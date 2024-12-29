@@ -1,0 +1,22 @@
+productName = "LonaNote"
+version = "0.0.1"
+identifier = "com.lonalabs.lonanote"
+
+[build]
+beforeDevCommand = "pnpm dev:web"
+beforeBuildCommand = "pnpm build:web"
+frontendDist = "../../ui/out/renderer"
+devUrl = "http://localhost:8000"
+
+[bundle]
+icon = ["../../ui/resources/icon.png"]
+active = true
+targets = "all"
+createUpdaterArtifacts = false
+
+[app]
+withGlobalTauri = true
+
+[app.security]
+# csp = "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost"
+assetProtocol = { scope = ["**/*"], enable = true }

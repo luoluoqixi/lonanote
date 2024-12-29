@@ -1,0 +1,3 @@
+{
+  "recommendations": ["dbaeumer.vscode-eslint", "fill-labs.dependi", "rust-lang.rust-analyzer"]
+}

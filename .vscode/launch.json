@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug UI Main",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceRoot}/ui",
+      "runtimeExecutable": "${workspaceRoot}/ui/node_modules/.bin/electron-vite",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/ui/node_modules/.bin/electron-vite.cmd"
+      },
+      "runtimeArgs": ["--sourcemap"],
+      "env": {
+        "REMOTE_DEBUGGING_PORT": "9222"
+      }
+    },
+    {
+      "name": "Debug UI Renderer",
+      "port": 9222,
+      "request": "attach",
+      "type": "chrome",
+      "webRoot": "${workspaceFolder}/ui/src/renderer",
+      "timeout": 60000,
+      "presentation": {
+        "hidden": true
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug UI All",
+      "configurations": ["Debug UI Main", "Debug UI Renderer"],
+      "presentation": {
+        "order": 1
+      }
+    }
+  ]
+}

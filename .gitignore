@@ -1,0 +1,15 @@
+logs
+*.log*
+
+node_modules
+
+# OSX
+**/*.DS_Store
+
+dist
+out
+target
+
+**/*.idea
+
+**/*.tsbuildinfo

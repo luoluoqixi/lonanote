@@ -1,0 +1,113 @@
+*       text    eol=lf
+
+# zip
+*.zip   binary
+*.7z    binary
+*.rar   binary
+*.tar   binary
+*.gz    binary
+*.bz2   binary
+*.xz    binary
+*.lz    binary
+*.iso   binary
+*.tgz   binary
+*.pkg   binary
+
+# music
+*.mp3   binary
+*.wav   binary
+*.flac  binary
+*.aac   binary
+*.ogg   binary
+*.m4a   binary
+
+# video
+*.mp4   binary
+*.mkv   binary
+*.avi   binary
+*.mov   binary
+*.flv   binary
+*.wmv   binary
+*.webm  binary
+*.mpeg  binary
+
+# exec
+*.exe   binary
+*.dll   binary
+*.lib   binary
+*.so    binary
+*.dylib binary
+*.bin   binary
+*.msi   binary
+*.deb   binary
+*.rpm   binary
+*.a     binary
+*.o     binary
+
+# image
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.bmp   binary
+*.ico   binary
+*.icns  binary
+*.tif   binary
+*.tiff  binary
+*.webp  binary
+*.svgz  binary
+
+# font
+*.eot   binary
+*.otf   binary
+*.ttf   binary
+*.woff  binary
+*.woff2 binary
+
+# model
+*.stl   binary
+*.obj   binary
+*.fbx   binary
+*.gltf  binary
+*.glb   binary
+*.dae   binary
+
+# adobe
+*.psd   binary
+*.ai    binary
+*.pdf   binary
+*.indd  binary
+*.eps   binary
+
+# document
+*.doc   binary
+*.docx  binary
+*.xls   binary
+*.xlsx  binary
+*.ppt   binary
+*.pptx  binary
+
+# db
+*.db    binary
+*.sqlite binary
+*.mdb   binary
+*.accdb binary
+
+# vm
+*.vmdk  binary
+*.vdi   binary
+*.vhd   binary
+*.ova   binary
+*.ovf   binary
+
+# bak
+*.bak   binary
+*.img   binary
+
+# encryption
+*.pem   binary
+*.crt   binary
+*.der   binary
+*.pfx   binary
+*.p12   binary
+*.key   binary

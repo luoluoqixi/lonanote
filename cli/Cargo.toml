@@ -1,0 +1,20 @@
+
+
+[workspace]
+members = ["icon_gen"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+version = "0.0.1"
+authors = ["luoluoqixi"]
+repository = "https://github.com/lona-labs/lonanote"
+license = ""
+
+[workspace.dependencies]
+anyhow = "1.0.95"
+log = "0.4.22"
+fern = "0.7.1"
+chrono = "0.4.39"
+image = "0.25.5"
+icns = "0.3.1"
