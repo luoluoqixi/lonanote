@@ -25,6 +25,20 @@ img {
   --separator-border: var(--chakra-colors-border);
 }
 
-.no-drag {
+.window-title-no-drag {
   -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.window-title-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+%window-title-no-drag {
+  @extend .window-title-no-drag;
+}
+
+%window-title-drag {
+  @extend .window-title-drag;
 }

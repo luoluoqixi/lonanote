@@ -1,0 +1,37 @@
+@use '../../../styles/index.scss';
+
+.title {
+  @extend %window-title-drag;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+}
+
+.titleTop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  justify-content: flex-start;
+  gap: 5px;
+}
+
+.titleBottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+}
+
+.titleFunctionItem {
+  @extend %window-title-no-drag;
+}
+
+.titleFunctionIcon {
+  @extend %window-title-no-drag;
+}
