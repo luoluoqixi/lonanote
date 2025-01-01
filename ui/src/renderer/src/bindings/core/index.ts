@@ -1,7 +1,7 @@
 import * as node from './bindingsNode';
 import * as tauri from './bindingsTauri';
 
-const { isNode } = node;
+const { isNode, isElectron } = node;
 const { isTauri } = tauri;
 
 const getJson = (args?: any) => {
@@ -144,4 +144,4 @@ export const getCommandJsLen = async (): Promise<number> => {
   }
 };
 
-export { isNode, isTauri };
+export { isNode, isElectron, isTauri };

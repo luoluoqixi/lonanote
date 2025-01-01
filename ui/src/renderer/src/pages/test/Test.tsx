@@ -2,8 +2,7 @@ import { useState } from 'react';
 
 import { api } from '@/bindings';
 import * as bindings from '@/bindings/core';
-import { Link } from '@/components';
-import { ColorModeSelect } from '@/components';
+import { ColorModeSelect, Link } from '@/components';
 import { Button, useColorMode } from '@/components/ui';
 
 export default function Index() {

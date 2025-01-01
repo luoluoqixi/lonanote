@@ -1,8 +1,8 @@
 import { RouteObject, RouterProvider, createBrowserRouter } from 'react-router';
 
-import Index from './pages/Index';
-import Layout from './pages/Layout';
-import Test from './pages/test/Test';
+// import Test from '../test/Test';
+import Index from './Index';
+import Layout from './Layout';
 
 export const routes: RouteObject[] = [
   {
@@ -11,8 +11,8 @@ export const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        // Component: Index,
-        Component: Test,
+        Component: Index,
+        // Component: Test,
       },
     ],
   },

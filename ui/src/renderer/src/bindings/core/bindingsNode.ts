@@ -1,4 +1,5 @@
 const isNode = window.api && window.api.invoke != null;
+const isElectron = isNode;
 
 export const invoke = async (
   key: string,
@@ -64,4 +65,4 @@ export const getCommandJsLen = async (): Promise<number> => {
   return await window.api.getCommandJsLen();
 };
 
-export { isNode };
+export { isNode, isElectron };
