@@ -16,6 +16,13 @@ img {
   height: 100%;
   width: 100%;
   overflow: visible;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+:root {
+  --focus-border: var(--chakra-colors-color-palette-focus-ring);
+  --separator-border: var(--chakra-colors-border);
 }
 
 .no-drag {

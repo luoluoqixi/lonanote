@@ -30,6 +30,8 @@ const createWindow = async () => {
   const win = new BrowserWindow({
     width: size.width,
     height: size.height,
+    minWidth: settings.minWindowSize.width,
+    minHeight: settings.minWindowSize.height,
     show: false,
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',

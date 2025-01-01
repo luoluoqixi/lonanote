@@ -15,6 +15,14 @@ export interface Size {
 }
 
 export const settings = {
+  defaultWindowSize: {
+    width: 1000,
+    height: 600,
+  },
+  minWindowSize: {
+    width: 300,
+    height: 200,
+  },
   getWindowSize: (): Size => {
     const windowSize = store.get(keys.windowSize);
     if (
@@ -24,10 +32,7 @@ export const settings = {
     ) {
       return windowSize;
     }
-    return {
-      width: 1000,
-      height: 600,
-    };
+    return settings.defaultWindowSize;
   },
   setWindowSize: (size: Size) => {
     store.set(keys.windowSize, size);
