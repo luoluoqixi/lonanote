@@ -1,5 +1,9 @@
 @use '../../../styles/index.scss';
 
+:root {
+  --activity-bar-bottom-height: 60px;
+}
+
 .title {
   @extend %window-title-drag;
   height: 100%;
@@ -12,12 +16,10 @@
 }
 
 .titleTop {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   margin: 0;
-  justify-content: flex-start;
-  gap: 5px;
+  height: calc(100% - var(--activity-bar-bottom-height));
+  width: 100%;
+  overflow: auto;
 }
 
 .titleBottom {
@@ -26,12 +28,23 @@
   align-items: center;
   justify-content: flex-start;
   gap: 5px;
+  height: var(--activity-bar-bottom-height);
 }
 
-.titleFunctionItem {
+.titleTabRoot {
+  height: 100%;
+  width: 100%;
+}
+
+.titleTabList {
+  height: 100%;
+  width: 100%;
+}
+
+.titleTabItem {
   @extend %window-title-no-drag;
 }
 
-.titleFunctionIcon {
+.titleTabIcon {
   @extend %window-title-no-drag;
 }

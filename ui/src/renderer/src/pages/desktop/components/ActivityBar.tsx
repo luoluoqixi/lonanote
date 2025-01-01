@@ -1,4 +1,4 @@
-import { IconButton } from '@chakra-ui/react';
+import { Tabs } from '@chakra-ui/react';
 import React from 'react';
 import { LuFolder, LuSearch } from 'react-icons/lu';
 import { VscExtensions } from 'react-icons/vsc';
@@ -35,13 +35,15 @@ export const ActivityBar: React.FC<ActivityBarProps> = () => {
   return (
     <div className={styles.title}>
       <div className={styles.titleTop}>
-        {functions.map((item) => (
-          <div key={item.key} className={styles.titleFunctionItem}>
-            <div className={styles.titleFunctionIcon}>
-              <IconButton variant="ghost">{item.icon}</IconButton>
-            </div>
-          </div>
-        ))}
+        <Tabs.Root className={styles.titleTabRoot} orientation="vertical" variant="plain">
+          <Tabs.List className={styles.titleTabList}>
+            {functions.map((item) => (
+              <Tabs.Trigger key={item.key} className={styles.titleTabItem} value={item.key}>
+                <div className={styles.titleTabIcon}>{item.icon}</div>
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
+        </Tabs.Root>
       </div>
       <div className={styles.titleBottom}>
         <div>123</div>
