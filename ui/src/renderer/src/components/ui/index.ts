@@ -44,6 +44,7 @@ export * from './status';
 export * from './stepper-input';
 export * from './steps';
 export * from './switch';
+export * from './tabs';
 export * from './tag';
 export * from './timeline';
 export * from './toaster';

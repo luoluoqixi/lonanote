@@ -1,9 +1,5 @@
 @use '../../../styles/index.scss';
 
-:root {
-  --activity-bar-bottom-height: 60px;
-}
-
 .title {
   @extend %window-title-drag;
   height: 100%;
@@ -13,13 +9,42 @@
   align-items: center;
   justify-content: space-between;
   background-color: #ffffff;
+  overflow: visible;
 }
 
 .titleTop {
   margin: 0;
-  height: calc(100% - var(--activity-bar-bottom-height));
   width: 100%;
-  overflow: auto;
+  overflow-y: overlay;
+  overflow-x: hidden;
+}
+
+.titltTop::-webkit-scrollbar-thumb {
+  display: none;
+  background-color: rgba(0, 0, 0, 0.473);
+  border-radius: 3px;
+}
+
+.titleTabRoot {
+  width: 100%;
+  justify-content: center;
+  overflow: visible;
+}
+
+.titleTabList {
+  @extend %window-title-no-drag;
+  height: 100%;
+  width: 80%;
+  align-items: center;
+  gap: 2px;
+}
+
+.titleTabItem {
+  @extend %window-title-no-drag;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  justify-content: center;
 }
 
 .titleBottom {
@@ -27,24 +52,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 5px;
-  height: var(--activity-bar-bottom-height);
+  overflow-x: visible;
 }
 
-.titleTabRoot {
-  height: 100%;
-  width: 100%;
-}
-
-.titleTabList {
-  height: 100%;
-  width: 100%;
-}
-
-.titleTabItem {
-  @extend %window-title-no-drag;
-}
-
-.titleTabIcon {
+.titleBottomItem {
   @extend %window-title-no-drag;
 }

@@ -42,3 +42,24 @@ img {
 %window-title-drag {
   @extend .window-title-drag;
 }
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  overflow-y: overlay;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+::-webkit-scrollbar-track-piece {
+  background-color: transparent;
+}
+::-webkit-scrollbar-thumb {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.473);
+  border-radius: 3px;
+}
+*:hover::-webkit-scrollbar-track-piece {
+  background-color: transparent;
+}
