@@ -2,7 +2,7 @@ import React from 'react';
 import { LuFolder, LuLibraryBig, LuSearch, LuSettings } from 'react-icons/lu';
 import { VscExtensions } from 'react-icons/vsc';
 
-import { Icon, IconButton, Tabs, Tooltip } from '@/components/ui';
+import { Button, Icon, IconButton, Tabs, Tooltip } from '@/components/ui';
 
 import styles from './ActivityBar.module.scss';
 
