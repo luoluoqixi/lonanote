@@ -1,9 +1,8 @@
-import { IconButton } from '@chakra-ui/react';
 import React from 'react';
 import { LuFolder, LuLibraryBig, LuSearch, LuSettings } from 'react-icons/lu';
 import { VscExtensions } from 'react-icons/vsc';
 
-import { Tabs, Tooltip } from '@/components/ui';
+import { Icon, IconButton, Tabs, Tooltip } from '@/components/ui';
 
 import styles from './ActivityBar.module.scss';
 
@@ -49,16 +48,18 @@ const fixedBtns: FunctionType[] = [
 const bottomBtnHeight = 40;
 const bottomGap = 2;
 const bottomHeight = fixedBtns.length * bottomBtnHeight + (fixedBtns.length - 1) * bottomGap;
+const topHeight = `calc(100% - ${bottomHeight}px)`;
 
 export const ActivityBar: React.FC<ActivityBarProps> = () => {
   return (
     <div className={styles.title}>
-      <div style={{ height: `calc(100% - ${bottomHeight}px)` }} className={styles.titleTop}>
+      <div style={{ height: topHeight }} className={styles.titleTop}>
         <Tabs
           className={styles.titleTabRoot}
           orientation="vertical"
           variant="subtle"
           tabs={tabs}
+          itemRender={(item) => <Icon size="md">{item.title}</Icon>}
           triggerListProps={{ className: styles.titleTabList }}
           triggerProps={{ className: styles.titleTabItem }}
           tooltipProps={{ positioning: { placement: 'right' } }}
@@ -67,7 +68,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = () => {
       <div style={{ height: bottomHeight, gap: bottomGap }} className={styles.titleBottom}>
         {fixedBtns.map((item) => (
           <div key={item.value}>
-            <Tooltip showArrow content={item.tooltip} positioning={{ placement: 'right' }}>
+            <Tooltip content={item.tooltip} positioning={{ placement: 'right' }}>
               <IconButton className={styles.titleBottomItem} variant="ghost">
                 {item.title}
               </IconButton>

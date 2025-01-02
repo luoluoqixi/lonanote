@@ -18,6 +18,8 @@ export * from './empty-state';
 export * from './field';
 export * from './file-upload';
 export * from './hover-card';
+export * from './icon-button';
+export * from './icon';
 export * from './input-group';
 export * from './link';
 export * from './link-button';

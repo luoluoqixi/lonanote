@@ -4,8 +4,8 @@ import { useWindowTitleHeight } from '@/hooks';
 
 import styles from './Layout.module.scss';
 import { ActivityBar } from './components/ActivityBar';
+import { AssistSideBar } from './components/AssistSideBar';
 import { Content } from './components/Content';
-import { RightSideBar } from './components/RightSideBar';
 import { SideBar } from './components/SideBar';
 import { StatusBar } from './components/StatusBar';
 import { Title } from './components/Title';
@@ -53,15 +53,15 @@ export default function Layout() {
             <Content />
           </Allotment.Pane>
           <Allotment.Pane
-            key={styles.contentRightSidebar}
-            className={styles.contentRightSidebar}
+            key={styles.contentAssistSideBar}
+            className={styles.contentAssistSideBar}
             minSize={170}
             priority={LayoutPriority.Low}
             preferredSize={300}
             visible={false}
             snap
           >
-            <RightSideBar />
+            <AssistSideBar />
           </Allotment.Pane>
         </Allotment>
       </Allotment.Pane>
