@@ -3,6 +3,7 @@ import { utils } from '@/utils';
 
 async function initStyles() {
   const { platform } = utils.detectBrowserAndPlatform();
+  document.body.classList.add(platform);
   if (platform === 'windows') {
     await import('@/styles/platform/windows.scss');
   } else if (platform === 'mac') {

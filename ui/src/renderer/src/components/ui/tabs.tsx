@@ -18,6 +18,7 @@ export interface TabType {
 export interface TabsProps extends ChakraTabsRootProps {
   tabs?: TabType[];
   itemRender?: (item: TabType) => React.ReactNode;
+  onTriggerClick?: (item: TabType) => void;
   triggersRender?: React.ReactNode;
   triggerListProps?: CharkaTabsListProps;
   triggerProps?: Omit<ChakraTabsTriggerProps, 'value'>;
@@ -32,6 +33,7 @@ export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => 
     children,
     tabs,
     itemRender,
+    onTriggerClick,
     triggersRender,
     triggerListProps,
     triggerProps,
@@ -51,6 +53,7 @@ export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => 
               color="primary.700"
               {...triggerProps}
               value={item.value}
+              onClick={() => onTriggerClick?.(item)}
             >
               {itemRender ? itemRender(item) : item.title}
             </CharkaTabs.Trigger>

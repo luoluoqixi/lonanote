@@ -1,4 +1,5 @@
 import { Allotment, LayoutPriority } from 'allotment';
+import { useState } from 'react';
 
 import { useWindowTitleHeight } from '@/hooks';
 
@@ -12,6 +13,32 @@ import { Title } from './components/Title';
 
 export default function Layout() {
   const titleHeight = useWindowTitleHeight();
+  const [isDrag, setIsDrag] = useState(false);
+  const [tabValue, setTabValue] = useState<string | undefined>('explorer');
+  const [showContentSidebar, setShowContentSidebar] = useState(true);
+  const [showContentAssistSideBar, setShowContentAssistSideBar] = useState(false);
+
+  const onContentVisibleChange = (index: number, visible: boolean) => {
+    if (index === 1) {
+      if (showContentSidebar != visible) {
+        setShowContentSidebar(visible);
+      }
+    } else if (index === 3) {
+      if (showContentAssistSideBar != visible) {
+        setShowContentAssistSideBar(visible);
+      }
+    }
+  };
+  const onContentChange = (sizes: number[]) => {
+    if (!isDrag) return;
+    const count = sizes.length;
+    for (let i = 0; i < count; i++) {
+      const s = sizes[i];
+      const visible = s > 0;
+      onContentVisibleChange(i, visible);
+    }
+  };
+
   return (
     <Allotment separator={false} vertical>
       <Allotment.Pane
@@ -23,7 +50,13 @@ export default function Layout() {
         <Title />
       </Allotment.Pane>
       <Allotment.Pane className={styles.content} key={styles.content}>
-        <Allotment proportionalLayout={false} separator={false}>
+        <Allotment
+          proportionalLayout={false}
+          separator={false}
+          onChange={onContentChange}
+          onDragStart={() => setIsDrag(true)}
+          onDragEnd={() => setIsDrag(false)}
+        >
           <Allotment.Pane
             key={styles.contentActivityBar}
             className={styles.contentActivityBar}
@@ -31,7 +64,12 @@ export default function Layout() {
             maxSize={48}
             visible={true}
           >
-            <ActivityBar />
+            <ActivityBar
+              tabValue={tabValue}
+              onTabChange={setTabValue}
+              isShowTabContent={showContentSidebar}
+              setShowTabContent={setShowContentSidebar}
+            />
           </Allotment.Pane>
           <Allotment.Pane
             key={styles.contentSidebar}
@@ -39,10 +77,10 @@ export default function Layout() {
             minSize={170}
             priority={LayoutPriority.Low}
             preferredSize={300}
-            visible={true}
+            visible={showContentSidebar}
             snap
           >
-            <SideBar />
+            <SideBar tabValue={tabValue} />
           </Allotment.Pane>
           <Allotment.Pane
             key={styles.contentContent}
@@ -58,7 +96,7 @@ export default function Layout() {
             minSize={170}
             priority={LayoutPriority.Low}
             preferredSize={300}
-            visible={false}
+            visible={showContentAssistSideBar}
             snap
           >
             <AssistSideBar />
