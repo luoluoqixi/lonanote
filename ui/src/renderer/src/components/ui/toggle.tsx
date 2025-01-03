@@ -16,7 +16,7 @@ const variantMap = {
   ghost: { on: 'subtle', off: 'ghost' },
 } as const;
 
-export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(function Toggle(props, ref) {
+export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>((props, ref) => {
   const { variant = 'subtle', size, children, ...rest } = props;
   const variantConfig = variantMap[variant];
 
@@ -34,7 +34,7 @@ interface ToggleBaseButtonProps extends Omit<ButtonProps, 'variant'> {
 }
 
 const ToggleBaseButton = React.forwardRef<HTMLButtonElement, ToggleBaseButtonProps>(
-  function ToggleBaseButton(props, ref) {
+  (props, ref) => {
     const toggle = useToggleContext();
     const { variant, ...rest } = props;
     return <Button variant={toggle.pressed ? variant.on : variant.off} ref={ref} {...rest} />;

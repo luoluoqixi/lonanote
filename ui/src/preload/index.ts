@@ -54,7 +54,7 @@ const api = {
     if (onZoomChangeCallbacks.findIndex((c) => c === callback) < 0) {
       onZoomChangeCallbacks.push(callback);
     } else {
-      console.warn(`onZoomChange function already exist`);
+      console.warn('onZoomChange function already exist');
     }
   },
   removeZoomChangeListener: (callback: (zoom: number) => void) => {
@@ -123,8 +123,8 @@ if (process.contextIsolated) {
     console.error(error);
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-expect-error (define in dts)
   window.electron = electronAPI;
-  // @ts-ignore (define in dts)
+  // @ts-expect-error (define in dts)
   window.api = api;
 }

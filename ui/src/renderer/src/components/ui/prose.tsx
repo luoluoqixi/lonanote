@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable quote-props */
 import { chakra } from '@chakra-ui/react';
 
 export const Prose = chakra('div', {

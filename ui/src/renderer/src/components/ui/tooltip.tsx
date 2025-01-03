@@ -10,7 +10,7 @@ export interface TooltipProps extends ChakraTooltip.RootProps {
   disabled?: boolean;
 }
 
-export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(function Tooltip(props, ref) {
+export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>((props, ref) => {
   const { showArrow, children, disabled, portalled, content, contentProps, portalRef, ...rest } =
     props;
 

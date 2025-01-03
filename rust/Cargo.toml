@@ -10,10 +10,10 @@ repository = "https://github.com/lona-labs/lonanote"
 license = ""
 
 [workspace.dependencies]
-serde = "1.0.216"
+serde = "1.0.217"
 serde_json = "1.0.134"
 tokio = { version = "1.42.0", features = ["full"] }
-async-trait = "0.1.83"
+async-trait = "0.1.84"
 anyhow = "1.0.95"
 log = "0.4.22"
 

@@ -26,7 +26,7 @@ export const initInvokeIpc = (ipcMain: Electron.IpcMain, win: BrowserWindow) => 
           if (code === 1) {
             resolve(result);
           } else {
-            reject(new Error('notfound js function: ' + key));
+            reject(new Error(`notfound js function: ${key}`));
           }
         });
         webContents.send(jsFunctionCallChannel, key, args, returnChannel);
@@ -71,7 +71,7 @@ export const initInvokeIpc = (ipcMain: Electron.IpcMain, win: BrowserWindow) => 
   ipcMain.handle('unregJsFunction', async (_, key) => {
     return bindings.unregJsFunction(key);
   });
-  ipcMain.handle('clearJsFunction', async (_) => {
+  ipcMain.handle('clearJsFunction', async () => {
     return bindings.clearJsFunction();
   });
   ipcMain.handle('getCommandJsKeys', async () => {

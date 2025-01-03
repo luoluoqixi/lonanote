@@ -64,6 +64,26 @@ export const ActivityBar: React.FC<ActivityBarProps> = () => {
           triggerProps={{ className: styles.titleTabItem }}
           tooltipProps={{ positioning: { placement: 'right' } }}
         />
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
+        <Button>123</Button>
       </div>
       <div style={{ height: bottomHeight, gap: bottomGap }} className={styles.titleBottom}>
         {fixedBtns.map((item) => (

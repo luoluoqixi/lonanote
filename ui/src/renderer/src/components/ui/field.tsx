@@ -8,7 +8,7 @@ export interface FieldProps extends Omit<ChakraField.RootProps, 'label'> {
   optionalText?: React.ReactNode;
 }
 
-export const Field = React.forwardRef<HTMLDivElement, FieldProps>(function Field(props, ref) {
+export const Field = React.forwardRef<HTMLDivElement, FieldProps>((props, ref) => {
   const { label, children, helperText, errorText, optionalText, ...rest } = props;
   return (
     <ChakraField.Root ref={ref} {...rest}>

@@ -4,7 +4,7 @@ import * as React from 'react';
 
 export interface IconProps extends ChakraIconProps {}
 
-export const Icon = React.forwardRef<SVGSVGElement, IconProps>(function Icon(props, ref) {
+export const Icon = React.forwardRef<SVGSVGElement, IconProps>((props, ref) => {
   const { children, ...rest } = props;
   return (
     <ChakraIcon ref={ref} color="primary.700" {...rest}>

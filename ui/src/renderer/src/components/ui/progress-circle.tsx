@@ -8,7 +8,7 @@ interface ProgressCircleRingProps extends ChakraProgressCircle.CircleProps {
 }
 
 export const ProgressCircleRing = React.forwardRef<SVGSVGElement, ProgressCircleRingProps>(
-  function ProgressCircleRing(props, ref) {
+  (props, ref) => {
     const { trackColor, cap, color, ...rest } = props;
     return (
       <ChakraProgressCircle.Circle {...rest} ref={ref}>
@@ -22,7 +22,7 @@ export const ProgressCircleRing = React.forwardRef<SVGSVGElement, ProgressCircle
 export const ProgressCircleValueText = React.forwardRef<
   HTMLDivElement,
   ChakraProgressCircle.ValueTextProps
->(function ProgressCircleValueText(props, ref) {
+>((props, ref) => {
   return (
     <AbsoluteCenter>
       <ChakraProgressCircle.ValueText {...props} ref={ref} />

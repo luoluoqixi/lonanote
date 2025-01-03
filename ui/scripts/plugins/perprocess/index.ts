@@ -16,7 +16,7 @@ export function preprocess(options?: Partial<PreProcessOptions>): Plugin {
   return {
     name: 'plugin-preprocess',
     enforce: 'pre',
-    configureServer(_server) {},
+    configureServer() {},
     async buildStart() {
       this.info('preprocess start');
       try {

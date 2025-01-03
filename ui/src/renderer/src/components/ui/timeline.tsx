@@ -2,7 +2,7 @@ import { Timeline as ChakraTimeline } from '@chakra-ui/react';
 import * as React from 'react';
 
 export const TimelineConnector = React.forwardRef<HTMLDivElement, ChakraTimeline.IndicatorProps>(
-  function TimelineConnector(props, ref) {
+  (props, ref) => {
     return (
       <ChakraTimeline.Connector ref={ref}>
         <ChakraTimeline.Separator />

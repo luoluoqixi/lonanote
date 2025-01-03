@@ -27,7 +27,7 @@ export interface PasswordInputProps extends InputProps, PasswordVisibilityProps 
 }
 
 export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
-  function PasswordInput(props, ref) {
+  (props, ref) => {
     const {
       rootProps,
       defaultVisible,
@@ -69,23 +69,21 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
   },
 );
 
-const VisibilityTrigger = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  function VisibilityTrigger(props, ref) {
-    return (
-      <IconButton
-        tabIndex={-1}
-        ref={ref}
-        me="-2"
-        aspectRatio="square"
-        size="sm"
-        variant="ghost"
-        height="calc(100% - {spacing.2})"
-        aria-label="Toggle password visibility"
-        {...props}
-      />
-    );
-  },
-);
+const VisibilityTrigger = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+  return (
+    <IconButton
+      tabIndex={-1}
+      ref={ref}
+      me="-2"
+      aspectRatio="square"
+      size="sm"
+      variant="ghost"
+      height="calc(100% - {spacing.2})"
+      aria-label="Toggle password visibility"
+      {...props}
+    />
+  );
+});
 
 interface PasswordStrengthMeterProps extends StackProps {
   max?: number;
@@ -93,7 +91,7 @@ interface PasswordStrengthMeterProps extends StackProps {
 }
 
 export const PasswordStrengthMeter = React.forwardRef<HTMLDivElement, PasswordStrengthMeterProps>(
-  function PasswordStrengthMeter(props, ref) {
+  (props, ref) => {
     const { max = 4, value, ...rest } = props;
 
     const percent = (value / max) * 100;

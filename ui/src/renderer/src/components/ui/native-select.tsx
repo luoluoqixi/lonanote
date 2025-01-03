@@ -8,7 +8,7 @@ export interface NativeSelectRootProps extends Select.RootProps {
 }
 
 export const NativeSelectRoot = React.forwardRef<HTMLDivElement, NativeSelectRootProps>(
-  function NativeSelect(props, ref) {
+  (props, ref) => {
     const { icon, children, ...rest } = props;
     return (
       <Select.Root ref={ref} {...rest}>
@@ -30,7 +30,7 @@ export interface NativeSelectFieldProps extends Select.FieldProps {
 }
 
 export const NativeSelectField = React.forwardRef<HTMLSelectElement, NativeSelectFieldProps>(
-  function NativeSelectField(props, ref) {
+  (props, ref) => {
     const { items: itemsProp, children, ...rest } = props;
 
     const items = React.useMemo(
@@ -56,13 +56,11 @@ export interface NativeSelecProps extends NativeSelectFieldProps {
   root?: NativeSelectRootProps;
 }
 
-export const NativeSelect = React.forwardRef<HTMLDivElement, NativeSelecProps>(
-  function NativeSelect(props, ref) {
-    const { root, ...rest } = props;
-    return (
-      <NativeSelectRoot ref={ref} {...root}>
-        <NativeSelectField {...rest} />
-      </NativeSelectRoot>
-    );
-  },
-);
+export const NativeSelect = React.forwardRef<HTMLDivElement, NativeSelecProps>((props, ref) => {
+  const { root, ...rest } = props;
+  return (
+    <NativeSelectRoot ref={ref} {...root}>
+      <NativeSelectField {...rest} />
+    </NativeSelectRoot>
+  );
+});

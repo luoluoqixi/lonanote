@@ -12,7 +12,7 @@ interface RadioCardItemProps extends RadioCard.ItemProps {
 }
 
 export const RadioCardItem = React.forwardRef<HTMLInputElement, RadioCardItemProps>(
-  function RadioCardItem(props, ref) {
+  (props, ref) => {
     const {
       inputProps,
       label,

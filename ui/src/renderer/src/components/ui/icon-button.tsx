@@ -4,13 +4,11 @@ import * as React from 'react';
 
 export interface IconButtonProps extends ChakraIconButtonProps {}
 
-export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  function IconButton(props, ref) {
-    const { children, ...rest } = props;
-    return (
-      <ChakraIconButton ref={ref} color="primary.700" {...rest}>
-        {children}
-      </ChakraIconButton>
-    );
-  },
-);
+export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>((props, ref) => {
+  const { children, ...rest } = props;
+  return (
+    <ChakraIconButton ref={ref} color="primary.700" {...rest}>
+      {children}
+    </ChakraIconButton>
+  );
+});

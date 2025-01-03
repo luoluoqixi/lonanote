@@ -7,7 +7,7 @@ export interface RatingProps extends RatingGroup.RootProps {
   label?: React.ReactNode;
 }
 
-export const Rating = React.forwardRef<HTMLDivElement, RatingProps>(function Rating(props, ref) {
+export const Rating = React.forwardRef<HTMLDivElement, RatingProps>((props, ref) => {
   const { icon, count = 5, label, ...rest } = props;
   return (
     <RatingGroup.Root ref={ref} count={count} {...rest}>

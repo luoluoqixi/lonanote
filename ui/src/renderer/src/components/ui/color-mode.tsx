@@ -14,7 +14,7 @@ export const colorModeList = ['light', 'dark', 'system'] as const;
 export type ColorMode = (typeof colorModeList)[number];
 export type ResolvedColorMode = 'light' | 'dark' | undefined;
 
-export type ColorModeState = {
+export interface ColorModeState {
   /** Active colorMode name */
   colorMode?: ColorMode;
   /** If `enableSystem` is true and the active theme is "system", this returns whether the system preference resolved to "dark" or "light". Otherwise, identical to `colorMode` */
@@ -23,7 +23,7 @@ export type ColorModeState = {
   setColorMode: (colorMode: ColorMode) => void;
   /** toggle colorMode: 'light' | 'dark' */
   toggleColorMode: () => void;
-};
+}
 
 export interface ColorModeProviderProps extends ThemeProviderProps {}
 
@@ -46,12 +46,16 @@ export function useColorMode(): ColorModeState {
   const toggleColorMode = () => {
     setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
   };
-  return {
+  const setColorMode = (colorMode: ColorMode) => {
+    setTheme(colorMode);
+  };
+  const state: ColorModeState = {
     colorMode: theme as ColorMode,
     resolvedColorMode: resolvedTheme as ResolvedColorMode,
-    setColorMode: setTheme,
+    setColorMode,
     toggleColorMode,
   };
+  return state;
 }
 
 export function useColorModeValue<T>(light: T, dark: T) {
@@ -67,7 +71,7 @@ export function ColorModeIcon() {
 export interface ColorModeButtonProps extends Omit<IconButtonProps, 'aria-label'> {}
 
 export const ColorModeButton = React.forwardRef<HTMLButtonElement, ColorModeButtonProps>(
-  function ColorModeButton(props, ref) {
+  (props, ref) => {
     const { toggleColorMode } = useColorMode();
     return (
       <ClientOnly fallback={<Skeleton boxSize="8" />}>
@@ -100,7 +104,7 @@ export interface ColorModeSelectProps extends SelectProps {
 export interface ColorModeLabels extends Record<ColorMode, Record<string, string>> {}
 
 export const ColorModeSelect = React.forwardRef<HTMLDivElement, ColorModeSelectProps>(
-  function ColorModeSelect(props, ref) {
+  (props, ref) => {
     const { labels, lang, ...rest } = props;
     const { colorMode, setColorMode } = useColorMode();
     const items: SelectValue[] = useMemo(() => {

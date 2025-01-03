@@ -2,7 +2,6 @@
 
 import './initAllotment';
 import './initApi';
-
-import '@/styles/index.scss';
+import './initStyles';
 
 console.log('inited!');

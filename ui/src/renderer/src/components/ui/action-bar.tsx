@@ -9,7 +9,7 @@ interface ActionBarContentProps extends ActionBar.ContentProps {
 }
 
 export const ActionBarContent = React.forwardRef<HTMLDivElement, ActionBarContentProps>(
-  function ActionBarContent(props, ref) {
+  (props, ref) => {
     const { children, portalled = true, portalRef, ...rest } = props;
 
     return (
@@ -27,7 +27,7 @@ export const ActionBarContent = React.forwardRef<HTMLDivElement, ActionBarConten
 export const ActionBarCloseTrigger = React.forwardRef<
   HTMLButtonElement,
   ActionBar.CloseTriggerProps
->(function ActionBarCloseTrigger(props, ref) {
+>((props, ref) => {
   return (
     <ActionBar.CloseTrigger {...props} asChild ref={ref}>
       <CloseButton size="sm" />

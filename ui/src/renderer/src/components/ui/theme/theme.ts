@@ -1,3 +1,4 @@
+/* eslint-disable quote-props */
 import { createSystem, defaultConfig, mergeConfigs } from '@chakra-ui/react';
 
 const config = mergeConfigs(defaultConfig, {

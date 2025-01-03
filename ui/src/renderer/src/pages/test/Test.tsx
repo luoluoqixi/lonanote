@@ -28,7 +28,7 @@ export default function Index() {
     }
     const start = performance.now();
     const data = await api.helloTest.helloCommand(msg);
-    logTime('hello_command: ' + data?.length, start);
+    logTime(`hello_command: ${data?.length}`, start);
 
     console.log(data);
   }
@@ -40,7 +40,7 @@ export default function Index() {
     }
     const start = performance.now();
     const data = await api.helloTest.helloCommandAsync(msg);
-    logTime('hello_command_async: ' + data?.length, start);
+    logTime(`hello_command_async: ${data?.length}`, start);
 
     console.log(data);
   }
@@ -55,21 +55,21 @@ export default function Index() {
     const start = performance.now();
     const keys = await bindings.getCommandKeys();
     const len = await bindings.getCommandLen();
-    logTime('getCommandKeys [' + len + ']: ' + keys.join(','), start);
+    logTime(`getCommandKeys [${len}]: ${keys.join(',')}`, start);
   }
 
   async function getCommandAsyncKeys() {
     const start = performance.now();
     const keys = await bindings.getCommandAsyncKeys();
     const len = await bindings.getCommandAsyncLen();
-    logTime('getCommandAsyncKeys [' + len + ']: ' + keys.join(','), start);
+    logTime(`getCommandAsyncKeys [${len}]: ${keys.join(',')}`, start);
   }
 
   async function getCommandJsKeys() {
     const start = performance.now();
     const keys = await bindings.getCommandJsKeys();
     const len = await bindings.getCommandJsLen();
-    logTime('getCommandJsKeys [' + len + ']: ' + keys.join(','), start);
+    logTime(`getCommandJsKeys [${len}]: ${keys.join(',')}`, start);
   }
 
   const wrapStyle: React.CSSProperties = {

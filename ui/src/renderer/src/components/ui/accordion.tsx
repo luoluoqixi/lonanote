@@ -7,7 +7,7 @@ interface AccordionItemTriggerProps extends Accordion.ItemTriggerProps {
 }
 
 export const AccordionItemTrigger = React.forwardRef<HTMLButtonElement, AccordionItemTriggerProps>(
-  function AccordionItemTrigger(props, ref) {
+  (props, ref) => {
     const { children, indicatorPlacement = 'end', ...rest } = props;
     return (
       <Accordion.ItemTrigger {...rest} ref={ref}>
@@ -32,7 +32,7 @@ export const AccordionItemTrigger = React.forwardRef<HTMLButtonElement, Accordio
 interface AccordionItemContentProps extends Accordion.ItemContentProps {}
 
 export const AccordionItemContent = React.forwardRef<HTMLDivElement, AccordionItemContentProps>(
-  function AccordionItemContent(props, ref) {
+  (props, ref) => {
     return (
       <Accordion.ItemContent>
         <Accordion.ItemBody {...props} ref={ref} />

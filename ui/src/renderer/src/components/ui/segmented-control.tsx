@@ -21,7 +21,7 @@ function normalize(items: Array<string | Item>): Item[] {
 }
 
 export const SegmentedControl = React.forwardRef<HTMLDivElement, SegmentedControlProps>(
-  function SegmentedControl(props, ref) {
+  (props, ref) => {
     const { items, ...rest } = props;
     const data = React.useMemo(() => normalize(items), [items]);
 

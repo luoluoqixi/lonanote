@@ -15,7 +15,7 @@ const statusMap: Record<StatusValue, ColorPalette> = {
   info: 'blue',
 };
 
-export const Status = React.forwardRef<HTMLDivElement, StatusProps>(function Status(props, ref) {
+export const Status = React.forwardRef<HTMLDivElement, StatusProps>((props, ref) => {
   const { children, value = 'info', ...rest } = props;
   const colorPalette = rest.colorPalette ?? statusMap[value];
   return (

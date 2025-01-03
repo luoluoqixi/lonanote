@@ -9,7 +9,7 @@ import { system } from './ui/theme';
 
 const titlebarStyle = `
 .titlebar {
-  ${isElectron ? `app-region: drag;` : ''}
+  ${isElectron ? 'app-region: drag;' : ''}
   user-select: none;
   position: fixed;
   width: 100%;

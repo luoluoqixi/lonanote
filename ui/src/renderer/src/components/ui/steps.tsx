@@ -12,25 +12,23 @@ export interface StepsItemProps extends Omit<ChakraSteps.ItemProps, 'title'>, St
   icon?: React.ReactNode;
 }
 
-export const StepsItem = React.forwardRef<HTMLDivElement, StepsItemProps>(
-  function StepsItem(props, ref) {
-    const { title, description, completedIcon, icon, ...rest } = props;
-    return (
-      <ChakraSteps.Item {...rest} ref={ref}>
-        <ChakraSteps.Trigger>
-          <ChakraSteps.Indicator>
-            <ChakraSteps.Status
-              complete={completedIcon || <LuCheck />}
-              incomplete={icon || <ChakraSteps.Number />}
-            />
-          </ChakraSteps.Indicator>
-          <StepInfo title={title} description={description} />
-        </ChakraSteps.Trigger>
-        <ChakraSteps.Separator />
-      </ChakraSteps.Item>
-    );
-  },
-);
+export const StepsItem = React.forwardRef<HTMLDivElement, StepsItemProps>((props, ref) => {
+  const { title, description, completedIcon, icon, ...rest } = props;
+  return (
+    <ChakraSteps.Item {...rest} ref={ref}>
+      <ChakraSteps.Trigger>
+        <ChakraSteps.Indicator>
+          <ChakraSteps.Status
+            complete={completedIcon || <LuCheck />}
+            incomplete={icon || <ChakraSteps.Number />}
+          />
+        </ChakraSteps.Indicator>
+        <StepInfo title={title} description={description} />
+      </ChakraSteps.Trigger>
+      <ChakraSteps.Separator />
+    </ChakraSteps.Item>
+  );
+});
 
 const StepInfo = (props: StepInfoProps) => {
   const { title, description } = props;
@@ -58,7 +56,7 @@ interface StepsIndicatorProps {
 }
 
 export const StepsIndicator = React.forwardRef<HTMLDivElement, StepsIndicatorProps>(
-  function StepsIndicator(props, ref) {
+  (props, ref) => {
     const { icon = <ChakraSteps.Number />, completedIcon } = props;
     return (
       <ChakraSteps.Indicator ref={ref}>

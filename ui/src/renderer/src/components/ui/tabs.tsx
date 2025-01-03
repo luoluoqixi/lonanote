@@ -27,7 +27,7 @@ export interface TabsProps extends ChakraTabsRootProps {
 export const TabsContent = CharkaTabs.Content;
 export const TabsTrigger = CharkaTabs.Trigger;
 
-export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(function Tabs(props, ref) {
+export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => {
   const {
     children,
     tabs,

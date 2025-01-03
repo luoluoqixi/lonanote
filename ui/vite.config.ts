@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { UserConfig, defineConfig } from 'vite';
