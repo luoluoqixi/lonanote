@@ -1,11 +1,24 @@
 mod commands;
 
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
-
+use anyhow::Result;
 use std::sync::OnceLock;
+use tauri::{App, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 pub static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 pub static MAIN_WINDOW_NAME: &str = "main";
+
+fn init(app: &mut App) -> Result<()> {
+    let path = app.handle().path();
+    let id = &app.config().identifier;
+    let cache_dir = path.temp_dir()?.to_str().unwrap().to_string();
+    let cache_dir = format!("{}/{}", cache_dir, id);
+    let data_dir = path.app_data_dir()?.to_str().unwrap().to_string();
+    let download_dir = path.download_dir()?.to_str().unwrap().to_string();
+    let home_dir = path.home_dir()?.to_str().unwrap().to_string();
+    lonanote_core::config::app_path::init_dir(data_dir, cache_dir, download_dir, home_dir);
+
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -47,6 +60,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
+            init(app)?;
+
             let win_builder =
                 WebviewWindowBuilder::new(app, MAIN_WINDOW_NAME, WebviewUrl::default());
             let _ = win_builder.build().unwrap();

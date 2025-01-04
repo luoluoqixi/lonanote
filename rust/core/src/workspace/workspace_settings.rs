@@ -1,14 +1,11 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WorkspaceSettings {
-    pub theme: String,
-}
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceSettings {}
 
 impl WorkspaceSettings {
     pub fn new() -> Self {
-        Self {
-            theme: "system".to_string(),
-        }
+        Self {}
     }
 }

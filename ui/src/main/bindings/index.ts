@@ -1,4 +1,5 @@
 import { BrowserWindow } from 'electron';
+import { app } from 'electron';
 
 import * as bindings from './bindings';
 import { initDialogIPC } from './dialog';
@@ -85,7 +86,19 @@ const initInvokeIpc = (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
   bindings.clearJsFunction();
 };
 
+const initPath = async () => {
+  const s = process.platform === 'win32' ? '\\' : '/';
+  const dirs = {
+    dataDir: app.getPath('userData'),
+    cacheDir: `${app.getPath('temp')}${s}${app.name}`,
+    downloadDir: app.getPath('downloads'),
+    homeDir: app.getPath('home'),
+  };
+  bindings.invoke('init_dir', JSON.stringify(dirs));
+};
+
 export const initBindings = async (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
   initInvokeIpc(ipcMain, win);
+  initPath();
   initDialogIPC(win);
 };
