@@ -17,3 +17,6 @@ serde_json = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 anyhow = { workspace = true }
 log = { workspace = true }
+thiserror = { workspace = true }
+notify = { workspace = true }
+ignore = { workspace = true }

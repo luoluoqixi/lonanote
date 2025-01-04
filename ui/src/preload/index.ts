@@ -1,6 +1,8 @@
 import { electronAPI } from '@electron-toolkit/preload';
 import { contextBridge, ipcRenderer } from 'electron';
 
+import { dialog } from './dialog';
+
 let jsFunctions:
   | Record<
       string,
@@ -40,7 +42,7 @@ ipcRenderer.on('onZoomChange', (e, zoom) => {
 });
 
 // Custom APIs for renderer
-const api = {
+export const api = {
   setTitleBarColor: async (color: string, backgroudColor: string) => {
     await ipcRenderer.invoke('setTitleBarColor', color, backgroudColor);
   },
@@ -110,6 +112,7 @@ const api = {
   getCommandJsLen: async () => {
     return await ipcRenderer.invoke('getCommandJsLen');
   },
+  dialog,
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -1,4 +1,5 @@
 mod api;
+pub(crate) mod workspace;
 
 use anyhow::Result;
 use log::info;

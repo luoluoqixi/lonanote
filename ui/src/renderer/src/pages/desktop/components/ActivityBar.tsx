@@ -40,9 +40,9 @@ const tabs: FunctionType[] = [
 
 const fixedBtns: FunctionType[] = [
   {
-    value: 'library',
+    value: 'workspace',
     title: <LuLibraryBig />,
-    tooltip: '切换空间',
+    tooltip: '切换工作区',
   },
   {
     value: 'settings',

@@ -1,10 +1,11 @@
 import { BrowserWindow } from 'electron';
 
 import * as bindings from './bindings';
+import { initDialogIPC } from './dialog';
 
 export * from './bindings';
 
-export const initInvokeIpc = (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
+const initInvokeIpc = (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
   let returnSequence = 0;
   const jsFunctionCallChannel = 'jsFunctionCall';
   const jsFunctionCall = (
@@ -82,4 +83,9 @@ export const initInvokeIpc = (ipcMain: Electron.IpcMain, win: BrowserWindow) => 
   });
 
   bindings.clearJsFunction();
+};
+
+export const initBindings = async (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
+  initInvokeIpc(ipcMain, win);
+  initDialogIPC(win);
 };

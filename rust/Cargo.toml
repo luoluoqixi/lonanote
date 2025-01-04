@@ -16,6 +16,9 @@ tokio = { version = "1.42.0", features = ["full"] }
 async-trait = "0.1.84"
 anyhow = "1.0.95"
 log = "0.4.22"
+thiserror = "2.0.9"
+notify = "7.0.0"
+ignore = "0.4.23"
 
 [profile.release]
 codegen-units = 1 # Compile crates one after another so the compiler can optimize better

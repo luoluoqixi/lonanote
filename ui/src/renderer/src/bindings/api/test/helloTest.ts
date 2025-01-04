@@ -14,7 +14,7 @@ export const helloTest = {
 
 export const initHelloTest = async () => {
   await regJsFunction<string, string>('rust_call_js_fn_key', async (args) => {
-    console.log('rust args: ' + args);
+    console.log(`rust args: ${args}`);
     // return '=====js return value=====';
     return undefined;
   });

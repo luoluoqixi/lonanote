@@ -2,3 +2,22 @@
   width: 100%;
   height: 100%;
 }
+
+.noWorkspace {
+  padding: 10px;
+}
+
+.handleButtonList {
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.handleButton {
+  width: 300px;
+  min-width: auto;
+  max-width: 100%;
+}
