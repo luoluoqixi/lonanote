@@ -3,7 +3,7 @@ import { Outlet } from 'react-router';
 
 import styles from './Content.module.scss';
 
-interface ContentProps {}
+export interface ContentProps {}
 
 export const Content: React.FC<ContentProps> = () => {
   return (

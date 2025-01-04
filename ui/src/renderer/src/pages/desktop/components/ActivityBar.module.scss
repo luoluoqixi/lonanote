@@ -18,6 +18,7 @@
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  padding-top: 2px;
 }
 
 :global(.windows) {
@@ -55,6 +56,7 @@
   align-items: center;
   justify-content: flex-start;
   overflow-x: visible;
+  margin-bottom: 4px;
 }
 
 .titleBottomItem {

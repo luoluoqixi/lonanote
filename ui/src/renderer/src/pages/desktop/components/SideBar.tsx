@@ -7,7 +7,7 @@ const tabsRenders: Record<string, React.FC<any>> = {
   search: lazy(() => import('./tabs/Search')),
 };
 
-interface SideBarProps {
+export interface SideBarProps {
   tabValue?: string | undefined;
 }
 

@@ -6,8 +6,10 @@ import { LuFolder, LuLibraryBig, LuSearch, LuSettings } from 'react-icons/lu';
 import { Icon, IconButton, Tabs, Tooltip } from '@/components/ui';
 
 import styles from './ActivityBar.module.scss';
+import { useSettings } from './dialogs/Settings';
+import { useWorkspaceManager } from './dialogs/WorkspaceManager';
 
-interface ActivityBarProps {
+export interface ActivityBarProps {
   tabValue: string | undefined;
   onTabChange: (v: string) => void;
   isShowTabContent?: boolean;
@@ -42,7 +44,7 @@ const fixedBtns: FunctionType[] = [
   {
     value: 'workspace',
     title: <LuLibraryBig />,
-    tooltip: '切换工作区',
+    tooltip: '工作区',
   },
   {
     value: 'settings',
@@ -57,8 +59,14 @@ const bottomHeight = fixedBtns.length * bottomBtnHeight + (fixedBtns.length - 1)
 const topHeight = `calc(100% - ${bottomHeight}px)`;
 
 const onBtnClick = (value: string) => {
-  console.log('点击了: ', value);
+  if (value === 'workspace') {
+    useWorkspaceManager.getState().setIsOpen(true);
+  } else if (value === 'settings') {
+    useSettings.getState().setIsOpen(true);
+  }
 };
+
+const startTabIndex = 0;
 
 export const ActivityBar: React.FC<ActivityBarProps> = ({
   tabValue,
@@ -67,6 +75,8 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   onTabChange,
 }) => {
   const curTabValue = tabValue || tabs[0].value;
+  const tabsIndex = startTabIndex;
+  const btnIndex = tabsIndex + tabs.length;
   return (
     <div className={styles.title}>
       <div style={{ height: topHeight }} className={styles.titleTop}>
@@ -83,6 +93,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
           }}
           tooltipProps={{ positioning: { placement: 'right' } }}
           onValueChange={(e) => onTabChange(e.value)}
+          startTabIndex={tabsIndex}
           onTriggerClick={(v) => {
             if (v.value === curTabValue) {
               setShowTabContent?.(!isShowTabContent);
@@ -93,10 +104,11 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         />
       </div>
       <div style={{ height: bottomHeight, gap: bottomGap }} className={styles.titleBottom}>
-        {fixedBtns.map((item) => (
+        {fixedBtns.map((item, i) => (
           <div key={item.value}>
             <Tooltip content={item.tooltip} positioning={{ placement: 'right' }}>
               <IconButton
+                tabIndex={btnIndex + i}
                 onClick={() => onBtnClick(item.value)}
                 className={styles.titleBottomItem}
                 variant="ghost"

@@ -10,6 +10,8 @@ import { Content } from './components/Content';
 import { SideBar } from './components/SideBar';
 import { StatusBar } from './components/StatusBar';
 import { Title } from './components/Title';
+import { Settings } from './components/dialogs/Settings';
+import { WorkspaceManager } from './components/dialogs/WorkspaceManager';
 
 export default function Layout() {
   const titleHeight = useWindowTitleHeight();
@@ -40,72 +42,81 @@ export default function Layout() {
   };
 
   return (
-    <Allotment separator={false} vertical>
-      <Allotment.Pane
-        key={styles.title}
-        className={styles.title}
-        minSize={titleHeight}
-        maxSize={titleHeight}
-      >
-        <Title />
-      </Allotment.Pane>
-      <Allotment.Pane className={styles.content} key={styles.content}>
-        <Allotment
-          proportionalLayout={false}
-          separator={false}
-          onChange={onContentChange}
-          onDragStart={() => setIsDrag(true)}
-          onDragEnd={() => setIsDrag(false)}
+    <>
+      <Allotment separator={false} vertical>
+        <Allotment.Pane
+          key={styles.title}
+          className={styles.title}
+          minSize={titleHeight}
+          maxSize={titleHeight}
         >
-          <Allotment.Pane
-            key={styles.contentActivityBar}
-            className={styles.contentActivityBar}
-            minSize={48}
-            maxSize={48}
-            visible={true}
+          <Title />
+        </Allotment.Pane>
+        <Allotment.Pane className={styles.content} key={styles.content}>
+          <Allotment
+            proportionalLayout={false}
+            separator={false}
+            onChange={onContentChange}
+            onDragStart={() => setIsDrag(true)}
+            onDragEnd={() => setIsDrag(false)}
           >
-            <ActivityBar
-              tabValue={tabValue}
-              onTabChange={setTabValue}
-              isShowTabContent={showContentSidebar}
-              setShowTabContent={setShowContentSidebar}
-            />
-          </Allotment.Pane>
-          <Allotment.Pane
-            key={styles.contentSidebar}
-            className={styles.contentSidebar}
-            minSize={170}
-            priority={LayoutPriority.Low}
-            preferredSize={300}
-            visible={showContentSidebar}
-            snap
-          >
-            <SideBar tabValue={tabValue} />
-          </Allotment.Pane>
-          <Allotment.Pane
-            key={styles.contentContent}
-            className={styles.contentContent}
-            minSize={300}
-            priority={LayoutPriority.High}
-          >
-            <Content />
-          </Allotment.Pane>
-          <Allotment.Pane
-            key={styles.contentAssistSideBar}
-            className={styles.contentAssistSideBar}
-            minSize={170}
-            priority={LayoutPriority.Low}
-            preferredSize={300}
-            visible={showContentAssistSideBar}
-            snap
-          >
-            <AssistSideBar />
-          </Allotment.Pane>
-        </Allotment>
-      </Allotment.Pane>
-      <Allotment.Pane key={styles.statusBar} className={styles.statusBar} minSize={22} maxSize={22}>
-        <StatusBar />
-      </Allotment.Pane>
-    </Allotment>
+            <Allotment.Pane
+              key={styles.contentActivityBar}
+              className={styles.contentActivityBar}
+              minSize={48}
+              maxSize={48}
+              visible={true}
+            >
+              <ActivityBar
+                tabValue={tabValue}
+                onTabChange={setTabValue}
+                isShowTabContent={showContentSidebar}
+                setShowTabContent={setShowContentSidebar}
+              />
+            </Allotment.Pane>
+            <Allotment.Pane
+              key={styles.contentSidebar}
+              className={styles.contentSidebar}
+              minSize={170}
+              priority={LayoutPriority.Low}
+              preferredSize={300}
+              visible={showContentSidebar}
+              snap
+            >
+              <SideBar tabValue={tabValue} />
+            </Allotment.Pane>
+            <Allotment.Pane
+              key={styles.contentContent}
+              className={styles.contentContent}
+              minSize={300}
+              priority={LayoutPriority.High}
+            >
+              <Content />
+            </Allotment.Pane>
+            <Allotment.Pane
+              key={styles.contentAssistSideBar}
+              className={styles.contentAssistSideBar}
+              minSize={170}
+              priority={LayoutPriority.Low}
+              preferredSize={300}
+              visible={showContentAssistSideBar}
+              snap
+            >
+              <AssistSideBar />
+            </Allotment.Pane>
+          </Allotment>
+        </Allotment.Pane>
+        <Allotment.Pane
+          key={styles.statusBar}
+          className={styles.statusBar}
+          minSize={22}
+          maxSize={22}
+        >
+          <StatusBar />
+        </Allotment.Pane>
+      </Allotment>
+      <WorkspaceManager />
+      <Settings />
+    </>
   );
 }

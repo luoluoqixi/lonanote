@@ -23,6 +23,7 @@ export interface TabsProps extends ChakraTabsRootProps {
   triggerListProps?: CharkaTabsListProps;
   triggerProps?: Omit<ChakraTabsTriggerProps, 'value'>;
   tooltipProps?: Omit<TooltipProps, 'content'>;
+  startTabIndex?: number;
 }
 
 export const TabsContent = CharkaTabs.Content;
@@ -38,15 +39,18 @@ export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => 
     triggerListProps,
     triggerProps,
     tooltipProps,
+    startTabIndex,
     ...rest
   } = props;
 
   return (
     <CharkaTabs.Root ref={ref} {...rest}>
       <CharkaTabs.List {...triggerListProps}>
-        {tabs?.map((item) => {
+        {tabs?.map((item, index) => {
+          const tabIndex = startTabIndex != null ? index + startTabIndex : undefined;
           const trigger = (k: string | undefined) => (
             <CharkaTabs.Trigger
+              tabIndex={tabIndex}
               key={k}
               _hover={{ bg: 'primary.100' }}
               _selected={{ bg: 'primary.100', color: 'primary.900' }}
@@ -59,7 +63,7 @@ export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => 
             </CharkaTabs.Trigger>
           );
           return item.tooltip ? (
-            <Tooltip key={item.value} content={item.tooltip} {...tooltipProps}>
+            <Tooltip key={index} content={item.tooltip} {...tooltipProps}>
               {trigger(undefined)}
             </Tooltip>
           ) : (
