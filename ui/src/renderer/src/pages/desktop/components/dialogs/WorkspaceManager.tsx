@@ -37,7 +37,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>工作区管理</DialogTitle>
+          <DialogTitle>工作区</DialogTitle>
           <DialogCloseTrigger />
         </DialogHeader>
         <DialogBody>

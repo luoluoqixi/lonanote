@@ -186,7 +186,7 @@ export const Select = React.forwardRef<HTMLDivElement, SelectProps>((props, ref)
       <SelectTrigger {...triggerProps}>
         <SelectValueText placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent {...contentProps}>
+      <SelectContent zIndex={9999} {...contentProps}>
         {itemsList.items.map((item) => (
           <SelectItem {...itemsProps} {...item.props} item={item} key={item.value}>
             {item.label}

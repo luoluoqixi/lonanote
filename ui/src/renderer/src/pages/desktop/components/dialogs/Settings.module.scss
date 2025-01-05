@@ -1,3 +1,43 @@
 .settings {
   width: 100%;
+  height: 100%;
+}
+
+.settingsTabs {
+  height: 100%;
+  width: 100%;
+}
+
+.settingsTabsTriggerList {
+  width: 180px;
+}
+
+.settingsContentWrap {
+  width: 100%;
+}
+
+.settingsContent {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.globalSettings {
+  @extend .settingsContent;
+}
+
+.workspaceSettings {
+  @extend .settingsContent;
+}
+
+.appearanceSettings {
+  @extend .settingsContent;
+}
+
+.rowSettings {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
 }

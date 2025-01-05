@@ -1,4 +1,4 @@
-import { Dialog as ChakraDialog, Portal } from '@chakra-ui/react';
+import { Dialog as ChakraDialog, DialogBackdropProps, Portal } from '@chakra-ui/react';
 import * as React from 'react';
 
 import { CloseButton } from './close-button';
@@ -7,14 +7,15 @@ interface DialogContentProps extends ChakraDialog.ContentProps {
   portalled?: boolean;
   portalRef?: React.RefObject<HTMLElement>;
   backdrop?: boolean;
+  backdropProps?: DialogBackdropProps;
 }
 
 export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>((props, ref) => {
-  const { children, portalled = true, portalRef, backdrop = true, ...rest } = props;
+  const { children, portalled = true, portalRef, backdrop = true, backdropProps, ...rest } = props;
 
   return (
     <Portal disabled={!portalled} container={portalRef}>
-      {backdrop && <ChakraDialog.Backdrop />}
+      {backdrop && <ChakraDialog.Backdrop background="blackAlpha.200" {...backdropProps} />}
       <ChakraDialog.Positioner>
         <ChakraDialog.Content ref={ref} {...rest} asChild={false}>
           {children}
