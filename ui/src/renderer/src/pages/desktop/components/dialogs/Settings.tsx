@@ -77,7 +77,7 @@ export const Settings: React.FC<SettingsProps> = () => {
       size="cover"
       placement="center"
       motionPreset="scale"
-      closeOnInteractOutside
+      closeOnInteractOutside={false}
       open={store.isOpen}
       onOpenChange={(v) => store.setIsOpen(v.open)}
     >

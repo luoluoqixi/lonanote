@@ -7,7 +7,7 @@ export interface IconButtonProps extends ChakraIconButtonProps {}
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>((props, ref) => {
   const { children, ...rest } = props;
   return (
-    <ChakraIconButton ref={ref} color="primary.700" {...rest}>
+    <ChakraIconButton ref={ref} color="primary.700" _hover={{ color: 'colorPalette.fg' }} {...rest}>
       {children}
     </ChakraIconButton>
   );

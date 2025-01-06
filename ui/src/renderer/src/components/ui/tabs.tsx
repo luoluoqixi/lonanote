@@ -52,9 +52,16 @@ export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => 
             <CharkaTabs.Trigger
               tabIndex={tabIndex}
               key={k}
-              _hover={{ bg: 'primary.100' }}
-              _selected={{ bg: 'primary.100', color: 'primary.900' }}
-              color="primary.700"
+              _hover={{
+                bg: 'colorPalette.subtle',
+                color: 'fg',
+                _icon: { color: 'colorPalette.fg' },
+              }}
+              _selected={{
+                bg: 'colorPalette.subtle',
+                color: 'fg',
+                _icon: { color: 'colorPalette.fg' },
+              }}
               {...triggerProps}
               value={item.value}
               onClick={() => onTriggerClick?.(item)}

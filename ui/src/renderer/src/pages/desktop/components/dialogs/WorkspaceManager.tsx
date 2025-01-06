@@ -31,7 +31,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
       size="cover"
       placement="center"
       motionPreset="scale"
-      closeOnInteractOutside
+      closeOnInteractOutside={false}
       open={store.isOpen}
       onOpenChange={(v) => store.setIsOpen(v.open)}
     >
