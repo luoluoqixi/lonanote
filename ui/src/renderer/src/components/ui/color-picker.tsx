@@ -33,14 +33,14 @@ export const ColorPickerInput = forwardRef<
 
 interface ColorPickerContentProps extends ChakraColorPicker.ContentProps {
   portalled?: boolean;
-  portalRef?: React.RefObject<HTMLElement>;
+  portalRef?: React.Ref<HTMLElement>;
 }
 
 export const ColorPickerContent = forwardRef<HTMLDivElement, ColorPickerContentProps>(
   (props, ref) => {
     const { portalled = true, portalRef, ...rest } = props;
     return (
-      <Portal disabled={!portalled} container={portalRef}>
+      <Portal disabled={!portalled} container={portalRef as React.RefObject<HTMLElement>}>
         <ChakraColorPicker.Positioner>
           <ChakraColorPicker.Content ref={ref} {...rest} />
         </ChakraColorPicker.Positioner>

@@ -1,3 +1,1 @@
-import system from './theme';
-
-export { system };
+export * from './theme';

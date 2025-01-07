@@ -134,6 +134,8 @@ export interface SelectValue {
 export interface SelectProps
   extends Omit<ChakraSelect.RootProps<any>, 'value' | 'onValueChange' | 'collection'> {
   label?: string | React.ReactNode;
+  /** 如果在Dialog中使用Select, 需要将DialogContent的ref传递到这里, 不然Select显示不出来 */
+  contentRef?: React.Ref<HTMLElement>;
   labelProps?: ChakraSelect.LabelProps;
   placeholder?: string;
   contentProps?: SelectContentProps;
@@ -150,6 +152,7 @@ export const Select = React.forwardRef<HTMLDivElement, SelectProps>((props, ref)
   const {
     children,
     label,
+    contentRef,
     placeholder,
     contentProps,
     labelProps,
@@ -186,7 +189,7 @@ export const Select = React.forwardRef<HTMLDivElement, SelectProps>((props, ref)
       <SelectTrigger {...triggerProps}>
         <SelectValueText placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent zIndex={9999} {...contentProps}>
+      <SelectContent portalRef={contentRef as React.RefObject<HTMLDivElement>} {...contentProps}>
         {itemsList.items.map((item) => (
           <SelectItem {...itemsProps} {...item.props} item={item} key={item.value}>
             {item.label}
