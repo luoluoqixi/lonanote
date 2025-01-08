@@ -75,7 +75,9 @@ const createWindow = async () => {
     const width = size[0];
     const height = size[1];
     if (width > 0 && height > 0) {
-      settings.setWindowSize({ width, height });
+      const size = { width, height };
+      settings.setWindowSize(size);
+      win.webContents.send('onWindowSizeChange', size);
     }
   });
 
@@ -92,6 +94,18 @@ const createWindow = async () => {
 };
 
 export const setupApp = async () => {
+  const setZoom = (zoom: number) => {
+    if (zoom < settings.minZoom) return;
+    if (zoom > settings.maxZoom) return;
+    mainWindow?.webContents.setZoomLevel(zoom);
+    settings.setZoom(zoom);
+    const titleBarOverlay = getTitleBarOverlay(zoom);
+    if (titleBarOverlay) {
+      mainWindow?.setTitleBarOverlay(titleBarOverlay);
+    }
+    mainWindow?.webContents.send('onZoomChange', zoom);
+  };
+
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
@@ -116,17 +130,6 @@ export const setupApp = async () => {
       globalShortcut.unregister('CommandOrControl+=');
       globalShortcut.unregister('CommandOrControl+-');
       globalShortcut.unregister('CommandOrControl+0');
-      const setZoom = (zoom: number) => {
-        if (zoom < settings.minZoom) return;
-        if (zoom > settings.maxZoom) return;
-        win.webContents.setZoomLevel(zoom);
-        settings.setZoom(zoom);
-        const titleBarOverlay = getTitleBarOverlay(zoom);
-        if (titleBarOverlay) {
-          win.setTitleBarOverlay(titleBarOverlay);
-        }
-        win.webContents.send('onZoomChange', zoom);
-      };
       globalShortcut.register('CommandOrControl+=', () => {
         if (!win) return;
         setZoom(settings.getZoom() + 1);
@@ -154,6 +157,21 @@ export const setupApp = async () => {
 
     ipcMain.handle('getZoom', () => {
       return settings.getZoom();
+    });
+    ipcMain.handle('setZoom', (_, zoom: number) => {
+      if (zoom != null && zoom !== settings.getZoom()) {
+        setZoom(zoom);
+      }
+    });
+    ipcMain.handle('getWindowSize', () => {
+      return settings.getWindowSize();
+    });
+    ipcMain.handle('resetWindowSize', () => {
+      if (mainWindow) {
+        const s = settings.defaultWindowSize;
+        mainWindow.setSize(s.width, s.height);
+        settings.setWindowSize(s);
+      }
     });
 
     createWindow();

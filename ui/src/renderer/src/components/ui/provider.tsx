@@ -3,19 +3,19 @@
 import { ChakraProvider } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 
-import { useSettingsStore } from '@/models';
+import { getThemeColor, useUISettingsStore } from '@/models';
 
 import { ColorModeProvider, type ColorModeProviderProps } from './color-mode';
 import { createDynamicTheme } from './theme';
 
-const defaultTheme = createDynamicTheme();
+const defaultTheme = createDynamicTheme(getThemeColor());
 
 export function Provider(props: ColorModeProviderProps) {
   const [theme, setTheme] = useState(defaultTheme);
-  const settings = useSettingsStore((s) => s.appearanceSettings);
+  const themeColor = useUISettingsStore((s) => s.themeColor);
   useEffect(() => {
-    setTheme(createDynamicTheme());
-  }, [settings]);
+    setTheme(createDynamicTheme(getThemeColor()));
+  }, [themeColor]);
   return (
     <ChakraProvider value={theme}>
       <ColorModeProvider {...props} />

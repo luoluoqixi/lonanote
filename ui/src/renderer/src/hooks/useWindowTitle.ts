@@ -18,14 +18,14 @@ export const useWindowTitleHeight = () => {
           setTitleHeight(h);
         }
       };
-      window.api.addZoomChangeListener(onZoomChange);
-      return () => window.api?.removeZoomChangeListener(onZoomChange);
+      window.api.utils.addZoomChangeListener(onZoomChange);
+      return () => window.api?.utils.removeZoomChangeListener(onZoomChange);
     }
     return undefined;
   }, [titleHeight]);
   useInited(async () => {
     if (window.api) {
-      const initZoom = await window.api.getZoom();
+      const initZoom = await window.api.utils.getZoom();
       if (initZoom && initZoom !== titleHeight) {
         const h = utils.getTitleHeight(initZoom, defaultTitleHeight);
         if (h !== titleHeight) {

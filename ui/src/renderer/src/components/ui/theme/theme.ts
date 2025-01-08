@@ -1,10 +1,10 @@
 /* eslint-disable quote-props */
 import { createSystem, defaultConfig, mergeConfigs } from '@chakra-ui/react';
 
-import { getAppearanceColorPrimaryColors } from '@/models';
+import { utils } from '@/utils';
 
-export const createDynamicTheme = () => {
-  const primary = getAppearanceColorPrimaryColors();
+export const createDynamicTheme = (color: string) => {
+  const primary = utils.generateColorShades(color);
   const config = mergeConfigs(defaultConfig, {
     theme: {
       tokens: {

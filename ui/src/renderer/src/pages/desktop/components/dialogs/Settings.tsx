@@ -20,12 +20,22 @@ import {
   DialogRoot,
   DialogTitle,
   IconButton,
+  IconButtonProps,
+  StepperInput,
   TabType,
   Tabs,
   TabsContent,
   Tooltip,
 } from '@/components/ui';
-import { defaultAppearanceColor, useSettingsStore, useWorkspaceStore } from '@/models';
+import { useWorkspaceStore } from '@/models';
+import {
+  defaultThemeColor,
+  isSupportResizeWindow,
+  isSupportZoom,
+  resetWindowSize,
+  setZoom,
+  useUISettingsStore,
+} from '@/models/settings';
 
 import styles from './Settings.module.scss';
 
@@ -56,6 +66,18 @@ const settingsTabs: TabType[] = [
   },
 ];
 
+interface ResetButtonProps extends IconButtonProps {}
+
+const ResetButton: React.FC<ResetButtonProps> = (props) => {
+  return (
+    <Tooltip content="重置" positioning={{ placement: 'top' }}>
+      <IconButton size="sm" variant="ghost" {...props}>
+        <RiResetLeftLine />
+      </IconButton>
+    </Tooltip>
+  );
+};
+
 interface BaseSettingsPanelProps {
   contentRef: React.Ref<HTMLDivElement>;
 }
@@ -77,8 +99,8 @@ const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
 
 interface AppearanceSettingsProps extends BaseSettingsPanelProps {}
 const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentRef }) => {
-  const appearanceSettings = useSettingsStore((s) => s.appearanceSettings);
-  const color = appearanceSettings?.color || defaultAppearanceColor;
+  const settings = useUISettingsStore();
+  const themeColor = settings.themeColor;
   return (
     <div className={styles.appearanceSettings}>
       <div className={styles.rowSettings}>
@@ -88,28 +110,18 @@ const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentRef }) =
         </div>
       </div>
       <div className={styles.rowSettings}>
-        <div className={styles.rowSettingsLeft}>颜色：</div>
+        <div className={styles.rowSettingsLeft}>主题颜色：</div>
         <div className={styles.rowSettingsRight}>
           <ColorPickerRoot
             width="100%"
             size="sm"
-            value={parseColor(color)}
-            onValueChange={(v) => useSettingsStore.getState().setAppearanceColor(v.valueAsString)}
+            value={parseColor(themeColor)}
+            onValueChange={(v) => settings.setThemeColor(v.valueAsString)}
           >
             <ColorPickerControl>
               <ColorPickerInput />
               <ColorPickerTrigger />
-              <Tooltip content="重置" positioning={{ placement: 'top' }}>
-                <IconButton
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    useSettingsStore.getState().setAppearanceColor(defaultAppearanceColor)
-                  }
-                >
-                  <RiResetLeftLine />
-                </IconButton>
-              </Tooltip>
+              <ResetButton onClick={() => settings.setThemeColor(defaultThemeColor)} />
             </ColorPickerControl>
             <ColorPickerContent portalRef={contentRef}>
               <ColorPickerArea />
@@ -121,6 +133,31 @@ const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentRef }) =
           </ColorPickerRoot>
         </div>
       </div>
+      {isSupportZoom() && settings.zoom != null && (
+        <div className={styles.rowSettings}>
+          <div className={styles.rowSettingsLeft}>缩放：</div>
+          <div className={styles.rowSettingsRight}>
+            <StepperInput
+              size="sm"
+              value={settings.zoom.toString()}
+              onValueChange={(v) => setZoom(v.valueAsNumber)}
+              btnProps={{ size: 'sm' }}
+              min={-8}
+              max={8}
+            />
+            <ResetButton onClick={() => setZoom(0)} />
+          </div>
+        </div>
+      )}
+      {isSupportResizeWindow() && settings.windowSize && (
+        <div className={styles.rowSettings}>
+          <div className={styles.rowSettingsLeft}>窗口大小：</div>
+          <div className={styles.rowSettingsRight}>
+            <div>{`宽: ${settings.windowSize.width}, 高: ${settings.windowSize.height}`}</div>
+            <ResetButton onClick={() => resetWindowSize()} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

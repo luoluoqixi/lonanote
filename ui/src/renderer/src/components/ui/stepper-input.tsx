@@ -1,30 +1,35 @@
-import { HStack, IconButton, NumberInput } from '@chakra-ui/react';
+import { HStack, IconButton, IconButtonProps, NumberInput } from '@chakra-ui/react';
 import * as React from 'react';
 import { LuMinus, LuPlus } from 'react-icons/lu';
 
 export interface StepperInputProps extends NumberInput.RootProps {
   label?: React.ReactNode;
+  btnProps?: IconButtonProps;
 }
 
 export const StepperInput = React.forwardRef<HTMLDivElement, StepperInputProps>((props, ref) => {
-  const { label, ...rest } = props;
+  const { label, btnProps, ...rest } = props;
   return (
     <NumberInput.Root {...rest} unstyled ref={ref}>
       {label && <NumberInput.Label>{label}</NumberInput.Label>}
       <HStack gap="2">
-        <DecrementTrigger />
-        <NumberInput.ValueText textAlign="center" fontSize="lg" minW="3ch" />
-        <IncrementTrigger />
+        <DecrementTrigger btnProps={{ size: rest.size, ...btnProps }} />
+        <NumberInput.ValueText textAlign="center" fontSize={rest.size || 'lg'} minW="3ch" />
+        <IncrementTrigger btnProps={{ size: rest.size, ...btnProps }} />
       </HStack>
     </NumberInput.Root>
   );
 });
 
-const DecrementTrigger = React.forwardRef<HTMLButtonElement, NumberInput.DecrementTriggerProps>(
+type DecrementTriggerProps = NumberInput.DecrementTriggerProps & {
+  btnProps?: IconButtonProps;
+};
+const DecrementTrigger = React.forwardRef<HTMLButtonElement, DecrementTriggerProps>(
   (props, ref) => {
+    const { btnProps, ...rest } = props;
     return (
-      <NumberInput.DecrementTrigger {...props} asChild ref={ref}>
-        <IconButton variant="outline" size="sm">
+      <NumberInput.DecrementTrigger {...rest} asChild ref={ref}>
+        <IconButton size="sm" variant="outline" {...btnProps}>
           <LuMinus />
         </IconButton>
       </NumberInput.DecrementTrigger>
@@ -32,11 +37,15 @@ const DecrementTrigger = React.forwardRef<HTMLButtonElement, NumberInput.Decreme
   },
 );
 
-const IncrementTrigger = React.forwardRef<HTMLButtonElement, NumberInput.IncrementTriggerProps>(
+type IncrementTriggerProps = NumberInput.IncrementTriggerProps & {
+  btnProps?: IconButtonProps;
+};
+const IncrementTrigger = React.forwardRef<HTMLButtonElement, IncrementTriggerProps>(
   (props, ref) => {
+    const { btnProps, ...rest } = props;
     return (
-      <NumberInput.IncrementTrigger {...props} asChild ref={ref}>
-        <IconButton variant="outline" size="sm">
+      <NumberInput.IncrementTrigger {...rest} asChild ref={ref}>
+        <IconButton size="sm" variant="outline" {...btnProps}>
           <LuPlus />
         </IconButton>
       </NumberInput.IncrementTrigger>
