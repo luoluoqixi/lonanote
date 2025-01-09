@@ -5,11 +5,13 @@ body {
   height: 100%;
   overflow: visible;
   position: fixed;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 img {
-  user-drag: none; /* 禁止拖拽 (WebKit 特性) */
-  -webkit-user-drag: none; /* 禁止拖拽 (Chrome, Safari) */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #root {

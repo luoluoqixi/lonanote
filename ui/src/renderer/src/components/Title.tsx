@@ -23,10 +23,10 @@ export const Title = () => {
   useEffect(() => {
     if (!window.api) return;
     requestAnimationFrame(() => {
-      if (window.api && window.api.setTitleBarColor) {
+      if (window.api) {
         const bg = utils.getCssVariableValue(bgColor);
         const fg = utils.getCssVariableValue(fgColor);
-        window.api.setTitleBarColor(fg, bg);
+        window.api.utils.setTitleBarColor(fg, bg);
       }
     });
   }, [resolvedColorMode]);

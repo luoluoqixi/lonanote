@@ -14,6 +14,7 @@ export * from './color-picker';
 export * from './data-list';
 export * from './dialog';
 export * from './drawer';
+export * from './editable';
 export * from './empty-state';
 export * from './field';
 export * from './file-upload';

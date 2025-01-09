@@ -5,5 +5,5 @@ import styles from './StatusBar.module.scss';
 export interface StatusBarProps {}
 
 export const StatusBar: React.FC<StatusBarProps> = () => {
-  return <div className={styles.statusBar}>statusBar</div>;
+  return <div className={styles.statusBar}></div>;
 };

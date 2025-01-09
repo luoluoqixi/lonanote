@@ -10,8 +10,8 @@ import { Content } from './components/Content';
 import { SideBar } from './components/SideBar';
 import { StatusBar } from './components/StatusBar';
 import { Title } from './components/Title';
-import { Settings } from './components/dialogs/Settings';
-import { WorkspaceManager } from './components/dialogs/WorkspaceManager';
+import { Settings } from './components/dialogs/settings';
+import { WorkspaceManager } from './components/dialogs/workspaceManager';
 
 export default function Layout() {
   const titleHeight = useWindowTitleHeight();

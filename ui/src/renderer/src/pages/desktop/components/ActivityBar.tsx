@@ -6,8 +6,8 @@ import { LuFolder, LuLibraryBig, LuSearch, LuSettings } from 'react-icons/lu';
 import { Icon, IconButton, Tabs, Tooltip } from '@/components/ui';
 
 import styles from './ActivityBar.module.scss';
-import { useSettingsState } from './dialogs/Settings';
-import { useWorkspaceManagerState } from './dialogs/WorkspaceManager';
+import { useSettingsState } from './dialogs/settings';
+import { useWorkspaceManagerState } from './dialogs/workspaceManager';
 
 export interface ActivityBarProps {
   tabValue: string | undefined;
