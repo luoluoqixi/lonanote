@@ -19,21 +19,21 @@ export interface WorkspaceManagerStore {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-export const useWorkspaceManager = create<WorkspaceManagerStore>((set) => ({
+export const useWorkspaceManagerState = create<WorkspaceManagerStore>((set) => ({
   isOpen: false,
   setIsOpen: (isOpen) => set({ isOpen }),
 }));
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
-  const store = useWorkspaceManager();
+  const state = useWorkspaceManagerState();
   return (
     <DialogRoot
       size="cover"
       placement="center"
       motionPreset="scale"
       closeOnInteractOutside
-      open={store.isOpen}
-      onOpenChange={(v) => store.setIsOpen(v.open)}
+      open={state.isOpen}
+      onOpenChange={(v) => state.setIsOpen(v.open)}
     >
       <DialogContent>
         <DialogHeader>

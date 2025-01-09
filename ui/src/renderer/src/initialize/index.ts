@@ -3,7 +3,6 @@
 import './initAllotment';
 import './initApi';
 import './initStyles';
-import './initSettings';
-import './initWorkspace';
+import './initController';
 
 console.log('inited!');

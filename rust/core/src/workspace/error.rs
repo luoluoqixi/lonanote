@@ -10,6 +10,10 @@ pub enum WorkspaceError {
     ParseConfigError(String),
     #[error("[workspace] json error: {0}")]
     JsonError(String),
+    #[error("[workspace] notfound workspace: {0}")]
+    NotFoundWorkspace(String),
+    #[error("[workspace] already exist workspace: {0}")]
+    AlreadyExistWorkspace(String),
 
     #[error("[workspace] unknow error: {0}")]
     UnknowError(String),

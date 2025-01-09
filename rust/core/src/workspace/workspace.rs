@@ -36,6 +36,26 @@ impl Workspace {
         get_workspace_index_path(&self.metadata.path)
     }
 
+    pub async fn set_settings(
+        &mut self,
+        settings: WorkspaceSettings,
+    ) -> Result<(), WorkspaceError> {
+        self.settings = settings;
+        self.save().await?;
+
+        Ok(())
+    }
+
+    pub async fn set_metadata(
+        &mut self,
+        metadata: WorkspaceMetadata,
+    ) -> Result<(), WorkspaceError> {
+        self.metadata = metadata;
+        self.save().await?;
+
+        Ok(())
+    }
+
     pub async fn save(&self) -> Result<(), WorkspaceError> {
         self.save_config().await?;
         self.save_index().await?;
@@ -55,7 +75,7 @@ impl Workspace {
         }
         let index = self.index.read().await;
         let index = &index.clone();
-        let s = serde_json::to_string(index)
+        let s = serde_json::to_string_pretty(index)
             .map_err(|err| WorkspaceError::JsonError(err.to_string()))?;
         std::fs::write(index_path, s).map_err(|err| WorkspaceError::IOError(err.to_string()))?;
 
@@ -69,7 +89,7 @@ impl Workspace {
             std::fs::create_dir_all(parent)
                 .map_err(|err| WorkspaceError::IOError(err.to_string()))?;
         }
-        let s = serde_json::to_string(self)
+        let s = serde_json::to_string_pretty(self)
             .map_err(|err| WorkspaceError::JsonError(err.to_string()))?;
         std::fs::write(config_path, s).map_err(|err| WorkspaceError::IOError(err.to_string()))?;
 

@@ -3,6 +3,7 @@ import { contextBridge } from 'electron';
 
 import { dialog } from './dialog';
 import { invoke } from './invoke';
+import { shell } from './shell';
 import { utils } from './utils';
 
 // Custom APIs for renderer
@@ -10,6 +11,7 @@ export const api = {
   invoke,
   utils,
   dialog,
+  shell,
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

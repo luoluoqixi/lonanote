@@ -6,8 +6,8 @@ import { LuFolder, LuLibraryBig, LuSearch, LuSettings } from 'react-icons/lu';
 import { Icon, IconButton, Tabs, Tooltip } from '@/components/ui';
 
 import styles from './ActivityBar.module.scss';
-import { useSettings } from './dialogs/Settings';
-import { useWorkspaceManager } from './dialogs/WorkspaceManager';
+import { useSettingsState } from './dialogs/Settings';
+import { useWorkspaceManagerState } from './dialogs/WorkspaceManager';
 
 export interface ActivityBarProps {
   tabValue: string | undefined;
@@ -60,9 +60,9 @@ const topHeight = `calc(100% - ${bottomHeight}px)`;
 
 const onBtnClick = (value: string) => {
   if (value === 'workspace') {
-    useWorkspaceManager.getState().setIsOpen(true);
+    useWorkspaceManagerState.getState().setIsOpen(true);
   } else if (value === 'settings') {
-    useSettings.getState().setIsOpen(true);
+    useSettingsState.getState().setIsOpen(true);
   }
 };
 

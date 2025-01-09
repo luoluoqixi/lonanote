@@ -39,9 +39,8 @@ export const getCommandKeys = async (): Promise<string[]> => {
     return await node.getCommandKeys();
   } else if (isTauri) {
     return await tauri.getCommandKeys();
-  } else {
-    throw new Error('invoke error: unknow env');
   }
+  throw new Error('invoke error: unknow env');
 };
 
 export const getCommandLen = async (): Promise<number> => {
@@ -49,9 +48,8 @@ export const getCommandLen = async (): Promise<number> => {
     return await node.getCommandLen();
   } else if (isTauri) {
     return await tauri.getCommandLen();
-  } else {
-    throw new Error('invoke error: unknow env');
   }
+  throw new Error('invoke error: unknow env');
 };
 
 export const invokeAsync = async <T>(key: string, args?: any): Promise<T | undefined> => {
@@ -71,9 +69,8 @@ export const getCommandAsyncKeys = async (): Promise<string[]> => {
     return await node.getCommandAsyncKeys();
   } else if (isTauri) {
     return await tauri.getCommandAsyncKeys();
-  } else {
-    throw new Error('invoke error: unknow env');
   }
+  throw new Error('invoke error: unknow env');
 };
 
 export const getCommandAsyncLen = async (): Promise<number> => {
@@ -81,9 +78,8 @@ export const getCommandAsyncLen = async (): Promise<number> => {
     return await node.getCommandAsyncLen();
   } else if (isTauri) {
     return await tauri.getCommandAsyncLen();
-  } else {
-    throw new Error('invoke error: unknow env');
   }
+  throw new Error('invoke error: unknow env');
 };
 
 export const regJsFunction = async <T, TRet>(
@@ -99,9 +95,8 @@ export const regJsFunction = async <T, TRet>(
     return await node.regJsFunction(key, handle);
   } else if (isTauri) {
     return await tauri.regJsFunction(key, handle);
-  } else {
-    throw new Error('regJsFunction error: unknow env');
   }
+  throw new Error('regJsFunction error: unknow env');
 };
 
 export const unregJsFunction = async (key: string) => {
@@ -109,9 +104,8 @@ export const unregJsFunction = async (key: string) => {
     return await node.unregJsFunction(key);
   } else if (isTauri) {
     return await tauri.unregJsFunction(key);
-  } else {
-    throw new Error('unregJsFunctionNode error: unknow env');
   }
+  throw new Error('unregJsFunctionNode error: unknow env');
 };
 
 export const clearJsFunction = async () => {
@@ -119,9 +113,8 @@ export const clearJsFunction = async () => {
     return await node.clearJsFunction();
   } else if (isTauri) {
     return await tauri.clearJsFunction();
-  } else {
-    throw new Error('clearJsFunctionNode error: unknow env');
   }
+  throw new Error('clearJsFunctionNode error: unknow env');
 };
 
 export const getCommandJsKeys = async (): Promise<string[]> => {
@@ -129,9 +122,8 @@ export const getCommandJsKeys = async (): Promise<string[]> => {
     return await node.getCommandJsKeys();
   } else if (isTauri) {
     return await tauri.getCommandJsKeys();
-  } else {
-    throw new Error('invoke error: unknow env');
   }
+  throw new Error('invoke error: unknow env');
 };
 
 export const getCommandJsLen = async (): Promise<number> => {
@@ -139,9 +131,8 @@ export const getCommandJsLen = async (): Promise<number> => {
     return await node.getCommandJsLen();
   } else if (isTauri) {
     return await tauri.getCommandJsLen();
-  } else {
-    throw new Error('invoke error: unknow env');
   }
+  throw new Error('invoke error: unknow env');
 };
 
 export { isNode, isElectron, isTauri };

@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::settings::SETTINGS;
+use crate::settings::get_settings;
 
 use super::{
     config::{
@@ -56,7 +56,7 @@ impl WorkspaceManager {
             {
                 // TODO 检测是否有另一个实例运行, 如果有, 那么就不自动打开上次的工作区
             }
-            let settings = SETTINGS.read().await;
+            let settings = get_settings().await;
             if settings.auto_open_last_workspace && self.last_workspace.is_some() {
                 let path = self.last_workspace.as_ref().unwrap().path.clone();
                 if fs::exists(&path).map_err(|e| WorkspaceError::IOError(e.to_string()))? {
@@ -70,6 +70,13 @@ impl WorkspaceManager {
     pub fn get_current_workspace(&self) -> Result<Option<&Workspace>, WorkspaceError> {
         if self.current_workspace.is_some() {
             Ok(self.current_workspace.as_ref())
+        } else {
+            Ok(None)
+        }
+    }
+    pub fn get_current_workspace_mut(&mut self) -> Result<Option<&mut Workspace>, WorkspaceError> {
+        if self.current_workspace.is_some() {
+            Ok(self.current_workspace.as_mut())
         } else {
             Ok(None)
         }
@@ -114,13 +121,40 @@ impl WorkspaceManager {
         &self.workspaces
     }
 
+    pub async fn set_workspace_metadata(
+        &mut self,
+        path: impl AsRef<str>,
+        metadata: WorkspaceMetadata,
+    ) -> Result<(), WorkspaceError> {
+        let path = path.as_ref().to_string();
+        let exists_workspace = self.workspaces.iter().find(|w| w.path == metadata.path);
+        if exists_workspace.is_some() {
+            return Err(WorkspaceError::AlreadyExistWorkspace(metadata.path));
+        }
+        let workspace = self.workspaces.iter_mut().find(|w| w.path == path);
+        if let Some(workspace) = workspace {
+            if let Some(current_workspace) = &mut self.current_workspace {
+                // 如果 metadata 是 当前workspace, 则同时更新
+                if current_workspace.metadata.path == metadata.path {
+                    current_workspace.set_metadata(metadata.clone()).await?;
+                }
+            }
+            *workspace = metadata;
+            self.save()?;
+
+            Ok(())
+        } else {
+            Err(WorkspaceError::NotFoundWorkspace(path))
+        }
+    }
+
     pub fn save(&self) -> Result<(), WorkspaceError> {
         let config_path = get_workspace_global_config_path();
         let parent = config_path.parent().unwrap();
         if !parent.exists() {
             fs::create_dir_all(parent).map_err(|err| WorkspaceError::IOError(err.to_string()))?;
         }
-        let s = serde_json::to_string(self)
+        let s = serde_json::to_string_pretty(self)
             .map_err(|err| WorkspaceError::JsonError(err.to_string()))?;
         fs::write(config_path, s).map_err(|err| WorkspaceError::IOError(err.to_string()))?;
 

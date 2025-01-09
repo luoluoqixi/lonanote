@@ -7,7 +7,7 @@ use super::config::get_settings_config_path;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
-    pub auto_update: bool,
+    pub auto_check_update: bool,
     pub auto_open_last_workspace: bool,
 }
 
@@ -26,7 +26,7 @@ impl Settings {
             }
         }
         return Self {
-            auto_update: true,
+            auto_check_update: true,
             auto_open_last_workspace: true,
         };
     }
@@ -37,7 +37,7 @@ impl Settings {
         if !parent.exists() {
             fs::create_dir_all(parent)?;
         }
-        let s = serde_json::to_string(self)?;
+        let s = serde_json::to_string_pretty(self)?;
         fs::write(config_path, s)?;
 
         Ok(())

@@ -3,8 +3,10 @@ import React, { useRef, useState } from 'react';
 import { RiResetLeftLine } from 'react-icons/ri';
 import { create } from 'zustand';
 
+import { path } from '@/bindings/api/path';
 import { ColorModeSelect } from '@/components';
 import {
+  Button,
   ColorPickerArea,
   ColorPickerContent,
   ColorPickerControl,
@@ -22,22 +24,30 @@ import {
   IconButton,
   IconButtonProps,
   StepperInput,
+  Switch,
   TabType,
   Tabs,
   TabsContent,
   Tooltip,
 } from '@/components/ui';
-import { useWorkspaceStore } from '@/models';
+import { config } from '@/config';
 import {
   defaultThemeColor,
   isSupportResizeWindow,
   isSupportZoom,
   resetWindowSize,
+  setSettingsAutoCheckUpdate,
+  setSettingsAutoOpenLastWorkspace,
+  setThemeColor,
   setZoom,
-  useUISettingsStore,
-} from '@/models/settings';
+  useSettings,
+  useUISettings,
+} from '@/controller/settings';
+import { useWorkspace } from '@/controller/workspace';
 
 import styles from './Settings.module.scss';
+
+const isShowDevUI = false;
 
 export interface SettingsProps {}
 
@@ -46,7 +56,7 @@ export interface SettingsStore {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-export const useSettings = create<SettingsStore>((set) => ({
+export const useSettingsState = create<SettingsStore>((set) => ({
   isOpen: false,
   setIsOpen: (isOpen) => set({ isOpen }),
 }));
@@ -85,11 +95,56 @@ interface BaseSettingsPanelProps {
 interface GlobalSettingsProps extends BaseSettingsPanelProps {}
 
 const GlobalSettings: React.FC<GlobalSettingsProps> = () => {
-  return <div className={styles.globalSettings}></div>;
+  const settings = useSettings((s) => s.settings);
+  return settings ? (
+    <div className={styles.globalSettings}>
+      <div className={styles.rowSettings}>
+        <div className={styles.rowSettingsLeft}>自动检查更新：</div>
+        <div className={styles.rowSettingsRight}>
+          <Switch
+            size="md"
+            checked={settings.autoCheckUpdate}
+            onCheckedChange={(e) => setSettingsAutoCheckUpdate(e.checked)}
+          />
+        </div>
+      </div>
+      <div className={styles.rowSettings}>
+        <div className={styles.rowSettingsLeft}>自动打开上次工作区：</div>
+        <div className={styles.rowSettingsRight}>
+          <Switch
+            size="md"
+            checked={settings.autoOpenLastWorkspace}
+            onCheckedChange={(e) => setSettingsAutoOpenLastWorkspace(e.checked)}
+          />
+        </div>
+      </div>
+      {config.isDev && isShowDevUI && (
+        <div className={styles.rowSettings}>
+          <div className={styles.rowSettingsLeft}>{'配置目录(开发模式)：'}</div>
+          <div className={styles.rowSettingsRight}>
+            <Button
+              size="sm"
+              onClick={async () => {
+                const dataDir = await path.getDataDir();
+                console.log(dataDir);
+                if (window.api) {
+                  window.api.shell.openPathInFolder(dataDir);
+                }
+              }}
+            >
+              打开配置目录
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  ) : (
+    <></>
+  );
 };
 interface WorkspaceSettingsProps extends BaseSettingsPanelProps {}
 const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
-  const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
+  const currentWorkspace = useWorkspace((s) => s.currentWorkspace);
   return (
     <div className={styles.workspaceSettings}>
       {currentWorkspace == null ? <Heading size="sm">没有打开工作区</Heading> : <div></div>}
@@ -99,7 +154,7 @@ const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
 
 interface AppearanceSettingsProps extends BaseSettingsPanelProps {}
 const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentRef }) => {
-  const settings = useUISettingsStore();
+  const settings = useUISettings();
   const themeColor = settings.themeColor;
   return (
     <div className={styles.appearanceSettings}>
@@ -116,12 +171,12 @@ const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentRef }) =
             width="100%"
             size="sm"
             value={parseColor(themeColor)}
-            onValueChange={(v) => settings.setThemeColor(v.valueAsString)}
+            onValueChange={(v) => setThemeColor(v.valueAsString)}
           >
             <ColorPickerControl>
               <ColorPickerInput />
               <ColorPickerTrigger />
-              <ResetButton onClick={() => settings.setThemeColor(defaultThemeColor)} />
+              <ResetButton onClick={() => setThemeColor(defaultThemeColor)} />
             </ColorPickerControl>
             <ColorPickerContent portalRef={contentRef}>
               <ColorPickerArea />
@@ -164,7 +219,7 @@ const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentRef }) =
 
 export const Settings: React.FC<SettingsProps> = () => {
   const contentRef = useRef<HTMLDivElement>(null);
-  const store = useSettings();
+  const state = useSettingsState();
   const [tabValue, setTabValue] = useState(settingsTabs[0].value);
   return (
     <DialogRoot
@@ -172,8 +227,8 @@ export const Settings: React.FC<SettingsProps> = () => {
       placement="center"
       motionPreset="scale"
       closeOnInteractOutside
-      open={store.isOpen}
-      onOpenChange={(v) => store.setIsOpen(v.open)}
+      open={state.isOpen}
+      onOpenChange={(v) => state.setIsOpen(v.open)}
     >
       <DialogContent ref={contentRef}>
         <DialogHeader>

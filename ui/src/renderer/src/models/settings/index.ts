@@ -1,7 +1,2 @@
-import { initUISettingsModel } from './uiSettings';
-
+export * from './settings';
 export * from './uiSettings';
-
-export const initSettingsModel = async () => {
-  initUISettingsModel();
-};

@@ -3,6 +3,7 @@ import { app } from 'electron';
 
 import * as bindings from './bindings';
 import { initDialogIPC } from './dialog';
+import { initShellIPC } from './shell';
 
 export * from './bindings';
 
@@ -100,5 +101,6 @@ const initPath = async () => {
 export const initBindings = async (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
   initInvokeIpc(ipcMain, win);
   initPath();
+  initShellIPC();
   initDialogIPC(win);
 };
