@@ -1,14 +1,7 @@
 import React from 'react';
 import { create } from 'zustand';
 
-import {
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-} from '@/components/ui';
+import { Dialog } from '@/components/ui';
 
 import styles from './WorkspaceManager.module.scss';
 
@@ -27,7 +20,7 @@ export const useWorkspaceManagerState = create<WorkspaceManagerStore>((set) => (
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
   const state = useWorkspaceManagerState();
   return (
-    <DialogRoot
+    <Dialog.Root
       size="cover"
       placement="center"
       motionPreset="scale"
@@ -35,15 +28,15 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
       open={state.isOpen}
       onOpenChange={(v) => state.setIsOpen(v.open)}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>工作区</DialogTitle>
-          <DialogCloseTrigger />
-        </DialogHeader>
-        <DialogBody>
+      <Dialog.Content>
+        <Dialog.Header>
+          <Dialog.Title>工作区</Dialog.Title>
+          <Dialog.CloseTrigger />
+        </Dialog.Header>
+        <Dialog.Body>
           <div className={styles.workspaceManager}>WorkspaceManager</div>
-        </DialogBody>
-      </DialogContent>
-    </DialogRoot>
+        </Dialog.Body>
+      </Dialog.Content>
+    </Dialog.Root>
   );
 };

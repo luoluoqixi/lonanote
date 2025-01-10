@@ -80,7 +80,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   return (
     <div className={styles.title}>
       <div style={{ height: topHeight }} className={styles.titleTop}>
-        <Tabs
+        <Tabs.Wrap
           className={styles.titleTabRoot}
           orientation="vertical"
           variant="subtle"

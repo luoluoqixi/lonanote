@@ -1,11 +1,10 @@
-import { Heading } from '@chakra-ui/react';
 import React from 'react';
 
 import { dialog } from '@/bindings/api/dialog';
 import { settings } from '@/bindings/api/settings';
 import { Workspace, workspace } from '@/bindings/api/workspace';
-import { Button } from '@/components/ui';
-import { useWorkspaceStore } from '@/models/workspace';
+import { Button, Heading } from '@/components/ui';
+import { setCurrentWorkspace, useWorkspace } from '@/controller/workspace';
 
 import styles from './Explorer.module.scss';
 
@@ -17,7 +16,7 @@ const NoWorkspace = () => {
     if (selectPath && selectPath !== '') {
       console.log('选择文件夹：', selectPath);
       const ws = await workspace.openWorkspaceByPath(selectPath);
-      useWorkspaceStore.getState().setCurrentWorkspace(ws);
+      setCurrentWorkspace(ws);
       console.log('打开工作区：', ws);
     }
   };
@@ -47,7 +46,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
 interface ExplorerProps {}
 
 const Explorer: React.FC<ExplorerProps> = () => {
-  const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
+  const currentWorkspace = useWorkspace((s) => s.currentWorkspace);
   return (
     <div className={styles.explorer}>
       {currentWorkspace == null ? (

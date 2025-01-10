@@ -1,7 +1,6 @@
-import { Heading } from '@chakra-ui/react';
 import { useState } from 'react';
 
-import { Editable } from '@/components/ui';
+import { Editable, Heading } from '@/components/ui';
 import { setCurrentWorkspaceName, useWorkspace } from '@/controller/workspace';
 
 import { BaseSettingsPanelProps } from '../Settings';

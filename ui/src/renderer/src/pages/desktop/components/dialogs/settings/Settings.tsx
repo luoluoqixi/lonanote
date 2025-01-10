@@ -2,20 +2,7 @@ import React, { useRef, useState } from 'react';
 import { RiResetLeftLine } from 'react-icons/ri';
 import { create } from 'zustand';
 
-import {
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-  IconButton,
-  IconButtonProps,
-  TabType,
-  Tabs,
-  TabsContent,
-  Tooltip,
-} from '@/components/ui';
+import { Dialog, IconButton, IconButtonProps, TabType, Tabs, Tooltip } from '@/components/ui';
 
 import styles from './Settings.module.scss';
 import { AppearanceSettings } from './subs/AppearanceSettings';
@@ -70,7 +57,7 @@ export const Settings: React.FC<SettingsProps> = () => {
   const state = useSettingsState();
   const [tabValue, setTabValue] = useState(settingsTabs[0].value);
   return (
-    <DialogRoot
+    <Dialog.Root
       size="cover"
       placement="center"
       motionPreset="scale"
@@ -78,14 +65,14 @@ export const Settings: React.FC<SettingsProps> = () => {
       open={state.isOpen}
       onOpenChange={(v) => state.setIsOpen(v.open)}
     >
-      <DialogContent ref={contentRef}>
-        <DialogHeader>
-          <DialogTitle>设置</DialogTitle>
-          <DialogCloseTrigger />
-        </DialogHeader>
-        <DialogBody>
+      <Dialog.Content ref={contentRef}>
+        <Dialog.Header>
+          <Dialog.Title>设置</Dialog.Title>
+          <Dialog.CloseTrigger />
+        </Dialog.Header>
+        <Dialog.Body>
           <div className={styles.settings}>
-            <Tabs
+            <Tabs.Wrap
               className={styles.settingsTabs}
               triggerListProps={{
                 className: styles.settingsTabsTriggerList,
@@ -95,19 +82,19 @@ export const Settings: React.FC<SettingsProps> = () => {
               value={tabValue}
               onValueChange={(v) => setTabValue(v.value)}
             >
-              <TabsContent className={styles.settingsContentWrap} value="globalSettings">
+              <Tabs.Content className={styles.settingsContentWrap} value="globalSettings">
                 <GlobalSettings contentRef={contentRef} />
-              </TabsContent>
-              <TabsContent className={styles.settingsContentWrap} value="workspaceSettings">
+              </Tabs.Content>
+              <Tabs.Content className={styles.settingsContentWrap} value="workspaceSettings">
                 <WorkspaceSettings contentRef={contentRef} />
-              </TabsContent>
-              <TabsContent className={styles.settingsContentWrap} value="appearance">
+              </Tabs.Content>
+              <Tabs.Content className={styles.settingsContentWrap} value="appearance">
                 <AppearanceSettings contentRef={contentRef} />
-              </TabsContent>
-            </Tabs>
+              </Tabs.Content>
+            </Tabs.Wrap>
           </div>
-        </DialogBody>
-      </DialogContent>
-    </DialogRoot>
+        </Dialog.Body>
+      </Dialog.Content>
+    </Dialog.Root>
   );
 };

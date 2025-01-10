@@ -1,17 +1,5 @@
-import { HStack, parseColor } from '@chakra-ui/react';
-
 import { ColorModeSelect } from '@/components';
-import {
-  ColorPickerArea,
-  ColorPickerContent,
-  ColorPickerControl,
-  ColorPickerEyeDropper,
-  ColorPickerInput,
-  ColorPickerRoot,
-  ColorPickerSliders,
-  ColorPickerTrigger,
-  StepperInput,
-} from '@/components/ui';
+import { ColorPicker, HStack, StepperInput, parseColor } from '@/components/ui';
 import {
   defaultThemeColor,
   isSupportResizeWindow,
@@ -41,25 +29,25 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentR
       <div className={styles.rowSettings}>
         <div className={styles.rowSettingsLeft}>主题颜色：</div>
         <div className={styles.rowSettingsRight}>
-          <ColorPickerRoot
+          <ColorPicker.Root
             width="100%"
             size="sm"
             value={parseColor(themeColor)}
             onValueChange={(v) => setThemeColor(v.valueAsString)}
           >
-            <ColorPickerControl>
-              <ColorPickerInput />
-              <ColorPickerTrigger />
+            <ColorPicker.Control>
+              <ColorPicker.Input />
+              <ColorPicker.Trigger />
               <ResetButton onClick={() => setThemeColor(defaultThemeColor)} />
-            </ColorPickerControl>
-            <ColorPickerContent portalRef={contentRef}>
-              <ColorPickerArea />
+            </ColorPicker.Control>
+            <ColorPicker.Content portalRef={contentRef}>
+              <ColorPicker.Area />
               <HStack>
-                <ColorPickerEyeDropper />
-                <ColorPickerSliders />
+                <ColorPicker.EyeDropper />
+                <ColorPicker.Sliders />
               </HStack>
-            </ColorPickerContent>
-          </ColorPickerRoot>
+            </ColorPicker.Content>
+          </ColorPicker.Root>
         </div>
       </div>
       {isSupportZoom() && settings.zoom != null && (
