@@ -1,4 +1,4 @@
-import { Settings, settings } from '@/bindings/api/settings';
+import { Settings, settings } from '@/bindings/api';
 import { useSettingsStore } from '@/models/settings';
 
 export const useSettings = useSettingsStore;

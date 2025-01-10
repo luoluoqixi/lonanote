@@ -1,10 +1,10 @@
-import { helloTest, initTest } from './test';
-import { workspace } from './workspace';
+import { initTest } from './test';
 
-export const api = {
-  helloTest,
-  workspace,
-};
+export * from './dialog';
+export * from './path';
+export * from './settings';
+export * from './test';
+export * from './workspace';
 
 export const initApi = async () => {
   await initTest();

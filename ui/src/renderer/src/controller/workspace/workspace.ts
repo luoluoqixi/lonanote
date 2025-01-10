@@ -1,9 +1,4 @@
-import {
-  Workspace,
-  WorkspaceMetadata,
-  WorkspaceSettings,
-  workspace,
-} from '@/bindings/api/workspace';
+import { Workspace, WorkspaceMetadata, WorkspaceSettings, workspace } from '@/bindings/api';
 import { useWorkspaceStore } from '@/models/workspace';
 
 export const useWorkspace = useWorkspaceStore;

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { Settings } from '@/bindings/api/settings';
+import { Settings } from '@/bindings/api';
 
 export interface SettingsStore {
   settings?: Settings;
