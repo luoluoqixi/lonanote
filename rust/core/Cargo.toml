@@ -20,3 +20,4 @@ log = { workspace = true }
 thiserror = { workspace = true }
 notify = { workspace = true }
 ignore = { workspace = true }
+fs_extra = { workspace = true }
