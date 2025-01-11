@@ -128,7 +128,7 @@ impl WorkspaceManager {
     ) -> Result<(), WorkspaceError> {
         let path = path.as_ref().to_string();
         let exists_workspace = self.workspaces.iter().find(|w| w.path == metadata.path);
-        if exists_workspace.is_some() {
+        if exists_workspace.is_some() && path != metadata.path {
             return Err(WorkspaceError::AlreadyExistWorkspace(metadata.path));
         }
         let workspace = self.workspaces.iter_mut().find(|w| w.path == path);

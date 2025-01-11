@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Editable, Heading } from '@/components/ui';
+import { Editable, Heading, toaster } from '@/components/ui';
 import { setCurrentWorkspaceName, useWorkspace } from '@/controller/workspace';
 
 import { BaseSettingsPanelProps } from '../Settings';
@@ -26,13 +26,37 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
                 onValueChange={(e) => {
                   setWorkspaceName(e.value);
                 }}
-                onFinish={() => {
-                  if (workspaceName != null && workspaceName !== currentWorkspace.metadata.name) {
-                    setCurrentWorkspaceName(workspaceName);
+                onValueCommit={async (details) => {
+                  const value = details.value;
+                  if (value != null && value !== currentWorkspace.metadata.name) {
+                    if (value.trim() === '') {
+                      toaster.error({
+                        title: '错误',
+                        description: '工作区名字不能为空',
+                        duration: 10000,
+                      });
+                      setWorkspaceName(currentWorkspace.metadata.name);
+                      return;
+                    }
+                    try {
+                      await setCurrentWorkspaceName(value);
+                    } catch (e) {
+                      console.error(e);
+                      toaster.error({
+                        title: '错误',
+                        description: `修改工作区名字失败: ${(e as Error).message}`,
+                        duration: 10000,
+                      });
+                      setWorkspaceName(currentWorkspace.metadata.name);
+                    }
                   }
                 }}
               />
             </div>
+          </div>
+          <div className={styles.rowSettings}>
+            <div className={styles.rowSettingsLeft}>路径：</div>
+            <div className={styles.rowSettingsRight}>{currentWorkspace.metadata.path}</div>
           </div>
         </div>
       )}

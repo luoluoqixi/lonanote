@@ -6,11 +6,10 @@ import { IconButton } from '../icon-button';
 
 export interface EditableProps extends EditableRootProps {
   size?: EditableRootProps['size'];
-  onFinish?: () => void;
 }
 
 export const Editable = React.forwardRef<HTMLDivElement, EditableProps>((props, ref) => {
-  const { size = 'sm', onFinish, ...rest } = props;
+  const { size = 'sm', ...rest } = props;
   return (
     <ChakraEditable.Root ref={ref} size={size} {...rest}>
       <ChakraEditable.Preview />
@@ -27,7 +26,7 @@ export const Editable = React.forwardRef<HTMLDivElement, EditableProps>((props, 
           </IconButton>
         </ChakraEditable.CancelTrigger>
         <ChakraEditable.SubmitTrigger asChild>
-          <IconButton variant="outline" size={size} onClick={onFinish}>
+          <IconButton variant="outline" size={size}>
             <LuCheck />
           </IconButton>
         </ChakraEditable.SubmitTrigger>

@@ -22,11 +22,10 @@ async fn get_current_workspace() -> CommandResult {
 }
 
 async fn set_current_workspace_metadata(Json(metadata): Json<WorkspaceMetadata>) -> CommandResult {
-    let workspace_manager = get_workspace_manager().await;
+    let mut workspace_manager = get_workspace_manager_mut().await;
     let current_workspace = workspace_manager.get_current_workspace()?;
     if let Some(workspace) = current_workspace {
         let path = workspace.metadata.path.clone();
-        let mut workspace_manager = get_workspace_manager_mut().await;
         workspace_manager
             .set_workspace_metadata(path, metadata)
             .await?;
