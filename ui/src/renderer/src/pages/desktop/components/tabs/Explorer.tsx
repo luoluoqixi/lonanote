@@ -1,8 +1,8 @@
 import React from 'react';
 
+import { Workspace, workspace, workspaceManager } from '@/bindings/api';
 import { dialog } from '@/bindings/api/dialog';
 import { settings } from '@/bindings/api/settings';
-import { Workspace, workspace } from '@/bindings/api/workspace';
 import { Button, Heading } from '@/components/ui';
 import { setCurrentWorkspace, useWorkspace } from '@/controller/workspace';
 
@@ -15,8 +15,9 @@ const NoWorkspace = () => {
     const selectPath = await dialog.showOpenFolderDialog('选择工作区文件夹');
     if (selectPath && selectPath !== '') {
       console.log('选择文件夹：', selectPath);
-      const ws = await workspace.openWorkspaceByPath(selectPath);
-      setCurrentWorkspace(ws);
+      await workspaceManager.openWorkspaceByPath(selectPath);
+      const ws = await workspace.getCurrentWorkspace();
+      if (ws) setCurrentWorkspace(ws);
       console.log('打开工作区：', ws);
     }
   };

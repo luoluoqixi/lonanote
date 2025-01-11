@@ -12,7 +12,7 @@ pub enum WorkspaceError {
     JsonError(String),
     #[error("[workspace] notfound workspace: {0}")]
     NotFoundWorkspace(String),
-    #[error("[workspace] already exist workspace: {0}")]
+    #[error("[workspace] cannot modify an already open workspace: {0}")]
     AlreadyExistWorkspace(String),
 
     #[error("[workspace] unknow error: {0}")]

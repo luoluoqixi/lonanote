@@ -1,44 +1,25 @@
 import { invokeAsync } from '@/bindings/core';
 
-export interface WorkspaceMetadata {
-  name: string;
-  path: string;
-  rootPath: string;
-}
+import { Workspace, WorkspaceSettings } from './types';
+import { getCurrentOpenWorkspace } from './workspaceManager';
 
-export interface WorkspaceSettings {}
-
-export interface Workspace {
-  metadata: WorkspaceMetadata;
-  settings: WorkspaceSettings;
-}
+const checkCurrentOpenWorkspace = async (): Promise<string> => {
+  const path = getCurrentOpenWorkspace();
+  if (!path) throw new Error('workspace is not open');
+  return path;
+};
 
 export const workspace = {
   getCurrentWorkspace: async (): Promise<Workspace | null> => {
-    return (await invokeAsync('get_current_workspace'))!;
+    const path = getCurrentOpenWorkspace();
+    return path ? (await invokeAsync('get_open_workspace', { path }))! : null;
   },
-  setCurrentWorkspaceRootPath: async (newPath: string, isMove: boolean) => {
-    return (await invokeAsync('set_current_workspace_root_path', { newPath, isMove }))!;
+  getCurrentWorkspaceSettings: async (): Promise<WorkspaceSettings> => {
+    const path = await checkCurrentOpenWorkspace();
+    return (await invokeAsync('get_open_workspace_settings', { path }))!;
   },
-  setCurrentWorkspaceName: async (newName: string, isMove: boolean) => {
-    return (await invokeAsync('set_current_workspace_name', { newName, isMove }))!;
-  },
-  setCurrentWorkspaceSettings: async (settings: WorkspaceSettings) => {
-    return (await invokeAsync('set_current_workspace_settings', { settings }))!;
-  },
-  setWorkspacePath: async (path: string, newPath: string, isMove: boolean) => {
-    return (await invokeAsync('set_workspace_path', { path, newPath, isMove }))!;
-  },
-  setWorkspaceName: async (path: string, newName: string, isMove: boolean) => {
-    return (await invokeAsync('set_workspace_name', { path, newName, isMove }))!;
-  },
-  getInitWorkspace: async (): Promise<Workspace | null> => {
-    return (await invokeAsync('get_init_workspace'))!;
-  },
-  getWorkspacesMetadata: async (): Promise<WorkspaceMetadata[]> => {
-    return (await invokeAsync('get_workspaces_metadata'))!;
-  },
-  openWorkspaceByPath: async (path: string): Promise<Workspace> => {
-    return (await invokeAsync('open_workspace_by_path', { path }))!;
+  setCurrentWorkspaceSettings: async (settings: WorkspaceSettings): Promise<Workspace> => {
+    const path = await checkCurrentOpenWorkspace();
+    return (await invokeAsync('set_open_workspace_settings', { path, settings }))!;
   },
 };

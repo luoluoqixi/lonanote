@@ -1,13 +1,14 @@
-import { BrowserWindow } from 'electron';
 import { app } from 'electron';
 
+import { getActiveWin } from '../app';
 import * as bindings from './bindings';
 import { initDialogIPC } from './dialog';
 import { initShellIPC } from './shell';
+import { initWorkspaceIPC } from './workspace';
 
 export * from './bindings';
 
-const initInvokeIpc = (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
+const initInvokeIpc = (ipcMain: Electron.IpcMain) => {
   let returnSequence = 0;
   const jsFunctionCallChannel = 'jsFunctionCall';
   const jsFunctionCall = (
@@ -69,7 +70,11 @@ const initInvokeIpc = (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
     return bindings.getCommandAsyncLen();
   });
   ipcMain.handle('regJsFunction', async (_, key) => {
-    return bindings.regJsFunction(key, (args) => jsFunctionCall(win.webContents, key, args));
+    return bindings.regJsFunction(key, (args) => {
+      const win = getActiveWin();
+      if (win == null) throw new Error('active window is null');
+      return jsFunctionCall(win.webContents, key, args);
+    });
   });
   ipcMain.handle('unregJsFunction', async (_, key) => {
     return bindings.unregJsFunction(key);
@@ -98,9 +103,10 @@ const initPath = async () => {
   bindings.invoke('init_dir', JSON.stringify(dirs));
 };
 
-export const initBindings = async (ipcMain: Electron.IpcMain, win: BrowserWindow) => {
-  initInvokeIpc(ipcMain, win);
+export const initBindings = async (ipcMain: Electron.IpcMain) => {
+  initInvokeIpc(ipcMain);
   initPath();
   initShellIPC();
-  initDialogIPC(win);
+  initDialogIPC();
+  initWorkspaceIPC();
 };

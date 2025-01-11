@@ -1,6 +1,10 @@
-import { BrowserWindow, dialog as e_dialog, ipcMain as ipc } from 'electron';
+import { dialog as e_dialog, ipcMain as ipc } from 'electron';
 
-let win: BrowserWindow | null = null;
+import { getActiveWin } from '../app';
+
+const getWin = () => {
+  return getActiveWin();
+};
 
 // 选择对话框
 const defaultFilters = [{ name: 'All Files', extensions: ['*'] }];
@@ -13,10 +17,6 @@ function getOptions<T>(options: any): T {
 }
 
 const dialog = {
-  setOwnWindow(ownWindow: BrowserWindow) {
-    win = ownWindow;
-  },
-
   // MessageBox对话框
   /**
    * 显示系统消息对话框 Info
@@ -73,6 +73,7 @@ const dialog = {
     options = getOptions(options);
     options.noLink = true;
     let result: Electron.MessageBoxReturnValue | null = null;
+    const win = getWin();
     if (win != null) {
       result = await e_dialog.showMessageBox(win, options);
     } else {
@@ -87,6 +88,7 @@ const dialog = {
     options = getOptions(options);
     options.buttons = options.buttons || ['确定'];
     options.noLink = true;
+    const win = getWin();
     if (win != null) {
       return e_dialog.showMessageBoxSync(win, options);
     }
@@ -105,6 +107,7 @@ const dialog = {
       options.filters = options.filters || defaultFilters;
     }
     let data: Electron.OpenDialogReturnValue | null = null;
+    const win = getWin();
     if (win != null) {
       data = await e_dialog.showOpenDialog(win, options);
     } else {
@@ -141,6 +144,7 @@ const dialog = {
     options.title = options.title || '保存文件';
     options.filters = options.filters || defaultFilters;
     let data: Electron.SaveDialogReturnValue | null = null;
+    const win = getWin();
     if (win != null) {
       data = await e_dialog.showSaveDialog(win, options);
     } else {
@@ -153,8 +157,7 @@ const dialog = {
   },
 };
 
-export const initDialogIPC = (win: BrowserWindow) => {
-  dialog.setOwnWindow(win);
+export const initDialogIPC = () => {
   // IPC通信
   // MessageBox对话框
   ipc.handle('dialog.showMessageBox', async (_event, options) => {

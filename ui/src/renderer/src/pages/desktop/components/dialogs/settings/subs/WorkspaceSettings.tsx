@@ -3,11 +3,7 @@ import { IoIosMore } from 'react-icons/io';
 
 import { dialog } from '@/bindings/api';
 import { Editable, Heading, IconButton, toaster } from '@/components/ui';
-import {
-  setCurrentWorkspaceName,
-  setCurrentWorkspaceRootPath,
-  useWorkspace,
-} from '@/controller/workspace';
+import { useWorkspace } from '@/controller/workspace';
 
 import { BaseSettingsPanelProps } from '../Settings';
 import styles from '../Settings.module.scss';
@@ -24,41 +20,41 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
   }, [currentWorkspace]);
 
   const setWorkspaceNameCommit = async (value: string | null) => {
-    if (currentWorkspace == null) return;
-    if (value != null && value !== '' && value !== currentWorkspace.metadata.name) {
-      try {
-        await setCurrentWorkspaceName(value, true);
-      } catch (e) {
-        console.error(e);
-        toaster.error({
-          title: '错误',
-          description: `修改工作区名字失败: ${(e as Error).message}`,
-          duration: 10000,
-        });
-        setWorkspaceName(currentWorkspace.metadata.name);
-      }
-    } else {
-      setWorkspaceName(currentWorkspace.metadata.name);
-    }
+    // if (currentWorkspace == null) return;
+    // if (value != null && value !== '' && value !== currentWorkspace.metadata.name) {
+    //   try {
+    //     await setCurrentWorkspaceName(value, true);
+    //   } catch (e) {
+    //     console.error(e);
+    //     toaster.error({
+    //       title: '错误',
+    //       description: `修改工作区名字失败: ${(e as Error).message}`,
+    //       duration: 10000,
+    //     });
+    //     setWorkspaceName(currentWorkspace.metadata.name);
+    //   }
+    // } else {
+    //   setWorkspaceName(currentWorkspace.metadata.name);
+    // }
   };
 
   const setWorkspacePathCommit = async (value: string | null) => {
-    if (currentWorkspace == null) return;
-    if (value != null && value !== '' && value !== currentWorkspace.metadata.rootPath) {
-      try {
-        await setCurrentWorkspaceRootPath(value, true);
-      } catch (e) {
-        console.error(e);
-        toaster.error({
-          title: '错误',
-          description: `修改工作区路径失败: ${(e as Error).message}`,
-          duration: 10000,
-        });
-        setWorkspacePath(currentWorkspace.metadata.rootPath);
-      }
-    } else {
-      setWorkspacePath(currentWorkspace.metadata.rootPath);
-    }
+    // if (currentWorkspace == null) return;
+    // if (value != null && value !== '' && value !== currentWorkspace.metadata.rootPath) {
+    //   try {
+    //     await setCurrentWorkspaceRootPath(value, true);
+    //   } catch (e) {
+    //     console.error(e);
+    //     toaster.error({
+    //       title: '错误',
+    //       description: `修改工作区路径失败: ${(e as Error).message}`,
+    //       duration: 10000,
+    //     });
+    //     setWorkspacePath(currentWorkspace.metadata.rootPath);
+    //   }
+    // } else {
+    //   setWorkspacePath(currentWorkspace.metadata.rootPath);
+    // }
   };
 
   return (

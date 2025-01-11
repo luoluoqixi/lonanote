@@ -33,10 +33,6 @@ impl WorkspaceIndex {
         }
     }
 
-    pub fn update_workspace_path(&mut self, workspace_path: impl AsRef<Path>) {
-        self.workspace_path = workspace_path.as_ref().to_path_buf();
-    }
-
     pub async fn save(&self) -> Result<(), WorkspaceError> {
         if get_indexing().await {
             return Ok(());

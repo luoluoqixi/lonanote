@@ -7,7 +7,20 @@ import icon from '../../resources/icon.png?asset';
 import { initBindings } from './bindings';
 import { settings } from './store';
 
-let mainWindow: BrowserWindow | undefined;
+let windows: BrowserWindow[] = [];
+
+export const getActiveWin = () => {
+  for (let i = 0; i < windows.length; i++) {
+    const win = windows[i];
+    if (!win.isFocused()) continue;
+    return win;
+  }
+  return null;
+};
+
+export const getWindows = () => {
+  return windows;
+};
 
 const getTitleBarOverlay = (zoom: number): TitleBarOverlay | undefined => {
   if (process.platform === 'darwin') return undefined;
@@ -43,9 +56,7 @@ const createWindow = async () => {
     },
   });
 
-  initBindings(ipcMain, win);
-
-  mainWindow = win;
+  windows.push(win);
 
   win.on('ready-to-show', () => {
     if (!win.isVisible()) {
@@ -82,7 +93,7 @@ const createWindow = async () => {
   });
 
   win.on('close', () => {
-    mainWindow = undefined;
+    windows = windows.filter((w) => w !== win);
   });
 
   const zoom = settings.getZoom();
@@ -97,19 +108,31 @@ export const setupApp = async () => {
   const setZoom = (zoom: number) => {
     if (zoom < settings.minZoom) return;
     if (zoom > settings.maxZoom) return;
-    mainWindow?.webContents.setZoomLevel(zoom);
+    const activeWin = getActiveWin();
+    if (!activeWin) return;
+    activeWin.webContents.setZoomLevel(zoom);
     settings.setZoom(zoom);
     const titleBarOverlay = getTitleBarOverlay(zoom);
-    if (titleBarOverlay) {
-      mainWindow?.setTitleBarOverlay(titleBarOverlay);
+    for (let i = 0; i < windows.length; i++) {
+      const win = windows[i];
+      if (titleBarOverlay) {
+        win?.setTitleBarOverlay(titleBarOverlay);
+      }
+      win?.webContents.send('onZoomChange', zoom);
     }
-    mainWindow?.webContents.send('onZoomChange', zoom);
   };
+
+  app.on('second-instance', () => {
+    // 当用户尝试启动第二个实例时，创建新窗口
+    createWindow();
+  });
 
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   app.whenReady().then(() => {
+    initBindings(ipcMain);
+
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.lonalabs.lonanote');
 
@@ -118,39 +141,51 @@ export const setupApp = async () => {
     // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
     app.on('browser-window-created', (_, win) => {
       optimizer.watchWindowShortcuts(win);
-      globalShortcut.unregister('CommandOrControl+Shift+i');
-      globalShortcut.register('CommandOrControl+Shift+i', () => {
-        if (!win) return;
+    });
+
+    globalShortcut.unregister('CommandOrControl+Shift+i');
+    globalShortcut.register('CommandOrControl+Shift+i', () => {
+      for (let i = 0; i < windows.length; i++) {
+        const win = windows[i];
+        if (!win.isFocused()) continue;
         if (win.webContents.isDevToolsOpened()) {
           win.webContents.closeDevTools();
         } else {
           win.webContents.openDevTools();
         }
-      });
-      globalShortcut.unregister('CommandOrControl+=');
-      globalShortcut.unregister('CommandOrControl+-');
-      globalShortcut.unregister('CommandOrControl+0');
-      globalShortcut.register('CommandOrControl+=', () => {
-        if (!win) return;
-        setZoom(settings.getZoom() + 1);
-      });
-      globalShortcut.register('CommandOrControl+-', () => {
-        if (!win) return;
-        setZoom(settings.getZoom() - 1);
-      });
-      globalShortcut.register('CommandOrControl+0', () => {
-        if (!win) return;
-        setZoom(0);
-      });
+      }
+    });
+    globalShortcut.unregister('CommandOrControl+=');
+    globalShortcut.unregister('CommandOrControl+-');
+    globalShortcut.unregister('CommandOrControl+0');
+    globalShortcut.register('CommandOrControl+=', () => {
+      setZoom(settings.getZoom() + 1);
+    });
+    globalShortcut.register('CommandOrControl+-', () => {
+      setZoom(settings.getZoom() - 1);
+    });
+    globalShortcut.register('CommandOrControl+0', () => {
+      setZoom(0);
+    });
+
+    globalShortcut.unregister('CommandOrControl+Shift+n');
+
+    globalShortcut.register('CommandOrControl+Shift+n', () => {
+      createWindow();
+    });
+
+    ipcMain.handle('openNewWindow', () => {
+      createWindow();
     });
 
     ipcMain.handle('setTitleBarColor', (e, color, backgroudColor) => {
-      if (mainWindow && color) {
+      const win = getActiveWin();
+      if (win && color) {
         settings.setTitleBarColor(color);
         settings.setTitleBarBackgroudColor(backgroudColor);
         const titleBarOverlay = getTitleBarOverlay(settings.getZoom());
         if (titleBarOverlay) {
-          mainWindow.setTitleBarOverlay(titleBarOverlay);
+          win.setTitleBarOverlay(titleBarOverlay);
         }
       }
     });
@@ -167,9 +202,10 @@ export const setupApp = async () => {
       return settings.getWindowSize();
     });
     ipcMain.handle('resetWindowSize', () => {
-      if (mainWindow) {
+      const win = getActiveWin();
+      if (win) {
         const s = settings.defaultWindowSize;
-        mainWindow.setSize(s.width, s.height);
+        win.setSize(s.width, s.height);
         settings.setWindowSize(s);
       }
     });

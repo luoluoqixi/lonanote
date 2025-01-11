@@ -38,24 +38,14 @@ impl Workspace {
         Ok(())
     }
 
-    pub async fn set_metadata(
-        &mut self,
-        metadata: WorkspaceMetadata,
-    ) -> Result<(), WorkspaceError> {
-        self.index
-            .write()
-            .await
-            .update_workspace_path(metadata.path.clone());
-        self.settings.update_workspace_path(metadata.path.clone());
-        self.metadata = metadata;
-
-        Ok(())
-    }
-
     pub async fn save(&self) -> Result<(), WorkspaceError> {
         self.settings.save().await?;
         self.index.read().await.save().await?;
 
+        Ok(())
+    }
+
+    pub async fn unload(&self) -> Result<(), WorkspaceError> {
         Ok(())
     }
 }

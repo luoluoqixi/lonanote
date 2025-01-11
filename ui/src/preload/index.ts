@@ -5,6 +5,7 @@ import { dialog } from './dialog';
 import { invoke } from './invoke';
 import { shell } from './shell';
 import { utils } from './utils';
+import { workspace } from './workspace';
 
 // Custom APIs for renderer
 export const api = {
@@ -12,6 +13,7 @@ export const api = {
   utils,
   dialog,
   shell,
+  workspace,
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -1,11 +1,12 @@
 use std::{
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
 
 use serde::{Deserialize, Serialize};
 
-use crate::{settings::get_settings, utils::fs_utils};
+use crate::utils::fs_utils;
 
 use super::{
     config::get_workspace_global_config_path, error::WorkspaceError, workspace::Workspace,
@@ -19,7 +20,7 @@ pub struct WorkspaceManager {
     pub workspaces: Vec<WorkspaceMetadata>,
 
     #[serde(skip)]
-    pub current_workspace: Option<Workspace>,
+    pub open_workspaces: HashMap<String, Workspace>,
 }
 
 impl WorkspaceManager {
@@ -42,47 +43,32 @@ impl WorkspaceManager {
             }
         }
         return Self {
-            current_workspace: None,
+            open_workspaces: HashMap::new(),
             last_workspace: None,
             workspaces: Vec::new(),
         };
     }
-    pub async fn get_init_workspace(&mut self) -> Result<Option<&Workspace>, WorkspaceError> {
-        if self.current_workspace.is_some() {
-            Ok(self.current_workspace.as_ref())
+
+    pub fn get_workspace(&self, path: impl AsRef<str>) -> Option<&Workspace> {
+        if self.open_workspaces.contains_key(path.as_ref()) {
+            Some(self.open_workspaces.get(path.as_ref()).unwrap())
         } else {
-            #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos",))]
-            {
-                // TODO 检测是否有另一个实例运行, 如果有, 那么就不自动打开上次的工作区
-            }
-            let settings = get_settings().await;
-            if settings.auto_open_last_workspace && self.last_workspace.is_some() {
-                let path = self.last_workspace.as_ref().unwrap();
-                if fs::exists(&path).map_err(|e| WorkspaceError::IOError(e.to_string()))? {
-                    let workspace =
-                        self.load_workspace(path.to_str().unwrap_or_default().to_string())?;
-                    return Ok(Some(workspace));
-                }
-            }
-            Ok(None)
-        }
-    }
-    pub fn get_current_workspace(&self) -> Result<Option<&Workspace>, WorkspaceError> {
-        if self.current_workspace.is_some() {
-            Ok(self.current_workspace.as_ref())
-        } else {
-            Ok(None)
-        }
-    }
-    pub fn get_current_workspace_mut(&mut self) -> Result<Option<&mut Workspace>, WorkspaceError> {
-        if self.current_workspace.is_some() {
-            Ok(self.current_workspace.as_mut())
-        } else {
-            Ok(None)
+            None
         }
     }
 
-    pub fn load_workspace(&mut self, path: impl AsRef<str>) -> Result<&Workspace, WorkspaceError> {
+    pub fn get_workspace_mut(&mut self, path: impl AsRef<str>) -> Option<&mut Workspace> {
+        if self.open_workspaces.contains_key(path.as_ref()) {
+            Some(self.open_workspaces.get_mut(path.as_ref()).unwrap())
+        } else {
+            None
+        }
+    }
+
+    pub fn load_workspace(&mut self, path: impl AsRef<str>) -> Result<(), WorkspaceError> {
+        if self.open_workspaces.contains_key(path.as_ref()) {
+            return Ok(());
+        }
         let workspace_path = PathBuf::from(path.as_ref());
         if !workspace_path.exists() {
             return Err(WorkspaceError::NotFoundPath(path.as_ref().to_string()));
@@ -98,10 +84,21 @@ impl WorkspaceManager {
             self.workspaces.push(workspace.metadata.clone());
         }
         self.last_workspace = Some(workspace.metadata.path.clone());
-        self.current_workspace = Some(workspace);
+        self.open_workspaces
+            .insert(path.as_ref().to_string(), workspace);
         self.save()?;
 
-        Ok(self.current_workspace.as_ref().unwrap())
+        Ok(())
+    }
+
+    pub async fn unload_workspace(&mut self, path: impl AsRef<str>) -> Result<(), WorkspaceError> {
+        if !self.open_workspaces.contains_key(path.as_ref()) {
+            return Ok(());
+        }
+        let workspace = self.open_workspaces.remove(path.as_ref()).unwrap();
+        workspace.unload().await?;
+
+        Ok(())
     }
 
     pub fn get_workspaces_metadata(&self) -> &Vec<WorkspaceMetadata> {
@@ -174,6 +171,11 @@ impl WorkspaceManager {
                 path.as_ref()
             )))?;
         let new_path_str = new_path.as_ref();
+
+        if self.open_workspaces.contains_key(path_str) {
+            return Err(WorkspaceError::AlreadyExistWorkspace(path_str.to_string()));
+        }
+
         if path_str == new_path_str {
             return Err(WorkspaceError::AlreadyExistWorkspace(
                 new_path_str.to_string(),
@@ -204,12 +206,6 @@ impl WorkspaceManager {
 
             let new_metadata = WorkspaceMetadata::new(new_path.clone())?;
 
-            if let Some(current_workspace) = &mut self.current_workspace {
-                // 更新当前workspace
-                if current_workspace.metadata.path == path {
-                    current_workspace.set_metadata(new_metadata.clone()).await?;
-                }
-            }
             if let Some(last_workspace) = &mut self.last_workspace {
                 // 更新上个workspace
                 if *last_workspace == path {
