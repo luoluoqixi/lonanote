@@ -10,7 +10,7 @@ import {
 import { BaseSettingsPanelProps } from '../Settings';
 import styles from '../Settings.module.scss';
 
-const isShowDevUI = false;
+const isShowDevUI = true;
 
 export interface GlobalSettingsProps extends BaseSettingsPanelProps {}
 

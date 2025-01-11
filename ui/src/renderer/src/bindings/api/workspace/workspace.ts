@@ -3,6 +3,7 @@ import { invokeAsync } from '@/bindings/core';
 export interface WorkspaceMetadata {
   name: string;
   path: string;
+  rootPath: string;
 }
 
 export interface WorkspaceSettings {}
@@ -16,8 +17,8 @@ export const workspace = {
   getCurrentWorkspace: async (): Promise<Workspace | null> => {
     return (await invokeAsync('get_current_workspace'))!;
   },
-  setCurrentWorkspacePath: async (newPath: string, isMove: boolean) => {
-    return (await invokeAsync('set_current_workspace_path', { newPath, isMove }))!;
+  setCurrentWorkspaceRootPath: async (newPath: string, isMove: boolean) => {
+    return (await invokeAsync('set_current_workspace_root_path', { newPath, isMove }))!;
   },
   setCurrentWorkspaceName: async (newName: string, isMove: boolean) => {
     return (await invokeAsync('set_current_workspace_name', { newName, isMove }))!;

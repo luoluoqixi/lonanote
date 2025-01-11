@@ -27,7 +27,7 @@ struct SetCurrentWorkspacePathArgs {
     pub is_move: bool,
 }
 
-async fn set_current_workspace_path(
+async fn set_current_workspace_root_path(
     Json(args): Json<SetCurrentWorkspacePathArgs>,
 ) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
@@ -35,7 +35,7 @@ async fn set_current_workspace_path(
     if let Some(workspace) = current_workspace {
         let path = workspace.metadata.path.clone();
         workspace_manager
-            .set_workspace_path(path.to_str().unwrap(), args.new_path, args.is_move)
+            .set_workspace_root_path(path.to_str().unwrap(), args.new_path, args.is_move)
             .await?;
         Ok(CommandResponse::None)
     } else {
@@ -93,10 +93,10 @@ struct SetWorkspacePathArgs {
     pub is_move: bool,
 }
 
-async fn set_workspace_path(Json(args): Json<SetWorkspacePathArgs>) -> CommandResult {
+async fn set_workspace_root_path(Json(args): Json<SetWorkspacePathArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
-        .set_workspace_path(args.path, args.new_path, args.is_move)
+        .set_workspace_root_path(args.path, args.new_path, args.is_move)
         .await?;
 
     Ok(CommandResponse::None)
@@ -150,13 +150,16 @@ async fn open_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> Co
 
 pub fn reg_commands() -> Result<()> {
     reg_command_async("get_current_workspace", get_current_workspace)?;
-    reg_command_async("set_current_workspace_path", set_current_workspace_path)?;
+    reg_command_async(
+        "set_current_workspace_root_path",
+        set_current_workspace_root_path,
+    )?;
     reg_command_async("set_current_workspace_name", set_current_workspace_name)?;
     reg_command_async(
         "set_current_workspace_settings",
         set_current_workspace_settings,
     )?;
-    reg_command_async("set_workspace_path", set_workspace_path)?;
+    reg_command_async("set_workspace_root_path", set_workspace_root_path)?;
     reg_command_async("set_workspace_name", set_workspace_name)?;
     reg_command_async("get_init_workspace", get_init_workspace)?;
     reg_command_async("get_workspaces_metadata", get_workspaces_metadata)?;

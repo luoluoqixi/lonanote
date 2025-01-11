@@ -6,20 +6,51 @@ import { IconButton } from '../icon-button';
 
 export interface EditableProps extends EditableRootProps {
   size?: EditableRootProps['size'];
+  showEditBtn?: boolean;
+  customEditRender?: React.ReactNode;
+  customRightSlotRender?: (edit: boolean) => React.ReactNode;
+  previewProps?: ChakraEditable.PreviewProps;
 }
 
 export const Editable = React.forwardRef<HTMLDivElement, EditableProps>((props, ref) => {
-  const { size = 'sm', ...rest } = props;
+  const {
+    size = 'sm',
+    showEditBtn = true,
+    customEditRender,
+    customRightSlotRender,
+    previewProps,
+    ...rest
+  } = props;
+  const [edit, setEdit] = React.useState(false);
   return (
-    <ChakraEditable.Root ref={ref} size={size} {...rest}>
-      <ChakraEditable.Preview />
+    <ChakraEditable.Root
+      ref={ref}
+      size={size}
+      edit={edit}
+      onEditChange={(e) => setEdit(e.edit)}
+      {...rest}
+    >
+      <ChakraEditable.Preview
+        whiteSpace="nowrap"
+        overflow="hidden"
+        textOverflow="ellipsis"
+        display="inline-block"
+        {...previewProps}
+      />
       <ChakraEditable.Input />
       <ChakraEditable.Control>
-        <ChakraEditable.EditTrigger asChild>
-          <IconButton variant="ghost" size={size}>
-            <LuPencilLine />
-          </IconButton>
-        </ChakraEditable.EditTrigger>
+        {customRightSlotRender?.(edit)}
+        {showEditBtn && (
+          <ChakraEditable.EditTrigger asChild>
+            {customEditRender ? (
+              customEditRender
+            ) : (
+              <IconButton variant="ghost" size={size}>
+                <LuPencilLine />
+              </IconButton>
+            )}
+          </ChakraEditable.EditTrigger>
+        )}
         <ChakraEditable.CancelTrigger asChild>
           <IconButton variant="outline" size={size}>
             <LuX />

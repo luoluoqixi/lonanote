@@ -21,7 +21,7 @@ impl Workspace {
     pub fn new(workspace_path: &PathBuf) -> Result<Self, WorkspaceError> {
         create_workspace_config_folder(workspace_path)?;
         Ok(Self {
-            metadata: WorkspaceMetadata::new(workspace_path),
+            metadata: WorkspaceMetadata::new(workspace_path)?,
             settings: WorkspaceSettings::new(workspace_path)?,
             index: Arc::new(RwLock::new(WorkspaceIndex::new(workspace_path)?)),
         })
@@ -42,8 +42,11 @@ impl Workspace {
         &mut self,
         metadata: WorkspaceMetadata,
     ) -> Result<(), WorkspaceError> {
-        self.index.write().await.workspace_path = metadata.path.clone();
-        self.settings.workspace_path = metadata.path.clone();
+        self.index
+            .write()
+            .await
+            .update_workspace_path(metadata.path.clone());
+        self.settings.update_workspace_path(metadata.path.clone());
         self.metadata = metadata;
 
         Ok(())

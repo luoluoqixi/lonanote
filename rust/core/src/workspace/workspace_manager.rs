@@ -15,7 +15,7 @@ use super::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceManager {
-    pub last_workspace: Option<WorkspaceMetadata>,
+    pub last_workspace: Option<PathBuf>,
     pub workspaces: Vec<WorkspaceMetadata>,
 
     #[serde(skip)]
@@ -57,12 +57,11 @@ impl WorkspaceManager {
             }
             let settings = get_settings().await;
             if settings.auto_open_last_workspace && self.last_workspace.is_some() {
-                let path = self.last_workspace.as_ref().unwrap().path.to_str();
-                if let Some(path) = path {
-                    if fs::exists(&path).map_err(|e| WorkspaceError::IOError(e.to_string()))? {
-                        let workspace = self.load_workspace(path.to_string())?;
-                        return Ok(Some(workspace));
-                    }
+                let path = self.last_workspace.as_ref().unwrap();
+                if fs::exists(&path).map_err(|e| WorkspaceError::IOError(e.to_string()))? {
+                    let workspace =
+                        self.load_workspace(path.to_str().unwrap_or_default().to_string())?;
+                    return Ok(Some(workspace));
                 }
             }
             Ok(None)
@@ -98,7 +97,7 @@ impl WorkspaceManager {
         } else {
             self.workspaces.push(workspace.metadata.clone());
         }
-        self.last_workspace = Some(workspace.metadata.clone());
+        self.last_workspace = Some(workspace.metadata.path.clone());
         self.current_workspace = Some(workspace);
         self.save()?;
 
@@ -123,6 +122,29 @@ impl WorkspaceManager {
                 path.as_ref()
             )))?
             .join(new_name.as_ref());
+        self.set_workspace_path(
+            path,
+            new_path
+                .to_str()
+                .ok_or(WorkspaceError::UnknowError(format!(
+                    "path to_str error: {:?}",
+                    &new_path
+                )))?,
+            is_move,
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn set_workspace_root_path(
+        &mut self,
+        path: impl AsRef<Path>,
+        new_root_path: impl AsRef<str>,
+        is_move: bool,
+    ) -> Result<(), WorkspaceError> {
+        let name = WorkspaceMetadata::get_file_name(&path)?;
+        let new_path = PathBuf::from(new_root_path.as_ref()).join(name);
         self.set_workspace_path(
             path,
             new_path
@@ -168,7 +190,19 @@ impl WorkspaceManager {
         }
         let workspace = self.workspaces.iter_mut().find(|w| w.path == path);
         if let Some(workspace) = workspace {
-            let new_metadata = WorkspaceMetadata::new(new_path.clone());
+            if is_move {
+                if new_path.exists() {
+                    return Err(WorkspaceError::IOError(format!(
+                        "target path already exist: {:?}",
+                        &new_path
+                    )));
+                }
+                // println!("src_folder: {:?}, target_folder: {:?}", &path, &new_path);
+                fs_utils::move_folder(&path, &new_path, false)
+                    .map_err(|e| WorkspaceError::IOError(e.to_string()))?;
+            }
+
+            let new_metadata = WorkspaceMetadata::new(new_path.clone())?;
 
             if let Some(current_workspace) = &mut self.current_workspace {
                 // 更新当前workspace
@@ -178,24 +212,12 @@ impl WorkspaceManager {
             }
             if let Some(last_workspace) = &mut self.last_workspace {
                 // 更新上个workspace
-                if last_workspace.path == path {
-                    *last_workspace = new_metadata.clone();
+                if *last_workspace == path {
+                    *last_workspace = new_metadata.path.clone();
                 }
             }
             *workspace = new_metadata;
             self.save()?;
-
-            if is_move {
-                if new_path.exists() {
-                    return Err(WorkspaceError::IOError(format!(
-                        "target path already exist: {:?}",
-                        &new_path
-                    )));
-                }
-                // println!("src_folder: {:?}, target_folder: {:?}", &path, &new_path);
-                fs_utils::move_folder(path, new_path, false)
-                    .map_err(|e| WorkspaceError::IOError(e.to_string()))?;
-            }
 
             Ok(())
         } else {

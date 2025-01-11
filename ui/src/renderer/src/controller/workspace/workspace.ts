@@ -17,8 +17,8 @@ export const setCurrentWorkspaceName = async (name: string, isMove: boolean) => 
   await updateCurrentWorkspace();
 };
 
-export const setCurrentWorkspacePath = async (path: string, isMove: boolean) => {
-  await workspace.setCurrentWorkspacePath(path, isMove);
+export const setCurrentWorkspaceRootPath = async (path: string, isMove: boolean) => {
+  await workspace.setCurrentWorkspaceRootPath(path, isMove);
   await updateCurrentWorkspace();
 };
 
