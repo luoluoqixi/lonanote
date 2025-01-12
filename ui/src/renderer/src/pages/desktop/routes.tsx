@@ -1,4 +1,4 @@
-import { RouteObject, RouterProvider, createBrowserRouter } from 'react-router';
+import { RouteObject, RouterProvider, createBrowserRouter, createHashRouter } from 'react-router';
 
 // import Test from '../test/Test';
 import Index from './Index';
@@ -18,7 +18,9 @@ export const routes: RouteObject[] = [
   },
 ];
 
-const router = createBrowserRouter(routes);
+const isWeb = false;
+
+const router = isWeb ? createBrowserRouter(routes) : createHashRouter(routes);
 
 export const Routes = () => {
   return <RouterProvider router={router} />;
