@@ -7,7 +7,10 @@ import icon from '../../resources/icon.png?asset';
 import { initBindings } from './bindings';
 import { settings } from './store';
 
+export type WindowsChangeCallback = (win: BrowserWindow, event: 'create' | 'close') => void;
+
 let windows: BrowserWindow[] = [];
+let windowsChangeCallback: WindowsChangeCallback[] = [];
 
 export const getActiveWin = () => {
   for (let i = 0; i < windows.length; i++) {
@@ -20,6 +23,37 @@ export const getActiveWin = () => {
 
 export const getWindows = () => {
   return windows;
+};
+
+export const removeWindowsChangeEvent = (callback: WindowsChangeCallback) => {
+  const index = windowsChangeCallback.findIndex((v) => v === callback);
+  if (index >= 0) {
+    windowsChangeCallback.splice(index, 1);
+  }
+};
+
+export const addWindowsChangeEvent = (callback: WindowsChangeCallback) => {
+  removeWindowsChangeEvent(callback);
+  windowsChangeCallback.push(callback);
+};
+
+export const clearWindowsChangeEvent = () => {
+  windowsChangeCallback = [];
+};
+
+const windowsChange = (win: BrowserWindow, event: 'create' | 'close') => {
+  if (windowsChangeCallback.length > 0) {
+    for (let i = 0; i < windowsChangeCallback.length; i++) {
+      const cb = windowsChangeCallback[i];
+      if (cb) {
+        try {
+          cb(win, event);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }
 };
 
 const getTitleBarOverlay = (zoom: number): TitleBarOverlay | undefined => {
@@ -57,6 +91,7 @@ const createWindow = async () => {
   });
 
   windows.push(win);
+  windowsChange(win, 'create');
 
   win.on('ready-to-show', () => {
     if (!win.isVisible()) {
@@ -94,6 +129,7 @@ const createWindow = async () => {
 
   win.on('close', () => {
     windows = windows.filter((w) => w !== win);
+    windowsChange(win, 'close');
   });
 
   const zoom = settings.getZoom();

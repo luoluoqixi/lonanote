@@ -1,5 +1,7 @@
 import { BrowserWindow, ipcMain as ipc } from 'electron';
 
+import { addWindowsChangeEvent } from '../app';
+
 const workspaceMap = new Map<BrowserWindow, string | null>();
 
 export const initWorkspaceIPC = () => {
@@ -32,5 +34,13 @@ export const initWorkspaceIPC = () => {
       }
     }
     return workspaces;
+  });
+
+  addWindowsChangeEvent((win, event) => {
+    if (event === 'close') {
+      if (workspaceMap.has(win)) {
+        workspaceMap.delete(win);
+      }
+    }
   });
 };

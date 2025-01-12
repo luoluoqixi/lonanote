@@ -8,6 +8,10 @@ export const getCurrentOpenWorkspace = (): string | null => {
   return currentWorkspace;
 };
 
+export const formatPath = (path: string) => {
+  return path.replace(/\\/g, '/');
+};
+
 export const initGetWorkspace = async () => {
   if (currentWorkspace) return;
   if (isTauri) {
@@ -21,6 +25,7 @@ export const initGetWorkspace = async () => {
       currentWorkspace = openWorkspace;
     } else {
       const lastWorkspace = await workspaceManager.getLastWorkspace();
+      console.log(lastWorkspace);
       if (lastWorkspace) {
         // 当前打开的所有workspace中没有lastWorkspace的情况下, 才打开该workspace
         const openWorkspaces = await window.api.workspace.getCurrentWorkspaces();
@@ -35,7 +40,7 @@ export const initGetWorkspace = async () => {
 
 const setCurrentWorkspace = async (path: string | null) => {
   if (isElectron && window.api) {
-    window.api.workspace.setCurrentWorkspace(path);
+    window.api.workspace.setCurrentWorkspace(path ? formatPath(path) : null);
   }
   currentWorkspace = path;
 };
@@ -51,6 +56,12 @@ export const workspaceManager = {
     return (await invokeAsync('get_workspaces_metadata'))!;
   },
   openWorkspaceByPath: async (path: string): Promise<void> => {
+    if (window.api) {
+      const openWorkspaces = await window.api.workspace.getCurrentWorkspaces();
+      if (openWorkspaces.indexOf(formatPath(path)) >= 0) {
+        throw new Error(`workspace has been opened: ${path}`);
+      }
+    }
     await invokeAsync('open_workspace_by_path', { path });
     await setCurrentWorkspace(path);
   },
