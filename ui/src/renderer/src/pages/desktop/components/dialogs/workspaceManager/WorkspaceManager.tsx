@@ -11,7 +11,7 @@ import {
   workspace,
   workspaceManager,
 } from '@/bindings/api';
-import { Dialog, Editable, Heading, IconButton, Menu, toaster } from '@/components/ui';
+import { Button, Dialog, Editable, Heading, IconButton, Menu, toaster } from '@/components/ui';
 import {
   setCurrentWorkspace,
   setWorkspaceName as setWorkspaceNameApi,
@@ -29,6 +29,25 @@ export interface WorkspaceManagerStore {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
+
+export const onOpenWorkspace = async () => {
+  const selectPath = await dialog.showOpenFolderDialog('选择工作区文件夹');
+  if (selectPath && selectPath !== '') {
+    console.log('选择文件夹：', selectPath);
+    try {
+      await workspaceManager.openWorkspaceByPath(selectPath);
+      const ws = await workspace.getCurrentWorkspace();
+      if (ws) setCurrentWorkspace(ws);
+      console.log('打开工作区：', ws);
+    } catch (e) {
+      toaster.error({
+        title: '错误',
+        description: `打开工作区失败: ${(e as Error).message}`,
+        duration: 10000,
+      });
+    }
+  }
+};
 
 export const useWorkspaceManagerState = create<WorkspaceManagerStore>((set) => ({
   isOpen: false,
@@ -236,7 +255,14 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     >
       <Dialog.Content ref={contentRef} positionerProps={{ padding: '90px' }}>
         <Dialog.Header>
-          <Dialog.Title>工作区</Dialog.Title>
+          <Dialog.Title>
+            <div className={styles.workspaceManagerTitle}>
+              <div>工作区</div>
+              <Button variant="ghost" size="xs" onClick={onOpenWorkspace}>
+                打开新的工作区
+              </Button>
+            </div>
+          </Dialog.Title>
           <Dialog.CloseTrigger />
         </Dialog.Header>
         <Dialog.Body overflow="auto">

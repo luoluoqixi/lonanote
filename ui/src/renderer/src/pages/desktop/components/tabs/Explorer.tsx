@@ -1,31 +1,13 @@
 import React from 'react';
 
-import { Workspace, workspace, workspaceManager } from '@/bindings/api';
-import { dialog } from '@/bindings/api/dialog';
-import { Button, Heading, toaster } from '@/components/ui';
-import { setCurrentWorkspace, useWorkspace } from '@/controller/workspace';
+import { Workspace } from '@/bindings/api';
+import { Button, Heading } from '@/components/ui';
+import { useWorkspace } from '@/controller/workspace';
 
+import { onOpenWorkspace } from '../dialogs/workspaceManager';
 import styles from './Explorer.module.scss';
 
 const NoWorkspace = () => {
-  const onOpenWorkspace = async () => {
-    const selectPath = await dialog.showOpenFolderDialog('选择工作区文件夹');
-    if (selectPath && selectPath !== '') {
-      console.log('选择文件夹：', selectPath);
-      try {
-        await workspaceManager.openWorkspaceByPath(selectPath);
-        const ws = await workspace.getCurrentWorkspace();
-        if (ws) setCurrentWorkspace(ws);
-        console.log('打开工作区：', ws);
-      } catch (e) {
-        toaster.error({
-          title: '错误',
-          description: `打开工作区失败: ${(e as Error).message}`,
-          duration: 10000,
-        });
-      }
-    }
-  };
   return (
     <div className={styles.noWorkspace}>
       <Heading size="sm">没有打开工作区</Heading>

@@ -7,6 +7,14 @@
   gap: 2px;
 }
 
+.workspaceManagerTitle {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  margin-right: 100px;
+  gap: 20px;
+}
+
 .workspaceRow {
   margin: 0;
   padding: 12px;
