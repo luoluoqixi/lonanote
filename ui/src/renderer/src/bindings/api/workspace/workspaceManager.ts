@@ -25,7 +25,6 @@ export const initGetWorkspace = async () => {
       currentWorkspace = openWorkspace;
     } else {
       const lastWorkspace = await workspaceManager.getLastWorkspace();
-      console.log(lastWorkspace);
       if (lastWorkspace) {
         // 当前打开的所有workspace中没有lastWorkspace的情况下, 才打开该workspace
         const openWorkspaces = await window.api.workspace.getCurrentWorkspaces();

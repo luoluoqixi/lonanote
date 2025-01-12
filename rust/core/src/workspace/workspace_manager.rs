@@ -20,7 +20,7 @@ pub struct WorkspaceManager {
     pub workspaces: Vec<WorkspaceMetadata>,
 
     #[serde(skip)]
-    pub open_workspaces: HashMap<String, Workspace>,
+    pub open_workspaces: HashMap<PathBuf, Workspace>,
 }
 
 impl WorkspaceManager {
@@ -49,7 +49,7 @@ impl WorkspaceManager {
         };
     }
 
-    pub fn get_workspace(&self, path: impl AsRef<str>) -> Option<&Workspace> {
+    pub fn get_workspace(&self, path: impl AsRef<Path>) -> Option<&Workspace> {
         if self.open_workspaces.contains_key(path.as_ref()) {
             Some(self.open_workspaces.get(path.as_ref()).unwrap())
         } else {
@@ -57,7 +57,7 @@ impl WorkspaceManager {
         }
     }
 
-    pub fn get_workspace_mut(&mut self, path: impl AsRef<str>) -> Option<&mut Workspace> {
+    pub fn get_workspace_mut(&mut self, path: impl AsRef<Path>) -> Option<&mut Workspace> {
         if self.open_workspaces.contains_key(path.as_ref()) {
             Some(self.open_workspaces.get_mut(path.as_ref()).unwrap())
         } else {
@@ -65,13 +65,15 @@ impl WorkspaceManager {
         }
     }
 
-    pub fn load_workspace(&mut self, path: impl AsRef<str>) -> Result<(), WorkspaceError> {
+    pub fn load_workspace(&mut self, path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
         if self.open_workspaces.contains_key(path.as_ref()) {
             return Ok(());
         }
         let workspace_path = PathBuf::from(path.as_ref());
         if !workspace_path.exists() {
-            return Err(WorkspaceError::NotFoundPath(path.as_ref().to_string()));
+            return Err(WorkspaceError::NotFoundPath(
+                path.as_ref().display().to_string(),
+            ));
         }
         let workspace = Workspace::new(&workspace_path)?;
         let f = self
@@ -86,13 +88,13 @@ impl WorkspaceManager {
         self.last_workspace = Some(workspace.metadata.path.clone());
         // println!("open workspace: {:?}", &self.last_workspace);
         self.open_workspaces
-            .insert(path.as_ref().to_string(), workspace);
+            .insert(path.as_ref().to_path_buf(), workspace);
         self.save()?;
 
         Ok(())
     }
 
-    pub async fn unload_workspace(&mut self, path: impl AsRef<str>) -> Result<(), WorkspaceError> {
+    pub async fn unload_workspace(&mut self, path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
         if !self.open_workspaces.contains_key(path.as_ref()) {
             return Ok(());
         }
@@ -120,17 +122,7 @@ impl WorkspaceManager {
                 path.as_ref()
             )))?
             .join(new_name.as_ref());
-        self.set_workspace_path(
-            path,
-            new_path
-                .to_str()
-                .ok_or(WorkspaceError::UnknowError(format!(
-                    "path to_str error: {:?}",
-                    &new_path
-                )))?,
-            is_move,
-        )
-        .await?;
+        self.set_workspace_path(path, new_path, is_move).await?;
 
         Ok(())
     }
@@ -138,22 +130,12 @@ impl WorkspaceManager {
     pub async fn set_workspace_root_path(
         &mut self,
         path: impl AsRef<Path>,
-        new_root_path: impl AsRef<str>,
+        new_root_path: impl AsRef<Path>,
         is_move: bool,
     ) -> Result<(), WorkspaceError> {
         let name = WorkspaceMetadata::get_file_name(&path)?;
-        let new_path = PathBuf::from(new_root_path.as_ref()).join(name);
-        self.set_workspace_path(
-            path,
-            new_path
-                .to_str()
-                .ok_or(WorkspaceError::UnknowError(format!(
-                    "path to_str error: {:?}",
-                    &new_path
-                )))?,
-            is_move,
-        )
-        .await?;
+        let new_path = new_root_path.as_ref().join(name);
+        self.set_workspace_path(path, new_path, is_move).await?;
 
         Ok(())
     }
@@ -161,34 +143,27 @@ impl WorkspaceManager {
     pub async fn set_workspace_path(
         &mut self,
         path: impl AsRef<Path>,
-        new_path: impl AsRef<str>,
+        new_path: impl AsRef<Path>,
         is_move: bool,
     ) -> Result<(), WorkspaceError> {
-        let path_str = path
-            .as_ref()
-            .to_str()
-            .ok_or(WorkspaceError::UnknowError(format!(
-                "path to_str error: {:?}",
-                path.as_ref()
-            )))?;
-        let new_path_str = new_path.as_ref();
-
-        if self.open_workspaces.contains_key(path_str) {
-            return Err(WorkspaceError::AlreadyExistWorkspace(path_str.to_string()));
-        }
-
-        if path_str == new_path_str {
+        if self.open_workspaces.contains_key(path.as_ref()) {
             return Err(WorkspaceError::AlreadyExistWorkspace(
-                new_path_str.to_string(),
+                path.as_ref().display().to_string(),
             ));
         }
 
-        let path = PathBuf::from(path.as_ref());
-        let new_path = PathBuf::from(new_path.as_ref());
+        if path.as_ref() == new_path.as_ref() {
+            return Err(WorkspaceError::AlreadyExistWorkspace(
+                new_path.as_ref().display().to_string(),
+            ));
+        }
+
+        let path = path.as_ref().to_path_buf();
+        let new_path = new_path.as_ref().to_path_buf();
         let exists_workspace = self.workspaces.iter().find(|w| w.path == new_path);
         if exists_workspace.is_some() {
             return Err(WorkspaceError::AlreadyExistWorkspace(
-                new_path_str.to_string(),
+                new_path.display().to_string(),
             ));
         }
         let workspace = self.workspaces.iter_mut().find(|w| w.path == path);
@@ -197,7 +172,7 @@ impl WorkspaceManager {
                 if new_path.exists() {
                     return Err(WorkspaceError::IOError(format!(
                         "target path already exist: {:?}",
-                        &new_path
+                        new_path.display()
                     )));
                 }
                 // println!("src_folder: {:?}, target_folder: {:?}", &path, &new_path);
@@ -218,7 +193,9 @@ impl WorkspaceManager {
 
             Ok(())
         } else {
-            Err(WorkspaceError::NotFoundWorkspace(path_str.to_string()))
+            Err(WorkspaceError::NotFoundWorkspace(
+                path.display().to_string(),
+            ))
         }
     }
 
