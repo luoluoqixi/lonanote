@@ -1,4 +1,9 @@
-import { Dialog as ChakraDialog, DialogBackdropProps, Portal } from '@chakra-ui/react';
+import {
+  Dialog as ChakraDialog,
+  DialogBackdropProps,
+  DialogPositionerProps,
+  Portal,
+} from '@chakra-ui/react';
 import * as React from 'react';
 
 import { CloseButton } from '../close-button';
@@ -8,15 +13,30 @@ export interface DialogContentProps extends ChakraDialog.ContentProps {
   portalRef?: React.RefObject<HTMLElement>;
   backdrop?: boolean;
   backdropProps?: DialogBackdropProps;
+  positionerProps?: DialogPositionerProps;
 }
 
+let isPositionerDown = false;
+
 export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>((props, ref) => {
-  const { children, portalled = true, portalRef, backdrop = true, backdropProps, ...rest } = props;
+  const {
+    children,
+    portalled = true,
+    positionerProps,
+    portalRef,
+    backdrop = true,
+    backdropProps,
+    ...rest
+  } = props;
 
   return (
     <Portal disabled={!portalled} container={portalRef}>
       {backdrop && <ChakraDialog.Backdrop background="blackAlpha.200" {...backdropProps} />}
-      <ChakraDialog.Positioner>
+      <ChakraDialog.Positioner
+        onPointerDown={() => (isPositionerDown = true)}
+        onPointerUp={() => (isPositionerDown = false)}
+        {...positionerProps}
+      >
         <ChakraDialog.Content ref={ref} {...rest} asChild={false}>
           {children}
         </ChakraDialog.Content>
@@ -38,7 +58,33 @@ export const DialogCloseTrigger = React.forwardRef<
   );
 });
 
-export const DialogRoot = ChakraDialog.Root;
+export const DialogRoot: React.FC<ChakraDialog.RootProps> = (props) => {
+  const { closeOnInteractOutside = true, ...rest } = props;
+  const [open, setOpen] = React.useState(props.open);
+  const onOpenChange = (e: { open: boolean }) => {
+    if (props.onOpenChange) {
+      props.onOpenChange(e);
+    } else {
+      setOpen(e.open);
+    }
+  };
+  return (
+    <ChakraDialog.Root
+      closeOnInteractOutside={false}
+      open={open || props.open}
+      onOpenChange={onOpenChange}
+      onPointerDownOutside={() => {
+        if (closeOnInteractOutside && isPositionerDown) {
+          onOpenChange({ open: false });
+        }
+      }}
+      {...rest}
+    >
+      {props.children}
+    </ChakraDialog.Root>
+  );
+};
+
 export const DialogFooter = ChakraDialog.Footer;
 export const DialogHeader = ChakraDialog.Header;
 export const DialogBody = ChakraDialog.Body;

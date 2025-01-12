@@ -9,6 +9,8 @@ import {
   createToaster,
 } from '@chakra-ui/react';
 
+import { CloseButton } from '../close-button';
+
 export const toaster = createToaster({
   placement: 'bottom-end',
   pauseOnPageIdle: true,
@@ -17,9 +19,20 @@ export const toaster = createToaster({
 export const Toaster = () => {
   return (
     <Portal>
-      <ChakraToaster toaster={toaster} insetInline={{ mdDown: '4' }}>
+      <ChakraToaster
+        style={{ zIndex: 'var(--chakra-z-index-max)' }}
+        toaster={toaster}
+        insetInline={{ mdDown: '4' }}
+      >
         {(toast) => (
-          <Toast.Root width={{ md: 'sm' }}>
+          <Toast.Root
+            width={{ md: 'sm' }}
+            style={{ zIndex: 'var(--chakra-z-index-max)' }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+          >
             {toast.type === 'loading' ? (
               <Spinner size="sm" color="blue.solid" />
             ) : (
@@ -31,6 +44,15 @@ export const Toaster = () => {
             </Stack>
             {toast.action && <Toast.ActionTrigger>{toast.action.label}</Toast.ActionTrigger>}
             {toast.meta?.closable && <Toast.CloseTrigger />}
+            <Toast.CloseTrigger asChild>
+              <CloseButton
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                variant="ghost"
+              />
+            </Toast.CloseTrigger>
           </Toast.Root>
         )}
       </ChakraToaster>

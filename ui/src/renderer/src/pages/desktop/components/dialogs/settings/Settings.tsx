@@ -70,7 +70,7 @@ export const Settings: React.FC<SettingsProps> = () => {
           <Dialog.Title>设置</Dialog.Title>
           <Dialog.CloseTrigger />
         </Dialog.Header>
-        <Dialog.Body>
+        <Dialog.Body overflow="auto">
           <div className={styles.settings}>
             <Tabs.Wrap
               className={styles.settingsTabs}

@@ -37,7 +37,12 @@ export const Editable = React.forwardRef<HTMLDivElement, EditableProps>((props, 
         display="inline-block"
         {...previewProps}
       />
-      <ChakraEditable.Input />
+      <ChakraEditable.Input
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+      />
       <ChakraEditable.Control>
         {customRightSlotRender?.(edit)}
         {showEditBtn && (

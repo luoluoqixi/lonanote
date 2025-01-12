@@ -38,8 +38,9 @@ export const initGetWorkspace = async () => {
 };
 
 const setCurrentWorkspace = async (path: string | null) => {
+  path = path ? formatPath(path) : null;
   if (isElectron && window.api) {
-    window.api.workspace.setCurrentWorkspace(path ? formatPath(path) : null);
+    window.api.workspace.setCurrentWorkspace(path);
   }
   currentWorkspace = path;
 };
