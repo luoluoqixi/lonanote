@@ -31,10 +31,13 @@ fn parse_invoke_args<'a>(request: &'a Request<'a>) -> Result<(String, CommandCon
             let data = if let InvokeBody::Json(data) = request.body() {
                 match data {
                     Value::Object(map) => match map.get("args") {
-                        Some(args) => match args {
-                            Value::String(s) => Some(s),
-                            _ => None,
-                        },
+                        Some(args) => {
+                            if let Value::String(s) = args {
+                                Some(s)
+                            } else {
+                                None
+                            }
+                        }
                         None => None,
                     },
                     _ => None,
@@ -42,7 +45,7 @@ fn parse_invoke_args<'a>(request: &'a Request<'a>) -> Result<(String, CommandCon
             } else {
                 None
             };
-            Ok((k.to_string(), CommandContext::from_str(data)))
+            Ok((k.to_string(), CommandContext::from_string(data)))
         }
         None => Err(anyhow!("error invoke, notfound key")),
     }

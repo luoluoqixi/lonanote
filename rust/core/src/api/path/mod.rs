@@ -1,9 +1,9 @@
-mod path;
+mod path_api;
 
 use anyhow::Result;
 
 pub fn reg_commands() -> Result<()> {
-    path::reg_commands()?;
+    path_api::reg_commands()?;
 
     Ok(())
 }

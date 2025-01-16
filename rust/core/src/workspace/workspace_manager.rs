@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use crate::utils::fs_utils;
 
 use super::{
-    config::get_workspace_global_config_path, error::WorkspaceError, workspace::Workspace,
-    workspace_metadata::WorkspaceMetadata,
+    config::get_workspace_global_config_path, error::WorkspaceError,
+    workspace_instance::WorkspaceInstance, workspace_metadata::WorkspaceMetadata,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,7 +20,7 @@ pub struct WorkspaceManager {
     pub workspaces: Vec<WorkspaceMetadata>,
 
     #[serde(skip)]
-    pub open_workspaces: HashMap<PathBuf, Workspace>,
+    pub open_workspaces: HashMap<PathBuf, WorkspaceInstance>,
 }
 
 impl WorkspaceManager {
@@ -31,25 +31,23 @@ impl WorkspaceManager {
                 .map_err(|err| WorkspaceError::IOError(err.to_string()))
                 .expect("read workspace config error");
             let manager = serde_json::from_str::<WorkspaceManager>(&data);
-            if manager.is_ok() {
-                return manager.unwrap();
-            } else {
-                if cfg!(debug_assertions) {
-                    eprintln!(
-                        "Error parsing workspace manager config: {:?}",
-                        manager.err()
-                    );
-                }
+            if let Ok(manager) = manager {
+                return manager;
+            } else if cfg!(debug_assertions) {
+                eprintln!(
+                    "Error parsing workspace manager config: {:?}",
+                    manager.err()
+                );
             }
         }
-        return Self {
+        Self {
             open_workspaces: HashMap::new(),
             last_workspace: None,
             workspaces: Vec::new(),
-        };
+        }
     }
 
-    pub fn get_workspace(&self, path: impl AsRef<Path>) -> Option<&Workspace> {
+    pub fn get_workspace(&self, path: impl AsRef<Path>) -> Option<&WorkspaceInstance> {
         if self.open_workspaces.contains_key(path.as_ref()) {
             Some(self.open_workspaces.get(path.as_ref()).unwrap())
         } else {
@@ -57,7 +55,7 @@ impl WorkspaceManager {
         }
     }
 
-    pub fn get_workspace_mut(&mut self, path: impl AsRef<Path>) -> Option<&mut Workspace> {
+    pub fn get_workspace_mut(&mut self, path: impl AsRef<Path>) -> Option<&mut WorkspaceInstance> {
         if self.open_workspaces.contains_key(path.as_ref()) {
             Some(self.open_workspaces.get_mut(path.as_ref()).unwrap())
         } else {
@@ -75,7 +73,7 @@ impl WorkspaceManager {
                 path.as_ref().display().to_string(),
             ));
         }
-        let workspace = Workspace::new(&workspace_path)?;
+        let workspace = WorkspaceInstance::new(&workspace_path)?;
         let f = self
             .workspaces
             .iter_mut()

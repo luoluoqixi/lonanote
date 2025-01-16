@@ -21,13 +21,13 @@ pub fn parse_invoke_result(res: CommandResult) -> Result<Option<String>> {
 pub fn init() -> Option<String> {
     match lonanote_core::init() {
         Ok(_) => None,
-        Err(err) => Some(format!("init rust error: {}", err.to_string())),
+        Err(err) => Some(format!("init rust error: {}", err)),
     }
 }
 
 #[napi]
 pub fn invoke(key: String, args: Option<String>) -> Result<Option<String>> {
-    let res = invoke_command(&key.to_string(), CommandContext::from_str(args.as_ref()));
+    let res = invoke_command(&key.to_string(), CommandContext::from_string(args.as_ref()));
     parse_invoke_result(res)
 }
 
@@ -45,7 +45,8 @@ pub fn get_command_len() -> Result<usize> {
 
 #[napi]
 pub async fn invoke_async(key: String, args: Option<String>) -> Result<Option<String>> {
-    let res = invoke_command_async(&key.to_string(), CommandContext::from_str(args.as_ref())).await;
+    let res =
+        invoke_command_async(&key.to_string(), CommandContext::from_string(args.as_ref())).await;
     parse_invoke_result(res)
 }
 

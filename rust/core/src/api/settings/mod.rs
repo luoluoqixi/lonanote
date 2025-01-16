@@ -1,9 +1,9 @@
-mod settings;
+mod settings_api;
 
 use anyhow::Result;
 
 pub fn reg_commands() -> Result<()> {
-    settings::reg_commands()?;
+    settings_api::reg_commands()?;
 
     Ok(())
 }

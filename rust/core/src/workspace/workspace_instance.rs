@@ -9,7 +9,7 @@ use super::{
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Workspace {
+pub struct WorkspaceInstance {
     pub metadata: WorkspaceMetadata,
     pub settings: WorkspaceSettings,
 
@@ -17,7 +17,7 @@ pub struct Workspace {
     pub index: Arc<RwLock<WorkspaceIndex>>,
 }
 
-impl Workspace {
+impl WorkspaceInstance {
     pub fn new(workspace_path: &PathBuf) -> Result<Self, WorkspaceError> {
         create_workspace_config_folder(workspace_path)?;
         Ok(Self {

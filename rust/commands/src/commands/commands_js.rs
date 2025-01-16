@@ -32,7 +32,7 @@ pub fn unreg_command_js(command: &String) -> Result<()> {
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(async {
         let mut commands = COMMANDS_JS.write().await;
-        commands.unreg(&command);
+        commands.unreg(command);
     });
     Ok(())
 }

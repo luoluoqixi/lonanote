@@ -1,7 +1,7 @@
-mod commands;
+mod invoke;
 
 use anyhow::Result;
-use commands::*;
+use invoke::*;
 use tauri::{Builder, Runtime};
 
 pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {

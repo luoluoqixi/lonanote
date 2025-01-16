@@ -1,10 +1,10 @@
 use anyhow::Result;
 
-mod workspace;
-mod workspace_manager;
+mod workspace_instance_api;
+mod workspace_manager_api;
 
 pub fn reg_commands() -> Result<()> {
-    workspace_manager::reg_commands()?;
-    workspace::reg_commands()?;
+    workspace_manager_api::reg_commands()?;
+    workspace_instance_api::reg_commands()?;
     Ok(())
 }

@@ -29,7 +29,7 @@ async fn get_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult
         .get_workspace(&args.path)
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
 
-    Ok(CommandResponse::json(workspace)?)
+    CommandResponse::json(workspace)
 }
 
 async fn set_open_workspace_settings(
@@ -50,7 +50,7 @@ async fn get_open_workspace_settings(Json(args): Json<GetWorkspaceArgs>) -> Comm
         .get_workspace(&args.path)
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
 
-    Ok(CommandResponse::json(&workspace.settings)?)
+    CommandResponse::json(&workspace.settings)
 }
 
 pub fn reg_commands() -> Result<()> {

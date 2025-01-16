@@ -1,5 +1,6 @@
 use std::{collections::HashMap, ops::Deref};
 
+#[derive(Debug, Default)]
 pub struct Commands<K, F> {
     commands: HashMap<K, F>,
 }
@@ -9,7 +10,7 @@ where
 {
     pub fn new() -> Self {
         Self {
-            commands: HashMap::new(),
+            commands: Default::default(),
         }
     }
     pub fn reg(&mut self, command: K, f: F) {
@@ -29,6 +30,9 @@ where
     pub fn len(&self) -> usize {
         self.commands.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.commands.is_empty()
+    }
     pub fn get_keys(&self) -> Vec<String> {
         self.commands
             .keys()
@@ -44,10 +48,10 @@ impl<K, F> Deref for Commands<K, F> {
     }
 }
 
-mod commands;
 mod commands_async;
 mod commands_js;
+mod commands_sync;
 
-pub use commands::*;
 pub use commands_async::*;
 pub use commands_js::*;
+pub use commands_sync::*;
