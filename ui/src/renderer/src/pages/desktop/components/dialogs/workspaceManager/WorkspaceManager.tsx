@@ -30,6 +30,22 @@ export interface WorkspaceManagerStore {
   setIsOpen: (isOpen: boolean) => void;
 }
 
+export const unloadCurrentWorkspace = async () => {
+  const currentWorkspace = getCurrentOpenWorkspace();
+  if (currentWorkspace != null) {
+    try {
+      workspaceManager.unloadWorkspaceByPath(currentWorkspace);
+    } catch (e) {
+      toaster.error({
+        title: '错误',
+        description: `卸载工作区失败: ${(e as Error).message}`,
+        duration: 10000,
+      });
+      return;
+    }
+  }
+};
+
 export const onOpenWorkspace = async () => {
   const selectPath = await dialog.showOpenFolderDialog('选择工作区文件夹');
   if (selectPath && selectPath !== '') {
@@ -37,7 +53,10 @@ export const onOpenWorkspace = async () => {
     try {
       await workspaceManager.openWorkspaceByPath(selectPath);
       const ws = await workspace.getCurrentWorkspace();
-      if (ws) setCurrentWorkspace(ws);
+      if (ws) {
+        await unloadCurrentWorkspace();
+        setCurrentWorkspace(ws);
+      }
       console.log('打开工作区：', ws);
     } catch (e) {
       toaster.error({
@@ -216,19 +235,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     if (index < 0 || workspaces.length < index) return;
     const clickWorkspace = workspaces[index];
     if (!(await checkIsOpenWorkspace(clickWorkspace.path, '已经打开工作区'))) return;
-    const currentWorkspace = getCurrentOpenWorkspace();
-    if (currentWorkspace != null) {
-      try {
-        workspaceManager.unloadWorkspaceByPath(currentWorkspace);
-      } catch (e) {
-        toaster.error({
-          title: '错误',
-          description: `卸载工作区失败: ${(e as Error).message}`,
-          duration: 10000,
-        });
-        return;
-      }
-    }
+    await unloadCurrentWorkspace();
     try {
       await workspaceManager.openWorkspaceByPath(clickWorkspace.path);
       const ws = await workspace.getCurrentWorkspace();
