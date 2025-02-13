@@ -1,3 +1,4 @@
+import { Input } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 
 import { Editable, Heading } from '@/components/ui';
@@ -17,44 +18,6 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
     setWorkspacePath(currentWorkspace?.metadata.rootPath);
   }, [currentWorkspace]);
 
-  // const setWorkspaceNameCommit = async (value: string | null) => {
-  //   if (currentWorkspace == null) return;
-  //   if (value != null && value !== '' && value !== currentWorkspace.metadata.name) {
-  //     try {
-  //       await setCurrentWorkspaceName(value, true);
-  //     } catch (e) {
-  //       console.error(e);
-  //       toaster.error({
-  //         title: '错误',
-  //         description: `修改工作区名字失败: ${(e as Error).message}`,
-  //         duration: 10000,
-  //       });
-  //       setWorkspaceName(currentWorkspace.metadata.name);
-  //     }
-  //   } else {
-  //     setWorkspaceName(currentWorkspace.metadata.name);
-  //   }
-  // };
-
-  // const setWorkspacePathCommit = async (value: string | null) => {
-  //   if (currentWorkspace == null) return;
-  //   if (value != null && value !== '' && value !== currentWorkspace.metadata.rootPath) {
-  //     try {
-  //       await setCurrentWorkspaceRootPath(value, true);
-  //     } catch (e) {
-  //       console.error(e);
-  //       toaster.error({
-  //         title: '错误',
-  //         description: `修改工作区路径失败: ${(e as Error).message}`,
-  //         duration: 10000,
-  //       });
-  //       setWorkspacePath(currentWorkspace.metadata.rootPath);
-  //     }
-  //   } else {
-  //     setWorkspacePath(currentWorkspace.metadata.rootPath);
-  //   }
-  // };
-
   return (
     <div className={styles.workspaceSettings}>
       {currentWorkspace == null ? (
@@ -64,54 +27,32 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
           <div className={styles.rowSettings}>
             <div className={styles.rowSettingsLeft}>名字：</div>
             <div className={styles.rowSettingsRight}>
-              <Editable
+              <Input
+                readOnly
+                size="sm"
+                variant="flushed"
                 spellCheck={false}
-                showEditBtn={false}
-                previewProps={{ pointerEvents: 'none' }}
                 placeholder="工作区名字"
                 value={workspaceName}
-                onValueChange={(e) => {
-                  setWorkspaceName(e.value);
+                onChange={(e) => {
+                  setWorkspaceName(e.target.value);
                 }}
-                // onValueCommit={async (details) => {
-                //   const value = details.value != null ? details.value.trim() : null;
-                //   setWorkspaceNameCommit(value);
-                // }}
               />
             </div>
           </div>
           <div className={styles.rowSettings}>
             <div className={styles.rowSettingsLeft}>路径：</div>
             <div className={styles.rowSettingsRight}>
-              <Editable
+              <Input
+                readOnly
+                size="sm"
+                variant="flushed"
                 spellCheck={false}
-                showEditBtn={false}
-                previewProps={{ pointerEvents: 'none' }}
                 placeholder="工作区路径"
                 value={workspacePath}
-                onValueChange={(e) => {
-                  setWorkspacePath(e.value);
+                onChange={(e) => {
+                  setWorkspacePath(e.target.value);
                 }}
-                // onValueCommit={async (details) => {
-                //   const value = details.value != null ? details.value.trim() : null;
-                //   setWorkspacePathCommit(value);
-                // }}
-                // customRightSlotRender={(edit) =>
-                //   !edit && (
-                //     <IconButton
-                //       variant="ghost"
-                //       size="sm"
-                //       onClick={async () => {
-                //         const selectPath = await dialog.showOpenFolderDialog('选择文件夹');
-                //         if (selectPath && selectPath !== '') {
-                //           setWorkspacePathCommit(selectPath);
-                //         }
-                //       }}
-                //     >
-                //       <IoIosMore />
-                //     </IconButton>
-                //   )
-                // }
               />
             </div>
           </div>
