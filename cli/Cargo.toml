@@ -13,7 +13,7 @@ license = ""
 
 [workspace.dependencies]
 anyhow = "1.0.95"
-log = "0.4.24"
+log = "0.4.25"
 fern = "0.7.1"
 chrono = "0.4.39"
 image = "0.25.5"

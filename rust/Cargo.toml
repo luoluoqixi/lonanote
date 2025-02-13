@@ -11,11 +11,11 @@ license = ""
 
 [workspace.dependencies]
 serde = "1.0.217"
-serde_json = "1.0.135"
+serde_json = "1.0.138"
 tokio = { version = "1.43.0", features = ["full"] }
-async-trait = "0.1.85"
+async-trait = "0.1.86"
 anyhow = "1.0.95"
-log = "0.4.24"
+log = "0.4.25"
 thiserror = "2.0.11"
 notify = "8.0.0"
 ignore = "0.4.23"

@@ -30,11 +30,11 @@ tokio = { workspace = true }
 lonanote-core = { path = "../core" }
 
 # tauri
-tauri = { version = "2.2.1", features = ["config-toml", "protocol-asset"] }
-specta = { version = "=2.0.0-rc.21" }
-tauri-plugin-clipboard-manager = { version = "2.2.0" }
+tauri = { version = "2.2.5", features = ["config-toml", "protocol-asset"] }
+specta = { version = "=2.0.0-rc.22" }
+tauri-plugin-clipboard-manager = { version = "2.2.1" }
 tauri-plugin-fs = { version = "2.2.0" }
-tauri-plugin-log = { version = "2.2.0" }
+tauri-plugin-log = { version = "2.2.1" }
 tauri-plugin-os = { version = "2.2.0" }
 tauri-plugin-dialog = { version = "2.2.0" }
 tauri-plugin-shell = { version = "2.2.0" }
