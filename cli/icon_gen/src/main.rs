@@ -7,7 +7,11 @@ use image::{
     EncodableLayout, ExtendedColorType, Rgba, RgbaImage,
 };
 use log::{error, info};
-use std::{io::BufWriter, path::PathBuf, sync::LazyLock};
+use std::{
+    io::BufWriter,
+    path::{Path, PathBuf},
+    sync::LazyLock,
+};
 
 static CURRENT_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
     std::env::current_dir()
@@ -163,9 +167,9 @@ static IOS_CONF: LazyLock<Vec<IOSConf>> = LazyLock::new(|| {
 });
 
 fn process_image(
-    image_path: &PathBuf,
-    output_path: &PathBuf,
-    mask_path: Option<&PathBuf>,
+    image_path: &Path,
+    output_path: &Path,
+    mask_path: Option<&Path>,
     blank_size: Option<u32>,
     resize: Option<(u32, u32)>,
     prefix: Option<&String>,
@@ -195,13 +199,13 @@ fn process_image(
     Ok(())
 }
 
-fn save_img(img: &RgbaImage, file_path: &PathBuf) -> Result<()> {
+fn save_img(img: &RgbaImage, file_path: &Path) -> Result<()> {
     let parent_dir = file_path
         .parent()
-        .expect(format!("notfound path parent: {}", file_path.to_str().unwrap()).as_str());
+        .unwrap_or_else(|| panic!("notfound path parent: {}", file_path.to_str().unwrap()));
     if !parent_dir.exists() {
         std::fs::create_dir_all(parent_dir)
-            .expect(format!("create dir error: {}", parent_dir.to_str().unwrap()).as_str());
+            .unwrap_or_else(|_| panic!("create dir error: {}", parent_dir.to_str().unwrap()));
     }
     let file = std::fs::File::create(file_path)?;
     let writer = BufWriter::new(file);
@@ -275,7 +279,7 @@ fn add_blank(img: &RgbaImage, blank_size: u32) -> RgbaImage {
     let (width, height) = img.dimensions();
     let new_width = width - 2 * blank_size;
     let new_height = height - 2 * blank_size;
-    if new_width <= 0 || new_height <= 0 {
+    if new_width == 0 || new_height == 0 {
         panic!("Blank size is too large for the image dimensions.");
     }
     let resized_img = image::imageops::resize(
@@ -295,9 +299,9 @@ fn add_blank(img: &RgbaImage, blank_size: u32) -> RgbaImage {
 }
 
 fn process_android(
-    image_path: &PathBuf,
-    android_path: &PathBuf,
-    mask_path: Option<&PathBuf>,
+    image_path: &Path,
+    android_path: &Path,
+    mask_path: Option<&Path>,
     blank_size: Option<u32>,
 ) -> Result<()> {
     let res_path = android_path.join("app/src/main/res");
@@ -305,8 +309,9 @@ fn process_android(
         let folder_name = format!("mipmap-{}/", &conf.name);
         let out_folder = res_path.join(&folder_name);
         if !out_folder.exists() {
-            std::fs::create_dir_all(&out_folder)
-                .expect(format!("create folder error: {}", out_folder.to_str().unwrap()).as_str());
+            std::fs::create_dir_all(&out_folder).unwrap_or_else(|_| {
+                panic!("create folder error: {}", out_folder.to_str().unwrap())
+            });
         }
         let file_name = "ic_launcher_foreground.png";
         let output_path = out_folder.join(file_name);
@@ -344,15 +349,15 @@ fn process_android(
 }
 
 fn process_ios(
-    image_path: &PathBuf,
-    ios_path: &PathBuf,
-    mask_path: Option<&PathBuf>,
+    image_path: &Path,
+    ios_path: &Path,
+    mask_path: Option<&Path>,
     blank_size: Option<u32>,
 ) -> Result<()> {
     let icon_path = ios_path.join("Assets.xcassets/AppIcon.appiconset");
     if !icon_path.exists() {
         std::fs::create_dir_all(&icon_path)
-            .expect(format!("create dir error: {}", icon_path.to_str().unwrap()).as_str());
+            .unwrap_or_else(|_| panic!("create dir error: {}", icon_path.to_str().unwrap()));
     }
     for conf in IOS_CONF.iter() {
         let size_str = if (conf.size - 512.0).abs() < 0.01 {
@@ -374,7 +379,7 @@ fn process_ios(
             )?;
         }
         for multiplier in conf.multipliers.iter() {
-            let size = (&conf.size * (*multiplier as f32)).round() as u32;
+            let size = (conf.size * (*multiplier as f32)).round() as u32;
             let file_name = format!("AppIcon-{}@{}x.png", size_str, multiplier);
             let output_path = icon_path.join(file_name);
             process_image(
@@ -409,7 +414,7 @@ fn _main() -> Result<()> {
     process_image(
         input_path,
         res_path,
-        default_mask.as_ref(),
+        default_mask.as_deref(),
         None,
         None,
         None,
@@ -418,7 +423,7 @@ fn _main() -> Result<()> {
     process_image(
         input_path,
         windows_path,
-        default_mask.as_ref(),
+        default_mask.as_deref(),
         None,
         None,
         None,
@@ -427,7 +432,7 @@ fn _main() -> Result<()> {
     process_image(
         input_path,
         mac_path,
-        default_mask.as_ref(),
+        default_mask.as_deref(),
         Some(100),
         Some((1024, 1024)),
         None,
@@ -436,7 +441,7 @@ fn _main() -> Result<()> {
     process_image(
         input_path,
         linux_path,
-        default_mask.as_ref(),
+        default_mask.as_deref(),
         None,
         None,
         None,
@@ -445,13 +450,13 @@ fn _main() -> Result<()> {
     process_image(
         input_path,
         web_path,
-        default_mask.as_ref(),
+        default_mask.as_deref(),
         None,
         None,
         None,
     )?;
     // android
-    process_android(input_path, android_path, default_mask.as_ref(), None)?;
+    process_android(input_path, android_path, default_mask.as_deref(), None)?;
     // ios
     process_ios(input_path, ios_path, None, None)?;
 
