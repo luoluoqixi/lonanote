@@ -1,4 +1,5 @@
-import { Box } from '@chakra-ui/react';
+import { Box, Span } from '@chakra-ui/react';
+import dayjs from 'dayjs';
 import React, { RefObject, useRef, useState } from 'react';
 import { IoMdMore } from 'react-icons/io';
 import { create } from 'zustand';
@@ -22,10 +23,16 @@ export const useWorkspaceManagerState = create<WorkspaceManagerStore>((set) => (
   setIsOpen: (isOpen) => set({ isOpen }),
 }));
 
+const getSortWorkspace = (workspaces: WorkspaceMetadata[]) => {
+  return workspaces.slice().sort((a, b) => b.lastOpenTime - a.lastOpenTime);
+};
+
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
   const contentRef = useRef<HTMLDivElement>(null);
   const state = useWorkspaceManagerState();
-  const workspaces = workspaceController.useWorkspace((s) => s.workspaces);
+  const workspacesOrigin = workspaceController.useWorkspace((s) => s.workspaces);
+  const workspaces = getSortWorkspace(workspacesOrigin);
+
   const [workspacesName, setWorkspacesName] = useState(workspaces.map((v) => v.name));
   const [workspacesPath, setWorkspacesPath] = useState(workspaces.map((v) => v.rootPath));
   const [workspacesEdit, setWorkspacesEdit] = useState(workspaces.map(() => false));
@@ -40,8 +47,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     setWorkspacesEdit(workspaces.map(() => false));
   };
   const fetchAndUpdateWorkspaceData = async () => {
-    const workspaces = await workspaceController.updateWorkspaces();
-    console.log(workspaces);
+    const workspacesOrigin = await workspaceController.updateWorkspaces();
+    const workspaces = getSortWorkspace(workspacesOrigin);
     updateWorkspacesData(workspaces);
   };
 
@@ -51,7 +58,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     }
   }, [state.isOpen]);
 
-  useEffect(() => updateWorkspacesData(workspaces), [workspaces]);
+  useEffect(() => updateWorkspacesData(workspaces), [workspacesOrigin]);
 
   const setWorkspaceName = (index: number, val: string) => {
     const newWorkspacesName = [...workspacesName];
@@ -206,6 +213,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                   const isEdit = workspacesEdit.length > i ? workspacesEdit[i] : false;
                   const name = workspacesName.length > i ? workspacesName[i] : '';
                   const path = workspacesPath.length > i ? workspacesPath[i] : '';
+                  const lastOpenTime = dayjs(workspace.lastOpenTime * 1000);
                   return (
                     <Box
                       key={i}
@@ -244,6 +252,11 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                               setWorkspaceNameCommit(i, value);
                             }}
                           />
+                          <div className={styles.workspaceLastOpenTime}>
+                            <Span color="fg.muted">
+                              {lastOpenTime.format('YYYY-MM-DD HH:mm:ss')}
+                            </Span>
+                          </div>
                         </div>
                         <div className={styles.workspacePath}>{path}</div>
                       </div>

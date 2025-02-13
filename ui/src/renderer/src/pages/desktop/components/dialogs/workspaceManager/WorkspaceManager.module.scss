@@ -28,6 +28,7 @@
 .workspaceRowLeft {
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
 }
 
 .workspaceRowRight {
@@ -40,6 +41,16 @@
   margin: 0;
   padding: 0;
   height: 30px;
+  width: 100%;
+
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+}
+
+.workspaceLastOpenTime {
+  width: 180px;
+  font-size: 12px;
 }
 
 .workspacePath {
