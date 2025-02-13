@@ -52,6 +52,9 @@ export const workspaceManager = {
   setWorkspaceName: async (path: string, newName: string, isMove: boolean) => {
     return (await invokeAsync('set_workspace_name', { path, newName, isMove }))!;
   },
+  removeWorkspace: async (path: string) => {
+    return (await invokeAsync('remove_workspace', { path }))!;
+  },
   getWorkspacesMetadata: async (): Promise<WorkspaceMetadata[]> => {
     return (await invokeAsync('get_workspaces_metadata'))!;
   },
@@ -64,12 +67,20 @@ export const workspaceManager = {
     }
     await invokeAsync('open_workspace_by_path', { path });
     await setCurrentWorkspace(path);
+    console.info('open workspace:', currentWorkspace);
   },
   unloadWorkspaceByPath: async (path: string): Promise<void> => {
     await invokeAsync('unload_workspace_by_path', { path });
     await setCurrentWorkspace(null);
+    console.info('unload workspace:', path);
   },
   getLastWorkspace: async (): Promise<string | null> => {
     return (await invokeAsync('get_last_workspace'))!;
+  },
+  checkWorkspacePathExist: async (workspacePath: string): Promise<boolean | null> => {
+    return (await invokeAsync('check_workspace_path_exist', { workspacePath }))!;
+  },
+  checkWorkspacePathLegal: async (workspacePath: string): Promise<boolean | null> => {
+    return (await invokeAsync('check_workspace_path_legal', { workspacePath }))!;
   },
 };

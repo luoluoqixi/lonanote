@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 
 import { Editable, Heading } from '@/components/ui';
-import { useWorkspace } from '@/controller/workspace';
+import { workspaceController } from '@/controller/workspace';
 
 import { BaseSettingsPanelProps } from '../Settings';
 import styles from '../Settings.module.scss';
 
 export interface WorkspaceSettingsProps extends BaseSettingsPanelProps {}
 export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
-  const currentWorkspace = useWorkspace((s) => s.currentWorkspace);
+  const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   const [workspaceName, setWorkspaceName] = useState(currentWorkspace?.metadata.name);
   const [workspacePath, setWorkspacePath] = useState(currentWorkspace?.metadata.rootPath);
 

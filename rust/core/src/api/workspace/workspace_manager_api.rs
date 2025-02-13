@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 
 use crate::{
@@ -45,6 +47,19 @@ async fn set_workspace_name(Json(args): Json<SetWorkspaceNameArgs>) -> CommandRe
     Ok(CommandResponse::None)
 }
 
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RemoveWorkspaceArgs {
+    pub path: String,
+}
+
+async fn remove_workspace(Json(args): Json<RemoveWorkspaceArgs>) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    workspace_manager.remove_workspace(args.path).await?;
+
+    Ok(CommandResponse::None)
+}
+
 async fn get_workspaces_metadata() -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspaces = workspace_manager.get_workspaces_metadata();
@@ -79,16 +94,34 @@ async fn get_last_workspace() -> CommandResult {
     } else {
         let workspace_manager = get_workspace_manager().await;
 
-        Ok(CommandResponse::json(&workspace_manager.last_workspace)?)
+        CommandResponse::json(&workspace_manager.last_workspace)
     }
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CheckWorkspacePathArgs {
+    pub workspace_path: String,
+}
+async fn check_workspace_path_exist(Json(args): Json<CheckWorkspacePathArgs>) -> CommandResult {
+    let path = PathBuf::from(args.workspace_path);
+    let exists = path.exists() && path.is_dir();
+    CommandResponse::json(exists)
+}
+async fn check_workspace_path_legal(Json(args): Json<CheckWorkspacePathArgs>) -> CommandResult {
+    let legal = !args.workspace_path.is_empty();
+    CommandResponse::json(legal)
 }
 
 pub fn reg_commands() -> Result<()> {
     reg_command_async("set_workspace_root_path", set_workspace_root_path)?;
     reg_command_async("set_workspace_name", set_workspace_name)?;
+    reg_command_async("remove_workspace", remove_workspace)?;
     reg_command_async("get_workspaces_metadata", get_workspaces_metadata)?;
     reg_command_async("open_workspace_by_path", open_workspace_by_path)?;
     reg_command_async("unload_workspace_by_path", unload_workspace_by_path)?;
     reg_command_async("get_last_workspace", get_last_workspace)?;
+    reg_command_async("check_workspace_path_exist", check_workspace_path_exist)?;
+    reg_command_async("check_workspace_path_legal", check_workspace_path_legal)?;
     Ok(())
 }

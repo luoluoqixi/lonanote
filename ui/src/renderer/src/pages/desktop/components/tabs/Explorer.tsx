@@ -2,27 +2,12 @@ import React from 'react';
 
 import { Workspace, dialog, workspace, workspaceManager } from '@/bindings/api';
 import { Button, Heading, toaster } from '@/components/ui';
-import { setCurrentWorkspace, useWorkspace } from '@/controller/workspace';
+import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 
 import styles from './Explorer.module.scss';
 
 const onOpenWorkspace = async () => {
-  const selectPath = await dialog.showOpenFolderDialog('选择工作区文件夹');
-  if (selectPath && selectPath !== '') {
-    console.log('选择文件夹：', selectPath);
-    try {
-      await workspaceManager.openWorkspaceByPath(selectPath);
-      const ws = await workspace.getCurrentWorkspace();
-      if (ws) setCurrentWorkspace(ws);
-      console.log('打开工作区：', ws);
-    } catch (e) {
-      toaster.error({
-        title: '错误',
-        description: `打开工作区失败: ${(e as Error).message}`,
-        duration: 10000,
-      });
-    }
-  }
+  await workspaceManagerController.selectOpenWorkspace();
 };
 
 const NoWorkspace = () => {
@@ -52,7 +37,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
 interface ExplorerProps {}
 
 const Explorer: React.FC<ExplorerProps> = () => {
-  const currentWorkspace = useWorkspace((s) => s.currentWorkspace);
+  const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   return (
     <div className={styles.explorer}>
       {currentWorkspace == null ? (

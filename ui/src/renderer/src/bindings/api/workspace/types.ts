@@ -2,6 +2,7 @@ export interface WorkspaceMetadata {
   name: string;
   path: string;
   rootPath: string;
+  lastOpenTime: number;
 }
 
 export interface WorkspaceSettings {}

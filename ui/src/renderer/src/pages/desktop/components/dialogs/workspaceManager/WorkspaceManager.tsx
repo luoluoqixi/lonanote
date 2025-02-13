@@ -3,22 +3,9 @@ import React, { RefObject, useRef, useState } from 'react';
 import { IoMdMore } from 'react-icons/io';
 import { create } from 'zustand';
 
-import {
-  WorkspaceMetadata,
-  dialog,
-  formatPath,
-  getCurrentOpenWorkspace,
-  workspace,
-  workspaceManager,
-} from '@/bindings/api';
+import { WorkspaceMetadata, dialog } from '@/bindings/api';
 import { Button, Dialog, Editable, Heading, IconButton, Menu, toaster } from '@/components/ui';
-import {
-  setCurrentWorkspace,
-  setWorkspaceName as setWorkspaceNameApi,
-  setWorkspaceRootPath as setWorkspaceRootPathApi,
-  updateWorkspaces,
-  useWorkspace,
-} from '@/controller/workspace';
+import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
 
 import styles from './WorkspaceManager.module.scss';
@@ -30,76 +17,15 @@ export interface WorkspaceManagerStore {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-export const unloadCurrentWorkspace = async () => {
-  const currentWorkspace = getCurrentOpenWorkspace();
-  if (currentWorkspace != null) {
-    try {
-      workspaceManager.unloadWorkspaceByPath(currentWorkspace);
-    } catch (e) {
-      toaster.error({
-        title: '错误',
-        description: `卸载工作区失败: ${(e as Error).message}`,
-        duration: 10000,
-      });
-      return;
-    }
-  }
-};
-
-export const onOpenWorkspace = async () => {
-  const selectPath = await dialog.showOpenFolderDialog('选择工作区文件夹');
-  if (selectPath && selectPath !== '') {
-    console.log('选择文件夹：', selectPath);
-    try {
-      await workspaceManager.openWorkspaceByPath(selectPath);
-      const ws = await workspace.getCurrentWorkspace();
-      if (ws) {
-        await unloadCurrentWorkspace();
-        setCurrentWorkspace(ws);
-      }
-      console.log('打开工作区：', ws);
-    } catch (e) {
-      toaster.error({
-        title: '错误',
-        description: `打开工作区失败: ${(e as Error).message}`,
-        duration: 10000,
-      });
-    }
-  }
-};
-
 export const useWorkspaceManagerState = create<WorkspaceManagerStore>((set) => ({
   isOpen: false,
   setIsOpen: (isOpen) => set({ isOpen }),
 }));
 
-const checkIsOpenWorkspace = async (workspacePath: string, errorText: string) => {
-  const path = formatPath(workspacePath);
-  let isOpen = false;
-  if (window.api) {
-    const openWorkspaces = await window.api.workspace.getCurrentWorkspaces();
-    isOpen = openWorkspaces.findIndex((v) => v === path) >= 0;
-  } else {
-    const currentWorkspace = getCurrentOpenWorkspace();
-    if (currentWorkspace && currentWorkspace === path) {
-      isOpen = true;
-    }
-  }
-  if (isOpen) {
-    toaster.error({
-      title: '错误',
-      description: `${errorText}: ${workspacePath}`,
-      duration: 10000,
-    });
-    return false;
-  }
-  return true;
-};
-
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
   const contentRef = useRef<HTMLDivElement>(null);
   const state = useWorkspaceManagerState();
-  const workspaces = useWorkspace((s) => s.workspaces);
+  const workspaces = workspaceController.useWorkspace((s) => s.workspaces);
   const [workspacesName, setWorkspacesName] = useState(workspaces.map((v) => v.name));
   const [workspacesPath, setWorkspacesPath] = useState(workspaces.map((v) => v.rootPath));
   const [workspacesEdit, setWorkspacesEdit] = useState(workspaces.map(() => false));
@@ -114,7 +40,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     setWorkspacesEdit(workspaces.map(() => false));
   };
   const fetchAndUpdateWorkspaceData = async () => {
-    const workspaces = await updateWorkspaces();
+    const workspaces = await workspaceController.updateWorkspaces();
+    console.log(workspaces);
     updateWorkspacesData(workspaces);
   };
 
@@ -166,20 +93,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
   const setWorkspaceNameCommit = async (index: number, value: string | null) => {
     if (index < 0 || workspaces.length < index) return;
     const workspace = workspaces[index];
-    if (value != null && value !== '' && value !== workspace.name) {
-      try {
-        await setWorkspaceNameApi(workspace.path, value, true);
-        await fetchAndUpdateWorkspaceData();
-        toaster.success({ title: '成功', description: `成功修改工作区名字为: ${value}` });
-      } catch (e) {
-        console.error(e);
-        toaster.error({
-          title: '错误',
-          description: `修改工作区名字失败: ${(e as Error).message}`,
-          duration: 10000,
-        });
-        setWorkspaceName(index, workspace.name);
-      }
+    if (await workspaceManagerController.chanWorkspaceName(workspace, value)) {
+      await fetchAndUpdateWorkspaceData();
     } else {
       setWorkspaceName(index, workspace.name);
     }
@@ -188,20 +103,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
   const setWorkspacePathCommit = async (index: number, value: string | null) => {
     if (index < 0 || workspaces.length < index) return;
     const workspace = workspaces[index];
-    if (value != null && value !== '' && value !== workspace.rootPath) {
-      try {
-        await setWorkspaceRootPathApi(workspace.path, value, true);
-        await fetchAndUpdateWorkspaceData();
-        toaster.success({ title: '成功', description: `成功修改工作区路径为: ${value}` });
-      } catch (e) {
-        console.error(e);
-        toaster.error({
-          title: '错误',
-          description: `修改工作区路径失败: ${(e as Error).message}`,
-          duration: 10000,
-        });
-        setWorkspacePath(index, workspace.rootPath);
-      }
+    if (await workspaceManagerController.changeWorkspaceRootPath(workspace, value)) {
+      await fetchAndUpdateWorkspaceData();
     } else {
       setWorkspacePath(index, workspace.rootPath);
     }
@@ -218,37 +121,60 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
   const renameClick = async () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
     const clickWorkspace = workspaces[currentMenuIndex];
-    if (!(await checkIsOpenWorkspace(clickWorkspace.path, '不能重命名已打开的工作区'))) return;
+    if (
+      !(await workspaceManagerController.isOpenWorkspace(
+        clickWorkspace.path,
+        '不能重命名已打开的工作区',
+      ))
+    ) {
+      return;
+    }
     setWorkspaceEdit(currentMenuIndex, true);
   };
   const changePathClick = async () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
     const clickWorkspace = workspaces[currentMenuIndex];
-    if (!(await checkIsOpenWorkspace(clickWorkspace.path, '不能改变已打开工作区的路径'))) return;
+    if (
+      !(await workspaceManagerController.isOpenWorkspace(
+        clickWorkspace.path,
+        '不能改变已打开工作区的路径',
+      ))
+    ) {
+      return;
+    }
     const selectPath = await dialog.showOpenFolderDialog('选择文件夹');
     if (selectPath && selectPath !== '') {
       setWorkspacePathCommit(currentMenuIndex, selectPath);
     }
   };
 
+  const removeWorkspaceClick = async () => {
+    if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
+    const clickWorkspace = workspaces[currentMenuIndex];
+    if (
+      !(await workspaceManagerController.isOpenWorkspace(
+        clickWorkspace.path,
+        '不能移除已打开的工作区',
+      ))
+    ) {
+      return;
+    }
+    if (await workspaceManagerController.removeWorkspace(clickWorkspace.path)) {
+      await fetchAndUpdateWorkspaceData();
+    }
+  };
+
   const openWorkspaceClick = async (index: number) => {
     if (index < 0 || workspaces.length < index) return;
     const clickWorkspace = workspaces[index];
-    if (!(await checkIsOpenWorkspace(clickWorkspace.path, '已经打开工作区'))) return;
-    await unloadCurrentWorkspace();
-    try {
-      await workspaceManager.openWorkspaceByPath(clickWorkspace.path);
-      const ws = await workspace.getCurrentWorkspace();
-      if (ws) setCurrentWorkspace(ws);
-    } catch (e) {
-      toaster.error({
-        title: '错误',
-        description: `打开工作区失败: ${(e as Error).message}`,
-        duration: 10000,
-      });
-      return;
+    if (await workspaceManagerController.openWorkspace(clickWorkspace.path)) {
+      state.setIsOpen(false);
     }
-    state.setIsOpen(false);
+  };
+  const onOpenWorkspace = async () => {
+    if (await workspaceManagerController.selectOpenWorkspace()) {
+      state.setIsOpen(false);
+    }
   };
 
   return (
@@ -359,6 +285,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                     </Menu.Item>
                     <Menu.Item value="change-path" onClick={changePathClick}>
                       修改路径
+                    </Menu.Item>
+                    <Menu.Item value="remove" onClick={removeWorkspaceClick}>
+                      移除工作区
                     </Menu.Item>
                   </Menu.Content>
                 </Menu.Root>

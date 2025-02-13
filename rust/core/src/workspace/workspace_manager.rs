@@ -106,6 +106,18 @@ impl WorkspaceManager {
         &self.workspaces
     }
 
+    pub async fn remove_workspace(&mut self, path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
+        if self.open_workspaces.contains_key(path.as_ref()) {
+            return Err(WorkspaceError::RemoveAlreadyOpenWorkspace(
+                path.as_ref().display().to_string(),
+            ));
+        }
+        if let Some(index) = self.workspaces.iter().position(|w| w.path == path.as_ref()) {
+            self.workspaces.remove(index);
+        }
+        Ok(())
+    }
+
     pub async fn set_workspace_name(
         &mut self,
         path: impl AsRef<Path>,
