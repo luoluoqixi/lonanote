@@ -5,6 +5,7 @@ pub mod workspace_index;
 pub mod workspace_instance;
 pub mod workspace_manager;
 pub mod workspace_metadata;
+pub mod workspace_savedata;
 pub mod workspace_settings;
 
 use std::sync::{Arc, LazyLock};

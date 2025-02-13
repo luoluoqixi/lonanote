@@ -27,6 +27,16 @@ impl WorkspaceInstance {
         })
     }
 
+    pub async fn start_indexing(&self) {
+        let mut index = self.index.write().await;
+        index.start_indexing();
+    }
+
+    pub async fn stop_indexing(&self) {
+        let mut index = self.index.write().await;
+        index.stop_indexing();
+    }
+
     pub async fn set_settings(
         &mut self,
         settings: WorkspaceSettings,
@@ -40,7 +50,6 @@ impl WorkspaceInstance {
 
     pub async fn save(&self) -> Result<(), WorkspaceError> {
         self.settings.save().await?;
-        self.index.read().await.save().await?;
 
         Ok(())
     }

@@ -11,6 +11,7 @@ use crate::utils::fs_utils;
 use super::{
     config::get_workspace_global_config_path, error::WorkspaceError,
     workspace_instance::WorkspaceInstance, workspace_metadata::WorkspaceMetadata,
+    workspace_savedata::WorkspaceSaveData,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,6 +19,7 @@ use super::{
 pub struct WorkspaceManager {
     pub last_workspace: Option<PathBuf>,
     pub workspaces: Vec<WorkspaceMetadata>,
+    pub workspaces_savedata: HashMap<PathBuf, WorkspaceSaveData>,
 
     #[serde(skip)]
     pub open_workspaces: HashMap<PathBuf, WorkspaceInstance>,
@@ -44,6 +46,7 @@ impl WorkspaceManager {
             open_workspaces: HashMap::new(),
             last_workspace: None,
             workspaces: Vec::new(),
+            workspaces_savedata: HashMap::new(),
         }
     }
 
@@ -83,6 +86,10 @@ impl WorkspaceManager {
         } else {
             self.workspaces.push(workspace.metadata.clone());
         }
+        if !self.workspaces_savedata.contains_key(&workspace_path) {
+            self.workspaces_savedata
+                .insert(workspace_path.to_path_buf(), WorkspaceSaveData::new());
+        }
         self.last_workspace = Some(workspace.metadata.path.clone());
         // println!("open workspace: {:?}", &self.last_workspace);
         self.open_workspaces
@@ -106,6 +113,42 @@ impl WorkspaceManager {
         &self.workspaces
     }
 
+    pub fn set_workspace_savedata(
+        &mut self,
+        path: impl AsRef<Path>,
+        savedata: WorkspaceSaveData,
+    ) -> Result<(), WorkspaceError> {
+        if !self.workspaces_savedata.contains_key(path.as_ref()) {
+            if !self.workspaces.iter().any(|w| w.path == path.as_ref()) {
+                return Err(WorkspaceError::NotFoundWorkspace(
+                    path.as_ref().display().to_string(),
+                ));
+            }
+            self.workspaces_savedata
+                .insert(path.as_ref().to_path_buf(), WorkspaceSaveData::new());
+        }
+        self.workspaces_savedata
+            .insert(path.as_ref().to_path_buf(), savedata);
+
+        self.save()?;
+        Ok(())
+    }
+
+    pub fn get_workspace_savedata(
+        &self,
+        path: impl AsRef<Path>,
+    ) -> Result<Option<&WorkspaceSaveData>, WorkspaceError> {
+        if !self.workspaces_savedata.contains_key(path.as_ref()) {
+            if !self.workspaces.iter().any(|w| w.path == path.as_ref()) {
+                return Err(WorkspaceError::NotFoundWorkspace(
+                    path.as_ref().display().to_string(),
+                ));
+            }
+            return Ok(None);
+        }
+        Ok(Some(self.workspaces_savedata.get(path.as_ref()).unwrap()))
+    }
+
     pub async fn remove_workspace(&mut self, path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
         if self.open_workspaces.contains_key(path.as_ref()) {
             return Err(WorkspaceError::RemoveAlreadyOpenWorkspace(
@@ -114,7 +157,12 @@ impl WorkspaceManager {
         }
         if let Some(index) = self.workspaces.iter().position(|w| w.path == path.as_ref()) {
             self.workspaces.remove(index);
+            if self.workspaces_savedata.contains_key(path.as_ref()) {
+                self.workspaces_savedata.remove(path.as_ref());
+            }
         }
+
+        self.save()?;
         Ok(())
     }
 

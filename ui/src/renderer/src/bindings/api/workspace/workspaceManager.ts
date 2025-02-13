@@ -1,6 +1,6 @@
 import { invokeAsync, isElectron, isTauri } from '@/bindings/core';
 
-import { WorkspaceMetadata } from './types';
+import { WorkspaceMetadata, WorkspaceSaveData } from './types';
 import { workspace } from './workspace';
 
 let currentWorkspace: string | null = null;
@@ -82,5 +82,11 @@ export const workspaceManager = {
   },
   checkWorkspacePathLegal: async (workspacePath: string): Promise<boolean | null> => {
     return (await invokeAsync('check_workspace_path_legal', { workspacePath }))!;
+  },
+  getWorkspaceSavedata: async (workspacePath: string): Promise<WorkspaceSaveData> => {
+    return (await invokeAsync('get_workspace_savedata', { workspacePath }))!;
+  },
+  setWorkspaceSavedata: async (workspacePath: string, data: WorkspaceSaveData): Promise<void> => {
+    return (await invokeAsync('set_workspace_savedata', { workspacePath, data }))!;
   },
 };

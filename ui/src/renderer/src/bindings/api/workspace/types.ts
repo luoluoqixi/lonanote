@@ -7,6 +7,10 @@ export interface WorkspaceMetadata {
 
 export interface WorkspaceSettings {}
 
+export interface WorkspaceSaveData {
+  lastOpenFilePath: string;
+}
+
 export interface Workspace {
   metadata: WorkspaceMetadata;
   settings: WorkspaceSettings;

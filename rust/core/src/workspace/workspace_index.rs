@@ -4,11 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::{
-    config::{from_json_config, get_indexing, save_json_config, WORKSPACE_INDEX_FILE},
-    error::WorkspaceError,
-    file_metadata::FileMetadata,
-};
+use super::{error::WorkspaceError, file_metadata::FileMetadata};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -17,28 +13,25 @@ pub struct WorkspaceIndex {
 
     #[serde(skip)]
     pub workspace_path: PathBuf,
+    #[serde(skip)]
+    pub indexing: bool,
 }
 
 impl WorkspaceIndex {
     pub fn new(workspace_path: impl AsRef<Path>) -> Result<Self, WorkspaceError> {
-        let config = from_json_config::<Self>(&workspace_path, WORKSPACE_INDEX_FILE)?;
-        if let Some(mut config) = config {
-            config.workspace_path = workspace_path.as_ref().to_path_buf();
-            Ok(config)
-        } else {
-            Ok(Self {
-                files: HashMap::new(),
-                workspace_path: workspace_path.as_ref().to_path_buf(),
-            })
-        }
+        Ok(Self {
+            files: HashMap::new(),
+            workspace_path: workspace_path.as_ref().to_path_buf(),
+            indexing: false,
+        })
     }
 
-    pub async fn save(&self) -> Result<(), WorkspaceError> {
-        if get_indexing().await {
-            return Ok(());
-        }
-        save_json_config(&self.workspace_path, WORKSPACE_INDEX_FILE, self)?;
+    pub fn start_indexing(&mut self) {
+        self.indexing = true;
+        log::debug!("start_indexing: {}", self.workspace_path.display());
+    }
 
-        Ok(())
+    pub fn stop_indexing(&mut self) {
+        self.indexing = false;
     }
 }
