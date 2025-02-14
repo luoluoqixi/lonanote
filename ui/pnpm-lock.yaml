@@ -111,6 +111,9 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.0.0
+      react-complex-tree:
+        specifier: ^2.4.6
+        version: 2.4.6(react@19.0.0)
       react-dom:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
@@ -2907,6 +2910,11 @@ packages:
   quick-lru@5.1.1:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
     engines: {node: '>=10'}
+
+  react-complex-tree@2.4.6:
+    resolution: {integrity: sha512-Akt55R8sI2r66ngxwU7lSgh0YxoBsQHjaVnLzRVCL3Xe+7vbrYfkRpdCK9i/Awga2vYkkdAh9z8etnO3PF/lAg==}
+    peerDependencies:
+      react: '>=16.0.0'
 
   react-dom@19.0.0:
     resolution: {integrity: sha512-4GV5sHFG0e/0AD4X+ySy6UJd3jVl1iNsNHdpad0qhABJ11twS3TTBnseqsKurKcsNqCEFeGL3uLpVChpIO3QfQ==}
@@ -7010,6 +7018,10 @@ snapshots:
   queue-microtask@1.2.3: {}
 
   quick-lru@5.1.1: {}
+
+  react-complex-tree@2.4.6(react@19.0.0):
+    dependencies:
+      react: 19.0.0
 
   react-dom@19.0.0(react@19.0.0):
     dependencies:
