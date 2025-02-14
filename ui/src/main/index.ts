@@ -8,6 +8,7 @@ const gotTheLock = app.requestSingleInstanceLock();
 const main = () => {
   init();
   setupApp();
+  console.log('process pid: ', process.pid);
 };
 
 if (!gotTheLock) {

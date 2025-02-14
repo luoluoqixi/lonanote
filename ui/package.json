@@ -13,7 +13,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
     "start": "electron-vite preview",
-    "dev": "pnpm run build:rust:node && electron-vite dev",
+    "dev": "pnpm run build:rust:node:debug && electron-vite dev",
     "dev:web": "vite --force",
     "dev:android": "pnpm tauri:cmd android dev --open",
     "dev:ios": "pnpm tauri:cmd ios dev --open --host",
@@ -27,6 +27,7 @@
     "build:mac": "pnpm run build && electron-builder --mac",
     "build:linux": "pnpm run build && electron-builder --linux",
     "build:rust:node": "pnpm -C ../rust/node build",
+    "build:rust:node:debug": "pnpm -C ../rust/node build:debug",
     "tauri:cmd": "env-cmd -f scripts/env/tauri.env -- tauri"
   },
   "dependencies": {

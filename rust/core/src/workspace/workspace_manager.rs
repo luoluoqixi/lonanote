@@ -205,7 +205,7 @@ impl WorkspaceManager {
         is_move: bool,
     ) -> Result<(), WorkspaceError> {
         if self.open_workspaces.contains_key(path.as_ref()) {
-            return Err(WorkspaceError::AlreadyExistWorkspace(
+            return Err(WorkspaceError::AlreadyExistOpenWorkspace(
                 path.as_ref().display().to_string(),
             ));
         }

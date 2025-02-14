@@ -13,6 +13,9 @@
       "runtimeArgs": ["--sourcemap"],
       "env": {
         "REMOTE_DEBUGGING_PORT": "9222"
+      },
+      "presentation": {
+        "hidden": true
       }
     },
     {
@@ -26,10 +29,17 @@
         "hidden": true
       }
     }
+    // {
+    //   "name": "Debug Rust (Windows)",
+    //   "type": "lldb",
+    //   "request": "attach",
+    //   "sourceLanguages": ["rust"],
+    //   "pid": "${command:pickProcess}"
+    // }
   ],
   "compounds": [
     {
-      "name": "Debug UI All",
+      "name": "Debug UI",
       "configurations": ["Debug UI Main", "Debug UI Renderer"],
       "presentation": {
         "order": 1

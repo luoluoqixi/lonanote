@@ -1,5 +1,3 @@
-import { Input } from '@chakra-ui/react';
-
 import { ColorModeSelect } from '@/components';
 import { ColorPicker, HStack, StepperInput, parseColor } from '@/components/ui';
 import {
