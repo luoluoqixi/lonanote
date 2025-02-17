@@ -13,7 +13,11 @@ export const getThemeColor = () => {
 };
 
 export const setThemeColor = (themeColor: string) => {
-  useUISettingsStore.setState((s) => ({ ...s, themeColor }));
+  useUISettingsStore.setState((s) => {
+    const newState = { ...s, themeColor };
+    saveUISettings(newState);
+    return newState;
+  });
 };
 
 export const setZoom = async (zoom: number) => {
