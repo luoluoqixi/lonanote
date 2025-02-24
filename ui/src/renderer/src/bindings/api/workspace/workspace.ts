@@ -1,6 +1,6 @@
 import { invokeAsync } from '@/bindings/core';
 
-import { Workspace, WorkspaceSettings } from './types';
+import { FileTree, Workspace, WorkspaceSettings } from './types';
 import { getCurrentOpenWorkspace } from './workspaceManager';
 
 const checkCurrentOpenWorkspace = async (): Promise<string> => {
@@ -19,11 +19,11 @@ export const workspace = {
   setWorkspaceSettings: async (path: string, settings: WorkspaceSettings): Promise<Workspace> => {
     return (await invokeAsync('set_open_workspace_settings', { path, settings }))!;
   },
-  startIndexingWorkspace: async (path: string): Promise<WorkspaceSettings> => {
-    return (await invokeAsync('start_indexing_open_workspace', { path }))!;
+  getOpenWorkspaceFileTree: async (path: string): Promise<FileTree> => {
+    return (await invokeAsync('get_open_workspace_file_tree', { path }))!;
   },
-  stopIndexingWorkspace: async (path: string): Promise<WorkspaceSettings> => {
-    return (await invokeAsync('stop_indexing_open_workspace', { path }))!;
+  callOpenWorkspaceReinit: async (path: string): Promise<void> => {
+    return (await invokeAsync('call_open_workspace_reinit', { path }))!;
   },
   getCurrentWorkspace: async (): Promise<Workspace | null> => {
     const path = getCurrentOpenWorkspace();
@@ -37,12 +37,12 @@ export const workspace = {
     const path = await checkCurrentOpenWorkspace();
     return await workspace.setWorkspaceSettings(path, settings);
   },
-  startIndexingCurrentworkspace: async (): Promise<void> => {
+  getCurrentworkspaceFileTree: async (): Promise<FileTree> => {
     const path = await checkCurrentOpenWorkspace();
-    await workspace.startIndexingWorkspace(path);
+    return await workspace.getOpenWorkspaceFileTree(path);
   },
-  stopIndexingCurrentworkspace: async (): Promise<void> => {
+  reinitCurrentworkspace: async (): Promise<void> => {
     const path = await checkCurrentOpenWorkspace();
-    await workspace.stopIndexingWorkspace(path);
+    await workspace.callOpenWorkspaceReinit(path);
   },
 };

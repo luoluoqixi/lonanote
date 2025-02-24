@@ -53,22 +53,22 @@ async fn get_open_workspace_settings(Json(args): Json<GetWorkspaceArgs>) -> Comm
     CommandResponse::json(&workspace.settings)
 }
 
-async fn start_indexing_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
+async fn get_open_workspace_file_tree(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
         .get_workspace(&args.path)
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
-    workspace.start_indexing().await;
 
-    Ok(CommandResponse::None)
+    let file_tree = workspace.get_file_tree().await;
+    CommandResponse::json(file_tree)
 }
 
-async fn stop_indexing_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
+async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
         .get_workspace(&args.path)
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
-    workspace.stop_indexing().await;
+    workspace.reinit()?;
 
     Ok(CommandResponse::None)
 }
@@ -77,10 +77,8 @@ pub fn reg_commands() -> Result<()> {
     reg_command_async("get_open_workspace", get_open_workspace)?;
     reg_command_async("set_open_workspace_settings", set_open_workspace_settings)?;
     reg_command_async("get_open_workspace_settings", get_open_workspace_settings)?;
-    reg_command_async(
-        "start_indexing_open_workspace",
-        start_indexing_open_workspace,
-    )?;
-    reg_command_async("stop_indexing_open_workspace", stop_indexing_open_workspace)?;
+    reg_command_async("get_open_workspace_file_tree", get_open_workspace_file_tree)?;
+    reg_command_async("call_open_workspace_reinit", call_open_workspace_reinit)?;
+
     Ok(())
 }

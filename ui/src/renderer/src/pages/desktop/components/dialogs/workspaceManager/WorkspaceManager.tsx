@@ -117,10 +117,14 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     }
   };
 
-  const openFolderClick = () => {
+  const openFolderClick = async () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
     if (window.api) {
       const path = workspaces[currentMenuIndex].path;
+      if (!(await workspaceManagerController.checkWorkspaceExist(path))) {
+        toaster.error({ title: '错误', description: `文件夹不存在: ${path}` });
+        return;
+      }
       console.log('open folder:', path);
       window.api.shell.openPathInFolder(path);
     }

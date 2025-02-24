@@ -173,3 +173,17 @@ export const removeWorkspace = async (workspacePath: string) => {
   }
   return false;
 };
+
+export const getCurrentWorkspaceFileTree = async () => {
+  try {
+    return await workspace.getCurrentworkspaceFileTree();
+  } catch (e) {
+    console.error(e);
+    toaster.error({
+      title: '错误',
+      description: `获取工作区文件树失败: ${(e as Error).message}`,
+      duration: 10000,
+    });
+  }
+  return null;
+};

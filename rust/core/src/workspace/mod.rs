@@ -1,6 +1,6 @@
 pub mod config;
 pub mod error;
-pub mod file_metadata;
+pub mod file_tree;
 pub mod workspace_index;
 pub mod workspace_instance;
 pub mod workspace_manager;

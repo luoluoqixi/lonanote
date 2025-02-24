@@ -15,3 +15,18 @@ export interface Workspace {
   metadata: WorkspaceMetadata;
   settings: WorkspaceSettings;
 }
+
+export type FileType = 'file' | 'directory';
+
+export interface FileNode {
+  children: FileNode[] | null;
+  fileType: FileType;
+  path: string;
+  size: number | null;
+  lastModified: number | null;
+}
+
+export interface FileTree {
+  path: string;
+  children: FileNode[];
+}

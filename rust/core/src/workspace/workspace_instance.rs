@@ -3,8 +3,9 @@ use std::{path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
 
 use super::{
-    config::create_workspace_config_folder, error::WorkspaceError, workspace_index::WorkspaceIndex,
-    workspace_metadata::WorkspaceMetadata, workspace_settings::WorkspaceSettings,
+    config::create_workspace_config_folder, error::WorkspaceError, file_tree::FileTree,
+    workspace_index::WorkspaceIndex, workspace_metadata::WorkspaceMetadata,
+    workspace_settings::WorkspaceSettings,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,14 +28,19 @@ impl WorkspaceInstance {
         })
     }
 
-    pub async fn start_indexing(&self) {
-        let mut index = self.index.write().await;
-        index.start_indexing();
+    pub fn reinit(&self) -> Result<(), WorkspaceError> {
+        let index = Arc::clone(&self.index);
+        tokio::spawn(async move {
+            if let Err(err) = index.write().await.reinit() {
+                log::error!("Error reinit workspace index: {}", err);
+            };
+        });
+
+        Ok(())
     }
 
-    pub async fn stop_indexing(&self) {
-        let mut index = self.index.write().await;
-        index.stop_indexing();
+    pub async fn get_file_tree(&self) -> FileTree {
+        self.index.read().await.file_tree.clone()
     }
 
     pub async fn set_settings(

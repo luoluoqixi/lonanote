@@ -1,37 +1,28 @@
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
+use std::path::Path;
+
+use super::{
+    error::WorkspaceError,
+    file_tree::{file_node::FileNode, FileTree},
 };
 
-use super::{error::WorkspaceError, file_metadata::FileMetadata};
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceIndex {
-    pub files: HashMap<String, FileMetadata>,
-
-    #[serde(skip)]
-    pub workspace_path: PathBuf,
-    #[serde(skip)]
-    pub indexing: bool,
+    pub file_tree: FileTree,
 }
 
 impl WorkspaceIndex {
     pub fn new(workspace_path: impl AsRef<Path>) -> Result<Self, WorkspaceError> {
         Ok(Self {
-            files: HashMap::new(),
-            workspace_path: workspace_path.as_ref().to_path_buf(),
-            indexing: false,
+            file_tree: FileTree::new(workspace_path.as_ref().to_str().unwrap()),
         })
     }
 
-    pub fn start_indexing(&mut self) {
-        self.indexing = true;
-        log::debug!("start_indexing: {}", self.workspace_path.display());
-    }
+    pub fn reinit(&mut self) -> Result<(), String> {
+        let new_root = FileNode::from_path(self.file_tree.to_path_buf().to_str().unwrap())?;
+        self.file_tree.children = new_root.children.unwrap_or_default();
 
-    pub fn stop_indexing(&mut self) {
-        self.indexing = false;
+        Ok(())
     }
 }
