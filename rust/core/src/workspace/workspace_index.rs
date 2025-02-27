@@ -20,7 +20,8 @@ impl WorkspaceIndex {
     }
 
     pub fn reinit(&mut self) -> Result<(), String> {
-        let new_root = FileNode::from_path(self.file_tree.to_path_buf().to_str().unwrap())?;
+        let root_path = self.file_tree.to_path_buf();
+        let new_root = FileNode::from_path(&root_path, &root_path)?;
         self.file_tree.children = new_root.children.unwrap_or_default();
 
         Ok(())

@@ -22,3 +22,4 @@ notify = { workspace = true }
 ignore = { workspace = true }
 fs_extra = { workspace = true }
 walkdir = { workspace = true }
+relative-path = { workspace = true, features = ["serde"] }

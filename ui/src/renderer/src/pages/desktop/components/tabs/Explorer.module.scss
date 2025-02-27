@@ -21,3 +21,21 @@
   min-width: auto;
   max-width: 100%;
 }
+
+.textNoWrap {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceExplorer {
+  @extend .textNoWrap;
+  overflow-y: scroll;
+  // overflow-x: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+.workspaceExplorerItem {
+  @extend .textNoWrap;
+  overflow: hidden;
+}

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  ControlledTreeEnvironment,
-  StaticTreeDataProvider,
+  Disposable,
   Tree,
+  TreeDataProvider,
   TreeItem,
   TreeItemIndex,
+  UncontrolledTreeEnvironment,
 } from 'react-complex-tree';
-import 'react-complex-tree/lib/style-modern.css';
 
 import { FileNode, FileTree, Workspace } from '@/bindings/api';
 import { Button, Heading } from '@/components/ui';
@@ -15,31 +15,87 @@ import { useEffect } from '@/hooks';
 
 import styles from './Explorer.module.scss';
 
-interface TreeData {
-  items: Record<TreeItemIndex, TreeItem<any>>;
+export type ExploreItemData = FileNode | FileTree;
+
+export type ExplorerTreeItem = TreeItem<ExploreItemData>;
+export interface ExplorerTreeData {
+  items: Record<TreeItemIndex, ExplorerTreeItem>;
 }
 
-const defaultTreeData = { items: {} };
+class ExplorerTreeDataProvider implements TreeDataProvider<ExploreItemData> {
+  private data: Record<TreeItemIndex, ExplorerTreeItem> = {};
+  private treeChangeListeners: ((changedItemIds: TreeItemIndex[]) => void)[] = [];
 
-const readTreeData = (fileTree: FileTree | FileNode, data: TreeData = defaultTreeData) => {
-  const children = fileTree.children;
-  if (children) {
-    for (const child of children) {
-      data.items[child.path] = {
-        index: child.path,
-        canMove: true,
-        isFolder: child.fileType === 'directory',
-        children: child.fileType === 'directory' ? child.children?.map((v) => v.path) : undefined,
-        data: child.path,
-        canRename: true,
-      };
-      if (child.fileType === 'directory') {
-        readTreeData(child, data);
+  public async getTreeItem(itemId: TreeItemIndex) {
+    return this.data[itemId];
+  }
+  public async onChangeItemChildren(itemId: TreeItemIndex, newChildren: TreeItemIndex[]) {
+    this.data[itemId].children = newChildren;
+    this.treeChangeListeners.forEach((listener) => listener([itemId]));
+  }
+  public onDidChangeTreeData(listener: (changedItemIds: TreeItemIndex[]) => void): Disposable {
+    this.treeChangeListeners.push(listener);
+    return {
+      dispose: () => this.treeChangeListeners.splice(this.treeChangeListeners.indexOf(listener), 1),
+    };
+  }
+  // public async onRenameItem(item: ExplorerTreeItem, data: string): Promise<void> {
+  //   // this.data[item.index].data = data;
+  // }
+
+  public initData(fileTree: FileTree) {
+    const data = ExplorerTreeDataProvider.convertToTreeData(fileTree);
+    for (const k in data.items) {
+      this.data[k] = data.items[k];
+    }
+    this.treeChangeListeners.forEach((listener) => listener(['root']));
+  }
+
+  static readTreeData(fileTree: FileNode, data: ExplorerTreeData) {
+    const children = fileTree.children;
+    const isFolder = fileTree.fileType === 'directory';
+    data.items[fileTree.path] = {
+      index: fileTree.path,
+      canMove: true,
+      isFolder,
+      children: isFolder ? children?.map((v) => v.path) : undefined,
+      data: fileTree,
+      canRename: true,
+    };
+    if (isFolder && children) {
+      for (const child of children) {
+        ExplorerTreeDataProvider.readTreeData(child, data);
       }
     }
   }
-  return data;
-};
+
+  static convertToTreeData(fileTree: FileTree) {
+    const treeData: ExplorerTreeData = { items: {} };
+    const children = fileTree.children;
+    treeData.items['root'] = {
+      index: 'root',
+      isFolder: true,
+      canMove: false,
+      data: fileTree,
+      children: children.map((v) => v.path),
+    };
+    for (let i = 0; i < children.length; i++) {
+      const c = children[i];
+      ExplorerTreeDataProvider.readTreeData(c, treeData);
+    }
+    return treeData;
+  }
+
+  public static getName(item: ExploreItemData): string {
+    if ('name' in item) {
+      return item.name as string;
+    }
+    const names = item.path.split(/\\|\//);
+    const name = names.length > 0 ? names[names.length - 1] : '';
+    item['name'] = name;
+    return name;
+  }
+}
 
 const onOpenWorkspace = async () => {
   await workspaceManagerController.selectOpenWorkspace();
@@ -66,26 +122,33 @@ interface WorkspaceExplorerProps {
 }
 
 const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
-  const [treeData, setTreeData] = useState<StaticTreeDataProvider>();
+  const [data, setData] = useState<FileTree>();
+  const dataProvider = useMemo<ExplorerTreeDataProvider>(() => {
+    const provider = new ExplorerTreeDataProvider();
+    if (data) {
+      provider.initData(data);
+    }
+    return provider;
+  }, [data]);
   useEffect(async () => {
     const fileTree = await workspaceManagerController.getCurrentWorkspaceFileTree();
     if (fileTree) {
-      const tree = readTreeData(fileTree);
-      const data = new StaticTreeDataProvider(tree.items, (item, data) => ({ ...item, data }));
-      setTreeData(data);
-      console.log(tree.items);
+      setData(fileTree);
     }
-  });
+  }, []);
   return (
-    <div>
+    <div className={styles.workspaceExplorer}>
       {workspace.metadata.name}
-      {/* <ControlledTreeEnvironment
-        dataProvider={treeData || new StaticTreeDataProvider({})}
-        getItemTitle={(item) => item.data}
+      <UncontrolledTreeEnvironment
+        dataProvider={dataProvider}
+        getItemTitle={(item) => ExplorerTreeDataProvider.getName(item.data)}
         viewState={{}}
+        renderItemTitle={({ title }) => (
+          <span className={styles.workspaceExplorerItem}>{title}</span>
+        )}
       >
         <Tree treeId="tree-1" rootItem="root" treeLabel="Tree Example" />
-      </ControlledTreeEnvironment> */}
+      </UncontrolledTreeEnvironment>
     </div>
   );
 };

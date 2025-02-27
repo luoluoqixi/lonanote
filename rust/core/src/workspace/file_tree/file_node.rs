@@ -1,5 +1,6 @@
-use std::time::UNIX_EPOCH;
+use std::{path::Path, time::UNIX_EPOCH};
 
+use relative_path::RelativePathBuf;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
@@ -14,7 +15,7 @@ pub enum FileType {
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FileNode {
-    pub path: String,
+    pub path: RelativePathBuf,
     pub file_type: FileType,
     pub children: Option<Vec<FileNode>>,
 
@@ -23,7 +24,7 @@ pub struct FileNode {
 }
 
 impl FileNode {
-    pub fn from_path(path: &str) -> Result<Self, String> {
+    pub fn from_path(root: &Path, path: &Path) -> Result<Self, String> {
         let metadata =
             std::fs::metadata(path).map_err(|err| format!("Error reading metadata: {}", err))?;
         let file_type = if metadata.is_dir() {
@@ -43,20 +44,27 @@ impl FileNode {
             FileType::Directory => None,
         };
 
+        let relative_path = path
+            .strip_prefix(root)
+            .map_err(|_| format!("Failed to create relative path: {:?}", path))?
+            .to_string_lossy()
+            .to_string()
+            .into();
+
         let children = match file_type {
             FileType::File => None,
             FileType::Directory => {
                 let mut sub_children = Vec::new();
                 for entry in WalkDir::new(path).min_depth(1).max_depth(1).into_iter() {
                     let entry = entry.map_err(|err| format!("Error walking directory: {}", err))?;
-                    sub_children.push(FileNode::from_path(&entry.path().to_string_lossy())?);
+                    sub_children.push(FileNode::from_path(root, entry.path())?);
                 }
                 Some(sub_children)
             }
         };
 
         Ok(Self {
-            path: path.to_string(),
+            path: relative_path,
             file_type,
             children,
             last_modified,
@@ -64,7 +72,7 @@ impl FileNode {
         })
     }
 
-    // pub fn to_path_buf(&self) -> PathBuf {
-    //     PathBuf::from(self.path.as_str())
+    // pub fn to_path_buf(&self, root: &Path) -> PathBuf {
+    //     root.join(self.path.as_str())
     // }
 }

@@ -92,7 +92,7 @@ impl WorkspaceManager {
         }
         self.last_workspace = Some(workspace.metadata.path.clone());
 
-        workspace.reinit()?;
+        // workspace.reinit()?;
         // println!("open workspace: {:?}", &self.last_workspace);
         self.open_workspaces
             .insert(path.as_ref().to_path_buf(), workspace);
