@@ -26,4 +26,4 @@ tokio = { workspace = true }
 lonanote-core = { path = "../core" }
 
 [build-dependencies]
-napi-build = "2.1.4"
+napi-build = "2.1.5"

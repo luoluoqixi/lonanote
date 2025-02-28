@@ -12,9 +12,9 @@ repository = "https://github.com/lona-labs/lonanote"
 license = ""
 
 [workspace.dependencies]
-anyhow = "1.0.95"
-log = "0.4.25"
+anyhow = "1.0.96"
+log = "0.4.26"
 fern = "0.7.1"
-chrono = "0.4.39"
+chrono = "0.4.40"
 image = "0.25.5"
 icns = "0.3.1"

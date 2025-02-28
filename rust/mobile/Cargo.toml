@@ -18,7 +18,7 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2.0.5", features = ["config-toml"] }
+tauri-build = { version = "2.0.6", features = ["config-toml"] }
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -30,11 +30,11 @@ tokio = { workspace = true }
 lonanote-core = { path = "../core" }
 
 # tauri
-tauri = { version = "2.2.5", features = ["config-toml", "protocol-asset"] }
+tauri = { version = "2.3.0", features = ["config-toml", "protocol-asset"] }
 specta = { version = "=2.0.0-rc.22" }
 tauri-plugin-clipboard-manager = { version = "2.2.1" }
 tauri-plugin-fs = { version = "2.2.0" }
-tauri-plugin-log = { version = "2.2.1" }
+tauri-plugin-log = { version = "2.2.3" }
 tauri-plugin-os = { version = "2.2.0" }
 tauri-plugin-dialog = { version = "2.2.0" }
 tauri-plugin-shell = { version = "2.2.0" }
