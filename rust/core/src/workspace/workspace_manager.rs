@@ -66,7 +66,7 @@ impl WorkspaceManager {
         }
     }
 
-    pub fn load_workspace(&mut self, path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
+    pub async fn load_workspace(&mut self, path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
         if self.open_workspaces.contains_key(path.as_ref()) {
             return Ok(());
         }
@@ -92,7 +92,7 @@ impl WorkspaceManager {
         }
         self.last_workspace = Some(workspace.metadata.path.clone());
 
-        // workspace.reinit()?;
+        workspace.reinit().await?;
         // println!("open workspace: {:?}", &self.last_workspace);
         self.open_workspaces
             .insert(path.as_ref().to_path_buf(), workspace);

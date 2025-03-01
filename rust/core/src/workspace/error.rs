@@ -18,6 +18,8 @@ pub enum WorkspaceError {
     AlreadyExistOpenWorkspace(String),
     #[error("[workspace] cannot remove an already open workspace: {0}")]
     RemoveAlreadyOpenWorkspace(String),
+    #[error("[workspace] workspace init error: {0}")]
+    InitError(String),
 
     #[error("[workspace] unknow error: {0}")]
     UnknowError(String),

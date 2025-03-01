@@ -7,21 +7,13 @@ import {
   workspaceManager,
 } from '@/bindings/api/workspace';
 import { toaster } from '@/components/ui';
+import { spinner } from '@/utils';
 
 import { setCurrentWorkspace, setWorkspaceName, setWorkspaceRootPath } from './workspace';
 
 export const isOpenWorkspace = async (workspacePath: string, errorText?: string | null) => {
   const path = formatPath(workspacePath);
-  let isOpen = false;
-  if (window.api) {
-    const openWorkspaces = await window.api.workspace.getCurrentWorkspaces();
-    isOpen = openWorkspaces.findIndex((v) => v === path) >= 0;
-  } else {
-    const currentWorkspace = getCurrentOpenWorkspace();
-    if (currentWorkspace && currentWorkspace === path) {
-      isOpen = true;
-    }
-  }
+  const isOpen = await workspace.isOpenWorkspace(path);
   if (isOpen) {
     if (errorText != null) {
       toaster.error({
@@ -82,10 +74,13 @@ export const openWorkspace = async (workspacePath: string) => {
     return false;
   }
   try {
+    spinner.showSpinner('加载workspace');
     await workspaceManager.openWorkspaceByPath(workspacePath);
     const ws = await workspace.getCurrentWorkspace();
     if (ws) setCurrentWorkspace(ws);
+    spinner.hideSpinner();
   } catch (e) {
+    spinner.hideSpinner();
     toaster.error({
       title: '错误',
       description: `打开工作区失败: ${(e as Error).message}`,
@@ -96,9 +91,9 @@ export const openWorkspace = async (workspacePath: string) => {
   return true;
 };
 
-export const openWorkspaceToNewWindow = async (workspacePath: string) => {
-  // 在新窗口中打开Window, TODO
-};
+// export const openWorkspaceToNewWindow = async (workspacePath: string) => {
+//   // 在新窗口中打开Workspace, TODO
+// };
 
 export const selectOpenWorkspace = async () => {
   const selectPath = await dialog.showOpenFolderDialog('选择工作区文件夹');

@@ -23,6 +23,13 @@ struct SetOpenWorkspaceSettingsArgs {
     pub settings: WorkspaceSettings,
 }
 
+async fn is_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
+    let workspace_manager = get_workspace_manager().await;
+    let is_open = workspace_manager.get_workspace(&args.path).is_some();
+
+    CommandResponse::json(is_open)
+}
+
 async fn get_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
@@ -68,12 +75,13 @@ async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> Comma
     let workspace = workspace_manager
         .get_workspace(&args.path)
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
-    workspace.reinit()?;
+    workspace.reinit().await?;
 
     Ok(CommandResponse::None)
 }
 
 pub fn reg_commands() -> Result<()> {
+    reg_command_async("is_open_workspace", is_open_workspace)?;
     reg_command_async("get_open_workspace", get_open_workspace)?;
     reg_command_async("set_open_workspace_settings", set_open_workspace_settings)?;
     reg_command_async("get_open_workspace_settings", get_open_workspace_settings)?;

@@ -4,6 +4,7 @@ import { Title } from './components';
 import { Toaster } from './components/ui';
 import { useInited } from './hooks';
 import { Routes } from './pages/desktop/routes';
+import { spinner } from './utils';
 
 export const App = () => {
   const [inited, setInited] = useState(false);
@@ -16,6 +17,7 @@ export const App = () => {
       <Title />
       {inited && <Routes />}
       <Toaster />
+      <spinner.GlobalSpinner />
     </>
   );
 };

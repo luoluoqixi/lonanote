@@ -10,6 +10,9 @@ const checkCurrentOpenWorkspace = async (): Promise<string> => {
 };
 
 export const workspace = {
+  isOpenWorkspace: async (path: string): Promise<boolean> => {
+    return path ? (await invokeAsync('is_open_workspace', { path }))! : false;
+  },
   getWorkspace: async (path: string): Promise<Workspace | null> => {
     return path ? (await invokeAsync('get_open_workspace', { path }))! : null;
   },

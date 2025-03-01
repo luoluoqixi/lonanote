@@ -28,13 +28,13 @@ impl WorkspaceInstance {
         })
     }
 
-    pub fn reinit(&self) -> Result<(), WorkspaceError> {
+    pub async fn reinit(&self) -> Result<(), WorkspaceError> {
         let index = Arc::clone(&self.index);
-        tokio::spawn(async move {
-            if let Err(err) = index.write().await.reinit() {
-                log::error!("Error reinit workspace index: {}", err);
-            };
-        });
+        index
+            .write()
+            .await
+            .reinit()
+            .map_err(WorkspaceError::InitError)?;
 
         Ok(())
     }

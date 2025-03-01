@@ -77,7 +77,7 @@ struct OpenWorkspaceByPathArgs {
 
 async fn open_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
-    workspace_manager.load_workspace(args.path)?;
+    workspace_manager.load_workspace(args.path).await?;
 
     Ok(CommandResponse::None)
 }

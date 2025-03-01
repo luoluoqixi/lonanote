@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   Disposable,
   Tree,
@@ -12,6 +12,7 @@ import { FileNode, FileTree, Workspace } from '@/bindings/api';
 import { Button, Heading } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
+import { useWorkspaceStore } from '@/models/workspace';
 
 import styles from './Explorer.module.scss';
 
@@ -44,6 +45,7 @@ class ExplorerTreeDataProvider implements TreeDataProvider<ExploreItemData> {
   // }
 
   public initData(fileTree: FileTree) {
+    this.data = {};
     const data = ExplorerTreeDataProvider.convertToTreeData(fileTree);
     for (const k in data.items) {
       this.data[k] = data.items[k];
@@ -122,20 +124,14 @@ interface WorkspaceExplorerProps {
 }
 
 const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
-  const [data, setData] = useState<FileTree>();
-  const dataProvider = useMemo<ExplorerTreeDataProvider>(() => {
-    const provider = new ExplorerTreeDataProvider();
-    if (data) {
-      provider.initData(data);
-    }
-    return provider;
-  }, [data]);
+  const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
+  const dataProvider = useMemo<ExplorerTreeDataProvider>(() => new ExplorerTreeDataProvider(), []);
   useEffect(async () => {
     const fileTree = await workspaceManagerController.getCurrentWorkspaceFileTree();
     if (fileTree) {
-      setData(fileTree);
+      dataProvider.initData(fileTree);
     }
-  }, []);
+  }, [currentWorkspace]);
   return (
     <div className={styles.workspaceExplorer}>
       {workspace.metadata.name}
