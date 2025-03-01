@@ -29,10 +29,21 @@
 
 .workspaceExplorer {
   @extend .textNoWrap;
-  overflow-y: scroll;
-  // overflow-x: hidden;
   height: 100%;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+}
+
+.workspaceExplorerTitle {
+  width: 100%;
+  height: 30px;
+}
+
+.workspaceExplorerTree {
+  width: 100%;
+  height: 100%;
 }
 
 .workspaceExplorerItem {

@@ -29,7 +29,7 @@ export const GlobalSpinner = () => {
   return (
     <Box
       visibility={store.open ? 'visible' : 'hidden'}
-      zIndex={99999}
+      zIndex={9998}
       pos="absolute"
       inset="0"
       bg="bg/80"

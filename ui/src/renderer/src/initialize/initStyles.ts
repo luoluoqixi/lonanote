@@ -1,5 +1,3 @@
-import 'react-complex-tree/lib/style-modern.css';
-
 import '@/styles/index.scss';
 import { utils } from '@/utils';
 
