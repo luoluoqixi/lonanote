@@ -77,6 +77,31 @@ export const utils = {
       '900': scale[9],
     };
   },
+  fileNameCompare(a: string, b: string): number {
+    if (a == null || b == null) return 0;
+    const na = a.split(/[-_.—, (]/);
+    const nb = b.split(/[-_.—, (]/);
+    const maxLoop = Math.max(na.length, nb.length);
+    for (let i = 0; i < maxLoop; i++) {
+      const nai = Number(na[i]);
+      const nbi = Number(na[i]);
+      if (!isNaN(nai) && !isNaN(nbi)) {
+        const num = nai - nbi;
+        if (num !== 0) {
+          return num;
+        }
+      }
+    }
+    const ma = a.match(/[0-9]+/);
+    const mb = b.match(/[0-9]+/);
+    if (ma?.length && mb?.length) {
+      const num = Number(ma[0]) - Number(mb[0]);
+      if (num !== 0) {
+        return num;
+      }
+    }
+    return a.localeCompare(b);
+  },
 };
 
 export * as spinner from './spinner';
