@@ -114,30 +114,30 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
   return (
     <>
-      <div className={styles.workspaceExplorer}>
-        <div className={styles.workspaceExplorerTitle}>{workspace.metadata.name}</div>
-        <div className={styles.workspaceExplorerTree}>
-          <Tree
-            items={treeItems}
-            fixedItemHeight={30}
-            itemsProps={{
-              onClick(e, data, context, state) {
-                console.log('onClick', data, context, state);
-              },
-              onRightDown(e, data) {
-                if (data.data) {
-                  openMenuClick(data.data, e);
-                }
-              },
-            }}
-          />
-        </div>
-      </div>
       <Menu.Root
         open={openMenu}
         onOpenChange={(e) => setOpenMenu(e.open)}
         anchorPoint={menuPosition}
       >
+        <div className={styles.workspaceExplorer}>
+          <div className={styles.workspaceExplorerTitle}>{workspace.metadata.name}</div>
+          <div className={styles.workspaceExplorerTree}>
+            <Tree
+              items={treeItems}
+              fixedItemHeight={30}
+              itemsProps={{
+                onClick(e, data, context, state) {
+                  console.log('onClick', data, context, state);
+                },
+                onRightDown(e, data) {
+                  if (data.data) {
+                    openMenuClick(data.data, e);
+                  }
+                },
+              }}
+            />
+          </div>
+        </div>
         <Menu.Content>
           <Menu.Item value="open-folder" onClick={openFolderClick}>
             在资源管理器中显示

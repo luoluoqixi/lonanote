@@ -188,6 +188,27 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     }
   };
 
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const setFocusIndex = (index: number) => {
+      index = Math.max(0, index);
+      index = Math.min(workspaces.length - 1, index);
+      setCurrentMenuIndex(index);
+      e.preventDefault();
+    };
+    if (e.key === 'ArrowDown') {
+      setFocusIndex(currentMenuIndex + 1);
+    } else if (e.key === 'ArrowUp') {
+      setFocusIndex(currentMenuIndex - 1);
+    } else if (e.key === ' ' || e.key === 'Spacebar') {
+      if (currentMenuIndex >= 0 && currentMenuIndex < workspacesEdit.length) {
+        const isEdit = workspacesEdit[currentMenuIndex];
+        if (!isEdit) {
+          openWorkspaceClick(currentMenuIndex);
+        }
+      }
+    }
+  };
+
   return (
     <Dialog.Root
       size="cover"
@@ -197,7 +218,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
       open={state.isOpen}
       onOpenChange={(v) => state.setIsOpen(v.open)}
     >
-      <Dialog.Content ref={contentRef} positionerProps={{ padding: '90px' }}>
+      <Dialog.Content onKeyDown={onKeyDown} ref={contentRef} positionerProps={{ padding: '90px' }}>
         <Dialog.Header>
           <Dialog.Title>
             <div className={styles.workspaceManagerTitle}>
@@ -226,6 +247,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                         color: 'fg',
                         _icon: { color: 'colorPalette.fg' },
                       }}
+                      borderColor="colorPalette.focusRing"
+                      borderWidth={currentMenuIndex === i ? 2 : 0}
                       className={styles.workspaceRow}
                       onPointerDown={(e) => {
                         if (e.button === 2 && !openMenu) {
@@ -242,7 +265,12 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                         <div className={styles.workspaceName}>
                           <Editable
                             edit={isEdit}
-                            onEditChange={(e) => setWorkspaceEdit(i, e.edit)}
+                            onEditChange={(e) => {
+                              // 防止因为focus而自动进入编辑模式，导致意外重命名当前工作区
+                              if (e.edit === false) {
+                                setWorkspaceEdit(i, e.edit);
+                              }
+                            }}
                             spellCheck={false}
                             showEditBtn={false}
                             previewProps={{ pointerEvents: 'none' }}
