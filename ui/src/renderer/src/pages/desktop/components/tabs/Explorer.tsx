@@ -1,7 +1,10 @@
+import { Box } from '@chakra-ui/react';
 import { useState } from 'react';
+import { MdDeleteOutline, MdOutlineDriveFileRenameOutline } from 'react-icons/md';
+import { VscFolderOpened, VscNewFile, VscNewFolder } from 'react-icons/vsc';
 
 import { FileNode, FileTree, Workspace, fs } from '@/bindings/api';
-import { Tree, TreeItem } from '@/components';
+import { Tree, TreeItem, dialog } from '@/components';
 import { Button, Heading, Menu, toaster } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
@@ -49,20 +52,20 @@ const fileNodeCompare = (a: ExplorerTreeItem, b: ExplorerTreeItem) => {
   return -1;
 };
 
+const getFileName = (item: FileNode): string => {
+  if ('name' in item) {
+    return item.name as string;
+  }
+  const name = utils.getFileName(item.path);
+  item['name'] = name;
+  return name;
+};
+
 const getTreeData = (fileTree: FileTree): ExplorerTreeItem[] => {
-  const getName = (item: FileNode): string => {
-    if ('name' in item) {
-      return item.name as string;
-    }
-    const names = item.path.split(/\\|\//);
-    const name = names.length > 0 ? names[names.length - 1] : '';
-    item['name'] = name;
-    return name;
-  };
   const getTreeItems = (fileNode: FileNode[]): ExplorerTreeItem[] => {
     const nodes = fileNode?.map((f) => ({
       id: f.path,
-      label: getName(f),
+      label: getFileName(f),
       children: f.children ? getTreeItems(f.children) : null,
       isLeaf: f.fileType === 'file',
       data: f,
@@ -112,35 +115,83 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       fs.showInFolder(path);
     }
   };
+  const newFile = async () => {
+    toaster.success({ title: 'todo' });
+  };
+  const newFolder = async () => {
+    toaster.success({ title: 'todo' });
+  };
+  const renameItem = async () => {
+    toaster.success({ title: 'todo' });
+  };
+  const deleteItem = async () => {
+    if (currentMenuNode) {
+      const isFile = currentMenuNode.fileType === 'file';
+      const fileName = utils.getFileName(currentMenuNode.path);
+      const fileType = isFile ? '文件' : '文件夹';
+      dialog.showDialog({
+        title: '提示',
+        content: `确定要删除${fileType} ${fileName} 吗？`,
+        okBtnColorPalette: 'red',
+        onOk: () => {
+          toaster.success({ title: 'todo' });
+        },
+      });
+    }
+  };
   return (
     <>
+      <div className={styles.workspaceExplorer}>
+        <div className={styles.workspaceExplorerTitle}>{workspace.metadata.name}</div>
+        <div className={styles.workspaceExplorerTree}>
+          <Tree
+            items={treeItems}
+            fixedItemHeight={30}
+            itemsProps={{
+              onClick(e, data, context, state) {
+                console.log('onClick', data, context, state);
+              },
+              onRightDown(e, data) {
+                if (data.data) {
+                  openMenuClick(data.data, e);
+                }
+              },
+            }}
+          />
+        </div>
+      </div>
       <Menu.Root
         open={openMenu}
         onOpenChange={(e) => setOpenMenu(e.open)}
         anchorPoint={menuPosition}
       >
-        <div className={styles.workspaceExplorer}>
-          <div className={styles.workspaceExplorerTitle}>{workspace.metadata.name}</div>
-          <div className={styles.workspaceExplorerTree}>
-            <Tree
-              items={treeItems}
-              fixedItemHeight={30}
-              itemsProps={{
-                onClick(e, data, context, state) {
-                  console.log('onClick', data, context, state);
-                },
-                onRightDown(e, data) {
-                  if (data.data) {
-                    openMenuClick(data.data, e);
-                  }
-                },
-              }}
-            />
-          </div>
-        </div>
-        <Menu.Content>
+        <Menu.Content animation="none">
+          <Menu.Item value="new-file" onClick={newFile}>
+            <VscNewFile />
+            <Box flex="1">新建笔记</Box>
+          </Menu.Item>
+          <Menu.Item value="new-folder" onClick={newFolder}>
+            <VscNewFolder />
+            <Box flex="1">新建文件夹</Box>
+          </Menu.Item>
+          <Menu.Separator />
           <Menu.Item value="open-folder" onClick={openFolderClick}>
-            在资源管理器中显示
+            <VscFolderOpened />
+            <Box flex="1">在资源管理器中显示</Box>
+          </Menu.Item>
+          <Menu.Separator />
+          <Menu.Item value="rename-item" onClick={renameItem}>
+            <MdOutlineDriveFileRenameOutline />
+            <Box flex="1">重命名</Box>
+          </Menu.Item>
+          <Menu.Item
+            value="delete-item"
+            onClick={deleteItem}
+            color="fg.error"
+            _hover={{ bg: 'bg.error', color: 'fg.error' }}
+          >
+            <MdDeleteOutline />
+            <Box flex="1">删除</Box>
           </Menu.Item>
         </Menu.Content>
       </Menu.Root>

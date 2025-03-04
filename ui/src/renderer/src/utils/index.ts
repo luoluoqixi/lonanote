@@ -102,6 +102,9 @@ export const utils = {
     }
     return a.localeCompare(b);
   },
+  getFileName: (path: string): string => {
+    const names = path.split(/\\|\//);
+    const name = names.length > 0 ? names[names.length - 1] : '';
+    return name;
+  },
 };
-
-export * as spinner from './spinner';

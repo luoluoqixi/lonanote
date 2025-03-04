@@ -2,9 +2,15 @@ import { Box, Span } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import React, { RefObject, useRef, useState } from 'react';
 import { IoMdMore } from 'react-icons/io';
+import {
+  MdDeleteOutline,
+  MdDriveFileMoveOutline,
+  MdOutlineDriveFileRenameOutline,
+} from 'react-icons/md';
+import { VscFolderOpened } from 'react-icons/vsc';
 import { create } from 'zustand';
 
-import { WorkspaceMetadata, dialog, fs } from '@/bindings/api';
+import { WorkspaceMetadata, fs } from '@/bindings/api';
 import { Button, Dialog, Editable, Heading, IconButton, Menu, toaster } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
@@ -151,8 +157,14 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     ) {
       return;
     }
-    const selectPath = await dialog.showOpenFolderDialog('选择文件夹');
-    if (selectPath && selectPath !== '') {
+
+    const selectPath = await fs.showSelectDialog({
+      title: '选择文件夹',
+      type: 'openFolder',
+      defaultDirectory: clickWorkspace.rootPath,
+    });
+    // const selectPath = await dialog.showOpenFolderDialog('选择文件夹');
+    if (typeof selectPath === 'string' && selectPath !== '') {
       setWorkspacePathCommit(currentMenuIndex, selectPath);
     }
   };
@@ -319,18 +331,27 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                   onOpenChange={(e) => setOpenMenu(e.open)}
                   anchorPoint={menuPosition}
                 >
-                  <Menu.Content portalRef={contentRef as RefObject<HTMLElement>}>
+                  <Menu.Content animation="none" portalRef={contentRef as RefObject<HTMLElement>}>
                     <Menu.Item value="open-folder" onClick={openFolderClick}>
-                      在资源管理器中显示
+                      <VscFolderOpened />
+                      <Box flex="1">在资源管理器中显示</Box>
                     </Menu.Item>
                     <Menu.Item value="rename" onClick={renameClick}>
-                      重命名工作区
+                      <MdOutlineDriveFileRenameOutline />
+                      <Box flex="1">重命名工作区</Box>
                     </Menu.Item>
                     <Menu.Item value="change-path" onClick={changePathClick}>
-                      修改路径
+                      <MdDriveFileMoveOutline />
+                      <Box flex="1">修改路径</Box>
                     </Menu.Item>
-                    <Menu.Item value="remove" onClick={removeWorkspaceClick}>
-                      移除工作区
+                    <Menu.Item
+                      value="remove"
+                      onClick={removeWorkspaceClick}
+                      color="fg.error"
+                      _hover={{ bg: 'bg.error', color: 'fg.error' }}
+                    >
+                      <MdDeleteOutline />
+                      <Box flex="1">移除工作区</Box>
                     </Menu.Item>
                   </Menu.Content>
                 </Menu.Root>

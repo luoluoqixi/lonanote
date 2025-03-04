@@ -25,25 +25,27 @@ export const fs = {
   isFile: async (path: string): Promise<boolean> => {
     return (await invoke('fs.is_file', { path }))!;
   },
-  readToString: async (path: string): Promise<boolean> => {
+  readToString: async (path: string): Promise<string> => {
     return (await invoke('fs.read_to_string', { path }))!;
   },
-  readBinary: async (path: string): Promise<boolean> => {
+  readBinary: async (path: string): Promise<number[]> => {
     return (await invoke('fs.read_binary', { path }))!;
   },
-  createDir: async (path: string): Promise<boolean> => {
+  createDir: async (path: string): Promise<void> => {
     return (await invoke('fs.create_dir', { path }))!;
   },
-  createDirAll: async (path: string): Promise<boolean> => {
+  createDirAll: async (path: string): Promise<void> => {
     return (await invoke('fs.create_dir_all', { path }))!;
   },
-  write: async (path: string, contents: string): Promise<boolean> => {
+  write: async (path: string, contents: string): Promise<void> => {
     return (await invoke('fs.write', { path, contents }))!;
   },
-  showInFolder: async (path: string): Promise<boolean> => {
+  showInFolder: async (path: string): Promise<void> => {
     return (await invoke('fs.show_in_folder', { path }))!;
   },
-  showSelectDialog: async (options: SelectDialogOptions): Promise<boolean> => {
+  showSelectDialog: async (
+    options: SelectDialogOptions,
+  ): Promise<string | string[] | null | undefined> => {
     return (await invokeAsync('fs.show_select_dialog', options))!;
   },
 };

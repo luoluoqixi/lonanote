@@ -1,4 +1,4 @@
-import { dialog } from '@/bindings/api';
+import { fs } from '@/bindings/api';
 import {
   WorkspaceMetadata,
   formatPath,
@@ -6,8 +6,8 @@ import {
   workspace,
   workspaceManager,
 } from '@/bindings/api/workspace';
+import { spinner } from '@/components';
 import { toaster } from '@/components/ui';
-import { spinner } from '@/utils';
 
 import { setCurrentWorkspace, setWorkspaceName, setWorkspaceRootPath } from './workspace';
 
@@ -96,9 +96,12 @@ export const openWorkspace = async (workspacePath: string) => {
 // };
 
 export const selectOpenWorkspace = async () => {
-  const selectPath = await dialog.showOpenFolderDialog('选择工作区文件夹');
-  if (selectPath && selectPath !== '') {
-    console.log('选择文件夹：', selectPath);
+  const selectPath = await fs.showSelectDialog({
+    title: '选择工作区文件夹',
+    type: 'openFolder',
+  });
+  if (typeof selectPath === 'string' && selectPath !== '') {
+    console.log('打开工作区文件夹：', selectPath);
     return openWorkspace(selectPath);
   }
   return null;

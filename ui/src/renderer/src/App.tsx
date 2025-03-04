@@ -1,10 +1,9 @@
 import { useState } from 'react';
 
-import { Title } from './components';
+import { Title, dialog, spinner } from './components';
 import { Toaster } from './components/ui';
 import { useInited } from './hooks';
 import { Routes } from './pages/desktop/routes';
-import { spinner } from './utils';
 
 export const App = () => {
   const [inited, setInited] = useState(false);
@@ -18,6 +17,7 @@ export const App = () => {
       {inited && <Routes />}
       <Toaster />
       <spinner.GlobalSpinner />
+      <dialog.GlobalDialog />
     </>
   );
 };

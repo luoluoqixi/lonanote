@@ -236,8 +236,14 @@ impl WorkspaceManager {
                     )));
                 }
                 // println!("src_folder: {:?}, target_folder: {:?}", &path, &new_path);
-                fs_utils::move_folder(&path, &new_path, false)
-                    .map_err(|e| WorkspaceError::IOError(e.to_string()))?;
+                fs_utils::copy_folder(&path, &new_path, false).map_err(|e| {
+                    WorkspaceError::IOError(format!(
+                        "copy folder error: {} >> {}, {}",
+                        path.display(),
+                        new_path.display(),
+                        e,
+                    ))
+                })?;
             }
 
             let new_metadata = WorkspaceMetadata::new(new_path.clone())?;
