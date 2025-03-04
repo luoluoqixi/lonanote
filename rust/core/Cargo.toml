@@ -23,3 +23,11 @@ ignore = { workspace = true }
 fs_extra = { workspace = true }
 walkdir = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
+
+# [target.'cfg(target_os = "windows")'.dependencies]
+# [target.'cfg(target_os = "macos")'.dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
+fork = { workspace = true }
+
+[target.'cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))'.dependencies]
+rfd = { workspace = true }

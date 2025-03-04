@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { FileNode, FileTree, Workspace } from '@/bindings/api';
+import { FileNode, FileTree, Workspace, fs } from '@/bindings/api';
 import { Tree, TreeItem } from '@/components';
 import { Button, Heading, Menu, toaster } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
@@ -102,14 +102,14 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
 
   const openFolderClick = async () => {
     console.log('openFolder:', currentMenuNode);
-    if (currentMenuNode && window.api) {
+    if (currentMenuNode) {
       const path = `${workspace.metadata.path}/${currentMenuNode.path}`;
-      if (!(await workspaceManagerController.checkWorkspaceExist(path))) {
-        toaster.error({ title: '错误', description: `文件夹不存在: ${path}` });
+      if (!(await fs.exists(path))) {
+        toaster.error({ title: '错误', description: `路径不存在: ${path}` });
         return;
       }
-      console.log('open folder:', path);
-      window.api.shell.openPathInFolder(path);
+      // console.log('showInFolder:', path);
+      fs.showInFolder(path);
     }
   };
   return (

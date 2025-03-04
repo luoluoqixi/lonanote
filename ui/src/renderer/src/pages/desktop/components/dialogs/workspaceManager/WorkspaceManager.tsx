@@ -4,7 +4,7 @@ import React, { RefObject, useRef, useState } from 'react';
 import { IoMdMore } from 'react-icons/io';
 import { create } from 'zustand';
 
-import { WorkspaceMetadata, dialog } from '@/bindings/api';
+import { WorkspaceMetadata, dialog, fs } from '@/bindings/api';
 import { Button, Dialog, Editable, Heading, IconButton, Menu, toaster } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
@@ -119,15 +119,13 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
 
   const openFolderClick = async () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
-    if (window.api) {
-      const path = workspaces[currentMenuIndex].path;
-      if (!(await workspaceManagerController.checkWorkspaceExist(path))) {
-        toaster.error({ title: '错误', description: `文件夹不存在: ${path}` });
-        return;
-      }
-      console.log('open folder:', path);
-      window.api.shell.openPathInFolder(path);
+    const path = workspaces[currentMenuIndex].path;
+    if (!(await workspaceManagerController.checkWorkspaceExist(path))) {
+      toaster.error({ title: '错误', description: `文件夹不存在: ${path}` });
+      return;
     }
+    // console.log('showInFolder:', path);
+    fs.showInFolder(path);
   };
   const renameClick = async () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;

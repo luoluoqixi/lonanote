@@ -11,22 +11,22 @@ const checkCurrentOpenWorkspace = async (): Promise<string> => {
 
 export const workspace = {
   isOpenWorkspace: async (path: string): Promise<boolean> => {
-    return path ? (await invokeAsync('is_open_workspace', { path }))! : false;
+    return path ? (await invokeAsync('workspace.is_open_workspace', { path }))! : false;
   },
   getWorkspace: async (path: string): Promise<Workspace | null> => {
-    return path ? (await invokeAsync('get_open_workspace', { path }))! : null;
+    return path ? (await invokeAsync('workspace.get_open_workspace', { path }))! : null;
   },
   getWorkspaceSettings: async (path: string): Promise<WorkspaceSettings> => {
-    return (await invokeAsync('get_open_workspace_settings', { path }))!;
+    return (await invokeAsync('workspace.get_open_workspace_settings', { path }))!;
   },
   setWorkspaceSettings: async (path: string, settings: WorkspaceSettings): Promise<Workspace> => {
-    return (await invokeAsync('set_open_workspace_settings', { path, settings }))!;
+    return (await invokeAsync('workspace.set_open_workspace_settings', { path, settings }))!;
   },
   getOpenWorkspaceFileTree: async (path: string): Promise<FileTree> => {
-    return (await invokeAsync('get_open_workspace_file_tree', { path }))!;
+    return (await invokeAsync('workspace.get_open_workspace_file_tree', { path }))!;
   },
   callOpenWorkspaceReinit: async (path: string): Promise<void> => {
-    return (await invokeAsync('call_open_workspace_reinit', { path }))!;
+    return (await invokeAsync('workspace.call_open_workspace_reinit', { path }))!;
   },
   getCurrentWorkspace: async (): Promise<Workspace | null> => {
     const path = getCurrentOpenWorkspace();

@@ -99,7 +99,7 @@ const initPath = async () => {
     downloadDir: app.getPath('downloads'),
     homeDir: app.getPath('home'),
   };
-  bindings.invoke('init_dir', JSON.stringify(dirs));
+  bindings.invoke('path.init_dir', JSON.stringify(dirs));
 };
 
 export const initBindings = async (ipcMain: Electron.IpcMain) => {

@@ -37,10 +37,10 @@ async fn save_settings() -> CommandResult {
 }
 
 pub fn reg_commands() -> Result<()> {
-    reg_command_async("get_settings", get_settings)?;
-    reg_command_async("set_settings", set_settings)?;
-    reg_command_async("set_settings_and_save", set_settings_and_save)?;
-    reg_command_async("save_settings", save_settings)?;
+    reg_command_async("settings.get_settings", get_settings)?;
+    reg_command_async("settings.set_settings", set_settings)?;
+    reg_command_async("settings.set_settings_and_save", set_settings_and_save)?;
+    reg_command_async("settings.save_settings", save_settings)?;
 
     Ok(())
 }

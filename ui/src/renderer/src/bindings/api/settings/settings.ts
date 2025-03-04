@@ -7,15 +7,15 @@ export interface Settings {
 
 export const settings = {
   getSettings: async (): Promise<Settings> => {
-    return (await invokeAsync('get_settings'))!;
+    return (await invokeAsync('settings.get_settings'))!;
   },
   setSettings: async (settings: Settings) => {
-    return (await invokeAsync('set_settings', settings))!;
+    return (await invokeAsync('settings.set_settings', settings))!;
   },
   setSettingsAndSave: async (settings: Settings) => {
-    return (await invokeAsync('set_settings_and_save', settings))!;
+    return (await invokeAsync('settings.set_settings_and_save', settings))!;
   },
   saveSettings: async (): Promise<void> => {
-    return (await invokeAsync('save_settings'))!;
+    return (await invokeAsync('settings.save_settings'))!;
   },
 };

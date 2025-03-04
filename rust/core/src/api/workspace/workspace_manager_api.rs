@@ -143,16 +143,25 @@ async fn set_workspace_savedata(Json(args): Json<SetWorkspaceSaveDataArgs>) -> C
 }
 
 pub fn reg_commands() -> Result<()> {
-    reg_command_async("set_workspace_root_path", set_workspace_root_path)?;
-    reg_command_async("set_workspace_name", set_workspace_name)?;
-    reg_command_async("remove_workspace", remove_workspace)?;
-    reg_command_async("get_workspaces_metadata", get_workspaces_metadata)?;
-    reg_command_async("open_workspace_by_path", open_workspace_by_path)?;
-    reg_command_async("unload_workspace_by_path", unload_workspace_by_path)?;
-    reg_command_async("get_last_workspace", get_last_workspace)?;
-    reg_command_async("check_workspace_path_exist", check_workspace_path_exist)?;
-    reg_command_async("check_workspace_path_legal", check_workspace_path_legal)?;
-    reg_command_async("get_workspace_savedata", get_workspace_savedata)?;
-    reg_command_async("set_workspace_savedata", set_workspace_savedata)?;
+    reg_command_async("workspace.set_workspace_root_path", set_workspace_root_path)?;
+    reg_command_async("workspace.set_workspace_name", set_workspace_name)?;
+    reg_command_async("workspace.remove_workspace", remove_workspace)?;
+    reg_command_async("workspace.get_workspaces_metadata", get_workspaces_metadata)?;
+    reg_command_async("workspace.open_workspace_by_path", open_workspace_by_path)?;
+    reg_command_async(
+        "workspace.unload_workspace_by_path",
+        unload_workspace_by_path,
+    )?;
+    reg_command_async("workspace.get_last_workspace", get_last_workspace)?;
+    reg_command_async(
+        "workspace.check_workspace_path_exist",
+        check_workspace_path_exist,
+    )?;
+    reg_command_async(
+        "workspace.check_workspace_path_legal",
+        check_workspace_path_legal,
+    )?;
+    reg_command_async("workspace.get_workspace_savedata", get_workspace_savedata)?;
+    reg_command_async("workspace.set_workspace_savedata", set_workspace_savedata)?;
     Ok(())
 }

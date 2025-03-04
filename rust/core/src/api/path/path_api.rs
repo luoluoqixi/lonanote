@@ -44,11 +44,11 @@ fn init_dir(Json(dirs): Json<InitDir>) -> CommandResult {
 }
 
 pub fn reg_commands() -> Result<()> {
-    reg_command("get_cache_dir", get_cache_dir)?;
-    reg_command("get_home_dir", get_home_dir)?;
-    reg_command("get_data_dir", get_data_dir)?;
-    reg_command("get_download_dir", get_download_dir)?;
-    reg_command("init_dir", init_dir)?;
+    reg_command("path.get_cache_dir", get_cache_dir)?;
+    reg_command("path.get_home_dir", get_home_dir)?;
+    reg_command("path.get_data_dir", get_data_dir)?;
+    reg_command("path.get_download_dir", get_download_dir)?;
+    reg_command("path.init_dir", init_dir)?;
 
     Ok(())
 }

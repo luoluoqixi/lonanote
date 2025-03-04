@@ -81,12 +81,24 @@ async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> Comma
 }
 
 pub fn reg_commands() -> Result<()> {
-    reg_command_async("is_open_workspace", is_open_workspace)?;
-    reg_command_async("get_open_workspace", get_open_workspace)?;
-    reg_command_async("set_open_workspace_settings", set_open_workspace_settings)?;
-    reg_command_async("get_open_workspace_settings", get_open_workspace_settings)?;
-    reg_command_async("get_open_workspace_file_tree", get_open_workspace_file_tree)?;
-    reg_command_async("call_open_workspace_reinit", call_open_workspace_reinit)?;
+    reg_command_async("workspace.is_open_workspace", is_open_workspace)?;
+    reg_command_async("workspace.get_open_workspace", get_open_workspace)?;
+    reg_command_async(
+        "workspace.set_open_workspace_settings",
+        set_open_workspace_settings,
+    )?;
+    reg_command_async(
+        "workspace.get_open_workspace_settings",
+        get_open_workspace_settings,
+    )?;
+    reg_command_async(
+        "workspace.get_open_workspace_file_tree",
+        get_open_workspace_file_tree,
+    )?;
+    reg_command_async(
+        "workspace.call_open_workspace_reinit",
+        call_open_workspace_reinit,
+    )?;
 
     Ok(())
 }
