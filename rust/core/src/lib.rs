@@ -14,3 +14,8 @@ pub fn init() -> Result<()> {
     info!("init finish!");
     Ok(())
 }
+
+pub fn init_log() -> Result<()> {
+    utils::init_logger()?;
+    Ok(())
+}

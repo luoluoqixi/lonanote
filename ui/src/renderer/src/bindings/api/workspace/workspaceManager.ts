@@ -55,6 +55,7 @@ export const workspaceManager = {
     return (await invokeAsync('workspace.get_workspaces_metadata'))!;
   },
   openWorkspaceByPath: async (path: string): Promise<void> => {
+    const start = performance.now();
     path = formatPath(path);
     const isOpen = await workspace.isOpenWorkspace(path);
     if (isOpen) {
@@ -62,12 +63,13 @@ export const workspaceManager = {
     }
     await invokeAsync('workspace.open_workspace_by_path', { path });
     await setCurrentOpenWorkspace(path);
-    console.info('open workspace:', path);
+    console.log(`open workspace: ${(performance.now() - start).toFixed(2)}ms`);
+    // console.info('open workspace:', path);
   },
   unloadWorkspaceByPath: async (path: string): Promise<void> => {
     await invokeAsync('workspace.unload_workspace_by_path', { path });
     await setCurrentOpenWorkspace(null);
-    console.info('unload workspace:', path);
+    // console.info('unload workspace:', path);
   },
   getLastWorkspace: async (): Promise<string | null> => {
     return (await invokeAsync('workspace.get_last_workspace'))!;

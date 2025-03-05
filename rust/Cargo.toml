@@ -24,6 +24,8 @@ walkdir = "2.5.0"
 relative-path = "1.9.3"
 fork = "0.2.0"
 rfd = "0.15.2"
+fern = "0.7.1"
+chrono = "0.4.40"
 
 [profile.release]
 codegen-units = 1 # Compile crates one after another so the compiler can optimize better

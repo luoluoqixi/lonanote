@@ -21,8 +21,10 @@ impl WorkspaceIndex {
 
     pub fn reinit(&mut self) -> Result<(), String> {
         let root_path = self.file_tree.to_path_buf();
+        log::info!("workspace reinit: {}", root_path.display());
         let new_root = FileNode::from_path(&root_path, &root_path)?;
         self.file_tree.children = new_root.children.unwrap_or_default();
+        log::info!("workspace reinit finish");
 
         Ok(())
     }

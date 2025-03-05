@@ -47,6 +47,9 @@ pub fn run() {
                 .level(log::LevelFilter::Info)
                 .level_for("lonanote", log::LevelFilter::Info)
                 .level_for("lonanote_lib", log::LevelFilter::Info)
+                .level_for("lonanote-lib", log::LevelFilter::Info)
+                .level_for("lonanote-core", log::LevelFilter::Info)
+                .level_for("lonanote_core", log::LevelFilter::Info)
                 .level_for("tao", third_log_filter)
                 .level_for(
                     "tao::platform_impl::platform::event_loop::runner",

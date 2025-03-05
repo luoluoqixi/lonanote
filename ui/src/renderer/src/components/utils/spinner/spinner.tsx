@@ -33,10 +33,11 @@ export const GlobalSpinner = () => {
       pos="absolute"
       inset="0"
       bg="bg/80"
+      pointerEvents="auto"
     >
       <Center h="full">
         <Spinner color="teal.500" />
-        {store.content}
+        <div style={{ marginLeft: '10px' }}>{store.content}</div>
       </Center>
     </Box>
   );
