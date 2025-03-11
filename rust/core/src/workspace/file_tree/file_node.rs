@@ -4,13 +4,7 @@ use relative_path::RelativePathBuf;
 use serde::{Deserialize, Serialize};
 use walkdir::{DirEntry, WalkDir};
 
-#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum FileType {
-    #[default]
-    File,
-    Directory,
-}
+use super::FileType;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

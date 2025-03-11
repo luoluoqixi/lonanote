@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-use super::{error::WorkspaceError, file_tree::FileTree};
+use super::{
+    error::WorkspaceError,
+    file_tree::{FileTree, FileTreeSortType},
+};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -10,17 +13,22 @@ pub struct WorkspaceIndex {
 }
 
 impl WorkspaceIndex {
-    pub fn new(workspace_path: impl AsRef<Path>) -> Result<Self, WorkspaceError> {
+    pub fn new(
+        workspace_path: impl AsRef<Path>,
+        sort_type: Option<FileTreeSortType>,
+    ) -> Result<Self, WorkspaceError> {
         Ok(Self {
-            file_tree: FileTree::new(workspace_path),
+            file_tree: FileTree::new(workspace_path, sort_type),
         })
     }
 
     pub fn reinit(&mut self) -> Result<(), String> {
         let root_path = self.file_tree.to_path_buf();
+        let start = std::time::Instant::now();
         log::info!("workspace reinit: {}", root_path.display());
         self.file_tree.update_tree()?;
-        log::info!("workspace reinit finish");
+        let time = start.elapsed().as_millis();
+        log::info!("workspace reinit finish: {:?}ms", time);
 
         Ok(())
     }

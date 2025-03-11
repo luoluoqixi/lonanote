@@ -21,10 +21,14 @@ pub struct WorkspaceInstance {
 impl WorkspaceInstance {
     pub fn new(workspace_path: &PathBuf) -> Result<Self, WorkspaceError> {
         create_workspace_config_folder(workspace_path)?;
+        let settings = WorkspaceSettings::new(workspace_path)?;
+        let metadata = WorkspaceMetadata::new(workspace_path)?;
+        let index = WorkspaceIndex::new(workspace_path, settings.file_tree_sort_type.clone())?;
+
         Ok(Self {
-            metadata: WorkspaceMetadata::new(workspace_path)?,
-            settings: WorkspaceSettings::new(workspace_path)?,
-            index: Arc::new(RwLock::new(WorkspaceIndex::new(workspace_path)?)),
+            metadata,
+            settings,
+            index: Arc::new(RwLock::new(index)),
         })
     }
 

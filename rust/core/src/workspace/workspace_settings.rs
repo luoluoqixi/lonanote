@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use super::{
     config::{from_json_config, save_json_config, WORKSPACE_SETTINGS_FILE},
     error::WorkspaceError,
+    file_tree::FileTreeSortType,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -11,6 +12,7 @@ use super::{
 pub struct WorkspaceSettings {
     #[serde(skip)]
     pub workspace_path: PathBuf,
+    pub file_tree_sort_type: Option<FileTreeSortType>,
 }
 
 impl WorkspaceSettings {
@@ -22,6 +24,7 @@ impl WorkspaceSettings {
         } else {
             Ok(Self {
                 workspace_path: workspace_path.as_ref().to_path_buf(),
+                file_tree_sort_type: None,
             })
         }
     }
