@@ -1,5 +1,4 @@
 import { Box, Span } from '@chakra-ui/react';
-import dayjs from 'dayjs';
 import React, { RefObject, useRef, useState } from 'react';
 import { IoMdMore } from 'react-icons/io';
 import {
@@ -14,6 +13,7 @@ import { WorkspaceMetadata, fs } from '@/bindings/api';
 import { Button, Dialog, Editable, Heading, IconButton, Menu, toaster } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
+import { timeUtils } from '@/utils';
 
 import styles from './WorkspaceManager.module.scss';
 
@@ -248,7 +248,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                   const isEdit = workspacesEdit.length > i ? workspacesEdit[i] : false;
                   const name = workspacesName.length > i ? workspacesName[i] : '';
                   const path = workspacesPath.length > i ? workspacesPath[i] : '';
-                  const lastOpenTime = dayjs(workspace.lastOpenTime * 1000);
+                  const lastOpenTime = timeUtils.getTimeFormat(workspace.lastOpenTime);
                   return (
                     <Box
                       key={i}
@@ -295,9 +295,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                             }}
                           />
                           <div className={styles.workspaceLastOpenTime}>
-                            <Span color="fg.muted">
-                              {lastOpenTime.format('YYYY-MM-DD HH:mm:ss')}
-                            </Span>
+                            <Span color="fg.muted">{lastOpenTime}</Span>
                           </div>
                         </div>
                         <div className={styles.workspacePath}>{path}</div>

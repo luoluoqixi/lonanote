@@ -23,7 +23,10 @@ export interface FileNode {
   fileType: FileType;
   path: string;
   size: number | null;
-  lastModified: number | null;
+  lastModifiedTime: number | null;
+  createTime: number | null;
+  fileCount: number;
+  dirCount: number;
 }
 
 export type FileTreeSortType =

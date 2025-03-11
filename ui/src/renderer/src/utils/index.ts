@@ -107,4 +107,14 @@ export const utils = {
     const name = names.length > 0 ? names[names.length - 1] : '';
     return name;
   },
+  getFileSizeStr: (size: number) => {
+    let unit = 1000;
+    const { platform } = utils.detectBrowserAndPlatform();
+    if (platform === 'windows') {
+      unit = 1024;
+    }
+    return `${(size / unit).toFixed(2)} kb`;
+  },
 };
+
+export * from './timeUtils';

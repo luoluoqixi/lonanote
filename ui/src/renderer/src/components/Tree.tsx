@@ -11,6 +11,8 @@ import {
 import { VscChevronDown, VscChevronRight } from 'react-icons/vsc';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 
+import { Tooltip, TooltipProps } from './ui';
+
 export interface TreeItem<T> {
   id: string;
   label?: string;
@@ -22,6 +24,11 @@ export interface TreeItem<T> {
 export interface TreeItemProps<T> {
   style?: CSSProperties;
   className?: string;
+  tooltip?: (
+    data: TreeItemFlattenData<T>,
+    context: TreeItemContext,
+    state: TreeItemState,
+  ) => TooltipProps | null | undefined;
   onClick?: (
     e: MouseEvent<HTMLDivElement> | KeyboardEvent,
     data: TreeItemFlattenData<T>,
@@ -41,6 +48,16 @@ export interface TreeItemProps<T> {
     state: TreeItemState,
   ) => void;
   customRender?: (
+    data: TreeItemFlattenData<T>,
+    context: TreeItemContext,
+    state: TreeItemState,
+  ) => React.ReactNode;
+  customIcon?: (
+    data: TreeItemFlattenData<T>,
+    context: TreeItemContext,
+    state: TreeItemState,
+  ) => React.ReactNode;
+  customTitle?: (
     data: TreeItemFlattenData<T>,
     context: TreeItemContext,
     state: TreeItemState,
@@ -136,7 +153,10 @@ const getFlattenData = <T,>(
 };
 
 export const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
+  const tooltip = props?.tooltip;
   const customRender = props?.customRender;
+  const customIcon = props?.customIcon;
+  const customTitle = props?.customTitle;
   const left = (data.depth - 1) * 20 + 10;
   const onRowClick = (e: MouseEvent<HTMLDivElement>) => {
     const multiple = (context.multipleCtrl && e.ctrlKey) || (context.multipleShift && e.shiftKey);
@@ -165,7 +185,7 @@ export const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) =>
     color: 'fg',
     _icon: { color: 'colorPalette.fg' },
   };
-  return (
+  const rowNode = (
     <Stack
       style={{
         // display: 'flex',
@@ -201,7 +221,9 @@ export const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) =>
           }}
         >
           <div style={{ width: 20, flexShrink: 0 }}>
-            {!data.isLeaf && (state.expand ? <VscChevronDown /> : <VscChevronRight />)}
+            {customIcon
+              ? customIcon(data, context, state)
+              : !data.isLeaf && (state.expand ? <VscChevronDown /> : <VscChevronRight />)}
           </div>
           <div
             style={{
@@ -212,12 +234,14 @@ export const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) =>
               minWidth: 0,
             }}
           >
-            {data.label}
+            {customTitle ? customTitle(data, context, state) : data.label}
           </div>
         </div>
       )}
     </Stack>
   );
+  const tooltipProps = tooltip?.(data, context, state);
+  return tooltipProps ? <Tooltip {...tooltipProps}>{rowNode}</Tooltip> : rowNode;
 };
 
 export const Tree = <T,>(props: TreeProps<T>) => {

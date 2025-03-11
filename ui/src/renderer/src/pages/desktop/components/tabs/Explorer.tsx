@@ -1,7 +1,7 @@
 import { Box } from '@chakra-ui/react';
 import { useState } from 'react';
 import { MdDeleteOutline, MdOutlineDriveFileRenameOutline } from 'react-icons/md';
-import { VscFolderOpened, VscNewFile, VscNewFolder } from 'react-icons/vsc';
+import { VscFolderOpened, VscNewFile, VscNewFolder, VscOpenPreview } from 'react-icons/vsc';
 
 import { FileNode, FileTree, Workspace, fs } from '@/bindings/api';
 import { Tree, TreeItem, dialog } from '@/components';
@@ -9,7 +9,7 @@ import { Button, Heading, Menu, toaster } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
 import { useWorkspaceStore } from '@/models/workspace';
-import { utils } from '@/utils';
+import { timeUtils, utils } from '@/utils';
 
 import styles from './Explorer.module.scss';
 
@@ -107,6 +107,9 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       fs.showInFolder(path);
     }
   };
+  const openFile = async () => {
+    toaster.success({ title: 'todo' });
+  };
   const newFile = async () => {
     toaster.success({ title: 'todo' });
   };
@@ -131,6 +134,10 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       });
     }
   };
+  const itemTooltipPositioning = {
+    placement: 'right',
+  } as const;
+  const menuIsFile = currentMenuNode && currentMenuNode.fileType === 'file';
   return (
     <>
       <div className={styles.workspaceExplorer}>
@@ -140,6 +147,30 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             items={treeItems}
             fixedItemHeight={30}
             itemsProps={{
+              tooltip: (data) => {
+                const fileNode = data.data;
+                if (!fileNode) return null;
+                const isDir = fileNode?.fileType === 'directory';
+                const content = isDir ? (
+                  `${fileNode.fileCount}个文件, ${fileNode.dirCount}个文件夹`
+                ) : (
+                  <>
+                    {fileNode.lastModifiedTime && (
+                      <div>{`最后修改: ${timeUtils.getTimeFormat(fileNode.lastModifiedTime)}`}</div>
+                    )}
+                    {fileNode.createTime && (
+                      <div>{`创建时间: ${timeUtils.getTimeFormat(fileNode.createTime)}`}</div>
+                    )}
+                    {fileNode.size && (
+                      <div>{`文件大小: ${utils.getFileSizeStr(fileNode.size)}`}</div>
+                    )}
+                  </>
+                );
+                return {
+                  content,
+                  positioning: itemTooltipPositioning,
+                };
+              },
               onClick(e, data, context, state) {
                 console.log('onClick', data, context, state);
               },
@@ -158,15 +189,27 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
         anchorPoint={menuPosition}
       >
         <Menu.Content animation="none">
-          <Menu.Item value="new-file" onClick={newFile}>
-            <VscNewFile />
-            <Box flex="1">新建笔记</Box>
-          </Menu.Item>
-          <Menu.Item value="new-folder" onClick={newFolder}>
-            <VscNewFolder />
-            <Box flex="1">新建文件夹</Box>
-          </Menu.Item>
-          <Menu.Separator />
+          {menuIsFile ? (
+            <>
+              <Menu.Item value="open-file" onClick={openFile}>
+                <VscOpenPreview />
+                <Box flex="1">打开</Box>
+              </Menu.Item>
+            </>
+          ) : (
+            <>
+              <Menu.Item value="new-file" onClick={newFile}>
+                <VscNewFile />
+                <Box flex="1">新建笔记</Box>
+              </Menu.Item>
+              <Menu.Item value="new-folder" onClick={newFolder}>
+                <VscNewFolder />
+                <Box flex="1">新建文件夹</Box>
+              </Menu.Item>
+              <Menu.Separator />
+            </>
+          )}
+
           <Menu.Item value="open-folder" onClick={openFolderClick}>
             <VscFolderOpened />
             <Box flex="1">在资源管理器中显示</Box>
