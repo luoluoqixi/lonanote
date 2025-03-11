@@ -74,7 +74,10 @@ fn show_in_folder(Json(args): Json<PathArg>) -> CommandResult {
     let path = args.path;
     #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos",))]
     {
+        #[cfg(target_os = "windows")]
         let path = path.replace("/", "\\");
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let path = path.replace("\\", "/");
         let path = PathBuf::from(&path);
         let path = if path.exists() {
             Some(path.to_str().unwrap().to_string())
