@@ -39,19 +39,6 @@ interface WorkspaceExplorerProps {
 
 export type ExplorerTreeItem = TreeItem<FileNode>;
 
-// const fileNodeCompare = (a: ExplorerTreeItem, b: ExplorerTreeItem) => {
-//   if (!a.label || !b.label) return 0;
-//   const aIsFolder = a.isLeaf || false;
-//   const bIsFolder = b.isLeaf || false;
-//   if (aIsFolder === bIsFolder) {
-//     return utils.fileNameCompare(a.label, b.label);
-//   }
-//   if (aIsFolder) {
-//     return 1;
-//   }
-//   return -1;
-// };
-
 const getFileName = (item: FileNode): string => {
   if ('name' in item) {
     return item.name as string;
@@ -70,10 +57,13 @@ const getTreeData = (fileTree: FileTree): ExplorerTreeItem[] => {
       isLeaf: f.fileType === 'file',
       data: f,
     }));
-    // nodes.sort(fileNodeCompare);
     return nodes;
   };
-  return getTreeItems(fileTree.children);
+  if (fileTree.root && fileTree.root.children) {
+    console.log(fileTree.root);
+    return getTreeItems(fileTree.root.children);
+  }
+  return [];
 };
 
 const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
@@ -86,7 +76,9 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   useEffect(async () => {
     const fileTree = await workspaceManagerController.getCurrentWorkspaceFileTree();
     if (fileTree) {
+      // const start = performance.now();
       setTreeItems(getTreeData(fileTree));
+      // console.log(`convert tree data: ${(performance.now() - start).toFixed(2)}ms`);
     }
   }, [currentWorkspace]);
 

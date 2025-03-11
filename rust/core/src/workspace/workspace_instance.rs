@@ -3,8 +3,11 @@ use std::{path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
 
 use super::{
-    config::create_workspace_config_folder, error::WorkspaceError, file_tree::FileTree,
-    workspace_index::WorkspaceIndex, workspace_metadata::WorkspaceMetadata,
+    config::create_workspace_config_folder,
+    error::WorkspaceError,
+    file_tree::{FileTree, FileTreeSortType},
+    workspace_index::WorkspaceIndex,
+    workspace_metadata::WorkspaceMetadata,
     workspace_settings::WorkspaceSettings,
 };
 
@@ -45,6 +48,18 @@ impl WorkspaceInstance {
 
     pub async fn get_file_tree(&self) -> FileTree {
         self.index.read().await.file_tree.clone()
+    }
+
+    pub async fn set_file_tree_sort_type(
+        &mut self,
+        sort_type: FileTreeSortType,
+    ) -> Result<(), WorkspaceError> {
+        let mut settings = self.settings.clone();
+        settings.file_tree_sort_type = Some(sort_type.clone());
+        self.set_settings(settings).await?;
+        self.index.write().await.file_tree.set_sort_type(sort_type);
+
+        Ok(())
     }
 
     pub async fn set_settings(

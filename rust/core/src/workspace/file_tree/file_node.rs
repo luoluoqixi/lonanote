@@ -11,9 +11,11 @@ use super::FileType;
 pub struct FileNode {
     pub path: RelativePathBuf,
     pub file_type: FileType,
-    pub last_modified: Option<u64>,
+    pub last_modified_time: Option<u64>,
+    pub create_time: Option<u64>,
     pub size: Option<u64>,
-    pub count: Option<usize>,
+    pub file_count: usize,
+    pub dir_count: usize,
     pub children: Option<Vec<FileNode>>,
 }
 
@@ -45,8 +47,14 @@ impl FileNode {
 
         let is_file = file_type == FileType::File;
 
-        let last_modified = metadata
+        let last_modified_time = metadata
             .modified()
+            .ok()
+            .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+            .map(|dur| dur.as_secs());
+
+        let create_time = metadata
+            .created()
             .ok()
             .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
             .map(|dur| dur.as_secs());
@@ -57,10 +65,39 @@ impl FileNode {
             path: relative_path,
             file_type,
             children: None,
-            last_modified,
+            last_modified_time,
+            create_time,
             size,
-            count: None,
+            file_count: 0,
+            dir_count: 0,
         })
+    }
+
+    pub fn calc_count(&mut self) {
+        if let Some(children) = self.children.as_mut() {
+            let mut file_count = 0;
+            let mut dir_count = 0;
+            for child in children.iter_mut() {
+                match child.file_type {
+                    FileType::File => {
+                        file_count += 1;
+                        child.file_count = 0;
+                        child.dir_count = 0;
+                    }
+                    FileType::Directory => {
+                        dir_count += 1;
+                        child.calc_count();
+                        dir_count += child.dir_count;
+                        file_count += child.file_count;
+                    }
+                }
+            }
+            self.file_count = file_count;
+            self.dir_count = dir_count;
+        } else {
+            self.file_count = 0;
+            self.dir_count = 0;
+        }
     }
 
     pub fn from_path(root: &Path) -> Result<Self, String> {
@@ -70,7 +107,7 @@ impl FileNode {
             Some(root_entry) => {
                 let root_entry =
                     root_entry.map_err(|err| format!("error walking root directory: {}", err))?;
-                let root_node = Self::new_node(root, root_entry)?;
+                let mut root_node = Self::new_node(root, root_entry)?;
 
                 let mut stack: Vec<&FileNode> = vec![&root_node];
 
@@ -94,6 +131,9 @@ impl FileNode {
                         stack.push(node_ref);
                     }
                 }
+                // let start = std::time::Instant::now();
+                root_node.calc_count();
+                // log::info!("calc_count: {:?}ms", start.elapsed().as_millis());
 
                 Ok(root_node)
             }

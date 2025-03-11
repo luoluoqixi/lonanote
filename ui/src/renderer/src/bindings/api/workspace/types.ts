@@ -26,7 +26,16 @@ export interface FileNode {
   lastModified: number | null;
 }
 
+export type FileTreeSortType =
+  | 'name'
+  | 'nameRev'
+  | 'lastModifiedTime'
+  | 'lastModifiedTimeRev'
+  | 'createTime'
+  | 'createTimeRev';
+
 export interface FileTree {
   path: string;
-  children: FileNode[];
+  sortType: FileTreeSortType;
+  root?: FileNode | null;
 }

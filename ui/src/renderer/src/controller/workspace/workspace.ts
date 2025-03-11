@@ -1,4 +1,5 @@
 import {
+  FileTreeSortType,
   Workspace,
   WorkspaceMetadata,
   WorkspaceSettings,
@@ -38,5 +39,10 @@ export const setWorkspaceRootPath = async (path: string, newRootPath: string, is
 
 export const setCurrentWorkspaceSettings = async (settings: WorkspaceSettings) => {
   await workspace.setCurrentWorkspaceSettings(settings);
+  await updateCurrentWorkspace();
+};
+
+export const setCurrentWorkspaceSortType = async (sortType: FileTreeSortType) => {
+  await workspace.setCurrentWorkspaceFileTreeSortType(sortType);
   await updateCurrentWorkspace();
 };

@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Result};
 
 use crate::workspace::{
-    get_workspace_manager, get_workspace_manager_mut, workspace_settings::WorkspaceSettings,
+    file_tree::FileTreeSortType, get_workspace_manager, get_workspace_manager_mut,
+    workspace_settings::WorkspaceSettings,
 };
 
 use lonanote_commands::{
@@ -70,6 +71,25 @@ async fn get_open_workspace_file_tree(Json(args): Json<GetWorkspaceArgs>) -> Com
     CommandResponse::json(file_tree)
 }
 
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetWorkspaceFileTreeSortTypeArgs {
+    pub path: String,
+    pub sort_type: FileTreeSortType,
+}
+
+async fn set_open_workspace_file_tree_sort_type(
+    Json(args): Json<SetWorkspaceFileTreeSortTypeArgs>,
+) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    let workspace = workspace_manager
+        .get_workspace_mut(&args.path)
+        .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+    workspace.set_file_tree_sort_type(args.sort_type).await?;
+
+    Ok(CommandResponse::None)
+}
+
 async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
@@ -94,6 +114,10 @@ pub fn reg_commands() -> Result<()> {
     reg_command_async(
         "workspace.get_open_workspace_file_tree",
         get_open_workspace_file_tree,
+    )?;
+    reg_command_async(
+        "workspace.set_open_workspace_file_tree_sort_type",
+        set_open_workspace_file_tree_sort_type,
     )?;
     reg_command_async(
         "workspace.call_open_workspace_reinit",

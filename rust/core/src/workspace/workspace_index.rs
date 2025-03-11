@@ -27,8 +27,10 @@ impl WorkspaceIndex {
         let start = std::time::Instant::now();
         log::info!("workspace reinit: {}", root_path.display());
         self.file_tree.update_tree()?;
-        let time = start.elapsed().as_millis();
-        log::info!("workspace reinit finish: {:?}ms", time);
+        log::info!(
+            "workspace reinit finish: {:?}ms",
+            start.elapsed().as_millis()
+        );
 
         Ok(())
     }

@@ -26,6 +26,7 @@ relative-path = { workspace = true, features = ["serde"] }
 fern = { workspace = true }
 chrono = { workspace = true }
 indexmap = { workspace = true }
+alphanumeric-sort = { workspace = true }
 
 # [target.'cfg(target_os = "windows")'.dependencies]
 # [target.'cfg(target_os = "macos")'.dependencies]
