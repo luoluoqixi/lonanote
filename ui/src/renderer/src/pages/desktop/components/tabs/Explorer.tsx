@@ -1,11 +1,22 @@
-import { Box } from '@chakra-ui/react';
+import { Box, Center, Spinner } from '@chakra-ui/react';
 import { useState } from 'react';
-import { MdDeleteOutline, MdOutlineDriveFileRenameOutline } from 'react-icons/md';
-import { VscFolderOpened, VscNewFile, VscNewFolder, VscOpenPreview } from 'react-icons/vsc';
+import {
+  MdDeleteOutline,
+  MdOutlineDriveFileRenameOutline,
+  MdOutlineFileOpen,
+} from 'react-icons/md';
+import {
+  VscCollapseAll,
+  VscCopy,
+  VscFolderOpened,
+  VscNewFile,
+  VscNewFolder,
+  VscRefresh,
+} from 'react-icons/vsc';
 
 import { FileNode, FileTree, Workspace, fs } from '@/bindings/api';
 import { Tree, TreeItem, dialog } from '@/components';
-import { Button, Heading, Menu, toaster } from '@/components/ui';
+import { Button, Heading, IconButton, Menu, Tooltip, toaster } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
 import { useWorkspaceStore } from '@/models/workspace';
@@ -60,27 +71,43 @@ const getTreeData = (fileTree: FileTree): ExplorerTreeItem[] => {
     return nodes;
   };
   if (fileTree.root && fileTree.root.children) {
-    console.log(fileTree.root);
     return getTreeItems(fileTree.root.children);
   }
   return [];
 };
 
 const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
+  const [refreshTreeDataState, setRefreshDataState] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
+  const [openLoading, setOpenLoading] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [currentMenuNode, setCurrentMenuNode] = useState<FileNode>();
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const [treeItems, setTreeItems] = useState<ExplorerTreeItem[]>(() => []);
 
   useEffect(async () => {
-    const fileTree = await workspaceManagerController.getCurrentWorkspaceFileTree();
-    if (fileTree) {
-      // const start = performance.now();
-      setTreeItems(getTreeData(fileTree));
-      // console.log(`convert tree data: ${(performance.now() - start).toFixed(2)}ms`);
+    const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
+    try {
+      const start = performance.now();
+      const fileTree = await workspaceManagerController.getCurrentWorkspaceFileTree();
+      console.log(`get file tree: ${(performance.now() - start).toFixed(2)}ms,`, fileTree);
+      if (fileTree) {
+        const treeData = getTreeData(fileTree);
+        setTreeItems(treeData);
+      }
+    } catch (e) {
+      console.error(e);
+      toaster.error({ title: '错误', description: `获取文件树错误: ${e}` });
     }
-  }, [currentWorkspace]);
+    if (openLoadingTime) {
+      window.clearTimeout(openLoadingTime);
+      setOpenLoading(false);
+    }
+  }, [currentWorkspace, refreshTreeDataState]);
+
+  const refreshTree = () => {
+    setRefreshDataState(!refreshTreeDataState);
+  };
 
   const openMenuClick = (
     node: FileNode,
@@ -108,31 +135,54 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     }
   };
   const openFile = async () => {
-    toaster.success({ title: 'todo' });
+    if (currentMenuNode) {
+      const path = `${workspace.metadata.path}/${currentMenuNode.path}`;
+      toaster.success({ title: `todo open: ${path}` });
+    }
   };
   const newFile = async () => {
-    toaster.success({ title: 'todo' });
+    if (currentMenuNode && currentMenuNode.fileType === 'directory') {
+      toaster.success({ title: 'todo' });
+    }
   };
   const newFolder = async () => {
-    toaster.success({ title: 'todo' });
+    if (currentMenuNode && currentMenuNode.fileType === 'directory') {
+      toaster.success({ title: 'todo' });
+    }
   };
   const renameItem = async () => {
-    toaster.success({ title: 'todo' });
+    if (currentMenuNode) {
+      toaster.success({ title: 'todo' });
+    }
+  };
+  const copyPath = async () => {
+    if (currentMenuNode) {
+      let path = `${workspace.metadata.path}/${currentMenuNode.path}`;
+      if (utils.detectBrowserAndPlatform().platform === 'windows') {
+        path = path.replace(/\//g, '\\');
+      }
+      navigator.clipboard.writeText(path);
+      toaster.success({ title: '成功' });
+    }
   };
   const deleteItem = async () => {
     if (currentMenuNode) {
       const isFile = currentMenuNode.fileType === 'file';
       const fileName = utils.getFileName(currentMenuNode.path);
       const fileType = isFile ? '文件' : '文件夹';
+      const path = `${workspace.metadata.path}/${currentMenuNode.path}`;
       dialog.showDialog({
         title: '提示',
         content: `确定要删除${fileType} ${fileName} 吗？`,
         okBtnColorPalette: 'red',
         onOk: () => {
-          toaster.success({ title: 'todo' });
+          toaster.success({ title: `todo delete: ${path}` });
         },
       });
     }
+  };
+  const collapseAllFolder = () => {
+    toaster.success({ title: 'todo' });
   };
   const itemTooltipPositioning = {
     placement: 'right',
@@ -141,7 +191,36 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   return (
     <>
       <div className={styles.workspaceExplorer}>
-        <div className={styles.workspaceExplorerTitle}>{workspace.metadata.name}</div>
+        <div className={styles.workspaceExplorerTitle}>
+          <div className={styles.workspaceExplorerTitleText}>{workspace.metadata.name}</div>
+          <div className={styles.workspaceExplorerTitleButtons}>
+            <Tooltip content="新建笔记" positioning={{ placement: 'bottom' }}>
+              <IconButton size="2xs" variant="ghost" onClick={newFile}>
+                <VscNewFile />
+              </IconButton>
+            </Tooltip>
+            <Tooltip content="新建文件夹" positioning={{ placement: 'bottom' }}>
+              <IconButton size="2xs" variant="ghost" onClick={newFolder}>
+                <VscNewFolder />
+              </IconButton>
+            </Tooltip>
+            <Tooltip content="刷新资源管理器" positioning={{ placement: 'bottom' }}>
+              <IconButton size="2xs" variant="ghost" onClick={refreshTree}>
+                <VscRefresh />
+              </IconButton>
+            </Tooltip>
+            <Tooltip content="在资源管理器中折叠文件夹" positioning={{ placement: 'bottom' }}>
+              <IconButton size="2xs" variant="ghost" onClick={collapseAllFolder}>
+                <VscCollapseAll />
+              </IconButton>
+            </Tooltip>
+          </div>
+
+          {/* <div></div> */}
+          {/* <div>
+            <Button>123</Button>
+          </div> */}
+        </div>
         <div className={styles.workspaceExplorerTree}>
           <Tree
             items={treeItems}
@@ -192,7 +271,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           {menuIsFile ? (
             <>
               <Menu.Item value="open-file" onClick={openFile}>
-                <VscOpenPreview />
+                <MdOutlineFileOpen />
                 <Box flex="1">打开</Box>
               </Menu.Item>
             </>
@@ -215,6 +294,13 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             <Box flex="1">在资源管理器中显示</Box>
           </Menu.Item>
           <Menu.Separator />
+
+          <Menu.Item value="copy-path" onClick={copyPath}>
+            <VscCopy />
+            <Box flex="1">复制路径</Box>
+          </Menu.Item>
+          <Menu.Separator />
+
           <Menu.Item value="rename-item" onClick={renameItem}>
             <MdOutlineDriveFileRenameOutline />
             <Box flex="1">重命名</Box>
@@ -230,6 +316,19 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           </Menu.Item>
         </Menu.Content>
       </Menu.Root>
+      <Box
+        visibility={openLoading ? 'visible' : 'hidden'}
+        zIndex={9998}
+        pos="absolute"
+        inset="0"
+        bg="bg/80"
+        pointerEvents="auto"
+      >
+        <Center h="full">
+          <Spinner color="teal.500" />
+          <div style={{ marginLeft: '10px' }}>刷新文件树...</div>
+        </Center>
+      </Box>
     </>
   );
 };

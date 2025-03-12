@@ -10,7 +10,7 @@ import { useWorkspaceStore } from '@/models/workspace';
 
 export const useWorkspace = useWorkspaceStore;
 
-export const setCurrentWorkspace = (currentWorkspace: Workspace) => {
+export const setCurrentWorkspace = (currentWorkspace: Workspace | null) => {
   useWorkspaceStore.setState((s) => ({ ...s, currentWorkspace }));
 };
 

@@ -1,7 +1,7 @@
 import { getCurrentOpenWorkspace, workspace, workspaceManager } from '@/bindings/api/workspace';
 import { useSettingsStore } from '@/models/settings';
 
-import { setCurrentWorkspace, updateWorkspaces } from './workspace';
+import { updateWorkspaces } from './workspace';
 import * as workspaceController from './workspace';
 import * as workspaceManagerController from './workspaceManager';
 
@@ -26,12 +26,10 @@ export const getInitWorkspace = async () => {
       }
     }
   }
-  return await workspace.getCurrentWorkspace();
 };
 
 export const initWorkspace = async () => {
-  const ws = await getInitWorkspace();
-  if (ws) setCurrentWorkspace(ws);
+  await getInitWorkspace();
   updateWorkspaces();
 };
 

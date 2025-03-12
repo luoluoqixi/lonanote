@@ -1,13 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::Arc};
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockReadGuard};
 
 use super::{
-    config::create_workspace_config_folder,
-    error::WorkspaceError,
-    file_tree::{FileTree, FileTreeSortType},
-    workspace_index::WorkspaceIndex,
-    workspace_metadata::WorkspaceMetadata,
+    config::create_workspace_config_folder, error::WorkspaceError, file_tree::FileTreeSortType,
+    workspace_index::WorkspaceIndex, workspace_metadata::WorkspaceMetadata,
     workspace_settings::WorkspaceSettings,
 };
 
@@ -46,8 +43,8 @@ impl WorkspaceInstance {
         Ok(())
     }
 
-    pub async fn get_file_tree(&self) -> FileTree {
-        self.index.read().await.file_tree.clone()
+    pub async fn get_workspace_index(&self) -> RwLockReadGuard<'_, WorkspaceIndex> {
+        self.index.read().await
     }
 
     pub async fn set_file_tree_sort_type(

@@ -40,6 +40,7 @@ export const unloadCurrentWorkspace = async () => {
   if (currentWorkspace != null) {
     try {
       await workspaceManager.unloadWorkspaceByPath(currentWorkspace);
+      setCurrentWorkspace(null);
     } catch (e) {
       toaster.error({
         title: '错误',

@@ -64,7 +64,6 @@ export const workspaceManager = {
     await invokeAsync('workspace.open_workspace_by_path', { path });
     await setCurrentOpenWorkspace(path);
     console.log(`open workspace: ${(performance.now() - start).toFixed(2)}ms`);
-    // console.info('open workspace:', path);
   },
   unloadWorkspaceByPath: async (path: string): Promise<void> => {
     await invokeAsync('workspace.unload_workspace_by_path', { path });

@@ -67,8 +67,8 @@ async fn get_open_workspace_file_tree(Json(args): Json<GetWorkspaceArgs>) -> Com
         .get_workspace(&args.path)
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
 
-    let file_tree = workspace.get_file_tree().await;
-    CommandResponse::json(file_tree)
+    let index = workspace.get_workspace_index().await;
+    CommandResponse::json(&index.file_tree)
 }
 
 #[derive(Debug, serde::Deserialize)]
