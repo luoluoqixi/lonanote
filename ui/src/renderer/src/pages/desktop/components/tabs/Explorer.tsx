@@ -188,6 +188,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     placement: 'right',
   } as const;
   const menuIsFile = currentMenuNode && currentMenuNode.fileType === 'file';
+  const titleIcon = { width: '4', height: '4' };
   return (
     <>
       <div className={styles.workspaceExplorer}>
@@ -195,22 +196,22 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           <div className={styles.workspaceExplorerTitleText}>{workspace.metadata.name}</div>
           <div className={styles.workspaceExplorerTitleButtons}>
             <Tooltip content="新建笔记" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" variant="ghost" onClick={newFile}>
+              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={newFile}>
                 <VscNewFile />
               </IconButton>
             </Tooltip>
             <Tooltip content="新建文件夹" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" variant="ghost" onClick={newFolder}>
+              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={newFolder}>
                 <VscNewFolder />
               </IconButton>
             </Tooltip>
             <Tooltip content="刷新资源管理器" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" variant="ghost" onClick={refreshTree}>
+              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={refreshTree}>
                 <VscRefresh />
               </IconButton>
             </Tooltip>
             <Tooltip content="在资源管理器中折叠文件夹" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" variant="ghost" onClick={collapseAllFolder}>
+              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={collapseAllFolder}>
                 <VscCollapseAll />
               </IconButton>
             </Tooltip>
