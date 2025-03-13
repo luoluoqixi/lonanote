@@ -37,6 +37,18 @@ export const fs = {
   createDirAll: async (path: string): Promise<void> => {
     return (await invoke('fs.create_dir_all', { path }))!;
   },
+  createFile: async (path: string, contents: string): Promise<void> => {
+    return (await invoke('fs.create_file', { path, contents }))!;
+  },
+  delete: async (path: string, trash: boolean): Promise<void> => {
+    return (await invoke('fs.delete', { path, trash }))!;
+  },
+  move: async (srcPath: string, targetPath: string, override: boolean): Promise<void> => {
+    return (await invoke('fs.move', { srcPath, targetPath, override }))!;
+  },
+  copy: async (srcPath: string, targetPath: string, override: boolean): Promise<void> => {
+    return (await invoke('fs.copy', { srcPath, targetPath, override }))!;
+  },
   write: async (path: string, contents: string): Promise<void> => {
     return (await invoke('fs.write', { path, contents }))!;
   },

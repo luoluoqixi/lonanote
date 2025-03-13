@@ -9,6 +9,8 @@ use lonanote_commands::{
 use rfd::AsyncFileDialog;
 use serde::{Deserialize, Serialize};
 
+use crate::utils::fs_utils;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct PathArg {
@@ -57,6 +59,86 @@ fn create_dir_all(Json(args): Json<PathArg>) -> CommandResult {
     Ok(CommandResponse::None)
 }
 
+fn create_file(Json(args): Json<WriteArg>) -> CommandResult {
+    let path = PathBuf::from(&args.path);
+    if path.exists() {
+        return Err(anyhow::anyhow!("path already exists: {}", path.display()));
+    }
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(path, args.contents)?;
+        Ok(CommandResponse::None)
+    } else {
+        Err(anyhow::anyhow!("path parent is None: {}", path.display()))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeleteArg {
+    path: String,
+    trash: bool,
+}
+
+fn delete(Json(args): Json<DeleteArg>) -> CommandResult {
+    let path = PathBuf::from(args.path);
+    if path.exists() {
+        if args.trash {
+            #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
+            {
+                use trash;
+                trash::delete(path)?;
+            }
+            #[cfg(all(
+                not(target_os = "windows"),
+                not(target_os = "linux"),
+                not(target_os = "macos")
+            ))]
+            {
+                return Err(anyhow::anyhow!("not support delete to trash"));
+            }
+        } else if path.is_file() {
+            fs_extra::file::remove(path)?;
+        } else {
+            fs_extra::dir::remove(path)?;
+        }
+    }
+    Ok(CommandResponse::None)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CopyArg {
+    src_path: String,
+    target_path: String,
+    #[serde(rename = "override")]
+    r#override: bool,
+}
+
+fn r#move(Json(args): Json<CopyArg>) -> CommandResult {
+    let src_path = PathBuf::from(args.src_path);
+    let target_path = PathBuf::from(args.target_path);
+    if src_path.exists() {
+        fs_utils::r#move(src_path, target_path, args.r#override)?;
+        Ok(CommandResponse::None)
+    } else {
+        Err(anyhow::anyhow!("src path notfound: {}", src_path.display()))
+    }
+}
+
+fn copy(Json(args): Json<CopyArg>) -> CommandResult {
+    let src_path = PathBuf::from(args.src_path);
+    let target_path = PathBuf::from(args.target_path);
+    if src_path.exists() {
+        fs_utils::copy(src_path, target_path, args.r#override)?;
+        Ok(CommandResponse::None)
+    } else {
+        Err(anyhow::anyhow!("src path notfound: {}", src_path.display()))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct WriteArg {
@@ -72,7 +154,7 @@ fn write(Json(args): Json<WriteArg>) -> CommandResult {
 fn show_in_folder(Json(args): Json<PathArg>) -> CommandResult {
     use std::process::Command;
     let path = args.path;
-    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos",))]
+    #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
     {
         #[cfg(target_os = "windows")]
         let path = path.replace("/", "\\");
@@ -252,6 +334,10 @@ pub fn reg_commands() -> Result<()> {
     reg_command("fs.read_binary", read_binary)?;
     reg_command("fs.create_dir", create_dir)?;
     reg_command("fs.create_dir_all", create_dir_all)?;
+    reg_command("fs.create_file", create_file)?;
+    reg_command("fs.delete", delete)?;
+    reg_command("fs.move", r#move)?;
+    reg_command("fs.copy", copy)?;
     reg_command("fs.write", write)?;
     reg_command("fs.show_in_folder", show_in_folder)?;
     reg_command_async("fs.show_select_dialog", show_select_dialog)?;

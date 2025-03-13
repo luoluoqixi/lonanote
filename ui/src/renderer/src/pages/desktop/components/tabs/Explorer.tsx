@@ -106,8 +106,29 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     }
   }, [currentWorkspace, refreshTreeDataState]);
 
-  const refreshTree = () => {
-    setRefreshDataState(!refreshTreeDataState);
+  const refreshTree = async () => {
+    try {
+      const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
+      await workspaceController.reinitCurrentWorkspace();
+      if (openLoadingTime) {
+        window.clearTimeout(openLoadingTime);
+        setOpenLoading(false);
+      }
+      setRefreshDataState(!refreshTreeDataState);
+    } catch (e) {
+      toaster.error({ title: '错误', description: `刷新资源管理器失败: ${e}` });
+    }
+  };
+  const openFile = (node: FileNode) => {
+    if (node.fileType === 'file') {
+      const path = `${workspace.metadata.path}/${node.path}`;
+      toaster.success({ title: `todo open: ${path}` });
+    }
+  };
+  const treeItemClick = (data: FileNode | undefined) => {
+    if (data) {
+      openFile(data);
+    }
   };
 
   const openMenuClick = (
@@ -135,24 +156,23 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       fs.showInFolder(path);
     }
   };
-  const openFile = async () => {
+  const openFileMenuClick = async () => {
     if (currentMenuNode) {
-      const path = `${workspace.metadata.path}/${currentMenuNode.path}`;
-      toaster.success({ title: `todo open: ${path}` });
+      openFile(currentMenuNode);
     }
   };
-  const newFile = async () => {
+  const newFileMenuClick = async () => {
     toaster.success({ title: 'todo' });
   };
-  const newFolder = async () => {
+  const newFolderMenuClick = async () => {
     toaster.success({ title: 'todo' });
   };
-  const renameItem = async () => {
+  const renameItemMenuClick = async () => {
     if (currentMenuNode) {
       toaster.success({ title: 'todo' });
     }
   };
-  const copyPath = async () => {
+  const copyPathMenuClick = async () => {
     if (currentMenuNode) {
       let path = `${workspace.metadata.path}/${currentMenuNode.path}`;
       if (utils.detectBrowserAndPlatform().platform === 'windows') {
@@ -162,7 +182,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       toaster.success({ title: '成功' });
     }
   };
-  const deleteItem = async () => {
+  const deleteItemMenuClick = async () => {
     if (currentMenuNode) {
       const isFile = currentMenuNode.fileType === 'file';
       const fileName = utils.getFileName(currentMenuNode.path);
@@ -172,8 +192,13 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
         title: '提示',
         content: `确定要删除${fileType} ${fileName} 吗？`,
         okBtnColorPalette: 'red',
-        onOk: () => {
-          toaster.success({ title: `todo delete: ${path}` });
+        onOk: async () => {
+          try {
+            await fs.delete(path, true);
+            toaster.success({ title: '成功' });
+          } catch (e) {
+            toaster.error({ title: '错误', description: `删除失败: ${e}` });
+          }
         },
       });
     }
@@ -195,12 +220,12 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           <div className={styles.workspaceExplorerTitleText}>{workspace.metadata.name}</div>
           <div className={styles.workspaceExplorerTitleButtons}>
             <Tooltip content="新建笔记" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={newFile}>
+              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={newFileMenuClick}>
                 <VscNewFile />
               </IconButton>
             </Tooltip>
             <Tooltip content="新建文件夹" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={newFolder}>
+              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={newFolderMenuClick}>
                 <VscNewFolder />
               </IconButton>
             </Tooltip>
@@ -251,8 +276,8 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
                   positioning: itemTooltipPositioning,
                 };
               },
-              onClick(e, data, context, state) {
-                console.log('onClick', data, context, state);
+              onClick(e, data) {
+                treeItemClick(data.data);
               },
               onRightDown(e, data) {
                 if (data.data) {
@@ -271,18 +296,18 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
         <Menu.Content animation="none">
           {menuIsFile ? (
             <>
-              <Menu.Item value="open-file" onClick={openFile}>
+              <Menu.Item value="open-file" onClick={openFileMenuClick}>
                 <MdOutlineFileOpen />
                 <Box flex="1">打开</Box>
               </Menu.Item>
             </>
           ) : (
             <>
-              <Menu.Item value="new-file" onClick={newFile}>
+              <Menu.Item value="new-file" onClick={newFileMenuClick}>
                 <VscNewFile />
                 <Box flex="1">新建笔记</Box>
               </Menu.Item>
-              <Menu.Item value="new-folder" onClick={newFolder}>
+              <Menu.Item value="new-folder" onClick={newFolderMenuClick}>
                 <VscNewFolder />
                 <Box flex="1">新建文件夹</Box>
               </Menu.Item>
@@ -296,19 +321,19 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           </Menu.Item>
           <Menu.Separator />
 
-          <Menu.Item value="copy-path" onClick={copyPath}>
+          <Menu.Item value="copy-path" onClick={copyPathMenuClick}>
             <VscCopy />
             <Box flex="1">复制路径</Box>
           </Menu.Item>
           <Menu.Separator />
 
-          <Menu.Item value="rename-item" onClick={renameItem}>
+          <Menu.Item value="rename-item" onClick={renameItemMenuClick}>
             <MdOutlineDriveFileRenameOutline />
             <Box flex="1">重命名</Box>
           </Menu.Item>
           <Menu.Item
             value="delete-item"
-            onClick={deleteItem}
+            onClick={deleteItemMenuClick}
             color="fg.error"
             _hover={{ bg: 'bg.error', color: 'fg.error' }}
           >

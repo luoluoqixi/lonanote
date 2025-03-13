@@ -35,3 +35,4 @@ fork = { workspace = true }
 
 [target.'cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))'.dependencies]
 rfd = { workspace = true }
+trash = { workspace = true }

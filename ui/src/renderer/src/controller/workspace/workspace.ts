@@ -46,3 +46,7 @@ export const setCurrentWorkspaceSortType = async (sortType: FileTreeSortType) =>
   await workspace.setCurrentWorkspaceFileTreeSortType(sortType);
   await updateCurrentWorkspace();
 };
+
+export const reinitCurrentWorkspace = async () => {
+  await workspace.reinitCurrentworkspace();
+};

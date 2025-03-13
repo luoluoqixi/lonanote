@@ -236,7 +236,7 @@ impl WorkspaceManager {
                     )));
                 }
                 // println!("src_folder: {:?}, target_folder: {:?}", &path, &new_path);
-                fs_utils::copy_folder(&path, &new_path, false).map_err(|e| {
+                fs_utils::copy(&path, &new_path, false).map_err(|e| {
                     WorkspaceError::IOError(format!(
                         "copy folder error: {} >> {}, {}",
                         path.display(),
