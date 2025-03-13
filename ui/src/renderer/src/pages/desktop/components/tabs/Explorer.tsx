@@ -142,14 +142,10 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     }
   };
   const newFile = async () => {
-    if (currentMenuNode && currentMenuNode.fileType === 'directory') {
-      toaster.success({ title: 'todo' });
-    }
+    toaster.success({ title: 'todo' });
   };
   const newFolder = async () => {
-    if (currentMenuNode && currentMenuNode.fileType === 'directory') {
-      toaster.success({ title: 'todo' });
-    }
+    toaster.success({ title: 'todo' });
   };
   const renameItem = async () => {
     if (currentMenuNode) {
