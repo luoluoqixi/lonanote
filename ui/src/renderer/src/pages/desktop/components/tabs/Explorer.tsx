@@ -1,5 +1,5 @@
 import { Box, Center, Spinner } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   MdDeleteOutline,
   MdOutlineDriveFileRenameOutline,
@@ -15,7 +15,7 @@ import {
 } from 'react-icons/vsc';
 
 import { FileNode, FileTree, Workspace, fs } from '@/bindings/api';
-import { Tree, TreeItem, dialog } from '@/components';
+import { Tree, TreeItem, TreeRef, dialog } from '@/components';
 import { Button, Heading, IconButton, Menu, Tooltip, toaster } from '@/components/ui';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
@@ -84,6 +84,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   const [currentMenuNode, setCurrentMenuNode] = useState<FileNode>();
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const [treeItems, setTreeItems] = useState<ExplorerTreeItem[]>(() => []);
+  const treeRef = useRef<TreeRef>(null);
 
   useEffect(async () => {
     const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
@@ -182,7 +183,9 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     }
   };
   const collapseAllFolder = () => {
-    toaster.success({ title: 'todo' });
+    if (treeRef) {
+      treeRef.current?.collapseAll();
+    }
   };
   const itemTooltipPositioning = {
     placement: 'right',
@@ -224,6 +227,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
         </div>
         <div className={styles.workspaceExplorerTree}>
           <Tree
+            ref={treeRef}
             items={treeItems}
             fixedItemHeight={30}
             itemsProps={{

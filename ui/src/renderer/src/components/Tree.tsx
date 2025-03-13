@@ -3,7 +3,11 @@ import {
   CSSProperties,
   MouseEvent,
   PointerEvent,
+  ReactElement,
+  Ref,
+  forwardRef,
   useCallback,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -73,8 +77,8 @@ export interface TreeProps<T> {
     newSelectIds: Record<string, boolean | undefined>,
     oldSelectIds: Record<string, boolean | undefined>,
   ) => void;
-  style?: CSSProperties;
-  className?: string;
+  treeStyle?: CSSProperties;
+  treeClassName?: string;
   itemsProps?: TreeItemProps<T>;
   items: TreeItem<T>[];
   multipleCtrl?: boolean;
@@ -123,6 +127,10 @@ export interface TreeRowProps<T> {
   state: TreeItemState;
 }
 
+export interface TreeRef {
+  collapseAll: () => void;
+}
+
 const defaultIncreaseViewportBy = 300;
 
 const getFlattenData = <T,>(
@@ -152,7 +160,7 @@ const getFlattenData = <T,>(
   return result;
 };
 
-export const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
+const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
   const tooltip = props?.tooltip;
   const customRender = props?.customRender;
   const customIcon = props?.customIcon;
@@ -244,11 +252,11 @@ export const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) =>
   return tooltipProps ? <Tooltip {...tooltipProps}>{rowNode}</Tooltip> : rowNode;
 };
 
-export const Tree = <T,>(props: TreeProps<T>) => {
+const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
   const {
     items,
-    style,
-    className,
+    treeClassName,
+    treeStyle,
     expandAll,
     increaseViewportBy,
     fixedItemHeight,
@@ -260,7 +268,7 @@ export const Tree = <T,>(props: TreeProps<T>) => {
     multipleCtrl = true,
     multipleShift = true,
   } = props;
-  const ref = useRef<VirtuosoHandle>(null);
+  const treeRef = useRef<VirtuosoHandle>(null);
   const listRef = useRef<HTMLElement>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const [localExpandIds, setExpandIds] = useState<Record<string, boolean | undefined>>(() => ({}));
@@ -274,6 +282,15 @@ export const Tree = <T,>(props: TreeProps<T>) => {
       ),
     [items, expandIds || localExpandIds, expandAll],
   );
+
+  useImperativeHandle(ref, () => ({
+    collapseAll() {
+      if (expandAll) return;
+      const updateExpandIds = onExpandIdsChange || setExpandIds;
+      const oldIds = expandIds || localExpandIds;
+      updateExpandIds({}, oldIds);
+    },
+  }));
 
   const onExpand = useCallback(
     (id: string, expand: boolean) => {
@@ -337,7 +354,7 @@ export const Tree = <T,>(props: TreeProps<T>) => {
         if (data.length === 0) return;
         index = Math.max(0, index);
         index = Math.min(data.length - 1, index);
-        ref.current?.scrollIntoView({
+        treeRef.current?.scrollIntoView({
           index,
           behavior: 'auto',
           done: () => {
@@ -383,7 +400,16 @@ export const Tree = <T,>(props: TreeProps<T>) => {
         setExpandOrSelect(focusIndex, null);
       }
     },
-    [focusIndex, ref, setFocusIndex, expandIds, localExpandIds, onExpand, onSelect, getItemState],
+    [
+      focusIndex,
+      treeRef,
+      setFocusIndex,
+      expandIds,
+      localExpandIds,
+      onExpand,
+      onSelect,
+      getItemState,
+    ],
   );
   const scrollerRef = useCallback(
     (element: HTMLElement | Window | null) => {
@@ -398,10 +424,10 @@ export const Tree = <T,>(props: TreeProps<T>) => {
   );
   return (
     <Virtuoso
-      ref={ref}
+      ref={treeRef}
       scrollerRef={scrollerRef}
-      style={{ height: '100%', ...style }}
-      className={className}
+      style={{ height: '100%', ...treeStyle }}
+      className={treeClassName}
       isScrolling={setIsScrolling}
       context={itemsContext}
       totalCount={data.length}
@@ -419,3 +445,7 @@ export const Tree = <T,>(props: TreeProps<T>) => {
     />
   );
 };
+
+export const Tree = forwardRef(TreeComp) as <T>(
+  p: TreeProps<T> & { ref?: Ref<TreeRef> },
+) => ReactElement;
