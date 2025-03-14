@@ -77,7 +77,6 @@ const getTreeData = (fileTree: FileTree): ExplorerTreeItem[] => {
 };
 
 const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
-  const [refreshTreeDataState, setRefreshDataState] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
   const [openLoading, setOpenLoading] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -86,7 +85,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   const [treeItems, setTreeItems] = useState<ExplorerTreeItem[]>(() => []);
   const treeRef = useRef<TreeRef>(null);
 
-  useEffect(async () => {
+  const refreshTreeData = async () => {
     const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
     try {
       const start = performance.now();
@@ -104,17 +103,18 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       window.clearTimeout(openLoadingTime);
       setOpenLoading(false);
     }
-  }, [currentWorkspace, refreshTreeDataState]);
+  };
+  useEffect(refreshTreeData, [currentWorkspace]);
 
   const refreshTree = async () => {
     try {
       const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
       await workspaceController.reinitCurrentWorkspace();
+      await refreshTreeData();
       if (openLoadingTime) {
         window.clearTimeout(openLoadingTime);
         setOpenLoading(false);
       }
-      setRefreshDataState(!refreshTreeDataState);
     } catch (e) {
       toaster.error({ title: '错误', description: `刷新资源管理器失败: ${e}` });
     }
@@ -145,7 +145,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
 
   const openFolderClick = async () => {
-    console.log('openFolder:', currentMenuNode);
+    // console.log('openFolder:', currentMenuNode);
     if (currentMenuNode) {
       const path = `${workspace.metadata.path}/${currentMenuNode.path}`;
       if (!(await fs.exists(path))) {
@@ -240,11 +240,6 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
               </IconButton>
             </Tooltip>
           </div>
-
-          {/* <div></div> */}
-          {/* <div>
-            <Button>123</Button>
-          </div> */}
         </div>
         <div className={styles.workspaceExplorerTree}>
           <Tree
