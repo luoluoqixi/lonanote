@@ -1,3 +1,5 @@
+import '@radix-ui/themes/styles.css';
+
 import '@/styles/index.scss';
 import { utils } from '@/utils';
 

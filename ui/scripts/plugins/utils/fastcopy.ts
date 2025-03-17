@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import walkDir from 'walkdir';
+
+import { walk } from './walk';
 
 const copyFile = async (fromStats: fs.Stats, from: string, to: string) => {
   if (fs.existsSync(to)) {
@@ -29,7 +30,7 @@ const copyDir = async (from: string, to: string) => {
   }
   const successFiles: string[] = [];
   // console.log('realFrom:', realFrom);
-  await walkDir.async(from, { no_return: true, follow_symlinks: true }, async (p, s) => {
+  walk(from, async (p, s) => {
     if (s.isFile()) {
       const relativePath = path.relative(realFrom, p);
       const toPath = path.join(to, relativePath);

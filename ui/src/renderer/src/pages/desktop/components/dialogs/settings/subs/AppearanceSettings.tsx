@@ -1,11 +1,12 @@
+import { Text, TextField } from '@radix-ui/themes';
+
 import { ColorModeSelect } from '@/components';
-import { ColorPicker, HStack, StepperInput, parseColor } from '@/components/ui';
 import {
-  defaultThemeColor,
+  // defaultThemeColor,
   isSupportResizeWindow,
   isSupportZoom,
   resetWindowSize,
-  setThemeColor,
+  // setThemeColor,
   setZoom,
   useUISettings,
 } from '@/controller/settings';
@@ -15,21 +16,90 @@ import styles from '../Settings.module.scss';
 
 export interface AppearanceSettingsProps extends BaseSettingsPanelProps {}
 
-export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentRef }) => {
+export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
   const settings = useUISettings();
-  const themeColor = settings.themeColor;
+  // const themeColor = settings.themeColor;
   return (
     <div className={styles.appearanceSettings}>
       <div className={styles.rowSettings}>
-        <div className={styles.rowSettingsLeft}>颜色模式：</div>
+        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          颜色模式：
+        </Text>
         <div className={styles.rowSettingsRight}>
-          <ColorModeSelect width="100%" contentRef={contentRef} size="sm" />
+          <ColorModeSelect
+            triggerProps={{
+              style: {
+                width: '100%',
+              },
+            }}
+          />
         </div>
       </div>
+      {isSupportZoom() && settings.zoom != null && (
+        <div className={styles.rowSettings}>
+          <Text as="div" size="2" className={styles.rowSettingsLeft}>
+            缩放：
+          </Text>
+          <div className={styles.rowSettingsRight}>
+            <TextField.Root
+              style={{ flexGrow: 1 }}
+              type="number"
+              value={settings.zoom}
+              onChange={(e) => {
+                if (e.target.value != null) {
+                  const zoom = parseInt(e.target.value);
+                  requestAnimationFrame(() => {
+                    setZoom(zoom);
+                    setTimeout(() => setZoom(zoom), 200);
+                  });
+                }
+              }}
+              min={-8}
+              max={8}
+            />
+            <ResetButton className="ml-1" onClick={() => setZoom(0)} />
+          </div>
+        </div>
+      )}
+      {isSupportResizeWindow() && settings.windowSize && (
+        <div className={styles.rowSettings}>
+          <Text as="div" size="2" className={styles.rowSettingsLeft}>
+            窗口大小：
+          </Text>
+          <div className={styles.rowSettingsRight}>
+            <Text size="2">{`宽: ${settings.windowSize.width}, 高: ${settings.windowSize.height}`}</Text>
+            <ResetButton onClick={() => resetWindowSize()} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+{
+  /*
       <div className={styles.rowSettings}>
         <div className={styles.rowSettingsLeft}>主题颜色：</div>
         <div className={styles.rowSettingsRight}>
-          <ColorPicker.Root
+          <InputText
+            pt={{
+              root: {
+                style: {
+                  width: '100%',
+                  height: '40px',
+                },
+              },
+            }}
+            spellCheck="false"
+            value={themeColor}
+            onChange={(e) => setThemeColor(e.target.value)}
+          />
+          <ResetButton className="ml-1" onClick={() => setThemeColor(defaultThemeColor)} />
+        </div>
+      </div> */
+}
+{
+  /* <ColorPicker.Root
             width="100%"
             size="sm"
             value={parseColor(themeColor)}
@@ -47,34 +117,5 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ contentR
                 <ColorPicker.Sliders />
               </HStack>
             </ColorPicker.Content>
-          </ColorPicker.Root>
-        </div>
-      </div>
-      {isSupportZoom() && settings.zoom != null && (
-        <div className={styles.rowSettings}>
-          <div className={styles.rowSettingsLeft}>缩放：</div>
-          <div className={styles.rowSettingsRight}>
-            <StepperInput
-              size="sm"
-              value={settings.zoom.toString()}
-              onValueChange={(v) => setZoom(v.valueAsNumber)}
-              btnProps={{ size: 'sm' }}
-              min={-8}
-              max={8}
-            />
-            <ResetButton onClick={() => setZoom(0)} />
-          </div>
-        </div>
-      )}
-      {isSupportResizeWindow() && settings.windowSize && (
-        <div className={styles.rowSettings}>
-          <div className={styles.rowSettingsLeft}>窗口大小：</div>
-          <div className={styles.rowSettingsRight}>
-            <div>{`宽: ${settings.windowSize.width}, 高: ${settings.windowSize.height}`}</div>
-            <ResetButton onClick={() => resetWindowSize()} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+          </ColorPicker.Root> */
+}

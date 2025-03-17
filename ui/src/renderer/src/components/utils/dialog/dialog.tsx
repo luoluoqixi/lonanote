@@ -1,6 +1,5 @@
-import { useRef } from 'react';
+import { AlertDialog, Button, Flex } from '@radix-ui/themes';
 
-import { Button, Dialog } from '@/components/ui';
 import { GlobalDialogOption, GlobalDialogType, useGlobalDialogStore } from '@/models/global';
 
 export const showDialog = (options: GlobalDialogOption) => {
@@ -20,7 +19,6 @@ export const closeDialog = () => {
 };
 
 export const GlobalDialog = () => {
-  const contentRef = useRef<HTMLDivElement>(null);
   const state = useGlobalDialogStore();
   const ops = state.options;
   const close = () => {
@@ -28,48 +26,43 @@ export const GlobalDialog = () => {
       ops.onClose();
     }
   };
-  const cancelBtn = (
-    <Button
-      variant={ops.cancelBtnVariant || 'outline'}
-      colorPalette={ops.cancelBtnColorPalette}
-      onClick={() => {
-        ops.onCancel?.();
-      }}
-    >
-      {ops.cancelText || '取消'}
-    </Button>
-  );
   return (
-    <Dialog.Root
-      size={ops.size}
-      placement={ops.placement || 'center'}
-      motionPreset={ops.motionPreset}
-      scrollBehavior={ops.scrollBehavior}
-      closeOnInteractOutside
+    <AlertDialog.Root
       open={state.open}
-      onOpenChange={(v) => {
-        if (v.open === false) {
+      onOpenChange={(open) => {
+        if (!open) {
           useGlobalDialogStore.setState({ open: false });
           close();
         }
       }}
     >
-      <Dialog.Content ref={contentRef}>
-        <Dialog.Header>
-          <Dialog.Title>{ops.title}</Dialog.Title>
-        </Dialog.Header>
-        <Dialog.Body overflow="auto">{ops.content}</Dialog.Body>
-        {!ops.hideCancelBtn && !ops.hideOkBtn && (
-          <Dialog.Footer>
-            {!ops.hideCancelBtn && ops.closeCancel === false ? (
-              cancelBtn
-            ) : (
-              <Dialog.ActionTrigger asChild>{cancelBtn}</Dialog.ActionTrigger>
-            )}
-            {!ops.hideOkBtn && (
+      <AlertDialog.Content maxWidth="50vw">
+        <AlertDialog.Title>{ops.title}</AlertDialog.Title>
+        <AlertDialog.Description>{ops.content}</AlertDialog.Description>
+        <Flex gap="3" mt="4" justify="end">
+          {!ops.hideCancelBtn && (
+            <AlertDialog.Action>
               <Button
-                variant={ops.okBtnVariant}
-                colorPalette={ops.okBtnColorPalette}
+                variant="soft"
+                color="gray"
+                onClick={() => {
+                  ops.onCancel?.();
+                  if (ops.closeCancel !== false) {
+                    useGlobalDialogStore.setState({ open: false });
+                    close();
+                  }
+                }}
+                {...ops.cancelBtnProps}
+              >
+                {ops.cancelText || '取消'}
+              </Button>
+            </AlertDialog.Action>
+          )}
+          {!ops.hideOkBtn && (
+            <AlertDialog.Action>
+              <Button
+                variant="solid"
+                color="red"
                 onClick={() => {
                   ops.onOk?.();
                   if (ops.closeOk !== false) {
@@ -77,14 +70,14 @@ export const GlobalDialog = () => {
                     close();
                   }
                 }}
+                {...ops.okBtnProps}
               >
                 {ops.okText || '确定'}
               </Button>
-            )}
-          </Dialog.Footer>
-        )}
-        {!ops.hideCloseBtn && <Dialog.CloseTrigger />}
-      </Dialog.Content>
-    </Dialog.Root>
+            </AlertDialog.Action>
+          )}
+        </Flex>
+      </AlertDialog.Content>
+    </AlertDialog.Root>
   );
 };

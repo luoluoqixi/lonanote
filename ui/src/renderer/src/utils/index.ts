@@ -107,7 +107,8 @@ export const utils = {
     const name = names.length > 0 ? names[names.length - 1] : '';
     return name;
   },
-  getFileSizeStr: (size: number) => {
+  getFileSizeStr: (size: number | null) => {
+    if (size == null) return '0 kb';
     let unit = 1000;
     const { platform } = utils.detectBrowserAndPlatform();
     if (platform === 'windows') {

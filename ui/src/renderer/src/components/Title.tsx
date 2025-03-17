@@ -1,11 +1,11 @@
-import { useToken } from '@chakra-ui/react';
 import { useEffect } from 'react';
 
 import { isElectron } from '@/bindings/core';
+import { useUISettings } from '@/controller/settings';
 import { useWindowTitleHeight } from '@/hooks';
 import { utils } from '@/utils';
 
-import { useColorMode } from './ui';
+import { useColorMode } from './provider/ColorModeProvider';
 
 const titlebarStyle = `
 .titlebar {
@@ -14,20 +14,24 @@ const titlebarStyle = `
   position: fixed;
   width: 100%;
   pointer-events: none;
+  background-color: var(--color-background);
 }
 `;
 
 export const Title = () => {
-  const [bgColor, fgColor] = useToken('colors', ['bg', 'fg']);
   const { resolvedColorMode } = useColorMode();
   useEffect(() => {
     if (!window.api) return;
     requestAnimationFrame(() => {
-      if (window.api) {
-        const bg = utils.getCssVariableValue(bgColor);
-        const fg = utils.getCssVariableValue(fgColor);
-        window.api.utils.setTitleBarColor(fg, bg);
-      }
+      const updateTitleBar = () => {
+        if (window.api && resolvedColorMode) {
+          // const bg = utils.getCssVariableValue('--color-background');
+          // const fg = utils.getCssVariableValue('--text-color');
+          // window.api.utils.setTitleBarColor(fg || '#000000', bg || '#ffffff');
+        }
+      };
+      updateTitleBar();
+      setTimeout(updateTitleBar, 200);
     });
   }, [resolvedColorMode]);
   const titleHeight = useWindowTitleHeight();

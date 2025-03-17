@@ -1,8 +1,7 @@
-import React, { useRef, useState } from 'react';
+import { Button, ButtonProps, Dialog, Flex, Tabs, Tooltip } from '@radix-ui/themes';
+import { useState } from 'react';
 import { RiResetLeftLine } from 'react-icons/ri';
 import { create } from 'zustand';
-
-import { Dialog, IconButton, IconButtonProps, TabType, Tabs, Tooltip } from '@/components/ui';
 
 import styles from './Settings.module.scss';
 import { AppearanceSettings } from './subs/AppearanceSettings';
@@ -21,7 +20,7 @@ export const useSettingsState = create<SettingsStore>((set) => ({
   setIsOpen: (isOpen) => set({ isOpen }),
 }));
 
-const settingsTabs: TabType[] = [
+const settingsTabs = [
   {
     value: 'globalSettings',
     title: '全局设置',
@@ -36,64 +35,67 @@ const settingsTabs: TabType[] = [
   },
 ];
 
-interface ResetButtonProps extends IconButtonProps {}
+interface ResetButtonProps extends ButtonProps {}
 
 export const ResetButton: React.FC<ResetButtonProps> = (props) => {
   return (
-    <Tooltip content="重置" positioning={{ placement: 'top' }}>
-      <IconButton size="sm" variant="ghost" {...props}>
+    <Tooltip content="重置" side="top">
+      <Button {...props}>
         <RiResetLeftLine />
-      </IconButton>
+      </Button>
     </Tooltip>
   );
 };
 
-export interface BaseSettingsPanelProps {
-  contentRef: React.Ref<HTMLDivElement>;
-}
+export interface BaseSettingsPanelProps {}
 
 export const Settings: React.FC<SettingsProps> = () => {
-  const contentRef = useRef<HTMLDivElement>(null);
   const state = useSettingsState();
-  const [tabValue, setTabValue] = useState(settingsTabs[0].value);
+  const [selectedValue, setSelectedValue] = useState(settingsTabs[0].value);
   return (
     <Dialog.Root
-      size="cover"
-      placement="center"
-      motionPreset="scale"
-      closeOnInteractOutside
       open={state.isOpen}
-      onOpenChange={(v) => state.setIsOpen(v.open)}
+      onOpenChange={(v) => {
+        if (!v) {
+          state.setIsOpen(false);
+        }
+      }}
     >
-      <Dialog.Content ref={contentRef}>
-        <Dialog.Header>
-          <Dialog.Title>设置</Dialog.Title>
-          <Dialog.CloseTrigger />
-        </Dialog.Header>
-        <Dialog.Body overflow="auto">
-          <div className={styles.settings}>
-            <Tabs.Wrap
-              className={styles.settingsTabs}
-              triggerListProps={{
-                className: styles.settingsTabsTriggerList,
-              }}
-              orientation="vertical"
-              tabs={settingsTabs}
-              value={tabValue}
-              onValueChange={(v) => setTabValue(v.value)}
-            >
-              <Tabs.Content className={styles.settingsContentWrap} value="globalSettings">
-                <GlobalSettings contentRef={contentRef} />
-              </Tabs.Content>
-              <Tabs.Content className={styles.settingsContentWrap} value="workspaceSettings">
-                <WorkspaceSettings contentRef={contentRef} />
-              </Tabs.Content>
-              <Tabs.Content className={styles.settingsContentWrap} value="appearance">
-                <AppearanceSettings contentRef={contentRef} />
-              </Tabs.Content>
-            </Tabs.Wrap>
+      <Dialog.Content maxWidth="80vw" maxHeight="80vh" height="80vh">
+        <Dialog.Title>设置</Dialog.Title>
+        <Dialog.Description></Dialog.Description>
+        <Flex className={styles.settings} direction="row" gap="0">
+          <Tabs.Root
+            className={styles.settingsTabs}
+            orientation="vertical"
+            aria-label="SettingsTabs"
+            value={selectedValue}
+            onValueChange={(v) => {
+              if (v) {
+                setSelectedValue(v);
+              }
+            }}
+          >
+            <Tabs.List wrap="wrap" style={{ width: '100%', boxShadow: 'none' }}>
+              {settingsTabs.map((tab) => {
+                return (
+                  <Tabs.Trigger
+                    className={styles.settingsTabItem}
+                    key={tab.value}
+                    value={tab.value}
+                  >
+                    {tab.title}
+                  </Tabs.Trigger>
+                );
+              })}
+            </Tabs.List>
+          </Tabs.Root>
+          <div className={styles.settingsContentWrap}>
+            {selectedValue === 'globalSettings' && <GlobalSettings />}
+            {selectedValue === 'workspaceSettings' && <WorkspaceSettings />}
+            {selectedValue === 'appearance' && <AppearanceSettings />}
           </div>
-        </Dialog.Body>
+        </Flex>
       </Dialog.Content>
     </Dialog.Root>
   );

@@ -1,11 +1,13 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
 import { BrowserWindow, app, globalShortcut, ipcMain, shell } from 'electron';
 import type { TitleBarOverlay } from 'electron';
+import fs from 'fs';
 import path from 'path';
 
 import icon from '../../resources/icon.png?asset';
 import { initBindings } from './bindings';
 import { settings } from './store';
+import { walk, walkOne } from './utils/walk';
 
 export type WindowsChangeCallback = (win: BrowserWindow, event: 'create' | 'close') => void;
 
@@ -140,6 +142,13 @@ const createWindow = async () => {
   win.show();
 };
 
+const getPublicPath = () => {
+  if (is.dev) {
+    return path.join(__dirname, '../../src/renderer/public');
+  }
+  return path.join(__dirname, '../renderer');
+};
+
 export const setupApp = async () => {
   const setZoom = (zoom: number) => {
     if (zoom < settings.minZoom) return;
@@ -215,13 +224,16 @@ export const setupApp = async () => {
     });
 
     ipcMain.handle('setTitleBarColor', (e, color, backgroudColor) => {
-      const win = getActiveWin();
-      if (win && color) {
-        settings.setTitleBarColor(color);
-        settings.setTitleBarBackgroudColor(backgroudColor);
-        const titleBarOverlay = getTitleBarOverlay(settings.getZoom());
-        if (titleBarOverlay) {
-          win.setTitleBarOverlay(titleBarOverlay);
+      const ws = windows;
+      if (ws && color) {
+        for (let i = 0; i < ws.length; i++) {
+          const win = ws[i];
+          settings.setTitleBarColor(color);
+          settings.setTitleBarBackgroudColor(backgroudColor);
+          const titleBarOverlay = getTitleBarOverlay(settings.getZoom());
+          if (titleBarOverlay) {
+            win.setTitleBarOverlay(titleBarOverlay);
+          }
         }
       }
     });
@@ -245,6 +257,30 @@ export const setupApp = async () => {
         settings.setWindowSize(s);
       }
     });
+    ipcMain.handle('getPublicDir', getPublicPath);
+    ipcMain.handle(
+      'getPublicFiles',
+      (e, folder: string, type: 'folder' | 'file' | 'all', recursive: boolean) => {
+        const publicPath = getPublicPath();
+        const folderPath = path.join(publicPath, folder);
+        const result: string[] = [];
+        const walkDir = recursive ? walk : walkOne;
+        if (fs.existsSync(folderPath)) {
+          const isFile = type === 'all' || type === 'file';
+          const isDir = type === 'all' || type === 'folder';
+          walkDir(folderPath, (f, s) => {
+            if (isDir && s.isDirectory()) {
+              const relativePath = path.relative(folderPath, f);
+              result.push(relativePath);
+            } else if (isFile && s.isFile()) {
+              const relativePath = path.relative(folderPath, f);
+              result.push(relativePath);
+            }
+          });
+        }
+        return result;
+      },
+    );
 
     createWindow();
 

@@ -15,16 +15,22 @@ img {
 }
 
 #root {
+  --toastify-z-index: 999999999;
   height: 100%;
   width: 100%;
   overflow: visible;
   -webkit-user-select: none;
   user-select: none;
+  background-color: var(--color-background);
 }
 
 :root {
-  --focus-border: var(--chakra-colors-color-palette-focus-ring);
-  --separator-border: var(--chakra-colors-border);
+  // --focus-border: var(--accent-11);
+  --separator-border: #00000000;
+}
+
+[data-accent-color] {
+  --focus-border: var(--accent-11);
 }
 
 .window-title-no-drag {
@@ -43,4 +49,18 @@ img {
 
 %window-title-drag {
   @extend .window-title-drag;
+}
+
+.spinner-wrap-class {
+  --spinner-opacity: 0.6;
+  z-index: 9998;
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background-color: rgb(from var(--color-background) r g b / var(--spinner-opacity));
 }

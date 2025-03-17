@@ -1,8 +1,7 @@
+import { Link as RadixLink, LinkProps as RadixLinkProps } from '@radix-ui/themes';
 import { Link as RouterLink, LinkProps as RouterLinkProps } from 'react-router';
 
-import { Link as UILink, LinkProps as UILinkProps } from './ui';
-
-export interface LinkProps extends UILinkProps {
+export interface LinkProps extends RadixLinkProps {
   to: string;
   children?: React.ReactNode;
   linkProps?: Omit<RouterLinkProps, 'to'>;
@@ -11,10 +10,10 @@ export interface LinkProps extends UILinkProps {
 export const Link = (props: LinkProps) => {
   const { to, children, linkProps, ...rest } = props;
   return (
-    <UILink asChild {...rest}>
+    <RadixLink href="#" {...rest}>
       <RouterLink to={to} {...linkProps}>
         {children}
       </RouterLink>
-    </UILink>
+    </RadixLink>
   );
 };

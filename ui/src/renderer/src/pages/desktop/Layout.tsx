@@ -47,8 +47,8 @@ export default function Layout() {
         <Allotment.Pane
           key={styles.title}
           className={styles.title}
-          minSize={titleHeight}
-          maxSize={titleHeight}
+          minSize={titleHeight + 1}
+          maxSize={titleHeight + 1}
         >
           <Title />
         </Allotment.Pane>

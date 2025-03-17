@@ -1,7 +1,6 @@
-import { Input } from '@chakra-ui/react';
+import { Text, TextField } from '@radix-ui/themes';
 import { useEffect, useState } from 'react';
 
-import { Editable, Heading } from '@/components/ui';
 import { workspaceController } from '@/controller/workspace';
 
 import { BaseSettingsPanelProps } from '../Settings';
@@ -21,17 +20,18 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
   return (
     <div className={styles.workspaceSettings}>
       {currentWorkspace == null ? (
-        <Heading size="sm">没有打开工作区</Heading>
+        <div>没有打开工作区</div>
       ) : (
-        <div className={styles.workspaceSettings}>
+        <>
           <div className={styles.rowSettings}>
-            <div className={styles.rowSettingsLeft}>名字：</div>
+            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+              名字：
+            </Text>
             <div className={styles.rowSettingsRight}>
-              <Input
+              <TextField.Root
+                style={{ width: '100%' }}
                 readOnly
-                size="sm"
-                variant="flushed"
-                spellCheck={false}
+                spellCheck="false"
                 placeholder="工作区名字"
                 value={workspaceName}
                 onChange={(e) => {
@@ -41,13 +41,14 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
             </div>
           </div>
           <div className={styles.rowSettings}>
-            <div className={styles.rowSettingsLeft}>路径：</div>
+            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+              路径：
+            </Text>
             <div className={styles.rowSettingsRight}>
-              <Input
+              <TextField.Root
+                style={{ width: '100%' }}
                 readOnly
-                size="sm"
-                variant="flushed"
-                spellCheck={false}
+                spellCheck="false"
                 placeholder="工作区路径"
                 value={workspacePath}
                 onChange={(e) => {
@@ -56,7 +57,7 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
               />
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

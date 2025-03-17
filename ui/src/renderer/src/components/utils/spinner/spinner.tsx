@@ -1,4 +1,4 @@
-import { Box, Center, Spinner } from '@chakra-ui/react';
+import { Spinner } from '@radix-ui/themes';
 
 import { useGlobalSpinnerStore } from '@/models/global';
 
@@ -27,18 +27,13 @@ export const hideSpinner = () => {
 export const GlobalSpinner = () => {
   const store = useGlobalSpinnerStore();
   return (
-    <Box
-      visibility={store.open ? 'visible' : 'hidden'}
-      zIndex={9998}
-      pos="absolute"
-      inset="0"
-      bg="bg/80"
-      pointerEvents="auto"
+    <div
+      className="spinner-wrap-class"
+      style={{
+        visibility: store.open ? 'visible' : 'hidden',
+      }}
     >
-      <Center h="full">
-        <Spinner color="teal.500" />
-        <div style={{ marginLeft: '10px' }}>{store.content}</div>
-      </Center>
-    </Box>
+      <Spinner />
+    </div>
   );
 };

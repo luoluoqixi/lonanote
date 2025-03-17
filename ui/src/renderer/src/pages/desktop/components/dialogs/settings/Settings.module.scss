@@ -1,19 +1,31 @@
 .settings {
   width: 100%;
-  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .settingsTabs {
   height: 100%;
-  width: 100%;
+  width: 180px;
 }
 
-.settingsTabsTriggerList {
-  width: 180px;
+.settingsTabItem {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+.settingsTabItem span {
+  margin: 0;
+  padding: 10px;
+  width: 100%;
+  height: 100%;
+  justify-content: left;
 }
 
 .settingsContentWrap {
   width: 100%;
+  padding: 0px 10px;
 }
 
 .settingsContent {
@@ -21,8 +33,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   overflow: auto;
+  gap: 10px;
 }
 
 .globalSettings {
@@ -42,6 +54,7 @@
   flex-direction: row;
   width: 100%;
   height: 40px;
+  padding-right: 5px;
   justify-content: space-between;
   align-items: center;
   text-overflow: ellipsis;
@@ -49,14 +62,16 @@
 }
 
 .rowSettingsLeft {
-  width: 50%;
+  width: 40%;
 }
 
 .rowSettingsRight {
-  width: 50%;
+  width: 60%;
+  height: 40px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  margin-right: 5px;
+  gap: 5px;
 }

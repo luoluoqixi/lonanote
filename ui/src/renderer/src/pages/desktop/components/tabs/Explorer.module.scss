@@ -1,6 +1,7 @@
 .explorer {
   width: 100%;
   height: 100%;
+  background-color: var(--color-background);
 }
 
 .noWorkspace {
@@ -60,6 +61,8 @@
   flex-direction: row;
   justify-content: start;
   align-items: center;
+  gap: 12px;
+  margin-right: 20px;
 }
 
 .workspaceExplorerTree {

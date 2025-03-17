@@ -1,5 +1,6 @@
-import { Box, Center, Spinner } from '@chakra-ui/react';
+import { Button, ButtonProps, ContextMenu, Spinner, Tooltip } from '@radix-ui/themes';
 import { useRef, useState } from 'react';
+import { IconBaseProps } from 'react-icons/lib';
 import {
   MdDeleteOutline,
   MdOutlineDriveFileRenameOutline,
@@ -13,10 +14,10 @@ import {
   VscNewFolder,
   VscRefresh,
 } from 'react-icons/vsc';
+import { toast } from 'react-toastify';
 
 import { FileNode, FileTree, Workspace, fs } from '@/bindings/api';
-import { Tree, TreeItem, TreeRef, dialog } from '@/components';
-import { Button, Heading, IconButton, Menu, Tooltip, toaster } from '@/components/ui';
+import { ContextMenuItem, Tree, TreeItem, TreeRef, dialog } from '@/components';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
 import { useWorkspaceStore } from '@/models/workspace';
@@ -31,9 +32,9 @@ const onOpenWorkspace = async () => {
 const NoWorkspace = () => {
   return (
     <div className={styles.noWorkspace}>
-      <Heading size="sm">没有打开工作区</Heading>
+      <div>没有打开工作区</div>
       <div className={styles.handleButtonList}>
-        <Button size="xs" className={styles.handleButton} onClick={onOpenWorkspace}>
+        <Button className={styles.handleButton} onClick={onOpenWorkspace}>
           打开工作区（文件夹）
         </Button>
         {/* <Button size="xs" className={styles.handleButton}>
@@ -76,14 +77,85 @@ const getTreeData = (fileTree: FileTree): ExplorerTreeItem[] => {
   return [];
 };
 
+const commonContextMenus: ContextMenuItem[] = [
+  {
+    id: 'sep-01',
+    separator: true,
+  },
+  {
+    id: 'open-folder',
+    label: '在资源管理器中显示',
+    icon: <VscFolderOpened />,
+  },
+  {
+    id: 'sep-02',
+    separator: true,
+  },
+  {
+    id: 'copy-path',
+    label: '复制路径',
+    icon: <VscCopy />,
+  },
+  {
+    id: 'sep-03',
+    separator: true,
+  },
+  {
+    id: 'rename-item',
+    label: '重命名',
+    icon: <MdOutlineDriveFileRenameOutline />,
+  },
+  {
+    id: 'delete-item',
+    label: '删除',
+    icon: <MdDeleteOutline />,
+    props: { color: 'red' },
+  },
+];
+const contextMenusFile: ContextMenuItem[] = [
+  {
+    id: 'open-file',
+    label: '打开',
+    icon: <MdOutlineFileOpen />,
+  },
+  ...commonContextMenus,
+];
+const contextMenusFolder: ContextMenuItem[] = [
+  {
+    id: 'new-file',
+    label: '新建笔记',
+    icon: <VscNewFile />,
+  },
+  {
+    id: 'new-folder',
+    label: '新建文件夹',
+    icon: <VscNewFolder />,
+  },
+  ...commonContextMenus,
+];
+
+const toolbarBtnProps: ButtonProps = {
+  variant: 'ghost',
+  style: {
+    display: 'flex',
+    justifyContent: 'center',
+    width: '15px',
+    // height: '100%',
+    // padding: '0px',
+  },
+};
+
+const toolbarBtnIconProps: IconBaseProps = {
+  size: '20px',
+};
+
 const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
-  const [openMenu, setOpenMenu] = useState(false);
   const [openLoading, setOpenLoading] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [currentMenuNode, setCurrentMenuNode] = useState<FileNode>();
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const [treeItems, setTreeItems] = useState<ExplorerTreeItem[]>(() => []);
   const treeRef = useRef<TreeRef>(null);
+  const menuRef = useRef<HTMLSpanElement>(null);
 
   const refreshTreeData = async () => {
     const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
@@ -97,7 +169,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       }
     } catch (e) {
       console.error(e);
-      toaster.error({ title: '错误', description: `获取文件树错误: ${e}` });
+      toast.error(`获取文件树错误: ${e}`);
     }
     if (openLoadingTime) {
       window.clearTimeout(openLoadingTime);
@@ -116,13 +188,13 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
         setOpenLoading(false);
       }
     } catch (e) {
-      toaster.error({ title: '错误', description: `刷新资源管理器失败: ${e}` });
+      toast.error(`刷新资源管理器失败: ${e}`);
     }
   };
   const openFile = (node: FileNode) => {
     if (node.fileType === 'file') {
       const path = `${workspace.metadata.path}/${node.path}`;
-      toaster.success({ title: `todo open: ${path}` });
+      toast.success(`todo open: ${path}`);
     }
   };
   const treeItemClick = (data: FileNode | undefined) => {
@@ -137,10 +209,15 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       | React.MouseEvent<HTMLDivElement, PointerEvent>
       | React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => {
-    if (!openMenu) {
+    if (menuRef.current) {
       setCurrentMenuNode(node);
-      setMenuPosition({ x: e.clientX, y: e.clientY });
-      setOpenMenu(true);
+      menuRef.current.dispatchEvent(
+        new MouseEvent('contextmenu', {
+          bubbles: true,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        }),
+      );
     }
   };
 
@@ -149,7 +226,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     if (currentMenuNode) {
       const path = `${workspace.metadata.path}/${currentMenuNode.path}`;
       if (!(await fs.exists(path))) {
-        toaster.error({ title: '错误', description: `路径不存在: ${path}` });
+        toast.error(`路径不存在: ${path}`);
         return;
       }
       // console.log('showInFolder:', path);
@@ -162,14 +239,14 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     }
   };
   const newFileMenuClick = async () => {
-    toaster.success({ title: 'todo' });
+    toast.success('todo');
   };
   const newFolderMenuClick = async () => {
-    toaster.success({ title: 'todo' });
+    toast.success('todo');
   };
   const renameItemMenuClick = async () => {
     if (currentMenuNode) {
-      toaster.success({ title: 'todo' });
+      toast.success('todo');
     }
   };
   const copyPathMenuClick = async () => {
@@ -179,7 +256,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
         path = path.replace(/\//g, '\\');
       }
       navigator.clipboard.writeText(path);
-      toaster.success({ title: '成功' });
+      toast.success('成功');
     }
   };
   const deleteItemMenuClick = async () => {
@@ -191,13 +268,15 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       dialog.showDialog({
         title: '提示',
         content: `确定要删除${fileType} ${fileName} 吗？`,
-        okBtnColorPalette: 'red',
+        okBtnProps: {
+          color: 'red',
+        },
         onOk: async () => {
           try {
             await fs.delete(path, true);
-            toaster.success({ title: '成功' });
+            toast.success('成功');
           } catch (e) {
-            toaster.error({ title: '错误', description: `删除失败: ${e}` });
+            toast.error(`删除失败: ${e}`);
           }
         },
       });
@@ -208,36 +287,51 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       treeRef.current?.collapseAll();
     }
   };
-  const itemTooltipPositioning = {
-    placement: 'right',
-  } as const;
   const menuIsFile = currentMenuNode && currentMenuNode.fileType === 'file';
-  const titleIcon = { width: '4', height: '4' };
+
+  const onMenuClick = (id: string) => {
+    if (id === 'open-file') {
+      openFileMenuClick();
+    } else if (id === 'new-file') {
+      newFileMenuClick();
+    } else if (id === 'new-folder') {
+      newFolderMenuClick();
+    } else if (id === 'open-folder') {
+      openFolderClick();
+    } else if (id === 'copy-path') {
+      copyPathMenuClick();
+    } else if (id === 'rename-item') {
+      renameItemMenuClick();
+    } else if (id === 'delete-item') {
+      deleteItemMenuClick();
+    }
+  };
+
   return (
     <>
       <div className={styles.workspaceExplorer}>
         <div className={styles.workspaceExplorerTitle}>
           <div className={styles.workspaceExplorerTitleText}>{workspace.metadata.name}</div>
           <div className={styles.workspaceExplorerTitleButtons}>
-            <Tooltip content="新建笔记" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={newFileMenuClick}>
-                <VscNewFile />
-              </IconButton>
+            <Tooltip content="新建笔记" side="bottom">
+              <Button {...toolbarBtnProps} onClick={newFileMenuClick}>
+                <VscNewFile {...toolbarBtnIconProps} />
+              </Button>
             </Tooltip>
-            <Tooltip content="新建文件夹" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={newFolderMenuClick}>
-                <VscNewFolder />
-              </IconButton>
+            <Tooltip content="新建文件夹" side="bottom">
+              <Button {...toolbarBtnProps} onClick={newFolderMenuClick}>
+                <VscNewFolder {...toolbarBtnIconProps} />
+              </Button>
             </Tooltip>
-            <Tooltip content="刷新资源管理器" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={refreshTree}>
-                <VscRefresh />
-              </IconButton>
+            <Tooltip content="刷新资源管理器" side="bottom">
+              <Button {...toolbarBtnProps} onClick={refreshTree}>
+                <VscRefresh {...toolbarBtnIconProps} />
+              </Button>
             </Tooltip>
-            <Tooltip content="在资源管理器中折叠文件夹" positioning={{ placement: 'bottom' }}>
-              <IconButton size="2xs" _icon={titleIcon} variant="ghost" onClick={collapseAllFolder}>
-                <VscCollapseAll />
-              </IconButton>
+            <Tooltip content="在资源管理器中折叠文件夹" side="bottom">
+              <Button {...toolbarBtnProps} onClick={collapseAllFolder}>
+                <VscCollapseAll {...toolbarBtnIconProps} />
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -251,24 +345,12 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
                 const fileNode = data.data;
                 if (!fileNode) return null;
                 const isDir = fileNode?.fileType === 'directory';
-                const content = isDir ? (
-                  `${fileNode.fileCount}个文件, ${fileNode.dirCount}个文件夹`
-                ) : (
-                  <>
-                    {fileNode.lastModifiedTime && (
-                      <div>{`最后修改: ${timeUtils.getTimeFormat(fileNode.lastModifiedTime)}`}</div>
-                    )}
-                    {fileNode.createTime && (
-                      <div>{`创建时间: ${timeUtils.getTimeFormat(fileNode.createTime)}`}</div>
-                    )}
-                    {fileNode.size && (
-                      <div>{`文件大小: ${utils.getFileSizeStr(fileNode.size)}`}</div>
-                    )}
-                  </>
-                );
+                const content = isDir
+                  ? `${fileNode.fileCount}个文件, ${fileNode.dirCount}个文件夹`
+                  : `最后修改: ${timeUtils.getTimeFormat(fileNode.lastModifiedTime)}\n创建时间: ${timeUtils.getTimeFormat(fileNode.createTime)}\n文件大小: ${utils.getFileSizeStr(fileNode.size)}`;
                 return {
                   content,
-                  positioning: itemTooltipPositioning,
+                  side: 'right',
                 };
               },
               onClick(e, data) {
@@ -283,73 +365,37 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           />
         </div>
       </div>
-      <Menu.Root
-        open={openMenu}
-        onOpenChange={(e) => setOpenMenu(e.open)}
-        anchorPoint={menuPosition}
-      >
-        <Menu.Content animation="none">
-          {menuIsFile ? (
-            <>
-              <Menu.Item value="open-file" onClick={openFileMenuClick}>
-                <MdOutlineFileOpen />
-                <Box flex="1">打开</Box>
-              </Menu.Item>
-            </>
-          ) : (
-            <>
-              <Menu.Item value="new-file" onClick={newFileMenuClick}>
-                <VscNewFile />
-                <Box flex="1">新建笔记</Box>
-              </Menu.Item>
-              <Menu.Item value="new-folder" onClick={newFolderMenuClick}>
-                <VscNewFolder />
-                <Box flex="1">新建文件夹</Box>
-              </Menu.Item>
-              <Menu.Separator />
-            </>
+      <ContextMenu.Root>
+        <ContextMenu.Trigger ref={menuRef}>
+          <span></span>
+        </ContextMenu.Trigger>
+        <ContextMenu.Content>
+          {(menuIsFile ? contextMenusFile : contextMenusFolder).map((m) =>
+            m.separator ? (
+              <ContextMenu.Separator key={m.id} />
+            ) : (
+              <ContextMenu.Item
+                key={m.id}
+                onClick={() => {
+                  onMenuClick(m.id);
+                }}
+                {...m.props}
+              >
+                {m.icon} {m.label}
+              </ContextMenu.Item>
+            ),
           )}
-
-          <Menu.Item value="open-folder" onClick={openFolderClick}>
-            <VscFolderOpened />
-            <Box flex="1">在资源管理器中显示</Box>
-          </Menu.Item>
-          <Menu.Separator />
-
-          <Menu.Item value="copy-path" onClick={copyPathMenuClick}>
-            <VscCopy />
-            <Box flex="1">复制路径</Box>
-          </Menu.Item>
-          <Menu.Separator />
-
-          <Menu.Item value="rename-item" onClick={renameItemMenuClick}>
-            <MdOutlineDriveFileRenameOutline />
-            <Box flex="1">重命名</Box>
-          </Menu.Item>
-          <Menu.Item
-            value="delete-item"
-            onClick={deleteItemMenuClick}
-            color="fg.error"
-            _hover={{ bg: 'bg.error', color: 'fg.error' }}
-          >
-            <MdDeleteOutline />
-            <Box flex="1">删除</Box>
-          </Menu.Item>
-        </Menu.Content>
-      </Menu.Root>
-      <Box
-        visibility={openLoading ? 'visible' : 'hidden'}
-        zIndex={9998}
-        pos="absolute"
-        inset="0"
-        bg="bg/80"
-        pointerEvents="auto"
+        </ContextMenu.Content>
+      </ContextMenu.Root>
+      <div
+        className="spinner-wrap-class"
+        style={{
+          visibility: openLoading ? 'visible' : 'hidden',
+        }}
       >
-        <Center h="full">
-          <Spinner color="teal.500" />
-          <div style={{ marginLeft: '10px' }}>刷新文件树...</div>
-        </Center>
-      </Box>
+        <Spinner />
+        <div style={{ marginLeft: '10px' }}>刷新文件树...</div>
+      </div>
     </>
   );
 };

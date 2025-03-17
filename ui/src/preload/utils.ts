@@ -74,4 +74,14 @@ export const utils = {
   ) => {
     onWindowSize.removeListener(callback);
   },
+  getPublicDir: async (): Promise<string> => {
+    return await ipcRenderer.invoke('getPublicDir');
+  },
+  getPublicFiles: async (
+    folder: string,
+    type: 'folder' | 'file' | 'all',
+    recursive: boolean,
+  ): Promise<string[]> => {
+    return await ipcRenderer.invoke('getPublicFiles', folder, type, recursive);
+  },
 };

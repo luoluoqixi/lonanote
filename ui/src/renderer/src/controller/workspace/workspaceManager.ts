@@ -1,3 +1,5 @@
+import { toast } from 'react-toastify';
+
 import { fs } from '@/bindings/api';
 import {
   WorkspaceMetadata,
@@ -7,7 +9,6 @@ import {
   workspaceManager,
 } from '@/bindings/api/workspace';
 import { spinner } from '@/components';
-import { toaster } from '@/components/ui';
 
 import { setCurrentWorkspace, setWorkspaceName, setWorkspaceRootPath } from './workspace';
 
@@ -16,11 +17,7 @@ export const isOpenWorkspace = async (workspacePath: string, errorText?: string 
   const isOpen = await workspace.isOpenWorkspace(path);
   if (isOpen) {
     if (errorText != null) {
-      toaster.error({
-        title: '错误',
-        description: `${errorText}: ${workspacePath}`,
-        duration: 10000,
-      });
+      toast.error(`${errorText}: ${workspacePath}`);
     }
     return false;
   }
@@ -42,11 +39,7 @@ export const unloadCurrentWorkspace = async () => {
       await workspaceManager.unloadWorkspaceByPath(currentWorkspace);
       setCurrentWorkspace(null);
     } catch (e) {
-      toaster.error({
-        title: '错误',
-        description: `卸载工作区失败: ${(e as Error).message}`,
-        duration: 10000,
-      });
+      toast.error(`卸载工作区失败: ${(e as Error).message}`);
       return false;
     }
   }
@@ -56,19 +49,11 @@ export const unloadCurrentWorkspace = async () => {
 export const openWorkspace = async (workspacePath: string) => {
   if (!(await isOpenWorkspace(workspacePath, '已经打开工作区'))) return false;
   if (!(await checkWorkspaceExist(workspacePath))) {
-    toaster.error({
-      title: '错误',
-      description: `打开工作区失败: workspace directory not exist: ${workspacePath}`,
-      duration: 10000,
-    });
+    toast.error(`打开工作区失败: workspace directory not exist: ${workspacePath}`);
     return false;
   }
   if (!(await checkWorkspaceLegal(workspacePath))) {
-    toaster.error({
-      title: '错误',
-      description: `打开工作区失败: workspace path not legal: ${workspacePath}`,
-      duration: 10000,
-    });
+    toast.error(`打开工作区失败: workspace path not legal: ${workspacePath}`);
     return false;
   }
   if (!(await unloadCurrentWorkspace())) {
@@ -82,11 +67,7 @@ export const openWorkspace = async (workspacePath: string) => {
     spinner.hideSpinner();
   } catch (e) {
     spinner.hideSpinner();
-    toaster.error({
-      title: '错误',
-      description: `打开工作区失败: ${(e as Error).message}`,
-      duration: 10000,
-    });
+    toast.error(`打开工作区失败: ${(e as Error).message}`);
     return false;
   }
   return true;
@@ -122,15 +103,11 @@ export const changeWorkspaceRootPath = async (
   }
   try {
     await setWorkspaceRootPath(workspace.path, targetRootPath, true);
-    toaster.success({ title: '成功', description: `成功修改工作区路径为: ${targetRootPath}` });
+    toast.success(`成功修改工作区路径为: ${targetRootPath}`);
     return true;
   } catch (e) {
     console.error(e);
-    toaster.error({
-      title: '错误',
-      description: `修改工作区路径失败: ${(e as Error).message}`,
-      duration: 10000,
-    });
+    toast.error(`修改工作区路径失败: ${(e as Error).message}`);
   }
   return false;
 };
@@ -144,15 +121,11 @@ export const chanWorkspaceName = async (
   }
   try {
     await setWorkspaceName(workspace.path, targetName, true);
-    toaster.success({ title: '成功', description: `成功修改工作区名字为: ${targetName}` });
+    toast.success(`成功修改工作区名字为: ${targetName}`);
     return true;
   } catch (e) {
     console.error(e);
-    toaster.error({
-      title: '错误',
-      description: `修改工作区名字失败: ${(e as Error).message}`,
-      duration: 10000,
-    });
+    toast.error(`修改工作区名字失败: ${(e as Error).message}`);
   }
   return false;
 };
@@ -160,15 +133,11 @@ export const chanWorkspaceName = async (
 export const removeWorkspace = async (workspacePath: string) => {
   try {
     await workspaceManager.removeWorkspace(workspacePath);
-    toaster.success({ title: '成功', description: `成功移除工作区: ${workspacePath}` });
+    toast.success(`成功移除工作区: ${workspacePath}`);
     return true;
   } catch (e) {
     console.error(e);
-    toaster.error({
-      title: '错误',
-      description: `移除工作区失败: ${(e as Error).message}`,
-      duration: 10000,
-    });
+    toast.error(`移除工作区失败: ${(e as Error).message}`);
   }
   return false;
 };
@@ -178,11 +147,7 @@ export const getCurrentWorkspaceFileTree = async () => {
     return await workspace.getCurrentworkspaceFileTree();
   } catch (e) {
     console.error(e);
-    toaster.error({
-      title: '错误',
-      description: `获取工作区文件树失败: ${(e as Error).message}`,
-      duration: 10000,
-    });
+    toast.error(`获取工作区文件树失败: ${(e as Error).message}`);
   }
   return null;
 };

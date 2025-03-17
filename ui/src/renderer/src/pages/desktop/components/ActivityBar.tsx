@@ -1,9 +1,8 @@
-import React from 'react';
+import { Button, Tabs, Tooltip } from '@radix-ui/themes';
+import { ReactNode } from 'react';
 import { LuFolder, LuLibraryBig, LuSearch, LuSettings } from 'react-icons/lu';
 
 // import { VscExtensions } from 'react-icons/vsc';
-
-import { Icon, IconButton, Tabs, Tooltip } from '@/components/ui';
 
 import styles from './ActivityBar.module.scss';
 import { useSettingsState } from './dialogs/settings';
@@ -18,7 +17,7 @@ export interface ActivityBarProps {
 
 export interface FunctionType {
   value: string;
-  title?: React.ReactNode;
+  title?: ReactNode;
   tooltip?: string;
 }
 
@@ -43,12 +42,12 @@ const tabs: FunctionType[] = [
 const fixedBtns: FunctionType[] = [
   {
     value: 'workspace',
-    title: <LuLibraryBig />,
+    title: <LuLibraryBig size={18} />,
     tooltip: '工作区',
   },
   {
     value: 'settings',
-    title: <LuSettings />,
+    title: <LuSettings size={18} />,
     tooltip: '设置',
   },
 ];
@@ -66,8 +65,6 @@ const onBtnClick = (value: string) => {
   }
 };
 
-const startTabIndex = 0;
-
 export const ActivityBar: React.FC<ActivityBarProps> = ({
   tabValue,
   isShowTabContent,
@@ -75,48 +72,57 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   onTabChange,
 }) => {
   const curTabValue = tabValue || tabs[0].value;
-  const tabsIndex = startTabIndex;
-  const btnIndex = tabsIndex + tabs.length;
+
   return (
     <div className={styles.title}>
       <div style={{ height: topHeight }} className={styles.titleTop}>
-        <Tabs.Wrap
+        <Tabs.Root
+          aria-label="ActivityTabs"
           className={styles.titleTabRoot}
-          orientation="vertical"
-          variant="subtle"
-          tabs={tabs}
           value={isShowTabContent ? curTabValue : ''}
-          itemRender={(item) => <Icon fontSize="1.25em">{item.title}</Icon>}
-          triggerListProps={{ className: styles.titleTabList }}
-          triggerProps={{
-            className: styles.titleTabItem,
-          }}
-          tooltipProps={{ positioning: { placement: 'right' } }}
-          onValueChange={(e) => onTabChange(e.value)}
-          startTabIndex={tabsIndex}
-          onTriggerClick={(v) => {
-            if (v.value === curTabValue) {
-              setShowTabContent?.(!isShowTabContent);
-            } else {
-              setShowTabContent?.(true);
-            }
-          }}
-        />
+          orientation="vertical"
+        >
+          <Tabs.List wrap="wrap" style={{ boxShadow: 'none', width: '100%' }}>
+            {tabs.map((tab) => {
+              const isSelect = isShowTabContent && tab.value === curTabValue;
+              return (
+                <Tooltip key={tab.value} content={tab.tooltip} side="right">
+                  <Tabs.Trigger
+                    style={{
+                      backgroundColor: isSelect ? 'var(--gray-a3)' : undefined,
+                    }}
+                    className={styles.titleTabItem}
+                    key={tab.value}
+                    value={tab.value}
+                    onClick={() => {
+                      if (tab.value === curTabValue) {
+                        setShowTabContent?.(!isShowTabContent);
+                      } else {
+                        setShowTabContent?.(true);
+                        onTabChange(tab.value);
+                      }
+                    }}
+                  >
+                    {tab.title}
+                  </Tabs.Trigger>
+                </Tooltip>
+              );
+            })}
+          </Tabs.List>
+        </Tabs.Root>
       </div>
       <div style={{ height: bottomHeight, gap: bottomGap }} className={styles.titleBottom}>
-        {fixedBtns.map((item, i) => (
-          <div key={item.value}>
-            <Tooltip content={item.tooltip} positioning={{ placement: 'right' }}>
-              <IconButton
-                tabIndex={btnIndex + i}
-                onClick={() => onBtnClick(item.value)}
-                className={styles.titleBottomItem}
-                variant="ghost"
-              >
-                {item.title}
-              </IconButton>
-            </Tooltip>
-          </div>
+        {fixedBtns.map((item) => (
+          <Tooltip key={item.value} content={item.tooltip} side="right">
+            <Button
+              variant="ghost"
+              key={item.value}
+              onClick={() => onBtnClick(item.value)}
+              className={styles.titleBottomItem}
+            >
+              {item.title}
+            </Button>
+          </Tooltip>
         ))}
       </div>
     </div>

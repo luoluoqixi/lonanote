@@ -1,9 +1,10 @@
+import { Button } from 'primereact/button';
 import { useState } from 'react';
 
 import { api } from '@/bindings';
 import * as bindings from '@/bindings/core';
 import { ColorModeSelect, Link } from '@/components';
-import { Button, useColorMode } from '@/components/ui';
+import { useColorMode } from '@/components/provider/ColorModeProvider';
 
 export default function Index() {
   const { colorMode, resolvedColorMode } = useColorMode();

@@ -1,6 +1,6 @@
 import Store from 'electron-store';
 
-interface StoreType extends Store {
+interface StoreType {
   /** 配置对象 */
   store: Record<string, any>;
   /** 配置存储路径 */

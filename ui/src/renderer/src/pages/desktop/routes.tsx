@@ -20,7 +20,7 @@ export const routes: RouteObject[] = [
 
 const isWeb = false;
 
-const router = isWeb ? createBrowserRouter(routes) : createHashRouter(routes);
+export const router = isWeb ? createBrowserRouter(routes) : createHashRouter(routes);
 
 export const Routes = () => {
   return <RouterProvider router={router} />;

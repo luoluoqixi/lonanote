@@ -8,9 +8,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  background-color: var(--chakra-colors-bg);
+  background-color: var(--color-background);
   overflow: visible;
-  border-right: 1px solid var(--chakra-colors-border);
+  border-right: 1px solid var(--gray-6);
 }
 
 .titleTop {
@@ -29,36 +29,44 @@
 }
 
 .titleTabRoot {
+  @extend %window-title-no-drag;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   justify-content: center;
-  overflow: visible;
-}
-
-.titleTabList {
-  @extend %window-title-no-drag;
-  height: 100%;
-  width: 80%;
   align-items: center;
-  gap: 2px;
+  overflow: visible;
 }
 
 .titleTabItem {
   @extend %window-title-no-drag;
-  width: 100%;
   padding: 0;
   margin: 0;
+  width: 100%;
   justify-content: center;
+}
+.titleTabItem span {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .titleBottom {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   overflow-x: visible;
   margin-bottom: 4px;
 }
 
 .titleBottomItem {
   @extend %window-title-no-drag;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
 }

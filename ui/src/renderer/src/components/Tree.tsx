@@ -1,4 +1,4 @@
-import { Stack, SystemStyleObject } from '@chakra-ui/react';
+import { Tooltip, TooltipProps } from '@radix-ui/themes';
 import {
   CSSProperties,
   MouseEvent,
@@ -14,8 +14,6 @@ import {
 } from 'react';
 import { VscChevronDown, VscChevronRight } from 'react-icons/vsc';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-
-import { Tooltip, TooltipProps } from './ui';
 
 export interface TreeItem<T> {
   id: string;
@@ -188,13 +186,13 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
       }
     }
   };
-  const selectStyle: SystemStyleObject = {
-    bg: 'colorPalette.subtle',
-    color: 'fg',
-    _icon: { color: 'colorPalette.fg' },
-  };
+  // const selectStyle: SystemStyleObject = {
+  //   bg: 'colorPalette.subtle',
+  //   color: 'fg',
+  //   _icon: { color: 'colorPalette.fg' },
+  // };
   const rowNode = (
-    <Stack
+    <div
       style={{
         // display: 'flex',
         // flexDirection: 'row',
@@ -203,12 +201,12 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
         margin: 2,
         ...props?.style,
       }}
-      borderRadius="md"
+      // borderRadius="md"
       color="fg"
-      borderColor="colorPalette.focusRing"
-      borderWidth={state.focus ? 2 : 0}
-      bg={state.select ? 'colorPalette.subtle' : 'bg'}
-      _hover={selectStyle}
+      // borderColor="colorPalette.focusRing"
+      // borderWidth={state.focus ? 2 : 0}
+      // bg={state.select ? 'colorPalette.subtle' : 'bg'}
+      // _hover={selectStyle}
       onClick={onRowClick}
       onDoubleClick={
         props?.onDoubleClick && ((e) => props.onDoubleClick?.(e, data, context, state))
@@ -246,7 +244,7 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
           </div>
         </div>
       )}
-    </Stack>
+    </div>
   );
   const tooltipProps = tooltip?.(data, context, state);
   return tooltipProps ? <Tooltip {...tooltipProps}>{rowNode}</Tooltip> : rowNode;

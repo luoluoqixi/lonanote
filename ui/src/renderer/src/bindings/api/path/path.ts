@@ -1,4 +1,4 @@
-import { invoke } from '@/bindings/core';
+import { invoke, isElectron } from '@/bindings/core';
 
 export const path = {
   getCacheDir: async (): Promise<string> => {
@@ -12,5 +12,21 @@ export const path = {
   },
   getDownloadDir: async (): Promise<string> => {
     return (await invoke('path.get_download_dir'))!;
+  },
+  getPublicDir: async () => {
+    if (isElectron && window.api) {
+      return window.api.utils.getPublicDir();
+    }
+    return null;
+  },
+  getPublicFiles: async (
+    folder: string,
+    type: 'folder' | 'file' | 'all',
+    recursive: boolean,
+  ): Promise<string[] | null> => {
+    if (isElectron && window.api) {
+      return window.api.utils.getPublicFiles(folder, type, recursive);
+    }
+    return null;
   },
 };
