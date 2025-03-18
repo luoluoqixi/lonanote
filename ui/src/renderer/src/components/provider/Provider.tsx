@@ -14,12 +14,23 @@ export function Provider(props: ThemeProps) {
         {props.children}
         {/* <ThemePanel /> */}
       </Theme>
-      <ToastContainer
-        position="bottom-right"
-        toastStyle={{
-          width: '50vw',
+      <div
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
         }}
-      />
+      >
+        <ToastContainer
+          stacked
+          // hideProgressBar
+          theme="colored"
+          position="bottom-right"
+          toastStyle={{
+            width: '40vw',
+            pointerEvents: 'auto',
+          }}
+        />
+      </div>
     </ColorModeProvider>
   );
 }

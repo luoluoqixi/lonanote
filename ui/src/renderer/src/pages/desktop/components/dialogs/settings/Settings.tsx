@@ -1,4 +1,4 @@
-import { Button, ButtonProps, Dialog, Flex, Tabs, Tooltip } from '@radix-ui/themes';
+import { Button, ButtonProps, Card, Dialog, Tabs, Tooltip } from '@radix-ui/themes';
 import { useState } from 'react';
 import { RiResetLeftLine } from 'react-icons/ri';
 import { create } from 'zustand';
@@ -61,41 +61,54 @@ export const Settings: React.FC<SettingsProps> = () => {
         }
       }}
     >
-      <Dialog.Content maxWidth="80vw" maxHeight="80vh" height="80vh">
+      <Dialog.Content
+        maxWidth="80vw"
+        maxHeight="80vh"
+        height="80vh"
+        style={{ display: 'flex', flexDirection: 'column' }}
+      >
         <Dialog.Title>设置</Dialog.Title>
         <Dialog.Description></Dialog.Description>
-        <Flex className={styles.settings} direction="row" gap="0">
-          <Tabs.Root
-            className={styles.settingsTabs}
-            orientation="vertical"
-            aria-label="SettingsTabs"
-            value={selectedValue}
-            onValueChange={(v) => {
-              if (v) {
-                setSelectedValue(v);
-              }
-            }}
-          >
-            <Tabs.List wrap="wrap" style={{ width: '100%', boxShadow: 'none' }}>
-              {settingsTabs.map((tab) => {
-                return (
-                  <Tabs.Trigger
-                    className={styles.settingsTabItem}
-                    key={tab.value}
-                    value={tab.value}
-                  >
-                    {tab.title}
-                  </Tabs.Trigger>
-                );
-              })}
-            </Tabs.List>
-          </Tabs.Root>
-          <div className={styles.settingsContentWrap}>
-            {selectedValue === 'globalSettings' && <GlobalSettings />}
-            {selectedValue === 'workspaceSettings' && <WorkspaceSettings />}
-            {selectedValue === 'appearance' && <AppearanceSettings />}
+        <Card
+          style={{
+            display: 'flex',
+            padding: 0,
+            flex: 1,
+          }}
+        >
+          <div className={styles.settings}>
+            <Tabs.Root
+              className={styles.settingsTabs}
+              orientation="vertical"
+              aria-label="SettingsTabs"
+              value={selectedValue}
+              onValueChange={(v) => {
+                if (v) {
+                  setSelectedValue(v);
+                }
+              }}
+            >
+              <Tabs.List wrap="wrap" style={{ width: '100%', boxShadow: 'none' }}>
+                {settingsTabs.map((tab) => {
+                  return (
+                    <Tabs.Trigger
+                      className={styles.settingsTabItem}
+                      key={tab.value}
+                      value={tab.value}
+                    >
+                      {tab.title}
+                    </Tabs.Trigger>
+                  );
+                })}
+              </Tabs.List>
+            </Tabs.Root>
+            <div className={styles.settingsContentWrap}>
+              {selectedValue === 'globalSettings' && <GlobalSettings />}
+              {selectedValue === 'workspaceSettings' && <WorkspaceSettings />}
+              {selectedValue === 'appearance' && <AppearanceSettings />}
+            </div>
           </div>
-        </Flex>
+        </Card>
       </Dialog.Content>
     </Dialog.Root>
   );

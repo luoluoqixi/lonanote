@@ -1,10 +1,11 @@
-import { Button, ContextMenu, Dialog, Text } from '@radix-ui/themes';
+import { Box, Button, Card, ContextMenu, Dialog, Text } from '@radix-ui/themes';
 import { ReactNode, useRef, useState } from 'react';
 import { IoMdMore } from 'react-icons/io';
 import {
   MdDeleteOutline,
   MdDriveFileMoveOutline,
   MdOutlineDriveFileRenameOutline,
+  MdOutlineFileOpen,
 } from 'react-icons/md';
 import { VscFolderOpened } from 'react-icons/vsc';
 import { toast } from 'react-toastify';
@@ -35,6 +36,11 @@ const getSortWorkspace = (workspaces: WorkspaceMetadata[]) => {
 };
 
 const contextMenus: ContextMenuItem[] = [
+  {
+    id: 'open-workspace',
+    label: '打开工作区',
+    icon: <MdOutlineFileOpen />,
+  },
   {
     id: 'open-folder',
     label: '在资源管理器中显示',
@@ -238,6 +244,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
       changePathClick();
     } else if (id === 'remove') {
       removeWorkspaceClick();
+    } else if (id === 'open-workspace') {
+      openWorkspaceClick(currentMenuIndex);
     }
   };
 
@@ -268,90 +276,97 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
           </div>
         </Dialog.Title>
         <Dialog.Description></Dialog.Description>
-        <div className={styles.workspaceManager}>
-          {workspaces.length > 0 ? (
-            <>
-              {workspaces.map((val, i) => {
-                const isEdit = workspacesEdit.length > i ? workspacesEdit[i] : false;
-                const name = workspacesName.length > i ? workspacesName[i] : '';
-                const path = workspacesPath.length > i ? workspacesPath[i] : '';
-                const lastOpenTime = timeUtils.getTimeFormat(val.lastOpenTime);
-                return (
-                  <Button
-                    key={i}
-                    style={{
-                      padding: '10px',
-                    }}
-                    color="gray"
-                    variant="soft"
-                    onClick={() => {
-                      const isEdit = workspacesEdit.length > i ? workspacesEdit[i] : false;
-                      if (!isEdit) {
-                        openWorkspaceClick(i);
-                      }
-                    }}
-                    asChild
-                  >
-                    <div
-                      // key={i}
-                      className={styles.workspaceRow}
-                      onPointerDown={(e) => {
-                        if (e.button === 2) {
-                          openMenuClick(i, e);
+        <Card
+          style={{
+            display: 'flex',
+            padding: 0,
+            flex: 1,
+          }}
+        >
+          <div className={styles.workspaceManager}>
+            {workspaces.length > 0 ? (
+              <>
+                {workspaces.map((val, i) => {
+                  const isEdit = workspacesEdit.length > i ? workspacesEdit[i] : false;
+                  const name = workspacesName.length > i ? workspacesName[i] : '';
+                  const path = workspacesPath.length > i ? workspacesPath[i] : '';
+                  const lastOpenTime = timeUtils.getTimeFormat(val.lastOpenTime);
+                  return (
+                    <Button
+                      key={i}
+                      style={{
+                        padding: '10px',
+                        color: 'var(--gray-12)',
+                      }}
+                      variant="ghost"
+                      onClick={() => {
+                        const isEdit = workspacesEdit.length > i ? workspacesEdit[i] : false;
+                        if (!isEdit) {
+                          openWorkspaceClick(i);
                         }
                       }}
-                      // onClick={() => {
-                      //   if (!isEdit) {
-                      //     openWorkspaceClick(i);
-                      //   }
-                      // }}
+                      asChild
                     >
-                      <div className={styles.workspaceRowLeft}>
-                        <Text as="div" size="2" className={styles.workspaceName}>
-                          {isEdit ? <></> : name}
-                          <div className={styles.workspaceLastOpenTime}>
-                            <Text as="span" size="2">
-                              {lastOpenTime}
-                            </Text>
-                          </div>
-                        </Text>
-                        <Text as="div" size="2" className={styles.workspacePath}>
-                          {path}
-                        </Text>
-                      </div>
-                      <div className={styles.workspaceRowRight}>
-                        <Button
-                          variant="ghost"
-                          onClick={(e) => {
+                      <div
+                        // key={i}
+                        className={styles.workspaceRow}
+                        onPointerDown={(e) => {
+                          if (e.button === 2) {
                             openMenuClick(i, e);
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                        >
-                          <IoMdMore />
-                        </Button>
+                          }
+                        }}
+                        // onClick={() => {
+                        //   if (!isEdit) {
+                        //     openWorkspaceClick(i);
+                        //   }
+                        // }}
+                      >
+                        <div className={styles.workspaceRowLeft}>
+                          <Text as="div" size="2" className={styles.workspaceName}>
+                            {isEdit ? <></> : name}
+                            <div className={styles.workspaceLastOpenTime}>
+                              <Text as="span" size="2">
+                                {lastOpenTime}
+                              </Text>
+                            </div>
+                          </Text>
+                          <Text as="div" size="2" className={styles.workspacePath}>
+                            {path}
+                          </Text>
+                        </div>
+                        <div className={styles.workspaceRowRight}>
+                          <Button
+                            variant="ghost"
+                            onClick={(e) => {
+                              openMenuClick(i, e);
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            <IoMdMore />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </Button>
-                );
-              })}
-              <ContextMenu.Root>
-                <ContextMenu.Trigger ref={menuRef}>
-                  <span></span>
-                </ContextMenu.Trigger>
-                <ContextMenu.Content size="2">
-                  {contextMenus.map((m) =>
-                    m.separator ? (
-                      <ContextMenu.Separator key={m.id} />
-                    ) : (
-                      <ContextMenu.Item key={m.id} {...m.props} onClick={() => onMenuClick(m.id)}>
-                        {m.icon} {m.label}
-                      </ContextMenu.Item>
-                    ),
-                  )}
-                </ContextMenu.Content>
-              </ContextMenu.Root>
-              {/* <Editable
+                    </Button>
+                  );
+                })}
+                <ContextMenu.Root>
+                  <ContextMenu.Trigger ref={menuRef}>
+                    <span></span>
+                  </ContextMenu.Trigger>
+                  <ContextMenu.Content size="2">
+                    {contextMenus.map((m) =>
+                      m.separator ? (
+                        <ContextMenu.Separator key={m.id} />
+                      ) : (
+                        <ContextMenu.Item key={m.id} {...m.props} onClick={() => onMenuClick(m.id)}>
+                          {m.icon} {m.label}
+                        </ContextMenu.Item>
+                      ),
+                    )}
+                  </ContextMenu.Content>
+                </ContextMenu.Root>
+                {/* <Editable
                             edit={isEdit}
                             onEditChange={(e) => {
                               // 防止因为focus而自动进入编辑模式，导致意外重命名当前工作区
@@ -372,11 +387,16 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                               setWorkspaceNameCommit(i, value);
                             }}
                           /> */}
-            </>
-          ) : (
-            <div>没有任何工作区</div>
-          )}
-        </div>
+              </>
+            ) : (
+              <Box style={{ padding: '10px' }}>
+                <Text as="div" size="2">
+                  没有任何工作区
+                </Text>
+              </Box>
+            )}
+          </div>
+        </Card>
       </Dialog.Content>
     </Dialog.Root>
   );

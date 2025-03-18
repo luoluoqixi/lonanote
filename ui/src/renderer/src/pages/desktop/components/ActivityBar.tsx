@@ -89,7 +89,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
                 <Tooltip key={tab.value} content={tab.tooltip} side="right">
                   <Tabs.Trigger
                     style={{
-                      backgroundColor: isSelect ? 'var(--gray-a3)' : undefined,
+                      backgroundColor: isSelect ? 'var(--accent-a3)' : undefined,
                     }}
                     className={styles.titleTabItem}
                     key={tab.value}
