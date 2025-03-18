@@ -40,7 +40,15 @@ interface ResetButtonProps extends ButtonProps {}
 export const ResetButton: React.FC<ResetButtonProps> = (props) => {
   return (
     <Tooltip content="重置" side="top">
-      <Button {...props}>
+      <Button
+        variant="ghost"
+        style={{
+          marginLeft: '5px',
+          marginRight: '5px',
+          padding: '8px',
+        }}
+        {...props}
+      >
         <RiResetLeftLine />
       </Button>
     </Tooltip>

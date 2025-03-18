@@ -1,18 +1,20 @@
 import {
   Size,
+  ThemeColorType,
   defaultThemeColor,
   saveUISettings,
+  themeColors,
   useUISettingsStore,
 } from '@/models/settings/uiSettings';
 
 export const useUISettings = useUISettingsStore;
-export { defaultThemeColor };
+export { defaultThemeColor, themeColors };
 
-export const getThemeColor = () => {
+export const getThemeColor = (): ThemeColorType => {
   return useUISettingsStore.getState().themeColor;
 };
 
-export const setThemeColor = (themeColor: string) => {
+export const setThemeColor = (themeColor: ThemeColorType) => {
   useUISettingsStore.setState((s) => {
     const newState = { ...s, themeColor };
     saveUISettings(newState);

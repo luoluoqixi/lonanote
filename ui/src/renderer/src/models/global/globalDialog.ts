@@ -1,4 +1,5 @@
 import { ButtonProps } from '@radix-ui/themes';
+import { ReactNode } from 'react';
 import { create } from 'zustand';
 
 export interface GlobalDialogType {
@@ -7,7 +8,8 @@ export interface GlobalDialogType {
 }
 
 export interface GlobalDialogOption {
-  content?: string | null;
+  description?: string | ReactNode;
+  content?: string | ReactNode | null;
   title?: string | null;
   okText?: string;
   cancelText?: string;
@@ -21,8 +23,8 @@ export interface GlobalDialogOption {
   closeOk?: boolean;
   /** 点击取消按钮时关闭 */
   closeCancel?: boolean;
-  onOk?: (() => void) | null;
-  onCancel?: (() => void) | null;
+  onOk?: (() => boolean | void | any) | null;
+  onCancel?: (() => boolean | void | any) | null;
   onClose?: (() => void) | null;
 }
 

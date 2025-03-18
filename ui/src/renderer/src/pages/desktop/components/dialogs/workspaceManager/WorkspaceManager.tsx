@@ -1,5 +1,5 @@
-import { Box, Button, Card, ContextMenu, Dialog, Text } from '@radix-ui/themes';
-import { ReactNode, useRef, useState } from 'react';
+import { Box, Button, Card, ContextMenu, Dialog, Text, TextField } from '@radix-ui/themes';
+import { useRef, useState } from 'react';
 import { IoMdMore } from 'react-icons/io';
 import {
   MdDeleteOutline,
@@ -12,7 +12,7 @@ import { toast } from 'react-toastify';
 import { create } from 'zustand';
 
 import { WorkspaceMetadata, fs } from '@/bindings/api';
-import { ContextMenuItem } from '@/components';
+import { ContextMenuItem, dialog } from '@/components';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
 import { timeUtils } from '@/utils';
@@ -74,7 +74,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
 
   const [workspacesName, setWorkspacesName] = useState(workspaces.map((v) => v.name));
   const [workspacesPath, setWorkspacesPath] = useState(workspaces.map((v) => v.rootPath));
-  const [workspacesEdit, setWorkspacesEdit] = useState(workspaces.map(() => false));
   const [currentMenuIndex, setCurrentMenuIndex] = useState(-1);
 
   const menuRef = useRef<HTMLSpanElement>(null);
@@ -82,7 +81,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
   const updateWorkspacesData = (workspaces: WorkspaceMetadata[]) => {
     setWorkspacesName(workspaces.map((v) => v.name));
     setWorkspacesPath(workspaces.map((v) => v.rootPath));
-    setWorkspacesEdit(workspaces.map(() => false));
   };
   const fetchAndUpdateWorkspaceData = async () => {
     const workspacesOrigin = await workspaceController.updateWorkspaces();
@@ -111,14 +109,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     if (newWorkspacesPath.length > index) {
       newWorkspacesPath[index] = val;
       setWorkspacesPath(newWorkspacesPath);
-    }
-  };
-
-  const setWorkspaceEdit = (index: number, val: boolean) => {
-    const newWorkspacesEdit = [...workspacesEdit];
-    if (newWorkspacesEdit.length > index) {
-      newWorkspacesEdit[index] = val;
-      setWorkspacesEdit(newWorkspacesEdit);
     }
   };
 
@@ -182,7 +172,34 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     ) {
       return;
     }
-    setWorkspaceEdit(currentMenuIndex, true);
+    let dialogInputRef: HTMLInputElement | null = null;
+    dialog.showDialog({
+      title: '请输入新名字',
+      content: (
+        <TextField.Root
+          ref={(r) => {
+            dialogInputRef = r;
+            setTimeout(() => {
+              if (r) r.focus();
+            }, 100);
+          }}
+          autoFocus
+          defaultValue={clickWorkspace.name}
+        />
+      ),
+      onOk: () => {
+        if (dialogInputRef) {
+          const v = dialogInputRef.value;
+          if (v && v !== '') {
+            setWorkspaceNameCommit(currentMenuIndex, v);
+          } else {
+            toast.error('请输入名字');
+            return false;
+          }
+        }
+        return true;
+      },
+    });
   };
   const changePathClick = async () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
@@ -287,7 +304,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
             {workspaces.length > 0 ? (
               <>
                 {workspaces.map((val, i) => {
-                  const isEdit = workspacesEdit.length > i ? workspacesEdit[i] : false;
                   const name = workspacesName.length > i ? workspacesName[i] : '';
                   const path = workspacesPath.length > i ? workspacesPath[i] : '';
                   const lastOpenTime = timeUtils.getTimeFormat(val.lastOpenTime);
@@ -300,10 +316,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                       }}
                       variant="ghost"
                       onClick={() => {
-                        const isEdit = workspacesEdit.length > i ? workspacesEdit[i] : false;
-                        if (!isEdit) {
-                          openWorkspaceClick(i);
-                        }
+                        openWorkspaceClick(i);
                       }}
                       asChild
                     >
@@ -315,15 +328,10 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                             openMenuClick(i, e);
                           }
                         }}
-                        // onClick={() => {
-                        //   if (!isEdit) {
-                        //     openWorkspaceClick(i);
-                        //   }
-                        // }}
                       >
                         <div className={styles.workspaceRowLeft}>
                           <Text as="div" size="2" className={styles.workspaceName}>
-                            {isEdit ? <></> : name}
+                            {name}
                             <div className={styles.workspaceLastOpenTime}>
                               <Text as="span" size="2">
                                 {lastOpenTime}
@@ -366,27 +374,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                     )}
                   </ContextMenu.Content>
                 </ContextMenu.Root>
-                {/* <Editable
-                            edit={isEdit}
-                            onEditChange={(e) => {
-                              // 防止因为focus而自动进入编辑模式，导致意外重命名当前工作区
-                              if (e.edit === false) {
-                                setWorkspaceEdit(i, e.edit);
-                              }
-                            }}
-                            spellCheck={false}
-                            showEditBtn={false}
-                            previewProps={{ pointerEvents: 'none' }}
-                            placeholder="工作区名字"
-                            value={name}
-                            onValueChange={(e) => {
-                              setWorkspaceName(i, e.value);
-                            }}
-                            onValueCommit={async (details) => {
-                              const value = details.value != null ? details.value.trim() : null;
-                              setWorkspaceNameCommit(i, value);
-                            }}
-                          /> */}
               </>
             ) : (
               <Box style={{ padding: '10px' }}>

@@ -1,19 +1,26 @@
 'use client';
 
-import { Theme, ThemePanel, ThemeProps } from '@radix-ui/themes';
+import { Theme, ThemeProps } from '@radix-ui/themes';
 import { ToastContainer } from 'react-toastify';
 
-// import { defaultTheme, useUISettings } from '@/controller/settings';
+import { defaultThemeColor, useUISettings } from '@/controller/settings';
 
 import { ColorModeProvider } from './ColorModeProvider';
+
+const ThemeProvider = (props: ThemeProps) => {
+  const themeColor = useUISettings((s) => s.themeColor);
+  return (
+    <Theme style={{ height: '100vh' }} accentColor={themeColor || defaultThemeColor} {...props} />
+  );
+};
 
 export function Provider(props: ThemeProps) {
   return (
     <ColorModeProvider>
-      <Theme style={{ height: '100vh' }} {...props}>
+      <ThemeProvider {...props}>
         {props.children}
         {/* <ThemePanel /> */}
-      </Theme>
+      </ThemeProvider>
       <div
         onPointerDown={(e) => {
           e.preventDefault();

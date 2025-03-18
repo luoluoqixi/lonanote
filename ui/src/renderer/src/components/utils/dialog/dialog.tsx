@@ -38,16 +38,19 @@ export const GlobalDialog = () => {
     >
       <AlertDialog.Content maxWidth="50vw">
         <AlertDialog.Title>{ops.title}</AlertDialog.Title>
-        <AlertDialog.Description>{ops.content}</AlertDialog.Description>
+        <AlertDialog.Description>{ops.description}</AlertDialog.Description>
+        {ops.content}
         <Flex gap="3" mt="4" justify="end">
           {!ops.hideCancelBtn && (
             <AlertDialog.Action>
               <Button
                 variant="soft"
                 color="gray"
-                onClick={() => {
-                  ops.onCancel?.();
-                  if (ops.closeCancel !== false) {
+                onClick={(e) => {
+                  const isClose = ops.onCancel?.();
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (ops.closeCancel !== false && isClose !== false) {
                     useGlobalDialogStore.setState({ open: false });
                     close();
                   }
@@ -63,9 +66,11 @@ export const GlobalDialog = () => {
               <Button
                 variant="solid"
                 color="red"
-                onClick={() => {
-                  ops.onOk?.();
-                  if (ops.closeOk !== false) {
+                onClick={(e) => {
+                  const isClose = ops.onOk?.();
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (ops.closeOk !== false && isClose !== false) {
                     useGlobalDialogStore.setState({ open: false });
                     close();
                   }

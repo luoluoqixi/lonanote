@@ -1,15 +1,17 @@
-import { Text, TextField } from '@radix-ui/themes';
+import { Select, Text, TextField } from '@radix-ui/themes';
 
 import { ColorModeSelect } from '@/components';
 import {
-  // defaultThemeColor,
+  defaultThemeColor,
   isSupportResizeWindow,
   isSupportZoom,
   resetWindowSize,
-  // setThemeColor,
+  setThemeColor,
   setZoom,
+  themeColors,
   useUISettings,
 } from '@/controller/settings';
+import { ThemeColorType } from '@/models/settings';
 
 import { BaseSettingsPanelProps, ResetButton } from '../Settings';
 import styles from '../Settings.module.scss';
@@ -18,7 +20,7 @@ export interface AppearanceSettingsProps extends BaseSettingsPanelProps {}
 
 export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
   const settings = useUISettings();
-  // const themeColor = settings.themeColor;
+  const themeColor = settings.themeColor || defaultThemeColor;
   return (
     <div className={styles.appearanceSettings}>
       <div className={styles.rowSettings}>
@@ -29,10 +31,35 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
           <ColorModeSelect
             triggerProps={{
               style: {
-                width: '100%',
+                flexGrow: 1,
               },
             }}
           />
+        </div>
+      </div>
+      <div className={styles.rowSettings}>
+        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          主题色：
+        </Text>
+        <div className={styles.rowSettingsRight}>
+          <Select.Root
+            value={themeColor}
+            onValueChange={(v) => {
+              if (v) {
+                setThemeColor(v as ThemeColorType);
+              }
+            }}
+          >
+            <Select.Trigger style={{ flexGrow: 1 }}>{themeColor}</Select.Trigger>
+            <Select.Content>
+              {themeColors.map((item) => (
+                <Select.Item key={item} value={item}>
+                  {item}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select.Root>
+          <ResetButton onClick={() => setThemeColor(defaultThemeColor)} />
         </div>
       </div>
       {isSupportZoom() && settings.zoom != null && (
@@ -57,7 +84,7 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
               min={-8}
               max={8}
             />
-            <ResetButton className="ml-1" onClick={() => setZoom(0)} />
+            <ResetButton onClick={() => setZoom(0)} />
           </div>
         </div>
       )}
@@ -75,47 +102,3 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
     </div>
   );
 };
-
-{
-  /*
-      <div className={styles.rowSettings}>
-        <div className={styles.rowSettingsLeft}>主题颜色：</div>
-        <div className={styles.rowSettingsRight}>
-          <InputText
-            pt={{
-              root: {
-                style: {
-                  width: '100%',
-                  height: '40px',
-                },
-              },
-            }}
-            spellCheck="false"
-            value={themeColor}
-            onChange={(e) => setThemeColor(e.target.value)}
-          />
-          <ResetButton className="ml-1" onClick={() => setThemeColor(defaultThemeColor)} />
-        </div>
-      </div> */
-}
-{
-  /* <ColorPicker.Root
-            width="100%"
-            size="sm"
-            value={parseColor(themeColor)}
-            onValueChange={(v) => setThemeColor(v.valueAsString)}
-          >
-            <ColorPicker.Control>
-              <ColorPicker.Input />
-              <ColorPicker.Trigger />
-              <ResetButton onClick={() => setThemeColor(defaultThemeColor)} />
-            </ColorPicker.Control>
-            <ColorPicker.Content portalRef={contentRef}>
-              <ColorPicker.Area />
-              <HStack>
-                <ColorPicker.EyeDropper />
-                <ColorPicker.Sliders />
-              </HStack>
-            </ColorPicker.Content>
-          </ColorPicker.Root> */
-}

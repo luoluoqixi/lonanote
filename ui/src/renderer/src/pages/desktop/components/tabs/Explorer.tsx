@@ -1,4 +1,4 @@
-import { Button, ButtonProps, ContextMenu, Spinner, Tooltip } from '@radix-ui/themes';
+import { Button, ButtonProps, ContextMenu, Spinner, Text, Tooltip } from '@radix-ui/themes';
 import { useRef, useState } from 'react';
 import { IconBaseProps } from 'react-icons/lib';
 import {
@@ -32,7 +32,9 @@ const onOpenWorkspace = async () => {
 const NoWorkspace = () => {
   return (
     <div className={styles.noWorkspace}>
-      <div>没有打开工作区</div>
+      <Text as="div" size="2">
+        没有打开工作区
+      </Text>
       <div className={styles.handleButtonList}>
         <Button className={styles.handleButton} onClick={onOpenWorkspace}>
           打开工作区（文件夹）
@@ -311,7 +313,9 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     <>
       <div className={styles.workspaceExplorer}>
         <div className={styles.workspaceExplorerTitle}>
-          <div className={styles.workspaceExplorerTitleText}>{workspace.metadata.name}</div>
+          <Text as="div" size="3" className={styles.workspaceExplorerTitleText}>
+            {workspace.metadata.name}
+          </Text>
           <div className={styles.workspaceExplorerTitleButtons}>
             <Tooltip content="新建笔记" side="bottom">
               <Button {...toolbarBtnProps} onClick={newFileMenuClick}>
