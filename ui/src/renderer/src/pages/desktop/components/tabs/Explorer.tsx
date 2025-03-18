@@ -349,9 +349,16 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
                 const fileNode = data.data;
                 if (!fileNode) return null;
                 const isDir = fileNode?.fileType === 'directory';
-                const content = isDir
-                  ? `${fileNode.fileCount}个文件, ${fileNode.dirCount}个文件夹`
-                  : `最后修改: ${timeUtils.getTimeFormat(fileNode.lastModifiedTime)}\n创建时间: ${timeUtils.getTimeFormat(fileNode.createTime)}\n文件大小: ${utils.getFileSizeStr(fileNode.size)}`;
+                const content = isDir ? (
+                  `${fileNode.fileCount}个文件, ${fileNode.dirCount}个文件夹`
+                ) : (
+                  <span style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>{`最后修改: ${timeUtils.getTimeFormat(fileNode.lastModifiedTime)}`}</span>
+                    <span>{`最后修改: ${timeUtils.getTimeFormat(fileNode.lastModifiedTime)}`}</span>
+                    <span>{`创建时间: ${timeUtils.getTimeFormat(fileNode.createTime)}`}</span>
+                    <span>{`文件大小: ${utils.getFileSizeStr(fileNode.size)}`}</span>
+                  </span>
+                );
                 return {
                   content,
                   side: 'right',

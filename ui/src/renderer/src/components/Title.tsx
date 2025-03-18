@@ -20,20 +20,21 @@ const titlebarStyle = `
 
 export const Title = () => {
   const { resolvedColorMode } = useColorMode();
+  const themeColor = useUISettings((s) => s.themeColor);
   useEffect(() => {
     if (!window.api) return;
     requestAnimationFrame(() => {
       const updateTitleBar = () => {
         if (window.api && resolvedColorMode) {
-          // const bg = utils.getCssVariableValue('--color-background');
-          // const fg = utils.getCssVariableValue('--text-color');
-          // window.api.utils.setTitleBarColor(fg || '#000000', bg || '#ffffff');
+          const bg = utils.getCssVariableValue('--color-background');
+          const fg = utils.getCssVariableValue('--gray-12');
+          window.api.utils.setTitleBarColor(fg || '#000000', bg || '#ffffff');
         }
       };
       updateTitleBar();
       setTimeout(updateTitleBar, 200);
     });
-  }, [resolvedColorMode]);
+  }, [resolvedColorMode, themeColor]);
   const titleHeight = useWindowTitleHeight();
   return (
     <>

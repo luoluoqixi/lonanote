@@ -1,4 +1,5 @@
 import { Tooltip, TooltipProps } from '@radix-ui/themes';
+import clsx from 'clsx';
 import {
   CSSProperties,
   MouseEvent,
@@ -14,6 +15,12 @@ import {
 } from 'react';
 import { VscChevronDown, VscChevronRight } from 'react-icons/vsc';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
+
+const treeStyles = `
+.m-tree-row:hover {
+  background-color: var(--accent-a3);
+}
+`;
 
 export interface TreeItem<T> {
   id: string;
@@ -186,33 +193,29 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
       }
     }
   };
-  // const selectStyle: SystemStyleObject = {
-  //   bg: 'colorPalette.subtle',
-  //   color: 'fg',
-  //   _icon: { color: 'colorPalette.fg' },
-  // };
   const rowNode = (
     <div
       style={{
-        // display: 'flex',
-        // flexDirection: 'row',
+        display: 'flex',
+        flexDirection: 'row',
         height: context.fixedItemHeight,
         cursor: 'pointer',
         margin: 2,
+        backgroundColor: state.select ? 'var(--accent-a3)' : undefined,
+        outlineWidth: state.focus ? 2 : 0,
+        outlineColor: 'var(--focus-8)',
+        outlineStyle: 'solid',
+        outlineOffset: '-2px',
+        borderRadius: 'var(--radius-2)',
         ...props?.style,
       }}
-      // borderRadius="md"
       color="fg"
-      // borderColor="colorPalette.focusRing"
-      // borderWidth={state.focus ? 2 : 0}
-      // bg={state.select ? 'colorPalette.subtle' : 'bg'}
-      // _hover={selectStyle}
       onClick={onRowClick}
       onDoubleClick={
         props?.onDoubleClick && ((e) => props.onDoubleClick?.(e, data, context, state))
       }
       onPointerDown={onPointerDown}
-      className={props?.className}
+      className={clsx('m-tree-row', props?.className)}
     >
       {customRender ? (
         customRender(data, context, state)
@@ -226,7 +229,7 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
             overflow: 'hidden',
           }}
         >
-          <div style={{ width: 20, flexShrink: 0 }}>
+          <div style={{ width: 20, flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
             {customIcon
               ? customIcon(data, context, state)
               : !data.isLeaf && (state.expand ? <VscChevronDown /> : <VscChevronRight />)}
@@ -421,26 +424,29 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
     [handleKeyDown],
   );
   return (
-    <Virtuoso
-      ref={treeRef}
-      scrollerRef={scrollerRef}
-      style={{ height: '100%', ...treeStyle }}
-      className={treeClassName}
-      isScrolling={setIsScrolling}
-      context={itemsContext}
-      totalCount={data.length}
-      itemContent={(index, _, context) => {
-        const item = data[index];
-        return (
-          <TreeRow data={item} context={context} props={itemsProps} state={getItemState(index)} />
-        );
-      }}
-      cellSpacing={0}
-      fixedItemHeight={fixedItemHeight}
-      increaseViewportBy={
-        increaseViewportBy != null ? increaseViewportBy : defaultIncreaseViewportBy
-      }
-    />
+    <>
+      <style>{treeStyles}</style>
+      <Virtuoso
+        ref={treeRef}
+        scrollerRef={scrollerRef}
+        style={{ height: '100%', ...treeStyle }}
+        className={treeClassName}
+        isScrolling={setIsScrolling}
+        context={itemsContext}
+        totalCount={data.length}
+        itemContent={(index, _, context) => {
+          const item = data[index];
+          return (
+            <TreeRow data={item} context={context} props={itemsProps} state={getItemState(index)} />
+          );
+        }}
+        cellSpacing={0}
+        fixedItemHeight={fixedItemHeight}
+        increaseViewportBy={
+          increaseViewportBy != null ? increaseViewportBy : defaultIncreaseViewportBy
+        }
+      />
+    </>
   );
 };
 
