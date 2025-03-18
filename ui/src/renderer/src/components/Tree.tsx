@@ -38,19 +38,19 @@ export interface TreeItemProps<T> {
     context: TreeItemContext,
     state: TreeItemState,
   ) => TooltipProps | null | undefined;
-  onClick?: (
+  onItemClick?: (
     e: MouseEvent<HTMLDivElement> | KeyboardEvent,
     data: TreeItemFlattenData<T>,
     context: TreeItemContext,
     state: TreeItemState,
   ) => void;
-  onDoubleClick?: (
+  onItemDoubleClick?: (
     e: MouseEvent<HTMLDivElement>,
     data: TreeItemFlattenData<T>,
     context: TreeItemContext,
     state: TreeItemState,
   ) => void;
-  onRightDown?: (
+  onItemRightDown?: (
     e: PointerEvent<HTMLDivElement>,
     data: TreeItemFlattenData<T>,
     context: TreeItemContext,
@@ -82,6 +82,7 @@ export interface TreeProps<T> {
     newSelectIds: Record<string, boolean | undefined>,
     oldSelectIds: Record<string, boolean | undefined>,
   ) => void;
+  onTreeRightDown?: (e: PointerEvent<HTMLDivElement>) => void;
   treeStyle?: CSSProperties;
   treeClassName?: string;
   itemsProps?: TreeItemProps<T>;
@@ -181,15 +182,15 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
       const targetExpand = !state.expand;
       context.onExpand(data.id, targetExpand);
     }
-    if (props?.onClick) {
-      props.onClick(e, data, context, state);
+    if (props?.onItemClick) {
+      props.onItemClick(e, data, context, state);
     }
   };
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button === 2) {
       context.setFocusIndex(state.index);
-      if (props?.onRightDown) {
-        props.onRightDown(e, data, context, state);
+      if (props?.onItemRightDown) {
+        props.onItemRightDown(e, data, context, state);
       }
     }
   };
@@ -212,7 +213,7 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
       color="fg"
       onClick={onRowClick}
       onDoubleClick={
-        props?.onDoubleClick && ((e) => props.onDoubleClick?.(e, data, context, state))
+        props?.onItemDoubleClick && ((e) => props.onItemDoubleClick?.(e, data, context, state))
       }
       onPointerDown={onPointerDown}
       className={clsx('m-tree-row', props?.className)}
@@ -266,6 +267,7 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
     expandIds,
     onExpandIdsChange,
     onSelectIdsChange,
+    onTreeRightDown,
     multipleCtrl = true,
     multipleShift = true,
   } = props;
@@ -371,7 +373,7 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
           if (targetExpand === null) {
             // 叶子节点处理Select事件
             onSelect(item.id, true, false);
-            itemsProps?.onClick?.(e, item, itemsContext, getItemState(index));
+            itemsProps?.onItemClick?.(e, item, itemsContext, getItemState(index));
           }
         } else {
           const ids = expandIds || localExpandIds;
@@ -423,10 +425,19 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
     },
     [handleKeyDown],
   );
+  const onTreePointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.button === 2) {
+      if (onTreeRightDown) {
+        onTreeRightDown(e);
+      }
+      setFocusIndex(-1);
+    }
+  };
   return (
     <>
       <style>{treeStyles}</style>
       <Virtuoso
+        onPointerDown={onTreePointerDown}
         ref={treeRef}
         scrollerRef={scrollerRef}
         style={{ height: '100%', ...treeStyle }}

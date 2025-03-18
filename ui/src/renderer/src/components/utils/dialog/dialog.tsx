@@ -65,7 +65,6 @@ export const GlobalDialog = () => {
             <AlertDialog.Action>
               <Button
                 variant="solid"
-                color="red"
                 onClick={(e) => {
                   const isClose = ops.onOk?.();
                   e.stopPropagation();

@@ -1,4 +1,13 @@
-import { Button, ButtonProps, ContextMenu, Spinner, Text, Tooltip } from '@radix-ui/themes';
+import {
+  Button,
+  ButtonProps,
+  ContextMenu,
+  Spinner,
+  Text,
+  TextField,
+  Tooltip,
+} from '@radix-ui/themes';
+import path from 'path-browserify-esm';
 import { useRef, useState } from 'react';
 import { IconBaseProps } from 'react-icons/lib';
 import {
@@ -98,6 +107,8 @@ const commonContextMenus: ContextMenuItem[] = [
     label: '复制路径',
     icon: <VscCopy />,
   },
+];
+const commonNodeContextMenus: ContextMenuItem[] = [
   {
     id: 'sep-03',
     separator: true,
@@ -121,8 +132,9 @@ const contextMenusFile: ContextMenuItem[] = [
     icon: <MdOutlineFileOpen />,
   },
   ...commonContextMenus,
+  ...commonNodeContextMenus,
 ];
-const contextMenusFolder: ContextMenuItem[] = [
+const contextMenusCommon: ContextMenuItem[] = [
   {
     id: 'new-file',
     label: '新建笔记',
@@ -135,6 +147,8 @@ const contextMenusFolder: ContextMenuItem[] = [
   },
   ...commonContextMenus,
 ];
+
+const contextMenusFolder = [...contextMenusCommon, ...commonNodeContextMenus];
 
 const toolbarBtnProps: ButtonProps = {
   variant: 'ghost',
@@ -153,7 +167,7 @@ const toolbarBtnIconProps: IconBaseProps = {
 
 const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   const [openLoading, setOpenLoading] = useState(false);
-  const [currentMenuNode, setCurrentMenuNode] = useState<FileNode>();
+  const [currentMenuNode, setCurrentMenuNode] = useState<FileNode | null>(null);
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const [treeItems, setTreeItems] = useState<ExplorerTreeItem[]>(() => []);
   const treeRef = useRef<TreeRef>(null);
@@ -206,7 +220,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
 
   const openMenuClick = (
-    node: FileNode,
+    node: FileNode | null,
     e:
       | React.MouseEvent<HTMLDivElement, PointerEvent>
       | React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -223,17 +237,19 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     }
   };
 
+  const rightTreeClick = async (e: React.PointerEvent<HTMLDivElement>) => {
+    openMenuClick(null, e);
+  };
+
   const openFolderClick = async () => {
-    // console.log('openFolder:', currentMenuNode);
-    if (currentMenuNode) {
-      const path = `${workspace.metadata.path}/${currentMenuNode.path}`;
-      if (!(await fs.exists(path))) {
-        toast.error(`路径不存在: ${path}`);
-        return;
-      }
-      // console.log('showInFolder:', path);
-      fs.showInFolder(path);
+    let path = workspace.metadata.path;
+    if (currentMenuNode) path += `/${currentMenuNode.path}`;
+    if (!(await fs.exists(path))) {
+      toast.error(`路径不存在: ${path}`);
+      return;
     }
+    // console.log('showInFolder:', path);
+    fs.showInFolder(path);
   };
   const openFileMenuClick = async () => {
     if (currentMenuNode) {
@@ -248,18 +264,54 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
   const renameItemMenuClick = async () => {
     if (currentMenuNode) {
-      toast.success('todo');
+      const f = currentMenuNode.path;
+      const basename = path.basename(f);
+      const folder = path.dirname(f);
+      let dialogInputRef: HTMLInputElement | null = null;
+      dialog.showDialog({
+        title: '请输入新名字',
+        content: (
+          <TextField.Root
+            ref={(r) => {
+              dialogInputRef = r;
+              setTimeout(() => {
+                if (r) r.focus();
+              }, 100);
+            }}
+            autoFocus
+            defaultValue={basename}
+          />
+        ),
+        onOk: async () => {
+          if (dialogInputRef) {
+            const v = dialogInputRef.value;
+            if (v && v !== '') {
+              const oldPath = path.join(workspace.metadata.path, f);
+              const newPath = path.join(workspace.metadata.path, folder, v);
+              try {
+                await fs.move(oldPath, newPath, false);
+                toast.success('成功');
+                refreshTree();
+              } catch (e) {
+                toast.error(`重命名失败: ${e}`);
+              }
+              console.log(newPath);
+            } else {
+              toast.error('请输入名字');
+            }
+          }
+        },
+      });
     }
   };
   const copyPathMenuClick = async () => {
-    if (currentMenuNode) {
-      let path = `${workspace.metadata.path}/${currentMenuNode.path}`;
-      if (utils.detectBrowserAndPlatform().platform === 'windows') {
-        path = path.replace(/\//g, '\\');
-      }
-      navigator.clipboard.writeText(path);
-      toast.success('成功');
+    let path = workspace.metadata.path;
+    if (currentMenuNode) path += `/${currentMenuNode.path}`;
+    if (utils.detectBrowserAndPlatform().platform === 'windows') {
+      path = path.replace(/\//g, '\\');
     }
+    navigator.clipboard.writeText(path);
+    toast.success('成功');
   };
   const deleteItemMenuClick = async () => {
     if (currentMenuNode) {
@@ -277,6 +329,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           try {
             await fs.delete(path, true);
             toast.success('成功');
+            refreshTree();
           } catch (e) {
             toast.error(`删除失败: ${e}`);
           }
@@ -289,7 +342,17 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       treeRef.current?.collapseAll();
     }
   };
+
+  let menus: ContextMenuItem[];
   const menuIsFile = currentMenuNode && currentMenuNode.fileType === 'file';
+  const menuIsDir = currentMenuNode && currentMenuNode.fileType === 'directory';
+  if (menuIsFile) {
+    menus = contextMenusFile;
+  } else if (menuIsDir) {
+    menus = contextMenusFolder;
+  } else {
+    menus = contextMenusCommon;
+  }
 
   const onMenuClick = (id: string) => {
     if (id === 'open-file') {
@@ -344,6 +407,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             ref={treeRef}
             items={treeItems}
             fixedItemHeight={30}
+            onTreeRightDown={rightTreeClick}
             itemsProps={{
               tooltip: (data) => {
                 const fileNode = data.data;
@@ -364,12 +428,14 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
                   side: 'right',
                 };
               },
-              onClick(e, data) {
+              onItemClick(e, data) {
                 treeItemClick(data.data);
               },
-              onRightDown(e, data) {
+              onItemRightDown(e, data) {
                 if (data.data) {
                   openMenuClick(data.data, e);
+                  e.preventDefault();
+                  e.stopPropagation();
                 }
               },
             }}
@@ -381,7 +447,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           <span></span>
         </ContextMenu.Trigger>
         <ContextMenu.Content>
-          {(menuIsFile ? contextMenusFile : contextMenusFolder).map((m) =>
+          {menus.map((m) =>
             m.separator ? (
               <ContextMenu.Separator key={m.id} />
             ) : (
