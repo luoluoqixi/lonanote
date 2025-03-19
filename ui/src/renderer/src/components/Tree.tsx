@@ -35,40 +35,40 @@ export interface TreeItemProps<T> {
   className?: string;
   tooltip?: (
     data: TreeItemFlattenData<T>,
-    context: TreeItemContext,
+    ctx: TreeItemContext,
     state: TreeItemState,
   ) => TooltipProps | null | undefined;
   onItemClick?: (
     e: MouseEvent<HTMLDivElement> | KeyboardEvent,
     data: TreeItemFlattenData<T>,
-    context: TreeItemContext,
+    ctx: TreeItemContext,
     state: TreeItemState,
   ) => void;
   onItemDoubleClick?: (
     e: MouseEvent<HTMLDivElement>,
     data: TreeItemFlattenData<T>,
-    context: TreeItemContext,
+    ctx: TreeItemContext,
     state: TreeItemState,
   ) => void;
   onItemRightDown?: (
     e: PointerEvent<HTMLDivElement>,
     data: TreeItemFlattenData<T>,
-    context: TreeItemContext,
+    ctx: TreeItemContext,
     state: TreeItemState,
   ) => void;
   customRender?: (
     data: TreeItemFlattenData<T>,
-    context: TreeItemContext,
+    ctx: TreeItemContext,
     state: TreeItemState,
   ) => React.ReactNode;
   customIcon?: (
     data: TreeItemFlattenData<T>,
-    context: TreeItemContext,
+    ctx: TreeItemContext,
     state: TreeItemState,
   ) => React.ReactNode;
   customTitle?: (
     data: TreeItemFlattenData<T>,
-    context: TreeItemContext,
+    ctx: TreeItemContext,
     state: TreeItemState,
   ) => React.ReactNode;
 }
@@ -117,6 +117,7 @@ export interface TreeItemContext {
   setFocusIndex: (index: number) => void;
   multipleCtrl?: boolean;
   multipleShift?: boolean;
+  treeFocus?: boolean;
 }
 
 export interface TreeItemState {
@@ -128,7 +129,7 @@ export interface TreeItemState {
 
 export interface TreeRowProps<T> {
   data: TreeItemFlattenData<T>;
-  context: TreeItemContext;
+  ctx: TreeItemContext;
   props?: TreeItemProps<T>;
   state: TreeItemState;
 }
@@ -166,44 +167,44 @@ const getFlattenData = <T,>(
   return result;
 };
 
-const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
+const TreeRow = <T,>({ data, ctx, props, state }: TreeRowProps<T>) => {
   const tooltip = props?.tooltip;
   const customRender = props?.customRender;
   const customIcon = props?.customIcon;
   const customTitle = props?.customTitle;
   const left = (data.depth - 1) * 20 + 10;
   const onRowClick = (e: MouseEvent<HTMLDivElement>) => {
-    const multiple = (context.multipleCtrl && e.ctrlKey) || (context.multipleShift && e.shiftKey);
+    const multiple = (ctx.multipleCtrl && e.ctrlKey) || (ctx.multipleShift && e.shiftKey);
     const targetSelect = multiple ? !state.select : true;
-    context.onSelect(data.id, targetSelect, multiple || false);
-    context.setFocusIndex(state.index);
+    ctx.onSelect(data.id, targetSelect, multiple || false);
+    ctx.setFocusIndex(state.index);
 
     if (!data.isLeaf) {
       const targetExpand = !state.expand;
-      context.onExpand(data.id, targetExpand);
+      ctx.onExpand(data.id, targetExpand);
     }
     if (props?.onItemClick) {
-      props.onItemClick(e, data, context, state);
+      props.onItemClick(e, data, ctx, state);
     }
   };
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button === 2) {
-      context.setFocusIndex(state.index);
+      ctx.setFocusIndex(state.index);
       if (props?.onItemRightDown) {
-        props.onItemRightDown(e, data, context, state);
+        props.onItemRightDown(e, data, ctx, state);
       }
     }
   };
   const rowNode = (
     <div
+      tabIndex={-1}
       style={{
         display: 'flex',
         flexDirection: 'row',
-        height: context.fixedItemHeight,
+        height: ctx.fixedItemHeight,
         cursor: 'pointer',
-        margin: 2,
         backgroundColor: state.select ? 'var(--accent-a3)' : undefined,
-        outlineWidth: state.focus ? 2 : 0,
+        outlineWidth: state.focus && ctx.treeFocus ? 2 : 0,
         outlineColor: 'var(--focus-8)',
         outlineStyle: 'solid',
         outlineOffset: '-2px',
@@ -213,13 +214,13 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
       color="fg"
       onClick={onRowClick}
       onDoubleClick={
-        props?.onItemDoubleClick && ((e) => props.onItemDoubleClick?.(e, data, context, state))
+        props?.onItemDoubleClick && ((e) => props.onItemDoubleClick?.(e, data, ctx, state))
       }
       onPointerDown={onPointerDown}
       className={clsx('m-tree-row', props?.className)}
     >
       {customRender ? (
-        customRender(data, context, state)
+        customRender(data, ctx, state)
       ) : (
         <div
           style={{
@@ -232,7 +233,7 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
         >
           <div style={{ width: 20, flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
             {customIcon
-              ? customIcon(data, context, state)
+              ? customIcon(data, ctx, state)
               : !data.isLeaf && (state.expand ? <VscChevronDown /> : <VscChevronRight />)}
           </div>
           <div
@@ -244,13 +245,13 @@ const TreeRow = <T,>({ data, context, props, state }: TreeRowProps<T>) => {
               minWidth: 0,
             }}
           >
-            {customTitle ? customTitle(data, context, state) : data.label}
+            {customTitle ? customTitle(data, ctx, state) : data.label}
           </div>
         </div>
       )}
     </div>
   );
-  const tooltipProps = tooltip?.(data, context, state);
+  const tooltipProps = tooltip?.(data, ctx, state);
   return tooltipProps ? <Tooltip {...tooltipProps}>{rowNode}</Tooltip> : rowNode;
 };
 
@@ -277,6 +278,7 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
   const [localExpandIds, setExpandIds] = useState<Record<string, boolean | undefined>>(() => ({}));
   const [localSelectIds, setSelectIds] = useState<Record<string, boolean | undefined>>(() => ({}));
   const [focusIndex, setFocusIndex] = useState(-1);
+  const [treeFocus, setTreeFocus] = useState(() => false);
   const data = useMemo(
     () =>
       getFlattenData(
@@ -333,6 +335,7 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
     setFocusIndex,
     multipleCtrl,
     multipleShift,
+    treeFocus,
   } as TreeItemContext;
 
   const getItemState = useCallback(
@@ -445,10 +448,12 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
         isScrolling={setIsScrolling}
         context={itemsContext}
         totalCount={data.length}
+        onFocus={() => setTreeFocus(true)}
+        onBlur={() => setTreeFocus(false)}
         itemContent={(index, _, context) => {
           const item = data[index];
           return (
-            <TreeRow data={item} context={context} props={itemsProps} state={getItemState(index)} />
+            <TreeRow data={item} ctx={context} props={itemsProps} state={getItemState(index)} />
           );
         }}
         cellSpacing={0}

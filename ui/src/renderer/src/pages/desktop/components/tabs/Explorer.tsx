@@ -431,7 +431,6 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
                 ) : (
                   <span style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{`最后修改: ${timeUtils.getTimeFormat(fileNode.lastModifiedTime)}`}</span>
-                    <span>{`最后修改: ${timeUtils.getTimeFormat(fileNode.lastModifiedTime)}`}</span>
                     <span>{`创建时间: ${timeUtils.getTimeFormat(fileNode.createTime)}`}</span>
                     <span>{`文件大小: ${utils.getFileSizeStr(fileNode.size)}`}</span>
                   </span>
