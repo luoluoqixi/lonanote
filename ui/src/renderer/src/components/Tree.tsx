@@ -8,6 +8,7 @@ import {
   Ref,
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -89,6 +90,10 @@ export interface TreeProps<T> {
   items: TreeItem<T>[];
   multipleCtrl?: boolean;
   multipleShift?: boolean;
+  /** 树是否有焦点 */
+  treeFocus?: boolean;
+  /** 设置树的焦点 */
+  onTreeFocus?: (focus: boolean) => void;
   /** 选择项的id */
   selectIds?: Record<string, boolean | undefined>;
   /** 展开项的id */
@@ -136,6 +141,9 @@ export interface TreeRowProps<T> {
 
 export interface TreeRef {
   collapseAll: () => void;
+  addExpandNodes: (id: string[]) => void;
+  selectNode: (id: string, isScrollTo?: boolean) => void;
+  scrollToNode: (id: string) => void;
 }
 
 const defaultIncreaseViewportBy = 300;
@@ -271,6 +279,8 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
     onTreeRightDown,
     multipleCtrl = true,
     multipleShift = true,
+    treeFocus,
+    onTreeFocus,
   } = props;
   const treeRef = useRef<VirtuosoHandle>(null);
   const listRef = useRef<HTMLElement>(null);
@@ -278,15 +288,78 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
   const [localExpandIds, setExpandIds] = useState<Record<string, boolean | undefined>>(() => ({}));
   const [localSelectIds, setSelectIds] = useState<Record<string, boolean | undefined>>(() => ({}));
   const [focusIndex, setFocusIndex] = useState(-1);
-  const [treeFocus, setTreeFocus] = useState(() => false);
+  const [localTreeFocus, setLocalTreeFocus] = useState(() => false);
+  const [nextUpdateSelect, setNextUpdateSelect] = useState<string | null>(() => null);
+
+  const isExpand = (id: string) => {
+    return expandAll || (expandIds ? expandIds[id] : localExpandIds[id]) || false;
+  };
   const data = useMemo(
-    () =>
-      getFlattenData(
-        items,
-        (id) => expandAll || (expandIds ? expandIds[id] : localExpandIds[id]) || false,
-      ),
+    () => getFlattenData(items, isExpand),
     [items, expandIds || localExpandIds, expandAll],
   );
+
+  const addExpandNodes = (ids: string[]) => {
+    const updateExpandIds = onExpandIdsChange || setExpandIds;
+    const oldIds = expandIds || localExpandIds;
+    const newIds = { ...oldIds };
+    ids.forEach((i) => {
+      newIds[i] = true;
+    });
+    updateExpandIds(newIds, oldIds);
+  };
+
+  useEffect(() => {
+    if (nextUpdateSelect) {
+      const id = nextUpdateSelect;
+      if (treeRef.current) {
+        const index = data.findIndex((d) => d.id === id);
+        if (index >= 0) {
+          treeRef.current.scrollToIndex(index);
+        }
+      }
+      setNextUpdateSelect(null);
+    }
+  }, [nextUpdateSelect]);
+
+  const scrollToNode = (id: string) => {
+    const getParentIds = (id: string, items: TreeItem<T>[], outIds: string[]) => {
+      const count = items.length;
+      for (let i = 0; i < count; i++) {
+        const item = items[i];
+        if (item.id === id) {
+          return true;
+        }
+        if (item.children) {
+          outIds.push(item.id);
+          if (getParentIds(id, item.children, outIds)) {
+            return true;
+          }
+          outIds.pop();
+        }
+      }
+      return false;
+    };
+    const parentIds: string[] = [];
+    const isNeedExpand = !expandAll && getParentIds(id, items, parentIds);
+    const needExpandIds = parentIds.filter((id) => !isExpand(id));
+    if (isNeedExpand && needExpandIds.length > 0) {
+      // console.log('needExpandIds:', needExpandIds);
+      addExpandNodes(needExpandIds);
+      setNextUpdateSelect(id);
+    } else {
+      if (treeRef.current) {
+        const index = data.findIndex((d) => d.id === id);
+        if (index >= 0) {
+          treeRef.current.scrollToIndex({
+            index,
+            behavior: 'auto',
+            align: 'center',
+          });
+        }
+      }
+    }
+  };
 
   useImperativeHandle(ref, () => ({
     collapseAll() {
@@ -294,6 +367,18 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
       const updateExpandIds = onExpandIdsChange || setExpandIds;
       const oldIds = expandIds || localExpandIds;
       updateExpandIds({}, oldIds);
+    },
+    addExpandNodes(ids) {
+      addExpandNodes(ids);
+    },
+    selectNode(id, isScrollTo) {
+      onSelect(id, true, false);
+      if (isScrollTo) {
+        scrollToNode(id);
+      }
+    },
+    scrollToNode(id) {
+      scrollToNode(id);
     },
   }));
 
@@ -335,7 +420,7 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
     setFocusIndex,
     multipleCtrl,
     multipleShift,
-    treeFocus,
+    treeFocus: treeFocus == null ? localTreeFocus : treeFocus,
   } as TreeItemContext;
 
   const getItemState = useCallback(
@@ -448,8 +533,14 @@ const TreeComp = <T,>(props: TreeProps<T>, ref: Ref<TreeRef>) => {
         isScrolling={setIsScrolling}
         context={itemsContext}
         totalCount={data.length}
-        onFocus={() => setTreeFocus(true)}
-        onBlur={() => setTreeFocus(false)}
+        onFocus={() => {
+          const setFocus = onTreeFocus || setLocalTreeFocus;
+          setFocus(true);
+        }}
+        onBlur={() => {
+          const setFocus = onTreeFocus || setLocalTreeFocus;
+          setFocus(false);
+        }}
         itemContent={(index, _, context) => {
           const item = data[index];
           return (

@@ -120,6 +120,11 @@ const commonContextMenus: ContextMenuItem[] = [
     label: '复制路径',
     icon: <VscCopy />,
   },
+  {
+    id: 'copy-relative-path',
+    label: '复制相对路径',
+    icon: <VscCopy />,
+  },
 ];
 const commonNodeContextMenus: ContextMenuItem[] = [
   {
@@ -181,8 +186,12 @@ const toolbarBtnIconProps: IconBaseProps = {
 const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   const [openLoading, setOpenLoading] = useState(false);
   const [currentMenuNode, setCurrentMenuNode] = useState<FileNode | null>(null);
-  const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const [treeItems, setTreeItems] = useState<ExplorerTreeItem[]>(() => []);
+  const [treeFocus, setTreeFocus] = useState<boolean>(() => false);
+  const [menuOpen, setMenuOpen] = useState<boolean>(() => false);
+  const [selectNodes, setSelectNodes] = useState<Record<string, boolean | undefined>>(() => ({}));
+  const [scrollTo, setScrollTo] = useState<string | null>(null);
+  const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const treeRef = useRef<TreeRef>(null);
   const menuRef = useRef<HTMLSpanElement>(null);
 
@@ -207,11 +216,28 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
   useEffect(refreshTreeData, [currentWorkspace]);
 
-  const refreshTree = async () => {
+  useEffect(() => {
+    if (scrollTo && treeRef.current) {
+      treeRef.current.selectNode(scrollTo, true);
+      setScrollTo(null);
+    }
+  }, [scrollTo]);
+
+  const refreshTree = async (scrollTo?: string) => {
     try {
       const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
       await workspaceController.reinitCurrentWorkspace();
       await refreshTreeData();
+      if (scrollTo) {
+        setScrollTo(scrollTo);
+      } else {
+        for (const id in selectNodes) {
+          if (selectNodes[id]) {
+            setScrollTo(id);
+            break;
+          }
+        }
+      }
       if (openLoadingTime) {
         window.clearTimeout(openLoadingTime);
         setOpenLoading(false);
@@ -269,18 +295,111 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       openFile(currentMenuNode);
     }
   };
-  const newFileMenuClick = async () => {
-    toast.success('todo');
+  const getFolderPath = (node?: FileNode | null) => {
+    if (node) {
+      if (node.fileType !== 'directory') {
+        toast.error(`${node.path} 不是文件夹`);
+        return null;
+      }
+      return node.path;
+    }
+    return '';
   };
-  const newFolderMenuClick = async () => {
-    toast.success('todo');
+  const createFileOrFolder = (folder: string, isCreateFile: boolean) => {
+    const type = isCreateFile ? '文件' : '文件夹';
+    let dialogInputRef: HTMLInputElement | null = null;
+    const onOk = async () => {
+      if (dialogInputRef) {
+        const v = dialogInputRef.value;
+        if (v && v !== '') {
+          const targetRelativePath = folder === '' ? v : `${folder}/${v}`;
+          const targetPath = path.join(workspace.metadata.path, targetRelativePath);
+          if (await fs.exists(targetPath)) {
+            toast.error(`已存在${type}: ${targetPath}`);
+            return;
+          }
+          try {
+            if (isCreateFile) {
+              await fs.createFile(targetPath, '');
+            } else {
+              await fs.createDirAll(targetPath);
+            }
+            refreshTree(targetRelativePath);
+            toast.success('成功');
+          } catch (e) {
+            toast.error(`创建${type}失败: ${e}`);
+          }
+        } else {
+          toast.error('请输入名字');
+        }
+      }
+    };
+    dialog.showDialog({
+      title: `创建${type} (在 ${folder === '' ? '/' : folder} 下)`,
+      content: (
+        <TextField.Root
+          ref={(r) => {
+            dialogInputRef = r;
+            setTimeout(() => {
+              if (r) {
+                if (isCreateFile) {
+                  const count = r.value.lastIndexOf('.');
+                  r.setSelectionRange(0, count >= 0 ? count : r.value.length);
+                } else {
+                  r.setSelectionRange(0, r.value.length);
+                }
+                r.focus();
+              }
+            }, 100);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              onOk();
+              dialog.closeDialog();
+            }
+          }}
+          autoFocus
+          defaultValue={isCreateFile ? '新建笔记.md' : '新建文件夹'}
+        />
+      ),
+      onOk,
+    });
+  };
+  const newFileMenuClick = async (node?: FileNode | null) => {
+    const folderPath = getFolderPath(node);
+    if (folderPath === null) return;
+    createFileOrFolder(folderPath, true);
+  };
+  const newFolderMenuClick = async (node?: FileNode | null) => {
+    const folderPath = getFolderPath(node);
+    if (folderPath === null) return;
+    createFileOrFolder(folderPath, false);
   };
   const renameItemMenuClick = async () => {
     if (currentMenuNode) {
       const f = currentMenuNode.path;
+      const isFile = currentMenuNode.fileType === 'file';
       const basename = path.basename(f);
       const folder = path.dirname(f);
       let dialogInputRef: HTMLInputElement | null = null;
+      const onOk = async () => {
+        if (dialogInputRef) {
+          const v = dialogInputRef.value;
+          if (v && v !== '') {
+            const oldPath = path.join(workspace.metadata.path, f);
+            const newPath = path.join(workspace.metadata.path, folder, v);
+            try {
+              await fs.move(oldPath, newPath, false);
+              toast.success('成功');
+              refreshTree();
+            } catch (e) {
+              toast.error(`重命名失败: ${e}`);
+            }
+          } else {
+            toast.error('请输入名字');
+          }
+        }
+      };
       dialog.showDialog({
         title: '请输入新名字',
         content: (
@@ -288,39 +407,38 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             ref={(r) => {
               dialogInputRef = r;
               setTimeout(() => {
-                if (r) r.focus();
+                if (r) {
+                  if (isFile) {
+                    const count = r.value.lastIndexOf('.');
+                    r.setSelectionRange(0, count >= 0 ? count : r.value.length);
+                  } else {
+                    r.setSelectionRange(0, r.value.length);
+                  }
+                  r.focus();
+                }
               }, 100);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onOk();
+                dialog.closeDialog();
+              }
             }}
             autoFocus
             defaultValue={basename}
           />
         ),
-        onOk: async () => {
-          if (dialogInputRef) {
-            const v = dialogInputRef.value;
-            if (v && v !== '') {
-              const oldPath = path.join(workspace.metadata.path, f);
-              const newPath = path.join(workspace.metadata.path, folder, v);
-              try {
-                await fs.move(oldPath, newPath, false);
-                toast.success('成功');
-                refreshTree();
-              } catch (e) {
-                toast.error(`重命名失败: ${e}`);
-              }
-              console.log(newPath);
-            } else {
-              toast.error('请输入名字');
-            }
-          }
-        },
+        onOk,
       });
     }
   };
-  const copyPathMenuClick = async () => {
-    let path = workspace.metadata.path;
-    if (currentMenuNode) path += `/${currentMenuNode.path}`;
-    if (utils.detectBrowserAndPlatform().platform === 'windows') {
+  const copyPathMenuClick = async (relative: boolean) => {
+    let path = relative ? '' : workspace.metadata.path;
+    if (currentMenuNode) {
+      if (!relative) path += '/';
+      path += currentMenuNode.path;
+    }
+    if (!relative && utils.detectBrowserAndPlatform().platform === 'windows') {
       path = path.replace(/\//g, '\\');
     }
     navigator.clipboard.writeText(path);
@@ -371,13 +489,15 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
     if (id === 'open-file') {
       openFileMenuClick();
     } else if (id === 'new-file') {
-      newFileMenuClick();
+      newFileMenuClick(currentMenuNode);
     } else if (id === 'new-folder') {
-      newFolderMenuClick();
+      newFolderMenuClick(currentMenuNode);
     } else if (id === 'open-folder') {
       openFolderClick();
     } else if (id === 'copy-path') {
-      copyPathMenuClick();
+      copyPathMenuClick(false);
+    } else if (id === 'copy-relative-path') {
+      copyPathMenuClick(true);
     } else if (id === 'rename-item') {
       renameItemMenuClick();
     } else if (id === 'delete-item') {
@@ -394,17 +514,17 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           </Text>
           <div className={styles.workspaceExplorerTitleButtons}>
             <Tooltip content="新建笔记" side="bottom">
-              <Button {...toolbarBtnProps} onClick={newFileMenuClick}>
+              <Button {...toolbarBtnProps} onClick={() => newFileMenuClick()}>
                 <VscNewFile {...toolbarBtnIconProps} />
               </Button>
             </Tooltip>
             <Tooltip content="新建文件夹" side="bottom">
-              <Button {...toolbarBtnProps} onClick={newFolderMenuClick}>
+              <Button {...toolbarBtnProps} onClick={() => newFolderMenuClick()}>
                 <VscNewFolder {...toolbarBtnIconProps} />
               </Button>
             </Tooltip>
             <Tooltip content="刷新资源管理器" side="bottom">
-              <Button {...toolbarBtnProps} onClick={refreshTree}>
+              <Button {...toolbarBtnProps} onClick={() => refreshTree()}>
                 <VscRefresh {...toolbarBtnIconProps} />
               </Button>
             </Tooltip>
@@ -421,6 +541,12 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             items={treeItems}
             fixedItemHeight={30}
             onTreeRightDown={rightTreeClick}
+            // 当 ContextMenu 打开时, 假装还在 Tree 的焦点
+            // 这样可以知道我的 ContextMenu 究竟选中了哪个节点
+            treeFocus={menuOpen || treeFocus}
+            onTreeFocus={setTreeFocus}
+            selectIds={selectNodes}
+            onSelectIdsChange={setSelectNodes}
             itemsProps={{
               tooltip: (data) => {
                 const fileNode = data.data;
@@ -454,7 +580,17 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           />
         </div>
       </div>
-      <ContextMenu.Root>
+      <ContextMenu.Root
+        onOpenChange={(open) => {
+          if (!open) {
+            // 关闭菜单时，延迟设置menuOpen状态
+            // 避免在关闭菜单时 Tree 过快的失去又重新获取焦点
+            setTimeout(() => setMenuOpen(open), 200);
+          } else {
+            setMenuOpen(open);
+          }
+        }}
+      >
         <ContextMenu.Trigger ref={menuRef}>
           <span></span>
         </ContextMenu.Trigger>
