@@ -7,7 +7,7 @@ import { defaultThemeColor, useUISettings } from '@/controller/settings';
 
 import { ColorModeProvider } from './ColorModeProvider';
 
-const ThemeProvider = (props: ThemeProps) => {
+export const ThemeProvider = (props: ThemeProps) => {
   const themeColor = useUISettings((s) => s.themeColor);
   return (
     <Theme style={{ height: '100vh' }} accentColor={themeColor || defaultThemeColor} {...props} />
@@ -17,10 +17,7 @@ const ThemeProvider = (props: ThemeProps) => {
 export function Provider(props: ThemeProps) {
   return (
     <ColorModeProvider>
-      <ThemeProvider {...props}>
-        {props.children}
-        {/* <ThemePanel /> */}
-      </ThemeProvider>
+      <ThemeProvider {...props}>{props.children}</ThemeProvider>
       <div
         onPointerDown={(e) => {
           e.preventDefault();

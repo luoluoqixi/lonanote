@@ -80,8 +80,9 @@ export const Settings: React.FC<SettingsProps> = () => {
         <Card
           style={{
             display: 'flex',
-            padding: 0,
+            padding: '10px',
             flex: 1,
+            backgroundColor: 'var(--gray-1)',
           }}
         >
           <div className={styles.settings}>

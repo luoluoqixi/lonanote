@@ -26,8 +26,12 @@ export const Title = () => {
     requestAnimationFrame(() => {
       const updateTitleBar = () => {
         if (window.api && resolvedColorMode) {
-          const bg = utils.getCssVariableValue('--color-background');
-          const fg = utils.getCssVariableValue('--gray-12');
+          const e = document.querySelector('[data-is-root-theme]');
+          const bgStr = utils.getCssVariableValue('--color-background', e);
+          const fgStr = utils.getCssVariableValue('--gray-12', e);
+          const bg = utils.cssColorToHex(bgStr);
+          const fg = utils.cssColorToHex(fgStr);
+          // console.log(bgStr, bg, fgStr, fg);
           window.api.utils.setTitleBarColor(fg || '#000000', bg || '#ffffff');
         }
       };

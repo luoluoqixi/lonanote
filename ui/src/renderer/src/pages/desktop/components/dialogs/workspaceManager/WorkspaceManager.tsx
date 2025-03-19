@@ -116,8 +116,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     index: number,
     e:
       | React.MouseEvent<HTMLDivElement, PointerEvent>
-      | React.MouseEvent<HTMLButtonElement, MouseEvent>
-      | React.MouseEvent<HTMLLIElement, MouseEvent>,
+      | React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => {
     if (menuRef.current) {
       setCurrentMenuIndex(index);
@@ -296,8 +295,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
         <Card
           style={{
             display: 'flex',
-            padding: 0,
+            padding: '10px 0px',
             flex: 1,
+            backgroundColor: 'var(--gray-1)',
           }}
         >
           <div className={styles.workspaceManager}>
@@ -307,12 +307,14 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                   const name = workspacesName.length > i ? workspacesName[i] : '';
                   const path = workspacesPath.length > i ? workspacesPath[i] : '';
                   const lastOpenTime = timeUtils.getTimeFormat(val.lastOpenTime);
+                  const isFocus = currentMenuIndex === i;
                   return (
                     <Button
                       key={i}
                       style={{
                         padding: '10px',
                         color: 'var(--gray-12)',
+                        backgroundColor: isFocus ? 'var(--accent-a3)' : undefined,
                       }}
                       variant="ghost"
                       onClick={() => {
@@ -321,7 +323,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                       asChild
                     >
                       <div
-                        // key={i}
                         className={styles.workspaceRow}
                         onPointerDown={(e) => {
                           if (e.button === 2) {
@@ -358,7 +359,13 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                     </Button>
                   );
                 })}
-                <ContextMenu.Root>
+                <ContextMenu.Root
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      setCurrentMenuIndex(-1);
+                    }
+                  }}
+                >
                   <ContextMenu.Trigger ref={menuRef}>
                     <span></span>
                   </ContextMenu.Trigger>

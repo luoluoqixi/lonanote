@@ -10,7 +10,12 @@ import {
 } from '@/bindings/api/workspace';
 import { spinner } from '@/components';
 
-import { setCurrentWorkspace, setWorkspaceName, setWorkspaceRootPath } from './workspace';
+import {
+  setCurrentWorkspace,
+  setWorkspaceLoading,
+  setWorkspaceName,
+  setWorkspaceRootPath,
+} from './workspace';
 
 export const isOpenWorkspace = async (workspacePath: string, errorText?: string | null) => {
   const path = formatPath(workspacePath);
@@ -56,7 +61,9 @@ export const openWorkspace = async (workspacePath: string) => {
     toast.error(`打开工作区失败: workspace path not legal: ${workspacePath}`);
     return false;
   }
+  setWorkspaceLoading(true);
   if (!(await unloadCurrentWorkspace())) {
+    setWorkspaceLoading(false);
     return false;
   }
   try {
@@ -65,9 +72,11 @@ export const openWorkspace = async (workspacePath: string) => {
     const ws = await workspace.getCurrentWorkspace();
     if (ws) setCurrentWorkspace(ws);
     spinner.hideSpinner();
+    setWorkspaceLoading(false);
   } catch (e) {
     spinner.hideSpinner();
     toast.error(`打开工作区失败: ${(e as Error).message}`);
+    setWorkspaceLoading(false);
     return false;
   }
   return true;

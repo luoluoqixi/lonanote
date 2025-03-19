@@ -29,7 +29,7 @@ img {
   --separator-border: #00000000;
 }
 
-[data-accent-color] {
+[data-is-root-theme] {
   --focus-border: var(--accent-11);
 }
 
@@ -57,9 +57,11 @@ img {
   position: absolute;
   inset: 0;
   pointer-events: auto;
+  width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
+  align-content: center;
   align-items: center;
   flex-direction: column;
   background-color: rgb(from var(--color-background) r g b / var(--spinner-opacity));

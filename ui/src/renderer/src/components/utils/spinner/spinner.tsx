@@ -1,5 +1,6 @@
-import { Spinner } from '@radix-ui/themes';
+import { Portal, Spinner } from '@radix-ui/themes';
 
+import { ThemeProvider } from '@/components/provider';
 import { useGlobalSpinnerStore } from '@/models/global';
 
 let showSpinnerTimeId: number | null = null;
@@ -26,14 +27,15 @@ export const hideSpinner = () => {
 
 export const GlobalSpinner = () => {
   const store = useGlobalSpinnerStore();
-  return (
-    <div
-      className="spinner-wrap-class"
-      style={{
-        visibility: store.open ? 'visible' : 'hidden',
-      }}
-    >
-      <Spinner />
-    </div>
+  return store.open ? (
+    <Portal>
+      <ThemeProvider style={{ width: '100vw', height: '100vh' }}>
+        <div className="spinner-wrap-class">
+          <Spinner />
+        </div>
+      </ThemeProvider>
+    </Portal>
+  ) : (
+    <></>
   );
 };

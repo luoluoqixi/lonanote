@@ -56,6 +56,19 @@ const NoWorkspace = () => {
   );
 };
 
+const LoadingWorkspace = () => {
+  return (
+    <div className={styles.workspaceLoading}>
+      <div className="spinner-wrap-class">
+        <Spinner />
+        <Text style={{ marginLeft: '10px' }} size="2">
+          加载中...
+        </Text>
+      </div>
+    </div>
+  );
+};
+
 interface WorkspaceExplorerProps {
   workspace: Workspace;
 }
@@ -471,7 +484,9 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
         }}
       >
         <Spinner />
-        <div style={{ marginLeft: '10px' }}>刷新文件树...</div>
+        <Text style={{ marginLeft: '10px' }} size="2">
+          刷新文件树...
+        </Text>
       </div>
     </>
   );
@@ -481,9 +496,12 @@ interface ExplorerProps {}
 
 const Explorer: React.FC<ExplorerProps> = () => {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
+  const isWorkspaceLoading = workspaceController.useWorkspace((s) => s.isWorkspaceLoading);
   return (
     <div className={styles.explorer}>
-      {currentWorkspace == null ? (
+      {isWorkspaceLoading ? (
+        <LoadingWorkspace />
+      ) : currentWorkspace == null ? (
         <NoWorkspace />
       ) : (
         <WorkspaceExploreer workspace={currentWorkspace} />

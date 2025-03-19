@@ -38,6 +38,7 @@
     "lonanote-core-node": "link:../rust/node"
   },
   "devDependencies": {
+    "@ctrl/tinycolor": "^4.1.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@radix-ui/themes": "^3.2.1",
     "@tauri-apps/api": "^2.3.0",
@@ -50,6 +51,7 @@
     "allotment": "^1.20.3",
     "chroma-js": "^3.1.2",
     "clsx": "^2.1.1",
+    "colorjs.io": "^0.5.2",
     "dayjs": "^1.11.13",
     "electron": "^35.0.2",
     "electron-builder": "^26.0.11",

@@ -18,6 +18,10 @@ export const setWorkspaces = (workspaces: WorkspaceMetadata[]) => {
   useWorkspaceStore.setState((s) => ({ ...s, workspaces }));
 };
 
+export const setWorkspaceLoading = (isWorkspaceLoading: boolean) => {
+  useWorkspaceStore.setState((s) => ({ ...s, isWorkspaceLoading }));
+};
+
 export const updateWorkspaces = async () => {
   const workspaces = await workspaceManager.getWorkspacesMetadata();
   setWorkspaces(workspaces);

@@ -1,4 +1,6 @@
+import { TinyColor } from '@ctrl/tinycolor';
 import chroma from 'chroma-js';
+import Color from 'colorjs.io';
 
 export type BrowserType = 'ie' | 'chrome' | 'firefox' | 'safari' | 'unknown';
 export type PlatformType = 'windows' | 'mac' | 'linux' | 'android' | 'ios' | 'unknown';
@@ -15,15 +17,21 @@ export const utils = {
     }
     return titleHeight;
   },
-  getCssVariableValue: (
-    variableName: string,
-    element: HTMLElement = document.documentElement,
-  ): string => {
+  getCssVariableValue: (variableName: string, element?: Element | null): string => {
     if (variableName.startsWith('var(')) {
       variableName = variableName.substring(4, variableName.length - 1);
     }
+    if (!element) {
+      element = document.documentElement;
+    }
     const computedStyle = getComputedStyle(element);
     return computedStyle.getPropertyValue(variableName).trim();
+  },
+  cssColorToHex: (color: string) => {
+    if (color.startsWith('color(')) {
+      return new Color(color).to('srgb').toString({ format: 'hex' });
+    }
+    return new TinyColor(color).toHexString();
   },
   detectBrowserAndPlatform: () => {
     const userAgent = navigator.userAgent;
