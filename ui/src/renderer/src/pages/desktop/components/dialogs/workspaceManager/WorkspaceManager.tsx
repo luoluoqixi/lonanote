@@ -69,18 +69,26 @@ const contextMenus: ContextMenuItem[] = [
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
   const state = useWorkspaceManagerState();
-  const workspacesOrigin = workspaceController.useWorkspace((s) => s.workspaces);
+  const { currentWorkspace, workspaces: workspacesOrigin } = workspaceController.useWorkspace();
   const workspaces = getSortWorkspace(workspacesOrigin);
 
   const [workspacesName, setWorkspacesName] = useState(workspaces.map((v) => v.name));
   const [workspacesPath, setWorkspacesPath] = useState(workspaces.map((v) => v.rootPath));
+  const [workspacesIsOpen, setWorkspacesIsOpen] = useState(workspaces.map(() => false));
   const [currentMenuIndex, setCurrentMenuIndex] = useState(-1);
 
   const menuRef = useRef<HTMLSpanElement>(null);
 
-  const updateWorkspacesData = (workspaces: WorkspaceMetadata[]) => {
+  const updateWorkspacesData = async (workspaces: WorkspaceMetadata[]) => {
     setWorkspacesName(workspaces.map((v) => v.name));
     setWorkspacesPath(workspaces.map((v) => v.rootPath));
+    const opens: boolean[] = [];
+    for (let i = 0; i < workspaces.length; i++) {
+      const ws = workspaces[i];
+      const isOpen = await workspaceManagerController.isOpenWorkspace(ws.path);
+      opens.push(isOpen);
+    }
+    setWorkspacesIsOpen(opens);
   };
   const fetchAndUpdateWorkspaceData = async () => {
     const workspacesOrigin = await workspaceController.updateWorkspaces();
@@ -164,10 +172,10 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
     const clickWorkspace = workspaces[currentMenuIndex];
     if (
-      !(await workspaceManagerController.isOpenWorkspace(
+      await workspaceManagerController.isOpenWorkspace(
         clickWorkspace.path,
         '不能重命名已打开的工作区',
-      ))
+      )
     ) {
       return;
     }
@@ -204,10 +212,10 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
     const clickWorkspace = workspaces[currentMenuIndex];
     if (
-      !(await workspaceManagerController.isOpenWorkspace(
+      await workspaceManagerController.isOpenWorkspace(
         clickWorkspace.path,
         '不能改变已打开工作区的路径',
-      ))
+      )
     ) {
       return;
     }
@@ -227,10 +235,10 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     if (currentMenuIndex < 0 || workspaces.length < currentMenuIndex) return;
     const clickWorkspace = workspaces[currentMenuIndex];
     if (
-      !(await workspaceManagerController.isOpenWorkspace(
+      await workspaceManagerController.isOpenWorkspace(
         clickWorkspace.path,
         '不能移除已打开的工作区',
-      ))
+      )
     ) {
       return;
     }
@@ -308,6 +316,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                   const path = workspacesPath.length > i ? workspacesPath[i] : '';
                   const lastOpenTime = timeUtils.getTimeFormat(val.lastOpenTime);
                   const isFocus = currentMenuIndex === i;
+                  const isCurrentWorkspace = currentWorkspace?.metadata.path === val.path;
+                  const isOpen = workspacesIsOpen.length > i ? workspacesIsOpen[i] : false;
                   return (
                     <Button
                       key={i}
@@ -331,16 +341,19 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                         }}
                       >
                         <div className={styles.workspaceRowLeft}>
-                          <Text as="div" size="2" className={styles.workspaceName}>
-                            {name}
+                          <Text as="div" size="2" className={styles.workspaceRowLeftContent}>
+                            <span>{name}</span>
+                            <span>{path}</span>
+                          </Text>
+                          <Text as="div" size="2" className={styles.workspaceLeftTime}>
                             <div className={styles.workspaceLastOpenTime}>
                               <Text as="span" size="2">
                                 {lastOpenTime}
                               </Text>
                             </div>
-                          </Text>
-                          <Text as="div" size="2" className={styles.workspacePath}>
-                            {path}
+                            <Text as="span" size="1" style={{ color: 'var(--accent-11)' }}>
+                              {isCurrentWorkspace ? '当前工作区' : isOpen ? '已打开' : undefined}
+                            </Text>
                           </Text>
                         </div>
                         <div className={styles.workspaceRowRight}>

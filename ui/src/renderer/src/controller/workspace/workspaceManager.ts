@@ -24,9 +24,9 @@ export const isOpenWorkspace = async (workspacePath: string, errorText?: string 
     if (errorText != null) {
       toast.error(`${errorText}: ${workspacePath}`);
     }
-    return false;
+    return true;
   }
-  return true;
+  return false;
 };
 
 export const checkWorkspaceExist = async (workspacePath: string) => {
@@ -52,7 +52,7 @@ export const unloadCurrentWorkspace = async () => {
 };
 
 export const openWorkspace = async (workspacePath: string) => {
-  if (!(await isOpenWorkspace(workspacePath, '已经打开工作区'))) return false;
+  if (await isOpenWorkspace(workspacePath, '已经打开工作区')) return false;
   if (!(await checkWorkspaceExist(workspacePath))) {
     toast.error(`打开工作区失败: workspace directory not exist: ${workspacePath}`);
     return false;
