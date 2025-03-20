@@ -27,9 +27,9 @@ import { toast } from 'react-toastify';
 
 import { FileNode, FileTree, Workspace, fs } from '@/bindings/api';
 import { ContextMenuItem, Tree, TreeItem, TreeRef, dialog } from '@/components';
+import { setCurrentEditFileNode } from '@/controller/editor';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
-import { useWorkspaceStore } from '@/models/workspace';
 import { timeUtils, utils } from '@/utils';
 
 import styles from './Explorer.module.scss';
@@ -191,7 +191,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(() => false);
   const [selectNodes, setSelectNodes] = useState<Record<string, boolean | undefined>>(() => ({}));
   const [scrollTo, setScrollTo] = useState<string | null>(null);
-  const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
+  const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   const treeRef = useRef<TreeRef>(null);
   const menuRef = useRef<HTMLSpanElement>(null);
 
@@ -248,8 +248,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
   const openFile = (node: FileNode) => {
     if (node.fileType === 'file') {
-      const path = `${workspace.metadata.path}/${node.path}`;
-      toast.success(`todo open: ${path}`);
+      setCurrentEditFileNode(node);
     }
   };
   const treeItemClick = (data: FileNode | undefined) => {

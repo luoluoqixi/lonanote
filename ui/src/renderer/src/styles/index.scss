@@ -1,3 +1,5 @@
+@use './editor.scss';
+
 body {
   margin: 0;
   padding: 0;
@@ -65,8 +67,4 @@ img {
   align-items: center;
   flex-direction: column;
   background-color: rgb(from var(--color-background) r g b / var(--spinner-opacity));
-}
-
-.Toastify__toast-container {
-  z-index: 200000;
 }

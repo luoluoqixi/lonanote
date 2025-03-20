@@ -3,8 +3,8 @@ import React, { lazy } from 'react';
 import styles from './SideBar.module.scss';
 
 const tabsRenders: Record<string, React.FC<any>> = {
-  explorer: lazy(() => import('./tabs/Explorer')),
-  search: lazy(() => import('./tabs/Search')),
+  explorer: lazy(() => import('./sideBarTabs/Explorer')),
+  search: lazy(() => import('./sideBarTabs/Search')),
 };
 
 export interface SideBarProps {

@@ -2,11 +2,11 @@ import { Button, Tabs, Tooltip } from '@radix-ui/themes';
 import { ReactNode } from 'react';
 import { LuFolder, LuLibraryBig, LuSearch, LuSettings } from 'react-icons/lu';
 
+import { useSettingsState } from '../components/dialogs/settings';
+import { useWorkspaceManagerState } from '../components/dialogs/workspaceManager';
 // import { VscExtensions } from 'react-icons/vsc';
 
 import styles from './ActivityBar.module.scss';
-import { useSettingsState } from './dialogs/settings';
-import { useWorkspaceManagerState } from './dialogs/workspaceManager';
 
 export interface ActivityBarProps {
   tabValue: string | undefined;

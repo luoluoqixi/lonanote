@@ -4,14 +4,14 @@ import { useState } from 'react';
 import { useWindowTitleHeight } from '@/hooks';
 
 import styles from './Layout.module.scss';
-import { ActivityBar } from './components/ActivityBar';
-import { AssistSideBar } from './components/AssistSideBar';
-import { Content } from './components/Content';
-import { SideBar } from './components/SideBar';
-import { StatusBar } from './components/StatusBar';
-import { Title } from './components/Title';
 import { Settings } from './components/dialogs/settings';
 import { WorkspaceManager } from './components/dialogs/workspaceManager';
+import { ActivityBar } from './layouts/ActivityBar';
+import { AssistSideBar } from './layouts/AssistSideBar';
+import { Content } from './layouts/Content';
+import { SideBar } from './layouts/SideBar';
+import { StatusBar } from './layouts/StatusBar';
+import { Title } from './layouts/Title';
 
 export default function Layout() {
   const titleHeight = useWindowTitleHeight();

@@ -22,17 +22,17 @@ const copyFile = async (fromStats: fs.Stats, from: string, to: string) => {
 };
 
 const copyDir = async (from: string, to: string) => {
-  let realFrom = from;
-  const fromStats = fs.lstatSync(from);
-  if (fromStats.isSymbolicLink()) {
-    realFrom = fs.readlinkSync(from);
-    realFrom = path.resolve(path.dirname(from), realFrom);
-  }
+  // let realFrom = from;
+  // const fromStats = fs.lstatSync(from);
+  // if (fromStats.isSymbolicLink()) {
+  //   realFrom = fs.readlinkSync(from);
+  //   realFrom = path.resolve(path.dirname(from), realFrom);
+  // }
   const successFiles: string[] = [];
   // console.log('realFrom:', realFrom);
   walk(from, async (p, s) => {
     if (s.isFile()) {
-      const relativePath = path.relative(realFrom, p);
+      const relativePath = path.relative(from, p);
       const toPath = path.join(to, relativePath);
       await copyFile(s, p, toPath);
       successFiles.push(relativePath.replace(/\\/g, '/'));

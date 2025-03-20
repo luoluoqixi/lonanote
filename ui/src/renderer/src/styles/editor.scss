@@ -1,0 +1,12 @@
+.vditor {
+  --border-color: transparent;
+  --textarea-background-color: transparent;
+  --panel-background-color: transparent;
+  --toolbar-background-color: transparent;
+  --toolbar-height: 0;
+  // --textarea-text-color: white;
+}
+
+.vditor-reset {
+  color: var(--gray-12);
+}
