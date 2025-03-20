@@ -1,4 +1,3 @@
-import { Button } from 'primereact/button';
 import { useState } from 'react';
 
 import { api } from '@/bindings';
@@ -95,26 +94,26 @@ export default function Index() {
             <Link to="#">Test Link</Link>
           </div>
           <div style={rowStyle}>
-            <Button style={buttonStyle} onClick={helloCommand}>
+            <button style={buttonStyle} onClick={helloCommand}>
               helloCommand
-            </Button>
-            <Button style={buttonStyle} onClick={helloCommandAsync}>
+            </button>
+            <button style={buttonStyle} onClick={helloCommandAsync}>
               helloCommandAsync
-            </Button>
-            <Button style={buttonStyle} onClick={helloRustCallJs}>
+            </button>
+            <button style={buttonStyle} onClick={helloRustCallJs}>
               helloRustCallJs
-            </Button>
+            </button>
           </div>
           <div style={rowStyle}>
-            <Button style={buttonStyle} onClick={getCommandKeys}>
+            <button style={buttonStyle} onClick={getCommandKeys}>
               getCommandKeys
-            </Button>
-            <Button style={buttonStyle} onClick={getCommandAsyncKeys}>
+            </button>
+            <button style={buttonStyle} onClick={getCommandAsyncKeys}>
               getCommandAsyncKeys
-            </Button>
-            <Button style={buttonStyle} onClick={getCommandJsKeys}>
+            </button>
+            <button style={buttonStyle} onClick={getCommandJsKeys}>
               getCommandJsKeys
-            </Button>
+            </button>
           </div>
           <div style={rowStyle}>
             {/* <Button style={buttonStyle} onClick={() => toast('TestToast')}>Toast</Button> */}
