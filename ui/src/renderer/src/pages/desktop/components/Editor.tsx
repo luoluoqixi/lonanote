@@ -18,11 +18,25 @@ export default function Editor(props: EditorProps) {
   const [vd, setVd] = useState<Vditor>();
   const [loadContentFinish, setLoadContentFinish] = useState(false);
   // const [content, setContent] = useState('');
+  const updateContent = async (vd: Vditor | undefined) => {
+    if (!vd) return;
+    setLoadContentFinish(false);
+    const filePath = path.join(props.currentWorkspace.metadata.path, props.file.path);
+    try {
+      const content = await fs.readToString(filePath);
+      // setContent(content);
+      vd.setValue(content);
+      setLoadContentFinish(true);
+    } catch (e: any) {
+      console.error('读取文件失败', e);
+      toast.error(`读取文件失败: ${e.message}`);
+    }
+  };
   useEffect(() => {
     const vditor = new Vditor('vditor', {
-      after: () => {
-        vditor.setValue('');
+      after: async () => {
         setVd(vditor);
+        updateContent(vditor);
       },
       cdn: '/libs/vditor',
       theme: 'classic',
@@ -35,19 +49,7 @@ export default function Editor(props: EditorProps) {
       setVd(undefined);
     };
   }, []);
-  useEffect(async () => {
-    setLoadContentFinish(false);
-    const filePath = path.join(props.currentWorkspace.metadata.path, props.file.path);
-    try {
-      const content = await fs.readToString(filePath);
-      // setContent(content);
-      vd?.setValue(content);
-      setLoadContentFinish(true);
-    } catch (e: any) {
-      console.error('读取文件失败', e);
-      toast.error(`读取文件失败: ${e.message}`);
-    }
-  }, [props.file, props.currentWorkspace]);
+  useEffect(() => updateContent(vd), [props.file, props.currentWorkspace]);
 
   const saveFile = async () => {
     if (!loadContentFinish) return;
