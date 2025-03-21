@@ -34,7 +34,7 @@ tauri = { version = "2.3.1", features = ["config-toml", "protocol-asset"] }
 specta = { version = "=2.0.0-rc.22" }
 tauri-plugin-clipboard-manager = { version = "2.2.2" }
 tauri-plugin-fs = { version = "2.2.0" }
-tauri-plugin-log = { version = "2.3.0" }
+tauri-plugin-log = { version = "2.3.1" }
 tauri-plugin-os = { version = "2.2.1" }
 tauri-plugin-dialog = { version = "2.2.0" }
 tauri-plugin-shell = { version = "2.2.0" }

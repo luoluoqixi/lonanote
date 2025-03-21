@@ -27,6 +27,7 @@ fern = { workspace = true }
 chrono = { workspace = true }
 indexmap = { workspace = true }
 alphanumeric-sort = { workspace = true }
+encoding_rs = { workspace = true }
 
 # [target.'cfg(target_os = "windows")'.dependencies]
 # [target.'cfg(target_os = "macos")'.dependencies]

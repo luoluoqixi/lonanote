@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::{fs, io::Read, path::PathBuf};
 
 use anyhow::Result;
 use lonanote_commands::{
@@ -9,7 +9,7 @@ use lonanote_commands::{
 use rfd::AsyncFileDialog;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::fs_utils;
+use crate::utils::{self, fs_utils};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,8 +36,12 @@ fn is_file(Json(args): Json<PathArg>) -> CommandResult {
 }
 
 fn read_to_string(Json(args): Json<PathArg>) -> CommandResult {
-    let s = fs::read_to_string(args.path)?;
-    CommandResponse::json(s)
+    // let s = fs::read_to_string(args.path)?;
+    let mut file = fs::File::open(args.path)?;
+    let mut buf = vec![];
+    file.read_to_end(&mut buf)?;
+    let contents = utils::read_string(&buf);
+    CommandResponse::json(contents)
 }
 
 fn read_binary(Json(args): Json<PathArg>) -> CommandResult {
