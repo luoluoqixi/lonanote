@@ -38,6 +38,12 @@
     "lonanote-core-node": "link:../rust/node"
   },
   "devDependencies": {
+    "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/commands": "^6.8.0",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/search": "^6.5.10",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.4",
     "@ctrl/tinycolor": "^4.1.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@radix-ui/themes": "^3.2.1",
