@@ -1,5 +1,4 @@
 import '@radix-ui/themes/styles.css';
-import 'vditor/dist/index.css';
 
 import '@/styles/index.scss';
 import { utils } from '@/utils';

@@ -24,12 +24,7 @@ export const renderer: UserConfig = {
   envDir: 'env/',
   plugins: [
     preprocess({
-      copyFiles: [
-        {
-          from: 'node_modules/vditor',
-          to: 'src/renderer/public/libs/vditor',
-        },
-      ],
+      copyFiles: [],
     }),
     react(),
     viteVConsole({

@@ -1,10 +1,10 @@
 import { Text } from '@radix-ui/themes';
 
+import Editor from '@/components/editor/Editor';
 import { useEditor } from '@/controller/editor';
 import { workspaceController } from '@/controller/workspace';
 
 import styles from './Index.module.scss';
-import Editor from './components/Editor';
 
 const EmptyIndex = () => {
   return (
