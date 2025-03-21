@@ -10,6 +10,7 @@ import {
 } from '@/bindings/api/workspace';
 import { spinner } from '@/components';
 
+import { setCurrentEditFileNode } from '../editor';
 import {
   setCurrentWorkspace,
   setWorkspaceLoading,
@@ -42,6 +43,7 @@ export const unloadCurrentWorkspace = async () => {
   if (currentWorkspace != null) {
     try {
       await workspaceManager.unloadWorkspaceByPath(currentWorkspace);
+      setCurrentEditFileNode(null);
       setCurrentWorkspace(null);
     } catch (e) {
       toast.error(`卸载工作区失败: ${(e as Error).message}`);
@@ -70,6 +72,7 @@ export const openWorkspace = async (workspacePath: string) => {
     spinner.showSpinner('加载workspace');
     await workspaceManager.openWorkspaceByPath(workspacePath);
     const ws = await workspace.getCurrentWorkspace();
+    setCurrentEditFileNode(null);
     if (ws) setCurrentWorkspace(ws);
     spinner.hideSpinner();
     setWorkspaceLoading(false);

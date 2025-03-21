@@ -32,21 +32,22 @@ export default function Editor(props: EditorProps) {
   };
   useEffect(() => updateContent(), [props.file, props.currentWorkspace]);
 
-  // const saveFile = async () => {
-  //   if (!loadContentFinish) return;
-  //   const content = vd?.getValue() || '';
-  //   const filePath = path.join(props.currentWorkspace.metadata.path, props.file.path);
-  //   try {
-  //     fs.write(filePath, content);
-  //     toast.success('保存文件成功');
-  //   } catch (e: any) {
-  //     console.error('保存文件失败', e);
-  //     toast.error(`保存文件失败: ${e.message}`);
-  //   }
-  // };
+  const saveFile = async (content: string) => {
+    if (!loadContentFinish) return;
+    const filePath = path.join(props.currentWorkspace.metadata.path, props.file.path);
+    try {
+      fs.write(filePath, content);
+      toast.success('保存文件成功');
+    } catch (e: any) {
+      console.error('保存文件失败', e);
+      toast.error(`保存文件失败: ${e.message}`);
+    }
+  };
   return (
     <div className="editorRoot">
-      {content && <CodeMirrorEditor className="editor" getInitContent={() => content} />}
+      {content != null && (
+        <CodeMirrorEditor className="editor" getInitContent={() => content} onSave={saveFile} />
+      )}
       {
         //   <div
         //   id="vditor"
