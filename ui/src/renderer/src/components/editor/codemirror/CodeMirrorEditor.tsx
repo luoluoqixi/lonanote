@@ -33,6 +33,7 @@ import { detectLanguage } from './extensions';
 
 export interface CodeMirrorEditorRef {
   getView: () => EditorView | null;
+  updateView?: () => void;
 }
 
 export interface UpdateState {
@@ -57,6 +58,7 @@ export default forwardRef(
   ) => {
     const editorRootRef = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<EditorView | null>(null);
+    const [update, setUpdate] = useState<boolean>(false);
     useEffect(() => {
       let view: EditorView | null = null;
       if (editorRootRef.current) {
@@ -144,11 +146,14 @@ export default forwardRef(
           view.destroy();
         }
       };
-    }, [editorRootRef]);
+    }, [editorRootRef, update]);
 
     useImperativeHandle(ref, () => ({
       getView() {
         return view;
+      },
+      updateView() {
+        setUpdate(!update);
       },
     }));
 

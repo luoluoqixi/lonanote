@@ -14,6 +14,11 @@ export const routes: RouteObject[] = [
         Component: Index,
         // Component: Test,
       },
+      {
+        path: '/:file',
+        Component: Index,
+        // Component: Test,
+      },
     ],
   },
 ];
@@ -21,6 +26,14 @@ export const routes: RouteObject[] = [
 const isWeb = false;
 
 export const router = isWeb ? createBrowserRouter(routes) : createHashRouter(routes);
+
+window.navigate = async (to, opts): Promise<void> => {
+  if (typeof to === 'number') {
+    await router.navigate(to);
+  } else {
+    await router.navigate(to, opts);
+  }
+};
 
 export const Routes = () => {
   return <RouterProvider router={router} />;

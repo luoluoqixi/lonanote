@@ -1,7 +1,7 @@
 import { Text } from '@radix-ui/themes';
+import { useParams } from 'react-router';
 
 import Editor from '@/components/editor/Editor';
-import { useEditor } from '@/controller/editor';
 import { workspaceController } from '@/controller/workspace';
 
 import styles from './Index.module.scss';
@@ -44,15 +44,16 @@ const EmptyWorkspaceIndex = () => {
 
 export default function Index() {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
-  const currentEditFileNode = useEditor((s) => s.currentEditFileNode);
+  const { file } = useParams();
+  const filePath = file ? decodeURIComponent(file) : null;
   return (
     <div className={styles.indexRoot}>
       {currentWorkspace == null ? (
         <EmptyWorkspaceIndex />
-      ) : currentEditFileNode == null ? (
+      ) : filePath == null ? (
         <EmptyIndex />
       ) : (
-        <Editor file={currentEditFileNode} currentWorkspace={currentWorkspace} />
+        <Editor file={filePath} currentWorkspace={currentWorkspace} />
       )}
     </div>
   );

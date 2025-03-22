@@ -1,3 +1,13 @@
 .cm-editor {
   height: 100%;
+  margin: 4px;
+  outline: 0 !important;
+}
+
+.cm-scroller {
+  justify-content: center;
+}
+
+.cm-content {
+  max-width: 80%;
 }

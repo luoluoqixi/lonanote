@@ -1,19 +1,19 @@
 import { Text } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
-import { FileNode, Workspace, fs } from '@/bindings/api';
+import { Workspace, fs } from '@/bindings/api';
 import { setCurrentEditorState } from '@/controller/editor';
 import { useEffect } from '@/hooks';
 
 import './Editor.scss';
-import { CodeMirrorEditor, isSupportLanguage } from './codemirror';
+import { CodeMirrorEditor, CodeMirrorEditorRef, isSupportLanguage } from './codemirror';
 import { ImageView, isSupportImageView } from './image';
 import { VideoView, isSupportVideoView } from './video';
 
 export interface EditorProps {
-  file: FileNode;
+  file: string;
   currentWorkspace: Workspace;
 }
 
@@ -36,39 +36,42 @@ const NotSupportEditorContent = () => {
 };
 
 export default function Editor({ file, currentWorkspace }: EditorProps) {
+  const editorRef = useRef<CodeMirrorEditorRef>(null);
   const [loadContentFinish, setLoadContentFinish] = useState(false);
   const [content, setContent] = useState<string | null>(null);
   const updateContent = async () => {
+    const updateView = editorRef.current?.updateView;
     setContent(null);
     setLoadContentFinish(false);
     if (isSupportEditor) {
-      const filePath = path.join(currentWorkspace.metadata.path, file.path);
+      const filePath = path.join(currentWorkspace.metadata.path, file);
       try {
         const content = await fs.readToString(filePath);
         setContent(content);
         setLoadContentFinish(true);
+        updateView?.();
         // console.log('load content: ', content);
       } catch (e: any) {
-        console.error('读取文件失败', e);
-        toast.error(`读取文件失败: ${e.message}`);
+        console.error('读取文件失败', filePath, e);
+        toast.error(`读取文件失败: ${filePath}, ${e.message}`);
       }
     }
   };
   useEffect(() => updateContent(), [file, currentWorkspace]);
-  const fileName = useMemo(() => path.basename(file.path), [file]);
+  const fileName = useMemo(() => path.basename(file), [file]);
   const fullPath = useMemo(
-    () => path.join(currentWorkspace.metadata.path, file.path),
+    () => path.join(currentWorkspace.metadata.path, file),
     [file, currentWorkspace],
   );
   const isSupportEditor = useMemo(() => {
-    const supportEditor = isSupportLanguage(path.basename(file.path));
+    const supportEditor = isSupportLanguage(path.basename(file));
     if (!supportEditor) {
       setCurrentEditorState(null);
     }
     return supportEditor;
   }, [file]);
-  const isSupportImage = useMemo(() => isSupportImageView(path.basename(file.path)), [file]);
-  const isSupportVideo = useMemo(() => isSupportVideoView(path.basename(file.path)), [file]);
+  const isSupportImage = useMemo(() => isSupportImageView(path.basename(file)), [file]);
+  const isSupportVideo = useMemo(() => isSupportVideoView(path.basename(file)), [file]);
 
   const saveFile = async (content: string) => {
     if (!loadContentFinish) return;
@@ -86,6 +89,7 @@ export default function Editor({ file, currentWorkspace }: EditorProps) {
       {isSupportEditor ? (
         content != null && (
           <CodeMirrorEditor
+            ref={editorRef}
             fileName={fileName}
             className="editor"
             getInitContent={() => content}
