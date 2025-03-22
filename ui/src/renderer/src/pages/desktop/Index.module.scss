@@ -1,9 +1,22 @@
+$editor-top-toolbar-height: 50px;
+
 .indexRoot {
   width: 100%;
   height: 100%;
 }
 
-.editor {
+.editorRoot {
   width: 100%;
-  height: 100%;
+  height: calc(100% - $editor-top-toolbar-height);
+  display: flex;
+  flex-direction: column;
+}
+
+.editorTopToolbar {
+  height: $editor-top-toolbar-height;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  margin: 0 10px 0 10px;
+  justify-content: space-between;
 }

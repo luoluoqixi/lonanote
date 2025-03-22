@@ -42,6 +42,16 @@ const EmptyWorkspaceIndex = () => {
   );
 };
 
+const TopToolbar = () => {
+  return (
+    <div className={styles.editorTopToolbar}>
+      <div>前进/后退</div>
+      <div>面包屑</div>
+      <div>功能按钮</div>
+    </div>
+  );
+};
+
 export default function Index() {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   const { file } = useParams();
@@ -53,7 +63,10 @@ export default function Index() {
       ) : filePath == null ? (
         <EmptyIndex />
       ) : (
-        <Editor file={filePath} currentWorkspace={currentWorkspace} />
+        <div className={styles.editorRoot}>
+          <TopToolbar />
+          <Editor file={filePath} currentWorkspace={currentWorkspace} />
+        </div>
       )}
     </div>
   );
