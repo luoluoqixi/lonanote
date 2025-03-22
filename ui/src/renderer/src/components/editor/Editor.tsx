@@ -1,65 +1,97 @@
+import { Text } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { FileNode, Workspace, fs } from '@/bindings/api';
 import { useEffect } from '@/hooks';
 
-import CodeMirrorEditor from './CodeMirrorEditor';
 import './Editor.scss';
+import { CodeMirrorEditor, isSupportLanguage } from './codemirror';
+import { ImageView, isSupportImageView } from './image';
+import { VideoView, isSupportVideoView } from './video';
 
 export interface EditorProps {
   file: FileNode;
   currentWorkspace: Workspace;
 }
 
-export default function Editor(props: EditorProps) {
+const NotSupportEditorContent = () => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100%',
+        width: '100%',
+      }}
+    >
+      <Text as="div" size="4">
+        不支持的文件类型
+      </Text>
+    </div>
+  );
+};
+
+export default function Editor({ file, currentWorkspace }: EditorProps) {
   const [loadContentFinish, setLoadContentFinish] = useState(false);
   const [content, setContent] = useState<string | null>(null);
   const updateContent = async () => {
     setContent(null);
     setLoadContentFinish(false);
-    const filePath = path.join(props.currentWorkspace.metadata.path, props.file.path);
-    try {
-      const content = await fs.readToString(filePath);
-      setContent(content);
-      setLoadContentFinish(true);
-      // console.log('load content: ', content);
-    } catch (e: any) {
-      console.error('读取文件失败', e);
-      toast.error(`读取文件失败: ${e.message}`);
+    if (isSupportEditor) {
+      const filePath = path.join(currentWorkspace.metadata.path, file.path);
+      try {
+        const content = await fs.readToString(filePath);
+        setContent(content);
+        setLoadContentFinish(true);
+        // console.log('load content: ', content);
+      } catch (e: any) {
+        console.error('读取文件失败', e);
+        toast.error(`读取文件失败: ${e.message}`);
+      }
     }
   };
-  useEffect(() => updateContent(), [props.file, props.currentWorkspace]);
+  useEffect(() => updateContent(), [file, currentWorkspace]);
+  const fileName = useMemo(() => path.basename(file.path), [file]);
+  const fullPath = useMemo(
+    () => path.join(currentWorkspace.metadata.path, file.path),
+    [file, currentWorkspace],
+  );
+  const isSupportEditor = useMemo(() => isSupportLanguage(path.basename(file.path)), [file]);
+  const isSupportImage = useMemo(() => isSupportImageView(path.basename(file.path)), [file]);
+  const isSupportVideo = useMemo(() => isSupportVideoView(path.basename(file.path)), [file]);
 
   const saveFile = async (content: string) => {
     if (!loadContentFinish) return;
-    const filePath = path.join(props.currentWorkspace.metadata.path, props.file.path);
     try {
-      fs.write(filePath, content);
+      fs.write(fullPath, content);
       toast.success('保存文件成功');
     } catch (e: any) {
       console.error('保存文件失败', e);
       toast.error(`保存文件失败: ${e.message}`);
     }
   };
+
   return (
     <div className="editorRoot">
-      {content != null && (
-        <CodeMirrorEditor className="editor" getInitContent={() => content} onSave={saveFile} />
+      {isSupportEditor ? (
+        content != null && (
+          <CodeMirrorEditor
+            fileName={fileName}
+            className="editor"
+            getInitContent={() => content}
+            onSave={saveFile}
+          />
+        )
+      ) : isSupportImage ? (
+        <ImageView imgPath={fullPath} />
+      ) : isSupportVideo ? (
+        <VideoView videoPath={fullPath} />
+      ) : (
+        <NotSupportEditorContent />
       )}
-      {
-        //   <div
-        //   id="vditor"
-        //   className={clsx('vditor', styles.editor)}
-        //   onKeyDown={(e) => {
-        //     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        //       e.preventDefault();
-        //       saveFile();
-        //     }
-        //   }}
-        // />
-      }
     </div>
   );
 }

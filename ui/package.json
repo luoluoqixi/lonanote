@@ -48,6 +48,7 @@
     "@codemirror/view": "=6.23.1",
     "@ctrl/tinycolor": "^4.1.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
+    "@markdoc/markdoc": "^0.5.1",
     "@radix-ui/themes": "^3.2.1",
     "@tauri-apps/api": "^2.3.0",
     "@tauri-apps/cli": "^2.3.1",

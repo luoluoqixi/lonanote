@@ -124,6 +124,12 @@ export const utils = {
     }
     return `${(size / unit).toFixed(2)} kb`;
   },
+  getMediaPath: (filePath: string) => {
+    if (window.api) {
+      return window.api?.utils.getMediaUrl(filePath);
+    }
+    return filePath;
+  },
 };
 
 export * from './timeUtils';

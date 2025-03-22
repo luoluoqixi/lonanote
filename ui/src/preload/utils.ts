@@ -84,4 +84,5 @@ export const utils = {
   ): Promise<string[]> => {
     return await ipcRenderer.invoke('getPublicFiles', folder, type, recursive);
   },
+  getMediaUrl: (filePath: string) => `media:///${filePath}`,
 };

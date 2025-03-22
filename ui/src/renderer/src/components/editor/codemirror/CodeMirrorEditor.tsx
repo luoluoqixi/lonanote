@@ -29,12 +29,14 @@ import {
 } from 'react';
 
 import './CodeMirrorEditor.scss';
+import { detectLanguage } from './extensions';
 
 export interface CodeMirrorEditorRef {
   getView: () => EditorView | null;
 }
 
 export interface CodeMirrorEditorProps {
+  fileName: string;
   style?: CSSProperties;
   className?: string;
   getInitContent?: () => string;
@@ -43,7 +45,7 @@ export interface CodeMirrorEditorProps {
 
 export default forwardRef(
   (
-    { className, style, getInitContent, onSave }: CodeMirrorEditorProps,
+    { className, style, fileName, getInitContent, onSave }: CodeMirrorEditorProps,
     ref: Ref<CodeMirrorEditorRef>,
   ) => {
     const editorRootRef = useRef<HTMLDivElement>(null);
@@ -64,6 +66,7 @@ export default forwardRef(
         const state = EditorState.create({
           doc: getInitContent ? getInitContent() : '',
           extensions: [
+            detectLanguage(fileName),
             //自动换行
             EditorView.lineWrapping,
             // 行号

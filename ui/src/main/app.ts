@@ -1,5 +1,5 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { BrowserWindow, app, globalShortcut, ipcMain, shell } from 'electron';
+import { BrowserWindow, app, globalShortcut, ipcMain, net, protocol, shell } from 'electron';
 import type { TitleBarOverlay } from 'electron';
 import fs from 'fs';
 import path from 'path';
@@ -172,6 +172,18 @@ export const setupApp = async () => {
     createWindow();
   });
 
+  protocol.registerSchemesAsPrivileged([
+    {
+      scheme: 'media',
+      privileges: {
+        secure: true,
+        supportFetchAPI: true,
+        bypassCSP: true,
+        stream: true,
+      },
+    },
+  ]);
+
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
@@ -180,6 +192,11 @@ export const setupApp = async () => {
 
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.lonalabs.lonanote');
+
+    protocol.handle('media', (request) => {
+      const pathToMedia = new URL(request.url).pathname;
+      return net.fetch(`file://${pathToMedia}`);
+    });
 
     // Default open or close DevTools by F12 in development
     // and ignore CommandOrControl + R in production.

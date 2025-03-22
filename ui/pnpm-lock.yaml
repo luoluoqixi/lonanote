@@ -54,6 +54,9 @@ importers:
       '@electron-toolkit/tsconfig':
         specifier: ^1.0.1
         version: 1.0.1(@types/node@22.13.11)
+      '@markdoc/markdoc':
+        specifier: ^0.5.1
+        version: 0.5.1(@types/react@19.0.12)(react@19.0.0)
       '@radix-ui/themes':
         specifier: ^3.2.1
         version: 3.2.1(@types/react-dom@19.0.4(@types/react@19.0.12))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -907,6 +910,18 @@ packages:
 
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
+
+  '@markdoc/markdoc@0.5.1':
+    resolution: {integrity: sha512-W2apYOglq0hOnvWbhE70yl6V9++FG+YPFKNHmgiSjv0HTmdJaMLt+NA1LMqoH5LasSiTI7R0yVc5ofjaFh39Pg==}
+    engines: {node: '>=14.7.0'}
+    peerDependencies:
+      '@types/react': '*'
+      react: '*'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -1831,6 +1846,15 @@ packages:
 
   '@types/keyv@3.1.4':
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
+
+  '@types/linkify-it@3.0.5':
+    resolution: {integrity: sha512-yg6E+u0/+Zjva+buc3EIb+29XEg4wltq7cSmd4Uc2EE/1nUVmxyzpX6gUXD0V8jIrG0r7YeOGVIbYRkxeooCtw==}
+
+  '@types/markdown-it@12.2.3':
+    resolution: {integrity: sha512-GKMHFfv3458yYy+v/N8gjufHO6MSZKCOXpZc5GXIWWy8uldwfmPn98vp81gZ5f9SVw8YYBctgfJ22a2d7AOMeQ==}
+
+  '@types/mdurl@2.0.0':
+    resolution: {integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==}
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
@@ -5154,6 +5178,13 @@ snapshots:
 
   '@marijn/find-cluster-break@1.0.2': {}
 
+  '@markdoc/markdoc@0.5.1(@types/react@19.0.12)(react@19.0.0)':
+    optionalDependencies:
+      '@types/linkify-it': 3.0.5
+      '@types/markdown-it': 12.2.3
+      '@types/react': 19.0.12
+      react: 19.0.0
+
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -6063,6 +6094,18 @@ snapshots:
   '@types/keyv@3.1.4':
     dependencies:
       '@types/node': 22.13.11
+
+  '@types/linkify-it@3.0.5':
+    optional: true
+
+  '@types/markdown-it@12.2.3':
+    dependencies:
+      '@types/linkify-it': 3.0.5
+      '@types/mdurl': 2.0.0
+    optional: true
+
+  '@types/mdurl@2.0.0':
+    optional: true
 
   '@types/ms@2.1.0': {}
 
