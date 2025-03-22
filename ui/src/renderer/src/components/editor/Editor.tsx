@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { FileNode, Workspace, fs } from '@/bindings/api';
+import { setCurrentEditorState } from '@/controller/editor';
 import { useEffect } from '@/hooks';
 
 import './Editor.scss';
@@ -59,7 +60,13 @@ export default function Editor({ file, currentWorkspace }: EditorProps) {
     () => path.join(currentWorkspace.metadata.path, file.path),
     [file, currentWorkspace],
   );
-  const isSupportEditor = useMemo(() => isSupportLanguage(path.basename(file.path)), [file]);
+  const isSupportEditor = useMemo(() => {
+    const supportEditor = isSupportLanguage(path.basename(file.path));
+    if (!supportEditor) {
+      setCurrentEditorState(null);
+    }
+    return supportEditor;
+  }, [file]);
   const isSupportImage = useMemo(() => isSupportImageView(path.basename(file.path)), [file]);
   const isSupportVideo = useMemo(() => isSupportVideoView(path.basename(file.path)), [file]);
 
@@ -83,6 +90,7 @@ export default function Editor({ file, currentWorkspace }: EditorProps) {
             className="editor"
             getInitContent={() => content}
             onSave={saveFile}
+            onUpdateListener={(s) => setCurrentEditorState(s)}
           />
         )
       ) : isSupportImage ? (

@@ -35,17 +35,24 @@ export interface CodeMirrorEditorRef {
   getView: () => EditorView | null;
 }
 
+export interface UpdateState {
+  charCount: number;
+  rowIndex: number;
+  colIndex: number;
+}
+
 export interface CodeMirrorEditorProps {
   fileName: string;
   style?: CSSProperties;
   className?: string;
   getInitContent?: () => string;
   onSave?: (content: string) => void;
+  onUpdateListener?: (state: UpdateState) => void;
 }
 
 export default forwardRef(
   (
-    { className, style, fileName, getInitContent, onSave }: CodeMirrorEditorProps,
+    { className, style, fileName, getInitContent, onSave, onUpdateListener }: CodeMirrorEditorProps,
     ref: Ref<CodeMirrorEditorRef>,
   ) => {
     const editorRootRef = useRef<HTMLDivElement>(null);
@@ -63,12 +70,23 @@ export default forwardRef(
             return true;
           },
         };
+        const updateListener = EditorView.updateListener.of((update) => {
+          if (onUpdateListener) {
+            const charCount = update.state.doc.length;
+            const cursorPos = update.state.selection.main.head;
+            const line = update.state.doc.lineAt(cursorPos);
+            const rowIndex = line.number;
+            const colIndex = cursorPos - line.from;
+            onUpdateListener({ charCount, rowIndex, colIndex });
+          }
+        });
         const state = EditorState.create({
           doc: getInitContent ? getInitContent() : '',
           extensions: [
             detectLanguage(fileName),
             //自动换行
             EditorView.lineWrapping,
+            updateListener,
             // 行号
             // lineNumbers(),
             // 用占位符替换不可打印字符
