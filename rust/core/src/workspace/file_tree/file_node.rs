@@ -137,8 +137,11 @@ impl FileNode {
                     let entry = entry.map_err(|err| format!("error walking directory: {}", err))?;
 
                     let path = entry.path();
-                    if custom_ignore.matched(path, path.is_dir()).is_ignore() {
-                        // log::info!("ignore: {}", path.display());
+                    if custom_ignore
+                        .matched_path_or_any_parents(path, path.is_dir())
+                        .is_ignore()
+                    {
+                        log::info!("ignore: {}", path.display());
                         continue;
                     }
 

@@ -1,4 +1,9 @@
-import { getCurrentOpenWorkspace, workspace, workspaceManager } from '@/bindings/api/workspace';
+import {
+  getCurrentOpenWorkspace,
+  setCurrentOpenWorkspace,
+  workspace,
+  workspaceManager,
+} from '@/bindings/api/workspace';
 import { useSettingsStore } from '@/models/settings';
 
 import { updateWorkspaces } from './workspace';
@@ -13,6 +18,7 @@ export const getInitWorkspace = async () => {
     const isOpen = await workspace.isOpenWorkspace(ws);
     if (!isOpen) {
       await workspaceManagerController.openWorkspace(ws);
+      setCurrentOpenWorkspace(ws);
     }
   } else {
     const settings = useSettingsStore.getState().settings;

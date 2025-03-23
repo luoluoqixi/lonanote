@@ -24,6 +24,9 @@ pub static DEFAULT_IGNORE: &str = r"
 # lonanote
 .lonanote
 
+# git
+.git/
+
 # OSX
 **/*.DS_Store
 ";
