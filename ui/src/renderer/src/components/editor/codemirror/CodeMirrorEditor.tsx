@@ -12,10 +12,9 @@ import {
   EditorView,
   KeyBinding,
   crosshairCursor,
-  drawSelection,
-  highlightActiveLine,
   highlightSpecialChars,
   keymap,
+  lineNumbers,
   rectangularSelection,
 } from '@codemirror/view';
 import {
@@ -29,7 +28,7 @@ import {
 } from 'react';
 
 import './CodeMirrorEditor.scss';
-import { detectLanguage } from './extensions';
+import { defaultShowLineNum, detectLanguage } from './extensions';
 
 export interface CodeMirrorEditorRef {
   getView: () => EditorView | null;
@@ -90,13 +89,13 @@ export default forwardRef(
             EditorView.lineWrapping,
             updateListener,
             // 行号
-            // lineNumbers(),
+            defaultShowLineNum(fileName) ? lineNumbers() : [],
             // 用占位符替换不可打印字符
             highlightSpecialChars(),
             // 撤销历史
             history(),
-            // 替换原始光标选区
-            drawSelection(),
+            // // 替换原始光标选区
+            // drawSelection(),
             // 替换拖拽时的放置光标
             // dropCursor(),
             // Allow multiple cursors/selections
@@ -115,8 +114,8 @@ export default forwardRef(
             rectangularSelection(),
             // 按住 alt 时, 光标更改为十字
             crosshairCursor(),
-            // 高亮激活的行
-            highlightActiveLine(),
+            // // 高亮激活的行
+            // highlightActiveLine(),
             // Style the gutter for current line specially
             // highlightActiveLineGutter(),
             // 突出显示与所选文本匹配的文本

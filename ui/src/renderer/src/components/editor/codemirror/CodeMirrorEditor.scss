@@ -11,3 +11,9 @@
 .cm-content {
   max-width: 80%;
 }
+
+// 行号
+.cm-gutters {
+  background-color: transparent !important;
+  color: var(--gray-10) !important;
+}

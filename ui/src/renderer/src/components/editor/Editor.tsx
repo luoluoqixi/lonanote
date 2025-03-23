@@ -76,7 +76,7 @@ export default function Editor({ file, currentWorkspace }: EditorProps) {
   const saveFile = async (content: string) => {
     if (!loadContentFinish) return;
     try {
-      fs.write(fullPath, content);
+      await fs.write(fullPath, content);
       toast.success('保存文件成功');
     } catch (e: any) {
       console.error('保存文件失败', e);

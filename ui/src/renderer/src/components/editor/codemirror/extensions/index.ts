@@ -24,15 +24,11 @@ export const detectLanguage = (fileName: string) => {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
   switch (ext) {
     case 'c':
-      return cpp();
     case 'h':
-      return cpp();
     case 'cc':
-      return cpp();
     case 'cpp':
-      return cpp();
     case 'hpp':
-      return cpp();
+    case 'mm':
     case 'cs':
       return cpp();
     case 'css':
@@ -42,14 +38,17 @@ export const detectLanguage = (fileName: string) => {
     case 'html':
       return html();
     case 'java':
+    case 'kt':
+    case 'kts':
       return java();
     case 'js':
-      return javascript();
     case 'ts':
-      return javascript();
     case 'jsx':
-      return javascript();
     case 'tsx':
+    case 'mjs':
+    case 'cjs':
+    case 'mts':
+    case 'cts':
       return javascript();
     case 'json':
       return json();
@@ -62,7 +61,6 @@ export const detectLanguage = (fileName: string) => {
     case 'rs':
       return rust();
     case 'sass':
-      return sass();
     case 'scss':
       return sass();
     case 'sql':
@@ -70,13 +68,13 @@ export const detectLanguage = (fileName: string) => {
     case 'vue':
       return vue();
     case 'xml':
+    case 'plist':
+    case 'storyboard':
       return xml();
     case 'yaml':
-      return yaml();
     case 'yml':
       return yaml();
     case 'md':
-      return markdown();
     case 'markdown':
       return markdown();
     case 'txt':
@@ -84,4 +82,11 @@ export const detectLanguage = (fileName: string) => {
     default:
       return [];
   }
+};
+
+const defaultNotShowLineNumList = ['md', 'markdown'] as const;
+
+export const defaultShowLineNum = (fileName: string) => {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return defaultNotShowLineNumList.findIndex((x) => x === ext) < 0;
 };

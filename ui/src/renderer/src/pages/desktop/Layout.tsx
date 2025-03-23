@@ -100,7 +100,6 @@ export default function Layout() {
               priority={LayoutPriority.Low}
               preferredSize={300}
               visible={showContentAssistSideBar}
-              snap
             >
               <AssistSideBar />
             </Allotment.Pane>
