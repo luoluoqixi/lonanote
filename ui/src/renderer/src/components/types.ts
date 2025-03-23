@@ -8,3 +8,11 @@ export interface ContextMenuItem {
   separator?: boolean;
   props?: ContextMenu.ItemProps;
 }
+
+export interface DropdownMenuItem {
+  id: string;
+  label?: string;
+  icon?: ReactNode | undefined;
+  separator?: boolean;
+  props?: ContextMenu.ItemProps;
+}

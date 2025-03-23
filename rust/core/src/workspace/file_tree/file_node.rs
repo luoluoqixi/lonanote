@@ -141,7 +141,7 @@ impl FileNode {
                         .matched_path_or_any_parents(path, path.is_dir())
                         .is_ignore()
                     {
-                        log::info!("ignore: {}", path.display());
+                        // log::info!("ignore: {}", path.display());
                         continue;
                     }
 

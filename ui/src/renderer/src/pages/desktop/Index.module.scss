@@ -17,7 +17,7 @@ $editor-top-toolbar-height: 50px;
   flex-shrink: 0;
   display: flex;
   flex-direction: row;
-  margin: 0 10px 0 10px;
+  margin: 0 20px 0 10px;
   justify-content: space-between;
   gap: 10px;
 }
@@ -28,6 +28,7 @@ $editor-top-toolbar-height: 50px;
   text-overflow: ellipsis;
   white-space: nowrap;
   align-items: center;
+  flex-direction: row;
 }
 
 .editorTopToolbarLeft {
@@ -42,4 +43,15 @@ $editor-top-toolbar-height: 50px;
 
 .editorTopToolbarRight {
   @extend .editorTopToolbarCommon;
+  gap: 15px;
+}
+
+.editorTopToolbarRightBtn {
+  width: 18px;
+  height: 18px;
+  padding: 6px;
+}
+.editorTopToolbarRightBtn svg {
+  width: 18px;
+  height: 18px;
 }

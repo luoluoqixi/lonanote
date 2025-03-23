@@ -90,6 +90,7 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
             >
               <Flex width="100%" height="100%" direction="column" gap="1">
                 <TextArea
+                  spellCheck="false"
                   style={{ height: '100%', width: '100%' }}
                   value={customIgnore}
                   onChange={(e) => setCustomIgnore(e.target.value)}

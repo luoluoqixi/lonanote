@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 
+export type EditorMode = 'edit' | 'preview';
+
+export const defaultEditorMode: EditorMode = 'edit';
+
 export interface EditorStore {
   currentEditorStatus: EditorState | null;
+  editorMode?: EditorMode;
 }
 
 export interface EditorState {
@@ -12,4 +17,5 @@ export interface EditorState {
 
 export const useEditorStore = create<EditorStore>(() => ({
   currentEditorStatus: null,
+  editorMode: undefined,
 }));
