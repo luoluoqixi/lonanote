@@ -130,6 +130,16 @@ async fn set_open_workspace_custom_ignore(
     Ok(CommandResponse::None)
 }
 
+async fn reset_open_workspace_custom_ignore(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    let workspace = workspace_manager
+        .get_workspace_mut(&args.path)
+        .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+    workspace.reset_custom_ignore().await?;
+
+    Ok(CommandResponse::None)
+}
+
 async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
@@ -166,6 +176,10 @@ pub fn reg_commands() -> Result<()> {
     reg_command_async(
         "workspace.set_open_workspace_custom_ignore",
         set_open_workspace_custom_ignore,
+    )?;
+    reg_command_async(
+        "workspace.reset_open_workspace_custom_ignore",
+        reset_open_workspace_custom_ignore,
     )?;
     reg_command_async(
         "workspace.call_open_workspace_reinit",

@@ -3,9 +3,12 @@ use std::{path::PathBuf, sync::Arc};
 use tokio::sync::{RwLock, RwLockReadGuard};
 
 use super::{
-    config::create_workspace_config_folder, error::WorkspaceError, file_tree::FileTreeSortType,
-    workspace_index::WorkspaceIndex, workspace_metadata::WorkspaceMetadata,
-    workspace_settings::WorkspaceSettings,
+    config::create_workspace_config_folder,
+    error::WorkspaceError,
+    file_tree::FileTreeSortType,
+    workspace_index::WorkspaceIndex,
+    workspace_metadata::WorkspaceMetadata,
+    workspace_settings::{WorkspaceSettings, DEFAULT_IGNORE},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,6 +80,15 @@ impl WorkspaceInstance {
     pub async fn set_custom_ignore(&mut self, custom_ignore: String) -> Result<(), WorkspaceError> {
         let mut settings = self.settings.clone();
         settings.custom_ignore = custom_ignore.clone();
+        self.set_settings(settings).await?;
+        self.reinit().await?;
+
+        Ok(())
+    }
+
+    pub async fn reset_custom_ignore(&mut self) -> Result<(), WorkspaceError> {
+        let mut settings = self.settings.clone();
+        settings.custom_ignore = DEFAULT_IGNORE.to_string();
         self.set_settings(settings).await?;
         self.reinit().await?;
 

@@ -5,7 +5,11 @@ export interface WorkspaceMetadata {
   lastOpenTime: number;
 }
 
-export interface WorkspaceSettings {}
+export interface WorkspaceSettings {
+  fileTreeSortType: FileTreeSortType | null;
+  followGitignore: boolean;
+  customIgnore: string;
+}
 
 export interface WorkspaceSaveData {
   lastOpenFilePath: string;

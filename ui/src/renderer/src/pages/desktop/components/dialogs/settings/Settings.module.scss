@@ -64,6 +64,10 @@
 
 .rowSettingsLeft {
   width: 40%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  padding-right: 10px;
 }
 
 .rowSettingsRight {

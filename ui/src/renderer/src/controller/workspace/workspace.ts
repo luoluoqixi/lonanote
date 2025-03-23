@@ -51,6 +51,21 @@ export const setCurrentWorkspaceSortType = async (sortType: FileTreeSortType) =>
   await updateCurrentWorkspace();
 };
 
+export const setCurrentWorkspaceFollowGitignore = async (followGitignore: boolean) => {
+  await workspace.setCurrentWorkspaceFollowGitignore(followGitignore);
+  await updateCurrentWorkspace();
+};
+
+export const setCurrentWorkspaceCustomIgnore = async (customIgnore: string) => {
+  await workspace.setCurrentWorkspaceCustomIgnore(customIgnore);
+  await updateCurrentWorkspace();
+};
+
+export const resetCurrentWorkspaceCustomIgnore = async () => {
+  await workspace.resetCurrentWorkspaceCustomIgnore();
+  await updateCurrentWorkspace();
+};
+
 export const reinitCurrentWorkspace = async () => {
   await workspace.reinitCurrentworkspace();
 };

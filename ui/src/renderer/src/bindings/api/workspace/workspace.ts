@@ -34,6 +34,26 @@ export const workspace = {
       sortType,
     }))!;
   },
+  setOpenWorkspaceFollowGitignore: async (
+    path: string,
+    followGitignore: boolean,
+  ): Promise<void> => {
+    return (await invokeAsync('workspace.set_open_workspace_follow_gitignore', {
+      path,
+      followGitignore,
+    }))!;
+  },
+  setOpenWorkspaceCustomIgnore: async (path: string, customIgnore: string): Promise<void> => {
+    return (await invokeAsync('workspace.set_open_workspace_custom_ignore', {
+      path,
+      customIgnore,
+    }))!;
+  },
+  resetOpenWorkspaceCustomIgnore: async (path: string): Promise<void> => {
+    return (await invokeAsync('workspace.reset_open_workspace_custom_ignore', {
+      path,
+    }))!;
+  },
   callOpenWorkspaceReinit: async (path: string): Promise<void> => {
     return (await invokeAsync('workspace.call_open_workspace_reinit', { path }))!;
   },
@@ -56,6 +76,18 @@ export const workspace = {
   setCurrentWorkspaceFileTreeSortType: async (sortType: FileTreeSortType): Promise<void> => {
     const path = await checkCurrentOpenWorkspace();
     return await workspace.setOpenWorkspaceFileTreeSortType(path, sortType);
+  },
+  setCurrentWorkspaceFollowGitignore: async (followGitignore: boolean): Promise<void> => {
+    const path = await checkCurrentOpenWorkspace();
+    return await workspace.setOpenWorkspaceFollowGitignore(path, followGitignore);
+  },
+  setCurrentWorkspaceCustomIgnore: async (customIgnore: string): Promise<void> => {
+    const path = await checkCurrentOpenWorkspace();
+    return await workspace.setOpenWorkspaceCustomIgnore(path, customIgnore);
+  },
+  resetCurrentWorkspaceCustomIgnore: async (): Promise<void> => {
+    const path = await checkCurrentOpenWorkspace();
+    return await workspace.resetOpenWorkspaceCustomIgnore(path);
   },
   reinitCurrentworkspace: async (): Promise<void> => {
     const path = await checkCurrentOpenWorkspace();

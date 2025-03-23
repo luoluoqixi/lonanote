@@ -20,7 +20,7 @@ pub struct WorkspaceSettings {
     pub custom_ignore: String,
 }
 
-static DEFAULT_IGNORE: &str = r"
+pub static DEFAULT_IGNORE: &str = r"
 # lonanote
 .lonanote
 
@@ -39,7 +39,7 @@ impl WorkspaceSettings {
                 workspace_path: workspace_path.as_ref().to_path_buf(),
                 file_tree_sort_type: None,
                 follow_gitignore: true,
-                custom_ignore: String::from(DEFAULT_IGNORE),
+                custom_ignore: DEFAULT_IGNORE.to_string(),
             })
         }
     }

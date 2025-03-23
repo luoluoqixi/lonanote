@@ -1,9 +1,9 @@
-import { Text, TextField } from '@radix-ui/themes';
+import { Button, Flex, Switch, Text, TextArea, TextField } from '@radix-ui/themes';
 import { useEffect, useState } from 'react';
 
 import { workspaceController } from '@/controller/workspace';
 
-import { BaseSettingsPanelProps } from '../Settings';
+import { BaseSettingsPanelProps, ResetButton } from '../Settings';
 import styles from '../Settings.module.scss';
 
 export interface WorkspaceSettingsProps extends BaseSettingsPanelProps {}
@@ -12,9 +12,14 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
   const [workspaceName, setWorkspaceName] = useState(currentWorkspace?.metadata.name);
   const [workspacePath, setWorkspacePath] = useState(currentWorkspace?.metadata.rootPath);
 
+  const [customIgnore, setCustomIgnore] = useState<string | undefined>(
+    currentWorkspace?.settings.customIgnore,
+  );
+
   useEffect(() => {
     setWorkspaceName(currentWorkspace?.metadata.name);
     setWorkspacePath(currentWorkspace?.metadata.rootPath);
+    setCustomIgnore(currentWorkspace?.settings.customIgnore);
   }, [currentWorkspace]);
 
   return (
@@ -55,6 +60,59 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
                   setWorkspacePath(e.target.value);
                 }}
               />
+            </div>
+          </div>
+          <div className={styles.rowSettings}>
+            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+              使用 .gitignore 规则：
+            </Text>
+            <div className={styles.rowSettingsRight}>
+              <Switch
+                checked={currentWorkspace.settings.followGitignore}
+                onCheckedChange={(v) => workspaceController.setCurrentWorkspaceFollowGitignore(v)}
+              />
+            </div>
+          </div>
+          <div
+            style={{
+              height: '100px',
+            }}
+            className={styles.rowSettings}
+          >
+            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+              自定义 ignore 规则：
+            </Text>
+            <div
+              style={{
+                height: '100px',
+              }}
+              className={styles.rowSettingsRight}
+            >
+              <Flex width="100%" height="100%" direction="column" gap="1">
+                <TextArea
+                  style={{ height: '100%', width: '100%' }}
+                  value={customIgnore}
+                  onChange={(e) => setCustomIgnore(e.target.value)}
+                  slot="123"
+                />
+                <Flex direction="row" width="100%" gap="1">
+                  <Button
+                    style={{ flexGrow: 1 }}
+                    size="1"
+                    onClick={() =>
+                      workspaceController.setCurrentWorkspaceCustomIgnore(customIgnore || '')
+                    }
+                  >
+                    保存并应用
+                  </Button>
+                  <ResetButton
+                    size="1"
+                    variant="solid"
+                    style={{ margin: 0 }}
+                    onClick={() => workspaceController.resetCurrentWorkspaceCustomIgnore()}
+                  />
+                </Flex>
+              </Flex>
             </div>
           </div>
         </>
