@@ -1,6 +1,7 @@
 import { Text } from '@radix-ui/themes';
 import { useParams } from 'react-router';
 
+import { Breadcrumb } from '@/components/Breadcrumb';
 import Editor from '@/components/editor/Editor';
 import { workspaceController } from '@/controller/workspace';
 
@@ -42,12 +43,19 @@ const EmptyWorkspaceIndex = () => {
   );
 };
 
-const TopToolbar = () => {
+const TopToolbar = ({ filePath }: { filePath: string }) => {
   return (
     <div className={styles.editorTopToolbar}>
-      <div>前进/后退</div>
-      <div>面包屑</div>
-      <div>功能按钮</div>
+      <div className={styles.editorTopToolbarLeft}>前进/后退</div>
+      <div className={styles.editorTopToolbarCenter}>
+        <Breadcrumb.Lazy
+          path={filePath}
+          onItemClick={(path) => {
+            console.log(path);
+          }}
+        />
+      </div>
+      <div className={styles.editorTopToolbarRight}>功能按钮</div>
     </div>
   );
 };
@@ -64,7 +72,7 @@ export default function Index() {
         <EmptyIndex />
       ) : (
         <div className={styles.editorRoot}>
-          <TopToolbar />
+          <TopToolbar filePath={filePath} />
           <Editor file={filePath} currentWorkspace={currentWorkspace} />
         </div>
       )}

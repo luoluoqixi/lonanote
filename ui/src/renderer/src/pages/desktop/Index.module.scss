@@ -19,4 +19,27 @@ $editor-top-toolbar-height: 50px;
   flex-direction: row;
   margin: 0 10px 0 10px;
   justify-content: space-between;
+  gap: 10px;
+}
+
+.editorTopToolbarCommon {
+  display: flex;
+  flex-wrap: nowrap;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  align-items: center;
+}
+
+.editorTopToolbarLeft {
+  @extend .editorTopToolbarCommon;
+}
+
+.editorTopToolbarCenter {
+  @extend .editorTopToolbarCommon;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.editorTopToolbarRight {
+  @extend .editorTopToolbarCommon;
 }
