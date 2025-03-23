@@ -167,6 +167,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
 
 export default function Index() {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
+  const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
   const { file } = useParams();
   const filePath = file ? decodeURIComponent(file) : null;
   return (
@@ -178,7 +179,11 @@ export default function Index() {
       ) : (
         <div className={styles.editorRoot}>
           <TopToolbar filePath={filePath} relativePath={file!} />
-          <Editor file={filePath} currentWorkspace={currentWorkspace} />
+          <Editor
+            file={filePath}
+            currentWorkspace={currentWorkspace}
+            readOnly={editorMode !== 'edit'}
+          />
         </div>
       )}
     </div>

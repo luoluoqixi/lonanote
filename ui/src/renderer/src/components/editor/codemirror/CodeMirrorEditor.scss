@@ -2,6 +2,8 @@
   height: 100%;
   padding: 4px;
   outline: 0 !important;
+  -webkit-user-select: auto;
+  user-select: auto;
 }
 
 .cm-scroller {

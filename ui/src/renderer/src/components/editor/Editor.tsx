@@ -16,6 +16,7 @@ import { VideoView, isSupportVideoView } from './video';
 export interface EditorProps {
   file: string;
   currentWorkspace: Workspace;
+  readOnly?: boolean;
 }
 
 const NotSupportEditorContent = ({ filePath }: { filePath: string }) => {
@@ -41,7 +42,7 @@ const NotSupportEditorContent = ({ filePath }: { filePath: string }) => {
   );
 };
 
-export default function Editor({ file, currentWorkspace }: EditorProps) {
+export default function Editor({ file, currentWorkspace, readOnly }: EditorProps) {
   const editorRef = useRef<CodeMirrorEditorRef>(null);
   const [loadContentFinish, setLoadContentFinish] = useState(false);
   const [content, setContent] = useState<string | null>(null);
@@ -98,6 +99,7 @@ export default function Editor({ file, currentWorkspace }: EditorProps) {
             ref={editorRef}
             fileName={fileName}
             className="editor"
+            readOnly={readOnly}
             getInitContent={() => content}
             onSave={saveFile}
             onUpdateListener={(s) => setCurrentEditorState(s)}

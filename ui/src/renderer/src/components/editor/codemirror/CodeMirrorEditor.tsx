@@ -45,6 +45,7 @@ export interface CodeMirrorEditorProps {
   fileName: string;
   style?: CSSProperties;
   className?: string;
+  readOnly?: boolean;
   getInitContent?: () => string;
   onSave?: (content: string) => void;
   onUpdateListener?: (state: UpdateState) => void;
@@ -52,7 +53,15 @@ export interface CodeMirrorEditorProps {
 
 export default forwardRef(
   (
-    { className, style, fileName, getInitContent, onSave, onUpdateListener }: CodeMirrorEditorProps,
+    {
+      className,
+      style,
+      fileName,
+      readOnly,
+      getInitContent,
+      onSave,
+      onUpdateListener,
+    }: CodeMirrorEditorProps,
     ref: Ref<CodeMirrorEditorRef>,
   ) => {
     const editorRootRef = useRef<HTMLDivElement>(null);
@@ -84,6 +93,7 @@ export default forwardRef(
         const state = EditorState.create({
           doc: getInitContent ? getInitContent() : '',
           extensions: [
+            EditorView.editable.of(readOnly ? false : true),
             detectLanguage(fileName),
             //自动换行
             EditorView.lineWrapping,
@@ -145,7 +155,7 @@ export default forwardRef(
           view.destroy();
         }
       };
-    }, [editorRootRef, update]);
+    }, [editorRootRef, update, readOnly]);
 
     useImperativeHandle(ref, () => ({
       getView() {
