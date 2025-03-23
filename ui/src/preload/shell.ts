@@ -7,7 +7,7 @@ export const shell = {
   openPath: async (path: string) => {
     await ipcRenderer.invoke('shell.openPath', path);
   },
-  openExternal: async (url: string, options: OpenExternalOptions) => {
+  openExternal: async (url: string, options?: OpenExternalOptions) => {
     await ipcRenderer.invoke('shell.openExternal', url, options);
   },
 };

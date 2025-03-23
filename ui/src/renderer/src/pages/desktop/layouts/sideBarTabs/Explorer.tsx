@@ -198,9 +198,9 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   const refreshTreeData = async () => {
     const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
     try {
-      const start = performance.now();
+      // const start = performance.now();
       const fileTree = await workspaceManagerController.getCurrentWorkspaceFileTree();
-      console.log(`get file tree: ${(performance.now() - start).toFixed(2)}ms,`, fileTree);
+      // console.log(`init file tree: ${(performance.now() - start).toFixed(2)}ms,`, fileTree);
       if (fileTree) {
         const treeData = getTreeData(fileTree);
         setTreeItems(treeData);

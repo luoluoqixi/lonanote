@@ -130,6 +130,14 @@ export const utils = {
     }
     return filePath;
   },
+  openFile: async (filePath: string) => {
+    if (!filePath) return;
+    if (window.api) {
+      await window.api.shell.openPath(filePath);
+    } else {
+      console.error('暂未支持');
+    }
+  },
 };
 
 export * from './timeUtils';

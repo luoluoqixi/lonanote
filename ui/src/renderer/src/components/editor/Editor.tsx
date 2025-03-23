@@ -1,4 +1,4 @@
-import { Text } from '@radix-ui/themes';
+import { Button, Text } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { Workspace, fs } from '@/bindings/api';
 import { setCurrentEditorState } from '@/controller/editor';
 import { useEffect } from '@/hooks';
+import { utils } from '@/utils';
 
 import './Editor.scss';
 import { CodeMirrorEditor, CodeMirrorEditorRef, isSupportLanguage } from './codemirror';
@@ -17,20 +18,25 @@ export interface EditorProps {
   currentWorkspace: Workspace;
 }
 
-const NotSupportEditorContent = () => {
+const NotSupportEditorContent = ({ filePath }: { filePath: string }) => {
   return (
     <div
       style={{
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100%',
         width: '100%',
+        gap: '4px',
       }}
     >
       <Text as="div" size="4">
         不支持的文件类型
       </Text>
+      <Button size="2" onClick={() => utils.openFile(filePath)}>
+        使用系统默认程序打开文件
+      </Button>
     </div>
   );
 };
@@ -63,15 +69,15 @@ export default function Editor({ file, currentWorkspace }: EditorProps) {
     () => path.join(currentWorkspace.metadata.path, file),
     [file, currentWorkspace],
   );
-  const isSupportEditor = useMemo(() => {
-    const supportEditor = isSupportLanguage(path.basename(file));
-    if (!supportEditor) {
-      setCurrentEditorState(null);
-    }
-    return supportEditor;
-  }, [file]);
+  const isSupportEditor = useMemo(() => isSupportLanguage(path.basename(file)), [file]);
   const isSupportImage = useMemo(() => isSupportImageView(path.basename(file)), [file]);
   const isSupportVideo = useMemo(() => isSupportVideoView(path.basename(file)), [file]);
+
+  useEffect(() => {
+    if (!isSupportEditor) {
+      setCurrentEditorState(null);
+    }
+  }, [isSupportEditor]);
 
   const saveFile = async (content: string) => {
     if (!loadContentFinish) return;
@@ -102,7 +108,7 @@ export default function Editor({ file, currentWorkspace }: EditorProps) {
       ) : isSupportVideo ? (
         <VideoView videoPath={fullPath} />
       ) : (
-        <NotSupportEditorContent />
+        <NotSupportEditorContent filePath={fullPath} />
       )}
     </div>
   );
