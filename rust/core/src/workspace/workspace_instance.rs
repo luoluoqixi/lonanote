@@ -33,11 +33,14 @@ impl WorkspaceInstance {
     }
 
     pub async fn reinit(&self) -> Result<(), WorkspaceError> {
+        let follow_gitignore = self.settings.follow_gitignore;
+        let custom_ignore = self.settings.custom_ignore.to_owned();
+        let sort_type = self.settings.file_tree_sort_type.to_owned();
         let index = Arc::clone(&self.index);
         index
             .write()
             .await
-            .reinit()
+            .reinit(sort_type, follow_gitignore, custom_ignore)
             .map_err(WorkspaceError::InitError)?;
 
         Ok(())
@@ -55,6 +58,27 @@ impl WorkspaceInstance {
         settings.file_tree_sort_type = Some(sort_type.clone());
         self.set_settings(settings).await?;
         self.index.write().await.file_tree.set_sort_type(sort_type);
+
+        Ok(())
+    }
+
+    pub async fn set_follow_gitignore(
+        &mut self,
+        follow_gitignore: bool,
+    ) -> Result<(), WorkspaceError> {
+        let mut settings = self.settings.clone();
+        settings.follow_gitignore = follow_gitignore;
+        self.set_settings(settings).await?;
+        self.reinit().await?;
+
+        Ok(())
+    }
+
+    pub async fn set_custom_ignore(&mut self, custom_ignore: String) -> Result<(), WorkspaceError> {
+        let mut settings = self.settings.clone();
+        settings.custom_ignore = custom_ignore.clone();
+        self.set_settings(settings).await?;
+        self.reinit().await?;
 
         Ok(())
     }

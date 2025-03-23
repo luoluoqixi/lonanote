@@ -26,8 +26,16 @@ impl FileTree {
             sort_type: sort_type.unwrap_or_default(),
         }
     }
-    pub fn update_tree(&mut self) -> Result<(), String> {
-        self.root.replace(FileNode::from_path(&self.path)?);
+    pub fn update_tree(
+        &mut self,
+        follow_gitignore: bool,
+        custom_ignore: String,
+    ) -> Result<(), String> {
+        self.root.replace(FileNode::from_path(
+            &self.path,
+            follow_gitignore,
+            custom_ignore,
+        )?);
         self.sort();
 
         Ok(())

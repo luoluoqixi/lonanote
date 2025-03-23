@@ -1,8 +1,8 @@
-use std::{path::Path, time::UNIX_EPOCH};
+use std::{fs::Metadata, path::Path, time::UNIX_EPOCH};
 
+use ignore::{gitignore::GitignoreBuilder, WalkBuilder};
 use relative_path::RelativePathBuf;
 use serde::{Deserialize, Serialize};
-use walkdir::{DirEntry, WalkDir};
 
 use super::FileType;
 
@@ -20,12 +20,15 @@ pub struct FileNode {
 }
 
 impl FileNode {
-    fn new_node(root: &Path, entry: DirEntry) -> Result<FileNode, String> {
+    fn new_node_ignore(root: &Path, entry: ignore::DirEntry) -> Result<FileNode, String> {
         let metadata = entry
             .metadata()
             .map_err(|err| format!("error reading metadata: {}", err))?;
         let path = entry.path();
 
+        Self::new_node(root, metadata, path)
+    }
+    fn new_node(root: &Path, metadata: Metadata, path: &Path) -> Result<FileNode, String> {
         let relative_path = RelativePathBuf::from_path(
             path.strip_prefix(root)
                 .map_err(|err| format!("failed to create relative path: {:?}, {}", path, err))?,
@@ -100,21 +103,47 @@ impl FileNode {
         }
     }
 
-    pub fn from_path(root: &Path) -> Result<Self, String> {
-        let mut dir_iter = WalkDir::new(root).into_iter();
+    pub fn from_path(
+        root: &Path,
+        follow_gitignore: bool,
+        custom_ignore: String,
+    ) -> Result<Self, String> {
+        let mut ignore_builder = GitignoreBuilder::new(root);
+
+        for rule in custom_ignore.lines() {
+            if let Err(ignore_err) = ignore_builder.add_line(None, rule) {
+                log::error!("custom ignore line parse error: {}, {}", ignore_err, rule);
+            }
+        }
+
+        let custom_ignore = ignore_builder.build().unwrap();
+
+        let mut dir_iter = WalkBuilder::new(root)
+            .hidden(false)
+            .git_ignore(follow_gitignore)
+            .git_exclude(false)
+            .require_git(false)
+            .build();
         let root_entry = dir_iter.next();
-        match root_entry {
+        let root_node = match root_entry {
             Some(root_entry) => {
                 let root_entry =
                     root_entry.map_err(|err| format!("error walking root directory: {}", err))?;
-                let mut root_node = Self::new_node(root, root_entry)?;
+                let root_node = Self::new_node_ignore(root, root_entry)?;
 
                 let mut stack: Vec<&FileNode> = vec![&root_node];
 
                 for entry in dir_iter {
                     let entry = entry.map_err(|err| format!("error walking directory: {}", err))?;
+
+                    let path = entry.path();
+                    if custom_ignore.matched(path, path.is_dir()).is_ignore() {
+                        // log::info!("ignore: {}", path.display());
+                        continue;
+                    }
+
                     let depth = entry.depth();
-                    let node = Self::new_node(root, entry)?;
+                    let node = Self::new_node_ignore(root, entry)?;
 
                     while stack.len() > depth {
                         stack.pop();
@@ -131,14 +160,18 @@ impl FileNode {
                         stack.push(node_ref);
                     }
                 }
-                // let start = std::time::Instant::now();
-                root_node.calc_count();
-                // log::info!("calc_count: {:?}ms", start.elapsed().as_millis());
 
                 Ok(root_node)
             }
             None => Err(format!("root node notfound: {}", root.display())),
-        }
+        };
+
+        let mut root_node = root_node?;
+        // let start = std::time::Instant::now();
+        root_node.calc_count();
+        // log::info!("calc_count: {:?}ms", start.elapsed().as_millis());
+
+        Ok(root_node)
     }
     // pub fn to_path_buf(&self, root: &Path) -> PathBuf {
     //     root.join(self.path.as_str())

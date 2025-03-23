@@ -12,8 +12,21 @@ use super::{
 pub struct WorkspaceSettings {
     #[serde(skip)]
     pub workspace_path: PathBuf,
+    /// 文件树排序类型
     pub file_tree_sort_type: Option<FileTreeSortType>,
+    /// 遍历文件时自动使用.gitignore忽略规则
+    pub follow_gitignore: bool,
+    /// 自定义的忽略规则
+    pub custom_ignore: String,
 }
+
+static DEFAULT_IGNORE: &str = r"
+# lonanote
+.lonanote
+
+# OSX
+**/*.DS_Store
+";
 
 impl WorkspaceSettings {
     pub fn new(workspace_path: impl AsRef<Path>) -> Result<Self, WorkspaceError> {
@@ -25,6 +38,8 @@ impl WorkspaceSettings {
             Ok(Self {
                 workspace_path: workspace_path.as_ref().to_path_buf(),
                 file_tree_sort_type: None,
+                follow_gitignore: true,
+                custom_ignore: String::from(DEFAULT_IGNORE),
             })
         }
     }

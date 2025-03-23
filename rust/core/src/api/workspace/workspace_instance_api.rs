@@ -90,6 +90,46 @@ async fn set_open_workspace_file_tree_sort_type(
     Ok(CommandResponse::None)
 }
 
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetWorkspaceFollowGitignoreArgs {
+    pub path: String,
+    pub follow_gitignore: bool,
+}
+
+async fn set_open_workspace_follow_gitignore(
+    Json(args): Json<SetWorkspaceFollowGitignoreArgs>,
+) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    let workspace = workspace_manager
+        .get_workspace_mut(&args.path)
+        .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+    workspace
+        .set_follow_gitignore(args.follow_gitignore)
+        .await?;
+
+    Ok(CommandResponse::None)
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetWorkspaceCustomIgnoreArgs {
+    pub path: String,
+    pub custom_ignore: String,
+}
+
+async fn set_open_workspace_custom_ignore(
+    Json(args): Json<SetWorkspaceCustomIgnoreArgs>,
+) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    let workspace = workspace_manager
+        .get_workspace_mut(&args.path)
+        .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+    workspace.set_custom_ignore(args.custom_ignore).await?;
+
+    Ok(CommandResponse::None)
+}
+
 async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
@@ -118,6 +158,14 @@ pub fn reg_commands() -> Result<()> {
     reg_command_async(
         "workspace.set_open_workspace_file_tree_sort_type",
         set_open_workspace_file_tree_sort_type,
+    )?;
+    reg_command_async(
+        "workspace.set_open_workspace_follow_gitignore",
+        set_open_workspace_follow_gitignore,
+    )?;
+    reg_command_async(
+        "workspace.set_open_workspace_custom_ignore",
+        set_open_workspace_custom_ignore,
     )?;
     reg_command_async(
         "workspace.call_open_workspace_reinit",
