@@ -1,3 +1,1 @@
-import './markdown.scss';
-
 export * from './markdown';
