@@ -33,6 +33,7 @@ $editor-top-toolbar-height: 50px;
 
 .editorTopToolbarLeft {
   @extend .editorTopToolbarCommon;
+  gap: 15px;
 }
 
 .editorTopToolbarCenter {

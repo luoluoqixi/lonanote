@@ -1,9 +1,9 @@
 import { Button, DropdownMenu, Text, Tooltip } from '@radix-ui/themes';
 import { AiOutlineRead } from 'react-icons/ai';
-import { IoMdMore } from 'react-icons/io';
+import { IoMdArrowBack, IoMdArrowForward, IoMdMore } from 'react-icons/io';
 import { MdOutlineDriveFileRenameOutline, MdOutlineFileOpen } from 'react-icons/md';
 import { VscCopy, VscFolderOpened } from 'react-icons/vsc';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { toast } from 'react-toastify';
 
 import { fs } from '@/bindings/api';
@@ -81,6 +81,7 @@ const moreMenu: DropdownMenuItem[] = [
 
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {
   const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
+  const navigate = useNavigate();
   const changeEditorMode = () => {
     const targetMode = editorMode === 'edit' ? 'preview' : 'edit';
     setEditorMode(targetMode);
@@ -112,9 +113,37 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
       copyPathMenuClick(true);
     }
   };
+  const toToolBtnBack = (val: string) => {
+    if (val === 'back') {
+      navigate(-1);
+    } else {
+      navigate(1);
+    }
+  };
   return (
     <div className={styles.editorTopToolbar}>
-      <div className={styles.editorTopToolbarLeft}>前进/后退</div>
+      <div className={styles.editorTopToolbarLeft}>
+        <Tooltip content={'返回'}>
+          <Button
+            className={styles.editorTopToolbarRightBtn}
+            onClick={() => toToolBtnBack('back')}
+            color="gray"
+            variant="ghost"
+          >
+            <IoMdArrowBack />
+          </Button>
+        </Tooltip>
+        <Tooltip content={'前进'}>
+          <Button
+            className={styles.editorTopToolbarRightBtn}
+            onClick={() => toToolBtnBack('forward')}
+            color="gray"
+            variant="ghost"
+          >
+            <IoMdArrowForward />
+          </Button>
+        </Tooltip>
+      </div>
       <div className={styles.editorTopToolbarCenter}>
         <Breadcrumb.Lazy
           path={filePath}
