@@ -28,7 +28,8 @@ import {
 } from 'react';
 
 import './CodeMirrorEditor.scss';
-import { defaultShowLineNum, detectLanguage } from './extensions';
+import { defaultShowLineNum } from './config';
+import { detectLanguage } from './detectLanguage';
 
 export interface CodeMirrorEditorRef {
   getView: () => EditorView | null;
@@ -131,7 +132,9 @@ export default forwardRef(
             // 突出显示与所选文本匹配的文本
             // highlightSelectionMatches(),
             keymap.of([
+              // 保存功能
               saveBinding,
+              // 按Tab键缩进
               indentWithTab,
               // 关闭括号支持退格
               ...closeBracketsKeymap,
