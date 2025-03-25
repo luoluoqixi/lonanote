@@ -11,7 +11,7 @@ import {
 import path from 'path-browserify-esm';
 import { useRef, useState } from 'react';
 import { BsSortUpAlt } from 'react-icons/bs';
-import { IoIosCheckmark } from 'react-icons/io';
+import { HiOutlineCheck } from 'react-icons/hi';
 import { IconBaseProps } from 'react-icons/lib';
 import {
   MdDeleteOutline,
@@ -578,7 +578,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
                       {m.label}
                       <div className={styles.selectedIcon}>
                         {currentWorkspace?.settings.fileTreeSortType === m.id && (
-                          <IoIosCheckmark {...toolbarBtnIconProps} />
+                          <HiOutlineCheck size="18px" />
                         )}
                       </div>
                     </DropdownMenu.Item>
