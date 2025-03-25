@@ -1,5 +1,4 @@
-import { EditorView } from '@codemirror/view';
-import { commandsCtx, editorViewOptionsCtx } from '@milkdown/core';
+import { commandsCtx, editorViewCtx, editorViewOptionsCtx } from '@milkdown/core';
 import { Crepe } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
@@ -23,8 +22,8 @@ export interface MarkdownEditorRef {
 
 export interface UpdateState {
   charCount: number;
-  rowIndex: number;
-  colIndex: number;
+  rowIndex?: number;
+  colIndex?: number;
 }
 
 export interface CodeMirrorEditorProps {
@@ -34,8 +33,19 @@ export interface CodeMirrorEditorProps {
   readOnly?: boolean;
   getInitContent?: () => string;
   onSave?: (content: string) => void;
-  onUpdateListener?: (state: UpdateState) => void;
+  onUpdateListener?: (state: UpdateState | null) => void;
 }
+
+// function getBlockLineNumber(state: EditorState) {
+//   const $from = state.selection.$from;
+//   let depth = $from.depth;
+//   while (depth > 0 && !$from.node(depth).type.isBlock) {
+//     depth--;
+//   }
+//   const blockPos = $from.start(depth);
+//   const resolvedPos = state.doc.resolve(blockPos);
+//   return resolvedPos.index(0) + 1;
+// }
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditorRef>) => {
   const { className, style, fileName, readOnly, getInitContent, onSave, onUpdateListener } = props;
@@ -45,9 +55,10 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
 
   useLayoutEffect(() => {
     if (!editorRef.current) return;
+    onUpdateListener?.(null);
     setLoading(true);
     const defaultValue = getInitContent?.();
-    const crepe = new Crepe({
+    let crepe: Crepe | undefined = new Crepe({
       root: editorRef.current,
       defaultValue,
       features: {
@@ -68,6 +79,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
 
     const saveCommand = $command('saveCommand', () => () => {
       return () => {
+        if (!crepe) return true;
         const mdText = crepe.getMarkdown();
         // console.log(mdText);
         onSave?.(mdText);
@@ -76,7 +88,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     });
     const saveKeyMap = $useKeymap('saveKeymap', {
       saveDescription: {
-        shortcuts: 'Ctrl-s',
+        shortcuts: 'Mod-s',
         command: (ctx) => {
           const commands = ctx.get(commandsCtx);
           return () => commands.call(saveCommand.key);
@@ -85,16 +97,6 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     });
     crepe.editor.use([saveCommand, saveKeyMap].flat());
 
-    crepe.on((listener) => {
-      // listener.markdownUpdated((ctx, md, prevMd) => {
-      //   console.log(ctx, md, prevMd);
-      // });
-      listener.updated((ctx, doc, prevDoc) => {
-        console.log(ctx, doc, prevDoc);
-        // const editorView = crepe.editor.ctx.get(editorViewCtx);
-      });
-    });
-
     crepe.editor.config((ctx) => {
       ctx.update(editorViewOptionsCtx, (prev) => ({
         ...prev,
@@ -102,7 +104,25 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
           ...prev.attributes,
           spellcheck: 'false',
         },
+        // handleDOMEvents: {
+        //   pointerup: (view) => {
+        //     const line = getBlockLineNumber(view.state);
+        //     console.log(line);
+        //   },
+        // },
       }));
+    });
+    crepe.on((listener) => {
+      listener.updated((ctx) => {
+        if (!crepe) return;
+        const view = ctx.get(editorViewCtx);
+        onUpdateListener?.({ charCount: view.state.doc.content.size });
+      });
+      listener.mounted((ctx) => {
+        if (!crepe) return;
+        const view = ctx.get(editorViewCtx);
+        onUpdateListener?.({ charCount: view.state.doc.content.size });
+      });
     });
     crepe
       .setReadonly(readOnly || false)
@@ -114,7 +134,10 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     updateCrepe(() => () => crepe);
     return () => {
       updateCrepe(null);
-      if (crepe) crepe.destroy();
+      if (crepe) {
+        crepe.destroy();
+        crepe = undefined;
+      }
     };
   }, [fileName, onSave, onUpdateListener]);
 

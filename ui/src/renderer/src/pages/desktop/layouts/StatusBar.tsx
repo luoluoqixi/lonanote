@@ -17,12 +17,16 @@ const StatusBarRight = () => {
     <>
       {currentEditorStatus && (
         <>
-          <Text as="span" size="1" color="gray">
-            行 {currentEditorStatus.rowIndex},
-          </Text>
-          <Text as="span" size="1" color="gray">
-            列 {currentEditorStatus.colIndex}
-          </Text>
+          {currentEditorStatus.rowIndex != null && (
+            <Text as="span" size="1" color="gray">
+              行 {currentEditorStatus.rowIndex},
+            </Text>
+          )}
+          {currentEditorStatus.colIndex != null && (
+            <Text as="span" size="1" color="gray">
+              列 {currentEditorStatus.colIndex}
+            </Text>
+          )}
           <Text as="span" size="1" color="gray">
             {currentEditorStatus.charCount}个字符
           </Text>

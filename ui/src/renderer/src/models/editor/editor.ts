@@ -11,8 +11,8 @@ export interface EditorStore {
 
 export interface EditorState {
   charCount: number;
-  rowIndex: number;
-  colIndex: number;
+  rowIndex?: number;
+  colIndex?: number;
 }
 
 export const useEditorStore = create<EditorStore>(() => ({
