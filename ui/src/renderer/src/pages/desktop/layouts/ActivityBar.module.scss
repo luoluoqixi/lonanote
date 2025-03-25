@@ -11,6 +11,8 @@
   background-color: var(--color-background);
   overflow: visible;
   border-right: 1px solid var(--gray-6);
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .titleTop {

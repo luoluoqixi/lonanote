@@ -7,6 +7,8 @@
   justify-content: space-between;
   padding: 0 10px 0 10px;
   box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .statusBarLeft {

@@ -5,8 +5,6 @@ body {
   height: 100%;
   overflow: visible;
   position: fixed;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 img {
@@ -19,8 +17,6 @@ img {
   height: 100%;
   width: 100%;
   overflow: visible;
-  -webkit-user-select: none;
-  user-select: none;
   background-color: var(--color-background);
 }
 
@@ -49,6 +45,11 @@ img {
 
 %window-title-drag {
   @extend .window-title-drag;
+}
+
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .spinner-wrap-class {

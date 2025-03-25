@@ -6,4 +6,6 @@
   align-items: center;
   font-size: 0.8em;
   border-bottom: 1px solid var(--gray-6);
+  -webkit-user-select: none;
+  user-select: none;
 }

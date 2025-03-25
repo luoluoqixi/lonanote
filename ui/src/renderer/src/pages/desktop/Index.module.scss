@@ -20,6 +20,8 @@ $editor-top-toolbar-height: 50px;
   margin: 0 20px 0 10px;
   justify-content: space-between;
   gap: 10px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .editorTopToolbarCommon {

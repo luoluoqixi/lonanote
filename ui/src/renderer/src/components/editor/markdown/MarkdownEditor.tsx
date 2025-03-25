@@ -5,13 +5,14 @@ import {
   CSSProperties,
   Ref,
   forwardRef,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
+
+import './MarkdownEditor.scss';
 
 export interface MarkdownEditorRef {
   getMarkdown: () => string | undefined;
@@ -36,32 +37,36 @@ export interface CodeMirrorEditorProps {
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditorRef>) => {
   const { className, style, fileName, readOnly, getInitContent, onSave, onUpdateListener } = props;
   const editorRef = useRef<HTMLDivElement>(null);
-  const isFirstRender = useRef(true);
   const [loading, setLoading] = useState(false);
-  const [update, setUpdata] = useState(false);
   const [getCrepe, updateCrepe] = useState<(() => Crepe | undefined) | null>(null);
 
-  const create = (isUpdate: boolean) => {
+  useLayoutEffect(() => {
     if (!editorRef.current) return;
     setLoading(true);
-    const lastCrepe = getCrepe?.();
-    const defaultValue = isUpdate && lastCrepe ? lastCrepe.getMarkdown() : getInitContent?.();
-    updateCrepe(null);
+    const defaultValue = getInitContent?.();
     const crepe = new Crepe({
       root: editorRef.current,
       defaultValue,
     });
     crepe.setReadonly(readOnly || false);
     crepe.create().then(() => {
+      // 上一个编辑器销毁时可能还会还会短暂占用dom导致鼠标在div上move时有一些事件报错, 延迟一点点时间解决
       setTimeout(() => setLoading(false), 50);
     });
     updateCrepe(() => () => crepe);
     return () => {
-      console.log('销毁');
+      updateCrepe(null);
       if (crepe) crepe.destroy();
     };
-  };
-  useLayoutEffect(() => create(false), [update]);
+  }, [fileName]);
+
+  useEffect(() => {
+    if (!getCrepe) return;
+    const crepe = getCrepe();
+    if (crepe) {
+      crepe.setReadonly(readOnly || false);
+    }
+  }, [readOnly]);
 
   useImperativeHandle(ref, () => ({
     getMarkdown() {
@@ -73,7 +78,9 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     <div
       style={{
         display: loading ? 'none' : undefined,
+        ...style,
       }}
+      className={className}
       ref={editorRef}
     />
   );

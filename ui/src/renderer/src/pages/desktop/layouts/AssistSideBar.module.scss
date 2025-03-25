@@ -2,4 +2,6 @@
   height: 100%;
   width: 100%;
   background-color: var(--color-background);
+  -webkit-user-select: none;
+  user-select: none;
 }

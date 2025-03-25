@@ -3,4 +3,6 @@
   width: calc(100% - 1px);
   border-right: 1px solid var(--gray-6);
   padding: 0px;
+  -webkit-user-select: none;
+  user-select: none;
 }
