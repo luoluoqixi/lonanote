@@ -28,7 +28,6 @@ import {
 } from 'react';
 
 import './CodeMirrorEditor.scss';
-import { defaultShowLineNum } from './config';
 import { detectLanguage } from './detectLanguage';
 
 export interface CodeMirrorEditorRef {
@@ -100,7 +99,7 @@ export default forwardRef(
             EditorView.lineWrapping,
             updateListener,
             // 行号
-            defaultShowLineNum(fileName) ? lineNumbers() : [],
+            lineNumbers(),
             // 用占位符替换不可打印字符
             highlightSpecialChars(),
             // 撤销历史

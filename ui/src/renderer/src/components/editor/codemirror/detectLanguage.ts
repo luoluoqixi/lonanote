@@ -15,7 +15,7 @@ import { vue } from '@codemirror/lang-vue';
 import { xml } from '@codemirror/lang-xml';
 import { yaml } from '@codemirror/lang-yaml';
 
-import { markdown } from './extensions/markdown';
+// import { markdown } from './extensions/markdown';
 
 export const detectLanguage = (fileName: string) => {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
@@ -71,9 +71,9 @@ export const detectLanguage = (fileName: string) => {
     case 'yaml':
     case 'yml':
       return yaml();
-    case 'md':
-    case 'markdown':
-      return markdown();
+    // case 'md':
+    // case 'markdown':
+    //   return markdown();
     case 'txt':
       return [json(), yaml()];
     default:
@@ -125,8 +125,8 @@ export const supportExts = [
   'storyboard',
   'yaml',
   'yml',
-  'md',
-  'markdown',
+  // 'md',
+  // 'markdown',
   'txt',
 
   'bat',

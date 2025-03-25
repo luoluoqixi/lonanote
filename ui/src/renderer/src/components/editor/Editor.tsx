@@ -11,6 +11,7 @@ import { utils } from '@/utils';
 import './Editor.scss';
 import { CodeMirrorEditor, CodeMirrorEditorRef, isSupportLanguage } from './codemirror';
 import { ImageView, isSupportImageView } from './image';
+import { MarkdownEditor, MarkdownEditorRef, isSupportMarkdown } from './markdown';
 import { VideoView, isSupportVideoView } from './video';
 
 export interface EditorProps {
@@ -44,13 +45,14 @@ const NotSupportEditorContent = ({ filePath }: { filePath: string }) => {
 
 export default function Editor({ file, currentWorkspace, readOnly }: EditorProps) {
   const editorRef = useRef<CodeMirrorEditorRef>(null);
+  const mdEditorRef = useRef<MarkdownEditorRef>(null);
   const [loadContentFinish, setLoadContentFinish] = useState(false);
   const [content, setContent] = useState<string | null>(null);
   const updateContent = async () => {
     const updateView = editorRef.current?.updateView;
     setContent(null);
     setLoadContentFinish(false);
-    if (isSupportEditor) {
+    if (isSupportEditor || isSupportMdEditor) {
       const filePath = path.join(currentWorkspace.metadata.path, file);
       try {
         const content = await fs.readToString(filePath);
@@ -70,15 +72,16 @@ export default function Editor({ file, currentWorkspace, readOnly }: EditorProps
     () => path.join(currentWorkspace.metadata.path, file),
     [file, currentWorkspace],
   );
+  const isSupportMdEditor = useMemo(() => isSupportMarkdown(path.basename(file)), [file]);
   const isSupportEditor = useMemo(() => isSupportLanguage(path.basename(file)), [file]);
   const isSupportImage = useMemo(() => isSupportImageView(path.basename(file)), [file]);
   const isSupportVideo = useMemo(() => isSupportVideoView(path.basename(file)), [file]);
 
   useEffect(() => {
-    if (!isSupportEditor) {
+    if (!isSupportEditor && !isSupportMdEditor) {
       setCurrentEditorState(null);
     }
-  }, [isSupportEditor]);
+  }, [isSupportEditor, isSupportMdEditor]);
 
   const saveFile = async (content: string) => {
     if (!loadContentFinish) return;
@@ -93,12 +96,24 @@ export default function Editor({ file, currentWorkspace, readOnly }: EditorProps
 
   return (
     <div className="editorRoot">
-      {isSupportEditor ? (
+      {isSupportMdEditor ? (
+        content != null && (
+          <MarkdownEditor
+            ref={mdEditorRef}
+            fileName={fileName}
+            className="markdown-editor"
+            readOnly={readOnly}
+            getInitContent={() => content}
+            onSave={saveFile}
+            onUpdateListener={(s) => setCurrentEditorState(s)}
+          />
+        )
+      ) : isSupportEditor ? (
         content != null && (
           <CodeMirrorEditor
             ref={editorRef}
             fileName={fileName}
-            className="editor"
+            className="codemirror-editor"
             readOnly={readOnly}
             getInitContent={() => content}
             onSave={saveFile}

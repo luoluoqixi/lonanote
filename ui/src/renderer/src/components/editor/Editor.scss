@@ -4,7 +4,15 @@
   flex-grow: 1;
 }
 
-.editor {
+.codemirror-editor {
+  height: 100%;
+  width: 100%;
+  border: none;
+  border-width: 0;
+  border-color: transparent;
+}
+
+.markdown-editor {
   height: 100%;
   width: 100%;
   border: none;
