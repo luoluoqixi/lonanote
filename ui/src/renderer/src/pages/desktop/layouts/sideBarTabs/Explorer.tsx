@@ -2,6 +2,7 @@ import {
   Button,
   ButtonProps,
   ContextMenu,
+  DropdownMenu,
   Spinner,
   Text,
   TextField,
@@ -9,6 +10,7 @@ import {
 } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
 import { useRef, useState } from 'react';
+import { BsSortUpAlt } from 'react-icons/bs';
 import { IconBaseProps } from 'react-icons/lib';
 import {
   MdDeleteOutline,
@@ -25,7 +27,7 @@ import {
 } from 'react-icons/vsc';
 import { toast } from 'react-toastify';
 
-import { FileNode, FileTree, Workspace, fs } from '@/bindings/api';
+import { FileNode, FileTree, FileTreeSortType, Workspace, fs } from '@/bindings/api';
 import { ContextMenuItem, Tree, TreeItem, TreeRef, dialog } from '@/components';
 import { setCurrentEditFileNode } from '@/controller/editor';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
@@ -37,6 +39,41 @@ import styles from './Explorer.module.scss';
 const onOpenWorkspace = async () => {
   await workspaceManagerController.selectOpenWorkspace();
 };
+
+const sortMenu: ContextMenuItem[] = [
+  {
+    id: 'name',
+    label: '文件名(A-Z)',
+  },
+  {
+    id: 'nameRev',
+    label: '文件名(Z-A)',
+  },
+  {
+    id: 'sep-01',
+    separator: true,
+  },
+  {
+    id: 'lastModifiedTime',
+    label: '编辑时间(从新到旧)',
+  },
+  {
+    id: 'lastModifiedTimeRev',
+    label: '编辑时间(从旧到新)',
+  },
+  {
+    id: 'sep-02',
+    separator: true,
+  },
+  {
+    id: 'createTime',
+    label: '创建时间(从新到旧)',
+  },
+  {
+    id: 'createTimeRev',
+    label: '创建时间(从旧到新)',
+  },
+];
 
 const NoWorkspace = () => {
   return (
@@ -503,6 +540,9 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       deleteItemMenuClick();
     }
   };
+  const sortClick = async (cmd: string) => {
+    await workspaceController.setCurrentWorkspaceSortType(cmd as FileTreeSortType);
+  };
 
   return (
     <>
@@ -512,6 +552,35 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             {workspace.metadata.name}
           </Text>
           <div className={styles.workspaceExplorerTitleButtons}>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                <Button {...toolbarBtnProps}>
+                  <Tooltip content="排序" side="bottom">
+                    <BsSortUpAlt {...toolbarBtnIconProps} />
+                  </Tooltip>
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content>
+                {sortMenu.map((m) => {
+                  const isSelect = currentWorkspace?.settings.fileTreeSortType === m.id;
+                  return m.separator ? (
+                    <DropdownMenu.Separator key={m.id} />
+                  ) : (
+                    <DropdownMenu.Item
+                      key={m.id}
+                      onClick={() => {
+                        sortClick(m.id);
+                      }}
+                      className={isSelect ? styles.activeDropBgc : ''}
+                      {...m.props}
+                    >
+                      {m.icon} {m.label}
+                    </DropdownMenu.Item>
+                  );
+                })}
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+
             <Tooltip content="新建笔记" side="bottom">
               <Button {...toolbarBtnProps} onClick={() => newFileMenuClick()}>
                 <VscNewFile {...toolbarBtnIconProps} />
