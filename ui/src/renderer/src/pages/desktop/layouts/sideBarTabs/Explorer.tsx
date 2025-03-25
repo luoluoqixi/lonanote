@@ -11,6 +11,7 @@ import {
 import path from 'path-browserify-esm';
 import { useRef, useState } from 'react';
 import { BsSortUpAlt } from 'react-icons/bs';
+import { IoIosCheckmark } from 'react-icons/io';
 import { IconBaseProps } from 'react-icons/lib';
 import {
   MdDeleteOutline,
@@ -562,7 +563,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 {sortMenu.map((m) => {
-                  const isSelect = currentWorkspace?.settings.fileTreeSortType === m.id;
+                  // const isSelect = currentWorkspace?.settings.fileTreeSortType === m.id;
                   return m.separator ? (
                     <DropdownMenu.Separator key={m.id} />
                   ) : (
@@ -571,10 +572,15 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
                       onClick={() => {
                         sortClick(m.id);
                       }}
-                      className={isSelect ? styles.activeDropBgc : ''}
+                      // className={isSelect ? styles.activeDropBgc : ''}
                       {...m.props}
                     >
-                      {m.icon} {m.label}
+                      {m.label}
+                      <div className={styles.selectedIcon}>
+                        {currentWorkspace?.settings.fileTreeSortType === m.id && (
+                          <IoIosCheckmark {...toolbarBtnIconProps} />
+                        )}
+                      </div>
                     </DropdownMenu.Item>
                   );
                 })}
