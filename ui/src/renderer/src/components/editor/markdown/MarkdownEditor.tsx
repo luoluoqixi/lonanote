@@ -1,4 +1,3 @@
-import clsx from 'clsx';
 import CodeMirror from 'codemirror';
 import * as HyperMD from 'hypermd';
 import {
@@ -16,7 +15,7 @@ import './MarkdownEditor.scss';
 
 export interface MarkdownEditorRef {
   getMarkdown: () => string | undefined;
-  setValue: (content: string) => void;
+  setValue: (content: string, useHistory?: boolean) => void;
 }
 
 export interface UpdateState {
@@ -69,7 +68,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     onUpdateListener?.(null);
     let cm: CodeMirror.EditorFromTextArea | null = HyperMD.fromTextArea(editorRef.current, {
       hmdModeLoader: false,
-      lineNumbers: false,
+      // lineNumbers: false,
       mode: {
         name: 'hypermd',
         hashtag: true,
@@ -81,6 +80,8 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
             console.log('点击url: ', info, url);
           }
           return false;
+        } else if (info.type === 'todo') {
+          return true;
         }
         console.log('click', info, cm);
         return false;
@@ -134,8 +135,15 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     getMarkdown() {
       return editor?.getValue();
     },
-    setValue(content) {
-      editor?.setValue(content);
+    setValue(content, useHistory) {
+      try {
+        editor?.setValue(content);
+        if (!useHistory) {
+          editor?.clearHistory();
+        }
+      } catch (e) {
+        console.log('setValue error:', e);
+      }
     },
   }));
 

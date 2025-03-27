@@ -7,7 +7,7 @@ import {
   syntaxHighlighting,
 } from '@codemirror/language';
 import { searchKeymap } from '@codemirror/search';
-import { Compartment, EditorState } from '@codemirror/state';
+import { Compartment, EditorState, Transaction } from '@codemirror/state';
 import {
   EditorView,
   KeyBinding,
@@ -33,7 +33,7 @@ import { detectLanguage } from './detectLanguage';
 
 export interface CodeMirrorEditorRef {
   getEditor: () => EditorView | null;
-  setValue: (content: string) => void;
+  setValue: (content: string, useHistory?: boolean) => void;
 }
 
 export interface UpdateState {
@@ -164,9 +164,10 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
     getEditor() {
       return view;
     },
-    setValue(content) {
+    setValue(content, useHistory) {
       if (!view) return;
       view.dispatch({
+        annotations: useHistory ? undefined : Transaction.addToHistory.of(false),
         changes: {
           from: 0,
           to: view.state.doc.length,
