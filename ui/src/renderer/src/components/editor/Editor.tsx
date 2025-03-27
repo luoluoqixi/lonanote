@@ -1,5 +1,4 @@
 import { Button, Text } from '@radix-ui/themes';
-import clsx from 'clsx';
 import path from 'path-browserify-esm';
 import { CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { toast } from 'react-toastify';
@@ -112,7 +111,7 @@ export default function Editor({
   );
 
   return (
-    <div style={style} className={clsx('editor-root', className)}>
+    <div id="editor-root" style={style} className={className}>
       {state.isSupportMdEditor ? (
         <MarkdownEditor
           ref={mdEditorRef}

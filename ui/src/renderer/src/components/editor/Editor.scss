@@ -1,7 +1,8 @@
-.editor-root {
+#editor-root {
   width: 100%;
   -webkit-user-select: auto;
   user-select: auto;
+  --editor-wrap-padding: 4px;
 }
 
 .codemirror-editor {
@@ -18,4 +19,7 @@
   width: 100%;
   -webkit-user-select: auto;
   user-select: auto;
+  overflow: auto;
+  padding: var(--editor-wrap-padding);
+  box-sizing: border-box;
 }

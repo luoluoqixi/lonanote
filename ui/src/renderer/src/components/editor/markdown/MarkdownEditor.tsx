@@ -140,7 +140,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
   }));
 
   return (
-    <div className={clsx('markdown-editor', className)} style={style}>
+    <div className={className} style={style}>
       <textarea ref={editorRef} />
     </div>
   );

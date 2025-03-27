@@ -121,11 +121,11 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
     }
   };
   return (
-    <div className={styles.editorTopToolbar}>
-      <div className={styles.editorTopToolbarLeft}>
+    <div className={styles.indexContentTopToolbar}>
+      <div className={styles.indexContentTopToolbarLeft}>
         <Tooltip content={'返回'}>
           <Button
-            className={styles.editorTopToolbarRightBtn}
+            className={styles.indexContentTopToolbarRightBtn}
             onClick={() => toToolBtnBack('back')}
             color="gray"
             variant="ghost"
@@ -135,7 +135,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         </Tooltip>
         <Tooltip content={'前进'}>
           <Button
-            className={styles.editorTopToolbarRightBtn}
+            className={styles.indexContentTopToolbarRightBtn}
             onClick={() => toToolBtnBack('forward')}
             color="gray"
             variant="ghost"
@@ -144,7 +144,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
           </Button>
         </Tooltip>
       </div>
-      <div className={styles.editorTopToolbarCenter}>
+      <div className={styles.indexContentTopToolbarCenter}>
         <Breadcrumb.Lazy
           path={filePath}
           onItemClick={(path) => {
@@ -152,10 +152,10 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
           }}
         />
       </div>
-      <div className={styles.editorTopToolbarRight}>
+      <div className={styles.indexContentTopToolbarRight}>
         <Tooltip content={editorMode === 'edit' ? '切换到预览模式' : '切换到编辑模式'}>
           <Button
-            className={styles.editorTopToolbarRightBtn}
+            className={styles.indexContentTopToolbarRightBtn}
             color="gray"
             variant="ghost"
             onClick={changeEditorMode}
@@ -165,7 +165,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         </Tooltip>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
-            <Button className={styles.editorTopToolbarRightBtn} color="gray" variant="ghost">
+            <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
               <Tooltip content="更多选项" side="bottom">
                 <IoMdMore />
               </Tooltip>
@@ -206,10 +206,10 @@ export default function Index() {
       ) : filePath == null ? (
         <EmptyIndex />
       ) : (
-        <div className={styles.editorRoot}>
+        <div className={styles.indexContent}>
           <TopToolbar filePath={filePath} relativePath={file!} />
           <Editor
-            className={styles.editorRootEditor}
+            className={styles.indexContentEditor}
             file={filePath}
             currentWorkspace={currentWorkspace}
             readOnly={editorMode !== 'edit'}

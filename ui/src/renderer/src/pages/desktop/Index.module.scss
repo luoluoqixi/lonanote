@@ -1,25 +1,25 @@
-$editor-top-toolbar-height: 50px;
+$content-top-toolbar-height: 50px;
 
 .indexRoot {
   width: 100%;
   height: 100%;
 }
 
-.editorRoot {
+.indexContent {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.editorRootEditor {
+.indexContentEditor {
   width: 100%;
-  height: calc(100% - $editor-top-toolbar-height);
+  height: calc(100% - $content-top-toolbar-height);
   flex-grow: 1;
 }
 
-.editorTopToolbar {
-  height: $editor-top-toolbar-height;
+.indexContentTopToolbar {
+  height: $content-top-toolbar-height;
   flex-shrink: 0;
   display: flex;
   flex-direction: row;
@@ -30,7 +30,7 @@ $editor-top-toolbar-height: 50px;
   user-select: none;
 }
 
-.editorTopToolbarCommon {
+.indexContentTopToolbarCommon {
   display: flex;
   flex-wrap: nowrap;
   text-overflow: ellipsis;
@@ -39,28 +39,28 @@ $editor-top-toolbar-height: 50px;
   flex-direction: row;
 }
 
-.editorTopToolbarLeft {
-  @extend .editorTopToolbarCommon;
+.indexContentTopToolbarLeft {
+  @extend .indexContentTopToolbarCommon;
   gap: 15px;
 }
 
-.editorTopToolbarCenter {
-  @extend .editorTopToolbarCommon;
+.indexContentTopToolbarCenter {
+  @extend .indexContentTopToolbarCommon;
   flex-shrink: 1;
   min-width: 0;
 }
 
-.editorTopToolbarRight {
-  @extend .editorTopToolbarCommon;
+.indexContentTopToolbarRight {
+  @extend .indexContentTopToolbarCommon;
   gap: 15px;
 }
 
-.editorTopToolbarRightBtn {
+.indexContentTopToolbarRightBtn {
   width: 18px;
   height: 18px;
   padding: 6px;
 }
-.editorTopToolbarRightBtn svg {
+.indexContentTopToolbarRightBtn svg {
   width: 18px;
   height: 18px;
 }

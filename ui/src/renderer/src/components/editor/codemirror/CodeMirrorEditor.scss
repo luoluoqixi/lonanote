@@ -1,6 +1,6 @@
 .cm-editor {
   height: 100%;
-  padding: 4px;
+  padding: var(--editor-wrap-padding);
   outline: 0 !important;
   -webkit-user-select: auto;
   user-select: auto;
