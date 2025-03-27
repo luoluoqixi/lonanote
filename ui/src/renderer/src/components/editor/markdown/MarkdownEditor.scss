@@ -14,10 +14,13 @@
 }
 
 .cm-s-hypermd-light {
-  $fs: 12pt; //default font-size
-
+  // 编辑器背景颜色
   $editor-background: var(--color-background);
+  // 编辑器字体颜色
   $editor-color: var(--gray-12);
+
+  // 默认的字体大小
+  $fs: 12pt; //default font-size
 
   $line-height: 1.5;
   $line-margin: 10px;
@@ -33,12 +36,14 @@
   $list-bullet-width: 30px;
   $list-margin-after-line: 0.3em;
 
+  // 表格线的颜色
   $table-border-style: 1px solid var(--gray-6);
   $table-row1-height: 8px;
   $table-sep-width: 15px;
   $table-sep-image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mOc+R8AAjcBmvywMWoAAAAASUVORK5CYII=';
   $table-row-1-image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAQAAAAziH6sAAAADklEQVR42mOc+Z9x5n8ACTkDM4ikM1IAAAAASUVORK5CYII=';
 
+  // 代码块
   $codeblock-border: 0px solid var(--gray-6);
   $codeblock-padding: 5px;
 
@@ -66,39 +71,6 @@
   font-size: $fs;
   background: $editor-background;
   color: $editor-color;
-
-  /// Fold-HTML
-
-  .CodeMirror-linewidget,
-  .hmd-fold-html {
-    table {
-      border-collapse: collapse;
-      td,
-      th {
-        padding: 10px;
-        border: 1px solid #ccc;
-      }
-    }
-
-    kbd {
-      @extend %monospace;
-      display: inline-block;
-      padding: 3px 5px;
-      font-size: 90%;
-      line-height: 1em;
-      background-color: #fafbfc;
-      border: solid 1px #c6cbd1;
-      border-bottom-color: rgb(198, 203, 209);
-      border-bottom-color: #959da5;
-      border-radius: 3px;
-      box-shadow: inset 0 -1px 0 #959da5;
-      vertical-align: baseline;
-    }
-
-    a > img {
-      border: 0;
-    }
-  }
 
   /// CodeMirror
 
@@ -253,7 +225,7 @@
       content: ' ';
       margin-top: 2px;
       height: 1px;
-      background: #eee;
+      background: var(--gray-6);
     }
   }
 
@@ -500,6 +472,7 @@
   }
 
   /// link
+  $link-img: var(--accent-9); // link右侧的图片
 
   .cm-formatting-link + .cm-formatting-link-string,
   .cm-formatting-link + .cm-formatting-link-string + .cm-url,
@@ -527,7 +500,7 @@
   }
 
   span.hmd-link-icon {
-    background: url(hypermd-image-link.png) no-repeat center center;
+    background: $link-img no-repeat center center;
     width: 20px;
     height: 16px;
     display: inline-block;
@@ -543,6 +516,10 @@
 
   /// image
 
+  // image加载error的背景
+  $img-error-bg: var(--gray-4);
+  $img-error-bg-hover: var(--gray-6);
+
   img.hmd-image {
     vertical-align: middle;
     width: auto;
@@ -552,10 +529,13 @@
     &.hmd-image-error {
       min-width: 24px;
       min-height: 24px;
-      background: #eeeeee url(hypermd-image-spin.gif) no-repeat center center;
+      background: $img-error-bg no-repeat center center;
     }
     &.hmd-image-error {
-      background-image: url(hypermd-image-error.png);
+      background-color: $img-error-bg;
+    }
+    &.hmd-image-error:hover {
+      background-color: $img-error-bg-hover;
     }
   }
 
@@ -609,9 +589,14 @@
 
   /// hashtag
 
+  // hashtag的背景
+  $hashtag-bg: var(--accent-9);
+  // hashtag的颜色
+  $hashtag-color: var(--accent-contrast);
+
   span.cm-hashtag {
-    background-color: var(--accent-9);
-    color: var(--accent-contrast);
+    background-color: $hashtag-bg;
+    color: $hashtag-color;
     font-size: $hashtag-fontsize;
     display: inline-block;
     vertical-align: middle;
@@ -770,12 +755,15 @@
 
   /// hypermd/addon/hover
 
+  // 附加的悬浮框的背景颜色
+  $addon-hover-content-bg: var(--gray-12);
+  $addon-hover-content-color: var(--gray-1);
+
   &.CodeMirror div.HyperMD-hover {
     > .HyperMD-hover-content {
-      background-color: #000;
-      background-color: rgba(#000, 0.7);
+      background-color: $addon-hover-content-bg;
+      color: $addon-hover-content-color;
       border: 0;
-      color: #fff;
       border-radius: 5px;
       padding: 5px 10px;
       font-size: 95%;
@@ -808,17 +796,50 @@
 
   /// fold-html
 
+  /// 按钮
+  // 折叠的html按钮的边框颜色
+  $fold-html-border-color: var(--gray-12);
+  // 折叠的html按钮的背景颜色
+  $fold-html-bg: var(--gray-2);
+  // 折叠的html按钮的字体颜色
+  $fold-html-color: var(--gray-12);
+
+  /// 按钮 悬浮
+  // 折叠的html按钮的边框颜色 hover
+  $fold-html-border-color-hover: var(--accent-10);
+  // 折叠的html按钮的背景颜色 hover
+  $fold-html-bg-hover: var(--accent-10);
+  // 折叠的html按钮的字体颜色 hover
+  $fold-html-color-hover: var(--accent-contrast);
+
+  // 块
+  // 折叠的html块的边框颜色
+  $fold-html-block-border: var(--gray-10);
+
+  /// kbd
+  /// // 折叠的html块的kbd的边框颜色 外侧
+  $fold-html-block-kbd-border-color-outside: transparent;
+  // 折叠的html块的kbd的边框颜色
+  $fold-html-block-kbd-border-color: var(--gray-6);
+  // 折叠的html块的kbd的边框颜色 hover
+  $fold-html-block-kbd-border-color-hover: var(--accent-10);
+
+  // 折叠的html块的kbd的背景颜色
+  $fold-html-block-kbd-bg: var(--accent-9);
+  // 折叠的html块的kbd的颜色
+  $fold-html-block-kbd-color: var(--accent-contrast);
+
   .hmd-fold-html-stub {
     @extend %monospace;
     display: inline-block;
     font-size: 67%;
-    color: #999;
+    color: $fold-html-color;
     vertical-align: middle;
-    border: 1px solid var(--gray-10);
+    border: 1px solid $fold-html-border-color;
     padding: 0 0.2em;
     border-radius: 5px;
     margin: 0 0.5em;
-    background: #fafafa;
+    background: $fold-html-bg;
     cursor: pointer;
 
     &.omittable {
@@ -828,18 +849,18 @@
     &:hover,
     &.highlight {
       // for non-inline HTML stub. Remind user where the stub is.
-      color: #fff;
-      border-color: #c30;
-      background: #f40;
+      color: $fold-html-color-hover;
+      border-color: $fold-html-border-color-hover;
+      background: $fold-html-bg-hover;
     }
   }
 
   .hmd-fold-html {
     position: relative;
-    border: 1px solid #fff;
+    border: 1px solid $fold-html-block-kbd-border-color-outside;
 
     &:hover {
-      border: 1px dashed #999;
+      border: 1px dashed $fold-html-block-kbd-border-color-hover;
 
       .hmd-fold-html-stub.omittable {
         display: block;
@@ -849,6 +870,38 @@
         position: absolute;
         z-index: 100;
       }
+    }
+  }
+
+  .CodeMirror-linewidget,
+  .hmd-fold-html {
+    table {
+      border-collapse: collapse;
+      td,
+      th {
+        padding: 10px;
+        border: 1px solid $fold-html-block-border;
+      }
+    }
+
+    kbd {
+      @extend %monospace;
+      display: inline-block;
+      padding: 3px 5px;
+      font-size: 90%;
+      line-height: 1em;
+      background-color: $fold-html-block-kbd-bg;
+      border: solid 1px $fold-html-block-kbd-border-color;
+      color: $fold-html-block-kbd-color;
+      box-shadow: none;
+      // border-bottom-color: rgb(198, 203, 209);
+      // border-bottom-color: #959da5;
+      // border-radius: 3px;
+      // vertical-align: baseline;
+    }
+
+    a > img {
+      border: 0;
     }
   }
 
