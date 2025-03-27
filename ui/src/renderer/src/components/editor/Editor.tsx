@@ -98,6 +98,7 @@ export default function Editor({
   const saveFile = useCallback(
     (content: string) => {
       if (content == null) return;
+      console.log(fullPath);
       fs.write(fullPath, content)
         .then(() => {
           toast.success('保存文件成功');

@@ -71,7 +71,12 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
       // lineNumbers: false,
       mode: {
         name: 'hypermd',
-        hashtag: true,
+        front_matter: true, // Yaml前言
+        hashtag: true, // hashtag
+        table: false, // 表格功能, 使用自己实现的
+        math: true, // 数学公式
+        toc: true, // toc占位符
+        orgModeMarkup: true,
       },
       hmdClick: (info: ClickHandleInfo, cm: CodeMirror.EditorFromTextArea) => {
         if (info.type === 'link' || info.type === 'url') {
@@ -110,6 +115,10 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
   useEffect(() => {
     if (editor) {
       // 初始化Editor
+      const events = (editor as any)._handlers;
+      if (events['keydown']) {
+        events['keydown'] = [];
+      }
       editor.on('keydown', (cm, e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
           if (onSave && editor) {
@@ -124,7 +133,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
       //   console.log(e);
       // });
     }
-  }, [editor]);
+  }, [editor, onSave]);
 
   useEffect(() => {
     if (!editor) return;
@@ -142,7 +151,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
           editor?.clearHistory();
         }
       } catch (e) {
-        console.log('setValue error:', e);
+        console.error('setValue error:', e);
       }
     },
   }));
