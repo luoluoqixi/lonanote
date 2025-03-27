@@ -1,8 +1,6 @@
-import { commandsCtx, editorViewCtx, editorViewOptionsCtx } from '@milkdown/core';
-import { Crepe } from '@milkdown/crepe';
-import '@milkdown/crepe/theme/common/style.css';
-import '@milkdown/crepe/theme/frame.css';
-import { $command, $useKeymap } from '@milkdown/utils';
+import clsx from 'clsx';
+import CodeMirror from 'codemirror';
+import * as HyperMD from 'hypermd';
 import {
   CSSProperties,
   Ref,
@@ -18,6 +16,7 @@ import './MarkdownEditor.scss';
 
 export interface MarkdownEditorRef {
   getMarkdown: () => string | undefined;
+  setValue: (content: string) => void;
 }
 
 export interface UpdateState {
@@ -26,143 +25,123 @@ export interface UpdateState {
   colIndex?: number;
 }
 
+export interface ClickPos {
+  line: number;
+  ch: number;
+  sticky: string;
+  xRel: number;
+}
+
+export interface ClickHandleInfo {
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+  button: number;
+  clientX: number;
+  clientY: number;
+  pos: ClickPos;
+  text?: string;
+  type: string;
+  url?: string;
+}
+
 export interface CodeMirrorEditorProps {
   fileName: string;
   style?: CSSProperties;
   className?: string;
   readOnly?: boolean;
-  getInitContent?: () => string;
   onSave?: (content: string) => void;
   onUpdateListener?: (state: UpdateState | null) => void;
 }
 
-// function getBlockLineNumber(state: EditorState) {
-//   const $from = state.selection.$from;
-//   let depth = $from.depth;
-//   while (depth > 0 && !$from.node(depth).type.isBlock) {
-//     depth--;
-//   }
-//   const blockPos = $from.start(depth);
-//   const resolvedPos = state.doc.resolve(blockPos);
-//   return resolvedPos.index(0) + 1;
-// }
+const setReadOnly = (editor: CodeMirror.EditorFromTextArea, readOnly: boolean | undefined) => {
+  const v = readOnly ? 'nocursor' : false;
+  editor.setOption('readOnly', v);
+};
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditorRef>) => {
-  const { className, style, fileName, readOnly, getInitContent, onSave, onUpdateListener } = props;
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(false);
-  const [getCrepe, updateCrepe] = useState<(() => Crepe | undefined) | null>(null);
-
+  const { className, style, readOnly, onSave, onUpdateListener } = props;
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const [editor, setEditor] = useState<CodeMirror.EditorFromTextArea | null>(null);
   useLayoutEffect(() => {
+    console.log('hypermd create');
     if (!editorRef.current) return;
     onUpdateListener?.(null);
-    setLoading(true);
-    const defaultValue = getInitContent?.();
-    let crepe: Crepe | undefined = new Crepe({
-      root: editorRef.current,
-      defaultValue,
-      features: {
-        placeholder: false,
+    let cm: CodeMirror.EditorFromTextArea | null = HyperMD.fromTextArea(editorRef.current, {
+      hmdModeLoader: false,
+      lineNumbers: false,
+      mode: {
+        name: 'hypermd',
+        hashtag: true,
       },
-      featureConfigs: {
-        [Crepe.Feature.ImageBlock]: {
-          proxyDomURL: (originalURL: string) => {
-            console.log(originalURL);
-            return originalURL;
-          },
-        },
-        [Crepe.Feature.BlockEdit]: {
-          handleAddIcon: undefined,
-        },
+      hmdClick: (info: ClickHandleInfo, cm: CodeMirror.EditorFromTextArea) => {
+        if (info.type === 'link' || info.type === 'url') {
+          if (info.ctrlKey) {
+            const url = info.url;
+            console.log('点击url: ', info, url);
+          }
+          return false;
+        }
+        console.log('click', info, cm);
+        return false;
       },
-    });
-
-    const saveCommand = $command('saveCommand', () => () => {
-      return () => {
-        if (!crepe) return true;
-        const mdText = crepe.getMarkdown();
-        // console.log(mdText);
-        onSave?.(mdText);
-        return true;
-      };
-    });
-    const saveKeyMap = $useKeymap('saveKeymap', {
-      saveDescription: {
-        shortcuts: 'Mod-s',
-        command: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          return () => commands.call(saveCommand.key);
-        },
+      hmdFold: {
+        image: true,
+        link: true,
+        math: true,
+        html: true,
+        emoji: true,
       },
-    });
-    crepe.editor.use([saveCommand, saveKeyMap].flat());
-
-    crepe.editor.config((ctx) => {
-      ctx.update(editorViewOptionsCtx, (prev) => ({
-        ...prev,
-        attributes: {
-          ...prev.attributes,
-          spellcheck: 'false',
-        },
-        // handleDOMEvents: {
-        //   pointerup: (view) => {
-        //     const line = getBlockLineNumber(view.state);
-        //     console.log(line);
-        //   },
-        // },
-      }));
-    });
-    crepe.on((listener) => {
-      listener.updated((ctx) => {
-        if (!crepe) return;
-        const view = ctx.get(editorViewCtx);
-        onUpdateListener?.({ charCount: view.state.doc.content.size });
-      });
-      listener.mounted((ctx) => {
-        if (!crepe) return;
-        const view = ctx.get(editorViewCtx);
-        onUpdateListener?.({ charCount: view.state.doc.content.size });
-      });
-    });
-    crepe
-      .setReadonly(readOnly || false)
-      .create()
-      .then(() => {
-        // 上一个编辑器销毁时可能还会还会短暂占用dom导致鼠标在div上move时有一些事件报错, 延迟一点点时间解决
-        setTimeout(() => setLoading(false), 50);
-      });
-    updateCrepe(() => () => crepe);
+    } as CodeMirror.EditorConfiguration) as CodeMirror.EditorFromTextArea;
+    setReadOnly(cm, readOnly);
+    cm.setValue('');
+    setEditor(cm);
     return () => {
-      updateCrepe(null);
-      if (crepe) {
-        crepe.destroy();
-        crepe = undefined;
+      if (cm) {
+        cm.toTextArea();
+        cm = null;
+        setEditor(null);
+        onUpdateListener?.(null);
       }
     };
-  }, [fileName, onSave, onUpdateListener]);
+  }, []);
 
   useEffect(() => {
-    if (!getCrepe) return;
-    const crepe = getCrepe();
-    if (crepe) {
-      crepe.setReadonly(readOnly || false);
+    if (editor) {
+      // 初始化Editor
+      editor.on('keydown', (cm, e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          if (onSave && editor) {
+            onSave(editor.getValue());
+            e.preventDefault();
+          }
+        }
+      });
+      // editor.on('copy', (cm, e) => {
+      //   // ignore copy by codemirror.  and will copy by browser
+      //   // e.codemirrorIgnore = true;
+      //   console.log(e);
+      // });
     }
+  }, [editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+    setReadOnly(editor, readOnly);
   }, [readOnly]);
 
   useImperativeHandle(ref, () => ({
     getMarkdown() {
-      return getCrepe?.()?.getMarkdown();
+      return editor?.getValue();
+    },
+    setValue(content) {
+      editor?.setValue(content);
     },
   }));
 
   return (
-    <div
-      style={{
-        display: loading ? 'none' : undefined,
-        ...style,
-      }}
-      className={className}
-      ref={editorRef}
-    />
+    <div className={clsx('markdown-editor', className)} style={style}>
+      <textarea ref={editorRef} />
+    </div>
   );
 });

@@ -7,9 +7,15 @@ $editor-top-toolbar-height: 50px;
 
 .editorRoot {
   width: 100%;
-  height: calc(100% - $editor-top-toolbar-height);
+  height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.editorRootEditor {
+  width: 100%;
+  height: calc(100% - $editor-top-toolbar-height);
+  flex-grow: 1;
 }
 
 .editorTopToolbar {

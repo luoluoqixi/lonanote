@@ -209,6 +209,7 @@ export default function Index() {
         <div className={styles.editorRoot}>
           <TopToolbar filePath={filePath} relativePath={file!} />
           <Editor
+            className={styles.editorRootEditor}
             file={filePath}
             currentWorkspace={currentWorkspace}
             readOnly={editorMode !== 'edit'}
