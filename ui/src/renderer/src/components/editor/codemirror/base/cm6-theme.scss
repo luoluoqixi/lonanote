@@ -1,0 +1,42 @@
+@use '../../base/cm-theme.scss' as *;
+
+.cm6-theme {
+  .cm-editor {
+    .cm-line {
+      caret-color: $cm-cursor;
+    }
+    .ͼb {
+      color: $cm-keyword-color;
+    }
+    .ͼe {
+      color: $cm-string-color;
+    }
+    .ͼg {
+      color: $cm-def-color;
+    }
+    .ͼd {
+      color: $cm-number-color;
+    }
+    .ͼc {
+      color: $cm-property-color;
+    }
+    .ͼj {
+      color: $cm-variable-color;
+    }
+    .ͼi {
+      color: $cm-variable-color;
+    }
+    .ͼl {
+      color: $cm-def-color;
+    }
+    .ͼm {
+      color: $cm-comment-color;
+    }
+    .ͼf {
+      color: $cm-string2-color;
+    }
+    .ͼk {
+      color: $cm-variable-2-color;
+    }
+  }
+}

@@ -2,6 +2,7 @@
 @use 'sass:color';
 
 @use './hypermd-theme.scss' as *;
+@use '../../base/cm-theme.scss' as *;
 
 .cm-s-hypermd-light {
   font-family: $font-family;

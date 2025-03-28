@@ -17,6 +17,7 @@ import {
   lineNumbers,
   rectangularSelection,
 } from '@codemirror/view';
+import clsx from 'clsx';
 import {
   CSSProperties,
   Ref,
@@ -177,5 +178,5 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
     },
   }));
 
-  return <div ref={editorRootRef} style={style} className={className}></div>;
+  return <div ref={editorRootRef} style={style} className={clsx('cm6-theme', className)}></div>;
 });

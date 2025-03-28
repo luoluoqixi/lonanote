@@ -1,8 +1,10 @@
 import { Button, DropdownMenu, Text, Tooltip } from '@radix-ui/themes';
+import path from 'path-browserify-esm';
+import { useMemo } from 'react';
 import { AiOutlineRead } from 'react-icons/ai';
 import { IoMdArrowBack, IoMdArrowForward, IoMdMore } from 'react-icons/io';
 import { MdOutlineDriveFileRenameOutline, MdOutlineFileOpen } from 'react-icons/md';
-import { VscCopy, VscFolderOpened } from 'react-icons/vsc';
+import { VscClose, VscCopy, VscFolderOpened } from 'react-icons/vsc';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'react-toastify';
 
@@ -10,7 +12,12 @@ import { fs } from '@/bindings/api';
 import { DropdownMenuItem } from '@/components';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import Editor from '@/components/editor/Editor';
-import { defaultEditorMode, setEditorMode, useEditor } from '@/controller/editor';
+import {
+  defaultEditorMode,
+  setCurrentEditFileNode,
+  setEditorMode,
+  useEditor,
+} from '@/controller/editor';
 import { workspaceController } from '@/controller/workspace';
 import { utils } from '@/utils';
 
@@ -77,6 +84,15 @@ const moreMenu: DropdownMenuItem[] = [
     label: '复制相对路径',
     icon: <VscCopy />,
   },
+  {
+    id: 'sep-03',
+    separator: true,
+  },
+  {
+    id: 'close-editor',
+    label: '关闭编辑器',
+    icon: <VscClose />,
+  },
 ];
 
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {
@@ -111,6 +127,8 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
       copyPathMenuClick(false);
     } else if (cmd === 'copy-relative-path') {
       copyPathMenuClick(true);
+    } else if (cmd === 'close-editor') {
+      setCurrentEditFileNode(null, true);
     }
   };
   const toToolBtnBack = (val: string) => {
@@ -198,7 +216,12 @@ export default function Index() {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
   const { file } = useParams();
-  const filePath = file ? decodeURIComponent(file) : null;
+  const filePath = useMemo(() => (file ? decodeURIComponent(file) : null), [file]);
+  const fullPath = useMemo(
+    () =>
+      filePath && currentWorkspace ? path.join(currentWorkspace.metadata.path, filePath) : null,
+    [filePath],
+  );
   return (
     <div className={styles.indexRoot}>
       {currentWorkspace == null ? (
@@ -207,7 +230,7 @@ export default function Index() {
         <EmptyIndex />
       ) : (
         <div className={styles.indexContent}>
-          <TopToolbar filePath={filePath} relativePath={file!} />
+          <TopToolbar filePath={fullPath!} relativePath={filePath} />
           <Editor
             className={styles.indexContentEditor}
             file={filePath}

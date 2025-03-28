@@ -3,10 +3,16 @@ import { EditorMode, EditorState, defaultEditorMode, useEditorStore } from '@/mo
 
 export const useEditor = useEditorStore;
 
-export const setCurrentEditFileNode = async (currentEditFileNode: FileNode | null) => {
+export const setCurrentEditFileNode = async (
+  currentEditFileNode: FileNode | null,
+  clearHistory?: boolean,
+) => {
   if (window.navigate) {
     const to = `/${currentEditFileNode ? encodeURIComponent(currentEditFileNode.path) : ''}`;
     window.navigate(to);
+    if (clearHistory) {
+      history.replaceState({}, document.title, window.location.pathname);
+    }
   }
 };
 
