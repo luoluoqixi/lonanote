@@ -361,8 +361,20 @@
 
     &.cm-property {
       // checked
-      background-image: none;
-      background-color: $todo-list-background-color-hover;
+      background: $todo-list-checked-img no-repeat center center;
+      background-color: $todo-list-checked-bg-color;
+
+      // mask-image: $todo-list-checked-img;
+      // -webkit-mask-image: $todo-list-checked-img;
+
+      // mask-repeat: no-repeat;
+      // -webkit-mask-repeat: no-repeat;
+
+      // mask-position: center;
+      // -webkit-mask-position: center;
+
+      // mask-size: contain;
+      // -webkit-mask-size: contain;
     }
 
     color: $todo-list-formatting-color;
@@ -467,12 +479,27 @@
   }
 
   span.hmd-link-icon {
-    background: $link-img no-repeat center center;
+    background: none; // $link-img no-repeat center center;
+    background-color: $link-img-color;
+
+    mask-image: $link-img;
+    -webkit-mask-image: $link-img;
+
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+
+    mask-position: center;
+    -webkit-mask-position: center;
+
+    mask-size: contain;
+    -webkit-mask-size: contain;
+
     width: 20px;
     height: 16px;
     display: inline-block;
     vertical-align: middle;
     opacity: 0.4;
+    margin-bottom: 1px;
     &:hover {
       opacity: 1;
     }

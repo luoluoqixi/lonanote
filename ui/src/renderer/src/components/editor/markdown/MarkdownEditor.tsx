@@ -67,7 +67,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     onUpdateListener?.(null);
     let cm: CodeMirror.EditorFromTextArea | null = HyperMD.fromTextArea(editorRef.current, {
       hmdModeLoader: false,
-      // lineNumbers: false,
+      lineNumbers: false, // 隐藏行号
       mode: {
         name: 'hypermd',
         front_matter: true, // Yaml前言

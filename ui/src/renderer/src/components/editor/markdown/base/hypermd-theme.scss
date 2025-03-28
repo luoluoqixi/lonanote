@@ -85,7 +85,8 @@ $todo-list-box-shadow: inset 0 0 0 1px var(--gray-a7);
 $todo-list-size: var(--space-4);
 $todo-list-border-radius: var(--radius-1);
 
-$todo-list-background-color-hover: var(--accent-indicator);
+$todo-list-checked-img: url('data:image/svg+xml;utf8,<svg width="9px" height="9px" viewBox="0 0 9 9" fill="white" xmlns="http://www.w3.org/2000/svg" data-state="checked" class="rt-BaseCheckboxIndicator rt-CheckboxIndicator" style="pointer-events: none;"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.53547 0.62293C8.88226 0.849446 8.97976 1.3142 8.75325 1.66099L4.5083 8.1599C4.38833 8.34356 4.19397 8.4655 3.9764 8.49358C3.75883 8.52167 3.53987 8.45309 3.3772 8.30591L0.616113 5.80777C0.308959 5.52987 0.285246 5.05559 0.563148 4.74844C0.84105 4.44128 1.31533 4.41757 1.62249 4.69547L3.73256 6.60459L7.49741 0.840706C7.72393 0.493916 8.18868 0.396414 8.53547 0.62293Z"></path></svg>');
+$todo-list-checked-bg-color: var(--accent-indicator);
 // #endregion
 
 // #region 代码块
@@ -105,7 +106,8 @@ $inline-code-color: var(--gray-12);
 // #endregion
 
 // #region 链接
-$link-img: var(--accent-9); // link右侧的图片
+$link-img: url('data:image/svg+xml;utf8,<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" height="16px" width="16px" xmlns="http://www.w3.org/2000/svg"><path d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"></path></svg>');
+$link-img-color: var(--gray-12);
 $link-color: var(--accent-11);
 $link-url-color: var(--accent-11);
 // #endregion
