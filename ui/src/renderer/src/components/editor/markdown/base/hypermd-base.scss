@@ -115,7 +115,7 @@
   }
 
   .CodeMirror-activeline-background {
-    background: #e8f2ff;
+    background: transparent;
   }
   .CodeMirror-matchingbracket {
     outline: 1px solid grey;
@@ -209,6 +209,15 @@
     padding-bottom: 0.25em;
     > span > span:first-child {
       margin-left: 0 !important;
+    }
+
+    .cm-formatting-header-1,
+    .cm-formatting-header-2,
+    .cm-formatting-header-3,
+    .cm-formatting-header-4,
+    .cm-formatting-header-5,
+    .cm-formatting-header-6 {
+      color: $cm-formatting-header-color;
     }
 
     &.HyperMD-header-1 {
@@ -307,6 +316,11 @@
   pre.HyperMD-list-line {
     padding-top: $list-margin-after-line;
     min-height: #{$line-height}em;
+
+    span.cm-formatting-list {
+      font-family: $font-family;
+      text-shadow: none;
+    }
 
     span.cm-formatting-list,
     span.cm-hmd-list-indent {

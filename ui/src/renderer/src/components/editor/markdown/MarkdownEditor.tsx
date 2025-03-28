@@ -53,9 +53,34 @@ export interface CodeMirrorEditorProps {
   onUpdateListener?: (state: UpdateState | null) => void;
 }
 
+const readOnlyMouseDown = (cm: CodeMirror.Editor, e: MouseEvent) => {
+  e.preventDefault();
+};
+
+const readOnlyMouseClick = (e: MouseEvent) => {
+  if (e.button === 0) {
+    window.getSelection()?.removeAllRanges();
+  }
+  e.preventDefault();
+};
+
 const setReadOnly = (editor: CodeMirror.EditorFromTextArea, readOnly: boolean | undefined) => {
   const v = readOnly ? 'nocursor' : false;
   editor.setOption('readOnly', v);
+  editor.off('mousedown', readOnlyMouseDown);
+  const wrapper = editor.getWrapperElement();
+  if (wrapper) {
+    wrapper.removeEventListener('click', readOnlyMouseClick);
+  }
+  if (readOnly) {
+    // 禁用鼠标事件
+    editor.on('mousedown', readOnlyMouseDown);
+    // 清除所有选区
+    editor.setCursor(0, 0);
+    if (wrapper) {
+      wrapper.addEventListener('click', readOnlyMouseClick);
+    }
+  }
 };
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditorRef>) => {
@@ -68,6 +93,8 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     let cm: CodeMirror.EditorFromTextArea | null = HyperMD.fromTextArea(editorRef.current, {
       hmdModeLoader: false,
       lineNumbers: false, // 隐藏行号
+      styleSelectedText: false, // 禁用选择高亮
+      highlightSelectionMatches: false, // 禁用匹配高亮
       mode: {
         name: 'hypermd',
         front_matter: true, // Yaml前言

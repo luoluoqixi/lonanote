@@ -70,12 +70,12 @@ $list-indent: 30px;
 $list-bullet-width: 30px;
 $list-margin-after-line: 0.3em;
 // list 虚线颜色
-$list-indent-border-color: var(--gray-6);
+$list-indent-border-color: var(--gray-8);
 
 // 一级list颜色
-$list-color-1: var(--gray-6);
+$list-color-1: var(--gray-10);
 // 二级list颜色
-$list-color-2: var(--gray-6);
+$list-color-2: var(--gray-10);
 // #endregion
 
 // #region 待办列表
@@ -98,11 +98,11 @@ $code-block-bg-color: var(--gray-3);
 
 // #region 内联代码
 // 内联代码的背景颜色
-$inline-code-bg-color: var(--gray-4);
+$inline-code-bg-color: var(--gray-a4);
 // 内联代码的边框颜色
-$inline-code-border-color: var(--gray-4);
+$inline-code-border-color: var(--gray-a4);
 // 内联代码的颜色
-$inline-code-color: var(--gray-12);
+$inline-code-color: var(--gray-a12);
 // #endregion
 
 // #region 链接
@@ -114,13 +114,13 @@ $link-url-color: var(--accent-11);
 
 // #region 图片
 // image加载error的背景
-$img-error-bg: var(--gray-4);
-$img-error-bg-hover: var(--gray-6);
+$img-error-bg: var(--gray-a4);
+$img-error-bg-hover: var(--gray-a6);
 // #endregion
 
 // #region hashtag
 // hashtag的背景
-$hashtag-bg: var(--accent-9);
+$hashtag-bg: var(--accent-a9);
 // hashtag的颜色
 $hashtag-color: var(--accent-contrast);
 // hashtag的反斜杠颜色
@@ -177,12 +177,12 @@ $addon-hover-content-code-border-color: var(--gray-1);
 // 脚注引用 背景颜色
 $footref-bg-color: $inline-code-bg-color;
 // 脚注引用 字体颜色
-$footref-color: var(--gray-11);
+$footref-color: var(--gray-a11);
 
 // 脚注 padding
 $footnote-padding: 40px;
 // 脚注 字体颜色
-$footnote-color: var(--gray-11);
+$footnote-color: var(--gray-a11);
 // #endregion
 
 // #region 公式
@@ -206,6 +206,9 @@ $cm-cursor: var(--gray-12);
 // 展开按钮的颜色
 $cm-foldmarker-color: var(--accent-9);
 $cm-foldmarker-hover-color: var(--accent-11);
+
+// header的 # 号的颜色
+$cm-formatting-header-color: var(--gray-10);
 
 // 行号背景配置
 $cm-gutters-bg-color: transparent;
