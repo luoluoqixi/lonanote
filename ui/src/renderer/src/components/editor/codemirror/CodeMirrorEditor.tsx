@@ -151,7 +151,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
         setReadOnlyEx(null);
       }
     };
-  }, [onSave]);
+  }, [onSave, onUpdateListener]);
 
   useEffect(() => {
     if (!view || !readOnlyEx) return;

@@ -63,7 +63,6 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [editor, setEditor] = useState<CodeMirror.EditorFromTextArea | null>(null);
   useLayoutEffect(() => {
-    console.log('hypermd create');
     if (!editorRef.current) return;
     onUpdateListener?.(null);
     let cm: CodeMirror.EditorFromTextArea | null = HyperMD.fromTextArea(editorRef.current, {
@@ -99,9 +98,28 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
         emoji: true,
       },
     } as CodeMirror.EditorConfiguration) as CodeMirror.EditorFromTextArea;
+    /// 如果多次调用cm.on, 事件无法清除
+    // const events = (cm as any)._handlers;
+    // if (events['keydown']) {
+    //   events['keydown'] = [];
+    // }
+    cm.on('keydown', (cm, e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        if (onSave && cm) {
+          onSave(cm.getValue());
+          e.preventDefault();
+        }
+      }
+    });
+    // cm.on('copy', (cm, e) => {
+    //   // ignore copy by codemirror.  and will copy by browser
+    //   // e.codemirrorIgnore = true;
+    //   console.log(e);
+    // });
     setReadOnly(cm, readOnly);
     cm.setValue('');
     setEditor(cm);
+    console.log('hypermd create');
     return () => {
       if (cm) {
         cm.toTextArea();
@@ -110,30 +128,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
         onUpdateListener?.(null);
       }
     };
-  }, []);
-
-  useEffect(() => {
-    if (editor) {
-      // 初始化Editor
-      const events = (editor as any)._handlers;
-      if (events['keydown']) {
-        events['keydown'] = [];
-      }
-      editor.on('keydown', (cm, e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-          if (onSave && editor) {
-            onSave(editor.getValue());
-            e.preventDefault();
-          }
-        }
-      });
-      // editor.on('copy', (cm, e) => {
-      //   // ignore copy by codemirror.  and will copy by browser
-      //   // e.codemirrorIgnore = true;
-      //   console.log(e);
-      // });
-    }
-  }, [editor, onSave]);
+  }, [onSave, onUpdateListener]);
 
   useEffect(() => {
     if (!editor) return;

@@ -1,0 +1,241 @@
+// #region 编辑器全局样式
+// 编辑器背景颜色
+$editor-background: var(--color-background);
+// 编辑器字体颜色
+$editor-color: var(--gray-12);
+// 默认的字体大小
+$fs: 12pt;
+// 编辑器字体
+$font-family:
+  -apple-system, BlinkMacSystemFont, 'Open Sans', 'Helvetica Neue', Helvetica, Arial,
+  'Hiragino Sans GB', 'WenQuanYi Micro Hei', 'Noto Sans CJK SC', 'Microsoft YaHei', STHeiti,
+  'Microsoft Jhenghei', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+// 行高
+$line-height: 1.5;
+$line-margin: 10px;
+$line-padding: 5px;
+
+// #endregion
+
+// #region Head背景er
+// header下面线的颜色
+$header-bottom-line-background: var(--gray-6);
+$header-bottom-line-background-select: var(--gray-6);
+// #endregion
+
+// #region 引用
+$quote-margin: 2px;
+$quote-padding: 20px;
+$quote-background: url('data:image/gif;base64,R0lGODlhIAABAIABAOjo6P///yH5BAEAAAEALAAAAAAgAAEAAAIHhI8Yy+1cAAA7')
+  0 0;
+
+// 引用的字体颜色
+$quote-color: var(--gray-11);
+
+// #endregion
+
+// #region 表格
+// 表格线的颜色
+$table-border-style: 1px solid var(--gray-6);
+$table-row1-height: 8px;
+$table-sep-width: 15px;
+$table-sep-image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mOc+R8AAjcBmvywMWoAAAAASUVORK5CYII=';
+$table-row-1-image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAQAAAAziH6sAAAADklEQVR42mOc+Z9x5n8ACTkDM4ikM1IAAAAASUVORK5CYII=';
+// #endregion
+
+// #region 代码块
+$codeblock-border: 0px solid var(--gray-6);
+$codeblock-padding: 5px;
+
+$hashtag-fontsize: 0.84em;
+$hashtag-padding-x: 6px;
+$hashtag-padding-y: 0.1em;
+$hashtag-radius: 8px;
+
+$hr-image: $table-row-1-image;
+$hr-padding: 5px;
+// #endregion
+
+// #region 分割线
+// hr的背景
+$hr-bg-color: $editor-background;
+$hr-bg-color-hover: var(--gray-10);
+// hr的颜色
+$hr-color: var(--gray-12);
+// #endregion
+
+// #region 列表
+$list-margin: 10px;
+$list-indent: 30px;
+$list-bullet-width: 30px;
+$list-margin-after-line: 0.3em;
+// list 虚线颜色
+$list-indent-border-color: var(--gray-6);
+
+// 一级list颜色
+$list-color-1: var(--gray-6);
+// 二级list颜色
+$list-color-2: var(--gray-6);
+// #endregion
+
+// #region 待办列表
+// todo list的 [x] 的语法颜色
+$todo-list-formatting-color: transparent;
+$todo-list-box-shadow: inset 0 0 0 1px var(--gray-a7);
+$todo-list-size: var(--space-4);
+$todo-list-border-radius: var(--radius-1);
+
+$todo-list-background-color-hover: var(--accent-indicator);
+// #endregion
+
+// #region 代码块
+// 代码块的语言名称color
+$code-block-language-color: var(--accent-10);
+// 代码块背景颜色
+$code-block-bg-color: var(--gray-3);
+// #endregion
+
+// #region 内联代码
+// 内联代码的背景颜色
+$inline-code-bg-color: var(--gray-4);
+// 内联代码的边框颜色
+$inline-code-border-color: var(--gray-4);
+// 内联代码的颜色
+$inline-code-color: var(--gray-12);
+// #endregion
+
+// #region 链接
+$link-img: var(--accent-9); // link右侧的图片
+$link-color: var(--accent-11);
+$link-url-color: var(--accent-11);
+// #endregion
+
+// #region 图片
+// image加载error的背景
+$img-error-bg: var(--gray-4);
+$img-error-bg-hover: var(--gray-6);
+// #endregion
+
+// #region hashtag
+// hashtag的背景
+$hashtag-bg: var(--accent-9);
+// hashtag的颜色
+$hashtag-color: var(--accent-contrast);
+// hashtag的反斜杠颜色
+$hashtag-backslash-color: var(--accent-contrast);
+// hashtag的#号颜色
+$hashtag-formatting-color: var(--accent-contrast);
+// #endregion
+
+// #region 折叠HTML
+
+/// 按钮
+// 折叠的html按钮的边框颜色
+$fold-html-border-color: var(--gray-12);
+// 折叠的html按钮的背景颜色
+$fold-html-bg: var(--gray-2);
+// 折叠的html按钮的字体颜色
+$fold-html-color: var(--gray-12);
+
+/// 按钮 悬浮
+// 折叠的html按钮的边框颜色 hover
+$fold-html-border-color-hover: var(--accent-10);
+// 折叠的html按钮的背景颜色 hover
+$fold-html-bg-hover: var(--accent-10);
+// 折叠的html按钮的字体颜色 hover
+$fold-html-color-hover: var(--accent-contrast);
+
+// 块
+// 折叠的html块的边框颜色
+$fold-html-block-border: var(--gray-10);
+
+/// kbd
+/// // 折叠的html块的kbd的边框颜色 外侧
+$fold-html-block-kbd-border-color-outside: transparent;
+// 折叠的html块的kbd的边框颜色
+$fold-html-block-kbd-border-color: var(--gray-6);
+// 折叠的html块的kbd的边框颜色 hover
+$fold-html-block-kbd-border-color-hover: var(--accent-10);
+
+// 折叠的html块的kbd的背景颜色
+$fold-html-block-kbd-bg: var(--accent-9);
+// 折叠的html块的kbd的颜色
+$fold-html-block-kbd-color: var(--accent-contrast);
+
+// #endregion
+
+// #region 附加悬浮框
+// 附加的悬浮框的背景颜色
+$addon-hover-content-bg: var(--gray-12);
+// 附加的悬浮框的字体颜色
+$addon-hover-content-color: var(--gray-1);
+// 附加的悬浮框中的code的边框颜色
+$addon-hover-content-code-border-color: var(--gray-1);
+// #endregion
+
+// #region 脚注
+// 脚注引用 背景颜色
+$footref-bg-color: $inline-code-bg-color;
+// 脚注引用 字体颜色
+$footref-color: var(--gray-11);
+
+// 脚注 padding
+$footnote-padding: 40px;
+// 脚注 字体颜色
+$footnote-color: var(--gray-11);
+// #endregion
+
+// #region TOC
+$toc-color: var(--gray-6);
+
+// #endregion
+
+// #region cm
+// 选中文本的背景
+$cm-selected-bg: var(--accent-a5);
+
+$cm-cursor: var(--gray-12);
+
+// 行号背景配置
+$cm-gutters-bg-color: transparent;
+$cm-gutters-color: var(--gray-10);
+$cm-gutters-font-size: var(--font-size-1);
+$cm-gutters-border-width: 0;
+
+// 行号字体的颜色
+$cm-linenumber-color: var(--gray-11);
+// 关键字颜色
+$cm-keyword-color: var(--pink-10);
+//
+$cm-atom-color: var(--blue-10);
+// 定义时的变量颜色
+$cm-def-color: var(--gray-12);
+// 变量颜色, Class颜色
+$cm-variable-color: var(--pink-10);
+$cm-variable-2-color: var(--pink-11);
+$cm-variable-3-color: var(--pink-12);
+// 属性颜色, 方法颜色
+$cm-property-color: var(--blue-10);
+// 注释颜色
+$cm-comment-color: var(--green-10);
+// 数字颜色
+$cm-number-color: var(--gray-12);
+// 操作符颜色
+$cm-operator-color: var(--gray-12);
+// 字符串颜色
+$cm-string-color: var(--brown-11);
+// 字符串颜色2
+$cm-string2-color: var(--brown-12);
+// html标签颜色
+$cm-tag-color: var(--pink-10);
+// html标签的attribute颜色
+$cm-attribute-color: var(--blue-9);
+// js中...操作符的颜色
+$cm-meta-color: var(--gray-12);
+// 错误的颜色
+$cm-error-color: var(--red-9);
+// css类名颜色
+$cm-qualifier-color: var(--pink-10);
+// 内置函数, 关键字颜色
+$cm-builtin-color: var(--pink-10);
+// #endregion
