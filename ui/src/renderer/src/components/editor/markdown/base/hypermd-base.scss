@@ -356,13 +356,11 @@
     min-width: 1em;
     text-align: center;
     vertical-align: middle;
-    background-repeat: no-repeat;
-    background-position: center 0;
+    margin-bottom: 3px;
     cursor: pointer;
 
     &.cm-property {
       // checked
-      // background-position-y: -1em;
       background-image: none;
       background-color: $todo-list-background-color-hover;
     }
@@ -813,18 +811,32 @@
 
     kbd {
       @extend %monospace;
-      display: inline-block;
-      padding: 3px 5px;
-      font-size: 90%;
-      line-height: 1em;
-      background-color: $fold-html-block-kbd-bg;
-      border: solid 1px $fold-html-block-kbd-border-color;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: var(--default-font-family);
+      font-weight: 400;
+      vertical-align: text-top;
+      white-space: nowrap;
+      -webkit-user-select: none;
+      user-select: none;
+      position: relative;
+      top: -0.03em;
+      font-size: 0.75em;
+      min-width: 1.75em;
+      line-height: 1.7em;
+      box-sizing: border-box;
+      padding-left: 0.5em;
+      padding-right: 0.5em;
+      padding-bottom: 0.05em;
+      word-spacing: -0.1em;
+      border-radius: calc(var(--radius-factor) * 0.35em);
+      letter-spacing: var(--letter-spacing, var(--default-letter-spacing));
+      height: fit-content;
       color: $fold-html-block-kbd-color;
-      box-shadow: none;
-      // border-bottom-color: rgb(198, 203, 209);
-      // border-bottom-color: #959da5;
-      // border-radius: 3px;
-      // vertical-align: baseline;
+      background-color: $fold-html-block-kbd-bg;
+      box-shadow: var(--kbd-box-shadow);
     }
 
     a > img {

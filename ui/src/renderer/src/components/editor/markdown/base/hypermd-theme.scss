@@ -152,15 +152,13 @@ $fold-html-block-border: var(--gray-10);
 /// kbd
 /// // 折叠的html块的kbd的边框颜色 外侧
 $fold-html-block-kbd-border-color-outside: transparent;
-// 折叠的html块的kbd的边框颜色
-$fold-html-block-kbd-border-color: var(--gray-6);
 // 折叠的html块的kbd的边框颜色 hover
 $fold-html-block-kbd-border-color-hover: var(--accent-10);
 
 // 折叠的html块的kbd的背景颜色
-$fold-html-block-kbd-bg: var(--accent-9);
+$fold-html-block-kbd-bg: var(--gray-1);
 // 折叠的html块的kbd的颜色
-$fold-html-block-kbd-color: var(--accent-contrast);
+$fold-html-block-kbd-color: var(--gray-12);
 
 // #endregion
 
@@ -234,9 +232,9 @@ $cm-number-color: var(--gray-12);
 // 操作符颜色
 $cm-operator-color: var(--gray-12);
 // 字符串颜色
-$cm-string-color: var(--brown-11);
+$cm-string-color: var(--bronze-11);
 // 字符串颜色2
-$cm-string2-color: var(--brown-12);
+$cm-string2-color: var(--bronze-12);
 // html标签颜色
 $cm-tag-color: var(--pink-10);
 // html标签的attribute颜色
