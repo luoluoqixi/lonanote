@@ -75,7 +75,7 @@
     color: $cm-builtin-color;
   }
   span.cm-bracket {
-    color: rgb(159, 119, 204);
+    color: $cm-bracket-color;
   }
   span.cm-tag {
     color: $cm-tag-color;
@@ -99,10 +99,10 @@
   span.cm-math {
     @extend %monospace;
     font-style: italic;
-    background: rgba(#ffe, 0.4);
+    background: $cm-math-bg;
   }
   span.cm-formatting-math {
-    color: #caa;
+    color: $cm-formatting-math-color;
     font-weight: inherit;
   }
 
@@ -119,7 +119,19 @@
   }
   .CodeMirror-matchingbracket {
     outline: 1px solid grey;
-    color: black !important;
+    color: $cm-matchingbracket-color !important;
+  }
+
+  .CodeMirror-foldmarker {
+    color: $cm-foldmarker-color;
+    text-shadow: none;
+    font-family: $font-family;
+    line-height: 0.3;
+    cursor: pointer;
+  }
+
+  .CodeMirror-foldmarker:hover {
+    color: $cm-foldmarker-hover-color;
   }
 
   .CodeMirror-linenumber {

@@ -185,6 +185,14 @@ $footnote-padding: 40px;
 $footnote-color: var(--gray-11);
 // #endregion
 
+// #region 公式
+// 公式编辑时的背景颜色
+$cm-math-bg: transparent;
+// 公式的$ $符号颜色
+$cm-formatting-math-color: var(--gray-11);
+
+// #endregion
+
 // #region TOC
 $toc-color: var(--gray-6);
 
@@ -193,8 +201,11 @@ $toc-color: var(--gray-6);
 // #region cm
 // 选中文本的背景
 $cm-selected-bg: var(--accent-a5);
-
+// 光标颜色
 $cm-cursor: var(--gray-12);
+// 展开按钮的颜色
+$cm-foldmarker-color: var(--accent-9);
+$cm-foldmarker-hover-color: var(--accent-11);
 
 // 行号背景配置
 $cm-gutters-bg-color: transparent;
@@ -238,4 +249,8 @@ $cm-error-color: var(--red-9);
 $cm-qualifier-color: var(--pink-10);
 // 内置函数, 关键字颜色
 $cm-builtin-color: var(--pink-10);
+
+// 不知道哪里的颜色, 括号似乎未生效
+$cm-matchingbracket-color: var(--gray-12);
+$cm-bracket-color: var(--gray-12);
 // #endregion
