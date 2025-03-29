@@ -2,14 +2,152 @@
   width: 100% !important;
   height: 100% !important;
   border: none;
+  .vditor-toolbar {
+    border: 0;
+    display: none;
+  }
 }
 
-.vditor-toolbar {
-  border: 0;
-}
+.vditor,
+.md-vditor-preview-wrap {
+  .vditor-reset {
+    $todo-list-checked-img: url('data:image/svg+xml;utf8,<svg width="9px" height="9px" viewBox="0 0 9 9" fill="white" xmlns="http://www.w3.org/2000/svg" data-state="checked" class="rt-BaseCheckboxIndicator rt-CheckboxIndicator" style="pointer-events: none;"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.53547 0.62293C8.88226 0.849446 8.97976 1.3142 8.75325 1.66099L4.5083 8.1599C4.38833 8.34356 4.19397 8.4655 3.9764 8.49358C3.75883 8.52167 3.53987 8.45309 3.3772 8.30591L0.616113 5.80777C0.308959 5.52987 0.285246 5.05559 0.563148 4.74844C0.84105 4.44128 1.31533 4.41757 1.62249 4.69547L3.73256 6.60459L7.49741 0.840706C7.72393 0.493916 8.18868 0.396414 8.53547 0.62293Z"></path></svg>');
+    color: var(--gray-12);
+    background-color: var(--color-background) !important;
 
-.vditor-reset {
-  background-color: var(--color-background) !important;
+    // 待办列表
+    .vditor-task input[type='checkbox'] {
+      --checkbox-size: var(--space-4);
+      appearance: none;
+      width: var(--checkbox-size);
+      height: var(--checkbox-size);
+      border-radius: var(--radius-1);
+      box-shadow: inset 0 0 0 1px var(--gray-a7);
+      background-color: var(--color-surface);
+      // cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      margin-bottom: 3px;
+      position: relative;
+    }
+    .vditor-task input[type='checkbox']:checked {
+      background-color: var(--accent-indicator);
+    }
+
+    .vditor-task input[type='checkbox']:checked::after {
+      content: '';
+      white-space: pre;
+      display: inline-block;
+      height: 1em;
+      line-height: 1em;
+      min-width: 1em;
+      text-align: center;
+      vertical-align: middle;
+      background: $todo-list-checked-img no-repeat center center;
+    }
+
+    .vditor-task input[type='checkbox']:focus-visible {
+      outline: 2px solid var(--accent-8);
+      outline-offset: 2px;
+    }
+    .vditor-task input[type='checkbox']:disabled {
+      background-color: var(--gray-4);
+    }
+    .vditor-task input[type='checkbox']:checked:disabled {
+      background-color: var(--accent-8);
+    }
+
+    // 标题的标签
+    .vditor-ir__marker--heading {
+      color: var(--gray-9) !important;
+    }
+
+    // 链接
+    a,
+    .vditor-ir__link {
+      color: var(--accent-11);
+    }
+
+    // 链接
+    .vditor-ir__link {
+      color: var(--accent-11);
+    }
+    // 链接括号
+    .vditor-ir__marker--bracket {
+      color: var(--gray-11);
+    }
+    // url的括号
+    .vditor-ir__marker--paren {
+      color: var(--gray-11);
+    }
+    // url
+    .vditor-ir__marker--link {
+      color: var(--gray-11);
+    }
+
+    // 行内代码块、删除线 等的标签颜色
+    .vditor-ir__node {
+      .vditor-ir__marker {
+        color: var(--gray-11);
+      }
+    }
+
+    // 加粗、斜体 的标签
+    .vditor-ir__marker--bi {
+      color: var(--gray-11) !important;
+    }
+
+    // 脚注引用
+    .vditor-ir__node[data-type='link-ref'],
+    .vditor-ir__node[data-type='footnotes-ref'] {
+      color: var(--accent-11);
+    }
+    // 行内代码块的背景
+    .vditor-ir__node code:not(.hljs):not(.highlight-chroma) {
+      background-color: var(--gray-a4);
+    }
+
+    // html块背景
+    .vditor-ir__node .vditor-ir__marker--pre code:not(.hljs):not(.highlight-chroma) {
+      background-color: var(--color-background);
+    }
+    // html块的颜色
+    .vditor-ir__node .vditor-ir__marker--pre code {
+      color: var(--gray-12);
+    }
+  }
+
+  // 左侧 H1 H2 的标签颜色
+  .vditor-ir .vditor-reset > h1:before,
+  .vditor-ir .vditor-reset > h2:before,
+  .vditor-ir .vditor-reset > h3:before,
+  .vditor-ir .vditor-reset > h4:before,
+  .vditor-ir .vditor-reset > h5:before,
+  .vditor-ir .vditor-reset > h6:before,
+  .vditor-ir div[data-type='link-ref-defs-block']:before,
+  .vditor-ir div[data-type='footnotes-block']:before,
+  .vditor-ir .vditor-toc:before {
+    color: var(--gray-8);
+  }
+
+  // 一些 html 块的背景
+  .vditor-ir__preview {
+    background-color: transparent;
+  }
+  .vditor-ir__preview:hover {
+    background-color: var(--gray-a4);
+  }
+
+  .vditor-wysiwyg__block[data-type='code-block']
+    .vditor-wysiwyg__pre[style='display: block;']
+    + .vditor-wysiwyg__preview {
+    display: none;
+  }
+  .vditor-ir__node--expand[data-type='code-block'] .vditor-ir__preview {
+    display: none;
+  }
 }
 
 .md-vditor-preview-wrap {

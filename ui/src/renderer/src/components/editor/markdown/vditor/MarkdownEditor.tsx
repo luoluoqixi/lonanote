@@ -82,8 +82,24 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       preview: {
         maxWidth,
       },
+      counter: {
+        enable: true,
+        after(length) {
+          onUpdateListener?.({
+            charCount: length,
+          });
+        },
+      },
+      keydown(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          if (onSave && vditor) {
+            onSave(vditor.getValue());
+            e.preventDefault();
+          }
+        }
+      },
       after: () => {
-        console.log('init finish', vditor);
+        // console.log('init finish', vditor);
         // 有可能是开发模式下第一次渲染还没初始化完成就被销毁了
         if (vditor != null) {
           setEditorTheme(vditor, theme);
@@ -129,7 +145,6 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         cdn,
       });
       updatePadding(editorPreviewRef.current);
-      console.log('set readOnly');
     }
   }, [readOnly, theme, updateReadOnlyState]);
 
