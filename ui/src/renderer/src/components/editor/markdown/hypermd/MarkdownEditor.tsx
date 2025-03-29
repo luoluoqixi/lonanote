@@ -1,7 +1,6 @@
 import CodeMirror from 'codemirror';
 import * as HyperMD from 'hypermd';
 import {
-  CSSProperties,
   Ref,
   forwardRef,
   useEffect,
@@ -11,18 +10,8 @@ import {
   useState,
 } from 'react';
 
+import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
 import './MarkdownEditor.scss';
-
-export interface MarkdownEditorRef {
-  getMarkdown: () => string | undefined;
-  setValue: (content: string, useHistory?: boolean) => void;
-}
-
-export interface UpdateState {
-  charCount: number;
-  rowIndex?: number;
-  colIndex?: number;
-}
 
 export interface ClickPos {
   line: number;
@@ -42,15 +31,6 @@ export interface ClickHandleInfo {
   text?: string;
   type: string;
   url?: string;
-}
-
-export interface CodeMirrorEditorProps {
-  fileName: string;
-  style?: CSSProperties;
-  className?: string;
-  readOnly?: boolean;
-  onSave?: (content: string) => void;
-  onUpdateListener?: (state: UpdateState | null) => void;
 }
 
 const clearCMEvent = (cm: CodeMirror.Editor, eventName: Parameters<CodeMirror.Editor['on']>[0]) => {
@@ -106,7 +86,15 @@ const setReadOnly = (
   // }
 };
 
-export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditorRef>) => {
+const countChars = (cm: CodeMirror.Editor) => {
+  let count = 0;
+  cm.eachLine((line) => {
+    count += line.text.length;
+  });
+  return count;
+};
+
+export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRef>) => {
   const { className, style, readOnly, onSave, onUpdateListener } = props;
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [editor, setEditor] = useState<CodeMirror.EditorFromTextArea | null>(null);
@@ -157,6 +145,17 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
         }
       }
     });
+    const updateState = (cm: CodeMirror.Editor) => {
+      if (cm == null) return;
+      const cursor = cm.getCursor();
+      onUpdateListener?.({
+        rowIndex: cursor.line,
+        colIndex: cursor.ch,
+        charCount: countChars(cm),
+      });
+    };
+    cm.on('cursorActivity', updateState);
+    cm.on('change', updateState);
     // cm.on('copy', (cm, e) => {
     //   // ignore copy by codemirror.  and will copy by browser
     //   // e.codemirrorIgnore = true;
