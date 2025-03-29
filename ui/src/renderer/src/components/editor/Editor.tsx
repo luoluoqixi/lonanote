@@ -78,7 +78,7 @@ export default function Editor({
   }, [state.isSupportEditor, state.isSupportMdEditor]);
   useLayoutEffect(() => {
     if (state.isSupportEditor || state.isSupportMdEditor) {
-      const filePath = path.join(currentWorkspace.metadata.path, file);
+      const filePath = fullPath;
       fs.readToString(filePath)
         .then((content) => {
           if (state.isSupportEditor && editorRef.current) {
@@ -93,7 +93,7 @@ export default function Editor({
           toast.error(`读取文件失败: ${filePath}, ${e.message}`);
         });
     }
-  }, [file, currentWorkspace]);
+  }, [file, fullPath]);
 
   const saveFile = useCallback(
     (content: string) => {

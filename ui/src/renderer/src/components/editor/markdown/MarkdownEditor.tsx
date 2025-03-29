@@ -53,6 +53,15 @@ export interface CodeMirrorEditorProps {
   onUpdateListener?: (state: UpdateState | null) => void;
 }
 
+const clearCMEvent = (cm: CodeMirror.Editor, eventName: Parameters<CodeMirror.Editor['on']>[0]) => {
+  if (!cm) return;
+  /// 如果多次调用cm.on, 事件无法清除
+  const events = (cm as any)._handlers;
+  if (events && events[eventName]) {
+    events[eventName] = [];
+  }
+};
+
 const readOnlyMouseDown = (cm: CodeMirror.Editor, e: MouseEvent) => {
   e.preventDefault();
 };
@@ -64,7 +73,11 @@ const readOnlyMouseClick = (e: MouseEvent) => {
   e.preventDefault();
 };
 
-const setReadOnly = (editor: CodeMirror.EditorFromTextArea, readOnly: boolean | undefined) => {
+const setReadOnly = (
+  editor: CodeMirror.EditorFromTextArea,
+  readOnly: boolean | undefined,
+  delay?: number,
+) => {
   const v = readOnly ? 'nocursor' : false;
   editor.setOption('readOnly', v);
   editor.off('mousedown', readOnlyMouseDown);
@@ -76,11 +89,21 @@ const setReadOnly = (editor: CodeMirror.EditorFromTextArea, readOnly: boolean | 
     // 禁用鼠标事件
     editor.on('mousedown', readOnlyMouseDown);
     // 清除所有选区
-    editor.setCursor(0, 0);
+    editor.setCursor(Number.MAX_VALUE);
     if (wrapper) {
       wrapper.addEventListener('click', readOnlyMouseClick);
     }
+    if (delay) {
+      // 初始化编辑器后, 光标会自动选中第一行, 似乎在setReadOnly之后, 这里加一个延迟设置
+      setTimeout(() => {
+        editor.setCursor(Number.MAX_VALUE);
+      }, delay);
+    }
   }
+  // 光标如果设置回0, 0点, 编辑界面会自动跳回最上方
+  // else {
+  //   editor.setCursor(0, 0);
+  // }
 };
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditorRef>) => {
@@ -125,11 +148,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
         emoji: true,
       },
     } as CodeMirror.EditorConfiguration) as CodeMirror.EditorFromTextArea;
-    /// 如果多次调用cm.on, 事件无法清除
-    // const events = (cm as any)._handlers;
-    // if (events['keydown']) {
-    //   events['keydown'] = [];
-    // }
+    clearCMEvent(cm, 'keydown');
     cm.on('keydown', (cm, e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         if (onSave && cm) {
@@ -143,7 +162,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<MarkdownEditor
     //   // e.codemirrorIgnore = true;
     //   console.log(e);
     // });
-    setReadOnly(cm, readOnly);
+    setReadOnly(cm, readOnly, 50);
     cm.setValue('');
     setEditor(cm);
     console.log('hypermd create');

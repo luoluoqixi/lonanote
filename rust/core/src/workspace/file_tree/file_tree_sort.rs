@@ -37,7 +37,7 @@ fn file_tree_compare_modified_time(a: &FileNode, b: &FileNode) -> Ordering {
         }
     } else {
         let time_a = last_modified_a.unwrap();
-        let time_b = last_modified_a.unwrap();
+        let time_b = last_modified_b.unwrap();
         time_a.cmp(&time_b)
     }
 }
