@@ -12,6 +12,7 @@ export interface UpdateState {
 }
 
 export interface MarkdownEditorProps {
+  editorId: string;
   fileName: string;
   style?: CSSProperties;
   className?: string;

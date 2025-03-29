@@ -110,6 +110,7 @@ const createWindow = async () => {
   });
 
   win.webContents.on('will-navigate', (e, url) => {
+    if (url.startsWith('http://localhost:8000')) return;
     e.preventDefault();
     shell.openExternal(url);
   });

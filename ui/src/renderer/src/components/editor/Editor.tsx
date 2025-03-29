@@ -82,9 +82,9 @@ export default function Editor({
       fs.readToString(filePath)
         .then((content) => {
           if (state.isSupportEditor && editorRef.current) {
-            editorRef.current.setValue(content);
+            editorRef.current.setValue(content || '');
           } else if (state.isSupportMdEditor && mdEditorRef.current) {
-            mdEditorRef.current.setValue(content);
+            mdEditorRef.current.setValue(content || '');
           }
           // console.log('content read finish');
         })
@@ -116,8 +116,9 @@ export default function Editor({
       {state.isSupportMdEditor ? (
         <MarkdownEditor
           ref={mdEditorRef}
-          fileName={state.fileName}
+          editorId="markdown-editor"
           className="markdown-editor"
+          fileName={state.fileName}
           readOnly={readOnly}
           onSave={saveFile}
           onUpdateListener={setCurrentEditorState}
