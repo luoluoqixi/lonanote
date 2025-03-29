@@ -399,6 +399,9 @@
     height: $todo-list-size;
     width: $todo-list-size;
     border-radius: $todo-list-border-radius;
+
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   /// footnote for link and image
