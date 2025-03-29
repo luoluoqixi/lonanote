@@ -164,7 +164,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
       </div>
       <div className={styles.indexContentTopToolbarCenter}>
         <Breadcrumb.Lazy
-          path={filePath}
+          path={relativePath}
           onItemClick={(path) => {
             console.log(path);
           }}

@@ -187,7 +187,7 @@ const BreadcrumbLazy = ({
             onItemClick?.(path, isLast);
           };
           return (
-            <Fragment key={value}>
+            <Fragment key={i}>
               {
                 <Breadcrumb.Item onClick={onClick} {...itemProps}>
                   {isLast ? (
