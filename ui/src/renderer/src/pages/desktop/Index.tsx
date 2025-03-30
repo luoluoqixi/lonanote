@@ -16,7 +16,7 @@ import { Breadcrumb } from '@/components/Breadcrumb';
 import Editor from '@/components/editor/Editor';
 import {
   defaultEditorMode,
-  setCurrentEditFileNode,
+  setCurrentEditFile,
   setEditorEditMode,
   setEditorMode,
   useEditor,
@@ -133,7 +133,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
     } else if (cmd === 'copy-relative-path') {
       copyPathMenuClick(true);
     } else if (cmd === 'close-editor') {
-      setCurrentEditFileNode(null, true);
+      setCurrentEditFile(null, true);
     }
   };
   const toToolBtnBack = (val: string) => {

@@ -13,6 +13,7 @@ import Vditor from 'vditor';
 import 'vditor/dist/index.css';
 
 import { useColorModeValue } from '@/components/provider/ColorModeProvider';
+import { utils } from '@/utils';
 
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
 import './MarkdownEditor.scss';
@@ -45,7 +46,17 @@ const getWrapPadding = (clientWidth: number) => {
 };
 
 export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRef>) => {
-  const { editorId, editMode, className, style, readOnly, onSave, onUpdateListener } = props;
+  const {
+    editorId,
+    editMode,
+    className,
+    style,
+    mediaRootPath,
+    readOnly,
+    onSave,
+    onUpdateListener,
+    onClickRelativeLink,
+  } = props;
   const theme = useColorModeValue<ThemeState>(lightTheme, darkTheme);
 
   const [content, setContent] = useState<string | null>(null);
@@ -69,18 +80,37 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   useLayoutEffect(() => {
     if (!editorRef.current) return;
     onUpdateListener?.(null);
+    const rootMediaPath = utils.getMediaPath(mediaRootPath);
     let vditor: Vditor | null = new Vditor(editorRef.current, {
       cache: {
         enable: false,
       },
       value: '',
+      // 必须显示toolbar, 通过css隐藏, 否则切换模式查找不到dom
       // toolbar: [],
       i18n: getI18n(),
       cdn,
       theme: 'classic',
       mode: editMode,
+      link: {
+        isOpen: false,
+        click(bom) {
+          const v = bom.innerHTML;
+          if (v == null) return;
+          if (v.startsWith('http://') || v.startsWith('https://')) {
+            window.open(v);
+          } else {
+            if (onClickRelativeLink) {
+              onClickRelativeLink(v);
+            }
+          }
+        },
+      },
       preview: {
         maxWidth,
+        markdown: {
+          linkBase: rootMediaPath,
+        },
       },
       counter: {
         enable: true,
@@ -131,7 +161,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       editor.current = null;
       onUpdateListener?.(null);
     };
-  }, [onSave, onUpdateListener]);
+  }, [onSave, onUpdateListener, onClickRelativeLink]);
 
   useEffect(() => {
     if (!editor.current) return;

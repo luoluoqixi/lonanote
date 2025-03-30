@@ -1,4 +1,3 @@
-import { FileNode } from '@/bindings/api';
 import {
   EditorEditMode,
   EditorMode,
@@ -9,12 +8,12 @@ import {
 
 export const useEditor = useEditorStore;
 
-export const setCurrentEditFileNode = async (
-  currentEditFileNode: FileNode | null,
+export const setCurrentEditFile = async (
+  currentEditFile: string | null,
   clearHistory?: boolean,
 ) => {
   if (window.navigate) {
-    const to = `/${currentEditFileNode ? encodeURIComponent(currentEditFileNode.path) : ''}`;
+    const to = `/${currentEditFile ? encodeURIComponent(currentEditFile) : ''}`;
     window.navigate(to);
     if (clearHistory) {
       history.replaceState({}, document.title, window.location.pathname);

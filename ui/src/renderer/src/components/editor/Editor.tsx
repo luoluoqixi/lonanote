@@ -4,7 +4,7 @@ import { CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef
 import { toast } from 'react-toastify';
 
 import { Workspace, fs } from '@/bindings/api';
-import { setCurrentEditorState, useEditor } from '@/controller/editor';
+import { setCurrentEditFile, setCurrentEditorState, useEditor } from '@/controller/editor';
 import { defaultEditorEditMode } from '@/models/editor';
 import { utils } from '@/utils';
 
@@ -59,6 +59,7 @@ export default function Editor({
     () => path.join(currentWorkspace.metadata.path, file),
     [file, currentWorkspace],
   );
+  const folderPath = useMemo(() => path.dirname(fullPath), [fullPath]);
   const state = useMemo(() => {
     const fileName = path.basename(file);
     const isSupportMdEditor = isSupportMarkdown(path.basename(file));
@@ -112,12 +113,29 @@ export default function Editor({
     },
     [fullPath],
   );
+  const onClickRelativeLink = useCallback(
+    (link: string) => {
+      const folder = path.dirname(file);
+      const filePath = path.resolve(folder, link);
+      const fullPath = path.resolve(folderPath, link);
+      fs.exists(fullPath).then((exists) => {
+        if (exists) {
+          console.log(filePath, fullPath);
+          setCurrentEditFile(filePath);
+        } else {
+          toast.error(`不存在文件: ${fullPath}`);
+        }
+      });
+    },
+    [file, folderPath],
+  );
 
   return (
     <div id="editor-root" style={style} className={className}>
       {state.isSupportMdEditor ? (
         <MarkdownEditor
           ref={mdEditorRef}
+          mediaRootPath={folderPath}
           editorId="markdown-editor"
           className="markdown-editor"
           fileName={state.fileName}
@@ -125,6 +143,7 @@ export default function Editor({
           editMode={editorEditMode}
           onSave={saveFile}
           onUpdateListener={setCurrentEditorState}
+          onClickRelativeLink={onClickRelativeLink}
         />
       ) : state.isSupportEditor ? (
         <CodeMirrorEditor

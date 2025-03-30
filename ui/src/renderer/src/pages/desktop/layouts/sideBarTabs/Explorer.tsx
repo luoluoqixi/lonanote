@@ -30,7 +30,7 @@ import { toast } from 'react-toastify';
 
 import { FileNode, FileTree, FileTreeSortType, Workspace, fs } from '@/bindings/api';
 import { ContextMenuItem, Tree, TreeItem, TreeRef, dialog } from '@/components';
-import { setCurrentEditFileNode } from '@/controller/editor';
+import { setCurrentEditFile } from '@/controller/editor';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
 import { timeUtils, utils } from '@/utils';
@@ -286,7 +286,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
   const openFile = (node: FileNode) => {
     if (node.fileType === 'file') {
-      setCurrentEditFileNode(node);
+      setCurrentEditFile(node.path);
     }
   };
   const treeItemClick = (data: FileNode | undefined) => {

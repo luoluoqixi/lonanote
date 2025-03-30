@@ -14,6 +14,7 @@ export interface UpdateState {
 }
 
 export interface MarkdownEditorProps {
+  mediaRootPath: string;
   editorId: string;
   editMode: EditorEditMode;
   fileName: string;
@@ -22,4 +23,5 @@ export interface MarkdownEditorProps {
   readOnly?: boolean;
   onSave?: (content: string) => void;
   onUpdateListener?: (state: UpdateState | null) => void;
+  onClickRelativeLink?: (link: string) => void;
 }
