@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import { AiOutlineRead } from 'react-icons/ai';
 import { IoMdArrowBack, IoMdArrowForward, IoMdMore } from 'react-icons/io';
 import { MdOutlineDriveFileRenameOutline, MdOutlineFileOpen } from 'react-icons/md';
+import { PiSquareSplitHorizontal } from 'react-icons/pi';
+import { TbAlignBoxLeftBottom } from 'react-icons/tb';
 import { VscClose, VscCopy, VscFolderOpened } from 'react-icons/vsc';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'react-toastify';
@@ -15,10 +17,12 @@ import Editor from '@/components/editor/Editor';
 import {
   defaultEditorMode,
   setCurrentEditFileNode,
+  setEditorEditMode,
   setEditorMode,
   useEditor,
 } from '@/controller/editor';
 import { workspaceController } from '@/controller/workspace';
+import { defaultEditorEditMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import styles from './Index.module.scss';
@@ -97,6 +101,7 @@ const moreMenu: DropdownMenuItem[] = [
 
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {
   const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
+  const editorEditMode = useEditor((s) => s.editorEditMode) || defaultEditorEditMode;
   const navigate = useNavigate();
   const changeEditorMode = () => {
     const targetMode = editorMode === 'edit' ? 'preview' : 'edit';
@@ -138,6 +143,10 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
       navigate(1);
     }
   };
+  const changeEditorClick = () => {
+    const targetMode = editorEditMode === 'ir' ? 'sv' : 'ir';
+    setEditorEditMode(targetMode);
+  };
   return (
     <div className={styles.indexContentTopToolbar}>
       <div className={styles.indexContentTopToolbarLeft}>
@@ -171,6 +180,25 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         />
       </div>
       <div className={styles.indexContentTopToolbarRight}>
+        <Tooltip content={editorEditMode === 'ir' ? '切换到左右分屏' : '切换到即时渲染'}>
+          <Button
+            className={styles.indexContentTopToolbarRightBtn}
+            color="gray"
+            variant="ghost"
+            onClick={changeEditorClick}
+          >
+            {editorEditMode === 'ir' ? (
+              <PiSquareSplitHorizontal />
+            ) : (
+              <TbAlignBoxLeftBottom
+                style={{
+                  width: '15px',
+                  height: '15px',
+                }}
+              />
+            )}
+          </Button>
+        </Tooltip>
         <Tooltip content={editorMode === 'edit' ? '切换到预览模式' : '切换到编辑模式'}>
           <Button
             className={styles.indexContentTopToolbarRightBtn}

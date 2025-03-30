@@ -6,11 +6,18 @@
     border: 0;
     display: none;
   }
+  .vditor-preview__action {
+    display: none !important;
+  }
+  .vditor-preview {
+    background-color: var(--color-background);
+  }
 }
 
 .vditor,
 .md-vditor-preview-wrap {
-  .vditor-reset {
+  .vditor-reset,
+  .vditor-sv {
     $todo-list-checked-img: url('data:image/svg+xml;utf8,<svg width="9px" height="9px" viewBox="0 0 9 9" fill="white" xmlns="http://www.w3.org/2000/svg" data-state="checked" class="rt-BaseCheckboxIndicator rt-CheckboxIndicator" style="pointer-events: none;"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.53547 0.62293C8.88226 0.849446 8.97976 1.3142 8.75325 1.66099L4.5083 8.1599C4.38833 8.34356 4.19397 8.4655 3.9764 8.49358C3.75883 8.52167 3.53987 8.45309 3.3772 8.30591L0.616113 5.80777C0.308959 5.52987 0.285246 5.05559 0.563148 4.74844C0.84105 4.44128 1.31533 4.41757 1.62249 4.69547L3.73256 6.60459L7.49741 0.840706C7.72393 0.493916 8.18868 0.396414 8.53547 0.62293Z"></path></svg>');
     color: var(--gray-12);
     background-color: var(--color-background) !important;
@@ -60,53 +67,65 @@
     }
 
     // 标题的标签
-    .vditor-ir__marker--heading {
+    .vditor-ir__marker--heading,
+    .vditor-sv__marker--heading {
       color: var(--gray-9) !important;
     }
 
     // 链接
     a,
-    .vditor-ir__link {
+    .vditor-ir__link,
+    .vditor-sv__link {
       color: var(--accent-11);
     }
 
     // 链接
-    .vditor-ir__link {
+    .vditor-ir__link,
+    .vditor-sv__link {
       color: var(--accent-11);
     }
     // 链接括号
-    .vditor-ir__marker--bracket {
+    .vditor-ir__marker--bracket,
+    .vditor-sv__marker--bracket {
       color: var(--gray-11);
     }
     // url的括号
-    .vditor-ir__marker--paren {
+    .vditor-ir__marker--paren,
+    .vditor-sv__marker--paren {
       color: var(--gray-11);
     }
     // url
-    .vditor-ir__marker--link {
+    .vditor-ir__marker--link,
+    .vditor-sv__marker--link {
       color: var(--gray-11);
     }
 
     // 行内代码块、删除线 等的标签颜色
-    .vditor-ir__node {
-      .vditor-ir__marker {
+    .vditor-ir__node,
+    .vditor-sv__node {
+      .vditor-ir__marker,
+      .vditor-sv__marker {
         color: var(--gray-11);
       }
     }
 
     // 加粗、斜体 的标签
-    .vditor-ir__marker--bi {
+    .vditor-ir__marker--bi,
+    .vditor-sv__marker--bi {
       color: var(--gray-11) !important;
     }
 
     // 脚注引用
     .vditor-ir__node[data-type='link-ref'],
-    .vditor-ir__node[data-type='footnotes-ref'] {
+    .vditor-ir__node[data-type='footnotes-ref'],
+    .vditor-sv__node[data-type='link-ref'],
+    .vditor-sv__node[data-type='footnotes-ref'] {
       color: var(--accent-11);
     }
 
     // 行内代码块的背景
-    .vditor-ir__node code:not(.hljs):not(.highlight-chroma) {
+    .vditor-ir__node code:not(.hljs):not(.highlight-chroma),
+    .vditor-sv__node code:not(.hljs):not(.highlight-chroma) {
       background-color: var(--gray-a4);
     }
     // 预览模式行内代码块的背景
@@ -131,12 +150,19 @@
     }
 
     // html块背景
-    .vditor-ir__node .vditor-ir__marker--pre code:not(.hljs):not(.highlight-chroma) {
+    .vditor-ir__node .vditor-ir__marker--pre code:not(.hljs):not(.highlight-chroma),
+    .vditor-sv__node .vditor-sv__marker--pre code:not(.hljs):not(.highlight-chroma) {
       background-color: var(--color-background);
     }
     // html块的颜色
-    .vditor-ir__node .vditor-ir__marker--pre code {
+    .vditor-ir__node .vditor-ir__marker--pre code,
+    .vditor-sv__node .vditor-sv__marker--pre code {
       color: var(--gray-12);
+    }
+
+    // sv模式的代码块标签
+    .vditor-sv__marker--info {
+      color: var(--gray-8);
     }
   }
 
@@ -154,10 +180,12 @@
   }
 
   // 一些 html 块的背景
-  .vditor-ir__preview {
+  .vditor-ir__preview,
+  .vditor-sv__preview {
     background-color: transparent;
   }
-  .vditor-ir__preview:hover {
+  .vditor-ir__preview:hover,
+  .vditor-sv__preview:hover {
     background-color: var(--gray-a4);
   }
 

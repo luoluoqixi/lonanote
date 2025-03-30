@@ -1,5 +1,11 @@
 import { FileNode } from '@/bindings/api';
-import { EditorMode, EditorState, defaultEditorMode, useEditorStore } from '@/models/editor';
+import {
+  EditorEditMode,
+  EditorMode,
+  EditorState,
+  defaultEditorMode,
+  useEditorStore,
+} from '@/models/editor';
 
 export const useEditor = useEditorStore;
 
@@ -22,6 +28,10 @@ export const setCurrentEditorState = async (currentEditorStatus: EditorState | n
 
 export const setEditorMode = async (editorMode: EditorMode) => {
   useEditorStore.setState((state) => ({ ...state, editorMode }));
+};
+
+export const setEditorEditMode = async (editorEditMode: EditorEditMode) => {
+  useEditorStore.setState((state) => ({ ...state, editorEditMode }));
 };
 
 export { defaultEditorMode };

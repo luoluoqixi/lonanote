@@ -4,7 +4,8 @@ import { CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef
 import { toast } from 'react-toastify';
 
 import { Workspace, fs } from '@/bindings/api';
-import { setCurrentEditorState } from '@/controller/editor';
+import { setCurrentEditorState, useEditor } from '@/controller/editor';
+import { defaultEditorEditMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import './Editor.scss';
@@ -45,12 +46,13 @@ const NotSupportEditorContent = ({ filePath }: { filePath: string }) => {
 };
 
 export default function Editor({
-  file,
-  currentWorkspace,
-  readOnly,
   className,
+  currentWorkspace,
+  file,
+  readOnly,
   style,
 }: EditorProps) {
+  const editorEditMode = useEditor((s) => s.editorEditMode) || defaultEditorEditMode;
   const editorRef = useRef<CodeMirrorEditorRef>(null);
   const mdEditorRef = useRef<MarkdownEditorRef>(null);
   const fullPath = useMemo(
@@ -120,6 +122,7 @@ export default function Editor({
           className="markdown-editor"
           fileName={state.fileName}
           readOnly={readOnly}
+          editMode={editorEditMode}
           onSave={saveFile}
           onUpdateListener={setCurrentEditorState}
         />

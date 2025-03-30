@@ -1,5 +1,7 @@
 import { CSSProperties } from 'react';
 
+import { EditorEditMode } from '@/models/editor';
+
 export interface MarkdownEditorRef {
   getMarkdown: () => string | undefined;
   setValue: (content: string, useHistory?: boolean) => void;
@@ -13,6 +15,7 @@ export interface UpdateState {
 
 export interface MarkdownEditorProps {
   editorId: string;
+  editMode: EditorEditMode;
   fileName: string;
   style?: CSSProperties;
   className?: string;

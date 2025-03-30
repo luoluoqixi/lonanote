@@ -45,7 +45,7 @@ const getWrapPadding = (clientWidth: number) => {
 };
 
 export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRef>) => {
-  const { editorId, className, style, readOnly, onSave, onUpdateListener } = props;
+  const { editorId, editMode, className, style, readOnly, onSave, onUpdateListener } = props;
   const theme = useColorModeValue<ThemeState>(lightTheme, darkTheme);
 
   const [content, setContent] = useState<string | null>(null);
@@ -74,11 +74,11 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         enable: false,
       },
       value: '',
-      toolbar: [],
+      // toolbar: [],
       i18n: getI18n(),
       cdn,
       theme: 'classic',
-      mode: 'ir',
+      mode: editMode,
       preview: {
         maxWidth,
       },
@@ -158,6 +158,12 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       updatePadding(editorPreviewRef.current);
     }
   }, [readOnly, theme, updateReadOnlyState]);
+
+  useEffect(() => {
+    if (!editor.current) return;
+    document.querySelector(`[data-mode="${editMode}"]`)?.dispatchEvent(new CustomEvent('click'));
+    console.log(editMode, document.querySelector(`[data-mode="${editMode}"]`));
+  }, [editMode]);
 
   useEffect(() => {
     if (!editor.current) return;
