@@ -25,7 +25,8 @@ const copyDir = async (from: string, to: string) => {
   const fromStats = fs.lstatSync(from);
   if (fromStats.isSymbolicLink()) {
     const fromNew = fs.readlinkSync(from);
-    from = fromNew;
+    // 当使用vite插件执行时, readlinkSync返回的是绝对路径, 当使用tsx执行时, 返回的是相对路径
+    from = path.resolve(path.dirname(from), fromNew);
   }
   const successFiles: string[] = [];
   walk(from, async (p, s) => {

@@ -11,7 +11,11 @@ export interface CopyFileItem {
 
 export const defaultCopyFiles: CopyFileItem[] = [];
 
-export const executeCopyFiles = async (context: any, copyFiles: CopyFileItem[] | undefined) => {
+export interface Context {
+  warn: (msg: string) => void;
+}
+
+export const executeCopyFiles = async (context: Context, copyFiles: CopyFileItem[] | undefined) => {
   const projectPath = process.cwd();
   copyFiles = copyFiles || defaultCopyFiles;
   for (let i = 0; i < copyFiles.length; i++) {

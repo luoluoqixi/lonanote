@@ -82,7 +82,7 @@ importers:
         version: 19.0.4(@types/react@19.0.12)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.3.4(vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0))
+        version: 4.3.4(vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3))
       allotment:
         specifier: ^1.20.3
         version: 1.20.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -112,7 +112,7 @@ importers:
         version: 26.0.12(dmg-builder@26.0.12)
       electron-vite:
         specifier: ^3.0.0
-        version: 3.0.0(vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0))
+        version: 3.0.0(vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3))
       env-cmd:
         specifier: ^10.1.0
         version: 10.1.0
@@ -176,6 +176,9 @@ importers:
       ts-deepmerge:
         specifier: ^7.0.2
         version: 7.0.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
       turndown-plugin-gfm:
         specifier: ^1.0.2
         version: 1.0.2
@@ -193,7 +196,7 @@ importers:
         version: 3.10.8
       vite:
         specifier: ^6.2.2
-        version: 6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)
+        version: 6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3)
       vite-plugin-vconsole:
         specifier: ^2.1.1
         version: 2.1.1
@@ -3109,6 +3112,9 @@ packages:
     resolution: {integrity: sha512-w9UMqWwJxHNOvoNzSJ2oPF5wvYcvP7jUvYzhp67yEhTi17ZDBBC1z9pTdGuzjD+EFIqLSYRweZjqfiPzQ06Ebg==}
     engines: {node: '>= 0.4'}
 
+  get-tsconfig@4.10.0:
+    resolution: {integrity: sha512-kGzZ3LWWQcGIAmg6iWvXn0ei6WDtV26wzHRMwDSzmAbcXrTEXxHy6IehI6/4eT6VRKyMP1eF1VqwrVUmE/LR7A==}
+
   getpass@0.1.7:
     resolution: {integrity: sha512-0fzj9JxOLfJ+XGLhR8ze3unN0KZCgZwiSSDz168VERjK8Wl8kVSdcu2kspd4s4wtAa1y/qrVRiAA0WclVsu0ng==}
 
@@ -4122,6 +4128,9 @@ packages:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
     engines: {node: '>=4'}
 
+  resolve-pkg-maps@1.0.0:
+    resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
+
   resolve@2.0.0-next.5:
     resolution: {integrity: sha512-U7WjGVG9sH8tvjW5SmGbQuui75FiyjAX72HX15DwBBwF9dNiQZRQAg9nnPhYy+TUnE0+VcrttuvNI8oSxZcocA==}
     hasBin: true
@@ -4573,6 +4582,11 @@ packages:
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
+  tsx@4.19.3:
+    resolution: {integrity: sha512-4H8vUNGNjQ4V2EOoGw005+c+dGuPSnhpPBPHBtsZdGZBk/iJb4kguGlPWaZTZ3q5nMtFOEsY0nRDlh9PJyd6SQ==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
 
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
@@ -6783,14 +6797,14 @@ snapshots:
       '@typescript-eslint/types': 8.27.0
       eslint-visitor-keys: 4.2.0
 
-  '@vitejs/plugin-react@4.3.4(vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0))':
+  '@vitejs/plugin-react@4.3.4(vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3))':
     dependencies:
       '@babel/core': 7.26.10
       '@babel/plugin-transform-react-jsx-self': 7.25.9(@babel/core@7.26.10)
       '@babel/plugin-transform-react-jsx-source': 7.25.9(@babel/core@7.26.10)
       '@types/babel__core': 7.20.5
       react-refresh: 0.14.2
-      vite: 6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)
+      vite: 6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -7891,7 +7905,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron-vite@3.0.0(vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)):
+  electron-vite@3.0.0(vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3)):
     dependencies:
       '@babel/core': 7.26.10
       '@babel/plugin-transform-arrow-functions': 7.25.9(@babel/core@7.26.10)
@@ -7899,7 +7913,7 @@ snapshots:
       esbuild: 0.24.2
       magic-string: 0.30.17
       picocolors: 1.1.1
-      vite: 6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)
+      vite: 6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -8439,6 +8453,10 @@ snapshots:
       call-bound: 1.0.4
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
+
+  get-tsconfig@4.10.0:
+    dependencies:
+      resolve-pkg-maps: 1.0.0
 
   getpass@0.1.7:
     dependencies:
@@ -9590,6 +9608,8 @@ snapshots:
 
   resolve-from@4.0.0: {}
 
+  resolve-pkg-maps@1.0.0: {}
+
   resolve@2.0.0-next.5:
     dependencies:
       is-core-module: 2.16.1
@@ -10089,6 +10109,13 @@ snapshots:
 
   tslib@2.8.1: {}
 
+  tsx@4.19.3:
+    dependencies:
+      esbuild: 0.25.1
+      get-tsconfig: 4.10.0
+    optionalDependencies:
+      fsevents: 2.3.3
+
   tunnel-agent@0.6.0:
     dependencies:
       safe-buffer: 5.2.1
@@ -10261,7 +10288,7 @@ snapshots:
 
   vite-plugin-vconsole@2.1.1: {}
 
-  vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0):
+  vite@6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3):
     dependencies:
       esbuild: 0.25.1
       postcss: 8.5.3
@@ -10270,6 +10297,7 @@ snapshots:
       '@types/node': 22.13.11
       fsevents: 2.3.3
       sass-embedded: 1.86.0
+      tsx: 4.19.3
 
   w3c-hr-time@1.0.2:
     dependencies:
