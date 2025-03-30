@@ -1,77 +1,24 @@
-# LonaNote
+# 露娜笔记 (LonaNote)
+
+一款本地优先的开源笔记软件，使用TypeScript和Rust编写。
+
+## 简介
+
+露娜笔记是一款开源、跨平台、本地优先的Markdown笔记软件，支持Markdown的所见即所得。
+
+笔记将以开放的Markdown格式离线保存在本地，您可以随意切换到其他笔记软件而无需导入导出。
+
+支持的平台：`Windows`、`MacOS`、`Linux`、`Android`、`iOS`。
+
+![screenshot-1](./docs/screenshots/screenshot-1.png)
 
 
-### 开发
+## 待办
 
-#### 开发环境
+露娜笔记在积极开发中，欢迎贡献代码
 
-- Windows / Mac / Linux
-  - `Rust` >= 1.85.0-nightly
-  - `Node` >= 20
-  - `pnpm` >= 9.15.0
-- Android
-  - 安装 `Android Studio` 和附带的 `SDK`、`NDK`、`Platform-Tools`
-  - 设置 `<android studio installation path>/jbr` 目录到JAVA_HOME 环境变量
-  - 设置 `ndk` 路径到 `NDK_HOME` 环境变量
-  - 设置 `sdk` 路径到 `ANDROID_HOME` 环境变量
-  - 详情查看 [Tauri 文档](https://tauri.app/start/prerequisites/#android)
-- IOS
-  - 安装 `XCode`
-  - 安装 `Cocoapods`
-  - 详情查看 [Tauri 文档](https://tauri.app/start/prerequisites/#ios)
+[待办事项](./docs/dev/todo.md)
 
+### 开发指南
 
-#### 安装
-
-```shell
-pnpm -C ui install
-```
-
-#### 运行 Windows / Mac / Linux
-
-```shell
-pnpm -C ui dev
-```
-
-#### 打包
-
-```shell
-# windows
-pnpm -C ui build:win
-
-# macos
-pnpm -C ui build:mac
-
-# linux
-pnpm -C ui build:linux
-
-# android
-pnpm -C ui build:android
-
-# ios
-pnpm -C ui build:ios
-```
-
-#### 运行 Android / IOS
-
-- 运行 Android
-
-```shell
-# 提前使用 USB 连接真机或启动 Android 模拟器
-pnpm -C ui dev:android
-```
-
-- 运行 IOS
-
-```shell
-# 提前使用 USB 连接真机或启动 IOS 模拟器
-pnpm -C ui dev:ios
-```
-
-> 首次运行应用程序时会被阻止
->
-> 转到手机 Settings > Privacy & Security > Developer Mode以启用开发者模式
->
-> 然后转到 Settings -> General -> VPN and device management -> From "Developer App"
->
-> 按 "Apple Development: APPLE_ID"->"信任"
+##### [开发文档](./docs/dev/README.md)
