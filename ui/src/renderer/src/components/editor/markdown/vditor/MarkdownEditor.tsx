@@ -91,11 +91,17 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         },
       },
       keydown(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        const isCtrl = e.ctrlKey || e.metaKey;
+        if (isCtrl && e.key === 's') {
           if (onSave && vditor) {
             onSave(vditor.getValue());
             e.preventDefault();
           }
+        } else if (isCtrl && e.key === 'v') {
+          navigator.clipboard.readText().then((val) => {
+            vditor?.insertMD(val);
+          });
+          e.preventDefault();
         }
       },
       after: () => {
@@ -135,11 +141,16 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       editorRef.current.style.display = readOnly ? 'none' : 'flex';
       editorPreviewWrapRef.current.style.display = readOnly ? 'flex' : 'none';
     }
+    setEditorTheme(editor.current, theme);
     if (readOnly) {
+      console.log(theme);
       Vditor.preview(editorPreviewRef.current, editor.current.getValue(), {
         mode: theme.contentTheme,
         theme: {
           current: theme.contentTheme,
+        },
+        hljs: {
+          style: theme.codeTheme,
         },
         i18n: getI18n(),
         cdn,

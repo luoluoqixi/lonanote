@@ -104,9 +104,30 @@
     .vditor-ir__node[data-type='footnotes-ref'] {
       color: var(--accent-11);
     }
+
     // 行内代码块的背景
     .vditor-ir__node code:not(.hljs):not(.highlight-chroma) {
       background-color: var(--gray-a4);
+    }
+    // 预览模式行内代码块的背景
+    code:not(.hljs):not(.highlight-chroma) {
+      // background-color: rgba(66, 133, 244, .36);
+      background-color: var(--gray-a4);
+    }
+
+    // 似乎是预览模式的代码块
+    pre > code {
+      background: var(--gray-a4);
+      background-image: none;
+      color: var(--gray-12);
+    }
+
+    // 表格
+    table tr {
+      background-color: var(--gray-a4);
+    }
+    table tbody tr:nth-child(2n) {
+      background-color: var(--gray-a3);
     }
 
     // html块背景
