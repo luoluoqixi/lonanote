@@ -1,5 +1,5 @@
-// import MarkdownEditor from './MarkdownEditor';
+import MarkdownEditor from './MarkdownEditor';
 
-// export * from './MarkdownEditor';
+export * from './MarkdownEditor';
 
-// export { MarkdownEditor };
+export { MarkdownEditor };

@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 
 import { Workspace, fs } from '@/bindings/api';
 import { setCurrentEditFile, setCurrentEditorState, useEditor } from '@/controller/editor';
-import { defaultEditorMode } from '@/models/editor';
+import { defaultEditorBackEnd, defaultEditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import './Editor.scss';
@@ -53,6 +53,7 @@ export default function Editor({
   style,
 }: EditorProps) {
   const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
+  const editorBackEnd = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
   const editorRef = useRef<CodeMirrorEditorRef>(null);
   const mdEditorRef = useRef<MarkdownEditorRef>(null);
   const fullPath = useMemo(
@@ -74,6 +75,7 @@ export default function Editor({
       isSupportVideo,
     };
   }, [file]);
+  const isCodeMirror = useMemo(() => editorBackEnd === 'codemirror', [editorBackEnd]);
   useEffect(() => {
     if (!state.isSupportEditor && !state.isSupportMdEditor) {
       setCurrentEditorState(null);
@@ -84,10 +86,15 @@ export default function Editor({
       const filePath = fullPath;
       fs.readToString(filePath)
         .then((content) => {
-          if (state.isSupportEditor && editorRef.current) {
-            editorRef.current.setValue(content || '');
-          } else if (state.isSupportMdEditor && mdEditorRef.current) {
-            mdEditorRef.current.setValue(content || '');
+          try {
+            if (state.isSupportEditor && editorRef.current) {
+              editorRef.current.setValue(content || '');
+            }
+            if (state.isSupportMdEditor && mdEditorRef.current) {
+              mdEditorRef.current.setValue(content || '');
+            }
+          } catch (e) {
+            toast.error(`setValue失败: ${e}`);
           }
           // console.log('content read finish');
         })
@@ -96,7 +103,7 @@ export default function Editor({
           toast.error(`读取文件失败: ${filePath}, ${e.message}`);
         });
     }
-  }, [file, fullPath]);
+  }, [file, fullPath, editorBackEnd]);
 
   const saveFile = useCallback(
     (content: string) => {
@@ -132,9 +139,10 @@ export default function Editor({
 
   return (
     <div id="editor-root" style={style} className={className}>
-      {state.isSupportMdEditor ? (
+      {state.isSupportMdEditor && !isCodeMirror ? (
         <MarkdownEditor
           ref={mdEditorRef}
+          editorBackEnd={editorBackEnd}
           mediaRootPath={folderPath}
           editorId="markdown-editor"
           className="markdown-editor"

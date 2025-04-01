@@ -1,6 +1,6 @@
 import { CSSProperties } from 'react';
 
-import { EditorEditMode } from '@/models/editor';
+import { EditorMode } from '@/models/editor';
 
 export interface MarkdownEditorRef {
   getMarkdown: () => string | undefined;
@@ -16,7 +16,7 @@ export interface UpdateState {
 export interface MarkdownEditorProps {
   mediaRootPath: string;
   editorId: string;
-  editMode: EditorEditMode;
+  editMode: EditorMode;
   fileName: string;
   style?: CSSProperties;
   className?: string;

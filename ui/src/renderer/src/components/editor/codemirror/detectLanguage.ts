@@ -6,6 +6,7 @@ import { java } from '@codemirror/lang-java';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { less } from '@codemirror/lang-less';
+import { markdown } from '@codemirror/lang-markdown';
 import { php } from '@codemirror/lang-php';
 import { python } from '@codemirror/lang-python';
 import { rust } from '@codemirror/lang-rust';
@@ -71,9 +72,9 @@ export const detectLanguage = (fileName: string) => {
     case 'yaml':
     case 'yml':
       return yaml();
-    // case 'md':
-    // case 'markdown':
-    //   return markdown();
+    case 'md':
+    case 'markdown':
+      return markdown();
     case 'txt':
       return [json(), yaml()];
     default:
@@ -125,8 +126,8 @@ export const supportExts = [
   'storyboard',
   'yaml',
   'yml',
-  // 'md',
-  // 'markdown',
+  'md',
+  'markdown',
   'txt',
 
   'bat',

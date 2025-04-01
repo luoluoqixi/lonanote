@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { globalLocalStorage } from '@/utils/storage';
 
 export const editorModeList = ['ir', 'sv'] as const;
-export const editorBackEndList = ['milkdown', 'vditor', 'hypermd'] as const;
+export const editorBackEndList = ['milkdown', 'vditor', 'hypermd', 'codemirror'] as const;
 
 export type EditorMode = (typeof editorModeList)[number];
 export type EditorBackEnd = (typeof editorBackEndList)[number];
@@ -26,7 +26,7 @@ export interface EditorState {
 }
 
 const editorBackEndSaveKey = 'editor-backend';
-const editorModeSaveKey = 'editor-backend';
+const editorModeSaveKey = 'editor-mode';
 
 export const saveEditorBackEnd = (editorBackEnd: EditorBackEnd) => {
   globalLocalStorage.set(editorBackEndSaveKey, editorBackEnd);

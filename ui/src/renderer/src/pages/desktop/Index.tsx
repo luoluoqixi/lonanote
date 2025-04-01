@@ -15,6 +15,7 @@ import { fs } from '@/bindings/api';
 import { Dropdown, DropdownMenuItem } from '@/components';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import Editor from '@/components/editor/Editor';
+import { supportEditorModeChange } from '@/components/editor/markdown';
 import {
   defaultEditorBackEnd,
   defaultEditorIsReadOnly,
@@ -142,12 +143,22 @@ const editorBackEndMenu: DropdownMenuItem[] = [
     label: 'Vditor',
     icon: undefined,
   },
+  {
+    id: 'hypermd',
+    label: 'HyperMD',
+    icon: undefined,
+  },
+  {
+    id: 'codemirror',
+    label: 'CodeMirror',
+    icon: undefined,
+  },
 ];
 
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {
   const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
   const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
-  const editorBackEndMode = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
+  const editorBackEnd = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
   const navigate = useNavigate();
   const changeEditorIsReadOnly = () => {
     const targetMode = !editorIsReadOnly;
@@ -195,7 +206,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
     }
   };
   const changeEditorBackEndClick = (cmd: string) => {
-    if (cmd && cmd !== editorBackEndMode) {
+    if (cmd && cmd !== editorBackEnd) {
       setEditorBackEnd(cmd as EditorBackEnd);
     }
   };
@@ -235,7 +246,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         <Dropdown
           items={editorBackEndMenu}
           onMenuClick={changeEditorBackEndClick}
-          selectId={editorBackEndMode}
+          selectId={editorBackEnd}
           contentWidth={200}
         >
           <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
@@ -249,6 +260,9 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
           onMenuClick={changeEditorModeClick}
           selectId={editorMode}
           contentWidth={200}
+          triggerProps={{
+            disabled: !supportEditorModeChange(editorBackEnd),
+          }}
         >
           <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
             <Tooltip content="切换编辑模式" side="bottom">
