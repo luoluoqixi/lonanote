@@ -192,7 +192,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   useEffect(() => {
     if (!editor.current) return;
     document.querySelector(`[data-mode="${editMode}"]`)?.dispatchEvent(new CustomEvent('click'));
-    console.log(editMode, document.querySelector(`[data-mode="${editMode}"]`));
+    // console.log(editMode, document.querySelector(`[data-mode="${editMode}"]`));
   }, [editMode]);
 
   useEffect(() => {

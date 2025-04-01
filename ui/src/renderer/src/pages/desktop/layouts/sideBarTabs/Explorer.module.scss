@@ -78,13 +78,3 @@
   @extend .textNoWrap;
   overflow: hidden;
 }
-// .activeDropBgc {
-// background-color: var(--accent-9);
-// color: var(--accent-contrast);
-// }
-.selectedIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: auto;
-}

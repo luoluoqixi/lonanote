@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 
 import { Workspace, fs } from '@/bindings/api';
 import { setCurrentEditFile, setCurrentEditorState, useEditor } from '@/controller/editor';
-import { defaultEditorEditMode } from '@/models/editor';
+import { defaultEditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import './Editor.scss';
@@ -52,7 +52,7 @@ export default function Editor({
   readOnly,
   style,
 }: EditorProps) {
-  const editorEditMode = useEditor((s) => s.editorEditMode) || defaultEditorEditMode;
+  const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
   const editorRef = useRef<CodeMirrorEditorRef>(null);
   const mdEditorRef = useRef<MarkdownEditorRef>(null);
   const fullPath = useMemo(
@@ -140,7 +140,7 @@ export default function Editor({
           className="markdown-editor"
           fileName={state.fileName}
           readOnly={readOnly}
-          editMode={editorEditMode}
+          editMode={editorMode}
           onSave={saveFile}
           onUpdateListener={setCurrentEditorState}
           onClickRelativeLink={onClickRelativeLink}

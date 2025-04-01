@@ -1,7 +1,8 @@
-import { Button, DropdownMenu, Text, Tooltip } from '@radix-ui/themes';
+import { Button, Text, Tooltip } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
 import { useMemo } from 'react';
 import { AiOutlineRead } from 'react-icons/ai';
+import { BsMarkdown } from 'react-icons/bs';
 import { IoMdArrowBack, IoMdArrowForward, IoMdMore } from 'react-icons/io';
 import { MdOutlineDriveFileRenameOutline, MdOutlineFileOpen } from 'react-icons/md';
 import { PiSquareSplitHorizontal } from 'react-icons/pi';
@@ -11,18 +12,21 @@ import { useNavigate, useParams } from 'react-router';
 import { toast } from 'react-toastify';
 
 import { fs } from '@/bindings/api';
-import { DropdownMenuItem } from '@/components';
+import { Dropdown, DropdownMenuItem } from '@/components';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import Editor from '@/components/editor/Editor';
 import {
+  defaultEditorBackEnd,
+  defaultEditorIsReadOnly,
   defaultEditorMode,
   setCurrentEditFile,
-  setEditorEditMode,
+  setEditorBackEnd,
+  setEditorIsReadOnly,
   setEditorMode,
   useEditor,
 } from '@/controller/editor';
 import { workspaceController } from '@/controller/workspace';
-import { defaultEditorEditMode } from '@/models/editor';
+import { EditorBackEnd, EditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import styles from './Index.module.scss';
@@ -99,13 +103,55 @@ const moreMenu: DropdownMenuItem[] = [
   },
 ];
 
+const editorModeMenu: DropdownMenuItem[] = [
+  {
+    id: 'ir',
+    label: '即时渲染',
+    icon: (
+      <TbAlignBoxLeftBottom
+        style={{
+          marginLeft: 1.5,
+          width: '15px',
+          height: '15px',
+        }}
+      />
+    ),
+  },
+  {
+    id: 'sv',
+    label: '左右分屏',
+    icon: (
+      <PiSquareSplitHorizontal
+        style={{
+          width: '18px',
+          height: '18px',
+        }}
+      />
+    ),
+  },
+];
+
+const editorBackEndMenu: DropdownMenuItem[] = [
+  {
+    id: 'milkdown',
+    label: 'Milkdown',
+    icon: undefined,
+  },
+  {
+    id: 'vditor',
+    label: 'Vditor',
+    icon: undefined,
+  },
+];
+
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {
+  const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
   const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
-  const editorEditMode = useEditor((s) => s.editorEditMode) || defaultEditorEditMode;
+  const editorBackEndMode = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
   const navigate = useNavigate();
-  const changeEditorMode = () => {
-    const targetMode = editorMode === 'edit' ? 'preview' : 'edit';
-    setEditorMode(targetMode);
+  const changeEditorIsReadOnly = () => {
+    const targetMode = !editorIsReadOnly;
+    setEditorIsReadOnly(targetMode);
   };
   const openFolderClick = async () => {
     if (!(await fs.exists(filePath))) {
@@ -143,14 +189,20 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
       navigate(1);
     }
   };
-  const changeEditorClick = () => {
-    const targetMode = editorEditMode === 'ir' ? 'sv' : 'ir';
-    setEditorEditMode(targetMode);
+  const changeEditorModeClick = (cmd: string) => {
+    if (cmd && cmd !== editorMode) {
+      setEditorMode(cmd as EditorMode);
+    }
+  };
+  const changeEditorBackEndClick = (cmd: string) => {
+    if (cmd && cmd !== editorBackEndMode) {
+      setEditorBackEnd(cmd as EditorBackEnd);
+    }
   };
   return (
     <div className={styles.indexContentTopToolbar}>
       <div className={styles.indexContentTopToolbarLeft}>
-        <Tooltip content={'返回'}>
+        <Tooltip content="返回">
           <Button
             className={styles.indexContentTopToolbarRightBtn}
             onClick={() => toToolBtnBack('back')}
@@ -160,7 +212,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
             <IoMdArrowBack />
           </Button>
         </Tooltip>
-        <Tooltip content={'前进'}>
+        <Tooltip content="前进">
           <Button
             className={styles.indexContentTopToolbarRightBtn}
             onClick={() => toToolBtnBack('forward')}
@@ -180,61 +232,47 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         />
       </div>
       <div className={styles.indexContentTopToolbarRight}>
-        <Tooltip content={editorEditMode === 'ir' ? '切换到左右分屏' : '切换到即时渲染'}>
+        <Dropdown
+          items={editorBackEndMenu}
+          onMenuClick={changeEditorBackEndClick}
+          selectId={editorBackEndMode}
+          contentWidth={200}
+        >
+          <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
+            <Tooltip content="切换编辑器" side="bottom">
+              <BsMarkdown style={{ width: '16px', height: '16px' }} />
+            </Tooltip>
+          </Button>
+        </Dropdown>
+        <Dropdown
+          items={editorModeMenu}
+          onMenuClick={changeEditorModeClick}
+          selectId={editorMode}
+          contentWidth={200}
+        >
+          <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
+            <Tooltip content="切换编辑模式" side="bottom">
+              {editorModeMenu.find((item) => item.id === editorMode)?.icon}
+            </Tooltip>
+          </Button>
+        </Dropdown>
+        <Tooltip content={editorIsReadOnly ? '切换到编辑模式' : '切换到预览模式'}>
           <Button
             className={styles.indexContentTopToolbarRightBtn}
             color="gray"
             variant="ghost"
-            onClick={changeEditorClick}
+            onClick={changeEditorIsReadOnly}
           >
-            {editorEditMode === 'ir' ? (
-              <PiSquareSplitHorizontal />
-            ) : (
-              <TbAlignBoxLeftBottom
-                style={{
-                  width: '15px',
-                  height: '15px',
-                }}
-              />
-            )}
+            {editorIsReadOnly ? <MdOutlineDriveFileRenameOutline /> : <AiOutlineRead />}
           </Button>
         </Tooltip>
-        <Tooltip content={editorMode === 'edit' ? '切换到预览模式' : '切换到编辑模式'}>
-          <Button
-            className={styles.indexContentTopToolbarRightBtn}
-            color="gray"
-            variant="ghost"
-            onClick={changeEditorMode}
-          >
-            {editorMode === 'edit' ? <AiOutlineRead /> : <MdOutlineDriveFileRenameOutline />}
+        <Dropdown items={moreMenu} onMenuClick={menuClick}>
+          <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
+            <Tooltip content="更多选项" side="bottom">
+              <IoMdMore />
+            </Tooltip>
           </Button>
-        </Tooltip>
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
-              <Tooltip content="更多选项" side="bottom">
-                <IoMdMore />
-              </Tooltip>
-            </Button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content>
-            {moreMenu.map((m) =>
-              m.separator ? (
-                <DropdownMenu.Separator key={m.id} />
-              ) : (
-                <DropdownMenu.Item
-                  key={m.id}
-                  onClick={() => {
-                    menuClick(m.id);
-                  }}
-                  {...m.props}
-                >
-                  {m.icon} {m.label}
-                </DropdownMenu.Item>
-              ),
-            )}
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
+        </Dropdown>
       </div>
     </div>
   );
@@ -242,7 +280,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
 
 export default function Index() {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
-  const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
+  const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
   const { file } = useParams();
   const filePath = useMemo(() => (file ? decodeURIComponent(file) : null), [file]);
   const fullPath = useMemo(
@@ -263,7 +301,7 @@ export default function Index() {
             className={styles.indexContentEditor}
             file={filePath}
             currentWorkspace={currentWorkspace}
-            readOnly={editorMode !== 'edit'}
+            readOnly={editorIsReadOnly}
           />
         </div>
       )}

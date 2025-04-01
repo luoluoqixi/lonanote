@@ -1,17 +1,7 @@
-import {
-  Button,
-  ButtonProps,
-  ContextMenu,
-  DropdownMenu,
-  Spinner,
-  Text,
-  TextField,
-  Tooltip,
-} from '@radix-ui/themes';
+import { Button, ButtonProps, Spinner, Text, TextField, Tooltip } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
 import { useRef, useState } from 'react';
 import { BsSortUpAlt } from 'react-icons/bs';
-import { HiOutlineCheck } from 'react-icons/hi';
 import { IconBaseProps } from 'react-icons/lib';
 import {
   MdDeleteOutline,
@@ -29,7 +19,15 @@ import {
 import { toast } from 'react-toastify';
 
 import { FileNode, FileTree, FileTreeSortType, Workspace, fs } from '@/bindings/api';
-import { ContextMenuItem, Tree, TreeItem, TreeRef, dialog } from '@/components';
+import {
+  ContextMenu,
+  ContextMenuItem,
+  Dropdown,
+  Tree,
+  TreeItem,
+  TreeRef,
+  dialog,
+} from '@/components';
 import { setCurrentEditFile } from '@/controller/editor';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
@@ -553,40 +551,17 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             {workspace.metadata.name}
           </Text>
           <div className={styles.workspaceExplorerTitleButtons}>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger>
-                <Button {...toolbarBtnProps}>
-                  <Tooltip content="排序" side="bottom">
-                    <BsSortUpAlt {...toolbarBtnIconProps} />
-                  </Tooltip>
-                </Button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content>
-                {sortMenu.map((m) => {
-                  // const isSelect = currentWorkspace?.settings.fileTreeSortType === m.id;
-                  return m.separator ? (
-                    <DropdownMenu.Separator key={m.id} />
-                  ) : (
-                    <DropdownMenu.Item
-                      key={m.id}
-                      onClick={() => {
-                        sortClick(m.id);
-                      }}
-                      // className={isSelect ? styles.activeDropBgc : ''}
-                      {...m.props}
-                    >
-                      {m.label}
-                      <div className={styles.selectedIcon}>
-                        {currentWorkspace?.settings.fileTreeSortType === m.id && (
-                          <HiOutlineCheck size="18px" />
-                        )}
-                      </div>
-                    </DropdownMenu.Item>
-                  );
-                })}
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-
+            <Dropdown
+              items={sortMenu}
+              onMenuClick={sortClick}
+              selectId={currentWorkspace?.settings.fileTreeSortType}
+            >
+              <Button {...toolbarBtnProps}>
+                <Tooltip content="排序" side="bottom">
+                  <BsSortUpAlt {...toolbarBtnIconProps} />
+                </Tooltip>
+              </Button>
+            </Dropdown>
             <Tooltip content="新建笔记" side="bottom">
               <Button {...toolbarBtnProps} onClick={() => newFileMenuClick()}>
                 <VscNewFile {...toolbarBtnIconProps} />
@@ -654,7 +629,8 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
           />
         </div>
       </div>
-      <ContextMenu.Root
+      <ContextMenu
+        triggerRef={menuRef}
         onOpenChange={(open) => {
           if (!open) {
             // 关闭菜单时，延迟设置menuOpen状态
@@ -664,28 +640,9 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             setMenuOpen(open);
           }
         }}
-      >
-        <ContextMenu.Trigger ref={menuRef}>
-          <span></span>
-        </ContextMenu.Trigger>
-        <ContextMenu.Content>
-          {menus.map((m) =>
-            m.separator ? (
-              <ContextMenu.Separator key={m.id} />
-            ) : (
-              <ContextMenu.Item
-                key={m.id}
-                onClick={() => {
-                  onMenuClick(m.id);
-                }}
-                {...m.props}
-              >
-                {m.icon} {m.label}
-              </ContextMenu.Item>
-            ),
-          )}
-        </ContextMenu.Content>
-      </ContextMenu.Root>
+        items={menus}
+        onMenuClick={onMenuClick}
+      />
       <div
         className="spinner-wrap-class"
         style={{

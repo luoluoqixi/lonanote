@@ -1,8 +1,12 @@
 import {
-  EditorEditMode,
+  EditorBackEnd,
   EditorMode,
   EditorState,
+  defaultEditorBackEnd,
+  defaultEditorIsReadOnly,
   defaultEditorMode,
+  saveEditorBackEnd,
+  saveEditorMode,
   useEditorStore,
 } from '@/models/editor';
 
@@ -25,12 +29,18 @@ export const setCurrentEditorState = async (currentEditorStatus: EditorState | n
   useEditorStore.setState((state) => ({ ...state, currentEditorStatus }));
 };
 
+export const setEditorIsReadOnly = async (editorIsReadOnly: boolean) => {
+  useEditorStore.setState((state) => ({ ...state, editorIsReadOnly }));
+};
+
 export const setEditorMode = async (editorMode: EditorMode) => {
   useEditorStore.setState((state) => ({ ...state, editorMode }));
+  saveEditorMode(editorMode);
 };
 
-export const setEditorEditMode = async (editorEditMode: EditorEditMode) => {
-  useEditorStore.setState((state) => ({ ...state, editorEditMode }));
+export const setEditorBackEnd = async (editorBackEnd: EditorBackEnd) => {
+  useEditorStore.setState((state) => ({ ...state, editorBackEnd }));
+  saveEditorBackEnd(editorBackEnd);
 };
 
-export { defaultEditorMode };
+export { defaultEditorMode, defaultEditorIsReadOnly, defaultEditorBackEnd };

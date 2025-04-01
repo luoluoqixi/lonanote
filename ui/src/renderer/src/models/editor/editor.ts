@@ -1,15 +1,22 @@
 import { create } from 'zustand';
 
-export type EditorMode = 'edit' | 'preview';
-export type EditorEditMode = 'ir' | 'sv';
+import { globalLocalStorage } from '@/utils/storage';
 
-export const defaultEditorMode: EditorMode = 'edit';
-export const defaultEditorEditMode: EditorEditMode = 'ir';
+export const editorModeList = ['ir', 'sv'] as const;
+export const editorBackEndList = ['milkdown', 'vditor', 'hypermd'] as const;
+
+export type EditorMode = (typeof editorModeList)[number];
+export type EditorBackEnd = (typeof editorBackEndList)[number];
+
+export const defaultEditorIsReadOnly: boolean = false;
+export const defaultEditorMode: EditorMode = 'ir';
+export const defaultEditorBackEnd: EditorBackEnd = 'vditor';
 
 export interface EditorStore {
   currentEditorStatus: EditorState | null;
+  editorIsReadOnly?: boolean;
   editorMode?: EditorMode;
-  editorEditMode?: EditorEditMode;
+  editorBackEnd?: EditorBackEnd;
 }
 
 export interface EditorState {
@@ -18,7 +25,26 @@ export interface EditorState {
   colIndex?: number;
 }
 
+const editorBackEndSaveKey = 'editor-backend';
+const editorModeSaveKey = 'editor-backend';
+
+export const saveEditorBackEnd = (editorBackEnd: EditorBackEnd) => {
+  globalLocalStorage.set(editorBackEndSaveKey, editorBackEnd);
+};
+const getSaveEditorBackEnd = (): EditorBackEnd | undefined => {
+  return globalLocalStorage.get(editorBackEndSaveKey);
+};
+
+export const saveEditorMode = (mode: EditorMode) => {
+  globalLocalStorage.set(editorModeSaveKey, mode);
+};
+const getSaveEditorMode = (): EditorMode | undefined => {
+  return globalLocalStorage.get(editorModeSaveKey);
+};
+
 export const useEditorStore = create<EditorStore>(() => ({
   currentEditorStatus: null,
-  editorMode: undefined,
+  editorIsReadOnly: undefined,
+  editorBackEnd: getSaveEditorBackEnd(),
+  editorMode: getSaveEditorMode(),
 }));
