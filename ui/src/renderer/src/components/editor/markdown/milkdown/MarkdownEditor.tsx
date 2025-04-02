@@ -3,6 +3,7 @@ import { Crepe } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import { $command, $useKeymap } from '@milkdown/utils';
+import path from 'path-browserify-esm';
 import { Slice } from 'prosemirror-model';
 import {
   Ref,
@@ -14,6 +15,8 @@ import {
   useRef,
   useState,
 } from 'react';
+
+import { utils } from '@/utils';
 
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
 import './MarkdownEditor.scss';
@@ -49,7 +52,7 @@ const setMarkdownValue = (editor: Crepe, content: string, useHistory: boolean | 
 };
 
 export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRef>) => {
-  const { className, style, fileName, readOnly, onSave, onUpdateListener } = props;
+  const { className, style, filePath, readOnly, onSave, onUpdateListener, mediaRootPath } = props;
   const editorRef = useRef<HTMLDivElement>(null);
   const editor = useRef<Crepe | null>(null);
 
@@ -73,8 +76,12 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       featureConfigs: {
         [Crepe.Feature.ImageBlock]: {
           proxyDomURL: (originalURL: string) => {
-            console.log(originalURL);
-            return originalURL;
+            if (!originalURL) return originalURL;
+            if (originalURL.startsWith('http://') || originalURL.startsWith('https://')) {
+              return originalURL;
+            }
+            const f = path.resolve(mediaRootPath, originalURL);
+            return utils.getMediaPath(f);
           },
         },
         [Crepe.Feature.BlockEdit]: {
@@ -152,7 +159,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         crepe = null;
       }
     };
-  }, [fileName, onSave, onUpdateListener]);
+  }, [filePath, onSave, onUpdateListener]);
 
   useEffect(() => {
     if (!editor.current) return;

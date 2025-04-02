@@ -17,7 +17,7 @@ export interface MarkdownEditorProps {
   mediaRootPath: string;
   editorId: string;
   editMode: EditorMode;
-  fileName: string;
+  filePath: string;
   style?: CSSProperties;
   className?: string;
   readOnly?: boolean;

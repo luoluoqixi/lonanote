@@ -1,6 +1,7 @@
 import { TinyColor } from '@ctrl/tinycolor';
 import chroma from 'chroma-js';
 import Color from 'colorjs.io';
+import path from 'path-browserify-esm';
 
 export type BrowserType = 'ie' | 'chrome' | 'firefox' | 'safari' | 'unknown';
 export type PlatformType = 'windows' | 'mac' | 'linux' | 'android' | 'ios' | 'unknown';
@@ -128,6 +129,11 @@ export const utils = {
     if (window.api) {
       return window.api?.utils.getMediaUrl(filePath);
     }
+    return filePath;
+  },
+  getFilePathFromRelativePath: (currentFilePath: string, linkRelPath: string) => {
+    const folder = path.dirname(currentFilePath);
+    const filePath = path.resolve(folder, linkRelPath);
     return filePath;
   },
   openFile: async (filePath: string) => {

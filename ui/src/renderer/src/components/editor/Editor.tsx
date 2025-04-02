@@ -120,13 +120,12 @@ export default function Editor({
   );
   const onClickRelativeLink = useCallback(
     (link: string) => {
-      const folder = path.dirname(file);
-      const filePath = path.resolve(folder, link);
-      const fullPath = path.resolve(folderPath, link);
-      fs.exists(fullPath).then((exists) => {
+      const relPath = utils.getFilePathFromRelativePath(file, link);
+      const absPath = utils.getFilePathFromRelativePath(fullPath, link);
+      fs.exists(absPath).then((exists) => {
         if (exists) {
-          console.log(filePath, fullPath);
-          setCurrentEditFile(filePath);
+          console.log(relPath, absPath);
+          setCurrentEditFile(relPath);
         } else {
           toast.error(`不存在文件: ${fullPath}`);
         }
@@ -144,7 +143,7 @@ export default function Editor({
           mediaRootPath={folderPath}
           editorId="markdown-editor"
           className="markdown-editor"
-          fileName={file}
+          filePath={file}
           readOnly={readOnly}
           editMode={editorMode}
           onSave={saveFile}

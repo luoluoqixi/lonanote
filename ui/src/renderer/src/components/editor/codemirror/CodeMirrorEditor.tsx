@@ -53,7 +53,7 @@ export interface CodeMirrorEditorProps {
 }
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEditorRef>) => {
-  const { className, style, filePath: fileName, readOnly, onSave, onUpdateListener } = props;
+  const { className, style, filePath, readOnly, onSave, onUpdateListener } = props;
   const editorRootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<EditorView | null>(null);
   const [readOnlyEx, setReadOnlyEx] = useState<Compartment | null>(null);
@@ -86,7 +86,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
         doc: '',
         extensions: [
           readOnlyEx.of(EditorView.editable.of(readOnly ? false : true)),
-          detectLanguage(fileName),
+          detectLanguage(filePath),
           //自动换行
           EditorView.lineWrapping,
           updateListener,
