@@ -102,8 +102,7 @@
   },
   "resolutions": {
     "@codemirror/commands": "=6.1.2",
-    "@codemirror/view": "=6.23.1",
-    "codemirror": "^5.65.19"
+    "@codemirror/view": "=6.23.1"
   },
   "packageManager": "pnpm@9.15.0",
   "node": ">=20.0.0"

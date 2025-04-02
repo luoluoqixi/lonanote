@@ -44,7 +44,7 @@ export interface UpdateState {
 }
 
 export interface CodeMirrorEditorProps {
-  fileName: string;
+  filePath: string;
   style?: CSSProperties;
   className?: string;
   readOnly?: boolean;
@@ -53,7 +53,7 @@ export interface CodeMirrorEditorProps {
 }
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEditorRef>) => {
-  const { className, style, fileName, readOnly, onSave, onUpdateListener } = props;
+  const { className, style, filePath: fileName, readOnly, onSave, onUpdateListener } = props;
   const editorRootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<EditorView | null>(null);
   const [readOnlyEx, setReadOnlyEx] = useState<Compartment | null>(null);

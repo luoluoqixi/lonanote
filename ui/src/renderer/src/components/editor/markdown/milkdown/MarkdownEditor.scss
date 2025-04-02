@@ -2,6 +2,16 @@
   width: 100%;
   height: 100%;
   overflow: auto;
+
+  --crepe-font-title:
+    -apple-system, BlinkMacSystemFont, 'Open Sans', 'Helvetica Neue', Helvetica, Arial,
+    'Hiragino Sans GB', 'WenQuanYi Micro Hei', 'Noto Sans CJK SC', 'Microsoft YaHei', STHeiti,
+    'Microsoft Jhenghei', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --crepe-font-default:
+    -apple-system, BlinkMacSystemFont, 'Open Sans', 'Helvetica Neue', Helvetica, Arial,
+    'Hiragino Sans GB', 'WenQuanYi Micro Hei', 'Noto Sans CJK SC', 'Microsoft YaHei', STHeiti,
+    'Microsoft Jhenghei', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --crepe-font-code: Consolas, 'Liberation Mono', Menlo, Courier, monospace;
 }
 
 .milkdown .ProseMirror {

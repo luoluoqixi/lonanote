@@ -62,13 +62,11 @@ export default function Editor({
   );
   const folderPath = useMemo(() => path.dirname(fullPath), [fullPath]);
   const state = useMemo(() => {
-    const fileName = path.basename(file);
     const isSupportMdEditor = isSupportMarkdown(path.basename(file));
     const isSupportEditor = isSupportLanguage(path.basename(file));
     const isSupportImage = isSupportImageView(path.basename(file));
     const isSupportVideo = isSupportVideoView(path.basename(file));
     return {
-      fileName,
       isSupportMdEditor,
       isSupportEditor,
       isSupportImage,
@@ -146,7 +144,7 @@ export default function Editor({
           mediaRootPath={folderPath}
           editorId="markdown-editor"
           className="markdown-editor"
-          fileName={state.fileName}
+          fileName={file}
           readOnly={readOnly}
           editMode={editorMode}
           onSave={saveFile}
@@ -156,7 +154,7 @@ export default function Editor({
       ) : state.isSupportEditor ? (
         <CodeMirrorEditor
           ref={editorRef}
-          fileName={state.fileName}
+          filePath={file}
           className="codemirror-editor"
           readOnly={readOnly}
           onSave={saveFile}

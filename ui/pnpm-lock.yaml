@@ -7,7 +7,6 @@ settings:
 overrides:
   '@codemirror/commands': '=6.1.2'
   '@codemirror/view': '=6.23.1'
-  codemirror: ^5.65.19
 
 importers:
 
@@ -2624,6 +2623,9 @@ packages:
   codemirror@5.65.19:
     resolution: {integrity: sha512-+aFkvqhaAVr1gferNMuN8vkTSrWIFvzlMV9I2KBLCWS2WpZ2+UAkZjlMZmEuT+gcXTi6RrGQCkWq1/bDtGqhIA==}
 
+  codemirror@6.0.1:
+    resolution: {integrity: sha512-J8j+nZ+CdWmIeFIGXEFbFPtpiYacFMDR8GlHK3IyHQJMCaVRfGx9NT+Hxivv1ckLWPvNdZqndbr/7lVhrf/Svg==}
+
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
     engines: {node: '>=7.0.0'}
@@ -3625,7 +3627,7 @@ packages:
   hypermd@0.3.11:
     resolution: {integrity: sha512-EGgnNgyh2WCJU+emez+X7OHKnV36xKIdmcs9EnrWIaa1Wx//wBetr9xSYhEFeXzD/qSYjezzH1lzDQh1LZIirw==}
     peerDependencies:
-      codemirror: ^5.65.19
+      codemirror: ^5.37.0
 
   iconv-corefoundation@1.1.7:
     resolution: {integrity: sha512-T10qvkw0zz4wnm560lOEg0PovVqUXuOFhhHAkixw8/sycy7TJt7v/RrkEKEQnAw2viPSJu6iAkErxnzR0g8PpQ==}
@@ -6636,7 +6638,7 @@ snapshots:
       '@milkdown/kit': 7.7.0(@codemirror/language@6.11.0)(@codemirror/state@6.5.2)(@codemirror/view@6.23.1)(element-internals-polyfill@0.1.55)
       atomico: 1.79.2
       clsx: 2.1.1
-      codemirror: 5.65.19
+      codemirror: 6.0.1
       katex: 0.16.21
       nanoid: 5.1.5
       remark-math: 6.0.0
@@ -8364,6 +8366,16 @@ snapshots:
   clsx@2.1.1: {}
 
   codemirror@5.65.19: {}
+
+  codemirror@6.0.1:
+    dependencies:
+      '@codemirror/autocomplete': 6.18.6
+      '@codemirror/commands': 6.1.2
+      '@codemirror/language': 6.11.0
+      '@codemirror/lint': 6.8.4
+      '@codemirror/search': 6.5.10
+      '@codemirror/state': 6.5.2
+      '@codemirror/view': 6.23.1
 
   color-convert@2.0.1:
     dependencies:

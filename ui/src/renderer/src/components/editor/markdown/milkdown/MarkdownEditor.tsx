@@ -1,8 +1,9 @@
-import { commandsCtx, editorViewCtx, editorViewOptionsCtx } from '@milkdown/core';
+import { commandsCtx, editorViewCtx, editorViewOptionsCtx, parserCtx } from '@milkdown/core';
 import { Crepe } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
-import { $command, $useKeymap, replaceAll } from '@milkdown/utils';
+import { $command, $useKeymap } from '@milkdown/utils';
+import { Slice } from 'prosemirror-model';
 import {
   Ref,
   forwardRef,
@@ -24,16 +25,24 @@ export interface UpdateState {
 }
 
 const setMarkdownValue = (editor: Crepe, content: string, useHistory: boolean | undefined) => {
-  // editor.editor.action((ctx) => {
-  //   const view = ctx.get(editorViewCtx);
-  //   const parser = ctx.get(parserCtx);
-  //   const doc = parser(content);
-  //   if (!doc) return;
-  //   const state = view.state;
-  //   view.dispatch(state.tr.replace(0, state.doc.content.size, new Slice(doc.content, 0, 0)));
-  // });
   try {
-    editor.editor.action(replaceAll(content));
+    // editor.editor.action((ctx) => {
+    //   const view = ctx.get(editorViewCtx);
+    //   view.state.tr.setMeta('addToHistory', false);
+    //   replaceAll(content)(ctx);
+    // });
+    editor.editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const parser = ctx.get(parserCtx);
+      const doc = parser(content);
+      if (!doc) return;
+      const state = view.state;
+      view.dispatch(
+        state.tr
+          .setMeta('addToHistory', useHistory ? true : false)
+          .replace(0, state.doc.content.size, new Slice(doc.content, 0, 0)),
+      );
+    });
   } catch (e) {
     console.error('setValue Error', e);
   }
@@ -153,7 +162,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   useEffect(() => {
     if (editor.current) {
       // console.log('value', editor, content);
-      setMarkdownValue(editor.current, content || '', true);
+      setMarkdownValue(editor.current, content || '', false);
     }
   }, [content, updateContent]);
 
