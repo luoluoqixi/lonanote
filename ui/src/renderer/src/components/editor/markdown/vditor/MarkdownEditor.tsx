@@ -13,6 +13,7 @@ import Vditor from 'vditor';
 import 'vditor/dist/index.css';
 
 import { useColorModeValue } from '@/components/provider/ColorModeProvider';
+import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
 
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
@@ -59,7 +60,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   } = props;
   const theme = useColorModeValue<ThemeState>(lightTheme, darkTheme);
 
-  const [content, setContent] = useState<string | null>(null);
+  const content = useEditor((s) => s.currentEditorContent);
   const [updateContentState, setUpdateContentState] = useState<boolean>(false);
   const [updateReadOnlyState, setUpdateReadOnlyState] = useState<boolean>(false);
 
@@ -91,7 +92,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       i18n: getI18n(),
       cdn,
       theme: 'classic',
-      mode: editMode,
+      mode: editMode as 'ir' | 'sv',
       link: {
         isOpen: false,
         click(bom) {
@@ -203,7 +204,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   useEffect(() => {
     if (editor.current) {
       // console.log('value', editor, content);
-      editor.current.setValue(content || '', true);
+      editor.current.setValue(content?.content || '', true);
       updateReadOnly();
     }
   }, [content, updateContent]);
@@ -214,7 +215,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     },
     setValue(content) {
       try {
-        setContent(content);
+        editor.current?.setValue(content || '', true);
       } catch (e) {
         console.error('setValue error:', e);
       }

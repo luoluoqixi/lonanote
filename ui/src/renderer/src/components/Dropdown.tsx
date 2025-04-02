@@ -40,7 +40,7 @@ export const Dropdown = ({
             <DropdownMenu.Separator key={m.id} />
           ) : (
             <DropdownMenu.Item key={m.id} onClick={() => onMenuClick?.(m.id)} {...m.props}>
-              {m.icon} {m.label}
+              <span style={{ width: '20px' }}>{m.icon}</span> {m.label}
               <div
                 style={{
                   display: 'flex',

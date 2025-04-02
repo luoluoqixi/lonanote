@@ -16,6 +16,7 @@ import {
   useState,
 } from 'react';
 
+import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
 
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
@@ -55,8 +56,9 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   const { className, style, filePath, readOnly, onSave, onUpdateListener, mediaRootPath } = props;
   const editorRef = useRef<HTMLDivElement>(null);
   const editor = useRef<Crepe | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const [content, setContent] = useState<string | null>(null);
+  const content = useEditor((s) => s.currentEditorContent);
   const [updateContentState, setUpdateContentState] = useState<boolean>(false);
 
   const updateContent = useCallback(
@@ -66,6 +68,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
 
   useLayoutEffect(() => {
     if (!editorRef.current) return;
+    setLoading(true);
     onUpdateListener?.(null);
     let crepe: Crepe | null = new Crepe({
       root: editorRef.current,
@@ -142,7 +145,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       .create()
       .then(() => {
         // 上一个编辑器销毁时可能还会还会短暂占用dom导致鼠标在div上move时有一些事件报错, 延迟一点点时间解决
-        // setTimeout(() => setLoading(false), 50);
+        setTimeout(() => setLoading(false), 50);
         if (crepe != null) {
           editor.current = crepe;
           updateContent();
@@ -152,6 +155,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     console.log('milkdown create');
 
     return () => {
+      setLoading(false);
       editor.current = null;
       onUpdateListener?.(null);
       if (crepe) {
@@ -169,7 +173,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   useEffect(() => {
     if (editor.current) {
       // console.log('value', editor, content);
-      setMarkdownValue(editor.current, content || '', false);
+      setMarkdownValue(editor.current, content?.content || '', false);
     }
   }, [content, updateContent]);
 
@@ -179,7 +183,9 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     },
     setValue(content) {
       try {
-        setContent(content);
+        if (editor.current) {
+          setMarkdownValue(editor.current, content || '', false);
+        }
       } catch (e) {
         console.error('setValue error:', e);
       }
@@ -189,7 +195,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   return (
     <div
       style={{
-        display: editor == null ? 'none' : undefined,
+        display: loading ? 'none' : undefined,
         ...style,
       }}
       className={className}

@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 import {
   EditorBackEnd,
   EditorMode,
@@ -27,6 +28,18 @@ export const setCurrentEditFile = async (
 
 export const setCurrentEditorState = async (currentEditorStatus: EditorState | null) => {
   useEditorStore.setState((state) => ({ ...state, currentEditorStatus }));
+};
+
+export const setCurrentEditorContent = async (currentEditorContent: string | null) => {
+  useEditorStore.setState((state) => ({
+    ...state,
+    currentEditorContent:
+      currentEditorContent != null
+        ? {
+            content: currentEditorContent,
+          }
+        : null,
+  }));
 };
 
 export const setEditorIsReadOnly = async (editorIsReadOnly: boolean) => {

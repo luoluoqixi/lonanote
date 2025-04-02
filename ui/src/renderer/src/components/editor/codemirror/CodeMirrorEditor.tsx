@@ -22,12 +22,15 @@ import {
   CSSProperties,
   Ref,
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
+
+import { useEditor } from '@/controller/editor';
 
 import './CodeMirrorEditor.scss';
 import { detectLanguage } from './detectLanguage';
@@ -57,6 +60,13 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
   const editorRootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<EditorView | null>(null);
   const [readOnlyEx, setReadOnlyEx] = useState<Compartment | null>(null);
+  const content = useEditor((s) => s.currentEditorContent);
+  const [updateContentState, setUpdateContentState] = useState<boolean>(false);
+  const updateContent = useCallback(
+    () => setUpdateContentState(!updateContentState),
+    [updateContentState],
+  );
+
   useLayoutEffect(() => {
     console.log('codemirror create');
     let view: EditorView | null = null;
@@ -144,6 +154,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
       });
       setView(view);
       setReadOnlyEx(readOnlyEx);
+      updateContent();
     }
     return () => {
       if (view) {
@@ -160,6 +171,21 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
       effects: readOnlyEx.reconfigure(EditorView.editable.of(readOnly ? false : true)),
     });
   }, [readOnly]);
+
+  useEffect(() => {
+    if (!view) return;
+    view.dispatch({
+      annotations: Transaction.addToHistory.of(false),
+      changes: {
+        from: 0,
+        to: view.state.doc.length,
+        insert: content?.content || '',
+      },
+    });
+    view.dispatch({
+      effects: EditorView.scrollIntoView(0),
+    });
+  }, [content, updateContent]);
 
   useImperativeHandle(ref, () => ({
     getEditor() {

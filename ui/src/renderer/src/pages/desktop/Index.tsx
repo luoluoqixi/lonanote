@@ -3,6 +3,7 @@ import path from 'path-browserify-esm';
 import { useMemo } from 'react';
 import { AiOutlineRead } from 'react-icons/ai';
 import { BsMarkdown } from 'react-icons/bs';
+import { FaCode } from 'react-icons/fa6';
 import { IoMdArrowBack, IoMdArrowForward, IoMdMore } from 'react-icons/io';
 import { MdOutlineDriveFileRenameOutline, MdOutlineFileOpen } from 'react-icons/md';
 import { PiSquareSplitHorizontal } from 'react-icons/pi';
@@ -130,6 +131,18 @@ const editorModeMenu: DropdownMenuItem[] = [
       />
     ),
   },
+  {
+    id: 'source',
+    label: '源码模式',
+    icon: (
+      <FaCode
+        style={{
+          width: '16px',
+          height: '16px',
+        }}
+      />
+    ),
+  },
 ];
 
 const editorBackEndMenu: DropdownMenuItem[] = [
@@ -143,16 +156,16 @@ const editorBackEndMenu: DropdownMenuItem[] = [
     label: 'Vditor',
     icon: undefined,
   },
-  {
-    id: 'hypermd',
-    label: 'HyperMD',
-    icon: undefined,
-  },
-  {
-    id: 'codemirror',
-    label: 'CodeMirror',
-    icon: undefined,
-  },
+  // {
+  //   id: 'hypermd',
+  //   label: 'HyperMD',
+  //   icon: undefined,
+  // },
+  // {
+  //   id: 'codemirror',
+  //   label: 'CodeMirror',
+  //   icon: undefined,
+  // },
 ];
 
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {

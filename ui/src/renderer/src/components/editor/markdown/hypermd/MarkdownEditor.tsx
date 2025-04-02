@@ -10,6 +10,8 @@ import {
   useState,
 } from 'react';
 
+import { useEditor } from '@/controller/editor';
+
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
 import './MarkdownEditor.scss';
 
@@ -98,6 +100,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   const { className, style, readOnly, onSave, onUpdateListener } = props;
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [editor, setEditor] = useState<CodeMirror.EditorFromTextArea | null>(null);
+  const content = useEditor((s) => s.currentEditorContent);
   useLayoutEffect(() => {
     if (!editorRef.current) return;
     onUpdateListener?.(null);
@@ -174,6 +177,13 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       }
     };
   }, [onSave, onUpdateListener]);
+
+  useEffect(() => {
+    if (editor) {
+      editor.setValue(content?.content || '');
+      editor.clearHistory();
+    }
+  }, [content]);
 
   useEffect(() => {
     if (!editor) return;

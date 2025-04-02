@@ -2,8 +2,9 @@ import { create } from 'zustand';
 
 import { globalLocalStorage } from '@/utils/storage';
 
-export const editorModeList = ['ir', 'sv'] as const;
-export const editorBackEndList = ['milkdown', 'vditor', 'hypermd', 'codemirror'] as const;
+export const editorModeList = ['ir', 'sv', 'source'] as const;
+export const editorBackEndList = ['milkdown', 'vditor'] as const;
+// ['milkdown', 'vditor', 'hypermd', 'codemirror'] as const;
 
 export type EditorMode = (typeof editorModeList)[number];
 export type EditorBackEnd = (typeof editorBackEndList)[number];
@@ -14,6 +15,9 @@ export const defaultEditorBackEnd: EditorBackEnd = 'vditor';
 
 export interface EditorStore {
   currentEditorStatus: EditorState | null;
+  currentEditorContent?: {
+    content: string;
+  } | null;
   editorIsReadOnly?: boolean;
   editorMode?: EditorMode;
   editorBackEnd?: EditorBackEnd;

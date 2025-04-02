@@ -4,7 +4,12 @@ import { CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef
 import { toast } from 'react-toastify';
 
 import { Workspace, fs } from '@/bindings/api';
-import { setCurrentEditFile, setCurrentEditorState, useEditor } from '@/controller/editor';
+import {
+  setCurrentEditFile,
+  setCurrentEditorContent,
+  setCurrentEditorState,
+  useEditor,
+} from '@/controller/editor';
 import { defaultEditorBackEnd, defaultEditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
@@ -73,7 +78,7 @@ export default function Editor({
       isSupportVideo,
     };
   }, [file]);
-  const isCodeMirror = useMemo(() => editorBackEnd === 'codemirror', [editorBackEnd]);
+  const isCodeMirror = useMemo(() => editorMode === 'source', [editorMode]);
   useEffect(() => {
     if (!state.isSupportEditor && !state.isSupportMdEditor) {
       setCurrentEditorState(null);
@@ -85,12 +90,7 @@ export default function Editor({
       fs.readToString(filePath)
         .then((content) => {
           try {
-            if (state.isSupportEditor && editorRef.current) {
-              editorRef.current.setValue(content || '');
-            }
-            if (state.isSupportMdEditor && mdEditorRef.current) {
-              mdEditorRef.current.setValue(content || '');
-            }
+            setCurrentEditorContent(content || '');
           } catch (e) {
             toast.error(`setValue失败: ${e}`);
           }
@@ -99,7 +99,10 @@ export default function Editor({
         .catch((e) => {
           console.error('读取文件失败', filePath, e);
           toast.error(`读取文件失败: ${filePath}, ${e.message}`);
+          setCurrentEditorContent('');
         });
+    } else {
+      setCurrentEditorContent(null);
     }
   }, [file, fullPath, editorBackEnd]);
 
