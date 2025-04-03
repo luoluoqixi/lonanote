@@ -78,7 +78,7 @@ export default function Editor({
       isSupportVideo,
     };
   }, [file]);
-  const isCodeMirror = useMemo(() => editorMode === 'source', [editorMode]);
+  const isCodeMirror = useMemo(() => editorMode === 'source' && !readOnly, [editorMode, readOnly]);
   useEffect(() => {
     if (!state.isSupportEditor && !state.isSupportMdEditor) {
       setCurrentEditorState(null);

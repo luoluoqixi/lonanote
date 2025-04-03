@@ -11,5 +11,6 @@ export const isSupportMarkdown = (fileName: string) => {
 export const supportExts = ['md', 'markdown'] as const;
 
 export const supportEditorModeChange = (editorBackEnd: EditorBackEnd) => {
-  return editorBackEnd !== 'hypermd' && editorBackEnd !== 'codemirror';
+  return editorBackEnd === 'milkdown' || editorBackEnd === 'vditor';
+  // editorBackEnd !== 'hypermd' && editorBackEnd !== 'codemirror';
 };
