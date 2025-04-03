@@ -1,17 +1,13 @@
 import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import {
-  bracketMatching,
-  defaultHighlightStyle,
-  indentOnInput,
-  syntaxHighlighting,
-} from '@codemirror/language';
+import { bracketMatching, indentOnInput } from '@codemirror/language';
 import { searchKeymap } from '@codemirror/search';
 import { Compartment, EditorState, Transaction } from '@codemirror/state';
 import {
   EditorView,
   KeyBinding,
   crosshairCursor,
+  highlightActiveLine,
   highlightSpecialChars,
   keymap,
   lineNumbers,
@@ -34,6 +30,7 @@ import { useEditor } from '@/controller/editor';
 
 import './CodeMirrorEditor.scss';
 import { detectLanguage } from './detectLanguage';
+import { useCodeMirrorTheme } from './theme';
 
 export interface CodeMirrorEditorRef {
   getEditor: () => EditorView | null;
@@ -57,6 +54,7 @@ export interface CodeMirrorEditorProps {
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEditorRef>) => {
   const { className, style, filePath, readOnly, onSave, onUpdateListener } = props;
+  const theme = useCodeMirrorTheme();
   const editorRootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<EditorView | null>(null);
   const [readOnlyEx, setReadOnlyEx] = useState<Compartment | null>(null);
@@ -114,8 +112,8 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
           EditorState.allowMultipleSelections.of(true),
           // 输入特定输入时自动缩进
           indentOnInput(),
-          // 高亮显示
-          syntaxHighlighting(defaultHighlightStyle),
+          // // 高亮显示
+          // syntaxHighlighting(defaultHighlightStyle),
           // 高亮光标旁边的匹配括号
           bracketMatching(),
           // 自动补全右括号
@@ -126,12 +124,13 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
           rectangularSelection(),
           // 按住 alt 时, 光标更改为十字
           crosshairCursor(),
-          // // 高亮激活的行
-          // highlightActiveLine(),
+          // 高亮激活的行
+          highlightActiveLine(),
           // Style the gutter for current line specially
           // highlightActiveLineGutter(),
           // 突出显示与所选文本匹配的文本
           // highlightSelectionMatches(),
+          theme,
           keymap.of([
             // 保存功能
             saveBinding,
@@ -163,7 +162,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
         setReadOnlyEx(null);
       }
     };
-  }, [onSave, onUpdateListener]);
+  }, [onSave, onUpdateListener, theme]);
 
   useEffect(() => {
     if (!view || !readOnlyEx) return;

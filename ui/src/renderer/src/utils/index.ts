@@ -144,6 +144,9 @@ export const utils = {
       console.error('暂未支持');
     }
   },
+  isImgUrl: (url: string) => {
+    return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image');
+  },
 };
 
 export * from './timeUtils';

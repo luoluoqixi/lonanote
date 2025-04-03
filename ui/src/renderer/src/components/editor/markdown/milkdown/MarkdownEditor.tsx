@@ -1,7 +1,13 @@
+import { Compartment } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { commandsCtx, editorViewCtx, editorViewOptionsCtx, parserCtx } from '@milkdown/core';
 import { Crepe } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
+// import { emoji } from '@milkdown/plugin-emoji';
+import { Uploader, upload, uploadConfig } from '@milkdown/plugin-upload';
+import type { Node } from '@milkdown/prose/model';
+import { Decoration } from '@milkdown/prose/view';
 import { $command, $useKeymap } from '@milkdown/utils';
 import path from 'path-browserify-esm';
 import { Slice } from 'prosemirror-model';
@@ -19,6 +25,7 @@ import {
 import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
 
+import { useCodeMirrorTheme } from '../../codemirror';
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
 import './MarkdownEditor.scss';
 
@@ -52,11 +59,33 @@ const setMarkdownValue = (editor: Crepe, content: string, useHistory: boolean | 
   }
 };
 
+const defaultUploader: Uploader = async (files, schema) => {
+  const imgs: File[] = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files.item(i);
+    if (!file) continue;
+    if (!file.type.includes('image')) continue;
+    imgs.push(file);
+  }
+  const { image } = schema.nodes;
+  if (!image) throw new Error('Missing node in schema, milkdown cannot find "image" in schema.');
+  // TODO 上传图片
+  const data = await Promise.all(
+    imgs.map((img) => ({
+      src: '',
+      alt: '',
+    })),
+  );
+  return data.map(({ alt, src }) => image.createAndFill({ src, alt }) as Node);
+};
+
 export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRef>) => {
   const { className, style, filePath, readOnly, onSave, onUpdateListener, mediaRootPath } = props;
+  const theme = useCodeMirrorTheme();
   const editorRef = useRef<HTMLDivElement>(null);
   const editor = useRef<Crepe | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [readOnlyEx, setReadOnlyEx] = useState<Compartment | null>(null);
 
   const content = useEditor((s) => s.currentEditorContent);
   const [updateContentState, setUpdateContentState] = useState<boolean>(false);
@@ -68,6 +97,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
 
   useLayoutEffect(() => {
     if (!editorRef.current) return;
+    const readOnlyEx = new Compartment();
     setLoading(true);
     onUpdateListener?.(null);
     let crepe: Crepe | null = new Crepe({
@@ -80,7 +110,8 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         [Crepe.Feature.ImageBlock]: {
           proxyDomURL: (originalURL: string) => {
             if (!originalURL) return originalURL;
-            if (originalURL.startsWith('http://') || originalURL.startsWith('https://')) {
+            console.log(originalURL);
+            if (utils.isImgUrl(originalURL)) {
               return originalURL;
             }
             const f = path.resolve(mediaRootPath, originalURL);
@@ -90,8 +121,30 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         [Crepe.Feature.BlockEdit]: {
           handleAddIcon: undefined,
         },
+        [Crepe.Feature.CodeMirror]: {
+          extensions: [readOnlyEx.of(EditorView.editable.of(readOnly ? false : true))],
+          theme,
+        },
       },
     });
+
+    crepe.editor.use(upload).config((ctx) => {
+      ctx.set(uploadConfig.key, {
+        uploader: defaultUploader,
+        enableHtmlFileUploader: false,
+        uploadWidgetFactory: (pos, spec) => {
+          const widgetDOM = document.createElement('span');
+          widgetDOM.textContent = '上传文件...';
+          return Decoration.widget(pos, widgetDOM, spec);
+        },
+      });
+    });
+
+    // crepe 目前不支持 diagram
+    // https://github.com/orgs/Milkdown/discussions/1733
+    // crepe.editor.use(diagram).config((ctx) => {
+    //   ctx.set(mermaidConfigCtx.key, {});
+    // });
 
     const saveCommand = $command('saveCommand', () => () => {
       return () => {
@@ -152,22 +205,41 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
           console.log('milkdown inited');
         }
       });
+    setReadOnlyEx(readOnlyEx);
     console.log('milkdown create');
 
     return () => {
       setLoading(false);
       editor.current = null;
       onUpdateListener?.(null);
+      setReadOnlyEx(null);
       if (crepe) {
         crepe.destroy();
         crepe = null;
       }
     };
-  }, [filePath, onSave, onUpdateListener]);
+  }, [filePath, onSave, onUpdateListener, theme]);
 
   useEffect(() => {
     if (!editor.current) return;
     editor.current.setReadonly(readOnly || false);
+    if (!readOnlyEx) return;
+    // 切换所有CodeMirror的ReadOnly
+    editor.current.editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const cmEditors = view.dom.querySelectorAll('.cm-editor');
+      if (cmEditors && cmEditors.length && cmEditors.length > 0) {
+        for (const cmEditor of cmEditors) {
+          if (!cmEditor) continue;
+          const cmView = cmEditor && EditorView.findFromDOM(cmEditor as HTMLElement);
+          if (cmView) {
+            cmView.dispatch({
+              effects: readOnlyEx.reconfigure(EditorView.editable.of(readOnly ? false : true)),
+            });
+          }
+        }
+      }
+    });
   }, [readOnly]);
 
   useEffect(() => {

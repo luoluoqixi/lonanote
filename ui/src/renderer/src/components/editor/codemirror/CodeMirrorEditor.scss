@@ -1,30 +1,13 @@
-@use './base/cm6-theme.scss';
-
-.cm-editor {
-  height: 100%;
-  padding: var(--editor-wrap-padding);
-  outline: 0 !important;
-  -webkit-user-select: auto;
-  user-select: auto;
-}
-
-.cm-scroller {
-  justify-content: center;
-}
-
-// .cm-content {
-//   max-width: 80%;
-// }
-
-// 行号
-.cm-gutters {
-  background-color: transparent !important;
-  color: var(--gray-10) !important;
-  font-size: var(--font-size-1);
-  border-width: 0 !important;
-}
-
-.ͼ1 .cm-lineNumbers .cm-gutterElement {
-  padding-top: 2px;
-  min-width: 40px;
+.cm6-theme {
+  .ͼ1 .cm-lineNumbers .cm-gutterElement {
+    // padding-top: 2px;
+    min-width: 40px;
+  }
+  // 行号
+  .cm-gutters {
+    background-color: transparent !important;
+    color: var(--gray-10) !important;
+    // font-size: var(--font-size-1);
+    border-width: 0 !important;
+  }
 }

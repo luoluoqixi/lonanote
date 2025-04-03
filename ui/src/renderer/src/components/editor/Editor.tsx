@@ -104,7 +104,7 @@ export default function Editor({
     } else {
       setCurrentEditorContent(null);
     }
-  }, [file, fullPath, editorBackEnd]);
+  }, [file, fullPath, editorBackEnd, editorMode]);
 
   const saveFile = useCallback(
     (content: string) => {

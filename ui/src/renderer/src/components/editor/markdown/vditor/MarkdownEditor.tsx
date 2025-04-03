@@ -93,12 +93,16 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       cdn,
       theme: 'classic',
       mode: editMode as 'ir' | 'sv',
+      tab: '  ',
+      image: {
+        isPreview: false,
+      },
       link: {
         isOpen: false,
         click(bom) {
           const v = bom.innerHTML;
           if (v == null) return;
-          if (v.startsWith('http://') || v.startsWith('https://')) {
+          if (utils.isImgUrl(v)) {
             window.open(v);
           } else {
             if (onClickRelativeLink) {
