@@ -3,7 +3,7 @@ import { CSSProperties } from 'react';
 import { EditorMode } from '@/models/editor';
 
 export interface MarkdownEditorRef {
-  getMarkdown: () => string | undefined;
+  getValue: () => string | undefined;
   setValue: (content: string, useHistory?: boolean) => void;
 }
 

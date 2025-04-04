@@ -1,6 +1,6 @@
 import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { bracketMatching, indentOnInput } from '@codemirror/language';
+import { bracketMatching, foldGutter, indentOnInput } from '@codemirror/language';
 import { searchKeymap } from '@codemirror/search';
 import { Compartment, EditorState, Transaction } from '@codemirror/state';
 import {
@@ -130,6 +130,8 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
           // highlightActiveLineGutter(),
           // 突出显示与所选文本匹配的文本
           // highlightSelectionMatches(),
+          // 折叠功能
+          foldGutter(),
           theme,
           keymap.of([
             // 保存功能

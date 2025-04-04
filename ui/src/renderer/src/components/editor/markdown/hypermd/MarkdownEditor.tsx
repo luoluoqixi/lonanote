@@ -191,7 +191,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   }, [readOnly]);
 
   useImperativeHandle(ref, () => ({
-    getMarkdown() {
+    getValue() {
       return editor?.getValue();
     },
     setValue(content, useHistory) {

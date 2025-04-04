@@ -1,0 +1,79 @@
+import { Editor } from '@milkdown/core';
+
+import { BlockEditFeatureConfig, defineBlockEdit } from './block-edit';
+import { CodeMirrorFeatureConfig, defineCodeMirror } from './codemirror';
+import { CursorFeatureConfig, defineCursor } from './cursor';
+import { ImageFeatureConfig, defineImage } from './image';
+import { defineLatex } from './latex';
+import { LinkTooltipFeatureConfig, defineLinkTooltip } from './link-tooltip';
+import { ListItemFeatureConfig, defineListItem } from './list-item';
+import { defineTable } from './table';
+import { ToolbarFeatureConfig, defineToolbar } from './toolbar';
+
+export enum MilkdownFeature {
+  CodeMirror = 'code-mirror',
+  ListItem = 'list-item',
+  LinkTooltip = 'link-tooltip',
+  Cursor = 'cursor',
+  Image = 'image-block',
+  BlockEdit = 'block-edit',
+  Toolbar = 'toolbar',
+  Table = 'table',
+  Latex = 'latex',
+}
+
+export interface FeaturesConfig {
+  [MilkdownFeature.Cursor]?: CursorFeatureConfig;
+  [MilkdownFeature.ListItem]?: ListItemFeatureConfig;
+  [MilkdownFeature.LinkTooltip]?: LinkTooltipFeatureConfig;
+  [MilkdownFeature.Image]?: ImageFeatureConfig;
+  [MilkdownFeature.BlockEdit]?: BlockEditFeatureConfig;
+  [MilkdownFeature.Toolbar]?: ToolbarFeatureConfig;
+  [MilkdownFeature.CodeMirror]?: CodeMirrorFeatureConfig;
+  // [MilkdownFeature.Table]?: TableFeatureConfig;
+  // [MilkdownFeature.Latex]?: LatexFeatureConfig;
+}
+
+export const defaultFeatures: Record<MilkdownFeature, boolean> = {
+  [MilkdownFeature.Cursor]: true,
+  [MilkdownFeature.ListItem]: true,
+  [MilkdownFeature.LinkTooltip]: true,
+  [MilkdownFeature.Image]: true,
+  [MilkdownFeature.BlockEdit]: true,
+  [MilkdownFeature.Toolbar]: true,
+  [MilkdownFeature.CodeMirror]: true,
+  [MilkdownFeature.Table]: true,
+  [MilkdownFeature.Latex]: true,
+};
+
+export function loadFeature(editor: Editor, feature: MilkdownFeature, config: any): any {
+  switch (feature) {
+    case MilkdownFeature.CodeMirror: {
+      return defineCodeMirror(editor, config);
+    }
+    case MilkdownFeature.ListItem: {
+      return defineListItem(editor, config);
+    }
+    case MilkdownFeature.LinkTooltip: {
+      return defineLinkTooltip(editor, config);
+    }
+    case MilkdownFeature.Image: {
+      return defineImage(editor, config);
+    }
+    case MilkdownFeature.Cursor: {
+      return defineCursor(editor, config);
+    }
+    case MilkdownFeature.BlockEdit: {
+      return defineBlockEdit(editor, config);
+    }
+    case MilkdownFeature.Toolbar: {
+      return defineToolbar(editor, config);
+    }
+    case MilkdownFeature.Table: {
+      return defineTable(editor, config);
+    }
+    case MilkdownFeature.Latex: {
+      return defineLatex(editor, config);
+    }
+  }
+}

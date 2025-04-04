@@ -2,7 +2,7 @@ import { Button, Text, Tooltip } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
 import { useMemo } from 'react';
 import { AiOutlineRead } from 'react-icons/ai';
-import { BsMarkdown } from 'react-icons/bs';
+// import { BsMarkdown } from 'react-icons/bs';
 import { FaCode } from 'react-icons/fa6';
 import { IoMdArrowBack, IoMdArrowForward, IoMdMore } from 'react-icons/io';
 import { MdOutlineDriveFileRenameOutline, MdOutlineFileOpen } from 'react-icons/md';
@@ -22,13 +22,13 @@ import {
   defaultEditorIsReadOnly,
   defaultEditorMode,
   setCurrentEditFile,
-  setEditorBackEnd,
+  // setEditorBackEnd,
   setEditorIsReadOnly,
   setEditorMode,
   useEditor,
 } from '@/controller/editor';
 import { workspaceController } from '@/controller/workspace';
-import { EditorBackEnd, EditorMode } from '@/models/editor';
+import { EditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import styles from './Index.module.scss';
@@ -145,28 +145,28 @@ const editorModeMenu: DropdownMenuItem[] = [
   },
 ];
 
-const editorBackEndMenu: DropdownMenuItem[] = [
-  {
-    id: 'milkdown',
-    label: 'Milkdown',
-    icon: undefined,
-  },
-  {
-    id: 'vditor',
-    label: 'Vditor',
-    icon: undefined,
-  },
-  // {
-  //   id: 'hypermd',
-  //   label: 'HyperMD',
-  //   icon: undefined,
-  // },
-  // {
-  //   id: 'codemirror',
-  //   label: 'CodeMirror',
-  //   icon: undefined,
-  // },
-];
+// const editorBackEndMenu: DropdownMenuItem[] = [
+//   {
+//     id: 'milkdown',
+//     label: 'Milkdown',
+//     icon: undefined,
+//   },
+//   {
+//     id: 'vditor',
+//     label: 'Vditor',
+//     icon: undefined,
+//   },
+//   // {
+//   //   id: 'hypermd',
+//   //   label: 'HyperMD',
+//   //   icon: undefined,
+//   // },
+//   // {
+//   //   id: 'codemirror',
+//   //   label: 'CodeMirror',
+//   //   icon: undefined,
+//   // },
+// ];
 
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {
   const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
@@ -218,11 +218,11 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
       setEditorMode(cmd as EditorMode);
     }
   };
-  const changeEditorBackEndClick = (cmd: string) => {
-    if (cmd && cmd !== editorBackEnd) {
-      setEditorBackEnd(cmd as EditorBackEnd);
-    }
-  };
+  // const changeEditorBackEndClick = (cmd: string) => {
+  //   if (cmd && cmd !== editorBackEnd) {
+  //     setEditorBackEnd(cmd as EditorBackEnd);
+  //   }
+  // };
   return (
     <div className={styles.indexContentTopToolbar}>
       <div className={styles.indexContentTopToolbarLeft}>
@@ -256,7 +256,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         />
       </div>
       <div className={styles.indexContentTopToolbarRight}>
-        <Dropdown
+        {/* <Dropdown
           items={editorBackEndMenu}
           onMenuClick={changeEditorBackEndClick}
           selectId={editorBackEnd}
@@ -267,7 +267,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
               <BsMarkdown style={{ width: '16px', height: '16px' }} />
             </Tooltip>
           </Button>
-        </Dropdown>
+        </Dropdown> */}
         <Dropdown
           items={editorModeMenu}
           onMenuClick={changeEditorModeClick}

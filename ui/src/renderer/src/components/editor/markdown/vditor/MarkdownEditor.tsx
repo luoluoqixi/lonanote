@@ -214,7 +214,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   }, [content, updateContent]);
 
   useImperativeHandle(ref, () => ({
-    getMarkdown() {
+    getValue() {
       return editor.current?.getValue();
     },
     setValue(content) {
