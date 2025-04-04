@@ -10,6 +10,7 @@ import {
   rootCtx,
 } from '@milkdown/core';
 import type { DefaultValue } from '@milkdown/kit/core';
+import { Ctx } from '@milkdown/kit/ctx';
 import { clipboard } from '@milkdown/kit/plugin/clipboard';
 import { history } from '@milkdown/kit/plugin/history';
 import { indent, indentConfig } from '@milkdown/kit/plugin/indent';
@@ -21,7 +22,7 @@ import { gfm } from '@milkdown/kit/preset/gfm';
 import { EditorState } from '@milkdown/kit/prose/state';
 import { Decoration } from '@milkdown/kit/prose/view';
 import { Uploader, upload, uploadConfig } from '@milkdown/plugin-upload';
-import type { Node as MilkdownNode } from '@milkdown/prose/model';
+import type { Node as ProseNode } from '@milkdown/prose/model';
 import { $command, $useKeymap, getMarkdown } from '@milkdown/utils';
 import { Slice } from 'prosemirror-model';
 
@@ -39,7 +40,15 @@ export interface MilkdownEditorConfig {
 }
 
 export interface MilkdownEditorEvent {
-  onSave: (state: EditorState) => boolean;
+  onSave: (editor: MilkdownEditor, state: EditorState) => void;
+  onCreate: (editor: MilkdownEditor) => void;
+  onCreated: (editor: MilkdownEditor) => void;
+  onUpdate: (ctx: Ctx, doc: ProseNode, prevDoc: ProseNode | null) => void;
+  onMounted: (ctx: Ctx) => void;
+  onBeforeMount: (ctx: Ctx) => void;
+  onBlur: (ctx: Ctx) => void;
+  onFocus: (ctx: Ctx) => void;
+  onDestroy: (ctx: Ctx) => void;
 }
 
 type MilkdownEditorEventListeners = {
@@ -63,7 +72,7 @@ const defaultUploader: Uploader = async (files, schema) => {
       alt: img.name,
     })),
   );
-  return data.map(({ alt, src }) => image.createAndFill({ src, alt }) as MilkdownNode);
+  return data.map(({ alt, src }) => image.createAndFill({ src, alt }) as ProseNode);
 };
 
 export class MilkdownEditor {
@@ -163,10 +172,22 @@ export class MilkdownEditor {
       const config = (this.#featuresConfig as Partial<Record<MilkdownFeature, any>>)[feature];
       this.#featuresConfig[feature] = loadFeature(this.#editor, feature, config);
     });
+
+    this.on((listener) => {
+      listener.updated((ctx, doc, prev) => this.#onUpdate(ctx, doc, prev));
+      listener.mounted((ctx) => this.#onMounted(ctx));
+      listener.beforeMount((ctx) => this.#onBeforeMount(ctx));
+      listener.destroy((ctx) => this.#onDestroy(ctx));
+      listener.blur((ctx) => this.#onBlur(ctx));
+      listener.focus((ctx) => this.#onFocus(ctx));
+    });
   }
 
   async create() {
-    return await this.#editor.create();
+    const editor = await this.#editor.create();
+    this.#onCreate();
+    this.#onCreated();
+    return editor;
   }
 
   async destroy() {
@@ -281,16 +302,59 @@ export class MilkdownEditor {
     this.#events[type] = undefined;
   }
 
-  #onSaveCommand(state: EditorState) {
-    const onSaveListener = this.#events['onSave'];
-    if (onSaveListener) {
-      for (let i = 0; i < onSaveListener.length; i++) {
-        const onSave = onSaveListener[i];
-        if (onSave(state)) {
-          return true;
+  #callEvent<K extends keyof MilkdownEditorEvent>(
+    type: K,
+    ...args: Parameters<MilkdownEditorEvent[K]>
+  ) {
+    const listener = this.#events[type];
+    if (listener) {
+      for (let i = 0; i < listener.length; i++) {
+        const cb = listener[i];
+        if (cb) {
+          try {
+            (cb as any)(...args);
+          } catch (e) {
+            console.error(e);
+          }
         }
       }
     }
+  }
+
+  #onSaveCommand(state: EditorState) {
+    this.#callEvent('onSave', this, state);
     return true;
+  }
+
+  #onCreate() {
+    this.#callEvent('onCreate', this);
+  }
+
+  #onCreated() {
+    this.#callEvent('onCreated', this);
+  }
+
+  #onDestroy(ctx: Ctx) {
+    this.#callEvent('onDestroy', ctx);
+  }
+
+  #onUpdate(ctx: Ctx, doc: ProseNode, prevDoc: ProseNode | null) {
+    this.#callEvent('onUpdate', ctx, doc, prevDoc);
+  }
+
+  #onMounted(ctx: Ctx) {
+    this.#callEvent('onMounted', ctx);
+  }
+
+  #onBeforeMount(ctx: Ctx) {
+    this.#callEvent('onBeforeMount', ctx);
+  }
+
+  #onBlur(ctx: Ctx) {
+    this.#callEvent('onBlur', ctx);
+  }
+
+  #onFocus(ctx: Ctx) {
+    this.#callEvent('onFocus', ctx);
   }
 }

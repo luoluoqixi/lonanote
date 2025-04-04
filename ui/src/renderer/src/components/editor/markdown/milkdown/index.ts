@@ -3,6 +3,7 @@
 import MarkdownEditor from './MarkdownEditor';
 
 import './theme/theme.scss';
+import './MarkdownEditor.scss';
 
 export * from './MarkdownEditor';
 
