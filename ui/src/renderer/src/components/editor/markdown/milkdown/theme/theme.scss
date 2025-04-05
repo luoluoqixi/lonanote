@@ -1,21 +1,21 @@
 .milkdown {
   --crepe-color-background: var(--color-background);
-  --crepe-color-on-background: #1b1c1d;
+  --crepe-color-on-background: var(--gray-12);
   --crepe-color-surface: var(--gray-2);
-  --crepe-color-surface-low: #f2f3fa;
-  --crepe-color-on-surface: #191c20;
-  --crepe-color-on-surface-variant: #43474e;
-  --crepe-color-outline: #73777f;
-  --crepe-color-primary: #37618e;
-  --crepe-color-secondary: #d7e3f8;
-  --crepe-color-on-secondary: #101c2b;
-  --crepe-color-inverse: #2e3135;
-  --crepe-color-on-inverse: #eff0f7;
-  --crepe-color-inline-code: #ba1a1a;
-  --crepe-color-error: #ba1a1a;
-  --crepe-color-hover: #eceef4;
-  --crepe-color-selected: #e1e2e8;
-  --crepe-color-inline-area: #d8dae0;
+  --crepe-color-surface-low: var(--gray-4);
+  --crepe-color-on-surface: var(--gray-12);
+  --crepe-color-on-surface-variant: var(--gray-11);
+  --crepe-color-outline: var(--gray-11);
+  --crepe-color-primary: var(--accent-10);
+  --crepe-color-secondary: var(--accent-6);
+  --crepe-color-on-secondary: var(--gray-12);
+  --crepe-color-inverse: var(--gray-10);
+  --crepe-color-on-inverse: var(--gray-2);
+  --crepe-color-inline-code: var(--accent-11);
+  --crepe-color-error: var(--red-6);
+  --crepe-color-hover: var(--gray-6);
+  --crepe-color-selected: var(--gray-5);
+  --crepe-color-inline-area: var(--gray-5);
 
   --crepe-font-title:
     -apple-system, BlinkMacSystemFont, 'Open Sans', 'Helvetica Neue', Helvetica, Arial,
@@ -29,4 +29,8 @@
 
   --crepe-shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
   --crepe-shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+
+  milkdown-list-item-block li .label-wrapper .checkbox svg {
+    fill: var(--crepe-color-primary);
+  }
 }
