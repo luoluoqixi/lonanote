@@ -19,6 +19,7 @@ import {
   lineNumbers,
   rectangularSelection,
 } from '@codemirror/view';
+import { editorViewCtx, editorViewOptionsCtx } from '@milkdown/core';
 import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
 import { html } from 'atomico';
 
@@ -53,9 +54,13 @@ export const defineCodeMirror: DefineFeature<CodeMirrorFeatureConfig> = (editor,
   const mergeConfig = { ...config };
   editor
     .config((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const { editable } = ctx.get(editorViewOptionsCtx);
+      const editorDefaultReadOnly = editable == null ? false : !editable(view.state);
+
       mergeConfig.readOnlyCtrl = config?.readOnlyCtrl || new Compartment();
       mergeConfig.defaultReadOnly =
-        mergeConfig.defaultReadOnly != null ? mergeConfig.defaultReadOnly : false;
+        mergeConfig.defaultReadOnly != null ? mergeConfig.defaultReadOnly : editorDefaultReadOnly;
       mergeConfig.languages = mergeConfig.languages || langList;
       mergeConfig.theme = mergeConfig.theme || oneDark;
 

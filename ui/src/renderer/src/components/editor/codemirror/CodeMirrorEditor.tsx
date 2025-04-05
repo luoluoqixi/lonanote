@@ -96,7 +96,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
           readOnlyEx.of(EditorView.editable.of(readOnly ? false : true)),
           detectLanguage(filePath),
           //自动换行
-          EditorView.lineWrapping,
+          // EditorView.lineWrapping,
           updateListener,
           // 行号
           lineNumbers(),

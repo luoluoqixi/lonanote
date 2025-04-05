@@ -92,6 +92,7 @@
     "react-router": "^7.4.0",
     "react-toastify": "^11.0.5",
     "react-virtuoso": "^4.12.5",
+    "remark-frontmatter": "^5.0.0",
     "sass-embedded": "^1.86.0",
     "ts-deepmerge": "^7.0.2",
     "tsx": "^4.19.3",
@@ -102,6 +103,7 @@
     "vditor": "=3.10.8",
     "vite": "^6.2.2",
     "vite-plugin-vconsole": "^2.1.1",
+    "yaml": "^2.7.1",
     "zustand": "^5.0.3"
   },
   "resolutions": {

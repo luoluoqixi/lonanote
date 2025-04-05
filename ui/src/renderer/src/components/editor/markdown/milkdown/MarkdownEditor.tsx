@@ -57,6 +57,9 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         [MilkdownFeature.CodeMirror]: {
           theme,
         },
+        [MilkdownFeature.Yaml]: {
+          theme,
+        },
       },
     });
     const updateState = (ctx: Ctx) => {

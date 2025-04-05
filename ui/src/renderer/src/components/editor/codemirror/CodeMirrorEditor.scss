@@ -5,9 +5,11 @@
   }
   // 行号
   .cm-gutters {
-    background-color: transparent !important;
     color: var(--gray-10) !important;
     // font-size: var(--font-size-1);
     border-width: 0 !important;
+  }
+  .cm-scroller {
+    justify-content: start;
   }
 }

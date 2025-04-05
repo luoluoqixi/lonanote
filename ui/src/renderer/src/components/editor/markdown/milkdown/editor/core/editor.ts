@@ -1,3 +1,4 @@
+import { Compartment } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import {
   Editor,
@@ -204,26 +205,36 @@ export class MilkdownEditor {
   setReadonly(value: boolean) {
     this.#editable = !value;
     const readOnlyEx = this.#featuresConfig[MilkdownFeature.CodeMirror]?.readOnlyCtrl;
-    if (this.#editor && readOnlyEx) {
-      // 切换所有CodeMirror的ReadOnly
-      this.#editor.action((ctx) => {
-        const flags = ctx?.get(FeaturesCtx);
-        const isCodeMirrorEnabled = flags?.includes(MilkdownFeature.CodeMirror);
-        if (!isCodeMirrorEnabled) return;
-
-        const view = ctx.get(editorViewCtx);
-        const cmEditors = view.dom.querySelectorAll('.cm-editor');
+    const readOnlyExYaml = this.#featuresConfig[MilkdownFeature.Yaml]?.readOnlyCtrl;
+    if (this.#editor && (readOnlyEx || readOnlyExYaml)) {
+      const setCMReadOnly = (
+        dom: HTMLElement,
+        className: string,
+        readOnlyEx: Compartment | undefined,
+        readOnly: boolean,
+      ) => {
+        if (!readOnlyEx) return;
+        const cmEditors = dom.querySelectorAll(`${className} .cm-editor`);
         if (cmEditors && cmEditors.length && cmEditors.length > 0) {
           for (const cmEditor of cmEditors) {
             if (!cmEditor) continue;
             const cmView = cmEditor && EditorView.findFromDOM(cmEditor as HTMLElement);
             if (cmView) {
               cmView.dispatch({
-                effects: readOnlyEx.reconfigure(EditorView.editable.of(value ? false : true)),
+                effects: readOnlyEx.reconfigure(EditorView.editable.of(readOnly ? false : true)),
               });
             }
           }
         }
+      };
+      // 切换所有CodeMirror的ReadOnly
+      this.#editor.action((ctx) => {
+        const flags = ctx?.get(FeaturesCtx);
+        const isCodeMirrorEnabled = flags?.includes(MilkdownFeature.CodeMirror);
+        if (!isCodeMirrorEnabled) return;
+        const view = ctx.get(editorViewCtx);
+        setCMReadOnly(view.dom, 'milkdown-code-block', readOnlyEx, value);
+        setCMReadOnly(view.dom, '.milkdown-yaml-block', readOnlyExYaml, value);
       });
     }
     return this;

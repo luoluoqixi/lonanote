@@ -64,4 +64,17 @@
   .ProseMirror blockquote milkdown-list-item-block li .label-wrapper {
     color: var(--gray-10);
   }
+
+  .milkdown-yaml-block {
+    .cm-editor {
+      background: var(--crepe-color-surface);
+    }
+    .cm-gutters {
+      border-width: 0 !important;
+      width: 0;
+    }
+  }
+  .cm-scroller {
+    justify-content: start;
+  }
 }

@@ -4,11 +4,12 @@ import { BlockEditFeatureConfig, defineBlockEdit } from './block-edit';
 import { CodeMirrorFeatureConfig, defineCodeMirror } from './codemirror';
 import { CursorFeatureConfig, defineCursor } from './cursor';
 import { ImageFeatureConfig, defineImage } from './image';
-import { defineLatex } from './latex';
+import { LatexFeatureConfig, defineLatex } from './latex';
 import { LinkTooltipFeatureConfig, defineLinkTooltip } from './link-tooltip';
 import { ListItemFeatureConfig, defineListItem } from './list-item';
-import { defineTable } from './table';
+import { TableFeatureConfig, defineTable } from './table';
 import { ToolbarFeatureConfig, defineToolbar } from './toolbar';
+import { YamlFeatureConfig, defineYaml } from './yaml';
 
 export enum MilkdownFeature {
   CodeMirror = 'code-mirror',
@@ -20,6 +21,7 @@ export enum MilkdownFeature {
   Toolbar = 'toolbar',
   Table = 'table',
   Latex = 'latex',
+  Yaml = 'yaml',
 }
 
 export interface FeaturesConfig {
@@ -30,8 +32,9 @@ export interface FeaturesConfig {
   [MilkdownFeature.BlockEdit]?: BlockEditFeatureConfig;
   [MilkdownFeature.Toolbar]?: ToolbarFeatureConfig;
   [MilkdownFeature.CodeMirror]?: CodeMirrorFeatureConfig;
-  // [MilkdownFeature.Table]?: TableFeatureConfig;
-  // [MilkdownFeature.Latex]?: LatexFeatureConfig;
+  [MilkdownFeature.Table]?: TableFeatureConfig;
+  [MilkdownFeature.Latex]?: LatexFeatureConfig;
+  [MilkdownFeature.Yaml]?: YamlFeatureConfig;
 }
 
 export const defaultFeatures: Record<MilkdownFeature, boolean> = {
@@ -44,6 +47,7 @@ export const defaultFeatures: Record<MilkdownFeature, boolean> = {
   [MilkdownFeature.CodeMirror]: true,
   [MilkdownFeature.Table]: true,
   [MilkdownFeature.Latex]: true,
+  [MilkdownFeature.Yaml]: true,
 };
 
 export function loadFeature(editor: Editor, feature: MilkdownFeature, config: any): any {
@@ -74,6 +78,9 @@ export function loadFeature(editor: Editor, feature: MilkdownFeature, config: an
     }
     case MilkdownFeature.Latex: {
       return defineLatex(editor, config);
+    }
+    case MilkdownFeature.Yaml: {
+      return defineYaml(editor, config);
     }
   }
 }
