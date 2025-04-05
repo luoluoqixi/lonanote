@@ -5,7 +5,7 @@ import { TextSelection } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import type { AtomicoThis } from 'atomico/types/dom';
 
-import { defIfNotExists } from '../../utils';
+import { addViewScrollEvent, defIfNotExists } from '../../utils';
 import type { DefineFeature, Icon } from '../types';
 import type { ToolbarProps } from './component';
 import { ToolbarElement } from './component';
@@ -26,6 +26,7 @@ const toolbar = tooltipFactory('CREPE_TOOLBAR');
 class ToolbarView implements PluginView {
   #tooltipProvider: TooltipProvider;
   #content: AtomicoThis<ToolbarProps>;
+  #removeOnScroll: (() => void) | null;
   constructor(ctx: Ctx, view: EditorView, config?: ToolbarFeatureConfig) {
     const content = new ToolbarElement();
     this.#content = content;
@@ -65,6 +66,10 @@ class ToolbarView implements PluginView {
       this.#content.show = false;
     };
     this.update(view);
+
+    this.#removeOnScroll = addViewScrollEvent(view, () => {
+      this.update(view);
+    });
   }
 
   update = (view: EditorView, prevState?: EditorState) => {
@@ -73,6 +78,9 @@ class ToolbarView implements PluginView {
   };
 
   destroy = () => {
+    if (this.#removeOnScroll) {
+      this.#removeOnScroll();
+    }
     this.#tooltipProvider.destroy();
     this.#content.remove();
   };
