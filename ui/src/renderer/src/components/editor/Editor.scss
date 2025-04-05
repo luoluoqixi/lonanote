@@ -19,7 +19,7 @@
   width: 100%;
   -webkit-user-select: auto;
   user-select: auto;
-  overflow: auto;
+  overflow-y: auto;
   padding: var(--editor-wrap-padding);
   box-sizing: border-box;
 }

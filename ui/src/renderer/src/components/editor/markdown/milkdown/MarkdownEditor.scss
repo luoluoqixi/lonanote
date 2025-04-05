@@ -1,13 +1,12 @@
 .milkdown {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow-y: auto;
 
   .cm-gutters {
     color: var(--gray-10) !important;
   }
-}
-
-.milkdown .ProseMirror {
-  padding: 0px 90px;
+  .ProseMirror {
+    padding: 0px 90px;
+  }
 }

@@ -57,7 +57,6 @@ export const defineYaml: DefineFeature<YamlFeatureConfig> = (editor, config) => 
         'data-type': nodeKey,
         'data-content': node.attrs.content,
       },
-      0,
     ],
     parseMarkdown: {
       match: (node) => node.type === 'yaml',

@@ -67,3 +67,7 @@ img {
   flex-direction: column;
   background-color: rgb(from var(--color-background) r g b / var(--spinner-opacity));
 }
+
+#root .split-view-container .split-view-view {
+  overflow: visible;
+}

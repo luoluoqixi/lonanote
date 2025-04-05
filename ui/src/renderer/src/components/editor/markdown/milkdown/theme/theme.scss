@@ -77,4 +77,13 @@
   .cm-scroller {
     justify-content: start;
   }
+
+  milkdown-link-preview,
+  milkdown-link-edit,
+  milkdown-toolbar,
+  milkdown-slash-menu,
+  milkdown-latex-inline-edit {
+    // fixed不会跟着容器滚动, 但是absolute会被滚动区域裁剪
+    position: fixed;
+  }
 }
