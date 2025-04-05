@@ -1,20 +1,37 @@
 .milkdown {
+  // 背景颜色
   --crepe-color-background: var(--color-background);
+  // 前景颜色
   --crepe-color-on-background: var(--gray-12);
+  // 次要背景颜色 (如代码块的背景颜色
   --crepe-color-surface: var(--gray-2);
+  // 次要背景颜色 (如弹出的语言选择列表背景颜色
   --crepe-color-surface-low: var(--gray-4);
+  // 次要前景颜色 (如代码块功能按钮的前景颜色
   --crepe-color-on-surface: var(--gray-12);
+  // 次要前景颜色 (如代码块语言选择按钮的前景颜色
   --crepe-color-on-surface-variant: var(--gray-11);
+  // 边框颜色 (如无序列表、有序列表的圆点颜色
   --crepe-color-outline: var(--gray-11);
+  // 主颜色 (如链接颜色
   --crepe-color-primary: var(--accent-10);
-  --crepe-color-secondary: var(--accent-6);
+  // 次要颜色 (如数学公式右上角的Hide按钮
+  --crepe-color-secondary: var(--gray-4);
+  // 次要前景颜色 (如数学公式右上角的Hide按钮
   --crepe-color-on-secondary: var(--gray-12);
-  --crepe-color-inverse: var(--gray-10);
-  --crepe-color-on-inverse: var(--gray-2);
+  // 图片块右上角按钮的背景颜色
+  --crepe-color-inverse: var(--gray-12);
+  // 图片块右上角按钮的前景颜色
+  --crepe-color-on-inverse: var(--gray-1);
+  // 内联代码的前景颜色
   --crepe-color-inline-code: var(--accent-11);
+  // error的颜色
   --crepe-color-error: var(--red-6);
+  // 鼠标hover状态的背景颜色
   --crepe-color-hover: var(--gray-6);
-  --crepe-color-selected: var(--gray-5);
+  // 文本选择区域的背景颜色
+  --crepe-color-selected: var(--accent-a5);
+  // 内联代码的背景颜色
   --crepe-color-inline-area: var(--gray-5);
 
   --crepe-font-title:
@@ -30,7 +47,21 @@
   --crepe-shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
   --crepe-shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
 
+  // 待办列表的checkbox
   milkdown-list-item-block li .label-wrapper .checkbox svg {
     fill: var(--crepe-color-primary);
+  }
+  // 代码块弹出的语言选择列表
+  milkdown-code-block .list-wrapper {
+    border-radius: var(--radius-1);
+  }
+  // 引用块的背景颜色
+  .ProseMirror blockquote::before {
+    background: var(--gray-6);
+  }
+  // 引用块的字体颜色
+  .ProseMirror blockquote p,
+  .ProseMirror blockquote milkdown-list-item-block li .label-wrapper {
+    color: var(--gray-10);
   }
 }

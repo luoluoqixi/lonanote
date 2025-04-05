@@ -2,11 +2,9 @@ import { Button, Text, Tooltip } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
 import { useMemo } from 'react';
 import { AiOutlineRead } from 'react-icons/ai';
-// import { BsMarkdown } from 'react-icons/bs';
 import { FaCode } from 'react-icons/fa6';
 import { IoMdArrowBack, IoMdArrowForward, IoMdMore } from 'react-icons/io';
 import { MdOutlineDriveFileRenameOutline, MdOutlineFileOpen } from 'react-icons/md';
-import { PiSquareSplitHorizontal } from 'react-icons/pi';
 import { TbAlignBoxLeftBottom } from 'react-icons/tb';
 import { VscClose, VscCopy, VscFolderOpened } from 'react-icons/vsc';
 import { useNavigate, useParams } from 'react-router';
@@ -22,7 +20,6 @@ import {
   defaultEditorIsReadOnly,
   defaultEditorMode,
   setCurrentEditFile,
-  // setEditorBackEnd,
   setEditorIsReadOnly,
   setEditorMode,
   useEditor,
@@ -119,18 +116,19 @@ const editorModeMenu: DropdownMenuItem[] = [
       />
     ),
   },
-  {
-    id: 'sv',
-    label: '左右分屏',
-    icon: (
-      <PiSquareSplitHorizontal
-        style={{
-          width: '18px',
-          height: '18px',
-        }}
-      />
-    ),
-  },
+  // 左右分屏, 先不做吧
+  // {
+  //   id: 'sv',
+  //   label: '左右分屏',
+  //   icon: (
+  //     <PiSquareSplitHorizontal
+  //       style={{
+  //         width: '18px',
+  //         height: '18px',
+  //       }}
+  //     />
+  //   ),
+  // },
   {
     id: 'source',
     label: '源码模式',
@@ -145,6 +143,7 @@ const editorModeMenu: DropdownMenuItem[] = [
   },
 ];
 
+// 切换编辑器功能, 可能没什么卵用, 会造成体验不一致, 不如专心做好一个
 // const editorBackEndMenu: DropdownMenuItem[] = [
 //   {
 //     id: 'milkdown',
@@ -218,11 +217,6 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
       setEditorMode(cmd as EditorMode);
     }
   };
-  // const changeEditorBackEndClick = (cmd: string) => {
-  //   if (cmd && cmd !== editorBackEnd) {
-  //     setEditorBackEnd(cmd as EditorBackEnd);
-  //   }
-  // };
   return (
     <div className={styles.indexContentTopToolbar}>
       <div className={styles.indexContentTopToolbarLeft}>
@@ -256,7 +250,8 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         />
       </div>
       <div className={styles.indexContentTopToolbarRight}>
-        {/* <Dropdown
+        {/** 切换编辑器功能 */
+        /* <Dropdown
           items={editorBackEndMenu}
           onMenuClick={changeEditorBackEndClick}
           selectId={editorBackEnd}
