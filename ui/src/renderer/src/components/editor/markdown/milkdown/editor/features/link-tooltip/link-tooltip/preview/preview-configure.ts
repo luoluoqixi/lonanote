@@ -46,14 +46,10 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
   const onMouseMove = throttle((view: EditorView, event: MouseEvent) => {
     if (!linkPreviewTooltipView) return;
     // if (!view.hasFocus()) return;
-    if (!view.editable) {
-      resetState();
-      return;
-    }
-
     const state = ctx.get(linkTooltipState.key);
-    if (state.mode === 'edit') {
+    if (!view.editable || state.mode === 'edit') {
       resetState();
+      linkPreviewTooltipView?.hide();
       return;
     }
 
@@ -79,11 +75,12 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
   };
 
   const onSelectionChange = (view: EditorView) => {
-    if (!linkPreviewTooltipView || !view.editable) return;
+    if (!linkPreviewTooltipView) return;
     if (view.isDestroyed) return;
     const state = ctx.get(linkTooltipState.key);
-    if (state.mode === 'edit') {
+    if (!view.editable || state.mode === 'edit') {
       resetState();
+      linkPreviewTooltipView?.hide();
       return;
     }
     isCursorInsideLink = isCursorInType(view, 'link');

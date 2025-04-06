@@ -1,5 +1,6 @@
 import type { Ctx, Slice } from '@milkdown/ctx';
 import { TooltipProvider } from '@milkdown/plugin-tooltip';
+import { linkSchema } from '@milkdown/preset-commonmark';
 import { posToDOMRect } from '@milkdown/prose';
 import type { Mark } from '@milkdown/prose/model';
 import type { PluginView } from '@milkdown/prose/state';
@@ -66,7 +67,22 @@ export class LinkPreviewTooltip implements PluginView {
   show = (view: EditorView, mark: Mark, from: number, to: number) => {
     this.#content.config = this.ctx.get(linkTooltipConfig.key);
     this.#content.src = mark.attrs.href;
-    this.#content.onEdit = () => {
+    const config = this.#content.config;
+    this.#content.onEdit = async () => {
+      if (config?.onEditClick) {
+        const href = await config?.onEditClick(mark.attrs.href);
+        if (href == null || typeof href === 'boolean') {
+          return;
+        }
+        if (href !== mark.attrs.href) {
+          const type = linkSchema.type(this.ctx);
+          const tr = view.state.tr;
+          if (mark) tr.removeMark(from, to, mark);
+          tr.addMark(from, to, type.create({ href }));
+          view.dispatch(tr);
+        }
+        return;
+      }
       this.ctx.get(linkTooltipAPI.key).editLink(mark, from, to);
     };
     this.#content.onRemove = () => {

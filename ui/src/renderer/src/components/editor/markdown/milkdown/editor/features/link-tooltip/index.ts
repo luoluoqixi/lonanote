@@ -9,6 +9,8 @@ interface LinkTooltipConfig {
   confirmButton?: Icon;
   inputPlaceholder?: string;
   onCopyLink?: (link: string) => void;
+  onClickLink?: (link: string) => void;
+  onEditClick?: (link: string) => Promise<string | false>;
 }
 
 export type LinkTooltipFeatureConfig = Partial<LinkTooltipConfig>;
@@ -25,6 +27,8 @@ export const defineLinkTooltip: DefineFeature<LinkTooltipFeatureConfig> = (edito
         confirmButton: config?.confirmButton ?? (() => confirmIcon),
         inputPlaceholder: config?.inputPlaceholder ?? 'Paste link...',
         onCopyLink: config?.onCopyLink ?? (() => {}),
+        onClickLink: config?.onClickLink ?? null,
+        onEditClick: config?.onEditClick ?? null,
       }));
     })
     .use(linkTooltipPlugin);

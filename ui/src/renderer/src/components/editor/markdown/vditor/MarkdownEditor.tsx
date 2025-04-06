@@ -56,7 +56,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     readOnly,
     onSave,
     onUpdateListener,
-    onClickRelativeLink,
+    onClickAnyLink,
   } = props;
   const theme = useColorModeValue<ThemeState>(lightTheme, darkTheme);
 
@@ -102,12 +102,8 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         click(bom) {
           const v = bom.innerHTML;
           if (v == null) return;
-          if (utils.isImgUrl(v)) {
-            window.open(v);
-          } else {
-            if (onClickRelativeLink) {
-              onClickRelativeLink(v);
-            }
+          if (onClickAnyLink) {
+            onClickAnyLink(v);
           }
         },
       },
@@ -166,7 +162,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       editor.current = null;
       onUpdateListener?.(null);
     };
-  }, [onSave, onUpdateListener, onClickRelativeLink]);
+  }, [onSave, onUpdateListener, onClickAnyLink]);
 
   useEffect(() => {
     if (!editor.current) return;

@@ -23,5 +23,5 @@ export interface MarkdownEditorProps {
   readOnly?: boolean;
   onSave?: (content: string) => void;
   onUpdateListener?: (state: UpdateState | null) => void;
-  onClickRelativeLink?: (link: string) => void;
+  onClickAnyLink?: (link: string) => void;
 }

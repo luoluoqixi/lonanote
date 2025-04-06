@@ -1,10 +1,62 @@
-import { AlertDialog, Button, Flex } from '@radix-ui/themes';
+import { AlertDialog, Button, Flex, TextField } from '@radix-ui/themes';
 
 import { GlobalDialogOption, GlobalDialogType, useGlobalDialogStore } from '@/models/global';
 
 export const showDialog = (options: GlobalDialogOption) => {
   const optionsNew: GlobalDialogType = { options, open: true };
   useGlobalDialogStore.setState(optionsNew);
+};
+
+export type SelectRange = { start: number; end: number } | 'all' | null;
+
+export const showInputDialog = (
+  title: string,
+  value: string,
+  onChange?: ((v: string) => void) | null,
+  onClose?: (() => void) | null,
+  selectRange: SelectRange = 'all',
+  options?: GlobalDialogOption,
+) => {
+  let dialogInputRef: HTMLInputElement | null = null;
+  const onOk = () => {
+    if (dialogInputRef) {
+      const v = dialogInputRef.value;
+      return onChange?.(v);
+    }
+    return true;
+  };
+  showDialog({
+    title,
+    content: (
+      <TextField.Root
+        ref={(r) => {
+          dialogInputRef = r;
+          setTimeout(() => {
+            if (r) {
+              if (selectRange != null && selectRange === 'all') {
+                r.setSelectionRange(0, r.value.length);
+              } else if (selectRange != null) {
+                r.setSelectionRange(selectRange.start, selectRange.end);
+              }
+              r.focus();
+            }
+          }, 100);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            if (onOk()) {
+              closeDialog();
+            }
+          }
+        }}
+        autoFocus
+        defaultValue={value}
+      />
+    ),
+    onOk,
+    onClose,
+    ...options,
+  });
 };
 
 export const closeDialog = () => {

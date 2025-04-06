@@ -1,4 +1,4 @@
-import { Box, Button, Card, ContextMenu, Dialog, Text, TextField } from '@radix-ui/themes';
+import { Box, Button, Card, ContextMenu, Dialog, Text } from '@radix-ui/themes';
 import { useRef, useState } from 'react';
 import { IoMdMore } from 'react-icons/io';
 import {
@@ -179,33 +179,14 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
     ) {
       return;
     }
-    let dialogInputRef: HTMLInputElement | null = null;
-    dialog.showDialog({
-      title: '请输入新名字',
-      content: (
-        <TextField.Root
-          ref={(r) => {
-            dialogInputRef = r;
-            setTimeout(() => {
-              if (r) r.focus();
-            }, 100);
-          }}
-          autoFocus
-          defaultValue={clickWorkspace.name}
-        />
-      ),
-      onOk: () => {
-        if (dialogInputRef) {
-          const v = dialogInputRef.value;
-          if (v && v !== '') {
-            setWorkspaceNameCommit(currentMenuIndex, v);
-          } else {
-            toast.error('请输入名字');
-            return false;
-          }
-        }
-        return true;
-      },
+    dialog.showInputDialog('请输入新名字', clickWorkspace.name, (v) => {
+      if (v && v !== '') {
+        setWorkspaceNameCommit(currentMenuIndex, v);
+      } else {
+        toast.error('请输入名字');
+        return false;
+      }
+      return true;
     });
   };
   const changePathClick = async () => {

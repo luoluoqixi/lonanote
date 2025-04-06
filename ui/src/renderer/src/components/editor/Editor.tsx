@@ -121,8 +121,13 @@ export default function Editor({
     },
     [fullPath],
   );
-  const onClickRelativeLink = useCallback(
+  const onClickAnyLink = useCallback(
     (link: string) => {
+      if (link == null) return;
+      if (utils.isImgUrl(link)) {
+        window.open(link);
+        return;
+      }
       const relPath = utils.getFilePathFromRelativePath(file, link);
       const absPath = utils.getFilePathFromRelativePath(fullPath, link);
       fs.exists(absPath).then((exists) => {
@@ -151,7 +156,7 @@ export default function Editor({
           editMode={editorMode}
           onSave={saveFile}
           onUpdateListener={setCurrentEditorState}
-          onClickRelativeLink={onClickRelativeLink}
+          onClickAnyLink={onClickAnyLink}
         />
       ) : state.isSupportEditor ? (
         <CodeMirrorEditor

@@ -10,7 +10,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import { toast } from 'react-toastify';
 
+import { dialog } from '@/components/utils';
 import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
 
@@ -25,7 +27,16 @@ export interface UpdateState {
 }
 
 export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRef>) => {
-  const { className, style, filePath, readOnly, onSave, onUpdateListener, mediaRootPath } = props;
+  const {
+    className,
+    style,
+    filePath,
+    readOnly,
+    onSave,
+    onUpdateListener,
+    onClickAnyLink,
+    mediaRootPath,
+  } = props;
   const theme = useCodeMirrorTheme();
   const editorRef = useRef<HTMLDivElement>(null);
   const content = useEditor((s) => s.currentEditorContent);
@@ -60,6 +71,30 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         [MilkdownFeature.Yaml]: {
           theme,
         },
+        [MilkdownFeature.LinkTooltip]: {
+          onClickLink: onClickAnyLink,
+          onCopyLink(link) {
+            if (navigator.clipboard && link) {
+              navigator.clipboard.writeText(link).catch((e) => {
+                throw e;
+              });
+              toast.success('复制成功');
+            }
+          },
+          onEditClick(link) {
+            return new Promise((resolve) => {
+              dialog.showInputDialog(
+                '编辑链接',
+                link,
+                (v) => {
+                  resolve(v);
+                  return true;
+                },
+                () => resolve(false),
+              );
+            });
+          },
+        },
       },
     });
     const updateState = (ctx: Ctx) => {
@@ -86,9 +121,15 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     editor.addListener('onMounted', (ctx) => {
       updateState(ctx);
     });
+    editor.addListener('onLinkClick', (link, view, e) => {
+      if (!view.editable) {
+        e.preventDefault();
+        onClickAnyLink?.(link);
+      }
+    });
     console.log('milkdown create');
     return editor;
-  }, [filePath, onSave, onUpdateListener, theme]);
+  }, [filePath, onSave, onUpdateListener, onClickAnyLink, theme]);
 
   useEffect(() => {
     const editor = getEditor();

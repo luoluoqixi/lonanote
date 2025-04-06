@@ -1,5 +1,5 @@
 import { Compartment } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
+import { EditorView as CMEditorView } from '@codemirror/view';
 import {
   Editor,
   EditorStatus,
@@ -20,8 +20,8 @@ import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
 import { trailing } from '@milkdown/kit/plugin/trailing';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
-import { EditorState } from '@milkdown/kit/prose/state';
-import { Decoration } from '@milkdown/kit/prose/view';
+import { EditorState, Selection } from '@milkdown/kit/prose/state';
+import { Decoration, EditorView } from '@milkdown/kit/prose/view';
 import { Uploader, upload, uploadConfig } from '@milkdown/plugin-upload';
 import type { Node as ProseNode } from '@milkdown/prose/model';
 import { $command, $useKeymap, getMarkdown } from '@milkdown/utils';
@@ -50,6 +50,8 @@ export interface MilkdownEditorEvent {
   onBlur: (ctx: Ctx) => void;
   onFocus: (ctx: Ctx) => void;
   onDestroy: (ctx: Ctx) => void;
+
+  onLinkClick: (link: string, view: EditorView, e: Event) => void;
 }
 
 type MilkdownEditorEventListeners = {
@@ -141,6 +143,17 @@ export class MilkdownEditor {
             ...prev.attributes,
             spellcheck: spellCheck ? 'true' : 'false',
           },
+          handleDOMEvents: {
+            click: (view, e) => {
+              const target = e.target;
+              if (!target) return;
+              const tagName = (target as any).tagName;
+              if (tagName != null && tagName.toLowerCase() === 'a') {
+                const href = (target as any).getAttribute('href');
+                this.#callEvent('onLinkClick', href, view, e);
+              }
+            },
+          },
         }));
       })
       .use(commonmark)
@@ -202,8 +215,32 @@ export class MilkdownEditor {
     return this.#editor;
   }
 
+  clearSelection() {
+    this.#editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      view.dispatch(view.state.tr.setSelection(Selection.near(view.state.doc.resolve(0))));
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+      }
+      view.dom.blur();
+      view.dom.focus();
+    });
+  }
+
   setReadonly(value: boolean) {
     this.#editable = !value;
+
+    // 同时清除选择
+    this.clearSelection();
+
+    // 同时隐藏block-handle
+    const blockHandle = document.querySelector('milkdown-block-handle');
+    if (blockHandle) {
+      blockHandle.setAttribute('data-show', 'false');
+    }
+
+    // 同时设置所有 CodeMirror 的 ReadOnly 状态
     const readOnlyEx = this.#featuresConfig[MilkdownFeature.CodeMirror]?.readOnlyCtrl;
     const readOnlyExYaml = this.#featuresConfig[MilkdownFeature.Yaml]?.readOnlyCtrl;
     if (this.#editor && (readOnlyEx || readOnlyExYaml)) {
@@ -218,10 +255,10 @@ export class MilkdownEditor {
         if (cmEditors && cmEditors.length && cmEditors.length > 0) {
           for (const cmEditor of cmEditors) {
             if (!cmEditor) continue;
-            const cmView = cmEditor && EditorView.findFromDOM(cmEditor as HTMLElement);
+            const cmView = cmEditor && CMEditorView.findFromDOM(cmEditor as HTMLElement);
             if (cmView) {
               cmView.dispatch({
-                effects: readOnlyEx.reconfigure(EditorView.editable.of(readOnly ? false : true)),
+                effects: readOnlyEx.reconfigure(CMEditorView.editable.of(readOnly ? false : true)),
               });
             }
           }

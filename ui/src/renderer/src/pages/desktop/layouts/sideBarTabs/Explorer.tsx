@@ -1,4 +1,5 @@
-import { Button, ButtonProps, Spinner, Text, TextField, Tooltip } from '@radix-ui/themes';
+/* eslint-disable indent */
+import { Button, ButtonProps, Spinner, Text, Tooltip } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
 import { useRef, useState } from 'react';
 import { BsSortUpAlt } from 'react-icons/bs';
@@ -342,63 +343,41 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
   const createFileOrFolder = (folder: string, isCreateFile: boolean) => {
     const type = isCreateFile ? '文件' : '文件夹';
-    let dialogInputRef: HTMLInputElement | null = null;
-    const onOk = async () => {
-      if (dialogInputRef) {
-        const v = dialogInputRef.value;
-        if (v && v !== '') {
-          const targetRelativePath = folder === '' ? v : `${folder}/${v}`;
-          const targetPath = path.join(workspace.metadata.path, targetRelativePath);
-          if (await fs.exists(targetPath)) {
-            toast.error(`已存在${type}: ${targetPath}`);
-            return;
-          }
-          try {
-            if (isCreateFile) {
-              await fs.createFile(targetPath, '');
-            } else {
-              await fs.createDirAll(targetPath);
-            }
-            refreshTree(targetRelativePath);
-            toast.success('成功');
-          } catch (e) {
-            toast.error(`创建${type}失败: ${e}`);
-          }
-        } else {
-          toast.error('请输入名字');
+    const onOk = async (v: string) => {
+      if (v && v !== '') {
+        const targetRelativePath = folder === '' ? v : `${folder}/${v}`;
+        const targetPath = path.join(workspace.metadata.path, targetRelativePath);
+        if (await fs.exists(targetPath)) {
+          toast.error(`已存在${type}: ${targetPath}`);
+          return;
         }
+        try {
+          if (isCreateFile) {
+            await fs.createFile(targetPath, '');
+          } else {
+            await fs.createDirAll(targetPath);
+          }
+          refreshTree(targetRelativePath);
+          toast.success('成功');
+        } catch (e) {
+          toast.error(`创建${type}失败: ${e}`);
+        }
+      } else {
+        toast.error('请输入名字');
       }
     };
-    dialog.showDialog({
-      title: `创建${type} (在 ${folder === '' ? '/' : folder} 下)`,
-      content: (
-        <TextField.Root
-          ref={(r) => {
-            dialogInputRef = r;
-            setTimeout(() => {
-              if (r) {
-                if (isCreateFile) {
-                  const count = r.value.lastIndexOf('.');
-                  r.setSelectionRange(0, count >= 0 ? count : r.value.length);
-                } else {
-                  r.setSelectionRange(0, r.value.length);
-                }
-                r.focus();
-              }
-            }, 100);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              onOk();
-              dialog.closeDialog();
-            }
-          }}
-          autoFocus
-          defaultValue={isCreateFile ? '新建笔记.md' : '新建文件夹'}
-        />
-      ),
-      onOk,
-    });
+    const value = isCreateFile ? '新建笔记.md' : '新建文件夹';
+    const count = value.lastIndexOf('.');
+    dialog.showInputDialog(
+      `创建${type} (在 ${folder === '' ? '/' : folder} 下)`,
+      value,
+      (v) => {
+        onOk(v);
+        return true;
+      },
+      null,
+      isCreateFile ? { start: 0, end: count >= 0 ? count : value.length } : 'all',
+    );
   };
   const newFileMenuClick = async (node?: FileNode | null) => {
     const folderPath = getFolderPath(node);
@@ -416,55 +395,39 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
       const isFile = currentMenuNode.fileType === 'file';
       const basename = path.basename(f);
       const folder = path.dirname(f);
-      let dialogInputRef: HTMLInputElement | null = null;
-      const onOk = async () => {
-        if (dialogInputRef) {
-          const v = dialogInputRef.value;
-          if (v && v !== '') {
-            const oldPath = path.join(workspace.metadata.path, f);
-            const newPath = path.join(workspace.metadata.path, folder, v);
-            try {
-              await fs.move(oldPath, newPath, false);
-              toast.success('成功');
-              refreshTree();
-            } catch (e) {
-              toast.error(`重命名失败: ${e}`);
-            }
-          } else {
-            toast.error('请输入名字');
+      const onOk = async (v: string) => {
+        if (v && v !== '') {
+          const oldPath = path.join(workspace.metadata.path, f);
+          const newPath = path.join(workspace.metadata.path, folder, v);
+          try {
+            await fs.move(oldPath, newPath, false);
+            toast.success('成功');
+            refreshTree();
+          } catch (e) {
+            toast.error(`重命名失败: ${e}`);
           }
+        } else {
+          toast.error('请输入名字');
         }
       };
-      dialog.showDialog({
-        title: '请输入新名字',
-        content: (
-          <TextField.Root
-            ref={(r) => {
-              dialogInputRef = r;
-              setTimeout(() => {
-                if (r) {
-                  if (isFile) {
-                    const count = r.value.lastIndexOf('.');
-                    r.setSelectionRange(0, count >= 0 ? count : r.value.length);
-                  } else {
-                    r.setSelectionRange(0, r.value.length);
-                  }
-                  r.focus();
-                }
-              }, 100);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                onOk();
-                dialog.closeDialog();
-              }
-            }}
-            autoFocus
-            defaultValue={basename}
-          />
-        ),
-        onOk,
-      });
+
+      const count = basename.lastIndexOf('.');
+
+      dialog.showInputDialog(
+        '请输入新名字',
+        basename,
+        (v) => {
+          onOk(v);
+          return true;
+        },
+        null,
+        isFile
+          ? {
+              start: 0,
+              end: count >= 0 ? count : basename.length,
+            }
+          : 'all',
+      );
     }
   };
   const copyPathMenuClick = async (relative: boolean) => {

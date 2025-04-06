@@ -30,15 +30,21 @@ export const linkPreviewComponent: Component<LinkPreviewProps> = ({
 
   const onClickPreview = (e: MouseEvent) => {
     e.preventDefault();
+    if (config?.onCopyLink) {
+      config?.onCopyLink(src || '');
+      return;
+    }
     if (navigator.clipboard && src) {
-      navigator.clipboard
-        .writeText(src)
-        .then(() => {
-          config?.onCopyLink(src);
-        })
-        .catch((e) => {
-          throw e;
-        });
+      navigator.clipboard.writeText(src).catch((e) => {
+        throw e;
+      });
+    }
+  };
+
+  const onClickLink = (e: Event) => {
+    if (config?.onClickLink) {
+      config.onClickLink(src || '');
+      e.preventDefault();
     }
   };
 
@@ -46,7 +52,7 @@ export const linkPreviewComponent: Component<LinkPreviewProps> = ({
     <host>
       <div class="link-preview">
         <span class="link-icon" onmousedown=${onClickPreview}>${config?.linkIcon()}</span>
-        <a href=${src} target="_blank" class="link-display">${src}</a>
+        <a href=${src} target="_blank" class="link-display" onclick=${onClickLink}>${src}</a>
         <span class="button link-edit-button" onmousedown=${onClickEditButton}>
           ${config?.editButton()}
         </span>

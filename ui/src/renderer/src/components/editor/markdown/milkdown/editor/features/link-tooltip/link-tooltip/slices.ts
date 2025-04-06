@@ -43,7 +43,9 @@ export interface LinkTooltipConfig {
   editButton: () => ReturnType<typeof html>;
   confirmButton: () => ReturnType<typeof html>;
   removeButton: () => ReturnType<typeof html>;
-  onCopyLink: (link: string) => void;
+  onCopyLink: ((link: string) => void) | null;
+  onClickLink: ((link: string) => void) | null;
+  onEditClick?: ((link: string) => Promise<string | false>) | null;
   inputPlaceholder: string;
 }
 
@@ -54,7 +56,9 @@ const defaultConfig: LinkTooltipConfig = {
   confirmButton: () => html`
     Confirm ⏎
   `,
-  onCopyLink: () => {},
+  onCopyLink: null,
+  onClickLink: null,
+  onEditClick: null,
   inputPlaceholder: 'Paste link...',
 };
 
