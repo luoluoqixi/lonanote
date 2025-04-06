@@ -78,15 +78,50 @@
     justify-content: start;
   }
 
-  milkdown-toolbar {
+  milkdown-toolbar,
+  milkdown-link-preview,
+  milkdown-link-edit {
     position: fixed;
   }
 
-  // milkdown-link-preview,
-  // milkdown-link-edit,
-  // milkdown-toolbar,
   // milkdown-slash-menu,
   // milkdown-latex-inline-edit {
   //   position: fixed;
   // }
+
+  milkdown-link-edit .link-edit {
+    --milkdown-link-edit-height: 40px;
+    width: 300px;
+    height: var(--milkdown-link-edit-height);
+    .input-area {
+      width: 100%;
+    }
+    .confirm {
+      width: var(--milkdown-link-edit-height);
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+  milkdown-link-preview .link-preview {
+    --milkdown-link-preview-height: 40px;
+    width: 350px;
+    height: var(--milkdown-link-preview-height);
+
+    .link-display {
+      width: 100%;
+      line-height: var(--milkdown-link-preview-height);
+      text-align: center;
+      align-self: center;
+    }
+    .link-icon,
+    .link-edit-button,
+    .link-remove-button {
+      width: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
 }

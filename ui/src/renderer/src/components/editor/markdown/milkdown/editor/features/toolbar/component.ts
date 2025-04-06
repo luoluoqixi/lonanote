@@ -1,5 +1,4 @@
 /* eslint-disable indent */
-import { linkTooltipAPI } from '@milkdown/kit/component/link-tooltip';
 import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
 import {
@@ -30,6 +29,7 @@ import {
   strikethroughIcon,
 } from '../../icons';
 import { mathInlineSchema } from '../latex/inline-latex';
+import { linkTooltipAPI } from '../link-tooltip/link-tooltip';
 import type { ToolbarFeatureConfig } from './index';
 
 export interface ToolbarProps {

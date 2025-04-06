@@ -1,11 +1,6 @@
-import {
-  configureLinkTooltip,
-  linkTooltipConfig,
-  linkTooltipPlugin,
-} from '@milkdown/kit/component/link-tooltip';
-
 import { confirmIcon, copyIcon, editIcon, removeIcon } from '../../icons';
 import type { DefineFeature, Icon } from './../types';
+import { configureLinkTooltip, linkTooltipConfig, linkTooltipPlugin } from './link-tooltip';
 
 interface LinkTooltipConfig {
   linkIcon?: Icon;

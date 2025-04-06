@@ -1,3 +1,4 @@
+import type { Meta, MilkdownPlugin } from '@milkdown/ctx';
 import type { Selection } from '@milkdown/kit/prose/state';
 import { EditorView } from '@milkdown/kit/prose/view';
 
@@ -12,7 +13,13 @@ export function isInList(selection: Selection) {
 }
 
 export function defIfNotExists(tagName: string, element: CustomElementConstructor) {
-  if (customElements.get(tagName) == null) customElements.define(tagName, element);
+  const current = customElements.get(tagName);
+  if (current == null) {
+    customElements.define(tagName, element);
+    return;
+  }
+  if (current === element) return;
+  console.warn(`Custom element ${tagName} has been defined before.`);
 }
 
 export function addViewScrollEvent(view: EditorView, onScroll: (e: Event) => void) {
@@ -24,4 +31,18 @@ export function addViewScrollEvent(view: EditorView, onScroll: (e: Event) => voi
     };
   }
   return null;
+}
+
+export function withMeta<T extends MilkdownPlugin>(
+  plugin: T,
+  meta: Partial<Meta> & Pick<Meta, 'displayName'>,
+): T {
+  Object.assign(plugin, {
+    meta: {
+      package: '@milkdown/components',
+      ...meta,
+    },
+  });
+
+  return plugin;
 }
