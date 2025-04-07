@@ -5,7 +5,7 @@ import type { EditorView } from '@milkdown/prose/view';
 import throttle from 'lodash.throttle';
 
 import { defIfNotExists } from '../../../../utils';
-import { linkTooltipState } from '../slices';
+import { linkTooltipConfig, linkTooltipState } from '../slices';
 import { linkPreviewTooltip } from '../tooltips';
 import { findMarkPosition, isCursorInType, shouldShowPreviewWhenHover } from '../utils';
 import { LinkPreviewElement } from './preview-component';
@@ -46,6 +46,11 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
   const onMouseMove = throttle((view: EditorView, event: MouseEvent) => {
     if (!linkPreviewTooltipView) return;
     // if (!view.hasFocus()) return;
+    if (view.isDestroyed) return;
+    const config = ctx.get(linkTooltipConfig.key);
+    if (config.hoverShow === false) {
+      return;
+    }
     const state = ctx.get(linkTooltipState.key);
     if (!view.editable || state.mode === 'edit') {
       resetState();
@@ -77,6 +82,10 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
   const onSelectionChange = (view: EditorView) => {
     if (!linkPreviewTooltipView) return;
     if (view.isDestroyed) return;
+    const config = ctx.get(linkTooltipConfig.key);
+    if (config.selectionShow === false) {
+      return;
+    }
     const state = ctx.get(linkTooltipState.key);
     if (!view.editable || state.mode === 'edit') {
       resetState();

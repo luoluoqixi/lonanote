@@ -87,6 +87,8 @@ export class LinkEditTooltip implements PluginView {
   #enterEditMode = (value: string, from: number, to: number) => {
     const config = this.ctx.get(linkTooltipConfig.key);
     this.#content.config = config;
+    // 每次打开编辑界面时需要更新 src
+    this.#content.updateValue = this.#content.updateValue ? false : true;
     this.#content.src = value;
     this.ctx.update(linkTooltipState.key, (state) => ({
       ...state,

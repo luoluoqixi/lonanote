@@ -12,7 +12,6 @@ import {
 } from 'react';
 import { toast } from 'react-toastify';
 
-import { dialog } from '@/components/utils';
 import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
 
@@ -80,19 +79,6 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
               });
               toast.success('复制成功');
             }
-          },
-          onEditClick(link) {
-            return new Promise((resolve) => {
-              dialog.showInputDialog(
-                '编辑链接',
-                link,
-                (v) => {
-                  resolve(v);
-                  return true;
-                },
-                () => resolve(false),
-              );
-            });
           },
         },
       },

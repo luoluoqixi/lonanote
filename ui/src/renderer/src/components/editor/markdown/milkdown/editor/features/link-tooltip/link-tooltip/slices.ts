@@ -43,6 +43,8 @@ export interface LinkTooltipConfig {
   editButton: () => ReturnType<typeof html>;
   confirmButton: () => ReturnType<typeof html>;
   removeButton: () => ReturnType<typeof html>;
+  hoverShow: boolean | null;
+  selectionShow: boolean | null;
   onCopyLink: ((link: string) => void) | null;
   onClickLink: ((link: string) => void) | null;
   onEditClick?: ((link: string) => Promise<string | false>) | null;
@@ -60,6 +62,8 @@ const defaultConfig: LinkTooltipConfig = {
   onClickLink: null,
   onEditClick: null,
   inputPlaceholder: 'Paste link...',
+  hoverShow: null,
+  selectionShow: null,
 };
 
 export const linkTooltipConfig = $ctx(

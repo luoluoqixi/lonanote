@@ -7,12 +7,14 @@ import type { LinkTooltipConfig } from '../slices';
 export interface LinkEditProps {
   config: LinkTooltipConfig;
   src: string;
+  updateValue: boolean;
   onConfirm: (href: string) => void;
   onCancel: () => void;
 }
 
 export const linkEditComponent: Component<LinkEditProps> = ({
   src,
+  updateValue,
   onConfirm,
   onCancel,
   config,
@@ -22,7 +24,7 @@ export const linkEditComponent: Component<LinkEditProps> = ({
 
   useEffect(() => {
     setLink(src ?? '');
-  }, [src]);
+  }, [src, updateValue]);
 
   const onConfirmEdit = () => {
     onConfirm?.(linkInput.current?.value ?? '');
@@ -62,6 +64,7 @@ export const linkEditComponent: Component<LinkEditProps> = ({
 linkEditComponent.props = {
   config: Object,
   src: String,
+  updateValue: Boolean,
   onConfirm: Function,
   onCancel: Function,
 };

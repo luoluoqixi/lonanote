@@ -8,6 +8,8 @@ interface LinkTooltipConfig {
   removeButton?: Icon;
   confirmButton?: Icon;
   inputPlaceholder?: string;
+  hoverShow?: boolean;
+  selectionShow?: boolean;
   onCopyLink?: (link: string) => void;
   onClickLink?: (link: string) => void;
   onEditClick?: (link: string) => Promise<string | false>;
@@ -29,6 +31,8 @@ export const defineLinkTooltip: DefineFeature<LinkTooltipFeatureConfig> = (edito
         onCopyLink: config?.onCopyLink ?? (() => {}),
         onClickLink: config?.onClickLink ?? null,
         onEditClick: config?.onEditClick ?? null,
+        hoverShow: config?.hoverShow == null ? true : config?.hoverShow,
+        selectionShow: config?.selectionShow == null ? true : config?.selectionShow,
       }));
     })
     .use(linkTooltipPlugin);
