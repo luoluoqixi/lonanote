@@ -1,6 +1,6 @@
 import type { Ctx } from '@milkdown/kit/ctx';
 import { SlashProvider, slashFactory } from '@milkdown/kit/plugin/slash';
-import type { PluginView } from '@milkdown/kit/prose/state';
+import { type PluginView, type Selection, TextSelection } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import { $ctx } from '@milkdown/kit/utils';
 import type { AtomicoThis } from 'atomico/types/dom';
@@ -59,6 +59,10 @@ class MenuView implements PluginView {
         );
 
         if (currentText == null) return false;
+
+        if (!isSelectionAtEndOfNode(view.state.selection)) {
+          return false;
+        }
 
         const pos = self.#programmaticallyPos;
 
@@ -167,4 +171,14 @@ class MenuView implements PluginView {
     this.#showPos = { x: newX, y: newY };
     // console.log('update', this.#showPos);
   };
+}
+
+function isSelectionAtEndOfNode(selection: Selection) {
+  if (!(selection instanceof TextSelection)) return false;
+
+  const { $head } = selection;
+  const parent = $head.parent;
+  const offset = $head.parentOffset;
+
+  return offset === parent.content.size;
 }
