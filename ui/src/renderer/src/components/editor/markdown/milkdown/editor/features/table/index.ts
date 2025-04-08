@@ -1,5 +1,3 @@
-import { tableBlock, tableBlockConfig } from '@milkdown/kit/component/table-block';
-
 import {
   alignCenterIcon,
   alignLeftIcon,
@@ -9,6 +7,7 @@ import {
   removeIcon,
 } from '../../icons';
 import type { DefineFeature, Icon } from '../types';
+import { tableBlock, tableBlockConfig } from './table-block';
 
 interface TableConfig {
   addRowIcon: Icon;
