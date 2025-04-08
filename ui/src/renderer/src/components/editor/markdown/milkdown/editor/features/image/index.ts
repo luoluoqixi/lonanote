@@ -1,8 +1,7 @@
-import { imageBlockComponent, imageBlockConfig } from '@milkdown/kit/component/image-block';
-import { imageInlineComponent, inlineImageConfig } from '@milkdown/kit/component/image-inline';
-
 import { captionIcon, confirmIcon, imageIcon } from '../../icons';
 import { DefineFeature, Icon } from './../types';
+import { imageBlockComponent, imageBlockConfig } from './image-block';
+import { imageInlineComponent, inlineImageConfig } from './image-inline';
 
 interface ImageConfig {
   onUpload: (file: File) => Promise<string>;

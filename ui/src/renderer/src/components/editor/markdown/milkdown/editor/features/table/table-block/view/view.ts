@@ -12,8 +12,7 @@ import type {
 } from '@milkdown/prose/view';
 import { $view } from '@milkdown/utils';
 
-import { defIfNotExists } from '../../../../utils';
-import { withMeta } from '../../../../utils';
+import { defIfNotExists, withMeta } from '../../../../utils';
 import { tableBlockConfig } from '../config';
 import type { TableComponentProps } from './component';
 import { TableElement } from './component';
