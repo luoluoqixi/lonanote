@@ -129,6 +129,7 @@ export class LinkEditTooltip implements PluginView {
 
   destroy = () => {
     this.#isShow = false;
+    this.#showPos = null;
     if (this.#removeOnScroll) {
       this.#removeOnScroll();
     }

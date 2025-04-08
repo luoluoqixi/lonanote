@@ -119,6 +119,7 @@ export class LinkPreviewTooltip implements PluginView {
 
   destroy = () => {
     this.#isShow = false;
+    this.#showPos = null;
     if (this.#removeOnScroll) {
       this.#removeOnScroll();
     }

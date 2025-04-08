@@ -5,7 +5,7 @@ import type { EditorView } from '@milkdown/kit/prose/view';
 import { $ctx } from '@milkdown/kit/utils';
 import type { AtomicoThis } from 'atomico/types/dom';
 
-import { defIfNotExists, isInCodeBlock, isInList } from '../../../utils';
+import { addViewScrollEvent, defIfNotExists, isInCodeBlock, isInList } from '../../../utils';
 import type { BlockEditFeatureConfig } from '../index';
 import type { MenuProps } from './component';
 import { MenuElement } from './component';
@@ -36,6 +36,11 @@ class MenuView implements PluginView {
   readonly #content: AtomicoThis<MenuProps, HTMLElement>;
   readonly #slashProvider: SlashProvider;
   #programmaticallyPos: number | null = null;
+
+  #removeOnScroll: (() => void) | null;
+  #showPos: { x: number; y: number } | null = null;
+  #showElements: HTMLElement | null = null;
+  #lastScrollPos: { x: number; y: number } | null = null;
 
   constructor(ctx: Ctx, view: EditorView, config?: BlockEditFeatureConfig) {
     this.#content = new MenuElement();
@@ -77,6 +82,22 @@ class MenuView implements PluginView {
         return true;
       },
       offset: 10,
+      floatingUIOptions: {
+        middleware: [
+          {
+            name: 'milkdown-block-edit-middleware',
+            fn: (s) => {
+              this.#showElements = s.elements.floating;
+              this.#showPos = {
+                x: s.x,
+                y: s.y,
+              };
+              this.#lastScrollPos = null;
+              return {};
+            },
+          },
+        ],
+      },
     });
 
     this.#slashProvider.onShow = () => {
@@ -90,6 +111,10 @@ class MenuView implements PluginView {
     ctx.set(menuAPI.key, {
       show: (pos) => this.show(pos),
       hide: () => this.hide(),
+    });
+
+    this.#removeOnScroll = addViewScrollEvent(view, (e) => {
+      this.updatePos(e);
     });
   }
 
@@ -109,7 +134,37 @@ class MenuView implements PluginView {
   };
 
   destroy = () => {
+    this.#showPos = null;
+    this.#showElements = null;
+    this.#lastScrollPos = null;
+    if (this.#removeOnScroll) {
+      this.#removeOnScroll();
+    }
     this.#slashProvider.destroy();
     this.#content.remove();
+  };
+
+  updatePos = (e: Event) => {
+    if (!this.#content.show || !this.#showElements || !this.#showPos) return;
+    const target = e.target instanceof HTMLElement ? e.target : null;
+    const scrollX = target?.scrollLeft || 0;
+    const scrollY = target?.scrollTop || 0;
+    if (this.#lastScrollPos == null) {
+      this.#lastScrollPos = {
+        x: scrollX,
+        y: scrollY,
+      };
+      return;
+    }
+    const moveX = scrollX - this.#lastScrollPos.x;
+    const moveY = scrollY - this.#lastScrollPos.y;
+    this.#lastScrollPos.x = scrollX;
+    this.#lastScrollPos.y = scrollY;
+    const newX = this.#showPos.x - moveX;
+    const newY = this.#showPos.y - moveY;
+    this.#showElements.style.left = `${newX}px`;
+    this.#showElements.style.top = `${newY}px`;
+    this.#showPos = { x: newX, y: newY };
+    // console.log('update', this.#showPos);
   };
 }

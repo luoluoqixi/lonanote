@@ -84,7 +84,11 @@
     position: fixed;
   }
 
-  // milkdown-slash-menu,
+  milkdown-slash-menu {
+    position: fixed;
+    z-index: 999;
+  }
+
   // milkdown-latex-inline-edit {
   //   position: fixed;
   // }

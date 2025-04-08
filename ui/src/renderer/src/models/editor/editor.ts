@@ -11,7 +11,7 @@ export type EditorBackEnd = (typeof editorBackEndList)[number];
 
 export const defaultEditorIsReadOnly: boolean = false;
 export const defaultEditorMode: EditorMode = 'ir';
-export const defaultEditorBackEnd: EditorBackEnd = 'vditor';
+export const defaultEditorBackEnd: EditorBackEnd = 'milkdown';
 
 export interface EditorStore {
   currentEditorStatus: EditorState | null;
