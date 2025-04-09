@@ -302,6 +302,7 @@ export class MilkdownEditor {
       });
     } catch (e) {
       console.error('setValue Error', e);
+      throw e;
     }
   }
 

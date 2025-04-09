@@ -126,7 +126,11 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   useEffect(() => {
     const editor = getEditor();
     if (editor) {
-      editor.setMarkdown(content?.content || '', false);
+      try {
+        editor.setMarkdown(content?.content || '', false);
+      } catch (e: any) {
+        toast.error(`setValue error: ${e.message}`);
+      }
     }
   }, [content, updateContent]);
 

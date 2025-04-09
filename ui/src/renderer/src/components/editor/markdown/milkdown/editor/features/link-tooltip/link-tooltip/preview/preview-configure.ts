@@ -7,7 +7,7 @@ import throttle from 'lodash.throttle';
 import { defIfNotExists } from '../../../../utils';
 import { linkTooltipConfig, linkTooltipState } from '../slices';
 import { linkPreviewTooltip } from '../tooltips';
-import { findMarkPosition, isCursorInType, shouldShowPreviewWhenHover } from '../utils';
+import { findMarkPosition, isCursorInType, linkType, shouldShowPreviewWhenHover } from '../utils';
 import { LinkPreviewElement } from './preview-component';
 import { LinkPreviewTooltip } from './preview-view';
 
@@ -58,8 +58,7 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
       return;
     }
 
-    const result = shouldShowPreviewWhenHover(ctx, view, event);
-
+    const result = shouldShowPreviewWhenHover(view, event, linkType);
     if (result) {
       isMouseInsideLink = true;
       showPreviewTooltip(linkPreviewTooltipView, view, result.pos, result.mark, result.node);
@@ -92,7 +91,7 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
       linkPreviewTooltipView?.hide();
       return;
     }
-    isCursorInsideLink = isCursorInType(view, 'link');
+    isCursorInsideLink = isCursorInType(view, linkType);
     if (isCursorInsideLink) {
       const { state } = view;
       const fromPos = state.selection.from;
