@@ -13,6 +13,7 @@ export const inlineImageView = $view(imageSchema.node, (ctx): NodeViewConstructo
   return (initialNode, view, getPos) => {
     const dom = document.createElement('milkdown-image-inline') as HTMLElement &
       InlineImageComponentProps;
+    console.log(getPos());
     const config = ctx.get(inlineImageConfig.key);
     const proxyDomURL = config.proxyDomURL;
     const bindAttrs = (node: Node) => {

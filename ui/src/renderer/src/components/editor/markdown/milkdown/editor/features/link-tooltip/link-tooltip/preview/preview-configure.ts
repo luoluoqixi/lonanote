@@ -5,9 +5,14 @@ import type { EditorView } from '@milkdown/prose/view';
 import throttle from 'lodash.throttle';
 
 import { defIfNotExists } from '../../../../utils';
+import {
+  findMarkPosition,
+  getCursorNodeInType,
+  getLinkMarkType,
+  shouldShowWhenHover,
+} from '../../../../utils';
 import { linkTooltipConfig, linkTooltipState } from '../slices';
 import { linkPreviewTooltip } from '../tooltips';
-import { findMarkPosition, isCursorInType, linkType, shouldShowPreviewWhenHover } from '../utils';
 import { LinkPreviewElement } from './preview-component';
 import { LinkPreviewTooltip } from './preview-view';
 
@@ -51,23 +56,24 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
     if (config.hoverShow === false) {
       return;
     }
+    if (isCursorInsideLink) return;
     const state = ctx.get(linkTooltipState.key);
     if (!view.editable || state.mode === 'edit') {
       resetState();
       linkPreviewTooltipView?.hide();
       return;
     }
-
-    const result = shouldShowPreviewWhenHover(view, event, linkType);
+    const result = shouldShowWhenHover(view, event, getLinkMarkType(ctx));
     if (result) {
+      // const $pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+      // console.log(document.elementFromPoint(event.clientX, event.clientY));
+      // console.log($pos, result.node);
       isMouseInsideLink = true;
       showPreviewTooltip(linkPreviewTooltipView, view, result.pos, result.mark, result.node);
       return;
     }
     isMouseInsideLink = false;
-    if (!isCursorInsideLink) {
-      linkPreviewTooltipView.hide();
-    }
+    linkPreviewTooltipView.hide();
   }, DELAY);
 
   const onMouseLeave = () => {
@@ -91,11 +97,11 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
       linkPreviewTooltipView?.hide();
       return;
     }
-    isCursorInsideLink = isCursorInType(view, linkType);
+    const node = getCursorNodeInType(view, getLinkMarkType(ctx));
+    isCursorInsideLink = node !== null;
     if (isCursorInsideLink) {
       const { state } = view;
       const fromPos = state.selection.from;
-      const node = state.doc.nodeAt(fromPos);
       const mark = node?.marks.find((mark) => mark.type.name === 'link');
       if (mark && node) {
         showPreviewTooltip(linkPreviewTooltipView, view, fromPos, mark, node);

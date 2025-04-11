@@ -22,6 +22,7 @@ import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { EditorState, Selection } from '@milkdown/kit/prose/state';
 import { Decoration, EditorView } from '@milkdown/kit/prose/view';
+import { automd } from '@milkdown/plugin-automd';
 import { Uploader, upload, uploadConfig } from '@milkdown/plugin-upload';
 import type { Node as ProseNode } from '@milkdown/prose/model';
 import { $command, $useKeymap, getMarkdown } from '@milkdown/utils';
@@ -163,6 +164,7 @@ export class MilkdownEditor {
       .use(trailing)
       .use(clipboard)
       .use(gfm)
+      .use(automd)
       .use([saveCommand, saveKeyMap].flat());
 
     this.#editor.use(upload).config((ctx) => {

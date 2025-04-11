@@ -50,6 +50,7 @@ export const linkEditComponent: Component<LinkEditProps> = ({
           placeholder=${config?.inputPlaceholder}
           ref=${linkInput}
           onkeydown=${onKeydown}
+          spellcheck="${false}"
           oninput=${(e: InputEvent) => setLink((e.target as HTMLInputElement).value)}
           value=${link}
         />

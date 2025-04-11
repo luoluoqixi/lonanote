@@ -1,8 +1,8 @@
 import type { Ctx } from '@milkdown/kit/ctx';
 import { createSlice } from '@milkdown/kit/ctx';
 
+import type { MilkdownFeature } from '../features';
 import type { MilkdownEditor } from './editor';
-import type { MilkdownFeature } from './features';
 
 export const milkdownEditorCtx = createSlice({} as MilkdownEditor, 'MilkdownEditorCtx');
 
