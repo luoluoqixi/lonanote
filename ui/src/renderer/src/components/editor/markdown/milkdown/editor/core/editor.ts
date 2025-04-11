@@ -112,8 +112,16 @@ export class MilkdownEditor {
       return (state) => this.#onSaveCommand(state);
     });
     const saveKeyMap = $useKeymap('saveKeymap', {
-      saveDescription: {
+      // 这个命令区分大小写, 必须同时绑定
+      saveDescriptionLower: {
         shortcuts: 'Mod-s',
+        command: (ctx) => {
+          const commands = ctx.get(commandsCtx);
+          return () => commands.call(saveCommand.key);
+        },
+      },
+      saveDescriptionUpper: {
+        shortcuts: 'Mod-S',
         command: (ctx) => {
           const commands = ctx.get(commandsCtx);
           return () => commands.call(saveCommand.key);
