@@ -129,10 +129,31 @@
     }
   }
 
+  milkdown-image-block.selected > .image-wrapper::before {
+    background: color-mix(in srgb, var(--crepe-color-selected), transparent 60%);
+  }
+  // milkdown-image-inline.selected > img {
+  //   filter: brightness(1);
+  // }
+
   milkdown-image-block > .image-wrapper {
     margin: 0;
     img {
       object-fit: contain;
+    }
+    .image-block-title {
+      display: none;
+      pointer-events: none;
+      width: 100%;
+      background-color: var(--gray-a3);
+      color: var(--crepe-color-on-inverse);
+      position: absolute;
+      top: 0px;
+      left: 0;
+      text-align: center;
+    }
+    .image-block-title.visible {
+      display: block;
     }
 
     .image-resize-handle {
@@ -177,8 +198,8 @@
       }
     }
 
-    .image-resize-handle.op-visible,
-    .operation.op-visible {
+    .image-resize-handle.visible,
+    .operation.visible {
       display: flex;
     }
   }

@@ -69,7 +69,6 @@ export const imageComponent: Component<ImageComponentProps> = ({
 
   const onMouseEnter = () => {
     if (readonly) return;
-    console.log('enter', readonly);
     setShowOperation(true);
   };
   const onMouseLeave = () => {
@@ -91,14 +90,15 @@ export const imageComponent: Component<ImageComponentProps> = ({
   };
 
   const preventDrag = (e: Event) => {
+    if (readonly) return;
     e.preventDefault();
     e.stopPropagation();
   };
 
   const operationClick = (e: Event) => {
+    if (readonly) return;
     e.preventDefault();
     e.stopPropagation();
-    console.log('operation');
   };
 
   return html`
@@ -145,23 +145,14 @@ export const imageComponent: Component<ImageComponentProps> = ({
         onmouseenter=${onMouseEnter}
         onmouseleave=${onMouseLeave}
       >
-        <div class=${clsx('operation', showOperation && 'op-visible')}>
+        <div class=${clsx('image-block-title', selected && 'visible')}>${caption}</div>
+        <div class=${clsx('operation', showOperation && 'visible')}>
           <div class="operation-item" onpointerdown=${operationClick}>
             ${config?.operationIcon()}
           </div>
         </div>
-        <img
-          ref=${image}
-          data-type=${IMAGE_DATA_TYPE}
-          src=${src}
-          alt=${caption}
-          title=${caption}
-          ratio=${ratio}
-        />
-        <div
-          ref=${resizeHandle}
-          class=${clsx('image-resize-handle', showOperation && 'op-visible')}
-        >
+        <img ref=${image} data-type=${IMAGE_DATA_TYPE} src=${src} alt=${caption} ratio=${ratio} />
+        <div ref=${resizeHandle} class=${clsx('image-resize-handle', showOperation && 'visible')}>
           ${config?.resizeIcon()}
         </div>
       </div>
