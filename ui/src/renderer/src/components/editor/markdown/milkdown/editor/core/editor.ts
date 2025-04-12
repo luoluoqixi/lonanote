@@ -30,7 +30,7 @@ import { Slice } from 'prosemirror-model';
 
 import { MilkdownFeature, defaultFeatures, loadFeature } from '../features';
 import type { FeaturesConfig } from '../features';
-import { FeaturesCtx, configureFeatures, milkdownEditorCtx } from './slice';
+import { FeaturesCtx, configureFeatures, editableCtx, milkdownEditorCtx } from './slice';
 
 export interface MilkdownEditorConfig {
   root?: Node | string | null;
@@ -132,9 +132,11 @@ export class MilkdownEditor {
     this.#editor = Editor.make()
       .config((ctx) => {
         ctx.inject(milkdownEditorCtx, this);
+        ctx.inject(editableCtx, true);
       })
       .config(configureFeatures(enabledFeatures))
       .config((ctx) => {
+        ctx.set(editableCtx, true);
         ctx.set(rootCtx, this.#rootElement);
         ctx.set(defaultValueCtx, defaultValue);
         ctx.set(editorViewOptionsCtx, {
@@ -238,50 +240,49 @@ export class MilkdownEditor {
     });
   }
 
+  #setCMReadOnly(
+    dom: HTMLElement,
+    className: string,
+    readOnlyEx: Compartment | undefined,
+    readOnly: boolean,
+  ) {
+    if (!readOnlyEx) return;
+    const cmEditors = dom.querySelectorAll(`${className} .cm-editor`);
+    if (cmEditors && cmEditors.length && cmEditors.length > 0) {
+      for (const cmEditor of cmEditors) {
+        if (!cmEditor) continue;
+        const cmView = cmEditor && CMEditorView.findFromDOM(cmEditor as HTMLElement);
+        if (cmView) {
+          cmView.dispatch({
+            effects: readOnlyEx.reconfigure(CMEditorView.editable.of(readOnly ? false : true)),
+          });
+        }
+      }
+    }
+  }
+
   setReadonly(value: boolean) {
     this.#editable = !value;
 
+    this.#editor.action((ctx) => {
+      ctx.set(editableCtx, this.#editable);
+    });
+
     // 同时清除选择
     this.clearSelection();
-
-    // 同时隐藏block-handle
-    const blockHandle = document.querySelector('milkdown-block-handle');
-    if (blockHandle) {
-      blockHandle.setAttribute('data-show', 'false');
-    }
 
     // 同时设置所有 CodeMirror 的 ReadOnly 状态
     const readOnlyEx = this.#featuresConfig[MilkdownFeature.CodeMirror]?.readOnlyCtrl;
     const readOnlyExYaml = this.#featuresConfig[MilkdownFeature.Yaml]?.readOnlyCtrl;
     if (this.#editor && (readOnlyEx || readOnlyExYaml)) {
-      const setCMReadOnly = (
-        dom: HTMLElement,
-        className: string,
-        readOnlyEx: Compartment | undefined,
-        readOnly: boolean,
-      ) => {
-        if (!readOnlyEx) return;
-        const cmEditors = dom.querySelectorAll(`${className} .cm-editor`);
-        if (cmEditors && cmEditors.length && cmEditors.length > 0) {
-          for (const cmEditor of cmEditors) {
-            if (!cmEditor) continue;
-            const cmView = cmEditor && CMEditorView.findFromDOM(cmEditor as HTMLElement);
-            if (cmView) {
-              cmView.dispatch({
-                effects: readOnlyEx.reconfigure(CMEditorView.editable.of(readOnly ? false : true)),
-              });
-            }
-          }
-        }
-      };
       // 切换所有CodeMirror的ReadOnly
       this.#editor.action((ctx) => {
         const flags = ctx?.get(FeaturesCtx);
         const isCodeMirrorEnabled = flags?.includes(MilkdownFeature.CodeMirror);
         if (!isCodeMirrorEnabled) return;
         const view = ctx.get(editorViewCtx);
-        setCMReadOnly(view.dom, 'milkdown-code-block', readOnlyEx, value);
-        setCMReadOnly(view.dom, '.milkdown-yaml-block', readOnlyExYaml, value);
+        this.#setCMReadOnly(view.dom, 'milkdown-code-block', readOnlyEx, value);
+        this.#setCMReadOnly(view.dom, '.milkdown-yaml-block', readOnlyExYaml, value);
       });
     }
     return this;

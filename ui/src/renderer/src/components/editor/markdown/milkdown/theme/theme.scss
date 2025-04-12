@@ -134,8 +134,11 @@
     img {
       object-fit: contain;
     }
+
     .image-resize-handle {
-      display: flex;
+      transition: all 0.2s;
+      opacity: 1;
+      display: none;
       justify-content: center;
       align-items: center;
       background: none;
@@ -153,10 +156,12 @@
         height: 14px;
       }
     }
-
     .operation {
       top: 4px;
       right: 2px;
+      display: none;
+      transition: all 0.2s;
+      opacity: 1;
       .operation-item {
         display: flex;
         justify-content: center;
@@ -170,6 +175,11 @@
           height: 16px;
         }
       }
+    }
+
+    .image-resize-handle.op-visible,
+    .operation.op-visible {
+      display: flex;
     }
   }
 }

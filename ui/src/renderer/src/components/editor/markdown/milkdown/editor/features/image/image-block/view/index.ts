@@ -2,6 +2,7 @@ import type { Node } from '@milkdown/prose/model';
 import type { NodeViewConstructor } from '@milkdown/prose/view';
 import { $view } from '@milkdown/utils';
 
+import { editableCtx } from '../../../../core/slice';
 import { defIfNotExists, withMeta } from '../../../../utils';
 import { imageBlockConfig } from '../config';
 import { imageBlockSchema } from '../schema';
@@ -32,6 +33,10 @@ export const imageBlockView = $view(imageBlockSchema.node, (ctx): NodeViewConstr
 
       dom.readonly = !view.editable;
     };
+
+    ctx.use(editableCtx).on((editable) => {
+      dom.readonly = !editable;
+    });
 
     bindAttrs(initialNode);
     dom.selected = false;

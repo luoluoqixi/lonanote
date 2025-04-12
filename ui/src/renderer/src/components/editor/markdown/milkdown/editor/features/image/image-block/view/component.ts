@@ -38,6 +38,7 @@ export const imageComponent: Component<ImageComponentProps> = ({
   const [uuid] = useState(nanoid());
   const [focusLinkInput, setFocusLinkInput] = useState(false);
   const [currentLink, setCurrentLink] = useState(src);
+  const [showOperation, setShowOperation] = useState(false);
 
   useBlockEffect({
     image,
@@ -64,6 +65,15 @@ export const imageComponent: Component<ImageComponentProps> = ({
 
     setAttr?.('src', url);
     setHidePlaceholder(true);
+  };
+
+  const onMouseEnter = () => {
+    if (readonly) return;
+    console.log('enter', readonly);
+    setShowOperation(true);
+  };
+  const onMouseLeave = () => {
+    setShowOperation(false);
   };
 
   // const onInput = (e: InputEvent) => {
@@ -130,8 +140,12 @@ export const imageComponent: Component<ImageComponentProps> = ({
           ${config?.confirmButton()}
         </div>
       </div>
-      <div class=${clsx('image-wrapper', src.length === 0 && 'hidden')}>
-        <div class="operation">
+      <div
+        class=${clsx('image-wrapper', src.length === 0 && 'hidden')}
+        onmouseenter=${onMouseEnter}
+        onmouseleave=${onMouseLeave}
+      >
+        <div class=${clsx('operation', showOperation && 'op-visible')}>
           <div class="operation-item" onpointerdown=${operationClick}>
             ${config?.operationIcon()}
           </div>
@@ -144,7 +158,12 @@ export const imageComponent: Component<ImageComponentProps> = ({
           title=${caption}
           ratio=${ratio}
         />
-        <div ref=${resizeHandle} class="image-resize-handle">${config?.resizeIcon()}</div>
+        <div
+          ref=${resizeHandle}
+          class=${clsx('image-resize-handle', showOperation && 'op-visible')}
+        >
+          ${config?.resizeIcon()}
+        </div>
       </div>
     </host>
   `;

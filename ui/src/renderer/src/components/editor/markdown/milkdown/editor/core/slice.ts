@@ -8,6 +8,8 @@ export const milkdownEditorCtx = createSlice({} as MilkdownEditor, 'MilkdownEdit
 
 export const FeaturesCtx = createSlice([] as MilkdownFeature[], 'FeaturesCtx');
 
+export const editableCtx = createSlice(true, 'editable');
+
 export function configureFeatures(features: MilkdownFeature[]) {
   return (ctx: Ctx) => {
     ctx.inject(FeaturesCtx, features);

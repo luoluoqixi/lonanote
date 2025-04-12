@@ -7,6 +7,7 @@ import type { PluginView } from '@milkdown/kit/prose/state';
 import { TextSelection } from '@milkdown/kit/prose/state';
 import type { AtomicoThis } from 'atomico/types/dom';
 
+import { editableCtx } from '../../../core/slice';
 import { defIfNotExists } from '../../../utils';
 import type { BlockEditFeatureConfig } from '../index';
 import { menuAPI } from '../menu';
@@ -46,6 +47,16 @@ export class BlockHandleView implements PluginView {
         const handleHeight = handleRect.height;
         return totalDescendant > 2 || handleHeight < height ? 'left-start' : 'left';
       },
+    });
+
+    ctx.use(editableCtx).on((editable) => {
+      if (!editable) {
+        // 切换readOnly时隐藏block-handle
+        const blockHandle = document.querySelector('milkdown-block-handle');
+        if (blockHandle) {
+          blockHandle.setAttribute('data-show', 'false');
+        }
+      }
     });
     this.update();
   }
