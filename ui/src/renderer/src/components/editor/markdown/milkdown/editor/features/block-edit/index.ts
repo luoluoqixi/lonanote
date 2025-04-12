@@ -41,6 +41,8 @@ interface BlockEditConfig {
   slashMenuAdvancedGroupLabel: string;
   slashMenuImageIcon: Icon;
   slashMenuImageLabel: string;
+  slashMenuImageLinkIcon: Icon;
+  slashMenuImageLinkLabel: string;
   slashMenuCodeBlockIcon: Icon;
   slashMenuCodeBlockLabel: string;
   slashMenuTableIcon: Icon;

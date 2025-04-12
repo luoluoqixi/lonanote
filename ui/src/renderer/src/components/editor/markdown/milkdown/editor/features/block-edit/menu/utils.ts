@@ -95,3 +95,15 @@ export function clearContentAndAddBlockType(
     return true;
   };
 }
+
+export function clearContentAndInsertText(text: string): Command {
+  return (state, dispatch) => {
+    const tr = clearRange(state.tr);
+    if (!tr) return false;
+    const { $from, $to } = tr.selection;
+    const { pos: from } = $from;
+    const { pos: to } = $to;
+    if (dispatch) dispatch(tr.insertText(text, from, to).scrollIntoView());
+    return true;
+  };
+}

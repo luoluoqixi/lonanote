@@ -39,6 +39,7 @@ import { GroupBuilder } from './group-builder';
 import type { MenuItemGroup } from './utils';
 import {
   clearContentAndAddBlockType,
+  clearContentAndInsertText,
   clearContentAndSetBlockType,
   clearContentAndWrapInBlockType,
   clearRange,
@@ -217,6 +218,17 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         const { dispatch, state } = view;
 
         const command = clearContentAndAddBlockType(imageBlockSchema.type(ctx));
+        command(state, dispatch);
+      },
+    });
+    advancedGroup.addItem('image-link', {
+      label: config?.slashMenuImageLinkLabel ?? 'Image Link',
+      icon: config?.slashMenuImageLinkIcon?.() ?? imageIcon,
+      onRun: (ctx) => {
+        const view = ctx.get(editorViewCtx);
+        const { dispatch, state } = view;
+
+        const command = clearContentAndInsertText('[![]()]()');
         command(state, dispatch);
       },
     });
