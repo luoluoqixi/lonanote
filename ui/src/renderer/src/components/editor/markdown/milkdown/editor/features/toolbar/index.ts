@@ -4,8 +4,9 @@ import type { EditorState, PluginView } from '@milkdown/kit/prose/state';
 import { TextSelection } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import type { AtomicoThis } from 'atomico/types/dom';
+import debounce from 'lodash/debounce';
 
-import { addViewScrollEvent, defIfNotExists } from '../../utils';
+import { addViewEvent, addViewScrollEvent, defIfNotExists } from '../../utils';
 import type { DefineFeature, Icon } from '../types';
 import type { ToolbarProps } from './component';
 import { ToolbarElement } from './component';
@@ -27,6 +28,10 @@ class ToolbarView implements PluginView {
   #tooltipProvider: TooltipProvider;
   #content: AtomicoThis<ToolbarProps>;
   #removeOnScroll: (() => void) | null;
+  #removeMousedownListener: (() => void) | null = null;
+  #removeMouseupListener: (() => void) | null = null;
+  #debouncedUpdate: (view: EditorView, prevState?: EditorState) => void;
+
   constructor(ctx: Ctx, view: EditorView, config?: ToolbarFeatureConfig) {
     const content = new ToolbarElement();
     this.#content = content;
@@ -65,21 +70,45 @@ class ToolbarView implements PluginView {
     this.#tooltipProvider.onHide = () => {
       this.#content.show = false;
     };
-    this.update(view);
+
+    this.#debouncedUpdate = debounce((view: EditorView, prevState?: EditorState) => {
+      this.#update(view, prevState);
+    }, 150);
+
+    this.#update(view);
 
     this.#removeOnScroll = addViewScrollEvent(view, () => {
-      this.update(view);
+      this.#update(view);
     });
+
+    const onMouseUp = () => {
+      this.#debouncedUpdate(view);
+    };
+    const onMouseDown = () => {
+      this.hide();
+    };
+    this.#removeMouseupListener = addViewEvent(window, 'mouseup', onMouseUp);
+    this.#removeMousedownListener = addViewEvent(view.dom, 'mousedown', onMouseDown);
   }
 
-  update = (view: EditorView, prevState?: EditorState) => {
+  #update = (view: EditorView, prevState?: EditorState) => {
     this.#tooltipProvider.update(view, prevState);
     this.#content.selection = view.state.selection;
   };
 
+  // update = (view: EditorView, prevState?: EditorState) => {
+  //   this.#update(view, prevState);
+  // };
+
   destroy = () => {
     if (this.#removeOnScroll) {
       this.#removeOnScroll();
+    }
+    if (this.#removeMouseupListener) {
+      this.#removeMouseupListener();
+    }
+    if (this.#removeMousedownListener) {
+      this.#removeMousedownListener();
     }
     this.#tooltipProvider.destroy();
     this.#content.remove();

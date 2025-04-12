@@ -27,10 +27,21 @@ export function withMeta<T extends MilkdownPlugin>(
 
 export function addViewScrollEvent(view: EditorView, onScroll: (e: Event) => void) {
   if (view.dom.parentElement) {
-    view.dom.parentElement.addEventListener('scroll', onScroll);
+    return addViewEvent(view.dom.parentElement, 'scroll', onScroll);
+  }
+  return null;
+}
+
+export function addViewEvent<K extends keyof HTMLElementEventMap>(
+  dom: HTMLElement | Window | null,
+  type: K,
+  listener: (this: HTMLElement, ev: Event) => any,
+) {
+  if (dom) {
+    dom.addEventListener(type, listener);
     return () => {
-      if (!view || !view.dom || !view.dom.parentElement) return;
-      view.dom.parentElement?.removeEventListener('scroll', onScroll);
+      if (!dom) return;
+      dom?.removeEventListener(type, listener);
     };
   }
   return null;
