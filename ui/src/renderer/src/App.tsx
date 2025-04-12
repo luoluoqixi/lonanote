@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TbChevronsDownRight } from 'react-icons/tb';
 
 import { Title, dialog, spinner } from './components';
 import { useInited } from './hooks';
@@ -16,6 +17,7 @@ export const App = () => {
       {inited && <Routes />}
       <spinner.GlobalSpinner />
       <dialog.GlobalDialog />
+      <TbChevronsDownRight />
     </>
   );
 };

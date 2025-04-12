@@ -1,6 +1,6 @@
-import { captionIcon, confirmIcon, imageIcon } from '../../icons';
+import { confirmIcon, imageIcon } from '../../icons';
 import { DefineFeature, Icon } from './../types';
-import { imageBlockComponent, imageBlockConfig } from './image-block';
+import { defaultImageBlockConfig, imageBlockComponent, imageBlockConfig } from './image-block';
 import { imageInlineComponent, inlineImageConfig } from './image-inline';
 
 interface ImageConfig {
@@ -15,9 +15,9 @@ interface ImageConfig {
 
   blockImageIcon: Icon;
   blockConfirmButton: Icon;
-  blockCaptionIcon: Icon;
+  blockOperationIcon: Icon;
+  blockResizeIcon: Icon;
   blockUploadButton: Icon;
-  blockCaptionPlaceholderText: string;
   blockUploadPlaceholderText: string;
   blockOnUpload: (file: File) => Promise<string>;
 }
@@ -38,9 +38,9 @@ export const defineImage: DefineFeature<ImageFeatureConfig> = (editor, config) =
       ctx.update(imageBlockConfig.key, (value) => ({
         uploadButton: config?.blockUploadButton ?? (() => 'Upload file'),
         imageIcon: config?.blockImageIcon ?? (() => imageIcon),
-        captionIcon: config?.blockCaptionIcon ?? (() => captionIcon),
         confirmButton: config?.blockConfirmButton ?? (() => 'Confirm'),
-        captionPlaceholderText: config?.blockCaptionPlaceholderText ?? 'Write Image Caption',
+        operationIcon: config?.blockOperationIcon ?? defaultImageBlockConfig.operationIcon,
+        resizeIcon: config?.blockResizeIcon ?? defaultImageBlockConfig.resizeIcon,
         uploadPlaceholderText: config?.blockUploadPlaceholderText ?? 'or paste link',
         onUpload: config?.blockOnUpload ?? config?.onUpload ?? value.onUpload,
         proxyDomURL: config?.proxyDomURL,

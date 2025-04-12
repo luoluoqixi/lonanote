@@ -128,4 +128,48 @@
       align-items: center;
     }
   }
+
+  milkdown-image-block > .image-wrapper {
+    margin: 0;
+    img {
+      object-fit: contain;
+    }
+    .image-resize-handle {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: none;
+      border-radius: 10px;
+      background-color: var(--gray-a10);
+      color: var(--crepe-color-on-inverse);
+      width: 24px;
+      height: 24px;
+      left: unset;
+      right: -12px;
+      bottom: 0px;
+      cursor: nwse-resize !important;
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+
+    .operation {
+      top: 4px;
+      right: 2px;
+      .operation-item {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 25px;
+        height: 25px;
+        // border-radius: 50%;
+        border-radius: 10px;
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+  }
 }

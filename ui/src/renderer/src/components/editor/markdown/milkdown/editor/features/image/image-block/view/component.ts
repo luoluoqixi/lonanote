@@ -1,5 +1,5 @@
 import type { Component } from 'atomico';
-import { c, html, useEffect, useRef, useState } from 'atomico';
+import { c, html, useRef, useState } from 'atomico';
 import clsx from 'clsx';
 import { customAlphabet } from 'nanoid';
 
@@ -20,8 +20,6 @@ export type ImageComponentProps = Attrs & {
   setAttr: <T extends keyof Attrs>(attr: T, value: Attrs[T]) => void;
 };
 
-let timer: number = 0;
-
 const nanoid = customAlphabet('abcdefg', 8);
 
 export const imageComponent: Component<ImageComponentProps> = ({
@@ -36,7 +34,6 @@ export const imageComponent: Component<ImageComponentProps> = ({
   const image = useRef<HTMLImageElement>();
   const resizeHandle = useRef<HTMLDivElement>();
   const linkInput = useRef<HTMLInputElement>();
-  const [showCaption, setShowCaption] = useState(caption.length > 0);
   const [hidePlaceholder, setHidePlaceholder] = useState(src.length !== 0);
   const [uuid] = useState(nanoid());
   const [focusLinkInput, setFocusLinkInput] = useState(false);
@@ -50,33 +47,6 @@ export const imageComponent: Component<ImageComponentProps> = ({
     src,
     readonly,
   });
-
-  useEffect(() => {
-    if (selected) return;
-
-    setShowCaption(caption.length > 0);
-  }, [selected]);
-
-  const onInput = (e: InputEvent) => {
-    const target = e.target as HTMLInputElement;
-    const value = target.value;
-    if (timer) window.clearTimeout(timer);
-
-    timer = window.setTimeout(() => {
-      setAttr?.('caption', value);
-    }, 1000);
-  };
-
-  const onBlurCaption = (e: InputEvent) => {
-    const target = e.target as HTMLInputElement;
-    const value = target.value;
-    if (timer) {
-      window.clearTimeout(timer);
-      timer = 0;
-    }
-
-    setAttr?.('caption', value);
-  };
 
   const onEditLink = (e: InputEvent) => {
     const target = e.target as HTMLInputElement;
@@ -96,12 +66,11 @@ export const imageComponent: Component<ImageComponentProps> = ({
     setHidePlaceholder(true);
   };
 
-  const onToggleCaption = (e: Event) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (readonly) return;
-    setShowCaption((x) => !x);
-  };
+  // const onInput = (e: InputEvent) => {
+  //   const target = e.target as HTMLInputElement;
+  //   const value = target.value;
+  //   setAttr?.('caption', value);
+  // };
 
   const onConfirmLinkInput = () => {
     setAttr?.('src', linkInput.current?.value ?? '');
@@ -114,6 +83,12 @@ export const imageComponent: Component<ImageComponentProps> = ({
   const preventDrag = (e: Event) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  const operationClick = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('operation');
   };
 
   return html`
@@ -157,22 +132,20 @@ export const imageComponent: Component<ImageComponentProps> = ({
       </div>
       <div class=${clsx('image-wrapper', src.length === 0 && 'hidden')}>
         <div class="operation">
-          <div class="operation-item" onpointerdown=${onToggleCaption}>
-            ${config?.captionIcon()}
+          <div class="operation-item" onpointerdown=${operationClick}>
+            ${config?.operationIcon()}
           </div>
         </div>
-        <img ref=${image} data-type=${IMAGE_DATA_TYPE} src=${src} alt=${caption} ratio=${ratio} />
-        <div ref=${resizeHandle} class="image-resize-handle"></div>
+        <img
+          ref=${image}
+          data-type=${IMAGE_DATA_TYPE}
+          src=${src}
+          alt=${caption}
+          title=${caption}
+          ratio=${ratio}
+        />
+        <div ref=${resizeHandle} class="image-resize-handle">${config?.resizeIcon()}</div>
       </div>
-      <input
-        draggable="true"
-        ondragstart=${preventDrag}
-        class=${clsx('caption-input', !showCaption && 'hidden')}
-        placeholder=${config?.captionPlaceholderText}
-        oninput=${onInput}
-        onblur=${onBlurCaption}
-        value=${caption}
-      />
     </host>
   `;
 };

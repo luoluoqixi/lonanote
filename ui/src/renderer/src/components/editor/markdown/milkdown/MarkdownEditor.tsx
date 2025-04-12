@@ -56,7 +56,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         [MilkdownFeature.Image]: {
           proxyDomURL(url) {
             if (!url) return url;
-            console.log(url);
+            // console.log(url);
             if (utils.isImgUrl(url)) {
               return url;
             }
