@@ -2,6 +2,7 @@ import { confirmIcon, imageIcon } from '../../icons';
 import { DefineFeature, Icon } from './../types';
 import { defaultImageBlockConfig, imageBlockComponent, imageBlockConfig } from './image-block';
 import { imageInlineComponent, inlineImageConfig } from './image-inline';
+import { ImageMenuConfig, defineImageMenu } from './image-menu';
 
 interface ImageConfig {
   onUpload: (file: File) => Promise<string>;
@@ -20,11 +21,14 @@ interface ImageConfig {
   blockUploadButton: Icon;
   blockUploadPlaceholderText: string;
   blockOnUpload: (file: File) => Promise<string>;
+
+  imageMenu: ImageMenuConfig;
 }
 
 export type ImageFeatureConfig = Partial<ImageConfig>;
 
 export const defineImage: DefineFeature<ImageFeatureConfig> = (editor, config) => {
+  defineImageMenu(editor, config?.imageMenu);
   editor
     .config((ctx) => {
       ctx.update(inlineImageConfig.key, (value) => ({
