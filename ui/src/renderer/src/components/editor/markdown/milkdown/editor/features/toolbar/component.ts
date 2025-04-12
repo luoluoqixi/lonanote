@@ -1,5 +1,5 @@
 /* eslint-disable indent */
-import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
+import { commandsCtx, editorViewCtx, schemaCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
 import {
   emphasisSchema,
@@ -69,6 +69,11 @@ export const toolbarComponent: Component<ToolbarProps> = ({
     return doc.rangeHasMark(selection.from, selection.to, mark);
   };
 
+  const isCtxInited = (ctx: Ctx | null | undefined) => {
+    if (!ctx) return false;
+    return ctx.isInjected(schemaCtx);
+  };
+
   const containsNode = (node: NodeType) => {
     if (!ctx || !selection) return false;
     const view = ctx.get(editorViewCtx);
@@ -136,7 +141,10 @@ export const toolbarComponent: Component<ToolbarProps> = ({
     <host>
       <button
         type="button"
-        class=${clsx('toolbar-item', ctx && isActive(strongSchema.type(ctx)) && 'active')}
+        class=${clsx(
+          'toolbar-item',
+          ctx && isCtxInited(ctx) && isActive(strongSchema.type(ctx)) && 'active',
+        )}
         onmousedown=${onClick((ctx) => {
           const commands = ctx.get(commandsCtx);
           commands.call(toggleStrongCommand.key);
@@ -146,7 +154,10 @@ export const toolbarComponent: Component<ToolbarProps> = ({
       </button>
       <button
         type="button"
-        class=${clsx('toolbar-item', ctx && isActive(emphasisSchema.type(ctx)) && 'active')}
+        class=${clsx(
+          'toolbar-item',
+          ctx && isCtxInited(ctx) && isActive(emphasisSchema.type(ctx)) && 'active',
+        )}
         onmousedown=${onClick((ctx) => {
           const commands = ctx.get(commandsCtx);
           commands.call(toggleEmphasisCommand.key);
@@ -156,7 +167,10 @@ export const toolbarComponent: Component<ToolbarProps> = ({
       </button>
       <button
         type="button"
-        class=${clsx('toolbar-item', ctx && isActive(strikethroughSchema.type(ctx)) && 'active')}
+        class=${clsx(
+          'toolbar-item',
+          ctx && isCtxInited(ctx) && isActive(strikethroughSchema.type(ctx)) && 'active',
+        )}
         onmousedown=${onClick((ctx) => {
           const commands = ctx.get(commandsCtx);
           commands.call(toggleStrikethroughCommand.key);
@@ -167,7 +181,10 @@ export const toolbarComponent: Component<ToolbarProps> = ({
       <div class="divider"></div>
       <button
         type="button"
-        class=${clsx('toolbar-item', ctx && isActive(inlineCodeSchema.type(ctx)) && 'active')}
+        class=${clsx(
+          'toolbar-item',
+          ctx && isCtxInited(ctx) && isActive(inlineCodeSchema.type(ctx)) && 'active',
+        )}
         onmousedown=${onClick((ctx) => {
           const commands = ctx.get(commandsCtx);
           commands.call(toggleInlineCodeCommand.key);
@@ -179,7 +196,10 @@ export const toolbarComponent: Component<ToolbarProps> = ({
       html`
         <button
           type="button"
-          class=${clsx('toolbar-item', ctx && containsNode(mathInlineSchema.type(ctx)) && 'active')}
+          class=${clsx(
+            'toolbar-item',
+            ctx && isCtxInited(ctx) && containsNode(mathInlineSchema.type(ctx)) && 'active',
+          )}
           onmousedown=${onClick(toggleLatex)}
         >
           ${config?.latexIcon?.() ?? functionsIcon}
@@ -187,7 +207,10 @@ export const toolbarComponent: Component<ToolbarProps> = ({
       `}
       <button
         type="button"
-        class=${clsx('toolbar-item', ctx && isActive(linkSchema.type(ctx)) && 'active')}
+        class=${clsx(
+          'toolbar-item',
+          ctx && isCtxInited(ctx) && isActive(linkSchema.type(ctx)) && 'active',
+        )}
         onmousedown=${onClick((ctx) => {
           const view = ctx.get(editorViewCtx);
           const { selection } = view.state;
