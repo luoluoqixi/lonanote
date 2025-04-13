@@ -1,8 +1,10 @@
+import type { Ctx } from '@milkdown/kit/ctx';
 import type { Component } from 'atomico';
 import { c, html, useRef, useState } from 'atomico';
 import clsx from 'clsx';
 import { customAlphabet } from 'nanoid';
 
+import { ImageMenuToggleSlice } from '../../image-menu';
 import type { ImageBlockConfig } from '../config';
 import { IMAGE_DATA_TYPE } from '../schema';
 import { useBlockEffect } from './event';
@@ -14,6 +16,7 @@ export interface Attrs {
 }
 
 export type ImageComponentProps = Attrs & {
+  ctx: Ctx;
   config: ImageBlockConfig;
   selected: boolean;
   readonly: boolean;
@@ -23,6 +26,7 @@ export type ImageComponentProps = Attrs & {
 const nanoid = customAlphabet('abcdefg', 8);
 
 export const imageComponent: Component<ImageComponentProps> = ({
+  ctx,
   src = '',
   caption = '',
   ratio = 1,
@@ -99,6 +103,12 @@ export const imageComponent: Component<ImageComponentProps> = ({
     if (readonly) return;
     e.preventDefault();
     e.stopPropagation();
+    if (!ctx) return;
+    const toggleMenu = ctx?.get(ImageMenuToggleSlice);
+    const el = (e.target as HTMLElement)?.closest('.operation-item') as HTMLElement | null;
+    if (el) {
+      toggleMenu?.(el, null);
+    }
   };
 
   return html`
@@ -168,6 +178,7 @@ imageComponent.props = {
   readonly: Boolean,
   setAttr: Function,
   config: Object,
+  ctx: Object,
 };
 
 export const ImageElement = c(imageComponent);

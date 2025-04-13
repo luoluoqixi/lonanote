@@ -16,6 +16,7 @@ export const imageBlockView = $view(imageBlockSchema.node, (ctx): NodeViewConstr
     const config = ctx.get(imageBlockConfig.key);
     const proxyDomURL = config.proxyDomURL;
     const bindAttrs = (node: Node) => {
+      dom.ctx = ctx;
       if (!proxyDomURL) {
         dom.src = node.attrs.src;
       } else {
