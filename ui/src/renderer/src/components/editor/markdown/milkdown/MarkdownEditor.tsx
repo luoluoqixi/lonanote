@@ -83,10 +83,21 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         },
       },
     });
+
+    let updateTimeId: number | null = null;
     const updateState = (ctx: Ctx) => {
-      if (!editor) return;
-      const view = ctx.get(editorViewCtx);
-      onUpdateListener?.({ charCount: view.state.doc.content.size });
+      if (updateTimeId) {
+        clearTimeout(updateTimeId);
+        updateTimeId = null;
+      }
+      updateTimeId = window.setTimeout(() => {
+        if (!editor || !ctx) return;
+        if (!ctx.isInjected(editorViewCtx)) {
+          return;
+        }
+        const view = ctx.get(editorViewCtx);
+        onUpdateListener?.({ charCount: view.state.doc.content.size });
+      }, 200);
     };
     editor.addListener('onSave', () => {
       if (!editor) return true;
