@@ -6,6 +6,7 @@ import type { PluginView } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import type { AtomicoThis } from 'atomico/types/dom';
 import throttle from 'lodash.throttle';
+import Viewer from 'viewerjs';
 
 import { MarkdownMenu, MarkdownMenuOption, MarkdownMenuProps } from '../../../components';
 import { captionIcon, downloadIcon, imageIcon, previewIcon } from '../../../icons';
@@ -20,46 +21,49 @@ export type ImageMenuClick = (
   option: MarkdownMenuOption,
   index: number,
   ctx: Ctx,
-  handles: ImageHandles | null,
+  info: ImageInfo | null,
 ) => boolean;
 
 export interface ImageMenuConfig {
   title: string;
   customOptions?: ImageMenuItem[];
-  previewItem?: ImageMenuItemConfig;
-  uploadImageItem?: ImageMenuItemConfig;
-  editImageItem?: ImageMenuItemConfig;
-  editCaptionItem?: ImageMenuItemConfig;
-  downloadImageItem?: ImageMenuItemConfig;
-
+  defaultMenuOptions?: Record<ImageMenuKey, ImageMenuItemConfig>;
   onMenuClick?: ImageMenuClick;
 }
 
 const toolbar = tooltipFactory('CREPE_TOOLBAR');
 
+export enum ImageMenuKey {
+  Preview = 'preview',
+  UploadImage = 'uploadImage',
+  EditImage = 'editImage',
+  EditCaption = 'editCaption',
+  DownloadImage = 'downloadImage',
+}
+
 const options: ImageMenuItem[] = [
   {
-    key: 'preview',
+    key: ImageMenuKey.Preview,
     label: 'Preview',
     icon: previewIcon,
   },
   {
-    key: 'upload-image',
+    key: ImageMenuKey.UploadImage,
     label: 'Upload Image',
     icon: imageIcon,
   },
   {
-    key: 'edit-image',
+    key: ImageMenuKey.EditImage,
     label: 'Edit Image',
     icon: imageIcon,
   },
   {
-    key: 'edit-caption',
+    key: ImageMenuKey.EditCaption,
     label: 'Edit Caption',
     icon: captionIcon,
   },
   {
-    key: 'download-image',
+    key: ImageMenuKey.DownloadImage,
     label: 'Download',
     icon: downloadIcon,
   },
@@ -85,11 +89,10 @@ const addMergeOption = (
 const getOptions = (config?: ImageMenuConfig): ImageMenuItem[] => {
   if (!config) return options;
   const newOptions: ImageMenuItem[] = [];
-  addMergeOption(newOptions, config.previewItem, options[0]);
-  addMergeOption(newOptions, config.uploadImageItem, options[1]);
-  addMergeOption(newOptions, config.editImageItem, options[2]);
-  addMergeOption(newOptions, config.editCaptionItem, options[3]);
-  addMergeOption(newOptions, config.downloadImageItem, options[4]);
+  for (let i = 0; i < options.length; i++) {
+    const item = options[i];
+    addMergeOption(newOptions, config.defaultMenuOptions?.[item.key], item);
+  }
   if (config.customOptions) {
     for (let i = 0; i < config.customOptions.length; i++) {
       const option = config.customOptions[i];
@@ -105,7 +108,15 @@ export interface VirtualElement {
   getBoundingClientRect(): ClientRectObject;
 }
 
-export interface ImageHandles {}
+export interface ImageInfo {
+  img: HTMLImageElement;
+  imageUrl: string;
+  caption?: string;
+  title?: string;
+  setImageUrl: (newImageUrl: string) => void;
+  setCaption: (newCaption: string) => void;
+  onUpload: (e: InputEvent) => Promise<boolean>;
+}
 
 class ImageMenuView implements PluginView {
   #tooltipProvider: TooltipProvider;
@@ -116,7 +127,8 @@ class ImageMenuView implements PluginView {
   #initialized?: boolean;
   #root: HTMLElement;
   #customMenuClick?: ImageMenuClick;
-  #menuHandles: ImageHandles | null;
+  #menuInfo: ImageInfo | null;
+  #viewer: Viewer | null;
 
   constructor(ctx: Ctx, view: EditorView, config?: ImageMenuConfig) {
     const content = new MarkdownMenu();
@@ -131,7 +143,8 @@ class ImageMenuView implements PluginView {
     this.#virtualElement = null;
     this.#initialized = false;
     this.#root = view.dom.parentElement ?? document.body;
-    this.#menuHandles = null;
+    this.#menuInfo = null;
+    this.#viewer = null;
 
     this.#tooltipProvider = new TooltipProvider({
       content: this.#content,
@@ -195,6 +208,10 @@ class ImageMenuView implements PluginView {
   };
 
   destroy = () => {
+    if (this.#viewer) {
+      this.#viewer.destroy();
+      this.#viewer = null;
+    }
     if (this.#removeOnScroll) {
       this.#removeOnScroll();
     }
@@ -206,18 +223,18 @@ class ImageMenuView implements PluginView {
   hide = () => {
     this.#show = false;
     this.#virtualElement = null;
-    this.#menuHandles = null;
+    this.#menuInfo = null;
     this.#tooltipProvider.hide();
   };
 
-  show = (virtualElement: VirtualElement | null, handles: ImageHandles | null) => {
-    this.#menuHandles = handles;
+  show = (virtualElement: VirtualElement | null, info: ImageInfo | null) => {
+    this.#menuInfo = info;
     this.#virtualElement = virtualElement;
     this.#show = true;
     this.#update();
   };
 
-  toggle = (virtualElement: VirtualElement | null, handles: ImageHandles | null) => {
+  toggle = (virtualElement: VirtualElement | null, handles: ImageInfo | null) => {
     if (!this.#show) {
       this.show(virtualElement, handles);
     } else {
@@ -225,17 +242,66 @@ class ImageMenuView implements PluginView {
     }
   };
 
+  #showImageViewer = (imageInfo: ImageInfo) => {
+    const { imageUrl, caption, title } = imageInfo;
+    const imgViewerId = 'milkdown-image-viewer';
+    let imgViewer = document.getElementById(imgViewerId);
+    if (!imgViewer) {
+      imgViewer = document.createElement('img');
+      imgViewer.id = imgViewerId;
+      imgViewer.style.display = 'none';
+      document.body.appendChild(imgViewer);
+    }
+    imgViewer.setAttribute('src', imageUrl);
+    imgViewer.setAttribute('alt', caption || '');
+    imgViewer.setAttribute('title', title || '');
+    if (this.#viewer == null) {
+      // https://github.com/fengyuanchen/viewerjs/issues/648
+      // 关闭 Viewer 时会有一个报错, github issue暂未解决
+      this.#viewer = new Viewer(imgViewer, {
+        button: false,
+        navbar: false,
+        loop: false,
+        title: true,
+        toolbar: {
+          prev: false,
+          next: false,
+          play: false,
+          flipHorizontal: true,
+          flipVertical: true,
+          oneToOne: true,
+          reset: true,
+          rotateLeft: true,
+          rotateRight: true,
+          zoomIn: true,
+          zoomOut: true,
+        },
+      });
+    }
+    this.#viewer.show();
+  };
+
   #onMenuClick = (option: MarkdownMenuOption, index: number, ctx: Ctx) => {
     if (this.#customMenuClick) {
-      const handleFinish = this.#customMenuClick(option, index, ctx, this.#menuHandles);
+      const handleFinish = this.#customMenuClick(option, index, ctx, this.#menuInfo);
       if (handleFinish) {
         return;
       }
     }
-    console.log(index, this.#menuHandles);
-    // if (this.#menuHandles) {
-    //   console.log(index, this.#menuHandles);
-    // }
+    if (this.#menuInfo) {
+      const key = option.key;
+      if (key === ImageMenuKey.Preview) {
+        this.#showImageViewer(this.#menuInfo);
+      } else if (key === ImageMenuKey.EditImage) {
+        //
+      } else if (key === ImageMenuKey.EditCaption) {
+        //
+      } else if (key === ImageMenuKey.UploadImage) {
+        //
+      } else if (key === ImageMenuKey.DownloadImage) {
+        console.log('download:', this.#menuInfo.img.src);
+      }
+    }
   };
 
   #onDocumentDown = (e: MouseEvent) => {
@@ -247,11 +313,9 @@ class ImageMenuView implements PluginView {
 }
 
 export type ImageMenuShowFun =
-  | ((virtualElement: VirtualElement | null, handles: ImageHandles | null) => void)
+  | ((virtualElement: VirtualElement | null, handles: ImageInfo | null) => void)
   | null;
-export type ImageMenuVoidFun =
-  | ((virtualElement: VirtualElement | null, handles: ImageHandles | null) => void)
-  | null;
+export type ImageMenuVoidFun = (() => void) | null;
 export type ImageMenuBooleanFun = (() => boolean) | null;
 
 export const ImageMenuToggleSlice = createSlice<ImageMenuShowFun>(null, 'image-menu-toggle');

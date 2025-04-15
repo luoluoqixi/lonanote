@@ -60,15 +60,19 @@ export const imageComponent: Component<ImageComponentProps> = ({
     setCurrentLink(value);
   };
 
-  const onUpload = async (e: InputEvent) => {
+  const startUpload = async (e: InputEvent): Promise<boolean> => {
     const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-
+    if (!file) return false;
     const url = await config?.onUpload(file);
-    if (!url) return;
-
+    if (!url) return false;
     setAttr?.('src', url);
-    setHidePlaceholder(true);
+    return true;
+  };
+
+  const onUpload = async (e: InputEvent) => {
+    if (await startUpload(e)) {
+      setHidePlaceholder(true);
+    }
   };
 
   const onMouseEnter = () => {
@@ -104,10 +108,23 @@ export const imageComponent: Component<ImageComponentProps> = ({
     e.preventDefault();
     e.stopPropagation();
     if (!ctx) return;
+    if (!image.current) return;
     const toggleMenu = ctx?.get(ImageMenuToggleSlice);
     const el = (e.target as HTMLElement)?.closest('.operation-item') as HTMLElement | null;
     if (el) {
-      toggleMenu?.(el, null);
+      toggleMenu?.(el, {
+        img: image.current,
+        imageUrl: src,
+        title: caption,
+        caption,
+        setImageUrl: (newImageUrl) => {
+          setAttr?.('src', newImageUrl);
+        },
+        setCaption: (newCaption) => {
+          setAttr?.('caption', newCaption);
+        },
+        onUpload: startUpload,
+      });
     }
   };
 

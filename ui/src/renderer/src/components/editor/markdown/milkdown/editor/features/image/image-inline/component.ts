@@ -33,6 +33,7 @@ export const inlineImageComponent: Component<InlineImageComponentProps> = ({
   const [focusLinkInput, setFocusLinkInput] = useState(false);
   const [hidePlaceholder, setHidePlaceholder] = useState(src.length !== 0);
   const [currentLink, setCurrentLink] = useState(src);
+  const image = useRef<HTMLImageElement>();
 
   const onEditLink = (e: InputEvent) => {
     const target = e.target as HTMLInputElement;
@@ -106,7 +107,7 @@ export const inlineImageComponent: Component<InlineImageComponentProps> = ({
             </div>
           `
         : html`
-            <img class="image-inline" src=${src} alt=${alt} title=${title} />
+            <img ref=${image} class="image-inline" src=${src} alt=${alt} title=${title} />
           `}
     </host>
   `;

@@ -220,6 +220,9 @@ importers:
       vditor:
         specifier: '=3.10.8'
         version: 3.10.8
+      viewerjs:
+        specifier: ^1.11.7
+        version: 1.11.7
       vite:
         specifier: ^6.2.2
         version: 6.2.2(@types/node@22.13.11)(sass-embedded@1.86.0)(tsx@4.19.3)(yaml@2.7.1)
@@ -5880,6 +5883,9 @@ packages:
 
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
+
+  viewerjs@1.11.7:
+    resolution: {integrity: sha512-0JuVqOmL5v1jmEAlG5EBDR3XquxY8DWFQbFMprOXgaBB0F7Q/X9xWdEaQc59D8xzwkdUgXEMSSknTpriq95igg==}
 
   vite-plugin-vconsole@2.1.1:
     resolution: {integrity: sha512-369FlBnQhzR5pF2+nsmbMeF5qNO6MzUIk3l+DHa8In15cscyk4eXT5pWfExoSLn41dgeI1FPP+kgAKViePYPdQ==}
@@ -13106,6 +13112,8 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
+
+  viewerjs@1.11.7: {}
 
   vite-plugin-vconsole@2.1.1: {}
 

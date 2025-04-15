@@ -3,7 +3,8 @@ import type { Node } from '@milkdown/prose/model';
 import type { NodeViewConstructor } from '@milkdown/prose/view';
 import { $view } from '@milkdown/utils';
 
-import { defIfNotExists, withMeta } from '../../../utils';
+import { addViewEvent, defIfNotExists, withMeta } from '../../../utils';
+import { ImageMenuShowSlice } from '../image-menu';
 import type { InlineImageComponentProps } from './component';
 import { InlineImageElement } from './component';
 import { inlineImageConfig } from './config';
@@ -40,6 +41,32 @@ export const inlineImageView = $view(imageSchema.node, (ctx): NodeViewConstructo
       view.dispatch(view.state.tr.setNodeAttribute(pos, attr, value));
     };
     dom.config = config;
+
+    let removePointerUpEvent = addViewEvent(dom, 'pointerup', () => {
+      const img = dom.querySelector('img');
+      if (!img) return;
+      const showMenu = ctx?.get(ImageMenuShowSlice);
+      showMenu?.(dom, {
+        img,
+        imageUrl: dom.src,
+        title: dom.title,
+        caption: dom.alt,
+        setImageUrl: (newImageUrl) => {
+          dom.setAttr?.('src', newImageUrl);
+        },
+        setCaption: (newCaption) => {
+          dom.setAttr?.('alt', newCaption);
+        },
+        onUpload: async (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (!file) return false;
+          const url = await config?.onUpload(file);
+          if (!url) return false;
+          dom.setAttr?.('src', url);
+          return true;
+        },
+      });
+    });
     return {
       dom,
       update: (updatedNode) => {
@@ -60,6 +87,10 @@ export const inlineImageView = $view(imageSchema.node, (ctx): NodeViewConstructo
         dom.selected = false;
       },
       destroy: () => {
+        if (removePointerUpEvent) {
+          removePointerUpEvent();
+          removePointerUpEvent = null;
+        }
         dom.remove();
       },
     };
