@@ -12,12 +12,15 @@ import {
 } from 'react';
 import { toast } from 'react-toastify';
 
+import { dialog } from '@/components/utils';
 import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
 
 import { useCodeMirrorTheme } from '../../codemirror';
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
 import { MilkdownEditor, MilkdownFeature, useMilkdownEditor } from './editor';
+import { ImageMenuKey } from './editor/features/image/image-menu';
+import { markdownEditorLanguages } from './languages';
 
 export interface UpdateState {
   charCount: number;
@@ -62,6 +65,50 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
             }
             const f = path.resolve(mediaRootPath, url);
             return utils.getMediaPath(f);
+          },
+          imageMenu: {
+            title: markdownEditorLanguages.imageMenuTitle,
+            defaultMenuOptions: {
+              [ImageMenuKey.Preview]: {
+                label: markdownEditorLanguages.imageMenuPreview,
+              },
+              [ImageMenuKey.UploadImage]: {
+                label: markdownEditorLanguages.imageMenuUploadImage,
+              },
+              [ImageMenuKey.EditImage]: {
+                label: markdownEditorLanguages.imageMenuEditImage,
+              },
+              [ImageMenuKey.EditCaption]: {
+                label: markdownEditorLanguages.imageMenuEditCaption,
+              },
+              [ImageMenuKey.DownloadImage]: {
+                label: markdownEditorLanguages.imageMenuDownload,
+              },
+            },
+            onMenuClick: (option, index, ctx, info) => {
+              const key = option.key;
+              if (key === ImageMenuKey.EditImage) {
+                const val = info?.imageUrl || '';
+                dialog.showInputDialog(markdownEditorLanguages.imageMenuEditImage, val, (v) => {
+                  if (info?.setImageUrl) {
+                    info.setImageUrl(v || '');
+                    console.log('set img url: ', v);
+                  }
+                });
+                return true;
+              } else if (key === ImageMenuKey.EditCaption) {
+                const val = info?.caption || '';
+                dialog.showInputDialog(markdownEditorLanguages.imageMenuEditCaption, val, (v) => {
+                  if (info?.setCaption) {
+                    info.setCaption(v || '');
+                  }
+                });
+                return true;
+              } else if (key === ImageMenuKey.DownloadImage) {
+                return true;
+              }
+              return false;
+            },
           },
         },
         [MilkdownFeature.CodeMirror]: {

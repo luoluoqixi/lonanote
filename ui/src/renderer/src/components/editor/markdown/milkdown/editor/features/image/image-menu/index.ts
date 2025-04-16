@@ -25,9 +25,9 @@ export type ImageMenuClick = (
 ) => boolean;
 
 export interface ImageMenuConfig {
-  title: string;
+  title?: string;
   customOptions?: ImageMenuItem[];
-  defaultMenuOptions?: Record<ImageMenuKey, ImageMenuItemConfig>;
+  defaultMenuOptions?: Partial<Record<ImageMenuKey, ImageMenuItemConfig>>;
   onMenuClick?: ImageMenuClick;
 }
 
@@ -82,6 +82,7 @@ const addMergeOption = (
       ...option,
       ...config,
     });
+    return;
   }
   options.push(option);
 };
@@ -281,6 +282,26 @@ class ImageMenuView implements PluginView {
     this.#viewer.show();
   };
 
+  #uploadImage = (imageInfo: ImageInfo) => {
+    if (!imageInfo) return;
+    const imgUploadId = 'milkdown-input-upload-image-tool';
+    let imgUpload = document.getElementById(imgUploadId);
+    if (!imgUpload) {
+      imgUpload = document.createElement('input');
+      imgUpload.id = imgUploadId;
+      imgUpload.setAttribute('type', 'file');
+      imgUpload.setAttribute('accept', 'image/*');
+      imgUpload.style.display = 'none';
+      document.body.appendChild(imgUpload);
+    }
+    imgUpload.onchange = async (e) => {
+      if (!imageInfo) return;
+      await imageInfo.onUpload(e as InputEvent);
+      imgUpload.onchange = null;
+    };
+    imgUpload.click();
+  };
+
   #onMenuClick = (option: MarkdownMenuOption, index: number, ctx: Ctx) => {
     if (this.#customMenuClick) {
       const handleFinish = this.#customMenuClick(option, index, ctx, this.#menuInfo);
@@ -293,11 +314,11 @@ class ImageMenuView implements PluginView {
       if (key === ImageMenuKey.Preview) {
         this.#showImageViewer(this.#menuInfo);
       } else if (key === ImageMenuKey.EditImage) {
-        //
+        console.log('edit image:', this.#menuInfo.img.src);
       } else if (key === ImageMenuKey.EditCaption) {
-        //
+        console.log('edit caption:', this.#menuInfo.img.src);
       } else if (key === ImageMenuKey.UploadImage) {
-        //
+        this.#uploadImage(this.#menuInfo);
       } else if (key === ImageMenuKey.DownloadImage) {
         console.log('download:', this.#menuInfo.img.src);
       }
