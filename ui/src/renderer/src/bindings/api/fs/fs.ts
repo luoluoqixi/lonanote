@@ -60,4 +60,10 @@ export const fs = {
   ): Promise<string | string[] | null | undefined> => {
     return (await invokeAsync('fs.show_select_dialog', options))!;
   },
+  saveImageUrlToFile: async (imageUrl: string, filePath: string): Promise<void> => {
+    return (await invokeAsync('fs.save_image_url_to_file', {
+      imageUrl,
+      filePath,
+    }))!;
+  },
 };

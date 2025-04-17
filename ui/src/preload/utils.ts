@@ -85,4 +85,13 @@ export const utils = {
     return await ipcRenderer.invoke('getPublicFiles', folder, type, recursive);
   },
   getMediaUrl: (filePath: string) => `media:///${filePath}`,
+  getMediaOriginUrl: (mediaPath: string) => {
+    if (mediaPath.startsWith('media:///')) {
+      return mediaPath.substring(9);
+    }
+    return mediaPath;
+  },
+  isMediaUrl: (mediaPath: string) => {
+    return mediaPath.startsWith('media:///');
+  },
 };

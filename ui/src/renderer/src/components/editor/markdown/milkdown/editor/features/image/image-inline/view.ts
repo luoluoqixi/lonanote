@@ -49,13 +49,13 @@ export const inlineImageView = $view(imageSchema.node, (ctx): NodeViewConstructo
       showMenu?.(dom, {
         img,
         imageUrl: dom.src,
-        title: dom.title,
-        caption: dom.alt,
+        title: dom.alt,
+        caption: dom.title,
         setImageUrl: (newImageUrl) => {
           dom.setAttr?.('src', newImageUrl);
         },
         setCaption: (newCaption) => {
-          dom.setAttr?.('alt', newCaption);
+          dom.setAttr?.('title', newCaption);
         },
         onUpload: async (e) => {
           const file = (e.target as HTMLInputElement).files?.[0];

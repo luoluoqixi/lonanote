@@ -131,6 +131,18 @@ export const utils = {
     }
     return filePath;
   },
+  getMedialogOriginPath: (mediaPath: string) => {
+    if (window.api) {
+      return window.api?.utils.getMediaOriginUrl(mediaPath);
+    }
+    return mediaPath;
+  },
+  isMedialogPath: (mediaPath: string) => {
+    if (window.api) {
+      return window.api?.utils.isMediaUrl(mediaPath);
+    }
+    return mediaPath;
+  },
   getFilePathFromRelativePath: (currentFilePath: string, linkRelPath: string) => {
     const folder = path.dirname(currentFilePath);
     const filePath = path.resolve(folder, linkRelPath);
@@ -146,6 +158,10 @@ export const utils = {
   },
   isImgUrl: (url: string) => {
     return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image');
+  },
+  getImageBlob: async (url: string): Promise<Blob> => {
+    const response = await fetch(url);
+    return await response.blob();
   },
 };
 

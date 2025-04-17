@@ -28,6 +28,8 @@ chrono = { workspace = true }
 indexmap = { workspace = true }
 alphanumeric-sort = { workspace = true }
 encoding_rs = { workspace = true }
+reqwest = { workspace = true, features = ["stream"] }
+futures = { workspace = true }
 
 # [target.'cfg(target_os = "windows")'.dependencies]
 # [target.'cfg(target_os = "macos")'.dependencies]

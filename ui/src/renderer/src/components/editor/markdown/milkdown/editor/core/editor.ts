@@ -211,6 +211,24 @@ export class MilkdownEditor {
 
   async create() {
     const editor = await this.#editor.create();
+    const view = editor.ctx.get(editorViewCtx);
+
+    // https://discuss.prosemirror.net/t/ignore-dynamic-attributes-in-the-html-e-g-aria-attributes-added-by-tippy-js/5442
+    // @ts-expect-error radix-ui/themes 的 modal 弹出层会批量修改 aria-hidden, 而当编辑器中存在 CodeMirror 时, 会引起很多 Plugin 重绘
+    const original = view.domObserver.registerMutation;
+    // @ts-expect-error 强行注册 domObserver 监听忽略掉 aria-hidden 的变化
+    view.domObserver.registerMutation = function (this: any, mut: MutationRecord, added: any[]) {
+      // console.log('wealthy registerMutation', mut, added);
+      if (
+        added.length === 0 &&
+        mut.type === 'attributes' &&
+        (mut.attributeName === 'data-aria-hidden' || mut.attributeName === 'aria-hidden')
+      ) {
+        return;
+      }
+      return original.call(this, mut, added);
+    };
+
     this.#onCreate();
     this.#onCreated();
     return editor;

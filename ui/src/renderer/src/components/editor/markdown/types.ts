@@ -14,6 +14,9 @@ export interface UpdateState {
 }
 
 export interface MarkdownEditorProps {
+  /** 基于当前workspace的根目录 */
+  workspaceRootPath: string;
+  /** 基于当前文件的根目录 */
   mediaRootPath: string;
   editorId: string;
   editMode: EditorMode;

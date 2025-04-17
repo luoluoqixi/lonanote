@@ -1,4 +1,8 @@
-use std::{fs, io::Read, path::PathBuf};
+use std::{
+    fs,
+    io::{Read, Write},
+    path::PathBuf,
+};
 
 use anyhow::Result;
 use lonanote_commands::{
@@ -330,6 +334,35 @@ async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> CommandResult
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveImageUrlToFileArgs {
+    image_url: String,
+    file_path: String,
+}
+
+async fn save_image_url_to_file(Json(args): Json<SaveImageUrlToFileArgs>) -> CommandResult {
+    use futures::StreamExt;
+
+    let img_url = args.image_url;
+    let file_path = args.file_path;
+
+    let client = reqwest::Client::new();
+    let response = client.get(img_url).send().await?;
+    if !response.status().is_success() {
+        anyhow::bail!("request error: {}", response.status());
+    }
+
+    let mut file = fs::File::create(file_path)?;
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        file.write_all(&chunk)?;
+    }
+
+    Ok(CommandResponse::None)
+}
+
 pub fn reg_commands() -> Result<()> {
     reg_command("fs.exists", exists)?;
     reg_command("fs.is_dir", is_dir)?;
@@ -345,6 +378,7 @@ pub fn reg_commands() -> Result<()> {
     reg_command("fs.write", write)?;
     reg_command("fs.show_in_folder", show_in_folder)?;
     reg_command_async("fs.show_select_dialog", show_select_dialog)?;
+    reg_command_async("fs.save_image_url_to_file", save_image_url_to_file)?;
 
     Ok(())
 }

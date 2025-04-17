@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { toast } from 'react-toastify';
 
+import { fs } from '@/bindings/api';
 import { dialog } from '@/components/utils';
 import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
@@ -38,6 +39,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     onUpdateListener,
     onClickAnyLink,
     mediaRootPath,
+    workspaceRootPath,
   } = props;
   const theme = useCodeMirrorTheme();
   const editorRef = useRef<HTMLDivElement>(null);
@@ -87,13 +89,23 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
             },
             onMenuClick: (option, index, ctx, info) => {
               const key = option.key;
+              const imgUrl = info?.imageUrl || '';
               if (key === ImageMenuKey.EditImage) {
-                const val = info?.imageUrl || '';
+                let val = imgUrl;
+                if (utils.isMedialogPath(imgUrl)) {
+                  val = utils.getMedialogOriginPath(imgUrl);
+                  if (val.startsWith(workspaceRootPath)) {
+                    val = path.relative(mediaRootPath, val);
+                  } else {
+                    console.warn('未知的路径:', val, workspaceRootPath);
+                  }
+                }
                 dialog.showInputDialog(markdownEditorLanguages.imageMenuEditImage, val, (v) => {
                   if (info?.setImageUrl) {
                     info.setImageUrl(v || '');
                     console.log('set img url: ', v);
                   }
+                  return true;
                 });
                 return true;
               } else if (key === ImageMenuKey.EditCaption) {
@@ -102,9 +114,55 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
                   if (info?.setCaption) {
                     info.setCaption(v || '');
                   }
+                  return true;
                 });
                 return true;
               } else if (key === ImageMenuKey.DownloadImage) {
+                if (utils.isMedialogPath(imgUrl)) {
+                  const fullPath = utils.getMedialogOriginPath(imgUrl);
+                  fs.showSelectDialog({
+                    type: 'saveFile',
+                    title: '保存图片',
+                    defaultFileName: path.basename(fullPath),
+                  }).then((path) => {
+                    if (!path) return;
+                    fs.copy(fullPath, path as string, true)
+                      .then(() => {
+                        toast.success(`成功保存: ${path}`);
+                      })
+                      .catch((e) => {
+                        console.error(e);
+                        toast.error(`保存失败: ${e}`);
+                      });
+                  });
+                } else {
+                  if (imgUrl !== '') {
+                    const url = new URL(imgUrl);
+                    const names = url.pathname.split('/');
+                    const n = names[names.length - 1];
+                    const defaultName = n || info?.caption || '';
+                    fs.showSelectDialog({
+                      type: 'saveFile',
+                      title: '保存图片',
+                      defaultFileName: defaultName,
+                    }).then((path) => {
+                      if (!path) return;
+                      const id = toast.loading('保存中...');
+                      fs.saveImageUrlToFile(imgUrl, path as string)
+                        .then(() => {
+                          toast.dismiss(id);
+                          toast.success(`成功保存: ${path}`);
+                        })
+                        .catch((e) => {
+                          toast.dismiss(id);
+                          console.error(e);
+                          toast.error(`保存失败: ${e}`);
+                        });
+                    });
+                  } else {
+                    toast.warn('没有图片可保存');
+                  }
+                }
                 return true;
               }
               return false;

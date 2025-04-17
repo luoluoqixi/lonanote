@@ -148,6 +148,7 @@ export default function Editor({
         <MarkdownEditor
           ref={mdEditorRef}
           editorBackEnd={editorBackEnd}
+          workspaceRootPath={currentWorkspace.metadata.path}
           mediaRootPath={folderPath}
           editorId="markdown-editor"
           className="markdown-editor"
