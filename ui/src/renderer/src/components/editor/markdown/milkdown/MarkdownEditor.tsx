@@ -71,17 +71,13 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
           },
           onUpload: async (file) => {
             const arrayBuffer = await file.arrayBuffer();
+            const exname = path.extname(file.name);
             let filePath = path.join(workspaceRootPath, defaultUploadPath, file.name);
+            let basename = path.basename(file.name);
             while (true) {
-              const basename = path.basename(file.name);
-              const exname = path.extname(file.name);
-              console.log(exname);
               if (await fs.exists(filePath)) {
-                filePath = path.join(
-                  workspaceRootPath,
-                  defaultUploadPath,
-                  `${basename}-1${exname}`,
-                );
+                basename = `${basename}-1`;
+                filePath = path.join(workspaceRootPath, defaultUploadPath, `${basename}${exname}`);
               } else {
                 break;
               }
