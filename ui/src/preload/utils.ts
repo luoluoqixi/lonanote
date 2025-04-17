@@ -94,4 +94,7 @@ export const utils = {
   isMediaUrl: (mediaPath: string) => {
     return mediaPath.startsWith('media:///');
   },
+  writeBinaryFile: async (filePath: string, buffer: ArrayBuffer) => {
+    return await ipcRenderer.invoke('writeBinaryFile', filePath, Buffer.from(buffer));
+  },
 };

@@ -40,6 +40,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     onClickAnyLink,
     mediaRootPath,
     workspaceRootPath,
+    defaultUploadPath,
   } = props;
   const theme = useCodeMirrorTheme();
   const editorRef = useRef<HTMLDivElement>(null);
@@ -68,6 +69,28 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
             const f = path.resolve(mediaRootPath, url);
             return utils.getMediaPath(f);
           },
+          onUpload: async (file) => {
+            const arrayBuffer = await file.arrayBuffer();
+            let filePath = path.join(workspaceRootPath, defaultUploadPath, file.name);
+            while (true) {
+              const basename = path.basename(file.name);
+              const exname = path.extname(file.name);
+              console.log(exname);
+              if (await fs.exists(filePath)) {
+                filePath = path.join(
+                  workspaceRootPath,
+                  defaultUploadPath,
+                  `${basename}-1${exname}`,
+                );
+              } else {
+                break;
+              }
+            }
+            await fs.writeBinary(filePath, arrayBuffer);
+            const resultPath = path.relative(mediaRootPath, filePath);
+            return resultPath;
+          },
+          uploadLoadingText: markdownEditorLanguages.imageUploadLoadingText,
           imageMenu: {
             title: markdownEditorLanguages.imageMenuTitle,
             defaultMenuOptions: {

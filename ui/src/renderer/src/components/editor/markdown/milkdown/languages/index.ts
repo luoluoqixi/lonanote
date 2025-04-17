@@ -1,4 +1,5 @@
 export const markdownEditorLanguages = {
+  imageUploadLoadingText: '上传文件...',
   imageMenuTitle: '图片操作',
   imageMenuPreview: '预览',
   imageMenuUploadImage: '上传图片',

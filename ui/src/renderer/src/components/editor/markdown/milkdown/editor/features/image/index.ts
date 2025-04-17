@@ -5,6 +5,7 @@ import { imageInlineComponent, inlineImageConfig } from './image-inline';
 import { ImageMenuConfig, defineImageMenu } from './image-menu';
 
 interface ImageConfig {
+  uploadLoadingText: string;
   onUpload: (file: File) => Promise<string>;
   proxyDomURL: (url: string) => Promise<string> | string;
 

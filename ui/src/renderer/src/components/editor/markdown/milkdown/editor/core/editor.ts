@@ -23,8 +23,8 @@ import { gfm } from '@milkdown/kit/preset/gfm';
 import { EditorState, Selection } from '@milkdown/kit/prose/state';
 import { Decoration, EditorView } from '@milkdown/kit/prose/view';
 import { automd } from '@milkdown/plugin-automd';
-import { Uploader, upload, uploadConfig } from '@milkdown/plugin-upload';
-import type { Node as ProseNode } from '@milkdown/prose/model';
+import { upload, uploadConfig } from '@milkdown/plugin-upload';
+import type { Node as ProseNode, Schema } from '@milkdown/prose/model';
 import { $command, $useKeymap, getMarkdown } from '@milkdown/utils';
 import { Slice } from 'prosemirror-model';
 
@@ -59,7 +59,11 @@ type MilkdownEditorEventListeners = {
   [K in keyof MilkdownEditorEvent]?: MilkdownEditorEvent[K][];
 };
 
-const defaultUploader: Uploader = async (files, schema) => {
+const defaultUploader = async (
+  files: FileList,
+  schema: Schema,
+  onUpload: (file: File) => Promise<string>,
+) => {
   const imgs: File[] = [];
   for (let i = 0; i < files.length; i++) {
     const file = files.item(i);
@@ -67,16 +71,22 @@ const defaultUploader: Uploader = async (files, schema) => {
     if (!file.type.includes('image')) continue;
     imgs.push(file);
   }
-  const { image } = schema.nodes;
-  if (!image) throw new Error('Missing node in schema, milkdown cannot find "image" in schema.');
-  // TODO 上传图片
+  const imageBlock = schema.nodes['image-block'];
+  if (!imageBlock)
+    throw new Error('Missing node in schema, milkdown cannot find "image-block" in schema.');
   const data = await Promise.all(
-    imgs.map((img) => ({
-      src: '',
-      alt: img.name,
-    })),
+    imgs.map(async (img) => {
+      const src = await onUpload(img);
+      return {
+        src,
+        caption: img.name,
+        ratio: 1,
+      };
+    }),
   );
-  return data.map(({ alt, src }) => image.createAndFill({ src, alt }) as ProseNode);
+  return data.map(
+    ({ caption, src, ratio }) => imageBlock.createAndFill({ src, caption, ratio }) as ProseNode,
+  );
 };
 
 export class MilkdownEditor {
@@ -177,17 +187,23 @@ export class MilkdownEditor {
       .use(automd)
       .use([saveCommand, saveKeyMap].flat());
 
-    this.#editor.use(upload).config((ctx) => {
-      ctx.set(uploadConfig.key, {
-        uploader: defaultUploader,
-        enableHtmlFileUploader: false,
-        uploadWidgetFactory: (pos, spec) => {
-          const widgetDOM = document.createElement('span');
-          widgetDOM.textContent = '上传文件...';
-          return Decoration.widget(pos, widgetDOM, spec);
-        },
-      });
-    });
+    if (featureConfigs && featureConfigs[MilkdownFeature.Image]) {
+      const imgConfig = featureConfigs[MilkdownFeature.Image];
+      if (imgConfig.onUpload) {
+        const onUpload = imgConfig.onUpload;
+        this.#editor.use(upload).config((ctx) => {
+          ctx.set(uploadConfig.key, {
+            uploader: (f, s) => defaultUploader(f, s, onUpload),
+            enableHtmlFileUploader: false,
+            uploadWidgetFactory: (pos, spec) => {
+              const widgetDOM = document.createElement('span');
+              widgetDOM.textContent = imgConfig.uploadLoadingText || 'Upload Image...';
+              return Decoration.widget(pos, widgetDOM, spec);
+            },
+          });
+        });
+      }
+    }
 
     // https://github.com/orgs/Milkdown/discussions/1733
     // this.#editor.editor.use(diagram).config((ctx) => {

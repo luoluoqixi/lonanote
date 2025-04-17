@@ -18,6 +18,8 @@ export interface MarkdownEditorProps {
   workspaceRootPath: string;
   /** 基于当前文件的根目录 */
   mediaRootPath: string;
+  /** 默认上传文件的路径 */
+  defaultUploadPath: string;
   editorId: string;
   editMode: EditorMode;
   filePath: string;

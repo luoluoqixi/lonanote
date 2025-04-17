@@ -66,6 +66,8 @@ export const imageComponent: Component<ImageComponentProps> = ({
     const url = await config?.onUpload(file);
     if (!url) return false;
     setAttr?.('src', url);
+    setAttr?.('caption', file.name);
+    setAttr?.('ratio', 1);
     return true;
   };
 

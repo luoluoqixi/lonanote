@@ -50,6 +50,7 @@ export const inlineImageComponent: Component<InlineImageComponentProps> = ({
     if (!url) return;
 
     setAttr?.('src', url);
+    setAttr?.('title', file.name);
     setHidePlaceholder(true);
   };
 

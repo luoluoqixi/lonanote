@@ -149,6 +149,7 @@ export default function Editor({
           ref={mdEditorRef}
           editorBackEnd={editorBackEnd}
           workspaceRootPath={currentWorkspace.metadata.path}
+          defaultUploadPath={'assets/images'}
           mediaRootPath={folderPath}
           editorId="markdown-editor"
           className="markdown-editor"

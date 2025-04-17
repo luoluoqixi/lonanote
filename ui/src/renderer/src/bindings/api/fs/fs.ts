@@ -1,4 +1,4 @@
-import { invoke, invokeAsync } from '@/bindings/core';
+import { invoke, invokeAsync, isTauri } from '@/bindings/core';
 
 export type SelectDialogType = 'openFile' | 'openFiles' | 'openFolder' | 'openFolders' | 'saveFile';
 
@@ -51,6 +51,13 @@ export const fs = {
   },
   write: async (path: string, contents: string): Promise<void> => {
     return (await invoke('fs.write', { path, contents }))!;
+  },
+  writeBinary: async (path: string, buffer: ArrayBuffer): Promise<void> => {
+    if (window.api) {
+      window.api.utils.writeBinaryFile(path, buffer);
+    } else if (isTauri) {
+      throw new Error('todo tauri writeBinary');
+    }
   },
   showInFolder: async (path: string): Promise<void> => {
     return (await invoke('fs.show_in_folder', { path }))!;

@@ -304,6 +304,13 @@ export const setupApp = async () => {
         return result;
       },
     );
+    ipcMain.handle('writeBinaryFile', async (e, filePath: string, buffer: Buffer) => {
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(filePath, buffer);
+    });
 
     createWindow();
 
