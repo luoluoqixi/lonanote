@@ -5,28 +5,46 @@ import { posToDOMRect } from '@milkdown/prose';
 import type { Mark } from '@milkdown/prose/model';
 import type { PluginView } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
+import { type App, type Ref, createApp, ref } from 'vue';
 
 import { addViewScrollEvent } from '../../../../utils';
-import type { LinkToolTipState } from '../slices';
+import type { LinkToolTipState, LinkTooltipConfig } from '../slices';
 import { linkTooltipAPI, linkTooltipConfig, linkTooltipState } from '../slices';
-import { LinkPreviewElement } from './preview-component';
+import { PreviewLink } from './component';
 
 export class LinkPreviewTooltip implements PluginView {
-  #content = new LinkPreviewElement();
+  #content: HTMLElement;
   #provider: TooltipProvider;
   #slice: Slice<LinkToolTipState>;
-  observer: MutationObserver | null = null;
+  #config: Ref<LinkTooltipConfig>;
+  #src = ref('');
+  #onEdit = ref(() => {});
+  #onRemove = ref(() => {});
+  #app: App;
 
+  #hovering = false;
+
+  // ==== 修改 ====
+  observer: MutationObserver | null = null;
   #removeOnScroll: (() => void) | null;
   #isShow: boolean = false;
   #showPos: { from: number; to: number } | null = null;
-
-  #hovering = false;
 
   constructor(
     readonly ctx: Ctx,
     view: EditorView,
   ) {
+    this.#config = ref(this.ctx.get(linkTooltipConfig.key));
+    this.#app = createApp(PreviewLink, {
+      config: this.#config,
+      src: this.#src,
+      onEdit: this.#onEdit,
+      onRemove: this.#onRemove,
+    });
+    this.#content = document.createElement('div');
+    this.#content.className = 'milkdown-link-preview';
+    this.#app.mount(this.#content);
+
     this.#provider = new TooltipProvider({
       debounce: 0,
       content: this.#content,
@@ -36,6 +54,7 @@ export class LinkPreviewTooltip implements PluginView {
     this.#slice = ctx.use(linkTooltipState.key);
     this.#slice.on(this.#onStateChange);
 
+    // ==== 修改 ====
     this.#removeOnScroll = addViewScrollEvent(view, () => {
       this.updatePos(view);
     });
@@ -65,10 +84,10 @@ export class LinkPreviewTooltip implements PluginView {
   };
 
   show = (view: EditorView, mark: Mark, from: number, to: number) => {
-    this.#content.config = this.ctx.get(linkTooltipConfig.key);
-    this.#content.src = mark.attrs.href;
-    const config = this.#content.config;
-    this.#content.onEdit = async () => {
+    this.#config.value = this.ctx.get(linkTooltipConfig.key);
+    this.#src.value = mark.attrs.href;
+    const config = this.#config.value;
+    this.#onEdit.value = async () => {
       if (config?.onEditClick) {
         const href = await config?.onEditClick(mark.attrs.href);
         if (href == null || typeof href === 'boolean') {
@@ -85,7 +104,7 @@ export class LinkPreviewTooltip implements PluginView {
       }
       this.ctx.get(linkTooltipAPI.key).editLink(mark, from, to);
     };
-    this.#content.onRemove = () => {
+    this.#onRemove.value = () => {
       this.ctx.get(linkTooltipAPI.key).removeLink(from, to);
       this.#hide();
     };
@@ -109,6 +128,7 @@ export class LinkPreviewTooltip implements PluginView {
 
   update = () => {};
 
+  // ==== 修改 ====
   updatePos = (view: EditorView) => {
     if (!this.#isShow || !this.#showPos) return;
     const { from, to } = this.#showPos;
@@ -118,11 +138,14 @@ export class LinkPreviewTooltip implements PluginView {
   };
 
   destroy = () => {
+    // ==== 修改 ====
     this.#isShow = false;
     this.#showPos = null;
     if (this.#removeOnScroll) {
       this.#removeOnScroll();
     }
+
+    this.#app.unmount();
     this.#slice.off(this.#onStateChange);
     this.#provider.destroy();
     this.#content.remove();

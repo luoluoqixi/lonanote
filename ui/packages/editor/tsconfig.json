@@ -1,9 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "baseUrl": "./src",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "composite": true,
     "emitDeclarationOnly": true,
     "jsx": "preserve",
@@ -17,5 +16,5 @@
     "skipLibCheck": true,
     "target": "esnext"
   },
-  "include": ["src"]
+  "include": ["src"],
 }

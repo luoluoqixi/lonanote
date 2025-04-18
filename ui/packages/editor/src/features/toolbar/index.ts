@@ -1,15 +1,14 @@
 import type { Ctx } from '@milkdown/kit/ctx';
 import { TooltipProvider, tooltipFactory } from '@milkdown/kit/plugin/tooltip';
-import type { EditorState, PluginView } from '@milkdown/kit/prose/state';
+import type { EditorState, PluginView, Selection } from '@milkdown/kit/prose/state';
 import { TextSelection } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
-import type { AtomicoThis } from 'atomico/types/dom';
 import debounce from 'lodash/debounce';
+import { type App, type ShallowRef, createApp, ref, shallowRef } from 'vue';
 
-import { addViewEvent, addViewScrollEvent, defIfNotExists } from '../../utils';
+import { addViewEvent, addViewScrollEvent } from '../../utils';
 import type { DefineFeature, Icon } from '../types';
-import type { ToolbarProps } from './component';
-import { ToolbarElement } from './component';
+import { Toolbar } from './component';
 
 interface ToolbarConfig {
   boldIcon: Icon;
@@ -26,19 +25,32 @@ const toolbar = tooltipFactory('CREPE_TOOLBAR');
 
 class ToolbarView implements PluginView {
   #tooltipProvider: TooltipProvider;
-  #content: AtomicoThis<ToolbarProps>;
+  #content: HTMLElement;
+  #app: App;
+  #selection: ShallowRef<Selection>;
+  #show = ref(false);
+
+  // ==== 修改 ====
   #removeOnScroll: (() => void) | null;
   #removeMousedownListener: (() => void) | null = null;
   #removeMouseupListener: (() => void) | null = null;
   #debouncedUpdate: (view: EditorView, prevState?: EditorState) => void;
 
   constructor(ctx: Ctx, view: EditorView, config?: ToolbarFeatureConfig) {
-    const content = new ToolbarElement();
+    const content = document.createElement('div');
+    content.className = 'milkdown-toolbar';
+    this.#selection = shallowRef(view.state.selection);
+    const app = createApp(Toolbar, {
+      ctx,
+      hide: this.hide,
+      config,
+      selection: this.#selection,
+      show: this.#show,
+    });
+    app.mount(content);
     this.#content = content;
-    this.#content.ctx = ctx;
-    this.#content.hide = this.hide;
-    this.#content.config = config;
-    this.#content.selection = view.state.selection;
+    this.#app = app;
+
     this.#tooltipProvider = new TooltipProvider({
       content: this.#content,
       debounce: 20,
@@ -65,12 +77,14 @@ class ToolbarView implements PluginView {
       },
     });
     this.#tooltipProvider.onShow = () => {
-      this.#content.show = true;
+      this.#show.value = true;
     };
     this.#tooltipProvider.onHide = () => {
-      this.#content.show = false;
+      this.#show.value = false;
     };
+    // this.update(view);
 
+    // ==== 修改 ====
     this.#debouncedUpdate = debounce((view: EditorView, prevState?: EditorState) => {
       this.#update(view, prevState);
     }, 150);
@@ -91,16 +105,19 @@ class ToolbarView implements PluginView {
     this.#removeMousedownListener = addViewEvent(view.dom, 'mousedown', onMouseDown);
   }
 
+  // ==== 修改 ====
   #update = (view: EditorView, prevState?: EditorState) => {
     this.#tooltipProvider.update(view, prevState);
-    this.#content.selection = view.state.selection;
+    this.#selection.value = view.state.selection;
   };
 
   // update = (view: EditorView, prevState?: EditorState) => {
-  //   this.#update(view, prevState);
+  //   this.#tooltipProvider.update(view, prevState);
+  //   this.#selection.value = view.state.selection;
   // };
 
   destroy = () => {
+    // ==== 修改 ====
     if (this.#removeOnScroll) {
       this.#removeOnScroll();
     }
@@ -110,7 +127,9 @@ class ToolbarView implements PluginView {
     if (this.#removeMousedownListener) {
       this.#removeMousedownListener();
     }
+
     this.#tooltipProvider.destroy();
+    this.#app.unmount();
     this.#content.remove();
   };
 
@@ -119,7 +138,6 @@ class ToolbarView implements PluginView {
   };
 }
 
-defIfNotExists('milkdown-toolbar', ToolbarElement);
 export const defineToolbar: DefineFeature<ToolbarFeatureConfig> = (editor, config) => {
   editor
     .config((ctx) => {

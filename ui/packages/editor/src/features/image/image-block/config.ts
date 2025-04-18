@@ -1,32 +1,29 @@
 import { $ctx } from '@milkdown/utils';
-import { html } from 'atomico';
 
 import { operationIcon, resizeIcon } from '../../../icons';
 import { withMeta } from '../../../utils';
 
 export interface ImageBlockConfig {
-  imageIcon: () => ReturnType<typeof html> | string | HTMLElement;
-  operationIcon: () => ReturnType<typeof html> | string | HTMLElement;
-  resizeIcon: () => ReturnType<typeof html> | string | HTMLElement;
-  uploadButton: () => ReturnType<typeof html> | string | HTMLElement;
-  confirmButton: () => ReturnType<typeof html> | string | HTMLElement;
+  imageIcon: () => string | undefined;
+  uploadButton: () => string | undefined;
+  confirmButton: () => string | undefined;
   uploadPlaceholderText: string;
   onUpload: (file: File) => Promise<string>;
   proxyDomURL?: (url: string) => Promise<string> | string;
+
+  operationIcon: () => string;
+  resizeIcon: () => string;
 }
 
 export const defaultImageBlockConfig: ImageBlockConfig = {
   imageIcon: () => '🌌',
-  operationIcon: () => operationIcon,
-  uploadButton: () => html`
-    Upload file
-  `,
-  confirmButton: () => html`
-    Confirm ⏎
-  `,
-  resizeIcon: () => resizeIcon,
+  uploadButton: () => 'Upload file',
+  confirmButton: () => 'Confirm ⏎',
   uploadPlaceholderText: 'or paste the image link ...',
   onUpload: (file) => Promise.resolve(URL.createObjectURL(file)),
+
+  operationIcon: () => operationIcon,
+  resizeIcon: () => resizeIcon,
 };
 
 export const imageBlockConfig = $ctx(defaultImageBlockConfig, 'imageBlockConfigCtx');

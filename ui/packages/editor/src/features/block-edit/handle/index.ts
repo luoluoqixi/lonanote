@@ -5,27 +5,32 @@ import { paragraphSchema } from '@milkdown/kit/preset/commonmark';
 import { findParent } from '@milkdown/kit/prose';
 import type { PluginView } from '@milkdown/kit/prose/state';
 import { TextSelection } from '@milkdown/kit/prose/state';
-import type { AtomicoThis } from 'atomico/types/dom';
+import { type App, createApp } from 'vue';
 
 import { editableCtx } from '../../../core/slice';
-import { defIfNotExists } from '../../../utils';
+import { menuIcon, plusIcon } from '../../../icons';
 import type { BlockEditFeatureConfig } from '../index';
 import { menuAPI } from '../menu';
-import type { BlockHandleProps } from './component';
-import { BlockHandleElement } from './component';
+import { BlockHandle } from './component';
 
 export class BlockHandleView implements PluginView {
-  #content: AtomicoThis<BlockHandleProps>;
+  #content: HTMLElement;
   #provider: BlockProvider;
+  #app: App;
   readonly #ctx: Ctx;
 
   constructor(ctx: Ctx, config?: BlockEditFeatureConfig) {
     this.#ctx = ctx;
-    const content = new BlockHandleElement();
+    const content = document.createElement('div');
+    content.classList.add('milkdown-block-handle');
+    const app = createApp(BlockHandle, {
+      onAdd: this.onAdd,
+      addIcon: config?.handleAddIcon ?? (() => plusIcon),
+      handleIcon: config?.handleDragIcon ?? (() => menuIcon),
+    });
+    app.mount(content);
+    this.#app = app;
     this.#content = content;
-    this.#content.onAdd = this.onAdd;
-    this.#content.addIcon = config?.handleAddIcon;
-    this.#content.handleIcon = config?.handleDragIcon;
     this.#provider = new BlockProvider({
       ctx,
       content,
@@ -49,15 +54,17 @@ export class BlockHandleView implements PluginView {
       },
     });
 
+    // ==== 修改 ====
+    // 切换readOnly时隐藏block-handle
     ctx.use(editableCtx).on((editable) => {
       if (!editable) {
-        // 切换readOnly时隐藏block-handle
-        const blockHandle = document.querySelector('milkdown-block-handle');
+        const blockHandle = document.querySelector('.milkdown-block-handle');
         if (blockHandle) {
           blockHandle.setAttribute('data-show', 'false');
         }
       }
     });
+
     this.update();
   }
 
@@ -68,6 +75,7 @@ export class BlockHandleView implements PluginView {
   destroy = () => {
     this.#provider.destroy();
     this.#content.remove();
+    this.#app.unmount();
   };
 
   onAdd = () => {
@@ -90,7 +98,6 @@ export class BlockHandleView implements PluginView {
   };
 }
 
-defIfNotExists('milkdown-block-handle', BlockHandleElement);
 export function configureBlockHandle(ctx: Ctx, config?: BlockEditFeatureConfig) {
   ctx.set(blockConfig.key, {
     filterNodes: (pos) => {

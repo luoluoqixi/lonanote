@@ -1,3 +1,4 @@
+// import { imageBlockSchema } from '@milkdown/kit/component/image-block';
 import { editorViewCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
 import {
@@ -221,6 +222,8 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         command(state, dispatch);
       },
     });
+
+    // ==== 修改 ====
     advancedGroup.addItem('image-link', {
       label: config?.slashMenuImageLinkLabel ?? 'Image Link',
       icon: config?.slashMenuImageLinkIcon?.() ?? imageIcon,

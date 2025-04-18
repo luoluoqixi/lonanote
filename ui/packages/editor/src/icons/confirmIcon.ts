@@ -1,6 +1,4 @@
-import { html } from 'atomico';
-
-export const confirmIcon = html`
+export const confirmIcon = `
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
     <g clip-path="url(#clip0_1013_1606)">
       <path

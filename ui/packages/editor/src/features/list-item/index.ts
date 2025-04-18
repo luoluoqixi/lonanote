@@ -3,13 +3,11 @@ import {
   listItemBlockConfig,
 } from '@milkdown/kit/component/list-item-block';
 import type { Ctx } from '@milkdown/kit/ctx';
-import { html } from 'atomico';
-import clsx from 'clsx';
 
 import { bulletIcon, checkBoxCheckedIcon, checkBoxUncheckedIcon } from '../../icons';
-import type { DefineFeature, Icon } from './../types';
+import type { DefineFeature, Icon } from '../types';
 
-interface ListItemConfig {
+export interface ListItemConfig {
   bulletIcon: Icon;
   checkBoxCheckedIcon: Icon;
   checkBoxUncheckedIcon: Icon;
@@ -19,30 +17,16 @@ export type ListItemFeatureConfig = Partial<ListItemConfig>;
 
 function configureListItem(ctx: Ctx, config?: ListItemFeatureConfig) {
   ctx.set(listItemBlockConfig.key, {
-    renderLabel: ({ label, listType, checked, readonly }) => {
+    renderLabel: ({ label, listType, checked }) => {
       if (checked == null) {
-        if (listType === 'bullet')
-          return html`
-            <span class="label">${config?.bulletIcon?.() ?? bulletIcon}</span>
-          `;
+        if (listType === 'bullet') return config?.bulletIcon?.() ?? bulletIcon;
 
-        return html`
-          <span class="label">${label}</span>
-        `;
+        return label;
       }
 
-      if (checked)
-        return html`
-          <span class=${clsx('label checkbox', readonly && 'readonly')}>
-            ${config?.checkBoxCheckedIcon?.() ?? checkBoxCheckedIcon}
-          </span>
-        `;
+      if (checked) return config?.checkBoxCheckedIcon?.() ?? checkBoxCheckedIcon;
 
-      return html`
-        <span class=${clsx('label checkbox', readonly && 'readonly')}>
-          ${config?.checkBoxUncheckedIcon?.() ?? checkBoxUncheckedIcon}
-        </span>
-      `;
+      return config?.checkBoxUncheckedIcon?.() ?? checkBoxUncheckedIcon;
     },
   });
 }

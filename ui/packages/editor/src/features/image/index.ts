@@ -1,7 +1,8 @@
-import { confirmIcon, imageIcon } from '../../icons';
+import { imageInlineComponent, inlineImageConfig } from '@milkdown/kit/component/image-inline';
+
+import { captionIcon, confirmIcon, imageIcon } from '../../icons';
 import { DefineFeature, Icon } from './../types';
 import { defaultImageBlockConfig, imageBlockComponent, imageBlockConfig } from './image-block';
-import { imageInlineComponent, inlineImageConfig } from './image-inline';
 import { ImageMenuConfig, defineImageMenu } from './image-menu';
 
 interface ImageConfig {
@@ -16,12 +17,15 @@ interface ImageConfig {
   inlineOnUpload: (file: File) => Promise<string>;
 
   blockImageIcon: Icon;
+  blockCaptionIcon: Icon;
   blockConfirmButton: Icon;
-  blockOperationIcon: Icon;
-  blockResizeIcon: Icon;
   blockUploadButton: Icon;
   blockUploadPlaceholderText: string;
   blockOnUpload: (file: File) => Promise<string>;
+
+  // ==== 修改 ====
+  blockResizeIcon: Icon;
+  blockOperationIcon: Icon;
 
   imageMenu: ImageMenuConfig;
 }
@@ -43,12 +47,15 @@ export const defineImage: DefineFeature<ImageFeatureConfig> = (editor, config) =
       ctx.update(imageBlockConfig.key, (value) => ({
         uploadButton: config?.blockUploadButton ?? (() => 'Upload file'),
         imageIcon: config?.blockImageIcon ?? (() => imageIcon),
+        captionIcon: config?.blockCaptionIcon ?? (() => captionIcon),
         confirmButton: config?.blockConfirmButton ?? (() => 'Confirm'),
-        operationIcon: config?.blockOperationIcon ?? defaultImageBlockConfig.operationIcon,
-        resizeIcon: config?.blockResizeIcon ?? defaultImageBlockConfig.resizeIcon,
         uploadPlaceholderText: config?.blockUploadPlaceholderText ?? 'or paste link',
         onUpload: config?.blockOnUpload ?? config?.onUpload ?? value.onUpload,
         proxyDomURL: config?.proxyDomURL,
+
+        // ==== 修改 ====
+        operationIcon: config?.blockOperationIcon ?? defaultImageBlockConfig.operationIcon,
+        resizeIcon: config?.blockResizeIcon ?? defaultImageBlockConfig.resizeIcon,
       }));
     })
     .use(imageBlockComponent)

@@ -1,6 +1,4 @@
-import { html } from 'atomico';
-
-export const resizeIcon = html`
+export const resizeIcon = `
   <svg
     stroke="currentColor"
     fill="none"

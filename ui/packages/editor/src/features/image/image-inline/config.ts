@@ -1,12 +1,11 @@
 import { $ctx } from '@milkdown/utils';
-import { html } from 'atomico';
 
 import { withMeta } from '../../../utils';
 
 export interface InlineImageConfig {
-  imageIcon: () => ReturnType<typeof html>;
-  uploadButton: () => ReturnType<typeof html>;
-  confirmButton: () => ReturnType<typeof html>;
+  imageIcon: () => string | undefined;
+  uploadButton: () => string | undefined;
+  confirmButton: () => string | undefined;
   uploadPlaceholderText: string;
   onUpload: (file: File) => Promise<string>;
   proxyDomURL?: (url: string) => Promise<string> | string;
@@ -14,12 +13,8 @@ export interface InlineImageConfig {
 
 export const defaultInlineImageConfig: InlineImageConfig = {
   imageIcon: () => '🌌',
-  uploadButton: () => html`
-    Upload
-  `,
-  confirmButton: () => html`
-    ⏎
-  `,
+  uploadButton: () => 'Upload',
+  confirmButton: () => '⏎',
   uploadPlaceholderText: '/Paste',
   onUpload: (file) => Promise.resolve(URL.createObjectURL(file)),
 };

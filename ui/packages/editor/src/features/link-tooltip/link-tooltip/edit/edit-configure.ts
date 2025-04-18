@@ -1,12 +1,9 @@
 import type { Ctx } from '@milkdown/ctx';
 
-import { defIfNotExists } from '../../../../utils';
 import { linkTooltipAPI } from '../slices';
 import { linkEditTooltip } from '../tooltips';
-import { LinkEditElement } from './edit-component';
 import { LinkEditTooltip } from './edit-view';
 
-defIfNotExists('milkdown-link-edit', LinkEditElement);
 export function configureLinkEditTooltip(ctx: Ctx) {
   let linkEditTooltipView: LinkEditTooltip | null;
 

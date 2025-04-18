@@ -4,9 +4,9 @@ import { type Ctx, createSlice } from '@milkdown/kit/ctx';
 import { TooltipProvider, tooltipFactory } from '@milkdown/kit/plugin/tooltip';
 import type { PluginView } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
-import type { AtomicoThis } from 'atomico/types/dom';
 import throttle from 'lodash.throttle';
 import Viewer from 'viewerjs';
+import { App, Ref, createApp, ref } from 'vue';
 
 import { MarkdownMenu, MarkdownMenuOption, MarkdownMenuProps } from '../../../components';
 import { captionIcon, downloadIcon, imageIcon, previewIcon } from '../../../icons';
@@ -121,24 +121,35 @@ export interface ImageInfo {
 
 class ImageMenuView implements PluginView {
   #tooltipProvider: TooltipProvider;
-  #content: AtomicoThis<MarkdownMenuProps>;
+  #app: App;
   #removeOnScroll: (() => void) | null;
   #show: boolean;
   #virtualElement?: VirtualElement | null;
   #initialized?: boolean;
   #root: HTMLElement;
+  #content: HTMLElement;
   #customMenuClick?: ImageMenuClick;
   #menuInfo: ImageInfo | null;
   #viewer: Viewer | null;
 
   constructor(ctx: Ctx, view: EditorView, config?: ImageMenuConfig) {
-    const content = new MarkdownMenu();
+    const content = document.createElement('div');
+    content.classList.add('image-menu');
+    const show = ref(false);
+    const hide = this.hide;
+    const app = createApp(MarkdownMenu, {
+      ctx,
+      config,
+      show,
+      hide,
+      options: getOptions(config),
+      title: config?.title || 'image handle',
+      onMenuClick: this.#onMenuClick,
+    });
+    this.#app = app;
     this.#content = content;
-    this.#content.ctx = ctx;
-    this.#content.hide = this.hide;
-    this.#content.options = getOptions(config);
-    this.#content.title = config?.title || 'image handle';
-    this.#content.onMenuClick = this.#onMenuClick;
+    app.mount(content);
+
     this.#customMenuClick = config?.onMenuClick;
     this.#show = false;
     this.#virtualElement = null;
@@ -148,7 +159,7 @@ class ImageMenuView implements PluginView {
     this.#viewer = null;
 
     this.#tooltipProvider = new TooltipProvider({
-      content: this.#content,
+      content,
       debounce: 20,
       offset: 10,
       shouldShow: () => {
@@ -159,13 +170,13 @@ class ImageMenuView implements PluginView {
       },
     });
     this.#tooltipProvider.onShow = () => {
-      if (!this.#content.show) {
-        this.#content.show = true;
+      if (!show.value) {
+        show.value = true;
       }
     };
     this.#tooltipProvider.onHide = () => {
-      if (this.#content.show) {
-        this.#content.show = false;
+      if (show.value) {
+        show.value = false;
       }
     };
 
@@ -217,6 +228,8 @@ class ImageMenuView implements PluginView {
       this.#removeOnScroll();
     }
     document.removeEventListener('pointerdown', this.#onDocumentDown);
+
+    this.#app.unmount();
     this.#tooltipProvider.destroy();
     this.#content.remove();
   };

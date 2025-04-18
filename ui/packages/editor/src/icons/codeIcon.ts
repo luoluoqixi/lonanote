@@ -1,6 +1,4 @@
-import { html } from 'atomico';
-
-export const codeIcon = html`
+export const codeIcon = `
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
     <g clip-path="url(#clip0_977_8081)">
       <path

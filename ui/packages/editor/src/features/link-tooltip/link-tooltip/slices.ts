@@ -1,6 +1,5 @@
 import type { Mark } from '@milkdown/prose/model';
 import { $ctx } from '@milkdown/utils';
-import { html } from 'atomico';
 
 import { withMeta } from '../../../utils';
 
@@ -39,29 +38,31 @@ withMeta(linkTooltipState, {
 });
 
 export interface LinkTooltipConfig {
-  linkIcon: () => ReturnType<typeof html>;
-  editButton: () => ReturnType<typeof html>;
-  confirmButton: () => ReturnType<typeof html>;
-  removeButton: () => ReturnType<typeof html>;
+  linkIcon: () => string;
+  editButton: () => string;
+  confirmButton: () => string;
+  removeButton: () => string;
+  onCopyLink: (link: string) => void;
+  inputPlaceholder: string;
+
+  // ==== 修改 ====
   hoverShow: boolean | null;
   selectionShow: boolean | null;
-  onCopyLink: ((link: string) => void) | null;
   onClickLink: ((link: string) => void) | null;
   onEditClick?: ((link: string) => Promise<string | false>) | null;
-  inputPlaceholder: string;
 }
 
 const defaultConfig: LinkTooltipConfig = {
   linkIcon: () => '🔗',
   editButton: () => '✎',
   removeButton: () => '⌫',
-  confirmButton: () => html`
-    Confirm ⏎
-  `,
-  onCopyLink: null,
+  confirmButton: () => 'Confirm ⏎',
+  onCopyLink: () => {},
+  inputPlaceholder: 'Paste link...',
+
+  // ==== 修改 ====
   onClickLink: null,
   onEditClick: null,
-  inputPlaceholder: 'Paste link...',
   hoverShow: null,
   selectionShow: null,
 };

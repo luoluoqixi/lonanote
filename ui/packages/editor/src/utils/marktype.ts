@@ -56,7 +56,7 @@ function isInHoverArea(
   const isLink = typeof type !== 'function' && type.name === 'link';
   if (isLink) {
     const dom = document.elementFromPoint(event.clientX, event.clientY);
-    const imgInlineDom = findClosestElement(dom, 'milkdown-image-inline');
+    const imgInlineDom = findClosestElement(dom, '.milkdown-image-inline');
     let imgDom: HTMLImageElement | null = null;
     if (imgInlineDom) {
       imgDom = imgInlineDom.querySelector('img');
@@ -100,20 +100,20 @@ function isPointInsideRect(event: MouseEvent, rect: DOMRect): boolean {
   );
 }
 
-function findClosestElement(dom: Node | null, tagName: string): HTMLElement | null {
+function findClosestElement(dom: Node | null, className: string): HTMLElement | null {
   if (!dom) return null;
-  if (dom.nodeType === Node.TEXT_NODE) {
-    const upperName = tagName.toUpperCase();
-    while (dom) {
-      if (dom instanceof HTMLElement && dom.tagName === upperName) {
-        return dom;
-      }
-      dom = dom.parentNode;
-    }
-    return null;
-  }
+  // if (dom.nodeType === Node.TEXT_NODE) {
+  //   const upperName = tagName.toUpperCase();
+  //   while (dom) {
+  //     if (dom instanceof HTMLElement && dom.tagName === upperName) {
+  //       return dom;
+  //     }
+  //     dom = dom.parentNode;
+  //   }
+  //   return null;
+  // }
   if (dom instanceof HTMLElement) {
-    return dom.closest(tagName);
+    return dom.closest(className);
   }
   return null;
 }

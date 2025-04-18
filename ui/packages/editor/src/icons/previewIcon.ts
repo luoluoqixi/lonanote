@@ -1,6 +1,4 @@
-import { html } from 'atomico';
-
-export const previewIcon = html`
+export const previewIcon = `
   <svg
     stroke="currentColor"
     fill="currentColor"

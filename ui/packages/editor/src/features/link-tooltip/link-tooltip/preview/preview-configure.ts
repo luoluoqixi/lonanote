@@ -4,7 +4,6 @@ import type { EditorView } from '@milkdown/prose/view';
 // import debounce from 'lodash.debounce';
 import throttle from 'lodash.throttle';
 
-import { defIfNotExists } from '../../../../utils';
 import {
   findMarkPosition,
   getCursorNodeInType,
@@ -13,7 +12,6 @@ import {
 } from '../../../../utils';
 import { linkTooltipConfig, linkTooltipState } from '../slices';
 import { linkPreviewTooltip } from '../tooltips';
-import { LinkPreviewElement } from './preview-component';
 import { LinkPreviewTooltip } from './preview-view';
 
 const showPreviewTooltip = (
@@ -36,7 +34,6 @@ const showPreviewTooltip = (
   linkPreviewTooltipView.show(view, mark, from, to);
 };
 
-defIfNotExists('milkdown-link-preview', LinkPreviewElement);
 export function configureLinkPreviewTooltip(ctx: Ctx) {
   let linkPreviewTooltipView: LinkPreviewTooltip | null;
   let isCursorInsideLink = false;
@@ -63,6 +60,8 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
       linkPreviewTooltipView?.hide();
       return;
     }
+
+    // ==== 修改 ====
     const result = shouldShowWhenHover(view, event, getLinkMarkType(ctx));
     if (result) {
       // const $pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
@@ -84,6 +83,7 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
     }, DELAY);
   };
 
+  // ==== 修改 ====
   const onSelectionChange = (view: EditorView) => {
     if (!linkPreviewTooltipView) return;
     if (view.isDestroyed) return;
@@ -119,12 +119,14 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
         mousemove: onMouseMove,
         mouseleave: onMouseLeave,
       },
+      // ==== 修改 ====
       handleClick: (view) => {
         setTimeout(() => onSelectionChange(view), 0);
       },
     },
     view: (view) => {
       linkPreviewTooltipView = new LinkPreviewTooltip(ctx, view);
+      // ==== 修改 ====
       const observer = new MutationObserver(() => {
         onSelectionChange(view);
       });
@@ -132,6 +134,8 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
       linkPreviewTooltipView.observer = observer;
       return linkPreviewTooltipView;
     },
+
+    // ==== 修改 ====
     destroy: () => {
       if (linkPreviewTooltipView && linkPreviewTooltipView.observer) {
         linkPreviewTooltipView.observer.disconnect();

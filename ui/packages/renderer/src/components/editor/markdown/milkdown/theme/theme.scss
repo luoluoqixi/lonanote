@@ -48,11 +48,11 @@
   --crepe-shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
 
   // 待办列表的checkbox
-  milkdown-list-item-block li .label-wrapper .checkbox svg {
+  .milkdown-list-item-block li .label-wrapper .checked svg {
     fill: var(--crepe-color-primary);
   }
   // 代码块弹出的语言选择列表
-  milkdown-code-block .list-wrapper {
+  .milkdown-code-block .list-wrapper {
     border-radius: var(--radius-1);
   }
   // 引用块的背景颜色
@@ -61,7 +61,7 @@
   }
   // 引用块的字体颜色
   .ProseMirror blockquote p,
-  .ProseMirror blockquote milkdown-list-item-block li .label-wrapper {
+  .ProseMirror blockquote .milkdown-list-item-block li .label-wrapper {
     color: var(--gray-10);
   }
 
@@ -78,19 +78,19 @@
     justify-content: start;
   }
 
-  milkdown-toolbar,
-  milkdown-link-preview,
-  milkdown-link-edit {
+  .milkdown-toolbar,
+  .milkdown-link-preview,
+  .milkdown-link-edit {
     position: fixed;
   }
 
-  milkdown-link-preview,
-  milkdown-toolbar {
+  .milkdown-link-preview,
+  .milkdown-toolbar {
     z-index: 10;
   }
 
-  milkdown-slash-menu,
-  milkdown-markdown-menu {
+  .milkdown-slash-menu,
+  .milkdown-markdown-menu {
     position: fixed;
     z-index: 999;
   }
@@ -99,7 +99,7 @@
   //   position: fixed;
   // }
 
-  milkdown-link-edit .link-edit {
+  .milkdown-link-edit .link-edit {
     --milkdown-link-edit-height: 40px;
     width: 300px;
     height: var(--milkdown-link-edit-height);
@@ -114,7 +114,7 @@
       align-items: center;
     }
   }
-  milkdown-link-preview .link-preview {
+  .milkdown-link-preview .link-preview {
     --milkdown-link-preview-height: 40px;
     width: 350px;
     height: var(--milkdown-link-preview-height);
@@ -135,14 +135,14 @@
     }
   }
 
-  milkdown-image-block.selected > .image-wrapper::before {
+  .milkdown-image-block.selected > .image-wrapper::before {
     background: color-mix(in srgb, var(--crepe-color-selected), transparent 60%);
   }
   // milkdown-image-inline.selected > img {
   //   filter: brightness(1);
   // }
 
-  milkdown-image-block > .image-wrapper {
+  .milkdown-image-block > .image-wrapper {
     margin: 0;
     img {
       object-fit: contain;
@@ -210,8 +210,8 @@
     }
   }
 
-  milkdown-slash-menu,
-  milkdown-markdown-menu {
+  .milkdown-slash-menu,
+  .milkdown-markdown-menu {
     &[data-show='false'] {
       display: none;
     }

@@ -1,6 +1,4 @@
-import { html } from 'atomico';
-
-export const clearIcon = html`
+export const clearIcon = `
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
     <g clip-path="url(#clip0_1098_15553)">
       <path

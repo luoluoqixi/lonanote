@@ -1,18 +1,19 @@
 import { confirmIcon, copyIcon, editIcon, removeIcon } from '../../icons';
-import type { DefineFeature, Icon } from './../types';
+import type { DefineFeature, Icon } from '../types';
 import { configureLinkTooltip, linkTooltipConfig, linkTooltipPlugin } from './link-tooltip';
 
 interface LinkTooltipConfig {
-  linkIcon?: Icon;
-  editButton?: Icon;
-  removeButton?: Icon;
-  confirmButton?: Icon;
-  inputPlaceholder?: string;
-  hoverShow?: boolean;
-  selectionShow?: boolean;
-  onCopyLink?: (link: string) => void;
-  onClickLink?: (link: string) => void;
-  onEditClick?: (link: string) => Promise<string | false>;
+  linkIcon: Icon;
+  editButton: Icon;
+  removeButton: Icon;
+  confirmButton: Icon;
+  inputPlaceholder: string;
+  onCopyLink: (link: string) => void;
+
+  hoverShow: boolean;
+  selectionShow: boolean;
+  onClickLink: (link: string) => void;
+  onEditClick: (link: string) => Promise<string | false>;
 }
 
 export type LinkTooltipFeatureConfig = Partial<LinkTooltipConfig>;

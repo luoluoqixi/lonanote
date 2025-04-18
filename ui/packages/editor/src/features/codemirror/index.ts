@@ -21,7 +21,6 @@ import {
 } from '@codemirror/view';
 import { editorViewCtx, editorViewOptionsCtx } from '@milkdown/core';
 import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
-import { html } from 'atomico';
 
 import { chevronDownIcon, clearIcon, editIcon, searchIcon, visibilityOffIcon } from '../../icons';
 import { DefineFeature, Icon } from '../types';
@@ -40,12 +39,12 @@ interface CodeMirrorConfig {
   searchPlaceholder: string;
   noResultText: string;
 
-  renderLanguage: (language: string, selected: boolean) => ReturnType<typeof html> | string;
+  renderLanguage: (language: string, selected: boolean) => string;
   renderPreview: (language: string, content: string) => string | HTMLElement | null;
 
   previewToggleIcon: (previewOnlyMode: boolean) => ReturnType<Icon>;
-  previewToggleText: (previewOnlyMode: boolean) => ReturnType<typeof html>;
-  previewLabel: () => ReturnType<typeof html>;
+  previewToggleText: (previewOnlyMode: boolean) => string;
+  previewLabel: () => string;
 }
 
 export type CodeMirrorFeatureConfig = Partial<CodeMirrorConfig>;
@@ -127,12 +126,12 @@ export const defineCodeMirror: DefineFeature<CodeMirrorFeatureConfig> = (editor,
         renderLanguage: mergeConfig.renderLanguage || defaultConfig.renderLanguage,
         renderPreview: mergeConfig.renderPreview || defaultConfig.renderPreview,
         previewToggleButton: (previewOnlyMode) => {
-          return html`
-            ${mergeConfig.previewToggleIcon?.(previewOnlyMode) ||
-            (previewOnlyMode ? editIcon : visibilityOffIcon)}
-            ${mergeConfig.previewToggleText?.(previewOnlyMode) ||
-            (previewOnlyMode ? 'Edit' : 'Hide')}
-          `;
+          const icon =
+            config.previewToggleIcon?.(previewOnlyMode) ||
+            (previewOnlyMode ? editIcon : visibilityOffIcon);
+          const text =
+            config.previewToggleText?.(previewOnlyMode) || (previewOnlyMode ? 'Edit' : 'Hide');
+          return [icon, text].map((v) => v.trim()).join(' ');
         },
         previewLabel: mergeConfig.previewLabel || defaultConfig.previewLabel,
       }));
