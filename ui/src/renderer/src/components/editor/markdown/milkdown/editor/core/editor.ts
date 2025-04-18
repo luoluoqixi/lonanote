@@ -225,7 +225,7 @@ export class MilkdownEditor {
     });
   }
 
-  async create() {
+  create = async () => {
     const editor = await this.#editor.create();
     const view = editor.ctx.get(editorViewCtx);
 
@@ -248,20 +248,20 @@ export class MilkdownEditor {
     this.#onCreate();
     this.#onCreated();
     return editor;
-  }
+  };
 
-  async destroy() {
+  destroy = async () => {
     for (const k in this.#events) {
       this.#events[k] = undefined;
     }
     return await this.#editor.destroy();
-  }
+  };
 
   get editor(): Editor {
     return this.#editor;
   }
 
-  clearSelection() {
+  clearSelection = () => {
     this.#editor.action((ctx) => {
       const view = ctx.get(editorViewCtx);
       view.dispatch(view.state.tr.setSelection(Selection.near(view.state.doc.resolve(0))));
@@ -272,14 +272,14 @@ export class MilkdownEditor {
       view.dom.blur();
       view.dom.focus();
     });
-  }
+  };
 
-  #setCMReadOnly(
+  #setCMReadOnly = (
     dom: HTMLElement,
     className: string,
     readOnlyEx: Compartment | undefined,
     readOnly: boolean,
-  ) {
+  ) => {
     if (!readOnlyEx) return;
     const cmEditors = dom.querySelectorAll(`${className} .cm-editor`);
     if (cmEditors && cmEditors.length && cmEditors.length > 0) {
@@ -293,9 +293,9 @@ export class MilkdownEditor {
         }
       }
     }
-  }
+  };
 
-  setReadonly(value: boolean) {
+  setReadonly = (value: boolean) => {
     this.#editable = !value;
 
     this.#editor.action((ctx) => {
@@ -320,13 +320,13 @@ export class MilkdownEditor {
       });
     }
     return this;
-  }
+  };
 
-  getMarkdown() {
+  getMarkdown = () => {
     return this.#editor.action(getMarkdown());
-  }
+  };
 
-  setMarkdown(content: string, useHistory?: boolean | undefined) {
+  setMarkdown = (content: string, useHistory?: boolean | undefined) => {
     try {
       // editor.editor.action((ctx) => {
       //   const view = ctx.get(editorViewCtx);
@@ -349,9 +349,9 @@ export class MilkdownEditor {
       console.error('setValue Error', e);
       throw e;
     }
-  }
+  };
 
-  on(fn: (api: ListenerManager) => void) {
+  on = (fn: (api: ListenerManager) => void) => {
     if (this.#editor.status !== EditorStatus.Created) {
       this.#editor.config((ctx) => {
         const listener = ctx.get(listenerCtx);
@@ -364,22 +364,22 @@ export class MilkdownEditor {
       fn(listener);
     });
     return this;
-  }
+  };
 
-  addListener<K extends keyof MilkdownEditorEvent>(
+  addListener = <K extends keyof MilkdownEditorEvent>(
     type: K,
     listener: MilkdownEditorEvent[K],
-  ): void {
+  ): void => {
     if (!this.#events[type]) {
       this.#events[type] = [];
     }
     this.#events[type].push(listener);
-  }
+  };
 
-  removeListener<K extends keyof MilkdownEditorEvent>(
+  removeListener = <K extends keyof MilkdownEditorEvent>(
     type: K,
     listener: MilkdownEditorEvent[K],
-  ): void {
+  ): void => {
     if (!this.#events[type]) {
       return;
     }
@@ -387,19 +387,19 @@ export class MilkdownEditor {
     if (index >= 0) {
       this.#events[type].splice(index, 1);
     }
-  }
+  };
 
-  clearListener<K extends keyof MilkdownEditorEvent>(type: K): void {
+  clearListener = <K extends keyof MilkdownEditorEvent>(type: K): void => {
     if (!this.#events[type]) {
       return;
     }
     this.#events[type] = undefined;
-  }
+  };
 
-  #callEvent<K extends keyof MilkdownEditorEvent>(
+  #callEvent = <K extends keyof MilkdownEditorEvent>(
     type: K,
     ...args: Parameters<MilkdownEditorEvent[K]>
-  ) {
+  ) => {
     const listener = this.#events[type];
     if (listener) {
       for (let i = 0; i < listener.length; i++) {
@@ -413,42 +413,42 @@ export class MilkdownEditor {
         }
       }
     }
-  }
+  };
 
-  #onSaveCommand(state: EditorState) {
+  #onSaveCommand = (state: EditorState) => {
     this.#callEvent('onSave', this, state);
     return true;
-  }
+  };
 
-  #onCreate() {
+  #onCreate = () => {
     this.#callEvent('onCreate', this);
-  }
+  };
 
-  #onCreated() {
+  #onCreated = () => {
     this.#callEvent('onCreated', this);
-  }
+  };
 
-  #onDestroy(ctx: Ctx) {
+  #onDestroy = (ctx: Ctx) => {
     this.#callEvent('onDestroy', ctx);
-  }
+  };
 
-  #onUpdate(ctx: Ctx, doc: ProseNode, prevDoc: ProseNode | null) {
+  #onUpdate = (ctx: Ctx, doc: ProseNode, prevDoc: ProseNode | null) => {
     this.#callEvent('onUpdate', ctx, doc, prevDoc);
-  }
+  };
 
-  #onMounted(ctx: Ctx) {
+  #onMounted = (ctx: Ctx) => {
     this.#callEvent('onMounted', ctx);
-  }
+  };
 
-  #onBeforeMount(ctx: Ctx) {
+  #onBeforeMount = (ctx: Ctx) => {
     this.#callEvent('onBeforeMount', ctx);
-  }
+  };
 
-  #onBlur(ctx: Ctx) {
+  #onBlur = (ctx: Ctx) => {
     this.#callEvent('onBlur', ctx);
-  }
+  };
 
-  #onFocus(ctx: Ctx) {
+  #onFocus = (ctx: Ctx) => {
     this.#callEvent('onFocus', ctx);
-  }
+  };
 }
