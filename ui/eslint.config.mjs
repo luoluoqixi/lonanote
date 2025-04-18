@@ -15,16 +15,10 @@ export default [
   prettierRecommended,
   prettierConfig,
   {
-    ignores: ['**/out', '**/dist', '**/node_modules'],
+    ignores: ['**/out', '**/dist', '**/node_modules', 'packages/renderer/public/libs'],
   },
   {
-    files: [
-      'src/**/*.{js,ts,jsx,tsx}',
-      'scripts/**/*.{js,ts}',
-      'eslint.config.mjs',
-      'electron.vite.config.ts',
-      'vite.config.ts',
-    ],
+    files: ['packages/**/*.{js,ts,jsx,tsx}', 'scripts/**/*.{js,ts}', 'eslint.config.mjs'],
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
@@ -37,14 +31,15 @@ export default [
       },
     },
     rules: {
-      indent: [
-        // 缩进: https://eslint.org/docs/latest/rules/indent
-        'warn',
-        2,
-        {
-          SwitchCase: 1, // switch的case语句缩进
-        },
-      ],
+      // indent: [
+      //   // 缩进: https://eslint.org/docs/latest/rules/indent
+      //   'warn',
+      //   2,
+      //   {
+      //     SwitchCase: 1, // switch的case语句缩进
+      //   },
+      // ],
+      ident: 0,
       quotes: [
         // 单引号: https://eslint.org/docs/latest/rules/quotes
         'warn',

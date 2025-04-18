@@ -1,0 +1,27 @@
+{
+  "name": "lonanote-editor",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsup --clean"
+  },
+  "devDependencies": {
+    "remark-frontmatter": "^5.0.0",
+    "turndown-plugin-gfm": "^1.0.2",
+    "viewerjs": "^1.11.7",
+    "yaml": "^2.7.1"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    },
+    "./*": "./src/*"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "packageManager": "pnpm@9.15.0",
+  "node": ">=20.0.0"
+}

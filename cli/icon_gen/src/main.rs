@@ -404,7 +404,7 @@ fn _main() -> Result<()> {
     let windows_path = &output_folder.join("icon_windows.ico");
     let mac_path = &output_folder.join("icon_mac.icns");
     let linux_path = &output_folder.join("icon_linux.icns");
-    let web_path = &UI_PATH.join("src/renderer/public/favicon.ico");
+    let web_path = &UI_PATH.join("packages/renderer/public/favicon.ico");
     let mobile_path = &RS_PATH.join("mobile");
     let android_path = &mobile_path.join("gen/android");
     let ios_path = &mobile_path.join("gen/apple");

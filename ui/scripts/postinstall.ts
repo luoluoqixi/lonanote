@@ -3,7 +3,7 @@ import path from 'path';
 
 import { CopyFileItem, executeCopyFiles } from './plugins/perprocess/copyFile';
 
-const __dirname = import.meta.dirname;
+// const __dirname = import.meta.dirname;
 
 const execute = (cmd: string) => {
   console.log(cmd);
@@ -25,7 +25,7 @@ const copyFileContext = {
 const copyFiles: CopyFileItem[] = [
   {
     from: 'node_modules/vditor',
-    to: 'src/renderer/public/libs/vditor',
+    to: 'packages/renderer/public/libs/vditor',
   },
 ];
 

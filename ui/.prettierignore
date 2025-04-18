@@ -18,5 +18,7 @@ pnpm-lock.json
 
 ../rust/node/
 
+packages/renderer/public
+
 *.rs
 *.yaml

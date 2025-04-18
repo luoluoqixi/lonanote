@@ -1,0 +1,37 @@
+{
+  "name": "lonanote",
+  "version": "0.0.1",
+  "main": "./out/main/index.js",
+  "type": "module",
+  "scripts": {
+    "format": "prettier --write .",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "pnpm run build:web",
+    "build:web": "pnpm run typecheck && electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "build:unpack": "pnpm run build && electron-builder --dir",
+    "build:win": "pnpm run build && electron-builder --win",
+    "build:mac": "pnpm run build && electron-builder --mac",
+    "build:linux": "pnpm run build && electron-builder --linux"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^4.0.0",
+    "electron-store": "^10.0.1",
+    "electron-updater": "^6.6.3",
+    "lonanote-core-node": "link:../../../rust/node"
+  },
+  "devDependencies": {
+    "@electron-toolkit/tsconfig": "^1.0.1",
+    "electron": "^35.1.5",
+    "electron-builder": "^26.0.12",
+    "electron-builder-squirrel-windows": "^26.0.13",
+    "electron-vite": "^3.1.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "node": ">=20.0.0"
+}

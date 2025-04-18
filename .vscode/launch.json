@@ -5,7 +5,7 @@
       "name": "Debug UI Main",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceRoot}/ui",
+      "cwd": "${workspaceRoot}/ui/packages/desktop",
       "runtimeExecutable": "${workspaceRoot}/ui/node_modules/.bin/electron-vite",
       "windows": {
         "runtimeExecutable": "${workspaceRoot}/ui/node_modules/.bin/electron-vite.cmd"
@@ -23,7 +23,7 @@
       "port": 9222,
       "request": "attach",
       "type": "chrome",
-      "webRoot": "${workspaceFolder}/ui/src/renderer",
+      "webRoot": "${workspaceFolder}/ui/packages/desktop/renderer",
       "timeout": 60000,
       "presentation": {
         "hidden": true
