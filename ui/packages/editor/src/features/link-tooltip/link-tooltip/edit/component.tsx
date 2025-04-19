@@ -65,6 +65,8 @@ export const EditLink = defineComponent<EditLinkProps>({
               link.value = (e.target as HTMLInputElement).value;
             }}
             value={link.value}
+            // ==== 修改 ====
+            spellcheck={false}
           />
           {link.value ? (
             <Icon

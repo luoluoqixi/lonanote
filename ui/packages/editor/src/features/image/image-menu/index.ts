@@ -249,6 +249,7 @@ class ImageMenuView implements PluginView {
   };
 
   toggle = (virtualElement: VirtualElement | null, handles: ImageInfo | null) => {
+    console.log('toggle', this.#show);
     if (!this.#show) {
       this.show(virtualElement, handles);
     } else {

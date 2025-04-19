@@ -11,6 +11,10 @@ Fragment;
 
 export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
   props: {
+    ctx: {
+      type: Object,
+      required: true,
+    },
     src: {
       type: Object,
       required: true,
@@ -43,7 +47,6 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
   setup({ ctx, src, caption, ratio, readonly, selected, setAttr, config }) {
     const imageRef = ref<HTMLImageElement>();
     const resizeHandle = ref<HTMLDivElement>();
-    const timer = ref(0);
 
     // ==== 修改 ====
     const showOperation = ref(false);
@@ -51,19 +54,30 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
     const onImageLoad = () => {
       const image = imageRef.value;
       if (!image) return;
+
       const host = image.closest('.milkdown-image-block');
       if (!host) return;
 
-      const maxWidth = host.getBoundingClientRect().width;
-      if (!maxWidth) return;
+      const updateHeight = (maxWidth: number) => {
+        const height = image.height;
+        const width = image.width;
+        const transformedHeight = width < maxWidth ? height : maxWidth * (height / width);
+        const h = (transformedHeight * (ratio.value ?? 1)).toFixed(2);
+        image.dataset.origin = transformedHeight.toFixed(2);
+        image.dataset.height = h;
+        image.style.height = `${h}px`;
+      };
 
-      const height = image.height;
-      const width = image.width;
-      const transformedHeight = width < maxWidth ? height : maxWidth * (height / width);
-      const h = (transformedHeight * (ratio.value ?? 1)).toFixed(2);
-      image.dataset.origin = transformedHeight.toFixed(2);
-      image.dataset.height = h;
-      image.style.height = `${h}px`;
+      const checkWidth = () => {
+        const maxWidth = host.getBoundingClientRect().width;
+        if (maxWidth <= 0) {
+          requestAnimationFrame(checkWidth);
+        } else {
+          updateHeight(maxWidth);
+        }
+      };
+
+      requestAnimationFrame(checkWidth);
     };
 
     const onResizeHandlePointerMove = (e: PointerEvent) => {
@@ -111,7 +125,7 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
 
     // ==== 修改 ====
     const operationClick = (e: Event) => {
-      if (readonly) return;
+      if (readonly.value) return;
       e.preventDefault();
       e.stopPropagation();
       if (!ctx) return;
