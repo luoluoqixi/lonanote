@@ -107,22 +107,20 @@ class MenuView implements PluginView {
       },
       offset: 10,
       // ==== 修改 ====
-      floatingUIOptions: {
-        middleware: [
-          {
-            name: 'milkdown-block-edit-middleware',
-            fn: (s) => {
-              this.#showElements = s.elements.floating;
-              this.#showPos = {
-                x: s.x,
-                y: s.y,
-              };
-              this.#lastScrollPos = null;
-              return {};
-            },
+      middleware: [
+        {
+          name: 'milkdown-block-edit-update-pos',
+          fn: (s) => {
+            this.#showElements = s.elements.floating;
+            this.#showPos = {
+              x: s.x,
+              y: s.y,
+            };
+            this.#lastScrollPos = null;
+            return {};
           },
-        ],
-      },
+        },
+      ],
     });
 
     this.#slashProvider.onShow = () => {

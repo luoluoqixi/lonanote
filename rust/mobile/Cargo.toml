@@ -32,6 +32,7 @@ lonanote-core = { path = "../core" }
 # tauri
 tauri = { version = "2.5.0", features = ["config-toml", "protocol-asset"] }
 specta = { version = "=2.0.0-rc.22" }
+tauri-plugin = "2.2.0"
 tauri-plugin-clipboard-manager = { version = "2.2.2" }
 tauri-plugin-fs = { version = "2.2.1" }
 tauri-plugin-log = { version = "2.4.0" }

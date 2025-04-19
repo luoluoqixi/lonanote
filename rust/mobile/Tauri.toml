@@ -9,7 +9,7 @@ frontendDist = "../../ui/renderer/dist"
 devUrl = "http://localhost:8000"
 
 [bundle]
-icon = ["../../ui/resources/icon.png"]
+icon = ["../../ui/packages/desktop/resources/icon.png"]
 active = true
 targets = "all"
 createUpdaterArtifacts = false
