@@ -84,3 +84,5 @@ export function loadFeature(editor: Editor, feature: MilkdownFeature, config: an
     }
   }
 }
+
+export { ImageMenuKey } from './image/image-menu';

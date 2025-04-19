@@ -211,7 +211,7 @@
   }
 
   .milkdown-slash-menu,
-  .milkdown-markdown-menu {
+  .image-menu {
     &[data-show='false'] {
       display: none;
     }
@@ -284,6 +284,11 @@
         height: 1px;
         background: color-mix(in srgb, var(--crepe-color-outline), transparent 80%);
         margin: 0 10px;
+      }
+
+      .milkdown-icon {
+        width: 25px;
+        height: 25px;
       }
     }
   }

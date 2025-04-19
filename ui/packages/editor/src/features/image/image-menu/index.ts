@@ -6,7 +6,7 @@ import type { PluginView } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import throttle from 'lodash.throttle';
 import Viewer from 'viewerjs';
-import { App, Ref, createApp, ref } from 'vue';
+import { App, createApp, ref } from 'vue';
 
 import { MarkdownMenu, MarkdownMenuOption, MarkdownMenuProps } from '../../../components';
 import { captionIcon, downloadIcon, imageIcon, previewIcon } from '../../../icons';
@@ -150,10 +150,10 @@ class ImageMenuView implements PluginView {
     });
     this.#app = app;
     this.#content = content;
+    this.#show = false;
     app.mount(content);
 
     this.#customMenuClick = config?.onMenuClick;
-    this.#show = false;
     this.#virtualElement = null;
     this.#initialized = false;
     this.#root = view.dom.parentElement ?? document.body;
@@ -165,21 +165,14 @@ class ImageMenuView implements PluginView {
       debounce: 20,
       offset: 10,
       shouldShow: () => {
-        return this.#show;
-      },
-      floatingUIOptions: {
-        placement: 'bottom',
+        return show.value;
       },
     });
     this.#tooltipProvider.onShow = () => {
-      if (!show.value) {
-        show.value = true;
-      }
+      show.value = true;
     };
     this.#tooltipProvider.onHide = () => {
-      if (show.value) {
-        show.value = false;
-      }
+      show.value = false;
     };
 
     this.#removeOnScroll = addViewScrollEvent(view, () => {
@@ -251,7 +244,6 @@ class ImageMenuView implements PluginView {
   };
 
   toggle = (virtualElement: VirtualElement | null, handles: ImageInfo | null) => {
-    console.log('toggle', this.#show);
     if (!this.#show) {
       this.show(virtualElement, handles);
     } else {
