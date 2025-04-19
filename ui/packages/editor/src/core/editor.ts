@@ -51,6 +51,16 @@ export interface MilkdownEditorEvent {
   onBlur: (ctx: Ctx) => void;
   onFocus: (ctx: Ctx) => void;
   onDestroy: (ctx: Ctx) => void;
+  onMouseDown: (view: EditorView, event: MouseEvent) => void;
+  onMouseUp: (view: EditorView, event: MouseEvent) => void;
+  onMouseEnter: (view: EditorView, event: MouseEvent) => void;
+  onMouseMove: (view: EditorView, event: MouseEvent) => void;
+  onMouseLeave: (view: EditorView, event: MouseEvent) => void;
+  onPointerDown: (view: EditorView, event: PointerEvent) => void;
+  onPointerUp: (view: EditorView, event: PointerEvent) => void;
+  onPointerEnter: (view: EditorView, event: PointerEvent) => void;
+  onPointerMove: (view: EditorView, event: PointerEvent) => void;
+  onPointerLeave: (view: EditorView, event: PointerEvent) => void;
 
   onLinkClick: (link: string, view: EditorView, e: Event) => void;
 }
@@ -173,6 +183,36 @@ export class MilkdownEditor {
                 const href = (target as any).getAttribute('href');
                 this.#callEvent('onLinkClick', href, view, e);
               }
+            },
+            mousedown: (view, e) => {
+              this.#callEvent('onMouseDown', view, e);
+            },
+            mouseup: (view, e) => {
+              this.#callEvent('onMouseUp', view, e);
+            },
+            mouseenter: (view, e) => {
+              this.#callEvent('onMouseEnter', view, e);
+            },
+            mousemove: (view, e) => {
+              this.#callEvent('onMouseMove', view, e);
+            },
+            mouseleave: (view, e) => {
+              this.#callEvent('onMouseLeave', view, e);
+            },
+            pointerdown: (view, e) => {
+              this.#callEvent('onPointerDown', view, e);
+            },
+            pointerup: (view, e) => {
+              this.#callEvent('onPointerUp', view, e);
+            },
+            pointerenter: (view, e) => {
+              this.#callEvent('onPointerEnter', view, e);
+            },
+            pointermove: (view, e) => {
+              this.#callEvent('onPointerMove', view, e);
+            },
+            pointerleave: (view, e) => {
+              this.#callEvent('onPointerLeave', view, e);
             },
           },
         }));

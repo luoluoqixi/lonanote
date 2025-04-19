@@ -1,8 +1,7 @@
 import { ContextMenu as RadixContextMenu } from '@radix-ui/themes';
-import { ReactNode } from 'react';
+import { ReactNode, Ref, forwardRef, useImperativeHandle, useRef, useState } from 'react';
 
 export interface ContextMenuProps {
-  triggerRef?: React.Ref<HTMLSpanElement>;
   rootProps?: RadixContextMenu.RootProps;
   triggerProps?: RadixContextMenu.TriggerProps;
   contentProps?: RadixContextMenu.ContentProps;
@@ -22,20 +21,65 @@ export interface ContextMenuItem {
   props?: RadixContextMenu.ItemProps;
 }
 
-export const ContextMenu = ({
-  triggerRef,
-  onOpenChange,
-  rootProps,
-  triggerProps,
-  contentProps,
-  children,
-  contentWidth,
-  items,
-  onMenuClick,
-}: ContextMenuProps) => {
+export interface VirtualEvent {
+  clientX?: number | undefined;
+  clientY?: number | undefined;
+}
+
+export interface ContextMenuRef {
+  openMenu: (e: VirtualEvent) => void;
+  closeMenu: () => void;
+  isOpen: () => boolean;
+}
+
+export const ContextMenu = forwardRef((props: ContextMenuProps, ref: Ref<ContextMenuRef>) => {
+  const {
+    onOpenChange,
+    rootProps,
+    triggerProps,
+    contentProps,
+    children,
+    contentWidth,
+    items,
+    onMenuClick,
+  } = props;
+  const menuRef = useRef<HTMLSpanElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const close = () => {
+    if (!menuRef.current) return;
+    menuRef.current.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    setMenuOpen(false);
+    if (onOpenChange) {
+      onOpenChange(false);
+    }
+  };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      openMenu: (e) => {
+        if (menuRef.current) {
+          menuRef.current.dispatchEvent(
+            new MouseEvent('contextmenu', {
+              bubbles: true,
+              clientX: e.clientX,
+              clientY: e.clientY,
+            }),
+          );
+        }
+      },
+      closeMenu: close,
+      isOpen: () => {
+        return menuOpen;
+      },
+    }),
+    [menuRef],
+  );
+
   return (
     <RadixContextMenu.Root onOpenChange={onOpenChange} {...rootProps}>
-      <RadixContextMenu.Trigger ref={triggerRef} {...triggerProps}>
+      <RadixContextMenu.Trigger ref={menuRef} {...triggerProps}>
         {children || <span></span>}
       </RadixContextMenu.Trigger>
       <RadixContextMenu.Content style={{ width: contentWidth }} {...contentProps}>
@@ -45,7 +89,10 @@ export const ContextMenu = ({
           ) : (
             <RadixContextMenu.Item
               key={m.id}
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                close();
                 onMenuClick?.(m.id);
               }}
               {...m.props}
@@ -57,4 +104,4 @@ export const ContextMenu = ({
       </RadixContextMenu.Content>
     </RadixContextMenu.Root>
   );
-};
+});

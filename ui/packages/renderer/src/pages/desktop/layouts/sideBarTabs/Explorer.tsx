@@ -22,6 +22,7 @@ import { FileNode, FileTree, FileTreeSortType, Workspace, fs } from '@/bindings/
 import {
   ContextMenu,
   ContextMenuItem,
+  ContextMenuRef,
   Dropdown,
   Tree,
   TreeItem,
@@ -229,7 +230,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   const [scrollTo, setScrollTo] = useState<string | null>(null);
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   const treeRef = useRef<TreeRef>(null);
-  const menuRef = useRef<HTMLSpanElement>(null);
+  const menuRef = useRef<ContextMenuRef>(null);
 
   const refreshTreeData = async () => {
     const openLoadingTime = window.setTimeout(() => setOpenLoading(true), 300);
@@ -301,13 +302,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   ) => {
     if (menuRef.current) {
       setCurrentMenuNode(node);
-      menuRef.current.dispatchEvent(
-        new MouseEvent('contextmenu', {
-          bubbles: true,
-          clientX: e.clientX,
-          clientY: e.clientY,
-        }),
-      );
+      menuRef.current.openMenu(e);
     }
   };
 
@@ -592,7 +587,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
         </div>
       </div>
       <ContextMenu
-        triggerRef={menuRef}
+        ref={menuRef}
         onOpenChange={(open) => {
           if (!open) {
             // 关闭菜单时，延迟设置menuOpen状态

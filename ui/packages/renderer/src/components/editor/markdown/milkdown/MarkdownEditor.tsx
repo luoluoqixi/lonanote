@@ -1,4 +1,4 @@
-import { editorViewCtx } from '@milkdown/core';
+import { editorCtx, editorViewCtx } from '@milkdown/core';
 import { Ctx } from '@milkdown/kit/ctx';
 import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-editor';
 import path from 'path-browserify-esm';
@@ -11,9 +11,11 @@ import {
   useRef,
   useState,
 } from 'react';
+import { VscCopy } from 'react-icons/vsc';
 import { toast } from 'react-toastify';
 
-import { fs } from '@/bindings/api';
+import { fs, system } from '@/bindings/api';
+import { ContextMenu, ContextMenuItem, ContextMenuRef } from '@/components';
 import { dialog } from '@/components/utils';
 import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
@@ -28,6 +30,29 @@ export interface UpdateState {
   rowIndex?: number;
   colIndex?: number;
 }
+
+const contextMenus: ContextMenuItem[] = [
+  {
+    id: 'cut',
+    label: '剪切',
+    icon: <VscCopy />,
+  },
+  {
+    id: 'copy',
+    label: '复制',
+    icon: <VscCopy />,
+  },
+  {
+    id: 'paste',
+    label: '粘贴',
+    icon: <VscCopy />,
+  },
+  {
+    id: 'select-all',
+    label: '全选',
+    icon: <VscCopy />,
+  },
+];
 
 export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRef>) => {
   const {
@@ -45,6 +70,8 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   const theme = useCodeMirrorTheme();
   const editorRef = useRef<HTMLDivElement>(null);
   const content = useEditor((s) => s.currentEditorContent);
+
+  const menuRef = useRef<ContextMenuRef>(null);
 
   const [updateContentState, setUpdateContentState] = useState<boolean>(false);
   const updateContent = useCallback(
@@ -284,6 +311,11 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         onClickAnyLink?.(link);
       }
     });
+    editor.addListener('onMouseDown', (view, e) => {
+      if (e.button === 2) {
+        openMenuClick(e);
+      }
+    });
     console.log('milkdown create');
     return editor;
   }, [filePath, onSave, onUpdateListener, onClickAnyLink, theme]);
@@ -317,14 +349,37 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     },
   }));
 
+  const openMenuClick = (e: MouseEvent) => {
+    if (menuRef.current) {
+      menuRef.current.openMenu(e);
+    }
+  };
+
+  const onMenuClick = async (id: string) => {
+    const editor = getEditor();
+    if (!editor) return;
+    if (id === 'cut') {
+      await system.cut();
+    } else if (id === 'copy') {
+      await system.copy();
+    } else if (id === 'paste') {
+      setTimeout(system.paste, 201);
+    } else if (id === 'select-all') {
+      setTimeout(system.selectAll, 201);
+    }
+  };
+
   return (
-    <div
-      style={{
-        display: loading ? 'none' : undefined,
-        ...style,
-      }}
-      className={className}
-      ref={editorRef}
-    />
+    <>
+      <div
+        style={{
+          display: loading ? 'none' : undefined,
+          ...style,
+        }}
+        className={className}
+        ref={editorRef}
+      />
+      <ContextMenu ref={menuRef} items={contextMenus} onMenuClick={onMenuClick} />
+    </>
   );
 });

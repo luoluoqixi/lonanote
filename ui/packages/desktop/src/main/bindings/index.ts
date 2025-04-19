@@ -4,6 +4,7 @@ import { getActiveWin } from '../app';
 import * as bindings from './bindings';
 import { initDialogIPC } from './dialog';
 import { initShellIPC } from './shell';
+import { initSystemIPC } from './system';
 
 export * from './bindings';
 
@@ -107,4 +108,5 @@ export const initBindings = async (ipcMain: Electron.IpcMain) => {
   initPath();
   initShellIPC();
   initDialogIPC();
+  initSystemIPC();
 };

@@ -20,7 +20,7 @@
     "strict": true,
     "skipLibCheck": true,
     "baseUrl": ".",
-    "types": ["vite/client", "./typings"],
+    "types": ["vite/client", "./typings", "../desktop/src/preload/index.d.ts"],
     "paths": {
       "@/*": ["src/*"]
     }
