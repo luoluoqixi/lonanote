@@ -116,7 +116,7 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
 
     // ==== 修改 ====
     const onMouseEnter = () => {
-      if (readonly) return;
+      if (readonly.value) return;
       showOperation.value = true;
     };
     const onMouseLeave = () => {
@@ -163,7 +163,7 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
         <>
           <div class="image-wrapper" onMouseenter={onMouseEnter} onMouseleave={onMouseLeave}>
             <div class={clsx('image-block-title', selected && 'visible')}>{caption.value}</div>
-            <div class={clsx('operation', showOperation && 'visible')}>
+            <div class={clsx('operation', showOperation.value && 'visible')}>
               <div class="operation-item" onPointerdown={operationClick}>
                 <Icon icon={config.operationIcon()} />
               </div>
@@ -177,7 +177,7 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
             />
             <div
               ref={resizeHandle}
-              class={clsx('image-resize-handle', showOperation && 'visible')}
+              class={clsx('image-resize-handle', showOperation.value && 'visible')}
               onPointerdown={onResizeHandlePointerDown}
             >
               <Icon icon={config?.resizeIcon()} />

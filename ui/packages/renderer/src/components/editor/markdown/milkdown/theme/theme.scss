@@ -170,8 +170,6 @@
       align-items: center;
       background: none;
       border-radius: 10px;
-      background-color: var(--gray-a10);
-      color: var(--crepe-color-on-inverse);
       width: 24px;
       height: 24px;
       left: unset;
@@ -190,6 +188,7 @@
       transition: all 0.2s;
       opacity: 0 !important;
       .operation-item {
+        opacity: 1;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -202,6 +201,12 @@
           height: 16px;
         }
       }
+    }
+
+    .image-resize-handle,
+    .operation .operation-item {
+      background-color: var(--gray-a8);
+      color: var(--crepe-color-on-inverse);
     }
 
     .image-resize-handle.visible,
