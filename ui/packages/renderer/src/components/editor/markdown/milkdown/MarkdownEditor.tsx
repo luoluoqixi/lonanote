@@ -1,6 +1,6 @@
 import { editorViewCtx } from '@milkdown/core';
 import { Ctx } from '@milkdown/kit/ctx';
-import { MilkdownEditor, MilkdownFeature, useMilkdownEditor } from 'lonanote-editor';
+import { MilkdownEditor, MilkdownFeature } from 'lonanote-editor';
 // import { ImageMenuKey } from 'lonanote-editor/features/image/image-menu/index.js';
 import path from 'path-browserify-esm';
 import {
@@ -21,6 +21,7 @@ import { utils } from '@/utils';
 
 import { useCodeMirrorTheme } from '../../codemirror';
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
+import { useMilkdownEditor } from './hooks';
 import { markdownEditorLanguages } from './languages';
 
 export interface UpdateState {

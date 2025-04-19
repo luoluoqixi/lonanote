@@ -4,7 +4,7 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "build": "tsup --clean"
+    "build": "vite build"
   },
   "devDependencies": {
     "remark-frontmatter": "^5.0.0",
@@ -14,9 +14,9 @@
   },
   "exports": {
     ".": {
-      "import": "./src/index.ts"
+      "import": "./dist/index.js"
     },
-    "./*": "./src/*"
+    "./*": "./dist/*"
   },
   "files": [
     "dist",

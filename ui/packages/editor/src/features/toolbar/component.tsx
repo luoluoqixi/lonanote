@@ -1,4 +1,3 @@
-import { Icon } from '@milkdown/kit/component';
 import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
 import {
@@ -18,6 +17,7 @@ import { Fragment, type Ref, type ShallowRef, defineComponent, h } from 'vue';
 
 import type { ToolbarFeatureConfig } from '.';
 import { MilkdownFeature } from '../..';
+import { Icon } from '../../components';
 import { FeaturesCtx } from '../../core/slice';
 import {
   boldIcon,

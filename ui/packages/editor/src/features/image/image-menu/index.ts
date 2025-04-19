@@ -136,14 +136,16 @@ class ImageMenuView implements PluginView {
     const content = document.createElement('div');
     content.classList.add('image-menu');
     const show = ref(false);
+    const title = ref(config?.title || 'image handle');
+    const options = ref(getOptions(config));
     const hide = this.hide;
     const app = createApp(MarkdownMenu, {
       ctx,
       config,
       show,
       hide,
-      options: getOptions(config),
-      title: config?.title || 'image handle',
+      title,
+      options,
       onMenuClick: this.#onMenuClick,
     });
     this.#app = app;

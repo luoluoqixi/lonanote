@@ -1,8 +1,8 @@
-import { Icon } from '@milkdown/kit/component';
 import type { Ctx } from '@milkdown/kit/ctx';
 import { type Ref, computed, defineComponent, h, onUnmounted, ref, watch, watchEffect } from 'vue';
 
 import type { BlockEditFeatureConfig } from '..';
+import { Icon } from '../../../components';
 import { getGroups } from './config';
 
 h;

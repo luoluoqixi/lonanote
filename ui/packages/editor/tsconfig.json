@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "composite": true,
@@ -14,7 +14,10 @@
     "noEmit": true,
     "rootDir": "src",
     "skipLibCheck": true,
-    "target": "esnext"
+    "target": "esnext",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src"],
 }

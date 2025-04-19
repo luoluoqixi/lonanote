@@ -1,8 +1,8 @@
-import { Icon } from '@milkdown/kit/component';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import { type ShallowRef, type VNodeRef, defineComponent, h } from 'vue';
 
 import type { LatexConfig } from '..';
+import { Icon } from '../../../components';
 
 type LatexTooltipProps = {
   config: Partial<LatexConfig>;

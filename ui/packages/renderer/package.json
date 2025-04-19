@@ -8,7 +8,7 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
-    "dev": "vite --force",
+    "dev": "pnpm --filter \"../editor\" run build && vite --force",
     "build": "vite build"
   },
   "devDependencies": {

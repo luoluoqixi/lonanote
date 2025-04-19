@@ -1,6 +1,7 @@
-import { Icon } from '@milkdown/kit/component';
 import type { Ctx } from '@milkdown/kit/ctx';
 import { type Ref, defineComponent, h, onUnmounted, ref, watch, watchEffect } from 'vue';
+
+import { Icon } from '../icon';
 
 h;
 
@@ -16,7 +17,7 @@ export type MarkdownMenuProps = {
   hide: () => void;
 
   title?: Ref<string>;
-  options: MarkdownMenuOption[];
+  options: Ref<MarkdownMenuOption[]>;
   onMenuClick?: (option: MarkdownMenuOption, index: number, ctx: Ctx) => void;
 };
 
@@ -35,7 +36,7 @@ export const MarkdownMenu = defineComponent<MarkdownMenuProps>({
       required: true,
     },
     options: {
-      type: Array,
+      type: Object,
       required: true,
     },
     onMenuClick: {
@@ -58,7 +59,7 @@ export const MarkdownMenu = defineComponent<MarkdownMenuProps>({
     };
 
     watch([options, show], () => {
-      const size = options.length;
+      const size = options.value.length;
       if (size === 0 && show.value) hide();
       else if (hoverIndex.value >= size) hoverIndex.value = 0;
     });
@@ -83,14 +84,14 @@ export const MarkdownMenu = defineComponent<MarkdownMenuProps>({
     };
 
     const runByIndex = (index: number) => {
-      const item = options?.at(index);
+      const item = options.value?.at(index);
       if (onMenuClick && item && ctx) onMenuClick(item, index, ctx);
 
       hide?.();
     };
 
     const onKeydown = (e: KeyboardEvent) => {
-      const size = options.length;
+      const size = options.value.length;
       if (e.key === 'Escape') {
         e.preventDefault();
         hide?.();
@@ -142,7 +143,7 @@ export const MarkdownMenu = defineComponent<MarkdownMenuProps>({
             <div class="menu-group">
               <h6>{title.value}</h6>
               <ul>
-                {options.map((item, index) => (
+                {options.value.map((item, index) => (
                   <li
                     key={item.key}
                     data-index={index}
