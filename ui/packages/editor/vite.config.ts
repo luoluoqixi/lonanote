@@ -2,7 +2,6 @@ import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 import path from 'path';
 import { defineConfig } from 'vite';
-import dts from 'vite-plugin-dts';
 import { externalizeDeps } from 'vite-plugin-externalize-deps';
 
 export default defineConfig({
@@ -31,7 +30,6 @@ export default defineConfig({
       nodeBuiltins: true,
       include: [/\@codemirror\/*/, /\@milkdown\/*/],
     }),
-    dts({ include: ['src'] }),
   ],
   resolve: {
     alias: {

@@ -15,10 +15,8 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js"
-    },
-    "./*": {
-      "import": "./dist/*"
+      "import": "./dist/index.js",
+      "types": "./src/index.ts"
     }
   },
   "files": [

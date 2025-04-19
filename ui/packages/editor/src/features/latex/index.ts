@@ -1,10 +1,11 @@
-import { codeBlockConfig } from '@milkdown/kit/component/code-block';
 import type { KatexOptions } from 'katex';
 import katex from 'katex';
 
 import { MilkdownFeature } from '../..';
 import { FeaturesCtx } from '../../core/slice';
 import { confirmIcon } from '../../icons';
+// import { codeBlockConfig } from '@milkdown/kit/component/code-block';
+import { codeBlockConfig } from '../codemirror/code-block';
 import type { DefineFeature, Icon } from '../types';
 import { blockLatexSchema } from './block-latex';
 import { mathInlineSchema } from './inline-latex';

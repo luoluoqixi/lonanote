@@ -60,6 +60,11 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       defaultValue: '',
       featureConfigs: {
         [MilkdownFeature.Image]: {
+          blockUploadPlaceholderText: markdownEditorLanguages.imageBlockUploadPlaceholderText,
+          blockUploadButton: () => markdownEditorLanguages.imageBlockUploadButton,
+          blockConfirmButton: () => markdownEditorLanguages.imageBlockConfirmButton,
+          inlineUploadPlaceholderText: markdownEditorLanguages.imageInlineUploadPlaceholderText,
+          inlineUploadButton: () => markdownEditorLanguages.imageInlineUploadButton,
           proxyDomURL(url) {
             if (!url) return url;
             // console.log(url);
@@ -190,12 +195,20 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         },
         [MilkdownFeature.CodeMirror]: {
           theme,
+          searchPlaceholder: markdownEditorLanguages.codemirrorSearchPlaceholder,
+          previewToggleText: (m) =>
+            m
+              ? markdownEditorLanguages.codemirrorToggleEdit
+              : markdownEditorLanguages.codemirrorToggleHide,
+          previewLabel: () => markdownEditorLanguages.codemirrorPreviewLabel,
+          noResultText: markdownEditorLanguages.codemirrorNoResultText,
         },
         [MilkdownFeature.Yaml]: {
           theme,
         },
         [MilkdownFeature.LinkTooltip]: {
           onClickLink: onClickAnyLink,
+          inputPlaceholder: markdownEditorLanguages.linkTooltipInputLinkLabel,
           onCopyLink(link) {
             if (navigator.clipboard && link) {
               navigator.clipboard.writeText(link).catch((e) => {
@@ -204,6 +217,29 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
               toast.success('复制成功');
             }
           },
+        },
+        [MilkdownFeature.BlockEdit]: {
+          slashMenuTextGroupLabel: markdownEditorLanguages.slashMenuTextGroupLabel,
+          slashMenuH1Label: markdownEditorLanguages.slashMenuH1Label,
+          slashMenuH2Label: markdownEditorLanguages.slashMenuH2Label,
+          slashMenuH3Label: markdownEditorLanguages.slashMenuH3Label,
+          slashMenuH4Label: markdownEditorLanguages.slashMenuH4Label,
+          slashMenuH5Label: markdownEditorLanguages.slashMenuH5Label,
+          slashMenuH6Label: markdownEditorLanguages.slashMenuH6Label,
+          slashMenuQuoteLabel: markdownEditorLanguages.slashMenuQuoteLabel,
+          slashMenuDividerLabel: markdownEditorLanguages.slashMenuDividerLabel,
+
+          slashMenuListGroupLabel: markdownEditorLanguages.slashMenuListGroupLabel,
+          slashMenuBulletListLabel: markdownEditorLanguages.slashMenuBulletListLabel,
+          slashMenuOrderedListLabel: markdownEditorLanguages.slashMenuOrderedListLabel,
+          slashMenuTaskListLabel: markdownEditorLanguages.slashMenuTaskListLabel,
+
+          slashMenuAdvancedGroupLabel: markdownEditorLanguages.slashMenuAdvancedGroupLabel,
+          slashMenuImageLabel: markdownEditorLanguages.slashMenuImageLabel,
+          slashMenuImageLinkLabel: markdownEditorLanguages.slashMenuImageLinkLabel,
+          slashMenuCodeBlockLabel: markdownEditorLanguages.slashMenuCodeBlockLabel,
+          slashMenuTableLabel: markdownEditorLanguages.slashMenuTableLabel,
+          slashMenuMathLabel: markdownEditorLanguages.slashMenuMathLabel,
         },
       },
     });

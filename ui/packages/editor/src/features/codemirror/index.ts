@@ -20,9 +20,10 @@ import {
   rectangularSelection,
 } from '@codemirror/view';
 import { editorViewCtx, editorViewOptionsCtx } from '@milkdown/core';
-import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
 
 import { chevronDownIcon, clearIcon, editIcon, searchIcon, visibilityOffIcon } from '../../icons';
+// import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
+import { codeBlockComponent, codeBlockConfig } from '../codemirror/code-block';
 import { DefineFeature, Icon } from '../types';
 
 interface CodeMirrorConfig {

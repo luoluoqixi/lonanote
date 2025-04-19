@@ -315,7 +315,7 @@ export class MilkdownEditor {
         const isCodeMirrorEnabled = flags?.includes(MilkdownFeature.CodeMirror);
         if (!isCodeMirrorEnabled) return;
         const view = ctx.get(editorViewCtx);
-        this.#setCMReadOnly(view.dom, 'milkdown-code-block', readOnlyEx, value);
+        this.#setCMReadOnly(view.dom, '.milkdown-code-block', readOnlyEx, value);
         this.#setCMReadOnly(view.dom, '.milkdown-yaml-block', readOnlyExYaml, value);
       });
     }
