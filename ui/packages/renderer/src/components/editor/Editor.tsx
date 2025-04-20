@@ -5,9 +5,10 @@ import { toast } from 'react-toastify';
 
 import { Workspace, fs } from '@/bindings/api';
 import {
+  saveContent,
   setCurrentEditFile,
-  setCurrentEditorContent,
   setCurrentEditorState,
+  updateContent,
   useEditor,
 } from '@/controller/editor';
 import { defaultEditorBackEnd, defaultEditorMode } from '@/models/editor';
@@ -96,7 +97,7 @@ export default function Editor({
       fs.readToString(filePath)
         .then((content) => {
           try {
-            setCurrentEditorContent(content || '');
+            updateContent({ content: content || '' });
           } catch (e) {
             toast.error(`setValue失败: ${e}`);
           }
@@ -105,28 +106,16 @@ export default function Editor({
         .catch((e) => {
           console.error('读取文件失败', filePath, e);
           toast.error(`读取文件失败: ${filePath}, ${e.message}`);
-          setCurrentEditorContent('');
+          updateContent({ content: '' });
         });
     } else {
-      setCurrentEditorContent(null);
+      updateContent(null);
     }
   }, [file, fullPath, editorBackEnd, editorMode]);
 
-  const saveFile = useCallback(
-    (content: string) => {
-      if (content == null) return;
-      // console.log(fullPath);
-      fs.write(fullPath, content)
-        .then(() => {
-          toast.success('保存文件成功');
-        })
-        .catch((e) => {
-          console.error('保存文件失败', e);
-          toast.error(`保存文件失败: ${e.message}`);
-        });
-    },
-    [fullPath],
-  );
+  const saveFile = useCallback((content: string) => {
+    saveContent(content, true);
+  }, []);
   const onClickAnyLink = useCallback(
     (link: string) => {
       if (link == null) return;

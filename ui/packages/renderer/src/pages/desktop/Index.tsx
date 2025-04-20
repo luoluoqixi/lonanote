@@ -19,6 +19,7 @@ import {
   defaultEditorBackEnd,
   defaultEditorIsReadOnly,
   defaultEditorMode,
+  parseCurrentEditFile,
   setCurrentEditFile,
   setEditorIsReadOnly,
   setEditorMode,
@@ -304,7 +305,7 @@ export default function Index() {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
   const { file } = useParams();
-  const filePath = useMemo(() => (file ? decodeURIComponent(file) : null), [file]);
+  const filePath = useMemo(() => parseCurrentEditFile(file), [file]);
   const fullPath = useMemo(
     () =>
       filePath && currentWorkspace ? path.join(currentWorkspace.metadata.path, filePath) : null,

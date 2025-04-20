@@ -13,11 +13,14 @@ export const defaultEditorIsReadOnly: boolean = false;
 export const defaultEditorMode: EditorMode = 'ir';
 export const defaultEditorBackEnd: EditorBackEnd = 'milkdown';
 
+export interface EditorContent {
+  content: string;
+  isDirty?: boolean;
+}
+
 export interface EditorStore {
   currentEditorStatus: EditorState | null;
-  currentEditorContent?: {
-    content: string;
-  } | null;
+  currentEditorContent?: EditorContent | null;
   editorIsReadOnly?: boolean;
   editorMode?: EditorMode;
   editorBackEnd?: EditorBackEnd;
