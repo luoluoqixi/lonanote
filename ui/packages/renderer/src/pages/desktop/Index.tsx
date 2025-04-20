@@ -7,7 +7,6 @@ import { IoMdArrowBack, IoMdArrowForward, IoMdMore } from 'react-icons/io';
 import { MdOutlineDriveFileRenameOutline, MdOutlineFileOpen } from 'react-icons/md';
 import { TbAlignBoxLeftBottom } from 'react-icons/tb';
 import { VscClose, VscCopy, VscFolderOpened } from 'react-icons/vsc';
-import { useNavigate, useParams } from 'react-router';
 import { toast } from 'react-toastify';
 
 import { fs } from '@/bindings/api';
@@ -19,7 +18,6 @@ import {
   defaultEditorBackEnd,
   defaultEditorIsReadOnly,
   defaultEditorMode,
-  parseCurrentEditFile,
   setCurrentEditFile,
   setEditorIsReadOnly,
   setEditorMode,
@@ -30,6 +28,7 @@ import { EditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import styles from './Index.module.scss';
+import { useSearchParams } from './routes';
 
 const EmptyIndex = () => {
   return (
@@ -172,7 +171,21 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
   const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
   const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
   const editorBackEnd = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
-  const navigate = useNavigate();
+
+  const fileHistory = window.useFileHistory?.();
+  const [canBack, canForward] = useMemo(() => {
+    const index = fileHistory?.currentIndex;
+    const history = fileHistory?.history;
+    if (index == null || history == null) {
+      return [false, false];
+    }
+
+    const canBack = index > 0;
+    const canForward = index < history.length - 1;
+
+    return [canBack, canForward];
+  }, [fileHistory]);
+
   const changeEditorIsReadOnly = () => {
     const targetMode = !editorIsReadOnly;
     setEditorIsReadOnly(targetMode);
@@ -208,9 +221,9 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
   };
   const toToolBtnBack = (val: string) => {
     if (val === 'back') {
-      navigate(-1);
+      window.backFile?.();
     } else {
-      navigate(1);
+      window.forwardFile?.();
     }
   };
   const changeEditorModeClick = (cmd: string) => {
@@ -223,6 +236,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
       <div className={styles.indexContentTopToolbarLeft}>
         <Tooltip content="返回">
           <Button
+            disabled={!canBack}
             className={styles.indexContentTopToolbarRightBtn}
             onClick={() => toToolBtnBack('back')}
             color="gray"
@@ -233,6 +247,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         </Tooltip>
         <Tooltip content="前进">
           <Button
+            disabled={!canForward}
             className={styles.indexContentTopToolbarRightBtn}
             onClick={() => toToolBtnBack('forward')}
             color="gray"
@@ -304,8 +319,8 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
 export default function Index() {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
-  const { file } = useParams();
-  const filePath = useMemo(() => parseCurrentEditFile(file), [file]);
+  const { file } = useSearchParams();
+  const filePath = useMemo(() => window.getCurrentFile?.(), [file]);
   const fullPath = useMemo(
     () =>
       filePath && currentWorkspace ? path.join(currentWorkspace.metadata.path, filePath) : null,

@@ -3,37 +3,20 @@ import { invokeAsync } from '@/bindings/core';
 import { WorkspaceMetadata, WorkspaceSaveData } from './types';
 import { workspace } from './workspace';
 
-const replaceSearch = (search: URLSearchParams) => {
-  const url = new URL(window.location.href);
-  url.search = search.toString();
-  history.replaceState('', '', url.href);
-  // console.log(window.location.href);
-};
-
-const getSearch = () => {
-  return new URLSearchParams(window.location.search);
-};
-
 let currentWorkspace: string | null = null;
 export const getCurrentOpenWorkspace = (): string | null => {
   if (currentWorkspace == null) {
-    const search = getSearch();
-    const ws = search.get('ws');
+    const ws = window.getSearchParams?.('ws');
     if (ws) {
-      currentWorkspace = ws;
+      currentWorkspace = ws as string;
     }
   }
   return currentWorkspace;
 };
 
 export const setCurrentOpenWorkspace = async (path: string | null) => {
-  const search = getSearch();
-  if (path) {
-    search.set('ws', path || '');
-  } else {
-    search.delete('ws');
-  }
-  replaceSearch(search);
+  window.setSearchParams?.('ws', path);
+  window.clearFileHistory?.();
   currentWorkspace = path;
 };
 

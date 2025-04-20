@@ -24,24 +24,15 @@ export const setCurrentEditFile = async (
   clearHistory?: boolean,
 ) => {
   if (window.navigate) {
-    const to = `/${currentEditFile ? encodeURIComponent(currentEditFile) : ''}`;
-    window.navigate(to);
+    window.navigateFile?.(currentEditFile);
     if (clearHistory) {
       history.replaceState({}, document.title, window.location.pathname);
     }
   }
 };
 
-export const parseCurrentEditFile = (file: string | null | undefined) => {
-  return file ? decodeURIComponent(file) : null;
-};
-
 export const getCurrentEditFile = () => {
-  const hash = location.hash;
-  if (hash && hash.startsWith('#/')) {
-    return parseCurrentEditFile(hash.substring(2));
-  }
-  return null;
+  return window.getCurrentFile?.();
 };
 
 export const setCurrentEditorState = async (currentEditorStatus: EditorState | null) => {

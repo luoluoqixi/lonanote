@@ -1,14 +1,14 @@
 import { Allotment, LayoutPriority } from 'allotment';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 
 import { useWindowTitleHeight } from '@/hooks';
 
+import Index from './Index';
 import styles from './Layout.module.scss';
 import { Settings } from './components/dialogs/settings';
 import { WorkspaceManager } from './components/dialogs/workspaceManager';
 import { ActivityBar } from './layouts/ActivityBar';
 import { AssistSideBar } from './layouts/AssistSideBar';
-import { Content } from './layouts/Content';
 import { SideBar } from './layouts/SideBar';
 import { StatusBar } from './layouts/StatusBar';
 import { Title } from './layouts/Title';
@@ -91,7 +91,7 @@ export default function Layout() {
               minSize={300}
               priority={LayoutPriority.High}
             >
-              <Content />
+              <Index />
             </Allotment.Pane>
             <Allotment.Pane
               key={styles.contentAssistSideBar}
