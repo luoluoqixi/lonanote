@@ -186,6 +186,8 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
     return [canBack, canForward];
   }, [fileHistory]);
 
+  // console.log(fileHistory?.currentIndex, fileHistory?.history);
+
   const changeEditorIsReadOnly = () => {
     const targetMode = !editorIsReadOnly;
     setEditorIsReadOnly(targetMode);

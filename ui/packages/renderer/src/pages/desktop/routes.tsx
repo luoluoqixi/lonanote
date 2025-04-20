@@ -34,13 +34,13 @@ export const pushFileHistory = (file: string | null) => {
   } else {
     const length = fileHistory.history.length;
     if (fileHistory.currentIndex !== length - 1) {
-      for (let i = length - 1; i >= fileHistory.currentIndex; i--) {
+      for (let i = length - 1; i > fileHistory.currentIndex; i--) {
         if (i < 0) continue;
         fileHistory.history.pop();
       }
     }
     fileHistory.history.push(file);
-    fileHistory.currentIndex = length;
+    fileHistory.currentIndex = fileHistory.history.length - 1;
   }
   dispatchFileHistoryChange();
 };
