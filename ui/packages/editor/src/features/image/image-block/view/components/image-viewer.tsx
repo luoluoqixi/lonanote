@@ -162,7 +162,9 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
       return (
         <>
           <div class="image-wrapper" onMouseenter={onMouseEnter} onMouseleave={onMouseLeave}>
-            <div class={clsx('image-block-title', selected && 'visible')}>{caption.value}</div>
+            <div class={clsx('image-block-title', selected.value && 'visible')}>
+              {caption.value}
+            </div>
             <div class={clsx('operation', showOperation.value && 'visible')}>
               <div class="operation-item" onPointerdown={operationClick}>
                 <Icon icon={config.operationIcon()} />

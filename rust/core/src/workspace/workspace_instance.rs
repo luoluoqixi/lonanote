@@ -3,12 +3,12 @@ use std::{path::PathBuf, sync::Arc};
 use tokio::sync::{RwLock, RwLockReadGuard};
 
 use super::{
-    config::create_workspace_config_folder,
+    config::{create_workspace_config_folder, create_workspace_init_files},
     error::WorkspaceError,
     file_tree::FileTreeSortType,
     workspace_index::WorkspaceIndex,
     workspace_metadata::WorkspaceMetadata,
-    workspace_settings::{WorkspaceSettings, DEFAULT_IGNORE},
+    workspace_settings::WorkspaceSettings,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,6 +24,7 @@ pub struct WorkspaceInstance {
 impl WorkspaceInstance {
     pub fn new(workspace_path: &PathBuf) -> Result<Self, WorkspaceError> {
         create_workspace_config_folder(workspace_path)?;
+        create_workspace_init_files(workspace_path)?;
         let settings = WorkspaceSettings::new(workspace_path)?;
         let metadata = WorkspaceMetadata::new(workspace_path)?;
         let index = WorkspaceIndex::new(workspace_path, settings.file_tree_sort_type.clone())?;
@@ -58,7 +59,7 @@ impl WorkspaceInstance {
         sort_type: FileTreeSortType,
     ) -> Result<(), WorkspaceError> {
         let mut settings = self.settings.clone();
-        settings.file_tree_sort_type = Some(sort_type.clone());
+        settings.file_tree_sort_type = sort_type.clone();
         self.set_settings(settings).await?;
         self.index.write().await.file_tree.set_sort_type(sort_type);
 
@@ -88,7 +89,34 @@ impl WorkspaceInstance {
 
     pub async fn reset_custom_ignore(&mut self) -> Result<(), WorkspaceError> {
         let mut settings = self.settings.clone();
-        settings.custom_ignore = DEFAULT_IGNORE.to_string();
+        settings.custom_ignore = WorkspaceSettings::default_custom_ignore();
+        self.set_settings(settings).await?;
+        self.reinit().await?;
+
+        Ok(())
+    }
+
+    pub async fn reset_histroy_snapshoot_count(&mut self) -> Result<(), WorkspaceError> {
+        let mut settings = self.settings.clone();
+        settings.histroy_snapshoot_count = WorkspaceSettings::default_histroy_snapshoot_count();
+        self.set_settings(settings).await?;
+        self.reinit().await?;
+
+        Ok(())
+    }
+
+    pub async fn reset_upload_attachment_path(&mut self) -> Result<(), WorkspaceError> {
+        let mut settings = self.settings.clone();
+        settings.upload_attachment_path = WorkspaceSettings::default_upload_attachment_path();
+        self.set_settings(settings).await?;
+        self.reinit().await?;
+
+        Ok(())
+    }
+
+    pub async fn reset_pload_image_path(&mut self) -> Result<(), WorkspaceError> {
+        let mut settings = self.settings.clone();
+        settings.upload_image_path = WorkspaceSettings::default_upload_image_path();
         self.set_settings(settings).await?;
         self.reinit().await?;
 

@@ -54,6 +54,21 @@ export const workspace = {
       path,
     }))!;
   },
+  resetOpenWorkspaceHistroySnapshootCount: async (path: string): Promise<void> => {
+    return (await invokeAsync('workspace.reset_open_workspace_histroy_snapshoot_count', {
+      path,
+    }))!;
+  },
+  resetOpenWorkspaceUploadAttachmentPath: async (path: string): Promise<void> => {
+    return (await invokeAsync('workspace.reset_open_workspace_upload_attachment_path', {
+      path,
+    }))!;
+  },
+  resetOpenWorkspaceUploadImagePath: async (path: string): Promise<void> => {
+    return (await invokeAsync('workspace.reset_open_workspace_upload_image_path', {
+      path,
+    }))!;
+  },
   callOpenWorkspaceReinit: async (path: string): Promise<void> => {
     return (await invokeAsync('workspace.call_open_workspace_reinit', { path }))!;
   },
@@ -88,6 +103,18 @@ export const workspace = {
   resetCurrentWorkspaceCustomIgnore: async (): Promise<void> => {
     const path = await checkCurrentOpenWorkspace();
     return await workspace.resetOpenWorkspaceCustomIgnore(path);
+  },
+  resetCurrentWorkspaceHistroySnapshootCount: async (): Promise<void> => {
+    const path = await checkCurrentOpenWorkspace();
+    return await workspace.resetOpenWorkspaceHistroySnapshootCount(path);
+  },
+  resetCurrentWorkspaceUploadAttachmentPath: async (): Promise<void> => {
+    const path = await checkCurrentOpenWorkspace();
+    return await workspace.resetOpenWorkspaceUploadAttachmentPath(path);
+  },
+  resetCurrentWorkspaceUploadImagePath: async (): Promise<void> => {
+    const path = await checkCurrentOpenWorkspace();
+    return await workspace.resetOpenWorkspaceUploadImagePath(path);
   },
   reinitCurrentworkspace: async (): Promise<void> => {
     const path = await checkCurrentOpenWorkspace();

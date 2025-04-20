@@ -11,10 +11,23 @@ use super::error::WorkspaceError;
 
 pub static WORKSPACE_CONFIG_FOLDER: &str = ".lonanote";
 pub static WORKSPACE_SETTINGS_FILE: &str = "workspace.json";
+pub static DEFAULT_GIT_IGNORE: &str = include_str!("../../assets/default_gitignore.txt");
 
 pub fn get_workspace_global_config_path() -> PathBuf {
     let path = app_path::get_data_dir();
     PathBuf::from(path).join("workspaces.json")
+}
+
+pub fn create_workspace_init_files(workspace_path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
+    let path = workspace_path.as_ref();
+    let folder = path.join(WORKSPACE_CONFIG_FOLDER);
+    let gitignore_path = folder.join(".gitignore");
+    if !gitignore_path.exists() {
+        fs::write(gitignore_path, DEFAULT_GIT_IGNORE)
+            .map_err(|err| WorkspaceError::IOError(err.to_string()))?;
+    }
+
+    Ok(())
 }
 
 pub fn create_workspace_config_folder(

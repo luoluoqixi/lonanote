@@ -1,14 +1,17 @@
-import { Button, Switch, Text } from '@radix-ui/themes';
+import { Button, Switch, Text, TextField } from '@radix-ui/themes';
 
 import { path } from '@/bindings/api/path';
 import { config } from '@/config';
 import {
+  resetSettingsAutoSaveInterval,
   setSettingsAutoCheckUpdate,
   setSettingsAutoOpenLastWorkspace,
+  setSettingsAutoSave,
+  setSettingsAutoSaveInterval,
   useSettings,
 } from '@/controller/settings';
 
-import { BaseSettingsPanelProps } from '../Settings';
+import { BaseSettingsPanelProps, ResetButton } from '../Settings';
 import styles from '../Settings.module.scss';
 
 const isShowDevUI = true;
@@ -39,6 +42,38 @@ export const GlobalSettings: React.FC<GlobalSettingsProps> = () => {
             checked={settings.autoOpenLastWorkspace}
             onCheckedChange={(v) => setSettingsAutoOpenLastWorkspace(v)}
           />
+        </div>
+      </div>
+      <div className={styles.rowSettings}>
+        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          自动保存：
+        </Text>
+        <div className={styles.rowSettingsRight}>
+          <Switch checked={settings.autoSave} onCheckedChange={(v) => setSettingsAutoSave(v)} />
+        </div>
+      </div>
+      <div className={styles.rowSettings}>
+        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          自动保存间隔 (秒)：
+        </Text>
+        <div className={styles.rowSettingsRight}>
+          <TextField.Root
+            readOnly={!settings.autoSave}
+            style={{ width: '100%' }}
+            type="number"
+            spellCheck="false"
+            placeholder="自动保存间隔"
+            value={settings.autoSaveInterval}
+            onChange={(e) => {
+              const s = e.target.value;
+              const num = Number(s);
+              if (Number.isNaN(num)) {
+                return;
+              }
+              setSettingsAutoSaveInterval(num);
+            }}
+          />
+          <ResetButton onClick={() => resetSettingsAutoSaveInterval()} />
         </div>
       </div>
       {config.isDev && isShowDevUI && (

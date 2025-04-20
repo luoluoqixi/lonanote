@@ -36,6 +36,24 @@ export const setSettingsAutoOpenLastWorkspace = async (autoOpenLastWorkspace: bo
   });
 };
 
+export const setSettingsAutoSave = async (autoSave: boolean) => {
+  setSettingsCallback((s) => {
+    s.autoSave = autoSave;
+  });
+};
+
+export const setSettingsAutoSaveInterval = async (autoSaveInterval: number) => {
+  setSettingsCallback((s) => {
+    s.autoSaveInterval = autoSaveInterval;
+  });
+};
+
+export const resetSettingsAutoSaveInterval = async () => {
+  await settings.resetSettingsAutoSaveInterval();
+  const ss = await settings.getSettings();
+  useSettingsStore.setState((s) => ({ ...s, settings: ss }));
+};
+
 export const initGlobalSettings = async () => {
   const ss = await settings.getSettings();
   useSettingsStore.setState((s) => ({ ...s, settings: ss }));

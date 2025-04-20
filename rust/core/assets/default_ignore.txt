@@ -1,0 +1,8 @@
+# lonanote
+.lonanote
+
+# git
+.git/
+
+# OSX
+**/*.DS_Store

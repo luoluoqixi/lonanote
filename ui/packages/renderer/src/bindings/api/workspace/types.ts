@@ -9,6 +9,9 @@ export interface WorkspaceSettings {
   fileTreeSortType: FileTreeSortType | null;
   followGitignore: boolean;
   customIgnore: string;
+  uploadImagePath: string;
+  uploadAttachmentPath: string;
+  histroySnapshootCount: number;
 }
 
 export interface WorkspaceSaveData {

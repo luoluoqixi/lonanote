@@ -3,6 +3,8 @@ import { invokeAsync } from '@/bindings/core';
 export interface Settings {
   autoCheckUpdate: boolean;
   autoOpenLastWorkspace: boolean;
+  autoSave: boolean;
+  autoSaveInterval: number;
 }
 
 export const settings = {
@@ -17,5 +19,8 @@ export const settings = {
   },
   saveSettings: async (): Promise<void> => {
     return (await invokeAsync('settings.save_settings'))!;
+  },
+  resetSettingsAutoSaveInterval: async () => {
+    return (await invokeAsync('settings.reset_settings_auto_save_interval', settings))!;
   },
 };

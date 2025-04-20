@@ -19,11 +19,11 @@ pub struct FileTree {
 }
 
 impl FileTree {
-    pub fn new(path: impl AsRef<Path>, sort_type: Option<FileTreeSortType>) -> Self {
+    pub fn new(path: impl AsRef<Path>, sort_type: FileTreeSortType) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
             root: None,
-            sort_type: sort_type.unwrap_or_default(),
+            sort_type,
         }
     }
     pub fn update_tree(

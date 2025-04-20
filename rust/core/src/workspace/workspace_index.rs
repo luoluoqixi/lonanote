@@ -15,7 +15,7 @@ pub struct WorkspaceIndex {
 impl WorkspaceIndex {
     pub fn new(
         workspace_path: impl AsRef<Path>,
-        sort_type: Option<FileTreeSortType>,
+        sort_type: FileTreeSortType,
     ) -> Result<Self, WorkspaceError> {
         Ok(Self {
             file_tree: FileTree::new(workspace_path, sort_type),
@@ -24,11 +24,11 @@ impl WorkspaceIndex {
 
     pub fn reinit(
         &mut self,
-        sort_type: Option<FileTreeSortType>,
+        sort_type: FileTreeSortType,
         follow_gitignore: bool,
         custom_ignore: String,
     ) -> Result<(), String> {
-        self.file_tree.set_sort_type(sort_type.unwrap_or_default());
+        self.file_tree.set_sort_type(sort_type);
         let root_path = self.file_tree.to_path_buf();
         let start = std::time::Instant::now();
         log::info!("workspace reinit: {}", root_path.display());

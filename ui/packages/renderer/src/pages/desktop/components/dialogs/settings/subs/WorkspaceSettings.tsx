@@ -64,6 +64,67 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
           </div>
           <div className={styles.rowSettings}>
             <Text as="div" size="2" className={styles.rowSettingsLeft}>
+              上传图片路径：
+            </Text>
+            <div className={styles.rowSettingsRight}>
+              <TextField.Root
+                style={{ width: '100%' }}
+                spellCheck="false"
+                placeholder="上传图片路径"
+                value={currentWorkspace.settings.uploadImagePath}
+                onChange={(e) => {
+                  workspaceController.setWorkspaceUploadImagePath(e.target.value);
+                }}
+              />
+              <ResetButton onClick={() => workspaceController.resetWorkspaceUploadImagePath()} />
+            </div>
+          </div>
+          <div className={styles.rowSettings}>
+            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+              上传附件路径：
+            </Text>
+            <div className={styles.rowSettingsRight}>
+              <TextField.Root
+                style={{ width: '100%' }}
+                spellCheck="false"
+                placeholder="上传附件路径"
+                value={currentWorkspace.settings.uploadAttachmentPath}
+                onChange={(e) => {
+                  workspaceController.setWorkspaceUploadAttachmentPath(e.target.value);
+                }}
+              />
+              <ResetButton
+                onClick={() => workspaceController.resetWorkspaceUploadAttachmentPath()}
+              />
+            </div>
+          </div>
+          <div className={styles.rowSettings}>
+            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+              历史快照数量：
+            </Text>
+            <div className={styles.rowSettingsRight}>
+              <TextField.Root
+                style={{ width: '100%' }}
+                type="number"
+                spellCheck="false"
+                placeholder="历史快照数量"
+                value={currentWorkspace.settings.histroySnapshootCount}
+                onChange={(e) => {
+                  const s = e.target.value;
+                  const num = Number(s);
+                  if (Number.isNaN(num)) {
+                    return;
+                  }
+                  workspaceController.setWorkspaceHistroySnapshootCount(num);
+                }}
+              />
+              <ResetButton
+                onClick={() => workspaceController.resetWorkspaceHistroySnapshootCount()}
+              />
+            </div>
+          </div>
+          <div className={styles.rowSettings}>
+            <Text as="div" size="2" className={styles.rowSettingsLeft}>
               使用 .gitignore 规则：
             </Text>
             <div className={styles.rowSettingsRight}>

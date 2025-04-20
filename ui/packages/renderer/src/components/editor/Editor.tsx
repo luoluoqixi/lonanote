@@ -65,6 +65,12 @@ export default function Editor({
     () => path.join(currentWorkspace.metadata.path, file),
     [file, currentWorkspace],
   );
+  const { uploadImagePath, uploadAttachmentPath } = useMemo(() => {
+    return {
+      uploadImagePath: currentWorkspace.settings.uploadImagePath,
+      uploadAttachmentPath: currentWorkspace.settings.uploadAttachmentPath,
+    };
+  }, [currentWorkspace]);
   const folderPath = useMemo(() => path.dirname(fullPath), [fullPath]);
   const state = useMemo(() => {
     const isSupportMdEditor = isSupportMarkdown(path.basename(file));
@@ -149,7 +155,8 @@ export default function Editor({
           ref={mdEditorRef}
           editorBackEnd={editorBackEnd}
           workspaceRootPath={currentWorkspace.metadata.path}
-          defaultUploadPath={'assets/images'}
+          defaultUploadPath={uploadImagePath}
+          defaultUploadAttachmentPath={uploadAttachmentPath}
           mediaRootPath={folderPath}
           editorId="markdown-editor"
           className="markdown-editor"

@@ -150,6 +150,42 @@ async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> Comma
     Ok(CommandResponse::None)
 }
 
+async fn reset_open_workspace_histroy_snapshoot_count(
+    Json(args): Json<GetWorkspaceArgs>,
+) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    let workspace = workspace_manager
+        .get_workspace_mut(&args.path)
+        .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+    workspace.reset_histroy_snapshoot_count().await?;
+
+    Ok(CommandResponse::None)
+}
+
+async fn reset_open_workspace_upload_attachment_path(
+    Json(args): Json<GetWorkspaceArgs>,
+) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    let workspace = workspace_manager
+        .get_workspace_mut(&args.path)
+        .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+    workspace.reset_upload_attachment_path().await?;
+
+    Ok(CommandResponse::None)
+}
+
+async fn reset_open_workspace_upload_image_path(
+    Json(args): Json<GetWorkspaceArgs>,
+) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    let workspace = workspace_manager
+        .get_workspace_mut(&args.path)
+        .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+    workspace.reset_pload_image_path().await?;
+
+    Ok(CommandResponse::None)
+}
+
 pub fn reg_commands() -> Result<()> {
     reg_command_async("workspace.is_open_workspace", is_open_workspace)?;
     reg_command_async("workspace.get_open_workspace", get_open_workspace)?;
@@ -184,6 +220,18 @@ pub fn reg_commands() -> Result<()> {
     reg_command_async(
         "workspace.call_open_workspace_reinit",
         call_open_workspace_reinit,
+    )?;
+    reg_command_async(
+        "workspace.reset_open_workspace_histroy_snapshoot_count",
+        reset_open_workspace_histroy_snapshoot_count,
+    )?;
+    reg_command_async(
+        "workspace.reset_open_workspace_upload_attachment_path",
+        reset_open_workspace_upload_attachment_path,
+    )?;
+    reg_command_async(
+        "workspace.reset_open_workspace_upload_image_path",
+        reset_open_workspace_upload_image_path,
     )?;
 
     Ok(())

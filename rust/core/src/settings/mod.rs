@@ -10,8 +10,36 @@ use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
+    /// 自动检查更新
+    #[serde(default = "Settings::default_auto_check_update")]
     pub auto_check_update: bool,
+    /// 自动打开上次的工作区
+    #[serde(default = "Settings::default_auto_open_last_workspace")]
     pub auto_open_last_workspace: bool,
+    /// 自动保存
+    #[serde(default = "Settings::default_auto_save")]
+    pub auto_save: bool,
+    /// 自动保存的时间间隔, 秒
+    #[serde(default = "Settings::default_auto_save_interval")]
+    pub auto_save_interval: f64,
+}
+
+impl Settings {
+    pub const fn default_auto_check_update() -> bool {
+        true
+    }
+
+    pub const fn default_auto_open_last_workspace() -> bool {
+        true
+    }
+
+    pub const fn default_auto_save() -> bool {
+        true
+    }
+
+    pub const fn default_auto_save_interval() -> f64 {
+        5.0
+    }
 }
 
 impl Settings {
@@ -27,8 +55,10 @@ impl Settings {
             }
         }
         Self {
-            auto_check_update: true,
-            auto_open_last_workspace: true,
+            auto_check_update: Settings::default_auto_check_update(),
+            auto_open_last_workspace: Settings::default_auto_open_last_workspace(),
+            auto_save: Settings::default_auto_save(),
+            auto_save_interval: Settings::default_auto_save_interval(),
         }
     }
 
