@@ -1,4 +1,4 @@
-import { editorCtx, editorViewCtx } from '@milkdown/core';
+import { editorViewCtx } from '@milkdown/core';
 import { Ctx } from '@milkdown/kit/ctx';
 import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-editor';
 import path from 'path-browserify-esm';
@@ -11,7 +11,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { VscCopy } from 'react-icons/vsc';
+import { LuClipboardPaste } from 'react-icons/lu';
+import { TbCopy, TbCut, TbSelectAll } from 'react-icons/tb';
 import { toast } from 'react-toastify';
 
 import { fs, system } from '@/bindings/api';
@@ -35,22 +36,22 @@ const contextMenus: ContextMenuItem[] = [
   {
     id: 'cut',
     label: '剪切',
-    icon: <VscCopy />,
+    icon: <TbCut />,
   },
   {
     id: 'copy',
     label: '复制',
-    icon: <VscCopy />,
+    icon: <TbCopy />,
   },
   {
     id: 'paste',
     label: '粘贴',
-    icon: <VscCopy />,
+    icon: <LuClipboardPaste />,
   },
   {
     id: 'select-all',
     label: '全选',
-    icon: <VscCopy />,
+    icon: <TbSelectAll />,
   },
 ];
 
@@ -379,7 +380,12 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         className={className}
         ref={editorRef}
       />
-      <ContextMenu ref={menuRef} items={contextMenus} onMenuClick={onMenuClick} />
+      <ContextMenu
+        ref={menuRef}
+        items={contextMenus}
+        onMenuClick={onMenuClick}
+        contentWidth={150}
+      />
     </>
   );
 });
