@@ -21,7 +21,8 @@ static CURRENT_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
 
 static UI_PATH: LazyLock<PathBuf> = LazyLock::new(|| CURRENT_PATH.join("../ui"));
 static RS_PATH: LazyLock<PathBuf> = LazyLock::new(|| CURRENT_PATH.join("../rust"));
-static INPUT_ICON_PATH: LazyLock<PathBuf> = LazyLock::new(|| UI_PATH.join("build/icons/icon.png"));
+static RES_PATH: LazyLock<PathBuf> = LazyLock::new(|| CURRENT_PATH.join("../resources"));
+static INPUT_ICON_PATH: LazyLock<PathBuf> = LazyLock::new(|| RES_PATH.join("icons/icon.png"));
 
 struct IcnsConf {
     name: String,
@@ -399,8 +400,8 @@ fn process_ios(
 fn _main() -> Result<()> {
     let input_path = &INPUT_ICON_PATH.to_path_buf();
     let input_folder = &input_path.parent().unwrap().to_path_buf();
-    let output_folder = input_folder;
-    let res_path = &UI_PATH.join("resources/icon.png");
+    let output_folder = UI_PATH.join("packages/desktop/build/icons");
+    let res_icon_path = &UI_PATH.join("packages/desktop/resources/icon.png");
     let windows_path = &output_folder.join("icon_windows.ico");
     let mac_path = &output_folder.join("icon_mac.icns");
     let linux_path = &output_folder.join("icon_linux.icns");
@@ -413,7 +414,7 @@ fn _main() -> Result<()> {
     // resources
     process_image(
         input_path,
-        res_path,
+        res_icon_path,
         default_mask.as_deref(),
         None,
         None,
