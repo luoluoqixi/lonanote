@@ -1,4 +1,5 @@
 import { Allotment, LayoutPriority } from 'allotment';
+import clsx from 'clsx';
 import { useState } from 'react';
 
 import { useWindowTitleHeight } from '@/hooks';
@@ -52,7 +53,7 @@ export default function Layout() {
         >
           <Title />
         </Allotment.Pane>
-        <Allotment.Pane className={styles.content} key={styles.content}>
+        <Allotment.Pane className={clsx('rootContent', styles.content)} key={styles.content}>
           <Allotment
             proportionalLayout={false}
             separator={false}
@@ -62,7 +63,7 @@ export default function Layout() {
           >
             <Allotment.Pane
               key={styles.contentActivityBar}
-              className={styles.contentActivityBar}
+              className={clsx('contentActivityBar', styles.contentActivityBar)}
               minSize={48}
               maxSize={48}
               visible={true}
@@ -76,7 +77,7 @@ export default function Layout() {
             </Allotment.Pane>
             <Allotment.Pane
               key={styles.contentSidebar}
-              className={styles.contentSidebar}
+              className={clsx('contentSidebar', styles.contentSidebar)}
               minSize={170}
               priority={LayoutPriority.Low}
               preferredSize={300}
@@ -87,7 +88,7 @@ export default function Layout() {
             </Allotment.Pane>
             <Allotment.Pane
               key={styles.contentContent}
-              className={styles.contentContent}
+              className={clsx('contentContent', styles.contentContent)}
               minSize={300}
               priority={LayoutPriority.High}
             >
@@ -95,7 +96,7 @@ export default function Layout() {
             </Allotment.Pane>
             <Allotment.Pane
               key={styles.contentAssistSideBar}
-              className={styles.contentAssistSideBar}
+              className={clsx('contentAssistSideBar', styles.contentAssistSideBar)}
               minSize={170}
               priority={LayoutPriority.Low}
               preferredSize={300}
@@ -107,7 +108,7 @@ export default function Layout() {
         </Allotment.Pane>
         <Allotment.Pane
           key={styles.statusBar}
-          className={styles.statusBar}
+          className={clsx('statusBar', styles.statusBar)}
           minSize={22}
           maxSize={22}
         >
