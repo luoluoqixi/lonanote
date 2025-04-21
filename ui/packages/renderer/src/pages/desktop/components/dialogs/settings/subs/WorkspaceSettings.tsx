@@ -98,7 +98,7 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
               />
             </div>
           </div>
-          <div className={styles.rowSettings}>
+          {/* <div className={styles.rowSettings}>
             <Text as="div" size="2" className={styles.rowSettingsLeft}>
               历史快照数量：
             </Text>
@@ -122,7 +122,7 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
                 onClick={() => workspaceController.resetWorkspaceHistroySnapshootCount()}
               />
             </div>
-          </div>
+          </div> */}
           <div className={styles.rowSettings}>
             <Text as="div" size="2" className={styles.rowSettingsLeft}>
               使用 .gitignore 规则：
