@@ -29,7 +29,7 @@ import {
   TreeRef,
   dialog,
 } from '@/components';
-import { setCurrentEditFile } from '@/controller/editor';
+import { setCurrentEditFileIf } from '@/controller/editor';
 import { workspaceController, workspaceManagerController } from '@/controller/workspace';
 import { useEffect } from '@/hooks';
 import { timeUtils, utils } from '@/utils';
@@ -285,7 +285,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
   };
   const openFile = (node: FileNode) => {
     if (node.fileType === 'file') {
-      setCurrentEditFile(node.path);
+      setCurrentEditFileIf(node.path);
     }
   };
   const treeItemClick = (data: FileNode | undefined) => {

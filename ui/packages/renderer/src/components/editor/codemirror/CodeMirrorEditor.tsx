@@ -18,7 +18,6 @@ import {
   CSSProperties,
   Ref,
   forwardRef,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
@@ -49,10 +48,9 @@ export interface CodeMirrorEditorProps {
   className?: string;
   readOnly?: boolean;
   onSave?: (content: string) => void;
+  onFocusChange?: (focus: boolean) => void;
   onUpdateStateListener?: (state: UpdateState) => void;
   onUpdate?: () => void;
-  onCreate?: () => void;
-  onDestroy?: () => void;
 }
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEditorRef>) => {
@@ -62,10 +60,9 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
     filePath,
     readOnly,
     onSave,
+    onFocusChange,
     onUpdateStateListener,
     onUpdate,
-    onCreate,
-    onDestroy,
     initValue,
   } = props;
   const theme = useCodeMirrorTheme();
@@ -88,6 +85,14 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
           return true;
         },
       };
+      const focusChangeListener = EditorView.domEventHandlers({
+        focus: () => {
+          if (onFocusChange) onFocusChange(true);
+        },
+        blur: () => {
+          if (onFocusChange) onFocusChange(false);
+        },
+      });
       const updateListener = EditorView.updateListener.of((update) => {
         if (onUpdate) {
           onUpdate();
@@ -106,6 +111,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
         extensions: [
           readOnlyEx.of(EditorView.editable.of(readOnly ? false : true)),
           detectLanguage(filePath),
+          focusChangeListener,
           //自动换行
           // EditorView.lineWrapping,
           updateListener,
@@ -166,17 +172,15 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
       });
       setView(view);
       setReadOnlyEx(readOnlyEx);
-      onCreate?.();
     }
     return () => {
       if (view) {
-        onDestroy?.();
         view.destroy();
         setView(null);
         setReadOnlyEx(null);
       }
     };
-  }, [onSave, onUpdateStateListener, onUpdate, onDestroy, theme, initValue]);
+  }, [onSave, onUpdateStateListener, onUpdate, theme, initValue]);
 
   useEffect(() => {
     if (!view || !readOnlyEx) return;

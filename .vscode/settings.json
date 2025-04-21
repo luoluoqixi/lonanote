@@ -18,5 +18,6 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "scss.lint.validProperties": ["app-region", "user-drag"],
-  "prettier.ignorePath": "ui/.prettierignore"
+  "prettier.ignorePath": "ui/.prettierignore",
+  "eslint.workingDirectories": ["ui"]
 }

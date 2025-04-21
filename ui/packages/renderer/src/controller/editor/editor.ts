@@ -3,9 +3,9 @@ import path from 'path-browserify-esm';
 import { toast } from 'react-toastify';
 
 import { fs } from '@/bindings/api';
+import { dialog } from '@/components';
 import {
   EditorBackEnd,
-  EditorContent,
   EditorMode,
   EditorState,
   defaultEditorBackEnd,
@@ -21,11 +21,32 @@ import { workspaceController } from '../workspace';
 
 export const useEditor = useEditorStore;
 
+export const setCurrentEditFileIf = async (
+  currentEditFile: string | null,
+  clearHistory?: boolean,
+) => {
+  const settings = useSettings.getState().settings;
+  if (!settings?.autoSave && !settings?.autoSaveFocusChange) {
+    if (useEditor.getState().currentEditorIsDirty) {
+      dialog.showDialog({
+        title: '警告',
+        content: '当前有未保存的内容, 确定要离开吗？',
+        onOk: () => {
+          setCurrentEditFile(currentEditFile, clearHistory);
+        },
+      });
+      return;
+    }
+  }
+  await setCurrentEditFile(currentEditFile, clearHistory);
+};
+
 export const setCurrentEditFile = async (
   currentEditFile: string | null,
   clearHistory?: boolean,
 ) => {
   if (window.navigate) {
+    await saveDirtyFocus();
     window.navigateFile?.(currentEditFile);
     if (clearHistory) {
       history.replaceState({}, document.title, window.location.pathname);
@@ -53,62 +74,68 @@ export const setCurrentEditorState = async (currentEditorStatus: EditorState | n
 //   }));
 // };
 
-export const updateContent = (content: EditorContent | null) => {
+export const updateContent = (content: string | null) => {
   useEditorStore.setState((state) => ({
     ...state,
     currentEditorContent: content,
+    currentEditorIsDirty: false,
   }));
 };
 
 type UpdateContentAutoSaveFunc = (
-  autoSave: boolean,
+  autoSave: boolean | undefined,
+  autoSaveInterval: number,
   getEditorValue: () => string | null | undefined,
 ) => void;
 
-const debounceUpdateContentAutoSaveInnerMap = new Map<number, UpdateContentAutoSaveFunc>();
-
-const updateContentAutoSaveInner: UpdateContentAutoSaveFunc = (autoSave, getEditorValue) => {
+const updateContentAutoSaveInner: UpdateContentAutoSaveFunc = (
+  autoSave,
+  autoSaveInterval,
+  getEditorValue,
+) => {
   const content = getEditorValue();
   if (content == null) return;
   const currentContent = useEditorStore.getState().currentEditorContent;
   if (
     currentContent == null ||
-    currentContent.content.length !== content.length ||
-    currentContent.content !== content
+    currentContent.length !== content.length ||
+    currentContent !== content
   ) {
-    console.log(autoSave, '变化');
-    if (autoSave) {
-      // useEditorStore.setState({});
-    }
+    saveContent(content, autoSave, autoSaveInterval);
   }
 };
-const debounceUpdateContentAutoSaveInner = (
-  autoSave: boolean,
-  getEditorValue: () => string | null | undefined,
-  wait: number,
-) => {
-  if (!debounceUpdateContentAutoSaveInnerMap.has(wait)) {
-    debounceUpdateContentAutoSaveInnerMap.set(wait, debounce(updateContentAutoSaveInner, wait));
-  }
-  const fun = debounceUpdateContentAutoSaveInnerMap.get(wait)!;
-  fun(autoSave, getEditorValue);
-};
+const debounceUpdateContentAutoSaveInner = debounce(updateContentAutoSaveInner, 100);
 
 export const updateContentAutoSave = (getEditorValue: () => string | null | undefined) => {
   const autoSave = useSettings.getState().settings?.autoSave;
   const autoSaveInterval = useSettings.getState().settings?.autoSaveInterval;
-  if (autoSave) {
-    let wait = autoSaveInterval == null ? 1000 : autoSaveInterval * 1000;
-    if (wait < 100) {
-      wait = 100; // 最小100ms
-    }
-    debounceUpdateContentAutoSaveInner(true, getEditorValue, wait);
-  } else {
-    debounceUpdateContentAutoSaveInner(false, getEditorValue, 200);
+  let wait = autoSaveInterval == null ? 1000 : autoSaveInterval * 1000;
+  if (wait < 100) {
+    wait = 100; // 最小100ms
+  }
+  debounceUpdateContentAutoSaveInner(autoSave, wait, getEditorValue);
+};
+
+export const saveDirtyFocus = async () => {
+  const autoSaveFocus = useSettings.getState().settings?.autoSaveFocusChange;
+  if (autoSaveFocus) saveDirtyContent();
+};
+
+const saveDirtyContent = async () => {
+  const isDirty = useEditorStore.getState().currentEditorIsDirty;
+  const content = useEditorStore.getState().currentEditorContent;
+  if (isDirty && content) {
+    await saveContent(content, true);
   }
 };
 
-export const saveContent = async (content: string) => {
+let saveInterval: number | null = null;
+
+export const saveContent = async (
+  content: string,
+  force: boolean | undefined,
+  interval?: number,
+) => {
   if (content == null) return;
   const ws = workspaceController.useWorkspace.getState().currentWorkspace;
   if (!ws) return;
@@ -116,15 +143,44 @@ export const saveContent = async (content: string) => {
   const file = getCurrentEditFile();
   if (file == null) return;
   const filePath = path.join(wsPath, file);
-  console.log(filePath);
-  fs.write(filePath, content)
-    .then(() => {
-      toast.success('保存文件成功');
-    })
-    .catch((e) => {
-      console.error('保存文件失败', e);
-      toast.error(`保存文件失败: ${e.message}`);
+  const s = useEditorStore.getState();
+  if (force) {
+    useEditorStore.setState({
+      ...s,
+      currentEditorContent: content,
+      currentEditorIsDirty: true,
     });
+    const save = async () => {
+      try {
+        await fs.write(filePath, content);
+        // toast.success('保存文件成功');
+        const s = useEditorStore.getState();
+        useEditorStore.setState({
+          ...s,
+          currentEditorIsDirty: false,
+          nowSaved: true,
+        });
+      } catch (e: any) {
+        console.error('保存文件失败', e);
+        toast.error(`保存文件失败: ${e.message}`);
+      }
+    };
+    if (interval) {
+      if (saveInterval != null) {
+        window.clearTimeout(saveInterval);
+        saveInterval = null;
+      }
+      saveInterval = window.setTimeout(save, interval);
+    } else {
+      await save();
+    }
+  } else {
+    useEditorStore.setState({
+      ...s,
+      currentEditorContent: content,
+      currentEditorIsDirty: true,
+    });
+  }
 };
 
 export const setEditorIsReadOnly = async (editorIsReadOnly: boolean) => {

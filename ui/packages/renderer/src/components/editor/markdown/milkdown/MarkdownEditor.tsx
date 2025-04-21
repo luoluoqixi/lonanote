@@ -54,11 +54,9 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     initValue,
     readOnly,
     onSave,
+    onFocusChange,
     onUpdateStateListener,
-    onCreate,
     onUpdate,
-    onMounted,
-    onDestroy,
     onClickAnyLink,
     mediaRootPath,
     workspaceRootPath,
@@ -283,18 +281,13 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       return true;
     });
     editor.addListener('onDestroy', () => {
-      onDestroy?.();
       onUpdateStateListener?.(null);
-    });
-    editor.addListener('onCreated', () => {
-      onCreate?.();
     });
     editor.addListener('onUpdate', (ctx) => {
       onUpdate?.();
       updateState(ctx);
     });
     editor.addListener('onMounted', (ctx) => {
-      onMounted?.();
       updateState(ctx);
     });
     editor.addListener('onLinkClick', (link, view, e) => {
@@ -308,18 +301,25 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         openMenuClick(e);
       }
     });
+    editor.addListener('onFocus', () => {
+      if (onFocusChange) {
+        onFocusChange(true);
+      }
+    });
+    editor.addListener('onBlur', () => {
+      if (onFocusChange) {
+        onFocusChange(false);
+      }
+    });
     console.log('milkdown create');
     return editor;
   }, [
     filePath,
     initValue,
     onSave,
+    onFocusChange,
     onUpdate,
     onUpdateStateListener,
-    onCreate,
-    onMounted,
-    onMounted,
-    onDestroy,
     onClickAnyLink,
     theme,
   ]);

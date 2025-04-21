@@ -1,5 +1,5 @@
 import { Allotment, LayoutPriority } from 'allotment';
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
 
 import { useWindowTitleHeight } from '@/hooks';
 

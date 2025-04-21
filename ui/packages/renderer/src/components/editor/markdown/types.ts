@@ -29,11 +29,9 @@ export interface MarkdownEditorProps {
   className?: string;
   readOnly?: boolean;
   initValue: string | null;
+  onFocusChange?: (focus: boolean) => void;
   onSave?: (content: string) => void;
   onUpdateStateListener?: (state: UpdateState | null) => void;
-  onClickAnyLink?: (link: string) => void;
-  onCreate?: () => void;
   onUpdate?: () => void;
-  onMounted?: () => void;
-  onDestroy?: () => void;
+  onClickAnyLink?: (link: string) => void;
 }

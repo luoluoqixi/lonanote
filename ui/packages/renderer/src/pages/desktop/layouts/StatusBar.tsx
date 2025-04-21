@@ -1,5 +1,5 @@
 import { Text } from '@radix-ui/themes';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { useEditor } from '@/controller/editor';
 
@@ -11,12 +11,33 @@ const StatusBarLeft = () => {
   return <></>;
 };
 
+let timeId: number | null = null;
+
 const StatusBarRight = () => {
   const currentEditorStatus = useEditor((s) => s.currentEditorStatus);
+  const nowSaved = useEditor((s) => s.nowSaved);
+
+  useEffect(() => {
+    if (nowSaved) {
+      if (timeId) {
+        clearTimeout(timeId);
+        timeId = null;
+      }
+      timeId = window.setTimeout(() => {
+        const s = useEditor.getState();
+        useEditor.setState({ ...s, nowSaved: false });
+      }, 3000);
+    }
+  }, [nowSaved]);
   return (
     <>
       {currentEditorStatus && (
         <>
+          {nowSaved && (
+            <Text as="span" size="1" color="gray">
+              已保存
+            </Text>
+          )}
           {currentEditorStatus.rowIndex != null && (
             <Text as="span" size="1" color="gray">
               行 {currentEditorStatus.rowIndex},

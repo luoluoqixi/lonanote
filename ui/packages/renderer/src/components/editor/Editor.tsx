@@ -14,13 +14,14 @@ import { toast } from 'react-toastify';
 import { Workspace, fs } from '@/bindings/api';
 import {
   saveContent,
-  setCurrentEditFile,
+  saveDirtyFocus,
+  setCurrentEditFileIf,
   setCurrentEditorState,
   updateContent,
   updateContentAutoSave,
   useEditor,
 } from '@/controller/editor';
-import { EditorState, defaultEditorBackEnd, defaultEditorMode } from '@/models/editor';
+import { defaultEditorBackEnd, defaultEditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import './Editor.scss';
@@ -71,45 +72,48 @@ export default function Editor({
   const editorBackEnd = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
   const editorRef = useRef<CodeMirrorEditorRef>(null);
   const mdEditorRef = useRef<MarkdownEditorRef>(null);
-  const fullPath = useMemo(
-    () => path.join(currentWorkspace.metadata.path, file),
-    [file, currentWorkspace],
-  );
-  const [initContent, setInitContent] = useState<string | null>(null);
-  const { uploadImagePath, uploadAttachmentPath } = useMemo(() => {
+  const { fullPath, folderPath, uploadImagePath, uploadAttachmentPath } = useMemo(() => {
+    const fullPath = path.join(currentWorkspace.metadata.path, file);
+    const folderPath = path.dirname(fullPath);
     return {
+      fullPath,
+      folderPath,
       uploadImagePath: currentWorkspace.settings.uploadImagePath,
       uploadAttachmentPath: currentWorkspace.settings.uploadAttachmentPath,
     };
-  }, [currentWorkspace]);
-  const folderPath = useMemo(() => path.dirname(fullPath), [fullPath]);
+  }, [file, currentWorkspace]);
+  const [initContent, setInitContent] = useState<string | null>(null);
   const state = useMemo(() => {
-    const isSupportMdEditor = isSupportMarkdown(path.basename(file));
-    const isSupportEditor = isSupportLanguage(path.basename(file));
-    const isSupportImage = isSupportImageView(path.basename(file));
-    const isSupportVideo = isSupportVideoView(path.basename(file));
+    let isMdEditor = isSupportMarkdown(path.basename(file));
+    let isCMEditor = isSupportLanguage(path.basename(file));
+    const isImage = isSupportImageView(path.basename(file));
+    const isVideo = isSupportVideoView(path.basename(file));
+    if (editorMode === 'source' && !readOnly) {
+      isMdEditor = false;
+      isCMEditor = true;
+    }
     return {
-      isSupportMdEditor,
-      isSupportEditor,
-      isSupportImage,
-      isSupportVideo,
+      isEditor: isMdEditor || isCMEditor,
+      isMdEditor,
+      isCMEditor,
+      isImage,
+      isVideo,
     };
-  }, [file]);
-  const isCodeMirror = useMemo(() => editorMode === 'source' && !readOnly, [editorMode, readOnly]);
+  }, [file, editorMode, readOnly]);
   useEffect(() => {
-    if (!state.isSupportEditor && !state.isSupportMdEditor) {
+    if (!state.isEditor) {
       setCurrentEditorState(null);
     }
-  }, [state.isSupportEditor, state.isSupportMdEditor]);
+  }, [state]);
   useLayoutEffect(() => {
-    console.log('reinit', file);
     setInitContent(null);
-    if (state.isSupportEditor || state.isSupportMdEditor) {
+    updateContent(null);
+    if (state.isEditor) {
       const filePath = fullPath;
       fs.readToString(filePath)
         .then((content) => {
           try {
-            updateContent({ content: content || '' });
+            updateContent(content || '');
             setInitContent(content || '');
           } catch (e) {
             toast.error(`setValue失败: ${e}`);
@@ -119,31 +123,37 @@ export default function Editor({
         .catch((e) => {
           console.error('读取文件失败', filePath, e);
           toast.error(`读取文件失败: ${filePath}, ${e.message}`);
-          updateContent({ content: '' });
+          updateContent('');
           setInitContent('');
         });
     } else {
       updateContent(null);
       setInitContent(null);
     }
-  }, [file, fullPath, editorBackEnd, editorMode]);
+  }, [fullPath, editorBackEnd, editorMode]);
 
   const saveFile = useCallback((content: string) => {
-    saveContent(content);
+    saveContent(content, true);
+  }, []);
+
+  const onFocusChange = useCallback((focus: boolean) => {
+    if (!focus) {
+      saveDirtyFocus();
+    }
   }, []);
 
   const getEditorValue = useCallback(() => {
-    if (state.isSupportMdEditor && !isCodeMirror) {
+    if (state.isMdEditor) {
       if (mdEditorRef.current) {
         return mdEditorRef.current.getValue();
       }
-    } else if (state.isSupportEditor) {
+    } else if (state.isCMEditor) {
       if (editorRef.current) {
         return editorRef.current.getValue();
       }
     }
     return null;
-  }, [editorRef, mdEditorRef, state, isCodeMirror]);
+  }, [editorRef, mdEditorRef, state.isCMEditor, state.isMdEditor]);
 
   const onUpdate = useCallback(() => {
     updateContentAutoSave(getEditorValue);
@@ -161,7 +171,7 @@ export default function Editor({
       fs.exists(absPath).then((exists) => {
         if (exists) {
           console.log(relPath, absPath);
-          setCurrentEditFile(relPath);
+          setCurrentEditFileIf(relPath);
         } else {
           toast.error(`不存在文件: ${fullPath}`);
         }
@@ -172,7 +182,7 @@ export default function Editor({
 
   return (
     <div id="editor-root" style={style} className={className}>
-      {state.isSupportMdEditor && !isCodeMirror ? (
+      {state.isMdEditor ? (
         initContent && (
           <MarkdownEditor
             ref={mdEditorRef}
@@ -187,13 +197,14 @@ export default function Editor({
             filePath={file}
             readOnly={readOnly}
             editMode={editorMode}
+            onFocusChange={onFocusChange}
             onSave={saveFile}
             onUpdateStateListener={setCurrentEditorState}
             onUpdate={onUpdate}
             onClickAnyLink={onClickAnyLink}
           />
         )
-      ) : state.isSupportEditor ? (
+      ) : state.isCMEditor ? (
         initContent && (
           <CodeMirrorEditor
             ref={editorRef}
@@ -202,13 +213,14 @@ export default function Editor({
             className="codemirror-editor"
             readOnly={readOnly}
             onSave={saveFile}
+            onFocusChange={onFocusChange}
             onUpdateStateListener={setCurrentEditorState}
             onUpdate={onUpdate}
           />
         )
-      ) : state.isSupportImage ? (
+      ) : state.isImage ? (
         <ImageView imgPath={fullPath} />
-      ) : state.isSupportVideo ? (
+      ) : state.isVideo ? (
         <VideoView videoPath={fullPath} />
       ) : (
         <NotSupportEditorContent filePath={fullPath} />

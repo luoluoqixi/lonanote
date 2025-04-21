@@ -18,11 +18,12 @@ import {
   defaultEditorBackEnd,
   defaultEditorIsReadOnly,
   defaultEditorMode,
-  setCurrentEditFile,
+  setCurrentEditFileIf,
   setEditorIsReadOnly,
   setEditorMode,
   useEditor,
 } from '@/controller/editor';
+import { useSettings } from '@/controller/settings';
 import { workspaceController } from '@/controller/workspace';
 import { EditorMode } from '@/models/editor';
 import { utils } from '@/utils';
@@ -171,6 +172,10 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
   const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
   const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
   const editorBackEnd = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
+  const isDirty = useEditor((s) => s.currentEditorIsDirty);
+  const autoSave = useSettings((s) => s.settings?.autoSave);
+  const autoSaveFocusChange = useSettings((s) => s.settings?.autoSaveFocusChange);
+  const showDirty = !autoSave && !autoSaveFocusChange;
 
   const fileHistory = window.useFileHistory?.();
   const [canBack, canForward] = useMemo(() => {
@@ -218,7 +223,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
     } else if (cmd === 'copy-relative-path') {
       copyPathMenuClick(true);
     } else if (cmd === 'close-editor') {
-      setCurrentEditFile(null, true);
+      setCurrentEditFileIf(null, true);
     }
   };
   const toToolBtnBack = (val: string) => {
@@ -266,6 +271,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
             console.log(path);
           }}
         />
+        <div style={{ height: '20px', marginLeft: 2 }}>{showDirty && isDirty && '*'}</div>
       </div>
       <div className={styles.indexContentTopToolbarRight}>
         {/** 切换编辑器功能 */
