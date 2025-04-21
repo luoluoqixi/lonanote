@@ -311,7 +311,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         onFocusChange(false);
       }
     });
-    console.log('milkdown create');
+    // console.log('milkdown create');
     return editor;
   }, [
     filePath,

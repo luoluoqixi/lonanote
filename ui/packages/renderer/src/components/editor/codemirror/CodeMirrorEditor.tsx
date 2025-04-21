@@ -71,7 +71,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
   const [readOnlyEx, setReadOnlyEx] = useState<Compartment | null>(null);
 
   useLayoutEffect(() => {
-    console.log('codemirror create');
+    // console.log('codemirror create');
     let view: EditorView | null = null;
     if (editorRootRef.current) {
       const readOnlyEx = new Compartment();
