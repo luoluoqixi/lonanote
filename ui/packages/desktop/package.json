@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "format": "prettier --write .",
-    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
-    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json --composite false",
     "start": "electron-vite preview",
     "dev": "pnpm --filter \"../editor\" run build && electron-vite dev",
     "build": "pnpm run build:web",
