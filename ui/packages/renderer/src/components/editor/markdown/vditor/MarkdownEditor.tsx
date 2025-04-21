@@ -13,7 +13,6 @@ import Vditor from 'vditor';
 import 'vditor/dist/index.css';
 
 import { useColorModeValue } from '@/components/provider/ColorModeProvider';
-import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
 
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
@@ -55,13 +54,12 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     mediaRootPath,
     readOnly,
     onSave,
-    onUpdateListener,
+    onUpdateStateListener,
     onClickAnyLink,
+    initValue,
   } = props;
   const theme = useColorModeValue<ThemeState>(lightTheme, darkTheme);
 
-  const content = useEditor((s) => s.currentEditorContent);
-  const [updateContentState, setUpdateContentState] = useState<boolean>(false);
   const [updateReadOnlyState, setUpdateReadOnlyState] = useState<boolean>(false);
 
   const editorRef = useRef<HTMLDivElement>(null);
@@ -69,10 +67,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   const editorPreviewParentRef = useRef<HTMLDivElement>(null);
   const editorPreviewWrapRef = useRef<HTMLDivElement>(null);
   const editor = useRef<Vditor | null>(null);
-  const updateContent = useCallback(
-    () => setUpdateContentState(!updateContentState),
-    [updateContentState],
-  );
+
   const updateReadOnly = useCallback(
     () => setUpdateReadOnlyState(!updateReadOnlyState),
     [updateReadOnlyState],
@@ -80,13 +75,13 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
 
   useLayoutEffect(() => {
     if (!editorRef.current) return;
-    onUpdateListener?.(null);
+    onUpdateStateListener?.(null);
     const rootMediaPath = utils.getMediaPath(mediaRootPath);
     let vditor: Vditor | null = new Vditor(editorRef.current, {
       cache: {
         enable: false,
       },
-      value: '',
+      value: initValue || '',
       // 必须显示toolbar, 通过css隐藏, 否则切换模式查找不到dom
       // toolbar: [],
       i18n: getI18n(),
@@ -116,7 +111,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       counter: {
         enable: true,
         after(length) {
-          onUpdateListener?.({
+          onUpdateStateListener?.({
             charCount: length,
           });
         },
@@ -141,7 +136,6 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         if (vditor != null) {
           setEditorTheme(vditor, theme);
           editor.current = vditor;
-          updateContent();
         } else {
           // 被销毁的 editor 初始化回调可能比第一次初始化的晚调用, 导致主题被还原
           if (editor.current != null) {
@@ -160,9 +154,9 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         vditor = null;
       }
       editor.current = null;
-      onUpdateListener?.(null);
+      onUpdateStateListener?.(null);
     };
-  }, [onSave, onUpdateListener, onClickAnyLink]);
+  }, [onSave, onUpdateStateListener, onClickAnyLink, initValue]);
 
   useEffect(() => {
     if (!editor.current) return;
@@ -201,14 +195,6 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     setEditorTheme(editor.current, theme);
   }, [theme]);
 
-  useEffect(() => {
-    if (editor.current) {
-      // console.log('value', editor, content);
-      editor.current.setValue(content?.content || '', true);
-      updateReadOnly();
-    }
-  }, [content, updateContent]);
-
   useImperativeHandle(ref, () => ({
     getValue() {
       return editor.current?.getValue();
@@ -216,6 +202,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     setValue(content) {
       try {
         editor.current?.setValue(content || '', true);
+        updateReadOnly();
       } catch (e) {
         console.error('setValue error:', e);
       }

@@ -26,8 +26,6 @@ import {
   useState,
 } from 'react';
 
-import { useEditor } from '@/controller/editor';
-
 import './CodeMirrorEditor.scss';
 import { detectLanguage } from './detectLanguage';
 import { useCodeMirrorTheme } from './theme';
@@ -35,6 +33,7 @@ import { useCodeMirrorTheme } from './theme';
 export interface CodeMirrorEditorRef {
   getEditor: () => EditorView | null;
   setValue: (content: string, useHistory?: boolean) => void;
+  getValue: () => string | null;
 }
 
 export interface UpdateState {
@@ -45,25 +44,34 @@ export interface UpdateState {
 
 export interface CodeMirrorEditorProps {
   filePath: string;
+  initValue: string | null;
   style?: CSSProperties;
   className?: string;
   readOnly?: boolean;
   onSave?: (content: string) => void;
-  onUpdateListener?: (state: UpdateState) => void;
+  onUpdateStateListener?: (state: UpdateState) => void;
+  onUpdate?: () => void;
+  onCreate?: () => void;
+  onDestroy?: () => void;
 }
 
 export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEditorRef>) => {
-  const { className, style, filePath, readOnly, onSave, onUpdateListener } = props;
+  const {
+    className,
+    style,
+    filePath,
+    readOnly,
+    onSave,
+    onUpdateStateListener,
+    onUpdate,
+    onCreate,
+    onDestroy,
+    initValue,
+  } = props;
   const theme = useCodeMirrorTheme();
   const editorRootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<EditorView | null>(null);
   const [readOnlyEx, setReadOnlyEx] = useState<Compartment | null>(null);
-  const content = useEditor((s) => s.currentEditorContent);
-  const [updateContentState, setUpdateContentState] = useState<boolean>(false);
-  const updateContent = useCallback(
-    () => setUpdateContentState(!updateContentState),
-    [updateContentState],
-  );
 
   useLayoutEffect(() => {
     console.log('codemirror create');
@@ -81,17 +89,20 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
         },
       };
       const updateListener = EditorView.updateListener.of((update) => {
-        if (onUpdateListener) {
+        if (onUpdate) {
+          onUpdate();
+        }
+        if (onUpdateStateListener) {
           const charCount = update.state.doc.length;
           const cursorPos = update.state.selection.main.head;
           const line = update.state.doc.lineAt(cursorPos);
           const rowIndex = line.number;
           const colIndex = cursorPos - line.from;
-          onUpdateListener({ charCount, rowIndex, colIndex });
+          onUpdateStateListener({ charCount, rowIndex, colIndex });
         }
       });
       const state = EditorState.create({
-        doc: '',
+        doc: initValue || '',
         extensions: [
           readOnlyEx.of(EditorView.editable.of(readOnly ? false : true)),
           detectLanguage(filePath),
@@ -155,16 +166,17 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
       });
       setView(view);
       setReadOnlyEx(readOnlyEx);
-      updateContent();
+      onCreate?.();
     }
     return () => {
       if (view) {
+        onDestroy?.();
         view.destroy();
         setView(null);
         setReadOnlyEx(null);
       }
     };
-  }, [onSave, onUpdateListener, theme]);
+  }, [onSave, onUpdateStateListener, onUpdate, onDestroy, theme, initValue]);
 
   useEffect(() => {
     if (!view || !readOnlyEx) return;
@@ -172,21 +184,6 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
       effects: readOnlyEx.reconfigure(EditorView.editable.of(readOnly ? false : true)),
     });
   }, [readOnly]);
-
-  useEffect(() => {
-    if (!view) return;
-    view.dispatch({
-      annotations: Transaction.addToHistory.of(false),
-      changes: {
-        from: 0,
-        to: view.state.doc.length,
-        insert: content?.content || '',
-      },
-    });
-    view.dispatch({
-      effects: EditorView.scrollIntoView(0),
-    });
-  }, [content, updateContent]);
 
   useImperativeHandle(ref, () => ({
     getEditor() {
@@ -199,9 +196,16 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
         changes: {
           from: 0,
           to: view.state.doc.length,
-          insert: content,
+          insert: content || '',
         },
       });
+      view.dispatch({
+        effects: EditorView.scrollIntoView(0),
+      });
+    },
+    getValue() {
+      if (!view) return null;
+      return view.state.doc.toString();
     },
   }));
 

@@ -1,3 +1,4 @@
+import debounce from 'lodash/debounce';
 import path from 'path-browserify-esm';
 import { toast } from 'react-toastify';
 
@@ -15,6 +16,7 @@ import {
   useEditorStore,
 } from '@/models/editor';
 
+import { useSettings } from '../settings';
 import { workspaceController } from '../workspace';
 
 export const useEditor = useEditorStore;
@@ -58,7 +60,55 @@ export const updateContent = (content: EditorContent | null) => {
   }));
 };
 
-export const saveContent = async (content: string, force: boolean) => {
+type UpdateContentAutoSaveFunc = (
+  autoSave: boolean,
+  getEditorValue: () => string | null | undefined,
+) => void;
+
+const debounceUpdateContentAutoSaveInnerMap = new Map<number, UpdateContentAutoSaveFunc>();
+
+const updateContentAutoSaveInner: UpdateContentAutoSaveFunc = (autoSave, getEditorValue) => {
+  const content = getEditorValue();
+  if (content == null) return;
+  const currentContent = useEditorStore.getState().currentEditorContent;
+  if (
+    currentContent == null ||
+    currentContent.content.length !== content.length ||
+    currentContent.content !== content
+  ) {
+    console.log(autoSave, '变化');
+    if (autoSave) {
+      // useEditorStore.setState({});
+    }
+  }
+};
+const debounceUpdateContentAutoSaveInner = (
+  autoSave: boolean,
+  getEditorValue: () => string | null | undefined,
+  wait: number,
+) => {
+  if (!debounceUpdateContentAutoSaveInnerMap.has(wait)) {
+    debounceUpdateContentAutoSaveInnerMap.set(wait, debounce(updateContentAutoSaveInner, wait));
+  }
+  const fun = debounceUpdateContentAutoSaveInnerMap.get(wait)!;
+  fun(autoSave, getEditorValue);
+};
+
+export const updateContentAutoSave = (getEditorValue: () => string | null | undefined) => {
+  const autoSave = useSettings.getState().settings?.autoSave;
+  const autoSaveInterval = useSettings.getState().settings?.autoSaveInterval;
+  if (autoSave) {
+    let wait = autoSaveInterval == null ? 1000 : autoSaveInterval * 1000;
+    if (wait < 100) {
+      wait = 100; // 最小100ms
+    }
+    debounceUpdateContentAutoSaveInner(true, getEditorValue, wait);
+  } else {
+    debounceUpdateContentAutoSaveInner(false, getEditorValue, 200);
+  }
+};
+
+export const saveContent = async (content: string) => {
   if (content == null) return;
   const ws = workspaceController.useWorkspace.getState().currentWorkspace;
   if (!ws) return;
@@ -67,16 +117,14 @@ export const saveContent = async (content: string, force: boolean) => {
   if (file == null) return;
   const filePath = path.join(wsPath, file);
   console.log(filePath);
-  if (force) {
-    fs.write(filePath, content)
-      .then(() => {
-        toast.success('保存文件成功');
-      })
-      .catch((e) => {
-        console.error('保存文件失败', e);
-        toast.error(`保存文件失败: ${e.message}`);
-      });
-  }
+  fs.write(filePath, content)
+    .then(() => {
+      toast.success('保存文件成功');
+    })
+    .catch((e) => {
+      console.error('保存文件失败', e);
+      toast.error(`保存文件失败: ${e.message}`);
+    });
 };
 
 export const setEditorIsReadOnly = async (editorIsReadOnly: boolean) => {

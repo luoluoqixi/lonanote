@@ -28,7 +28,12 @@ export interface MarkdownEditorProps {
   style?: CSSProperties;
   className?: string;
   readOnly?: boolean;
+  initValue: string | null;
   onSave?: (content: string) => void;
-  onUpdateListener?: (state: UpdateState | null) => void;
+  onUpdateStateListener?: (state: UpdateState | null) => void;
   onClickAnyLink?: (link: string) => void;
+  onCreate?: () => void;
+  onUpdate?: () => void;
+  onMounted?: () => void;
+  onDestroy?: () => void;
 }

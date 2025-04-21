@@ -7,6 +7,7 @@ import {
   setSettingsAutoCheckUpdate,
   setSettingsAutoOpenLastWorkspace,
   setSettingsAutoSave,
+  setSettingsAutoSaveFocusChange,
   setSettingsAutoSaveInterval,
   useSettings,
 } from '@/controller/settings';
@@ -46,7 +47,7 @@ export const GlobalSettings: React.FC<GlobalSettingsProps> = () => {
       </div>
       <div className={styles.rowSettings}>
         <Text as="div" size="2" className={styles.rowSettingsLeft}>
-          自动保存：
+          编辑时自动保存：
         </Text>
         <div className={styles.rowSettingsRight}>
           <Switch checked={settings.autoSave} onCheckedChange={(v) => setSettingsAutoSave(v)} />
@@ -74,6 +75,17 @@ export const GlobalSettings: React.FC<GlobalSettingsProps> = () => {
             }}
           />
           <ResetButton onClick={() => resetSettingsAutoSaveInterval()} />
+        </div>
+      </div>
+      <div className={styles.rowSettings}>
+        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          失去焦点时自动保存：
+        </Text>
+        <div className={styles.rowSettingsRight}>
+          <Switch
+            checked={settings.autoSaveFocusChange}
+            onCheckedChange={(v) => setSettingsAutoSaveFocusChange(v)}
+          />
         </div>
       </div>
       {config.isDev && isShowDevUI && (

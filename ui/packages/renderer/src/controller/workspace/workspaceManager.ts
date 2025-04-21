@@ -72,8 +72,8 @@ export const openWorkspace = async (workspacePath: string) => {
     spinner.showSpinner('加载workspace');
     await workspaceManager.openWorkspaceByPath(workspacePath);
     const ws = await workspace.getCurrentWorkspace();
-    setCurrentEditFile(null);
     if (ws) setCurrentWorkspace(ws);
+    setCurrentEditFile(null);
     spinner.hideSpinner();
     setWorkspaceLoading(false);
   } catch (e) {

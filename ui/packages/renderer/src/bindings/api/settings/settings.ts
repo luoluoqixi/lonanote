@@ -5,6 +5,7 @@ export interface Settings {
   autoOpenLastWorkspace: boolean;
   autoSave: boolean;
   autoSaveInterval: number;
+  autoSaveFocusChange: boolean;
 }
 
 export const settings = {

@@ -10,8 +10,6 @@ import {
   useState,
 } from 'react';
 
-import { useEditor } from '@/controller/editor';
-
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
 import './MarkdownEditor.scss';
 
@@ -97,13 +95,12 @@ const countChars = (cm: CodeMirror.Editor) => {
 };
 
 export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRef>) => {
-  const { className, style, readOnly, onSave, onUpdateListener } = props;
+  const { className, style, readOnly, onSave, onUpdateStateListener, initValue } = props;
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [editor, setEditor] = useState<CodeMirror.EditorFromTextArea | null>(null);
-  const content = useEditor((s) => s.currentEditorContent);
   useLayoutEffect(() => {
     if (!editorRef.current) return;
-    onUpdateListener?.(null);
+    onUpdateStateListener?.(null);
     let cm: CodeMirror.EditorFromTextArea | null = HyperMD.fromTextArea(editorRef.current, {
       hmdModeLoader: false,
       lineNumbers: false, // 隐藏行号
@@ -151,7 +148,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     const updateState = (cm: CodeMirror.Editor) => {
       if (cm == null) return;
       const cursor = cm.getCursor();
-      onUpdateListener?.({
+      onUpdateStateListener?.({
         rowIndex: cursor.line,
         colIndex: cursor.ch,
         charCount: countChars(cm),
@@ -165,7 +162,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     //   console.log(e);
     // });
     setReadOnly(cm, readOnly, 50);
-    cm.setValue('');
+    cm.setValue(initValue || '');
     setEditor(cm);
     console.log('hypermd create');
     return () => {
@@ -173,17 +170,10 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
         cm.toTextArea();
         cm = null;
         setEditor(null);
-        onUpdateListener?.(null);
+        onUpdateStateListener?.(null);
       }
     };
-  }, [onSave, onUpdateListener]);
-
-  useEffect(() => {
-    if (editor) {
-      editor.setValue(content?.content || '');
-      editor.clearHistory();
-    }
-  }, [content]);
+  }, [onSave, onUpdateStateListener, initValue]);
 
   useEffect(() => {
     if (!editor) return;

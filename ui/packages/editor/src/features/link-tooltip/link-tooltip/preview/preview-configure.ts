@@ -49,6 +49,10 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
     if (!linkPreviewTooltipView) return;
     // if (!view.hasFocus()) return;
     if (view.isDestroyed) return;
+    // ==== 修改 ====
+    if (!ctx.isInjected(linkTooltipConfig.key)) {
+      return;
+    }
     const config = ctx.get(linkTooltipConfig.key);
     if (config.hoverShow === false) {
       return;
@@ -87,6 +91,9 @@ export function configureLinkPreviewTooltip(ctx: Ctx) {
   const onSelectionChange = (view: EditorView) => {
     if (!linkPreviewTooltipView) return;
     if (view.isDestroyed) return;
+    if (!ctx.isInjected(linkTooltipConfig.key)) {
+      return;
+    }
     const config = ctx.get(linkTooltipConfig.key);
     if (config.selectionShow === false) {
       return;

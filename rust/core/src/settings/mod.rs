@@ -22,6 +22,9 @@ pub struct Settings {
     /// 自动保存的时间间隔, 秒
     #[serde(default = "Settings::default_auto_save_interval")]
     pub auto_save_interval: f64,
+    /// 编辑器失去焦点时自动保存
+    #[serde(default = "Settings::default_auto_save_focus_change")]
+    pub auto_save_focus_change: bool,
 }
 
 impl Settings {
@@ -38,7 +41,11 @@ impl Settings {
     }
 
     pub const fn default_auto_save_interval() -> f64 {
-        5.0
+        1.0
+    }
+
+    pub const fn default_auto_save_focus_change() -> bool {
+        true
     }
 }
 
@@ -59,6 +66,7 @@ impl Settings {
             auto_open_last_workspace: Settings::default_auto_open_last_workspace(),
             auto_save: Settings::default_auto_save(),
             auto_save_interval: Settings::default_auto_save_interval(),
+            auto_save_focus_change: Settings::default_auto_save_focus_change(),
         }
     }
 

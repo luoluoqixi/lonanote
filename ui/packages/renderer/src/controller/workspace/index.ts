@@ -27,7 +27,11 @@ export const getInitWorkspace = async () => {
       if (lastWorkspace) {
         // 没有打开此workspace时, 才能打开该workspace
         if (!(await workspace.isOpenWorkspace(lastWorkspace))) {
-          await workspaceManagerController.openWorkspace(lastWorkspace);
+          if (await workspaceManagerController.openWorkspace(lastWorkspace)) {
+            setCurrentOpenWorkspace(lastWorkspace);
+          }
+        } else {
+          console.warn(`already opened workspace: ${lastWorkspace}`);
         }
       }
     }

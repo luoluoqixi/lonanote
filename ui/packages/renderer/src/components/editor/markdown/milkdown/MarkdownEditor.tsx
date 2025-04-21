@@ -2,15 +2,7 @@ import { editorViewCtx } from '@milkdown/core';
 import { Ctx } from '@milkdown/kit/ctx';
 import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-editor';
 import path from 'path-browserify-esm';
-import {
-  Ref,
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
+import { Ref, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { LuClipboardPaste } from 'react-icons/lu';
 import { TbCopy, TbCut, TbSelectAll } from 'react-icons/tb';
 import { toast } from 'react-toastify';
@@ -18,7 +10,6 @@ import { toast } from 'react-toastify';
 import { fs, system } from '@/bindings/api';
 import { ContextMenu, ContextMenuItem, ContextMenuRef } from '@/components';
 import { dialog } from '@/components/utils';
-import { useEditor } from '@/controller/editor';
 import { utils } from '@/utils';
 
 import { useCodeMirrorTheme } from '../../codemirror';
@@ -60,9 +51,14 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     className,
     style,
     filePath,
+    initValue,
     readOnly,
     onSave,
-    onUpdateListener,
+    onUpdateStateListener,
+    onCreate,
+    onUpdate,
+    onMounted,
+    onDestroy,
     onClickAnyLink,
     mediaRootPath,
     workspaceRootPath,
@@ -70,22 +66,14 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
   } = props;
   const theme = useCodeMirrorTheme();
   const editorRef = useRef<HTMLDivElement>(null);
-  const content = useEditor((s) => s.currentEditorContent);
-
   const menuRef = useRef<ContextMenuRef>(null);
-
-  const [updateContentState, setUpdateContentState] = useState<boolean>(false);
-  const updateContent = useCallback(
-    () => setUpdateContentState(!updateContentState),
-    [updateContentState],
-  );
 
   const { getEditor, loading } = useMilkdownEditor(() => {
     if (!editorRef.current) return null;
     const editor = new MilkdownEditor({
       root: editorRef.current,
       defaultReadOnly: readOnly,
-      defaultValue: '',
+      defaultValue: initValue || '',
       featureConfigs: {
         [MilkdownFeature.Image]: {
           blockUploadPlaceholderText: markdownEditorLanguages.imageBlockUploadPlaceholderText,
@@ -284,7 +272,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
           return;
         }
         const view = ctx.get(editorViewCtx);
-        onUpdateListener?.({ charCount: view.state.doc.content.size });
+        onUpdateStateListener?.({ charCount: view.state.doc.content.size });
       }, 200);
     };
     editor.addListener('onSave', () => {
@@ -295,15 +283,18 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       return true;
     });
     editor.addListener('onDestroy', () => {
-      onUpdateListener?.(null);
+      onDestroy?.();
+      onUpdateStateListener?.(null);
     });
     editor.addListener('onCreated', () => {
-      updateContent();
+      onCreate?.();
     });
     editor.addListener('onUpdate', (ctx) => {
+      onUpdate?.();
       updateState(ctx);
     });
     editor.addListener('onMounted', (ctx) => {
+      onMounted?.();
       updateState(ctx);
     });
     editor.addListener('onLinkClick', (link, view, e) => {
@@ -319,24 +310,25 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     });
     console.log('milkdown create');
     return editor;
-  }, [filePath, onSave, onUpdateListener, onClickAnyLink, theme]);
+  }, [
+    filePath,
+    initValue,
+    onSave,
+    onUpdate,
+    onUpdateStateListener,
+    onCreate,
+    onMounted,
+    onMounted,
+    onDestroy,
+    onClickAnyLink,
+    theme,
+  ]);
 
   useEffect(() => {
     const editor = getEditor();
     if (!editor) return;
     editor.setReadonly(readOnly || false);
   }, [readOnly]);
-
-  useEffect(() => {
-    const editor = getEditor();
-    if (editor) {
-      try {
-        editor.setMarkdown(content?.content || '', false);
-      } catch (e: any) {
-        toast.error(`setValue error: ${e.message}`);
-      }
-    }
-  }, [content, updateContent]);
 
   useImperativeHandle(ref, () => ({
     getValue() {
@@ -345,7 +337,11 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
     setValue(content) {
       const editor = getEditor();
       if (editor) {
-        editor.setMarkdown(content || '', false);
+        try {
+          editor.setMarkdown(content || '', false);
+        } catch (e: any) {
+          toast.error(`setValue error: ${e.message}`);
+        }
       }
     },
   }));

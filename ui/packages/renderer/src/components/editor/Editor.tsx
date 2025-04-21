@@ -1,6 +1,14 @@
 import { Button, Text } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
-import { CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import {
+  CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { toast } from 'react-toastify';
 
 import { Workspace, fs } from '@/bindings/api';
@@ -9,9 +17,10 @@ import {
   setCurrentEditFile,
   setCurrentEditorState,
   updateContent,
+  updateContentAutoSave,
   useEditor,
 } from '@/controller/editor';
-import { defaultEditorBackEnd, defaultEditorMode } from '@/models/editor';
+import { EditorState, defaultEditorBackEnd, defaultEditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import './Editor.scss';
@@ -66,6 +75,7 @@ export default function Editor({
     () => path.join(currentWorkspace.metadata.path, file),
     [file, currentWorkspace],
   );
+  const [initContent, setInitContent] = useState<string | null>(null);
   const { uploadImagePath, uploadAttachmentPath } = useMemo(() => {
     return {
       uploadImagePath: currentWorkspace.settings.uploadImagePath,
@@ -92,12 +102,15 @@ export default function Editor({
     }
   }, [state.isSupportEditor, state.isSupportMdEditor]);
   useLayoutEffect(() => {
+    console.log('reinit', file);
+    setInitContent(null);
     if (state.isSupportEditor || state.isSupportMdEditor) {
       const filePath = fullPath;
       fs.readToString(filePath)
         .then((content) => {
           try {
             updateContent({ content: content || '' });
+            setInitContent(content || '');
           } catch (e) {
             toast.error(`setValue失败: ${e}`);
           }
@@ -107,15 +120,35 @@ export default function Editor({
           console.error('读取文件失败', filePath, e);
           toast.error(`读取文件失败: ${filePath}, ${e.message}`);
           updateContent({ content: '' });
+          setInitContent('');
         });
     } else {
       updateContent(null);
+      setInitContent(null);
     }
   }, [file, fullPath, editorBackEnd, editorMode]);
 
   const saveFile = useCallback((content: string) => {
-    saveContent(content, true);
+    saveContent(content);
   }, []);
+
+  const getEditorValue = useCallback(() => {
+    if (state.isSupportMdEditor && !isCodeMirror) {
+      if (mdEditorRef.current) {
+        return mdEditorRef.current.getValue();
+      }
+    } else if (state.isSupportEditor) {
+      if (editorRef.current) {
+        return editorRef.current.getValue();
+      }
+    }
+    return null;
+  }, [editorRef, mdEditorRef, state, isCodeMirror]);
+
+  const onUpdate = useCallback(() => {
+    updateContentAutoSave(getEditorValue);
+  }, [getEditorValue]);
+
   const onClickAnyLink = useCallback(
     (link: string) => {
       if (link == null) return;
@@ -140,31 +173,39 @@ export default function Editor({
   return (
     <div id="editor-root" style={style} className={className}>
       {state.isSupportMdEditor && !isCodeMirror ? (
-        <MarkdownEditor
-          ref={mdEditorRef}
-          editorBackEnd={editorBackEnd}
-          workspaceRootPath={currentWorkspace.metadata.path}
-          defaultUploadPath={uploadImagePath}
-          defaultUploadAttachmentPath={uploadAttachmentPath}
-          mediaRootPath={folderPath}
-          editorId="markdown-editor"
-          className="markdown-editor"
-          filePath={file}
-          readOnly={readOnly}
-          editMode={editorMode}
-          onSave={saveFile}
-          onUpdateListener={setCurrentEditorState}
-          onClickAnyLink={onClickAnyLink}
-        />
+        initContent && (
+          <MarkdownEditor
+            ref={mdEditorRef}
+            initValue={initContent}
+            editorBackEnd={editorBackEnd}
+            workspaceRootPath={currentWorkspace.metadata.path}
+            defaultUploadPath={uploadImagePath}
+            defaultUploadAttachmentPath={uploadAttachmentPath}
+            mediaRootPath={folderPath}
+            editorId="markdown-editor"
+            className="markdown-editor"
+            filePath={file}
+            readOnly={readOnly}
+            editMode={editorMode}
+            onSave={saveFile}
+            onUpdateStateListener={setCurrentEditorState}
+            onUpdate={onUpdate}
+            onClickAnyLink={onClickAnyLink}
+          />
+        )
       ) : state.isSupportEditor ? (
-        <CodeMirrorEditor
-          ref={editorRef}
-          filePath={file}
-          className="codemirror-editor"
-          readOnly={readOnly}
-          onSave={saveFile}
-          onUpdateListener={setCurrentEditorState}
-        />
+        initContent && (
+          <CodeMirrorEditor
+            ref={editorRef}
+            initValue={initContent}
+            filePath={file}
+            className="codemirror-editor"
+            readOnly={readOnly}
+            onSave={saveFile}
+            onUpdateStateListener={setCurrentEditorState}
+            onUpdate={onUpdate}
+          />
+        )
       ) : state.isSupportImage ? (
         <ImageView imgPath={fullPath} />
       ) : state.isSupportVideo ? (

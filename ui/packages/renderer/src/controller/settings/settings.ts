@@ -48,6 +48,12 @@ export const setSettingsAutoSaveInterval = async (autoSaveInterval: number) => {
   });
 };
 
+export const setSettingsAutoSaveFocusChange = async (autoSaveFocusChange: boolean) => {
+  setSettingsCallback((s) => {
+    s.autoSaveFocusChange = autoSaveFocusChange;
+  });
+};
+
 export const resetSettingsAutoSaveInterval = async () => {
   await settings.resetSettingsAutoSaveInterval();
   const ss = await settings.getSettings();
