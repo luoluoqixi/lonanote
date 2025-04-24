@@ -79,13 +79,19 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
           blockConfirmButton: () => markdownEditorLanguages.imageBlockConfirmButton,
           inlineUploadPlaceholderText: markdownEditorLanguages.imageInlineUploadPlaceholderText,
           inlineUploadButton: () => markdownEditorLanguages.imageInlineUploadButton,
-          proxyDomURL(url) {
+          proxyDomURL: async (url) => {
             if (!url) return url;
             // console.log(url);
             if (utils.isImgUrl(url)) {
               return url;
             }
             const f = path.resolve(mediaRootPath, url);
+            if (!(await fs.exists(f))) {
+              const f = path.resolve(path.resolve(workspaceRootPath, defaultUploadPath), url);
+              if (await fs.exists(f)) {
+                return utils.getMediaPath(f);
+              }
+            }
             return utils.getMediaPath(f);
           },
           onUpload: async (file) => {
