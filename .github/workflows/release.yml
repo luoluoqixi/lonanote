@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+env:
+  BUILD_DIR: 'build_output'
+  BUILD_NAME: 'lonanote'
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_title: ${{ steps.release_info.outputs.release_title }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate Release Info
+        id: release_info
+        run: |
+          RELEASE_TITLE=$(git describe --tags --abbrev=0)
+          echo "release_title=$RELEASE_TITLE" >> $GITHUB_OUTPUT
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          RELEASE_TITLE="$RELEASE_TITLE" python python/scripts/changelog.py >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ steps.release_info.outputs.release_title }}
+          body: ${{ steps.release_info.outputs.release_body }}
+          tag: ${{ github.ref }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: ${{ matrix.config.name }}
+    needs: release
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-22.04
+            name: build linux
+            suffix: 'linux.tar.gz'
+          - os: windows-latest
+            name: build windows
+            suffix: 'windows.exe'
+          - os: macos-latest
+            name: build mac-arm64
+            suffix: 'mac-arm64.dmg'
+          - os: macos-latest
+            name: build mac-amd64
+            suffix: 'mac-amd64.dmg'
+
+    runs-on: ${{ matrix.config.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run build script
+        run: |
+          python python/scripts/build.py
+        env:
+          RELEASE_TITLE: ${{ needs.release.outputs.release_title }}
+          RUNNER_OS: ${{ runner.os }}
+          RUNNER_NAME: ${{ matrix.config.name }}
+          SUFFIX: ${{ matrix.config.suffix }}
+
+      - name: Upload artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/${{ env.BUILD_DIR }}/${{ env.BUILD_NAME }}-${{ needs.release.outputs.release_title }}-${{ matrix.config.suffix }}
+          asset_name: ${{ env.BUILD_NAME }}-${{ needs.release.outputs.release_title }}-${{ matrix.config.suffix }}
+          asset_content_type: application/octet-stream
