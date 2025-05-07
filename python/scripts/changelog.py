@@ -16,7 +16,10 @@ def main():
     if release_title is None:
         release_title = ""
 
-    repo_root = utils.REPO_ROOT
+    repo_root = os.environ.get('GITHUB_WORKSPACE')
+    if repo_root is None:
+        repo_root = utils.REPO_ROOT
+
     changelog_path = os.path.join(repo_root, "CHANGELOG.md")
 
     if os.path.exists(changelog_path):
@@ -27,7 +30,7 @@ def main():
                 line = line.strip()
                 if line.startswith(f"### [v") and current_version:
                     break
-                if line.startswith(f"### [v{release_title}"):
+                if line.startswith(f"## [v"):
                     if current_version == False:
                         current_version = True
                         print(line)

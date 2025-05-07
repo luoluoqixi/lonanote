@@ -5,6 +5,7 @@ import codecs
 import os
 import sys
 import argparse
+import platform
 
 import utils
 
@@ -47,7 +48,10 @@ def generate_changelog(repo_root, changelog_config_path, changelog_file, next_ve
 def change_package_version(project_path, next_version):
     # pnpm version {version} --no-git-tag-version
     print("change package version...")
-    utils.subprocess_check_output(["cmd", "/c", "pnpm", "version", next_version, "--no-git-tag-version", "--allow-same-version"], working_dir=project_path)
+    if platform.system().lower() == "windows":
+        utils.subprocess_check_output(["cmd", "/c", "pnpm", "version", next_version, "--no-git-tag-version", "--allow-same-version"], working_dir=project_path)
+    else:
+        utils.subprocess_check_output(["pnpm", "version", next_version, "--no-git-tag-version", "--allow-same-version"], working_dir=project_path)
     print(f"change package version finish: v{next_version}")
 
 def change_cargo_version(project_path, next_version):
@@ -82,7 +86,7 @@ def git_push(repo_root):
 
 def git_commit(repo_root, next_version):
     utils.subprocess_check_output(["git", "add", "."], working_dir=repo_root)
-    utils.subprocess_check_output(["git", "commit", "-m", f"{COMMIT_MESSAGE} v{next_version}"], working_dir=repo_root)
+    utils.subprocess_check_output(["git", "commit", "-S", "-m", f"{COMMIT_MESSAGE} v{next_version}"], working_dir=repo_root)
 
 def main():
     parser = argparse.ArgumentParser(description='release tools')
