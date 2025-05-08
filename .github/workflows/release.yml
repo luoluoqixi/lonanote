@@ -57,18 +57,18 @@ jobs:
     strategy:
       matrix:
         config:
-          - os: ubuntu-22.04
-            name: build linux
-            suffix: 'linux.tar.gz'
+          # - os: ubuntu-22.04
+          #   name: build linux
+          #   suffix: 'linux.tar.gz'
           - os: windows-latest
             name: build windows
-            suffix: 'windows.exe'
-          - os: macos-latest
-            name: build mac-arm64
-            suffix: 'mac-arm64.dmg'
-          - os: macos-latest
-            name: build mac-amd64
-            suffix: 'mac-amd64.dmg'
+            suffix: 'windows.zip'
+          # - os: macos-latest
+          #   name: build mac-arm64
+          #   suffix: 'mac-arm64.zip'
+          # - os: macos-latest
+          #   name: build mac-amd64
+          #   suffix: 'mac-amd64.zip'
 
     runs-on: ${{ matrix.config.os }}
     steps:
@@ -79,6 +79,23 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+      - name: Check Cargo
+        run: cargo --version
 
       - name: Run build script
         run: |

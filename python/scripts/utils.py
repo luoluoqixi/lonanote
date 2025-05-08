@@ -19,8 +19,8 @@ def make_writable_path(path):
         raise RuntimeError(f"make_writable_path error: {path}: {e}")
 
 def subprocess_check_output(command, input=None, throw_error=True, working_dir=None):
+    cwd = os.getcwd()
     try:
-        cwd = os.getcwd()
         if working_dir is not None:
             os.chdir(working_dir)
         output = subprocess.check_output(command, input=input, universal_newlines=True, encoding='utf8')
@@ -29,14 +29,21 @@ def subprocess_check_output(command, input=None, throw_error=True, working_dir=N
         return output
     except Exception as err:
         print(f"run command {command} error: {err}")
+        if working_dir is not None:
+            os.chdir(cwd)
         if throw_error:
             raise RuntimeError(err)
         else:
             return None
 
-def subprocess_run(command, input=None, throw_error=True):
+def subprocess_run(command, input=None, throw_error=True, working_dir=None):
+    cwd = os.getcwd()
     try:
+        if working_dir is not None:
+            os.chdir(working_dir)
         cp = subprocess.run(command, input=input, universal_newlines=True, encoding='utf8')
+        if working_dir is not None:
+            os.chdir(cwd)
         if cp.returncode != 0:
             err = cp.stderr
             if err is None:
@@ -48,6 +55,8 @@ def subprocess_run(command, input=None, throw_error=True):
                 return cp
         return cp
     except Exception as err:
+        if working_dir is not None:
+            os.chdir(cwd)
         print(err)
         if throw_error:
             raise RuntimeError(err)
