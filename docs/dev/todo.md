@@ -1,4 +1,4 @@
-### 待办
+### [待办](https://github.com/lona-labs/lonanote/issues/1)
 
 * [x] 预览模式
 * [x] 源码模式
