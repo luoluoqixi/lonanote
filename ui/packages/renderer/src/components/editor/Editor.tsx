@@ -183,7 +183,7 @@ export default function Editor({
   return (
     <div id="editor-root" style={style} className={className}>
       {state.isMdEditor ? (
-        initContent && (
+        initContent != null && (
           <MarkdownEditor
             ref={mdEditorRef}
             initValue={initContent}
@@ -205,7 +205,7 @@ export default function Editor({
           />
         )
       ) : state.isCMEditor ? (
-        initContent && (
+        initContent != null && (
           <CodeMirrorEditor
             ref={editorRef}
             initValue={initContent}
