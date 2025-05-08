@@ -102,7 +102,8 @@ def main():
 
     print(f"repo root: {repo_root}")
 
-    changelog_config_path = os.path.join(repo_root, "scripts/.versionrc")
+    changelog_config_path = os.path.join(os.path.join(__file__, "../"), ".versionrc")
+    print(f"changelog_config_path: {changelog_config_path}")
 
     check_convco_install()
     current_version = get_current_version(changelog_config_path)

@@ -1,0 +1,77 @@
+header: |
+  # Changelog
+types:
+- type: feat
+  section: ✨ Features
+  hidden: false
+  increment: Minor
+- type: ✨
+  section: ✨ Features
+  hidden: false
+  increment: Minor
+- type: fix
+  section: 🐛 Fixes
+  hidden: false
+  increment: Patch
+- type: 🐛
+  section: 🐛 Fixes
+  hidden: false
+  increment: Patch
+- type: docs
+  section: 📝 Documentation
+  hidden: false
+  increment: Patch
+- type: 📝
+  section: 📝 Documentation
+  hidden: false
+  increment: Patch
+- type: style
+  section: 🎨 Styling
+  hidden: false
+  increment: Patch
+- type: 🎨
+  section: 🎨 Styling
+  hidden: false
+  increment: Patch
+- type: refactor
+  section: ♻️ Refactor
+  hidden: false
+  increment: Patch
+- type: ♻️
+  section: ♻️ Refactor
+  hidden: false
+  increment: Patch
+- type: perf
+  section: ⚡ Performance
+  hidden: false
+  increment: Patch
+- type: ⚡
+  section: ⚡ Performance
+  hidden: false
+  increment: Patch
+- type: revert
+  section: ⏪️ Revert
+  hidden: false
+  increment: Patch
+- type: ⏪️
+  section: ⏪️ Revert
+  hidden: false
+  increment: Patch
+- type: test
+  section: 🧪 Testing
+  hidden: false
+- type: 🧪
+  section: 🧪 Testing
+  hidden: false
+- type: build
+  section: 💼 Other
+  hidden: true
+- type: chore
+  section: 💼 Other
+  hidden: true
+- type: ci
+  section: 💼 Other
+  hidden: true
+- type: 🚧
+  section: 💼 Other
+  hidden: true
