@@ -3,6 +3,7 @@ import { Editor } from '@milkdown/core';
 import { BlockEditFeatureConfig, defineBlockEdit } from './block-edit';
 import { CodeMirrorFeatureConfig, defineCodeMirror } from './codemirror';
 import { CursorFeatureConfig, defineCursor } from './cursor';
+import { HiglightFeatureConfig, defineHiglight } from './highlight';
 import { ImageFeatureConfig, defineImage } from './image';
 import { LatexFeatureConfig, defineLatex } from './latex';
 import { LinkTooltipFeatureConfig, defineLinkTooltip } from './link-tooltip';
@@ -22,6 +23,7 @@ export enum MilkdownFeature {
   Table = 'table',
   Latex = 'latex',
   Yaml = 'yaml',
+  Highlight = 'highlight',
 }
 
 export interface FeaturesConfig {
@@ -35,6 +37,7 @@ export interface FeaturesConfig {
   [MilkdownFeature.Table]?: TableFeatureConfig;
   [MilkdownFeature.Latex]?: LatexFeatureConfig;
   [MilkdownFeature.Yaml]?: YamlFeatureConfig;
+  [MilkdownFeature.Highlight]?: HiglightFeatureConfig;
 }
 
 export const defaultFeatures: Record<MilkdownFeature, boolean> = {
@@ -48,6 +51,7 @@ export const defaultFeatures: Record<MilkdownFeature, boolean> = {
   [MilkdownFeature.Table]: true,
   [MilkdownFeature.Latex]: true,
   [MilkdownFeature.Yaml]: true,
+  [MilkdownFeature.Highlight]: true,
 };
 
 export function loadFeature(editor: Editor, feature: MilkdownFeature, config: any): any {
@@ -81,6 +85,9 @@ export function loadFeature(editor: Editor, feature: MilkdownFeature, config: an
     }
     case MilkdownFeature.Yaml: {
       return defineYaml(editor, config);
+    }
+    case MilkdownFeature.Highlight: {
+      return defineHiglight(editor, config);
     }
   }
 }
