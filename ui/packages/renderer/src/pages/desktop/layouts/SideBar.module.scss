@@ -5,4 +5,9 @@
   padding: 0px;
   -webkit-user-select: none;
   user-select: none;
+  display: none;
+}
+
+:global(.contentSidebar):global(.split-view-view-visible) .sidebar {
+  display: block;
 }
