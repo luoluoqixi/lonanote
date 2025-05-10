@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { workspaceController } from '@/controller/workspace';
 
 import { BaseSettingsPanelProps, ResetButton } from '../Settings';
-import styles from '../Settings.module.scss';
 
 export interface WorkspaceSettingsProps extends BaseSettingsPanelProps {}
 export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
@@ -23,16 +22,16 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
   }, [currentWorkspace]);
 
   return (
-    <div className={styles.workspaceSettings}>
+    <div className="workspaceSettings">
       {currentWorkspace == null ? (
         <div>没有打开工作区</div>
       ) : (
         <>
-          <div className={styles.rowSettings}>
-            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          <div className="rowSettings">
+            <Text as="div" size="2" className="rowSettingsLeft">
               名字：
             </Text>
-            <div className={styles.rowSettingsRight}>
+            <div className="rowSettingsRight">
               <TextField.Root
                 style={{ width: '100%' }}
                 readOnly
@@ -45,11 +44,11 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
               />
             </div>
           </div>
-          <div className={styles.rowSettings}>
-            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          <div className="rowSettings">
+            <Text as="div" size="2" className="rowSettingsLeft">
               路径：
             </Text>
-            <div className={styles.rowSettingsRight}>
+            <div className="rowSettingsRight">
               <TextField.Root
                 style={{ width: '100%' }}
                 readOnly
@@ -62,11 +61,11 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
               />
             </div>
           </div>
-          <div className={styles.rowSettings}>
-            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          <div className="rowSettings">
+            <Text as="div" size="2" className="rowSettingsLeft">
               上传图片路径：
             </Text>
-            <div className={styles.rowSettingsRight}>
+            <div className="rowSettingsRight">
               <TextField.Root
                 style={{ width: '100%' }}
                 spellCheck="false"
@@ -79,11 +78,11 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
               <ResetButton onClick={() => workspaceController.resetWorkspaceUploadImagePath()} />
             </div>
           </div>
-          <div className={styles.rowSettings}>
-            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          <div className="rowSettings">
+            <Text as="div" size="2" className="rowSettingsLeft">
               上传附件路径：
             </Text>
-            <div className={styles.rowSettingsRight}>
+            <div className="rowSettingsRight">
               <TextField.Root
                 style={{ width: '100%' }}
                 spellCheck="false"
@@ -123,11 +122,11 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
               />
             </div>
           </div> */}
-          <div className={styles.rowSettings}>
-            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+          <div className="rowSettings">
+            <Text as="div" size="2" className="rowSettingsLeft">
               使用 .gitignore 规则：
             </Text>
-            <div className={styles.rowSettingsRight}>
+            <div className="rowSettingsRight">
               <Switch
                 checked={currentWorkspace.settings.followGitignore}
                 onCheckedChange={(v) => workspaceController.setCurrentWorkspaceFollowGitignore(v)}
@@ -138,16 +137,16 @@ export const WorkspaceSettings: React.FC<WorkspaceSettingsProps> = () => {
             style={{
               height: '100px',
             }}
-            className={styles.rowSettings}
+            className="rowSettings"
           >
-            <Text as="div" size="2" className={styles.rowSettingsLeft}>
+            <Text as="div" size="2" className="rowSettingsLeft">
               自定义 ignore 规则：
             </Text>
             <div
               style={{
                 height: '100px',
               }}
-              className={styles.rowSettingsRight}
+              className="rowSettingsRight"
             >
               <Flex width="100%" height="100%" direction="column" gap="1">
                 <TextArea

@@ -1,7 +1,8 @@
-import { Select, Text, TextField } from '@radix-ui/themes';
+import { Button, Select, Text, TextField } from '@radix-ui/themes';
 
 import { ColorModeSelect } from '@/components';
 import {
+  changeToMobileUI,
   defaultThemeColor,
   isSupportResizeWindow,
   isSupportZoom,
@@ -14,7 +15,7 @@ import {
 import { ThemeColorType } from '@/models/settings';
 
 import { BaseSettingsPanelProps, ResetButton } from '../Settings';
-import styles from '../Settings.module.scss';
+import '../Settings.scss';
 
 export interface AppearanceSettingsProps extends BaseSettingsPanelProps {}
 
@@ -22,12 +23,12 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
   const settings = useUISettings();
   const themeColor = settings.themeColor || defaultThemeColor;
   return (
-    <div className={styles.appearanceSettings}>
-      <div className={styles.rowSettings}>
-        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+    <div className="appearanceSettings">
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
           颜色模式：
         </Text>
-        <div className={styles.rowSettingsRight}>
+        <div className="rowSettingsRight">
           <ColorModeSelect
             triggerProps={{
               style: {
@@ -37,11 +38,11 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
           />
         </div>
       </div>
-      <div className={styles.rowSettings}>
-        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
           主题色：
         </Text>
-        <div className={styles.rowSettingsRight}>
+        <div className="rowSettingsRight">
           <Select.Root
             value={themeColor}
             onValueChange={(v) => {
@@ -63,11 +64,11 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
         </div>
       </div>
       {isSupportZoom() && settings.zoom != null && (
-        <div className={styles.rowSettings}>
-          <Text as="div" size="2" className={styles.rowSettingsLeft}>
+        <div className="rowSettings">
+          <Text as="div" size="2" className="rowSettingsLeft">
             缩放：
           </Text>
-          <div className={styles.rowSettingsRight}>
+          <div className="rowSettingsRight">
             <TextField.Root
               style={{ flexGrow: 1 }}
               type="number"
@@ -89,16 +90,31 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
         </div>
       )}
       {isSupportResizeWindow() && settings.windowSize && (
-        <div className={styles.rowSettings}>
-          <Text as="div" size="2" className={styles.rowSettingsLeft}>
+        <div className="rowSettings">
+          <Text as="div" size="2" className="rowSettingsLeft">
             窗口大小：
           </Text>
-          <div className={styles.rowSettingsRight}>
+          <div className="rowSettingsRight">
             <Text size="2">{`宽: ${settings.windowSize.width}, 高: ${settings.windowSize.height}`}</Text>
             <ResetButton onClick={() => resetWindowSize()} />
           </div>
         </div>
       )}
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
+          {'UI模式：'}
+        </Text>
+        <div className="rowSettingsRight">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              changeToMobileUI();
+            }}
+          >
+            切换到移动端UI
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

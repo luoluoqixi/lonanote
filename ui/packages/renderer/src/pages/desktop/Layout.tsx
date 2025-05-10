@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useWindowTitleHeight } from '@/hooks';
 
 import Index from './Index';
-import styles from './Layout.module.scss';
+import './Layout.scss';
 import { Settings } from './components/dialogs/settings';
 import { WorkspaceManager } from './components/dialogs/workspaceManager';
 import { ActivityBar } from './layouts/ActivityBar';
@@ -46,14 +46,17 @@ export default function Layout() {
     <>
       <Allotment separator={false} vertical>
         <Allotment.Pane
-          key={styles.title}
-          className={styles.title}
+          key="desktopLayoutTitle"
+          className="desktopLayoutTitle"
           minSize={titleHeight + 1}
           maxSize={titleHeight + 1}
         >
           <Title />
         </Allotment.Pane>
-        <Allotment.Pane className={clsx('rootContent', styles.content)} key={styles.content}>
+        <Allotment.Pane
+          className={clsx('rootContent', 'desktopLayoutContent')}
+          key="desktopLayoutContent"
+        >
           <Allotment
             proportionalLayout={false}
             separator={false}
@@ -62,8 +65,8 @@ export default function Layout() {
             onDragEnd={() => setIsDrag(false)}
           >
             <Allotment.Pane
-              key={styles.contentActivityBar}
-              className={clsx('contentActivityBar', styles.contentActivityBar)}
+              key="desktopLayoutContentActivityBar"
+              className={clsx('contentActivityBar', 'desktopLayoutContentActivityBar')}
               minSize={48}
               maxSize={48}
               visible={true}
@@ -76,8 +79,8 @@ export default function Layout() {
               />
             </Allotment.Pane>
             <Allotment.Pane
-              key={styles.contentSidebar}
-              className={clsx('contentSidebar', styles.contentSidebar)}
+              key="desktopLayoutContentSidebar"
+              className={clsx('contentSidebar', 'desktopLayoutContentSidebar')}
               minSize={170}
               priority={LayoutPriority.Low}
               preferredSize={300}
@@ -87,16 +90,16 @@ export default function Layout() {
               <SideBar tabValue={tabValue} />
             </Allotment.Pane>
             <Allotment.Pane
-              key={styles.contentContent}
-              className={clsx('contentContent', styles.contentContent)}
+              key="desktopLayoutContentContent"
+              className={clsx('contentContent', 'desktopLayoutContentContent')}
               minSize={300}
               priority={LayoutPriority.High}
             >
               <Index />
             </Allotment.Pane>
             <Allotment.Pane
-              key={styles.contentAssistSideBar}
-              className={clsx('contentAssistSideBar', styles.contentAssistSideBar)}
+              key="desktopLayoutContentAssistSideBar"
+              className={clsx('contentAssistSideBar', 'desktopLayoutContentAssistSideBar')}
               minSize={170}
               priority={LayoutPriority.Low}
               preferredSize={300}
@@ -107,8 +110,8 @@ export default function Layout() {
           </Allotment>
         </Allotment.Pane>
         <Allotment.Pane
-          key={styles.statusBar}
-          className={clsx('statusBar', styles.statusBar)}
+          key="desktopLayoutStatusBar"
+          className={clsx('statusBar', 'desktopLayoutStatusBar')}
           minSize={22}
           maxSize={22}
         >

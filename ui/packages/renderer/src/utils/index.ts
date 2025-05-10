@@ -34,6 +34,14 @@ export const utils = {
     }
     return new TinyColor(color).toHexString();
   },
+  isDesktop: () => {
+    const { platform } = utils.detectBrowserAndPlatform();
+    return platform === 'windows' || platform === 'mac' || platform === 'linux';
+  },
+  isMobile: () => {
+    const { platform } = utils.detectBrowserAndPlatform();
+    return platform === 'android' || platform === 'ios';
+  },
   detectBrowserAndPlatform: () => {
     const userAgent = navigator.userAgent;
     const isIE = !!(document as any).documentMode;

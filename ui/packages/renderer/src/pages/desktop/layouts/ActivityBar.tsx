@@ -6,7 +6,7 @@ import { useSettingsState } from '../components/dialogs/settings';
 import { useWorkspaceManagerState } from '../components/dialogs/workspaceManager';
 // import { VscExtensions } from 'react-icons/vsc';
 
-import styles from './ActivityBar.module.scss';
+import './ActivityBar.scss';
 
 export interface ActivityBarProps {
   tabValue: string | undefined;
@@ -74,11 +74,11 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   const curTabValue = tabValue || tabs[0].value;
 
   return (
-    <div className={styles.title}>
-      <div style={{ height: topHeight }} className={styles.titleTop}>
+    <div className="desktopLayoutActivityBarTitle">
+      <div style={{ height: topHeight }} className="desktopLayoutActivityBarTitleTop">
         <Tabs.Root
           aria-label="ActivityTabs"
-          className={styles.titleTabRoot}
+          className="desktopLayoutActivityBarTitleTabRoot"
           value={isShowTabContent ? curTabValue : ''}
           orientation="vertical"
         >
@@ -91,7 +91,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
                     style={{
                       backgroundColor: isSelect ? 'var(--accent-a3)' : undefined,
                     }}
-                    className={styles.titleTabItem}
+                    className="desktopLayoutActivityBarTitleTabItem"
                     key={tab.value}
                     value={tab.value}
                     onClick={() => {
@@ -111,14 +111,17 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
           </Tabs.List>
         </Tabs.Root>
       </div>
-      <div style={{ height: bottomHeight, gap: bottomGap }} className={styles.titleBottom}>
+      <div
+        style={{ height: bottomHeight, gap: bottomGap }}
+        className="desktopLayoutActivityBarTitleBottom"
+      >
         {fixedBtns.map((item) => (
           <Tooltip key={item.value} content={item.tooltip} side="right">
             <Button
               variant="ghost"
               key={item.value}
               onClick={() => onBtnClick(item.value)}
-              className={styles.titleBottomItem}
+              className="desktopLayoutActivityBarTitleBottomItem"
             >
               {item.title}
             </Button>

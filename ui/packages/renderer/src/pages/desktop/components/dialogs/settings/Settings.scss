@@ -1,0 +1,82 @@
+.settings {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 0;
+
+  .settingsTabs {
+    height: 100%;
+    width: 180px;
+  }
+
+  .settingsTabItem {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+  .settingsTabItem span {
+    margin: 0;
+    padding: 10px;
+    width: 100%;
+    height: 100%;
+    justify-content: left;
+  }
+
+  .settingsContentWrap {
+    width: 100%;
+    padding: 5px 0px 0px 10px;
+  }
+
+  .settingsContent {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    gap: 10px;
+  }
+
+  .globalSettings {
+    @extend .settingsContent;
+  }
+
+  .workspaceSettings {
+    @extend .settingsContent;
+  }
+
+  .appearanceSettings {
+    @extend .settingsContent;
+  }
+
+  .rowSettings {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 40px;
+    justify-content: space-between;
+    align-items: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rowSettingsLeft {
+    width: 40%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    padding-right: 10px;
+  }
+
+  .rowSettingsRight {
+    width: 60%;
+    height: 40px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-right: 5px;
+    gap: 5px;
+  }
+}

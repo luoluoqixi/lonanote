@@ -28,8 +28,8 @@ import { workspaceController } from '@/controller/workspace';
 import { EditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
-import styles from './Index.module.scss';
-import { useSearchParams } from './routes';
+import { useSearchParams } from '../routes';
+import './Index.scss';
 
 const EmptyIndex = () => {
   return (
@@ -239,12 +239,12 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
     }
   };
   return (
-    <div className={styles.indexContentTopToolbar}>
-      <div className={styles.indexContentTopToolbarLeft}>
+    <div className="desktopIndexContentTopToolbar">
+      <div className="desktopIndexContentTopToolbarLeft">
         <Tooltip content="返回">
           <Button
             disabled={!canBack}
-            className={styles.indexContentTopToolbarRightBtn}
+            className="desktopIndexContentTopToolbarRightBtn"
             onClick={() => toToolBtnBack('back')}
             color="gray"
             variant="ghost"
@@ -255,7 +255,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         <Tooltip content="前进">
           <Button
             disabled={!canForward}
-            className={styles.indexContentTopToolbarRightBtn}
+            className="desktopIndexContentTopToolbarRightBtn"
             onClick={() => toToolBtnBack('forward')}
             color="gray"
             variant="ghost"
@@ -264,7 +264,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
           </Button>
         </Tooltip>
       </div>
-      <div className={styles.indexContentTopToolbarCenter}>
+      <div className="desktopIndexContentTopToolbarCenter">
         <Breadcrumb.Lazy
           path={relativePath}
           onItemClick={(path) => {
@@ -273,7 +273,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         />
         <div style={{ height: '20px', marginLeft: 2 }}>{showDirty && isDirty && '*'}</div>
       </div>
-      <div className={styles.indexContentTopToolbarRight}>
+      <div className="desktopIndexContentTopToolbarRight">
         {/** 切换编辑器功能 */
         /* <Dropdown
           items={editorBackEndMenu}
@@ -296,7 +296,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
             disabled: !supportEditorModeChange(editorBackEnd),
           }}
         >
-          <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
+          <Button className="desktopIndexContentTopToolbarRightBtn" color="gray" variant="ghost">
             <Tooltip content="切换编辑模式" side="bottom">
               {editorModeMenu.find((item) => item.id === editorMode)?.icon}
             </Tooltip>
@@ -304,7 +304,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         </Dropdown>
         <Tooltip content={editorIsReadOnly ? '切换到编辑模式' : '切换到预览模式'}>
           <Button
-            className={styles.indexContentTopToolbarRightBtn}
+            className="desktopIndexContentTopToolbarRightBtn"
             color="gray"
             variant="ghost"
             onClick={changeEditorIsReadOnly}
@@ -313,7 +313,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
           </Button>
         </Tooltip>
         <Dropdown items={moreMenu} onMenuClick={menuClick}>
-          <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
+          <Button className="desktopIndexContentTopToolbarRightBtn" color="gray" variant="ghost">
             <Tooltip content="更多选项" side="bottom">
               <IoMdMore />
             </Tooltip>
@@ -335,16 +335,16 @@ export default function Index() {
     [filePath],
   );
   return (
-    <div className={styles.indexRoot}>
+    <div className="desktopIndexRoot">
       {currentWorkspace == null ? (
         <EmptyWorkspaceIndex />
       ) : filePath == null ? (
         <EmptyIndex />
       ) : (
-        <div className={styles.indexContent}>
+        <div className="desktopIndexContent">
           <TopToolbar filePath={fullPath!} relativePath={filePath} />
           <Editor
-            className={styles.indexContentEditor}
+            className="desktopIndexContentEditor"
             file={filePath}
             currentWorkspace={currentWorkspace}
             readOnly={editorIsReadOnly}

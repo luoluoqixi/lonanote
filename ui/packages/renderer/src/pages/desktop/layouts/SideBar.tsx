@@ -1,6 +1,6 @@
 import React, { lazy } from 'react';
 
-import styles from './SideBar.module.scss';
+import './SideBar.scss';
 
 const tabsRenders: Record<string, React.FC<any>> = {
   explorer: lazy(() => import('./sideBarTabs/Explorer')),
@@ -19,5 +19,5 @@ export const SideBar: React.FC<SideBarProps> = ({ tabValue }) => {
     }
     return <></>;
   };
-  return <div className={styles.sidebar}>{getTabRender(tabValue)}</div>;
+  return <div className="desktopLayoutSidebarRoot">{getTabRender(tabValue)}</div>;
 };

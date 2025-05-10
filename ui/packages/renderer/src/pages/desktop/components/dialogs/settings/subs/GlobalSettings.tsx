@@ -13,7 +13,7 @@ import {
 } from '@/controller/settings';
 
 import { BaseSettingsPanelProps, ResetButton } from '../Settings';
-import styles from '../Settings.module.scss';
+import '../Settings.scss';
 
 const isShowDevUI = true;
 
@@ -22,42 +22,42 @@ export interface GlobalSettingsProps extends BaseSettingsPanelProps {}
 export const GlobalSettings: React.FC<GlobalSettingsProps> = () => {
   const settings = useSettings((s) => s.settings);
   return settings ? (
-    <div className={styles.globalSettings}>
-      <div className={styles.rowSettings}>
-        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+    <div className="globalSettings">
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
           自动检查更新：
         </Text>
-        <div className={styles.rowSettingsRight}>
+        <div className="rowSettingsRight">
           <Switch
             checked={settings.autoCheckUpdate}
             onCheckedChange={(v) => setSettingsAutoCheckUpdate(v)}
           />
         </div>
       </div>
-      <div className={styles.rowSettings}>
-        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
           自动打开上次工作区：
         </Text>
-        <div className={styles.rowSettingsRight}>
+        <div className="rowSettingsRight">
           <Switch
             checked={settings.autoOpenLastWorkspace}
             onCheckedChange={(v) => setSettingsAutoOpenLastWorkspace(v)}
           />
         </div>
       </div>
-      <div className={styles.rowSettings}>
-        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
           编辑时自动保存：
         </Text>
-        <div className={styles.rowSettingsRight}>
+        <div className="rowSettingsRight">
           <Switch checked={settings.autoSave} onCheckedChange={(v) => setSettingsAutoSave(v)} />
         </div>
       </div>
-      <div className={styles.rowSettings}>
-        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
           自动保存间隔 (秒)：
         </Text>
-        <div className={styles.rowSettingsRight}>
+        <div className="rowSettingsRight">
           <TextField.Root
             readOnly={!settings.autoSave}
             style={{ width: '100%' }}
@@ -77,11 +77,11 @@ export const GlobalSettings: React.FC<GlobalSettingsProps> = () => {
           <ResetButton onClick={() => resetSettingsAutoSaveInterval()} />
         </div>
       </div>
-      <div className={styles.rowSettings}>
-        <Text as="div" size="2" className={styles.rowSettingsLeft}>
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
           失去焦点时自动保存：
         </Text>
-        <div className={styles.rowSettingsRight}>
+        <div className="rowSettingsRight">
           <Switch
             checked={settings.autoSaveFocusChange}
             onCheckedChange={(v) => setSettingsAutoSaveFocusChange(v)}
@@ -89,11 +89,11 @@ export const GlobalSettings: React.FC<GlobalSettingsProps> = () => {
         </div>
       </div>
       {config.isDev && isShowDevUI && (
-        <div className={styles.rowSettings}>
-          <Text as="div" size="2" className={styles.rowSettingsLeft}>
+        <div className="rowSettings">
+          <Text as="div" size="2" className="rowSettingsLeft">
             {'配置目录(开发模式)：'}
           </Text>
-          <div className={styles.rowSettingsRight}>
+          <div className="rowSettingsRight">
             <Button
               variant="ghost"
               onClick={async () => {

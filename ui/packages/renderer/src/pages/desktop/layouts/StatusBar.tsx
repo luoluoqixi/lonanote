@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 
 import { useEditor } from '@/controller/editor';
 
-import styles from './StatusBar.module.scss';
+import './StatusBar.scss';
 
 export interface StatusBarProps {}
 
@@ -59,11 +59,11 @@ const StatusBarRight = () => {
 
 export const StatusBar: React.FC<StatusBarProps> = () => {
   return (
-    <div className={styles.statusBar}>
-      <div className={styles.statusBarLeft}>
+    <div className="desktopLayoutStatusBarRoot">
+      <div className="desktopLayoutStatusBarLeft">
         <StatusBarLeft />
       </div>
-      <div className={styles.statusBarRight}>
+      <div className="desktopLayoutStatusBarRight">
         <StatusBarRight />
       </div>
     </div>

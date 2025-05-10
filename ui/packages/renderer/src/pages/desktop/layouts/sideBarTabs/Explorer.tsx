@@ -34,7 +34,7 @@ import { workspaceController, workspaceManagerController } from '@/controller/wo
 import { useEffect } from '@/hooks';
 import { timeUtils, utils } from '@/utils';
 
-import styles from './Explorer.module.scss';
+import './Explorer.scss';
 
 const onOpenWorkspace = async () => {
   await workspaceManagerController.selectOpenWorkspace();
@@ -77,12 +77,12 @@ const sortMenu: ContextMenuItem[] = [
 
 const NoWorkspace = () => {
   return (
-    <div className={styles.noWorkspace}>
+    <div className="noWorkspace">
       <Text as="div" size="2">
         没有打开工作区
       </Text>
-      <div className={styles.handleButtonList}>
-        <Button className={styles.handleButton} onClick={onOpenWorkspace}>
+      <div className="handleButtonList">
+        <Button className="handleButton" onClick={onOpenWorkspace}>
           打开工作区（文件夹）
         </Button>
         {/* <Button size="xs" className={styles.handleButton}>
@@ -95,7 +95,7 @@ const NoWorkspace = () => {
 
 const LoadingWorkspace = () => {
   return (
-    <div className={styles.workspaceLoading}>
+    <div className="workspaceLoading">
       <div className="spinner-wrap-class">
         <Spinner />
         <Text style={{ marginLeft: '10px' }} size="2">
@@ -502,12 +502,12 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
 
   return (
     <>
-      <div className={styles.workspaceExplorer}>
-        <div className={styles.workspaceExplorerTitle}>
-          <Text as="div" size="3" className={styles.workspaceExplorerTitleText}>
+      <div className="workspaceExplorer">
+        <div className="workspaceExplorerTitle">
+          <Text as="div" size="3" className="workspaceExplorerTitleText">
             {workspace.metadata.name}
           </Text>
-          <div className={styles.workspaceExplorerTitleButtons}>
+          <div className="workspaceExplorerTitleButtons">
             <Dropdown
               items={sortMenu}
               onMenuClick={sortClick}
@@ -541,7 +541,7 @@ const WorkspaceExploreer = ({ workspace }: WorkspaceExplorerProps) => {
             </Tooltip>
           </div>
         </div>
-        <div className={styles.workspaceExplorerTree}>
+        <div className="workspaceExplorerTree">
           <Tree
             ref={treeRef}
             items={treeItems}
@@ -621,7 +621,7 @@ const Explorer: React.FC<ExplorerProps> = () => {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
   const isWorkspaceLoading = workspaceController.useWorkspace((s) => s.isWorkspaceLoading);
   return (
-    <div className={styles.explorer}>
+    <div className="sidebarExplorer">
       {isWorkspaceLoading ? (
         <LoadingWorkspace />
       ) : currentWorkspace == null ? (

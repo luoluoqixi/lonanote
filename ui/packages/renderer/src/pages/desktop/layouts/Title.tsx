@@ -1,9 +1,9 @@
 import React from 'react';
 
-import styles from './Title.module.scss';
+import './Title.scss';
 
 export interface TitleProps {}
 
 export const Title: React.FC<TitleProps> = () => {
-  return <div className={styles.title}>LonaNote</div>;
+  return <div className="desktopLayoutTitleRoot">LonaNote</div>;
 };

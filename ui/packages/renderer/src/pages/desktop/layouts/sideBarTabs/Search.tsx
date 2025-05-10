@@ -1,11 +1,11 @@
 import React from 'react';
 
-import styles from './Search.module.scss';
+import './Search.scss';
 
 interface SearchProps {}
 
 const Search: React.FC<SearchProps> = () => {
-  return <div className={styles.search}>搜索：TODO</div>;
+  return <div className="sidebarSearch">搜索：TODO</div>;
 };
 
 export default Search;

@@ -1,4 +1,4 @@
-.sidebar {
+.desktopLayoutSidebarRoot {
   height: 100%;
   width: calc(100% - 1px);
   border-right: 1px solid var(--gray-6);
@@ -8,6 +8,6 @@
   display: none;
 }
 
-:global(.contentSidebar):global(.split-view-view-visible) .sidebar {
+.contentSidebar.split-view-view-visible .desktopLayoutSidebarRoot {
   display: block;
 }

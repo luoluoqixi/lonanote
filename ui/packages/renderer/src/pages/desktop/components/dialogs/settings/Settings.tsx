@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { RiResetLeftLine } from 'react-icons/ri';
 import { create } from 'zustand';
 
-import styles from './Settings.module.scss';
+import './Settings.scss';
 import { AppearanceSettings } from './subs/AppearanceSettings';
 import { GlobalSettings } from './subs/GlobalSettings';
 import { WorkspaceSettings } from './subs/WorkspaceSettings';
@@ -85,9 +85,9 @@ export const Settings: React.FC<SettingsProps> = () => {
             backgroundColor: 'var(--gray-1)',
           }}
         >
-          <div className={styles.settings}>
+          <div className="settings">
             <Tabs.Root
-              className={styles.settingsTabs}
+              className="settingsTabs"
               orientation="vertical"
               aria-label="SettingsTabs"
               value={selectedValue}
@@ -100,18 +100,14 @@ export const Settings: React.FC<SettingsProps> = () => {
               <Tabs.List wrap="wrap" style={{ width: '100%', boxShadow: 'none' }}>
                 {settingsTabs.map((tab) => {
                   return (
-                    <Tabs.Trigger
-                      className={styles.settingsTabItem}
-                      key={tab.value}
-                      value={tab.value}
-                    >
+                    <Tabs.Trigger className="settingsTabItem" key={tab.value} value={tab.value}>
                       {tab.title}
                     </Tabs.Trigger>
                   );
                 })}
               </Tabs.List>
             </Tabs.Root>
-            <div className={styles.settingsContentWrap}>
+            <div className="settingsContentWrap">
               {selectedValue === 'globalSettings' && <GlobalSettings />}
               {selectedValue === 'workspaceSettings' && <WorkspaceSettings />}
               {selectedValue === 'appearance' && <AppearanceSettings />}

@@ -1,6 +1,6 @@
 @use '../../../styles/index.scss';
 
-.title {
+.desktopLayoutActivityBarTitle {
   @extend %window-title-drag;
   height: 100%;
   // width: 100%;
@@ -15,7 +15,7 @@
   user-select: none;
 }
 
-.titleTop {
+.desktopLayoutActivityBarTitleTop {
   margin: 0;
   width: 100%;
   overflow-y: auto;
@@ -23,14 +23,14 @@
   padding-top: 2px;
 }
 
-:global(.windows) {
-  .titleTop::-webkit-scrollbar {
+.windows {
+  .desktopLayoutActivityBarTitleTop::-webkit-scrollbar {
     width: 0;
     height: 0;
   }
 }
 
-.titleTabRoot {
+.desktopLayoutActivityBarTitleTabRoot {
   @extend %window-title-no-drag;
   margin-top: 2px;
   display: flex;
@@ -41,21 +41,21 @@
   overflow: visible;
 }
 
-.titleTabItem {
+.desktopLayoutActivityBarTitleTabItem {
   @extend %window-title-no-drag;
   padding: 0;
   margin: 0;
   width: 100%;
   justify-content: center;
 }
-.titleTabItem span {
+.desktopLayoutActivityBarTitleTabItem span {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
 }
 
-.titleBottom {
+.desktopLayoutActivityBarTitleBottom {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -64,7 +64,7 @@
   margin-bottom: 4px;
 }
 
-.titleBottomItem {
+.desktopLayoutActivityBarTitleBottomItem {
   @extend %window-title-no-drag;
   width: 40px;
   height: 40px;

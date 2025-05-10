@@ -1,4 +1,4 @@
-.statusBar {
+.desktopLayoutStatusBarRoot {
   height: 100%;
   width: 100%;
   background-color: var(--color-background);
@@ -11,13 +11,13 @@
   user-select: none;
 }
 
-.statusBarLeft {
+.desktopLayoutStatusBarLeft {
   display: flex;
   justify-content: start;
   align-items: center;
 }
 
-.statusBarRight {
+.desktopLayoutStatusBarRight {
   display: flex;
   justify-content: start;
   align-items: center;

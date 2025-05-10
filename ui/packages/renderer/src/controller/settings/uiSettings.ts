@@ -1,7 +1,9 @@
 import {
   Size,
   ThemeColorType,
+  UIPlatform,
   defaultThemeColor,
+  defaultUIPlatform,
   saveUISettings,
   themeColors,
   useUISettingsStore,
@@ -20,6 +22,32 @@ export const setThemeColor = (themeColor: ThemeColorType) => {
     saveUISettings(newState);
     return newState;
   });
+};
+
+export const setUIPlatform = (uiPlatform: UIPlatform) => {
+  useUISettingsStore.setState((s) => {
+    const newState = { ...s, uiPlatform };
+    saveUISettings(newState);
+    return newState;
+  });
+};
+
+export const changeToDesktopUI = () => {
+  setUIPlatform('desktop');
+};
+
+export const changeToMobileUI = () => {
+  setUIPlatform('mobile');
+};
+
+export const useUIPlatform = () => {
+  const uiPlatform = useUISettings((s) => s.uiPlatform) || defaultUIPlatform;
+  const isDesktop = uiPlatform !== 'mobile';
+  const isMobile = uiPlatform === 'mobile';
+  return {
+    isDesktop,
+    isMobile,
+  };
 };
 
 export const setZoom = async (zoom: number) => {

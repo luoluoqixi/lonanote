@@ -5,7 +5,7 @@ import { utils } from '@/utils';
 import { useEffect } from './useEffect';
 import { useInited } from './useInited';
 
-export const defaultTitleHeight = 30;
+export const defaultTitleHeight = utils.isDesktop() ? 30 : 0;
 
 export const useWindowTitleHeight = () => {
   const [titleHeight, setTitleHeight] = useState(defaultTitleHeight);

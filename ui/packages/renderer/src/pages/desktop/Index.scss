@@ -1,24 +1,24 @@
 $content-top-toolbar-height: 50px;
 
-.indexRoot {
+.desktopIndexRoot {
   width: 100%;
   height: 100%;
 }
 
-.indexContent {
+.desktopIndexContent {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.indexContentEditor {
+.desktopIndexContentEditor {
   width: 100%;
   height: calc(100% - $content-top-toolbar-height);
   flex-grow: 1;
 }
 
-.indexContentTopToolbar {
+.desktopIndexContentTopToolbar {
   height: $content-top-toolbar-height;
   flex-shrink: 0;
   display: flex;
@@ -30,7 +30,7 @@ $content-top-toolbar-height: 50px;
   user-select: none;
 }
 
-.indexContentTopToolbarCommon {
+.desktopIndexContentTopToolbarCommon {
   display: flex;
   flex-wrap: nowrap;
   text-overflow: ellipsis;
@@ -39,28 +39,28 @@ $content-top-toolbar-height: 50px;
   flex-direction: row;
 }
 
-.indexContentTopToolbarLeft {
-  @extend .indexContentTopToolbarCommon;
+.desktopIndexContentTopToolbarLeft {
+  @extend .desktopIndexContentTopToolbarCommon;
   gap: 15px;
 }
 
-.indexContentTopToolbarCenter {
-  @extend .indexContentTopToolbarCommon;
+.desktopIndexContentTopToolbarCenter {
+  @extend .desktopIndexContentTopToolbarCommon;
   flex-shrink: 1;
   min-width: 0;
 }
 
-.indexContentTopToolbarRight {
-  @extend .indexContentTopToolbarCommon;
+.desktopIndexContentTopToolbarRight {
+  @extend .desktopIndexContentTopToolbarCommon;
   gap: 15px;
 }
 
-.indexContentTopToolbarRightBtn {
+.desktopIndexContentTopToolbarRightBtn {
   width: 18px;
   height: 18px;
   padding: 6px;
 }
-.indexContentTopToolbarRightBtn svg {
+.desktopIndexContentTopToolbarRightBtn svg {
   width: 18px;
   height: 18px;
 }

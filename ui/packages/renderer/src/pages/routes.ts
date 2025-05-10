@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 
-import Layout from './Layout';
-
 export const navigate = (to: string, options?: { replace?: boolean; state?: any }) => {
   throw new Error('desktop navigate not support');
 };
@@ -159,7 +157,3 @@ window.forwardFile = forwardFile;
 window.useFileHistory = useFileHistory;
 window.clearFileHistory = clearFileHistory;
 window.getCurrentFile = getCurrentFile;
-
-export const Routes = () => {
-  return <Layout />;
-};
