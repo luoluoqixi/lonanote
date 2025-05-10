@@ -5,7 +5,7 @@ identifier = "com.lonalabs.lonanote"
 [build]
 beforeDevCommand = "pnpm dev:web"
 beforeBuildCommand = "pnpm build:web"
-frontendDist = "../../ui/renderer/dist"
+frontendDist = "../../ui/packages/renderer/dist"
 devUrl = "http://localhost:8000"
 
 [bundle]

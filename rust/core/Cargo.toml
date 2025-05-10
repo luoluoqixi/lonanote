@@ -28,7 +28,10 @@ chrono = { workspace = true }
 indexmap = { workspace = true }
 alphanumeric-sort = { workspace = true }
 encoding_rs = { workspace = true }
-reqwest = { workspace = true, features = ["stream"] }
+reqwest = { workspace = true, default-features = false, features = [
+  "stream",
+  "rustls-tls",
+] }
 futures = { workspace = true }
 
 # [target.'cfg(target_os = "windows")'.dependencies]

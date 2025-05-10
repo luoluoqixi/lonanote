@@ -14,7 +14,7 @@ import {
 } from '@/controller/settings';
 import { ThemeColorType } from '@/models/settings';
 
-import { BaseSettingsPanelProps, ResetButton } from '../Settings';
+import { BaseSettingsPanelProps, ResetButton, useSettingsState } from '../Settings';
 import '../Settings.scss';
 
 export interface AppearanceSettingsProps extends BaseSettingsPanelProps {}
@@ -108,6 +108,7 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
           <Button
             variant="ghost"
             onClick={() => {
+              useSettingsState.getState().setIsOpen(false);
               changeToMobileUI();
             }}
           >

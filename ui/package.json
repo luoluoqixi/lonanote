@@ -13,7 +13,7 @@
     "dev:android": "pnpm tauri:cmd android dev --open",
     "dev:ios": "pnpm tauri:cmd ios dev --open --host",
     "build": "pnpm run build:rust:node && pnpm --filter=\"./packages/desktop\" run build",
-    "build:web": "pnpm --filter=\"./packages/desktop\" run build:web",
+    "build:web": "pnpm --filter=\"./packages/renderer\" run build",
     "build:android": "pnpm tauri:cmd android build --open",
     "build:ios": "pnpm tauri:cmd ios build --open",
     "postinstall": "tsx ./scripts/postinstall.ts",

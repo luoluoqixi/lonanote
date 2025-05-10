@@ -10,7 +10,6 @@ use lonanote_commands::{
     reg_command, reg_command_async,
     result::{CommandResponse, CommandResult},
 };
-use rfd::AsyncFileDialog;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::{self, fs_utils};
@@ -160,10 +159,10 @@ fn write(Json(args): Json<WriteArg>) -> CommandResult {
 }
 
 fn show_in_folder(Json(args): Json<PathArg>) -> CommandResult {
-    use std::process::Command;
-    let path = args.path;
     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
     {
+        use std::process::Command;
+        let path = args.path;
         #[cfg(target_os = "windows")]
         let path = path.replace("/", "\\");
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -272,65 +271,74 @@ struct SelectDialogArgs {
 }
 
 async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> CommandResult {
-    let mut file = AsyncFileDialog::new();
-    if let Some(title) = args.title {
-        file = file.set_title(title);
-    };
-    if let Some(default_directory) = args.default_directory {
-        file = file.set_directory(default_directory);
-    };
-    if let Some(default_file_name) = args.default_file_name {
-        file = file.set_file_name(default_file_name);
-    };
-    if let Some(filters) = args.filters {
-        for f in filters.into_iter() {
-            file = file.add_filter(f.name, &f.extensions);
-        }
-    };
-    match args.r#type {
-        SelectDialogType::OpenFile => {
-            let f = file.pick_file().await;
-            match f {
-                Some(f) => CommandResponse::json(f.path().display().to_string()),
-                None => Ok(CommandResponse::None),
+    #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
+    {
+        use rfd::AsyncFileDialog;
+        let mut file = AsyncFileDialog::new();
+        if let Some(title) = args.title {
+            file = file.set_title(title);
+        };
+        if let Some(default_directory) = args.default_directory {
+            file = file.set_directory(default_directory);
+        };
+        if let Some(default_file_name) = args.default_file_name {
+            file = file.set_file_name(default_file_name);
+        };
+        if let Some(filters) = args.filters {
+            for f in filters.into_iter() {
+                file = file.add_filter(f.name, &f.extensions);
+            }
+        };
+        match args.r#type {
+            SelectDialogType::OpenFile => {
+                let f = file.pick_file().await;
+                match f {
+                    Some(f) => CommandResponse::json(f.path().display().to_string()),
+                    None => Ok(CommandResponse::None),
+                }
+            }
+            SelectDialogType::OpenFiles => {
+                let files = file.pick_files().await;
+                match files {
+                    Some(fs) => CommandResponse::json(
+                        fs.iter()
+                            .map(|f| f.path().display().to_string())
+                            .collect::<Vec<String>>(),
+                    ),
+                    None => Ok(CommandResponse::None),
+                }
+            }
+            SelectDialogType::OpenFolder => {
+                let f = file.pick_folder().await;
+                match f {
+                    Some(f) => CommandResponse::json(f.path().display().to_string()),
+                    None => Ok(CommandResponse::None),
+                }
+            }
+            SelectDialogType::OpenFolders => {
+                let folders = file.pick_folders().await;
+                match folders {
+                    Some(fs) => CommandResponse::json(
+                        fs.iter()
+                            .map(|f| f.path().display().to_string())
+                            .collect::<Vec<String>>(),
+                    ),
+                    None => Ok(CommandResponse::None),
+                }
+            }
+            SelectDialogType::SaveFile => {
+                let f = file.save_file().await;
+                match f {
+                    Some(f) => CommandResponse::json(f.path().display().to_string()),
+                    None => Ok(CommandResponse::None),
+                }
             }
         }
-        SelectDialogType::OpenFiles => {
-            let files = file.pick_files().await;
-            match files {
-                Some(fs) => CommandResponse::json(
-                    fs.iter()
-                        .map(|f| f.path().display().to_string())
-                        .collect::<Vec<String>>(),
-                ),
-                None => Ok(CommandResponse::None),
-            }
-        }
-        SelectDialogType::OpenFolder => {
-            let f = file.pick_folder().await;
-            match f {
-                Some(f) => CommandResponse::json(f.path().display().to_string()),
-                None => Ok(CommandResponse::None),
-            }
-        }
-        SelectDialogType::OpenFolders => {
-            let folders = file.pick_folders().await;
-            match folders {
-                Some(fs) => CommandResponse::json(
-                    fs.iter()
-                        .map(|f| f.path().display().to_string())
-                        .collect::<Vec<String>>(),
-                ),
-                None => Ok(CommandResponse::None),
-            }
-        }
-        SelectDialogType::SaveFile => {
-            let f = file.save_file().await;
-            match f {
-                Some(f) => CommandResponse::json(f.path().display().to_string()),
-                None => Ok(CommandResponse::None),
-            }
-        }
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos",)))]
+    {
+        Ok(CommandResponse::None)
     }
 }
 
