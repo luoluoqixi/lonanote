@@ -17,7 +17,7 @@ import { workspaceController, workspaceManagerController } from '@/controller/wo
 import { useEffect } from '@/hooks';
 import { timeUtils } from '@/utils';
 
-import styles from './WorkspaceManager.module.scss';
+import './WorkspaceManager.scss';
 
 export interface WorkspaceManagerProps {}
 
@@ -273,7 +273,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
         }}
       >
         <Dialog.Title>
-          <div className={styles.workspaceManagerTitle}>
+          <div className="workspaceManagerTitle">
             <div>工作区</div>
             <Button style={{ marginTop: '0px' }} variant="ghost" onClick={onOpenWorkspace}>
               打开新的工作区
@@ -289,7 +289,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
             backgroundColor: 'var(--gray-1)',
           }}
         >
-          <div className={styles.workspaceManager}>
+          <div className="workspaceManager">
             {workspaces.length > 0 ? (
               <>
                 {workspaces.map((val, i) => {
@@ -314,20 +314,20 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                       asChild
                     >
                       <div
-                        className={styles.workspaceRow}
+                        className="workspaceRow"
                         onPointerDown={(e) => {
                           if (e.button === 2) {
                             openMenuClick(i, e);
                           }
                         }}
                       >
-                        <div className={styles.workspaceRowLeft}>
-                          <Text as="div" size="2" className={styles.workspaceRowLeftContent}>
+                        <div className="workspaceRowLeft">
+                          <Text as="div" size="2" className="workspaceRowLeftContent">
                             <span>{name}</span>
                             <span>{path}</span>
                           </Text>
-                          <Text as="div" size="2" className={styles.workspaceLeftTime}>
-                            <div className={styles.workspaceLastOpenTime}>
+                          <Text as="div" size="2" className="workspaceLeftTime">
+                            <div className="workspaceLastOpenTime">
                               <Text as="span" size="2">
                                 {lastOpenTime}
                               </Text>
@@ -337,7 +337,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                             </Text>
                           </Text>
                         </div>
-                        <div className={styles.workspaceRowRight}>
+                        <div className="workspaceRowRight">
                           <Button
                             variant="ghost"
                             onClick={(e) => {
