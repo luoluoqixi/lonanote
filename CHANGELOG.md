@@ -1,13 +1,33 @@
 # Changelog
 
-## [v0.0.3](https://github.com/lona-labs/lonanote/compare/v0.0.2...10af32c88389e67118f0dc54fd258fa146f015ce) (2025-05-11)
+## [v0.0.4](https://github.com/lona-labs/lonanote/compare/v0.0.3...5bb98a31b694990798e9199cd2f2fb7a3d68a0d0) (2025-05-11)
 
 ### ✨ Features
+
+* about github url #23
+([5bb98a3](https://github.com/lona-labs/lonanote/commit/5bb98a31b694990798e9199cd2f2fb7a3d68a0d0)),
+closes [#23](https://github.com/lona-labs/lonanote/issues/23)
+* add about page, check update
+([a8a33f5](https://github.com/lona-labs/lonanote/commit/a8a33f5b80acd027b2a1b0e5de697d055bf1f6dd))
+
+### 🐛 Fixes
+
+* fix install nodejs error
+([17752b8](https://github.com/lona-labs/lonanote/commit/17752b8b38f1d6e2e1de3ff23cd2fa4e45aa9e73))
+
+### 📝 Documentation
+
+* update todo
+([db531b2](https://github.com/lona-labs/lonanote/commit/db531b2f293ca7375c1f6fe35c6548ac9fd7e719))
+
+### [v0.0.3](https://github.com/lona-labs/lonanote/compare/v0.0.2...v0.0.3) (2025-05-11)
+
+#### ✨ Features
 
 * import mobile ui f7, fix android build error
 ([9821854](https://github.com/lona-labs/lonanote/commit/982185476bb2e8c4784054ebb6dcf0b63e4ef7ba))
 
-### 🐛 Fixes
+#### 🐛 Fixes
 
 * fix window electron build error
 ([10af32c](https://github.com/lona-labs/lonanote/commit/10af32c88389e67118f0dc54fd258fa146f015ce))

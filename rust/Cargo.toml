@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 edition = "2021"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["luoluoqixi"]
 repository = "https://github.com/lona-labs/lonanote"
 license = ""
