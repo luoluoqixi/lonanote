@@ -1,8 +1,17 @@
 # Changelog
 
-## [v0.0.4](https://github.com/lona-labs/lonanote/compare/v0.0.3...5bb98a31b694990798e9199cd2f2fb7a3d68a0d0) (2025-05-11)
+## [v0.0.5](https://github.com/lona-labs/lonanote/compare/v0.0.4...d262d61e20cb21d6c036f2534bde93299beb9ee4) (2025-05-12)
 
-### ✨ Features
+### 🐛 Fixes
+
+* fix produce app version
+([d262d61](https://github.com/lona-labs/lonanote/commit/d262d61e20cb21d6c036f2534bde93299beb9ee4))
+* install node js, cache post error
+([fb22d5c](https://github.com/lona-labs/lonanote/commit/fb22d5c3874c81034bd37b886d753d67acc4fd6c))
+
+### [v0.0.4](https://github.com/lona-labs/lonanote/compare/v0.0.3...v0.0.4) (2025-05-11)
+
+#### ✨ Features
 
 * about github url #23
 ([5bb98a3](https://github.com/lona-labs/lonanote/commit/5bb98a31b694990798e9199cd2f2fb7a3d68a0d0)),
@@ -10,12 +19,12 @@ closes [#23](https://github.com/lona-labs/lonanote/issues/23)
 * add about page, check update
 ([a8a33f5](https://github.com/lona-labs/lonanote/commit/a8a33f5b80acd027b2a1b0e5de697d055bf1f6dd))
 
-### 🐛 Fixes
+#### 🐛 Fixes
 
 * fix install nodejs error
 ([17752b8](https://github.com/lona-labs/lonanote/commit/17752b8b38f1d6e2e1de3ff23cd2fa4e45aa9e73))
 
-### 📝 Documentation
+#### 📝 Documentation
 
 * update todo
 ([db531b2](https://github.com/lona-labs/lonanote/commit/db531b2f293ca7375c1f6fe35c6548ac9fd7e719))

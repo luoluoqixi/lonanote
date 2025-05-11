@@ -2423,7 +2423,7 @@ dependencies = [
 
 [[package]]
 name = "lonanote-commands"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2434,7 +2434,7 @@ dependencies = [
 
 [[package]]
 name = "lonanote-core"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "alphanumeric-sort",
  "anyhow",
@@ -2462,7 +2462,7 @@ dependencies = [
 
 [[package]]
 name = "lonanote-core-node"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "anyhow",
  "log",
@@ -2477,7 +2477,7 @@ dependencies = [
 
 [[package]]
 name = "lonanote-mobile"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "anyhow",
  "log",
