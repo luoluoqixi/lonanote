@@ -34,4 +34,5 @@
 * [ ] [打包时自动封装安装程序, 并接入更新检查与自动更新（使用Github查询更新） #19](https://github.com/lona-labs/lonanote/issues/19)
 * [ ] [补充详细的README介绍 #20](https://github.com/lona-labs/lonanote/issues/20)
 * [ ] [增加多语言支持 #21](https://github.com/lona-labs/lonanote/issues/21)
-* [ ] [github工作流: release 时自动 build](https://github.com/lona-labs/lonanote/issues/22)
+* [ ] [github工作流: release 时自动 build #22](https://github.com/lona-labs/lonanote/issues/22)
+* [ ] [桌面端增加关于菜单，增加版本号与LICENNSE #23](https://github.com/lona-labs/lonanote/issues/23)
