@@ -32,7 +32,7 @@ def get_current_version():
 def get_output_file_path(repo_root, build_dir, build_name, release_title, suffix):
     return os.path.join(repo_root, build_dir, f"{build_name}-{release_title}-{suffix}")
 
-def zip_release_to_file(dist_folder, output_file):
+def zip_folder_to_file(dist_folder, output_file):
     output_file_path = pathlib.Path(output_file)
     file_stem = output_file_path.stem
     dir_folder = os.path.dirname(output_file)
@@ -53,6 +53,20 @@ def zip_release_to_file(dist_folder, output_file):
 
     zip_file(target_folder, output_file)
 
+def move_file_to_file(dist_file, output_file):
+    output_file_path = pathlib.Path(output_file)
+    dir_folder = os.path.dirname(output_file)
+    dir_folder_path = pathlib.Path(dir_folder)
+    if not dir_folder_path.exists():
+        print(f"mkdir {dir_folder_path}")
+        dir_folder_path.mkdir(parents=True)
+    if os.path.exists(output_file_path):
+        print(f"delete target_file: {output_file_path}")
+        os.remove(output_file_path)
+        # shutil.rmtree(output_file_path)
+    print(f"move {dist_file} to {output_file_path}")
+    shutil.move(dist_file, output_file_path)
+
 def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
     if build_dir is None:
         build_dir = "build_output"
@@ -63,6 +77,8 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
     if release_title is None:
         release_title = f"v{get_current_version()}"
         print(f"get current version: {release_title}")
+
+    version = release_title[1:]
 
     platform = None
     if runner_name is not None:
@@ -100,10 +116,10 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
     # zip output
     if platform == "win":
         if suffix is None:
-            suffix = "windows.zip"
-        dist_folder = os.path.join(repo_root, "ui/packages/desktop/dist/win-unpacked")
+            suffix = "windows.exe"
+        dist_exe = os.path.join(repo_root, f"ui/packages/desktop/dist/lonanote Setup {version}.exe")
         output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        zip_release_to_file(dist_folder, output_file)
+        move_file_to_file(dist_exe, output_file)
 
 
 def main():

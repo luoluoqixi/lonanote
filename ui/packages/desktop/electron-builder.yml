@@ -37,7 +37,7 @@ win:
   icon: build/icons/icon_windows.ico
   target:
     # 目标封装类型: nsis, nsis-web, portable, appx, msi, squirrel, 7z, zip, tar.xz, tar.lz, tar.gz, tar.bz2, dir
-    target: dir
+    target: nsis
     # x64 | ia32 | armv7l | arm64 | x64 | ia32
     arch:
       - x64

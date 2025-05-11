@@ -62,7 +62,7 @@ jobs:
           #   suffix: 'linux.tar.gz'
           - os: windows-latest
             name: build windows
-            suffix: 'windows.zip'
+            suffix: 'windows.exe'
           # - os: macos-latest
           #   name: build mac-arm64
           #   suffix: 'mac-arm64.zip'
