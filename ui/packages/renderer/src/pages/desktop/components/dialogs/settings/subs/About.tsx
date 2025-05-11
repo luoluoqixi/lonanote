@@ -1,4 +1,4 @@
-import { Button, Spinner, Text, TextField } from '@radix-ui/themes';
+import { Button, Link, Spinner, Text, TextField } from '@radix-ui/themes';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -58,6 +58,14 @@ export const About: React.FC<AboutProps> = () => {
             <Spinner loading={checkUpdateLoading}></Spinner>
             检查更新
           </Button>
+        </div>
+      </div>
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
+          Github：
+        </Text>
+        <div className="rowSettingsRight">
+          <Link href={config.githubUrl}>{config.githubUrl}</Link>
         </div>
       </div>
     </div>

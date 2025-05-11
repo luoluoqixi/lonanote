@@ -4,4 +4,5 @@ export const config = {
   Mode: import.meta.env.MODE,
   buildMode: import.meta.env['LONANOTE_BUILD_MODE'],
   version: (window as any)['APP_VERSION'] as string,
+  githubUrl: 'https://github.com/lona-labs/lonanote',
 };
