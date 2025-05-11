@@ -3,6 +3,6 @@ export const config = {
   isProd: import.meta.env.PROD,
   Mode: import.meta.env.MODE,
   buildMode: import.meta.env['LONANOTE_BUILD_MODE'],
-  version: (window as any)['APP_VERSION'] as string,
+  version: __APP_VERSION__,
   githubUrl: 'https://github.com/lona-labs/lonanote',
 };

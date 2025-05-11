@@ -1,3 +1,5 @@
+declare const __APP_VERSION__: string;
+
 interface Window {
   initializeSuccess?: boolean;
   navigate?: (to: string, options?: { replace?: boolean; state?: any }) => void;

@@ -59,7 +59,7 @@ const commonConfig: UserConfig = {
       : undefined,
   },
   define: {
-    APP_VERSION: JSON.stringify(pkg.version),
+    __APP_VERSION__: JSON.stringify(pkg.version),
   },
 };
 
