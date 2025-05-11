@@ -4,6 +4,7 @@ import { RiResetLeftLine } from 'react-icons/ri';
 import { create } from 'zustand';
 
 import './Settings.scss';
+import { About } from './subs/About';
 import { AppearanceSettings } from './subs/AppearanceSettings';
 import { GlobalSettings } from './subs/GlobalSettings';
 import { WorkspaceSettings } from './subs/WorkspaceSettings';
@@ -21,6 +22,10 @@ export const useSettingsState = create<SettingsStore>((set) => ({
 }));
 
 const settingsTabs = [
+  {
+    value: 'about',
+    title: '关于',
+  },
   {
     value: 'globalSettings',
     title: '全局设置',
@@ -108,6 +113,7 @@ export const Settings: React.FC<SettingsProps> = () => {
               </Tabs.List>
             </Tabs.Root>
             <div className="settingsContentWrap">
+              {selectedValue === 'about' && <About />}
               {selectedValue === 'globalSettings' && <GlobalSettings />}
               {selectedValue === 'workspaceSettings' && <WorkspaceSettings />}
               {selectedValue === 'appearance' && <AppearanceSettings />}

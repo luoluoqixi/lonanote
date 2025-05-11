@@ -3,6 +3,8 @@ import path from 'path';
 import { UserConfig, defineConfig } from 'vite';
 import { viteVConsole } from 'vite-plugin-vconsole';
 
+import pkg from './package.json';
+
 const tauriDevHost = process.env.TAURI_DEV_HOST;
 
 export const defaultBuildConfig: UserConfig['build'] = {
@@ -56,9 +58,13 @@ const commonConfig: UserConfig = {
         }
       : undefined,
   },
+  define: {
+    APP_VERSION: JSON.stringify(pkg.version),
+  },
 };
 
 export const renderer: UserConfig = {
+  ...commonConfig,
   root: '../renderer',
   build: {
     ...defaultBuildConfig,
@@ -68,11 +74,11 @@ export const renderer: UserConfig = {
     },
   },
   define: {
+    ...commonConfig.define,
     __VUE_OPTIONS_API__: 'true',
     __VUE_PROD_DEVTOOLS__: 'false',
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
   },
-  ...commonConfig,
 };
 
 export default defineConfig({
@@ -82,5 +88,4 @@ export default defineConfig({
     outDir: 'dist',
     ...defaultBuildConfig,
   },
-  ...commonConfig,
 });

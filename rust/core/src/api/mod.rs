@@ -1,3 +1,4 @@
+mod app;
 mod fs;
 mod path;
 mod settings;
@@ -11,6 +12,7 @@ pub fn reg_commands() -> Result<()> {
     info!("register commands...");
 
     test::reg_commands()?;
+    app::reg_commands()?;
     path::reg_commands()?;
     fs::reg_commands()?;
     settings::reg_commands()?;

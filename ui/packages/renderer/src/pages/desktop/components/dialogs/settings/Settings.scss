@@ -50,6 +50,10 @@
     @extend .settingsContent;
   }
 
+  .about {
+    @extend .settingsContent;
+  }
+
   .rowSettings {
     display: flex;
     flex-direction: row;

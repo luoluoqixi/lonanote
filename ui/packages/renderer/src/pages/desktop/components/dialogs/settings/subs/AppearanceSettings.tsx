@@ -1,8 +1,8 @@
-import { Button, Select, Text, TextField } from '@radix-ui/themes';
+import { Select, Text, TextField } from '@radix-ui/themes';
 
 import { ColorModeSelect } from '@/components';
 import {
-  changeToMobileUI,
+  // changeToMobileUI,
   defaultThemeColor,
   isSupportResizeWindow,
   isSupportZoom,
@@ -14,7 +14,7 @@ import {
 } from '@/controller/settings';
 import { ThemeColorType } from '@/models/settings';
 
-import { BaseSettingsPanelProps, ResetButton, useSettingsState } from '../Settings';
+import { BaseSettingsPanelProps, ResetButton } from '../Settings';
 import '../Settings.scss';
 
 export interface AppearanceSettingsProps extends BaseSettingsPanelProps {}
@@ -104,7 +104,7 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
         <Text as="div" size="2" className="rowSettingsLeft">
           {'UI模式：'}
         </Text>
-        <div className="rowSettingsRight">
+        {/* <div className="rowSettingsRight">
           <Button
             variant="ghost"
             onClick={() => {
@@ -114,7 +114,7 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
           >
             切换到移动端UI
           </Button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
