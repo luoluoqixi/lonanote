@@ -1,8 +1,24 @@
 # Changelog
 
-## [v0.0.2](https://github.com/lona-labs/lonanote/compare/v0.0.1...19abf1f56be19fee6c75bb100855aed28e2e1e2a) (2025-05-09)
+## [v0.0.3](https://github.com/lona-labs/lonanote/compare/v0.0.2...10af32c88389e67118f0dc54fd258fa146f015ce) (2025-05-11)
 
 ### ✨ Features
+
+* import mobile ui f7, fix android build error
+([9821854](https://github.com/lona-labs/lonanote/commit/982185476bb2e8c4784054ebb6dcf0b63e4ef7ba))
+
+### 🐛 Fixes
+
+* fix window electron build error
+([10af32c](https://github.com/lona-labs/lonanote/commit/10af32c88389e67118f0dc54fd258fa146f015ce))
+* fix sidebar css
+([dcc712c](https://github.com/lona-labs/lonanote/commit/dcc712c7db8f087b57f5341951af5dd847672e0c))
+* fix pnpm install
+([b74f3d7](https://github.com/lona-labs/lonanote/commit/b74f3d77877d7943adc87ac4c925b5ffc9534a77))
+
+### [v0.0.2](https://github.com/lona-labs/lonanote/compare/v0.0.1...v0.0.2) (2025-05-09)
+
+#### ✨ Features
 
 * auto build windows #22
 ([34795c3](https://github.com/lona-labs/lonanote/commit/34795c3c9aeaf2bae349377d57dc82e72547113d)),
@@ -13,7 +29,7 @@ closes [#2](https://github.com/lona-labs/lonanote/issues/2)
 * release scripts
 ([8f06c3d](https://github.com/lona-labs/lonanote/commit/8f06c3db5868b2c47a0e465e89d76df70ad6f1f4))
 
-### 🐛 Fixes
+#### 🐛 Fixes
 
 * fix release.py changelog generate
 ([19abf1f](https://github.com/lona-labs/lonanote/commit/19abf1f56be19fee6c75bb100855aed28e2e1e2a))
@@ -22,7 +38,7 @@ closes [#2](https://github.com/lona-labs/lonanote/issues/2)
 * fix changelog script
 ([2fd4737](https://github.com/lona-labs/lonanote/commit/2fd47376cad4e4a653b1cbe672ada46340422a20))
 
-### 📝 Documentation
+#### 📝 Documentation
 
 * update todo
 ([ff299ca](https://github.com/lona-labs/lonanote/commit/ff299ca0a0068424e2776ae70f46866e5ea6d9ba))
