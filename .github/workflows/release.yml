@@ -89,9 +89,9 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          cache-dependency-path: 'ui/pnpm-lock.yaml'
           node-version: 20
-          cache: 'pnpm'
+          # cache-dependency-path: 'ui/pnpm-lock.yaml'
+          # cache: 'pnpm'
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
