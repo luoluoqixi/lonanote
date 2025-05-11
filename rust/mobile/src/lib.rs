@@ -11,7 +11,7 @@ fn init(app: &mut App) -> Result<()> {
     let path = app.handle().path();
     let id = &app.config().identifier;
     let cache_dir = path.temp_dir()?.to_str().unwrap().to_string();
-    let cache_dir = format!("{}/{}", cache_dir, id);
+    let cache_dir = format!("{cache_dir}/{id}");
     let data_dir = path.app_data_dir()?.to_str().unwrap().to_string();
     let download_dir = path.download_dir()?.to_str().unwrap().to_string();
     let home_dir = path.home_dir()?.to_str().unwrap().to_string();

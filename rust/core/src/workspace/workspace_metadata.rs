@@ -43,8 +43,7 @@ impl WorkspaceMetadata {
             .file_name()
             .map(|f| {
                 f.to_str().ok_or(WorkspaceError::UnknowError(format!(
-                    "parse file_name error: {:?}",
-                    f
+                    "parse file_name error: {f:?}"
                 )))
             })
             .unwrap_or(Ok("Unknow"))?

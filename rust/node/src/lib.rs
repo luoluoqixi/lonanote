@@ -22,9 +22,9 @@ pub fn init() -> Option<String> {
     match lonanote_core::init_log() {
         Ok(_) => match lonanote_core::init() {
             Ok(_) => None,
-            Err(err) => Some(format!("init rust error: {}", err)),
+            Err(err) => Some(format!("init rust error: {err}")),
         },
-        Err(err) => Some(format!("init_log error: {}", err)),
+        Err(err) => Some(format!("init_log error: {err}")),
     }
 }
 

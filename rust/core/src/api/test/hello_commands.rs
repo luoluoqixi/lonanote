@@ -22,7 +22,7 @@ pub async fn hello_command_async(Json(args): Json<Vec<String>>) -> CommandResult
 pub async fn hello_rust_call_js() -> CommandResult {
     let ret: Option<String> =
         invoke_command_js_lazy("rust_call_js_fn_key", Some("rust args".to_string())).await?;
-    println!("hello_rust_call_js: {:?}", ret);
+    println!("hello_rust_call_js: {ret:?}");
 
     Ok(CommandResponse::None)
 }

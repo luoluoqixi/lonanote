@@ -23,7 +23,7 @@ impl FileNode {
     fn new_node_ignore(root: &Path, entry: ignore::DirEntry) -> Result<FileNode, String> {
         let metadata = entry
             .metadata()
-            .map_err(|err| format!("error reading metadata: {}", err))?;
+            .map_err(|err| format!("error reading metadata: {err}"))?;
         let path = entry.path();
 
         Self::new_node(root, metadata, path)
@@ -31,7 +31,7 @@ impl FileNode {
     fn new_node(root: &Path, metadata: Metadata, path: &Path) -> Result<FileNode, String> {
         let relative_path = RelativePathBuf::from_path(
             path.strip_prefix(root)
-                .map_err(|err| format!("failed to create relative path: {:?}, {}", path, err))?,
+                .map_err(|err| format!("failed to create relative path: {path:?}, {err}"))?,
         )
         .map_err(|err| {
             format!(
@@ -112,7 +112,7 @@ impl FileNode {
 
         for rule in custom_ignore.lines() {
             if let Err(ignore_err) = ignore_builder.add_line(None, rule) {
-                log::error!("custom ignore line parse error: {}, {}", ignore_err, rule);
+                log::error!("custom ignore line parse error: {ignore_err}, {rule}");
             }
         }
 
@@ -128,13 +128,13 @@ impl FileNode {
         let root_node = match root_entry {
             Some(root_entry) => {
                 let root_entry =
-                    root_entry.map_err(|err| format!("error walking root directory: {}", err))?;
+                    root_entry.map_err(|err| format!("error walking root directory: {err}"))?;
                 let root_node = Self::new_node_ignore(root, root_entry)?;
 
                 let mut stack: Vec<&FileNode> = vec![&root_node];
 
                 for entry in dir_iter {
-                    let entry = entry.map_err(|err| format!("error walking directory: {}", err))?;
+                    let entry = entry.map_err(|err| format!("error walking directory: {err}"))?;
 
                     let path = entry.path();
                     if custom_ignore
