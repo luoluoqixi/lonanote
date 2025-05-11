@@ -34,7 +34,7 @@ jobs:
           RELEASE_TITLE=$(git describe --tags --abbrev=0)
           echo "release_title=$RELEASE_TITLE" >> $GITHUB_OUTPUT
           echo "release_body<<EOF" >> $GITHUB_OUTPUT
-          RELEASE_TITLE="$RELEASE_TITLE" python python/scripts/changelog.py >> $GITHUB_OUTPUT
+          RELEASE_TITLE="$RELEASE_TITLE" python cli/build/changelog.py >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
         env:
@@ -104,7 +104,7 @@ jobs:
 
       - name: Run build script
         run: |
-          python python/scripts/build.py
+          python cli/build/build.py
         env:
           RELEASE_TITLE: ${{ needs.release.outputs.release_title }}
           RUNNER_OS: ${{ runner.os }}
