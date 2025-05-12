@@ -100,11 +100,11 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
           </div>
         </div>
       )}
-      <div className="rowSettings">
+      {/* <div className="rowSettings">
         <Text as="div" size="2" className="rowSettingsLeft">
           {'UI模式：'}
         </Text>
-        {/* <div className="rowSettingsRight">
+        <div className="rowSettingsRight">
           <Button
             variant="ghost"
             onClick={() => {
@@ -114,8 +114,8 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = () => {
           >
             切换到移动端UI
           </Button>
-        </div> */}
-      </div>
+        </div>
+      </div> */}
     </div>
   );
 };
