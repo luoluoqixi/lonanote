@@ -19,6 +19,8 @@ flutter build ios --release
 
 ```
 # generate code
+cargo install flutter_rust_bridge_codegen
+
 cd ui/flutter
 flutter_rust_bridge_codegen generate
 ```
