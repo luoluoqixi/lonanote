@@ -19,6 +19,13 @@
 
 [待办事项](./docs/dev/todo.md)
 
-### 开发指南
+## 交流群
+
+[Github Discussions](https://github.com/lona-labs/lonanote/discussions)
+
+QQ群：978017481
+
+## 开发指南
 
 ##### [开发文档](./docs/dev/README.md)
+
