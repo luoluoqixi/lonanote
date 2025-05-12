@@ -3,19 +3,12 @@
 #### 开发环境
 
 - Windows / Mac / Linux
-  - `Rust` >= 1.85.0-nightly
-  - `Node` >= 20
-  - `pnpm` >= 9.15.0
-- Android
-  - 安装 `Android Studio` 和附带的 `SDK`、`NDK`、`Platform-Tools`
-  - 设置 `<android studio installation path>/jbr` 目录到JAVA_HOME 环境变量
-  - 设置 `ndk` 路径到 `NDK_HOME` 环境变量
-  - 设置 `sdk` 路径到 `ANDROID_HOME` 环境变量
-  - 详情查看 [Tauri 文档](https://tauri.app/start/prerequisites/#android)
-- IOS
-  - 安装 `XCode`
-  - 安装 `Cocoapods`
-  - 详情查看 [Tauri 文档](https://tauri.app/start/prerequisites/#ios)
+  - [Rust](https://rustup.rs/) >= 1.85.0-nightly
+  - [Node](https://nodejs.org/) >= 20
+  - [pnpm](https://pnpm.io/) >= 9.15.0
+- Android / IOS
+  - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.5.4
+  - Android 和 IOS 环境配置参考 Flutter 文档
 
 #### 安装
 
@@ -42,10 +35,12 @@ pnpm -C ui build:mac
 pnpm -C ui build:linux
 
 # android
-pnpm -C ui build:android
+cd ui/flutter
+flutter build apk --release
 
 # ios
-pnpm -C ui build:ios
+cd ui/flutter
+flutter build ios --release
 ```
 
 #### 运行 Android / IOS
@@ -54,14 +49,16 @@ pnpm -C ui build:ios
 
 ```shell
 # 提前使用 USB 连接真机或启动 Android 模拟器
-pnpm -C ui dev:android
+cd ui/flutter
+flutter run
 ```
 
 - 运行 IOS
 
 ```shell
 # 提前使用 USB 连接真机或启动 IOS 模拟器
-pnpm -C ui dev:ios
+cd ui/flutter
+flutter run
 ```
 
 > 首次运行应用程序时会被阻止

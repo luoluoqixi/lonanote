@@ -5,8 +5,6 @@ import { viteVConsole } from 'vite-plugin-vconsole';
 
 import pkg from './package.json';
 
-const tauriDevHost = process.env.TAURI_DEV_HOST;
-
 export const defaultBuildConfig: UserConfig['build'] = {
   assetsInlineLimit: 0, // 内联base64大小限制
   chunkSizeWarningLimit: 20000, // 触发警告的chunk大小 (kb)
@@ -47,16 +45,8 @@ const commonConfig: UserConfig = {
     },
   },
   server: {
-    host: tauriDevHost || '0.0.0.0',
     port: 8000,
     open: false,
-    hmr: tauriDevHost
-      ? {
-          protocol: 'ws',
-          host: tauriDevHost,
-          port: 1421,
-        }
-      : undefined,
   },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
