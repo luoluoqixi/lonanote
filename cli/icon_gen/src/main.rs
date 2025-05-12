@@ -10,6 +10,7 @@ use log::{error, info};
 use std::{
     io::BufWriter,
     path::{Path, PathBuf},
+    process::Command,
     sync::LazyLock,
 };
 
@@ -97,7 +98,7 @@ static ICNS_CONF: LazyLock<Vec<IcnsConf>> = LazyLock::new(|| {
     ]
 });
 
-static ANDROID_CONF: LazyLock<Vec<AndroidConf>> = LazyLock::new(|| {
+static TAURI_ANDROID_CONF: LazyLock<Vec<AndroidConf>> = LazyLock::new(|| {
     vec![
         AndroidConf {
             name: "hdpi".to_string(),
@@ -127,7 +128,7 @@ static ANDROID_CONF: LazyLock<Vec<AndroidConf>> = LazyLock::new(|| {
     ]
 });
 
-static IOS_CONF: LazyLock<Vec<IOSConf>> = LazyLock::new(|| {
+static TAURI_IOS_CONF: LazyLock<Vec<IOSConf>> = LazyLock::new(|| {
     vec![
         IOSConf {
             size: 20.0,
@@ -299,14 +300,14 @@ fn add_blank(img: &RgbaImage, blank_size: u32) -> RgbaImage {
     bordered_img
 }
 
-fn process_android(
+fn process_tauri_android(
     image_path: &Path,
     android_path: &Path,
     mask_path: Option<&Path>,
     blank_size: Option<u32>,
 ) -> Result<()> {
     let res_path = android_path.join("app/src/main/res");
-    for conf in ANDROID_CONF.iter() {
+    for conf in TAURI_ANDROID_CONF.iter() {
         let folder_name = format!("mipmap-{}/", &conf.name);
         let out_folder = res_path.join(&folder_name);
         if !out_folder.exists() {
@@ -349,7 +350,7 @@ fn process_android(
     Ok(())
 }
 
-fn process_ios(
+fn process_tauri_ios(
     image_path: &Path,
     ios_path: &Path,
     mask_path: Option<&Path>,
@@ -360,7 +361,7 @@ fn process_ios(
         std::fs::create_dir_all(&icon_path)
             .unwrap_or_else(|_| panic!("create dir error: {}", icon_path.to_str().unwrap()));
     }
-    for conf in IOS_CONF.iter() {
+    for conf in TAURI_IOS_CONF.iter() {
         let size_str = if (conf.size - 512.0).abs() < 0.01 {
             "512".to_string()
         } else {
@@ -397,6 +398,61 @@ fn process_ios(
     Ok(())
 }
 
+#[allow(dead_code)]
+fn generate_tauri_icon(input_path: &Path, default_mask: &Option<PathBuf>) -> Result<()> {
+    let mobile_path = &RS_PATH.join("mobile");
+    let android_path = &mobile_path.join("gen/android");
+    let ios_path = &mobile_path.join("gen/apple");
+
+    // android
+    process_tauri_android(input_path, android_path, default_mask.as_deref(), None)?;
+    // ios
+    process_tauri_ios(input_path, ios_path, None, None)?;
+
+    Ok(())
+}
+
+fn start_flutter_launcher_icons(flutter_project_path: &PathBuf) -> Result<()> {
+    // dart run flutter_launcher_icons
+    std::env::set_current_dir(flutter_project_path)?;
+    let dart_command = if cfg!(target_os = "windows") {
+        "dart.bat"
+    } else {
+        "dart"
+    };
+    let status = Command::new(dart_command)
+        .args(["run", "flutter_launcher_icons"])
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .status()?;
+    if !status.success() {
+        Err(anyhow::anyhow!("[dart run flutter_launcher_icons] error"))
+    } else {
+        info!("dart run flutter_launcher_icons success");
+        Ok(())
+    }
+}
+
+fn generate_flutter_icon(input_path: &Path, default_mask: &Option<PathBuf>) -> Result<()> {
+    let flutter_path = &UI_PATH.join("flutter");
+    let android_icon_path = &flutter_path.join("assets/icons/icon_android.png");
+    let ios_path = &flutter_path.join("assets/icons/icon_ios.png");
+
+    process_image(
+        input_path,
+        android_icon_path,
+        default_mask.as_deref(),
+        None,
+        None,
+        None,
+    )?;
+    process_image(input_path, ios_path, None, None, None, None)?;
+
+    start_flutter_launcher_icons(flutter_path)?;
+
+    Ok(())
+}
+
 fn _main() -> Result<()> {
     let input_path = &INPUT_ICON_PATH.to_path_buf();
     let input_folder = &input_path.parent().unwrap().to_path_buf();
@@ -406,9 +462,6 @@ fn _main() -> Result<()> {
     let mac_path = &output_folder.join("icon_mac.icns");
     let linux_path = &output_folder.join("icon_linux.icns");
     let web_path = &UI_PATH.join("packages/renderer/public/favicon.ico");
-    let mobile_path = &RS_PATH.join("mobile");
-    let android_path = &mobile_path.join("gen/android");
-    let ios_path = &mobile_path.join("gen/apple");
 
     let default_mask = Some(input_folder.join("mask.png"));
     // resources
@@ -456,10 +509,9 @@ fn _main() -> Result<()> {
         None,
         None,
     )?;
-    // android
-    process_android(input_path, android_path, default_mask.as_deref(), None)?;
-    // ios
-    process_ios(input_path, ios_path, None, None)?;
+
+    // generate_tauri_icon(input_path, &default_mask)?;
+    generate_flutter_icon(input_path, &default_mask)?;
 
     info!("all finish!");
 
