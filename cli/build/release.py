@@ -61,11 +61,25 @@ def change_cargo_version(project_path, next_version):
     utils.subprocess_check_output(["cargo", "set-version", next_version], working_dir=project_path)
     print(f"change cargo version finish: v{next_version}")
 
+def chang_pubspec_version(project_path, next_version):
+    pubspec_path = os.path.join(project_path, "pubspec.yaml")
+    if os.path.exists(pubspec_path):
+        with open(pubspec_path, 'r+') as f:
+            lines = f.readlines()
+            for i, line in enumerate(lines):
+                if line.startswith("version: "):
+                    lines[i] = f"version: {next_version}+1"
+                    break
+            f.seek(0)
+            f.truncate()
+            f.writelines(lines)
+
 def change_version(repo_root, next_version):
     change_package_version(os.path.join(repo_root, "ui"), next_version)
     change_package_version(os.path.join(repo_root, "ui/packages/desktop"), next_version)
     change_package_version(os.path.join(repo_root, "ui/packages/editor"), next_version)
     change_package_version(os.path.join(repo_root, "ui/packages/renderer"), next_version)
+    chang_pubspec_version(os.path.join(repo_root, "ui/flutter"), next_version)
     change_cargo_version(os.path.join(repo_root, "rust"), next_version)
 
 def git_tag(repo_root, next_version):
