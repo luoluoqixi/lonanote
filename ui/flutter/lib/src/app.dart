@@ -5,6 +5,7 @@ import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'package:lonanote/src/common/config/app_config.dart';
+import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/views/index.dart';
 
@@ -73,12 +74,13 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
   }
 
   Widget buildBody(ColorScheme colorScheme) {
-    return const SafeArea(
+    final backgroundColor = colorScheme.surface;
+    return SafeArea(
       top: true,
       bottom: false,
       child: ColoredBox(
-        color: Colors.purple,
-        // color: backgroundColor,
+        // color: Colors.purple,
+        color: backgroundColor,
         child: Column(
           children: [
             Expanded(
@@ -96,22 +98,20 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
   }
 
   PlatformAppBar? buildAppBar(ColorScheme colorScheme) {
-    const title = null;
-    return AppConfig.isMaterial
-        ? PlatformAppBar(
-            backgroundColor: Colors.transparent,
-            title: title,
-            material: (context, platform) => MaterialAppBarData(
-              toolbarHeight: 0,
-            ),
-            // cupertino: (context, platform) => CupertinoNavigationBarData(
-            //   border: const Border(),
-            //   backgroundColor: colorScheme.surface,
-            //   title: title,
-            //   brightness: colorScheme.brightness,
-            // ),
-          )
-        : null;
+    const title = Text("Home");
+    return PlatformAppBar(
+      backgroundColor: Colors.transparent,
+      title: title,
+      material: (context, platform) => MaterialAppBarData(
+        toolbarHeight: 0,
+      ),
+      cupertino: (context, platform) => CupertinoNavigationBarData(
+        border: const Border(),
+        backgroundColor: colorScheme.surface,
+        title: title,
+        brightness: colorScheme.brightness,
+      ),
+    );
   }
 
   Widget buildHome(BuildContext context) {
@@ -132,6 +132,7 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
     // final botToastBuilder = BotToastInit();
 
     final theme = ref.watch(settingsProvider).theme;
+    logger.i("theme mode: ${theme.themeMode}");
     return PlatformProvider(
       settings: PlatformSettingsData(
         platformStyle: const PlatformStyleData(
