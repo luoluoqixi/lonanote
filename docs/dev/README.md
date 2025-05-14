@@ -7,7 +7,7 @@
   - [Node](https://nodejs.org/) >= 20
   - [pnpm](https://pnpm.io/) >= 9.15.0
 - Android / IOS
-  - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.5.4
+  - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.29.3
   - Android 和 IOS 环境配置参考 Flutter 文档
 
 #### 安装
