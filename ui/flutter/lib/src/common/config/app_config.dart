@@ -10,4 +10,5 @@ class AppConfig {
   static const bool isDebug = kDebugMode;
   static const bool isRelease = kReleaseMode;
   static const bool isProfile = kProfileMode;
+  static const String appTitle = "lonanote";
 }

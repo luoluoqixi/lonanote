@@ -9,6 +9,7 @@
 - Android / IOS
   - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.29.3
   - Android 和 IOS 环境配置参考 Flutter 文档
+  - 保存 dart 时如果出现长时间无法保存, 请关闭 dart 分析功能 `dart --disable-analytics`, [详情请查看](https://github.com/dart-lang/sdk/issues/56106)
 
 #### 安装
 
