@@ -7,7 +7,7 @@ import type { CodeBlockProps } from './code-block';
 
 type LanguagePickerProps = Pick<
   CodeBlockProps,
-  'language' | 'readonly' | 'config' | 'setLanguage' | 'getAllLanguages'
+  'language' | 'config' | 'setLanguage' | 'getAllLanguages' | 'getReadOnly'
 >;
 
 h;
@@ -18,8 +18,8 @@ export const LanguagePicker = defineComponent<LanguagePickerProps>({
       type: Object,
       required: true,
     },
-    readonly: {
-      type: Object,
+    getReadOnly: {
+      type: Function,
       required: true,
     },
     config: {
@@ -35,7 +35,7 @@ export const LanguagePicker = defineComponent<LanguagePickerProps>({
       required: true,
     },
   },
-  setup({ readonly, language, config, setLanguage, getAllLanguages }) {
+  setup({ language, config, setLanguage, getAllLanguages, getReadOnly }) {
     const triggerRef = ref<HTMLButtonElement>();
     const showPicker = ref(false);
     const searchRef = ref<HTMLInputElement>();
@@ -63,7 +63,7 @@ export const LanguagePicker = defineComponent<LanguagePickerProps>({
     const onTogglePicker = (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      if (readonly.value) return;
+      if (getReadOnly()) return;
 
       const next = !showPicker.value;
       showPicker.value = next;
@@ -135,7 +135,6 @@ export const LanguagePicker = defineComponent<LanguagePickerProps>({
       return (
         <>
           <button
-            disabled={readonly.value}
             type="button"
             ref={triggerRef}
             class="language-button"

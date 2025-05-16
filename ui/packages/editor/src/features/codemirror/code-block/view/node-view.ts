@@ -22,7 +22,6 @@ export class CodeMirrorBlock implements NodeView {
   cm: CodeMirror;
   app: App;
 
-  readonly = ref(false);
   selected = ref(false);
   language = ref('');
   text = ref('');
@@ -51,6 +50,7 @@ export class CodeMirrorBlock implements NodeView {
         this.readOnlyConf.of(EditorState.readOnly.of(!this.view.editable)),
         cmKeymap.of(this.codeMirrorKeymap()),
         this.languageConf.of([]),
+        EditorState.changeFilter.of(() => this.view.editable),
         ...config.extensions,
         CodeMirror.updateListener.of(this.forwardUpdate),
       ],
@@ -100,10 +100,10 @@ export class CodeMirrorBlock implements NodeView {
     return createApp(CodeBlock, {
       text: this.text,
       selected: this.selected,
-      readonly: this.readonly,
       codemirror: this.cm,
       language: this.language,
       getAllLanguages: this.getAllLanguages,
+      getReadOnly: () => !this.view.editable,
       setLanguage: this.setLanguage,
       config: this.config,
     });

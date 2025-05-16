@@ -340,6 +340,10 @@ export class MilkdownEditor {
 
     this.#editor.action((ctx) => {
       ctx.set(editableCtx, this.#editable);
+      const view = ctx.get(editorViewCtx);
+      view.setProps({
+        editable: () => !value,
+      });
     });
 
     // 同时清除选择

@@ -89,8 +89,10 @@ class MenuView implements PluginView {
         filter.value = currentText.startsWith('/') ? currentText.slice(1) : currentText;
 
         if (typeof pos === 'number') {
+          const maxSize = view.state.doc.nodeSize - 2;
+          const validPos = Math.min(pos, maxSize);
           if (
-            view.state.doc.resolve(pos).node() !==
+            view.state.doc.resolve(validPos).node() !==
             view.state.doc.resolve(view.state.selection.from).node()
           ) {
             self.#programmaticallyPos = null;
