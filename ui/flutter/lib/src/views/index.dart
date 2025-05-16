@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -36,19 +35,11 @@ class _IndexState extends ConsumerState<Index>
 
   Widget buildBody(ColorScheme colorScheme) {
     final backgroundColor = colorScheme.surface;
-    return SafeArea(
-        top: true,
-        bottom: false,
-        child: ColoredBox(
-          color: backgroundColor,
-          child: buildContent(),
-        ));
-  }
-
-  PlatformAppBar? buildAppBar(ColorScheme colorScheme) {
-    const title = Text("工作区");
-    return PlatformAppBar(
-      title: title,
+    return Center(
+      child: ColoredBox(
+        color: Colors.yellow,
+        child: Text("body"),
+      ),
     );
   }
 
@@ -57,11 +48,29 @@ class _IndexState extends ConsumerState<Index>
     final colorScheme = Theme.of(context).colorScheme;
     final backgroundColor = colorScheme.surface;
     return PlatformScaffold(
-      appBar: buildAppBar(colorScheme),
       backgroundColor: backgroundColor,
-      body: buildBody(colorScheme),
-      material: (context, platform) => MaterialScaffoldData(
-        extendBody: true,
+      body: NestedScrollView(
+        // 折叠头部
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              pinned: true,
+              floating: false,
+              // backgroundColor: Colors.red,
+              // 停留的标题
+              title: Text("工作区"),
+              // 展开高度
+              expandedHeight: 200,
+              // 可折叠的
+              flexibleSpace: FlexibleSpaceBar(
+                background: Center(
+                  child: Text("折叠区域"),
+                ),
+              ),
+            )
+          ];
+        },
+        body: buildBody(colorScheme),
       ),
     );
   }

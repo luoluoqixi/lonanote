@@ -10,8 +10,8 @@ class AppTheme {
         isLight ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
     final iconBrightness = isLight ? Brightness.dark : Brightness.light;
     return style.copyWith(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
+      statusBarColor: Colors.transparent, // 状态栏背景颜色
+      systemNavigationBarColor: Colors.transparent, // 底部导航栏颜色
       systemNavigationBarDividerColor: Colors.transparent,
       systemNavigationBarIconBrightness: iconBrightness,
       statusBarIconBrightness: iconBrightness,
@@ -34,14 +34,15 @@ class AppTheme {
 
     final appBarTheme = AppBarTheme(
         systemOverlayStyle: getSystemOverlayStyle(colorScheme),
+        scrolledUnderElevation: 0.0, // 禁用滚动时AppBar背景颜色自动改变
         titleSpacing: 0.0,
         elevation: 0.0,
         centerTitle: true,
-        backgroundColor: colorScheme.surface,
+        backgroundColor: colorScheme.surface, // AppBar的背景颜色
         titleTextStyle: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: isLight ? Colors.black : Colors.white,
+          color: isLight ? Colors.black : Colors.white, // AppBar的字体颜色
         ));
     final themeData = isLight ? ThemeData.light() : ThemeData.dark();
     return themeData.copyWith(
@@ -66,7 +67,7 @@ class AppTheme {
       barBackgroundColor: colorScheme.surface, // 导航栏背景色
       textTheme: CupertinoTextThemeData(
         navTitleTextStyle: TextStyle(
-          // 导航栏标题样式
+          // 导航栏字体样式
           fontSize: 18,
           fontWeight: FontWeight.bold,
           color: isLight ? Colors.black : Colors.white,
