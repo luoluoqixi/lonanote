@@ -9,7 +9,8 @@
 - Android / IOS
   - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.29.3
   - Android 和 IOS 环境配置参考 Flutter 文档
-  - 保存 dart 时如果出现长时间无法保存, 请关闭 dart 分析功能 `dart --disable-analytics`, [详情请查看](https://github.com/dart-lang/sdk/issues/56106)
+  - VSCode 中保存 dart 时长时间无法保存
+    - [#60335](https://github.com/dart-lang/sdk/issues/60335)
 
 #### 安装
 
@@ -64,7 +65,7 @@ flutter run
 
 > 首次运行应用程序时会被阻止
 >
-> 转到手机 Settings > Privacy & Security > Developer Mode以启用开发者模式
+> 转到手机 Settings > Privacy & Security > Developer Mode 以启用开发者模式
 >
 > 然后转到 Settings -> General -> VPN and device management -> From "Developer App"
 >
