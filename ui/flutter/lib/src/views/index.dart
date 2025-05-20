@@ -109,6 +109,7 @@ class _IndexState extends ConsumerState<Index>
       backgroundColor: backgroundColor,
       body: SafeArea(
         top: false,
+        bottom: false,
         child: CustomScrollView(
           slivers: [
             ScrollAppBar(
