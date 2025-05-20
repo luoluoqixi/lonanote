@@ -8,6 +8,7 @@ class ScrollAppBar extends StatelessWidget {
   final Color? subTitleColor;
   final Color? bgColor;
   final List<Widget>? actions;
+  final double? scrolledUnderElevation;
 
   const ScrollAppBar({
     super.key,
@@ -17,6 +18,7 @@ class ScrollAppBar extends StatelessWidget {
     this.subTitleColor,
     this.bgColor,
     this.actions,
+    this.scrolledUnderElevation,
   });
 
   @override
@@ -32,17 +34,20 @@ class ScrollAppBar extends StatelessWidget {
       titleTextStyle: TextStyle(color: textColor),
       centerTitle: false,
       expandedHeight: 120.0,
-      scrolledUnderElevation: 0.0,
+      scrolledUnderElevation: scrolledUnderElevation ?? 1,
+      surfaceTintColor: colorScheme.primary,
       flexibleSpace: CustomFlexibleSpaceBar(
         centerTitle: false,
         expandedTitleScale: 2,
-        fixedSubtitle: Text(
-          subTitle ?? "",
-          style: TextStyle(
-            color: subTitleColor ?? subColor,
-            fontSize: 12,
-          ),
-        ),
+        fixedSubtitle: subTitle != null
+            ? Text(
+                subTitle ?? "",
+                style: TextStyle(
+                  color: subTitleColor ?? subColor,
+                  fontSize: 12,
+                ),
+              )
+            : null,
         title: Padding(
           padding: const EdgeInsets.only(bottom: 3),
           child: Text(

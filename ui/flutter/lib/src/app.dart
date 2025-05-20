@@ -20,12 +20,16 @@ class App extends ConsumerStatefulWidget {
 class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
   @override
   void initState() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     // final botToastBuilder = BotToastInit();
+
+    final size = MediaQuery.of(context).size;
+    logger.i("Screen width: ${size.width}, height: ${size.height}");
 
     final theme = ref.watch(settingsProvider.select((s) => s.theme));
     logger.i("theme mode: ${theme.themeMode}");
@@ -51,15 +55,21 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
           SystemChrome.setSystemUIOverlayStyle(AppTheme.getSystemOverlayStyle(
             colorScheme,
           ));
-          return PlatformApp(
-            debugShowCheckedModeBanner: false,
-            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-              DefaultMaterialLocalizations.delegate,
-              DefaultWidgetsLocalizations.delegate,
-              DefaultCupertinoLocalizations.delegate,
-            ],
-            title: AppConfig.appTitle,
-            home: Index(),
+          return SafeArea(
+            left: false,
+            top: false,
+            bottom: false,
+            right: false,
+            child: PlatformApp(
+                debugShowCheckedModeBanner: false,
+                localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+                  DefaultMaterialLocalizations.delegate,
+                  DefaultWidgetsLocalizations.delegate,
+                  DefaultCupertinoLocalizations.delegate,
+                ],
+                title: AppConfig.appTitle,
+                home: Index(),
+              ),
           );
         },
       ),

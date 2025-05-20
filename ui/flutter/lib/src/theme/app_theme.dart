@@ -14,7 +14,7 @@ class AppTheme {
       systemNavigationBarColor: Colors.transparent, // 底部导航栏颜色
       systemNavigationBarDividerColor: Colors.transparent,
       systemNavigationBarIconBrightness: iconBrightness,
-      statusBarIconBrightness: iconBrightness,
+      statusBarIconBrightness: iconBrightness, // 状态栏字体颜色
       statusBarBrightness: colorScheme.brightness,
       systemNavigationBarContrastEnforced: false,
       systemStatusBarContrastEnforced: false,
@@ -34,7 +34,7 @@ class AppTheme {
 
     final appBarTheme = AppBarTheme(
         systemOverlayStyle: getSystemOverlayStyle(colorScheme),
-        scrolledUnderElevation: 0.0, // 禁用滚动时AppBar背景颜色自动改变
+        scrolledUnderElevation: 1, // 滚动时AppBar背景颜色自动改变
         titleSpacing: 0.0,
         elevation: 0.0,
         centerTitle: true,
