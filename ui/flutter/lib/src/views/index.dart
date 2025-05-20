@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/log.dart';
+import 'package:lonanote/src/widgets/platform_ink_well.dart';
 import 'package:lonanote/src/widgets/scroll_app_bar.dart';
 
 class Index extends ConsumerStatefulWidget {
@@ -61,14 +62,7 @@ class _IndexState extends ConsumerState<Index>
   }
 
   Widget _buildWorkspaceTile(Map<String, String> workspace) {
-    return PlatformWidget(
-      material: (_, __) => _buildTileContent(workspace),
-      cupertino: (_, __) => _buildTileContent(workspace),
-    );
-  }
-
-  Widget _buildTileContent(Map<String, String> workspace) {
-    return InkWell(
+    return PlatformInkWell(
       onTap: () {
         logger.i("click item");
       },
@@ -115,18 +109,14 @@ class _IndexState extends ConsumerState<Index>
       backgroundColor: backgroundColor,
       body: SafeArea(
         top: false,
-        child: Scrollbar(
-          controller: _scrollController,
-          child: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              ScrollAppBar(
-                title: "露娜笔记",
-                subTitle: "选择工作区",
-              ),
-              _buildContent(),
-            ],
-          ),
+        child: CustomScrollView(
+          slivers: [
+            ScrollAppBar(
+              title: "露娜笔记",
+              subTitle: "选择工作区",
+            ),
+            _buildContent(),
+          ],
         ),
       ),
     );
