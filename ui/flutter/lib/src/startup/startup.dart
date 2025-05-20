@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:logger/logger.dart';
+import 'package:lonanote/src/bindings/api/app/app.dart';
+import 'package:lonanote/src/bindings/bindings.dart';
 
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
@@ -34,6 +36,15 @@ Future<void> startup() async {
     logger.e("RustLib.init error: $e");
     rethrow;
   }
+  try {
+    logger.i("Bindings.init start...");
+    Bindings.init();
+    logger.i("Bindings.init finish");
+  } catch (e) {
+    logger.e("Bindings.init error: $e");
+    rethrow;
+  }
+
   WidgetsFlutterBinding.ensureInitialized();
   await startupApp();
   await started();

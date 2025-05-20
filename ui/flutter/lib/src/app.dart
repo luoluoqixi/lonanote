@@ -28,9 +28,6 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     // final botToastBuilder = BotToastInit();
 
-    final size = MediaQuery.of(context).size;
-    logger.i("Screen width: ${size.width}, height: ${size.height}");
-
     final theme = ref.watch(settingsProvider.select((s) => s.theme));
     logger.i("theme mode: ${theme.themeMode}");
     return PlatformProvider(
