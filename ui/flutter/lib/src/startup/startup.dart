@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:logger/logger.dart';
 import 'package:lonanote/src/bindings/bindings.dart';
-
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/rust/frb_generated.dart';
@@ -14,14 +13,7 @@ Future<void> started() async {
   GestureBinding.instance.resamplingEnabled = true;
 }
 
-Future<void> startup() async {
-  if (AppConfig.isDebug) {
-    Logger.level = Level.debug;
-  } else {
-    Logger.level = Level.info;
-  }
-
-  final startTime = DateTime.now().millisecondsSinceEpoch;
+Future<void> initRust() async {
   try {
     logger.i("RustLib.init start...");
     var config = const ExternalLibraryLoaderConfig(
@@ -43,6 +35,18 @@ Future<void> startup() async {
     logger.e("Bindings.init error: $e");
     rethrow;
   }
+}
+
+Future<void> startup() async {
+  if (AppConfig.isDebug) {
+    Logger.level = Level.debug;
+  } else {
+    Logger.level = Level.info;
+  }
+
+  final startTime = DateTime.now().millisecondsSinceEpoch;
+
+  initRust();
 
   WidgetsFlutterBinding.ensureInitialized();
   await startupApp();
