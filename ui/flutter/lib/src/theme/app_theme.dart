@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
+import 'package:lonanote/src/theme/theme_colors.dart';
 
 class AppTheme {
   static SystemUiOverlayStyle getSystemOverlayStyle(ColorScheme colorScheme) {
@@ -38,11 +39,11 @@ class AppTheme {
         titleSpacing: 0.0,
         elevation: 0.0,
         centerTitle: true,
-        backgroundColor: colorScheme.surface, // AppBar的背景颜色
+        backgroundColor: ThemeColors.getBgColor(colorScheme), // AppBar的背景颜色
         titleTextStyle: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: isLight ? Colors.black : Colors.white, // AppBar的字体颜色
+          color: ThemeColors.getTextColor(colorScheme), // AppBar的字体颜色
         ));
     final themeData = isLight ? ThemeData.light() : ThemeData.dark();
     return themeData.copyWith(
@@ -64,13 +65,13 @@ class AppTheme {
           );
     return CupertinoThemeData(
       primaryColor: theme.primaryColor, // 导航栏按钮颜色
-      barBackgroundColor: colorScheme.surface, // 导航栏背景色
+      barBackgroundColor: ThemeColors.getBgColor(colorScheme), // 导航栏背景色
       textTheme: CupertinoTextThemeData(
         navTitleTextStyle: TextStyle(
           // 导航栏字体样式
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: isLight ? Colors.black : Colors.white,
+          color: ThemeColors.getTextColor(colorScheme),
         ),
       ),
     );

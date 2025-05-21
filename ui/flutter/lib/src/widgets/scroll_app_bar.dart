@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/flutter/custom_flexible_space_bar.dart';
 
 class ScrollAppBar extends StatelessWidget {
@@ -24,10 +25,9 @@ class ScrollAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isLight = colorScheme.brightness == Brightness.light;
-    final backgroundColor = colorScheme.surface;
-    final textColor = isLight ? Colors.black : Colors.white;
-    final subColor = isLight ? Colors.grey : Colors.white;
+    final backgroundColor = ThemeColors.getBgColor(colorScheme);
+    final textColor = ThemeColors.getTextColor(colorScheme);
+    final subColor = ThemeColors.getTextGreyColor(colorScheme);
     return SliverAppBar(
       pinned: true,
       backgroundColor: backgroundColor,
