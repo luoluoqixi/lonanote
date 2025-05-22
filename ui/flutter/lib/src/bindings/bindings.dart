@@ -1,17 +1,23 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:lonanote/src/bindings/api/path/path.dart';
 import 'package:lonanote/src/rust/api/command.dart' as command;
 
 class Bindings {
   static bool isInited = false;
 
-  static init() {
+  static Future<void> _initApi() async {
+    await Path.initPath();
+  }
+
+  static Future<void> init() async {
     if (isInited) return;
     final error = command.init();
     if (error != null) {
       throw Exception(error);
     }
+    await _initApi();
     isInited = true;
   }
 
@@ -25,7 +31,7 @@ class Bindings {
   }
 
   static Future<dynamic> invokeAsync(
-      {required String key, String? value}) async {
+      {required String key, Object? value}) async {
     var args = jsonEncode(value);
     var ret = await command.invokeAsync(key: key, args: args);
     if (ret == null) {
@@ -71,4 +77,10 @@ class Bindings {
   static BigInt getCommandDartLen() {
     return command.getCommandDartLen();
   }
+}
+
+void testBindings() {
+  // App.test();
+  // Fs.test();
+  // Path.test();
 }

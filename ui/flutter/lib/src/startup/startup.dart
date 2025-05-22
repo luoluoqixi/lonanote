@@ -29,7 +29,7 @@ Future<void> initRust() async {
   }
   try {
     logger.i("Bindings.init start...");
-    Bindings.init();
+    await Bindings.init();
     logger.i("Bindings.init finish");
   } catch (e) {
     logger.e("Bindings.init error: $e");
@@ -46,14 +46,15 @@ Future<void> startup() async {
 
   final startTime = DateTime.now().millisecondsSinceEpoch;
 
-  initRust();
-
   WidgetsFlutterBinding.ensureInitialized();
+
+  await initRust();
   await startupApp();
   await started();
 
   int duration = DateTime.now().millisecondsSinceEpoch - startTime;
   if (AppConfig.isDebug) {
     logger.i("启动耗时: ${duration}ms");
+    testBindings();
   }
 }
