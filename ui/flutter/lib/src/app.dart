@@ -58,15 +58,15 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
             bottom: false,
             right: false,
             child: PlatformApp(
-                debugShowCheckedModeBanner: false,
-                localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-                  DefaultMaterialLocalizations.delegate,
-                  DefaultWidgetsLocalizations.delegate,
-                  DefaultCupertinoLocalizations.delegate,
-                ],
-                title: AppConfig.appTitle,
-                home: Index(),
-              ),
+              debugShowCheckedModeBanner: false,
+              localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+                DefaultMaterialLocalizations.delegate,
+                DefaultWidgetsLocalizations.delegate,
+                DefaultCupertinoLocalizations.delegate,
+              ],
+              title: AppConfig.appTitle,
+              home: Index(),
+            ),
           );
         },
       ),

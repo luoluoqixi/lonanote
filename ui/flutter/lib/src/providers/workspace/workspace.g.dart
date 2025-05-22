@@ -1,25 +1,25 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'settings.dart';
+part of 'workspace.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$settingsHash() => r'0a1ec115764b36fa242259b5a2e19be3a66132ed';
+String _$workspaceHash() => r'cf3f72ce42867b233f040883b56c7ab8c8759af3';
 
-/// See also [Settings].
-@ProviderFor(Settings)
-final settingsProvider =
-    AutoDisposeNotifierProvider<Settings, SettingsStore>.internal(
-  Settings.new,
-  name: r'settingsProvider',
+/// See also [Workspace].
+@ProviderFor(Workspace)
+final workspaceProvider =
+    AutoDisposeNotifierProvider<Workspace, WorkspaceStore>.internal(
+  Workspace.new,
+  name: r'workspaceProvider',
   debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$settingsHash,
+      const bool.fromEnvironment('dart.vm.product') ? null : _$workspaceHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$Settings = AutoDisposeNotifier<SettingsStore>;
+typedef _$Workspace = AutoDisposeNotifier<WorkspaceStore>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

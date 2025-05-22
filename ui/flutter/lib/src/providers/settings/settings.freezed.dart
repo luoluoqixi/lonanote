@@ -16,6 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SettingsStore {
   ThemeSettings get theme;
+  RustSettingsData? get settings;
 
   /// Create a copy of SettingsStore
   /// with the given fields replaced by the non-null parameter values.
@@ -30,15 +31,17 @@ mixin _$SettingsStore {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is SettingsStore &&
-            (identical(other.theme, theme) || other.theme == theme));
+            (identical(other.theme, theme) || other.theme == theme) &&
+            (identical(other.settings, settings) ||
+                other.settings == settings));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, theme);
+  int get hashCode => Object.hash(runtimeType, theme, settings);
 
   @override
   String toString() {
-    return 'SettingsStore(theme: $theme)';
+    return 'SettingsStore(theme: $theme, settings: $settings)';
   }
 }
 
@@ -48,7 +51,7 @@ abstract mixin class $SettingsStoreCopyWith<$Res> {
           SettingsStore value, $Res Function(SettingsStore) _then) =
       _$SettingsStoreCopyWithImpl;
   @useResult
-  $Res call({ThemeSettings theme});
+  $Res call({ThemeSettings theme, RustSettingsData? settings});
 
   $ThemeSettingsCopyWith<$Res> get theme;
 }
@@ -67,12 +70,17 @@ class _$SettingsStoreCopyWithImpl<$Res>
   @override
   $Res call({
     Object? theme = null,
+    Object? settings = freezed,
   }) {
     return _then(_self.copyWith(
       theme: null == theme
           ? _self.theme
           : theme // ignore: cast_nullable_to_non_nullable
               as ThemeSettings,
+      settings: freezed == settings
+          ? _self.settings
+          : settings // ignore: cast_nullable_to_non_nullable
+              as RustSettingsData?,
     ));
   }
 
@@ -90,10 +98,12 @@ class _$SettingsStoreCopyWithImpl<$Res>
 /// @nodoc
 
 class _SettingsStore implements SettingsStore {
-  const _SettingsStore({required this.theme});
+  const _SettingsStore({required this.theme, this.settings});
 
   @override
   final ThemeSettings theme;
+  @override
+  final RustSettingsData? settings;
 
   /// Create a copy of SettingsStore
   /// with the given fields replaced by the non-null parameter values.
@@ -108,15 +118,17 @@ class _SettingsStore implements SettingsStore {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _SettingsStore &&
-            (identical(other.theme, theme) || other.theme == theme));
+            (identical(other.theme, theme) || other.theme == theme) &&
+            (identical(other.settings, settings) ||
+                other.settings == settings));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, theme);
+  int get hashCode => Object.hash(runtimeType, theme, settings);
 
   @override
   String toString() {
-    return 'SettingsStore(theme: $theme)';
+    return 'SettingsStore(theme: $theme, settings: $settings)';
   }
 }
 
@@ -128,7 +140,7 @@ abstract mixin class _$SettingsStoreCopyWith<$Res>
       __$SettingsStoreCopyWithImpl;
   @override
   @useResult
-  $Res call({ThemeSettings theme});
+  $Res call({ThemeSettings theme, RustSettingsData? settings});
 
   @override
   $ThemeSettingsCopyWith<$Res> get theme;
@@ -148,12 +160,17 @@ class __$SettingsStoreCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   $Res call({
     Object? theme = null,
+    Object? settings = freezed,
   }) {
     return _then(_SettingsStore(
       theme: null == theme
           ? _self.theme
           : theme // ignore: cast_nullable_to_non_nullable
               as ThemeSettings,
+      settings: freezed == settings
+          ? _self.settings
+          : settings // ignore: cast_nullable_to_non_nullable
+              as RustSettingsData?,
     ));
   }
 

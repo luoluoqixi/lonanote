@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/log.dart';
+import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
 import 'package:lonanote/src/widgets/scroll_app_bar.dart';
@@ -24,28 +26,13 @@ class _IndexState extends ConsumerState<Index>
   }
 
   SliverList _buildContent(BuildContext context) {
+    final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
     final colorScheme = Theme.of(context).colorScheme;
-    final workspaces = [
-      {
-        'name': 'test1',
-        'path': '/workspaces/test1',
-        'lastOpenTime': '2025-05-16 01:39:00'
-      },
-      {
-        'name': 'test2',
-        'path': '/workspaces/test2',
-        'lastOpenTime': '2025-05-16 01:39:00'
-      },
-      {
-        'name': 'test3',
-        'path': '/workspaces/test3',
-        'lastOpenTime': '2025-05-16 01:39:00'
-      },
-    ];
+    final count = workspaces?.length ?? 0;
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
-          final workspace = workspaces[index];
+          final workspace = workspaces![index];
           return Column(
             children: [
               _buildWorkspaceTile(colorScheme, workspace),
@@ -58,12 +45,13 @@ class _IndexState extends ConsumerState<Index>
             ],
           );
         },
-        childCount: workspaces.length,
+        childCount: count,
       ),
     );
   }
 
-  Widget _buildWorkspaceTile(ColorScheme colorScheme, Map<String, String> workspace) {
+  Widget _buildWorkspaceTile(
+      ColorScheme colorScheme, RustWorkspaceMetadata workspace) {
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
     return PlatformInkWell(
       onTap: () {
@@ -76,7 +64,7 @@ class _IndexState extends ConsumerState<Index>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              workspace['name'] ?? '',
+              workspace.name,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -84,7 +72,7 @@ class _IndexState extends ConsumerState<Index>
             ),
             const SizedBox(height: 4),
             Text(
-              workspace['path'] ?? '',
+              workspace.path,
               style: TextStyle(
                 fontSize: 13,
                 color: greyColor,
@@ -92,7 +80,7 @@ class _IndexState extends ConsumerState<Index>
             ),
             const SizedBox(height: 4),
             Text(
-              '上次打开时间: ${workspace['lastOpenTime'] ?? ''}',
+              '上次打开时间: ${workspace.lastOpenTime}',
               style: TextStyle(
                 fontSize: 12,
                 color: greyColor,
