@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../bindings.dart';
 
-class Path {
+class RustPath {
   static Future<void> initPath() async {
     final tempDir = await getTemporaryDirectory();
     final downloadDir = await getDownloadsDirectory();
@@ -37,9 +37,9 @@ class Path {
   static void test() {
     if (!AppConfig.isDebug) return;
 
-    logger.i("Path.getCacheDir = ${getCacheDir()}");
-    logger.i("Path.getHomeDir = ${getHomeDir()}");
-    logger.i("Path.getDataDir = ${getDataDir()}");
-    logger.i("Path.getDownloadDir = ${getDownloadDir()}");
+    logger.i("RustPath.getCacheDir = ${getCacheDir()}");
+    logger.i("RustPath.getHomeDir = ${getHomeDir()}");
+    logger.i("RustPath.getDataDir = ${getDataDir()}");
+    logger.i("RustPath.getDownloadDir = ${getDownloadDir()}");
   }
 }

@@ -23,6 +23,9 @@ cargo install flutter_rust_bridge_codegen
 
 cd ui/flutter
 flutter_rust_bridge_codegen generate
+
+# generate other dart
+dart run build_runner build
 ```
 
 ### install project

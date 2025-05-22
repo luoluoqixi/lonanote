@@ -7,6 +7,6 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async => {await initRust()});
   test("rust api > fs", () {
-    Fs.test();
+    RustFs.test();
   });
 }

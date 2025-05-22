@@ -4,7 +4,7 @@ import 'package:lonanote/src/common/log.dart';
 
 import '../../bindings.dart';
 
-class Fs {
+class RustFs {
   static bool exists(String path) {
     return Bindings.invoke(key: "fs.exists", value: {"path": path});
   }
@@ -65,7 +65,8 @@ class Fs {
         key: "fs.write", value: {"path": path, "contents": contents});
   }
 
-  static Future<void> saveImageUrlToFile(String imageUrl, String filePath) async {
+  static Future<void> saveImageUrlToFile(
+      String imageUrl, String filePath) async {
     await Bindings.invokeAsync(
         key: "fs.save_image_url_to_file",
         value: {"imageUrl": imageUrl, "filePath": filePath});
@@ -74,37 +75,39 @@ class Fs {
   static void test() async {
     if (!AppConfig.isDebug) return;
 
-    final testFilePath = "${Path.getCacheDir()}/test.txt";
+    final testFilePath = "${RustPath.getCacheDir()}/test.txt";
     write(testFilePath, "test123");
     final fileText = readToString(testFilePath);
     final binary = readBinary(testFilePath);
-    logger.i("Fs.exists = ${exists(testFilePath)}");
-    logger.i("Fs.readToString = $fileText");
-    logger.i("Fs.readBinary = ${binary.length}");
-    logger.i("Fs.isFile = ${isFile(testFilePath)}");
+    logger.i("RustFs.exists = ${exists(testFilePath)}");
+    logger.i("RustFs.readToString = $fileText");
+    logger.i("RustFs.readBinary = ${binary.length}");
+    logger.i("RustFs.isFile = ${isFile(testFilePath)}");
 
-    final testDirPath = "${Path.getCacheDir()}/testDir";
+    final testDirPath = "${RustPath.getCacheDir()}/testDir";
     createDirAll(testDirPath);
-    logger.i("Fs.createDirAll = ${exists(testDirPath)}");
-    logger.i("Fs.isDir = ${isDir(testDirPath)}");
+    logger.i("RustFs.createDirAll = ${exists(testDirPath)}");
+    logger.i("RustFs.isDir = ${isDir(testDirPath)}");
     delete(testDirPath, false);
 
-    final copyFilePath = "${Path.getCacheDir()}/copyText.txt";
+    final copyFilePath = "${RustPath.getCacheDir()}/copyText.txt";
     copy(testFilePath, copyFilePath, true);
-    logger.i("Fs.copy = ${exists(copyFilePath)}");
+    logger.i("RustFs.copy = ${exists(copyFilePath)}");
 
-    final moveFilePath = "${Path.getCacheDir()}/moveText.txt";
+    final moveFilePath = "${RustPath.getCacheDir()}/moveText.txt";
     copy(testFilePath, moveFilePath, true);
-    logger.i("Fs.move = ${exists(moveFilePath)}");
+    logger.i("RustFs.move = ${exists(moveFilePath)}");
 
-    final imgPath = "${Path.getCacheDir()}/img.png";
-    await saveImageUrlToFile("https://raw.githubusercontent.com/lona-labs/lonanote/refs/heads/main/resources/icons/icon.png", imgPath);
-    logger.i("Fs.saveImageUrlToFile = ${exists(imgPath)}");
+    final imgPath = "${RustPath.getCacheDir()}/img.png";
+    await saveImageUrlToFile(
+        "https://raw.githubusercontent.com/lona-labs/lonanote/refs/heads/main/resources/icons/icon.png",
+        imgPath);
+    logger.i("RustFs.saveImageUrlToFile = ${exists(imgPath)}");
 
     delete(testFilePath, false);
     delete(copyFilePath, false);
     delete(moveFilePath, false);
     delete(imgPath, false);
-    logger.i("Fs.delete = success");
+    logger.i("RustFs.delete = success");
   }
 }

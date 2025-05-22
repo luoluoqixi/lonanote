@@ -22,6 +22,6 @@ export const settings = {
     return (await invokeAsync('settings.save_settings'))!;
   },
   resetSettingsAutoSaveInterval: async () => {
-    return (await invokeAsync('settings.reset_settings_auto_save_interval', settings))!;
+    return (await invokeAsync('settings.reset_settings_auto_save_interval'))!;
   },
 };

@@ -51,14 +51,14 @@ class Settings extends _$Settings with WidgetsBindingObserver {
 }
 
 @freezed
-class SettingsStore with _$SettingsStore {
+sealed class SettingsStore with _$SettingsStore {
   const factory SettingsStore({
     required ThemeSettings theme,
   }) = _SettingsStore;
 }
 
 @freezed
-class ThemeSettings with _$ThemeSettings {
+sealed class ThemeSettings with _$ThemeSettings {
   const factory ThemeSettings({
     required Brightness platformBrightness,
     required ThemeMode themeMode,

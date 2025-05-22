@@ -8,7 +8,7 @@ class Bindings {
   static bool isInited = false;
 
   static Future<void> _initApi() async {
-    await Path.initPath();
+    await RustPath.initPath();
   }
 
   static Future<void> init() async {
@@ -80,7 +80,10 @@ class Bindings {
 }
 
 void testBindings() {
-  // App.test();
-  // Fs.test();
-  // Path.test();
+  // RustApp.test();
+  // RustFs.test();
+  // RustPath.test();
+  // RustSettings.test();
+  // RustWorkspace.test();
+  // RustWorkspaceManager.test();
 }

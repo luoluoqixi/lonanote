@@ -3,7 +3,7 @@ import 'package:lonanote/src/common/log.dart';
 
 import '../../bindings.dart';
 
-class App {
+class RustApp {
   static String? getVersion() {
     return Bindings.invoke(key: "app.get_version");
   }
@@ -11,6 +11,6 @@ class App {
   static void test() {
     if (!AppConfig.isDebug) return;
 
-    logger.i("App.getVersion = ${getVersion()}");
+    logger.i("RustApp.getVersion = ${getVersion()}");
   }
 }
