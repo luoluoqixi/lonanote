@@ -4,22 +4,30 @@ import 'package:lonanote/src/widgets/flutter/custom_flexible_space_bar.dart';
 
 class ScrollAppBar extends StatelessWidget {
   final String title;
+  final double? titleFontSize;
   final String? subTitle;
+  final double? subTitleFontSize;
   final Color? titleColor;
   final Color? subTitleColor;
   final Color? bgColor;
   final List<Widget>? actions;
   final double? scrolledUnderElevation;
+  final double? expandedHeight;
+  final double? expandedTitleScale;
 
   const ScrollAppBar({
     super.key,
     required this.title,
+    this.titleFontSize,
     this.subTitle,
+    this.subTitleFontSize,
     this.titleColor,
     this.subTitleColor,
     this.bgColor,
     this.actions,
     this.scrolledUnderElevation,
+    this.expandedHeight,
+    this.expandedTitleScale,
   });
 
   @override
@@ -33,18 +41,18 @@ class ScrollAppBar extends StatelessWidget {
       backgroundColor: backgroundColor,
       titleTextStyle: TextStyle(color: textColor),
       centerTitle: false,
-      expandedHeight: 120.0,
+      expandedHeight: expandedHeight ?? 120.0,
       scrolledUnderElevation: scrolledUnderElevation ?? 1,
       surfaceTintColor: colorScheme.primary,
       flexibleSpace: CustomFlexibleSpaceBar(
         centerTitle: false,
-        expandedTitleScale: 2,
+        expandedTitleScale: expandedTitleScale ?? 2,
         fixedSubtitle: subTitle != null
             ? Text(
                 subTitle ?? "",
                 style: TextStyle(
                   color: subTitleColor ?? subColor,
-                  fontSize: 12,
+                  fontSize: subTitleFontSize ?? 12,
                 ),
               )
             : null,
@@ -53,7 +61,7 @@ class ScrollAppBar extends StatelessWidget {
           child: Text(
             title,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: titleFontSize ?? 16,
               color: titleColor ?? textColor,
             ),
           ),

@@ -22,6 +22,10 @@ class ThemeColors {
     return isLight(colorScheme) ? Colors.black : Colors.white;
   }
 
+  static Color getTextColorReverse(ColorScheme colorScheme) {
+    return isLight(colorScheme) ? Colors.white : Colors.black;
+  }
+
   static Color getTextGreyColor(ColorScheme colorScheme) {
     return isLight(colorScheme) ? Colors.black54 : Colors.grey;
   }

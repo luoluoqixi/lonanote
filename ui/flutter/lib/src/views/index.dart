@@ -96,6 +96,7 @@ class _IndexState extends ConsumerState<Index>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
+    final menuItemTextStyle = TextStyle(color: ThemeColors.getTextColor(colorScheme));
     return PlatformScaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
@@ -106,6 +107,43 @@ class _IndexState extends ConsumerState<Index>
             ScrollAppBar(
               title: "露娜笔记",
               subTitle: "选择工作区",
+              actions: [
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    isMaterial(context) ? Icons.more_vert : Icons.more_horiz,
+                    size: 28,
+                  ),
+                  tooltip: '更多操作',
+                  offset: const Offset(0, 50),
+                  elevation: 1,
+                  color: colorScheme.surface,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      bottomLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'add') {
+                      logger.i("创建工作区");
+                    } else if (value == 'settings') {
+                      logger.i("点击设置");
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    PopupMenuItem<String>(
+                      value: 'add',
+                      child: Text('创建工作区', style: menuItemTextStyle),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'settings',
+                      child: Text('设置', style: menuItemTextStyle),
+                    ),
+                  ],
+                ),
+              ],
             ),
             _buildContent(context),
           ],
