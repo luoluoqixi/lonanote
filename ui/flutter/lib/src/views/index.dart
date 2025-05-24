@@ -25,10 +25,13 @@ class _IndexState extends ConsumerState<Index>
     super.dispose();
   }
 
-  SliverList _buildContent(BuildContext context) {
+  Widget _buildContent(BuildContext context) {
     final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
     final colorScheme = Theme.of(context).colorScheme;
     final count = workspaces?.length ?? 0;
+    if (count == 0) {
+      return _buildNoWorkspace(context);
+    }
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
@@ -46,6 +49,50 @@ class _IndexState extends ConsumerState<Index>
           );
         },
         childCount: count,
+      ),
+    );
+  }
+
+  Widget _buildNoWorkspace(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SliverToBoxAdapter(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '暂无工作区',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: ThemeColors.getTextGreyColor(colorScheme),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    logger.i("点击创建工作区");
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('创建工作区'),
+                  style: TextButton.styleFrom(
+                    side: BorderSide(
+                      color: colorScheme.primary,
+                    ),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -96,7 +143,8 @@ class _IndexState extends ConsumerState<Index>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
-    final menuItemTextStyle = TextStyle(color: ThemeColors.getTextColor(colorScheme));
+    final menuItemTextStyle =
+        TextStyle(color: ThemeColors.getTextColor(colorScheme));
     return PlatformScaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
@@ -118,12 +166,7 @@ class _IndexState extends ConsumerState<Index>
                   elevation: 1,
                   color: colorScheme.surface,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      bottomLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
                   onSelected: (value) {
                     if (value == 'add') {
