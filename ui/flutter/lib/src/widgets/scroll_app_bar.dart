@@ -70,7 +70,9 @@ class ScrollAppBar extends StatelessWidget {
         collapseMode: CollapseMode.parallax,
       ),
       elevation: 0,
-      actions: actions,
+      actions: [
+        ...?actions, const SizedBox(width: 20), // 增加右边间距
+      ],
     );
   }
 }
