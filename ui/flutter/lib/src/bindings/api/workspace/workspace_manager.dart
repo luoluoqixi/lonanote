@@ -1,7 +1,9 @@
+import 'package:lonanote/src/bindings/api/fs/fs.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
 
 import '../../bindings.dart';
+import '../path/path.dart';
 import './types.dart';
 
 class RustWorkspaceManager {
@@ -13,6 +15,10 @@ class RustWorkspaceManager {
 
   static void setCurrentOpenWorkspace(String? path) {
     currentWorkspace = path;
+  }
+
+  static String getWorkspaceDir() {
+    return RustPath.getDataDir();
   }
 
   static Future<void> setWorkspaceRootPath(
@@ -42,6 +48,15 @@ class RustWorkspaceManager {
         .map((e) => RustWorkspaceMetadata.fromJson(e as Map<String, dynamic>))
         .toList();
     return workspaces;
+  }
+
+  static Future<void> createWorkspace(String name) async {
+    final path = "${getWorkspaceDir()}/$name";
+    if (RustFs.exists(path)) {
+      throw Exception("already exist path: $path");
+    }
+    await Bindings.invokeAsync(
+        key: "workspace.create_workspace", value: {"path": path});
   }
 
   static Future<void> openWorkspaceByPath(String path) async {

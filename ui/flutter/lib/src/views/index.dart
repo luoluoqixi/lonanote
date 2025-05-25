@@ -6,10 +6,12 @@ import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
+import 'package:lonanote/src/views/settings/settings_page.dart';
+import 'package:lonanote/src/views/workspace/create_workspace_page.dart';
 import 'package:lonanote/src/widgets/platform_button.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
+import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_popup_menu_button.dart';
-import 'package:lonanote/src/widgets/scroll_app_bar.dart';
 
 class Index extends ConsumerStatefulWidget {
   const Index({super.key});
@@ -126,11 +128,23 @@ class _IndexState extends ConsumerState<Index>
   }
 
   void createWorkspace() {
-    logger.i("创建工作区");
+    Navigator.push(
+      context,
+      platformPageRoute(
+        context: context,
+        builder: (context) => CreateWorkspacePage(),
+      ),
+    );
   }
 
   void openSettings() {
-    logger.i("打开设置");
+    Navigator.push(
+      context,
+      platformPageRoute(
+        context: context,
+        builder: (context) => SettingsPage(),
+      ),
+    );
   }
 
   void openWorkspace(RustWorkspaceMetadata workspace) {
@@ -147,43 +161,30 @@ class _IndexState extends ConsumerState<Index>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final backgroundColor = ThemeColors.getBgColor(colorScheme);
-    return PlatformScaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        child: CustomScrollView(
-          slivers: [
-            ScrollAppBar(
-              title: "露娜笔记",
-              subTitle: "选择工作区",
-              actions: [
-                PlatformPopupMenuButton(
-                  options: [
-                    PlatformPopupMenuOption(
-                      value: "create-workspace",
-                      label: "创建工作区",
-                      onClick: onMoreOptionClick,
-                    ),
-                    PlatformPopupMenuOption(
-                      value: "settings",
-                      label: "设置",
-                      onClick: onMoreOptionClick,
-                    ),
-                  ],
-                  icon: Icon(
-                    ThemeIcons.more(context),
-                    size: 28,
-                  ),
-                ),
-              ],
+    return PlatformPage(
+      title: "露娜笔记",
+      subTitle: "选择工作区",
+      titleActions: [
+        PlatformPopupMenuButton(
+          options: [
+            PlatformPopupMenuOption(
+              value: "create-workspace",
+              label: "创建工作区",
+              onClick: onMoreOptionClick,
             ),
-            _buildContent(context),
+            PlatformPopupMenuOption(
+              value: "settings",
+              label: "设置",
+              onClick: onMoreOptionClick,
+            ),
           ],
+          icon: Icon(
+            ThemeIcons.more(context),
+            size: 28,
+          ),
         ),
-      ),
+      ],
+      contents: [_buildContent(context)],
     );
   }
 }
