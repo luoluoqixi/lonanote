@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
+import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/log.dart';
+import 'package:lonanote/src/common/utility.dart';
+import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
-import 'package:lonanote/src/views/settings/settings_page.dart';
-import 'package:lonanote/src/views/workspace/create_workspace_page.dart';
 import 'package:lonanote/src/widgets/platform_button.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
@@ -23,6 +23,8 @@ class Index extends ConsumerStatefulWidget {
 class _IndexState extends ConsumerState<Index>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -128,27 +130,39 @@ class _IndexState extends ConsumerState<Index>
   }
 
   void createWorkspace() {
-    Navigator.push(
-      context,
-      platformPageRoute(
-        context: context,
-        builder: (context) => CreateWorkspacePage(),
-      ),
-    );
+    AppRouter.jumpToCreateWorkspacePage(context);
   }
 
   void openSettings() {
-    Navigator.push(
-      context,
-      platformPageRoute(
-        context: context,
-        builder: (context) => SettingsPage(),
-      ),
-    );
+    AppRouter.jumpToSettingsPage(context);
   }
 
-  void openWorkspace(RustWorkspaceMetadata workspace) {
-    logger.i("打开工作区${workspace.name}");
+  void openWorkspace(RustWorkspaceMetadata workspace) async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await WorkspaceManager.openWorkspace(ref, workspace.path);
+      if (mounted) {
+        AppRouter.jumpToWorkspaceHomePage(context);
+      }
+    } catch(e) {
+      logger.e(e);
+      if (mounted) {
+        Utility.showDialog(
+          context: context,
+          title: "错误",
+          content: LoggerUtility.errorShow("打开工作区失败", e),
+          okText: "确定",
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void onMoreOptionClick(PlatformPopupMenuOption option) {
@@ -164,6 +178,7 @@ class _IndexState extends ConsumerState<Index>
     return PlatformPage(
       title: "露娜笔记",
       subTitle: "选择工作区",
+      isLoading: _isLoading,
       titleActions: [
         PlatformPopupMenuButton(
           options: [

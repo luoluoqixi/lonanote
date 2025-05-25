@@ -12,9 +12,9 @@ pub enum WorkspaceError {
     JsonError(String),
     #[error("[workspace] notfound workspace: {0}")]
     NotFoundWorkspace(String),
-    #[error("[workspace] cannot modify an already workspace: {0}")]
+    #[error("[workspace] already existed workspace: {0}")]
     AlreadyExistWorkspace(String),
-    #[error("[workspace] cannot modify an already open workspace: {0}")]
+    #[error("[workspace] already existed open workspace: {0}")]
     AlreadyExistOpenWorkspace(String),
     #[error("[workspace] cannot remove an already open workspace: {0}")]
     RemoveAlreadyOpenWorkspace(String),

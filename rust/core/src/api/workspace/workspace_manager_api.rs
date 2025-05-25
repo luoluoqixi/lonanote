@@ -82,6 +82,13 @@ async fn open_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> Co
     Ok(CommandResponse::None)
 }
 
+async fn create_workspace(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    workspace_manager.create_workspace(args.path).await?;
+
+    Ok(CommandResponse::None)
+}
+
 async fn unload_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager.unload_workspace(args.path).await?;
@@ -148,6 +155,7 @@ pub fn reg_commands() -> Result<()> {
     reg_command_async("workspace.remove_workspace", remove_workspace)?;
     reg_command_async("workspace.get_workspaces_metadata", get_workspaces_metadata)?;
     reg_command_async("workspace.open_workspace_by_path", open_workspace_by_path)?;
+    reg_command_async("workspace.create_workspace", create_workspace)?;
     reg_command_async(
         "workspace.unload_workspace_by_path",
         unload_workspace_by_path,

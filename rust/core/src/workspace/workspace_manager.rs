@@ -66,6 +66,30 @@ impl WorkspaceManager {
         }
     }
 
+    pub async fn create_workspace(&mut self, path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
+        let path = path.as_ref();
+        if !path.exists() {
+            std::fs::create_dir_all(path)
+                .map_err(|err| WorkspaceError::IOError(err.to_string()))?;
+        } else if path.is_file() {
+            return Err(WorkspaceError::IOError(format!(
+                "the path is a file: {}",
+                path.display()
+            )));
+        }
+        if self.workspaces.iter().any(|x| x.path == path) {
+            return Err(WorkspaceError::AlreadyExistWorkspace(
+                path.display().to_string(),
+            ));
+        }
+
+        let workspace = WorkspaceInstance::new(&path.to_path_buf())?;
+        self.workspaces.push(workspace.metadata.clone());
+        self.save()?;
+
+        Ok(())
+    }
+
     pub async fn load_workspace(&mut self, path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
         if self.open_workspaces.contains_key(path.as_ref()) {
             return Ok(());

@@ -1,4 +1,3 @@
-import 'package:lonanote/src/bindings/api/fs/fs.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
 
@@ -50,13 +49,11 @@ class RustWorkspaceManager {
     return workspaces;
   }
 
-  static Future<void> createWorkspace(String name) async {
+  static Future<String> createWorkspace(String name) async {
     final path = "${getWorkspaceDir()}/$name";
-    if (RustFs.exists(path)) {
-      throw Exception("already exist path: $path");
-    }
     await Bindings.invokeAsync(
         key: "workspace.create_workspace", value: {"path": path});
+    return path;
   }
 
   static Future<void> openWorkspaceByPath(String path) async {

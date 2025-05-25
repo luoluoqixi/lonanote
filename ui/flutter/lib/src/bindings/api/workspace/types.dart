@@ -14,7 +14,7 @@ class RustWorkspaceMetadata {
   String name;
   String path;
   String rootPath;
-  BigInt lastOpenTime;
+  int lastOpenTime;
 
   factory RustWorkspaceMetadata.fromJson(Map<String, dynamic> json) =>
       _$RustWorkspaceMetadataFromJson(json);
@@ -97,11 +97,11 @@ class RustFileNode {
   /// 'file' | 'directory'
   String fileType;
   String path;
-  BigInt? size;
-  BigInt? lastModifiedTime;
-  BigInt? createTime;
-  BigInt fileCount;
-  BigInt dirCount;
+  int? size;
+  int? lastModifiedTime;
+  int? createTime;
+  int fileCount;
+  int dirCount;
 
   factory RustFileNode.fromJson(Map<String, dynamic> json) =>
       _$RustFileNodeFromJson(json);

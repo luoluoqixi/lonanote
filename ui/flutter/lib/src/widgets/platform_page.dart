@@ -12,6 +12,7 @@ class PlatformPage extends StatelessWidget {
   final List<Widget>? contents;
 
   final Color? backgroundColor;
+  final bool? isLoading;
 
   const PlatformPage({
     super.key,
@@ -22,12 +23,14 @@ class PlatformPage extends StatelessWidget {
     this.child,
     this.contents,
     this.backgroundColor,
+    this.isLoading,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final backgroundColor = this.backgroundColor ?? ThemeColors.getBgColor(colorScheme);
+    final backgroundColor =
+        this.backgroundColor ?? ThemeColors.getBgColor(colorScheme);
     final appBar = this.appBar ??
         (title != null
             ? ScrollAppBar(
@@ -37,22 +40,33 @@ class PlatformPage extends StatelessWidget {
               )
             : null);
 
-    return PlatformScaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        child: CustomScrollView(
-          slivers: [
-            if (appBar != null) appBar,
-            if (child != null)
-              SliverToBoxAdapter(
-                child: child,
-              ),
-            ...?contents,
-          ],
+    return Stack(
+      children: [
+        PlatformScaffold(
+          backgroundColor: backgroundColor,
+          body: SafeArea(
+            top: false,
+            bottom: false,
+            child: CustomScrollView(
+              slivers: [
+                if (appBar != null) appBar,
+                if (child != null)
+                  SliverToBoxAdapter(
+                    child: child,
+                  ),
+                ...?contents,
+              ],
+            ),
+          ),
         ),
-      ),
+        if (isLoading == true)
+          Container(
+            color: Colors.black45,
+            child: Center(
+              child: PlatformCircularProgressIndicator(),
+            ),
+          ),
+      ],
     );
   }
 }

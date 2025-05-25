@@ -29,6 +29,11 @@ class Workspace extends _$Workspace {
     final workspaces = await RustWorkspaceManager.getWorkspacesMetadata();
     state = state.copyWith(workspaces: workspaces);
   }
+
+  Future<void> updateAll() async {
+    await updateWorkspaces();
+    await updateCurrentWorkspace();
+  }
 }
 
 @freezed

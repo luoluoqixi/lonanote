@@ -12,7 +12,7 @@ RustWorkspaceMetadata _$RustWorkspaceMetadataFromJson(
       name: json['name'] as String,
       path: json['path'] as String,
       rootPath: json['rootPath'] as String,
-      lastOpenTime: BigInt.parse(json['lastOpenTime'] as String),
+      lastOpenTime: (json['lastOpenTime'] as num).toInt(),
     );
 
 Map<String, dynamic> _$RustWorkspaceMetadataToJson(
@@ -21,7 +21,7 @@ Map<String, dynamic> _$RustWorkspaceMetadataToJson(
       'name': instance.name,
       'path': instance.path,
       'rootPath': instance.rootPath,
-      'lastOpenTime': instance.lastOpenTime.toString(),
+      'lastOpenTime': instance.lastOpenTime,
     };
 
 RustWorkspaceSettings _$RustWorkspaceSettingsFromJson(
@@ -78,15 +78,11 @@ RustFileNode _$RustFileNodeFromJson(Map<String, dynamic> json) => RustFileNode(
           : RustFileNode.fromJson(json['children'] as Map<String, dynamic>),
       fileType: json['fileType'] as String,
       path: json['path'] as String,
-      size: json['size'] == null ? null : BigInt.parse(json['size'] as String),
-      lastModifiedTime: json['lastModifiedTime'] == null
-          ? null
-          : BigInt.parse(json['lastModifiedTime'] as String),
-      createTime: json['createTime'] == null
-          ? null
-          : BigInt.parse(json['createTime'] as String),
-      fileCount: BigInt.parse(json['fileCount'] as String),
-      dirCount: BigInt.parse(json['dirCount'] as String),
+      size: (json['size'] as num?)?.toInt(),
+      lastModifiedTime: (json['lastModifiedTime'] as num?)?.toInt(),
+      createTime: (json['createTime'] as num?)?.toInt(),
+      fileCount: (json['fileCount'] as num).toInt(),
+      dirCount: (json['dirCount'] as num).toInt(),
     );
 
 Map<String, dynamic> _$RustFileNodeToJson(RustFileNode instance) =>
@@ -94,11 +90,11 @@ Map<String, dynamic> _$RustFileNodeToJson(RustFileNode instance) =>
       'children': instance.children,
       'fileType': instance.fileType,
       'path': instance.path,
-      'size': instance.size?.toString(),
-      'lastModifiedTime': instance.lastModifiedTime?.toString(),
-      'createTime': instance.createTime?.toString(),
-      'fileCount': instance.fileCount.toString(),
-      'dirCount': instance.dirCount.toString(),
+      'size': instance.size,
+      'lastModifiedTime': instance.lastModifiedTime,
+      'createTime': instance.createTime,
+      'fileCount': instance.fileCount,
+      'dirCount': instance.dirCount,
     };
 
 RustFileTree _$RustFileTreeFromJson(Map<String, dynamic> json) => RustFileTree(
