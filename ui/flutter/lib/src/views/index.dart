@@ -5,7 +5,10 @@ import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
+import 'package:lonanote/src/theme/theme_icons.dart';
+import 'package:lonanote/src/widgets/platform_button.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
+import 'package:lonanote/src/widgets/platform_popup_menu_button.dart';
 import 'package:lonanote/src/widgets/scroll_app_bar.dart';
 
 class Index extends ConsumerStatefulWidget {
@@ -71,24 +74,9 @@ class _IndexState extends ConsumerState<Index>
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: () {
-                    logger.i("点击创建工作区");
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('创建工作区'),
-                  style: TextButton.styleFrom(
-                    side: BorderSide(
-                      color: colorScheme.primary,
-                    ),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
+              PlatformButton(
+                onPressed: createWorkspace,
+                labelText: "创建工作区",
               ),
             ],
           ),
@@ -101,9 +89,7 @@ class _IndexState extends ConsumerState<Index>
       ColorScheme colorScheme, RustWorkspaceMetadata workspace) {
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
     return PlatformInkWell(
-      onTap: () {
-        logger.i("click item");
-      },
+      onTap: () => openWorkspace(workspace),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -139,12 +125,30 @@ class _IndexState extends ConsumerState<Index>
     );
   }
 
+  void createWorkspace() {
+    logger.i("创建工作区");
+  }
+
+  void openSettings() {
+    logger.i("打开设置");
+  }
+
+  void openWorkspace(RustWorkspaceMetadata workspace) {
+    logger.i("打开工作区${workspace.name}");
+  }
+
+  void onMoreOptionClick(PlatformPopupMenuOption option) {
+    if (option.value == "create-workspace") {
+      createWorkspace();
+    } else if (option.value == "settings") {
+      openSettings();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
-    final menuItemTextStyle =
-        TextStyle(color: ThemeColors.getTextColor(colorScheme));
     return PlatformScaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
@@ -156,35 +160,23 @@ class _IndexState extends ConsumerState<Index>
               title: "露娜笔记",
               subTitle: "选择工作区",
               actions: [
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    isMaterial(context) ? Icons.more_vert : Icons.more_horiz,
-                    size: 28,
-                  ),
-                  tooltip: '更多操作',
-                  offset: const Offset(0, 50),
-                  elevation: 1,
-                  color: colorScheme.surface,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  onSelected: (value) {
-                    if (value == 'add') {
-                      logger.i("创建工作区");
-                    } else if (value == 'settings') {
-                      logger.i("点击设置");
-                    }
-                  },
-                  itemBuilder: (BuildContext context) => [
-                    PopupMenuItem<String>(
-                      value: 'add',
-                      child: Text('创建工作区', style: menuItemTextStyle),
+                PlatformPopupMenuButton(
+                  options: [
+                    PlatformPopupMenuOption(
+                      value: "create-workspace",
+                      label: "创建工作区",
+                      onClick: onMoreOptionClick,
                     ),
-                    PopupMenuItem<String>(
-                      value: 'settings',
-                      child: Text('设置', style: menuItemTextStyle),
+                    PlatformPopupMenuOption(
+                      value: "settings",
+                      label: "设置",
+                      onClick: onMoreOptionClick,
                     ),
                   ],
+                  icon: Icon(
+                    ThemeIcons.more(context),
+                    size: 28,
+                  ),
                 ),
               ],
             ),
