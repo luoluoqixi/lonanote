@@ -18,7 +18,7 @@ class Settings extends _$Settings with WidgetsBindingObserver {
       theme: ThemeSettings(
         platformBrightness: _getSystemTheme(),
         themeMode: ThemeMode.system,
-        primaryColor: Colors.red,
+        primaryColor: Colors.pink,
       ),
       settings: null,
     );
