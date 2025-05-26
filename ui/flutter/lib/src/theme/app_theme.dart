@@ -64,7 +64,7 @@ class AppTheme {
             primary: theme.primaryColor,
           );
     return CupertinoThemeData(
-      primaryColor: theme.primaryColor, // 导航栏按钮颜色
+      primaryColor: colorScheme.primary, // 导航栏按钮颜色
       barBackgroundColor: ThemeColors.getBgColor(colorScheme), // 导航栏背景色
       textTheme: CupertinoTextThemeData(
         navTitleTextStyle: TextStyle(

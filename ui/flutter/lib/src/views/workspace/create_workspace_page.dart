@@ -1,11 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
 import 'package:lonanote/src/widgets/platform_button.dart';
+import 'package:lonanote/src/widgets/platform_input.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 
 class CreateWorkspacePage extends ConsumerStatefulWidget {
@@ -77,41 +78,43 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
-    return PlatformPage(
+    return PlatformSimplePage(
       title: "创建工作区",
-      subTitle: "创建一个新的工作区",
       isLoading: _isLoading,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                PlatformTextFormField(
-                  controller: _nameController,
-                  autofocus: true,
-                  hintText: '工作区名称',
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return '请输入工作区名称';
-                    }
-                    final invalidChars = RegExp(r'[\/\\:\*\?"<>\|]');
-                    if (invalidChars.hasMatch(value)) {
-                      return '工作区名称中不能包含特殊字符: / \\ : * ? " < > | ';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                PlatformButton(
-                  onPressed: _createWorkspace,
-                  labelText: '创建并打开',
-                ),
-              ],
+      child: Column(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  PlatformInput(
+                    controller: _nameController,
+                    autofocus: true,
+                    hintText: '工作区名称',
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return '请输入工作区名称';
+                      }
+                      final invalidChars = RegExp(r'[\/\\:\*\?"<>\|]');
+                      if (invalidChars.hasMatch(value)) {
+                        return '工作区名称中不能包含特殊字符: / \\ : * ? " < > | ';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  PlatformButton(
+                    width: double.infinity,
+                    onPressed: _createWorkspace,
+                    labelText: '创建并打开',
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          )
+        ],
       ),
     );
   }

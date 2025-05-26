@@ -18,7 +18,7 @@ class Settings extends _$Settings with WidgetsBindingObserver {
       theme: ThemeSettings(
         platformBrightness: _getSystemTheme(),
         themeMode: ThemeMode.system,
-        primaryColor: Colors.blue,
+        primaryColor: Colors.red,
       ),
       settings: null,
     );
@@ -28,8 +28,6 @@ class Settings extends _$Settings with WidgetsBindingObserver {
     final settings = await RustSettings.getSettings();
     state = state.copyWith(settings: settings);
   }
-
-
 
   Brightness _getSystemTheme() {
     return WidgetsBinding.instance.platformDispatcher.platformBrightness;

@@ -49,6 +49,7 @@ dependencies:
   logger: ^2.5.0
   path_provider: ^2.1.5
   json_annotation: ^4.9.0
+  pull_down_button: ^0.10.2
 
 dev_dependencies:
   integration_test:
