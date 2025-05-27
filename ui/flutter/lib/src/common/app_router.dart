@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/views/settings/settings_page.dart';
 import 'package:lonanote/src/views/workspace/create_workspace_page.dart';
+import 'package:lonanote/src/views/workspace/rename_workspace_page.dart';
+import 'package:lonanote/src/views/workspace/select_workspace_page.dart';
 import 'package:lonanote/src/views/workspace/workspace_home.dart';
 
 class AppRouter {
@@ -11,14 +13,26 @@ class AppRouter {
       RouteObserver<ModalRoute<void>>();
 
   static Future<T?> jumpToPage<T extends Object?>(
-      BuildContext context, WidgetBuilder? builder) {
-    return Navigator.push(
-      context,
-      platformPageRoute(
-        context: context,
-        builder: builder,
-      ),
-    );
+      BuildContext context, WidgetBuilder? builder,
+      {bool removeAllHistroy = false}) {
+    if (removeAllHistroy) {
+      return Navigator.pushAndRemoveUntil(
+        context,
+        platformPageRoute(
+          context: context,
+          builder: builder,
+        ),
+        (Route<dynamic> route) => false,
+      );
+    } else {
+      return Navigator.push(
+        context,
+        platformPageRoute(
+          context: context,
+          builder: builder,
+        ),
+      );
+    }
   }
 
   static Future<T?> showBottomSheet<T extends Object?>(
@@ -90,10 +104,29 @@ class AppRouter {
     );
   }
 
+  static void showRenameWorkspacePage(
+      BuildContext context, RustWorkspaceMetadata workspace) {
+    showBottomSheet(
+      context,
+      (context) => RenameWorkspacePage(
+        workspace: workspace,
+      ),
+      childSize: 0.4,
+    );
+  }
+
   static void jumpToSettingsPage(BuildContext context) {
     jumpToPage(
       context,
       (context) => SettingsPage(),
+    );
+  }
+
+  static void jumpToSelectWorkspacePage(BuildContext context) {
+    jumpToPage(
+      context,
+      (context) => SelectWorkspacePage(),
+      removeAllHistroy: true,
     );
   }
 
@@ -106,10 +139,14 @@ class AppRouter {
     );
   }
 
-  static void jumpToWorkspaceHomePage(BuildContext context) {
+  static void jumpToWorkspaceHomePage(
+      BuildContext context, RustWorkspaceData workspace) {
     jumpToPage(
       context,
-      (context) => WorkspaceHomePage(),
+      (context) => WorkspaceHomePage(
+        workspace: workspace,
+      ),
+      removeAllHistroy: true,
     );
   }
 }

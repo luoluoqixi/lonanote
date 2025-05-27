@@ -64,7 +64,7 @@ class ScrollAppBar extends StatelessWidget {
               child: Text(
                 title,
                 style: TextStyle(
-                  fontSize: titleFontSize ?? 16,
+                  fontSize: titleFontSize ?? (subTitle == null ? 20 : 18),
                   color: titleColor ?? textColor,
                 ),
               ),

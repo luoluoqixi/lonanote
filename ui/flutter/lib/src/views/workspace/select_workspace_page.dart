@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -142,12 +141,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
               itemBuilder: (context) => [
                 PullDownMenuItem(
                   title: '重命名',
-                  onTap: () => Fluttertoast.showToast(msg: "TODO: 重命名"),
+                  onTap: () => renameWorkspaceClick(workspace),
                 ),
                 PullDownMenuItem(
                   title: '删除',
                   isDestructive: true,
-                  onTap: () => Fluttertoast.showToast(msg: "TODO: 删除"),
+                  onTap: () => deleteWorkspaceClick(workspace),
                 ),
               ],
               buttonIcon: Icon(
@@ -177,7 +176,17 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     try {
       await WorkspaceManager.openWorkspace(ref, workspace.path);
       if (mounted) {
-        AppRouter.jumpToWorkspaceHomePage(context);
+        final ws = WorkspaceManager.getCurrentWorkspace(ref);
+        if (ws != null) {
+          AppRouter.jumpToWorkspaceHomePage(context, ws);
+        } else {
+          Utility.showDialog(
+            context: context,
+            title: "错误",
+            content: "打开工作区失败, 未获取到工作区数据",
+            okText: "确定",
+          );
+        }
       }
     } catch (e) {
       logger.e(e);
@@ -196,6 +205,40 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         });
       }
     }
+  }
+
+  void deleteWorkspace(RustWorkspaceMetadata workspace) async {
+    try {
+      await WorkspaceManager.deleteWorkspace(ref, workspace.path);
+    } catch (e) {
+      logger.e(e);
+      if (mounted) {
+        Utility.showDialog(
+          context: context,
+          title: "错误",
+          content: LoggerUtility.errorShow("删除工作区失败", e),
+          okText: "确定",
+        );
+      }
+    }
+  }
+
+  void deleteWorkspaceClick(RustWorkspaceMetadata workspace) {
+    Utility.showDialog(
+      context: context,
+      title: "提示",
+      content: "确定要删除工作区 ${workspace.name} 吗？",
+      okText: "确定",
+      cancelText: "取消",
+      onOkPressed: () {
+        deleteWorkspace(workspace);
+        return null;
+      },
+    );
+  }
+
+  void renameWorkspaceClick(RustWorkspaceMetadata workspace) {
+    AppRouter.showRenameWorkspacePage(context, workspace);
   }
 
   @override

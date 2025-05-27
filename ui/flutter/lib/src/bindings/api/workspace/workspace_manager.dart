@@ -17,7 +17,7 @@ class RustWorkspaceManager {
   }
 
   static String getWorkspaceDir() {
-    return "${RustPath.getDataDir()}/ws";
+    return RustPath.getHomeDir();
   }
 
   static Future<void> setWorkspaceRootPath(

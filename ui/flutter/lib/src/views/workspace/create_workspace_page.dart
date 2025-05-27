@@ -20,7 +20,8 @@ class CreateWorkspacePage extends ConsumerStatefulWidget {
 
 class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _nameController =
+      TextEditingController(text: "新建工作区");
 
   bool _isLoading = false;
 
@@ -52,7 +53,17 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
               if (!widget.isPage) {
                 Navigator.of(context).pop();
               }
-              AppRouter.jumpToWorkspaceHomePage(context);
+              final ws = WorkspaceManager.getCurrentWorkspace(ref);
+              if (ws != null) {
+                AppRouter.jumpToWorkspaceHomePage(context, ws);
+              } else {
+                Utility.showDialog(
+                  context: context,
+                  title: "错误",
+                  content: "打开工作区失败, 未获取到工作区数据",
+                  okText: "确定",
+                );
+              }
             }
           } catch (e) {
             if (mounted) {
