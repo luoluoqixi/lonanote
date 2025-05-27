@@ -133,7 +133,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   }
 
   void createWorkspace() {
-    AppRouter.jumpToCreateWorkspacePage(context);
+    AppRouter.showCreateWorkspacePage(context);
   }
 
   void openSettings() {

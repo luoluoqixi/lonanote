@@ -52,6 +52,8 @@ class PlatformInput extends StatefulWidget {
 
   final String? hintText;
 
+  final int? delayFocus;
+
   final PlatformBuilder<MaterialTextFormFieldData>? material;
   final PlatformBuilder<CupertinoTextFormFieldData>? cupertino;
 
@@ -102,6 +104,7 @@ class PlatformInput extends StatefulWidget {
     this.restorationId,
     this.spellCheckConfiguration,
     this.hintText,
+    this.delayFocus,
     this.material,
     this.cupertino,
   });
@@ -112,6 +115,12 @@ class PlatformInput extends StatefulWidget {
 
 class _PlatformInputState extends State<PlatformInput> with RouteAware {
   final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    autofocusAsync();
+  }
 
   @override
   void didChangeDependencies() {
@@ -127,11 +136,7 @@ class _PlatformInputState extends State<PlatformInput> with RouteAware {
         route.animation!.addStatusListener((status) {
           if (status == AnimationStatus.completed) {
             // 动画完成时再设置 focus
-            if (widget.focusNode != null) {
-              widget.focusNode!.requestFocus();
-            } else {
-              _focusNode.requestFocus();
-            }
+            focusSync();
           }
         });
       }
@@ -143,6 +148,20 @@ class _PlatformInputState extends State<PlatformInput> with RouteAware {
     AppRouter.routeObserver.unsubscribe(this);
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void autofocusAsync() async {
+    if (widget.autofocus != true || widget.delayFocus == null) return;
+    await Future.delayed(Duration(milliseconds: widget.delayFocus!));
+    focusSync();
+  }
+
+  void focusSync() {
+    if (widget.focusNode != null) {
+      widget.focusNode!.requestFocus();
+    } else {
+      _focusNode.requestFocus();
+    }
   }
 
   @override
@@ -201,6 +220,7 @@ class _PlatformInputState extends State<PlatformInput> with RouteAware {
               ),
       cupertino: widget.cupertino ??
           (_, __) => CupertinoTextFormFieldData(
+                padding: EdgeInsets.zero,
                 decoration: BoxDecoration(
                   border: Border.all(color: CupertinoColors.systemGrey),
                   borderRadius: BorderRadius.circular(8.0),

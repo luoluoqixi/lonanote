@@ -10,7 +10,8 @@ import 'package:lonanote/src/widgets/platform_input.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 
 class CreateWorkspacePage extends ConsumerStatefulWidget {
-  const CreateWorkspacePage({super.key});
+  final bool isPage;
+  const CreateWorkspacePage({super.key, required this.isPage});
 
   @override
   ConsumerState<CreateWorkspacePage> createState() =>
@@ -48,6 +49,9 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
           try {
             await WorkspaceManager.openWorkspace(ref, path);
             if (mounted) {
+              if (!widget.isPage) {
+                Navigator.of(context).pop();
+              }
               AppRouter.jumpToWorkspaceHomePage(context);
             }
           } catch (e) {
@@ -81,8 +85,39 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget buildForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          PlatformInput(
+            controller: _nameController,
+            autofocus: true,
+            delayFocus: widget.isPage ? null : 300,
+            hintText: '工作区名称',
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return '请输入工作区名称';
+              }
+              final invalidChars = RegExp(r'[\/\\:\*\?"<>\|]');
+              if (invalidChars.hasMatch(value)) {
+                return '工作区名称中不能包含特殊字符: / \\ : * ? " < > | ';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
+          PlatformButton(
+            width: double.infinity,
+            onPressed: _createWorkspace,
+            labelText: '创建并打开',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildPage() {
     return PlatformSimplePage(
       title: "创建工作区",
       isLoading: _isLoading,
@@ -90,37 +125,36 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  PlatformInput(
-                    controller: _nameController,
-                    autofocus: true,
-                    hintText: '工作区名称',
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return '请输入工作区名称';
-                      }
-                      final invalidChars = RegExp(r'[\/\\:\*\?"<>\|]');
-                      if (invalidChars.hasMatch(value)) {
-                        return '工作区名称中不能包含特殊字符: / \\ : * ? " < > | ';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  PlatformButton(
-                    width: double.infinity,
-                    onPressed: _createWorkspace,
-                    labelText: '创建并打开',
-                  ),
-                ],
-              ),
-            ),
+            child: buildForm(),
           )
         ],
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isPage) {
+      return buildPage();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+            padding: EdgeInsets.only(
+              bottom: 15.0,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "创建工作区",
+                style: TextStyle(
+                  fontSize: 20,
+                ),
+              ),
+            )),
+        buildForm()
+      ],
     );
   }
 }
