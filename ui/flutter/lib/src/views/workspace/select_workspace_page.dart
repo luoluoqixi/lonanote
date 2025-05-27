@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -34,9 +35,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     super.dispose();
   }
 
-  Widget _buildContent(BuildContext context) {
+  Widget _buildContent(BuildContext context, ColorScheme colorScheme) {
     final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
-    final colorScheme = Theme.of(context).colorScheme;
+
     final count = workspaces?.length ?? 0;
     if (count == 0) {
       return SliverToBoxAdapter(
@@ -100,30 +101,59 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              workspace.name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            // 左侧信息部分
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    workspace.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    workspace.path,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: greyColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '上次打开时间: ${workspace.lastOpenTime}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: greyColor,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              workspace.path,
-              style: TextStyle(
-                fontSize: 13,
-                color: greyColor,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '上次打开时间: ${workspace.lastOpenTime}',
-              style: TextStyle(
-                fontSize: 12,
-                color: greyColor,
+            // 右侧下拉按钮
+            PlatformPullDownButton(
+              // buttonColor: ThemeColors.getTextGreyColor(colorScheme),
+              itemBuilder: (context) => [
+                PullDownMenuItem(
+                  title: '重命名',
+                  onTap: () => Fluttertoast.showToast(msg: "TODO: 重命名"),
+                ),
+                PullDownMenuItem(
+                  title: '删除',
+                  isDestructive: true,
+                  onTap: () => Fluttertoast.showToast(msg: "TODO: 删除"),
+                ),
+              ],
+              buttonIcon: Icon(
+                ThemeIcons.more(context),
+                color: ThemeColors.getTextGreyColor(colorScheme),
+                size: 24,
               ),
             ),
           ],
@@ -170,6 +200,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return PlatformPage(
       title: "工作区",
       subTitle: "选择工作区",
@@ -188,11 +219,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
           ],
           buttonIcon: Icon(
             ThemeIcons.more(context),
+            color: ThemeColors.getTextGreyColor(colorScheme),
             size: 28,
           ),
         ),
       ],
-      contents: [_buildContent(context)],
+      contents: [_buildContent(context, colorScheme)],
     );
   }
 }

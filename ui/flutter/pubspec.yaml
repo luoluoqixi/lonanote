@@ -50,6 +50,7 @@ dependencies:
   path_provider: ^2.1.5
   json_annotation: ^4.9.0
   pull_down_button: ^0.10.2
+  fluttertoast: ^8.2.12
 
 dev_dependencies:
   integration_test:
