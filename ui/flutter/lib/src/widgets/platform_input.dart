@@ -2,8 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/common/app_router.dart';
 
-class PlatformInput extends StatelessWidget {
+class PlatformInput extends StatefulWidget {
   final TextEditingController? controller;
   final String? initialValue;
   final FocusNode? focusNode;
@@ -106,60 +107,99 @@ class PlatformInput extends StatelessWidget {
   });
 
   @override
+  State<StatefulWidget> createState() => _PlatformInputState();
+}
+
+class _PlatformInputState extends State<PlatformInput> with RouteAware {
+  final _focusNode = FocusNode();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    AppRouter.routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPush() {
+    if (widget.autofocus ?? false) {
+      final route = ModalRoute.of(context);
+      if (route is PageRoute) {
+        route.animation!.addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            // 动画完成时再设置 focus
+            if (widget.focusNode != null) {
+              widget.focusNode!.requestFocus();
+            } else {
+              _focusNode.requestFocus();
+            }
+          }
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    AppRouter.routeObserver.unsubscribe(this);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PlatformTextFormField(
-      controller: controller,
-      initialValue: initialValue,
-      focusNode: focusNode,
-      keyboardType: keyboardType,
-      textCapitalization: textCapitalization,
-      textInputAction: textInputAction,
-      style: style,
-      strutStyle: strutStyle,
-      textAlign: textAlign,
-      textAlignVertical: textAlignVertical,
-      autofocus: autofocus,
-      readOnly: readOnly,
-      showCursor: showCursor,
-      obscuringCharacter: obscuringCharacter,
-      obscureText: obscureText,
-      autocorrect: autocorrect,
-      smartDashesType: smartDashesType,
-      smartQuotesType: smartQuotesType,
-      enableSuggestions: enableSuggestions,
-      maxLines: maxLines,
-      minLines: minLines,
-      expands: expands,
-      maxLength: maxLength,
-      onChanged: onChanged,
-      onTap: onTap,
-      onEditingComplete: onEditingComplete,
-      onFieldSubmitted: onFieldSubmitted,
-      onSaved: onSaved,
-      validator: validator,
-      inputFormatters: inputFormatters,
-      enabled: enabled,
-      cursorWidth: cursorWidth,
-      cursorHeight: cursorHeight,
-      cursorColor: cursorColor,
-      keyboardAppearance: keyboardAppearance,
-      scrollPadding: scrollPadding,
-      enableInteractiveSelection: enableInteractiveSelection,
-      selectionControls: selectionControls,
-      scrollPhysics: scrollPhysics,
-      autofillHints: autofillHints,
-      autovalidateMode: autovalidateMode,
-      contextMenuBuilder: contextMenuBuilder,
-      restorationId: restorationId,
-      spellCheckConfiguration: spellCheckConfiguration,
-      hintText: hintText,
-      material: material ??
+      controller: widget.controller,
+      initialValue: widget.initialValue,
+      focusNode: _focusNode,
+      keyboardType: widget.keyboardType,
+      textCapitalization: widget.textCapitalization,
+      textInputAction: widget.textInputAction,
+      style: widget.style,
+      strutStyle: widget.strutStyle,
+      textAlign: widget.textAlign,
+      textAlignVertical: widget.textAlignVertical,
+      autofocus: false,
+      readOnly: widget.readOnly,
+      showCursor: widget.showCursor,
+      obscuringCharacter: widget.obscuringCharacter,
+      obscureText: widget.obscureText,
+      autocorrect: widget.autocorrect,
+      smartDashesType: widget.smartDashesType,
+      smartQuotesType: widget.smartQuotesType,
+      enableSuggestions: widget.enableSuggestions,
+      maxLines: widget.maxLines,
+      minLines: widget.minLines,
+      expands: widget.expands,
+      maxLength: widget.maxLength,
+      onChanged: widget.onChanged,
+      onTap: widget.onTap,
+      onEditingComplete: widget.onEditingComplete,
+      onFieldSubmitted: widget.onFieldSubmitted,
+      onSaved: widget.onSaved,
+      validator: widget.validator,
+      inputFormatters: widget.inputFormatters,
+      enabled: widget.enabled,
+      cursorWidth: widget.cursorWidth,
+      cursorHeight: widget.cursorHeight,
+      cursorColor: widget.cursorColor,
+      keyboardAppearance: widget.keyboardAppearance,
+      scrollPadding: widget.scrollPadding,
+      enableInteractiveSelection: widget.enableInteractiveSelection,
+      selectionControls: widget.selectionControls,
+      scrollPhysics: widget.scrollPhysics,
+      autofillHints: widget.autofillHints,
+      autovalidateMode: widget.autovalidateMode,
+      contextMenuBuilder: widget.contextMenuBuilder,
+      restorationId: widget.restorationId,
+      spellCheckConfiguration: widget.spellCheckConfiguration,
+      hintText: widget.hintText,
+      material: widget.material ??
           (_, __) => MaterialTextFormFieldData(
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                 ),
               ),
-      cupertino: cupertino ??
+      cupertino: widget.cupertino ??
           (_, __) => CupertinoTextFormFieldData(
                 decoration: BoxDecoration(
                   border: Border.all(color: CupertinoColors.systemGrey),

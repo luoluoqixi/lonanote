@@ -24,6 +24,11 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     super.dispose();

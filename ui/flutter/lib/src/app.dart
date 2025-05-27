@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 
 import 'package:lonanote/src/common/log.dart';
@@ -64,6 +65,7 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
                 DefaultWidgetsLocalizations.delegate,
                 DefaultCupertinoLocalizations.delegate,
               ],
+              navigatorObservers: [AppRouter.routeObserver],
               title: AppConfig.appTitle,
               home: Index(),
             ),
