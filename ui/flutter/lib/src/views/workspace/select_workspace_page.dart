@@ -39,7 +39,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     final colorScheme = Theme.of(context).colorScheme;
     final count = workspaces?.length ?? 0;
     if (count == 0) {
-      return _buildNoWorkspace(context);
+      return SliverToBoxAdapter(
+        child: _buildNoWorkspace(context),
+      );
     }
     return SliverList(
       delegate: SliverChildBuilderDelegate(
@@ -65,28 +67,26 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   Widget _buildNoWorkspace(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SliverToBoxAdapter(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '暂无工作区',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: ThemeColors.getTextGreyColor(colorScheme),
-                ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '暂无工作区',
+              style: TextStyle(
+                fontSize: 16,
+                color: ThemeColors.getTextGreyColor(colorScheme),
               ),
-              const SizedBox(height: 16),
-              PlatformButton(
-                width: double.infinity,
-                onPressed: createWorkspace,
-                labelText: "创建工作区",
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            PlatformButton(
+              width: double.infinity,
+              onPressed: createWorkspace,
+              labelText: "创建工作区",
+            ),
+          ],
         ),
       ),
     );
