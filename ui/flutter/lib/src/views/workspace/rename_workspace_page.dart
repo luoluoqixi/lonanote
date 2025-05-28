@@ -7,6 +7,7 @@ import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
 import 'package:lonanote/src/widgets/platform_button.dart';
 import 'package:lonanote/src/widgets/platform_input.dart';
+import 'package:lonanote/src/widgets/platform_page.dart';
 
 class RenameWorkspacePage extends ConsumerStatefulWidget {
   final RustWorkspaceMetadata workspace;
@@ -101,24 +102,9 @@ class _RenameWorkspacePageState extends ConsumerState<RenameWorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-            padding: EdgeInsets.only(
-              bottom: 15.0,
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "重命名工作区",
-                style: TextStyle(
-                  fontSize: 20,
-                ),
-              ),
-            )),
-        buildForm()
-      ],
+    return PlatformSheetPage(
+      title: "重命名工作区",
+      child: buildForm(),
     );
   }
 }

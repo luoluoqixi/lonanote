@@ -148,24 +148,9 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
     if (widget.isPage) {
       return buildPage();
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-            padding: EdgeInsets.only(
-              bottom: 15.0,
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "创建工作区",
-                style: TextStyle(
-                  fontSize: 20,
-                ),
-              ),
-            )),
-        buildForm()
-      ],
+    return PlatformSheetPage(
+      title: "创建工作区",
+      child: buildForm(),
     );
   }
 }

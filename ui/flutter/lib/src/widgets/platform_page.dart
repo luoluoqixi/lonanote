@@ -232,3 +232,64 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     );
   }
 }
+
+class PlatformSheetPage extends StatelessWidget {
+  final String? title;
+  final double? titleFontSize;
+  final EdgeInsetsGeometry? titlePadding;
+  final EdgeInsetsGeometry? contentPadding;
+  final List<Widget>? children;
+  final Widget? child;
+
+  const PlatformSheetPage({
+    super.key,
+    this.title,
+    this.titlePadding,
+    this.titleFontSize,
+    this.contentPadding,
+    this.child,
+    this.children,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (title != null)
+          Padding(
+              padding: titlePadding ??
+                  EdgeInsets.only(
+                    bottom: 15.0,
+                    left: 20.0,
+                    right: 20.0,
+                  ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title!,
+                  style: TextStyle(
+                    fontSize: titleFontSize ?? 20,
+                  ),
+                ),
+              )),
+        if (child != null)
+          Padding(
+            padding: contentPadding ??
+                EdgeInsets.only(
+                  left: 20.0,
+                  right: 20.0,
+                ),
+            child: child!,
+          ),
+        ...?children?.map((child) => Padding(
+              padding: contentPadding ??
+                  EdgeInsets.only(
+                    left: 20.0,
+                    right: 20.0,
+                  ),
+              child: child,
+            )),
+      ],
+    );
+  }
+}

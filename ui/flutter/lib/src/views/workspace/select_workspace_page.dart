@@ -14,6 +14,82 @@ import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
+enum WorkspaceSortType {
+  time,
+  timeRev,
+  name,
+  nameRev,
+}
+
+class WorkspaceSortSelect extends StatelessWidget {
+  final WorkspaceSortType currentSortType;
+  final void Function(WorkspaceSortType sortType) onChange;
+  const WorkspaceSortSelect({
+    super.key,
+    required this.currentSortType,
+    required this.onChange,
+  });
+
+  Widget _buildSortOption(
+    BuildContext context,
+    String title,
+    IconData icon,
+    WorkspaceSortType type,
+  ) {
+    final isSelected = type == currentSortType;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textColor = isSelected
+        ? colorScheme.primary
+        : ThemeColors.getTextColor(colorScheme);
+    final iconColor = isSelected
+        ? colorScheme.primary
+        : ThemeColors.getTextGreyColor(colorScheme);
+
+    return PlatformInkWell(
+      onTap: () => onChange(type),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: iconColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: textColor,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check, size: 20, color: colorScheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PlatformSheetPage(
+      title: "排序方式",
+      contentPadding: EdgeInsets.zero,
+      children: [
+        _buildSortOption(context, '按时间排序', ThemeIcons.schedule(context),
+            WorkspaceSortType.time),
+        _buildSortOption(context, '按时间倒序', ThemeIcons.schedule(context),
+            WorkspaceSortType.timeRev),
+        _buildSortOption(context, '按名称排序', ThemeIcons.sortName(context),
+            WorkspaceSortType.name),
+        _buildSortOption(context, '按名称倒序', ThemeIcons.sortName(context),
+            WorkspaceSortType.nameRev),
+      ],
+    );
+  }
+}
+
 class SelectWorkspacePage extends ConsumerStatefulWidget {
   const SelectWorkspacePage({super.key});
 
@@ -25,6 +101,7 @@ class SelectWorkspacePage extends ConsumerStatefulWidget {
 class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+  WorkspaceSortType _sortType = WorkspaceSortType.time;
 
   bool _isLoading = false;
 
@@ -36,6 +113,22 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
 
   void _createWorkspace() {
     AppRouter.showCreateWorkspacePage(context);
+  }
+
+  void _sortClick() {
+    AppRouter.showBottomSheet(
+      context,
+      (context) => WorkspaceSortSelect(
+        currentSortType: _sortType,
+        onChange: (t) {
+          setState(() {
+            _sortType = t;
+          });
+          Navigator.of(context).pop();
+        },
+      ),
+      childSize: 0.4,
+    );
   }
 
   // void _selectOpenWorkspace() async {
@@ -156,8 +249,19 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         child: _buildNoWorkspace(context),
       );
     }
-    final sortedWorkspaces = [...workspaces!]
-      ..sort((a, b) => b.lastOpenTime.compareTo(a.lastOpenTime));
+    final sortedWorkspaces = [...workspaces!]..sort((a, b) {
+        if (_sortType == WorkspaceSortType.time) {
+          return b.lastOpenTime.compareTo(a.lastOpenTime);
+        } else if (_sortType == WorkspaceSortType.timeRev) {
+          return a.lastOpenTime.compareTo(b.lastOpenTime);
+        } else if (_sortType == WorkspaceSortType.name) {
+          return a.name.compareTo(b.name);
+        } else if (_sortType == WorkspaceSortType.nameRev) {
+          return b.name.compareTo(a.name);
+        } else {
+          return b.lastOpenTime.compareTo(a.lastOpenTime);
+        }
+      });
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
@@ -282,6 +386,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             PullDownMenuItem(
               title: "创建工作区",
               onTap: _createWorkspace,
+              icon: ThemeIcons.add(context),
+            ),
+            PullDownMenuItem(
+              title: "排序方式",
+              icon: ThemeIcons.sort(context),
+              onTap: _sortClick,
             ),
             // PullDownMenuItem(
             //   title: "打开文件夹...",
@@ -290,6 +400,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             PullDownMenuItem(
               title: "设置",
               onTap: _openSettings,
+              icon: ThemeIcons.settings(context),
             ),
           ],
           buttonIcon: Icon(

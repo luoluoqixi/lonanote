@@ -39,7 +39,7 @@ class AppRouter {
     BuildContext context,
     WidgetBuilder builder, {
     double childSize = 0.5,
-    double padding = 16.0,
+    double padding = 0.0,
     double? minChildSize,
     double? maxChildSize,
     bool? expand,
