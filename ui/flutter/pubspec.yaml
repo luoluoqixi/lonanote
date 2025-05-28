@@ -51,6 +51,7 @@ dependencies:
   json_annotation: ^4.9.0
   pull_down_button: ^0.10.2
   fluttertoast: ^8.2.12
+  file_picker: ^9.2.3
 
 dev_dependencies:
   integration_test:

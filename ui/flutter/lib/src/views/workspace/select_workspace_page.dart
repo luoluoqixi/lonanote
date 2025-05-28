@@ -38,7 +38,18 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     AppRouter.showCreateWorkspacePage(context);
   }
 
-  void _selectOpenWorkspace() {}
+  void _selectOpenWorkspace() async {
+    Utility.showDialog(
+      context: context,
+      title: "提示",
+      content: "暂未支持",
+      okText: "确定",
+    );
+    // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    // if (selectedDirectory != null) {
+    //   // logger.i("select: $selectedDirectory");
+    // }
+  }
 
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
