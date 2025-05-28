@@ -1,6 +1,6 @@
 import { editorViewCtx } from '@milkdown/core';
 import { Ctx } from '@milkdown/kit/ctx';
-import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-editor';
+import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-markdown-editor';
 import path from 'path-browserify-esm';
 import { Ref, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { LuClipboardPaste } from 'react-icons/lu';

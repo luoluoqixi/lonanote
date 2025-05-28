@@ -19,15 +19,15 @@ import {
   setCurrentEditorState,
   updateContent,
   updateContentAutoSave,
-  useEditor,
+  useEditorData,
 } from '@/controller/editor';
-import { defaultEditorBackEnd, defaultEditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
 import './Editor.scss';
-import { CodeMirrorEditor, CodeMirrorEditorRef, isSupportLanguage } from './codemirror';
+import { CodeMirrorEditor, CodeMirrorEditorRef, isSupportCodeMirrorLanguage } from './codemirror';
 import { ImageView, isSupportImageView } from './image';
 import { MarkdownEditor, MarkdownEditorRef, isSupportMarkdown } from './markdown';
+import { defaultEditorBackEnd, defaultEditorMode } from './types';
 import { VideoView, isSupportVideoView } from './video';
 
 export interface EditorProps {
@@ -68,8 +68,8 @@ export default function Editor({
   readOnly,
   style,
 }: EditorProps) {
-  const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
-  const editorBackEnd = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
+  const editorMode = useEditorData((s) => s.editorMode) || defaultEditorMode;
+  const editorBackEnd = useEditorData((s) => s.editorBackEnd) || defaultEditorBackEnd;
   const editorRef = useRef<CodeMirrorEditorRef>(null);
   const mdEditorRef = useRef<MarkdownEditorRef>(null);
   const { fullPath, folderPath, uploadImagePath, uploadAttachmentPath } = useMemo(() => {
@@ -85,7 +85,7 @@ export default function Editor({
   const [initContent, setInitContent] = useState<string | null>(null);
   const state = useMemo(() => {
     let isMdEditor = isSupportMarkdown(path.basename(file));
-    let isCMEditor = isSupportLanguage(path.basename(file));
+    let isCMEditor = isSupportCodeMirrorLanguage(path.basename(file));
     const isImage = isSupportImageView(path.basename(file));
     const isVideo = isSupportVideoView(path.basename(file));
     if (editorMode === 'source' && !readOnly) {

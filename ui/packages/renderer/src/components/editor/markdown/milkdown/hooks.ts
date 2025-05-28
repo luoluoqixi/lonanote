@@ -1,4 +1,4 @@
-import { MilkdownEditor } from 'lonanote-editor';
+import { MilkdownEditor } from 'lonanote-markdown-editor';
 import { useLayoutEffect, useRef, useState } from 'react';
 
 export type InitEditorCallback = () => MilkdownEditor | null;

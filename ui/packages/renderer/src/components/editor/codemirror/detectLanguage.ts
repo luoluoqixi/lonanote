@@ -18,7 +18,7 @@ import { yaml } from '@codemirror/lang-yaml';
 
 // import { markdown } from './extensions/markdown';
 
-export const detectLanguage = (fileName: string) => {
+export const detectCodeMirrorLanguage = (fileName: string) => {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
   switch (ext) {
     case 'c':
@@ -82,15 +82,15 @@ export const detectLanguage = (fileName: string) => {
   }
 };
 
-export const isSupportLanguage = (fileName: string) => {
+export const isSupportCodeMirrorLanguage = (fileName: string) => {
   const index = fileName.lastIndexOf('.');
   if (index < 0) return false;
   const extName = fileName.substring(index + 1).toLowerCase();
-  return supportExts.findIndex((x) => x === extName) >= 0;
+  return supportCodeMirrorExts.findIndex((x) => x === extName) >= 0;
 };
 
 /** 支持编辑器的扩展名 */
-export const supportExts = [
+export const supportCodeMirrorExts = [
   'c',
   'h',
   'cc',

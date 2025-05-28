@@ -26,7 +26,7 @@ import {
 } from 'react';
 
 import './CodeMirrorEditor.scss';
-import { detectLanguage } from './detectLanguage';
+import { detectCodeMirrorLanguage } from './detectLanguage';
 import { useCodeMirrorTheme } from './theme';
 
 export interface CodeMirrorEditorRef {
@@ -110,7 +110,7 @@ export default forwardRef((props: CodeMirrorEditorProps, ref: Ref<CodeMirrorEdit
         doc: initValue || '',
         extensions: [
           readOnlyEx.of(EditorView.editable.of(readOnly ? false : true)),
-          detectLanguage(filePath),
+          detectCodeMirrorLanguage(filePath),
           focusChangeListener,
           //自动换行
           // EditorView.lineWrapping,

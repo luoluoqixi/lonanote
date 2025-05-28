@@ -13,7 +13,8 @@ import { fs } from '@/bindings/api';
 import { Dropdown, DropdownMenuItem } from '@/components';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import Editor from '@/components/editor/Editor';
-import { supportEditorModeChange } from '@/components/editor/markdown';
+import { supportMarkdownEditorModeChange } from '@/components/editor/markdown';
+import { EditorMode } from '@/components/editor/types';
 import {
   defaultEditorBackEnd,
   defaultEditorIsReadOnly,
@@ -21,15 +22,14 @@ import {
   setCurrentEditFileIf,
   setEditorIsReadOnly,
   setEditorMode,
-  useEditor,
+  useEditorData,
 } from '@/controller/editor';
 import { useSettings } from '@/controller/settings';
 import { workspaceController } from '@/controller/workspace';
-import { EditorMode } from '@/models/editor';
 import { utils } from '@/utils';
 
-import { useSearchParams } from '../routes';
 import './Index.scss';
+import { useSearchParams } from './routes';
 
 const EmptyIndex = () => {
   return (
@@ -169,10 +169,10 @@ const editorModeMenu: DropdownMenuItem[] = [
 // ];
 
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {
-  const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
-  const editorMode = useEditor((s) => s.editorMode) || defaultEditorMode;
-  const editorBackEnd = useEditor((s) => s.editorBackEnd) || defaultEditorBackEnd;
-  const isDirty = useEditor((s) => s.currentEditorIsDirty);
+  const editorIsReadOnly = useEditorData((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
+  const editorMode = useEditorData((s) => s.editorMode) || defaultEditorMode;
+  const editorBackEnd = useEditorData((s) => s.editorBackEnd) || defaultEditorBackEnd;
+  const isDirty = useEditorData((s) => s.currentEditorIsDirty);
   const autoSave = useSettings((s) => s.settings?.autoSave);
   const autoSaveFocusChange = useSettings((s) => s.settings?.autoSaveFocusChange);
   const showDirty = !autoSave && !autoSaveFocusChange;
@@ -293,7 +293,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
           selectId={editorMode}
           contentWidth={200}
           triggerProps={{
-            disabled: !supportEditorModeChange(editorBackEnd),
+            disabled: !supportMarkdownEditorModeChange(editorBackEnd),
           }}
         >
           <Button className="desktopIndexContentTopToolbarRightBtn" color="gray" variant="ghost">
@@ -326,7 +326,7 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
 
 export default function Index() {
   const currentWorkspace = workspaceController.useWorkspace((s) => s.currentWorkspace);
-  const editorIsReadOnly = useEditor((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
+  const editorIsReadOnly = useEditorData((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
   const { file } = useSearchParams();
   const filePath = useMemo(() => window.getCurrentFile?.(), [file]);
   const fullPath = useMemo(

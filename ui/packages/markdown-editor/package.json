@@ -1,5 +1,5 @@
 {
-  "name": "lonanote-editor",
+  "name": "lonanote-markdown-editor",
   "version": "0.0.5",
   "type": "module",
   "main": "src/index.ts",

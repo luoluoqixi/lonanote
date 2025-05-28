@@ -149,7 +149,7 @@ export const utils = {
     if (window.api) {
       return window.api?.utils.isMediaUrl(mediaPath);
     }
-    return mediaPath;
+    return false;
   },
   getFilePathFromRelativePath: (currentFilePath: string, linkRelPath: string) => {
     const folder = path.dirname(currentFilePath);

@@ -1,7 +1,7 @@
 import { Text } from '@radix-ui/themes';
 import React, { useEffect } from 'react';
 
-import { useEditor } from '@/controller/editor';
+import { useEditorData } from '@/controller/editor';
 
 import './StatusBar.scss';
 
@@ -14,8 +14,8 @@ const StatusBarLeft = () => {
 let timeId: number | null = null;
 
 const StatusBarRight = () => {
-  const currentEditorStatus = useEditor((s) => s.currentEditorStatus);
-  const nowSaved = useEditor((s) => s.nowSaved);
+  const currentEditorStatus = useEditorData((s) => s.currentEditorStatus);
+  const nowSaved = useEditorData((s) => s.nowSaved);
 
   useEffect(() => {
     if (nowSaved) {
@@ -24,8 +24,8 @@ const StatusBarRight = () => {
         timeId = null;
       }
       timeId = window.setTimeout(() => {
-        const s = useEditor.getState();
-        useEditor.setState({ ...s, nowSaved: false });
+        const s = useEditorData.getState();
+        useEditorData.setState({ ...s, nowSaved: false });
       }, 3000);
     }
   }, [nowSaved]);

@@ -5,7 +5,7 @@ export * from './ImageView';
 export { ImageView };
 
 /** 支持的扩展名 */
-export const supportExts = [
+export const supportImageExts = [
   'jpg',
   'jpeg',
   'jpe',
@@ -28,5 +28,5 @@ export const isSupportImageView = (fileName: string) => {
   const index = fileName.lastIndexOf('.');
   if (index < 0) return false;
   const extName = fileName.substring(index + 1).toLowerCase();
-  return supportExts.findIndex((x) => x === extName) >= 0;
+  return supportImageExts.findIndex((x) => x === extName) >= 0;
 };

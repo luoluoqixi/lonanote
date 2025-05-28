@@ -212,7 +212,7 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(vite@6.3.2(@types/node@22.14.1)(sass-embedded@1.86.3)(tsx@4.19.3)(yaml@2.7.1))
 
-  packages/editor:
+  packages/markdown-editor:
     devDependencies:
       remark-frontmatter:
         specifier: ^5.0.0
@@ -238,9 +238,9 @@ importers:
       hypermd:
         specifier: ^0.3.11
         version: 0.3.11(codemirror@6.0.1)
-      lonanote-editor:
+      lonanote-markdown-editor:
         specifier: workspace:*
-        version: link:../editor
+        version: link:../markdown-editor
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -266,8 +266,8 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5
       vditor:
-        specifier: '=3.10.8'
-        version: 3.10.8
+        specifier: ^3.11.1
+        version: 3.11.1
       zustand:
         specifier: ^5.0.3
         version: 5.0.3(@types/react@19.1.2)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
@@ -5965,8 +5965,8 @@ packages:
   vconsole@3.15.1:
     resolution: {integrity: sha512-KH8XLdrq9T5YHJO/ixrjivHfmF2PC2CdVoK6RWZB4yftMykYIaXY1mxZYAic70vADM54kpMQF+dYmvl5NRNy1g==}
 
-  vditor@3.10.8:
-    resolution: {integrity: sha512-u9npjvMuGJVk0QGbpqiGAmvgiR4QvMVpNQYrvFYZ/yWDtTFLZrHmLxuUbtswotR6KY10u5kVuaoSEoBGGWQGjQ==}
+  vditor@3.11.1:
+    resolution: {integrity: sha512-7rjNSXYVyZG0mVZpUG2tfxwnoNtkcRCnwdSju+Zvpjf/r72iQa6kLpeThFMIKPuQ5CRnQQv6gnR3eNU6UGbC2Q==}
 
   verror@1.10.0:
     resolution: {integrity: sha512-ZZKSmDAEFOijERBLkmYfJ+vmk3w+7hOLYDNkRCuRuMJGEmqYNCNLyBBFwWKVMhfwaEF3WOd0Zlw86U/WC/+nYw==}
@@ -13589,7 +13589,7 @@ snapshots:
       core-js: 3.41.0
       mutation-observer: 1.0.3
 
-  vditor@3.10.8:
+  vditor@3.11.1:
     dependencies:
       diff-match-patch: 1.0.5
 

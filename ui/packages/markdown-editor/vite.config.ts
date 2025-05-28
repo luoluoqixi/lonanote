@@ -16,7 +16,7 @@ export default defineConfig({
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
       formats: ['es'],
-      name: 'lonanote-editor',
+      name: 'lonanote-markdown-editor',
       fileName: 'index',
     },
   },
@@ -28,7 +28,7 @@ export default defineConfig({
       deps: false,
       devDeps: true,
       nodeBuiltins: true,
-      include: [/\@codemirror\/*/, /\@milkdown\/*/],
+      include: [/@codemirror\/*/, /@milkdown\/*/],
     }),
   ],
   resolve: {

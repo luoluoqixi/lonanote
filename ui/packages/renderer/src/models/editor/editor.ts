@@ -1,17 +1,7 @@
 import { create } from 'zustand';
 
+import { EditorBackEnd, EditorMode, EditorState } from '@/components/editor/types';
 import { globalLocalStorage } from '@/utils/storage';
-
-export const editorModeList = ['ir', 'sv', 'source'] as const;
-export const editorBackEndList = ['milkdown', 'vditor'] as const;
-// ['milkdown', 'vditor', 'hypermd', 'codemirror'] as const;
-
-export type EditorMode = (typeof editorModeList)[number];
-export type EditorBackEnd = (typeof editorBackEndList)[number];
-
-export const defaultEditorIsReadOnly: boolean = false;
-export const defaultEditorMode: EditorMode = 'ir';
-export const defaultEditorBackEnd: EditorBackEnd = 'milkdown';
 
 export interface EditorStore {
   currentEditorStatus: EditorState | null;
@@ -21,12 +11,6 @@ export interface EditorStore {
   editorIsReadOnly?: boolean;
   editorMode?: EditorMode;
   editorBackEnd?: EditorBackEnd;
-}
-
-export interface EditorState {
-  charCount: number;
-  rowIndex?: number;
-  colIndex?: number;
 }
 
 const editorBackEndSaveKey = 'editor-backend';

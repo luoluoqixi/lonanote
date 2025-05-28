@@ -6,10 +6,10 @@ import { useColorModeValue } from '@/components/provider/ColorModeProvider';
 
 import './theme.scss';
 
-const darkTheme = vsCodeDark;
-const lightTheme = vsCodeLight;
+export const codemirrorDarkTheme = vsCodeDark;
+export const codemirrorLightTheme = vsCodeLight;
 
 export const useCodeMirrorTheme = () => {
-  const theme = useColorModeValue<Extension>(lightTheme, darkTheme);
+  const theme = useColorModeValue<Extension>(codemirrorLightTheme, codemirrorDarkTheme);
   return theme;
 };

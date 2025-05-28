@@ -11,15 +11,13 @@ import {
   defaultEditorBackEnd,
   defaultEditorIsReadOnly,
   defaultEditorMode,
-  saveEditorBackEnd,
-  saveEditorMode,
-  useEditorStore,
-} from '@/models/editor';
+} from '@/components/editor/types';
+import { saveEditorBackEnd, saveEditorMode, useEditorStore } from '@/models/editor';
 
 import { useSettings } from '../settings';
 import { workspaceController } from '../workspace';
 
-export const useEditor = useEditorStore;
+export const useEditorData = useEditorStore;
 
 export const setCurrentEditFileIf = async (
   currentEditFile: string | null,
@@ -27,7 +25,7 @@ export const setCurrentEditFileIf = async (
 ) => {
   const settings = useSettings.getState().settings;
   if (!settings?.autoSave && !settings?.autoSaveFocusChange) {
-    if (useEditor.getState().currentEditorIsDirty) {
+    if (useEditorData.getState().currentEditorIsDirty) {
       dialog.showDialog({
         title: '警告',
         content: '当前有未保存的内容, 确定要离开吗？',

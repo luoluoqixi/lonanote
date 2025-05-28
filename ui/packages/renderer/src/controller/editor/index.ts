@@ -1,3 +1,3 @@
 export * from './editor';
 
-export const initEditor = async () => {};
+export const initEditor = () => {};

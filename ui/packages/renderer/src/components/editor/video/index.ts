@@ -5,7 +5,7 @@ export * from './VideoView';
 export { VideoView };
 
 /** 支持的扩展名 */
-export const supportExts = [
+export const supportVideoExts = [
   'mp4',
   'webm',
   'ogg',
@@ -21,5 +21,5 @@ export const isSupportVideoView = (fileName: string) => {
   const index = fileName.lastIndexOf('.');
   if (index < 0) return false;
   const extName = fileName.substring(index + 1).toLowerCase();
-  return supportExts.findIndex((x) => x === extName) >= 0;
+  return supportVideoExts.findIndex((x) => x === extName) >= 0;
 };
