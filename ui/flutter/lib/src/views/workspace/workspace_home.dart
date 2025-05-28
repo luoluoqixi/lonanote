@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
+import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
@@ -22,8 +23,11 @@ class _WorkspaceHomePageState extends ConsumerState<WorkspaceHomePage> {
     super.dispose();
   }
 
-  void selectWorkspace() {
-    AppRouter.jumpToSelectWorkspacePage(context);
+  void selectWorkspace() async {
+    await WorkspaceManager.unloadWorkspace(ref);
+    if (mounted) {
+      AppRouter.jumpToSelectWorkspacePage(context);
+    }
   }
 
   void openSettings() {

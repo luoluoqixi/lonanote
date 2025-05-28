@@ -34,6 +34,108 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     super.dispose();
   }
 
+  void _createWorkspace() {
+    AppRouter.showCreateWorkspacePage(context);
+  }
+
+  void _selectOpenWorkspace() {}
+
+  void _openSettings() {
+    AppRouter.jumpToSettingsPage(context);
+  }
+
+  void _openWorkspace(RustWorkspaceMetadata workspace) async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await WorkspaceManager.openWorkspace(ref, workspace.path);
+      if (mounted) {
+        final ws = WorkspaceManager.getCurrentWorkspace(ref);
+        if (ws != null) {
+          AppRouter.jumpToWorkspaceHomePage(context, ws);
+        } else {
+          Utility.showDialog(
+            context: context,
+            title: "错误",
+            content: "打开工作区失败, 未获取到工作区数据",
+            okText: "确定",
+          );
+        }
+      }
+    } catch (e) {
+      logger.e(e);
+      if (mounted) {
+        Utility.showDialog(
+          context: context,
+          title: "错误",
+          content: LoggerUtility.errorShow("打开工作区失败", e),
+          okText: "确定",
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _deleteWorkspace(RustWorkspaceMetadata workspace) async {
+    try {
+      await WorkspaceManager.deleteWorkspace(ref, workspace.path);
+    } catch (e) {
+      logger.e(e);
+      if (mounted) {
+        Utility.showDialog(
+          context: context,
+          title: "错误",
+          content: LoggerUtility.errorShow("删除工作区失败", e),
+          okText: "确定",
+        );
+      }
+    }
+  }
+
+  void _deleteWorkspaceClick(RustWorkspaceMetadata workspace) {
+    Utility.showDialog(
+      context: context,
+      title: "提示",
+      content: "确定要删除工作区 ${workspace.name} 吗？",
+      okText: "删除",
+      cancelText: "取消",
+      isDange: true,
+      onOkPressed: () {
+        _deleteWorkspace(workspace);
+        return null;
+      },
+    );
+  }
+
+  void _renameWorkspaceClick(RustWorkspaceMetadata workspace) {
+    AppRouter.showRenameWorkspacePage(context, workspace);
+  }
+
+  Future<void> _refreshWorkspaces() async {
+    try {
+      // 刷新太快了, 加个延时假装一下在干活
+      await Future.delayed(Duration(milliseconds: 200));
+      await WorkspaceManager.refreshWorkspace(ref);
+      logger.i("refresh workspace finish");
+    } catch (e) {
+      logger.e(e);
+      if (mounted) {
+        Utility.showDialog(
+          context: context,
+          title: "错误",
+          content: LoggerUtility.errorShow("刷新工作区失败", e),
+          okText: "确定",
+        );
+      }
+    }
+  }
+
   Widget _buildContent(BuildContext context, ColorScheme colorScheme) {
     final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
 
@@ -83,7 +185,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             const SizedBox(height: 16),
             PlatformButton(
               width: double.infinity,
-              onPressed: createWorkspace,
+              onPressed: _createWorkspace,
               labelText: "创建工作区",
             ),
           ],
@@ -96,7 +198,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       ColorScheme colorScheme, RustWorkspaceMetadata workspace) {
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
     return PlatformInkWell(
-      onTap: () => openWorkspace(workspace),
+      onTap: () => _openWorkspace(workspace),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -141,12 +243,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
               itemBuilder: (context) => [
                 PullDownMenuItem(
                   title: '重命名',
-                  onTap: () => renameWorkspaceClick(workspace),
+                  onTap: () => _renameWorkspaceClick(workspace),
                 ),
                 PullDownMenuItem(
                   title: '删除',
                   isDestructive: true,
-                  onTap: () => deleteWorkspaceClick(workspace),
+                  onTap: () => _deleteWorkspaceClick(workspace),
                 ),
               ],
               buttonIcon: Icon(
@@ -161,86 +263,6 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     );
   }
 
-  void createWorkspace() {
-    AppRouter.showCreateWorkspacePage(context);
-  }
-
-  void openSettings() {
-    AppRouter.jumpToSettingsPage(context);
-  }
-
-  void openWorkspace(RustWorkspaceMetadata workspace) async {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      await WorkspaceManager.openWorkspace(ref, workspace.path);
-      if (mounted) {
-        final ws = WorkspaceManager.getCurrentWorkspace(ref);
-        if (ws != null) {
-          AppRouter.jumpToWorkspaceHomePage(context, ws);
-        } else {
-          Utility.showDialog(
-            context: context,
-            title: "错误",
-            content: "打开工作区失败, 未获取到工作区数据",
-            okText: "确定",
-          );
-        }
-      }
-    } catch (e) {
-      logger.e(e);
-      if (mounted) {
-        Utility.showDialog(
-          context: context,
-          title: "错误",
-          content: LoggerUtility.errorShow("打开工作区失败", e),
-          okText: "确定",
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void deleteWorkspace(RustWorkspaceMetadata workspace) async {
-    try {
-      await WorkspaceManager.deleteWorkspace(ref, workspace.path);
-    } catch (e) {
-      logger.e(e);
-      if (mounted) {
-        Utility.showDialog(
-          context: context,
-          title: "错误",
-          content: LoggerUtility.errorShow("删除工作区失败", e),
-          okText: "确定",
-        );
-      }
-    }
-  }
-
-  void deleteWorkspaceClick(RustWorkspaceMetadata workspace) {
-    Utility.showDialog(
-      context: context,
-      title: "提示",
-      content: "确定要删除工作区 ${workspace.name} 吗？",
-      okText: "确定",
-      cancelText: "取消",
-      onOkPressed: () {
-        deleteWorkspace(workspace);
-        return null;
-      },
-    );
-  }
-
-  void renameWorkspaceClick(RustWorkspaceMetadata workspace) {
-    AppRouter.showRenameWorkspacePage(context, workspace);
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -248,16 +270,21 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       title: "工作区",
       subTitle: "选择工作区",
       isLoading: _isLoading,
+      onRefresh: _refreshWorkspaces,
       titleActions: [
         PlatformPullDownButton(
           itemBuilder: (context) => [
             PullDownMenuItem(
               title: "创建工作区",
-              onTap: createWorkspace,
+              onTap: _createWorkspace,
+            ),
+            PullDownMenuItem(
+              title: "打开文件夹...",
+              onTap: _selectOpenWorkspace,
             ),
             PullDownMenuItem(
               title: "设置",
-              onTap: openSettings,
+              onTap: _openSettings,
             ),
           ],
           buttonIcon: Icon(

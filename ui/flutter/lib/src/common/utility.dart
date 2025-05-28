@@ -10,6 +10,7 @@ class Utility {
     String? cancelText,
     bool? Function()? onOkPressed,
     bool? Function()? onCancelPressed,
+    bool? isDange,
   }) {
     return showPlatformDialog(
       context: context,
@@ -19,21 +20,30 @@ class Utility {
           child: Text(content),
         ),
         actions: <Widget>[
-          if (okText != null)
-            PlatformDialogAction(
-              child: PlatformText(okText),
-              onPressed: () {
-                if (onOkPressed?.call() == true) {
-                  return;
-                }
-                Navigator.pop(context);
-              },
-            ),
           if (cancelText != null)
             PlatformDialogAction(
               child: PlatformText(cancelText),
               onPressed: () {
                 if (onCancelPressed?.call() == true) {
+                  return;
+                }
+                Navigator.pop(context);
+              },
+            ),
+          if (okText != null)
+            PlatformDialogAction(
+              cupertino: (context, platform) => CupertinoDialogActionData(
+                isDestructiveAction: isDange,
+              ),
+              child: Text(
+                okText,
+                style: isDange == true && isMaterial(context)
+                    ? const TextStyle(
+                        color: Colors.red, backgroundColor: Colors.red)
+                    : null,
+              ),
+              onPressed: () {
+                if (onOkPressed?.call() == true) {
                   return;
                 }
                 Navigator.pop(context);

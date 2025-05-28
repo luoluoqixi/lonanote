@@ -3,6 +3,7 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/flutter/custom_flexible_space_bar.dart';
 
 class ScrollAppBar extends StatelessWidget {
+  static double defaultExpandedHeight = 120.0;
   final String title;
   final double? titleFontSize;
   final String? subTitle;
@@ -43,7 +44,7 @@ class ScrollAppBar extends StatelessWidget {
       backgroundColor: backgroundColor,
       titleTextStyle: TextStyle(color: textColor),
       centerTitle: false,
-      expandedHeight: expandedHeight ?? 120.0,
+      expandedHeight: expandedHeight ?? defaultExpandedHeight,
       scrolledUnderElevation: scrolledUnderElevation ?? 1,
       surfaceTintColor: colorScheme.primary,
       flexibleSpace: flexibleSpace ??

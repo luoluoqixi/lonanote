@@ -6,6 +6,7 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/app_bar.dart';
 
 class PlatformPage extends StatefulWidget {
+  final ScrollController? scrollController;
   final ScrollAppBar? appBar;
   final String? title;
   final String? subTitle;
@@ -16,8 +17,11 @@ class PlatformPage extends StatefulWidget {
   final Color? backgroundColor;
   final bool? isLoading;
 
+  final RefreshCallback? onRefresh;
+
   const PlatformPage({
     super.key,
+    this.scrollController,
     this.appBar,
     this.title,
     this.subTitle,
@@ -26,6 +30,7 @@ class PlatformPage extends StatefulWidget {
     this.contents,
     this.backgroundColor,
     this.isLoading,
+    this.onRefresh,
   });
 
   @override
@@ -60,6 +65,21 @@ class _PlatformPageState extends State<PlatformPage> {
     }
   }
 
+  Widget buildCustomScroll(BuildContext context, ScrollAppBar? appBar) {
+    return CustomScrollView(
+      controller: widget.scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        if (appBar != null) appBar,
+        if (widget.child != null)
+          SliverToBoxAdapter(
+            child: widget.child,
+          ),
+        ...?widget.contents,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -81,16 +101,16 @@ class _PlatformPageState extends State<PlatformPage> {
           body: SafeArea(
             top: false,
             bottom: false,
-            child: CustomScrollView(
-              slivers: [
-                if (appBar != null) appBar,
-                if (widget.child != null)
-                  SliverToBoxAdapter(
-                    child: widget.child,
-                  ),
-                ...?widget.contents,
-              ],
-            ),
+            child: widget.onRefresh != null
+                ? RefreshIndicator(
+                    onRefresh: widget.onRefresh!,
+                    edgeOffset: widget.title == null
+                        ? 0.0
+                        : (ScrollAppBar.defaultExpandedHeight +
+                            MediaQuery.of(context).padding.top),
+                    child: buildCustomScroll(context, appBar),
+                  )
+                : buildCustomScroll(context, appBar),
           ),
         ),
         if (_isLoading == true)
@@ -106,6 +126,7 @@ class _PlatformPageState extends State<PlatformPage> {
 }
 
 class PlatformSimplePage extends StatefulWidget {
+  final ScrollController? scrollController;
   final PlatformAppBar? appBar;
   final String? title;
   final Widget child;
@@ -113,13 +134,17 @@ class PlatformSimplePage extends StatefulWidget {
   final Color? backgroundColor;
   final bool? isLoading;
 
+  final RefreshCallback? onRefresh;
+
   const PlatformSimplePage({
     super.key,
+    this.scrollController,
     this.appBar,
     this.title,
     required this.child,
     this.backgroundColor,
     this.isLoading,
+    this.onRefresh,
   });
 
   @override
@@ -154,6 +179,17 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     }
   }
 
+  Widget buildCustomScroll(BuildContext context, Widget? appBar) {
+    return CustomScrollView(
+      slivers: [
+        if (appBar != null) appBar,
+        SliverToBoxAdapter(
+          child: widget.child,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -173,14 +209,16 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
           body: SafeArea(
             top: false,
             bottom: false,
-            child: CustomScrollView(
-              slivers: [
-                if (appBar != null) appBar,
-                SliverToBoxAdapter(
-                  child: widget.child,
-                ),
-              ],
-            ),
+            child: widget.onRefresh != null
+                ? RefreshIndicator(
+                    onRefresh: widget.onRefresh!,
+                    edgeOffset: widget.title == null
+                        ? 0.0
+                        : (ScrollAppBar.defaultExpandedHeight +
+                            MediaQuery.of(context).padding.top),
+                    child: buildCustomScroll(context, appBar),
+                  )
+                : buildCustomScroll(context, appBar),
           ),
         ),
         if (_isLoading == true)
