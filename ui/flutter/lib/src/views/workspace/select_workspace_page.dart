@@ -38,18 +38,18 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     AppRouter.showCreateWorkspacePage(context);
   }
 
-  void _selectOpenWorkspace() async {
-    Utility.showDialog(
-      context: context,
-      title: "提示",
-      content: "暂未支持",
-      okText: "确定",
-    );
-    // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-    // if (selectedDirectory != null) {
-    //   // logger.i("select: $selectedDirectory");
-    // }
-  }
+  // void _selectOpenWorkspace() async {
+  //   Utility.showDialog(
+  //     context: context,
+  //     title: "提示",
+  //     content: "暂未支持",
+  //     okText: "确定",
+  //   );
+  //   // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+  //   // if (selectedDirectory != null) {
+  //   //   // logger.i("select: $selectedDirectory");
+  //   // }
+  // }
 
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
@@ -156,10 +156,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         child: _buildNoWorkspace(context),
       );
     }
+    final sortedWorkspaces = [...workspaces!]
+      ..sort((a, b) => b.lastOpenTime.compareTo(a.lastOpenTime));
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
-          final workspace = workspaces![index];
+          final workspace = sortedWorkspaces[index];
           return Column(
             children: [
               _buildWorkspaceTile(colorScheme, workspace),
@@ -229,17 +231,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    workspace.path,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: greyColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '上次打开时间: ${workspace.lastOpenTime}',
+                    '上次打开时间: ${Utility.formatTimestamp(workspace.lastOpenTime)}',
                     style: TextStyle(
                       fontSize: 12,
                       color: greyColor,
@@ -289,10 +283,10 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
               title: "创建工作区",
               onTap: _createWorkspace,
             ),
-            PullDownMenuItem(
-              title: "打开文件夹...",
-              onTap: _selectOpenWorkspace,
-            ),
+            // PullDownMenuItem(
+            //   title: "打开文件夹...",
+            //   onTap: _selectOpenWorkspace,
+            // ),
             PullDownMenuItem(
               title: "设置",
               onTap: _openSettings,

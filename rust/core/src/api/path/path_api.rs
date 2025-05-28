@@ -30,6 +30,7 @@ struct InitDir {
     pub cache_dir: String,
     pub download_dir: String,
     pub home_dir: String,
+    pub root_dir: Option<String>,
 }
 
 fn init_dir(Json(dirs): Json<InitDir>) -> CommandResult {
@@ -38,6 +39,7 @@ fn init_dir(Json(dirs): Json<InitDir>) -> CommandResult {
         dirs.cache_dir,
         dirs.download_dir,
         dirs.home_dir,
+        dirs.root_dir,
     );
 
     Ok(CommandResponse::None)

@@ -1,13 +1,10 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
 
 use serde::{de, Serialize};
 
 use crate::config::app_path;
 
-use super::error::WorkspaceError;
+use super::{error::WorkspaceError, workspace_path::WorkspacePath};
 
 pub static WORKSPACE_CONFIG_FOLDER: &str = ".lonanote";
 pub static WORKSPACE_SETTINGS_FILE: &str = "workspace.json";
@@ -18,8 +15,8 @@ pub fn get_workspace_global_config_path() -> PathBuf {
     PathBuf::from(path).join("workspaces.json")
 }
 
-pub fn create_workspace_init_files(workspace_path: impl AsRef<Path>) -> Result<(), WorkspaceError> {
-    let path = workspace_path.as_ref();
+pub fn create_workspace_init_files(workspace_path: &WorkspacePath) -> Result<(), WorkspaceError> {
+    let path = workspace_path.to_path_buf_cow();
     let folder = path.join(WORKSPACE_CONFIG_FOLDER);
     let gitignore_path = folder.join(".gitignore");
     if !gitignore_path.exists() {
@@ -31,9 +28,9 @@ pub fn create_workspace_init_files(workspace_path: impl AsRef<Path>) -> Result<(
 }
 
 pub fn create_workspace_config_folder(
-    workspace_path: impl AsRef<Path>,
+    workspace_path: &WorkspacePath,
 ) -> Result<(), WorkspaceError> {
-    let path = workspace_path.as_ref();
+    let path = workspace_path.to_path_buf_cow();
     let folder = path.join(WORKSPACE_CONFIG_FOLDER);
     if !folder.exists() {
         std::fs::create_dir_all(folder).map_err(|err| WorkspaceError::IOError(err.to_string()))?;
@@ -43,14 +40,14 @@ pub fn create_workspace_config_folder(
 }
 
 pub fn from_json_config<T>(
-    workspace_path: impl AsRef<Path>,
+    workspace_path: &WorkspacePath,
     file: &str,
 ) -> Result<Option<T>, WorkspaceError>
 where
     T: for<'a> de::Deserialize<'a>,
 {
-    create_workspace_config_folder(&workspace_path)?;
-    let path = workspace_path.as_ref();
+    create_workspace_config_folder(workspace_path)?;
+    let path = workspace_path.to_path_buf_cow();
     let config_path = path.join(WORKSPACE_CONFIG_FOLDER).join(file);
     if config_path.exists() {
         let data = fs::read_to_string(config_path)
@@ -65,15 +62,15 @@ where
 }
 
 pub fn save_json_config<T>(
-    workspace_path: impl AsRef<Path>,
+    workspace_path: &WorkspacePath,
     file: &str,
     value: &T,
 ) -> Result<(), WorkspaceError>
 where
     T: ?Sized + Serialize,
 {
-    create_workspace_config_folder(&workspace_path)?;
-    let path = workspace_path.as_ref();
+    create_workspace_config_folder(workspace_path)?;
+    let path = workspace_path.to_path_buf_cow();
     let config_path = path.join(WORKSPACE_CONFIG_FOLDER).join(file);
     let s = serde_json::to_string_pretty(value)
         .map_err(|err| WorkspaceError::JsonError(err.to_string()))?;

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
 
 use super::{
@@ -8,6 +8,7 @@ use super::{
     file_tree::FileTreeSortType,
     workspace_index::WorkspaceIndex,
     workspace_metadata::WorkspaceMetadata,
+    workspace_path::WorkspacePath,
     workspace_settings::WorkspaceSettings,
 };
 
@@ -22,7 +23,7 @@ pub struct WorkspaceInstance {
 }
 
 impl WorkspaceInstance {
-    pub fn new(workspace_path: &PathBuf) -> Result<Self, WorkspaceError> {
+    pub fn new(workspace_path: &WorkspacePath) -> Result<Self, WorkspaceError> {
         create_workspace_config_folder(workspace_path)?;
         create_workspace_init_files(workspace_path)?;
         let settings = WorkspaceSettings::new(workspace_path)?;

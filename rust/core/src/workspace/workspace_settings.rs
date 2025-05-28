@@ -1,17 +1,17 @@
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
 
 use super::{
     config::{from_json_config, save_json_config, WORKSPACE_SETTINGS_FILE},
     error::WorkspaceError,
     file_tree::FileTreeSortType,
+    workspace_path::WorkspacePath,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceSettings {
     #[serde(skip)]
-    pub workspace_path: PathBuf,
+    pub workspace_path: WorkspacePath,
     /// 文件树排序类型
     #[serde(default = "WorkspaceSettings::default_file_tree_sort_type")]
     pub file_tree_sort_type: FileTreeSortType,
@@ -60,14 +60,14 @@ impl WorkspaceSettings {
 pub static DEFAULT_IGNORE: &str = include_str!("../../assets/default_ignore.txt");
 
 impl WorkspaceSettings {
-    pub fn new(workspace_path: impl AsRef<Path>) -> Result<Self, WorkspaceError> {
-        let config = from_json_config::<Self>(&workspace_path, WORKSPACE_SETTINGS_FILE)?;
+    pub fn new(workspace_path: &WorkspacePath) -> Result<Self, WorkspaceError> {
+        let config = from_json_config::<Self>(workspace_path, WORKSPACE_SETTINGS_FILE)?;
         if let Some(mut config) = config {
-            config.workspace_path = workspace_path.as_ref().to_path_buf();
+            config.workspace_path = workspace_path.clone();
             Ok(config)
         } else {
             Ok(Self {
-                workspace_path: workspace_path.as_ref().to_path_buf(),
+                workspace_path: workspace_path.clone(),
                 file_tree_sort_type: WorkspaceSettings::default_file_tree_sort_type(),
                 follow_gitignore: WorkspaceSettings::default_follow_gitignore(),
                 custom_ignore: WorkspaceSettings::default_custom_ignore(),

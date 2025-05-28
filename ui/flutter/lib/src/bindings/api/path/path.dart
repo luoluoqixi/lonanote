@@ -8,13 +8,14 @@ class RustPath {
   static Future<void> initPath() async {
     final tempDir = await getTemporaryDirectory();
     final downloadDir = await getDownloadsDirectory();
-    final domDir = await getApplicationDocumentsDirectory();
+    final documentDir = await getApplicationDocumentsDirectory();
     final dataDir = await getApplicationSupportDirectory();
     Bindings.invoke(key: "path.init_dir", value: {
       "dataDir": dataDir.path,
       "cacheDir": tempDir.path,
-      "downloadDir": downloadDir?.path ?? domDir.path,
-      "homeDir": domDir.path,
+      "downloadDir": downloadDir?.path ?? documentDir.path,
+      "homeDir": documentDir.path,
+      "rootDir": documentDir.path,
     });
   }
 

@@ -50,7 +50,7 @@ class RustWorkspaceManager {
   }
 
   static Future<String> createWorkspace(String name) async {
-    final path = "${getWorkspaceDir()}/$name";
+    final path = name;
     await Bindings.invokeAsync(
         key: "workspace.create_workspace", value: {"path": path});
     return path;

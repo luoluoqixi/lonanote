@@ -8,6 +8,14 @@ static DEFAULT_DATA_DIR: LazyLock<Arc<RwLock<Option<String>>>> =
     LazyLock::new(|| Arc::new(RwLock::new(None)));
 static DEFAULT_DOWNLOAD_DIR: LazyLock<Arc<RwLock<Option<String>>>> =
     LazyLock::new(|| Arc::new(RwLock::new(None)));
+static DEFAULT_ROOT_DIR: LazyLock<Arc<RwLock<Option<String>>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(None)));
+
+pub fn get_root_dir() -> Option<String> {
+    let binding = DEFAULT_ROOT_DIR.read().unwrap();
+    let dir = binding.as_ref();
+    dir.map(|s| s.to_string())
+}
 
 pub fn get_cache_dir() -> String {
     DEFAULT_CACHE_DIR
@@ -50,6 +58,7 @@ pub fn init_dir(
     cache_dir: impl AsRef<str>,
     download_dir: impl AsRef<str>,
     home_dir: impl AsRef<str>,
+    root_dir: Option<String>,
 ) {
     DEFAULT_DATA_DIR
         .write()
@@ -67,4 +76,7 @@ pub fn init_dir(
         .write()
         .unwrap()
         .replace(home_dir.as_ref().to_string());
+    if let Some(root_dir) = root_dir {
+        DEFAULT_ROOT_DIR.write().unwrap().replace(root_dir);
+    }
 }

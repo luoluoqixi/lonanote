@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 
 use crate::workspace::{
     file_tree::FileTreeSortType, get_workspace_manager, get_workspace_manager_mut,
-    workspace_settings::WorkspaceSettings,
+    workspace_path::WorkspacePath, workspace_settings::WorkspaceSettings,
 };
 
 use lonanote_commands::{
@@ -26,7 +26,9 @@ struct SetOpenWorkspaceSettingsArgs {
 
 async fn is_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
-    let is_open = workspace_manager.get_workspace(&args.path).is_some();
+    let is_open = workspace_manager
+        .get_workspace(&WorkspacePath::from(&args.path))
+        .is_some();
 
     CommandResponse::json(is_open)
 }
@@ -34,7 +36,7 @@ async fn is_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult 
 async fn get_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
-        .get_workspace(&args.path)
+        .get_workspace(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
 
     CommandResponse::json(workspace)
@@ -45,7 +47,7 @@ async fn set_open_workspace_settings(
 ) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
-        .get_workspace_mut(&args.path)
+        .get_workspace_mut(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace.set_settings(args.settings).await?;
 
@@ -55,7 +57,7 @@ async fn set_open_workspace_settings(
 async fn get_open_workspace_settings(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
-        .get_workspace(&args.path)
+        .get_workspace(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
 
     CommandResponse::json(&workspace.settings)
@@ -64,7 +66,7 @@ async fn get_open_workspace_settings(Json(args): Json<GetWorkspaceArgs>) -> Comm
 async fn get_open_workspace_file_tree(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
-        .get_workspace(&args.path)
+        .get_workspace(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
 
     let index = workspace.get_workspace_index().await;
@@ -83,7 +85,7 @@ async fn set_open_workspace_file_tree_sort_type(
 ) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
-        .get_workspace_mut(&args.path)
+        .get_workspace_mut(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace.set_file_tree_sort_type(args.sort_type).await?;
 
@@ -102,7 +104,7 @@ async fn set_open_workspace_follow_gitignore(
 ) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
-        .get_workspace_mut(&args.path)
+        .get_workspace_mut(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace
         .set_follow_gitignore(args.follow_gitignore)
@@ -123,7 +125,7 @@ async fn set_open_workspace_custom_ignore(
 ) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
-        .get_workspace_mut(&args.path)
+        .get_workspace_mut(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace.set_custom_ignore(args.custom_ignore).await?;
 
@@ -133,7 +135,7 @@ async fn set_open_workspace_custom_ignore(
 async fn reset_open_workspace_custom_ignore(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
-        .get_workspace_mut(&args.path)
+        .get_workspace_mut(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace.reset_custom_ignore().await?;
 
@@ -143,7 +145,7 @@ async fn reset_open_workspace_custom_ignore(Json(args): Json<GetWorkspaceArgs>) 
 async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
-        .get_workspace(&args.path)
+        .get_workspace(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace.reinit().await?;
 
@@ -155,7 +157,7 @@ async fn reset_open_workspace_histroy_snapshoot_count(
 ) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
-        .get_workspace_mut(&args.path)
+        .get_workspace_mut(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace.reset_histroy_snapshoot_count().await?;
 
@@ -167,7 +169,7 @@ async fn reset_open_workspace_upload_attachment_path(
 ) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
-        .get_workspace_mut(&args.path)
+        .get_workspace_mut(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace.reset_upload_attachment_path().await?;
 
@@ -179,7 +181,7 @@ async fn reset_open_workspace_upload_image_path(
 ) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
-        .get_workspace_mut(&args.path)
+        .get_workspace_mut(&WorkspacePath::from(&args.path))
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
     workspace.reset_pload_image_path().await?;
 

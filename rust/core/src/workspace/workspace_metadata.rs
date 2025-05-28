@@ -4,32 +4,32 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::time_utils::get_now_timestamp;
 
-use super::error::WorkspaceError;
+use super::{error::WorkspaceError, workspace_path::WorkspacePath};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceMetadata {
-    pub path: PathBuf,
+    pub path: WorkspacePath,
     pub root_path: PathBuf,
     pub name: String,
     pub last_open_time: u64,
 }
 
 impl WorkspaceMetadata {
-    pub fn new(path: impl AsRef<Path>) -> Result<Self, WorkspaceError> {
-        let root_path = path
-            .as_ref()
+    pub fn new(path: &WorkspacePath) -> Result<Self, WorkspaceError> {
+        let path_buf = path.to_path_buf_cow();
+        let root_path = path_buf
             .parent()
             .ok_or(WorkspaceError::UnknowError(format!(
                 "path no parent: {:?}",
-                path.as_ref()
+                path_buf.as_ref()
             )))?
             .to_path_buf();
-        let name = Self::get_file_name(&path)?;
+        let name = Self::get_file_name(path_buf.as_ref())?;
         Ok(Self {
             root_path,
             name,
-            path: path.as_ref().to_path_buf(),
+            path: path.clone(),
             last_open_time: get_now_timestamp(),
         })
     }

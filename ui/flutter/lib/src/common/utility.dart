@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:intl/intl.dart';
 
 class Utility {
+  static String formatTimestamp(int timestamp) {
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    return formatter.format(date);
+  }
+
   static showDialog({
     required BuildContext context,
     required String title,

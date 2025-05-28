@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 
 use super::{
     error::WorkspaceError,
     file_tree::{FileTree, FileTreeSortType},
+    workspace_path::WorkspacePath,
 };
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -14,11 +14,11 @@ pub struct WorkspaceIndex {
 
 impl WorkspaceIndex {
     pub fn new(
-        workspace_path: impl AsRef<Path>,
+        workspace_path: &WorkspacePath,
         sort_type: FileTreeSortType,
     ) -> Result<Self, WorkspaceError> {
         Ok(Self {
-            file_tree: FileTree::new(workspace_path, sort_type),
+            file_tree: FileTree::new(workspace_path.to_path_buf(), sort_type),
         })
     }
 
