@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/log.dart';
-import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
 import 'package:lonanote/src/widgets/platform_button.dart';
 import 'package:lonanote/src/widgets/platform_input.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
+import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
 
 class CreateWorkspacePage extends ConsumerStatefulWidget {
   final bool isPage;
@@ -57,7 +57,7 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
               if (ws != null) {
                 AppRouter.jumpToWorkspaceHomePage(context, ws);
               } else {
-                Utility.showDialog(
+                DialogTools.showDialog(
                   context: context,
                   title: "错误",
                   content: "打开工作区失败, 未获取到工作区数据",
@@ -67,7 +67,7 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
             }
           } catch (e) {
             if (mounted) {
-              Utility.showDialog(
+              DialogTools.showDialog(
                 context: context,
                 title: "错误",
                 content: LoggerUtility.errorShow("打开工作区失败", e),
@@ -79,7 +79,7 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
       } catch (e) {
         logger.e(e);
         if (mounted) {
-          Utility.showDialog(
+          DialogTools.showDialog(
             context: context,
             title: "错误",
             content: LoggerUtility.errorShow("创建工作区失败", e),

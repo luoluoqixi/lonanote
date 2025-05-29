@@ -6,9 +6,6 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 
 class PlatformInkWell extends StatefulWidget {
   final GestureTapCallback? onTap;
-  final GestureTapDownCallback? onTapDown;
-  final GestureTapUpCallback? onTapUp;
-  final GestureTapCallback? onTapCancel;
   final GestureTapCallback? onDoubleTap;
   final GestureLongPressCallback? onLongPress;
   final Widget? child;
@@ -16,18 +13,18 @@ class PlatformInkWell extends StatefulWidget {
   final Color? pressBgColor;
   final Color? textColor;
 
+  final bool? forcePressColor;
+
   const PlatformInkWell({
     super.key,
     this.onTap,
-    this.onTapDown,
-    this.onTapUp,
-    this.onTapCancel,
     this.onDoubleTap,
     this.onLongPress,
     this.child,
     this.bgColor,
     this.pressBgColor,
     this.textColor,
+    this.forcePressColor,
   });
 
   @override
@@ -102,41 +99,60 @@ class _InkkWellState extends State<PlatformInkWell> {
             onTapDown: (e) {
               // logger.i("onTapDown");
               _tapDown();
-              widget.onTapDown?.call(e);
             },
             onTapUp: (e) {
               _delayTapUp();
-              widget.onTapUp?.call(e);
             },
             onTapCancel: () {
               _delayTapUp();
-              widget.onTapCancel?.call();
             },
             onDoubleTap: widget.onDoubleTap,
             onLongPress: widget.onLongPress,
             child: ColoredBox(
-              color: _isPress ? pressBgColor : bgColor,
+              color: _isPress || widget.forcePressColor == true
+                  ? pressBgColor
+                  : bgColor,
             ),
           ),
         ),
-        DefaultTextStyle(
-          style: TextStyle(color: textColor),
-          child: widget.child!,
+        GestureDetector(
+          behavior: HitTestBehavior.deferToChild,
+          onTap: () {
+            _delayTapUp();
+            widget.onTap?.call();
+          },
+          // onTapDown: (e) {
+          //   // logger.i("onTapDown");
+          //   _tapDown();
+          // },
+          onTapUp: (e) {
+            _delayTapUp();
+          },
+          onTapCancel: () {
+            _delayTapUp();
+          },
+          onDoubleTap: widget.onDoubleTap,
+          onLongPress: widget.onLongPress,
+          child: DefaultTextStyle(
+            style: TextStyle(color: textColor),
+            child: widget.child!,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildMaterial() {
+    final forcePressColor = widget.forcePressColor == true;
     return Theme(
       data: Theme.of(context),
       child: Material(
-        color: Colors.transparent,
+        color: forcePressColor
+            ? (widget.pressBgColor ??
+                ThemeColors.getPressBgColor(Theme.of(context).colorScheme))
+            : Colors.transparent,
         child: InkWell(
           onTap: widget.onTap,
-          onTapDown: widget.onTapDown,
-          onTapUp: widget.onTapUp,
-          onTapCancel: widget.onTapCancel,
           onDoubleTap: widget.onDoubleTap,
           onLongPress: widget.onLongPress,
           child: widget.child,

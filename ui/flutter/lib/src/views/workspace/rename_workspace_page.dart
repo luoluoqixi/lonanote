@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/log.dart';
-import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
 import 'package:lonanote/src/widgets/platform_button.dart';
 import 'package:lonanote/src/widgets/platform_input.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
+import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
 
 class RenameWorkspacePage extends ConsumerStatefulWidget {
   final RustWorkspaceMetadata workspace;
@@ -51,7 +51,7 @@ class _RenameWorkspacePageState extends ConsumerState<RenameWorkspacePage> {
       } catch (e) {
         logger.e(e);
         if (mounted) {
-          Utility.showDialog(
+          DialogTools.showDialog(
             context: context,
             title: "错误",
             content: LoggerUtility.errorShow("重命名工作区失败", e),

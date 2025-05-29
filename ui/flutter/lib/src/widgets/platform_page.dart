@@ -8,6 +8,7 @@ import 'package:lonanote/src/widgets/app_bar.dart';
 class PlatformPage extends StatefulWidget {
   final ScrollController? scrollController;
   final ScrollAppBar? appBar;
+  final Widget? bottomBar;
   final String? title;
   final String? subTitle;
   final List<Widget>? titleActions;
@@ -23,6 +24,7 @@ class PlatformPage extends StatefulWidget {
     super.key,
     this.scrollController,
     this.appBar,
+    this.bottomBar,
     this.title,
     this.subTitle,
     this.titleActions,
@@ -98,13 +100,19 @@ class _PlatformPageState extends State<PlatformPage> {
 
   Widget _buildPage() {
     final appBar = _buildAppBar();
-    return widget.onRefresh != null
+    final scrollView = widget.onRefresh != null
         ? RefreshIndicator(
             onRefresh: widget.onRefresh!,
             edgeOffset: widget.title == null ? 0.0 : _getAppBarHeight(),
             child: _buildPageScroll(context, appBar),
           )
         : _buildPageScroll(context, appBar);
+    return Column(
+      children: [
+        Expanded(child: scrollView),
+        if (widget.bottomBar != null) widget.bottomBar!,
+      ],
+    );
   }
 
   @override
@@ -137,6 +145,7 @@ class _PlatformPageState extends State<PlatformPage> {
 class PlatformSimplePage extends StatefulWidget {
   final ScrollController? scrollController;
   final PlatformAppBar? appBar;
+  final Widget? bottomBar;
   final Widget? title;
   final String? titleText;
   final Widget child;
@@ -150,6 +159,7 @@ class PlatformSimplePage extends StatefulWidget {
     super.key,
     this.scrollController,
     this.appBar,
+    this.bottomBar,
     this.title,
     this.titleText,
     required this.child,
@@ -240,6 +250,13 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
             child: _buildPage(),
           ),
         ),
+        if (widget.bottomBar != null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: widget.bottomBar!,
+          ),
         if (_isLoading == true)
           Container(
             color: Colors.black45,

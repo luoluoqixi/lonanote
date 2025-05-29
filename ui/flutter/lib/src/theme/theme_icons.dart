@@ -11,12 +11,22 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.check : Icons.check;
   }
 
+  static IconData close(BuildContext context) {
+    return isMaterial(context) ? Icons.close : Icons.close;
+  }
+
   static IconData more(BuildContext context) {
     return isMaterial(context) ? Icons.more_vert : Icons.more_horiz;
   }
 
   static IconData schedule(BuildContext context) {
     return isMaterial(context) ? Icons.schedule : Icons.schedule;
+  }
+
+  static IconData select(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.check_circle_outline
+        : Icons.check_circle_outline;
   }
 
   static IconData settings(BuildContext context) {
