@@ -26,7 +26,7 @@ impl WorkspacePath {
         }
     }
 
-    pub fn to_path_buf_cow<'a>(&'a self) -> Cow<'a, std::path::Path> {
+    pub fn to_path_buf_cow(&self) -> Cow<'_, std::path::Path> {
         if let Some(root_dir) = get_root_dir() {
             Cow::Owned(PathBuf::from(root_dir).join(&self.path))
         } else {
@@ -83,7 +83,7 @@ impl<'de> Deserialize<'de> for WorkspacePath {
     {
         struct PathVisitor;
 
-        impl<'de> Visitor<'de> for PathVisitor {
+        impl Visitor<'_> for PathVisitor {
             type Value = WorkspacePath;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

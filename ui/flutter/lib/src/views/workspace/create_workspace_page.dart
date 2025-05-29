@@ -130,7 +130,7 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
 
   Widget buildPage() {
     return PlatformSimplePage(
-      title: "创建工作区",
+      titleText: "创建工作区",
       isLoading: _isLoading,
       child: Column(
         children: [
@@ -149,7 +149,8 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
       return buildPage();
     }
     return PlatformSheetPage(
-      title: "创建工作区",
+      titleText: "创建工作区",
+      childSize: 0.35,
       child: buildForm(),
     );
   }

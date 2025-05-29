@@ -7,7 +7,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlatformSimplePage(
-      title: '设置',
+      titleText: '设置',
       child: Center(child: Text('这是设置页面')),
     );
   }

@@ -42,11 +42,22 @@ class Utility {
               cupertino: (context, platform) => CupertinoDialogActionData(
                 isDestructiveAction: isDange,
               ),
+              material: (context, platform) => MaterialDialogActionData(
+                style: ButtonStyle(
+                  overlayColor: isDange == true
+                      ? WidgetStateProperty.all(
+                          const Color.from(
+                              alpha: 0.2, red: 1.0, green: 0, blue: 0),
+                        )
+                      : null,
+                ),
+              ),
               child: Text(
                 okText,
                 style: isDange == true && isMaterial(context)
                     ? const TextStyle(
-                        color: Colors.red, backgroundColor: Colors.red)
+                        color: Colors.red,
+                      )
                     : null,
               ),
               onPressed: () {

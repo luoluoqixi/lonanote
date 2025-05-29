@@ -82,7 +82,9 @@ class ScrollAppBar extends StatelessWidget {
 }
 
 class SimpleAppBar extends StatelessWidget {
-  final String title;
+  static double defaultHeight = kToolbarHeight;
+  final Widget? title;
+  final String? titleText;
   final double? titleFontSize;
   final Color? titleColor;
   final Color? bgColor;
@@ -94,6 +96,7 @@ class SimpleAppBar extends StatelessWidget {
   const SimpleAppBar({
     super.key,
     required this.title,
+    this.titleText,
     this.titleFontSize,
     this.titleColor,
     this.bgColor,
@@ -113,7 +116,7 @@ class SimpleAppBar extends StatelessWidget {
       backgroundColor: backgroundColor,
       titleTextStyle:
           TextStyle(color: textColor, fontSize: titleFontSize ?? 22),
-      title: Text(title),
+      title: title ?? Text(titleText ?? ""),
       centerTitle: false,
       expandedHeight: 0,
       scrolledUnderElevation: scrolledUnderElevation ?? 1,

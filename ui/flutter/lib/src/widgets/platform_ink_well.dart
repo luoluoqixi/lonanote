@@ -121,14 +121,20 @@ class _InkkWellState extends State<PlatformInkWell> {
   }
 
   Widget _buildMaterial() {
-    return InkWell(
-      onTap: widget.onTap,
-      onTapDown: widget.onTapDown,
-      onTapUp: widget.onTapUp,
-      onTapCancel: widget.onTapCancel,
-      onDoubleTap: widget.onDoubleTap,
-      onLongPress: widget.onLongPress,
-      child: widget.child,
+    return Theme(
+      data: Theme.of(context),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          onTapDown: widget.onTapDown,
+          onTapUp: widget.onTapUp,
+          onTapCancel: widget.onTapCancel,
+          onDoubleTap: widget.onDoubleTap,
+          onLongPress: widget.onLongPress,
+          child: widget.child,
+        ),
+      ),
     );
   }
 }

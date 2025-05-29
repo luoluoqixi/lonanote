@@ -3,24 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 
 class ThemeIcons {
+  static IconData add(BuildContext context) {
+    return isMaterial(context) ? Icons.add : CupertinoIcons.add;
+  }
+
+  static IconData check(BuildContext context) {
+    return isMaterial(context) ? Icons.check : Icons.check;
+  }
+
   static IconData more(BuildContext context) {
     return isMaterial(context) ? Icons.more_vert : Icons.more_horiz;
   }
 
-  static IconData sort(BuildContext context) {
-    return Icons.sort;
-  }
-
-  static IconData add(BuildContext context) {
-    return isMaterial(context) ? Icons.add : CupertinoIcons.add;
+  static IconData schedule(BuildContext context) {
+    return isMaterial(context) ? Icons.schedule : Icons.schedule;
   }
 
   static IconData settings(BuildContext context) {
     return isMaterial(context) ? Icons.settings : CupertinoIcons.settings;
   }
 
-  static IconData schedule(BuildContext context) {
-    return isMaterial(context) ? Icons.schedule : Icons.schedule;
+  static IconData sort(BuildContext context) {
+    return Icons.sort;
   }
 
   static IconData sortName(BuildContext context) {

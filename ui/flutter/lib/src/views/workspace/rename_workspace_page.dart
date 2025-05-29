@@ -103,7 +103,8 @@ class _RenameWorkspacePageState extends ConsumerState<RenameWorkspacePage> {
   @override
   Widget build(BuildContext context) {
     return PlatformSheetPage(
-      title: "重命名工作区",
+      titleText: "重命名工作区",
+      childSize: 0.35,
       child: buildForm(),
     );
   }
