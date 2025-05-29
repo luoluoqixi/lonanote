@@ -90,33 +90,40 @@ class _InkkWellState extends State<PlatformInkWell> {
         widget.pressBgColor ?? ThemeColors.getPressBgColor(colorScheme);
     final textColor = widget.textColor ?? ThemeColors.getTextColor(colorScheme);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        _delayTapUp();
-        widget.onTap?.call();
-      },
-      onTapDown: (e) {
-        _tapDown();
-        widget.onTapDown?.call(e);
-      },
-      onTapUp: (e) {
-        _delayTapUp();
-        widget.onTapUp?.call(e);
-      },
-      onTapCancel: () {
-        _delayTapUp();
-        widget.onTapCancel?.call();
-      },
-      onDoubleTap: widget.onDoubleTap,
-      onLongPress: widget.onLongPress,
-      child: ColoredBox(
-        color: _isPress ? pressBgColor : bgColor,
-        child: DefaultTextStyle(
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              _delayTapUp();
+              widget.onTap?.call();
+            },
+            onTapDown: (e) {
+              // logger.i("onTapDown");
+              _tapDown();
+              widget.onTapDown?.call(e);
+            },
+            onTapUp: (e) {
+              _delayTapUp();
+              widget.onTapUp?.call(e);
+            },
+            onTapCancel: () {
+              _delayTapUp();
+              widget.onTapCancel?.call();
+            },
+            onDoubleTap: widget.onDoubleTap,
+            onLongPress: widget.onLongPress,
+            child: ColoredBox(
+              color: _isPress ? pressBgColor : bgColor,
+            ),
+          ),
+        ),
+        DefaultTextStyle(
           style: TextStyle(color: textColor),
           child: widget.child!,
         ),
-      ),
+      ],
     );
   }
 
