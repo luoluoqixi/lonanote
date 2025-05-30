@@ -9,6 +9,7 @@ class PlatformPage extends StatefulWidget {
   final ScrollController? scrollController;
   final ScrollAppBar? appBar;
   final Widget? bottomBar;
+  final List<Widget>? stacks;
   final String? title;
   final String? subTitle;
   final List<Widget>? titleActions;
@@ -25,6 +26,7 @@ class PlatformPage extends StatefulWidget {
     this.scrollController,
     this.appBar,
     this.bottomBar,
+    this.stacks,
     this.title,
     this.subTitle,
     this.titleActions,
@@ -130,6 +132,7 @@ class _PlatformPageState extends State<PlatformPage> {
             child: _buildPage(),
           ),
         ),
+        ...?widget.stacks,
         if (_isLoading == true)
           Container(
             color: Colors.black45,

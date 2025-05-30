@@ -10,6 +10,7 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/views/workspace/workspace_sort_select.dart';
 import 'package:lonanote/src/widgets/platform_btn.dart';
+import 'package:lonanote/src/widgets/platform_floating_toolbar.dart';
 import 'package:lonanote/src/widgets/platform_icon_btn.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
@@ -95,6 +96,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       context: context,
       title: "确认删除",
       content: "确定删除所选的 ${_selectedPaths.length} 个工作区？",
+      cancelText: "取消",
       okText: "仅删除工作区",
       isDange: true,
       onOkPressed: () {
@@ -446,6 +448,25 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     );
   }
 
+  Widget _buildFloatingToolbar() {
+    return PlatformFloatingToolbar(
+      children: [
+        Text("已选择 ${_selectedPaths.length} 个"),
+        Row(
+          children: [
+            PlatformIconBtn(
+              icon: Icon(
+                ThemeIcons.delete(context),
+                color: _selectedPaths.isNotEmpty ? Colors.red : Colors.grey,
+              ),
+              onPressed: _selectedPaths.isNotEmpty ? _confirmBatchDelete : null,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
@@ -471,11 +492,13 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
                 onTap: _createWorkspace,
                 icon: ThemeIcons.add(context),
               ),
+              const PullDownMenuDivider.large(),
               PullDownMenuItem(
                 title: "排序方式",
                 icon: ThemeIcons.sort(context),
                 onTap: _sortClick,
               ),
+
               // PullDownMenuItem(
               //   title: "打开文件夹...",
               //   onTap: _selectOpenWorkspace,
@@ -495,6 +518,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
           ),
       ],
       contents: [_buildContent(context, colorScheme, workspaces)],
+      stacks: [
+        if (_isSelectionMode) _buildFloatingToolbar(),
+      ],
     );
   }
 }

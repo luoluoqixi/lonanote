@@ -15,6 +15,10 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.close : Icons.close;
   }
 
+  static IconData delete(BuildContext context) {
+    return isMaterial(context) ? Icons.delete_outline : Icons.delete_outline;
+  }
+
   static IconData more(BuildContext context) {
     return isMaterial(context) ? Icons.more_vert : Icons.more_horiz;
   }
