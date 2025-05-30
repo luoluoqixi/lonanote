@@ -2,7 +2,8 @@ export interface WorkspaceMetadata {
   name: string;
   path: string;
   rootPath: string;
-  lastOpenTime: number;
+  updateTime?: number | null;
+  createTime?: number | null;
 }
 
 export interface WorkspaceSettings {
@@ -12,6 +13,8 @@ export interface WorkspaceSettings {
   uploadImagePath: string;
   uploadAttachmentPath: string;
   histroySnapshootCount: number;
+  updateTime?: number | null;
+  createTime?: number | null;
 }
 
 export interface WorkspaceSaveData {

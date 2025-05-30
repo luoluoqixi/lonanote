@@ -313,15 +313,15 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     }
     final sortedWorkspaces = [...workspaces!]..sort((a, b) {
         if (_sortType == WorkspaceSortType.time) {
-          return b.lastOpenTime.compareTo(a.lastOpenTime);
+          return TimeUtility.compareTime(b.updateTime, a.updateTime);
         } else if (_sortType == WorkspaceSortType.timeRev) {
-          return a.lastOpenTime.compareTo(b.lastOpenTime);
+          return TimeUtility.compareTime(a.updateTime, b.updateTime);
         } else if (_sortType == WorkspaceSortType.name) {
           return a.name.compareTo(b.name);
         } else if (_sortType == WorkspaceSortType.nameRev) {
           return b.name.compareTo(a.name);
         } else {
-          return b.lastOpenTime.compareTo(a.lastOpenTime);
+          return TimeUtility.compareTime(b.updateTime, a.updateTime);
         }
       });
     return SliverList(
@@ -409,7 +409,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    TimeUtility.formatTimestamp(workspace.lastOpenTime),
+                    TimeUtility.formatTimestamp(workspace.updateTime),
                     style: TextStyle(
                       fontSize: 12,
                       color: greyColor,

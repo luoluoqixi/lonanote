@@ -31,8 +31,21 @@ export const useWorkspaceManagerState = create<WorkspaceManagerStore>((set) => (
   setIsOpen: (isOpen) => set({ isOpen }),
 }));
 
+const compareTime = (a?: number | null, b?: number | null) => {
+  if (a == null && b != null) {
+    return 1;
+  }
+  if (a != null && b == null) {
+    return -1;
+  }
+  if (a == null && b == null) {
+    return 0;
+  }
+  return a! - b!;
+};
+
 const getSortWorkspace = (workspaces: WorkspaceMetadata[]) => {
-  return workspaces.slice().sort((a, b) => b.lastOpenTime - a.lastOpenTime);
+  return workspaces.slice().sort((a, b) => compareTime(b.updateTime, a.updateTime));
 };
 
 const contextMenus: ContextMenuItem[] = [
@@ -295,7 +308,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = () => {
                 {workspaces.map((val, i) => {
                   const name = workspacesName.length > i ? workspacesName[i] : '';
                   const path = workspacesPath.length > i ? workspacesPath[i] : '';
-                  const lastOpenTime = timeUtils.getTimeFormat(val.lastOpenTime);
+                  const lastOpenTime = timeUtils.getTimeFormat(val.updateTime);
                   const isFocus = currentMenuIndex === i;
                   const isCurrentWorkspace = currentWorkspace?.metadata.path === val.path;
                   const isOpen = workspacesIsOpen.length > i ? workspacesIsOpen[i] : false;

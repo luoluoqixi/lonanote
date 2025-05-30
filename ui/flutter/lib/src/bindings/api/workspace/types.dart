@@ -8,13 +8,13 @@ class RustWorkspaceMetadata {
     required this.name,
     required this.path,
     required this.rootPath,
-    required this.lastOpenTime,
   });
 
   String name;
   String path;
   String rootPath;
-  int lastOpenTime;
+  int? createTime;
+  int? updateTime;
 
   factory RustWorkspaceMetadata.fromJson(Map<String, dynamic> json) =>
       _$RustWorkspaceMetadataFromJson(json);
@@ -25,6 +25,8 @@ class RustWorkspaceMetadata {
 @JsonSerializable()
 class RustWorkspaceSettings {
   RustWorkspaceSettings({
+    this.createTime,
+    this.updateTime,
     this.fileTreeSortType,
     required this.followGitignore,
     required this.customIgnore,
@@ -32,6 +34,9 @@ class RustWorkspaceSettings {
     required this.uploadAttachmentPath,
     required this.histroySnapshootCount,
   });
+
+  int? createTime;
+  int? updateTime;
 
   /// 'name' | 'nameRev' |
   /// 'lastModifiedTime' | 'lastModifiedTimeRev' |
@@ -118,6 +123,7 @@ class RustFileTree {
   });
 
   String path;
+
   /// 'name' | 'nameRev' |
   /// 'lastModifiedTime' | 'lastModifiedTimeRev' |
   /// 'createTime' | 'createTimeRev'

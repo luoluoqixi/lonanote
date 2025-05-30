@@ -2,8 +2,6 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::utils::time_utils::get_now_timestamp;
-
 use super::{error::WorkspaceError, workspace_path::WorkspacePath};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -12,7 +10,8 @@ pub struct WorkspaceMetadata {
     pub path: WorkspacePath,
     pub root_path: PathBuf,
     pub name: String,
-    pub last_open_time: u64,
+    pub create_time: Option<u64>,
+    pub update_time: Option<u64>,
 }
 
 impl WorkspaceMetadata {
@@ -30,11 +29,14 @@ impl WorkspaceMetadata {
             root_path,
             name,
             path: path.clone(),
-            last_open_time: get_now_timestamp(),
+            create_time: None,
+            update_time: None,
         })
     }
-    pub fn update_time(&mut self, time: u64) {
-        self.last_open_time = time;
+
+    pub fn update_time(&mut self, create_time: Option<u64>, update_time: Option<u64>) {
+        self.create_time = create_time;
+        self.update_time = update_time;
     }
 
     pub fn get_file_name(path: impl AsRef<Path>) -> Result<String, WorkspaceError> {

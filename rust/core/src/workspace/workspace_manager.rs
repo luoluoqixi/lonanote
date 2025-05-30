@@ -2,7 +2,10 @@ use std::{collections::HashMap, fs, path::Path};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{config::app_path::get_root_dir, utils::fs_utils};
+use crate::{
+    config::app_path::get_root_dir,
+    utils::{fs_utils, time_utils::get_now_timestamp},
+};
 
 use super::{
     config::get_workspace_global_config_path, error::WorkspaceError,
@@ -96,13 +99,27 @@ impl WorkspaceManager {
                 workspace_path.display().to_string(),
             ));
         }
-        let workspace = WorkspaceInstance::new(path)?;
+        let mut workspace = WorkspaceInstance::new(path)?;
+        if workspace.settings.create_time.is_none() {
+            workspace
+                .settings
+                .update_create_time(get_now_timestamp())
+                .await?;
+        } else {
+            workspace.settings.update_time(get_now_timestamp()).await?;
+        }
+
         let f = self.workspaces.iter_mut().find(|w| w.path == *path);
+
         if let Some(metadata) = f {
-            metadata.update_time(workspace.metadata.last_open_time);
+            metadata.update_time(
+                workspace.settings.create_time,
+                workspace.settings.update_time,
+            );
         } else {
             self.workspaces.push(workspace.metadata.clone());
         }
+
         if !self.workspaces_savedata.contains_key(path) {
             self.workspaces_savedata
                 .insert(path.clone(), WorkspaceSaveData::new());

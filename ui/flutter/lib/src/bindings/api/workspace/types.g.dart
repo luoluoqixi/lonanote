@@ -12,8 +12,9 @@ RustWorkspaceMetadata _$RustWorkspaceMetadataFromJson(
       name: json['name'] as String,
       path: json['path'] as String,
       rootPath: json['rootPath'] as String,
-      lastOpenTime: (json['lastOpenTime'] as num).toInt(),
-    );
+    )
+      ..createTime = (json['createTime'] as num?)?.toInt()
+      ..updateTime = (json['updateTime'] as num?)?.toInt();
 
 Map<String, dynamic> _$RustWorkspaceMetadataToJson(
         RustWorkspaceMetadata instance) =>
@@ -21,12 +22,15 @@ Map<String, dynamic> _$RustWorkspaceMetadataToJson(
       'name': instance.name,
       'path': instance.path,
       'rootPath': instance.rootPath,
-      'lastOpenTime': instance.lastOpenTime,
+      'createTime': instance.createTime,
+      'updateTime': instance.updateTime,
     };
 
 RustWorkspaceSettings _$RustWorkspaceSettingsFromJson(
         Map<String, dynamic> json) =>
     RustWorkspaceSettings(
+      createTime: (json['createTime'] as num?)?.toInt(),
+      updateTime: (json['updateTime'] as num?)?.toInt(),
       fileTreeSortType: json['fileTreeSortType'] as String?,
       followGitignore: json['followGitignore'] as bool,
       customIgnore: json['customIgnore'] as String,
@@ -38,6 +42,8 @@ RustWorkspaceSettings _$RustWorkspaceSettingsFromJson(
 Map<String, dynamic> _$RustWorkspaceSettingsToJson(
         RustWorkspaceSettings instance) =>
     <String, dynamic>{
+      'createTime': instance.createTime,
+      'updateTime': instance.updateTime,
       'fileTreeSortType': instance.fileTreeSortType,
       'followGitignore': instance.followGitignore,
       'customIgnore': instance.customIgnore,

@@ -12,6 +12,12 @@ use super::{
 pub struct WorkspaceSettings {
     #[serde(skip)]
     pub workspace_path: WorkspacePath,
+    /// 创建时间
+    #[serde(default = "WorkspaceSettings::default_create_time")]
+    pub create_time: Option<u64>,
+    /// 更新时间
+    #[serde(default = "WorkspaceSettings::default_update_time")]
+    pub update_time: Option<u64>,
     /// 文件树排序类型
     #[serde(default = "WorkspaceSettings::default_file_tree_sort_type")]
     pub file_tree_sort_type: FileTreeSortType,
@@ -33,6 +39,14 @@ pub struct WorkspaceSettings {
 }
 
 impl WorkspaceSettings {
+    pub fn default_create_time() -> Option<u64> {
+        None
+    }
+
+    pub fn default_update_time() -> Option<u64> {
+        None
+    }
+
     pub const fn default_file_tree_sort_type() -> FileTreeSortType {
         FileTreeSortType::Name
     }
@@ -68,6 +82,8 @@ impl WorkspaceSettings {
         } else {
             Ok(Self {
                 workspace_path: workspace_path.clone(),
+                create_time: WorkspaceSettings::default_create_time(),
+                update_time: WorkspaceSettings::default_update_time(),
                 file_tree_sort_type: WorkspaceSettings::default_file_tree_sort_type(),
                 follow_gitignore: WorkspaceSettings::default_follow_gitignore(),
                 custom_ignore: WorkspaceSettings::default_custom_ignore(),
@@ -76,6 +92,17 @@ impl WorkspaceSettings {
                 histroy_snapshoot_count: WorkspaceSettings::default_histroy_snapshoot_count(),
             })
         }
+    }
+
+    pub async fn update_time(&mut self, time: u64) -> Result<(), WorkspaceError> {
+        self.update_time.replace(time);
+        self.save().await
+    }
+
+    pub async fn update_create_time(&mut self, time: u64) -> Result<(), WorkspaceError> {
+        self.create_time.replace(time);
+        self.update_time.replace(time);
+        self.save().await
     }
 
     pub async fn save(&self) -> Result<(), WorkspaceError> {
