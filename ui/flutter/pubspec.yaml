@@ -51,7 +51,7 @@ dependencies:
   json_annotation: ^4.9.0
   pull_down_button: ^0.10.2
   fluttertoast: ^8.2.12
-  file_picker: ^10.1.9
+  # file_picker: ^10.1.9
   intl: ^0.20.2
 
 dev_dependencies:
