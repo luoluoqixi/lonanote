@@ -4,7 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
-import 'package:lonanote/src/widgets/platform_button.dart';
+import 'package:lonanote/src/widgets/platform_btn.dart';
 import 'package:lonanote/src/widgets/platform_input.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
@@ -118,7 +118,7 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
             },
           ),
           const SizedBox(height: 24),
-          PlatformButton(
+          PlatformBtn(
             width: double.infinity,
             onPressed: _createWorkspace,
             labelText: '创建并打开',

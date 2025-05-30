@@ -77,6 +77,7 @@ class ScrollAppBar extends StatelessWidget {
       actions: [
         ...?actions,
       ],
+      actionsPadding: const EdgeInsets.only(right: 15.0),
     );
   }
 }

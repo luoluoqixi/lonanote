@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/tools/cupertino_ink_response.dart';
 
@@ -58,7 +57,7 @@ class _PlatformInkkWellState extends State<PlatformInkWell> {
   }
 
   void _tapDown() {
-    logger.i("onTapDown");
+    // logger.i("onTapDown");
     _pressResetTimer?.cancel();
     _setIsPress(true);
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:lonanote/src/widgets/tools/cupertino_ink_response.dart';
+import 'package:lonanote/src/widgets/platform_ink_response.dart';
 
 class PlatformIconBtn extends StatelessWidget {
   final Key? widgetKey;
@@ -32,28 +32,20 @@ class PlatformIconBtn extends StatelessWidget {
     this.cupertino,
   });
 
-  Widget buildBtn(BuildContext context) {
-    return PlatformIconButton(
-      icon: icon,
-      cupertinoIcon: cupertinoIcon,
-      materialIcon: materialIcon,
-      onPressed: onPressed,
-      color: color,
-      disabledColor: disabledColor,
-      padding: padding,
-      onLongPress: onLongPress,
-      material: material,
-      cupertino: cupertino,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return PlatformWidget(
-      material: (context, _) => buildBtn(context),
-      cupertino: (context, _) => CupertinoInkResponse(
-        onTap: onPressed != null ? () {} : null,
-        child: buildBtn(context),
+    return PlatformInkResponse(
+      child: PlatformIconButton(
+        icon: icon,
+        cupertinoIcon: cupertinoIcon,
+        materialIcon: materialIcon,
+        onPressed: onPressed,
+        color: color,
+        disabledColor: disabledColor,
+        padding: padding,
+        onLongPress: onLongPress,
+        material: material,
+        cupertino: cupertino,
       ),
     );
   }

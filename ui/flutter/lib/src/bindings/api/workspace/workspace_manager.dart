@@ -34,9 +34,11 @@ class RustWorkspaceManager {
         value: {"path": path, "newName": newName, "isMove": isMove});
   }
 
-  static Future<void> removeWorkspace(String path) async {
+  static Future<void> removeWorkspace(String path, bool deleteFile) async {
     await Bindings.invokeAsync(
-        key: "workspace.remove_workspace", value: {"path": path});
+      key: "workspace.remove_workspace",
+      value: {"path": path, "deleteFile": deleteFile},
+    );
   }
 
   static Future<List<RustWorkspaceMetadata>> getWorkspacesMetadata() async {

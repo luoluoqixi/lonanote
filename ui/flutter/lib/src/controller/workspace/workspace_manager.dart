@@ -24,8 +24,11 @@ class WorkspaceManager {
   }
 
   static Future<void> deleteWorkspace(
-      WidgetRef ref, String workspaceName) async {
-    await RustWorkspaceManager.removeWorkspace(workspaceName);
+    WidgetRef ref,
+    String workspaceName,
+    bool deleteFile,
+  ) async {
+    await RustWorkspaceManager.removeWorkspace(workspaceName, deleteFile);
     logger.i("delete workspace: $workspaceName");
     await refreshWorkspace(ref);
   }

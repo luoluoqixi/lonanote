@@ -62,12 +62,20 @@ async fn set_workspace_name(Json(args): Json<SetWorkspaceNameArgs>) -> CommandRe
 #[serde(rename_all = "camelCase")]
 struct RemoveWorkspaceArgs {
     pub path: String,
+    #[serde(default = "RemoveWorkspaceArgs::default_delete_file")]
+    pub delete_file: bool,
+}
+
+impl RemoveWorkspaceArgs {
+    pub const fn default_delete_file() -> bool {
+        false
+    }
 }
 
 async fn remove_workspace(Json(args): Json<RemoveWorkspaceArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
-        .remove_workspace(&WorkspacePath::from(&args.path))
+        .remove_workspace(&WorkspacePath::from(&args.path), args.delete_file)
         .await?;
 
     Ok(CommandResponse::None)

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -10,7 +9,8 @@ import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/views/workspace/workspace_sort_select.dart';
-import 'package:lonanote/src/widgets/platform_button.dart';
+import 'package:lonanote/src/widgets/platform_btn.dart';
+import 'package:lonanote/src/widgets/platform_icon_btn.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
@@ -52,14 +52,36 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     });
   }
 
-  void _batchDeleteWorkspace() async {
+  bool _isSelectAll(List<RustWorkspaceMetadata>? ws) {
+    if (ws == null) return false;
+    return ws.length == _selectedPaths.length;
+  }
+
+  void _selectAll(List<RustWorkspaceMetadata>? ws) {
+    final ws = ref.read(workspaceProvider).workspaces;
+    if (ws == null) return;
+    setState(() {
+      _selectedPaths.clear();
+      for (final w in ws) {
+        _selectedPaths.add(w.path);
+      }
+    });
+  }
+
+  void _unSelectAll() {
+    setState(() {
+      _selectedPaths.clear();
+    });
+  }
+
+  void _batchDeleteWorkspace(bool deleteFile) async {
     for (final path in _selectedPaths) {
       final ws = ref
           .read(workspaceProvider)
           .workspaces
           ?.firstWhere((w) => w.path == path);
       if (ws != null) {
-        await _deleteWorkspace(ws);
+        await _deleteWorkspace(ws, deleteFile);
       }
     }
     setState(() {
@@ -68,18 +90,23 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     });
   }
 
-  // ignore: unused_element
   void _confirmBatchDelete() {
     DialogTools.showDialog(
       context: context,
       title: "确认删除",
       content: "确定删除所选的 ${_selectedPaths.length} 个工作区？",
-      okText: "删除",
+      okText: "仅删除工作区",
       isDange: true,
       onOkPressed: () {
-        _batchDeleteWorkspace();
+        _batchDeleteWorkspace(false);
         return null;
       },
+      actions: [
+        DialogTools.dialogAction(context, "同时删除本地文件", onPressed: () {
+          _batchDeleteWorkspace(true);
+          return null;
+        }, isDange: true)
+      ],
     );
   }
 
@@ -163,9 +190,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     }
   }
 
-  Future<void> _deleteWorkspace(RustWorkspaceMetadata workspace) async {
+  Future<void> _deleteWorkspace(
+    RustWorkspaceMetadata workspace,
+    bool deleteFile,
+  ) async {
     try {
-      await WorkspaceManager.deleteWorkspace(ref, workspace.path);
+      await WorkspaceManager.deleteWorkspace(ref, workspace.path, deleteFile);
     } catch (e) {
       logger.e(e);
       if (mounted) {
@@ -181,17 +211,22 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
 
   void _deleteWorkspaceClick(RustWorkspaceMetadata workspace) {
     DialogTools.showDialog(
-      context: context,
-      title: "提示",
-      content: "确定要删除工作区 ${workspace.name} 吗？",
-      okText: "删除",
-      cancelText: "取消",
-      isDange: true,
-      onOkPressed: () {
-        _deleteWorkspace(workspace);
-        return null;
-      },
-    );
+        context: context,
+        title: "提示",
+        content: "确定要删除工作区 ${workspace.name} 吗？",
+        okText: "仅删除工作区",
+        cancelText: "取消",
+        isDange: true,
+        onOkPressed: () {
+          _deleteWorkspace(workspace, false);
+          return null;
+        },
+        actions: [
+          DialogTools.dialogAction(context, "同时删除本地文件", onPressed: () {
+            _deleteWorkspace(workspace, true);
+            return null;
+          }, isDange: true)
+        ]);
   }
 
   void _renameWorkspaceClick(RustWorkspaceMetadata workspace) {
@@ -217,10 +252,23 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     }
   }
 
-  List<Widget> _buildSelectModeActions() {
+  List<Widget> _buildSelectModeActions(List<RustWorkspaceMetadata>? ws) {
+    final selectAll = _isSelectAll(ws);
     return [
-      PlatformIconButton(
+      PlatformIconBtn(
+        icon: Text(selectAll ? "取消全选" : "全选"),
+        padding: EdgeInsets.all(10.0),
+        onPressed: () {
+          if (selectAll) {
+            _unSelectAll();
+          } else {
+            _selectAll(ws);
+          }
+        },
+      ),
+      PlatformIconBtn(
         icon: Text("完成"),
+        padding: EdgeInsets.all(8.0),
         onPressed: () {
           setState(() {
             _isSelectionMode = false;
@@ -241,7 +289,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       RustWorkspaceMetadata workspace, bool isSelect) {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
-      child: PlatformIconButton(
+      child: PlatformIconBtn(
         icon: Icon(
           isSelect ? Icons.check_circle : Icons.radio_button_unchecked,
         ),
@@ -253,9 +301,8 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     );
   }
 
-  Widget _buildContent(BuildContext context, ColorScheme colorScheme) {
-    final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
-
+  Widget _buildContent(BuildContext context, ColorScheme colorScheme,
+      List<RustWorkspaceMetadata>? workspaces) {
     final count = workspaces?.length ?? 0;
     if (count == 0) {
       return SliverToBoxAdapter(
@@ -313,7 +360,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
               ),
             ),
             const SizedBox(height: 16),
-            PlatformButton(
+            PlatformBtn(
               width: double.infinity,
               onPressed: _createWorkspace,
               labelText: "创建工作区",
@@ -370,30 +417,29 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
               ),
             ),
             // 右侧下拉按钮
-            PlatformPullDownButton(
-              // buttonColor: ThemeColors.getTextGreyColor(colorScheme),
-              buttonOnPressed: (showMenu) {
-                if (!_isSelectionMode) {
+            if (!_isSelectionMode)
+              PlatformPullDownButton(
+                // buttonColor: ThemeColors.getTextGreyColor(colorScheme),
+                buttonOnPressed: (showMenu) {
                   showMenu();
-                }
-              },
-              itemBuilder: (context) => [
-                PullDownMenuItem(
-                  title: '重命名',
-                  onTap: () => _renameWorkspaceClick(workspace),
+                },
+                itemBuilder: (context) => [
+                  PullDownMenuItem(
+                    title: '重命名',
+                    onTap: () => _renameWorkspaceClick(workspace),
+                  ),
+                  PullDownMenuItem(
+                    title: '删除',
+                    isDestructive: true,
+                    onTap: () => _deleteWorkspaceClick(workspace),
+                  ),
+                ],
+                buttonIcon: Icon(
+                  ThemeIcons.more(context),
+                  color: ThemeColors.getTextGreyColor(colorScheme),
+                  size: 24,
                 ),
-                PullDownMenuItem(
-                  title: '删除',
-                  isDestructive: true,
-                  onTap: () => _deleteWorkspaceClick(workspace),
-                ),
-              ],
-              buttonIcon: Icon(
-                ThemeIcons.more(context),
-                color: ThemeColors.getTextGreyColor(colorScheme),
-                size: 24,
               ),
-            ),
           ],
         ),
       ),
@@ -402,14 +448,15 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
 
   @override
   Widget build(BuildContext context) {
+    final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
     final colorScheme = Theme.of(context).colorScheme;
     return PlatformPage(
       title: "工作区",
       subTitle: "选择工作区",
       isLoading: _isLoading,
-      onRefresh: _refreshWorkspaces,
+      onRefresh: _isSelectionMode ? null : _refreshWorkspaces,
       titleActions: [
-        if (_isSelectionMode) ..._buildSelectModeActions(),
+        if (_isSelectionMode) ..._buildSelectModeActions(workspaces),
         if (!_isSelectionMode)
           PlatformPullDownButton(
             itemBuilder: (context) => [
@@ -417,6 +464,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
                 title: "选择工作区",
                 onTap: _selectWorkspace,
                 icon: ThemeIcons.select(context),
+                enabled: workspaces?.isNotEmpty ?? false,
               ),
               PullDownMenuItem(
                 title: "创建工作区",
@@ -446,7 +494,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             ),
           ),
       ],
-      contents: [_buildContent(context, colorScheme)],
+      contents: [_buildContent(context, colorScheme, workspaces)],
     );
   }
 }

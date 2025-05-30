@@ -166,16 +166,25 @@ impl WorkspaceManager {
         Ok(Some(self.workspaces_savedata.get(path).unwrap()))
     }
 
-    pub async fn remove_workspace(&mut self, path: &WorkspacePath) -> Result<(), WorkspaceError> {
+    pub async fn remove_workspace(
+        &mut self,
+        path: &WorkspacePath,
+        delete_file: bool,
+    ) -> Result<(), WorkspaceError> {
         if self.open_workspaces.contains_key(path) {
             return Err(WorkspaceError::RemoveAlreadyOpenWorkspace(
                 path.to_path_buf_cow().display().to_string(),
             ));
         }
         if let Some(index) = self.workspaces.iter().position(|w| w.path == *path) {
-            self.workspaces.remove(index);
+            let ws = self.workspaces.remove(index);
             if self.workspaces_savedata.contains_key(path) {
                 self.workspaces_savedata.remove(path);
+            }
+            if delete_file && ws.path.exists() {
+                let ws_path = ws.path.to_path_buf();
+                fs::remove_dir_all(ws_path)
+                    .map_err(|e| WorkspaceError::IOError(format!("delete dir error: {e}")))?;
             }
         }
 
