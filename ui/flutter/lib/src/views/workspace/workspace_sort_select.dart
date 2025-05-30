@@ -5,8 +5,10 @@ import 'package:lonanote/src/widgets/platform_ink_well.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 
 enum WorkspaceSortType {
-  time,
-  timeRev,
+  updateTime,
+  updateTimeRev,
+  createTime,
+  createTimeRev,
   name,
   nameRev,
 }
@@ -73,10 +75,14 @@ class WorkspaceSortSelect extends StatelessWidget {
       childSize: 0.4,
       allowScroll: true,
       children: [
-        _buildSortOption(context, '按时间排序', ThemeIcons.schedule(context),
-            WorkspaceSortType.time),
-        _buildSortOption(context, '按时间倒序', ThemeIcons.schedule(context),
-            WorkspaceSortType.timeRev),
+        _buildSortOption(context, '按打开时间排序', ThemeIcons.schedule(context),
+            WorkspaceSortType.updateTime),
+        _buildSortOption(context, '按打开时间倒序', ThemeIcons.schedule(context),
+            WorkspaceSortType.updateTimeRev),
+        _buildSortOption(context, '按创建时间排序', ThemeIcons.schedule(context),
+            WorkspaceSortType.createTime),
+        _buildSortOption(context, '按创建时间倒序', ThemeIcons.schedule(context),
+            WorkspaceSortType.createTimeRev),
         _buildSortOption(context, '按名称排序', ThemeIcons.sortName(context),
             WorkspaceSortType.name),
         _buildSortOption(context, '按名称倒序', ThemeIcons.sortName(context),

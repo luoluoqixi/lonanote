@@ -29,7 +29,7 @@ class SelectWorkspacePage extends ConsumerStatefulWidget {
 class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
-  WorkspaceSortType _sortType = WorkspaceSortType.time;
+  WorkspaceSortType _sortType = WorkspaceSortType.updateTime;
 
   bool _isLoading = false;
 
@@ -40,6 +40,11 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  bool isShowCreateTime() {
+    return _sortType == WorkspaceSortType.createTime ||
+        _sortType == WorkspaceSortType.createTimeRev;
   }
 
   void _toggleSelection(RustWorkspaceMetadata workspace) {
@@ -312,10 +317,14 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       );
     }
     final sortedWorkspaces = [...workspaces!]..sort((a, b) {
-        if (_sortType == WorkspaceSortType.time) {
+        if (_sortType == WorkspaceSortType.updateTime) {
           return TimeUtility.compareTime(b.updateTime, a.updateTime);
-        } else if (_sortType == WorkspaceSortType.timeRev) {
+        } else if (_sortType == WorkspaceSortType.updateTimeRev) {
           return TimeUtility.compareTime(a.updateTime, b.updateTime);
+        } else if (_sortType == WorkspaceSortType.createTime) {
+          return TimeUtility.compareTime(b.createTime, a.createTime);
+        } else if (_sortType == WorkspaceSortType.createTimeRev) {
+          return TimeUtility.compareTime(a.createTime, b.createTime);
         } else if (_sortType == WorkspaceSortType.name) {
           return a.name.compareTo(b.name);
         } else if (_sortType == WorkspaceSortType.nameRev) {
@@ -409,7 +418,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    TimeUtility.formatTimestamp(workspace.updateTime),
+                    TimeUtility.formatTimestamp(isShowCreateTime()
+                        ? workspace.createTime
+                        : workspace.updateTime),
                     style: TextStyle(
                       fontSize: 12,
                       color: greyColor,
