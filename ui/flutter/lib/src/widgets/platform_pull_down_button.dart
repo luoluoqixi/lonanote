@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/widgets/platform_icon_btn.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
 class PlatformPullDownButton extends StatelessWidget {
@@ -28,7 +29,7 @@ class PlatformPullDownButton extends StatelessWidget {
     return PullDownButton(
       itemBuilder: itemBuilder,
       buttonBuilder: buttonBuilder ??
-          (context, showMenu) => PlatformIconButton(
+          (context, showMenu) => PlatformIconBtn(
                 onLongPress: buttonOnLongPress,
                 onPressed: buttonOnPressed != null
                     ? () => buttonOnPressed!(showMenu)

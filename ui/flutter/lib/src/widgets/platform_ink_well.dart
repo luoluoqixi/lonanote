@@ -2,12 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
+import 'package:lonanote/src/widgets/tools/cupertino_ink_response.dart';
 
 class PlatformInkWell extends StatefulWidget {
   final GestureTapCallback? onTap;
+  final GestureTapDownCallback? onTapDown;
+  final GestureTapUpCallback? onTapUp;
+  final GestureTapCallback? onTapCancel;
   final GestureTapCallback? onDoubleTap;
   final GestureLongPressCallback? onLongPress;
+  final GestureTapCallback? onSecondaryTap;
+  final GestureTapDownCallback? onSecondaryTapDown;
+  final GestureTapUpCallback? onSecondaryTapUp;
+  final GestureTapCallback? onSecondaryTapCancel;
   final Widget? child;
   final Color? bgColor;
   final Color? pressBgColor;
@@ -20,6 +29,13 @@ class PlatformInkWell extends StatefulWidget {
     this.onTap,
     this.onDoubleTap,
     this.onLongPress,
+    this.onTapDown,
+    this.onTapUp,
+    this.onTapCancel,
+    this.onSecondaryTap,
+    this.onSecondaryTapUp,
+    this.onSecondaryTapDown,
+    this.onSecondaryTapCancel,
     this.child,
     this.bgColor,
     this.pressBgColor,
@@ -28,10 +44,10 @@ class PlatformInkWell extends StatefulWidget {
   });
 
   @override
-  State<StatefulWidget> createState() => _InkkWellState();
+  State<StatefulWidget> createState() => _PlatformInkkWellState();
 }
 
-class _InkkWellState extends State<PlatformInkWell> {
+class _PlatformInkkWellState extends State<PlatformInkWell> {
   bool _isPress = false;
   Timer? _pressResetTimer;
 
@@ -42,6 +58,7 @@ class _InkkWellState extends State<PlatformInkWell> {
   }
 
   void _tapDown() {
+    logger.i("onTapDown");
     _pressResetTimer?.cancel();
     _setIsPress(true);
   }
@@ -64,81 +81,52 @@ class _InkkWellState extends State<PlatformInkWell> {
   }
 
   Widget? _buildCupertino(BuildContext context) {
-    // return Theme(
-    //   data: Theme.of(context).copyWith(
-    //     splashFactory: InkRipple.splashFactory,
-    //   ),
-    //   child: Material(
-    //     color: Colors.transparent,
-    //     child: InkWell(
-    //       onTap: widget.onTap,
-    //       onTapDown: widget.onTapDown,
-    //       onTapUp: widget.onTapUp,
-    //       onTapCancel: widget.onTapCancel,
-    //       onDoubleTap: widget.onDoubleTap,
-    //       onLongPress: widget.onLongPress,
-    //       child: widget.child,
-    //     ),
-    //   ),
-    // );
     final colorScheme = Theme.of(context).colorScheme;
     final bgColor = widget.bgColor ?? ThemeColors.getBgColor(colorScheme);
     final pressBgColor =
         widget.pressBgColor ?? ThemeColors.getPressBgColor(colorScheme);
     final textColor = widget.textColor ?? ThemeColors.getTextColor(colorScheme);
 
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              _delayTapUp();
-              widget.onTap?.call();
-            },
-            onTapDown: (e) {
-              // logger.i("onTapDown");
-              _tapDown();
-            },
-            onTapUp: (e) {
-              _delayTapUp();
-            },
-            onTapCancel: () {
-              _delayTapUp();
-            },
-            onDoubleTap: widget.onDoubleTap,
-            onLongPress: widget.onLongPress,
-            child: ColoredBox(
-              color: _isPress || widget.forcePressColor == true
-                  ? pressBgColor
-                  : bgColor,
-            ),
-          ),
+    return CupertinoInkResponse(
+      onTap: () {
+        _delayTapUp();
+        widget.onTap?.call();
+      },
+      onTapDown: (e) {
+        _tapDown();
+        widget.onTapDown?.call(e);
+      },
+      onTapUp: (e) {
+        _delayTapUp();
+        widget.onTapUp?.call(e);
+      },
+      onTapCancel: () {
+        _delayTapUp();
+        widget.onTapCancel?.call();
+      },
+      onSecondaryTapDown: (e) {
+        _tapDown();
+        widget.onSecondaryTapDown?.call(e);
+      },
+      onSecondaryTapUp: (e) {
+        _delayTapUp();
+        widget.onSecondaryTapUp?.call(e);
+      },
+      onSecondaryTapCancel: () {
+        _delayTapUp();
+        widget.onSecondaryTapCancel?.call();
+      },
+      onSecondaryTap: widget.onSecondaryTap,
+      onDoubleTap: widget.onDoubleTap,
+      onLongPress: widget.onLongPress,
+      child: ColoredBox(
+        color:
+            _isPress || widget.forcePressColor == true ? pressBgColor : bgColor,
+        child: DefaultTextStyle(
+          style: TextStyle(color: textColor),
+          child: widget.child!,
         ),
-        GestureDetector(
-          behavior: HitTestBehavior.deferToChild,
-          onTap: () {
-            _delayTapUp();
-            widget.onTap?.call();
-          },
-          // onTapDown: (e) {
-          //   // logger.i("onTapDown");
-          //   _tapDown();
-          // },
-          onTapUp: (e) {
-            _delayTapUp();
-          },
-          onTapCancel: () {
-            _delayTapUp();
-          },
-          onDoubleTap: widget.onDoubleTap,
-          onLongPress: widget.onLongPress,
-          child: DefaultTextStyle(
-            style: TextStyle(color: textColor),
-            child: widget.child!,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -155,6 +143,13 @@ class _InkkWellState extends State<PlatformInkWell> {
           onTap: widget.onTap,
           onDoubleTap: widget.onDoubleTap,
           onLongPress: widget.onLongPress,
+          onTapDown: widget.onTapDown,
+          onTapUp: widget.onTapUp,
+          onTapCancel: widget.onTapCancel,
+          onSecondaryTap: widget.onSecondaryTap,
+          onSecondaryTapUp: widget.onSecondaryTapUp,
+          onSecondaryTapDown: widget.onSecondaryTapDown,
+          onSecondaryTapCancel: widget.onSecondaryTapCancel,
           child: widget.child,
         ),
       ),

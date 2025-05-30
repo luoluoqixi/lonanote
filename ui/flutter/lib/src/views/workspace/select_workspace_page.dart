@@ -348,28 +348,25 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             if (_isSelectionMode) _buildSelectModeContent(workspace, isSelect),
             // 左侧信息部分
             Expanded(
-              child: IgnorePointer(
-                ignoring: true,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      workspace.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    workspace.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      TimeUtility.formatTimestamp(workspace.lastOpenTime),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: greyColor,
-                      ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    TimeUtility.formatTimestamp(workspace.lastOpenTime),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: greyColor,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             // 右侧下拉按钮
