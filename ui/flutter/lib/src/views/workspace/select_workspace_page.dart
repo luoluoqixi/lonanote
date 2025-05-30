@@ -244,7 +244,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     try {
       // 刷新太快了, 加个延时假装一下在干活
       await Future.delayed(Duration(milliseconds: 200));
-      await WorkspaceManager.refreshWorkspace(ref);
+      await WorkspaceManager.refreshWorkspace(ref, true, true);
       logger.i("refresh workspace finish");
     } catch (e) {
       logger.e(e);
