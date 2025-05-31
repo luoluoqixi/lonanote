@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/theme/theme_colors.dart';
 
 class PlatformFloatingToolbar extends StatelessWidget {
   final List<Widget> children;
@@ -42,7 +43,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
         children: children,
       ),
     );
-    final bgColor = this.bgColor ?? colorScheme.surface;
+    final bgColor = this.bgColor ?? ThemeColors.getBg0Color(colorScheme);
     return Positioned(
       top: top,
       left: left ?? 20,
@@ -58,7 +59,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
           material: (context, platform) => Material(
             elevation: 6,
             borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).colorScheme.surface,
+            color: ThemeColors.getBg0Color(Theme.of(context).colorScheme),
             child: content,
           ),
           cupertino: (context, platform) => Container(

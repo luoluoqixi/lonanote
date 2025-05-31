@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/views/settings/settings_page.dart';
+import 'package:lonanote/src/views/settings/workspace_settings.dart';
 import 'package:lonanote/src/views/workspace/create_workspace_page.dart';
 import 'package:lonanote/src/views/workspace/rename_workspace_page.dart';
 import 'package:lonanote/src/views/workspace/select_workspace_page.dart';
@@ -64,13 +65,20 @@ class AppRouter {
     );
   }
 
-  static void jumpToSettingsPage(
+  static void jumpToSettingsPage(BuildContext context) {
+    jumpToPage(
+      context,
+      (context) => SettingsPage(),
+    );
+  }
+
+  static void jumpToWorkspaceSettingsPage(
     BuildContext context,
-    RustWorkspaceData? workspace,
+    RustWorkspaceData workspace,
   ) {
     jumpToPage(
       context,
-      (context) => SettingsPage(
+      (context) => WorkspaceSettingsPage(
         workspace: workspace,
       ),
     );

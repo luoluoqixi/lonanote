@@ -23,6 +23,10 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.more_vert : Icons.more_horiz;
   }
 
+  static IconData radio(BuildContext context, bool check) {
+    return check ? Icons.check_circle : Icons.radio_button_unchecked;
+  }
+
   static IconData schedule(BuildContext context) {
     return isMaterial(context) ? Icons.schedule : Icons.schedule;
   }

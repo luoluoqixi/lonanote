@@ -173,7 +173,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   // }
 
   void _openSettings() {
-    AppRouter.jumpToSettingsPage(context, null);
+    AppRouter.jumpToSettingsPage(context);
   }
 
   void _openWorkspace(RustWorkspaceMetadata workspace) async {
@@ -310,14 +310,15 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   }
 
   Widget _buildSelectModeContent(
-      RustWorkspaceMetadata workspace, bool isSelect) {
+    RustWorkspaceMetadata workspace,
+    bool isSelect,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: PlatformIconBtn(
         icon: Icon(
-          isSelect ? Icons.check_circle : Icons.radio_button_unchecked,
+          ThemeIcons.radio(context, isSelect),
         ),
-        // color: Theme.of(context).colorScheme.primary,
         onPressed: () {
           _toggleSelection(workspace);
         },
@@ -325,8 +326,11 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     );
   }
 
-  Widget _buildContent(BuildContext context, ColorScheme colorScheme,
-      List<RustWorkspaceMetadata>? workspaces) {
+  Widget _buildContent(
+    BuildContext context,
+    ColorScheme colorScheme,
+    List<RustWorkspaceMetadata>? workspaces,
+  ) {
     final count = workspaces?.length ?? 0;
     if (count == 0) {
       return SliverToBoxAdapter(
@@ -500,10 +504,11 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
     final colorScheme = Theme.of(context).colorScheme;
     return PlatformPage(
-      title: "工作区",
-      subTitle: "选择工作区",
+      titleText: "工作区",
+      subTitleText: "选择工作区",
       isLoading: _isLoading,
       onRefresh: _isSelectionMode ? null : _refreshWorkspaces,
+      backgroundColor: ThemeColors.getBg0Color(colorScheme),
       titleActions: [
         if (_isSelectionMode) ..._buildSelectModeActions(workspaces),
         if (!_isSelectionMode)

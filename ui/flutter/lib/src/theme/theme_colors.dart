@@ -11,7 +11,15 @@ class ThemeColors {
   }
 
   static Color getBgColor(ColorScheme colorScheme) {
-    return colorScheme.surface;
+    return isLight(colorScheme) ? Colors.grey[100]! : Colors.black87;
+  }
+
+  static Color getPrimaryColor(ColorScheme colorScheme) {
+    return colorScheme.primary;
+  }
+
+  static Color getBg0Color(ColorScheme colorScheme) {
+    return isLight(colorScheme) ? Colors.white : Colors.black;
   }
 
   static Color getPressBgColor(ColorScheme colorScheme) {

@@ -10,13 +10,16 @@ class PlatformPage extends StatefulWidget {
   final ScrollAppBar? appBar;
   final Widget? bottomBar;
   final List<Widget>? stacks;
-  final String? title;
-  final String? subTitle;
+  final Widget? title;
+  final String? titleText;
+  final Widget? subTitle;
+  final String? subTitleText;
   final List<Widget>? titleActions;
   final Widget? child;
   final List<Widget>? contents;
 
   final Color? backgroundColor;
+  final Color? titleColor;
 
   final bool? isLoading;
   final RefreshCallback? onRefresh;
@@ -28,11 +31,14 @@ class PlatformPage extends StatefulWidget {
     this.bottomBar,
     this.stacks,
     this.title,
+    this.titleText,
     this.subTitle,
+    this.subTitleText,
     this.titleActions,
     this.child,
     this.contents,
     this.backgroundColor,
+    this.titleColor,
     this.isLoading,
     this.onRefresh,
   });
@@ -70,11 +76,14 @@ class _PlatformPageState extends State<PlatformPage> {
   }
 
   double _getAppBarHeight() {
-    return ScrollAppBar.defaultExpandedHeight +
-        MediaQuery.of(context).padding.top;
+    return (widget.title == null && widget.titleText == null)
+        ? 0.0
+        : (ScrollAppBar.defaultExpandedHeight +
+            MediaQuery.of(context).padding.top);
   }
 
-  Widget _buildPageScroll(BuildContext context, Widget? appBar) {
+  Widget _buildPageContent(BuildContext context) {
+    final appBar = _buildAppBar();
     return CustomScrollView(
       controller: widget.scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
@@ -90,28 +99,29 @@ class _PlatformPageState extends State<PlatformPage> {
   }
 
   Widget? _buildAppBar() {
-    return widget.appBar ??
-        (widget.title != null
-            ? ScrollAppBar(
-                title: widget.title!,
-                subTitle: widget.subTitle,
-                actions: widget.titleActions,
-              )
-            : null);
+    if (widget.appBar != null) return widget.appBar;
+    if (widget.title == null && widget.titleText == null) return null;
+    return ScrollAppBar(
+      title: widget.title,
+      titleText: widget.titleText,
+      subTitle: widget.subTitle,
+      subTitleText: widget.subTitleText,
+      actions: widget.titleActions,
+      bgColor: widget.titleColor,
+    );
   }
 
   Widget _buildPage() {
-    final appBar = _buildAppBar();
-    final scrollView = widget.onRefresh != null
-        ? RefreshIndicator(
-            onRefresh: widget.onRefresh!,
-            edgeOffset: widget.title == null ? 0.0 : _getAppBarHeight(),
-            child: _buildPageScroll(context, appBar),
-          )
-        : _buildPageScroll(context, appBar);
     return Column(
       children: [
-        Expanded(child: scrollView),
+        Expanded(
+            child: widget.onRefresh != null
+                ? RefreshIndicator(
+                    onRefresh: widget.onRefresh!,
+                    edgeOffset: _getAppBarHeight(),
+                    child: _buildPageContent(context),
+                  )
+                : _buildPageContent(context)),
         if (widget.bottomBar != null) widget.bottomBar!,
       ],
     );
@@ -120,16 +130,19 @@ class _PlatformPageState extends State<PlatformPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final backgroundColor =
-        widget.backgroundColor ?? ThemeColors.getBgColor(colorScheme);
+    final backgroundColor = ThemeColors.getBgColor(colorScheme);
     return Stack(
       children: [
         PlatformScaffold(
           backgroundColor: backgroundColor,
-          body: SafeArea(
-            top: false,
-            bottom: false,
-            child: _buildPage(),
+          body: Container(
+            color: widget.backgroundColor ?? Colors.transparent,
+            child: SafeArea(
+              left: true,
+              right: true,
+              top: false,
+              child: _buildPage(),
+            ),
           ),
         ),
         ...?widget.stacks,
@@ -151,9 +164,11 @@ class PlatformSimplePage extends StatefulWidget {
   final Widget? bottomBar;
   final Widget? title;
   final String? titleText;
-  final Widget child;
+  final Widget? child;
+  final List<Widget>? contents;
 
   final Color? backgroundColor;
+  final Color? titleColor;
 
   final bool? isLoading;
   final RefreshCallback? onRefresh;
@@ -165,8 +180,10 @@ class PlatformSimplePage extends StatefulWidget {
     this.bottomBar,
     this.title,
     this.titleText,
-    required this.child,
+    this.child,
+    this.contents,
     this.backgroundColor,
+    this.titleColor,
     this.isLoading,
     this.onRefresh,
   });
@@ -204,16 +221,21 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
   }
 
   double _getAppBarHeight() {
-    return SimpleAppBar.defaultHeight + MediaQuery.of(context).padding.top;
+    return (widget.title == null && widget.titleText == null)
+        ? 0.0
+        : (SimpleAppBar.defaultHeight + MediaQuery.of(context).padding.top);
   }
 
-  Widget _buildPageScroll(BuildContext context, Widget? appBar) {
+  Widget _buildPageContent(BuildContext context) {
+    final appBar = _buildAppBar();
     return CustomScrollView(
       slivers: [
         if (appBar != null) appBar,
-        SliverToBoxAdapter(
-          child: widget.child,
-        ),
+        if (widget.child != null)
+          SliverToBoxAdapter(
+            child: widget.child,
+          ),
+        ...?widget.contents,
       ],
     );
   }
@@ -224,33 +246,36 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     return SimpleAppBar(
       title: widget.title,
       titleText: widget.titleText,
+      bgColor: widget.titleColor,
     );
   }
 
   Widget _buildPage() {
-    final appBar = _buildAppBar();
     return widget.onRefresh != null
         ? RefreshIndicator(
             onRefresh: widget.onRefresh!,
-            edgeOffset: widget.title == null ? 0.0 : _getAppBarHeight(),
-            child: _buildPageScroll(context, appBar),
+            edgeOffset: _getAppBarHeight(),
+            child: _buildPageContent(context),
           )
-        : _buildPageScroll(context, appBar);
+        : _buildPageContent(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final backgroundColor =
-        widget.backgroundColor ?? ThemeColors.getBgColor(colorScheme);
+    final backgroundColor = ThemeColors.getBgColor(colorScheme);
     return Stack(
       children: [
         PlatformScaffold(
           backgroundColor: backgroundColor,
-          body: SafeArea(
-            top: false,
-            bottom: false,
-            child: _buildPage(),
+          body: Container(
+            color: widget.backgroundColor ?? Colors.transparent,
+            child: SafeArea(
+              left: true,
+              right: true,
+              top: false,
+              child: _buildPage(),
+            ),
           ),
         ),
         if (widget.bottomBar != null)
@@ -273,6 +298,9 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
 }
 
 class PlatformSheetPage extends StatefulWidget {
+  final Color? titleBgColor;
+  final Color? contentBgColor;
+
   final Widget? title;
   final String? titleText;
   final double? titleFontSize;
@@ -293,6 +321,8 @@ class PlatformSheetPage extends StatefulWidget {
 
   const PlatformSheetPage({
     super.key,
+    this.titleBgColor,
+    this.contentBgColor,
     this.title,
     this.titleText,
     this.titlePadding,
@@ -379,22 +409,28 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context, ColorScheme colorScheme) {
     final title = _buildTitle(context);
 
-    return Column(
-      children: [
-        _buildDargToolbar(),
-        if (title != null) title,
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12.0),
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: Colors.grey,
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.titleBgColor ?? ThemeColors.getBg0Color(colorScheme),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Column(
+        children: [
+          _buildDargToolbar(),
+          if (title != null) title,
+          const Padding(
+            padding: EdgeInsets.only(top: 12.0),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.grey,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -408,6 +444,7 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
           child: Padding(
             padding: widget.contentPadding ??
                 const EdgeInsets.only(
+                  top: 12,
                   left: 20.0,
                   right: 20.0,
                 ),
@@ -461,17 +498,22 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
           final colorScheme = Theme.of(context).colorScheme;
           return Stack(
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: ThemeColors.getBgColor(colorScheme),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: Column(
-                  children: [
-                    _buildAppBar(context),
-                    Expanded(child: _buildContent(context)),
-                  ],
-                ),
+              Column(
+                children: [
+                  _buildAppBar(context, colorScheme),
+                  Expanded(
+                    child: Container(
+                      color: widget.contentBgColor ??
+                          ThemeColors.getBgColor(colorScheme),
+                      child: SafeArea(
+                        left: true,
+                        right: true,
+                        top: false,
+                        child: _buildContent(context),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               if (_isLoading == true)
                 Container(

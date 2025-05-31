@@ -4,9 +4,11 @@ import 'package:lonanote/src/widgets/flutter/custom_flexible_space_bar.dart';
 
 class ScrollAppBar extends StatelessWidget {
   static double defaultExpandedHeight = 120.0;
-  final String title;
+  final Widget? title;
+  final String? titleText;
   final double? titleFontSize;
-  final String? subTitle;
+  final Widget? subTitle;
+  final String? subTitleText;
   final double? subTitleFontSize;
   final Color? titleColor;
   final Color? subTitleColor;
@@ -19,9 +21,11 @@ class ScrollAppBar extends StatelessWidget {
 
   const ScrollAppBar({
     super.key,
-    required this.title,
+    this.title,
+    this.titleText,
     this.titleFontSize,
     this.subTitle,
+    this.subTitleText,
     this.subTitleFontSize,
     this.titleColor,
     this.subTitleColor,
@@ -36,7 +40,7 @@ class ScrollAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final backgroundColor = bgColor ?? ThemeColors.getBgColor(colorScheme);
+    final backgroundColor = bgColor ?? ThemeColors.getBg0Color(colorScheme);
     final textColor = ThemeColors.getTextColor(colorScheme);
     final subColor = ThemeColors.getTextGreyColor(colorScheme);
     return SliverAppBar(
@@ -46,29 +50,31 @@ class ScrollAppBar extends StatelessWidget {
       centerTitle: false,
       expandedHeight: expandedHeight ?? defaultExpandedHeight,
       scrolledUnderElevation: scrolledUnderElevation ?? 1,
-      surfaceTintColor: colorScheme.primary,
+      surfaceTintColor: ThemeColors.getPrimaryColor(colorScheme),
       flexibleSpace: flexibleSpace ??
           CustomFlexibleSpaceBar(
             centerTitle: false,
             expandedTitleScale: expandedTitleScale ?? 2,
-            fixedSubtitle: subTitle != null
-                ? Text(
-                    subTitle ?? "",
-                    style: TextStyle(
-                      color: subTitleColor ?? subColor,
-                      fontSize: subTitleFontSize ?? 12,
-                    ),
-                  )
-                : null,
+            fixedSubtitle: subTitle ??
+                (subTitleText != null
+                    ? Text(
+                        subTitleText!,
+                        style: TextStyle(
+                          color: subTitleColor ?? subColor,
+                          fontSize: subTitleFontSize ?? 12,
+                        ),
+                      )
+                    : null),
             title: Padding(
               padding: const EdgeInsets.only(bottom: 3),
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: titleFontSize ?? (subTitle == null ? 20 : 18),
-                  color: titleColor ?? textColor,
-                ),
-              ),
+              child: title ??
+                  Text(
+                    titleText ?? "",
+                    style: TextStyle(
+                      fontSize: titleFontSize ?? (subTitle == null ? 20 : 18),
+                      color: titleColor ?? textColor,
+                    ),
+                  ),
             ),
             titlePadding: const EdgeInsets.only(left: 20, bottom: 10),
             collapseMode: CollapseMode.parallax,
@@ -110,7 +116,7 @@ class SimpleAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final backgroundColor = bgColor ?? ThemeColors.getBgColor(colorScheme);
+    final backgroundColor = bgColor ?? ThemeColors.getBg0Color(colorScheme);
     final textColor = titleColor ?? ThemeColors.getTextColor(colorScheme);
     return SliverAppBar(
       pinned: true,
@@ -121,7 +127,7 @@ class SimpleAppBar extends StatelessWidget {
       centerTitle: false,
       expandedHeight: 0,
       scrolledUnderElevation: scrolledUnderElevation ?? 1,
-      surfaceTintColor: colorScheme.primary,
+      surfaceTintColor: ThemeColors.getPrimaryColor(colorScheme),
       elevation: 0,
       actions: [
         ...?actions,

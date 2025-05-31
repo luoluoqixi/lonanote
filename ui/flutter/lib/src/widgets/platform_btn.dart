@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/platform_ink_response.dart';
 
 class PlatformBtn extends StatelessWidget {
@@ -59,7 +60,7 @@ class PlatformBtn extends StatelessWidget {
               (builder, context) => MaterialElevatedButtonData(
                     style: TextButton.styleFrom(
                       side: BorderSide(
-                        color: colorScheme.primary,
+                        color: ThemeColors.getPrimaryColor(colorScheme),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: borderRadius,

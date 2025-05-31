@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/theme/theme_colors.dart';
 
 class PlatformPopupMenuOption extends PopupMenuOption {
   final String? value;
@@ -41,7 +42,7 @@ class PlatformPopupMenuButton extends StatelessWidget {
         tooltip: tooltip,
         offset: const Offset(0, 50),
         elevation: 1,
-        color: colorScheme.surface,
+        color: ThemeColors.getBg0Color(colorScheme),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(10)),
         ),

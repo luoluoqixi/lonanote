@@ -23,7 +23,9 @@ class AppTheme {
   }
 
   static ThemeData getMaterialThemeData(
-      ThemeSettings theme, Brightness brightness) {
+    ThemeSettings theme,
+    Brightness brightness,
+  ) {
     final isLight = brightness == Brightness.light;
     final colorScheme = isLight
         ? const ColorScheme.light().copyWith(
@@ -39,7 +41,7 @@ class AppTheme {
         titleSpacing: 0.0,
         elevation: 0.0,
         centerTitle: true,
-        backgroundColor: ThemeColors.getBgColor(colorScheme), // AppBar的背景颜色
+        backgroundColor: ThemeColors.getBg0Color(colorScheme), // AppBar的背景颜色
         titleTextStyle: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
@@ -47,6 +49,7 @@ class AppTheme {
         ));
     final themeData = isLight ? ThemeData.light() : ThemeData.dark();
     return themeData.copyWith(
+      scaffoldBackgroundColor: ThemeColors.getBgColor(colorScheme),
       brightness: colorScheme.brightness,
       colorScheme: colorScheme,
       appBarTheme: appBarTheme,
@@ -54,7 +57,9 @@ class AppTheme {
   }
 
   static CupertinoThemeData getCupertinoThemeData(
-      ThemeSettings theme, Brightness brightness) {
+    ThemeSettings theme,
+    Brightness brightness,
+  ) {
     final isLight = brightness == Brightness.light;
     final colorScheme = isLight
         ? const ColorScheme.light().copyWith(
@@ -64,9 +69,11 @@ class AppTheme {
             primary: theme.primaryColor,
           );
     return CupertinoThemeData(
-      primaryColor: colorScheme.primary, // 导航栏按钮颜色
-      barBackgroundColor: ThemeColors.getBgColor(colorScheme), // 导航栏背景色
+      primaryColor: ThemeColors.getPrimaryColor(colorScheme), // 导航栏按钮颜色
+      barBackgroundColor: ThemeColors.getBg0Color(colorScheme), // 导航栏背景色
+      scaffoldBackgroundColor: ThemeColors.getBgColor(colorScheme),
       textTheme: CupertinoTextThemeData(
+        primaryColor: ThemeColors.getPrimaryColor(colorScheme),
         navTitleTextStyle: TextStyle(
           // 导航栏字体样式
           fontSize: 18,

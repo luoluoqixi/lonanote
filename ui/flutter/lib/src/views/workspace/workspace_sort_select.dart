@@ -31,10 +31,10 @@ class WorkspaceSortSelect extends StatelessWidget {
     final isSelected = type == currentSortType;
     final colorScheme = Theme.of(context).colorScheme;
     final textColor = isSelected
-        ? colorScheme.primary
+        ? ThemeColors.getPrimaryColor(colorScheme)
         : ThemeColors.getTextColor(colorScheme);
     final iconColor = isSelected
-        ? colorScheme.primary
+        ? ThemeColors.getPrimaryColor(colorScheme)
         : ThemeColors.getTextGreyColor(colorScheme);
 
     return PlatformInkWell(
@@ -59,7 +59,7 @@ class WorkspaceSortSelect extends StatelessWidget {
               Icon(
                 ThemeIcons.check(context),
                 size: 20,
-                color: colorScheme.primary,
+                color: ThemeColors.getPrimaryColor(colorScheme),
               ),
           ],
         ),

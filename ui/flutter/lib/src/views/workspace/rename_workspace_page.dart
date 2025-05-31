@@ -89,7 +89,7 @@ class _RenameWorkspacePageState extends ConsumerState<RenameWorkspacePage> {
               return null;
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           PlatformBtn(
             width: double.infinity,
             onPressed: _renameWorkspace,

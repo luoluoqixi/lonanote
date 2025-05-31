@@ -23,18 +23,22 @@ class WorkspaceFilesPage extends ConsumerStatefulWidget {
 }
 
 class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
-  void selectWorkspace() async {
+  void _selectWorkspace() async {
     await WorkspaceManager.unloadWorkspace(ref);
     if (mounted) {
       AppRouter.jumpToSelectWorkspacePage(context);
     }
   }
 
-  void openSettings() {
-    AppRouter.jumpToSettingsPage(context, widget.workspace);
+  void _openSettings() {
+    AppRouter.jumpToSettingsPage(context);
   }
 
-  Widget buildWorkspaceFiles() {
+  void _openWorkspaceSettings() {
+    AppRouter.jumpToWorkspaceSettingsPage(context, widget.workspace);
+  }
+
+  Widget _buildWorkspaceFiles() {
     return Text("123");
   }
 
@@ -43,17 +47,21 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final wsName = widget.workspace.metadata.name;
     return PlatformPage(
-      title: wsName,
+      titleText: wsName,
       titleActions: [
         PlatformPullDownButton(
           itemBuilder: (context) => [
             PullDownMenuItem(
               title: "切换工作区",
-              onTap: selectWorkspace,
+              onTap: _selectWorkspace,
+            ),
+            PullDownMenuItem(
+              title: "工作区设置",
+              onTap: _openWorkspaceSettings,
             ),
             PullDownMenuItem(
               title: "设置",
-              onTap: openSettings,
+              onTap: _openSettings,
             ),
           ],
           buttonIcon: Icon(
@@ -63,7 +71,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
           ),
         ),
       ],
-      child: buildWorkspaceFiles(),
+      child: _buildWorkspaceFiles(),
     );
   }
 }
