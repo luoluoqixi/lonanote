@@ -280,6 +280,7 @@ class PlatformSheetPage extends StatefulWidget {
   final EdgeInsetsGeometry? contentPadding;
   final List<Widget>? children;
   final Widget? child;
+  final double? desiredHeight;
   final double? childSize;
   final double? minChildSize;
   final double? maxChildSize;
@@ -299,6 +300,7 @@ class PlatformSheetPage extends StatefulWidget {
     this.contentPadding,
     this.child,
     this.children,
+    this.desiredHeight,
     this.childSize,
     this.minChildSize,
     this.maxChildSize,
@@ -434,7 +436,17 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
 
   @override
   Widget build(BuildContext context) {
-    final childSize = widget.childSize ?? 0.5;
+    var childSize = widget.childSize ?? 0.5;
+    if (widget.desiredHeight != null) {
+      final screenHeight = MediaQuery.of(context).size.height;
+      childSize = widget.desiredHeight! / screenHeight;
+    }
+    if (childSize < 0) {
+      childSize = 0;
+    }
+    if (childSize > 1) {
+      childSize = 1;
+    }
     var minChildSize = widget.minChildSize ?? childSize;
     var maxChildSize = widget.maxChildSize ?? childSize;
     return Padding(

@@ -72,7 +72,7 @@ class WorkspaceSortSelect extends StatelessWidget {
     return PlatformSheetPage(
       titleText: "排序方式",
       contentPadding: EdgeInsets.zero,
-      childSize: 0.4,
+      desiredHeight: 360,
       allowScroll: true,
       children: [
         _buildSortOption(context, '按打开时间排序', ThemeIcons.schedule(context),

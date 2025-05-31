@@ -150,7 +150,7 @@ class _CreateWorkspacePageState extends ConsumerState<CreateWorkspacePage> {
     }
     return PlatformSheetPage(
       titleText: "创建工作区",
-      childSize: 0.35,
+      desiredHeight: 300,
       child: buildForm(),
     );
   }
