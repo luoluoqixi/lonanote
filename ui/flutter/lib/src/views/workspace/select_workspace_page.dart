@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/log.dart';
+import 'package:lonanote/src/common/store/ui_store.dart';
 import 'package:lonanote/src/common/utils/time_utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
@@ -35,6 +36,21 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
 
   bool _isSelectionMode = false;
   final Set<String> _selectedPaths = {};
+
+  @override
+  void initState() {
+    super.initState();
+    initStore();
+  }
+
+  Future<void> initStore() async {
+    final type = await UIStore.getSortType();
+    if (type != null) {
+      setState(() {
+        _sortType = WorkspaceSortType.values[type];
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -135,6 +151,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         onChange: (t) {
           setState(() {
             _sortType = t;
+            UIStore.setSortType(t.index);
           });
           Navigator.of(context).pop();
         },
