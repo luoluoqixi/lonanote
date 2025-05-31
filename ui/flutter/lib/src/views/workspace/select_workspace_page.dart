@@ -173,7 +173,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   // }
 
   void _openSettings() {
-    AppRouter.jumpToSettingsPage(context);
+    AppRouter.jumpToSettingsPage(context, null);
   }
 
   void _openWorkspace(RustWorkspaceMetadata workspace) async {

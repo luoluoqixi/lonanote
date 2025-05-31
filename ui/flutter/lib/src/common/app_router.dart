@@ -64,10 +64,15 @@ class AppRouter {
     );
   }
 
-  static void jumpToSettingsPage(BuildContext context) {
+  static void jumpToSettingsPage(
+    BuildContext context,
+    RustWorkspaceData? workspace,
+  ) {
     jumpToPage(
       context,
-      (context) => SettingsPage(),
+      (context) => SettingsPage(
+        workspace: workspace,
+      ),
     );
   }
 
