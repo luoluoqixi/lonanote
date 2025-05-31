@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lonanote/src/common/log.dart';
-import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/platform_list_view.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 
@@ -11,8 +9,22 @@ class SettingsPage extends StatelessWidget {
 
   Widget _buildGlobalSettings() {
     return PlatformListView(
+      insetGrouped: true,
       header: Text("标题"),
-      children: [],
+      children: [
+        PlatformListTile(
+          title: Text("1223"),
+          onTap: () {},
+        ),
+        PlatformListTile(
+          title: Text("1223"),
+          onTap: () {},
+        ),
+        PlatformListTile(
+          title: Text("1223"),
+          onTap: () {},
+        ),
+      ],
     );
   }
 
@@ -22,10 +34,10 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // final colorScheme = Theme.of(context).colorScheme;
     return PlatformSimplePage(
       titleText: '设置',
-      backgroundColor: ThemeColors.getBg0Color(colorScheme),
+      // backgroundColor: ThemeColors.getBg0Color(colorScheme),
       child: Column(
         children: [
           _buildGlobalSettings(),

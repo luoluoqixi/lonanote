@@ -13,7 +13,7 @@ import 'package:lonanote/src/views/workspace/workspace_sort_select.dart';
 import 'package:lonanote/src/widgets/platform_btn.dart';
 import 'package:lonanote/src/widgets/platform_floating_toolbar.dart';
 import 'package:lonanote/src/widgets/platform_icon_btn.dart';
-import 'package:lonanote/src/widgets/platform_ink_well.dart';
+import 'package:lonanote/src/widgets/platform_list_view.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
@@ -94,6 +94,28 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     setState(() {
       _selectedPaths.clear();
     });
+  }
+
+  List<RustWorkspaceMetadata> _getSortWorkspaces(
+      List<RustWorkspaceMetadata> workspaces) {
+    final sortedWorkspaces = [...workspaces]..sort((a, b) {
+        if (_sortType == WorkspaceSortType.updateTime) {
+          return TimeUtility.compareTime(b.updateTime, a.updateTime);
+        } else if (_sortType == WorkspaceSortType.updateTimeRev) {
+          return TimeUtility.compareTime(a.updateTime, b.updateTime);
+        } else if (_sortType == WorkspaceSortType.createTime) {
+          return TimeUtility.compareTime(b.createTime, a.createTime);
+        } else if (_sortType == WorkspaceSortType.createTimeRev) {
+          return TimeUtility.compareTime(a.createTime, b.createTime);
+        } else if (_sortType == WorkspaceSortType.name) {
+          return a.name.compareTo(b.name);
+        } else if (_sortType == WorkspaceSortType.nameRev) {
+          return b.name.compareTo(a.name);
+        } else {
+          return TimeUtility.compareTime(b.updateTime, a.updateTime);
+        }
+      });
+    return sortedWorkspaces;
   }
 
   void _batchDeleteWorkspace(bool deleteFile) async {
@@ -300,12 +322,6 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
           });
         },
       ),
-      // IconButton(
-      //   icon: const Icon(Icons.delete),
-      //   onPressed: () {
-      //     _confirmBatchDelete();
-      //   },
-      // ),
     ];
   }
 
@@ -313,65 +329,13 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     RustWorkspaceMetadata workspace,
     bool isSelect,
   ) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: PlatformIconBtn(
-        icon: Icon(
-          ThemeIcons.radio(context, isSelect),
-        ),
-        onPressed: () {
-          _toggleSelection(workspace);
-        },
+    return PlatformIconBtn(
+      icon: Icon(
+        ThemeIcons.radio(context, isSelect),
       ),
-    );
-  }
-
-  Widget _buildContent(
-    BuildContext context,
-    ColorScheme colorScheme,
-    List<RustWorkspaceMetadata>? workspaces,
-  ) {
-    final count = workspaces?.length ?? 0;
-    if (count == 0) {
-      return SliverToBoxAdapter(
-        child: _buildNoWorkspace(context),
-      );
-    }
-    final sortedWorkspaces = [...workspaces!]..sort((a, b) {
-        if (_sortType == WorkspaceSortType.updateTime) {
-          return TimeUtility.compareTime(b.updateTime, a.updateTime);
-        } else if (_sortType == WorkspaceSortType.updateTimeRev) {
-          return TimeUtility.compareTime(a.updateTime, b.updateTime);
-        } else if (_sortType == WorkspaceSortType.createTime) {
-          return TimeUtility.compareTime(b.createTime, a.createTime);
-        } else if (_sortType == WorkspaceSortType.createTimeRev) {
-          return TimeUtility.compareTime(a.createTime, b.createTime);
-        } else if (_sortType == WorkspaceSortType.name) {
-          return a.name.compareTo(b.name);
-        } else if (_sortType == WorkspaceSortType.nameRev) {
-          return b.name.compareTo(a.name);
-        } else {
-          return TimeUtility.compareTime(b.updateTime, a.updateTime);
-        }
-      });
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final workspace = sortedWorkspaces[index];
-          return Column(
-            children: [
-              _buildWorkspaceTile(colorScheme, workspace),
-              const Divider(
-                height: 1,
-                thickness: 0.1,
-                indent: 16,
-                endIndent: 16,
-              ),
-            ],
-          );
-        },
-        childCount: count,
-      ),
+      onPressed: () {
+        _toggleSelection(workspace);
+      },
     );
   }
 
@@ -408,7 +372,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     final isSelect =
         _isSelectionMode && _selectedPaths.contains(workspace.path);
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
-    return PlatformInkWell(
+    return PlatformListTile(
       onTap: () {
         if (_isSelectionMode) {
           _toggleSelection(workspace);
@@ -417,66 +381,67 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         }
       },
       forcePressColor: isSelect,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (_isSelectionMode) _buildSelectModeContent(workspace, isSelect),
-            // 左侧信息部分
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    workspace.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    TimeUtility.formatTimestamp(isShowCreateTime()
-                        ? workspace.createTime
-                        : workspace.updateTime),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: greyColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // 右侧下拉按钮
-            if (!_isSelectionMode)
-              PlatformPullDownButton(
-                // buttonColor: ThemeColors.getTextGreyColor(colorScheme),
-                buttonOnPressed: (showMenu) {
-                  showMenu();
-                },
-                itemBuilder: (context) => [
-                  PullDownMenuItem(
-                    title: '重命名',
-                    onTap: () => _renameWorkspaceClick(workspace),
-                  ),
-                  PullDownMenuItem(
-                    title: '删除',
-                    isDestructive: true,
-                    onTap: () => _deleteWorkspaceClick(workspace),
-                  ),
-                ],
-                buttonIcon: Icon(
-                  ThemeIcons.more(context),
-                  color: ThemeColors.getTextGreyColor(colorScheme),
-                  size: 24,
-                ),
-              ),
-          ],
+      title: Text(
+        workspace.name,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
         ),
       ),
+      subtitle: Text(
+        TimeUtility.formatTimestamp(
+          isShowCreateTime() ? workspace.createTime : workspace.updateTime,
+        ),
+        style: TextStyle(
+          fontSize: 12,
+          color: greyColor,
+        ),
+      ),
+      leading: _isSelectionMode
+          ? _buildSelectModeContent(workspace, isSelect)
+          : null,
+      trailing: _isSelectionMode
+          ? null
+          : PlatformPullDownButton(
+              buttonOnPressed: (showMenu) {
+                showMenu();
+              },
+              itemBuilder: (context) => [
+                PullDownMenuItem(
+                  title: '重命名',
+                  onTap: () => _renameWorkspaceClick(workspace),
+                ),
+                PullDownMenuItem(
+                  title: '删除',
+                  isDestructive: true,
+                  onTap: () => _deleteWorkspaceClick(workspace),
+                ),
+              ],
+              buttonIcon: Icon(
+                ThemeIcons.more(context),
+                color: ThemeColors.getTextGreyColor(colorScheme),
+                size: 24,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildWorkspacesList(
+    BuildContext context,
+    ColorScheme colorScheme,
+    List<RustWorkspaceMetadata>? workspaces,
+  ) {
+    final count = workspaces?.length ?? 0;
+    if (count == 0) {
+      return _buildNoWorkspace(context);
+    }
+    final sortedWorkspaces = _getSortWorkspaces(workspaces!);
+    return PlatformListView(
+      itemBuilder: (context, index) {
+        final workspace = sortedWorkspaces[index];
+        return _buildWorkspaceTile(colorScheme, workspace);
+      },
+      itemCount: count,
     );
   }
 
@@ -550,10 +515,11 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             ),
           ),
       ],
-      contents: [_buildContent(context, colorScheme, workspaces)],
+      // contents: [_buildContent(context, colorScheme, workspaces)],
       stacks: [
         if (_isSelectionMode) _buildFloatingToolbar(),
       ],
+      child: _buildWorkspacesList(context, colorScheme, workspaces),
     );
   }
 }
