@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ThemeColors {
   static Color lightPressBgColor =
-      Color.from(alpha: 1, red: 0.7, green: 0.7, blue: 0.7);
+      Color.from(alpha: 1, red: 0.8, green: 0.8, blue: 0.8);
   static Color darkPressBgColor =
       Color.from(alpha: 1, red: 0.3, green: 0.3, blue: 0.3);
 
