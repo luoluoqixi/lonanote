@@ -29,7 +29,7 @@ class WorkspaceSortSelect extends StatelessWidget {
     WorkspaceSortType type,
   ) {
     final isSelected = type == currentSortType;
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     final textColor = isSelected
         ? ThemeColors.getPrimaryColor(colorScheme)
         : ThemeColors.getTextColor(colorScheme);
@@ -69,11 +69,13 @@ class WorkspaceSortSelect extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformSheetPage(
       titleText: "排序方式",
       contentPadding: EdgeInsets.zero,
       desiredHeight: 360,
       allowScroll: true,
+      contentBgColor: ThemeColors.getBg0Color(colorScheme),
       children: [
         _buildSortOption(context, '按打开时间排序', ThemeIcons.schedule(context),
             WorkspaceSortType.updateTime),

@@ -80,8 +80,8 @@ class _PlatformInkkWellState extends State<PlatformInkWell> {
   }
 
   Widget? _buildCupertino(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final bgColor = widget.bgColor ?? ThemeColors.getBgColor(colorScheme);
+    final colorScheme = ThemeColors.getColorScheme(context);
+    final bgColor = widget.bgColor ?? ThemeColors.getBg0Color(colorScheme);
     final pressBgColor =
         widget.pressBgColor ?? ThemeColors.getPressBgColor(colorScheme);
     final textColor = widget.textColor ?? ThemeColors.getTextColor(colorScheme);
@@ -136,7 +136,8 @@ class _PlatformInkkWellState extends State<PlatformInkWell> {
       child: Material(
         color: forcePressColor
             ? (widget.pressBgColor ??
-                ThemeColors.getPressBgColor(Theme.of(context).colorScheme))
+                ThemeColors.getPressBgColor(
+                    ThemeColors.getColorScheme(context)))
             : Colors.transparent,
         child: InkWell(
           onTap: widget.onTap,

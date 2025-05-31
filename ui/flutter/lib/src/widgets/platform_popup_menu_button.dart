@@ -35,7 +35,7 @@ class PlatformPopupMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformPopupMenu(
       icon: icon,
       material: (context, platform) => MaterialPopupMenuData(

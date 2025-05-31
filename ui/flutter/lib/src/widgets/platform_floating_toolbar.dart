@@ -34,7 +34,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     final content = Padding(
       padding: contentPadding ??
           const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -59,7 +59,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
           material: (context, platform) => Material(
             elevation: 6,
             borderRadius: BorderRadius.circular(12),
-            color: ThemeColors.getBg0Color(Theme.of(context).colorScheme),
+            color: ThemeColors.getBg0Color(ThemeColors.getColorScheme(context)),
             child: content,
           ),
           cupertino: (context, platform) => Container(

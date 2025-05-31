@@ -339,9 +339,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     );
   }
 
-  Widget _buildNoWorkspace(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _buildNoWorkspace(BuildContext context, ColorScheme colorScheme) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
@@ -368,7 +366,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   }
 
   Widget _buildWorkspaceTile(
-      ColorScheme colorScheme, RustWorkspaceMetadata workspace) {
+    ColorScheme colorScheme,
+    RustWorkspaceMetadata workspace,
+  ) {
     final isSelect =
         _isSelectionMode && _selectedPaths.contains(workspace.path);
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
@@ -381,6 +381,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         }
       },
       forcePressColor: isSelect,
+      minTileHeight: 72,
       title: Text(
         workspace.name,
         style: const TextStyle(
@@ -400,29 +401,29 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       leading: _isSelectionMode
           ? _buildSelectModeContent(workspace, isSelect)
           : null,
-      trailing: _isSelectionMode
-          ? null
-          : PlatformPullDownButton(
-              buttonOnPressed: (showMenu) {
-                showMenu();
-              },
-              itemBuilder: (context) => [
-                PullDownMenuItem(
-                  title: '重命名',
-                  onTap: () => _renameWorkspaceClick(workspace),
-                ),
-                PullDownMenuItem(
-                  title: '删除',
-                  isDestructive: true,
-                  onTap: () => _deleteWorkspaceClick(workspace),
-                ),
-              ],
-              buttonIcon: Icon(
-                ThemeIcons.more(context),
-                color: ThemeColors.getTextGreyColor(colorScheme),
-                size: 24,
-              ),
-            ),
+      trailing: PlatformPullDownButton(
+        buttonOnPressed: (showMenu) {
+          if (!_isSelectionMode) {
+            showMenu();
+          }
+        },
+        itemBuilder: (context) => [
+          PullDownMenuItem(
+            title: '重命名',
+            onTap: () => _renameWorkspaceClick(workspace),
+          ),
+          PullDownMenuItem(
+            title: '删除',
+            isDestructive: true,
+            onTap: () => _deleteWorkspaceClick(workspace),
+          ),
+        ],
+        buttonIcon: Icon(
+          _isSelectionMode ? null : ThemeIcons.more(context),
+          color: ThemeColors.getTextGreyColor(colorScheme),
+          size: 24,
+        ),
+      ),
     );
   }
 
@@ -433,7 +434,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   ) {
     final count = workspaces?.length ?? 0;
     if (count == 0) {
-      return _buildNoWorkspace(context);
+      return _buildNoWorkspace(context, colorScheme);
     }
     final sortedWorkspaces = _getSortWorkspaces(workspaces!);
     return PlatformListView(
@@ -467,7 +468,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   @override
   Widget build(BuildContext context) {
     final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformPage(
       titleText: "工作区",
       subTitleText: "选择工作区",

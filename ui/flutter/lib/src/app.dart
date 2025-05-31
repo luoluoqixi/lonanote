@@ -9,6 +9,7 @@ import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/app_theme.dart';
+import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/views/index.dart';
 
 class App extends ConsumerStatefulWidget {
@@ -49,7 +50,7 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
         cupertinoDarkTheme:
             AppTheme.getCupertinoThemeData(theme, Brightness.dark),
         builder: (context) {
-          final colorScheme = Theme.of(context).colorScheme;
+          final colorScheme = ThemeColors.getColorScheme(context);
           SystemChrome.setSystemUIOverlayStyle(AppTheme.getSystemOverlayStyle(
             colorScheme,
           ));

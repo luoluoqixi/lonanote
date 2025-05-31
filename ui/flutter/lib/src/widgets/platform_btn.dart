@@ -42,7 +42,7 @@ class PlatformBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     final padding = this.padding ?? const EdgeInsets.all(8);
     final borderRadius =
         this.borderRadius ?? BorderRadius.all(Radius.circular(10));

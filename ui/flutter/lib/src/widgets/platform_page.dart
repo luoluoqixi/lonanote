@@ -129,7 +129,7 @@ class _PlatformPageState extends State<PlatformPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
     return Stack(
       children: [
@@ -262,7 +262,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
     return Stack(
       children: [
@@ -495,7 +495,7 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
         maxChildSize: maxChildSize,
         expand: widget.expand ?? false,
         builder: (context, scrollController) {
-          final colorScheme = Theme.of(context).colorScheme;
+          final colorScheme = ThemeColors.getColorScheme(context);
           return Stack(
             children: [
               Column(
@@ -509,6 +509,7 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
                         left: true,
                         right: true,
                         top: false,
+                        bottom: false,
                         child: _buildContent(context),
                       ),
                     ),

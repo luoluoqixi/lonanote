@@ -44,7 +44,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     final wsName = widget.workspace.metadata.name;
     return PlatformPage(
       titleText: wsName,

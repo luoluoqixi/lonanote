@@ -34,7 +34,7 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final colorScheme = Theme.of(context).colorScheme;
+    // final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformSimplePage(
       titleText: '设置',
       // backgroundColor: ThemeColors.getBg0Color(colorScheme),

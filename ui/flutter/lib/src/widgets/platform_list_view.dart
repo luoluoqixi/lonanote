@@ -2,12 +2,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
+import 'package:lonanote/src/widgets/platform_ink_well.dart';
 
 class PlatformListTile extends StatelessWidget {
   final Widget? leading;
   final Widget title;
   final Widget? trailing;
   final Widget? subtitle;
+
+  final EdgeInsets? padding;
+  final double? minTileHeight;
 
   final GestureTapCallback? onTap;
 
@@ -20,6 +24,8 @@ class PlatformListTile extends StatelessWidget {
     required this.title,
     this.trailing,
     this.subtitle,
+    this.minTileHeight,
+    this.padding,
     this.onTap,
     this.pressBgColor,
     this.forcePressColor,
@@ -30,25 +36,41 @@ class PlatformListTile extends StatelessWidget {
     return Material(
       color: forcePressColor
           ? (pressBgColor ??
-              ThemeColors.getPressBgColor(Theme.of(context).colorScheme))
+              ThemeColors.getPressBgColor(ThemeColors.getColorScheme(context)))
           : Colors.transparent,
       child: ListTile(
+        contentPadding: padding,
         leading: leading,
         title: title,
         trailing: trailing,
         subtitle: subtitle,
+        minTileHeight: minTileHeight,
         onTap: onTap,
       ),
     );
   }
 
   Widget _buildCupertino(BuildContext context) {
-    return CupertinoListTile(
-      leading: leading,
-      title: title,
-      trailing: trailing,
-      subtitle: subtitle,
+    final forcePressColor = this.forcePressColor == true;
+    return PlatformInkWell(
+      forcePressColor: forcePressColor,
+      pressBgColor: pressBgColor,
       onTap: onTap,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          contentPadding: padding ??
+              EdgeInsets.only(
+                left: 20.0,
+                right: 20.0,
+              ),
+          leading: leading,
+          minTileHeight: minTileHeight ?? 48,
+          title: title,
+          trailing: trailing,
+          subtitle: subtitle,
+        ),
+      ),
     );
   }
 
@@ -104,7 +126,7 @@ class PlatformListView extends StatelessWidget {
 
   Widget? _buildHeader(BuildContext context) {
     if (header == null) return null;
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ThemeColors.getColorScheme(context);
     return Container(
       padding: headerPadding ??
           EdgeInsets.only(

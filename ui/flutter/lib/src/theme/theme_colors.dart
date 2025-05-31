@@ -6,6 +6,10 @@ class ThemeColors {
   static Color darkPressBgColor =
       Color.from(alpha: 1, red: 0.3, green: 0.3, blue: 0.3);
 
+  static ColorScheme getColorScheme(BuildContext context) {
+    return Theme.of(context).colorScheme;
+  }
+
   static bool isLight(ColorScheme colorScheme) {
     return colorScheme.brightness == Brightness.light;
   }
