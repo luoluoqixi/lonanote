@@ -3,7 +3,72 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
+import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
+import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
+import 'package:pull_down_button/pull_down_button.dart';
+
+class PlatformPullDownListTile extends StatelessWidget {
+  final String selectValue;
+
+  final Widget? selectWidget;
+  final Widget? selectIcon;
+
+  final PullDownMenuItemBuilder itemBuilder;
+
+  final Widget? leading;
+  final Widget title;
+  final Widget? subtitle;
+
+  final EdgeInsets? padding;
+  final double? minTileHeight;
+
+  final Color? pressBgColor;
+  final bool? forcePressColor;
+
+  const PlatformPullDownListTile({
+    super.key,
+    required this.title,
+    required this.selectValue,
+    required this.itemBuilder,
+    this.selectWidget,
+    this.selectIcon,
+    this.leading,
+    this.subtitle,
+    this.minTileHeight,
+    this.padding,
+    this.pressBgColor,
+    this.forcePressColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = ThemeColors.getColorScheme(context);
+    return PlatformPullDownButton(
+      itemBuilder: itemBuilder,
+      buttonBuilder: (context, showMenu) => PlatformListTileRaw(
+        title: title,
+        onTap: showMenu,
+        leading: leading,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            selectWidget ??
+                Text(
+                  selectValue,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: ThemeColors.getTextGreyColor(colorScheme),
+                  ),
+                ),
+            SizedBox(width: 8),
+            selectIcon ?? Icon(ThemeIcons.keyboardArrowDown(context)),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class PlatformSwitchListTile extends StatelessWidget {
   final ValueChanged<bool>? onChanged;

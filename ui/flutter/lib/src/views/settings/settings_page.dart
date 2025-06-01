@@ -80,7 +80,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               "自动保存间隔 (秒)",
               finishBtnText: "确认修改",
               inputHintText: "自动保存间隔 (秒)",
-              initValue: settings.autoSaveInterval?.toString() ?? "",
+              initValue: settings.autoSaveInterval == null
+                  ? ""
+                  : "${settings.autoSaveInterval}秒",
               onFinish: _setAutoSaveInterval,
               validator: _validatorAutoSaveInterval,
             );
@@ -114,12 +116,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         PlatformListTileRaw(
           title: Text("个性化"),
           trailing: Icon(ThemeIcons.chevronRight(context)),
-          onTap: () {},
+          onTap: () => AppRouter.jumpToPersonalizationSettingsPage(context),
         ),
         PlatformListTileRaw(
           title: Text("关于"),
           trailing: Icon(ThemeIcons.chevronRight(context)),
-          onTap: () {},
+          onTap: () => AppRouter.jumpToAboutPage(context),
         ),
       ],
     );

@@ -190,6 +190,7 @@ mixin _$ThemeSettings {
   Brightness get platformBrightness;
   ThemeMode get themeMode;
   Color get primaryColor;
+  ThemePrimaryColor get primaryColorEnum;
 
   /// Create a copy of ThemeSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -209,16 +210,18 @@ mixin _$ThemeSettings {
             (identical(other.themeMode, themeMode) ||
                 other.themeMode == themeMode) &&
             (identical(other.primaryColor, primaryColor) ||
-                other.primaryColor == primaryColor));
+                other.primaryColor == primaryColor) &&
+            (identical(other.primaryColorEnum, primaryColorEnum) ||
+                other.primaryColorEnum == primaryColorEnum));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, platformBrightness, themeMode, primaryColor);
+  int get hashCode => Object.hash(runtimeType, platformBrightness, themeMode,
+      primaryColor, primaryColorEnum);
 
   @override
   String toString() {
-    return 'ThemeSettings(platformBrightness: $platformBrightness, themeMode: $themeMode, primaryColor: $primaryColor)';
+    return 'ThemeSettings(platformBrightness: $platformBrightness, themeMode: $themeMode, primaryColor: $primaryColor, primaryColorEnum: $primaryColorEnum)';
   }
 }
 
@@ -229,7 +232,10 @@ abstract mixin class $ThemeSettingsCopyWith<$Res> {
       _$ThemeSettingsCopyWithImpl;
   @useResult
   $Res call(
-      {Brightness platformBrightness, ThemeMode themeMode, Color primaryColor});
+      {Brightness platformBrightness,
+      ThemeMode themeMode,
+      Color primaryColor,
+      ThemePrimaryColor primaryColorEnum});
 }
 
 /// @nodoc
@@ -248,6 +254,7 @@ class _$ThemeSettingsCopyWithImpl<$Res>
     Object? platformBrightness = null,
     Object? themeMode = null,
     Object? primaryColor = null,
+    Object? primaryColorEnum = null,
   }) {
     return _then(_self.copyWith(
       platformBrightness: null == platformBrightness
@@ -262,6 +269,10 @@ class _$ThemeSettingsCopyWithImpl<$Res>
           ? _self.primaryColor
           : primaryColor // ignore: cast_nullable_to_non_nullable
               as Color,
+      primaryColorEnum: null == primaryColorEnum
+          ? _self.primaryColorEnum
+          : primaryColorEnum // ignore: cast_nullable_to_non_nullable
+              as ThemePrimaryColor,
     ));
   }
 }
@@ -272,7 +283,8 @@ class _ThemeSettings implements ThemeSettings {
   const _ThemeSettings(
       {required this.platformBrightness,
       required this.themeMode,
-      required this.primaryColor});
+      required this.primaryColor,
+      required this.primaryColorEnum});
 
   @override
   final Brightness platformBrightness;
@@ -280,6 +292,8 @@ class _ThemeSettings implements ThemeSettings {
   final ThemeMode themeMode;
   @override
   final Color primaryColor;
+  @override
+  final ThemePrimaryColor primaryColorEnum;
 
   /// Create a copy of ThemeSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -299,16 +313,18 @@ class _ThemeSettings implements ThemeSettings {
             (identical(other.themeMode, themeMode) ||
                 other.themeMode == themeMode) &&
             (identical(other.primaryColor, primaryColor) ||
-                other.primaryColor == primaryColor));
+                other.primaryColor == primaryColor) &&
+            (identical(other.primaryColorEnum, primaryColorEnum) ||
+                other.primaryColorEnum == primaryColorEnum));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, platformBrightness, themeMode, primaryColor);
+  int get hashCode => Object.hash(runtimeType, platformBrightness, themeMode,
+      primaryColor, primaryColorEnum);
 
   @override
   String toString() {
-    return 'ThemeSettings(platformBrightness: $platformBrightness, themeMode: $themeMode, primaryColor: $primaryColor)';
+    return 'ThemeSettings(platformBrightness: $platformBrightness, themeMode: $themeMode, primaryColor: $primaryColor, primaryColorEnum: $primaryColorEnum)';
   }
 }
 
@@ -321,7 +337,10 @@ abstract mixin class _$ThemeSettingsCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {Brightness platformBrightness, ThemeMode themeMode, Color primaryColor});
+      {Brightness platformBrightness,
+      ThemeMode themeMode,
+      Color primaryColor,
+      ThemePrimaryColor primaryColorEnum});
 }
 
 /// @nodoc
@@ -340,6 +359,7 @@ class __$ThemeSettingsCopyWithImpl<$Res>
     Object? platformBrightness = null,
     Object? themeMode = null,
     Object? primaryColor = null,
+    Object? primaryColorEnum = null,
   }) {
     return _then(_ThemeSettings(
       platformBrightness: null == platformBrightness
@@ -354,6 +374,10 @@ class __$ThemeSettingsCopyWithImpl<$Res>
           ? _self.primaryColor
           : primaryColor // ignore: cast_nullable_to_non_nullable
               as Color,
+      primaryColorEnum: null == primaryColorEnum
+          ? _self.primaryColorEnum
+          : primaryColorEnum // ignore: cast_nullable_to_non_nullable
+              as ThemePrimaryColor,
     ));
   }
 }

@@ -7,6 +7,10 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.add : CupertinoIcons.add;
   }
 
+  static IconData arrowDropDown(BuildContext context) {
+    return isMaterial(context) ? Icons.arrow_drop_down : Icons.arrow_drop_down;
+  }
+
   static IconData check(BuildContext context) {
     return isMaterial(context) ? Icons.check : Icons.check;
   }
@@ -15,12 +19,22 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.chevron_right : Icons.chevron_right;
   }
 
+  static IconData circle(BuildContext context) {
+    return isMaterial(context) ? Icons.circle : Icons.circle;
+  }
+
   static IconData close(BuildContext context) {
     return isMaterial(context) ? Icons.close : Icons.close;
   }
 
   static IconData delete(BuildContext context) {
     return isMaterial(context) ? Icons.delete_outline : Icons.delete_outline;
+  }
+
+  static IconData keyboardArrowDown(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.keyboard_arrow_down
+        : Icons.keyboard_arrow_down;
   }
 
   static IconData more(BuildContext context) {

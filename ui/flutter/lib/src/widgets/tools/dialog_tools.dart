@@ -60,8 +60,12 @@ class DialogTools {
           if (cancelText != null)
             dialogAction(context, cancelText, onPressed: onCancelPressed),
           if (okText != null)
-            dialogAction(context, okText,
-                onPressed: onOkPressed, isDange: isDange ?? false),
+            dialogAction(
+              context,
+              okText,
+              onPressed: onOkPressed,
+              isDange: isDange ?? false,
+            ),
           ...?actions,
         ],
       ),

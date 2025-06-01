@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
+import 'package:lonanote/src/views/settings/about_page.dart';
+import 'package:lonanote/src/views/settings/personalization_settings_page.dart';
 import 'package:lonanote/src/views/settings/settings_page.dart';
-import 'package:lonanote/src/views/settings/workspace_settings.dart';
+import 'package:lonanote/src/views/settings/workspace_settings_page.dart';
 import 'package:lonanote/src/views/workspace/select_workspace_page.dart';
 import 'package:lonanote/src/views/workspace/workspace_home_page.dart';
 import 'package:lonanote/src/widgets/tools/edit_sheet.dart';
@@ -50,10 +52,24 @@ class AppRouter {
     );
   }
 
+  static void jumpToAboutPage(BuildContext context) {
+    jumpToPage(
+      context,
+      (context) => AboutPage(),
+    );
+  }
+
   static void jumpToSettingsPage(BuildContext context) {
     jumpToPage(
       context,
       (context) => SettingsPage(),
+    );
+  }
+
+  static void jumpToPersonalizationSettingsPage(BuildContext context) {
+    jumpToPage(
+      context,
+      (context) => PersonalizationSettingsPage(),
     );
   }
 

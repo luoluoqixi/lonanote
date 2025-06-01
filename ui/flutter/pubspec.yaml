@@ -54,6 +54,8 @@ dependencies:
   # file_picker: ^10.1.9
   intl: ^0.20.2
   shared_preferences: ^2.5.3
+  http: "^1.4.0"
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   integration_test:
@@ -116,3 +118,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  assets:
+    - assets/icons/icon_android.png
+    - assets/icons/icon_ios.png

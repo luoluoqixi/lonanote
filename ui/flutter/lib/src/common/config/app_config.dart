@@ -10,5 +10,8 @@ class AppConfig {
   static const bool isDebug = kDebugMode;
   static const bool isRelease = kReleaseMode;
   static const bool isProfile = kProfileMode;
-  static const String appTitle = "lonanote";
+  static const String githubUrl = "https://github.com/lona-labs/lonanote";
+  static const String appTitleZH = "露娜笔记";
+  static const String appTitleEN = "LonaNote";
+  static String get appTitle => appTitleZH;
 }
