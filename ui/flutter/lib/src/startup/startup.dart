@@ -37,7 +37,7 @@ Future<void> initRust() async {
     rethrow;
   }
 
-  RustSettings.initSettings();
+  await RustSettings.initSettings();
 }
 
 Future<void> startup() async {
