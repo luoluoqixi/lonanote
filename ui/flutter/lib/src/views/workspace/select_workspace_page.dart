@@ -471,6 +471,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       subTitleText: "选择工作区",
       isLoading: _isLoading,
       onRefresh: _isSelectionMode ? null : _refreshWorkspaces,
+      isHome: true,
       backgroundColor: ThemeColors.getBg0Color(colorScheme),
       titleActions: [
         if (_isSelectionMode) ..._buildSelectModeActions(workspaces),

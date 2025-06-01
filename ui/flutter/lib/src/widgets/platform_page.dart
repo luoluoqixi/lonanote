@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/app_bar.dart';
+import 'package:lonanote/src/widgets/platform_double_back.dart';
 
 class PlatformPage extends StatefulWidget {
   final ScrollController? scrollController;
@@ -17,6 +18,8 @@ class PlatformPage extends StatefulWidget {
   final List<Widget>? titleActions;
   final Widget? child;
   final List<Widget>? contents;
+
+  final bool? isHome;
 
   final Color? backgroundColor;
   final Color? titleColor;
@@ -37,6 +40,7 @@ class PlatformPage extends StatefulWidget {
     this.titleActions,
     this.child,
     this.contents,
+    this.isHome,
     this.backgroundColor,
     this.titleColor,
     this.isLoading,
@@ -131,17 +135,21 @@ class _PlatformPageState extends State<PlatformPage> {
   Widget build(BuildContext context) {
     final colorScheme = ThemeColors.getColorScheme(context);
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
+    final isHome = widget.isHome == true;
     return Stack(
       children: [
         PlatformScaffold(
           backgroundColor: backgroundColor,
-          body: Container(
-            color: widget.backgroundColor ?? Colors.transparent,
-            child: SafeArea(
-              left: true,
-              right: true,
-              top: false,
-              child: _buildPage(),
+          body: PlatformDoubleBack(
+            isEnable: isHome,
+            child: Container(
+              color: widget.backgroundColor ?? Colors.transparent,
+              child: SafeArea(
+                left: true,
+                right: true,
+                top: false,
+                child: _buildPage(),
+              ),
             ),
           ),
         ),
@@ -166,6 +174,7 @@ class PlatformSimplePage extends StatefulWidget {
   final String? titleText;
   final Widget? child;
   final List<Widget>? contents;
+  final bool? isHome;
 
   final Color? backgroundColor;
   final Color? titleColor;
@@ -182,6 +191,7 @@ class PlatformSimplePage extends StatefulWidget {
     this.titleText,
     this.child,
     this.contents,
+    this.isHome,
     this.backgroundColor,
     this.titleColor,
     this.isLoading,
@@ -264,17 +274,21 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
   Widget build(BuildContext context) {
     final colorScheme = ThemeColors.getColorScheme(context);
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
+    final isHome = widget.isHome == true;
     return Stack(
       children: [
         PlatformScaffold(
           backgroundColor: backgroundColor,
-          body: Container(
-            color: widget.backgroundColor ?? Colors.transparent,
-            child: SafeArea(
-              left: true,
-              right: true,
-              top: false,
-              child: _buildPage(),
+          body: PlatformDoubleBack(
+            isEnable: isHome,
+            child: Container(
+              color: widget.backgroundColor ?? Colors.transparent,
+              child: SafeArea(
+                left: true,
+                right: true,
+                top: false,
+                child: _buildPage(),
+              ),
             ),
           ),
         ),

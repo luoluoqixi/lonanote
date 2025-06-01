@@ -48,6 +48,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     final wsName = widget.workspace.metadata.name;
     return PlatformPage(
       titleText: wsName,
+      isHome: widget.isRoot,
       titleActions: [
         PlatformPullDownButton(
           itemBuilder: (context) => [
