@@ -10,6 +10,7 @@ class PlatformPullDownButton extends StatelessWidget {
   final Widget? buttonIcon;
   final void Function(Future<void> Function() showMenu)? buttonOnPressed;
   final void Function()? buttonOnLongPress;
+  final bool? disable;
 
   final PlatformBuilder<MaterialIconButtonData>? material;
   final PlatformBuilder<CupertinoIconButtonData>? cupertino;
@@ -21,6 +22,7 @@ class PlatformPullDownButton extends StatelessWidget {
     this.buttonIcon,
     this.buttonOnPressed,
     this.buttonOnLongPress,
+    this.disable,
     this.material,
     this.cupertino,
   });
@@ -31,9 +33,11 @@ class PlatformPullDownButton extends StatelessWidget {
       buttonBuilder: buttonBuilder ??
           (context, showMenu) => PlatformIconBtn(
                 onLongPress: buttonOnLongPress,
-                onPressed: buttonOnPressed != null
-                    ? () => buttonOnPressed!(showMenu)
-                    : showMenu,
+                onPressed: (disable == true)
+                    ? null
+                    : (buttonOnPressed != null
+                        ? () => buttonOnPressed!(showMenu)
+                        : showMenu),
                 materialIcon: buttonIcon,
                 cupertinoIcon: buttonIcon,
                 cupertino: cupertino ??

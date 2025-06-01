@@ -402,11 +402,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
           ? _buildSelectModeContent(workspace, isSelect)
           : null,
       trailing: PlatformPullDownButton(
-        buttonOnPressed: (showMenu) {
-          if (!_isSelectionMode) {
-            showMenu();
-          }
-        },
+        disable: _isSelectionMode,
         itemBuilder: (context) => [
           PullDownMenuItem(
             title: '重命名',
@@ -438,6 +434,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     }
     final sortedWorkspaces = _getSortWorkspaces(workspaces!);
     return PlatformListView(
+      topMargin: 0.0,
       itemBuilder: (context, index) {
         final workspace = sortedWorkspaces[index];
         return _buildWorkspaceTile(colorScheme, workspace);

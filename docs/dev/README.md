@@ -7,7 +7,7 @@
   - [Node](https://nodejs.org/) >= 20
   - [pnpm](https://pnpm.io/) >= 9.15.0
 - Android / IOS
-  - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.29.3
+  - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.32.1
   - Android 和 IOS 环境配置参考 Flutter 文档
   - VSCode 中保存 dart 时长时间无法保存
     - [#60335](https://github.com/dart-lang/sdk/issues/60335)
@@ -47,18 +47,8 @@ flutter build ios --release
 
 #### 运行 Android / IOS
 
-- 运行 Android
-
 ```shell
 # 提前使用 USB 连接真机或启动 Android 模拟器
-cd ui/flutter
-flutter run
-```
-
-- 运行 IOS
-
-```shell
-# 提前使用 USB 连接真机或启动 IOS 模拟器
 cd ui/flutter
 flutter run
 ```
