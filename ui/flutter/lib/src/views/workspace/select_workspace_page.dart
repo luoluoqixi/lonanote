@@ -5,11 +5,10 @@ import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/store/ui_store.dart';
 import 'package:lonanote/src/common/utils/time_utility.dart';
-import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
+import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
-import 'package:lonanote/src/views/workspace/workspace_sort_select.dart';
 import 'package:lonanote/src/widgets/platform_btn.dart';
 import 'package:lonanote/src/widgets/platform_floating_toolbar.dart';
 import 'package:lonanote/src/widgets/platform_icon_btn.dart';
@@ -17,7 +16,17 @@ import 'package:lonanote/src/widgets/platform_list_view.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
+import 'package:lonanote/src/widgets/tools/select_sheet.dart';
 import 'package:pull_down_button/pull_down_button.dart';
+
+enum WorkspaceSortType {
+  updateTime,
+  updateTimeRev,
+  createTime,
+  createTimeRev,
+  name,
+  nameRev,
+}
 
 class SelectWorkspacePage extends ConsumerStatefulWidget {
   const SelectWorkspacePage({super.key});
@@ -161,23 +170,130 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     });
   }
 
-  void _createWorkspace() {
-    AppRouter.showCreateWorkspacePage(context);
+  String? _validatorWorkspaceName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '请输入工作区名称';
+    }
+    final invalidChars = RegExp(r'[\/\\:\*\?"<>\|]');
+    if (invalidChars.hasMatch(value)) {
+      return '工作区名称中不能包含特殊字符: / \\ : * ? " < > | ';
+    }
+    return null;
+  }
+
+  void _createWorkspace(String value) async {
+    final workspaceName = value.trim();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final path =
+          await WorkspaceManagerController.createWorkspace(ref, workspaceName);
+      if (mounted) {
+        try {
+          await WorkspaceManagerController.openWorkspace(ref, path);
+          if (mounted) {
+            Navigator.of(context).pop();
+            final ws = WorkspaceManagerController.getCurrentWorkspace(ref);
+            if (ws != null) {
+              AppRouter.jumpToWorkspaceHomePage(context, ws);
+            } else {
+              DialogTools.showDialog(
+                context: context,
+                title: "错误",
+                content: "打开工作区失败, 未获取到工作区数据",
+                okText: "确定",
+              );
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            DialogTools.showDialog(
+              context: context,
+              title: "错误",
+              content: LoggerUtility.errorShow("打开工作区失败", e),
+              okText: "确定",
+            );
+          }
+        }
+      }
+    } catch (e) {
+      logger.e(e);
+      if (mounted) {
+        DialogTools.showDialog(
+          context: context,
+          title: "错误",
+          content: LoggerUtility.errorShow("创建工作区失败", e),
+          okText: "确定",
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _createWorkspaceClick() {
+    AppRouter.showEditSheet(
+      context,
+      "创建工作区",
+      finishBtnText: "创建并打开",
+      inputHintText: "工作区名称",
+      initValue: "新建工作区",
+      onFinish: _createWorkspace,
+      validator: _validatorWorkspaceName,
+    );
   }
 
   void _sortClick() {
-    AppRouter.showBottomSheet(
-      context,
-      (context) => WorkspaceSortSelect(
-        currentSortType: _sortType,
-        onChange: (t) {
-          setState(() {
-            _sortType = t;
-            UIStore.setSortType(t.index);
-          });
-          Navigator.of(context).pop();
-        },
+    final sortTypes = [
+      SelectItem(
+        value: WorkspaceSortType.updateTime.index,
+        title: "按打开时间排序",
+        icon: ThemeIcons.schedule(context),
       ),
+      SelectItem(
+        value: WorkspaceSortType.updateTimeRev.index,
+        title: "按打开时间倒序",
+        icon: ThemeIcons.schedule(context),
+      ),
+      SelectItem(
+        value: WorkspaceSortType.createTime.index,
+        title: "按创建时间排序",
+        icon: ThemeIcons.schedule(context),
+      ),
+      SelectItem(
+        value: WorkspaceSortType.createTimeRev.index,
+        title: "按创建时间倒序",
+        icon: ThemeIcons.schedule(context),
+      ),
+      SelectItem(
+        value: WorkspaceSortType.name.index,
+        title: "按名称排序",
+        icon: ThemeIcons.sortName(context),
+      ),
+      SelectItem(
+        value: WorkspaceSortType.nameRev.index,
+        title: "按名称倒序",
+        icon: ThemeIcons.sortName(context),
+      ),
+    ];
+    AppRouter.showSelectSheet(
+      context,
+      sortTypes: sortTypes,
+      currentSortType: _sortType.index,
+      onChange: (t) {
+        setState(() {
+          _sortType = WorkspaceSortType.values[t];
+          UIStore.setSortType(t);
+        });
+        Navigator.of(context).pop();
+      },
     );
   }
 
@@ -203,9 +319,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       _isLoading = true;
     });
     try {
-      await WorkspaceManager.openWorkspace(ref, workspace.path);
+      await WorkspaceManagerController.openWorkspace(ref, workspace.path);
       if (mounted) {
-        final ws = WorkspaceManager.getCurrentWorkspace(ref);
+        final ws = WorkspaceManagerController.getCurrentWorkspace(ref);
         if (ws != null) {
           AppRouter.jumpToWorkspaceHomePage(context, ws);
         } else {
@@ -241,7 +357,8 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     bool deleteFile,
   ) async {
     try {
-      await WorkspaceManager.deleteWorkspace(ref, workspace.path, deleteFile);
+      await WorkspaceManagerController.deleteWorkspace(
+          ref, workspace.path, deleteFile);
     } catch (e) {
       logger.e(e);
       if (mounted) {
@@ -275,15 +392,55 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         ]);
   }
 
+  void _renameWorkspace(RustWorkspaceMetadata workspace, String value) async {
+    final workspaceName = value;
+
+    // setState(() {
+    //   _isLoading = true;
+    // });
+
+    try {
+      await WorkspaceManagerController.renameWorkspace(
+          ref, workspace.path, workspaceName);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      logger.e(e);
+      if (mounted) {
+        DialogTools.showDialog(
+          context: context,
+          title: "错误",
+          content: LoggerUtility.errorShow("重命名工作区失败", e),
+          okText: "确定",
+        );
+      }
+    } finally {
+      // if (mounted) {
+      //   setState(() {
+      //     _isLoading = false;
+      //   });
+      // }
+    }
+  }
+
   void _renameWorkspaceClick(RustWorkspaceMetadata workspace) {
-    AppRouter.showRenameWorkspacePage(context, workspace);
+    AppRouter.showEditSheet(
+      context,
+      "重命名工作区",
+      finishBtnText: "确认修改",
+      inputHintText: "工作区名称",
+      initValue: workspace.name,
+      onFinish: (v) => _renameWorkspace(workspace, v),
+      validator: _validatorWorkspaceName,
+    );
   }
 
   Future<void> _refreshWorkspaces() async {
     try {
       // 刷新太快了, 加个延时假装一下在干活
       await Future.delayed(Duration(milliseconds: 200));
-      await WorkspaceManager.refreshWorkspace(ref, true, true);
+      await WorkspaceManagerController.refreshWorkspace(ref, true, true);
       logger.i("refresh workspace finish");
     } catch (e) {
       logger.e(e);
@@ -356,7 +513,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             const SizedBox(height: 16),
             PlatformBtn(
               width: double.infinity,
-              onPressed: _createWorkspace,
+              onPressed: _createWorkspaceClick,
               labelText: "创建工作区",
             ),
           ],
@@ -372,7 +529,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     final isSelect =
         _isSelectionMode && _selectedPaths.contains(workspace.path);
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
-    return PlatformListTile(
+    return PlatformListTileRaw(
       onTap: () {
         if (_isSelectionMode) {
           _toggleSelection(workspace);
@@ -486,7 +643,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
               ),
               PullDownMenuItem(
                 title: "创建工作区",
-                onTap: _createWorkspace,
+                onTap: _createWorkspaceClick,
                 icon: ThemeIcons.add(context),
               ),
               const PullDownMenuDivider.large(),

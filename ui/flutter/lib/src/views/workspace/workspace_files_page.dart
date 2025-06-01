@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
-import 'package:lonanote/src/controller/workspace/workspace_manager.dart';
+import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
@@ -24,7 +24,7 @@ class WorkspaceFilesPage extends ConsumerStatefulWidget {
 
 class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   void _selectWorkspace() async {
-    await WorkspaceManager.unloadWorkspace(ref);
+    await WorkspaceManagerController.unloadWorkspace(ref);
     if (mounted) {
       AppRouter.jumpToSelectWorkspacePage(context);
     }

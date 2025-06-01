@@ -4,7 +4,7 @@ import 'package:lonanote/src/bindings/api/workspace/workspace_manager.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 
-class WorkspaceManager {
+class WorkspaceManagerController {
   static Future<void> refreshWorkspace(
     WidgetRef ref,
     bool updateWorkspaces,

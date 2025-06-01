@@ -1,10 +1,103 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
 
-class PlatformListTile extends StatelessWidget {
+class PlatformSwitchListTile extends StatelessWidget {
+  final ValueChanged<bool>? onChanged;
+  final bool value;
+  final Color? switchActiveColor;
+  final DragStartBehavior? switchDragStartBehavior;
+  final WidgetStateProperty<Icon?>? switchThumbIcon;
+  final WidgetStateProperty<Color?>? switchTrackOutlineColor;
+  final WidgetStateProperty<double?>? switchTrackOutlineWidth;
+  final ImageErrorListener? switchOnActiveThumbImageError;
+  final ImageErrorListener? switchOnInactiveThumbImageError;
+  final Color? switchActiveTrackColor;
+  final Color? switchInactiveThumbColor;
+  final Color? switchInactiveTrackColor;
+  final ImageProvider? switchActiveThumbImage;
+  final ImageProvider? switchInactiveThumbImage;
+
+  final PlatformBuilder<MaterialSwitchData>? switchMaterial;
+  final PlatformBuilder<CupertinoSwitchData>? switchCupertino;
+
+  final Widget? leading;
+  final Widget title;
+  final Widget? subtitle;
+
+  final EdgeInsets? padding;
+  final double? minTileHeight;
+
+  final Color? pressBgColor;
+  final bool? forcePressColor;
+
+  const PlatformSwitchListTile({
+    super.key,
+    this.leading,
+    this.onChanged,
+    this.switchActiveColor,
+    this.switchDragStartBehavior,
+    this.switchThumbIcon,
+    this.switchTrackOutlineColor,
+    this.switchTrackOutlineWidth,
+    this.switchOnActiveThumbImageError,
+    this.switchOnInactiveThumbImageError,
+    this.switchActiveTrackColor,
+    this.switchInactiveThumbColor,
+    this.switchInactiveTrackColor,
+    this.switchActiveThumbImage,
+    this.switchInactiveThumbImage,
+    this.switchMaterial,
+    this.switchCupertino,
+    required this.value,
+    required this.title,
+    this.subtitle,
+    this.minTileHeight,
+    this.padding,
+    this.pressBgColor,
+    this.forcePressColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PlatformListTileRaw(
+      title: title,
+      subtitle: subtitle,
+      minTileHeight: minTileHeight,
+      padding: padding,
+      pressBgColor: pressBgColor,
+      forcePressColor: forcePressColor,
+      trailing: PlatformSwitch(
+        value: value,
+        onChanged: onChanged,
+        activeColor: switchActiveColor,
+        dragStartBehavior: switchDragStartBehavior,
+        thumbIcon: switchThumbIcon,
+        trackOutlineColor: switchTrackOutlineColor,
+        trackOutlineWidth: switchTrackOutlineWidth,
+        onActiveThumbImageError: switchOnActiveThumbImageError,
+        onInactiveThumbImageError: switchOnInactiveThumbImageError,
+        activeTrackColor: switchActiveTrackColor,
+        inactiveThumbColor: switchInactiveThumbColor,
+        inactiveTrackColor: switchInactiveTrackColor,
+        activeThumbImage: switchActiveThumbImage,
+        inactiveThumbImage: switchInactiveThumbImage,
+        material: switchMaterial,
+        cupertino: switchCupertino,
+      ),
+      onTap: onChanged != null
+          ? () {
+              onChanged!(!value);
+            }
+          : null,
+    );
+  }
+}
+
+class PlatformListTileRaw extends StatelessWidget {
   final Widget? leading;
   final Widget title;
   final Widget? trailing;
@@ -18,7 +111,7 @@ class PlatformListTile extends StatelessWidget {
   final Color? pressBgColor;
   final bool? forcePressColor;
 
-  const PlatformListTile({
+  const PlatformListTileRaw({
     super.key,
     this.leading,
     required this.title,

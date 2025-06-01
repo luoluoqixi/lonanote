@@ -4,29 +4,37 @@ import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 
-enum WorkspaceSortType {
-  updateTime,
-  updateTimeRev,
-  createTime,
-  createTimeRev,
-  name,
-  nameRev,
+class SelectItem {
+  final int value;
+  final String title;
+  final IconData? icon;
+
+  const SelectItem({
+    required this.value,
+    required this.title,
+    this.icon,
+  });
 }
 
-class WorkspaceSortSelect extends StatelessWidget {
-  final WorkspaceSortType currentSortType;
-  final void Function(WorkspaceSortType sortType) onChange;
-  const WorkspaceSortSelect({
+class SelectSheet extends StatelessWidget {
+  final int currentSortType;
+  final void Function(int sortType) onChange;
+  final List<SelectItem> sortTypes;
+  final String? title;
+
+  const SelectSheet({
     super.key,
     required this.currentSortType,
     required this.onChange,
+    required this.sortTypes,
+    this.title,
   });
 
   Widget _buildSortOption(
     BuildContext context,
     String title,
-    IconData icon,
-    WorkspaceSortType type,
+    IconData? icon,
+    int type,
   ) {
     final isSelected = type == currentSortType;
     final colorScheme = ThemeColors.getColorScheme(context);
@@ -43,8 +51,8 @@ class WorkspaceSortSelect extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: iconColor),
-            const SizedBox(width: 12),
+            if (icon != null) Icon(icon, size: 20, color: iconColor),
+            if (icon != null) const SizedBox(width: 12),
             Expanded(
               child: Text(
                 title,
@@ -71,25 +79,14 @@ class WorkspaceSortSelect extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformSheetPage(
-      titleText: "排序方式",
+      titleText: title ?? "排序方式",
       contentPadding: EdgeInsets.zero,
       desiredHeight: 360,
       allowScroll: true,
       contentBgColor: ThemeColors.getBg0Color(colorScheme),
-      children: [
-        _buildSortOption(context, '按打开时间排序', ThemeIcons.schedule(context),
-            WorkspaceSortType.updateTime),
-        _buildSortOption(context, '按打开时间倒序', ThemeIcons.schedule(context),
-            WorkspaceSortType.updateTimeRev),
-        _buildSortOption(context, '按创建时间排序', ThemeIcons.schedule(context),
-            WorkspaceSortType.createTime),
-        _buildSortOption(context, '按创建时间倒序', ThemeIcons.schedule(context),
-            WorkspaceSortType.createTimeRev),
-        _buildSortOption(context, '按名称排序', ThemeIcons.sortName(context),
-            WorkspaceSortType.name),
-        _buildSortOption(context, '按名称倒序', ThemeIcons.sortName(context),
-            WorkspaceSortType.nameRev),
-      ],
+      children: sortTypes
+          .map((v) => _buildSortOption(context, v.title, v.icon, v.value))
+          .toList(),
     );
   }
 }

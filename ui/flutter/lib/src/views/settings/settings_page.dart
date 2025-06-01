@@ -1,49 +1,143 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lonanote/src/bindings/api/settings/types.dart';
+import 'package:lonanote/src/common/app_router.dart';
+import 'package:lonanote/src/controller/settings/settings_controller.dart';
+import 'package:lonanote/src/providers/settings/settings.dart';
+import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/widgets/platform_list_view.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({
     super.key,
   });
 
-  Widget _buildGlobalSettings() {
+  @override
+  ConsumerState<ConsumerStatefulWidget> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<SettingsPage> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  String? _validatorAutoSaveInterval(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '不能为空';
+    }
+    final n = double.tryParse(value);
+    if (n == null) {
+      return '不能解析值: $value';
+    }
+    if (n <= 0) {
+      return '必须大于0';
+    }
+    return null;
+  }
+
+  void _setAutoOpenLastWorkspace(bool value) {
+    SettingsController.setAutoOpenLastWorkspace(ref, value);
+  }
+
+  void _setAutoSave(bool value) {
+    SettingsController.setAutoSave(ref, value);
+  }
+
+  void _setAutoSaveInterval(String value) {
+    double? v = double.tryParse(value);
+    if (v != null) {
+      SettingsController.setAutoSaveInterval(ref, v);
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _setAutoSaveFocusChange(bool value) {
+    SettingsController.setAutoSaveFocusChange(ref, value);
+  }
+
+  Widget _buildBasicSettings(RustSettingsData settings) {
     return PlatformListView(
       insetGrouped: true,
-      header: Text("标题"),
+      header: Text("基本设置"),
       children: [
-        PlatformListTile(
-          title: Text("1223"),
+        PlatformSwitchListTile(
+          title: Text("自动打开上次工作区"),
+          value: settings.autoOpenLastWorkspace == true,
+          onChanged: _setAutoOpenLastWorkspace,
+        ),
+        PlatformSwitchListTile(
+          title: Text("编辑时自动保存"),
+          value: settings.autoSave == true,
+          onChanged: _setAutoSave,
+        ),
+        PlatformListTileRaw(
+          title: Text("自动保存间隔 (秒)"),
+          onTap: () {
+            AppRouter.showEditSheet(
+              context,
+              "自动保存间隔 (秒)",
+              finishBtnText: "确认修改",
+              inputHintText: "自动保存间隔 (秒)",
+              initValue: settings.autoSaveInterval?.toString() ?? "",
+              onFinish: _setAutoSaveInterval,
+              validator: _validatorAutoSaveInterval,
+            );
+          },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                settings.autoSaveInterval?.toString() ?? "",
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(width: 8),
+              Icon(ThemeIcons.chevronRight(context)),
+            ],
+          ),
+        ),
+        PlatformSwitchListTile(
+          title: Text("关闭页面时自动保存"),
+          value: settings.autoSaveFocusChange == true,
+          onChanged: _setAutoSaveFocusChange,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOtherSettings(RustSettingsData settings) {
+    return PlatformListView(
+      insetGrouped: true,
+      header: Text("更多"),
+      children: [
+        PlatformListTileRaw(
+          title: Text("个性化"),
+          trailing: Icon(ThemeIcons.chevronRight(context)),
           onTap: () {},
         ),
-        PlatformListTile(
-          title: Text("1223"),
-          onTap: () {},
-        ),
-        PlatformListTile(
-          title: Text("1223"),
+        PlatformListTileRaw(
+          title: Text("关于"),
+          trailing: Icon(ThemeIcons.chevronRight(context)),
           onTap: () {},
         ),
       ],
     );
   }
 
-  Widget _buildOtherSettings() {
-    return Text("456");
-  }
-
   @override
   Widget build(BuildContext context) {
-    // final colorScheme = ThemeColors.getColorScheme(context);
+    final settings = ref.watch(settingsProvider.select((s) => s.settings));
     return PlatformSimplePage(
       titleText: '设置',
-      // backgroundColor: ThemeColors.getBg0Color(colorScheme),
-      child: Column(
-        children: [
-          _buildGlobalSettings(),
-          _buildOtherSettings(),
-        ],
-      ),
+      child: settings == null
+          ? Text("加载中...")
+          : Column(
+              children: [
+                _buildBasicSettings(settings),
+                _buildOtherSettings(settings),
+              ],
+            ),
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 
 class DialogTools {
-  static dialogAction(
+  static PlatformDialogAction dialogAction(
     BuildContext context,
     String text, {
     bool? Function()? onPressed,
@@ -38,7 +38,7 @@ class DialogTools {
     );
   }
 
-  static showDialog({
+  static Future<T?> showDialog<T>({
     required BuildContext context,
     required String title,
     required String content,

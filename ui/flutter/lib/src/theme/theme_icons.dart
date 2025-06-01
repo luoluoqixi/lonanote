@@ -11,6 +11,10 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.check : Icons.check;
   }
 
+  static IconData chevronRight(BuildContext context) {
+    return isMaterial(context) ? Icons.chevron_right : Icons.chevron_right;
+  }
+
   static IconData close(BuildContext context) {
     return isMaterial(context) ? Icons.close : Icons.close;
   }
