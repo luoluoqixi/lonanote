@@ -13,6 +13,7 @@ class PlatformIconBtn extends StatelessWidget {
   final EdgeInsets? padding;
   final Color? disabledColor;
   final VoidCallback? onLongPress;
+  final bool? disable;
 
   final PlatformBuilder<MaterialIconButtonData>? material;
   final PlatformBuilder<CupertinoIconButtonData>? cupertino;
@@ -28,6 +29,7 @@ class PlatformIconBtn extends StatelessWidget {
     this.disabledColor,
     this.padding,
     this.onLongPress,
+    this.disable,
     this.material,
     this.cupertino,
   });
@@ -35,6 +37,7 @@ class PlatformIconBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlatformInkResponse(
+      disable: disable,
       child: PlatformIconButton(
         icon: icon,
         cupertinoIcon: cupertinoIcon,

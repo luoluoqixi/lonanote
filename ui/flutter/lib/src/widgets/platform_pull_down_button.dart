@@ -32,6 +32,7 @@ class PlatformPullDownButton extends StatelessWidget {
       itemBuilder: itemBuilder,
       buttonBuilder: buttonBuilder ??
           (context, showMenu) => PlatformIconBtn(
+                disable: disable,
                 onLongPress: buttonOnLongPress,
                 onPressed: (disable == true)
                     ? null
