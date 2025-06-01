@@ -15,6 +15,12 @@ class EditSheet extends ConsumerStatefulWidget {
   final String? inputHintText;
   final bool? autofocus;
 
+  final bool? multilineInput;
+
+  final String? customButtonText;
+  final void Function(String value, bool Function() validate)?
+      onCustomButtonTap;
+
   final void Function(String value)? onFinish;
   final String? Function(String?)? validator;
 
@@ -29,6 +35,9 @@ class EditSheet extends ConsumerStatefulWidget {
     this.autofocus,
     this.onFinish,
     this.validator,
+    this.multilineInput,
+    this.customButtonText,
+    this.onCustomButtonTap,
   });
 
   @override
@@ -51,13 +60,26 @@ class _EditSheetState extends ConsumerState<EditSheet> {
     super.dispose();
   }
 
+  bool hasCustomBtn() {
+    return widget.customButtonText != null || widget.onCustomButtonTap != null;
+  }
+
   void _onFinish() {
     if (_formKey.currentState?.validate() ?? false) {
       widget.onFinish?.call(_textController.text);
     }
   }
 
-  Widget buildForm() {
+  void _onCustomBtnTap() {
+    widget.onCustomButtonTap?.call(
+      _textController.text,
+      () => _formKey.currentState?.validate() ?? false,
+    );
+  }
+
+  Widget buildForm(bool multilineInput) {
+    final minLines = multilineInput ? 3 : null;
+    final maxLines = multilineInput ? null : 1;
     return Form(
       key: _formKey,
       child: Column(
@@ -68,6 +90,8 @@ class _EditSheetState extends ConsumerState<EditSheet> {
             delayFocus: widget.isPage ? null : 300,
             hintText: widget.inputHintText,
             validator: widget.validator,
+            minLines: minLines,
+            maxLines: maxLines,
           ),
           const SizedBox(height: 12),
           PlatformBtn(
@@ -75,19 +99,25 @@ class _EditSheetState extends ConsumerState<EditSheet> {
             onPressed: _onFinish,
             labelText: widget.finishBtnText,
           ),
+          if (hasCustomBtn())
+            PlatformBtn(
+              width: double.infinity,
+              onPressed: _onCustomBtnTap,
+              labelText: widget.customButtonText,
+            ),
         ],
       ),
     );
   }
 
-  Widget buildPage() {
+  Widget buildPage(bool multilineInput) {
     return PlatformSimplePage(
       titleText: widget.title,
       child: Column(
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: buildForm(),
+            child: buildForm(multilineInput),
           )
         ],
       ),
@@ -96,13 +126,17 @@ class _EditSheetState extends ConsumerState<EditSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final multilineInput = widget.multilineInput == true;
     if (widget.isPage) {
-      return buildPage();
+      return buildPage(multilineInput);
     }
+    final multilineHeight = multilineInput ? 300.0 : 0.0;
+    final customBtnHeight = hasCustomBtn() ? 80.0 : 0.0;
     return PlatformSheetPage(
       titleText: widget.title,
-      desiredHeight: widget.desiredHeight ?? 300,
-      child: buildForm(),
+      desiredHeight:
+          widget.desiredHeight ?? (300.0 + multilineHeight + customBtnHeight),
+      child: buildForm(multilineInput),
     );
   }
 }

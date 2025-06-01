@@ -6,6 +6,7 @@ import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/store/ui_store.dart';
 import 'package:lonanote/src/common/utils/time_utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
+import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
@@ -29,7 +30,12 @@ enum WorkspaceSortType {
 }
 
 class SelectWorkspacePage extends ConsumerStatefulWidget {
-  const SelectWorkspacePage({super.key});
+  final bool initOpen;
+
+  const SelectWorkspacePage({
+    super.key,
+    this.initOpen = false,
+  });
 
   @override
   ConsumerState<SelectWorkspacePage> createState() =>
@@ -46,9 +52,13 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   bool _isSelectionMode = false;
   final Set<String> _selectedPaths = {};
 
+  late bool audoOpenWorkspace = false;
+  bool loadingWorkspace = true;
+
   @override
   void initState() {
     super.initState();
+    initAutoOpen();
     initStore();
   }
 
@@ -65,6 +75,30 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void initAutoOpen() {
+    final settings = ref.read(settingsProvider).settings;
+    if (!widget.initOpen) return;
+    audoOpenWorkspace = settings?.autoOpenLastWorkspace == true;
+    if (audoOpenWorkspace) {
+      initLastWorkspace();
+    }
+  }
+
+  void initLastWorkspace() async {
+    final lastWorkspace = await WorkspaceManagerController.getLastWorkspace();
+    logger.i("上次打开工作区: $lastWorkspace");
+    if (lastWorkspace != null) {
+      try {
+        await WorkspaceManagerController.openWorkspace(ref, lastWorkspace);
+        if (mounted) {
+          AppRouter.jumpToWorkspaceHomePage(context);
+        }
+      } catch (e) {
+        logger.e(e);
+      }
+    }
   }
 
   bool isShowCreateTime() {
@@ -198,7 +232,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             Navigator.of(context).pop();
             final ws = WorkspaceManagerController.getCurrentWorkspace(ref);
             if (ws != null) {
-              AppRouter.jumpToWorkspaceHomePage(context, ws);
+              AppRouter.jumpToWorkspaceHomePage(context);
             } else {
               DialogTools.showDialog(
                 context: context,
@@ -323,7 +357,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       if (mounted) {
         final ws = WorkspaceManagerController.getCurrentWorkspace(ref);
         if (ws != null) {
-          AppRouter.jumpToWorkspaceHomePage(context, ws);
+          AppRouter.jumpToWorkspaceHomePage(context);
         } else {
           DialogTools.showDialog(
             context: context,

@@ -34,12 +34,11 @@ class RustWorkspace {
     return RustWorkspaceSettings.fromJson(s);
   }
 
-  static Future<RustWorkspaceData> setWorkspaceSettings(
+  static Future<void> setWorkspaceSettings(
       String path, RustWorkspaceSettings settings) async {
-    final ws = await Bindings.invokeAsync(
+    await Bindings.invokeAsync(
         key: "workspace.set_open_workspace_settings",
         value: {"path": path, "settings": settings.toJson()});
-    return RustWorkspaceData.fromJson(ws);
   }
 
   static Future<RustFileTree> getOpenWorkspaceFileTree(String path) async {
@@ -110,13 +109,13 @@ class RustWorkspace {
     return await getWorkspaceSettings(path);
   }
 
-  static Future<RustWorkspaceData> setCurrentWorkspaceSettings(
+  static Future<void> setCurrentWorkspaceSettings(
       RustWorkspaceSettings settings) async {
     final path = checkCurrentOpenWorkspace();
-    return await setWorkspaceSettings(path, settings);
+    await setWorkspaceSettings(path, settings);
   }
 
-  static Future<RustFileTree> getCurrentworkspaceFileTree() async {
+  static Future<RustFileTree> getCurrentWorkspaceFileTree() async {
     final path = checkCurrentOpenWorkspace();
     return await getOpenWorkspaceFileTree(path);
   }

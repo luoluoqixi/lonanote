@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/views/settings/about_page.dart';
 import 'package:lonanote/src/views/settings/personalization_settings_page.dart';
 import 'package:lonanote/src/views/settings/settings_page.dart';
@@ -73,15 +72,10 @@ class AppRouter {
     );
   }
 
-  static void jumpToWorkspaceSettingsPage(
-    BuildContext context,
-    RustWorkspaceData workspace,
-  ) {
+  static void jumpToWorkspaceSettingsPage(BuildContext context) {
     jumpToPage(
       context,
-      (context) => WorkspaceSettingsPage(
-        workspace: workspace,
-      ),
+      (context) => WorkspaceSettingsPage(),
     );
   }
 
@@ -93,15 +87,10 @@ class AppRouter {
     );
   }
 
-  static void jumpToWorkspaceHomePage(
-    BuildContext context,
-    RustWorkspaceData workspace,
-  ) {
+  static void jumpToWorkspaceHomePage(BuildContext context) {
     jumpToPage(
       context,
-      (context) => WorkspaceHomePage(
-        workspace: workspace,
-      ),
+      (context) => WorkspaceHomePage(),
       removeAllHistroy: true,
     );
   }
@@ -109,28 +98,37 @@ class AppRouter {
   static Future<T?> showEditSheet<T>(
     BuildContext context,
     String title, {
-    double? desiredHeight,
-    String? initValue,
-    String? finishBtnText,
-    String? inputHintText,
-    bool? autofocus,
-    void Function(String value)? onFinish,
-    String? Function(String?)? validator,
+    final bool isPage = false,
+    final double? desiredHeight,
+    final String? initValue,
+    final String? finishBtnText,
+    final String? inputHintText,
+    final bool? autofocus,
+    final void Function(String value)? onFinish,
+    final String? Function(String?)? validator,
+    final bool? multilineInput,
+    final String? customButtonText,
+    final void Function(String value, bool Function() validate)?
+        onCustomButtonTap,
   }) {
-    return AppRouter.showBottomSheet(
-      context,
-      (context) => EditSheet(
-        isPage: false,
-        title: title,
-        desiredHeight: desiredHeight,
-        initValue: initValue,
-        finishBtnText: finishBtnText,
-        inputHintText: inputHintText,
-        autofocus: autofocus,
-        onFinish: onFinish,
-        validator: validator,
-      ),
-    );
+    builder(context) => EditSheet(
+          isPage: isPage,
+          title: title,
+          desiredHeight: desiredHeight,
+          initValue: initValue,
+          finishBtnText: finishBtnText,
+          inputHintText: inputHintText,
+          autofocus: autofocus,
+          onFinish: onFinish,
+          validator: validator,
+          multilineInput: multilineInput,
+          customButtonText: customButtonText,
+          onCustomButtonTap: onCustomButtonTap,
+        );
+    if (isPage) {
+      return jumpToPage(context, builder);
+    }
+    return AppRouter.showBottomSheet(context, builder);
   }
 
   static Future<T?> showSelectSheet<T>(

@@ -5,9 +5,17 @@ import '../../bindings.dart';
 import 'types.dart';
 
 class RustSettings {
+  static RustSettingsData? settings;
+
+  static Future<void> initSettings() async {
+    await getSettings();
+  }
+
   static Future<RustSettingsData> getSettings() async {
     final res = await Bindings.invokeAsync(key: "settings.get_settings");
-    return RustSettingsData.fromJson(res as Map<String, dynamic>);
+    final s = RustSettingsData.fromJson(res as Map<String, dynamic>);
+    settings = s;
+    return s;
   }
 
   static Future<void> setSettings(RustSettingsData settings) async {

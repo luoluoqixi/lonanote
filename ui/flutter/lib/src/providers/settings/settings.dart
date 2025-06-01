@@ -24,7 +24,7 @@ class Settings extends _$Settings with WidgetsBindingObserver {
         primaryColor: getPrimaryColorFromEnum(color),
         primaryColorEnum: color,
       ),
-      settings: null,
+      settings: RustSettings.settings,
     );
   }
 

@@ -24,6 +24,10 @@ class WorkspaceManagerController {
     return ws.currentWorkspace;
   }
 
+  static Future<String?> getLastWorkspace() async {
+    return await RustWorkspaceManager.getLastWorkspace();
+  }
+
   static Future<String> createWorkspace(
     WidgetRef ref,
     String workspaceName, {
