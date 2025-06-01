@@ -67,6 +67,7 @@ class Settings extends _$Settings with WidgetsBindingObserver {
   void setPrimaryColor(ThemePrimaryColor color) {
     final c = getPrimaryColorFromEnum(color);
     _setPrimaryColor(color, c);
+    UIStore.setThemePrimaryColor(color.name);
   }
 
   static ThemeMode getThemeMode() {
