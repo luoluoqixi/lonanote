@@ -99,6 +99,7 @@ class _EditSheetState extends ConsumerState<EditSheet> {
             onPressed: _onFinish,
             labelText: widget.finishBtnText,
           ),
+          if (hasCustomBtn()) const SizedBox(height: 8),
           if (hasCustomBtn())
             PlatformBtn(
               width: double.infinity,

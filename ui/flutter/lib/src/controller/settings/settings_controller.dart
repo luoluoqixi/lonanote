@@ -57,10 +57,7 @@ class SettingsController {
     setSettingsValue(ref, (s) => s.autoSaveFocusChange = value);
   }
 
-  static Future<void> resetSettingsAutoSaveInterval(
-    WidgetRef ref,
-    bool value,
-  ) async {
+  static Future<void> resetSettingsAutoSaveInterval(WidgetRef ref) async {
     await RustSettings.resetSettingsAutoSaveInterval();
     await refreshSettings(ref);
   }

@@ -9,9 +9,9 @@ import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
 class PlatformPullDownListTile extends StatelessWidget {
-  final String selectValue;
+  final String? selectValue;
 
-  final Widget? selectWidget;
+  final List<Widget>? selectWidgets;
   final Widget? selectIcon;
 
   final PullDownMenuItemBuilder itemBuilder;
@@ -29,9 +29,9 @@ class PlatformPullDownListTile extends StatelessWidget {
   const PlatformPullDownListTile({
     super.key,
     required this.title,
-    required this.selectValue,
     required this.itemBuilder,
-    this.selectWidget,
+    this.selectValue,
+    this.selectWidgets,
     this.selectIcon,
     this.leading,
     this.subtitle,
@@ -53,15 +53,16 @@ class PlatformPullDownListTile extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            selectWidget ??
-                Text(
-                  selectValue,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: ThemeColors.getTextGreyColor(colorScheme),
-                  ),
+            ...?selectWidgets,
+            if (selectValue != null)
+              Text(
+                selectValue!,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: ThemeColors.getTextGreyColor(colorScheme),
                 ),
-            SizedBox(width: 8),
+              ),
+            const SizedBox(width: 8),
             selectIcon ?? Icon(ThemeIcons.keyboardArrowDown(context)),
           ],
         ),
@@ -128,6 +129,7 @@ class PlatformSwitchListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformListTileRaw(
       title: title,
       subtitle: subtitle,
@@ -151,7 +153,10 @@ class PlatformSwitchListTile extends StatelessWidget {
         activeThumbImage: switchActiveThumbImage,
         inactiveThumbImage: switchInactiveThumbImage,
         material: switchMaterial,
-        cupertino: switchCupertino,
+        cupertino: switchCupertino ??
+            (context, platform) => CupertinoSwitchData(
+                  activeTrackColor: ThemeColors.getPrimaryColor(colorScheme),
+                ),
       ),
       onTap: onChanged != null
           ? () {

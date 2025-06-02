@@ -53,6 +53,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
+  void _resetAutoSaveInterval() {
+    SettingsController.resetSettingsAutoSaveInterval(ref);
+    Navigator.of(context).pop();
+  }
+
   void _setAutoSaveFocusChange(bool value) {
     SettingsController.setAutoSaveFocusChange(ref, value);
   }
@@ -80,18 +85,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               "自动保存间隔 (秒)",
               finishBtnText: "确认修改",
               inputHintText: "自动保存间隔 (秒)",
-              initValue: settings.autoSaveInterval == null
-                  ? ""
-                  : "${settings.autoSaveInterval}秒",
+              initValue: settings.autoSaveInterval != null
+                  ? settings.autoSaveInterval.toString()
+                  : "",
               onFinish: _setAutoSaveInterval,
               validator: _validatorAutoSaveInterval,
+              customButtonText: "重置",
+              onCustomButtonTap: (_, __) => _resetAutoSaveInterval(),
             );
           },
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                settings.autoSaveInterval?.toString() ?? "",
+                settings.autoSaveInterval != null
+                    ? "${settings.autoSaveInterval} 秒"
+                    : "",
                 style: TextStyle(fontSize: 14),
               ),
               SizedBox(width: 8),

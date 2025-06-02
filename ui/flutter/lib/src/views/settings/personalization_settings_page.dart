@@ -86,6 +86,16 @@ class _PersonalizationSettingsPageState
         PlatformPullDownListTile(
           title: const Text("主题色"),
           selectValue: _getPrimaryColorString(currentPrimaryColor),
+          selectWidgets: [
+            Icon(
+              ThemeIcons.circle(context),
+              size: 18,
+              color: Settings.getPrimaryColorFromEnum(currentPrimaryColor),
+            ),
+            const SizedBox(
+              width: 8,
+            ),
+          ],
           itemBuilder: (BuildContext context) {
             return ThemePrimaryColor.values
                 .map((v) => PullDownMenuItem.selectable(
