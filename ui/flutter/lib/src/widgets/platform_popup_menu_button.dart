@@ -42,7 +42,7 @@ class PlatformPopupMenuButton extends StatelessWidget {
         tooltip: tooltip,
         offset: const Offset(0, 50),
         elevation: 1,
-        color: ThemeColors.getBg0Color(colorScheme),
+        color: ThemeColors.getBg1Color(colorScheme),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(10)),
         ),

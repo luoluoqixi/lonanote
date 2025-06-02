@@ -428,7 +428,7 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: widget.titleBgColor ?? ThemeColors.getBg0Color(colorScheme),
+        color: widget.titleBgColor ?? ThemeColors.getBg1Color(colorScheme),
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
@@ -518,7 +518,7 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
                   Expanded(
                     child: Container(
                       color: widget.contentBgColor ??
-                          ThemeColors.getBgColor(colorScheme),
+                          ThemeColors.getBg1Color(colorScheme),
                       child: SafeArea(
                         left: true,
                         right: true,

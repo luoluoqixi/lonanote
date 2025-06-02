@@ -663,7 +663,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       isLoading: _isLoading,
       onRefresh: _isSelectionMode ? null : _refreshWorkspaces,
       isHome: true,
-      backgroundColor: ThemeColors.getBg0Color(colorScheme),
+      backgroundColor: ThemeColors.getBgColor(colorScheme),
       titleActions: [
         if (_isSelectionMode) ..._buildSelectModeActions(workspaces),
         if (!_isSelectionMode)

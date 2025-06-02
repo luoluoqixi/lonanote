@@ -81,7 +81,7 @@ class _PlatformInkkWellState extends State<PlatformInkWell> {
 
   Widget? _buildCupertino(BuildContext context) {
     final colorScheme = ThemeColors.getColorScheme(context);
-    final bgColor = widget.bgColor ?? ThemeColors.getBg0Color(colorScheme);
+    final bgColor = widget.bgColor ?? ThemeColors.getBg1Color(colorScheme);
     final pressBgColor =
         widget.pressBgColor ?? ThemeColors.getPressBgColor(colorScheme);
     final textColor = widget.textColor ?? ThemeColors.getTextColor(colorScheme);

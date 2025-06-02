@@ -40,7 +40,7 @@ class ScrollAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ThemeColors.getColorScheme(context);
-    final backgroundColor = bgColor ?? ThemeColors.getBg0Color(colorScheme);
+    final backgroundColor = bgColor ?? ThemeColors.getBgColor(colorScheme);
     final textColor = ThemeColors.getTextColor(colorScheme);
     final subColor = ThemeColors.getTextGreyColor(colorScheme);
     return SliverAppBar(
@@ -116,7 +116,7 @@ class SimpleAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ThemeColors.getColorScheme(context);
-    final backgroundColor = bgColor ?? ThemeColors.getBg0Color(colorScheme);
+    final backgroundColor = bgColor ?? ThemeColors.getBgColor(colorScheme);
     final textColor = titleColor ?? ThemeColors.getTextColor(colorScheme);
     return SliverAppBar(
       pinned: true,

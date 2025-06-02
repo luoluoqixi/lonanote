@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/common/app_router.dart';
+import 'package:lonanote/src/theme/theme_colors.dart';
 
 class PlatformInput extends StatefulWidget {
   final TextEditingController? controller;
@@ -166,6 +167,7 @@ class _PlatformInputState extends State<PlatformInput> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformTextFormField(
       controller: widget.controller,
       initialValue: widget.initialValue,
@@ -173,7 +175,10 @@ class _PlatformInputState extends State<PlatformInput> with RouteAware {
       keyboardType: widget.keyboardType,
       textCapitalization: widget.textCapitalization,
       textInputAction: widget.textInputAction,
-      style: widget.style,
+      style: widget.style ??
+          TextStyle(
+            color: ThemeColors.getTextColor(colorScheme),
+          ),
       strutStyle: widget.strutStyle,
       textAlign: widget.textAlign,
       textAlignVertical: widget.textAlignVertical,

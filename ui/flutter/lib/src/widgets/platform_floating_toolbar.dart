@@ -38,12 +38,17 @@ class PlatformFloatingToolbar extends StatelessWidget {
     final content = Padding(
       padding: contentPadding ??
           const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: children,
+      child: DefaultTextStyle(
+        style: TextStyle(
+          color: ThemeColors.getTextColor(colorScheme),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: children,
+        ),
       ),
     );
-    final bgColor = this.bgColor ?? ThemeColors.getBg0Color(colorScheme);
+    final bgColor = this.bgColor ?? ThemeColors.getBg1Color(colorScheme);
     return Positioned(
       top: top,
       left: left ?? 20,
@@ -59,7 +64,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
           material: (context, platform) => Material(
             elevation: 6,
             borderRadius: BorderRadius.circular(12),
-            color: ThemeColors.getBg0Color(ThemeColors.getColorScheme(context)),
+            color: bgColor,
             child: content,
           ),
           cupertino: (context, platform) => Container(

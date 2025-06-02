@@ -83,7 +83,7 @@ class SelectSheet extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       desiredHeight: 360,
       allowScroll: true,
-      contentBgColor: ThemeColors.getBg0Color(colorScheme),
+      contentBgColor: ThemeColors.getBg1Color(colorScheme),
       children: sortTypes
           .map((v) => _buildSortOption(context, v.title, v.icon, v.value))
           .toList(),

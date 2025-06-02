@@ -178,6 +178,7 @@ class PlatformListTileRaw extends StatelessWidget {
 
   final GestureTapCallback? onTap;
 
+  final Color? bgColor;
   final Color? pressBgColor;
   final bool? forcePressColor;
 
@@ -190,17 +191,19 @@ class PlatformListTileRaw extends StatelessWidget {
     this.minTileHeight,
     this.padding,
     this.onTap,
+    this.bgColor,
     this.pressBgColor,
     this.forcePressColor,
   });
 
   Widget _buildMaterial(BuildContext context) {
     final forcePressColor = this.forcePressColor == true;
+    final colorScheme = ThemeColors.getColorScheme(context);
     return Material(
       color: forcePressColor
           ? (pressBgColor ??
               ThemeColors.getPressBgColor(ThemeColors.getColorScheme(context)))
-          : Colors.transparent,
+          : (bgColor ?? ThemeColors.getBg1Color(colorScheme)),
       child: ListTile(
         contentPadding: padding,
         leading: leading,
@@ -218,6 +221,7 @@ class PlatformListTileRaw extends StatelessWidget {
     return PlatformInkWell(
       forcePressColor: forcePressColor,
       pressBgColor: pressBgColor,
+      bgColor: bgColor,
       onTap: onTap,
       child: Material(
         color: Colors.transparent,
@@ -343,7 +347,10 @@ class PlatformListView extends StatelessWidget {
           topMargin: header != null ? 0 : topMargin,
           backgroundColor: backgroundColor ?? Colors.transparent,
           separatorColor: separatorColor,
-          decoration: decoration,
+          decoration: decoration ??
+              BoxDecoration(
+                color: backgroundColor ?? Colors.transparent,
+              ),
           footer: _buildFooter(context),
           children: children,
         ),

@@ -41,7 +41,7 @@ class AppTheme {
         titleSpacing: 0.0,
         elevation: 0.0,
         centerTitle: true,
-        backgroundColor: ThemeColors.getBg0Color(colorScheme), // AppBar的背景颜色
+        backgroundColor: ThemeColors.getBgColor(colorScheme), // AppBar的背景颜色
         titleTextStyle: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
@@ -70,7 +70,7 @@ class AppTheme {
           );
     return CupertinoThemeData(
       primaryColor: ThemeColors.getPrimaryColor(colorScheme), // 导航栏按钮颜色
-      barBackgroundColor: ThemeColors.getBg0Color(colorScheme), // 导航栏背景色
+      barBackgroundColor: ThemeColors.getBgColor(colorScheme), // 导航栏背景色
       scaffoldBackgroundColor: ThemeColors.getBgColor(colorScheme),
       textTheme: CupertinoTextThemeData(
         primaryColor: ThemeColors.getPrimaryColor(colorScheme),
