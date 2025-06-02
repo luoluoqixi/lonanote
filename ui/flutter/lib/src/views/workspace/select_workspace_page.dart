@@ -493,7 +493,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     final selectAll = _isSelectAll(ws);
     return [
       PlatformIconBtn(
-        icon: Text(selectAll ? "取消全选" : "全选"),
+        icon: Text(
+          selectAll ? "取消全选" : "全选",
+          style: TextStyle(
+            fontSize: 18,
+          ),
+        ),
         padding: EdgeInsets.all(10.0),
         onPressed: () {
           if (selectAll) {
@@ -504,7 +509,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         },
       ),
       PlatformIconBtn(
-        icon: Text("完成"),
+        icon: Text(
+          "完成",
+          style: TextStyle(
+            fontSize: 18,
+          ),
+        ),
         padding: EdgeInsets.all(8.0),
         onPressed: () {
           setState(() {

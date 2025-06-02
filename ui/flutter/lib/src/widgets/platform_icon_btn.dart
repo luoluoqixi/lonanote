@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/platform_ink_response.dart';
 
 class PlatformIconBtn extends StatelessWidget {
@@ -36,10 +37,17 @@ class PlatformIconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = ThemeColors.getColorScheme(context);
+    final iconColor = ThemeColors.getPrimaryColor(colorScheme);
     return PlatformInkResponse(
       disable: disable,
       child: PlatformIconButton(
-        icon: icon,
+        icon: icon != null
+            ? DefaultTextStyle(
+                style: TextStyle(color: iconColor),
+                child: icon!,
+              )
+            : null,
         cupertinoIcon: cupertinoIcon,
         materialIcon: materialIcon,
         onPressed: onPressed,
@@ -47,7 +55,10 @@ class PlatformIconBtn extends StatelessWidget {
         disabledColor: disabledColor,
         padding: padding,
         onLongPress: onLongPress,
-        material: material,
+        material: material ??
+            (context, platform) => MaterialIconButtonData(
+                  color: iconColor,
+                ),
         cupertino: cupertino,
       ),
     );
