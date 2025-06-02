@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
+import 'package:pull_down_button/pull_down_button.dart';
 
 class AppTheme {
   static SystemUiOverlayStyle getSystemOverlayStyle(ColorScheme colorScheme) {
@@ -53,6 +54,7 @@ class AppTheme {
       brightness: colorScheme.brightness,
       colorScheme: colorScheme,
       appBarTheme: appBarTheme,
+      extensions: [getPullDownTheme(colorScheme)],
     );
   }
 
@@ -69,6 +71,7 @@ class AppTheme {
             primary: theme.primaryColor,
           );
     return CupertinoThemeData(
+      brightness: brightness,
       primaryColor: ThemeColors.getPrimaryColor(colorScheme), // 导航栏按钮颜色
       barBackgroundColor: ThemeColors.getBgColor(colorScheme), // 导航栏背景色
       scaffoldBackgroundColor: ThemeColors.getBgColor(colorScheme),
@@ -82,5 +85,9 @@ class AppTheme {
         ),
       ),
     );
+  }
+
+  static PullDownButtonTheme getPullDownTheme(ColorScheme colorScheme) {
+    return PullDownButtonTheme();
   }
 }

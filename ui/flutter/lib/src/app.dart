@@ -11,6 +11,7 @@ import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/app_theme.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/views/index.dart';
+import 'package:pull_down_button/pull_down_button.dart';
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -69,6 +70,12 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
               navigatorObservers: [AppRouter.routeObserver],
               title: AppConfig.appTitle,
               home: Index(),
+              cupertino: (context, platform) => CupertinoAppData(
+                builder: (context, child) => PullDownButtonInheritedTheme(
+                  data: AppTheme.getPullDownTheme(colorScheme),
+                  child: child!,
+                ),
+              ),
             ),
           );
         },
