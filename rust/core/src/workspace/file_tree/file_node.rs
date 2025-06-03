@@ -107,6 +107,7 @@ impl FileNode {
         root: &Path,
         follow_gitignore: bool,
         custom_ignore: String,
+        recursive: bool,
     ) -> Result<Self, String> {
         let mut ignore_builder = GitignoreBuilder::new(root);
 
@@ -117,9 +118,10 @@ impl FileNode {
         }
 
         let custom_ignore = ignore_builder.build().unwrap();
-
+        let depth = if recursive { None } else { Some(1) };
         let mut dir_iter = WalkBuilder::new(root)
             .hidden(false)
+            .max_depth(depth)
             .git_ignore(follow_gitignore)
             .git_exclude(false)
             .require_git(false)

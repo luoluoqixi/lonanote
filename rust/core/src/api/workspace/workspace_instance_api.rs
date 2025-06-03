@@ -75,6 +75,37 @@ async fn get_open_workspace_file_tree(Json(args): Json<GetWorkspaceArgs>) -> Com
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct GetWorkspaceFileNodeArgs {
+    pub path: String,
+
+    pub node_path: Option<String>,
+    pub sort_type: FileTreeSortType,
+    pub recursive: bool,
+}
+
+async fn get_open_workspace_file_node(Json(args): Json<GetWorkspaceFileNodeArgs>) -> CommandResult {
+    let workspace_manager = get_workspace_manager().await;
+    let workspace = workspace_manager
+        .get_workspace(&WorkspacePath::from(&args.path))
+        .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+
+    let node = workspace
+        .get_node(args.node_path.as_ref(), args.sort_type, args.recursive)
+        .await
+        .map_err(|err| {
+            anyhow!(
+                "workspace get_node error: {}, path: {}, {:?}",
+                err,
+                &args.path,
+                &args.node_path
+            )
+        })?;
+
+    CommandResponse::json(node)
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct SetWorkspaceFileTreeSortTypeArgs {
     pub path: String,
     pub sort_type: FileTreeSortType,
@@ -234,6 +265,10 @@ pub fn reg_commands() -> Result<()> {
     reg_command_async(
         "workspace.reset_open_workspace_upload_image_path",
         reset_open_workspace_upload_image_path,
+    )?;
+    reg_command_async(
+        "workspace.get_open_workspace_file_node",
+        get_open_workspace_file_node,
     )?;
 
     Ok(())

@@ -35,6 +35,7 @@ impl FileTree {
             &self.path,
             follow_gitignore,
             custom_ignore,
+            true,
         )?);
         self.sort();
 
@@ -60,5 +61,25 @@ impl FileTree {
     }
     pub fn to_path_buf(&self) -> PathBuf {
         self.path.to_path_buf()
+    }
+
+    pub fn get_node(
+        &self,
+        path: Option<&String>,
+        follow_gitignore: bool,
+        custom_ignore: String,
+        recursive: bool,
+        sort_type: FileTreeSortType,
+    ) -> Result<FileNode, String> {
+        let path = if let Some(s) = path {
+            &self.path.join(s)
+        } else {
+            &self.path
+        };
+        let mut node = FileNode::from_path(path, follow_gitignore, custom_ignore, recursive)?;
+        if let Some(children) = &mut node.children {
+            children.sort_by(|a, b| file_tree_compare(a, b, &sort_type));
+        }
+        Ok(node)
     }
 }

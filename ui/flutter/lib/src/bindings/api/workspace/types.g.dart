@@ -79,9 +79,9 @@ Map<String, dynamic> _$RustWorkspaceDataToJson(RustWorkspaceData instance) =>
     };
 
 RustFileNode _$RustFileNodeFromJson(Map<String, dynamic> json) => RustFileNode(
-      children: json['children'] == null
-          ? null
-          : RustFileNode.fromJson(json['children'] as Map<String, dynamic>),
+      children: (json['children'] as List<dynamic>?)
+          ?.map((e) => RustFileNode.fromJson(e as Map<String, dynamic>))
+          .toList(),
       fileType: json['fileType'] as String,
       path: json['path'] as String,
       size: (json['size'] as num?)?.toInt(),

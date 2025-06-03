@@ -35,9 +35,9 @@ class RustFs {
     Bindings.invoke(key: "fs.create_dir_all", value: {"path": path});
   }
 
-  static void createFile(String path, String content) {
+  static void createFile(String path, String contents) {
     Bindings.invoke(
-        key: "fs.create_file", value: {"path": path, "content": content});
+        key: "fs.create_file", value: {"path": path, "contents": contents});
   }
 
   static void delete(String path, bool trash) {

@@ -5,7 +5,7 @@ use tokio::sync::{RwLock, RwLockReadGuard};
 use super::{
     config::{create_workspace_config_folder, create_workspace_init_files},
     error::WorkspaceError,
-    file_tree::FileTreeSortType,
+    file_tree::{FileNode, FileTreeSortType},
     workspace_index::WorkspaceIndex,
     workspace_metadata::WorkspaceMetadata,
     workspace_path::WorkspacePath,
@@ -49,6 +49,19 @@ impl WorkspaceInstance {
             .map_err(WorkspaceError::InitError)?;
 
         Ok(())
+    }
+
+    pub async fn get_node(
+        &self,
+        path: Option<&String>,
+        sort_type: FileTreeSortType,
+        recursive: bool,
+    ) -> Result<FileNode, String> {
+        let follow_gitignore = self.settings.follow_gitignore;
+        let custom_ignore = self.settings.custom_ignore.to_owned();
+        let index = Arc::clone(&self.index);
+        let index = index.read().await;
+        index.get_node(path, follow_gitignore, custom_ignore, recursive, sort_type)
     }
 
     pub async fn get_workspace_index(&self) -> RwLockReadGuard<'_, WorkspaceIndex> {

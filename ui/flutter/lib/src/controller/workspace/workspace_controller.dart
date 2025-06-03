@@ -1,6 +1,8 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lonanote/src/bindings/api/fs/fs.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/bindings/api/workspace/workspace.dart';
+import 'package:lonanote/src/bindings/api/workspace/workspace_manager.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 
@@ -69,11 +71,23 @@ class WorkspaceController {
     WorkspaceManagerController.refreshWorkspace(ref, false, true);
   }
 
-  static Future<void> reinitworkspace(
+  static Future<void> reinitWorkspace(
     WidgetRef ref,
   ) async {
     await RustWorkspace.reinitCurrentWorkspace();
     WorkspaceManagerController.refreshWorkspace(ref, false, true);
+  }
+
+  static Future<RustFileNode> getWorkspaceFileNode(
+    WidgetRef ref,
+    String? nodePath,
+    RustFileSortType sortType,
+  ) async {
+    return await RustWorkspace.getCurrentWorkspaceFileNode(
+      nodePath,
+      sortType.name,
+      false,
+    );
   }
 
   static Future<void> setWorkspaceUploadImagePath(
@@ -109,6 +123,34 @@ class WorkspaceController {
       final s = ws.settings;
       s.histroySnapshootCount = value;
       setWorkspaceSettings(ref, s);
+    }
+  }
+
+  static void createFolder(
+    WidgetRef ref,
+    String folderPath,
+  ) async {
+    final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
+    if (ws != null) {
+      final dir = RustWorkspaceManager.getWorkspaceDir();
+      final targetPath = "$dir/${ws.metadata.name}/$folderPath";
+      if (!RustFs.exists(targetPath)) {
+        RustFs.createDirAll(targetPath);
+      }
+    }
+  }
+
+  static void createFile(
+    WidgetRef ref,
+    String filePath,
+  ) async {
+    final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
+    if (ws != null) {
+      final dir = RustWorkspaceManager.getWorkspaceDir();
+      final targetPath = "$dir/${ws.metadata.name}/$filePath";
+      if (!RustFs.exists(targetPath)) {
+        RustFs.createFile(targetPath, "");
+      }
     }
   }
 }

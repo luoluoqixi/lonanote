@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:lonanote/src/common/log.dart';
 
 part 'types.g.dart';
 
@@ -97,7 +98,7 @@ class RustFileNode {
     required this.dirCount,
   });
 
-  RustFileNode? children;
+  List<RustFileNode>? children;
 
   /// 'file' | 'directory'
   String fileType;
@@ -112,6 +113,21 @@ class RustFileNode {
       _$RustFileNodeFromJson(json);
 
   Map<String, dynamic> toJson() => _$RustFileNodeToJson(this);
+
+  bool isFile() {
+    return fileType == "file";
+  }
+
+  bool isDirectory() {
+    return fileType == "directory";
+  }
+
+  RustFileTypeEnum getFileType() {
+    if (isDirectory()) {
+      return RustFileTypeEnum.directory;
+    }
+    return RustFileTypeEnum.file;
+  }
 }
 
 @JsonSerializable()
@@ -134,4 +150,27 @@ class RustFileTree {
       _$RustFileTreeFromJson(json);
 
   Map<String, dynamic> toJson() => _$RustFileTreeToJson(this);
+
+  RustFileSortType getSortType() {
+    try {
+      return RustFileSortType.values.byName(sortType);
+    } catch (e) {
+      logger.e("parse sort type error: $sortType");
+      return RustFileSortType.name;
+    }
+  }
+}
+
+enum RustFileTypeEnum {
+  file,
+  directory,
+}
+
+enum RustFileSortType {
+  name,
+  nameRev,
+  lastModifiedTime,
+  lastModifiedTimeRev,
+  createTime,
+  createTimeRev,
 }

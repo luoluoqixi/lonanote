@@ -99,6 +99,23 @@ class RustWorkspace {
         key: "workspace.call_open_workspace_reinit", value: {"path": path});
   }
 
+  static Future<RustFileNode> getOpenWorkspaceFileNode(
+    String path,
+    String? nodePath,
+    String sortType,
+    bool recursive,
+  ) async {
+    final s = await Bindings.invokeAsync(
+        key: "workspace.get_open_workspace_file_node",
+        value: {
+          "path": path,
+          "nodePath": nodePath,
+          "sortType": sortType,
+          "recursive": recursive,
+        });
+    return RustFileNode.fromJson(s);
+  }
+
   static Future<RustWorkspaceData?> getCurrentWorkspace() async {
     final path = RustWorkspaceManager.getCurrentOpenWorkspace();
     return await getWorkspace(path);
@@ -161,6 +178,15 @@ class RustWorkspace {
   static Future<void> reinitCurrentWorkspace() async {
     final path = checkCurrentOpenWorkspace();
     await callOpenWorkspaceReinit(path);
+  }
+
+  static Future<RustFileNode> getCurrentWorkspaceFileNode(
+    String? nodePath,
+    String sortType,
+    bool recursive,
+  ) async {
+    final path = checkCurrentOpenWorkspace();
+    return await getOpenWorkspaceFileNode(path, nodePath, sortType, recursive);
   }
 
   static Future<void> test() async {

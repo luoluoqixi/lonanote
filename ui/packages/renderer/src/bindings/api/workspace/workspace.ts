@@ -1,6 +1,6 @@
 import { invokeAsync } from '@/bindings/core';
 
-import { FileTree, FileTreeSortType, Workspace, WorkspaceSettings } from './types';
+import { FileNode, FileTree, FileTreeSortType, Workspace, WorkspaceSettings } from './types';
 import { getCurrentOpenWorkspace } from './workspaceManager';
 
 const checkCurrentOpenWorkspace = async (): Promise<string> => {
@@ -72,6 +72,19 @@ export const workspace = {
   callOpenWorkspaceReinit: async (path: string): Promise<void> => {
     return (await invokeAsync('workspace.call_open_workspace_reinit', { path }))!;
   },
+  getOpenWorkspaceFileNode: async (
+    path: string,
+    nodePath: string | null | undefined,
+    sortType: FileTreeSortType,
+    recursive: boolean,
+  ): Promise<FileNode> => {
+    return (await invokeAsync('workspace.get_open_workspace_file_node', {
+      path,
+      nodePath,
+      sortType,
+      recursive,
+    }))!;
+  },
   getCurrentWorkspace: async (): Promise<Workspace | null> => {
     const path = getCurrentOpenWorkspace();
     return path ? await workspace.getWorkspace(path) : null;
@@ -119,5 +132,13 @@ export const workspace = {
   reinitCurrentworkspace: async (): Promise<void> => {
     const path = await checkCurrentOpenWorkspace();
     await workspace.callOpenWorkspaceReinit(path);
+  },
+  getCurrentworkspaceFileNode: async (
+    nodePath: string | null | undefined,
+    sortType: FileTreeSortType,
+    recursive: boolean,
+  ): Promise<FileNode> => {
+    const path = await checkCurrentOpenWorkspace();
+    return await workspace.getOpenWorkspaceFileNode(path, nodePath, sortType, recursive);
   },
 };

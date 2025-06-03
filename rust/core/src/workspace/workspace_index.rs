@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     error::WorkspaceError,
-    file_tree::{FileTree, FileTreeSortType},
+    file_tree::{FileNode, FileTree, FileTreeSortType},
     workspace_path::WorkspacePath,
 };
 
@@ -40,5 +40,17 @@ impl WorkspaceIndex {
         );
 
         Ok(())
+    }
+
+    pub fn get_node(
+        &self,
+        path: Option<&String>,
+        follow_gitignore: bool,
+        custom_ignore: String,
+        recursive: bool,
+        sort_type: FileTreeSortType,
+    ) -> Result<FileNode, String> {
+        self.file_tree
+            .get_node(path, follow_gitignore, custom_ignore, recursive, sort_type)
     }
 }
