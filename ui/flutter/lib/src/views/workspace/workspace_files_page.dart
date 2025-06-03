@@ -21,12 +21,26 @@ class WorkspaceFilesPage extends ConsumerStatefulWidget {
 }
 
 class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
-  void _selectWorkspace() async {
+  // bool _isSelectionMode = false;
+
+  void _switchWorkspace() async {
     await WorkspaceManagerController.unloadWorkspace(ref);
     if (mounted) {
       AppRouter.jumpToSelectWorkspacePage(context);
     }
   }
+
+  void _openSelectModeClick() {
+    // setState(() {
+    //   _isSelectionMode = true;
+    // });
+  }
+
+  void _createFileClick() {}
+
+  void _createFolderClick() {}
+
+  void _sortModeClick() {}
 
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
@@ -53,16 +67,42 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         PlatformPullDownButton(
           itemBuilder: (context) => [
             PullDownMenuItem(
+              title: "选择",
+              onTap: _openSelectModeClick,
+              icon: ThemeIcons.select(context),
+              // enabled: isNotEmpty ?? false,
+            ),
+            PullDownMenuItem(
+              title: "创建笔记",
+              onTap: _createFileClick,
+              icon: ThemeIcons.add(context),
+            ),
+            PullDownMenuItem(
+              title: "创建文件夹",
+              onTap: _createFolderClick,
+              icon: ThemeIcons.add(context),
+            ),
+            const PullDownMenuDivider.large(),
+            PullDownMenuItem(
+              title: "排序方式",
+              onTap: _sortModeClick,
+              icon: ThemeIcons.sort(context),
+            ),
+            const PullDownMenuDivider.large(),
+            PullDownMenuItem(
               title: "切换工作区",
-              onTap: _selectWorkspace,
+              onTap: _switchWorkspace,
+              icon: ThemeIcons.swap(context),
             ),
             PullDownMenuItem(
               title: "工作区设置",
               onTap: _openWorkspaceSettings,
+              icon: ThemeIcons.tune(context),
             ),
             PullDownMenuItem(
               title: "设置",
               onTap: _openSettings,
+              icon: ThemeIcons.settings(context),
             ),
           ],
           buttonIcon: Icon(

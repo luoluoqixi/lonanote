@@ -15,6 +15,10 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.check : Icons.check;
   }
 
+  static IconData swap(BuildContext context) {
+    return isMaterial(context) ? Icons.swap_horiz : Icons.swap_horiz;
+  }
+
   static IconData chevronRight(BuildContext context) {
     return isMaterial(context) ? Icons.chevron_right : Icons.chevron_right;
   }
@@ -65,5 +69,9 @@ class ThemeIcons {
 
   static IconData sortName(BuildContext context) {
     return isMaterial(context) ? Icons.sort_by_alpha : Icons.sort_by_alpha;
+  }
+
+  static IconData tune(BuildContext context) {
+    return isMaterial(context) ? Icons.tune : Icons.tune;
   }
 }

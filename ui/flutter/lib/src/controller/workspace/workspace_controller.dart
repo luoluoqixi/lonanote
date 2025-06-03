@@ -72,7 +72,7 @@ class WorkspaceController {
   static Future<void> reinitworkspace(
     WidgetRef ref,
   ) async {
-    await RustWorkspace.reinitCurrentworkspace();
+    await RustWorkspace.reinitCurrentWorkspace();
     WorkspaceManagerController.refreshWorkspace(ref, false, true);
   }
 

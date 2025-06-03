@@ -158,7 +158,7 @@ class RustWorkspace {
     await resetOpenWorkspaceUploadImagePath(path);
   }
 
-  static Future<void> reinitCurrentworkspace() async {
+  static Future<void> reinitCurrentWorkspace() async {
     final path = checkCurrentOpenWorkspace();
     await callOpenWorkspaceReinit(path);
   }
