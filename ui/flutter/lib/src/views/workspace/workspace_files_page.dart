@@ -141,14 +141,14 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   void _createFile(String value) async {
-    final folderName = value.trim();
+    final fileName = value.trim();
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      WorkspaceController.createFile(ref, folderName);
+      WorkspaceController.createFile(ref, fileName);
       Navigator.of(context).pop();
       await _reinitFileNode();
       if (mounted) {}

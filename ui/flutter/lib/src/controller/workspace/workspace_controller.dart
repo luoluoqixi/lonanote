@@ -129,13 +129,15 @@ class WorkspaceController {
   static void createFolder(
     WidgetRef ref,
     String folderPath,
-  ) async {
+  ) {
     final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
     if (ws != null) {
       final dir = RustWorkspaceManager.getWorkspaceDir();
       final targetPath = "$dir/${ws.metadata.name}/$folderPath";
       if (!RustFs.exists(targetPath)) {
         RustFs.createDirAll(targetPath);
+      } else {
+        throw Exception("文件夹已存在: ${ws.metadata.name}/$folderPath");
       }
     }
   }
@@ -143,13 +145,15 @@ class WorkspaceController {
   static void createFile(
     WidgetRef ref,
     String filePath,
-  ) async {
+  ) {
     final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
     if (ws != null) {
       final dir = RustWorkspaceManager.getWorkspaceDir();
       final targetPath = "$dir/${ws.metadata.name}/$filePath";
       if (!RustFs.exists(targetPath)) {
         RustFs.createFile(targetPath, "");
+      } else {
+        throw Exception("文件已存在: ${ws.metadata.name}/$filePath");
       }
     }
   }
