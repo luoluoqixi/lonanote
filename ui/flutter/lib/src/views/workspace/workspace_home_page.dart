@@ -22,8 +22,6 @@ class _WorkspaceHomePageState extends ConsumerState<WorkspaceHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return WorkspaceFilesPage(
-      isRoot: true,
-    );
+    return WorkspaceFilesPage();
   }
 }

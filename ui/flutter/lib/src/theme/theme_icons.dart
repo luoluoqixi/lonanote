@@ -35,10 +35,28 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.delete_outline : Icons.delete_outline;
   }
 
+  static IconData file(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.insert_drive_file
+        : Icons.insert_drive_file;
+  }
+
+  static IconData folder(BuildContext context) {
+    return isMaterial(context) ? Icons.folder : Icons.folder;
+  }
+
+  static IconData image(BuildContext context) {
+    return isMaterial(context) ? Icons.image : Icons.image;
+  }
+
   static IconData keyboardArrowDown(BuildContext context) {
     return isMaterial(context)
         ? Icons.keyboard_arrow_down
         : Icons.keyboard_arrow_down;
+  }
+
+  static IconData markdown(BuildContext context) {
+    return isMaterial(context) ? Icons.description : Icons.description;
   }
 
   static IconData more(BuildContext context) {
@@ -73,5 +91,9 @@ class ThemeIcons {
 
   static IconData tune(BuildContext context) {
     return isMaterial(context) ? Icons.tune : Icons.tune;
+  }
+
+  static IconData video(BuildContext context) {
+    return isMaterial(context) ? Icons.video_call : Icons.video_call;
   }
 }

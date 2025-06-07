@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:logger/logger.dart';
@@ -11,7 +10,8 @@ import 'startup_app.dart';
 
 Future<void> started() async {
   // 屏幕刷新率优化
-  GestureBinding.instance.resamplingEnabled = true;
+  // 设置这个会导致ios上第一次滚动时报错
+  // GestureBinding.instance.resamplingEnabled = true;
 }
 
 Future<void> initRust() async {

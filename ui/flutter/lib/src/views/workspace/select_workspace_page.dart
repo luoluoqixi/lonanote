@@ -429,10 +429,6 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   void _renameWorkspace(RustWorkspaceMetadata workspace, String value) async {
     final workspaceName = value;
 
-    // setState(() {
-    //   _isLoading = true;
-    // });
-
     try {
       await WorkspaceManagerController.renameWorkspace(
           ref, workspace.path, workspaceName);
@@ -449,12 +445,6 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
           okText: "确定",
         );
       }
-    } finally {
-      // if (mounted) {
-      //   setState(() {
-      //     _isLoading = false;
-      //   });
-      // }
     }
   }
 
@@ -526,6 +516,51 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     ];
   }
 
+  List<Widget> _buildActions(
+    List<RustWorkspaceMetadata>? workspaces,
+    ColorScheme colorScheme,
+  ) {
+    return [
+      PlatformPullDownButton(
+        itemBuilder: (context) => [
+          PullDownMenuItem(
+            title: "选择工作区",
+            onTap: _selectWorkspace,
+            icon: ThemeIcons.select(context),
+            enabled: workspaces?.isNotEmpty ?? false,
+          ),
+          PullDownMenuItem(
+            title: "创建工作区",
+            onTap: _createWorkspaceClick,
+            icon: ThemeIcons.add(context),
+          ),
+          const PullDownMenuDivider.large(),
+          PullDownMenuItem(
+            title: "排序方式",
+            icon: ThemeIcons.sort(context),
+            onTap: _sortClick,
+          ),
+
+          // PullDownMenuItem(
+          //   title: "打开文件夹...",
+          //   onTap: _selectOpenWorkspace,
+          // ),
+          const PullDownMenuDivider.large(),
+          PullDownMenuItem(
+            title: "设置",
+            onTap: _openSettings,
+            icon: ThemeIcons.settings(context),
+          ),
+        ],
+        buttonIcon: Icon(
+          ThemeIcons.more(context),
+          color: ThemeColors.getTextGreyColor(colorScheme),
+          size: 28,
+        ),
+      ),
+    ];
+  }
+
   Widget _buildSelectModeContent(
     RustWorkspaceMetadata workspace,
     bool isSelect,
@@ -574,6 +609,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         _isSelectionMode && _selectedPaths.contains(workspace.path);
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
     return PlatformListTileRaw(
+      bgColor: Colors.transparent,
       onTap: () {
         if (_isSelectionMode) {
           _toggleSelection(workspace);
@@ -676,48 +712,26 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       backgroundColor: ThemeColors.getBgColor(colorScheme),
       titleActions: [
         if (_isSelectionMode) ..._buildSelectModeActions(workspaces),
-        if (!_isSelectionMode)
-          PlatformPullDownButton(
-            itemBuilder: (context) => [
-              PullDownMenuItem(
-                title: "选择工作区",
-                onTap: _selectWorkspace,
-                icon: ThemeIcons.select(context),
-                enabled: workspaces?.isNotEmpty ?? false,
-              ),
-              PullDownMenuItem(
-                title: "创建工作区",
-                onTap: _createWorkspaceClick,
-                icon: ThemeIcons.add(context),
-              ),
-              const PullDownMenuDivider.large(),
-              PullDownMenuItem(
-                title: "排序方式",
-                icon: ThemeIcons.sort(context),
-                onTap: _sortClick,
-              ),
-
-              // PullDownMenuItem(
-              //   title: "打开文件夹...",
-              //   onTap: _selectOpenWorkspace,
-              // ),
-              const PullDownMenuDivider.large(),
-              PullDownMenuItem(
-                title: "设置",
-                onTap: _openSettings,
-                icon: ThemeIcons.settings(context),
-              ),
-            ],
-            buttonIcon: Icon(
-              ThemeIcons.more(context),
-              color: ThemeColors.getTextGreyColor(colorScheme),
-              size: 28,
-            ),
-          ),
+        if (!_isSelectionMode) ..._buildActions(workspaces, colorScheme),
       ],
-      // contents: [_buildContent(context, colorScheme, workspaces)],
       stacks: [
         if (_isSelectionMode) _buildFloatingToolbar(),
+      ],
+      contents: [
+        // 选择模式下, 增加底部边距, 不然会被FloatingToolbar挡住最下方的Tile
+        if (_isSelectionMode)
+          const SliverToBoxAdapter(
+            child: SizedBox(
+              height: 100,
+              width: double.infinity,
+            ),
+          ),
+        const SliverToBoxAdapter(
+          child: SizedBox(
+            height: 30,
+            width: double.infinity,
+          ),
+        ),
       ],
       child: _buildWorkspacesList(context, colorScheme, workspaces),
     );

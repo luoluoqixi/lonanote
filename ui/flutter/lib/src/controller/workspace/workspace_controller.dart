@@ -146,6 +146,9 @@ class WorkspaceController {
     WidgetRef ref,
     String filePath,
   ) {
+    if (filePath.lastIndexOf(".") < 0) {
+      filePath = "$filePath.md";
+    }
     final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
     if (ws != null) {
       final dir = RustWorkspaceManager.getWorkspaceDir();
