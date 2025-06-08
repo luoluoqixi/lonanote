@@ -146,10 +146,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     if (mounted) {
       await _reinitFileNode();
     }
-    setState(() {
-      _isSelectionMode = false;
-      _selectedPaths.clear();
-    });
+    _closeSelectMode();
   }
 
   void _confirmBatchDelete() {
@@ -242,6 +239,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   void _closeSelectMode() {
     setState(() {
       _isSelectionMode = false;
+      _selectedPaths.clear();
     });
   }
 
@@ -559,10 +557,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         ),
         padding: EdgeInsets.all(8.0),
         onPressed: () {
-          setState(() {
-            _isSelectionMode = false;
-            _selectedPaths.clear();
-          });
+          _closeSelectMode();
         },
       ),
     ];
