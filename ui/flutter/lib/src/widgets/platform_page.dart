@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
@@ -25,7 +26,11 @@ class PlatformPage extends StatefulWidget {
   final Color? titleColor;
 
   final bool? isLoading;
-  final RefreshCallback? onRefresh;
+  final Future<void> Function()? onRefresh;
+
+  final bool? showScrollbar;
+  final bool? scrollThumbVisibility;
+  final bool? scrollInteractive;
 
   const PlatformPage({
     super.key,
@@ -45,6 +50,9 @@ class PlatformPage extends StatefulWidget {
     this.titleColor,
     this.isLoading,
     this.onRefresh,
+    this.showScrollbar,
+    this.scrollThumbVisibility,
+    this.scrollInteractive,
   });
 
   @override
@@ -86,10 +94,10 @@ class _PlatformPageState extends State<PlatformPage> {
             MediaQuery.of(context).padding.top);
   }
 
-  Widget _buildPageContent(BuildContext context) {
+  Widget _buildPageContent(ScrollController controller, BuildContext context) {
     final appBar = _buildAppBar();
     return CustomScrollView(
-      controller: widget.scrollController,
+      controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         if (appBar != null) appBar,
@@ -116,16 +124,39 @@ class _PlatformPageState extends State<PlatformPage> {
   }
 
   Widget _buildPage() {
+    final scrollController = widget.scrollController ?? ScrollController();
+    final content = widget.onRefresh != null
+        ? RefreshIndicator(
+            onRefresh: widget.onRefresh!,
+            edgeOffset: _getAppBarHeight(),
+            child: _buildPageContent(scrollController, context),
+          )
+        : _buildPageContent(scrollController, context);
+
+    var child = content;
+    if (widget.showScrollbar == true) {
+      if (isMaterial(context)) {
+        child = Scrollbar(
+          controller: scrollController,
+          thumbVisibility: widget.scrollThumbVisibility ?? false,
+          interactive: widget.scrollInteractive ?? true,
+          child: content,
+        );
+      } else {
+        // IOS滚动条体验存在问题:
+        // https://github.com/flutter/flutter/issues/83198
+        child = CupertinoScrollbar(
+          controller: scrollController,
+          thumbVisibility: widget.scrollThumbVisibility ?? false,
+          child: content,
+        );
+      }
+    }
     return Column(
       children: [
         Expanded(
-            child: widget.onRefresh != null
-                ? RefreshIndicator(
-                    onRefresh: widget.onRefresh!,
-                    edgeOffset: _getAppBarHeight(),
-                    child: _buildPageContent(context),
-                  )
-                : _buildPageContent(context)),
+          child: child,
+        ),
         if (widget.bottomBar != null) widget.bottomBar!,
       ],
     );
@@ -181,7 +212,11 @@ class PlatformSimplePage extends StatefulWidget {
   final Color? titleColor;
 
   final bool? isLoading;
-  final RefreshCallback? onRefresh;
+  final Future<void> Function()? onRefresh;
+
+  final bool? showScrollbar;
+  final bool? scrollThumbVisibility;
+  final bool? scrollInteractive;
 
   const PlatformSimplePage({
     super.key,
@@ -197,6 +232,9 @@ class PlatformSimplePage extends StatefulWidget {
     this.titleColor,
     this.isLoading,
     this.onRefresh,
+    this.showScrollbar,
+    this.scrollThumbVisibility,
+    this.scrollInteractive,
   });
 
   @override
@@ -237,9 +275,10 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
         : (SimpleAppBar.defaultHeight + MediaQuery.of(context).padding.top);
   }
 
-  Widget _buildPageContent(BuildContext context) {
+  Widget _buildPageContent(ScrollController controller, BuildContext context) {
     final appBar = _buildAppBar();
     return CustomScrollView(
+      controller: controller,
       slivers: [
         if (appBar != null) appBar,
         if (widget.child != null)
@@ -262,13 +301,33 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
   }
 
   Widget _buildPage() {
-    return widget.onRefresh != null
+    final scrollController = widget.scrollController ?? ScrollController();
+    final content = widget.onRefresh != null
         ? RefreshIndicator(
             onRefresh: widget.onRefresh!,
             edgeOffset: _getAppBarHeight(),
-            child: _buildPageContent(context),
+            child: _buildPageContent(scrollController, context),
           )
-        : _buildPageContent(context);
+        : _buildPageContent(scrollController, context);
+    if (widget.showScrollbar == true) {
+      if (isMaterial(context)) {
+        return Scrollbar(
+          controller: scrollController,
+          thumbVisibility: widget.scrollThumbVisibility ?? false,
+          interactive: widget.scrollInteractive ?? true,
+          child: content,
+        );
+      } else {
+        // IOS滚动条体验存在问题:
+        // https://github.com/flutter/flutter/issues/83198
+        return CupertinoScrollbar(
+          controller: scrollController,
+          thumbVisibility: widget.scrollThumbVisibility ?? false,
+          child: content,
+        );
+      }
+    }
+    return content;
   }
 
   @override
@@ -333,7 +392,7 @@ class PlatformSheetPage extends StatefulWidget {
   final bool? allowScroll;
 
   final bool? isLoading;
-  final RefreshCallback? onRefresh;
+  final Future<void> Function()? onRefresh;
 
   const PlatformSheetPage({
     super.key,

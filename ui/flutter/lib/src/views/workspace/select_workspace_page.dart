@@ -713,6 +713,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     return PlatformPage(
       titleText: "工作区",
       subTitleText: "选择工作区",
+      showScrollbar: true,
       isLoading: _isLoading,
       onRefresh: _isSelectionMode ? null : _refreshWorkspaces,
       isHome: true,

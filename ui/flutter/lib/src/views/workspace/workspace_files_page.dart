@@ -568,6 +568,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   List<Widget> _buildActions(ColorScheme colorScheme) {
+    final isNotEmpty = fileNode?.children?.isNotEmpty;
     return [
       PlatformPullDownButton(
         itemBuilder: (context) => [
@@ -575,7 +576,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
             title: "选择",
             onTap: _openSelectMode,
             icon: ThemeIcons.select(context),
-            // enabled: isNotEmpty ?? false,
+            enabled: isNotEmpty ?? false,
           ),
           PullDownMenuItem(
             title: "创建笔记",
@@ -666,6 +667,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     return PlatformPage(
       titleText: title,
       isHome: widget.parentPath == null,
+      showScrollbar: true,
       isLoading: _isLoading,
       onRefresh: _isSelectionMode ? null : _reinitFileNode,
       titleActions: [
