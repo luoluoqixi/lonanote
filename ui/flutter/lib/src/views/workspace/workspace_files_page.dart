@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -165,7 +166,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       for (final path in _selectedPaths) {
         final index = children!.indexWhere((child) => child.path == path);
         if (index >= 0) {
-          await _deleteNode(children[index]);
+          _deleteNode(children[index]);
         }
       }
     }
@@ -191,7 +192,25 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     );
   }
 
-  Future<void> _deleteNode(RustFileNode node) async {
+  void _confirmDelete(RustFileNode node) {
+    HapticFeedback.selectionClick();
+    final isDirectory = node.isDirectory();
+    final type = isDirectory ? "文件夹" : "文件";
+    DialogTools.showDialog(
+      context: context,
+      title: "确认删除$type",
+      content: "确定删除$type ${node.path} 吗？",
+      cancelText: "取消",
+      okText: "删除",
+      isDange: true,
+      onOkPressed: () {
+        _deleteNode(node);
+        return null;
+      },
+    );
+  }
+
+  void _deleteNode(RustFileNode node) {
     final filePath = _getFullFilePath(node.path);
     try {
       WorkspaceController.deleteFileOrFolder(
@@ -210,6 +229,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   void _renameNode(RustFileNode node) {
+    HapticFeedback.selectionClick();
     final isDirectory = node.isDirectory();
     final type = isDirectory ? "文件夹" : "文件";
     AppRouter.showEditSheet(
@@ -568,64 +588,91 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
 
     var name = _getShowName(node);
 
-    return PlatformListTileRaw(
-      bgColor: Colors.transparent,
-      onTap: () {
-        if (_isSelectionMode) {
-          _toggleSelection(node);
-        } else {
-          _openFileNode(node);
-        }
-      },
-      onLongPress: _isSelectionMode
-          ? null
-          : () {
-              HapticFeedback.selectionClick();
-              _openSelectMode();
-              _toggleSelection(node);
-            },
-      forcePressColor: isSelect,
-      minTileHeight: 72,
-      title: Text(
-        name,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        TimeUtility.formatTimestamp(
-          isShowCreateTime(otherSettings.fileSortType)
-              ? node.createTime
-              : node.lastModifiedTime,
-        ),
-        style: TextStyle(
-          fontSize: 12,
-          color: greyColor,
-        ),
-      ),
-      leading: Row(
-        mainAxisSize: MainAxisSize.min,
+    return Slidable(
+      key: ValueKey(node.path),
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.4,
         children: [
-          if (isFile)
-            Icon(
-              _getFileIcon(node),
-              size: 40,
-              color: ThemeColors.getPrimaryColor(colorScheme),
+          CustomSlidableAction(
+            onPressed: (_) => _renameNode(node),
+            backgroundColor: ThemeColors.getPrimaryColor(colorScheme),
+            foregroundColor: ThemeColors.getTextColorReverse(colorScheme),
+            child: Icon(
+              ThemeIcons.edit(context),
+              size: 24,
             ),
-          if (isDirectory)
-            Icon(
-              ThemeIcons.folder(context),
-              size: 40,
-              color: ThemeColors.getPrimaryColor(colorScheme),
+          ),
+          CustomSlidableAction(
+            onPressed: (_) => _confirmDelete(node),
+            backgroundColor: Colors.red,
+            foregroundColor: ThemeColors.getTextColorReverse(colorScheme),
+            child: Icon(
+              ThemeIcons.delete(context),
+              size: 24,
             ),
+          ),
         ],
       ),
-      trailing: _isSelectionMode
-          ? _buildSelectModeContent(node, isSelect)
-          : isDirectory
-              ? Icon(ThemeIcons.chevronRight(context))
-              : null,
+      child: PlatformListTileRaw(
+        bgColor: Colors.transparent,
+        onTap: () {
+          if (_isSelectionMode) {
+            _toggleSelection(node);
+          } else {
+            _openFileNode(node);
+          }
+        },
+        onLongPress: _isSelectionMode
+            ? null
+            : () {
+                HapticFeedback.selectionClick();
+                _openSelectMode();
+                _toggleSelection(node);
+              },
+        forcePressColor: isSelect,
+        minTileHeight: 72,
+        title: Text(
+          name,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          TimeUtility.formatTimestamp(
+            isShowCreateTime(otherSettings.fileSortType)
+                ? node.createTime
+                : node.lastModifiedTime,
+          ),
+          style: TextStyle(
+            fontSize: 12,
+            color: greyColor,
+          ),
+        ),
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isFile)
+              Icon(
+                _getFileIcon(node),
+                size: 40,
+                color: ThemeColors.getPrimaryColor(colorScheme),
+              ),
+            if (isDirectory)
+              Icon(
+                ThemeIcons.folder(context),
+                size: 40,
+                color: ThemeColors.getPrimaryColor(colorScheme),
+              ),
+          ],
+        ),
+        trailing: _isSelectionMode
+            ? _buildSelectModeContent(node, isSelect)
+            : isDirectory
+                ? Icon(ThemeIcons.chevronRight(context))
+                : null,
+      ),
     );
   }
 

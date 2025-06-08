@@ -45,6 +45,10 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.delete_outline : Icons.delete_outline;
   }
 
+  static IconData edit(BuildContext context) {
+    return isMaterial(context) ? Icons.edit : Icons.edit;
+  }
+
   static IconData file(BuildContext context) {
     return isMaterial(context)
         ? Icons.insert_drive_file

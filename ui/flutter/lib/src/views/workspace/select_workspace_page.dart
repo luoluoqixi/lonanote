@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -172,10 +173,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         }
       }
     }
-    setState(() {
-      _isSelectionMode = false;
-      _selectedPaths.clear();
-    });
+    _closeSelectWorkspaceMode();
   }
 
   void _confirmBatchDelete() {
@@ -199,9 +197,16 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     );
   }
 
-  void _selectWorkspace() {
+  void _selectWorkspaceMode() {
     setState(() {
       _isSelectionMode = true;
+    });
+  }
+
+  void _closeSelectWorkspaceMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedPaths.clear();
     });
   }
 
@@ -432,6 +437,8 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   void _renameWorkspace(RustWorkspaceMetadata workspace, String value) async {
     final workspaceName = value;
 
+    _closeSelectWorkspaceMode();
+
     try {
       await WorkspaceManagerController.renameWorkspace(
           ref, workspace.path, workspaceName);
@@ -462,6 +469,15 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       validator: _validatorWorkspaceName,
       pageName: "/rename_workspace",
     );
+  }
+
+  void _renameWorkspaceSelectClick(String path) {
+    final workspaces = ref.read(workspaceProvider).workspaces;
+    if (workspaces == null) return;
+    final index = workspaces.indexWhere((f) => f.path == path);
+    if (index >= 0) {
+      _renameWorkspaceClick(workspaces[index]);
+    }
   }
 
   Future<void> _refreshWorkspaces() async {
@@ -511,10 +527,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         ),
         padding: EdgeInsets.all(8.0),
         onPressed: () {
-          setState(() {
-            _isSelectionMode = false;
-            _selectedPaths.clear();
-          });
+          _closeSelectWorkspaceMode();
         },
       ),
     ];
@@ -529,7 +542,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         itemBuilder: (context) => [
           PullDownMenuItem(
             title: "选择工作区",
-            onTap: _selectWorkspace,
+            onTap: _selectWorkspaceMode,
             icon: ThemeIcons.select(context),
             enabled: workspaces?.isNotEmpty ?? false,
           ),
@@ -612,61 +625,89 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     final isSelect =
         _isSelectionMode && _selectedPaths.contains(workspace.path);
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
-    return PlatformListTileRaw(
-      bgColor: Colors.transparent,
-      onTap: () {
-        if (_isSelectionMode) {
-          _toggleSelection(workspace);
-        } else {
-          _openWorkspace(workspace);
-        }
-      },
-      onLongPress: _isSelectionMode
-          ? null
-          : () {
-              logger.i("long press");
-              HapticFeedback.selectionClick();
-              _selectWorkspace();
-              _toggleSelection(workspace);
-            },
-      forcePressColor: isSelect,
-      minTileHeight: 72,
-      title: Text(
-        workspace.name,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        TimeUtility.formatTimestamp(
-          isShowCreateTime() ? workspace.createTime : workspace.updateTime,
-        ),
-        style: TextStyle(
-          fontSize: 12,
-          color: greyColor,
-        ),
-      ),
-      trailing: _isSelectionMode
-          ? _buildSelectModeContent(workspace, isSelect)
-          : PlatformPullDownButton(
-              itemBuilder: (context) => [
-                PullDownMenuItem(
-                  title: '重命名',
-                  onTap: () => _renameWorkspaceClick(workspace),
-                ),
-                PullDownMenuItem(
-                  title: '删除',
-                  isDestructive: true,
-                  onTap: () => _deleteWorkspaceClick(workspace),
-                ),
-              ],
-              buttonIcon: Icon(
-                ThemeIcons.more(context),
-                color: ThemeColors.getTextGreyColor(colorScheme),
-                size: 24,
-              ),
+    return Slidable(
+      key: ValueKey(workspace.path),
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.4,
+        children: [
+          CustomSlidableAction(
+            onPressed: (_) => _renameWorkspaceClick(workspace),
+            backgroundColor: ThemeColors.getPrimaryColor(colorScheme),
+            foregroundColor: ThemeColors.getTextColorReverse(colorScheme),
+            child: Icon(
+              ThemeIcons.edit(context),
+              size: 24,
             ),
+          ),
+          CustomSlidableAction(
+            onPressed: (_) => _deleteWorkspaceClick(workspace),
+            backgroundColor: Colors.red,
+            foregroundColor: ThemeColors.getTextColorReverse(colorScheme),
+            child: Icon(
+              ThemeIcons.delete(context),
+              size: 24,
+            ),
+          ),
+        ],
+      ),
+      child: PlatformListTileRaw(
+        bgColor: Colors.transparent,
+        onTap: () {
+          if (_isSelectionMode) {
+            _toggleSelection(workspace);
+          } else {
+            _openWorkspace(workspace);
+          }
+        },
+        onLongPress: _isSelectionMode
+            ? null
+            : () {
+                logger.i("long press");
+                HapticFeedback.selectionClick();
+                _selectWorkspaceMode();
+                _toggleSelection(workspace);
+              },
+        forcePressColor: isSelect,
+        minTileHeight: 72,
+        title: Text(
+          workspace.name,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          TimeUtility.formatTimestamp(
+            isShowCreateTime() ? workspace.createTime : workspace.updateTime,
+          ),
+          style: TextStyle(
+            fontSize: 12,
+            color: greyColor,
+          ),
+        ),
+        trailing: _isSelectionMode
+            ? _buildSelectModeContent(workspace, isSelect)
+            : Icon(ThemeIcons.chevronRight(context)),
+        // : PlatformPullDownButton(
+        //     itemBuilder: (context) => [
+        //       PullDownMenuItem(
+        //         title: '重命名',
+        //         onTap: () => _renameWorkspaceClick(workspace),
+        //       ),
+        //       PullDownMenuItem(
+        //         title: '删除',
+        //         isDestructive: true,
+        //         onTap: () => _deleteWorkspaceClick(workspace),
+        //       ),
+        //     ],
+        //     buttonIcon: Icon(
+        //       ThemeIcons.more(context),
+        //       color: ThemeColors.getTextGreyColor(colorScheme),
+        //       size: 24,
+        //     ),
+        //   ),
+      ),
     );
   }
 
@@ -691,17 +732,26 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   }
 
   Widget _buildFloatingToolbar() {
+    final isSelectOnlyOne = _selectedPaths.length == 1;
+    final isNotEmpty = _selectedPaths.isNotEmpty;
     return PlatformFloatingToolbar(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text("已选择 ${_selectedPaths.length} 个"),
         Row(
           children: [
+            if (isSelectOnlyOne)
+              PlatformIconBtn(
+                icon: Icon(ThemeIcons.rename(context)),
+                onPressed: () =>
+                    _renameWorkspaceSelectClick(_selectedPaths.first),
+              ),
             PlatformIconBtn(
               icon: Icon(
                 ThemeIcons.delete(context),
-                color: _selectedPaths.isNotEmpty ? Colors.red : Colors.grey,
+                color: isNotEmpty ? Colors.red : Colors.grey,
               ),
-              onPressed: _selectedPaths.isNotEmpty ? _confirmBatchDelete : null,
+              onPressed: isNotEmpty ? _confirmBatchDelete : null,
             ),
           ],
         ),

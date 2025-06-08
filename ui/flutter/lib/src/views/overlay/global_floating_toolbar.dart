@@ -119,16 +119,18 @@ class _GlobalFloatingToolbarState extends ConsumerState<GlobalFloatingToolbar> {
                 sendEvent('add_file', null);
               },
             ),
-            PlatformIconBtn(
-              icon: Icon(
-                ThemeIcons.search(context),
-                size: 25,
-              ),
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                sendEvent('search', null);
-              },
-            ),
+
+            // todo: 以后在实现Search
+            // PlatformIconBtn(
+            //   icon: Icon(
+            //     ThemeIcons.search(context),
+            //     size: 25,
+            //   ),
+            //   onPressed: () {
+            //     HapticFeedback.selectionClick();
+            //     sendEvent('search', null);
+            //   },
+            // ),
           ],
         ),
       ],

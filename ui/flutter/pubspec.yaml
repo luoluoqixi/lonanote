@@ -56,6 +56,7 @@ dependencies:
   shared_preferences: ^2.5.3
   http: "^1.4.0"
   url_launcher: ^6.3.1
+  flutter_slidable: ^4.0.0
 
 dev_dependencies:
   integration_test:
@@ -68,7 +69,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
   # riverpod
   build_runner: ^2.4.15
