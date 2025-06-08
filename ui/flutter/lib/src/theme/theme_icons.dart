@@ -67,6 +67,12 @@ class ThemeIcons {
     return check ? Icons.check_circle : Icons.radio_button_unchecked;
   }
 
+  static IconData rename(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.drive_file_rename_outline
+        : Icons.drive_file_rename_outline;
+  }
+
   static IconData schedule(BuildContext context) {
     return isMaterial(context) ? Icons.schedule : Icons.schedule;
   }

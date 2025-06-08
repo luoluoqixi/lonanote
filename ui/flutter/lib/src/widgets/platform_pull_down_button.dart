@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/widgets/platform_icon_btn.dart';
 import 'package:pull_down_button/pull_down_button.dart';
@@ -11,6 +12,7 @@ class PlatformPullDownButton extends StatelessWidget {
   final void Function(Future<void> Function() showMenu)? buttonOnPressed;
   final void Function()? buttonOnLongPress;
   final bool? disable;
+  final bool? disableHaptic;
 
   final PlatformBuilder<MaterialIconButtonData>? material;
   final PlatformBuilder<CupertinoIconButtonData>? cupertino;
@@ -23,6 +25,7 @@ class PlatformPullDownButton extends StatelessWidget {
     this.buttonOnPressed,
     this.buttonOnLongPress,
     this.disable,
+    this.disableHaptic,
     this.material,
     this.cupertino,
   });
@@ -36,9 +39,16 @@ class PlatformPullDownButton extends StatelessWidget {
                 onLongPress: buttonOnLongPress,
                 onPressed: (disable == true)
                     ? null
-                    : (buttonOnPressed != null
-                        ? () => buttonOnPressed!(showMenu)
-                        : showMenu),
+                    : () {
+                        if (disableHaptic != true) {
+                          HapticFeedback.selectionClick();
+                        }
+                        if (buttonOnPressed != null) {
+                          buttonOnPressed?.call(showMenu);
+                        } else {
+                          showMenu();
+                        }
+                      },
                 materialIcon: buttonIcon,
                 cupertinoIcon: buttonIcon,
                 cupertino: cupertino ??

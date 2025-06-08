@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -162,13 +163,13 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   }
 
   void _batchDeleteWorkspace(bool deleteFile) async {
-    for (final path in _selectedPaths) {
-      final ws = ref
-          .read(workspaceProvider)
-          .workspaces
-          ?.firstWhere((w) => w.path == path);
-      if (ws != null) {
-        await _deleteWorkspace(ws, deleteFile);
+    final workspaces = ref.read(workspaceProvider).workspaces;
+    if (workspaces != null) {
+      for (final path in _selectedPaths) {
+        final wsIndex = workspaces.indexWhere((w) => w.path == path);
+        if (wsIndex >= 0) {
+          await _deleteWorkspace(workspaces[wsIndex], deleteFile);
+        }
       }
     }
     setState(() {
@@ -617,6 +618,13 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
           _openWorkspace(workspace);
         }
       },
+      onLongPress: _isSelectionMode
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              _selectWorkspace();
+              _toggleSelection(workspace);
+            },
       forcePressColor: isSelect,
       minTileHeight: 72,
       title: Text(
@@ -635,28 +643,26 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
           color: greyColor,
         ),
       ),
-      leading: _isSelectionMode
+      trailing: _isSelectionMode
           ? _buildSelectModeContent(workspace, isSelect)
-          : null,
-      trailing: PlatformPullDownButton(
-        disable: _isSelectionMode,
-        itemBuilder: (context) => [
-          PullDownMenuItem(
-            title: '重命名',
-            onTap: () => _renameWorkspaceClick(workspace),
-          ),
-          PullDownMenuItem(
-            title: '删除',
-            isDestructive: true,
-            onTap: () => _deleteWorkspaceClick(workspace),
-          ),
-        ],
-        buttonIcon: Icon(
-          _isSelectionMode ? null : ThemeIcons.more(context),
-          color: ThemeColors.getTextGreyColor(colorScheme),
-          size: 24,
-        ),
-      ),
+          : PlatformPullDownButton(
+              itemBuilder: (context) => [
+                PullDownMenuItem(
+                  title: '重命名',
+                  onTap: () => _renameWorkspaceClick(workspace),
+                ),
+                PullDownMenuItem(
+                  title: '删除',
+                  isDestructive: true,
+                  onTap: () => _deleteWorkspaceClick(workspace),
+                ),
+              ],
+              buttonIcon: Icon(
+                ThemeIcons.more(context),
+                color: ThemeColors.getTextGreyColor(colorScheme),
+                size: 24,
+              ),
+            ),
     );
   }
 

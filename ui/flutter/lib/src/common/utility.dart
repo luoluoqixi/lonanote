@@ -1,5 +1,10 @@
 import 'package:url_launcher/url_launcher.dart';
 
+const supportMarkdownExts = [
+  'md',
+  'markdown',
+];
+
 const supportImageExts = [
   'jpg',
   'jpeg',
@@ -36,6 +41,17 @@ class Utility {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     }
+  }
+
+  static String? getExtName(String fileName) {
+    final index = fileName.lastIndexOf(".");
+    if (index < 0) return null;
+    return fileName.substring(index + 1).toLowerCase();
+  }
+
+  static bool isMarkdown(String extName) {
+    extName = extName.toLowerCase();
+    return supportMarkdownExts.contains(extName);
   }
 
   static bool isImage(String extName) {

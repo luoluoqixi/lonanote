@@ -177,6 +177,7 @@ class PlatformListTileRaw extends StatelessWidget {
   final double? minTileHeight;
 
   final GestureTapCallback? onTap;
+  final GestureLongPressCallback? onLongPress;
 
   final Color? bgColor;
   final Color? pressBgColor;
@@ -191,6 +192,7 @@ class PlatformListTileRaw extends StatelessWidget {
     this.minTileHeight,
     this.padding,
     this.onTap,
+    this.onLongPress,
     this.bgColor,
     this.pressBgColor,
     this.forcePressColor,
@@ -212,6 +214,7 @@ class PlatformListTileRaw extends StatelessWidget {
         subtitle: subtitle,
         minTileHeight: minTileHeight,
         onTap: onTap,
+        onLongPress: onLongPress,
       ),
     );
   }

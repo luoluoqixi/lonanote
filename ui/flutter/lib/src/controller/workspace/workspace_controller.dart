@@ -71,13 +71,6 @@ class WorkspaceController {
     WorkspaceManagerController.refreshWorkspace(ref, false, true);
   }
 
-  static Future<void> reinitWorkspace(
-    WidgetRef ref,
-  ) async {
-    await RustWorkspace.reinitCurrentWorkspace();
-    WorkspaceManagerController.refreshWorkspace(ref, false, true);
-  }
-
   static Future<RustFileNode> getWorkspaceFileNode(
     WidgetRef ref,
     String? nodePath,
@@ -126,18 +119,26 @@ class WorkspaceController {
     }
   }
 
+  static String? getCurrentWorkspacePath(WidgetRef ref) {
+    final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
+    if (ws != null) {
+      final dir = RustWorkspaceManager.getWorkspaceDir();
+      return "$dir/${ws.metadata.name}";
+    }
+    return null;
+  }
+
   static void createFolder(
     WidgetRef ref,
     String folderPath,
   ) {
-    final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
-    if (ws != null) {
-      final dir = RustWorkspaceManager.getWorkspaceDir();
-      final targetPath = "$dir/${ws.metadata.name}/$folderPath";
+    final wsPath = getCurrentWorkspacePath(ref);
+    if (wsPath != null) {
+      final targetPath = "$wsPath/$folderPath";
       if (!RustFs.exists(targetPath)) {
         RustFs.createDirAll(targetPath);
       } else {
-        throw Exception("文件夹已存在: ${ws.metadata.name}/$folderPath");
+        throw Exception("文件夹已存在: $targetPath");
       }
     }
   }
@@ -146,17 +147,43 @@ class WorkspaceController {
     WidgetRef ref,
     String filePath,
   ) {
-    if (filePath.lastIndexOf(".") < 0) {
-      filePath = "$filePath.md";
-    }
-    final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
-    if (ws != null) {
-      final dir = RustWorkspaceManager.getWorkspaceDir();
-      final targetPath = "$dir/${ws.metadata.name}/$filePath";
+    final wsPath = getCurrentWorkspacePath(ref);
+    if (wsPath != null) {
+      final targetPath = "$wsPath/$filePath";
       if (!RustFs.exists(targetPath)) {
         RustFs.createFile(targetPath, "");
       } else {
-        throw Exception("文件已存在: ${ws.metadata.name}/$filePath");
+        throw Exception("文件已存在: $targetPath");
+      }
+    }
+  }
+
+  static void deleteFileOrFolder(
+    WidgetRef ref,
+    String path,
+  ) {
+    final wsPath = getCurrentWorkspacePath(ref);
+    if (wsPath != null) {
+      final targetPath = "$wsPath/$path";
+      if (RustFs.exists(targetPath)) {
+        RustFs.delete(targetPath, false);
+      }
+    }
+  }
+
+  static void renameFileOrFolder(
+    WidgetRef ref,
+    String path,
+    String targetPath,
+  ) {
+    final wsPath = getCurrentWorkspacePath(ref);
+    if (wsPath != null) {
+      final src = "$wsPath/$path";
+      final target = "$wsPath/$targetPath";
+      if (!RustFs.exists(target)) {
+        RustFs.move(src, target, true);
+      } else {
+        throw Exception("路径已存在: $target");
       }
     }
   }

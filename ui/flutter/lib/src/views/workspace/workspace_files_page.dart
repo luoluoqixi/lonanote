@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -133,19 +134,22 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   void _batchDeleteFileNode() async {
-    // for (final path in _selectedPaths) {
-    //   final ws = ref
-    //       .read(workspaceProvider)
-    //       .workspaces
-    //       ?.firstWhere((w) => w.path == path);
-    //   if (ws != null) {
-    //     await _deleteWorkspace(ws, deleteFile);
-    //   }
-    // }
-    // setState(() {
-    //   _isSelectionMode = false;
-    //   _selectedPaths.clear();
-    // });
+    if (fileNode?.children != null) {
+      final children = fileNode!.children;
+      for (final path in _selectedPaths) {
+        final index = children!.indexWhere((child) => child.path == path);
+        if (index >= 0) {
+          await _deleteNode(children[index]);
+        }
+      }
+    }
+    if (mounted) {
+      await _reinitFileNode();
+    }
+    setState(() {
+      _isSelectionMode = false;
+      _selectedPaths.clear();
+    });
   }
 
   void _confirmBatchDelete() {
@@ -163,9 +167,81 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     );
   }
 
-  void _openSelectModeClick() {
+  Future<void> _deleteNode(RustFileNode node) async {
+    final filePath = _getFullFilePath(node.path);
+    try {
+      WorkspaceController.deleteFileOrFolder(
+        ref,
+        filePath,
+      );
+    } catch (e) {
+      logger.e(e);
+      DialogTools.showDialog(
+        context: context,
+        title: "错误",
+        content: LoggerUtility.errorShow("删除失败", e),
+        okText: "确定",
+      );
+    }
+  }
+
+  void _renameNode(RustFileNode node) {
+    final isDirectory = node.isDirectory();
+    final type = isDirectory ? "文件夹" : "文件";
+    AppRouter.showEditSheet(
+      context,
+      "重命名$type",
+      finishBtnText: "确认修改",
+      inputHintText: "$type名称",
+      initValue: node.path,
+      onFinish: (v) async {
+        final rawFilePath = _getFullFilePath(node.path);
+        final targetFilePath = _getFullFilePath(v);
+
+        var isSuccess = false;
+        try {
+          WorkspaceController.renameFileOrFolder(
+            ref,
+            rawFilePath,
+            targetFilePath,
+          );
+          isSuccess = true;
+        } catch (e) {
+          logger.e(e);
+          DialogTools.showDialog(
+            context: context,
+            title: "错误",
+            content: LoggerUtility.errorShow("重命名失败", e),
+            okText: "确定",
+          );
+        }
+        if (isSuccess) {
+          Navigator.of(context).pop();
+          _closeSelectMode();
+          await _reinitFileNode();
+        }
+      },
+      validator: isDirectory ? _validatorFolderName : _validatorFileName,
+    );
+  }
+
+  void _renameNodeSelect(String path) {
+    if (fileNode?.children == null) return;
+    final index = fileNode?.children?.indexWhere((f) => f.path == path);
+    if (index != null && index >= 0) {
+      _renameNode(fileNode!.children![index]);
+    }
+  }
+
+  void _openSelectMode() {
     setState(() {
       _isSelectionMode = true;
+    });
+  }
+
+  void _closeSelectMode() {
+    setState(() {
+      _isSelectionMode = false;
     });
   }
 
@@ -205,6 +281,31 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     return null;
   }
 
+  String _getShowName(RustFileNode node) {
+    final name = node.path;
+    if (node.isFile()) {
+      final ext = Utility.getExtName(name);
+      if (ext != null && Utility.isMarkdown(ext)) {
+        return name.substring(0, name.length - (ext.length + 1));
+      }
+    }
+    return name;
+  }
+
+  String _getNameAddMd(String name) {
+    if (name.lastIndexOf(".") < 0) {
+      name = "$name.md";
+    }
+    return name;
+  }
+
+  String _getFullFilePath(String name) {
+    if (widget.parentPath != null) {
+      name = "${widget.parentPath}/$name";
+    }
+    return name;
+  }
+
   void _createFolder(String value) async {
     final folderName = value.trim();
 
@@ -213,7 +314,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     });
 
     try {
-      WorkspaceController.createFolder(ref, folderName);
+      WorkspaceController.createFolder(ref, _getFullFilePath(folderName));
       Navigator.of(context).pop();
       await _reinitFileNode();
       if (mounted) {}
@@ -237,17 +338,17 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   void _createFile(String value) async {
-    final fileName = value.trim();
+    var fileName = value.trim();
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      WorkspaceController.createFile(ref, fileName);
+      fileName = _getNameAddMd(fileName);
+      WorkspaceController.createFile(ref, _getFullFilePath(fileName));
       Navigator.of(context).pop();
       await _reinitFileNode();
-      if (mounted) {}
     } catch (e) {
       logger.e(e);
       if (mounted) {
@@ -349,13 +450,11 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   IconData _getFileIcon(RustFileNode node) {
-    final name = node.path;
-    final index = name.lastIndexOf(".");
-    if (index < 0) {
-      return ThemeIcons.file(context);
-    }
-    final ext = name.substring(index + 1).toLowerCase();
-    if (Utility.isImage(ext)) {
+    final ext = Utility.getExtName(node.path);
+    if (ext == null) return ThemeIcons.file(context);
+    if (Utility.isMarkdown(ext)) {
+      return ThemeIcons.markdown(context);
+    } else if (Utility.isImage(ext)) {
       return ThemeIcons.image(context);
     } else if (Utility.isVideo(ext)) {
       return ThemeIcons.video(context);
@@ -370,18 +469,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     final isFile = node.isFile();
     final isDirectory = node.isDirectory();
 
-    var isMarkdown = false;
-    var name = node.path;
-    if (isFile) {
-      final lowerName = name.toLowerCase();
-      if (lowerName.endsWith(".md")) {
-        isMarkdown = true;
-        name = name.substring(0, name.length - 3);
-      } else if (lowerName.endsWith(".markdown")) {
-        isMarkdown = true;
-        name = name.substring(0, name.length - 9);
-      }
-    }
+    var name = _getShowName(node);
 
     return PlatformListTileRaw(
       bgColor: Colors.transparent,
@@ -392,6 +480,13 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
           _openFileNode(node);
         }
       },
+      onLongPress: _isSelectionMode
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              _openSelectMode();
+              _toggleSelection(node);
+            },
       forcePressColor: isSelect,
       minTileHeight: 72,
       title: Text(
@@ -415,7 +510,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         children: [
           if (isFile)
             Icon(
-              isMarkdown ? ThemeIcons.markdown(context) : _getFileIcon(node),
+              _getFileIcon(node),
               size: 32,
               color: ThemeColors.getPrimaryColor(colorScheme),
             ),
@@ -425,30 +520,13 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
               size: 32,
               color: ThemeColors.getPrimaryColor(colorScheme),
             ),
-          if (_isSelectionMode) const SizedBox(width: 8),
-          if (_isSelectionMode) _buildSelectModeContent(node, isSelect),
         ],
       ),
-      trailing: isDirectory ? Icon(ThemeIcons.chevronRight(context)) : null,
-      // trailing: PlatformPullDownButton(
-      //   disable: _isSelectionMode,
-      //   itemBuilder: (context) => [
-      //     PullDownMenuItem(
-      //       title: '重命名',
-      //       onTap: () => {},
-      //     ),
-      //     PullDownMenuItem(
-      //       title: '删除',
-      //       isDestructive: true,
-      //       onTap: () => {},
-      //     ),
-      //   ],
-      //   buttonIcon: Icon(
-      //     _isSelectionMode ? null : ThemeIcons.more(context),
-      //     color: ThemeColors.getTextGreyColor(colorScheme),
-      //     size: 24,
-      //   ),
-      // ),
+      trailing: _isSelectionMode
+          ? _buildSelectModeContent(node, isSelect)
+          : isDirectory
+              ? Icon(ThemeIcons.chevronRight(context))
+              : null,
     );
   }
 
@@ -496,7 +574,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         itemBuilder: (context) => [
           PullDownMenuItem(
             title: "选择",
-            onTap: _openSelectModeClick,
+            onTap: _openSelectMode,
             icon: ThemeIcons.select(context),
             // enabled: isNotEmpty ?? false,
           ),
@@ -543,17 +621,24 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   Widget _buildSelectFloatingToolbar() {
+    final isSelectOnlyOne = _selectedPaths.length == 1;
+    final isNotEmpty = _selectedPaths.isNotEmpty;
     return PlatformFloatingToolbar(
       children: [
         Text("已选择 ${_selectedPaths.length} 个"),
         Row(
           children: [
+            if (isSelectOnlyOne)
+              PlatformIconBtn(
+                icon: Icon(ThemeIcons.rename(context)),
+                onPressed: () => _renameNodeSelect(_selectedPaths.first),
+              ),
             PlatformIconBtn(
               icon: Icon(
                 ThemeIcons.delete(context),
-                color: _selectedPaths.isNotEmpty ? Colors.red : Colors.grey,
+                color: isNotEmpty ? Colors.red : Colors.grey,
               ),
-              onPressed: _selectedPaths.isNotEmpty ? _confirmBatchDelete : null,
+              onPressed: isNotEmpty ? _confirmBatchDelete : null,
             ),
           ],
         ),
