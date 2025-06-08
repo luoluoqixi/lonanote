@@ -8,6 +8,7 @@ import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/common/utils/time_utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_controller.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
+import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
@@ -646,24 +647,43 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     );
   }
 
-  Widget? _buildFloatingToolbar() {
+  Widget? _buildFloatingToolbar(bool showFloatingToolbar) {
     if (_isSelectionMode) {
       return _buildSelectFloatingToolbar();
     }
-    return null;
+    if (!showFloatingToolbar) {
+      return null;
+    }
+    return PlatformFloatingToolbar(
+      left: 80,
+      right: 80,
+      children: [
+        Row(
+          children: [
+            PlatformIconBtn(
+              icon: Icon(ThemeIcons.add(context)),
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final workspace =
         ref.watch(workspaceProvider.select((s) => s.currentWorkspace));
+    final otherSettings =
+        ref.watch(settingsProvider.select((s) => s.otherSettings));
     final colorScheme = ThemeColors.getColorScheme(context);
     var title = workspace?.metadata.name ?? "";
     if (widget.parentPath != null) {
       final paths = widget.parentPath!.split("/");
       title = paths[paths.length - 1];
     }
-    final floatingToolbar = _buildFloatingToolbar();
+    final floatingToolbar =
+        _buildFloatingToolbar(otherSettings.showFloatingToolbar);
     return PlatformPage(
       titleText: title,
       isHome: widget.parentPath == null,
@@ -679,7 +699,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       ],
       contents: [
         // 选择模式下, 增加底部边距, 不然会被FloatingToolbar挡住最下方的Tile
-        if (_isSelectionMode)
+        if (otherSettings.showFloatingToolbar || _isSelectionMode)
           const SliverToBoxAdapter(
             child: SizedBox(
               height: 100,

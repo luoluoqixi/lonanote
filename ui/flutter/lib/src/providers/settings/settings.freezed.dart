@@ -16,6 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SettingsStore {
   ThemeSettings get theme;
+  OtherSettings get otherSettings;
   RustSettingsData? get settings;
 
   /// Create a copy of SettingsStore
@@ -32,16 +33,18 @@ mixin _$SettingsStore {
         (other.runtimeType == runtimeType &&
             other is SettingsStore &&
             (identical(other.theme, theme) || other.theme == theme) &&
+            (identical(other.otherSettings, otherSettings) ||
+                other.otherSettings == otherSettings) &&
             (identical(other.settings, settings) ||
                 other.settings == settings));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, theme, settings);
+  int get hashCode => Object.hash(runtimeType, theme, otherSettings, settings);
 
   @override
   String toString() {
-    return 'SettingsStore(theme: $theme, settings: $settings)';
+    return 'SettingsStore(theme: $theme, otherSettings: $otherSettings, settings: $settings)';
   }
 }
 
@@ -51,9 +54,13 @@ abstract mixin class $SettingsStoreCopyWith<$Res> {
           SettingsStore value, $Res Function(SettingsStore) _then) =
       _$SettingsStoreCopyWithImpl;
   @useResult
-  $Res call({ThemeSettings theme, RustSettingsData? settings});
+  $Res call(
+      {ThemeSettings theme,
+      OtherSettings otherSettings,
+      RustSettingsData? settings});
 
   $ThemeSettingsCopyWith<$Res> get theme;
+  $OtherSettingsCopyWith<$Res> get otherSettings;
 }
 
 /// @nodoc
@@ -70,6 +77,7 @@ class _$SettingsStoreCopyWithImpl<$Res>
   @override
   $Res call({
     Object? theme = null,
+    Object? otherSettings = null,
     Object? settings = freezed,
   }) {
     return _then(_self.copyWith(
@@ -77,6 +85,10 @@ class _$SettingsStoreCopyWithImpl<$Res>
           ? _self.theme
           : theme // ignore: cast_nullable_to_non_nullable
               as ThemeSettings,
+      otherSettings: null == otherSettings
+          ? _self.otherSettings
+          : otherSettings // ignore: cast_nullable_to_non_nullable
+              as OtherSettings,
       settings: freezed == settings
           ? _self.settings
           : settings // ignore: cast_nullable_to_non_nullable
@@ -93,15 +105,28 @@ class _$SettingsStoreCopyWithImpl<$Res>
       return _then(_self.copyWith(theme: value));
     });
   }
+
+  /// Create a copy of SettingsStore
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $OtherSettingsCopyWith<$Res> get otherSettings {
+    return $OtherSettingsCopyWith<$Res>(_self.otherSettings, (value) {
+      return _then(_self.copyWith(otherSettings: value));
+    });
+  }
 }
 
 /// @nodoc
 
 class _SettingsStore implements SettingsStore {
-  const _SettingsStore({required this.theme, this.settings});
+  const _SettingsStore(
+      {required this.theme, required this.otherSettings, this.settings});
 
   @override
   final ThemeSettings theme;
+  @override
+  final OtherSettings otherSettings;
   @override
   final RustSettingsData? settings;
 
@@ -119,16 +144,18 @@ class _SettingsStore implements SettingsStore {
         (other.runtimeType == runtimeType &&
             other is _SettingsStore &&
             (identical(other.theme, theme) || other.theme == theme) &&
+            (identical(other.otherSettings, otherSettings) ||
+                other.otherSettings == otherSettings) &&
             (identical(other.settings, settings) ||
                 other.settings == settings));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, theme, settings);
+  int get hashCode => Object.hash(runtimeType, theme, otherSettings, settings);
 
   @override
   String toString() {
-    return 'SettingsStore(theme: $theme, settings: $settings)';
+    return 'SettingsStore(theme: $theme, otherSettings: $otherSettings, settings: $settings)';
   }
 }
 
@@ -140,10 +167,15 @@ abstract mixin class _$SettingsStoreCopyWith<$Res>
       __$SettingsStoreCopyWithImpl;
   @override
   @useResult
-  $Res call({ThemeSettings theme, RustSettingsData? settings});
+  $Res call(
+      {ThemeSettings theme,
+      OtherSettings otherSettings,
+      RustSettingsData? settings});
 
   @override
   $ThemeSettingsCopyWith<$Res> get theme;
+  @override
+  $OtherSettingsCopyWith<$Res> get otherSettings;
 }
 
 /// @nodoc
@@ -160,6 +192,7 @@ class __$SettingsStoreCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   $Res call({
     Object? theme = null,
+    Object? otherSettings = null,
     Object? settings = freezed,
   }) {
     return _then(_SettingsStore(
@@ -167,6 +200,10 @@ class __$SettingsStoreCopyWithImpl<$Res>
           ? _self.theme
           : theme // ignore: cast_nullable_to_non_nullable
               as ThemeSettings,
+      otherSettings: null == otherSettings
+          ? _self.otherSettings
+          : otherSettings // ignore: cast_nullable_to_non_nullable
+              as OtherSettings,
       settings: freezed == settings
           ? _self.settings
           : settings // ignore: cast_nullable_to_non_nullable
@@ -181,6 +218,16 @@ class __$SettingsStoreCopyWithImpl<$Res>
   $ThemeSettingsCopyWith<$Res> get theme {
     return $ThemeSettingsCopyWith<$Res>(_self.theme, (value) {
       return _then(_self.copyWith(theme: value));
+    });
+  }
+
+  /// Create a copy of SettingsStore
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $OtherSettingsCopyWith<$Res> get otherSettings {
+    return $OtherSettingsCopyWith<$Res>(_self.otherSettings, (value) {
+      return _then(_self.copyWith(otherSettings: value));
     });
   }
 }
@@ -378,6 +425,138 @@ class __$ThemeSettingsCopyWithImpl<$Res>
           ? _self.primaryColorEnum
           : primaryColorEnum // ignore: cast_nullable_to_non_nullable
               as ThemePrimaryColor,
+    ));
+  }
+}
+
+/// @nodoc
+mixin _$OtherSettings {
+  bool get showFloatingToolbar;
+
+  /// Create a copy of OtherSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $OtherSettingsCopyWith<OtherSettings> get copyWith =>
+      _$OtherSettingsCopyWithImpl<OtherSettings>(
+          this as OtherSettings, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is OtherSettings &&
+            (identical(other.showFloatingToolbar, showFloatingToolbar) ||
+                other.showFloatingToolbar == showFloatingToolbar));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, showFloatingToolbar);
+
+  @override
+  String toString() {
+    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar)';
+  }
+}
+
+/// @nodoc
+abstract mixin class $OtherSettingsCopyWith<$Res> {
+  factory $OtherSettingsCopyWith(
+          OtherSettings value, $Res Function(OtherSettings) _then) =
+      _$OtherSettingsCopyWithImpl;
+  @useResult
+  $Res call({bool showFloatingToolbar});
+}
+
+/// @nodoc
+class _$OtherSettingsCopyWithImpl<$Res>
+    implements $OtherSettingsCopyWith<$Res> {
+  _$OtherSettingsCopyWithImpl(this._self, this._then);
+
+  final OtherSettings _self;
+  final $Res Function(OtherSettings) _then;
+
+  /// Create a copy of OtherSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? showFloatingToolbar = null,
+  }) {
+    return _then(_self.copyWith(
+      showFloatingToolbar: null == showFloatingToolbar
+          ? _self.showFloatingToolbar
+          : showFloatingToolbar // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
+}
+
+/// @nodoc
+
+class _OtherSettings implements OtherSettings {
+  const _OtherSettings({required this.showFloatingToolbar});
+
+  @override
+  final bool showFloatingToolbar;
+
+  /// Create a copy of OtherSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$OtherSettingsCopyWith<_OtherSettings> get copyWith =>
+      __$OtherSettingsCopyWithImpl<_OtherSettings>(this, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _OtherSettings &&
+            (identical(other.showFloatingToolbar, showFloatingToolbar) ||
+                other.showFloatingToolbar == showFloatingToolbar));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, showFloatingToolbar);
+
+  @override
+  String toString() {
+    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar)';
+  }
+}
+
+/// @nodoc
+abstract mixin class _$OtherSettingsCopyWith<$Res>
+    implements $OtherSettingsCopyWith<$Res> {
+  factory _$OtherSettingsCopyWith(
+          _OtherSettings value, $Res Function(_OtherSettings) _then) =
+      __$OtherSettingsCopyWithImpl;
+  @override
+  @useResult
+  $Res call({bool showFloatingToolbar});
+}
+
+/// @nodoc
+class __$OtherSettingsCopyWithImpl<$Res>
+    implements _$OtherSettingsCopyWith<$Res> {
+  __$OtherSettingsCopyWithImpl(this._self, this._then);
+
+  final _OtherSettings _self;
+  final $Res Function(_OtherSettings) _then;
+
+  /// Create a copy of OtherSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? showFloatingToolbar = null,
+  }) {
+    return _then(_OtherSettings(
+      showFloatingToolbar: null == showFloatingToolbar
+          ? _self.showFloatingToolbar
+          : showFloatingToolbar // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }

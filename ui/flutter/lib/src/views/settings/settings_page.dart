@@ -62,7 +62,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     SettingsController.setAutoSaveFocusChange(ref, value);
   }
 
-  Widget _buildBasicSettings(RustSettingsData settings) {
+  void _setShowFloatingToolbar(bool value) {
+    SettingsController.setShowFloatingToolbar(ref, value);
+  }
+
+  Widget _buildBasicSettings(
+    RustSettingsData settings,
+    OtherSettings otherSettings,
+  ) {
     return PlatformListView(
       insetGrouped: true,
       header: Text("基本设置"),
@@ -113,6 +120,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           value: settings.autoSaveFocusChange == true,
           onChanged: _setAutoSaveFocusChange,
         ),
+        PlatformSwitchListTile(
+          title: Text("显示悬浮工具栏"),
+          value: otherSettings.showFloatingToolbar,
+          onChanged: _setShowFloatingToolbar,
+        ),
       ],
     );
   }
@@ -139,13 +151,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider.select((s) => s.settings));
+    final otherSettings =
+        ref.watch(settingsProvider.select((s) => s.otherSettings));
     return PlatformSimplePage(
       titleText: '设置',
       child: settings == null
           ? Text("加载中...")
           : Column(
               children: [
-                _buildBasicSettings(settings),
+                _buildBasicSettings(settings, otherSettings),
                 _buildOtherSettings(settings),
               ],
             ),

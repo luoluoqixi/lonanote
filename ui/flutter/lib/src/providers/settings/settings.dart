@@ -25,6 +25,9 @@ class Settings extends _$Settings with WidgetsBindingObserver {
         primaryColorEnum: color,
       ),
       settings: RustSettings.settings,
+      otherSettings: OtherSettings(
+        showFloatingToolbar: getShowFloatingToolbar(),
+      ),
     );
   }
 
@@ -88,6 +91,20 @@ class Settings extends _$Settings with WidgetsBindingObserver {
     return ThemePrimaryColor.blue;
   }
 
+  static bool getShowFloatingToolbar() {
+    final v = UIStore.getShowFloatingToolbar();
+    return v ?? true;
+  }
+
+  void setShowFloatingToolbar(bool value) {
+    state = state.copyWith(
+      otherSettings: state.otherSettings.copyWith(
+        showFloatingToolbar: value,
+      ),
+    );
+    UIStore.setShowFloatingToolbar(value);
+  }
+
   static Color getPrimaryColorFromEnum(ThemePrimaryColor color) {
     if (color == ThemePrimaryColor.blue) {
       return Colors.blue;
@@ -114,6 +131,7 @@ class Settings extends _$Settings with WidgetsBindingObserver {
 sealed class SettingsStore with _$SettingsStore {
   const factory SettingsStore({
     required ThemeSettings theme,
+    required OtherSettings otherSettings,
     RustSettingsData? settings,
   }) = _SettingsStore;
 }
@@ -126,6 +144,13 @@ sealed class ThemeSettings with _$ThemeSettings {
     required Color primaryColor,
     required ThemePrimaryColor primaryColorEnum,
   }) = _ThemeSettings;
+}
+
+@freezed
+sealed class OtherSettings with _$OtherSettings {
+  const factory OtherSettings({
+    required bool showFloatingToolbar,
+  }) = _OtherSettings;
 }
 
 enum ThemePrimaryColor {

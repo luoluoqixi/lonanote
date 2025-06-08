@@ -57,6 +57,14 @@ class SettingsController {
     setSettingsValue(ref, (s) => s.autoSaveFocusChange = value);
   }
 
+  static Future<void> setShowFloatingToolbar(
+    WidgetRef ref,
+    bool value,
+  ) async {
+    final s = ref.read(settingsProvider.notifier);
+    s.setShowFloatingToolbar(value);
+  }
+
   static Future<void> resetSettingsAutoSaveInterval(WidgetRef ref) async {
     await RustSettings.resetSettingsAutoSaveInterval();
     await refreshSettings(ref);

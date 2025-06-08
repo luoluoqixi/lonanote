@@ -26,4 +26,12 @@ class UIStore {
   static void setThemePrimaryColor(String value) {
     Store.setSyncValue(syncKey, "theme_primary_color", value);
   }
+
+  static bool? getShowFloatingToolbar() {
+    return Store.getSyncValue(syncKey, "show_floating_toolbar");
+  }
+
+  static void setShowFloatingToolbar(bool value) {
+    Store.setSyncValue(syncKey, "show_floating_toolbar", value);
+  }
 }

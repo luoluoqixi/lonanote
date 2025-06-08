@@ -21,10 +21,10 @@ class PlatformFloatingToolbar extends StatelessWidget {
   const PlatformFloatingToolbar({
     super.key,
     required this.children,
-    this.left,
+    this.left = 20,
     this.top,
-    this.right,
-    this.bottom,
+    this.right = 20,
+    this.bottom = 20,
     this.width,
     this.height,
     this.bgColor,
@@ -51,9 +51,9 @@ class PlatformFloatingToolbar extends StatelessWidget {
     final bgColor = this.bgColor ?? ThemeColors.getBg1Color(colorScheme);
     return Positioned(
       top: top,
-      left: left ?? 20,
-      right: right ?? 20,
-      bottom: bottom ?? 20,
+      left: left,
+      right: right,
+      bottom: bottom,
       width: width,
       height: height,
       child: SafeArea(
@@ -63,18 +63,18 @@ class PlatformFloatingToolbar extends StatelessWidget {
         child: PlatformWidget(
           material: (context, platform) => Material(
             elevation: 6,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(30),
             color: bgColor,
             child: content,
           ),
           cupertino: (context, platform) => Container(
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: CupertinoColors.black.withAlpha(51),
-                  blurRadius: 8,
+                  color: CupertinoColors.black.withAlpha(30),
+                  blurRadius: 4,
                   offset: Offset(0, 2),
                 ),
               ],

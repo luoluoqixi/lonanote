@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
@@ -160,6 +161,7 @@ class PlatformSwitchListTile extends StatelessWidget {
       ),
       onTap: onChanged != null
           ? () {
+              HapticFeedback.selectionClick();
               onChanged!(!value);
             }
           : null,
