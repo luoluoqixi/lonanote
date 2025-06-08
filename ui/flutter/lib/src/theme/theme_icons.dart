@@ -15,10 +15,6 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.check : Icons.check;
   }
 
-  static IconData swap(BuildContext context) {
-    return isMaterial(context) ? Icons.swap_horiz : Icons.swap_horiz;
-  }
-
   static IconData chevronRight(BuildContext context) {
     return isMaterial(context) ? Icons.chevron_right : Icons.chevron_right;
   }
@@ -56,7 +52,7 @@ class ThemeIcons {
   }
 
   static IconData markdown(BuildContext context) {
-    return isMaterial(context) ? Icons.description : Icons.description;
+    return isMaterial(context) ? Icons.article : Icons.article;
   }
 
   static IconData more(BuildContext context) {
@@ -93,6 +89,10 @@ class ThemeIcons {
 
   static IconData sortName(BuildContext context) {
     return isMaterial(context) ? Icons.sort_by_alpha : Icons.sort_by_alpha;
+  }
+
+  static IconData swap(BuildContext context) {
+    return isMaterial(context) ? Icons.swap_horiz : Icons.swap_horiz;
   }
 
   static IconData tune(BuildContext context) {

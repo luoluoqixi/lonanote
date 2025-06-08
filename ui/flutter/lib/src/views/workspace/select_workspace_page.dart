@@ -464,7 +464,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   Future<void> _refreshWorkspaces() async {
     try {
       // 刷新太快了, 加个延时假装一下在干活
-      await Future.delayed(Duration(milliseconds: 200));
+      await Future.delayed(Duration(milliseconds: 300));
       await WorkspaceManagerController.refreshWorkspace(ref, true, true);
       logger.i("refresh workspace finish");
     } catch (e) {
@@ -621,6 +621,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       onLongPress: _isSelectionMode
           ? null
           : () {
+              logger.i("long press");
               HapticFeedback.selectionClick();
               _selectWorkspace();
               _toggleSelection(workspace);

@@ -226,6 +226,7 @@ class PlatformListTileRaw extends StatelessWidget {
       pressBgColor: pressBgColor,
       bgColor: bgColor,
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Material(
         color: Colors.transparent,
         child: ListTile(

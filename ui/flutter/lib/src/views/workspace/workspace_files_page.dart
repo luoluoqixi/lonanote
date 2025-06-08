@@ -51,15 +51,19 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   Future<void> _reinitFileNode() async {
+    // 刷新太快了, 加个延时假装一下在干活
+    await Future.delayed(Duration(milliseconds: 300));
     final ws = ref.read(workspaceProvider.select((s) => s.currentWorkspace));
     if (ws == null) {
       logger.e("current workspace is null");
-      DialogTools.showDialog(
-        context: context,
-        title: "错误",
-        content: "初始化工作区失败, 当前工作区不存在",
-        okText: "确定",
-      );
+      if (mounted) {
+        DialogTools.showDialog(
+          context: context,
+          title: "错误",
+          content: "初始化工作区失败, 当前工作区不存在",
+          okText: "确定",
+        );
+      }
       return;
     }
 
@@ -432,10 +436,10 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     final children = fileNode?.children;
     final count = children?.length ?? 0;
     if (count == 0 && _isLoading) {
-      return Center(child: Text("加载中..."));
+      return SizedBox(height: 300, child: Center(child: Text("加载中...")));
     }
     if (count == 0) {
-      return Center(child: Text("没有文件"));
+      return SizedBox(height: 300, child: Center(child: Text("没有文件")));
     }
     return PlatformListView(
       topMargin: 0.0,
@@ -509,13 +513,13 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
           if (isFile)
             Icon(
               _getFileIcon(node),
-              size: 32,
+              size: 40,
               color: ThemeColors.getPrimaryColor(colorScheme),
             ),
           if (isDirectory)
             Icon(
               ThemeIcons.folder(context),
-              size: 32,
+              size: 40,
               color: ThemeColors.getPrimaryColor(colorScheme),
             ),
         ],
