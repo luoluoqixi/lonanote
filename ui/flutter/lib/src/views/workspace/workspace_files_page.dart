@@ -8,10 +8,12 @@ import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/common/utils/time_utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_controller.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
+import 'package:lonanote/src/providers/router/router.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
+import 'package:lonanote/src/views/overlay/global_floating_toolbar.dart';
 import 'package:lonanote/src/widgets/platform_floating_toolbar.dart';
 import 'package:lonanote/src/widgets/platform_icon_btn.dart';
 import 'package:lonanote/src/widgets/platform_list_view.dart';
@@ -50,6 +52,22 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         _isLoading = false;
       });
     });
+  }
+
+  void listenFloatingToolbar() {
+    ref.listen<FloatingToolbarEvent?>(
+      floatingToolbarEventProvider,
+      (previous, next) {
+        if (next != null) {
+          if (next.type == 'add_file') {
+            _createFileClick();
+          } else if (next.type == 'search') {
+            _searchClick();
+          }
+          ref.read(floatingToolbarEventProvider.notifier).state = null;
+        }
+      },
+    );
   }
 
   Future<void> _reinitFileNode() async {
@@ -100,10 +118,9 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     }
   }
 
-  bool isShowCreateTime() {
-    // return _sortType == WorkspaceSortType.createTime ||
-    //     _sortType == WorkspaceSortType.createTimeRev;
-    return false;
+  bool isShowCreateTime(RustFileSortType sortType) {
+    return sortType == RustFileSortType.createTime ||
+        sortType == RustFileSortType.createTimeRev;
   }
 
   void _toggleSelection(RustFileNode node) {
@@ -199,6 +216,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       finishBtnText: "确认修改",
       inputHintText: "$type名称",
       initValue: node.path,
+      pageName: "/rename_file_node",
       onFinish: (v) async {
         final rawFilePath = _getFullFilePath(node.path);
         final targetFilePath = _getFullFilePath(v);
@@ -242,6 +260,8 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     setState(() {
       _isSelectionMode = true;
     });
+    final r = ref.read(routerProvider.notifier);
+    r.setHideGlobalFloatingToolbar(true);
   }
 
   void _closeSelectMode() {
@@ -249,6 +269,8 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       _isSelectionMode = false;
       _selectedPaths.clear();
     });
+    final r = ref.read(routerProvider.notifier);
+    r.setHideGlobalFloatingToolbar(false);
   }
 
   Widget _buildSelectModeContent(
@@ -311,6 +333,8 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     }
     return name;
   }
+
+  void _searchClick() {}
 
   void _createFolder(String value) async {
     final folderName = value.trim();
@@ -383,6 +407,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       initValue: "新建笔记",
       onFinish: _createFile,
       validator: _validatorFileName,
+      pageName: "/create_file",
     );
   }
 
@@ -395,6 +420,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       initValue: "新建文件夹",
       onFinish: _createFolder,
       validator: _validatorFolderName,
+      pageName: "/create_folder",
     );
   }
 
@@ -447,6 +473,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         Navigator.of(context).pop();
         _reinitFileNode();
       },
+      pageName: "/sort_file_node",
     );
   }
 
@@ -464,11 +491,15 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       if (widget.parentPath != null) {
         parentPath = "${widget.parentPath}/$parentPath";
       }
-      AppRouter.jumpToPage(context, (context) {
-        return WorkspaceFilesPage(
-          parentPath: parentPath,
-        );
-      });
+      AppRouter.jumpToPage(
+        context,
+        (context) {
+          return WorkspaceFilesPage(
+            parentPath: parentPath,
+          );
+        },
+        pageName: "/workspace_files",
+      );
     } else if (node.isFile()) {
       DialogTools.showDialog(
         context: context,
@@ -519,6 +550,8 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   Widget _buildWorkspaceFile(ColorScheme colorScheme, RustFileNode node) {
+    final otherSettings =
+        ref.read(settingsProvider.select((w) => w.otherSettings));
     final isSelect = _isSelectionMode && _selectedPaths.contains(node.path);
     final greyColor = ThemeColors.getTextGreyColor(colorScheme);
 
@@ -554,7 +587,9 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       ),
       subtitle: Text(
         TimeUtility.formatTimestamp(
-          isShowCreateTime() ? node.createTime : node.lastModifiedTime,
+          isShowCreateTime(otherSettings.fileSortType)
+              ? node.createTime
+              : node.lastModifiedTime,
         ),
         style: TextStyle(
           fontSize: 12,
@@ -705,47 +740,12 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     if (_isSelectionMode) {
       return _buildSelectFloatingToolbar();
     }
-    if (!showFloatingToolbar) {
-      return null;
-    }
-    return PlatformFloatingToolbar(
-      left: 80,
-      right: 80,
-      contentPadding: EdgeInsets.all(2),
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            PlatformIconBtn(
-              icon: Icon(
-                ThemeIcons.chevronLeft(context),
-                size: 25,
-              ),
-              onPressed: () {},
-            ),
-            PlatformIconBtn(
-              icon: Icon(
-                ThemeIcons.add(context),
-                size: 25,
-              ),
-              onPressed: () {},
-            ),
-            PlatformIconBtn(
-              icon: Icon(
-                ThemeIcons.search(context),
-                size: 25,
-              ),
-              onPressed: () {},
-            ),
-          ],
-        ),
-      ],
-    );
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
+    listenFloatingToolbar();
     final workspace =
         ref.watch(workspaceProvider.select((s) => s.currentWorkspace));
     final otherSettings =

@@ -15,6 +15,12 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.arrow_back : Icons.arrow_back;
   }
 
+  static IconData arrowBackIos(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.arrow_back_ios_new
+        : Icons.arrow_back_ios_new;
+  }
+
   static IconData check(BuildContext context) {
     return isMaterial(context) ? Icons.check : Icons.check;
   }

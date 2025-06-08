@@ -282,6 +282,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       initValue: "新建工作区",
       onFinish: _createWorkspace,
       validator: _validatorWorkspaceName,
+      pageName: "/create_workspace",
     );
   }
 
@@ -329,6 +330,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         });
         Navigator.of(context).pop();
       },
+      pageName: "/sort_workspace",
     );
   }
 
@@ -458,6 +460,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       initValue: workspace.name,
       onFinish: (v) => _renameWorkspace(workspace, v),
       validator: _validatorWorkspaceName,
+      pageName: "/rename_workspace",
     );
   }
 
@@ -689,7 +692,6 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
 
   Widget _buildFloatingToolbar() {
     return PlatformFloatingToolbar(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text("已选择 ${_selectedPaths.length} 个"),
         Row(

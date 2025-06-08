@@ -7,6 +7,7 @@ import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 
 import 'package:lonanote/src/common/log.dart';
+import 'package:lonanote/src/providers/router/router.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/app_theme.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
@@ -67,7 +68,10 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
                 DefaultWidgetsLocalizations.delegate,
                 DefaultCupertinoLocalizations.delegate,
               ],
-              navigatorObservers: [AppRouter.routeObserver],
+              navigatorObservers: [
+                RouterNavigatorObserver(ref),
+                AppRouter.routeObserver,
+              ],
               title: AppConfig.appTitle,
               home: Index(),
               cupertino: (context, platform) => CupertinoAppData(

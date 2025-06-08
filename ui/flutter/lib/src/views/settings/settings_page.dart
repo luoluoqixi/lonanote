@@ -99,6 +99,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               validator: _validatorAutoSaveInterval,
               customButtonText: "重置",
               onCustomButtonTap: (_, __) => _resetAutoSaveInterval(),
+              pageName: "/set_settings_auto_save_interval",
             );
           },
           trailing: Row(

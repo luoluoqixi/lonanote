@@ -177,6 +177,7 @@ class _WorkspaceSettingsPageState extends ConsumerState<WorkspaceSettingsPage> {
               validator: _validatorPath,
               customButtonText: "重置",
               onCustomButtonTap: (_, __) => _resetUploadImagePath(),
+              pageName: "/set_workspace_settings_upload_image_path",
             );
           },
           trailing: Row(
@@ -204,6 +205,7 @@ class _WorkspaceSettingsPageState extends ConsumerState<WorkspaceSettingsPage> {
               validator: _validatorPath,
               customButtonText: "重置",
               onCustomButtonTap: (_, __) => _resetUploadAttachmentPath(),
+              pageName: "/set_workspace_settings_upload_attachment_path",
             );
           },
           trailing: Row(
@@ -237,6 +239,7 @@ class _WorkspaceSettingsPageState extends ConsumerState<WorkspaceSettingsPage> {
               onCustomButtonTap: (_, __) => _resetCustomIgnore(),
               validator: (v) => null,
               multilineInput: true,
+              pageName: "/set_workspace_settings_custom_ignore",
             );
           },
           trailing: Icon(ThemeIcons.chevronRight(context)),

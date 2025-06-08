@@ -7,10 +7,14 @@ class PlatformFloatingToolbar extends StatelessWidget {
   final List<Widget> children;
   final MainAxisAlignment mainAxisAlignment;
 
+  final bool visible;
+
   final double? left;
   final double? top;
   final double? right;
   final double? bottom;
+
+  final bool fixedSize;
   final double? width;
   final double? height;
 
@@ -20,12 +24,14 @@ class PlatformFloatingToolbar extends StatelessWidget {
 
   const PlatformFloatingToolbar({
     super.key,
+    this.visible = true,
     required this.children,
     this.mainAxisAlignment = MainAxisAlignment.center,
     this.left = 20,
     this.top,
     this.right = 20,
     this.bottom = 20,
+    this.fixedSize = false,
     this.width,
     this.height,
     this.bgColor,
@@ -37,7 +43,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
     final colorScheme = ThemeColors.getColorScheme(context);
     final content = Padding(
       padding: contentPadding ??
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: DefaultTextStyle(
         style: TextStyle(
           color: ThemeColors.getTextColor(colorScheme),
@@ -49,38 +55,54 @@ class PlatformFloatingToolbar extends StatelessWidget {
       ),
     );
     final bgColor = this.bgColor ?? ThemeColors.getBg1Color(colorScheme);
+
+    final widget = PlatformWidget(
+      material: (context, platform) => Material(
+        elevation: 6,
+        borderRadius: BorderRadius.circular(30),
+        color: bgColor,
+        child: content,
+      ),
+      cupertino: (context, platform) => Container(
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: CupertinoColors.black.withAlpha(30),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: content,
+      ),
+    );
     return Positioned(
       top: top,
       left: left,
       right: right,
       bottom: bottom,
-      width: width,
-      height: height,
-      child: SafeArea(
-        bottom: true,
-        left: true,
-        right: true,
-        child: PlatformWidget(
-          material: (context, platform) => Material(
-            elevation: 6,
-            borderRadius: BorderRadius.circular(30),
-            color: bgColor,
-            child: content,
-          ),
-          cupertino: (context, platform) => Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: CupertinoColors.black.withAlpha(30),
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: content,
-          ),
+      child: Visibility(
+        visible: visible,
+        maintainState: true,
+        maintainSize: false,
+        child: SafeArea(
+          bottom: true,
+          left: true,
+          right: true,
+          child: fixedSize
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: width,
+                      height: height,
+                      child: widget,
+                    ),
+                  ],
+                )
+              : widget,
         ),
       ),
     );

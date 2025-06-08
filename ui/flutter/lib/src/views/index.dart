@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lonanote/src/views/overlay/global_floating_toolbar.dart';
 import 'package:lonanote/src/views/workspace/select_workspace_page.dart';
 
 class Index extends ConsumerStatefulWidget {
@@ -13,6 +14,9 @@ class _IndexState extends ConsumerState<Index> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      GlobalFloatingToolbar.initOverlay(context);
+    });
   }
 
   @override

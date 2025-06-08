@@ -16,6 +16,7 @@ class AppRouter {
   static Future<T?> jumpToPage<T extends Object?>(
     BuildContext context,
     WidgetBuilder? builder, {
+    required String pageName,
     bool removeAllHistroy = false,
   }) {
     if (removeAllHistroy) {
@@ -24,6 +25,7 @@ class AppRouter {
         platformPageRoute(
           context: context,
           builder: builder,
+          settings: RouteSettings(name: pageName),
         ),
         (Route<dynamic> route) => false,
       );
@@ -33,6 +35,7 @@ class AppRouter {
         platformPageRoute(
           context: context,
           builder: builder,
+          settings: RouteSettings(name: pageName),
         ),
       );
     }
@@ -40,14 +43,16 @@ class AppRouter {
 
   static Future<T?> showBottomSheet<T extends Object?>(
     BuildContext context,
-    WidgetBuilder builder,
-  ) {
+    WidgetBuilder builder, {
+    required String pageName,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       isDismissible: true,
       backgroundColor: Colors.transparent,
       builder: builder,
+      routeSettings: RouteSettings(name: pageName),
     );
   }
 
@@ -55,6 +60,7 @@ class AppRouter {
     jumpToPage(
       context,
       (context) => AboutPage(),
+      pageName: "/about",
     );
   }
 
@@ -62,6 +68,7 @@ class AppRouter {
     jumpToPage(
       context,
       (context) => SettingsPage(),
+      pageName: "/settings",
     );
   }
 
@@ -69,6 +76,7 @@ class AppRouter {
     jumpToPage(
       context,
       (context) => PersonalizationSettingsPage(),
+      pageName: "/personalization_settings",
     );
   }
 
@@ -76,6 +84,7 @@ class AppRouter {
     jumpToPage(
       context,
       (context) => WorkspaceSettingsPage(),
+      pageName: "/workspace_settings",
     );
   }
 
@@ -84,6 +93,7 @@ class AppRouter {
       context,
       (context) => SelectWorkspacePage(),
       removeAllHistroy: true,
+      pageName: "/select_workspace",
     );
   }
 
@@ -92,12 +102,14 @@ class AppRouter {
       context,
       (context) => WorkspaceHomePage(),
       removeAllHistroy: true,
+      pageName: "/workspace_home",
     );
   }
 
   static Future<T?> showEditSheet<T>(
     BuildContext context,
     String title, {
+    required String pageName,
     final bool isPage = false,
     final double? desiredHeight,
     final String? initValue,
@@ -126,13 +138,18 @@ class AppRouter {
           onCustomButtonTap: onCustomButtonTap,
         );
     if (isPage) {
-      return jumpToPage(context, builder);
+      return jumpToPage(
+        context,
+        builder,
+        pageName: "/edit_sheet",
+      );
     }
-    return AppRouter.showBottomSheet(context, builder);
+    return AppRouter.showBottomSheet(context, builder, pageName: pageName);
   }
 
   static Future<T?> showSelectSheet<T>(
     BuildContext context, {
+    required String pageName,
     required int currentSortType,
     required void Function(int sortType) onChange,
     required List<SelectItem> sortTypes,
@@ -146,6 +163,7 @@ class AppRouter {
         onChange: onChange,
         sortTypes: sortTypes,
       ),
+      pageName: pageName,
     );
   }
 }

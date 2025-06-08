@@ -50,7 +50,7 @@ class PlatformIconBtn extends StatelessWidget {
             : null,
         cupertinoIcon: cupertinoIcon,
         materialIcon: materialIcon,
-        onPressed: onPressed,
+        onPressed: disable == true ? null : onPressed,
         color: color,
         disabledColor: disabledColor,
         padding: padding,
