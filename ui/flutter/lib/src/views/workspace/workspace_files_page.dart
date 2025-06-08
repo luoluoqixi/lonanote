@@ -20,6 +20,7 @@ import 'package:lonanote/src/widgets/platform_list_view.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
+import 'package:lonanote/src/widgets/tools/search_sheet.dart';
 import 'package:lonanote/src/widgets/tools/select_sheet.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
@@ -175,6 +176,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   void _confirmBatchDelete() {
+    HapticFeedback.selectionClick();
     DialogTools.showDialog(
       context: context,
       title: "确认删除",
@@ -334,7 +336,13 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     return name;
   }
 
-  void _searchClick() {}
+  void _searchClick() {
+    AppRouter.showBottomSheet(
+      context,
+      (context) => SearchSheet(),
+      pageName: "/seatch",
+    );
+  }
 
   void _createFolder(String value) async {
     final folderName = value.trim();

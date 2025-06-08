@@ -45,11 +45,15 @@ class AppRouter {
     BuildContext context,
     WidgetBuilder builder, {
     required String pageName,
+    bool isScrollControlled = true,
+    bool isDismissible = true,
+    bool showDragHandle = false,
   }) {
     return showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      isDismissible: true,
+      isScrollControlled: isScrollControlled,
+      isDismissible: isDismissible,
+      showDragHandle: showDragHandle,
       backgroundColor: Colors.transparent,
       builder: builder,
       routeSettings: RouteSettings(name: pageName),
