@@ -689,6 +689,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
 
   Widget _buildFloatingToolbar() {
     return PlatformFloatingToolbar(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text("已选择 ${_selectedPaths.length} 个"),
         Row(

@@ -34,4 +34,12 @@ class UIStore {
   static void setShowFloatingToolbar(bool value) {
     Store.setSyncValue(syncKey, "show_floating_toolbar", value);
   }
+
+  static int? getFileSortType() {
+    return Store.getSyncValue(syncKey, "file_sort_type");
+  }
+
+  static void setFileSortType(int value) {
+    Store.setSyncValue(syncKey, "file_sort_type", value);
+  }
 }

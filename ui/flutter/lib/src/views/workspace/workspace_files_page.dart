@@ -18,6 +18,7 @@ import 'package:lonanote/src/widgets/platform_list_view.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
+import 'package:lonanote/src/widgets/tools/select_sheet.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
 class WorkspaceFilesPage extends ConsumerStatefulWidget {
@@ -69,10 +70,12 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     }
 
     try {
+      final otherSettings =
+          ref.read(settingsProvider.select((w) => w.otherSettings));
       final fileNode = await WorkspaceController.getWorkspaceFileNode(
         ref,
         widget.parentPath,
-        RustFileSortType.name,
+        otherSettings.fileSortType,
       );
       setState(() {
         this.fileNode = fileNode;
@@ -395,7 +398,57 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     );
   }
 
-  void _sortModeClick() {}
+  void _sortModeClick() {
+    final otherSettings =
+        ref.read(settingsProvider.select((w) => w.otherSettings));
+    final currentSortType = otherSettings.fileSortType;
+    final sortTypes = [
+      SelectItem(
+        value: RustFileSortType.lastModifiedTime.index,
+        title: "按修改时间排序",
+        icon: ThemeIcons.schedule(context),
+      ),
+      SelectItem(
+        value: RustFileSortType.lastModifiedTimeRev.index,
+        title: "按修改时间倒序",
+        icon: ThemeIcons.schedule(context),
+      ),
+      SelectItem(
+        value: RustFileSortType.createTime.index,
+        title: "按创建时间排序",
+        icon: ThemeIcons.schedule(context),
+      ),
+      SelectItem(
+        value: RustFileSortType.createTimeRev.index,
+        title: "按创建时间倒序",
+        icon: ThemeIcons.schedule(context),
+      ),
+      SelectItem(
+        value: RustFileSortType.name.index,
+        title: "按名称排序",
+        icon: ThemeIcons.sortName(context),
+      ),
+      SelectItem(
+        value: RustFileSortType.nameRev.index,
+        title: "按名称倒序",
+        icon: ThemeIcons.sortName(context),
+      ),
+    ];
+    AppRouter.showSelectSheet(
+      context,
+      sortTypes: sortTypes,
+      currentSortType: currentSortType.index,
+      onChange: (t) {
+        setState(() {
+          final sortType = RustFileSortType.values[t];
+          final s = ref.read(settingsProvider.notifier);
+          s.setFileSortType(sortType);
+        });
+        Navigator.of(context).pop();
+        _reinitFileNode();
+      },
+    );
+  }
 
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
@@ -625,6 +678,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     final isSelectOnlyOne = _selectedPaths.length == 1;
     final isNotEmpty = _selectedPaths.isNotEmpty;
     return PlatformFloatingToolbar(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text("已选择 ${_selectedPaths.length} 个"),
         Row(
@@ -657,11 +711,31 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     return PlatformFloatingToolbar(
       left: 80,
       right: 80,
+      contentPadding: EdgeInsets.all(2),
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             PlatformIconBtn(
-              icon: Icon(ThemeIcons.add(context)),
+              icon: Icon(
+                ThemeIcons.chevronLeft(context),
+                size: 25,
+              ),
+              onPressed: () {},
+            ),
+            PlatformIconBtn(
+              icon: Icon(
+                ThemeIcons.add(context),
+                size: 25,
+              ),
+              onPressed: () {},
+            ),
+            PlatformIconBtn(
+              icon: Icon(
+                ThemeIcons.search(context),
+                size: 25,
+              ),
               onPressed: () {},
             ),
           ],

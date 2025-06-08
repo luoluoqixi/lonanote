@@ -11,8 +11,16 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.arrow_drop_down : Icons.arrow_drop_down;
   }
 
+  static IconData arrowBack(BuildContext context) {
+    return isMaterial(context) ? Icons.arrow_back : Icons.arrow_back;
+  }
+
   static IconData check(BuildContext context) {
     return isMaterial(context) ? Icons.check : Icons.check;
+  }
+
+  static IconData chevronLeft(BuildContext context) {
+    return isMaterial(context) ? Icons.chevron_left : Icons.chevron_left;
   }
 
   static IconData chevronRight(BuildContext context) {
@@ -71,6 +79,10 @@ class ThemeIcons {
 
   static IconData schedule(BuildContext context) {
     return isMaterial(context) ? Icons.schedule : Icons.schedule;
+  }
+
+  static IconData search(BuildContext context) {
+    return isMaterial(context) ? Icons.search : Icons.search;
   }
 
   static IconData select(BuildContext context) {

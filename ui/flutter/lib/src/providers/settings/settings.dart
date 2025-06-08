@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:lonanote/src/bindings/api/settings/settings.dart';
 import 'package:lonanote/src/bindings/api/settings/types.dart';
+import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/store/ui_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -27,6 +28,7 @@ class Settings extends _$Settings with WidgetsBindingObserver {
       settings: RustSettings.settings,
       otherSettings: OtherSettings(
         showFloatingToolbar: getShowFloatingToolbar(),
+        fileSortType: getFileSortType(),
       ),
     );
   }
@@ -105,6 +107,23 @@ class Settings extends _$Settings with WidgetsBindingObserver {
     UIStore.setShowFloatingToolbar(value);
   }
 
+  static RustFileSortType getFileSortType() {
+    final v = UIStore.getFileSortType();
+    if (v != null) {
+      return RustFileSortType.values[v];
+    }
+    return RustFileSortType.lastModifiedTime;
+  }
+
+  void setFileSortType(RustFileSortType value) {
+    state = state.copyWith(
+      otherSettings: state.otherSettings.copyWith(
+        fileSortType: value,
+      ),
+    );
+    UIStore.setFileSortType(value.index);
+  }
+
   static Color getPrimaryColorFromEnum(ThemePrimaryColor color) {
     if (color == ThemePrimaryColor.blue) {
       return Colors.blue;
@@ -150,6 +169,7 @@ sealed class ThemeSettings with _$ThemeSettings {
 sealed class OtherSettings with _$OtherSettings {
   const factory OtherSettings({
     required bool showFloatingToolbar,
+    required RustFileSortType fileSortType,
   }) = _OtherSettings;
 }
 

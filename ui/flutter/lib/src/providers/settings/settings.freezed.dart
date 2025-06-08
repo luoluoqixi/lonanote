@@ -432,6 +432,7 @@ class __$ThemeSettingsCopyWithImpl<$Res>
 /// @nodoc
 mixin _$OtherSettings {
   bool get showFloatingToolbar;
+  RustFileSortType get fileSortType;
 
   /// Create a copy of OtherSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -447,15 +448,18 @@ mixin _$OtherSettings {
         (other.runtimeType == runtimeType &&
             other is OtherSettings &&
             (identical(other.showFloatingToolbar, showFloatingToolbar) ||
-                other.showFloatingToolbar == showFloatingToolbar));
+                other.showFloatingToolbar == showFloatingToolbar) &&
+            (identical(other.fileSortType, fileSortType) ||
+                other.fileSortType == fileSortType));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, showFloatingToolbar);
+  int get hashCode =>
+      Object.hash(runtimeType, showFloatingToolbar, fileSortType);
 
   @override
   String toString() {
-    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar)';
+    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar, fileSortType: $fileSortType)';
   }
 }
 
@@ -465,7 +469,7 @@ abstract mixin class $OtherSettingsCopyWith<$Res> {
           OtherSettings value, $Res Function(OtherSettings) _then) =
       _$OtherSettingsCopyWithImpl;
   @useResult
-  $Res call({bool showFloatingToolbar});
+  $Res call({bool showFloatingToolbar, RustFileSortType fileSortType});
 }
 
 /// @nodoc
@@ -482,12 +486,17 @@ class _$OtherSettingsCopyWithImpl<$Res>
   @override
   $Res call({
     Object? showFloatingToolbar = null,
+    Object? fileSortType = null,
   }) {
     return _then(_self.copyWith(
       showFloatingToolbar: null == showFloatingToolbar
           ? _self.showFloatingToolbar
           : showFloatingToolbar // ignore: cast_nullable_to_non_nullable
               as bool,
+      fileSortType: null == fileSortType
+          ? _self.fileSortType
+          : fileSortType // ignore: cast_nullable_to_non_nullable
+              as RustFileSortType,
     ));
   }
 }
@@ -495,10 +504,13 @@ class _$OtherSettingsCopyWithImpl<$Res>
 /// @nodoc
 
 class _OtherSettings implements OtherSettings {
-  const _OtherSettings({required this.showFloatingToolbar});
+  const _OtherSettings(
+      {required this.showFloatingToolbar, required this.fileSortType});
 
   @override
   final bool showFloatingToolbar;
+  @override
+  final RustFileSortType fileSortType;
 
   /// Create a copy of OtherSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -514,15 +526,18 @@ class _OtherSettings implements OtherSettings {
         (other.runtimeType == runtimeType &&
             other is _OtherSettings &&
             (identical(other.showFloatingToolbar, showFloatingToolbar) ||
-                other.showFloatingToolbar == showFloatingToolbar));
+                other.showFloatingToolbar == showFloatingToolbar) &&
+            (identical(other.fileSortType, fileSortType) ||
+                other.fileSortType == fileSortType));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, showFloatingToolbar);
+  int get hashCode =>
+      Object.hash(runtimeType, showFloatingToolbar, fileSortType);
 
   @override
   String toString() {
-    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar)';
+    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar, fileSortType: $fileSortType)';
   }
 }
 
@@ -534,7 +549,7 @@ abstract mixin class _$OtherSettingsCopyWith<$Res>
       __$OtherSettingsCopyWithImpl;
   @override
   @useResult
-  $Res call({bool showFloatingToolbar});
+  $Res call({bool showFloatingToolbar, RustFileSortType fileSortType});
 }
 
 /// @nodoc
@@ -551,12 +566,17 @@ class __$OtherSettingsCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   $Res call({
     Object? showFloatingToolbar = null,
+    Object? fileSortType = null,
   }) {
     return _then(_OtherSettings(
       showFloatingToolbar: null == showFloatingToolbar
           ? _self.showFloatingToolbar
           : showFloatingToolbar // ignore: cast_nullable_to_non_nullable
               as bool,
+      fileSortType: null == fileSortType
+          ? _self.fileSortType
+          : fileSortType // ignore: cast_nullable_to_non_nullable
+              as RustFileSortType,
     ));
   }
 }

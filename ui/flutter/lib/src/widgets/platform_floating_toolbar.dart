@@ -5,6 +5,7 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 
 class PlatformFloatingToolbar extends StatelessWidget {
   final List<Widget> children;
+  final MainAxisAlignment mainAxisAlignment;
 
   final double? left;
   final double? top;
@@ -15,12 +16,12 @@ class PlatformFloatingToolbar extends StatelessWidget {
 
   final Color? bgColor;
 
-  final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? contentPadding;
 
   const PlatformFloatingToolbar({
     super.key,
     required this.children,
+    this.mainAxisAlignment = MainAxisAlignment.center,
     this.left = 20,
     this.top,
     this.right = 20,
@@ -28,7 +29,6 @@ class PlatformFloatingToolbar extends StatelessWidget {
     this.width,
     this.height,
     this.bgColor,
-    this.padding,
     this.contentPadding,
   });
 
@@ -43,7 +43,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
           color: ThemeColors.getTextColor(colorScheme),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: mainAxisAlignment,
           children: children,
         ),
       ),
