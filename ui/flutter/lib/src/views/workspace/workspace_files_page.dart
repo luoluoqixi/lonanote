@@ -43,6 +43,8 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   RustFileNode? fileNode;
   final Set<String> _selectedPaths = {};
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -56,7 +58,13 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     });
   }
 
-  void listenFloatingToolbar(BuildContext context) {
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _listenFloatingToolbar(BuildContext context) {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     ref.listen<FloatingToolbarEvent?>(
       floatingToolbarEventProvider,
@@ -558,13 +566,15 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     if (count == 0) {
       return SizedBox(height: 300, child: Center(child: Text("没有文件")));
     }
-    return PlatformListView(
-      topMargin: 0.0,
-      itemBuilder: (context, index) {
-        final f = fileNode!.children![index];
-        return _buildWorkspaceFile(colorScheme, f);
-      },
-      itemCount: count,
+    return SlidableAutoCloseBehavior(
+      child: PlatformListView(
+        topMargin: 0.0,
+        itemBuilder: (context, index) {
+          final f = fileNode!.children![index];
+          return _buildWorkspaceFile(colorScheme, f);
+        },
+        itemCount: count,
+      ),
     );
   }
 
@@ -804,7 +814,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
 
   @override
   Widget build(BuildContext context) {
-    listenFloatingToolbar(context);
+    _listenFloatingToolbar(context);
     final workspace =
         ref.watch(workspaceProvider.select((s) => s.currentWorkspace));
     final otherSettings =
@@ -819,6 +829,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         _buildFloatingToolbar(otherSettings.showFloatingToolbar);
     return PlatformPage(
       titleText: title,
+      scrollController: _scrollController,
       isHome: widget.parentPath == null,
       showScrollbar: true,
       isLoading: _isLoading,

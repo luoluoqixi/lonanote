@@ -293,7 +293,7 @@ class PlatformListView extends StatelessWidget {
   final Color? backgroundColor;
   final Color? separatorColor;
 
-  final NullableIndexedWidgetBuilder? itemBuilder;
+  final Widget Function(BuildContext context, int index)? itemBuilder;
   final IndexedWidgetBuilder? separatorBuilder;
   final int itemCount;
 
@@ -395,7 +395,26 @@ class PlatformListView extends StatelessWidget {
   }
 
   Widget _buildBuilder(BuildContext context) {
+    List<Widget> itemWidgets = [];
+    for (int i = 0; i < itemCount; i++) {
+      itemWidgets.add(itemBuilder!(context, i));
+      if (i != itemCount - 1) {
+        itemWidgets.add(
+          separatorBuilder != null
+              ? separatorBuilder!(context, i)
+              : Container(
+                  margin:
+                      EdgeInsetsDirectional.only(start: dividerMargin ?? 14.0),
+                  color: separatorColor ??
+                      CupertinoColors.separator.resolveFrom(context),
+                  height: 1.0 / MediaQuery.devicePixelRatioOf(context),
+                ),
+        );
+      }
+    }
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (header != null)
           Align(
@@ -405,9 +424,7 @@ class PlatformListView extends StatelessWidget {
               child: _buildHeader(context),
             ),
           ),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
+        Padding(
           padding: padding ??
               EdgeInsets.only(
                 top: header != null ? 0.0 : (padding?.top ?? 0 + topMargin),
@@ -415,21 +432,10 @@ class PlatformListView extends StatelessWidget {
                 left: padding?.left ?? 0,
                 right: padding?.right ?? 0,
               ),
-          itemBuilder: itemBuilder!,
-          separatorBuilder: separatorBuilder ??
-              (context, index) {
-                final Color dividerColor = separatorColor ??
-                    CupertinoColors.separator.resolveFrom(context);
-                final double dividerHeight =
-                    1.0 / MediaQuery.devicePixelRatioOf(context);
-                return Container(
-                  margin:
-                      EdgeInsetsDirectional.only(start: dividerMargin ?? 14.0),
-                  color: dividerColor,
-                  height: dividerHeight,
-                );
-              },
-          itemCount: itemCount,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: itemWidgets,
+          ),
         ),
         if (footer != null)
           Align(
