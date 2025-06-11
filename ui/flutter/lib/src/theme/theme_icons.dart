@@ -7,6 +7,12 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.add : CupertinoIcons.add;
   }
 
+  static IconData addFolder(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.create_new_folder_outlined
+        : Icons.create_new_folder_outlined;
+  }
+
   static IconData arrowDropDown(BuildContext context) {
     return isMaterial(context) ? Icons.arrow_drop_down : Icons.arrow_drop_down;
   }

@@ -56,13 +56,16 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     });
   }
 
-  void listenFloatingToolbar() {
+  void listenFloatingToolbar(BuildContext context) {
+    if (ModalRoute.of(context)?.isCurrent != true) return;
     ref.listen<FloatingToolbarEvent?>(
       floatingToolbarEventProvider,
       (previous, next) {
         if (next != null) {
           if (next.type == 'add_file') {
             _createFileClick();
+          } else if (next.type == 'add_folder') {
+            _createFolderClick();
           } else if (next.type == 'search') {
             _searchClick();
           }
@@ -731,7 +734,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
           PullDownMenuItem(
             title: "创建文件夹",
             onTap: _createFolderClick,
-            icon: ThemeIcons.add(context),
+            icon: ThemeIcons.addFolder(context),
           ),
           const PullDownMenuDivider.large(),
           PullDownMenuItem(
@@ -801,7 +804,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
 
   @override
   Widget build(BuildContext context) {
-    listenFloatingToolbar();
+    listenFloatingToolbar(context);
     final workspace =
         ref.watch(workspaceProvider.select((s) => s.currentWorkspace));
     final otherSettings =
