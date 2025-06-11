@@ -78,8 +78,8 @@ class _EditSheetState extends ConsumerState<EditSheet> {
   }
 
   Widget buildForm(bool multilineInput) {
-    final minLines = multilineInput ? 3 : null;
-    final maxLines = multilineInput ? null : 1;
+    final minLines = multilineInput ? 10 : null;
+    final maxLines = multilineInput ? 10 : 1;
     return Form(
       key: _formKey,
       child: Column(

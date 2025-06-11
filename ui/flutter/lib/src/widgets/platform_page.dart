@@ -279,6 +279,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     final appBar = _buildAppBar();
     return CustomScrollView(
       controller: controller,
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         if (appBar != null) appBar,
         if (widget.child != null)
