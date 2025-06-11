@@ -205,6 +205,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       isDange: true,
       onOkPressed: () {
         _deleteNode(node);
+        _reinitFileNode();
         return null;
       },
     );
