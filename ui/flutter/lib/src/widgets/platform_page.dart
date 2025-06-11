@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/app_bar.dart';
+import 'package:lonanote/src/widgets/flutter/custom_refresh_indicator.dart';
 import 'package:lonanote/src/widgets/platform_double_back.dart';
 
 class PlatformPage extends StatefulWidget {
@@ -126,7 +127,7 @@ class _PlatformPageState extends State<PlatformPage> {
   Widget _buildPage() {
     final scrollController = widget.scrollController ?? ScrollController();
     final content = widget.onRefresh != null
-        ? RefreshIndicator(
+        ? CustomRefreshIndicator(
             onRefresh: widget.onRefresh!,
             edgeOffset: _getAppBarHeight(),
             child: _buildPageContent(scrollController, context),
@@ -304,7 +305,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
   Widget _buildPage() {
     final scrollController = widget.scrollController ?? ScrollController();
     final content = widget.onRefresh != null
-        ? RefreshIndicator(
+        ? CustomRefreshIndicator(
             onRefresh: widget.onRefresh!,
             edgeOffset: _getAppBarHeight(),
             child: _buildPageContent(scrollController, context),
@@ -539,7 +540,7 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
 
   Widget _buildContent(BuildContext context) {
     return widget.onRefresh != null
-        ? RefreshIndicator(
+        ? CustomRefreshIndicator(
             onRefresh: widget.onRefresh!,
             edgeOffset: 0.0,
             child: _buildContentScroll(context),
