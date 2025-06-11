@@ -721,13 +721,15 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       return _buildNoWorkspace(context, colorScheme);
     }
     final sortedWorkspaces = _getSortWorkspaces(workspaces!);
-    return PlatformListView(
-      topMargin: 0.0,
-      itemBuilder: (context, index) {
-        final workspace = sortedWorkspaces[index];
-        return _buildWorkspaceTile(colorScheme, workspace);
-      },
-      itemCount: count,
+    return SlidableAutoCloseBehavior(
+      child: PlatformListView(
+        topMargin: 0.0,
+        itemBuilder: (context, index) {
+          final workspace = sortedWorkspaces[index];
+          return _buildWorkspaceTile(colorScheme, workspace);
+        },
+        itemCount: count,
+      ),
     );
   }
 
