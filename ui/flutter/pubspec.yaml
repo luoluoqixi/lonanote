@@ -59,6 +59,8 @@ dependencies:
   flutter_slidable: ^4.0.0
   font_awesome_flutter: ^10.8.0
   photo_view: ^0.15.0
+  video_player: ^2.10.0
+  chewie: ^1.11.3
 
 dev_dependencies:
   integration_test:
