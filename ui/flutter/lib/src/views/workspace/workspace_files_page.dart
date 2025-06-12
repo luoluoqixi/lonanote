@@ -670,13 +670,13 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
             if (isFile)
               Icon(
                 _getFileIcon(node),
-                size: 40,
+                size: 48,
                 color: ThemeColors.getPrimaryColor(colorScheme),
               ),
             if (isDirectory)
               Icon(
                 ThemeIcons.folder(context),
-                size: 40,
+                size: 48,
                 color: ThemeColors.getPrimaryColor(colorScheme),
               ),
           ],
@@ -815,6 +815,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   @override
   Widget build(BuildContext context) {
     _listenFloatingToolbar(context);
+    final isRoot = widget.parentPath == null;
     final workspace =
         ref.watch(workspaceProvider.select((s) => s.currentWorkspace));
     final otherSettings =
@@ -828,7 +829,20 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     final floatingToolbar =
         _buildFloatingToolbar(otherSettings.showFloatingToolbar);
     return PlatformPage(
-      titleText: title,
+      // titleText: title,
+      title: Row(
+        children: [
+          Icon(
+            isRoot
+                ? ThemeIcons.workspace(context)
+                : ThemeIcons.folderOutlined(context),
+            size: 18,
+            color: ThemeColors.getTextColor(colorScheme),
+          ),
+          const SizedBox(width: 8),
+          Text(title),
+        ],
+      ),
       scrollController: _scrollController,
       isHome: widget.parentPath == null,
       showScrollbar: true,

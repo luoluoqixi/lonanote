@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ThemeIcons {
   static IconData add(BuildContext context) {
@@ -63,6 +64,12 @@ class ThemeIcons {
 
   static IconData folder(BuildContext context) {
     return isMaterial(context) ? Icons.folder : Icons.folder;
+  }
+
+  static IconData folderOutlined(BuildContext context) {
+    return isMaterial(context)
+        ? FontAwesomeIcons.folderOpen
+        : FontAwesomeIcons.folderOpen;
   }
 
   static IconData image(BuildContext context) {
@@ -129,5 +136,9 @@ class ThemeIcons {
 
   static IconData video(BuildContext context) {
     return isMaterial(context) ? Icons.video_call : Icons.video_call;
+  }
+
+  static IconData workspace(BuildContext context) {
+    return isMaterial(context) ? FontAwesomeIcons.cube : FontAwesomeIcons.cube;
   }
 }

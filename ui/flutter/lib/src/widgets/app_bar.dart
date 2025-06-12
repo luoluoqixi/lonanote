@@ -55,26 +55,23 @@ class ScrollAppBar extends StatelessWidget {
           CustomFlexibleSpaceBar(
             centerTitle: false,
             expandedTitleScale: expandedTitleScale ?? 2,
-            fixedSubtitle: subTitle ??
-                (subTitleText != null
-                    ? Text(
-                        subTitleText!,
-                        style: TextStyle(
-                          color: subTitleColor ?? subColor,
-                          fontSize: subTitleFontSize ?? 12,
-                        ),
-                      )
-                    : null),
+            fixedSubtitle: subTitle != null || subTitleText != null
+                ? DefaultTextStyle(
+                    style: TextStyle(
+                      color: subTitleColor ?? subColor,
+                      fontSize: subTitleFontSize ?? 12,
+                    ),
+                    child: subTitle ?? Text(subTitleText!))
+                : null,
             title: Padding(
               padding: const EdgeInsets.only(bottom: 3),
-              child: title ??
-                  Text(
-                    titleText ?? "",
-                    style: TextStyle(
-                      fontSize: titleFontSize ?? (subTitle == null ? 20 : 18),
-                      color: titleColor ?? textColor,
-                    ),
-                  ),
+              child: DefaultTextStyle(
+                style: TextStyle(
+                  fontSize: titleFontSize ?? (subTitle == null ? 20 : 18),
+                  color: titleColor ?? textColor,
+                ),
+                child: title ?? Text(titleText ?? ""),
+              ),
             ),
             titlePadding: const EdgeInsets.only(left: 20, bottom: 10),
             collapseMode: CollapseMode.parallax,

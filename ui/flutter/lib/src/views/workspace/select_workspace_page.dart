@@ -686,6 +686,11 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             color: greyColor,
           ),
         ),
+        leading: Icon(
+          ThemeIcons.workspace(context),
+          size: 30,
+          color: ThemeColors.getPrimaryColor(colorScheme),
+        ),
         trailing: _isSelectionMode
             ? _buildSelectModeContent(workspace, isSelect)
             : Icon(ThemeIcons.chevronRight(context)),
@@ -766,7 +771,16 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     final workspaces = ref.watch(workspaceProvider.select((s) => s.workspaces));
     final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformPage(
-      titleText: "工作区",
+      title: Row(
+        children: [
+          Text("工作区"),
+          const SizedBox(width: 10),
+          // Icon(
+          //   ThemeIcons.workspace(context),
+          //   size: 18,
+          // ),
+        ],
+      ),
       subTitleText: "选择工作区",
       showScrollbar: true,
       isLoading: _isLoading,
