@@ -210,10 +210,13 @@ class PlatformSimplePage extends StatefulWidget {
   final bool? isHome;
 
   final Color? backgroundColor;
-  final Color? titleColor;
+  final Color? titleBgColor;
+  final Color? titleTextColor;
 
   final bool? isLoading;
   final Future<void> Function()? onRefresh;
+
+  final bool? noScrollView;
 
   final bool? showScrollbar;
   final bool? scrollThumbVisibility;
@@ -230,9 +233,11 @@ class PlatformSimplePage extends StatefulWidget {
     this.contents,
     this.isHome,
     this.backgroundColor,
-    this.titleColor,
+    this.titleBgColor,
+    this.titleTextColor,
     this.isLoading,
     this.onRefresh,
+    this.noScrollView,
     this.showScrollbar,
     this.scrollThumbVisibility,
     this.scrollInteractive,
@@ -276,8 +281,24 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
         : (SimpleAppBar.defaultHeight + MediaQuery.of(context).padding.top);
   }
 
-  Widget _buildPageContent(ScrollController controller, BuildContext context) {
-    final appBar = _buildAppBar();
+  Widget _buildPageContent(
+    ColorScheme colorScheme,
+    ScrollController controller,
+    BuildContext context,
+  ) {
+    final appBar = _buildAppBar(colorScheme);
+    if (widget.noScrollView == true) {
+      return Column(
+        children: [
+          if (appBar != null) appBar,
+          if (widget.child != null)
+            Expanded(
+              child: widget.child!,
+            ),
+          ...?widget.contents,
+        ],
+      );
+    }
     return CustomScrollView(
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
@@ -292,25 +313,41 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     );
   }
 
-  Widget? _buildAppBar() {
+  Widget? _buildAppBar(ColorScheme colorScheme) {
+    final backgroundColor =
+        widget.titleBgColor ?? ThemeColors.getBgColor(colorScheme);
+    final textColor =
+        widget.titleTextColor ?? ThemeColors.getTextColor(colorScheme);
     if (widget.appBar != null) return widget.appBar;
     if (widget.title == null && widget.titleText == null) return null;
+    if (widget.noScrollView == true) {
+      return AppBar(
+        centerTitle: false,
+        title: widget.title ?? Text(widget.titleText ?? ""),
+        titleTextStyle: TextStyle(color: textColor, fontSize: 22),
+        backgroundColor: backgroundColor,
+        toolbarHeight: SimpleAppBar.defaultHeight,
+      );
+    }
     return SimpleAppBar(
       title: widget.title,
       titleText: widget.titleText,
-      bgColor: widget.titleColor,
+      bgColor: backgroundColor,
     );
   }
 
-  Widget _buildPage() {
+  Widget _buildPage(ColorScheme colorScheme) {
     final scrollController = widget.scrollController ?? ScrollController();
     final content = widget.onRefresh != null
         ? CustomRefreshIndicator(
             onRefresh: widget.onRefresh!,
             edgeOffset: _getAppBarHeight(),
-            child: _buildPageContent(scrollController, context),
+            child: _buildPageContent(colorScheme, scrollController, context),
           )
-        : _buildPageContent(scrollController, context);
+        : _buildPageContent(colorScheme, scrollController, context);
+    if (widget.noScrollView == true) {
+      return content;
+    }
     if (widget.showScrollbar == true) {
       if (isMaterial(context)) {
         return Scrollbar(
@@ -350,7 +387,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
                 right: true,
                 top: false,
                 bottom: false,
-                child: _buildPage(),
+                child: _buildPage(colorScheme),
               ),
             ),
           ),

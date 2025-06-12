@@ -368,6 +368,16 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     return name;
   }
 
+  String? _getRawFullFilePath(String name) {
+    name = _getFullFilePath(name);
+    final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
+    if (wsPath != null) {
+      return "$wsPath/$name";
+    } else {
+      return null;
+    }
+  }
+
   void _searchClick() {
     AppRouter.showBottomSheet(
       context,
@@ -525,6 +535,69 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     AppRouter.jumpToWorkspaceSettingsPage(context);
   }
 
+  void _openImage(RustFileNode node, String rawPath) {
+    final count = fileNode?.children?.length ?? 0;
+    List<String> list = [];
+    var index = 0;
+    for (var i = 0; i < count; i++) {
+      final f = fileNode!.children![i];
+      final extName = Utility.getExtName(f.path);
+      if (extName == null) continue;
+      if (Utility.isImage(extName)) {
+        final path = _getRawFullFilePath(f.path);
+        if (path != null) {
+          if (node == f) {
+            index = list.length;
+          }
+          list.add(path);
+        }
+      }
+    }
+    AppRouter.jumpToImageViewPage(context, list, index);
+  }
+
+  void _openVideo(String rawPath) {
+    AppRouter.jumpToVideoViewPage(context, rawPath);
+  }
+
+  void _openEditor(String rawPath) {
+    AppRouter.jumpToEditorPage(context, rawPath);
+  }
+
+  void _openNotSupport(String rawPath) {
+    AppRouter.jumpToNotSupportFilePage(context, rawPath);
+  }
+
+  void _openFile(RustFileNode node) {
+    if (node.isDirectory()) return;
+    final extName = Utility.getExtName(node.path);
+    final rawPath = _getRawFullFilePath(node.path);
+    if (rawPath == null) {
+      DialogTools.showDialog(
+        context: context,
+        title: "错误",
+        content: "工作区路径获取失败",
+        okText: "确定",
+      );
+      return;
+    }
+
+    if (extName == null) {
+      _openNotSupport(rawPath);
+      return;
+    }
+    if (Utility.isImage(extName)) {
+      _openImage(node, rawPath);
+    } else if (Utility.isVideo(extName)) {
+      _openVideo(rawPath);
+    } else if (Utility.isSupportEditor(extName)) {
+      _openEditor(rawPath);
+    } else {
+      _openNotSupport(rawPath);
+      return;
+    }
+  }
+
   void _openFileNode(RustFileNode node) {
     if (node.isDirectory()) {
       String parentPath = node.path;
@@ -541,12 +614,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         pageName: "/workspace_files",
       );
     } else if (node.isFile()) {
-      DialogTools.showDialog(
-        context: context,
-        title: "提示",
-        content: "待实现",
-        okText: "确定",
-      );
+      _openFile(node);
     } else {
       DialogTools.showDialog(
         context: context,

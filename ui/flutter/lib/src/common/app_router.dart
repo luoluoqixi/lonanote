@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/views/editor/editor_page.dart';
+import 'package:lonanote/src/views/editor/image_view_page.dart';
+import 'package:lonanote/src/views/editor/not_support_file_page.dart';
+import 'package:lonanote/src/views/editor/video_view_page.dart';
 import 'package:lonanote/src/views/settings/about_page.dart';
 import 'package:lonanote/src/views/settings/personalization_settings_page.dart';
 import 'package:lonanote/src/views/settings/settings_page.dart';
@@ -107,6 +111,55 @@ class AppRouter {
       (context) => WorkspaceHomePage(),
       removeAllHistroy: true,
       pageName: "/workspace_home",
+    );
+  }
+
+  static void jumpToImageViewPage(
+    BuildContext context,
+    List<String> paths,
+    int index,
+  ) {
+    jumpToPage(
+      context,
+      (context) => ImageViewPage(
+        paths: paths,
+        index: index,
+      ),
+      pageName: "/image_view",
+    );
+  }
+
+  static void jumpToVideoViewPage(
+    BuildContext context,
+    String path,
+  ) {
+    jumpToPage(
+      context,
+      (context) => VideoViewPage(
+        path: path,
+      ),
+      pageName: "/video_view",
+    );
+  }
+
+  static void jumpToEditorPage(
+    BuildContext context,
+    String path,
+  ) {
+    jumpToPage(
+      context,
+      (context) => EditorPage(
+        path: path,
+      ),
+      pageName: "/editor",
+    );
+  }
+
+  static void jumpToNotSupportFilePage(BuildContext context, String path) {
+    jumpToPage(
+      context,
+      (context) => NotSupportFilePage(path: path),
+      pageName: "/not_support_file",
     );
   }
 

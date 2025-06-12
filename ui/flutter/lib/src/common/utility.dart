@@ -5,6 +5,64 @@ const supportMarkdownExts = [
   'markdown',
 ];
 
+const supportEditorExts = [
+  'c',
+  'h',
+  'cc',
+  'cpp',
+  'hpp',
+  'mm',
+  'cs',
+  'css',
+  'go',
+  'html',
+  'java',
+  'kt',
+  'kts',
+  'js',
+  'ts',
+  'jsx',
+  'tsx',
+  'mjs',
+  'cjs',
+  'mts',
+  'cts',
+  'json',
+  'less',
+  'php',
+  'python',
+  'rs',
+  'sass',
+  'scss',
+  'sql',
+  'vue',
+  'xml',
+  'plist',
+  'storyboard',
+  'yaml',
+  'yml',
+  'md',
+  'markdown',
+  'txt',
+  'bat',
+  'development',
+  'editorconfig',
+  'env',
+  'gitattributes',
+  'gitignore',
+  'gradle',
+  'ignore',
+  'lock',
+  'npmrc',
+  'podfile',
+  'prettierignore',
+  'production',
+  'properties',
+  'readme',
+  'taurignore',
+  'toml',
+];
+
 const supportImageExts = [
   'jpg',
   'jpeg',
@@ -47,6 +105,17 @@ class Utility {
     final index = fileName.lastIndexOf(".");
     if (index < 0) return null;
     return fileName.substring(index + 1).toLowerCase();
+  }
+
+  static String getFileName(String path) {
+    final index = path.lastIndexOf("/");
+    if (index < 0) return path;
+    return path.substring(index + 1);
+  }
+
+  static bool isSupportEditor(String extName) {
+    extName = extName.toLowerCase();
+    return isMarkdown(extName) || supportEditorExts.contains(extName);
   }
 
   static bool isMarkdown(String extName) {
