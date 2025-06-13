@@ -61,6 +61,7 @@ dependencies:
   photo_view: ^0.15.0
   video_player: ^2.10.0
   chewie: ^1.11.3
+  webview_flutter: ^4.13.0
 
 dev_dependencies:
   integration_test:
@@ -127,3 +128,4 @@ flutter:
   assets:
     - assets/icons/icon_android.png
     - assets/icons/icon_ios.png
+    - assets/editor/

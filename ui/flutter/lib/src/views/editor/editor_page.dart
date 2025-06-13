@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class EditorPage extends ConsumerStatefulWidget {
   const EditorPage({
@@ -16,9 +17,17 @@ class EditorPage extends ConsumerStatefulWidget {
 }
 
 class _EditorPageState extends ConsumerState<EditorPage> {
+  final WebViewController _controller = WebViewController();
+
   @override
   void initState() {
     super.initState();
+    initEditorHtml();
+  }
+
+  Future<void> initEditorHtml() async {
+    await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+    await _controller.loadFlutterAsset('assets/editor/index.html');
   }
 
   @override
@@ -28,7 +37,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     return PlatformSimplePage(
       titleText: name,
       noScrollView: true,
-      child: Text("Editor"),
+      child: WebViewWidget(controller: _controller),
     );
   }
 }
