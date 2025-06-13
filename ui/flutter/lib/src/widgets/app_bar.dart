@@ -70,7 +70,12 @@ class ScrollAppBar extends StatelessWidget {
                   fontSize: titleFontSize ?? (subTitle == null ? 20 : 18),
                   color: titleColor ?? textColor,
                 ),
-                child: title ?? Text(titleText ?? ""),
+                child: title ??
+                    Text(
+                      titleText ?? "",
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
               ),
             ),
             titlePadding: const EdgeInsets.only(left: 20, bottom: 10),
@@ -120,7 +125,12 @@ class SimpleAppBar extends StatelessWidget {
       backgroundColor: backgroundColor,
       titleTextStyle:
           TextStyle(color: textColor, fontSize: titleFontSize ?? 22),
-      title: title ?? Text(titleText ?? ""),
+      title: title ??
+          Text(
+            titleText ?? "",
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
       centerTitle: false,
       expandedHeight: 0,
       scrolledUnderElevation: scrolledUnderElevation ?? 1,

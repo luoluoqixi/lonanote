@@ -908,7 +908,14 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
             color: ThemeColors.getTextColor(colorScheme),
           ),
           const SizedBox(width: 8),
-          Text(title),
+          Expanded(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
         ],
       ),
       scrollController: _scrollController,

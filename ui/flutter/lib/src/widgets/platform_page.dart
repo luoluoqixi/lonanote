@@ -323,7 +323,12 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     if (widget.noScrollView == true) {
       return AppBar(
         centerTitle: false,
-        title: widget.title ?? Text(widget.titleText ?? ""),
+        title: widget.title ??
+            Text(
+              widget.titleText ?? "",
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
         titleTextStyle: TextStyle(color: textColor, fontSize: 22),
         backgroundColor: backgroundColor,
         toolbarHeight: SimpleAppBar.defaultHeight,
