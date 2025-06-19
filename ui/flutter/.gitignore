@@ -44,6 +44,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+assets/editor
+
 
 # lib/src/rust/*
 # !lib/src/rust/.gitkeep
