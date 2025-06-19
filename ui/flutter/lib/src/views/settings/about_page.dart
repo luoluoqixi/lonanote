@@ -83,14 +83,19 @@ class _AboutPageState extends ConsumerState<AboutPage> {
           onTap: () => _checkUpdate(version),
         ),
         PlatformListTileRaw(
-          title: const Text("Github"),
+          title: const SizedBox(
+            width: 200,
+            child: Text("Github", softWrap: false),
+          ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 AppConfig.githubUrl,
+                softWrap: true,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 11,
                   color: Colors.blue,
                   decoration: TextDecoration.underline,
                 ),
