@@ -7,6 +7,7 @@ import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/common/utils/time_utility.dart';
+import 'package:lonanote/src/common/ws_utils.dart';
 import 'package:lonanote/src/controller/workspace/workspace_controller.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
 import 'package:lonanote/src/providers/router/router.dart';
@@ -343,24 +344,6 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     return null;
   }
 
-  String _getShowName(RustFileNode node) {
-    final name = node.path;
-    if (node.isFile()) {
-      final ext = Utility.getExtName(name);
-      if (ext != null && Utility.isMarkdown(ext)) {
-        return name.substring(0, name.length - (ext.length + 1));
-      }
-    }
-    return name;
-  }
-
-  String _getNameAddMd(String name) {
-    if (name.lastIndexOf(".") < 0) {
-      name = "$name.md";
-    }
-    return name;
-  }
-
   String _getFullFilePath(String name) {
     if (widget.parentPath != null) {
       name = "${widget.parentPath}/$name";
@@ -425,7 +408,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     });
 
     try {
-      fileName = _getNameAddMd(fileName);
+      fileName = WsUtils.getNameAddMd(fileName);
       WorkspaceController.createFile(ref, _getFullFilePath(fileName));
       Navigator.of(context).pop();
       await _reinitFileNode();
@@ -668,7 +651,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     final isFile = node.isFile();
     final isDirectory = node.isDirectory();
 
-    var name = _getShowName(node);
+    var name = WsUtils.getShowName(node);
 
     return Slidable(
       key: ValueKey(node.path),

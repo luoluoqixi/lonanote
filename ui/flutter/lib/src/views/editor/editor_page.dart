@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/utility.dart';
+import 'package:lonanote/src/common/ws_utils.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -33,9 +34,10 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   @override
   Widget build(BuildContext context) {
     final name = Utility.getFileName(widget.path);
+    final showName = WsUtils.getFileShowName(name);
 
     return PlatformSimplePage(
-      titleText: name,
+      titleText: showName,
       noScrollView: true,
       child: WebViewWidget(controller: _controller),
     );
