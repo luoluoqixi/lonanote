@@ -90,11 +90,11 @@ class _AboutPageState extends ConsumerState<AboutPage> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 AppConfig.githubUrl,
                 softWrap: true,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 11,
                   color: Colors.blue,
                   decoration: TextDecoration.underline,
@@ -105,7 +105,7 @@ class _AboutPageState extends ConsumerState<AboutPage> {
             ],
           ),
           onTap: () async {
-            const url = AppConfig.githubUrl;
+            final url = AppConfig.githubUrl;
             Utility.openUrl(url);
           },
         ),

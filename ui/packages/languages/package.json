@@ -1,0 +1,12 @@
+{
+  "name": "lonanote-languages",
+  "version": "0.0.5",
+  "exports": {
+    "./zh/*": {
+      "import": "./zh/*"
+    }
+  },
+  "files": [
+    "zh"
+  ]
+}

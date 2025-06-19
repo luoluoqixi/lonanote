@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lonanote/src/common/config/app_config.dart';
+import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/common/ws_utils.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
@@ -28,7 +30,30 @@ class _EditorPageState extends ConsumerState<EditorPage> {
 
   Future<void> initEditorHtml() async {
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
-    await _controller.loadFlutterAsset('assets/editor/index.html');
+    _controller.setOnConsoleMessage((message) {
+      if (message.level == JavaScriptLogLevel.info) {
+        logger.i(message.message);
+      } else if (message.level == JavaScriptLogLevel.warning) {
+        logger.w(message.message);
+      } else if (message.level == JavaScriptLogLevel.error) {
+        logger.e(message.message);
+      } else if (message.level == JavaScriptLogLevel.log) {
+        logger.i(message.message);
+      } else if (message.level == JavaScriptLogLevel.debug) {
+        logger.d(message.message);
+      }
+    });
+    if (AppConfig.isDebug) {
+      final ip = "http://${AppConfig.devServerIp}:${AppConfig.devServerPort}";
+      logger.i("load $ip");
+      // await _controller.loadRequest(Uri.parse(ip));
+      await _controller.loadFlutterAsset('assets/editor/index.html');
+      logger.i("load finish");
+    } else {
+      logger.i("load index.html...");
+      await _controller.loadFlutterAsset('assets/editor/index.html');
+      logger.i("load index.html finish");
+    }
   }
 
   @override
@@ -39,7 +64,9 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     return PlatformSimplePage(
       titleText: showName,
       noScrollView: true,
-      child: WebViewWidget(controller: _controller),
+      child: WebViewWidget(
+        controller: _controller,
+      ),
     );
   }
 }

@@ -77,7 +77,8 @@ def chang_pubspec_version(project_path, next_version):
 def change_version(repo_root, next_version):
     change_package_version(os.path.join(repo_root, "ui"), next_version)
     change_package_version(os.path.join(repo_root, "ui/packages/desktop"), next_version)
-    change_package_version(os.path.join(repo_root, "ui/packages/editor"), next_version)
+    change_package_version(os.path.join(repo_root, "ui/packages/markdown-editor"), next_version)
+    change_package_version(os.path.join(repo_root, "ui/packages/mobile-editor"), next_version)
     change_package_version(os.path.join(repo_root, "ui/packages/renderer"), next_version)
     chang_pubspec_version(os.path.join(repo_root, "ui/flutter"), next_version)
     change_cargo_version(os.path.join(repo_root, "rust"), next_version)

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:url_launcher/url_launcher.dart';
 
 const supportMarkdownExts = [
@@ -131,5 +133,19 @@ class Utility {
   static bool isVideo(String extName) {
     extName = extName.toLowerCase();
     return supportVideoExts.contains(extName);
+  }
+
+  static Future<String?> getLocalIp() async {
+    for (var interface in await NetworkInterface.list(
+      includeLoopback: false,
+      type: InternetAddressType.IPv4,
+    )) {
+      for (var addr in interface.addresses) {
+        if (!addr.isLoopback && addr.type == InternetAddressType.IPv4) {
+          return addr.address;
+        }
+      }
+    }
+    return null;
   }
 }

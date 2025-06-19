@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConfig {
   static final bool isDesktop =
@@ -10,8 +11,10 @@ class AppConfig {
   static const bool isDebug = kDebugMode;
   static const bool isRelease = kReleaseMode;
   static const bool isProfile = kProfileMode;
-  static const String githubUrl = "https://github.com/lona-labs/lonanote";
-  static const String appTitleZH = "露娜笔记";
-  static const String appTitleEN = "LonaNote";
+  static String githubUrl = dotenv.env['GITHUB_URL'] ?? "";
+  static String appTitleZH = dotenv.env['APP_TITLE_ZH'] ?? "";
+  static String appTitleEN = dotenv.env['APP_TITLE'] ?? "";
+  static String devServerIp = dotenv.env['DEV_SERVER_IP'] ?? "";
+  static String devServerPort = dotenv.env['DEV_SERVER_PORT'] ?? "";
   static String get appTitle => appTitleZH;
 }

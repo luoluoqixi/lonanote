@@ -62,6 +62,7 @@ dependencies:
   video_player: ^2.10.0
   chewie: ^1.11.3
   webview_flutter: ^4.13.0
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   integration_test:
@@ -126,6 +127,7 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 
   assets:
+    - .env
     - assets/icons/icon_android.png
     - assets/icons/icon_ios.png
     - assets/editor/

@@ -212,6 +212,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(vite@6.3.2(@types/node@22.14.1)(sass-embedded@1.86.3)(tsx@4.19.3)(yaml@2.7.1))
 
+  packages/languages: {}
+
   packages/markdown-editor:
     devDependencies:
       remark-frontmatter:
@@ -227,6 +229,18 @@ importers:
         specifier: ^2.7.1
         version: 2.7.1
 
+  packages/mobile-editor:
+    devDependencies:
+      lonanote-languages:
+        specifier: workspace:*
+        version: link:../languages
+      lonanote-markdown-editor:
+        specifier: workspace:*
+        version: link:../markdown-editor
+      zustand:
+        specifier: ^5.0.3
+        version: 5.0.3(@types/react@19.1.2)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
+
   packages/renderer:
     devDependencies:
       '@radix-ui/themes':
@@ -238,6 +252,9 @@ importers:
       hypermd:
         specifier: ^0.3.11
         version: 0.3.11(codemirror@6.0.1)
+      lonanote-languages:
+        specifier: workspace:*
+        version: link:../languages
       lonanote-markdown-editor:
         specifier: workspace:*
         version: link:../markdown-editor

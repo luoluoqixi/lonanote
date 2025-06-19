@@ -1,5 +1,6 @@
 import { editorViewCtx } from '@milkdown/core';
 import { Ctx } from '@milkdown/kit/ctx';
+import markdownEditorLanguages from 'lonanote-languages/zh/markdown_editor_languages.json';
 import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-markdown-editor';
 import path from 'path-browserify-esm';
 import { Ref, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
@@ -15,7 +16,6 @@ import { utils } from '@/utils';
 import { useCodeMirrorTheme } from '../../codemirror';
 import { MarkdownEditorProps, MarkdownEditorRef } from '../types';
 import { useMilkdownEditor } from './hooks';
-import { markdownEditorLanguages } from './languages';
 
 export interface UpdateState {
   charCount: number;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:logger/logger.dart';
 import 'package:lonanote/src/bindings/api/settings/settings.dart';
@@ -48,6 +49,8 @@ Future<void> startup() async {
   }
 
   final startTime = DateTime.now().millisecondsSinceEpoch;
+
+  await dotenv.load();
 
   WidgetsFlutterBinding.ensureInitialized();
 

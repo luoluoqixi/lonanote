@@ -1,5 +1,5 @@
 {
-  "name": "lonanote-renderer",
+  "name": "lonanote-mobile-editor",
   "version": "0.0.5",
   "type": "module",
   "main": "src/index.tsx",
@@ -8,24 +8,12 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
-    "dev": "pnpm --filter \"../markdown-editor\" run build && vite --force",
+    "dev": "vite --host",
     "build": "vite build"
   },
   "devDependencies": {
-    "@radix-ui/themes": "^3.2.1",
-    "allotment": "^1.20.3",
-    "hypermd": "^0.3.11",
     "lonanote-markdown-editor": "workspace:*",
     "lonanote-languages": "workspace:*",
-    "next-themes": "^0.4.6",
-    "react-toastify": "^11.0.5",
-    "react-virtuoso": "^4.12.6",
-    "rehype-sanitize": "^6.0.0",
-    "rehype-stringify": "^10.0.1",
-    "remark-parse": "^11.0.0",
-    "remark-rehype": "^11.1.2",
-    "unified": "^11.0.5",
-    "vditor": "^3.11.1",
     "zustand": "^5.0.3"
   },
   "packageManager": "pnpm@9.15.0",
