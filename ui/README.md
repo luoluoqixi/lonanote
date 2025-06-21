@@ -18,6 +18,8 @@
 pnpm -C ui install
 ```
 
+- [flutter 安装](./flutter/README.md)
+
 #### 运行 Windows / Mac / Linux
 
 ```shell
@@ -36,21 +38,21 @@ pnpm -C ui build:mac
 # linux
 pnpm -C ui build:linux
 
+# build & run mobile
+pnpm -C ui build:mobile
+
 # android
-cd ui/flutter
-flutter build apk --release
+pnpm -C ui build:android
 
 # ios
-cd ui/flutter
-flutter build ios --release
+pnpm -C ui build:ios
 ```
 
 #### 运行 Android / IOS
 
 ```shell
 # 提前使用 USB 连接真机或启动 Android 模拟器
-cd ui/flutter
-flutter run
+pnpm -C ui dev:mobile
 ```
 
 > 首次运行应用程序时会被阻止
@@ -63,4 +65,4 @@ flutter run
 
 #### 提交
 
-[commit_emoji](./commit_emoji.md)
+[commit_emoji](../docs/dev/commit_emoji.md)

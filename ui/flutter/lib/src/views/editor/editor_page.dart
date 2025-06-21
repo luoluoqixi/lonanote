@@ -46,8 +46,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     if (AppConfig.isDebug) {
       final ip = "http://${AppConfig.devServerIp}:${AppConfig.devServerPort}";
       logger.i("load $ip");
-      // await _controller.loadRequest(Uri.parse(ip));
-      await _controller.loadFlutterAsset('assets/editor/index.html');
+      await _controller.loadRequest(Uri.parse(ip));
+      // await _controller.loadFlutterAsset('assets/editor/index.html');
       logger.i("load finish");
     } else {
       logger.i("load index.html...");

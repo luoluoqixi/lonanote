@@ -11,6 +11,10 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      tree-kill:
+        specifier: ^1.2.2
+        version: 1.2.2
     devDependencies:
       '@codemirror/autocomplete':
         specifier: '=6.18.6'

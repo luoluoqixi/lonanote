@@ -10,8 +10,14 @@
     "start": "pnpm --filter=\"./packages/desktop\" run start",
     "dev": "pnpm run build:rust:node && pnpm --filter=\"./packages/desktop\" run dev",
     "dev:web": "pnpm --filter=\"./packages/renderer\" run dev",
+    "dev:mobile": "tsx ./scripts/buildMobile.ts dev",
     "build": "pnpm run build:rust:node && pnpm --filter=\"./packages/desktop\" run build",
+    "build:android": "tsx ./scripts/buildMobile.ts build-android",
+    "build:ios": "tsx ./scripts/buildMobile.ts build-ios",
+    "build:mobile": "tsx ./scripts/buildMobile.ts build",
     "build:web": "pnpm --filter=\"./packages/renderer\" run build",
+    "flutter:build_runner": "cd flutter && dart run build_runner build",
+    "flutter:rust_generate": "cd flutter && flutter_rust_bridge_codegen generate",
     "postinstall": "tsx ./scripts/postinstall.ts",
     "build:unpack": "pnpm run build:rust:node && pnpm --filter=\"./packages/desktop\" run build:unpack",
     "build:win": "pnpm run build:rust:node && pnpm --filter=\"./packages/desktop\" run build:win",
@@ -81,5 +87,8 @@
     "@codemirror/view": "=6.23.1"
   },
   "packageManager": "pnpm@9.15.0",
-  "node": ">=20.0.0"
+  "node": ">=20.0.0",
+  "dependencies": {
+    "tree-kill": "^1.2.2"
+  }
 }

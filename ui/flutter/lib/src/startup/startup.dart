@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
@@ -41,6 +43,17 @@ Future<void> initRust() async {
   await RustSettings.initSettings();
 }
 
+Future<void> loadEnv() async {
+  if (AppConfig.isDebug) {
+    // priority: environment > .env.local > .env
+    await dotenv.load(fileName: '.env.local', mergeWith: Platform.environment);
+    await dotenv.load(fileName: '.env', mergeWith: {...dotenv.env});
+  } else {
+    // priority: environment > .env
+    await dotenv.load(fileName: '.env', mergeWith: Platform.environment);
+  }
+}
+
 Future<void> startup() async {
   if (AppConfig.isDebug) {
     Logger.level = Level.debug;
@@ -50,7 +63,7 @@ Future<void> startup() async {
 
   final startTime = DateTime.now().millisecondsSinceEpoch;
 
-  await dotenv.load();
+  await loadEnv();
 
   WidgetsFlutterBinding.ensureInitialized();
 

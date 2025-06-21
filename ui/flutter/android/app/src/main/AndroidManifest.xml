@@ -3,7 +3,8 @@
         android:label="lonanote"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:colorBackground="@color/app_color_background">
+        android:colorBackground="@color/app_color_background"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

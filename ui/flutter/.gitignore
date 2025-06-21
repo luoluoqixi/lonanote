@@ -49,3 +49,5 @@ assets/editor
 
 # lib/src/rust/*
 # !lib/src/rust/.gitkeep
+
+.env.local
