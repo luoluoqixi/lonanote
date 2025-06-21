@@ -3,4 +3,8 @@ import './styles/index.scss';
 import './theme';
 import './utils';
 
-createEditor();
+const initEditor = async (contentJson: string) => {
+  createEditor(contentJson);
+};
+
+window.initEditor = initEditor;

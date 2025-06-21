@@ -543,8 +543,8 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     AppRouter.jumpToVideoViewPage(context, rawPath);
   }
 
-  void _openEditor(String rawPath) {
-    AppRouter.jumpToEditorPage(context, rawPath);
+  void _openEditor(String path) {
+    AppRouter.jumpToEditorPage(context, path);
   }
 
   void _openNotSupport(String rawPath) {
@@ -574,7 +574,8 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     } else if (Utility.isVideo(extName)) {
       _openVideo(rawPath);
     } else if (Utility.isSupportEditor(extName)) {
-      _openEditor(rawPath);
+      final path = _getFullFilePath(node.path);
+      _openEditor(path);
     } else {
       _openNotSupport(rawPath);
       return;

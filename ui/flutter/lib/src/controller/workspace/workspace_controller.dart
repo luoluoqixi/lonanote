@@ -187,4 +187,20 @@ class WorkspaceController {
       }
     }
   }
+
+  static String getFileContent(
+    WidgetRef ref,
+    String filePath,
+  ) {
+    final wsPath = getCurrentWorkspacePath(ref);
+    if (wsPath != null) {
+      final targetPath = "$wsPath/$filePath";
+      if (RustFs.exists(targetPath)) {
+        return RustFs.readToString(targetPath);
+      } else {
+        throw Exception("文件不存在: $targetPath");
+      }
+    }
+    throw Exception("Workspace未打开");
+  }
 }

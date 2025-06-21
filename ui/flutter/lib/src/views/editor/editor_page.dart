@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -5,10 +7,12 @@ import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/common/ws_utils.dart';
+import 'package:lonanote/src/controller/workspace/workspace_controller.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
+import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -31,10 +35,12 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   int _tapCount = 0;
   DateTime? _lastTapTime;
 
+  String fileContent = "";
+
   @override
   void initState() {
     super.initState();
-    initEditorHtml();
+    _initEditorHtml();
   }
 
   @override
@@ -43,7 +49,25 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     _updateWebViewUI();
   }
 
-  Future<void> initEditorHtml() async {
+  Future<void> _loadFileContent() async {
+    try {
+      final content = WorkspaceController.getFileContent(ref, widget.path);
+      setState(() {
+        fileContent = content;
+      });
+    } catch (e) {
+      logger.e("load file error: $e");
+      DialogTools.showDialog(
+        context: context,
+        title: "错误",
+        content: LoggerUtility.errorShow("加载文件失败", e),
+        okText: "确定",
+      );
+    }
+  }
+
+  Future<void> _initEditorHtml() async {
+    await _loadFileContent();
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     await _controller.clearCache();
     await _controller.setOnConsoleMessage((message) {
@@ -67,7 +91,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
           setState(() {
             _webViewLoaded = true;
           });
-          _updateWebViewUI();
+          await _updateWebViewUI();
+          await _initWebEditor();
         },
       ),
     );
@@ -96,20 +121,29 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     _controller.runJavaScript("window.setupVConsole()");
   }
 
-  void _updateWebViewUI() {
+  Future<void> _initWebEditor() async {
+    if (_webViewLoaded) {
+      await _controller
+          .runJavaScript('window.initEditor(${jsonEncode(fileContent)})');
+    }
+  }
+
+  Future<void> _updateWebViewUI() async {
     // 设置 webview 的背景颜色
     final bgColor = ThemeColors.getBgColor(ThemeColors.getColorScheme(context));
-    _controller.setBackgroundColor(bgColor);
+    await _controller.setBackgroundColor(bgColor);
 
     if (_webViewLoaded) {
       final brightness =
           WidgetsBinding.instance.platformDispatcher.platformBrightness;
       final theme = brightness == Brightness.dark ? 'dark' : 'light';
-      _controller.runJavaScript('window.setColorMode("$theme")');
+      await _controller.runJavaScript('window.setColorMode("$theme")');
 
-      final statusBarHeight = MediaQuery.of(context).padding.top;
-      _controller
-          .runJavaScript('window.setStatusBarHeight("$statusBarHeight")');
+      if (mounted) {
+        final statusBarHeight = MediaQuery.of(context).padding.top;
+        await _controller
+            .runJavaScript('window.setStatusBarHeight("$statusBarHeight")');
+      }
     }
   }
 

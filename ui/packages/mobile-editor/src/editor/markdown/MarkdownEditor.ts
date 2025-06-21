@@ -6,12 +6,12 @@ import { codemirrorLightTheme } from '../codemirror/theme';
 import { utils } from '../utils';
 import './MarkdownEditor.scss';
 
-export const create = (root: HTMLElement) => {
+export const create = (root: HTMLElement, contentJson: string) => {
   const theme = codemirrorLightTheme;
   const editor = new MilkdownEditor({
     root,
     defaultReadOnly: false,
-    defaultValue: 'default value',
+    defaultValue: contentJson,
     features: {
       [MilkdownFeature.BlockEdit]: false,
     },
