@@ -70,6 +70,12 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     await _loadFileContent();
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     await _controller.clearCache();
+    _controller.addJavaScriptChannel(
+      'EditorBridge',
+      onMessageReceived: (JavaScriptMessage message) {
+        // if (message.message == '') {}
+      },
+    );
     await _controller.setOnConsoleMessage((message) {
       if (message.level == JavaScriptLogLevel.info) {
         logger.i(message.message);
@@ -88,9 +94,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
         onPageFinished: (url) async {
           logger.i("load finish: $url");
           if (!mounted) return;
-          setState(() {
-            _webViewLoaded = true;
-          });
+          _webViewLoaded = true;
           await _updateWebViewUI();
           await _initWebEditor();
         },
@@ -122,10 +126,16 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   }
 
   Future<void> _initWebEditor() async {
-    if (_webViewLoaded) {
-      await _controller
-          .runJavaScript('window.initEditor(${jsonEncode(fileContent)})');
-    }
+    // if (!_webViewLoaded) return;
+    await _controller.runJavaScript(
+      """
+      try {
+        window.initEditor(${jsonEncode(fileContent)});
+      } catch(e) {
+        console.error(e);
+      }
+      """,
+    );
   }
 
   Future<void> _updateWebViewUI() async {

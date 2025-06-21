@@ -3,9 +3,9 @@ import { TextSelection } from '@milkdown/kit/prose/state';
 
 import { create } from './markdown/MarkdownEditor';
 
-export const createEditor = async (contentJson: string) => {
+export const createEditor = async (content: string) => {
   const root = document.getElementById('root')!;
-  const editor = create(root, contentJson);
+  const editor = create(root, content);
 
   document.body.addEventListener('click', (e) => {
     if (editor == null || editor.editor == null) return;

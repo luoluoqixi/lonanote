@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:logger/logger.dart';
@@ -62,12 +63,26 @@ Future<void> initRust() async {
 
 Future<void> loadEnv() async {
   if (AppConfig.isDebug) {
+    Future<bool> assetExists(String assetPath) async {
+      try {
+        await rootBundle.loadString(assetPath);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
     // priority: environment > .env.local > .env
-    await dotenv.load(fileName: '.env.local', mergeWith: Platform.environment);
-    await dotenv.load(fileName: '.env', mergeWith: {...dotenv.env});
+    if (await assetExists("env/.env.local")) {
+      await dotenv.load(
+          fileName: 'env/.env.local', mergeWith: Platform.environment);
+      await dotenv.load(fileName: 'env/.env', mergeWith: {...dotenv.env});
+    } else {
+      await dotenv.load(fileName: 'env/.env', mergeWith: Platform.environment);
+    }
   } else {
     // priority: environment > .env
-    await dotenv.load(fileName: '.env', mergeWith: Platform.environment);
+    await dotenv.load(fileName: 'env/.env', mergeWith: Platform.environment);
   }
 }
 
