@@ -33,6 +33,7 @@ reqwest = { workspace = true, default-features = false, features = [
   "rustls-tls",
 ] }
 futures = { workspace = true }
+rust-embed = { workspace = true }
 
 # [target.'cfg(target_os = "windows")'.dependencies]
 # [target.'cfg(target_os = "macos")'.dependencies]

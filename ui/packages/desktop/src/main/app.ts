@@ -155,6 +155,10 @@ const getPublicPath = () => {
   return path.join(__dirname, '../renderer');
 };
 
+const getDocumentPath = () => {
+  return app.getPath('documents');
+};
+
 export const setupApp = async () => {
   const setZoom = (zoom: number) => {
     if (zoom < settings.minZoom) return;
@@ -281,6 +285,7 @@ export const setupApp = async () => {
       }
     });
     ipcMain.handle('getPublicDir', getPublicPath);
+    ipcMain.handle('getDocumentDir', getDocumentPath);
     ipcMain.handle(
       'getPublicFiles',
       (e, folder: string, type: 'folder' | 'file' | 'all', recursive: boolean) => {

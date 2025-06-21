@@ -11,6 +11,11 @@ String checkCurrentOpenWorkspace() {
 }
 
 class RustWorkspace {
+  static Future<void> importInitWorkspace(String path) async {
+    await Bindings.invokeAsync(
+        key: "workspace.import_init_workspace", value: {"path": path});
+  }
+
   static Future<bool> isOpenWorkspace(String? path) async {
     if (path == null) {
       return false;
@@ -114,6 +119,11 @@ class RustWorkspace {
           "recursive": recursive,
         });
     return RustFileNode.fromJson(s);
+  }
+
+  static Future<void> importCurrentInitWorkspace() async {
+    final path = checkCurrentOpenWorkspace();
+    return await importInitWorkspace(path);
   }
 
   static Future<RustWorkspaceData?> getCurrentWorkspace() async {

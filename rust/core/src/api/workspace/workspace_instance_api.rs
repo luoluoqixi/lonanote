@@ -24,6 +24,23 @@ struct SetOpenWorkspaceSettingsArgs {
     pub settings: WorkspaceSettings,
 }
 
+async fn import_init_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+
+    workspace_manager
+        .import_init_data(&WorkspacePath::from(&args.path))
+        .await
+        .map_err(|err| {
+            anyhow!(
+                "workspace import_init_workspace error: {}, path: {}",
+                err,
+                &args.path,
+            )
+        })?;
+
+    Ok(CommandResponse::None)
+}
+
 async fn is_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let is_open = workspace_manager
@@ -220,6 +237,7 @@ async fn reset_open_workspace_upload_image_path(
 }
 
 pub fn reg_commands() -> Result<()> {
+    reg_command_async("workspace.import_init_workspace", import_init_workspace)?;
     reg_command_async("workspace.is_open_workspace", is_open_workspace)?;
     reg_command_async("workspace.get_open_workspace", get_open_workspace)?;
     reg_command_async(

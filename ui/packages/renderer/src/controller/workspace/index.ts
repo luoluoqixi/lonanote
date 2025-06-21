@@ -1,9 +1,13 @@
+import path from 'path-browserify-esm';
+
+import { path as bindingPath } from '@/bindings/api';
 import {
   getCurrentOpenWorkspace,
   setCurrentOpenWorkspace,
   workspace,
   workspaceManager,
 } from '@/bindings/api/workspace';
+import { dialog } from '@/components';
 import { useSettingsStore } from '@/models/settings';
 
 import { updateWorkspaces } from './workspace';
@@ -39,7 +43,20 @@ export const getInitWorkspace = async () => {
 };
 
 export const initWorkspace = async () => {
-  await getInitWorkspace();
+  try {
+    const documentDir = await bindingPath.getDocumentDir();
+    if (documentDir) {
+      const firstWsPath = path.join(documentDir, 'lonanote/Default');
+      await workspaceManager.initSetup(firstWsPath);
+    }
+    await getInitWorkspace();
+  } catch (e) {
+    console.error(e);
+    dialog.showDialog({
+      title: '错误',
+      content: `初始化workspace失败: ${e}`,
+    });
+  }
   updateWorkspaces();
 };
 

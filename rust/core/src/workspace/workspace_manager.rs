@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     config::app_path::get_root_dir,
     utils::{fs_utils, time_utils::get_now_timestamp},
+    workspace::config::DefaultWorkspace,
 };
 
 use super::{
@@ -47,6 +48,46 @@ impl WorkspaceManager {
             workspaces: Vec::new(),
             workspaces_savedata: HashMap::new(),
         }
+    }
+
+    pub async fn import_init_data(&mut self, path: &WorkspacePath) -> Result<(), WorkspaceError> {
+        for file_path in DefaultWorkspace::iter() {
+            if let Some(file) = DefaultWorkspace::get(file_path.as_ref()) {
+                let bytes = file.data.as_ref();
+
+                let mut out_path = path.to_path_buf();
+                out_path.push(file_path.as_ref());
+                if let Some(parent) = out_path.parent() {
+                    fs::create_dir_all(parent)
+                        .map_err(|err| WorkspaceError::IOError(format!("{}", err)))?;
+                }
+                fs::write(&out_path, bytes)
+                    .map_err(|err| WorkspaceError::IOError(format!("{}", err)))?;
+            }
+        }
+        log::info!("import init data: {}", path.to_path_buf().display());
+
+        Ok(())
+    }
+
+    pub async fn init_setup(&mut self, path: &WorkspacePath) -> Result<(), WorkspaceError> {
+        let mut settings = crate::settings::get_settings_mut().await;
+
+        if settings.first_setup {
+            settings.first_setup = false;
+
+            if self.workspaces.is_empty() {
+                self.create_workspace(path).await?;
+                self.import_init_data(path).await?;
+                self.last_workspace.replace(path.clone());
+            }
+
+            settings
+                .save()
+                .map_err(|err| WorkspaceError::InitError(format!("{}", err)))?;
+        }
+
+        Ok(())
     }
 
     pub fn get_workspace(&self, path: &WorkspacePath) -> Option<&WorkspaceInstance> {

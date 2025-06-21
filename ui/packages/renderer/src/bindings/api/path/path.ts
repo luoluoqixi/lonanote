@@ -13,6 +13,12 @@ export const path = {
   getDownloadDir: async (): Promise<string> => {
     return (await invoke('path.get_download_dir'))!;
   },
+  getDocumentDir: async () => {
+    if (isElectron && window.api) {
+      return window.api.utils.getDocumentDir();
+    }
+    return null;
+  },
   getPublicDir: async () => {
     if (isElectron && window.api) {
       return window.api.utils.getPublicDir();

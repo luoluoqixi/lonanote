@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:logger/logger.dart';
 import 'package:lonanote/src/bindings/api/settings/settings.dart';
+import 'package:lonanote/src/bindings/api/workspace/workspace_manager.dart';
 import 'package:lonanote/src/bindings/bindings.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
@@ -41,6 +42,7 @@ Future<void> initRust() async {
   }
 
   await RustSettings.initSettings();
+  await RustWorkspaceManager.initSetup("Default");
 }
 
 Future<void> loadEnv() async {

@@ -10,6 +10,9 @@ use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
+    /// 是否是第一次启动
+    #[serde(default = "Settings::default_first_setup")]
+    pub first_setup: bool,
     /// 自动检查更新
     #[serde(default = "Settings::default_auto_check_update")]
     pub auto_check_update: bool,
@@ -28,6 +31,10 @@ pub struct Settings {
 }
 
 impl Settings {
+    pub const fn default_first_setup() -> bool {
+        true
+    }
+
     pub const fn default_auto_check_update() -> bool {
         true
     }
@@ -62,6 +69,7 @@ impl Settings {
             }
         }
         Self {
+            first_setup: Settings::default_first_setup(),
             auto_check_update: Settings::default_auto_check_update(),
             auto_open_last_workspace: Settings::default_auto_open_last_workspace(),
             auto_save: Settings::default_auto_save(),

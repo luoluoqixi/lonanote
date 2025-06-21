@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 use crate::{
     settings::get_settings,
@@ -22,6 +22,16 @@ struct SetWorkspaceRootPathArgs {
     pub path: String,
     pub new_path: String,
     pub is_move: bool,
+}
+
+async fn init_setup(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
+    let mut workspace_manager = get_workspace_manager_mut().await;
+    workspace_manager
+        .init_setup(&WorkspacePath::from(&args.path))
+        .await
+        .map_err(|err| anyhow!("workspace init_setup error: {}", err,))?;
+
+    Ok(CommandResponse::None)
 }
 
 async fn set_workspace_root_path(Json(args): Json<SetWorkspaceRootPathArgs>) -> CommandResult {
@@ -177,6 +187,7 @@ async fn set_workspace_savedata(Json(args): Json<SetWorkspaceSaveDataArgs>) -> C
 }
 
 pub fn reg_commands() -> Result<()> {
+    reg_command_async("workspace.init_setup", init_setup)?;
     reg_command_async("workspace.set_workspace_root_path", set_workspace_root_path)?;
     reg_command_async("workspace.set_workspace_name", set_workspace_name)?;
     reg_command_async("workspace.remove_workspace", remove_workspace)?;

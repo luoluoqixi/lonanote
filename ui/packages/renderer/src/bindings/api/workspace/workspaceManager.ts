@@ -25,6 +25,9 @@ export const formatPath = (path: string) => {
 };
 
 export const workspaceManager = {
+  initSetup: async (path: string) => {
+    return await invokeAsync('workspace.init_setup', { path });
+  },
   setWorkspaceRootPath: async (path: string, newPath: string, isMove: boolean) => {
     return (await invokeAsync('workspace.set_workspace_root_path', { path, newPath, isMove }))!;
   },

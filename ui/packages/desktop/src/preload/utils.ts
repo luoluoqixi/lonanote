@@ -77,6 +77,9 @@ export const utils = {
   getPublicDir: async (): Promise<string> => {
     return await ipcRenderer.invoke('getPublicDir');
   },
+  getDocumentDir: async (): Promise<string> => {
+    return await ipcRenderer.invoke('getDocumentDir');
+  },
   getPublicFiles: async (
     folder: string,
     type: 'folder' | 'file' | 'all',

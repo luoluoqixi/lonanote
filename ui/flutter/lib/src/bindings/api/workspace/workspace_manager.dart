@@ -20,6 +20,11 @@ class RustWorkspaceManager {
     return RustPath.getHomeDir();
   }
 
+  static Future<void> initSetup(String path) async {
+    await Bindings.invokeAsync(
+        key: "workspace.init_setup", value: {"path": path});
+  }
+
   static Future<void> setWorkspaceRootPath(
       String path, String newPath, bool isMove) async {
     await Bindings.invokeAsync(

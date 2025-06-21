@@ -10,6 +10,9 @@ const checkCurrentOpenWorkspace = async (): Promise<string> => {
 };
 
 export const workspace = {
+  importInitWorkspace: async (path: string): Promise<boolean> => {
+    return path ? (await invokeAsync('workspace.import_init_workspace', { path }))! : false;
+  },
   isOpenWorkspace: async (path: string): Promise<boolean> => {
     return path ? (await invokeAsync('workspace.is_open_workspace', { path }))! : false;
   },
@@ -84,6 +87,10 @@ export const workspace = {
       sortType,
       recursive,
     }))!;
+  },
+  importCurrentInitWorkspace: async (): Promise<boolean> => {
+    const path = await checkCurrentOpenWorkspace();
+    return await workspace.importInitWorkspace(path);
   },
   getCurrentWorkspace: async (): Promise<Workspace | null> => {
     const path = getCurrentOpenWorkspace();
