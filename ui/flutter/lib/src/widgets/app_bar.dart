@@ -18,6 +18,7 @@ class ScrollAppBar extends StatelessWidget {
   final double? expandedHeight;
   final double? expandedTitleScale;
   final Widget? flexibleSpace;
+  final bool? centerTitle;
 
   const ScrollAppBar({
     super.key,
@@ -35,6 +36,7 @@ class ScrollAppBar extends StatelessWidget {
     this.expandedHeight,
     this.expandedTitleScale,
     this.flexibleSpace,
+    this.centerTitle,
   });
 
   @override
@@ -47,13 +49,13 @@ class ScrollAppBar extends StatelessWidget {
       pinned: true,
       backgroundColor: backgroundColor,
       titleTextStyle: TextStyle(color: textColor),
-      centerTitle: false,
+      centerTitle: centerTitle ?? false,
       expandedHeight: expandedHeight ?? defaultExpandedHeight,
       scrolledUnderElevation: scrolledUnderElevation ?? 1,
       surfaceTintColor: ThemeColors.getPrimaryColor(colorScheme),
       flexibleSpace: flexibleSpace ??
           CustomFlexibleSpaceBar(
-            centerTitle: false,
+            centerTitle: centerTitle ?? false,
             expandedTitleScale: expandedTitleScale ?? 2,
             fixedSubtitle: subTitle != null || subTitleText != null
                 ? DefaultTextStyle(
@@ -101,6 +103,7 @@ class SimpleAppBar extends StatelessWidget {
   final double? scrolledUnderElevation;
   final double? expandedHeight;
   final double? expandedTitleScale;
+  final bool? centerTitle;
 
   const SimpleAppBar({
     super.key,
@@ -113,6 +116,7 @@ class SimpleAppBar extends StatelessWidget {
     this.scrolledUnderElevation,
     this.expandedHeight,
     this.expandedTitleScale,
+    this.centerTitle,
   });
 
   @override
@@ -131,7 +135,7 @@ class SimpleAppBar extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),
-      centerTitle: false,
+      centerTitle: centerTitle ?? false,
       expandedHeight: 0,
       scrolledUnderElevation: scrolledUnderElevation ?? 1,
       surfaceTintColor: ThemeColors.getPrimaryColor(colorScheme),
@@ -139,6 +143,7 @@ class SimpleAppBar extends StatelessWidget {
       actions: [
         ...?actions,
       ],
+      actionsPadding: const EdgeInsets.only(right: 15.0),
     );
   }
 }

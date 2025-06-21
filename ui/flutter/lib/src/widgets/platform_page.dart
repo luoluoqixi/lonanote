@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/theme/app_theme.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/app_bar.dart';
 import 'package:lonanote/src/widgets/flutter/custom_refresh_indicator.dart';
@@ -25,6 +27,7 @@ class PlatformPage extends StatefulWidget {
 
   final Color? backgroundColor;
   final Color? titleColor;
+  final bool? centerTitle;
 
   final bool? isLoading;
   final Future<void> Function()? onRefresh;
@@ -44,6 +47,7 @@ class PlatformPage extends StatefulWidget {
     this.subTitle,
     this.subTitleText,
     this.titleActions,
+    this.centerTitle,
     this.child,
     this.contents,
     this.isHome,
@@ -120,6 +124,7 @@ class _PlatformPageState extends State<PlatformPage> {
       subTitle: widget.subTitle,
       subTitleText: widget.subTitleText,
       actions: widget.titleActions,
+      centerTitle: widget.centerTitle,
       bgColor: widget.titleColor,
     );
   }
@@ -213,6 +218,8 @@ class PlatformSimplePage extends StatefulWidget {
   final Color? titleBgColor;
   final Color? titleTextColor;
   final List<Widget>? titleActions;
+  final bool? centerTitle;
+  final bool? extendBodyBehindAppBar;
 
   final bool? isLoading;
   final Future<void> Function()? onRefresh;
@@ -237,6 +244,8 @@ class PlatformSimplePage extends StatefulWidget {
     this.titleBgColor,
     this.titleTextColor,
     this.titleActions,
+    this.centerTitle,
+    this.extendBodyBehindAppBar,
     this.isLoading,
     this.onRefresh,
     this.noScrollView,
@@ -289,17 +298,61 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     BuildContext context,
   ) {
     final appBar = _buildAppBar(colorScheme);
+    final SystemUiOverlayStyle overlayStyle =
+        AppTheme.getSystemOverlayStyle(colorScheme);
     if (widget.noScrollView == true) {
-      return Column(
-        children: [
-          if (appBar != null) appBar,
-          if (widget.child != null)
-            Expanded(
-              child: widget.child!,
-            ),
-          ...?widget.contents,
-        ],
-      );
+      if (widget.extendBodyBehindAppBar == true) {
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          // 如果不加这个, 那么安卓端热重载后 BottomNavBar 会变黑
+          value: overlayStyle,
+          child: Stack(
+            children: [
+              SafeArea(
+                top: false,
+                left: true,
+                right: true,
+                bottom: false,
+                child: Column(
+                  children: [
+                    if (widget.child != null)
+                      Expanded(
+                        child: widget.child!,
+                      ),
+                    ...?widget.contents,
+                  ],
+                ),
+              ),
+              if (appBar != null)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    left: true,
+                    right: true,
+                    top: true,
+                    bottom: false,
+                    child: SizedBox(
+                      height: SimpleAppBar.defaultHeight,
+                      child: appBar,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      } else {
+        return Column(
+          children: [
+            if (appBar != null) appBar,
+            if (widget.child != null)
+              Expanded(
+                child: widget.child!,
+              ),
+            ...?widget.contents,
+          ],
+        );
+      }
     }
     return CustomScrollView(
       controller: controller,
@@ -324,7 +377,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     if (widget.title == null && widget.titleText == null) return null;
     if (widget.noScrollView == true) {
       return AppBar(
-        centerTitle: false,
+        centerTitle: widget.centerTitle ?? false,
         actions: widget.titleActions,
         title: widget.title ??
             Text(
@@ -335,6 +388,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
         titleTextStyle: TextStyle(color: textColor, fontSize: 22),
         backgroundColor: backgroundColor,
         toolbarHeight: SimpleAppBar.defaultHeight,
+        actionsPadding: const EdgeInsets.only(right: 15.0),
       );
     }
     return SimpleAppBar(

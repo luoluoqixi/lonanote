@@ -1,3 +1,5 @@
+import { config } from '@/config';
+
 export async function setupVConsole() {
   const { default: VConsole } = await import('vconsole');
   const vConsole = new VConsole({
@@ -14,3 +16,7 @@ export async function setupVConsole() {
 }
 
 window.setupVConsole = setupVConsole;
+
+if (config.isDev) {
+  setupVConsole();
+}

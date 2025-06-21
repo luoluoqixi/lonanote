@@ -26,6 +26,7 @@ class EditorPage extends ConsumerStatefulWidget {
 
 class _EditorPageState extends ConsumerState<EditorPage> {
   final WebViewController _controller = WebViewController();
+  bool _webViewLoaded = false;
 
   int _tapCount = 0;
   DateTime? _lastTapTime;
@@ -36,9 +37,15 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     initEditorHtml();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateWebViewUI();
+  }
+
   Future<void> initEditorHtml() async {
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
-    _controller.setOnConsoleMessage((message) {
+    await _controller.setOnConsoleMessage((message) {
       if (message.level == JavaScriptLogLevel.info) {
         logger.i(message.message);
       } else if (message.level == JavaScriptLogLevel.warning) {
@@ -51,10 +58,15 @@ class _EditorPageState extends ConsumerState<EditorPage> {
         logger.d(message.message);
       }
     });
-    _controller.setNavigationDelegate(
+    await _controller.setNavigationDelegate(
       NavigationDelegate(
         onPageFinished: (url) async {
           logger.i("load finish: $url");
+          if (!mounted) return;
+          setState(() {
+            _webViewLoaded = true;
+          });
+          _updateWebViewUI();
         },
       ),
     );
@@ -74,12 +86,28 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   }
 
   void _openVConsole() {
+    if (!_webViewLoaded) return;
     _controller.runJavaScript("window.setupVConsole()");
   }
 
-  void _onTitleTap() {
-    if (AppConfig.isDebug) return;
+  void _updateWebViewUI() {
+    // 设置 webview 的背景颜色
+    final bgColor = ThemeColors.getBgColor(ThemeColors.getColorScheme(context));
+    _controller.setBackgroundColor(bgColor);
 
+    if (_webViewLoaded) {
+      final brightness =
+          WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      final theme = brightness == Brightness.dark ? 'dark' : 'light';
+      _controller.runJavaScript('window.setColorMode("$theme")');
+
+      final statusBarHeight = MediaQuery.of(context).padding.top;
+      _controller
+          .runJavaScript('window.setStatusBarHeight("$statusBarHeight")');
+    }
+  }
+
+  void _onTitleTap() {
     final now = DateTime.now();
     if (_lastTapTime == null ||
         now.difference(_lastTapTime!) > Duration(seconds: 2)) {
@@ -122,6 +150,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
 
     return PlatformSimplePage(
       titleActions: _buildTitleActions(colorScheme),
+      extendBodyBehindAppBar: true,
       title: GestureDetector(
         onTap: _onTitleTap,
         child: Text(
@@ -130,6 +159,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
           maxLines: 1,
         ),
       ),
+      titleBgColor: Colors.transparent,
+      centerTitle: true,
       noScrollView: true,
       child: WebViewWidget(
         controller: _controller,

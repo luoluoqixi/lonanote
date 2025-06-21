@@ -17,8 +17,25 @@
     <meta name="theme-color" content="#2196f3" />
   </head>
 
-  <body>
+  <body style="background-color: transparent">
+    <script>
+      window.setColorMode = (mode) => {
+        if (!mode) return;
+        document.documentElement.classList.remove('light', 'dark');
+        document.documentElement.classList.add(mode);
+        console.log(`setColorMode: ${mode}`);
+      };
+      window.setStatusBarHeight = (statusBarHeight) => {
+        if (typeof statusBarHeight === 'string') {
+          const n = Number.parseFloat(statusBarHeight);
+          if (!Number.isNaN(n)) {
+            document.body.style.paddingTop = `${n}px`;
+            console.log(`setStatusBarHeight: ${statusBarHeight}`);
+          }
+        }
+      };
+    </script>
     <div id="root"></div>
-    <script type="module" src="/src/index.tsx"></script>
+    <script type="module" src="/src/index.ts"></script>
   </body>
 </html>

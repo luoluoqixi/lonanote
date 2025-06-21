@@ -12,10 +12,6 @@ async function initStyles() {
     await import('@/styles/platform/mac.scss');
   } else if (platform === 'linux') {
     await import('@/styles/platform/linux.scss');
-  } else if (platform === 'android') {
-    await import('@/styles/platform/android.scss');
-  } else if (platform === 'ios') {
-    await import('@/styles/platform/ios.scss');
   }
 }
 

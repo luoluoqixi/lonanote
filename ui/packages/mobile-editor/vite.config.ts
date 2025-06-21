@@ -1,6 +1,5 @@
 import path from 'path';
 import { UserConfig, defineConfig } from 'vite';
-import { viteVConsole } from 'vite-plugin-vconsole';
 
 import pkg from './package.json';
 
@@ -18,62 +17,41 @@ const removeCrossOrigin = () => {
     },
   };
 };
-
-export default defineConfig((env) => {
-  const isProduction = env.mode === 'production';
-  const outDir = '../../flutter/assets/editor';
-  return {
-    root: './',
-    base: './',
-    build: {
-      outDir,
-      rollupOptions: {
-        input: path.resolve(__dirname, 'index.html'),
-        output: {
-          dir: outDir,
-          format: 'iife',
-        },
-      },
-      ...defaultBuildConfig,
-    },
-    envPrefix: ['VITE_', 'LONANOTE_'],
-    envDir: 'env/',
-    plugins: [
-      viteVConsole({
-        entry: path.resolve(__dirname, 'src/index.tsx'),
-        enabled: !isProduction,
-        localEnabled: false,
-        config: {
-          log: {
-            maxLogNumber: 1000,
-            showTimestamps: true,
-          },
-          theme: 'light',
-          onReady() {
-            console.log('vConfig init success');
-          },
-        },
-      }),
-      removeCrossOrigin(),
-    ],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, 'src'),
+const outDir = '../../flutter/assets/editor';
+export default defineConfig({
+  root: './',
+  base: './',
+  build: {
+    outDir,
+    rollupOptions: {
+      input: path.resolve(__dirname, 'index.html'),
+      output: {
+        dir: outDir,
+        format: 'iife',
       },
     },
-    css: {
-      preprocessorOptions: {
-        scss: {
-          api: 'modern-compiler', // 或 "modern"，"legacy"
-        },
+    ...defaultBuildConfig,
+  },
+  envPrefix: ['VITE_', 'LONANOTE_'],
+  envDir: 'env/',
+  plugins: [removeCrossOrigin()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler', // 或 "modern"，"legacy"
       },
     },
-    server: {
-      port: 8888,
-      open: false,
-    },
-    define: {
-      __APP_VERSION__: JSON.stringify(pkg.version),
-    },
-  };
+  },
+  server: {
+    port: 8888,
+    open: false,
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
 });
