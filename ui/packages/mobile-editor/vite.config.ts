@@ -26,7 +26,7 @@ export default defineConfig((env) => {
     root: './',
     base: './',
     build: {
-      outDir: outDir,
+      outDir,
       rollupOptions: {
         input: path.resolve(__dirname, 'index.html'),
         output: {

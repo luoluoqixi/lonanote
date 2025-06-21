@@ -130,3 +130,4 @@ flutter:
     - .env
     - assets/icons/
     - assets/editor/
+    - assets/editor/assets/
