@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
 
+use crate::config::app_path::get_root_dir;
+
 use super::{
     config::{create_workspace_config_folder, create_workspace_init_files},
     error::WorkspaceError,
@@ -38,6 +40,10 @@ impl WorkspaceInstance {
     }
 
     pub async fn reinit(&self) -> Result<(), WorkspaceError> {
+        if get_root_dir().is_some() {
+            // 当 root_dir 存在时, 是在移动端, 而移动端不使用 file_tree, 就不 reinit 了
+            return Ok(());
+        }
         let follow_gitignore = self.settings.follow_gitignore;
         let custom_ignore = self.settings.custom_ignore.to_owned();
         let sort_type = self.settings.file_tree_sort_type.to_owned();

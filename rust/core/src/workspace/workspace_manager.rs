@@ -57,6 +57,7 @@ impl WorkspaceManager {
 
                 let mut out_path = path.to_path_buf();
                 out_path.push(file_path.as_ref());
+
                 if let Some(parent) = out_path.parent() {
                     fs::create_dir_all(parent)
                         .map_err(|err| WorkspaceError::IOError(format!("{}", err)))?;
@@ -74,17 +75,23 @@ impl WorkspaceManager {
         let mut settings = crate::settings::get_settings_mut().await;
 
         if settings.first_setup {
-            settings.first_setup = false;
+            log::info!("start import init data...");
 
             if self.workspaces.is_empty() {
                 self.create_workspace(path).await?;
                 self.import_init_data(path).await?;
                 self.last_workspace.replace(path.clone());
+                log::info!("import init data finish");
+            } else {
+                log::info!("workspaces is not empty, jump import");
             }
 
+            settings.first_setup = false;
             settings
                 .save()
                 .map_err(|err| WorkspaceError::InitError(format!("{}", err)))?;
+        } else {
+            log::info!("first_setup is false, jump import data");
         }
 
         Ok(())

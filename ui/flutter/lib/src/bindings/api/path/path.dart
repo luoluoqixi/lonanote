@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:path_provider/path_provider.dart';
@@ -8,8 +10,14 @@ class RustPath {
   static Future<void> initPath() async {
     final tempDir = await getTemporaryDirectory();
     final downloadDir = await getDownloadsDirectory();
-    final documentDir = await getApplicationDocumentsDirectory();
+    var documentDir = await getApplicationDocumentsDirectory();
     final dataDir = await getApplicationSupportDirectory();
+    if (Platform.isAndroid) {
+      final directory = await getExternalStorageDirectory();
+      if (directory != null) {
+        documentDir = directory;
+      }
+    }
     Bindings.invoke(key: "path.init_dir", value: {
       "dataDir": dataDir.path,
       "cacheDir": tempDir.path,

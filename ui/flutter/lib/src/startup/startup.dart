@@ -41,8 +41,23 @@ Future<void> initRust() async {
     rethrow;
   }
 
-  await RustSettings.initSettings();
-  await RustWorkspaceManager.initSetup("Default");
+  try {
+    logger.i("RustSettings.initSettings start...");
+    await RustSettings.initSettings();
+    logger.i("RustSettings.initSettings finish");
+  } catch (e) {
+    logger.e("RustSettings.initSettings error: $e");
+    rethrow;
+  }
+
+  try {
+    logger.i("RustWorkspaceManager.initSetup start...");
+    await RustWorkspaceManager.initSetup("Default");
+    logger.i("RustWorkspaceManager.initSetup finish");
+  } catch (e) {
+    logger.e("RustWorkspaceManager.initSetup error: $e");
+    rethrow;
+  }
 }
 
 Future<void> loadEnv() async {

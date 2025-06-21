@@ -6,10 +6,10 @@ use crate::config::app_path;
 
 use super::{error::WorkspaceError, workspace_path::WorkspacePath};
 
-use rust_embed::RustEmbed;
+use rust_embed::Embed;
 
-#[derive(RustEmbed)]
-#[folder = "assets/default_workspace"]
+#[derive(Embed)]
+#[folder = "assets/default_workspace/"]
 pub struct DefaultWorkspace;
 
 pub static WORKSPACE_CONFIG_FOLDER: &str = ".lonanote";
