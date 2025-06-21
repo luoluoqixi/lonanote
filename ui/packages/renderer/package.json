@@ -17,6 +17,7 @@
     "hypermd": "^0.3.11",
     "lonanote-markdown-editor": "workspace:*",
     "lonanote-languages": "workspace:*",
+    "lonanote-styles": "workspace:*",
     "next-themes": "^0.4.6",
     "react-toastify": "^11.0.5",
     "react-virtuoso": "^4.12.6",

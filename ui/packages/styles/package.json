@@ -1,0 +1,16 @@
+{
+  "name": "lonanote-styles",
+  "version": "0.0.5",
+  "exports": {
+    "./common-milkdown-theme.scss": {
+      "import": "./common-milkdown-theme.scss"
+    },
+    "./codemirror-theme.scss": {
+      "import": "./codemirror-theme.scss"
+    }
+  },
+  "files": [
+    "common-milkdown-theme.scss",
+    "codemirror-theme"
+  ]
+}

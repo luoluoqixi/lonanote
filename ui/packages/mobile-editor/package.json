@@ -13,7 +13,8 @@
   },
   "devDependencies": {
     "lonanote-languages": "workspace:*",
-    "lonanote-markdown-editor": "workspace:*"
+    "lonanote-markdown-editor": "workspace:*",
+    "lonanote-styles": "workspace:*"
   },
   "packageManager": "pnpm@9.15.0",
   "node": ">=20.0.0"

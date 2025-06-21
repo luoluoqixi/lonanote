@@ -94,6 +94,10 @@ class ThemeIcons {
     return check ? Icons.check_circle : Icons.radio_button_unchecked;
   }
 
+  static IconData refresh(BuildContext context) {
+    return isMaterial(context) ? Icons.refresh : Icons.refresh;
+  }
+
   static IconData rename(BuildContext context) {
     return isMaterial(context)
         ? Icons.drive_file_rename_outline

@@ -1,5 +1,6 @@
 import { editorViewCtx } from '@milkdown/core';
 import { Ctx } from '@milkdown/kit/ctx';
+import { TextSelection } from '@milkdown/kit/prose/state';
 import markdownEditorLanguages from 'lonanote-languages/zh/markdown_editor_languages.json';
 import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-markdown-editor';
 import path from 'path-browserify-esm';
@@ -377,10 +378,31 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       <div
         style={{
           display: loading ? 'none' : undefined,
+          cursor: 'text',
           ...style,
         }}
         className={className}
         ref={editorRef}
+        onClick={(e) => {
+          const editor = getEditor();
+          if (editor == null || editor.editor == null) return;
+          // if (e.target !== document.body) return;
+          const target = e.target;
+          if (target == null) return;
+          if (target instanceof HTMLElement) {
+            if (target.classList.contains('milkdown')) {
+              // 手指点在 milkdown 上时自动聚焦
+              editor.editor.action((ctx) => {
+                const view = ctx.get(editorViewCtx);
+                const pos = view.state.doc.content.size;
+                const { state } = view;
+                const selection = TextSelection.create(state.doc, pos);
+                view.focus();
+                view.dispatch(state.tr.setSelection(selection));
+              });
+            }
+          }
+        }}
       />
       <ContextMenu
         ref={menuRef}

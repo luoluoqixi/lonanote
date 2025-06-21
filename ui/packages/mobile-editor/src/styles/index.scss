@@ -1,22 +1,16 @@
+@use './theme.scss';
+
 body {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
-  overflow: visible;
-  position: fixed;
+  min-height: 90vh;
+  overflow: auto;
 }
 
 #root {
+  margin-top: 56px;
   width: 100%;
-  height: 100%;
-}
-
-.dark #root {
-  background-color: #000;
-  color: #fff;
-}
-.light #root {
-  background-color: #fff;
-  color: #000;
+  background-color: var(--color-background);
+  color: var(--text-color);
 }

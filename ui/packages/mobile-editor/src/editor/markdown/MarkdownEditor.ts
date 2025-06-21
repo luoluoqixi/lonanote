@@ -1,10 +1,10 @@
 import markdownEditorLanguages from 'lonanote-languages/zh/markdown_editor_languages.json';
 import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-markdown-editor';
+import 'lonanote-styles/common-milkdown-theme.scss';
 
 import { codemirrorLightTheme } from '../codemirror/theme';
 import { utils } from '../utils';
 import './MarkdownEditor.scss';
-import './theme/theme.scss';
 
 export const create = (root: HTMLElement) => {
   const theme = codemirrorLightTheme;
@@ -12,6 +12,9 @@ export const create = (root: HTMLElement) => {
     root,
     defaultReadOnly: false,
     defaultValue: 'default value',
+    features: {
+      [MilkdownFeature.BlockEdit]: false,
+    },
     featureConfigs: {
       [MilkdownFeature.Image]: {
         blockUploadPlaceholderText: markdownEditorLanguages.imageBlockUploadPlaceholderText,
@@ -81,29 +84,6 @@ export const create = (root: HTMLElement) => {
             console.log('复制成功');
           }
         },
-      },
-      [MilkdownFeature.BlockEdit]: {
-        slashMenuTextGroupLabel: markdownEditorLanguages.slashMenuTextGroupLabel,
-        slashMenuH1Label: markdownEditorLanguages.slashMenuH1Label,
-        slashMenuH2Label: markdownEditorLanguages.slashMenuH2Label,
-        slashMenuH3Label: markdownEditorLanguages.slashMenuH3Label,
-        slashMenuH4Label: markdownEditorLanguages.slashMenuH4Label,
-        slashMenuH5Label: markdownEditorLanguages.slashMenuH5Label,
-        slashMenuH6Label: markdownEditorLanguages.slashMenuH6Label,
-        slashMenuQuoteLabel: markdownEditorLanguages.slashMenuQuoteLabel,
-        slashMenuDividerLabel: markdownEditorLanguages.slashMenuDividerLabel,
-
-        slashMenuListGroupLabel: markdownEditorLanguages.slashMenuListGroupLabel,
-        slashMenuBulletListLabel: markdownEditorLanguages.slashMenuBulletListLabel,
-        slashMenuOrderedListLabel: markdownEditorLanguages.slashMenuOrderedListLabel,
-        slashMenuTaskListLabel: markdownEditorLanguages.slashMenuTaskListLabel,
-
-        slashMenuAdvancedGroupLabel: markdownEditorLanguages.slashMenuAdvancedGroupLabel,
-        slashMenuImageLabel: markdownEditorLanguages.slashMenuImageLabel,
-        slashMenuImageLinkLabel: markdownEditorLanguages.slashMenuImageLinkLabel,
-        slashMenuCodeBlockLabel: markdownEditorLanguages.slashMenuCodeBlockLabel,
-        slashMenuTableLabel: markdownEditorLanguages.slashMenuTableLabel,
-        slashMenuMathLabel: markdownEditorLanguages.slashMenuMathLabel,
       },
     },
   });

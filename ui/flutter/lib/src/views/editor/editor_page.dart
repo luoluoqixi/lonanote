@@ -45,6 +45,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
 
   Future<void> initEditorHtml() async {
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+    await _controller.clearCache();
     await _controller.setOnConsoleMessage((message) {
       if (message.level == JavaScriptLogLevel.info) {
         logger.i(message.message);
@@ -83,6 +84,11 @@ class _EditorPageState extends ConsumerState<EditorPage> {
 
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
+  }
+
+  void _refreshWebview() async {
+    if (!_webViewLoaded) return;
+    await _controller.reload();
   }
 
   void _openVConsole() {
@@ -127,6 +133,11 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     return [
       PlatformPullDownButton(
         itemBuilder: (context) => [
+          PullDownMenuItem(
+            title: "刷新",
+            onTap: _refreshWebview,
+            icon: ThemeIcons.refresh(context),
+          ),
           PullDownMenuItem(
             title: "设置",
             onTap: _openSettings,
