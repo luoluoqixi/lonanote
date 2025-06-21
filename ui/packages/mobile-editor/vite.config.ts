@@ -10,56 +10,70 @@ export const defaultBuildConfig: UserConfig['build'] = {
   reportCompressedSize: false, // gzip压缩大小报告, 禁用提高构建速度
 };
 
-const commonConfig: UserConfig = {
-  envPrefix: ['VITE_', 'LONANOTE_'],
-  envDir: 'env/',
-  plugins: [
-    viteVConsole({
-      entry: path.resolve(__dirname, 'src/index.tsx'),
-      enabled: true,
-      localEnabled: false,
-      config: {
-        log: {
-          maxLogNumber: 1000,
-          showTimestamps: true,
-        },
-        theme: 'light',
-        onReady() {
-          console.log('vConfig init success');
-        },
-      },
-    }),
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
+const removeCrossOrigin = () => {
+  return {
+    name: 'remove-crossorigin-attribute',
+    transformIndexHtml(html: string) {
+      return html.replace(' type="module" crossorigin ', ' defer ');
     },
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        api: 'modern-compiler', // 或 "modern"，"legacy"
-      },
-    },
-  },
-  server: {
-    port: 8888,
-    open: false,
-  },
-  define: {
-    __APP_VERSION__: JSON.stringify(pkg.version),
-  },
+  };
 };
 
-export default defineConfig({
-  ...commonConfig,
-  root: './',
-  base: './',
-  build: {
-    outDir: '../../flutter/assets/editor',
-    rollupOptions: {
-      input: path.resolve(__dirname, 'index.html'),
+export default defineConfig((env) => {
+  const isProduction = env.mode === 'production';
+  const outDir = '../../flutter/assets/editor';
+  return {
+    root: './',
+    base: './',
+    build: {
+      outDir: outDir,
+      rollupOptions: {
+        input: path.resolve(__dirname, 'index.html'),
+        output: {
+          dir: outDir,
+          format: 'iife',
+        },
+      },
+      ...defaultBuildConfig,
     },
-    ...defaultBuildConfig,
-  },
+    envPrefix: ['VITE_', 'LONANOTE_'],
+    envDir: 'env/',
+    plugins: [
+      viteVConsole({
+        entry: path.resolve(__dirname, 'src/index.tsx'),
+        enabled: !isProduction,
+        localEnabled: false,
+        config: {
+          log: {
+            maxLogNumber: 1000,
+            showTimestamps: true,
+          },
+          theme: 'light',
+          onReady() {
+            console.log('vConfig init success');
+          },
+        },
+      }),
+      removeCrossOrigin(),
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+      },
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern-compiler', // 或 "modern"，"legacy"
+        },
+      },
+    },
+    server: {
+      port: 8888,
+      open: false,
+    },
+    define: {
+      __APP_VERSION__: JSON.stringify(pkg.version),
+    },
+  };
 });

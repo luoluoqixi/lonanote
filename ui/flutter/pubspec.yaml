@@ -128,6 +128,5 @@ flutter:
 
   assets:
     - .env
-    - assets/icons/icon_android.png
-    - assets/icons/icon_ios.png
+    - assets/icons/
     - assets/editor/

@@ -1,7 +1,6 @@
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { UserConfig, defineConfig } from 'vite';
-import { viteVConsole } from 'vite-plugin-vconsole';
 
 import pkg from './package.json';
 
@@ -14,24 +13,7 @@ export const defaultBuildConfig: UserConfig['build'] = {
 const commonConfig: UserConfig = {
   envPrefix: ['VITE_', 'LONANOTE_'],
   envDir: 'env/',
-  plugins: [
-    react(),
-    viteVConsole({
-      entry: path.resolve(__dirname, 'src/index.tsx'),
-      enabled: false,
-      localEnabled: false,
-      config: {
-        log: {
-          maxLogNumber: 1000,
-          showTimestamps: true,
-        },
-        theme: 'light',
-        onReady() {
-          console.log('vConfig init success');
-        },
-      },
-    }),
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

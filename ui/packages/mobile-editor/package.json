@@ -9,12 +9,11 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
     "dev": "vite --host",
-    "build": "vite build"
+    "build": "pnpm --filter \"../markdown-editor\" run build && vite build --emptyOutDir"
   },
   "devDependencies": {
-    "lonanote-markdown-editor": "workspace:*",
     "lonanote-languages": "workspace:*",
-    "zustand": "^5.0.3"
+    "lonanote-markdown-editor": "workspace:*"
   },
   "packageManager": "pnpm@9.15.0",
   "node": ">=20.0.0"
