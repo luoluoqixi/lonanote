@@ -212,6 +212,7 @@ class PlatformSimplePage extends StatefulWidget {
   final Color? backgroundColor;
   final Color? titleBgColor;
   final Color? titleTextColor;
+  final List<Widget>? titleActions;
 
   final bool? isLoading;
   final Future<void> Function()? onRefresh;
@@ -235,6 +236,7 @@ class PlatformSimplePage extends StatefulWidget {
     this.backgroundColor,
     this.titleBgColor,
     this.titleTextColor,
+    this.titleActions,
     this.isLoading,
     this.onRefresh,
     this.noScrollView,
@@ -323,6 +325,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     if (widget.noScrollView == true) {
       return AppBar(
         centerTitle: false,
+        actions: widget.titleActions,
         title: widget.title ??
             Text(
               widget.titleText ?? "",
@@ -335,6 +338,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
       );
     }
     return SimpleAppBar(
+      actions: widget.titleActions,
       title: widget.title,
       titleText: widget.titleText,
       bgColor: backgroundColor,
