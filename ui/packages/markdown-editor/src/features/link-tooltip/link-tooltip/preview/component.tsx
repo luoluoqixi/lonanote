@@ -63,12 +63,13 @@ export const PreviewLink = defineComponent<PreviewLinkProps>({
       if (config.value?.onClickLink) {
         config.value.onClickLink(src.value || '');
         e.preventDefault();
+        e.stopPropagation();
       }
     };
 
     return () => {
       return (
-        <div class="link-preview" onPointerdown={onClickPreview}>
+        <div class="link-preview" onClick={onClickPreview}>
           <Icon class="link-icon" icon={config.value.linkIcon} />
           <a href={src.value} target="_blank" class="link-display" onClick={onClickLink}>
             {src.value}

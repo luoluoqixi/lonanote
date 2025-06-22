@@ -14,7 +14,7 @@ export function Icon({ icon, class: className, onClick }: IconProps) {
   return (
     <span
       class={clsx('milkdown-icon', className)}
-      onPointerdown={onClick}
+      onClick={onClick}
       ref={(el) => {
         if (el && icon) {
           (el as HTMLElement).innerHTML = DOMPurify.sanitize(icon.trim());

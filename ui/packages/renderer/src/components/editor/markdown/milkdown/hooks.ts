@@ -1,11 +1,11 @@
-import { MilkdownEditor } from 'lonanote-markdown-editor';
+import { MarkdownEditor } from 'lonanote-markdown-editor';
 import { useLayoutEffect, useRef, useState } from 'react';
 
-export type InitEditorCallback = () => MilkdownEditor | null;
-export type DestroyEditorCallback = (editor: MilkdownEditor | null) => void;
+export type InitEditorCallback = () => MarkdownEditor | null;
+export type DestroyEditorCallback = (editor: MarkdownEditor | null) => void;
 
 export const useMilkdownEditor = (initEditor: InitEditorCallback, deps?: React.DependencyList) => {
-  const editorRef = useRef<MilkdownEditor | null>(null);
+  const editorRef = useRef<MarkdownEditor | null>(null);
   const [loading, setLoading] = useState(true);
   useLayoutEffect(() => {
     if (!initEditor) return;
