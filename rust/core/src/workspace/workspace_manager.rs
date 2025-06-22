@@ -60,10 +60,10 @@ impl WorkspaceManager {
 
                 if let Some(parent) = out_path.parent() {
                     fs::create_dir_all(parent)
-                        .map_err(|err| WorkspaceError::IOError(format!("{}", err)))?;
+                        .map_err(|err| WorkspaceError::IOError(format!("{err}")))?;
                 }
                 fs::write(&out_path, bytes)
-                    .map_err(|err| WorkspaceError::IOError(format!("{}", err)))?;
+                    .map_err(|err| WorkspaceError::IOError(format!("{err}")))?;
             }
         }
         log::info!("import init data: {}", path.to_path_buf().display());
@@ -89,7 +89,7 @@ impl WorkspaceManager {
             settings.first_setup = false;
             settings
                 .save()
-                .map_err(|err| WorkspaceError::InitError(format!("{}", err)))?;
+                .map_err(|err| WorkspaceError::InitError(format!("{err}")))?;
         } else {
             log::info!("first_setup is false, jump import data");
         }

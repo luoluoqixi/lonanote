@@ -462,6 +462,8 @@ fn _main() -> Result<()> {
     let mac_path = &output_folder.join("icon_mac.icns");
     let linux_path = &output_folder.join("icon_linux.icns");
     let web_path = &UI_PATH.join("packages/renderer/public/favicon.ico");
+    let default_workspace_icon_path =
+        &RS_PATH.join("core/assets/default_workspace/assets/images/icon.png");
 
     let default_mask = Some(input_folder.join("mask.png"));
     // resources
@@ -504,6 +506,15 @@ fn _main() -> Result<()> {
     process_image(
         input_path,
         web_path,
+        default_mask.as_deref(),
+        None,
+        None,
+        None,
+    )?;
+    // default_workspace
+    process_image(
+        input_path,
+        default_workspace_icon_path,
         default_mask.as_deref(),
         None,
         None,
