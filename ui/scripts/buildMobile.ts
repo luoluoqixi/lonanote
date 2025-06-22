@@ -1,4 +1,4 @@
-import { ChildProcess, execSync, spawn, spawnSync } from 'child_process';
+import { ChildProcess, execSync, spawn } from 'child_process';
 import path from 'path';
 import { argv } from 'process';
 import kill from 'tree-kill';
