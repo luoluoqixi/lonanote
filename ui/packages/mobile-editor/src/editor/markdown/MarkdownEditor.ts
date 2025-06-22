@@ -1,5 +1,5 @@
 import markdownEditorLanguages from 'lonanote-languages/zh/markdown_editor_languages.json';
-import { ImageMenuKey, MilkdownEditor, MilkdownFeature } from 'lonanote-markdown-editor';
+import { ImageMenuKey, MarkdownEditor, MarkdownFeature } from 'lonanote-markdown-editor';
 import 'lonanote-styles/common-milkdown-theme.scss';
 
 import { codemirrorLightTheme } from '../codemirror/theme';
@@ -8,20 +8,20 @@ import './MarkdownEditor.scss';
 
 export const create = (root: HTMLElement, contentJson: string) => {
   const theme = codemirrorLightTheme;
-  const editor = new MilkdownEditor({
+  const editor = new MarkdownEditor({
     root,
     defaultReadOnly: false,
     defaultValue: contentJson,
     features: {
-      [MilkdownFeature.BlockEdit]: false,
+      [MarkdownFeature.BlockEdit]: false,
     },
     featureConfigs: {
-      [MilkdownFeature.Image]: {
+      [MarkdownFeature.Image]: {
         blockUploadPlaceholderText: markdownEditorLanguages.imageBlockUploadPlaceholderText,
-        blockUploadButton: () => markdownEditorLanguages.imageBlockUploadButton,
-        blockConfirmButton: () => markdownEditorLanguages.imageBlockConfirmButton,
+        blockUploadButton: markdownEditorLanguages.imageBlockUploadButton,
+        blockConfirmButton: markdownEditorLanguages.imageBlockConfirmButton,
         inlineUploadPlaceholderText: markdownEditorLanguages.imageInlineUploadPlaceholderText,
-        inlineUploadButton: () => markdownEditorLanguages.imageInlineUploadButton,
+        inlineUploadButton: markdownEditorLanguages.imageInlineUploadButton,
         proxyDomURL: async (url) => {
           if (!url) return url;
           // console.log(url);
@@ -60,20 +60,20 @@ export const create = (root: HTMLElement, contentJson: string) => {
           },
         },
       },
-      [MilkdownFeature.CodeMirror]: {
+      [MarkdownFeature.CodeMirror]: {
         theme,
         searchPlaceholder: markdownEditorLanguages.codemirrorSearchPlaceholder,
         previewToggleText: (m) =>
           m
             ? markdownEditorLanguages.codemirrorToggleEdit
             : markdownEditorLanguages.codemirrorToggleHide,
-        previewLabel: () => markdownEditorLanguages.codemirrorPreviewLabel,
+        previewLabel: markdownEditorLanguages.codemirrorPreviewLabel,
         noResultText: markdownEditorLanguages.codemirrorNoResultText,
       },
-      [MilkdownFeature.Yaml]: {
+      [MarkdownFeature.Yaml]: {
         theme,
       },
-      [MilkdownFeature.LinkTooltip]: {
+      [MarkdownFeature.LinkTooltip]: {
         // onClickLink: onClickAnyLink,
         inputPlaceholder: markdownEditorLanguages.linkTooltipInputLinkLabel,
         onCopyLink(link) {

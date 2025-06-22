@@ -1,4 +1,4 @@
-import { ChildProcess, execSync, spawn } from 'child_process';
+import { ChildProcess, execSync, spawn, spawnSync } from 'child_process';
 import path from 'path';
 import { argv } from 'process';
 import kill from 'tree-kill';
@@ -33,12 +33,13 @@ const executeAsync = async (
   args: string[],
   cwd?: string | null,
   detached?: boolean,
+  shell?: boolean,
 ) => {
   console.log(`${cmd} ${args.join(' ')}`);
   return spawn(cmd, args, {
     cwd: cwd ? path.resolve(__dirname, cwd) : undefined,
     stdio: 'inherit',
-    shell: true,
+    shell: shell == null ? true : shell,
     detached,
   });
 };
@@ -54,7 +55,11 @@ const dev = async () => {
 
   console.log('');
   console.log('---------- flutter run... ----------');
-  await executeAsync('flutter', ['run'], '../flutter', true);
+  if (process.platform === 'win32') {
+    await executeAsync('flutter', ['run'], '../flutter', true);
+  } else {
+    executeAsync('script', ['-q', '/dev/null', 'flutter', 'run'], '../flutter', false, false);
+  }
   // childs.push(p2);
   console.log('');
 };

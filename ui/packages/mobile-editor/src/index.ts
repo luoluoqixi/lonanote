@@ -1,3 +1,4 @@
+import { config } from './config';
 import { createEditor } from './editor';
 import './styles/index.scss';
 import './theme';
@@ -12,6 +13,9 @@ const initEditor = async (content: string) => {
 const init = () => {
   window.initEditor = initEditor;
   // window.EditorBridge.postMessage('');
+  if (!config.isFlutter) {
+    initEditor('');
+  }
 };
 
 init();

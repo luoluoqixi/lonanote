@@ -4,4 +4,5 @@ export const config = {
   Mode: import.meta.env.MODE,
   buildMode: import.meta.env['LONANOTE_BUILD_MODE'],
   version: __APP_VERSION__,
+  isFlutter: window.EditorBridge != null,
 };
