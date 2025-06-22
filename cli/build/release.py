@@ -6,6 +6,7 @@ import os
 import sys
 import argparse
 import platform
+from pathlib import Path
 
 import utils
 
@@ -27,8 +28,12 @@ def get_current_version(config_path):
     current_version = current_version.strip()
     return current_version
 
-def get_next_version(config_path):
-    next_version = utils.subprocess_check_output(["convco", "version", "--bump", "--config", config_path])
+def get_next_version(config_path, ext_commands):
+    commands = ["convco", "version", "--bump", "--config", config_path]
+    if ext_commands is not None:
+        for c in ext_commands:
+            commands.append(c)
+    next_version = utils.subprocess_check_output(commands)
     if next_version is None:
         print("convco version --bump failed, output is None")
         return None
@@ -108,7 +113,24 @@ def git_commit(repo_root, next_version):
 def main():
     parser = argparse.ArgumentParser(description='release tools')
     parser.add_argument('--push', required=False, action="store_true", help='git push')
-    parser.add_argument('--version', required=False, help='custom version', default=None)
+    parser.add_argument(
+        "--major",
+        required=False,
+        action="store_true",
+        help="major version",
+    )
+    parser.add_argument(
+        "--minor",
+        required=False,
+        action="store_true",
+        help="minor version",
+    )
+    parser.add_argument(
+        "--patch",
+        required=False,
+        action="store_true",
+        help="patch version",
+    )
     args = parser.parse_args()
 
     # 修复 windows 编码问题
@@ -120,13 +142,19 @@ def main():
     print(f"repo root: {repo_root}")
 
     changelog_config_path = os.path.join(os.path.join(__file__, "../"), ".versionrc")
+    changelog_config_path = Path(changelog_config_path).resolve()
     print(f"changelog_config_path: {changelog_config_path}")
 
     check_convco_install()
     current_version = get_current_version(changelog_config_path)
-    next_version = get_next_version(changelog_config_path)
-    if args.version is not None:
-        next_version = args.version
+    ext_commands = []
+    if args.major:
+        ext_commands.append("--major")
+    if args.minor:
+        ext_commands.append("--minor")
+    if args.patch:
+        ext_commands.append("--patch")
+    next_version = get_next_version(changelog_config_path, ext_commands)
 
     print(f"current version: {current_version}")
     print(f"next version: {next_version}")
