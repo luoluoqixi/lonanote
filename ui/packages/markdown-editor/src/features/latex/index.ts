@@ -1,12 +1,13 @@
 import type { KatexOptions } from 'katex';
 import katex from 'katex';
 
-import { MilkdownFeature } from '../..';
+import { MarkdownFeature } from '../..';
 import { FeaturesCtx } from '../../core/slice';
+import { featureConfig } from '../../core/slice';
 import { confirmIcon } from '../../icons';
 // import { codeBlockConfig } from '@milkdown/kit/component/code-block';
 import { codeBlockConfig } from '../codemirror/code-block';
-import type { DefineFeature, Icon } from '../types';
+import type { DefineFeature } from '../types';
 import { blockLatexSchema } from './block-latex';
 import { mathInlineSchema } from './inline-latex';
 import { inlineLatexTooltip } from './inline-tooltip/tooltip';
@@ -16,16 +17,17 @@ import { remarkMathBlockPlugin, remarkMathPlugin } from './remark';
 
 export interface LatexConfig {
   katexOptions: KatexOptions;
-  inlineEditConfirm: Icon;
+  inlineEditConfirm: string;
 }
 
 export type LatexFeatureConfig = Partial<LatexConfig>;
 
 export const defineLatex: DefineFeature<LatexFeatureConfig> = (editor, config) => {
   editor
+    .config(featureConfig(MarkdownFeature.Latex))
     .config((ctx) => {
       const flags = ctx.get(FeaturesCtx);
-      const isCodeMirrorEnabled = flags.includes(MilkdownFeature.CodeMirror);
+      const isCodeMirrorEnabled = flags.includes(MarkdownFeature.CodeMirror);
       if (!isCodeMirrorEnabled) {
         throw new Error('You need to enable CodeMirror to use LaTeX feature');
       }
@@ -44,7 +46,7 @@ export const defineLatex: DefineFeature<LatexFeatureConfig> = (editor, config) =
       ctx.set(inlineLatexTooltip.key, {
         view: (view) => {
           return new LatexInlineTooltip(ctx, view, {
-            inlineEditConfirm: config?.inlineEditConfirm ?? (() => confirmIcon),
+            inlineEditConfirm: config?.inlineEditConfirm ?? confirmIcon,
             ...config,
           });
         },

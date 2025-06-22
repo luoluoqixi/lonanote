@@ -1,6 +1,8 @@
 import { InputRule } from '@milkdown/kit/prose/inputrules';
 import { $inputRule, $node, $remark } from '@milkdown/kit/utils';
 
+import { MarkdownFeature } from '..';
+import { featureConfig } from '../../core/slice';
 import { DefineFeature } from '../types';
 
 /// https://github.com/orgs/Milkdown/discussions/1674
@@ -114,6 +116,6 @@ export type HiglightFeatureConfig = Partial<HiglightConfig>;
 
 export const defineHiglight: DefineFeature<HiglightFeatureConfig> = (editor, config) => {
   const mergeConfig = { ...config };
-  editor.use(highlightMarkPlugin);
+  editor.config(featureConfig(MarkdownFeature.Highlight)).use(highlightMarkPlugin);
   return mergeConfig;
 };

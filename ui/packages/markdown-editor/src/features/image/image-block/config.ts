@@ -4,26 +4,26 @@ import { operationIcon, resizeIcon } from '../../../icons';
 import { withMeta } from '../../../utils';
 
 export interface ImageBlockConfig {
-  imageIcon: () => string | undefined;
-  uploadButton: () => string | undefined;
-  confirmButton: () => string | undefined;
+  imageIcon: string | undefined;
+  uploadButton: string | undefined;
+  confirmButton: string | undefined;
   uploadPlaceholderText: string;
   onUpload: (file: File) => Promise<string>;
   proxyDomURL?: (url: string) => Promise<string> | string;
 
-  operationIcon: () => string;
-  resizeIcon: () => string;
+  operationIcon: string;
+  resizeIcon: string;
 }
 
 export const defaultImageBlockConfig: ImageBlockConfig = {
-  imageIcon: () => '🌌',
-  uploadButton: () => 'Upload file',
-  confirmButton: () => 'Confirm ⏎',
+  imageIcon: '🌌',
+  uploadButton: 'Upload file',
+  confirmButton: 'Confirm ⏎',
   uploadPlaceholderText: 'or paste the image link ...',
   onUpload: (file) => Promise.resolve(URL.createObjectURL(file)),
 
-  operationIcon: () => operationIcon,
-  resizeIcon: () => resizeIcon,
+  operationIcon,
+  resizeIcon,
 };
 
 export const imageBlockConfig = $ctx(defaultImageBlockConfig, 'imageBlockConfigCtx');

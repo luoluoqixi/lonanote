@@ -1,12 +1,14 @@
+import { MarkdownFeature } from '..';
+import { featureConfig } from '../../core/slice';
 import { confirmIcon, copyIcon, editIcon, removeIcon } from '../../icons';
-import type { DefineFeature, Icon } from '../types';
+import type { DefineFeature } from '../types';
 import { configureLinkTooltip, linkTooltipConfig, linkTooltipPlugin } from './link-tooltip';
 
 interface LinkTooltipConfig {
-  linkIcon: Icon;
-  editButton: Icon;
-  removeButton: Icon;
-  confirmButton: Icon;
+  linkIcon: string;
+  editButton: string;
+  removeButton: string;
+  confirmButton: string;
   inputPlaceholder: string;
   onCopyLink: (link: string) => void;
 
@@ -20,14 +22,15 @@ export type LinkTooltipFeatureConfig = Partial<LinkTooltipConfig>;
 
 export const defineLinkTooltip: DefineFeature<LinkTooltipFeatureConfig> = (editor, config) => {
   editor
+    .config(featureConfig(MarkdownFeature.LinkTooltip))
     .config(configureLinkTooltip)
     .config((ctx) => {
       ctx.update(linkTooltipConfig.key, (prev) => ({
         ...prev,
-        linkIcon: config?.linkIcon ?? (() => copyIcon),
-        editButton: config?.editButton ?? (() => editIcon),
-        removeButton: config?.removeButton ?? (() => removeIcon),
-        confirmButton: config?.confirmButton ?? (() => confirmIcon),
+        linkIcon: config?.linkIcon ?? copyIcon,
+        editButton: config?.editButton ?? editIcon,
+        removeButton: config?.removeButton ?? removeIcon,
+        confirmButton: config?.confirmButton ?? confirmIcon,
         inputPlaceholder: config?.inputPlaceholder ?? 'Paste link...',
         onCopyLink: config?.onCopyLink ?? (() => {}),
         onClickLink: config?.onClickLink ?? null,

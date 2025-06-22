@@ -143,7 +143,7 @@ export const LanguagePicker = defineComponent<LanguagePickerProps>({
           >
             {language.value || 'Text'}
             <div class="expand-icon">
-              <Icon icon={config.expandIcon()} />
+              <Icon icon={config.expandIcon} />
             </div>
           </button>
           <div ref={pickerRef} class="language-picker">
@@ -151,7 +151,7 @@ export const LanguagePicker = defineComponent<LanguagePickerProps>({
               <div class="list-wrapper">
                 <div class="search-box">
                   <div class="search-icon">
-                    <Icon icon={config.searchIcon()} />
+                    <Icon icon={config.searchIcon} />
                   </div>
                   <input
                     ref={searchRef}
@@ -168,7 +168,7 @@ export const LanguagePicker = defineComponent<LanguagePickerProps>({
                       filter.value = '';
                     }}
                   >
-                    <Icon icon={config.clearSearchIcon()} />
+                    <Icon icon={config.clearSearchIcon} />
                   </div>
                 </div>
                 <ul

@@ -98,6 +98,13 @@ export default [
       '@typescript-eslint/no-this-alias': 'off', // 允许this赋值给其他变量
       'prettier/prettier': 'warn',
       '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-unused-expressions': 'warn',
+    },
+  },
+  {
+    files: ['packages/markdown-editor/**/*.{js,ts,jsx,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unused-expressions': 'off',
     },
   },
 ];

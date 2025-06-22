@@ -167,7 +167,7 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
             </div>
             <div class={clsx('operation', showOperation.value && 'visible')}>
               <div class="operation-item" onPointerdown={operationClick}>
-                <Icon icon={config.operationIcon()} />
+                <Icon icon={config.operationIcon} />
               </div>
             </div>
             <img
@@ -182,7 +182,7 @@ export const ImageViewer = defineComponent<MilkdownImageBlockProps>({
               class={clsx('image-resize-handle', showOperation.value && 'visible')}
               onPointerdown={onResizeHandlePointerDown}
             >
-              <Icon icon={config?.resizeIcon()} />
+              <Icon icon={config?.resizeIcon} />
             </div>
           </div>
         </>

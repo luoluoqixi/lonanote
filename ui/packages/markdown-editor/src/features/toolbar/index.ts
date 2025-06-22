@@ -6,22 +6,24 @@ import type { EditorView } from '@milkdown/kit/prose/view';
 import debounce from 'lodash/debounce';
 import { type App, type ShallowRef, createApp, ref, shallowRef } from 'vue';
 
+import { MarkdownFeature } from '..';
+import { featureConfig } from '../../core/slice';
 import { addViewEvent, addViewScrollEvent } from '../../utils';
-import type { DefineFeature, Icon } from '../types';
+import type { DefineFeature } from '../types';
 import { Toolbar } from './component';
 
 interface ToolbarConfig {
-  boldIcon: Icon;
-  codeIcon: Icon;
-  italicIcon: Icon;
-  linkIcon: Icon;
-  strikethroughIcon: Icon;
-  latexIcon: Icon;
+  boldIcon: string;
+  codeIcon: string;
+  italicIcon: string;
+  linkIcon: string;
+  strikethroughIcon: string;
+  latexIcon: string;
 }
 
 export type ToolbarFeatureConfig = Partial<ToolbarConfig>;
 
-const toolbar = tooltipFactory('CREPE_TOOLBAR');
+const toolbarTooltip = tooltipFactory('CREPE_TOOLBAR');
 
 class ToolbarView implements PluginView {
   #tooltipProvider: TooltipProvider;
@@ -140,12 +142,13 @@ class ToolbarView implements PluginView {
 
 export const defineToolbar: DefineFeature<ToolbarFeatureConfig> = (editor, config) => {
   editor
+    .config(featureConfig(MarkdownFeature.Toolbar))
     .config((ctx) => {
-      ctx.set(toolbar.key, {
+      ctx.set(toolbarTooltip.key, {
         view: (view) => new ToolbarView(ctx, view, config),
       });
     })
-    .use(toolbar);
+    .use(toolbarTooltip);
 
   return config;
 };

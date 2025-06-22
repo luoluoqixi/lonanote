@@ -16,9 +16,9 @@ import clsx from 'clsx';
 import { Fragment, type Ref, type ShallowRef, defineComponent, h } from 'vue';
 
 import type { ToolbarFeatureConfig } from '.';
-import { MilkdownFeature } from '../..';
+import { MarkdownFeature } from '../..';
 import { Icon } from '../../components';
-import { FeaturesCtx } from '../../core/slice';
+import { useMarkdownFeatures } from '../../core/slice';
 import {
   boldIcon,
   codeIcon,
@@ -105,8 +105,8 @@ export const Toolbar = defineComponent<ToolbarProps>({
       return hasNode;
     };
 
-    const flags = ctx?.get(FeaturesCtx);
-    const isLatexEnabled = flags?.includes(MilkdownFeature.Latex);
+    const flags = ctx && useMarkdownFeatures(ctx).get();
+    const isLatexEnabled = flags?.includes(MarkdownFeature.Latex);
 
     const toggleLatex = (ctx: Ctx) => {
       const hasLatex = containsNode(mathInlineSchema.type(ctx));
@@ -114,7 +114,7 @@ export const Toolbar = defineComponent<ToolbarProps>({
       const { selection, doc, tr } = view.state;
       if (!hasLatex) {
         const text = doc.textBetween(selection.from, selection.to);
-        let _tr = tr.replaceSelectionWith(
+        const _tr = tr.replaceSelectionWith(
           mathInlineSchema.type(ctx).create({
             value: text,
           }),
@@ -154,7 +154,7 @@ export const Toolbar = defineComponent<ToolbarProps>({
               commands.call(toggleStrongCommand.key);
             })}
           >
-            <Icon icon={config?.boldIcon?.() ?? boldIcon} />
+            <Icon icon={config?.boldIcon ?? boldIcon} />
           </button>
           <button
             type="button"
@@ -164,7 +164,7 @@ export const Toolbar = defineComponent<ToolbarProps>({
               commands.call(toggleEmphasisCommand.key);
             })}
           >
-            <Icon icon={config?.italicIcon?.() ?? italicIcon} />
+            <Icon icon={config?.italicIcon ?? italicIcon} />
           </button>
           <button
             type="button"
@@ -174,7 +174,7 @@ export const Toolbar = defineComponent<ToolbarProps>({
               commands.call(toggleStrikethroughCommand.key);
             })}
           >
-            <Icon icon={config?.strikethroughIcon?.() ?? strikethroughIcon} />
+            <Icon icon={config?.strikethroughIcon ?? strikethroughIcon} />
           </button>
           <div class="divider"></div>
           <button
@@ -185,7 +185,7 @@ export const Toolbar = defineComponent<ToolbarProps>({
               commands.call(toggleInlineCodeCommand.key);
             })}
           >
-            <Icon icon={config?.codeIcon?.() ?? codeIcon} />
+            <Icon icon={config?.codeIcon ?? codeIcon} />
           </button>
           {isLatexEnabled && (
             <button
@@ -196,7 +196,7 @@ export const Toolbar = defineComponent<ToolbarProps>({
               )}
               onPointerdown={onClick(toggleLatex)}
             >
-              <Icon icon={config?.latexIcon?.() ?? functionsIcon} />
+              <Icon icon={config?.latexIcon ?? functionsIcon} />
             </button>
           )}
           <button
@@ -215,7 +215,7 @@ export const Toolbar = defineComponent<ToolbarProps>({
               hide?.();
             })}
           >
-            <Icon icon={config?.linkIcon?.() ?? linkIcon} />
+            <Icon icon={config?.linkIcon ?? linkIcon} />
           </button>
         </>
       );

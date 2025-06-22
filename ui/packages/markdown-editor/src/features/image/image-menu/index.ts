@@ -8,7 +8,7 @@ import throttle from 'lodash.throttle';
 import Viewer from 'viewerjs';
 import { App, createApp, ref } from 'vue';
 
-import { MarkdownMenu, MarkdownMenuOption, MarkdownMenuProps } from '../../../components';
+import { MarkdownMenu, MarkdownMenuOption } from '../../../components';
 import { captionIcon, downloadIcon, imageIcon, previewIcon } from '../../../icons';
 import { addViewScrollEvent } from '../../../utils';
 

@@ -1,95 +1,69 @@
-import { Editor } from '@milkdown/core';
+import { BlockEditFeatureConfig } from './block-edit';
+import { CodeMirrorFeatureConfig } from './codemirror';
+import { CursorFeatureConfig } from './cursor';
+import { HiglightFeatureConfig } from './highlight';
+import { ImageFeatureConfig } from './image';
+import { LatexFeatureConfig } from './latex';
+import { LinkTooltipFeatureConfig } from './link-tooltip';
+import { ListItemFeatureConfig } from './list-item';
+import { TableFeatureConfig } from './table';
+import { ToolbarFeatureConfig } from './toolbar';
+import { YamlFeatureConfig } from './yaml';
 
-import { BlockEditFeatureConfig, defineBlockEdit } from './block-edit';
-import { CodeMirrorFeatureConfig, defineCodeMirror } from './codemirror';
-import { CursorFeatureConfig, defineCursor } from './cursor';
-import { HiglightFeatureConfig, defineHiglight } from './highlight';
-import { ImageFeatureConfig, defineImage } from './image';
-import { LatexFeatureConfig, defineLatex } from './latex';
-import { LinkTooltipFeatureConfig, defineLinkTooltip } from './link-tooltip';
-import { ListItemFeatureConfig, defineListItem } from './list-item';
-import { TableFeatureConfig, defineTable } from './table';
-import { ToolbarFeatureConfig, defineToolbar } from './toolbar';
-import { YamlFeatureConfig, defineYaml } from './yaml';
-
-export enum MilkdownFeature {
+/// The editor feature flags.Add commentMore actions
+/// Every feature is enabled by default.
+/// Every feature is a string literal type.
+export enum MarkdownFeature {
+  /// Syntax highlighting and editing for code blocks with language support, theme customization, and preview capabilities.
   CodeMirror = 'code-mirror',
+  /// Support for bullet lists, ordered lists, and todo lists with customizable icons and formatting.
   ListItem = 'list-item',
+  /// Enhanced link editing and preview with customizable tooltips, edit/remove actions, and copy functionality.
   LinkTooltip = 'link-tooltip',
+  /// Enhanced cursor experience with drop cursor and gap cursor for better content placement.
   Cursor = 'cursor',
+  /// Image upload and management with resizing, captions, and support for both inline and block images.
   Image = 'image-block',
+  /// Drag-and-drop block management and slash commands for quick content insertion and organization.
   BlockEdit = 'block-edit',
+  /// Formatting toolbar for selected text with customizable icons and actions.
   Toolbar = 'toolbar',
+  /// Full-featured table editing with row/column management, alignment options, and drag-and-drop functionality.
   Table = 'table',
+  /// Mathematical formula support with both inline and block math rendering using KaTeX.
   Latex = 'latex',
+  /// Yaml
   Yaml = 'yaml',
+  /// Highlight
   Highlight = 'highlight',
 }
 
 export interface FeaturesConfig {
-  [MilkdownFeature.Cursor]?: CursorFeatureConfig;
-  [MilkdownFeature.ListItem]?: ListItemFeatureConfig;
-  [MilkdownFeature.LinkTooltip]?: LinkTooltipFeatureConfig;
-  [MilkdownFeature.Image]?: ImageFeatureConfig;
-  [MilkdownFeature.BlockEdit]?: BlockEditFeatureConfig;
-  [MilkdownFeature.Toolbar]?: ToolbarFeatureConfig;
-  [MilkdownFeature.CodeMirror]?: CodeMirrorFeatureConfig;
-  [MilkdownFeature.Table]?: TableFeatureConfig;
-  [MilkdownFeature.Latex]?: LatexFeatureConfig;
-  [MilkdownFeature.Yaml]?: YamlFeatureConfig;
-  [MilkdownFeature.Highlight]?: HiglightFeatureConfig;
+  [MarkdownFeature.Cursor]?: CursorFeatureConfig;
+  [MarkdownFeature.ListItem]?: ListItemFeatureConfig;
+  [MarkdownFeature.LinkTooltip]?: LinkTooltipFeatureConfig;
+  [MarkdownFeature.Image]?: ImageFeatureConfig;
+  [MarkdownFeature.BlockEdit]?: BlockEditFeatureConfig;
+  [MarkdownFeature.Toolbar]?: ToolbarFeatureConfig;
+  [MarkdownFeature.CodeMirror]?: CodeMirrorFeatureConfig;
+  [MarkdownFeature.Table]?: TableFeatureConfig;
+  [MarkdownFeature.Latex]?: LatexFeatureConfig;
+  [MarkdownFeature.Yaml]?: YamlFeatureConfig;
+  [MarkdownFeature.Highlight]?: HiglightFeatureConfig;
 }
 
-export const defaultFeatures: Record<MilkdownFeature, boolean> = {
-  [MilkdownFeature.Cursor]: true,
-  [MilkdownFeature.ListItem]: true,
-  [MilkdownFeature.LinkTooltip]: true,
-  [MilkdownFeature.Image]: true,
-  [MilkdownFeature.BlockEdit]: true,
-  [MilkdownFeature.Toolbar]: true,
-  [MilkdownFeature.CodeMirror]: true,
-  [MilkdownFeature.Table]: true,
-  [MilkdownFeature.Latex]: true,
-  [MilkdownFeature.Yaml]: true,
-  [MilkdownFeature.Highlight]: true,
+export const defaultFeatures: Record<MarkdownFeature, boolean> = {
+  [MarkdownFeature.Cursor]: true,
+  [MarkdownFeature.ListItem]: true,
+  [MarkdownFeature.LinkTooltip]: true,
+  [MarkdownFeature.Image]: true,
+  [MarkdownFeature.BlockEdit]: true,
+  [MarkdownFeature.Toolbar]: true,
+  [MarkdownFeature.CodeMirror]: true,
+  [MarkdownFeature.Table]: true,
+  [MarkdownFeature.Latex]: true,
+  [MarkdownFeature.Yaml]: true,
+  [MarkdownFeature.Highlight]: true,
 };
-
-export function loadFeature(editor: Editor, feature: MilkdownFeature, config: any): any {
-  switch (feature) {
-    case MilkdownFeature.CodeMirror: {
-      return defineCodeMirror(editor, config);
-    }
-    case MilkdownFeature.ListItem: {
-      return defineListItem(editor, config);
-    }
-    case MilkdownFeature.LinkTooltip: {
-      return defineLinkTooltip(editor, config);
-    }
-    case MilkdownFeature.Image: {
-      return defineImage(editor, config);
-    }
-    case MilkdownFeature.Cursor: {
-      return defineCursor(editor, config);
-    }
-    case MilkdownFeature.BlockEdit: {
-      return defineBlockEdit(editor, config);
-    }
-    case MilkdownFeature.Toolbar: {
-      return defineToolbar(editor, config);
-    }
-    case MilkdownFeature.Table: {
-      return defineTable(editor, config);
-    }
-    case MilkdownFeature.Latex: {
-      return defineLatex(editor, config);
-    }
-    case MilkdownFeature.Yaml: {
-      return defineYaml(editor, config);
-    }
-    case MilkdownFeature.Highlight: {
-      return defineHiglight(editor, config);
-    }
-  }
-}
 
 export { ImageMenuKey } from './image/image-menu';

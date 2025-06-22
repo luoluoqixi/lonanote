@@ -4,13 +4,15 @@ import {
 } from '@milkdown/kit/component/list-item-block';
 import type { Ctx } from '@milkdown/kit/ctx';
 
+import { MarkdownFeature } from '..';
+import { featureConfig } from '../../core/slice';
 import { bulletIcon, checkBoxCheckedIcon, checkBoxUncheckedIcon } from '../../icons';
-import type { DefineFeature, Icon } from '../types';
+import type { DefineFeature } from '../types';
 
 export interface ListItemConfig {
-  bulletIcon: Icon;
-  checkBoxCheckedIcon: Icon;
-  checkBoxUncheckedIcon: Icon;
+  bulletIcon: string;
+  checkBoxCheckedIcon: string;
+  checkBoxUncheckedIcon: string;
 }
 
 export type ListItemFeatureConfig = Partial<ListItemConfig>;
@@ -19,19 +21,22 @@ function configureListItem(ctx: Ctx, config?: ListItemFeatureConfig) {
   ctx.set(listItemBlockConfig.key, {
     renderLabel: ({ label, listType, checked }) => {
       if (checked == null) {
-        if (listType === 'bullet') return config?.bulletIcon?.() ?? bulletIcon;
+        if (listType === 'bullet') return config?.bulletIcon ?? bulletIcon;
 
         return label;
       }
 
-      if (checked) return config?.checkBoxCheckedIcon?.() ?? checkBoxCheckedIcon;
+      if (checked) return config?.checkBoxCheckedIcon ?? checkBoxCheckedIcon;
 
-      return config?.checkBoxUncheckedIcon?.() ?? checkBoxUncheckedIcon;
+      return config?.checkBoxUncheckedIcon ?? checkBoxUncheckedIcon;
     },
   });
 }
 
 export const defineListItem: DefineFeature<ListItemFeatureConfig> = (editor, config) => {
-  editor.config((ctx) => configureListItem(ctx, config)).use(listItemBlockComponent);
+  editor
+    .config(featureConfig(MarkdownFeature.ListItem))
+    .config((ctx) => configureListItem(ctx, config))
+    .use(listItemBlockComponent);
   return config;
 };

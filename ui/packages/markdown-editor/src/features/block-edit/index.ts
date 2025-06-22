@@ -1,53 +1,55 @@
 import { block } from '@milkdown/kit/plugin/block';
 
-import type { DefineFeature, Icon } from '../types';
+import { MarkdownFeature } from '..';
+import { featureConfig } from '../../core/slice';
+import type { DefineFeature } from '../types';
 import { configureBlockHandle } from './handle';
 import { configureMenu, menu, menuAPI } from './menu';
 import type { GroupBuilder } from './menu/group-builder';
 
 interface BlockEditConfig {
-  handleAddIcon: Icon;
-  handleDragIcon: Icon;
+  handleAddIcon: string;
+  handleDragIcon: string;
   buildMenu: (builder: GroupBuilder) => void;
 
   slashMenuTextGroupLabel: string;
-  slashMenuTextIcon: Icon;
+  slashMenuTextIcon: string;
   slashMenuTextLabel: string;
-  slashMenuH1Icon: Icon;
+  slashMenuH1Icon: string;
   slashMenuH1Label: string;
-  slashMenuH2Icon: Icon;
+  slashMenuH2Icon: string;
   slashMenuH2Label: string;
-  slashMenuH3Icon: Icon;
+  slashMenuH3Icon: string;
   slashMenuH3Label: string;
-  slashMenuH4Icon: Icon;
+  slashMenuH4Icon: string;
   slashMenuH4Label: string;
-  slashMenuH5Icon: Icon;
+  slashMenuH5Icon: string;
   slashMenuH5Label: string;
-  slashMenuH6Icon: Icon;
+  slashMenuH6Icon: string;
   slashMenuH6Label: string;
-  slashMenuQuoteIcon: Icon;
+  slashMenuQuoteIcon: string;
   slashMenuQuoteLabel: string;
-  slashMenuDividerIcon: Icon;
+  slashMenuDividerIcon: string;
   slashMenuDividerLabel: string;
 
   slashMenuListGroupLabel: string;
-  slashMenuBulletListIcon: Icon;
+  slashMenuBulletListIcon: string;
   slashMenuBulletListLabel: string;
-  slashMenuOrderedListIcon: Icon;
+  slashMenuOrderedListIcon: string;
   slashMenuOrderedListLabel: string;
-  slashMenuTaskListIcon: Icon;
+  slashMenuTaskListIcon: string;
   slashMenuTaskListLabel: string;
 
   slashMenuAdvancedGroupLabel: string;
-  slashMenuImageIcon: Icon;
+  slashMenuImageIcon: string;
   slashMenuImageLabel: string;
-  slashMenuImageLinkIcon: Icon;
+  slashMenuImageLinkIcon: string;
   slashMenuImageLinkLabel: string;
-  slashMenuCodeBlockIcon: Icon;
+  slashMenuCodeBlockIcon: string;
   slashMenuCodeBlockLabel: string;
-  slashMenuTableIcon: Icon;
+  slashMenuTableIcon: string;
   slashMenuTableLabel: string;
-  slashMenuMathIcon: Icon;
+  slashMenuMathIcon: string;
   slashMenuMathLabel: string;
 }
 
@@ -55,6 +57,7 @@ export type BlockEditFeatureConfig = Partial<BlockEditConfig>;
 
 export const defineBlockEdit: DefineFeature<BlockEditFeatureConfig> = (editor, config) => {
   editor
+    .config(featureConfig(MarkdownFeature.BlockEdit))
     .config((ctx) => configureBlockHandle(ctx, config))
     .config((ctx) => configureMenu(ctx, config))
     .use(menuAPI)

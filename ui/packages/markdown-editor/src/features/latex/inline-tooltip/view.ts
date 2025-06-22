@@ -92,6 +92,7 @@ export class LatexInlineTooltip implements PluginView {
               'Mod-z': undo,
               'Mod-Z': redo,
               'Mod-y': redo,
+              // eslint-disable-next-line quote-props
               Enter: () => {
                 this.#updateValue.value();
                 return true;

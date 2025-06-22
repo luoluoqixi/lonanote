@@ -16,6 +16,8 @@ import { $node, $remark, $view } from '@milkdown/utils';
 import type { NodeView } from 'prosemirror-view';
 import remarkFrontmatter from 'remark-frontmatter';
 
+import { MarkdownFeature } from '..';
+import { featureConfig } from '../../core/slice';
 import { DefineFeature } from '../types';
 
 interface YamlConfig {
@@ -143,7 +145,7 @@ export const defineYaml: DefineFeature<YamlFeatureConfig> = (editor, config) => 
     };
   });
 
-  editor.use(yamlNode).use(yamlView);
+  editor.config(featureConfig(MarkdownFeature.Yaml)).use(yamlNode).use(yamlView);
 
   return mergeConfig;
 };

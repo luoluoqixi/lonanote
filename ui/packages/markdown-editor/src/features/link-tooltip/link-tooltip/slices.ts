@@ -38,10 +38,10 @@ withMeta(linkTooltipState, {
 });
 
 export interface LinkTooltipConfig {
-  linkIcon: () => string;
-  editButton: () => string;
-  confirmButton: () => string;
-  removeButton: () => string;
+  linkIcon: string;
+  editButton: string;
+  confirmButton: string;
+  removeButton: string;
   onCopyLink: (link: string) => void;
   inputPlaceholder: string;
 
@@ -53,10 +53,10 @@ export interface LinkTooltipConfig {
 }
 
 const defaultConfig: LinkTooltipConfig = {
-  linkIcon: () => '🔗',
-  editButton: () => '✎',
-  removeButton: () => '⌫',
-  confirmButton: () => 'Confirm ⏎',
+  linkIcon: '🔗',
+  editButton: '✎',
+  removeButton: '⌫',
+  confirmButton: 'Confirm ⏎',
   onCopyLink: () => {},
   inputPlaceholder: 'Paste link...',
 

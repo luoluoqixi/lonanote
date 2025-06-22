@@ -6,4 +6,6 @@ import 'viewerjs/dist/viewer.css';
 // sort-imports-ignore
 
 export * from './core/editor';
+export * from './core/builder';
+export * from './core/slice';
 export * from './features';

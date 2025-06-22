@@ -1,15 +1,14 @@
 import { Fragment, defineComponent, h, ref } from 'vue';
 
 import { Icon } from '../../../components';
-import type { Icon as IconType } from '../../types';
 
 h;
 Fragment;
 
 export interface BlockHandleProps {
   onAdd: () => void;
-  addIcon: IconType;
-  handleIcon: IconType;
+  addIcon: string;
+  handleIcon: string;
 }
 
 export const BlockHandle = defineComponent<BlockHandleProps>({
@@ -19,11 +18,11 @@ export const BlockHandle = defineComponent<BlockHandleProps>({
       required: true,
     },
     addIcon: {
-      type: Function,
+      type: String,
       required: true,
     },
     handleIcon: {
-      type: Function,
+      type: String,
       required: true,
     },
   },
@@ -48,10 +47,10 @@ export const BlockHandle = defineComponent<BlockHandleProps>({
               props.onAdd();
             }}
           >
-            <Icon icon={props.addIcon()} />
+            <Icon icon={props.addIcon} />
           </div>
           <div class="operation-item">
-            <Icon icon={props.handleIcon()} />
+            <Icon icon={props.handleIcon} />
           </div>
         </>
       );

@@ -21,10 +21,12 @@ import {
 } from '@codemirror/view';
 import { editorViewCtx, editorViewOptionsCtx } from '@milkdown/core';
 
+import { MarkdownFeature } from '..';
+import { featureConfig } from '../../core/slice';
 import { chevronDownIcon, clearIcon, editIcon, searchIcon, visibilityOffIcon } from '../../icons';
 // import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
 import { codeBlockComponent, codeBlockConfig } from '../codemirror/code-block';
-import { DefineFeature, Icon } from '../types';
+import { DefineFeature } from '../types';
 
 interface CodeMirrorConfig {
   extensions: Extension[];
@@ -33,9 +35,9 @@ interface CodeMirrorConfig {
   defaultReadOnly: boolean;
   readOnlyCtrl: Compartment;
 
-  expandIcon: Icon;
-  searchIcon: Icon;
-  clearSearchIcon: Icon;
+  expandIcon: string;
+  searchIcon: string;
+  clearSearchIcon: string;
 
   searchPlaceholder: string;
   noResultText: string;
@@ -43,9 +45,9 @@ interface CodeMirrorConfig {
   renderLanguage: (language: string, selected: boolean) => string;
   renderPreview: (language: string, content: string) => string | HTMLElement | null;
 
-  previewToggleIcon: (previewOnlyMode: boolean) => ReturnType<Icon>;
+  previewToggleIcon: (previewOnlyMode: boolean) => string;
   previewToggleText: (previewOnlyMode: boolean) => string;
-  previewLabel: () => string;
+  previewLabel: string;
 }
 
 export type CodeMirrorFeatureConfig = Partial<CodeMirrorConfig>;
@@ -53,6 +55,7 @@ export type CodeMirrorFeatureConfig = Partial<CodeMirrorConfig>;
 export const defineCodeMirror: DefineFeature<CodeMirrorFeatureConfig> = (editor, config) => {
   const mergeConfig = { ...config };
   editor
+    .config(featureConfig(MarkdownFeature.CodeMirror))
     .config((ctx) => {
       const view = ctx.get(editorViewCtx);
       const { editable } = ctx.get(editorViewOptionsCtx);
@@ -119,9 +122,9 @@ export const defineCodeMirror: DefineFeature<CodeMirrorFeatureConfig> = (editor,
           ...(config?.extensions ?? []),
         ],
         languages,
-        expandIcon: mergeConfig.expandIcon || (() => chevronDownIcon),
-        searchIcon: mergeConfig.searchIcon || (() => searchIcon),
-        clearSearchIcon: mergeConfig.clearSearchIcon || (() => clearIcon),
+        expandIcon: mergeConfig.expandIcon || chevronDownIcon,
+        searchIcon: mergeConfig.searchIcon || searchIcon,
+        clearSearchIcon: mergeConfig.clearSearchIcon || clearIcon,
         searchPlaceholder: mergeConfig.searchPlaceholder || 'Search language',
         noResultText: mergeConfig.noResultText || 'No result',
         renderLanguage: mergeConfig.renderLanguage || defaultConfig.renderLanguage,
