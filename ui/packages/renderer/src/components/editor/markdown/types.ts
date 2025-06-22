@@ -1,6 +1,6 @@
 import { CSSProperties } from 'react';
 
-import { EditorMode } from '@/models/editor';
+import { EditorMode } from '../types';
 
 export interface MarkdownEditorRef {
   getValue: () => string | undefined;

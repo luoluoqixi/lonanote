@@ -90,6 +90,10 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.more_vert : Icons.more_horiz;
   }
 
+  static IconData preview(BuildContext context) {
+    return isMaterial(context) ? Icons.preview : Icons.preview;
+  }
+
   static IconData radio(BuildContext context, bool check) {
     return check ? Icons.check_circle : Icons.radio_button_unchecked;
   }
@@ -102,6 +106,10 @@ class ThemeIcons {
     return isMaterial(context)
         ? Icons.drive_file_rename_outline
         : Icons.drive_file_rename_outline;
+  }
+
+  static IconData save(BuildContext context) {
+    return isMaterial(context) ? Icons.save : Icons.save;
   }
 
   static IconData schedule(BuildContext context) {

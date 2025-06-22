@@ -8,6 +8,7 @@ import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/common/ws_utils.dart';
 import 'package:lonanote/src/controller/workspace/workspace_controller.dart';
+import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
@@ -28,9 +29,13 @@ class EditorPage extends ConsumerStatefulWidget {
   ConsumerState<ConsumerStatefulWidget> createState() => _EditorPageState();
 }
 
-class _EditorPageState extends ConsumerState<EditorPage> {
+class _EditorPageState extends ConsumerState<EditorPage>
+    with WidgetsBindingObserver {
   final WebViewController _controller = WebViewController();
   bool _webViewLoaded = false;
+  bool _previewMode = false;
+  late bool _sourceMode;
+  late bool _isMarkdown;
 
   int _tapCount = 0;
   DateTime? _lastTapTime;
@@ -40,13 +45,29 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final ext = Utility.getExtName(widget.path);
+    _isMarkdown = ext != null && Utility.isMarkdown(ext);
+    _sourceMode = !_isMarkdown;
     _initEditorHtml();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _updateWebViewUI();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    _updateColorMode(true);
   }
 
   Future<void> _loadFileContent() async {
@@ -72,9 +93,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     await _controller.clearCache();
     _controller.addJavaScriptChannel(
       'EditorBridge',
-      onMessageReceived: (JavaScriptMessage message) {
-        // if (message.message == '') {}
-      },
+      onMessageReceived: _onMessageReceived,
     );
     await _controller.setOnConsoleMessage((message) {
       if (message.level == JavaScriptLogLevel.info) {
@@ -111,6 +130,27 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     }
   }
 
+  void _onMessageReceived(JavaScriptMessage message) {
+    final messageObject = jsonDecode(message.message) as Map<String, dynamic>;
+    final command = messageObject['command'];
+    if (command == 'update_state') {
+      _updateState(messageObject['state']);
+    } else if (command == 'save_file') {
+      _saveFile(messageObject['content']);
+    }
+  }
+
+  void _updateState(Map<String, dynamic>? state) {}
+
+  void _saveFile(String? content) {
+    if (!_webViewLoaded) return;
+    if (!mounted) return;
+    if (content == null) return;
+    fileContent = content;
+    WorkspaceController.saveFileContent(ref, widget.path, content);
+    logger.i("save file: ${content.length}");
+  }
+
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
   }
@@ -118,6 +158,37 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   void _refreshWebview() async {
     if (!_webViewLoaded) return;
     await _controller.reload();
+  }
+
+  Future<void> _saveCommand() async {
+    await _runWebCommand('save', null);
+  }
+
+  Future<String?> _getContentCommand() async {
+    if (!_webViewLoaded) return null;
+    final s = await _controller.runJavaScriptReturningResult(
+      "window.getContent()",
+    ) as String?;
+    if (s != null) {
+      return jsonDecode(s);
+    }
+    return null;
+  }
+
+  Future<void> _changeEditModeCommand() async {
+    final targetPreviewMode = !_previewMode;
+    setState(() {
+      _previewMode = targetPreviewMode;
+    });
+    await _runWebCommand('change_preview_mode', targetPreviewMode);
+  }
+
+  Future<void> _toggleSourceMode() async {
+    final targetSourceMode = !_sourceMode;
+    setState(() {
+      _sourceMode = targetSourceMode;
+    });
+    await _runWebCommand('change_source_mode', targetSourceMode);
   }
 
   void _openVConsole() {
@@ -130,12 +201,36 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     await _controller.runJavaScript(
       """
       try {
-        window.initEditor(${jsonEncode(fileContent)});
+        window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)});
       } catch(e) {
-        console.error(e);
+        console.error('initEditor error:', e);
       }
       """,
     );
+  }
+
+  Future<void> _runWebCommand(String command, dynamic data) async {
+    if (!_webViewLoaded) return;
+    final dataStr = data == null ? "null" : jsonEncode(data);
+    await _controller.runJavaScript(
+      """
+      try {
+        window.invokeCommand("$command", $dataStr);
+      } catch(e) {
+        console.error('invokeCommand error:', e);
+      }
+      """,
+    );
+  }
+
+  Future<void> _updateColorMode(bool updateEditor) async {
+    if (_webViewLoaded) {
+      final brightness =
+          WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      final theme = brightness == Brightness.dark ? 'dark' : 'light';
+      await _controller
+          .runJavaScript('window.setColorMode("$theme", $updateEditor)');
+    }
   }
 
   Future<void> _updateWebViewUI() async {
@@ -144,15 +239,20 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     await _controller.setBackgroundColor(bgColor);
 
     if (_webViewLoaded) {
-      final brightness =
-          WidgetsBinding.instance.platformDispatcher.platformBrightness;
-      final theme = brightness == Brightness.dark ? 'dark' : 'light';
-      await _controller.runJavaScript('window.setColorMode("$theme")');
-
+      final s = ref.read(settingsProvider.select((s) => s.settings));
+      if (s != null) {
+        final autoSave = s.autoSave;
+        final autoSaveInterval = s.autoSaveInterval;
+        final autoSaveFocusChange = s.autoSaveFocusChange;
+        await _controller.runJavaScript(
+          'window.setAutoSave($autoSave, $autoSaveInterval, $autoSaveFocusChange)',
+        );
+      }
+      await _updateColorMode(false);
       if (mounted) {
         final statusBarHeight = MediaQuery.of(context).padding.top;
         await _controller
-            .runJavaScript('window.setStatusBarHeight("$statusBarHeight")');
+            .runJavaScript('window.setStatusBarHeight($statusBarHeight)');
       }
     }
   }
@@ -178,6 +278,23 @@ class _EditorPageState extends ConsumerState<EditorPage> {
       PlatformPullDownButton(
         itemBuilder: (context) => [
           PullDownMenuItem(
+            title: "保存",
+            onTap: _saveCommand,
+            icon: ThemeIcons.save(context),
+          ),
+          PullDownMenuItem.selectable(
+            title: "预览模式",
+            onTap: _changeEditModeCommand,
+            selected: _previewMode,
+            icon: ThemeIcons.preview(context),
+          ),
+          PullDownMenuItem.selectable(
+            title: "源码模式",
+            onTap: _toggleSourceMode,
+            selected: _sourceMode,
+            enabled: _isMarkdown,
+          ),
+          PullDownMenuItem(
             title: "刷新",
             onTap: _refreshWebview,
             icon: ThemeIcons.refresh(context),
@@ -197,28 +314,40 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     ];
   }
 
+  void _onPopInvoked<T>(bool didPop, T result) async {
+    final s = ref.read(settingsProvider.select((s) => s.settings));
+    if (s != null && s.autoSaveFocusChange == true) {
+      // 退出页面前保存文件
+      final content = await _getContentCommand();
+      _saveFile(content);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = Utility.getFileName(widget.path);
     final showName = WsUtils.getFileShowName(name);
     final colorScheme = ThemeColors.getColorScheme(context);
 
-    return PlatformSimplePage(
-      titleActions: _buildTitleActions(colorScheme),
-      extendBodyBehindAppBar: true,
-      title: GestureDetector(
-        onTap: _onTitleTap,
-        child: Text(
-          showName,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
+    return PopScope(
+      onPopInvokedWithResult: _onPopInvoked,
+      child: PlatformSimplePage(
+        titleActions: _buildTitleActions(colorScheme),
+        extendBodyBehindAppBar: true,
+        title: GestureDetector(
+          onTap: _onTitleTap,
+          child: Text(
+            showName,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
         ),
-      ),
-      titleBgColor: Colors.transparent,
-      centerTitle: true,
-      noScrollView: true,
-      child: WebViewWidget(
-        controller: _controller,
+        titleBgColor: Colors.transparent,
+        centerTitle: true,
+        noScrollView: true,
+        child: WebViewWidget(
+          controller: _controller,
+        ),
       ),
     );
   }

@@ -1,0 +1,15 @@
+.cm6-theme {
+  .ͼ1 .cm-lineNumbers .cm-gutterElement {
+    // padding-top: 2px;
+    min-width: 40px;
+  }
+  // 行号
+  .cm-gutters {
+    color: var(--gray-10) !important;
+    // font-size: var(--font-size-1);
+    border-width: 0 !important;
+  }
+  .cm-scroller {
+    justify-content: start;
+  }
+}

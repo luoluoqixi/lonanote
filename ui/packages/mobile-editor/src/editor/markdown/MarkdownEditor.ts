@@ -1,17 +1,21 @@
+import { editorViewCtx } from '@milkdown/core';
+import { Ctx } from '@milkdown/kit/ctx';
+import { TextSelection } from '@milkdown/kit/prose/state';
 import markdownEditorLanguages from 'lonanote-languages/zh/markdown_editor_languages.json';
 import { ImageMenuKey, MarkdownEditor, MarkdownFeature } from 'lonanote-markdown-editor';
 import 'lonanote-styles/common-milkdown-theme.scss';
 
-import { codemirrorLightTheme } from '../codemirror/theme';
+import { onUpdateState, saveContent } from '..';
+import { codemirrorDarkTheme, codemirrorLightTheme } from '../codemirror/theme';
 import { utils } from '../utils';
 import './MarkdownEditor.scss';
 
-export const create = (root: HTMLElement, contentJson: string) => {
-  const theme = codemirrorLightTheme;
+export const createMarkdownEditor = (root: HTMLElement, content: string, previewMode: boolean) => {
+  const theme = window.colorMode === 'dark' ? codemirrorDarkTheme : codemirrorLightTheme;
   const editor = new MarkdownEditor({
     root,
-    defaultReadOnly: false,
-    defaultValue: contentJson,
+    defaultReadOnly: previewMode,
+    defaultValue: content,
     features: {
       [MarkdownFeature.BlockEdit]: false,
     },
@@ -88,5 +92,67 @@ export const create = (root: HTMLElement, contentJson: string) => {
     },
   });
   editor.create();
+
+  let updateTimeId: number | null = null;
+  const updateState = (ctx: Ctx) => {
+    if (updateTimeId) {
+      clearTimeout(updateTimeId);
+      updateTimeId = null;
+    }
+    updateTimeId = window.setTimeout(() => {
+      if (!editor || !ctx) return;
+      if (!ctx.isInjected(editorViewCtx)) {
+        return;
+      }
+      const view = ctx.get(editorViewCtx);
+      onUpdateState({ charCount: view.state.doc.content.size });
+    }, 200);
+  };
+  editor.addListener('onSave', () => {
+    if (!editor) return true;
+    const mdText = editor.getMarkdown();
+    // console.log(mdText);
+    saveContent(mdText);
+    return true;
+  });
+  editor.addListener('onDestroy', () => {
+    onUpdateState();
+  });
+  editor.addListener('onUpdate', (ctx) => {
+    updateState(ctx);
+  });
+  editor.addListener('onMounted', (ctx) => {
+    updateState(ctx);
+  });
+  editor.addListener('onLinkClick', (link, view, e) => {
+    if (!view.editable) {
+      e.preventDefault();
+      // onClickAnyLink?.(link);
+    }
+  });
+  editor.addListener('onFocus', () => {
+    // if (onFocusChange) {
+    //   onFocusChange(true);
+    // }
+  });
+  editor.addListener('onBlur', () => {
+    // if (onFocusChange) {
+    //   onFocusChange(false);
+    // }
+  });
+
+  document.body.addEventListener('click', (e) => {
+    if (editor == null || editor.editor == null) return;
+    if (e.target !== document.body) return;
+    // 手指点在 body 上时自动聚焦
+    editor.editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const pos = view.state.doc.content.size;
+      const { state } = view;
+      const selection = TextSelection.create(state.doc, pos);
+      view.focus();
+      view.dispatch(state.tr.setSelection(selection));
+    });
+  });
   return editor;
 };

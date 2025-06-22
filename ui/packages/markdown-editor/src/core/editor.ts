@@ -26,8 +26,6 @@ export class MarkdownEditor extends MarkdownBuilder {
   static Feature = MarkdownFeature;
 
   /// @internal
-  readonly #parentSetReadonly: (value: boolean) => void;
-  /// @internal
   readonly #featuresConfig: FeaturesConfig;
 
   /// The constructor of the editor.Add commentMore actions
@@ -44,8 +42,6 @@ export class MarkdownEditor extends MarkdownBuilder {
     })
       .filter(([, enabled]) => enabled)
       .map(([feature]) => feature as MarkdownFeature);
-
-    this.#parentSetReadonly = this.setReadonly;
 
     this.#featuresConfig = { ...finalConfigs };
 
@@ -75,7 +71,7 @@ export class MarkdownEditor extends MarkdownBuilder {
 
   /// Set the readonly mode of the editor.
   setReadonly = (value: boolean) => {
-    this.#parentSetReadonly(value);
+    this.setReadonlyRaw(value);
 
     // 同时设置所有 CodeMirror 的 ReadOnly 状态
     const readOnlyEx = this.#featuresConfig[MarkdownFeature.CodeMirror]?.readOnlyCtrl;

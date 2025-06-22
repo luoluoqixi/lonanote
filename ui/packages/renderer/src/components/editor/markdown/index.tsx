@@ -1,7 +1,6 @@
 import { Ref, forwardRef, useMemo } from 'react';
 
-import { EditorBackEnd } from '@/models/editor';
-
+import { EditorBackEnd } from '../types';
 import { MarkdownEditor as MilkdownMDEditor } from './milkdown';
 import { MarkdownEditorProps as CommonMarkdownEditorProps, MarkdownEditorRef } from './types';
 import { MarkdownEditor as VditorMDEditor } from './vditor';

@@ -305,11 +305,11 @@ export class MarkdownBuilder {
 
   /// Set the readonly mode of the editor.
   setReadonly = (value: boolean) => {
-    this.#setReadonly(value);
+    this.setReadonlyRaw(value);
     return this;
   };
 
-  #setReadonly = (value: boolean) => {
+  setReadonlyRaw = (value: boolean) => {
     this.#editable = !value;
 
     this.#editor.action((ctx) => {

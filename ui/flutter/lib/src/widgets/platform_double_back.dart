@@ -37,7 +37,7 @@ class _PlatformDoubleBackState extends State<PlatformDoubleBack> {
         : widget.child;
   }
 
-  Future<void> _onPopInvoked<T>(bool didPop, T result) async {
+  void _onPopInvoked<T>(bool didPop, T result) {
     DateTime now = DateTime.now();
     if (currentBackPressTime == null ||
         now.difference(currentBackPressTime!) >

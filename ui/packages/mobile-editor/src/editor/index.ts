@@ -1,23 +1,54 @@
-import { editorViewCtx } from '@milkdown/core';
-import { TextSelection } from '@milkdown/kit/prose/state';
+import { autoSaveUpdate } from './autoSave';
+import { createCMEditor } from './codemirror';
+import { createMarkdownEditor } from './markdown/MarkdownEditor';
 
-import { create } from './markdown/MarkdownEditor';
+export const saveContent = (content: string) => {
+  if (window.EditorBridge != null) {
+    const msg = {
+      command: 'save_file',
+      content,
+    };
+    window.EditorBridge.postMessage(JSON.stringify(msg));
+  }
+};
 
-export const createEditor = async (content: string) => {
+export const getContent = () => {
+  if (window.editor != null) {
+    return window.editor.getMarkdown();
+  } else if (window.cmEditor != null) {
+    return window.cmEditor.state.doc.toString();
+  }
+  return null;
+};
+
+export const onUpdateState = (state?: {
+  charCount?: number;
+  rowIndex?: number;
+  colIndex?: number;
+}) => {
+  if (window.EditorBridge != null) {
+    const msg = {
+      command: 'update_state',
+      state,
+    };
+    window.EditorBridge.postMessage(JSON.stringify(msg));
+  }
+  autoSaveUpdate(getContent);
+};
+
+export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
   const root = document.getElementById('root')!;
-  const editor = create(root, content);
-
-  document.body.addEventListener('click', (e) => {
-    if (editor == null || editor.editor == null) return;
-    if (e.target !== document.body) return;
-    // 手指点在 body 上时自动聚焦
-    editor.editor.action((ctx) => {
-      const view = ctx.get(editorViewCtx);
-      const pos = view.state.doc.content.size;
-      const { state } = view;
-      const selection = TextSelection.create(state.doc, pos);
-      view.focus();
-      view.dispatch(state.tr.setSelection(selection));
-    });
-  });
+  if (window.editor != null) {
+    window.editor.destroy();
+    window.editor = null;
+  }
+  if (window.cmEditor != null) {
+    window.cmEditor.destroy();
+    window.cmEditor = null;
+  }
+  if (sourceMode) {
+    window.cmEditor = createCMEditor(root, content, fileName);
+  } else {
+    window.editor = createMarkdownEditor(root, content, window.previewMode || false);
+  }
 };

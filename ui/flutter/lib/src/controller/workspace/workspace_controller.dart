@@ -203,4 +203,18 @@ class WorkspaceController {
     }
     throw Exception("Workspace未打开");
   }
+
+  static void saveFileContent(
+    WidgetRef ref,
+    String filePath,
+    String content,
+  ) {
+    final wsPath = getCurrentWorkspacePath(ref);
+    if (wsPath != null) {
+      final targetPath = "$wsPath/$filePath";
+      RustFs.write(targetPath, content);
+      return;
+    }
+    throw Exception("Workspace未打开");
+  }
 }
