@@ -9,6 +9,7 @@ import { confirmIcon } from '../../icons';
 import { codeBlockConfig } from '../codemirror/code-block';
 import type { DefineFeature } from '../types';
 import { blockLatexSchema } from './block-latex';
+import { toggleLatexCommand } from './command';
 import { mathInlineSchema } from './inline-latex';
 import { inlineLatexTooltip } from './inline-tooltip/tooltip';
 import { LatexInlineTooltip } from './inline-tooltip/view';
@@ -58,7 +59,8 @@ export const defineLatex: DefineFeature<LatexFeatureConfig> = (editor, config) =
     .use(inlineLatexTooltip)
     .use(mathInlineInputRule)
     .use(mathBlockInputRule)
-    .use(blockLatexSchema);
+    .use(blockLatexSchema)
+    .use(toggleLatexCommand);
 
   return config;
 };

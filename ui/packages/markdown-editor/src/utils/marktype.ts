@@ -1,7 +1,7 @@
 import type { Mark, MarkType, Node as ProseNode } from '@milkdown/prose/model';
 import type { EditorView } from '@milkdown/prose/view';
 
-import { getNodeMark } from './check';
+import { getNodeMark } from './checker';
 
 export function findMarkPosition(
   mark: Mark,

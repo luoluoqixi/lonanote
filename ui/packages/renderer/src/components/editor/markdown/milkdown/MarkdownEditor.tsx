@@ -80,10 +80,10 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
       featureConfigs: {
         [MilkdownFeature.Image]: {
           blockUploadPlaceholderText: markdownEditorLanguages.imageBlockUploadPlaceholderText,
-          blockUploadButton: () => markdownEditorLanguages.imageBlockUploadButton,
-          blockConfirmButton: () => markdownEditorLanguages.imageBlockConfirmButton,
+          blockUploadButton: markdownEditorLanguages.imageBlockUploadButton,
+          blockConfirmButton: markdownEditorLanguages.imageBlockConfirmButton,
           inlineUploadPlaceholderText: markdownEditorLanguages.imageInlineUploadPlaceholderText,
-          inlineUploadButton: () => markdownEditorLanguages.imageInlineUploadButton,
+          inlineUploadButton: markdownEditorLanguages.imageInlineUploadButton,
           proxyDomURL: async (url) => {
             if (!url) return url;
             // console.log(url);
@@ -225,7 +225,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
             m
               ? markdownEditorLanguages.codemirrorToggleEdit
               : markdownEditorLanguages.codemirrorToggleHide,
-          previewLabel: () => markdownEditorLanguages.codemirrorPreviewLabel,
+          previewLabel: markdownEditorLanguages.codemirrorPreviewLabel,
           noResultText: markdownEditorLanguages.codemirrorNoResultText,
         },
         [MilkdownFeature.Yaml]: {
@@ -244,27 +244,68 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
           },
         },
         [MilkdownFeature.BlockEdit]: {
-          slashMenuTextGroupLabel: markdownEditorLanguages.slashMenuTextGroupLabel,
-          slashMenuH1Label: markdownEditorLanguages.slashMenuH1Label,
-          slashMenuH2Label: markdownEditorLanguages.slashMenuH2Label,
-          slashMenuH3Label: markdownEditorLanguages.slashMenuH3Label,
-          slashMenuH4Label: markdownEditorLanguages.slashMenuH4Label,
-          slashMenuH5Label: markdownEditorLanguages.slashMenuH5Label,
-          slashMenuH6Label: markdownEditorLanguages.slashMenuH6Label,
-          slashMenuQuoteLabel: markdownEditorLanguages.slashMenuQuoteLabel,
-          slashMenuDividerLabel: markdownEditorLanguages.slashMenuDividerLabel,
+          textGroup: {
+            label: markdownEditorLanguages.slashMenuTextGroupLabel,
+            text: {
+              label: markdownEditorLanguages.slashMenuTextGroupLabel,
+            },
+            h1: {
+              label: markdownEditorLanguages.slashMenuH1Label,
+            },
+            h2: {
+              label: markdownEditorLanguages.slashMenuH2Label,
+            },
+            h3: {
+              label: markdownEditorLanguages.slashMenuH3Label,
+            },
+            h4: {
+              label: markdownEditorLanguages.slashMenuH4Label,
+            },
+            h5: {
+              label: markdownEditorLanguages.slashMenuH5Label,
+            },
+            h6: {
+              label: markdownEditorLanguages.slashMenuH6Label,
+            },
+            quote: {
+              label: markdownEditorLanguages.slashMenuH6Label,
+            },
+            divider: {
+              label: markdownEditorLanguages.slashMenuDividerLabel,
+            },
+          },
 
-          slashMenuListGroupLabel: markdownEditorLanguages.slashMenuListGroupLabel,
-          slashMenuBulletListLabel: markdownEditorLanguages.slashMenuBulletListLabel,
-          slashMenuOrderedListLabel: markdownEditorLanguages.slashMenuOrderedListLabel,
-          slashMenuTaskListLabel: markdownEditorLanguages.slashMenuTaskListLabel,
+          listGroup: {
+            label: markdownEditorLanguages.slashMenuListGroupLabel,
+            bulletList: {
+              label: markdownEditorLanguages.slashMenuBulletListLabel,
+            },
+            orderedList: {
+              label: markdownEditorLanguages.slashMenuOrderedListLabel,
+            },
+            taskList: {
+              label: markdownEditorLanguages.slashMenuTaskListLabel,
+            },
+          },
 
-          slashMenuAdvancedGroupLabel: markdownEditorLanguages.slashMenuAdvancedGroupLabel,
-          slashMenuImageLabel: markdownEditorLanguages.slashMenuImageLabel,
-          slashMenuImageLinkLabel: markdownEditorLanguages.slashMenuImageLinkLabel,
-          slashMenuCodeBlockLabel: markdownEditorLanguages.slashMenuCodeBlockLabel,
-          slashMenuTableLabel: markdownEditorLanguages.slashMenuTableLabel,
-          slashMenuMathLabel: markdownEditorLanguages.slashMenuMathLabel,
+          advancedGroup: {
+            label: markdownEditorLanguages.slashMenuAdvancedGroupLabel,
+            image: {
+              label: markdownEditorLanguages.slashMenuImageLabel,
+            },
+            imageLink: {
+              label: markdownEditorLanguages.slashMenuImageLinkLabel,
+            },
+            codeBlock: {
+              label: markdownEditorLanguages.slashMenuCodeBlockLabel,
+            },
+            table: {
+              label: markdownEditorLanguages.slashMenuTableLabel,
+            },
+            math: {
+              label: markdownEditorLanguages.slashMenuMathLabel,
+            },
+          },
         },
       },
     });

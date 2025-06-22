@@ -9,8 +9,10 @@ import { type App, type ShallowRef, createApp, ref, shallowRef } from 'vue';
 import { MarkdownFeature } from '..';
 import { featureConfig } from '../../core/slice';
 import { addViewEvent, addViewScrollEvent } from '../../utils';
+import type { GroupBuilder } from '../../utils';
 import type { DefineFeature } from '../types';
 import { Toolbar } from './component';
+import type { ToolbarItem } from './config';
 
 interface ToolbarConfig {
   boldIcon: string;
@@ -19,6 +21,7 @@ interface ToolbarConfig {
   linkIcon: string;
   strikethroughIcon: string;
   latexIcon: string;
+  buildToolbar: (builder: GroupBuilder<ToolbarItem>) => void;
 }
 
 export type ToolbarFeatureConfig = Partial<ToolbarConfig>;

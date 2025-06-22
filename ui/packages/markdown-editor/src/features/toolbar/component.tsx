@@ -1,34 +1,12 @@
-import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
+import { Icon } from '@milkdown/kit/component';
+import { EditorStatus, editorCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
-import {
-  emphasisSchema,
-  inlineCodeSchema,
-  linkSchema,
-  strongSchema,
-  toggleEmphasisCommand,
-  toggleInlineCodeCommand,
-  toggleStrongCommand,
-} from '@milkdown/kit/preset/commonmark';
-import { strikethroughSchema, toggleStrikethroughCommand } from '@milkdown/kit/preset/gfm';
-import type { MarkType, Node, NodeType } from '@milkdown/kit/prose/model';
-import { NodeSelection, type Selection, TextSelection } from '@milkdown/kit/prose/state';
+import type { Selection } from '@milkdown/kit/prose/state';
 import clsx from 'clsx';
-import { Fragment, type Ref, type ShallowRef, defineComponent, h } from 'vue';
+import { Fragment, type Ref, type ShallowRef, computed, defineComponent, h } from 'vue';
 
 import type { ToolbarFeatureConfig } from '.';
-import { MarkdownFeature } from '../..';
-import { Icon } from '../../components';
-import { useMarkdownFeatures } from '../../core/slice';
-import {
-  boldIcon,
-  codeIcon,
-  functionsIcon,
-  italicIcon,
-  linkIcon,
-  strikethroughIcon,
-} from '../../icons';
-import { mathInlineSchema } from '../latex/inline-latex';
-import { linkTooltipAPI } from '../link-tooltip/link-tooltip';
+import { type ToolbarItem, getGroups } from './config';
 
 h;
 Fragment;
@@ -65,158 +43,50 @@ export const Toolbar = defineComponent<ToolbarProps>({
     },
   },
   setup(props) {
-    const { ctx, hide, config } = props;
+    const { ctx, config } = props;
 
     const onClick = (fn: (ctx: Ctx) => void) => (e: MouseEvent) => {
       e.preventDefault();
       ctx && fn(ctx);
     };
 
-    const isActive = (mark: MarkType) => {
-      const selection = props.selection.value;
-      if (!ctx || !selection) return false;
-      const { state } = ctx.get(editorViewCtx);
-      if (!state) return false;
-      const { doc } = state;
-      return doc.rangeHasMark(selection.from, selection.to, mark);
-    };
+    function checkActive(checker: ToolbarItem['active']) {
+      // make sure the function subscribed to vue reactive
+      props.selection.value;
+      // Check if the edtior is ready
+      const status = ctx.get(editorCtx).status;
+      if (status !== EditorStatus.Created) return false;
 
-    const containsNode = (node: NodeType) => {
-      const selection = props.selection.value;
-      if (!ctx || !selection) return false;
-      const { state } = ctx.get(editorViewCtx);
-      if (!state) return false;
-      const { doc } = state;
-      if (selection instanceof NodeSelection) {
-        return selection.node.type === node;
-      }
+      return checker(ctx);
+    }
 
-      const { from, to } = selection;
-
-      let hasNode = false;
-      doc.nodesBetween(from, to, (n) => {
-        if (n.type === node) {
-          hasNode = true;
-          return false;
-        }
-        return true;
-      });
-
-      return hasNode;
-    };
-
-    const flags = ctx && useMarkdownFeatures(ctx).get();
-    const isLatexEnabled = flags?.includes(MarkdownFeature.Latex);
-
-    const toggleLatex = (ctx: Ctx) => {
-      const hasLatex = containsNode(mathInlineSchema.type(ctx));
-      const view = ctx.get(editorViewCtx);
-      const { selection, doc, tr } = view.state;
-      if (!hasLatex) {
-        const text = doc.textBetween(selection.from, selection.to);
-        const _tr = tr.replaceSelectionWith(
-          mathInlineSchema.type(ctx).create({
-            value: text,
-          }),
-        );
-        view.dispatch(_tr.setSelection(NodeSelection.create(_tr.doc, selection.from)));
-        return;
-      }
-
-      const { from, to } = selection;
-      let pos = -1;
-      let node: Node | null = null;
-      doc.nodesBetween(from, to, (n, p) => {
-        if (node) return false;
-        if (n.type === mathInlineSchema.type(ctx)) {
-          pos = p;
-          node = n;
-          return false;
-        }
-        return true;
-      });
-      if (!node || pos < 0) return;
-
-      let _tr = tr.delete(pos, pos + 1);
-      const content = (node as Node).attrs.value;
-      _tr = _tr.insertText(content, pos);
-      view.dispatch(_tr.setSelection(TextSelection.create(_tr.doc, from, to + content.length - 1)));
-    };
+    const groupInfo = computed(() => getGroups(config, ctx));
 
     return () => {
       return (
         <>
-          <button
-            type="button"
-            class={clsx('toolbar-item', ctx && isActive(strongSchema.type(ctx)) && 'active')}
-            onPointerdown={onClick((ctx) => {
-              const commands = ctx.get(commandsCtx);
-              commands.call(toggleStrongCommand.key);
-            })}
-          >
-            <Icon icon={config?.boldIcon ?? boldIcon} />
-          </button>
-          <button
-            type="button"
-            class={clsx('toolbar-item', ctx && isActive(emphasisSchema.type(ctx)) && 'active')}
-            onPointerdown={onClick((ctx) => {
-              const commands = ctx.get(commandsCtx);
-              commands.call(toggleEmphasisCommand.key);
-            })}
-          >
-            <Icon icon={config?.italicIcon ?? italicIcon} />
-          </button>
-          <button
-            type="button"
-            class={clsx('toolbar-item', ctx && isActive(strikethroughSchema.type(ctx)) && 'active')}
-            onPointerdown={onClick((ctx) => {
-              const commands = ctx.get(commandsCtx);
-              commands.call(toggleStrikethroughCommand.key);
-            })}
-          >
-            <Icon icon={config?.strikethroughIcon ?? strikethroughIcon} />
-          </button>
-          <div class="divider"></div>
-          <button
-            type="button"
-            class={clsx('toolbar-item', ctx && isActive(inlineCodeSchema.type(ctx)) && 'active')}
-            onPointerdown={onClick((ctx) => {
-              const commands = ctx.get(commandsCtx);
-              commands.call(toggleInlineCodeCommand.key);
-            })}
-          >
-            <Icon icon={config?.codeIcon ?? codeIcon} />
-          </button>
-          {isLatexEnabled && (
-            <button
-              type="button"
-              class={clsx(
-                'toolbar-item',
-                ctx && containsNode(mathInlineSchema.type(ctx)) && 'active',
-              )}
-              onPointerdown={onClick(toggleLatex)}
-            >
-              <Icon icon={config?.latexIcon ?? functionsIcon} />
-            </button>
-          )}
-          <button
-            type="button"
-            class={clsx('toolbar-item', ctx && isActive(linkSchema.type(ctx)) && 'active')}
-            onPointerdown={onClick((ctx) => {
-              const view = ctx.get(editorViewCtx);
-              const { selection } = view.state;
-
-              if (isActive(linkSchema.type(ctx))) {
-                ctx.get(linkTooltipAPI.key).removeLink(selection.from, selection.to);
-                return;
+          {groupInfo.value
+            .map((group) => {
+              return group.items.map((item) => {
+                return (
+                  <button
+                    type="button"
+                    class={clsx('toolbar-item', ctx && checkActive(item.active) && 'active')}
+                    onPointerdown={onClick(item.onRun)}
+                  >
+                    <Icon icon={item.icon} />
+                  </button>
+                );
+              });
+            })
+            .reduce((acc, curr, index) => {
+              if (index === 0) {
+                acc.push(...curr);
+              } else {
+                acc.push(<div class="divider"></div>, ...curr);
               }
-
-              ctx.get(linkTooltipAPI.key).addLink(selection.from, selection.to);
-              hide?.();
-            })}
-          >
-            <Icon icon={config?.linkIcon ?? linkIcon} />
-          </button>
+              return acc;
+            }, [])}
         </>
       );
     };
