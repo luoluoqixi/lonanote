@@ -1,6 +1,11 @@
 import { editorViewCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
-import { BlockProvider, block, blockConfig } from '@milkdown/kit/plugin/block';
+import {
+  BlockProvider,
+  type BlockProviderOptions,
+  block,
+  blockConfig,
+} from '@milkdown/kit/plugin/block';
 import { paragraphSchema } from '@milkdown/kit/preset/commonmark';
 import { findParent } from '@milkdown/kit/prose';
 import type { PluginView } from '@milkdown/kit/prose/state';
@@ -31,6 +36,7 @@ export class BlockHandleView implements PluginView {
     app.mount(content);
     this.#app = app;
     this.#content = content;
+    const blockProviderOptions = config?.blockHandle ?? {};
     this.#provider = new BlockProvider({
       ctx,
       content,
@@ -52,6 +58,7 @@ export class BlockHandleView implements PluginView {
         const handleHeight = handleRect.height;
         return totalDescendant > 2 || handleHeight < height ? 'left-start' : 'left';
       },
+      ...(blockProviderOptions as Partial<BlockProviderOptions>),
     });
 
     // ==== 修改 ====

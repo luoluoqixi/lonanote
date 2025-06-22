@@ -1,4 +1,4 @@
-import { block } from '@milkdown/kit/plugin/block';
+import { type BlockProviderOptions, block } from '@milkdown/kit/plugin/block';
 
 import { MarkdownFeature } from '..';
 import { featureConfig } from '../../core/slice';
@@ -13,6 +13,17 @@ interface BlockEditConfig {
   handleAddIcon: string;
   handleDragIcon: string;
   buildMenu: (builder: GroupBuilder<SlashMenuItem>) => void;
+
+  blockHandle: Pick<
+    BlockProviderOptions,
+    | 'shouldShow'
+    | 'getOffset'
+    | 'getPosition'
+    | 'getPlacement'
+    | 'middleware'
+    | 'floatingUIOptions'
+    | 'root'
+  >;
 
   textGroup: {
     label: string;
