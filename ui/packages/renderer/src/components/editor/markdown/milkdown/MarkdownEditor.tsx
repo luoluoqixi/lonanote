@@ -437,14 +437,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
           if (target instanceof HTMLElement) {
             if (target.classList.contains('milkdown')) {
               // 手指点在 milkdown 上时自动聚焦
-              editor.editor.action((ctx) => {
-                const view = ctx.get(editorViewCtx);
-                const pos = view.state.doc.content.size;
-                const { state } = view;
-                const selection = TextSelection.create(state.doc, pos);
-                view.focus();
-                view.dispatch(state.tr.setSelection(selection));
-              });
+              editor.focus();
             }
           }
         }}

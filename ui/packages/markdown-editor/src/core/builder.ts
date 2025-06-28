@@ -20,7 +20,7 @@ import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
 import { trailing } from '@milkdown/kit/plugin/trailing';
 import { commonmark, remarkPreserveEmptyLinePlugin } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
-import { EditorState, Selection } from '@milkdown/kit/prose/state';
+import { EditorState, Selection, TextSelection } from '@milkdown/kit/prose/state';
 import { EditorView } from '@milkdown/kit/prose/view';
 import { automd } from '@milkdown/plugin-automd';
 import type { Node as ProseNode } from '@milkdown/prose/model';
@@ -406,6 +406,17 @@ export class MarkdownBuilder {
       return;
     }
     this.#events[type] = undefined;
+  };
+
+  focus = () => {
+    this.#editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const pos = view.state.doc.content.size;
+      const { state } = view;
+      const selection = TextSelection.create(state.doc, pos);
+      view.focus();
+      view.dispatch(state.tr.setSelection(selection));
+    });
   };
 
   /// @internal

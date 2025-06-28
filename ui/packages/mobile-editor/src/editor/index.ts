@@ -1,5 +1,7 @@
+import { config } from '@/config';
+
 import { autoSaveUpdate } from './autoSave';
-import { createCMEditor } from './codemirror';
+import { cmFocus, createCMEditor } from './codemirror';
 import { createMarkdownEditor } from './markdown/MarkdownEditor';
 
 export const saveContent = (content: string) => {
@@ -40,8 +42,31 @@ export const onUpdateState = (state?: {
   autoSaveUpdate(getContent);
 };
 
+const bodyClick = (e: MouseEvent) => {
+  if (e.target !== document.body) {
+    if (e.target instanceof HTMLElement) {
+      const id = e.target.id;
+      if (
+        id !== config.rootId &&
+        id !== config.cmRootId &&
+        id !== config.mdRootId &&
+        !e.target.classList.contains('milkdown')
+      ) {
+        return;
+      }
+    }
+  }
+  if (window.editor != null) {
+    const editor = window.editor;
+    editor.focus();
+    console.log('focus editor');
+  }
+  if (window.cmEditor != null) {
+    cmFocus(window.cmEditor);
+  }
+};
+
 export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
-  const root = document.getElementById('root')!;
   if (window.editor != null) {
     window.editor.destroy();
     window.editor = null;
@@ -50,9 +75,18 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
     window.cmEditor.destroy();
     window.cmEditor = null;
   }
+  const cmRoot = document.getElementById(config.cmRootId)!;
+  const mdRoot = document.getElementById(config.mdRootId)!;
   if (sourceMode) {
-    window.cmEditor = createCMEditor(root, content, fileName);
+    cmRoot.style.display = 'block';
+    mdRoot.style.display = 'none';
+    window.cmEditor = createCMEditor(cmRoot, content, fileName);
   } else {
-    window.editor = createMarkdownEditor(root, content, window.previewMode || false);
+    cmRoot.style.display = 'none';
+    mdRoot.style.display = 'block';
+    window.editor = createMarkdownEditor(mdRoot, content, window.previewMode || false);
   }
+
+  document.body.removeEventListener('click', bodyClick);
+  document.body.addEventListener('click', bodyClick);
 };

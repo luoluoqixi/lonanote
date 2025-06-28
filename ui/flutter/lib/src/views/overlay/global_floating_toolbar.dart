@@ -90,7 +90,7 @@ class _GlobalFloatingToolbarState extends ConsumerState<GlobalFloatingToolbar> {
     return PlatformFloatingToolbar(
       fixedSize: true,
       visible: isShow,
-      contentPadding: EdgeInsets.all(2),
+      contentPadding: EdgeInsets.all(5),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Row(

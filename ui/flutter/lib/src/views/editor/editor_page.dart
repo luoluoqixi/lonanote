@@ -30,7 +30,7 @@ class EditorPage extends ConsumerStatefulWidget {
 }
 
 class _EditorPageState extends ConsumerState<EditorPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteAware {
   final WebViewController _controller = WebViewController();
   bool _webViewLoaded = false;
   bool _previewMode = false;
@@ -54,6 +54,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   @override
   void dispose() {
+    AppRouter.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -61,6 +62,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    AppRouter.routeObserver.subscribe(this, ModalRoute.of(context)!);
     _updateWebViewUI();
   }
 
@@ -89,6 +91,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   Future<void> _initEditorHtml() async {
     await _loadFileContent();
+    await _controller.setOverScrollMode(WebViewOverScrollMode.always);
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     await _controller.clearCache();
     _controller.addJavaScriptChannel(
@@ -244,8 +247,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   Future<void> _updateWebViewUI() async {
     // 设置 webview 的背景颜色
-    final bgColor = ThemeColors.getBgColor(ThemeColors.getColorScheme(context));
-    await _controller.setBackgroundColor(bgColor);
+    // final bgColor = ThemeColors.getBgColor(ThemeColors.getColorScheme(context));
+    // await _controller.setBackgroundColor(bgColor);
+    await _controller.setBackgroundColor(Colors.transparent);
 
     if (_webViewLoaded) {
       final s = ref.read(settingsProvider.select((s) => s.settings));
@@ -323,7 +327,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     ];
   }
 
-  void _onPopInvoked<T>(bool didPop, T result) async {
+  @override
+  void didPop() {
     final s = ref.read(settingsProvider.select((s) => s.settings));
     if (s != null && s.autoSaveFocusChange == true) {
       // 退出页面前保存文件
@@ -337,25 +342,25 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final showName = WsUtils.getFileShowName(name);
     final colorScheme = ThemeColors.getColorScheme(context);
 
-    return PopScope(
-      onPopInvokedWithResult: _onPopInvoked,
-      child: PlatformSimplePage(
-        titleActions: _buildTitleActions(colorScheme),
-        extendBodyBehindAppBar: true,
-        title: GestureDetector(
-          onTap: _onTitleTap,
-          child: Text(
-            showName,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
+    return PlatformSimplePage(
+      titleActions: _buildTitleActions(colorScheme),
+      // 将 AppBar 背景延伸到屏幕顶部
+      extendBodyBehindAppBar: true,
+      // 如果不设置为 false, 键盘弹出与关闭时会显示根 widget 的背景颜色
+      resizeToAvoidBottomInset: false,
+      title: GestureDetector(
+        onTap: _onTitleTap,
+        child: Text(
+          showName,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
-        titleBgColor: Colors.transparent,
-        centerTitle: true,
-        noScrollView: true,
-        child: WebViewWidget(
-          controller: _controller,
-        ),
+      ),
+      titleBgColor: Colors.transparent,
+      centerTitle: true,
+      noScrollView: true,
+      child: WebViewWidget(
+        controller: _controller,
       ),
     );
   }

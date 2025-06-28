@@ -69,7 +69,7 @@ export const createCMEditor = (root: HTMLElement, content: string, fileName: str
         detectCodeMirrorLanguage(fileName),
         focusChangeListener,
         //自动换行
-        // EditorView.lineWrapping,
+        EditorView.lineWrapping,
         updateListener,
         // 行号
         lineNumbers(),
@@ -128,4 +128,15 @@ export const createCMEditor = (root: HTMLElement, content: string, fileName: str
     });
   }
   return view;
+};
+
+/// 获取焦点并设置光标到最后位置
+export const cmFocus = (editor: EditorView) => {
+  const lastLine = editor.state.doc.lines;
+  const lastPos = editor.state.doc.line(lastLine).to;
+  editor.dispatch({
+    selection: { anchor: lastPos, head: lastPos },
+    effects: EditorView.scrollIntoView(lastPos, { y: 'center' }),
+  });
+  editor.focus();
 };

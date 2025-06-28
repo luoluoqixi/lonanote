@@ -37,13 +37,20 @@
       window.setStatusBarHeight = (statusBarHeight) => {
         if (typeof statusBarHeight === 'number') {
           if (!Number.isNaN(statusBarHeight)) {
-            document.body.style.paddingTop = `${statusBarHeight}px`;
+            document.documentElement.style.setProperty(
+              '--status-bar-height-app',
+              `${statusBarHeight}px`,
+            );
+            // document.body.style.paddingTop = `${statusBarHeight}px`;
             // console.log(`setStatusBarHeight: ${statusBarHeight}`);
           }
         }
       };
     </script>
-    <div id="root"></div>
+    <div id="root">
+      <div id="cm-root"></div>
+      <div id="md-root"></div>
+    </div>
     <script type="module" src="/src/index.ts"></script>
   </body>
 </html>

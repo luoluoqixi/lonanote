@@ -58,7 +58,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
 
     final widget = PlatformWidget(
       material: (context, platform) => Material(
-        elevation: 6,
+        elevation: 1,
         borderRadius: BorderRadius.circular(30),
         color: bgColor,
         child: content,

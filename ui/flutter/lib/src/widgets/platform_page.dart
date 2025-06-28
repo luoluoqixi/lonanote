@@ -36,6 +36,8 @@ class PlatformPage extends StatefulWidget {
   final bool? scrollThumbVisibility;
   final bool? scrollInteractive;
 
+  final bool? resizeToAvoidBottomInset;
+
   const PlatformPage({
     super.key,
     this.scrollController,
@@ -58,6 +60,7 @@ class PlatformPage extends StatefulWidget {
     this.showScrollbar,
     this.scrollThumbVisibility,
     this.scrollInteractive,
+    this.resizeToAvoidBottomInset,
   });
 
   @override
@@ -190,6 +193,12 @@ class _PlatformPageState extends State<PlatformPage> {
               ),
             ),
           ),
+          material: (context, platform) => MaterialScaffoldData(
+            resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
+          ),
+          cupertino: (context, platform) => CupertinoPageScaffoldData(
+            resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
+          ),
         ),
         ...?widget.stacks,
         if (_isLoading == true)
@@ -230,6 +239,8 @@ class PlatformSimplePage extends StatefulWidget {
   final bool? scrollThumbVisibility;
   final bool? scrollInteractive;
 
+  final bool? resizeToAvoidBottomInset;
+
   const PlatformSimplePage({
     super.key,
     this.scrollController,
@@ -252,6 +263,7 @@ class PlatformSimplePage extends StatefulWidget {
     this.showScrollbar,
     this.scrollThumbVisibility,
     this.scrollInteractive,
+    this.resizeToAvoidBottomInset,
   });
 
   @override
@@ -453,6 +465,12 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
                 child: _buildPage(colorScheme),
               ),
             ),
+          ),
+          material: (context, platform) => MaterialScaffoldData(
+            resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
+          ),
+          cupertino: (context, platform) => CupertinoPageScaffoldData(
+            resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
           ),
         ),
         if (widget.bottomBar != null)

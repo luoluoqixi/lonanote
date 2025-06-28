@@ -1,13 +1,19 @@
-.cm6-theme {
+#cm-root {
+  background-color: var(--cm-background-color);
+
   .ͼ1 .cm-lineNumbers .cm-gutterElement {
     // padding-top: 2px;
     min-width: 40px;
+  }
+  .cm-editor {
+    background-color: var(--cm-background-color);
   }
   // 行号
   .cm-gutters {
     color: var(--gray-10) !important;
     // font-size: var(--font-size-1);
     border-width: 0 !important;
+    background-color: var(--cm-background-color) !important;
   }
   .cm-scroller {
     justify-content: start;

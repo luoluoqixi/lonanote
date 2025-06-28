@@ -14,6 +14,10 @@
   background-color: var(--accent-a5) !important;
 }
 
+.cm-focused {
+  box-shadow: 0 0 0 0 !important;
+}
+
 .cm-scroller {
   justify-content: center;
   outline: none;

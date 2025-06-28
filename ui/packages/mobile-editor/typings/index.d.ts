@@ -2,7 +2,9 @@ declare const __APP_VERSION__: string;
 
 interface Window {
   setupVConsole: () => Promise<any>;
-  setColorMode: (mode: string) => Promise<any>;
+  setAutoSave: (autoSave: boolean, autoSaveInterval: number, autoSaveFocusChange: boolean) => void;
+  setColorMode: (mode: string, isUpdateEditor?: boolean) => Promise<any>;
+  setStatusBarHeight: (statusBarHeight: number) => void;
   initEditor: (fileName: string, sourceMode: bool, content: string) => Promise<any>;
   invokeCommand: (command: string, data: any) => Promise<any>;
   getContent?: () => string | null;
