@@ -145,10 +145,18 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _saveFile(String? content) {
     if (!_webViewLoaded) return;
     if (!mounted) return;
-    if (content == null) return;
-    fileContent = content;
-    WorkspaceController.saveFileContent(ref, widget.path, content);
-    logger.i("save file: ${content.length}");
+    if (content == null) {
+      logger.w("content is null, not saving file");
+      return;
+    }
+    if (fileContent != content) {
+      fileContent = content;
+      // logger.i("content: $content");
+      WorkspaceController.saveFileContent(ref, widget.path, content);
+      logger.i("save file: ${content.length}");
+    } else {
+      logger.i("content not changed, not saving file");
+    }
   }
 
   void _openSettings() {
@@ -160,8 +168,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
     await _controller.reload();
   }
 
-  Future<void> _saveCommand() async {
-    await _runWebCommand('save', null);
+  Future<void> _save() async {
+    final content = await _getContentCommand();
+    _saveFile(content);
   }
 
   Future<String?> _getContentCommand() async {
@@ -279,7 +288,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         itemBuilder: (context) => [
           PullDownMenuItem(
             title: "保存",
-            onTap: _saveCommand,
+            onTap: _save,
             icon: ThemeIcons.save(context),
           ),
           PullDownMenuItem.selectable(
@@ -318,8 +327,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final s = ref.read(settingsProvider.select((s) => s.settings));
     if (s != null && s.autoSaveFocusChange == true) {
       // 退出页面前保存文件
-      final content = await _getContentCommand();
-      _saveFile(content);
+      _save();
     }
   }
 

@@ -1,4 +1,3 @@
-import { imageBlockSchema } from '@milkdown/kit/component/image-block';
 import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
 import {
@@ -39,6 +38,7 @@ import {
   todoListIcon,
 } from '../../../icons';
 import { GroupBuilder, type MenuItemGroup } from '../../../utils/group-builder';
+import { imageBlockSchema } from '../../image/image-block';
 import type { BlockEditFeatureConfig } from '../index';
 import { type SlashMenuItem, clearContentAndInsertText } from './utils';
 

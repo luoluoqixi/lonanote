@@ -13,6 +13,7 @@ const updateContentAutoSaveInner: UpdateContentAutoSaveFunc = (
   getEditorValue,
 ) => {
   const content = getEditorValue();
+  // console.warn('update:', content);
   if (content == null) return;
   const currentContent = window.fileContent;
   if (

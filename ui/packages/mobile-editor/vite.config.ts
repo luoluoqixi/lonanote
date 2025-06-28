@@ -23,6 +23,7 @@ export default defineConfig({
   base: './',
   build: {
     outDir,
+    minify: false,
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
       output: {

@@ -1,4 +1,3 @@
-import { Icon } from '@milkdown/kit/component';
 import { EditorStatus, editorCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
 import type { Selection } from '@milkdown/kit/prose/state';
@@ -6,6 +5,7 @@ import clsx from 'clsx';
 import { Fragment, type Ref, type ShallowRef, computed, defineComponent, h } from 'vue';
 
 import type { ToolbarFeatureConfig } from '.';
+import { Icon } from '../../components';
 import { type ToolbarItem, getGroups } from './config';
 
 h;

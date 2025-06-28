@@ -246,7 +246,7 @@ importers:
         version: 2.8.0
 
   packages/mobile-editor:
-    devDependencies:
+    dependencies:
       lonanote-languages:
         specifier: workspace:*
         version: link:../languages
@@ -6575,7 +6575,7 @@ snapshots:
   '@babel/template@7.27.0':
     dependencies:
       '@babel/code-frame': 7.26.2
-      '@babel/parser': 7.27.0
+      '@babel/parser': 7.27.5
       '@babel/types': 7.27.0
 
   '@babel/template@7.27.2':
@@ -9104,14 +9104,14 @@ snapshots:
       '@babel/core': 7.27.4
       '@babel/helper-module-imports': 7.25.9
       '@babel/helper-plugin-utils': 7.26.5
-      '@babel/parser': 7.27.0
+      '@babel/parser': 7.27.5
       '@vue/compiler-sfc': 3.5.13
     transitivePeerDependencies:
       - supports-color
 
   '@vue/compiler-core@3.5.13':
     dependencies:
-      '@babel/parser': 7.27.0
+      '@babel/parser': 7.27.5
       '@vue/shared': 3.5.13
       entities: 4.5.0
       estree-walker: 2.0.2
@@ -9124,7 +9124,7 @@ snapshots:
 
   '@vue/compiler-sfc@3.5.13':
     dependencies:
-      '@babel/parser': 7.27.0
+      '@babel/parser': 7.27.5
       '@vue/compiler-core': 3.5.13
       '@vue/compiler-dom': 3.5.13
       '@vue/compiler-ssr': 3.5.13

@@ -72,15 +72,19 @@ Future<void> loadEnv() async {
       }
     }
 
+    logger.i("loading environment variables...");
     // priority: environment > .env.local > .env
     if (await assetExists("env/.env.local")) {
+      logger.i("loading .env.local");
       await dotenv.load(
           fileName: 'env/.env.local', mergeWith: Platform.environment);
       await dotenv.load(fileName: 'env/.env', mergeWith: {...dotenv.env});
     } else {
+      logger.i("loading .env");
       await dotenv.load(fileName: 'env/.env', mergeWith: Platform.environment);
     }
   } else {
+    logger.i("loading .env");
     // priority: environment > .env
     await dotenv.load(fileName: 'env/.env', mergeWith: Platform.environment);
   }
@@ -95,10 +99,9 @@ Future<void> startup() async {
 
   final startTime = DateTime.now().millisecondsSinceEpoch;
 
-  await loadEnv();
-
   WidgetsFlutterBinding.ensureInitialized();
 
+  await loadEnv();
   await initRust();
   await startupApp();
   await started();

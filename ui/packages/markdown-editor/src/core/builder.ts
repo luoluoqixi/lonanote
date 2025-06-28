@@ -18,7 +18,7 @@ import { indent, indentConfig } from '@milkdown/kit/plugin/indent';
 import type { ListenerManager } from '@milkdown/kit/plugin/listener';
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
 import { trailing } from '@milkdown/kit/plugin/trailing';
-import { commonmark } from '@milkdown/kit/preset/commonmark';
+import { commonmark, remarkPreserveEmptyLinePlugin } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { EditorState, Selection } from '@milkdown/kit/prose/state';
 import { EditorView } from '@milkdown/kit/prose/view';
@@ -200,6 +200,8 @@ export class MarkdownBuilder {
       .use(gfm)
       .use(automd)
       .use([saveCommand, saveKeyMap].flat());
+
+    this.#editor.remove(remarkPreserveEmptyLinePlugin);
 
     // https://github.com/orgs/Milkdown/discussions/1733
     // this.#editor.editor.use(diagram).config((ctx) => {
