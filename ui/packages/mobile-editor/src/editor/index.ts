@@ -101,6 +101,19 @@ const observeScrollability = (el: HTMLElement, cb: (e: HTMLElement) => void): ((
 };
 
 const onScrollContentChange = (el: HTMLElement) => {
+  // const root = document.getElementById(config.rootId);
+  // if (!root) return;
+  // const s = window.getComputedStyle(root);
+  // let paddingTop = parseFloat(s.paddingTop) || 0;
+  // let paddingBottom = parseFloat(s.paddingBottom) || 0;
+  // paddingTop = isNaN(paddingTop) ? 0 : paddingTop;
+  // paddingBottom = isNaN(paddingBottom) ? 0 : paddingBottom;
+  // const rootHeight = root.clientHeight - paddingTop - paddingBottom;
+  // const editorContentHeight = el.clientHeight;
+  // const isScrollable = editorContentHeight > rootHeight;
+  // document.body.classList.toggle('editor-scrollable', isScrollable);
+  // root.style.setProperty('--editor-content-height', `${editorContentHeight}px`);
+
   /// 当内容高度超过可视区域时，添加 editor-scrollable 类
   const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
   // console.log('isScrollable', isScrollable);
@@ -108,8 +121,8 @@ const onScrollContentChange = (el: HTMLElement) => {
 };
 
 export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
-  if ((window as any).onScrollContentChangeCleanup != null) {
-    (window as any).onScrollContentChangeCleanup();
+  if ((window as any).onCleanEvents != null) {
+    (window as any).onCleanEvents();
   }
   if (window.editor != null) {
     window.editor.destroy();
@@ -119,17 +132,54 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
     window.cmEditor.destroy();
     window.cmEditor = null;
   }
+  // const scrollWrap = document.getElementById('virtual-scroll-wrap');
   const cmRoot = document.getElementById(config.cmRootId)!;
   const mdRoot = document.getElementById(config.mdRootId)!;
 
   const cmScrollDom = cmRoot;
   const mdScrollDom = mdRoot;
 
+  // function forwardTouchScroll(fromEl: HTMLElement) {
+  //   let startY = 0;
+
+  //   const touchStart = (e: TouchEvent) => {
+  //     startY = e.touches[0].clientY;
+  //   };
+
+  //   const touchMove = (e: TouchEvent) => {
+  //     const dy = startY - e.touches[0].clientY;
+  //     scrollWrap?.scrollBy(0, dy);
+  //     startY = e.touches[0].clientY;
+  //     e.preventDefault();
+  //   };
+
+  //   const wheel = (e: WheelEvent) => {
+  //     scrollWrap?.scrollBy(0, e.deltaY);
+  //     e.preventDefault();
+  //   };
+
+  //   fromEl.addEventListener('touchstart', touchStart, { passive: true });
+  //   fromEl.addEventListener('touchmove', touchMove, { passive: false });
+  //   fromEl.addEventListener('wheel', wheel, { passive: false });
+
+  //   return () => {
+  //     fromEl.removeEventListener('touchstart', touchStart);
+  //     fromEl.removeEventListener('touchmove', touchMove);
+  //     fromEl.removeEventListener('wheel', wheel);
+  //   };
+  // }
+
+  // function onScrollWrapScroll() {
+  //   if (!scrollWrap) return;
+  //   const scrollTop = scrollWrap?.scrollTop;
+  //   cmRoot.style.transform = `translateY(${-scrollTop}px)`;
+  //   mdRoot.style.transform = `translateY(${-scrollTop}px)`;
+  // }
+  // const cmTouchCleanup = forwardTouchScroll(cmScrollDom);
+  // const mdTouchCleanup = forwardTouchScroll(mdScrollDom);
+  // scrollWrap?.addEventListener('scroll', onScrollWrapScroll);
+
   let onScrollContentChangeCleanup: (() => void) | null = null;
-
-  cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
-  mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);
-
   if (sourceMode) {
     cmRoot.style.display = 'block';
     mdRoot.style.display = 'none';
@@ -143,8 +193,15 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
     mdScrollDom?.addEventListener('scroll', onScrollPositionChange);
     onScrollContentChangeCleanup = observeScrollability(mdScrollDom, onScrollContentChange);
   }
-  document.body.removeEventListener('click', bodyClick);
   document.body.addEventListener('click', bodyClick);
 
-  (window as any).onScrollContentChangeCleanup = onScrollContentChangeCleanup;
+  (window as any).onCleanEvents = () => {
+    onScrollContentChangeCleanup?.();
+    // cmTouchCleanup?.();
+    // mdTouchCleanup?.();
+    // scrollWrap?.removeEventListener('scroll', onScrollWrapScroll);
+    document.body.removeEventListener('click', bodyClick);
+    cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
+    mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);
+  };
 };

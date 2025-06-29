@@ -50,7 +50,7 @@ body.android {
   --padding-top: calc(var(--title-bar-height) + var(--status-bar-height));
 
   padding: 0 2px;
-  padding-top: calc(var(--title-bar-height) + var(--status-bar-height));
+  padding-top: var(--padding-top);
 
   overflow: visible;
 
@@ -67,14 +67,29 @@ body.android {
 
   #cm-root,
   #md-root {
+    // position: absolute;
+    position: block;
     height: 100%;
     width: 100%;
     cursor: text;
 
-    overflow-x: hidden;
     overflow-y: auto;
+    // overflow: visible;
     -webkit-overflow-scrolling: touch; // ios
   }
+  // #virtual-scroll-wrap {
+  //   pointer-events: none;
+  //   z-index: 999;
+  //   flex: 1;
+  //   width: 100%;
+  //   height: 100%;
+  //   overflow-y: auto;
+  //   #virtual-scroll-dummy {
+  //     width: 100%;
+  //     height: var(--editor-content-height, 0);
+  //     pointer-events: none;
+  //   }
+  // }
 }
 
 #test-button-wrap {

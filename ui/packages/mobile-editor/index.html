@@ -47,6 +47,7 @@
       window.setStatusBarHeight = (statusBarHeight) => {
         if (typeof statusBarHeight === 'number') {
           if (!Number.isNaN(statusBarHeight)) {
+            window.statusBarHeight = statusBarHeight;
             document.documentElement.style.setProperty(
               '--status-bar-height-app',
               `${statusBarHeight}px`,
@@ -58,7 +59,6 @@
       };
     </script>
     <div id="root">
-      <div id="header"></div>
       <div id="virtual-scroll-wrap">
         <div id="virtual-scroll-dummy"></div>
       </div>
