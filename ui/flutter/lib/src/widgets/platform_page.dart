@@ -310,15 +310,16 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     BuildContext context,
   ) {
     final appBar = _buildAppBar(colorScheme);
-    final SystemUiOverlayStyle overlayStyle =
-        AppTheme.getSystemOverlayStyle(colorScheme);
     if (widget.noScrollView == true) {
       if (widget.extendBodyBehindAppBar == true) {
+        final SystemUiOverlayStyle overlayStyle =
+            AppTheme.getSystemOverlayStyle(colorScheme);
         return AnnotatedRegion<SystemUiOverlayStyle>(
           // 如果不加这个, 那么安卓端热重载后 BottomNavBar 会变黑
           value: overlayStyle,
           child: Stack(
             children: [
+              // 页面主内容
               SafeArea(
                 top: false,
                 left: true,
@@ -334,6 +335,21 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
                   ],
                 ),
               ),
+
+              // 状态栏遮罩层（带渐变或颜色）
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: MediaQuery.of(context).padding.top +
+                      SimpleAppBar.defaultHeight,
+                  color: widget.titleBgColor ??
+                      ThemeColors.getBgColor(colorScheme),
+                ),
+              ),
+
+              // AppBar
               if (appBar != null)
                 Positioned(
                   top: 0,
@@ -388,6 +404,11 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     if (widget.appBar != null) return widget.appBar;
     if (widget.title == null && widget.titleText == null) return null;
     if (widget.noScrollView == true) {
+      var titleBgColor = backgroundColor;
+      if (widget.extendBodyBehindAppBar == true) {
+        // 如果 extendBodyBehindAppBar 为 true, 则 AppBar 背景色由下层Stack绘制
+        titleBgColor = Colors.transparent;
+      }
       return AppBar(
         centerTitle: widget.centerTitle ?? false,
         actions: widget.titleActions,
@@ -398,7 +419,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
               maxLines: 1,
             ),
         titleTextStyle: TextStyle(color: textColor, fontSize: 22),
-        backgroundColor: backgroundColor,
+        backgroundColor: titleBgColor,
         toolbarHeight: SimpleAppBar.defaultHeight,
         actionsPadding: const EdgeInsets.only(right: 15.0),
       );
