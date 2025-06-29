@@ -13,8 +13,10 @@ const updateContentAutoSaveInner: UpdateContentAutoSaveFunc = (
   getEditorValue,
 ) => {
   const content = getEditorValue();
-  // console.warn('update:', content);
-  if (content == null) return;
+  if (content == null) {
+    console.warn('content is null, skip auto save');
+    return;
+  }
   const currentContent = window.fileContent;
   if (
     currentContent == null ||
@@ -45,9 +47,9 @@ export const saveForce = async (getEditorValue: () => string | null | undefined)
 
 let saveInterval: number | null = null;
 
-const saveStart = async (content: string, force: boolean | undefined, interval?: number) => {
+const saveStart = async (content: string, autoSave: boolean | undefined, interval?: number) => {
   if (content == null) return;
-  if (force) {
+  if (autoSave) {
     window.fileContent = content;
     const save = async () => {
       if (window.fileContent != null) {

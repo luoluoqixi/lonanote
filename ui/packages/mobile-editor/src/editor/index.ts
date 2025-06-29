@@ -17,11 +17,9 @@ export const saveContent = (content: string) => {
 export const getContent = () => {
   if (window.editor != null) {
     const content = window.editor.getMarkdown();
-    window.fileContent = content;
     return content;
   } else if (window.cmEditor != null) {
     const content = window.cmEditor.state.doc.toString();
-    window.fileContent = content;
     return content;
   }
   return null;
