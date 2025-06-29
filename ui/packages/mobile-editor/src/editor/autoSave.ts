@@ -36,6 +36,13 @@ export const autoSaveUpdate = (getEditorValue: () => string | null | undefined) 
   debounceUpdateContentAutoSaveInner(autoSave, wait, getEditorValue);
 };
 
+export const saveForce = async (getEditorValue: () => string | null | undefined) => {
+  const content = getEditorValue();
+  if (content == null) return;
+  window.fileContent = content;
+  saveContent(content);
+};
+
 let saveInterval: number | null = null;
 
 const saveStart = async (content: string, force: boolean | undefined, interval?: number) => {

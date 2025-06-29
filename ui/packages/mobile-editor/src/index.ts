@@ -1,6 +1,6 @@
 import { invokeCommand } from './commands';
 import { config } from './config';
-import { createEditor, getContent } from './editor';
+import { createEditor, getContentJson } from './editor';
 import './styles/index.scss';
 import './theme';
 import './utils';
@@ -36,7 +36,7 @@ const appendTestBtn = (text: string, onClick: (e: MouseEvent) => void) => {
 const init = () => {
   window.initEditor = initEditor;
   window.invokeCommand = invokeCommand;
-  window.getContent = getContent;
+  window.getContent = getContentJson;
 
   if (!config.isFlutter) {
     const testContent = 'test';

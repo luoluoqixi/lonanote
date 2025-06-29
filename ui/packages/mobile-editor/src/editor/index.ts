@@ -27,6 +27,11 @@ export const getContent = () => {
   return null;
 };
 
+export const getContentJson = () => {
+  const content = getContent();
+  return content == null ? null : JSON.stringify(content);
+};
+
 export const onUpdateState = (state?: {
   charCount?: number;
   rowIndex?: number;
@@ -59,7 +64,6 @@ const bodyClick = (e: MouseEvent) => {
   if (window.editor != null) {
     const editor = window.editor;
     editor.focus();
-    console.log('focus editor');
   }
   if (window.cmEditor != null) {
     cmFocus(window.cmEditor);

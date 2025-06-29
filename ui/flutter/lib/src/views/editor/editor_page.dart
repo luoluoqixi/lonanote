@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -9,13 +10,16 @@ import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/common/ws_utils.dart';
 import 'package:lonanote/src/controller/workspace/workspace_controller.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
+import 'package:lonanote/src/theme/app_theme.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
+import 'package:lonanote/src/widgets/flutter/custom_webkit_proxy.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 class EditorPage extends ConsumerStatefulWidget {
   const EditorPage({
@@ -31,7 +35,8 @@ class EditorPage extends ConsumerStatefulWidget {
 
 class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
-  final WebViewController _controller = WebViewController();
+  late WebViewController _controller;
+  late CustomWebkitProxy? _webkitProxy;
   bool _webViewLoaded = false;
   bool _previewMode = false;
   late bool _sourceMode;
@@ -51,11 +56,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final ext = Utility.getExtName(widget.path);
     _isMarkdown = ext != null && Utility.isMarkdown(ext);
     _sourceMode = !_isMarkdown;
+    _initController();
     _initEditorHtml();
   }
 
   @override
   void dispose() {
+    _webkitProxy?.dispose();
     AppRouter.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -72,6 +79,23 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void didChangePlatformBrightness() {
     super.didChangePlatformBrightness();
     _updateColorMode(true);
+  }
+
+  void _initController() {
+    late final PlatformWebViewControllerCreationParams params;
+    if (WebViewPlatform.instance is WebKitWebViewPlatform) {
+      // iOS 使用 webKitProxy 强行获取 webview 实例
+      _webkitProxy = CustomWebkitProxy("editor_webview");
+      params = WebKitWebViewControllerCreationParams(
+        allowsInlineMediaPlayback: true,
+        mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
+        // ignore: invalid_use_of_visible_for_testing_member
+        webKitProxy: _webkitProxy!,
+      );
+    } else {
+      params = const PlatformWebViewControllerCreationParams();
+    }
+    _controller = WebViewController.fromPlatformCreationParams(params);
   }
 
   Future<void> _loadFileContent() async {
@@ -91,9 +115,26 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
   }
 
+  Future<void> _setIOSOverScrollMode() async {
+    if (_controller.platform.runtimeType == WebKitWebViewController) {
+      final webview = _webkitProxy?.webViewInstance;
+      if (webview != null) {
+        // 设置 iOS WebView 的滚动行为
+        // 允许垂直方向的回弹效果, 禁止水平方向的回弹效果
+        webview.scrollView.setBounces(true);
+        webview.scrollView.setAlwaysBounceHorizontal(false);
+        webview.scrollView.setAlwaysBounceVertical(true);
+      }
+    }
+  }
+
   Future<void> _initEditorHtml() async {
     await _loadFileContent();
-    await _controller.setOverScrollMode(WebViewOverScrollMode.always);
+    if (Platform.isIOS) {
+      await _setIOSOverScrollMode();
+    } else {
+      await _controller.setOverScrollMode(WebViewOverScrollMode.always);
+    }
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     await _controller.clearCache();
     // _controller.setOnScrollPositionChange(_onHtmlScrollPositionChange);
@@ -247,11 +288,20 @@ class _EditorPageState extends ConsumerState<EditorPage>
     // if (!_webViewLoaded) return;
     await _controller.runJavaScript(
       """
-      try {
-        window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)});
-      } catch(e) {
-        console.error('initEditor error:', e);
-      }
+      (() => {
+        const init = () => {
+          if (window.initEditor) {
+            try {
+              window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)});
+            } catch (e) {
+              console.error('initEditor error:', e.message);
+            }
+          } else {
+            setTimeout(init, 100);
+          }
+        };
+        init();
+      })();
       """,
     );
   }
@@ -264,7 +314,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       try {
         window.invokeCommand("$command", $dataStr);
       } catch(e) {
-        console.error('invokeCommand error:', e);
+        console.error('invokeComrror:', e);
       }
       """,
     );
@@ -322,8 +372,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
+    final theme = AppTheme.getPullDownMenuRouteThemeNoAlpha(context);
     return [
+      // 如果 PullDown 下面是 webview, 背景会错误的变为透明
+      // https://github.com/notDmDrl/pull_down_button/issues/28
       PlatformPullDownButton(
+        routeTheme: theme,
         itemBuilder: (context) => [
           PullDownMenuItem(
             title: "保存",

@@ -51,7 +51,7 @@ const dev = async () => {
   childs.push(p1);
   console.log('');
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
   console.log('');
   console.log('---------- flutter run... ----------');

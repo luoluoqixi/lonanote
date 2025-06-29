@@ -6,6 +6,12 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
 class AppTheme {
+  /// The light and dark color of the menu's background.
+  static const kBackgroundColorNoAlpha = CupertinoDynamicColor.withBrightness(
+    color: Color.fromRGBO(247, 247, 247, 1.0),
+    darkColor: Color.fromRGBO(36, 36, 36, 1.0),
+  );
+
   static SystemUiOverlayStyle getSystemOverlayStyle(ColorScheme colorScheme) {
     final isLight = colorScheme.brightness == Brightness.light;
     final style =
@@ -89,5 +95,13 @@ class AppTheme {
 
   static PullDownButtonTheme getPullDownTheme(ColorScheme colorScheme) {
     return PullDownButtonTheme();
+  }
+
+  static PullDownMenuRouteTheme getPullDownMenuRouteThemeNoAlpha(
+    BuildContext context,
+  ) {
+    return PullDownMenuRouteTheme(
+      backgroundColor: kBackgroundColorNoAlpha.resolveFrom(context),
+    );
   }
 }

@@ -9,7 +9,7 @@ body {
 }
 
 body {
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch; // ios
 }
@@ -48,6 +48,7 @@ body.android {
   padding-top: calc(var(--title-bar-height) + var(--status-bar-height));
 
   overflow: visible;
+
   background-color: var(--color-background);
   color: var(--text-color);
 
@@ -65,6 +66,7 @@ body.android {
     width: 100%;
     cursor: text;
 
+    overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch; // ios
   }

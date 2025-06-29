@@ -14,6 +14,8 @@ class PlatformPullDownButton extends StatelessWidget {
   final bool? disable;
   final bool? disableHaptic;
 
+  final PullDownMenuRouteTheme? routeTheme;
+
   final PlatformBuilder<MaterialIconButtonData>? material;
   final PlatformBuilder<CupertinoIconButtonData>? cupertino;
 
@@ -26,12 +28,14 @@ class PlatformPullDownButton extends StatelessWidget {
     this.buttonOnLongPress,
     this.disable,
     this.disableHaptic,
+    this.routeTheme,
     this.material,
     this.cupertino,
   });
 
   Widget buildButton(BuildContext context) {
     return PullDownButton(
+      routeTheme: routeTheme,
       itemBuilder: itemBuilder,
       buttonBuilder: buttonBuilder ??
           (context, showMenu) => PlatformIconBtn(
