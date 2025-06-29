@@ -7,8 +7,7 @@
   }
   .cm-editor {
     background-color: var(--cm-background-color);
-    overflow-y: visible;
-    overflow-x: hidden;
+    overflow: visible;
   }
   // 行号
   .cm-gutters {
@@ -19,8 +18,7 @@
   }
   .cm-scroller {
     justify-content: start;
-    overflow-y: visible;
-    overflow-x: hidden;
+    overflow: visible;
   }
 
   .cm-content {

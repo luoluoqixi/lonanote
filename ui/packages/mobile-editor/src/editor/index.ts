@@ -81,7 +81,36 @@ const onScrollPositionChange = (e: Event) => {
   }
 };
 
+const observeScrollability = (el: HTMLElement, cb: (e: HTMLElement) => void): (() => void) => {
+  const callback = () => {
+    cb(el);
+  };
+  callback();
+  const resizeObserver = new ResizeObserver(callback);
+  resizeObserver.observe(el);
+  const mutationObserver = new MutationObserver(callback);
+  mutationObserver.observe(el, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+  return () => {
+    resizeObserver.disconnect();
+    mutationObserver.disconnect();
+  };
+};
+
+const onScrollContentChange = (el: HTMLElement) => {
+  /// 当内容高度超过可视区域时，添加 editor-scrollable 类
+  const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
+  // console.log('isScrollable', isScrollable);
+  document.body.classList.toggle('editor-scrollable', isScrollable);
+};
+
 export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
+  if ((window as any).onScrollContentChangeCleanup != null) {
+    (window as any).onScrollContentChangeCleanup();
+  }
   if (window.editor != null) {
     window.editor.destroy();
     window.editor = null;
@@ -92,20 +121,30 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   }
   const cmRoot = document.getElementById(config.cmRootId)!;
   const mdRoot = document.getElementById(config.mdRootId)!;
+
+  const cmScrollDom = cmRoot;
+  const mdScrollDom = mdRoot;
+
+  let onScrollContentChangeCleanup: (() => void) | null = null;
+
+  cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
+  mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);
+
   if (sourceMode) {
     cmRoot.style.display = 'block';
     mdRoot.style.display = 'none';
     window.cmEditor = createCMEditor(cmRoot, content, fileName);
+    cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
+    onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
   } else {
     cmRoot.style.display = 'none';
     mdRoot.style.display = 'block';
     window.editor = await createMarkdownEditor(mdRoot, content, window.previewMode || false);
-    window.editor.addListener('onScroll', (_, e) => onScrollPositionChange(e));
+    mdScrollDom?.addEventListener('scroll', onScrollPositionChange);
+    onScrollContentChangeCleanup = observeScrollability(mdScrollDom, onScrollContentChange);
   }
-
   document.body.removeEventListener('click', bodyClick);
   document.body.addEventListener('click', bodyClick);
 
-  cmRoot.removeEventListener('scroll', onScrollPositionChange);
-  cmRoot.addEventListener('scroll', onScrollPositionChange);
+  (window as any).onScrollContentChangeCleanup = onScrollContentChangeCleanup;
 };

@@ -208,6 +208,19 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _onScrollPositionChange(position.y);
   }
 
+  void _setAppBarColor(Color newBgColor, Color newTextColor) {
+    if (newBgColor != _titleBgColor) {
+      setState(() {
+        _titleBgColor = newBgColor;
+        _titleTextColor = newTextColor;
+      });
+    }
+  }
+
+  void _resetAppBarColor() {
+    _setAppBarColor(Colors.transparent, Colors.transparent);
+  }
+
   void _onScrollPositionChange(double? scrollY) {
     if (!_webViewLoaded) return;
     if (!mounted) return;
@@ -219,12 +232,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
     final newBgColor = _getTitleColor(scrollY, bgColor);
     final newTextColor = _getTitleColor(scrollY, textColor);
-    if (newBgColor != _titleBgColor) {
-      setState(() {
-        _titleBgColor = newBgColor;
-        _titleTextColor = newTextColor;
-      });
-    }
+
+    _setAppBarColor(newBgColor, newTextColor);
   }
 
   void _updateState(Map<String, dynamic>? state) {}
@@ -253,6 +262,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _refreshWebview() async {
     if (!_webViewLoaded) return;
     await _controller.reload();
+    _resetAppBarColor();
   }
 
   Future<void> _save() async {
@@ -285,6 +295,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _sourceMode = targetSourceMode;
     });
     await _runWebCommand('change_source_mode', targetSourceMode);
+    _resetAppBarColor();
   }
 
   void _openVConsole() {

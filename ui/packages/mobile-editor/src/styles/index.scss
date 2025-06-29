@@ -14,6 +14,11 @@ body {
   -webkit-overflow-scrolling: touch; // ios
 }
 
+body.editor-scrollable {
+  // 当 editor 开始接管滚动时, body 需要完全禁用滚动, 不然表现很奇怪
+  overflow: hidden;
+}
+
 body.android {
   #root {
     // fix scrollbar on Android WebView
