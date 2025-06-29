@@ -37,6 +37,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
   late bool _sourceMode;
   late bool _isMarkdown;
 
+  // Color _titleBgColor = Colors.transparent;
+
   int _tapCount = 0;
   DateTime? _lastTapTime;
 
@@ -94,6 +96,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     await _controller.setOverScrollMode(WebViewOverScrollMode.always);
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     await _controller.clearCache();
+    // _controller.setOnScrollPositionChange(_onHtmlScrollPositionChange);
     _controller.addJavaScriptChannel(
       'EditorBridge',
       onMessageReceived: _onMessageReceived,
@@ -140,8 +143,40 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _updateState(messageObject['state']);
     } else if (command == 'save_file') {
       _saveFile(messageObject['content']);
+    } else if (command == 'scroll_position') {
+      // _onScrollPositionChange(messageObject['scrollY']);
     }
   }
+
+  // Color _getTitleColor(double scrollY) {
+  //   if (scrollY < 30.0) {
+  //     scrollY = 0.0;
+  //   }
+  //   const maxScroll = 300.0;
+  //   final opacity = (scrollY / maxScroll).clamp(0.0, 1.0); // 0.0 ~ 1.0
+  //   final baseColor =
+  //       ThemeColors.getBgColor(ThemeColors.getColorScheme(context));
+  //   logger.i("$scrollY, $opacity");
+  //   return baseColor.withAlpha(
+  //     (255.0 * opacity).round(),
+  //   );
+  // }
+
+  // void _onHtmlScrollPositionChange(ScrollPositionChange position) {
+  //   _onScrollPositionChange(position.y);
+  // }
+
+  // void _onScrollPositionChange(double scrollY) {
+  //   if (!_webViewLoaded) return;
+  //   if (!mounted) return;
+
+  //   final newColor = _getTitleColor(scrollY);
+  //   if (newColor != _titleBgColor) {
+  //     setState(() {
+  //       _titleBgColor = newColor;
+  //     });
+  //   }
+  // }
 
   void _updateState(Map<String, dynamic>? state) {}
 

@@ -1,6 +1,9 @@
 declare const __APP_VERSION__: string;
 
 interface Window {
+  isAndroid: boolean;
+  isIOS: boolean;
+
   setupVConsole: () => Promise<any>;
   setAutoSave: (autoSave: boolean, autoSaveInterval: number, autoSaveFocusChange: boolean) => void;
   setColorMode: (mode: string, isUpdateEditor?: boolean) => Promise<any>;

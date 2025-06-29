@@ -2,6 +2,8 @@
   width: 100%;
   height: 100%;
   overflow-y: auto;
+  box-sizing: border-box;
+  padding-bottom: var(--bottom-safe-height);
 
   .cm-gutters {
     color: var(--gray-10) !important;

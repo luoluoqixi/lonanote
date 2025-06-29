@@ -68,6 +68,7 @@ export interface MilkdownEditorEvent {
   onPointerEnter: (view: EditorView, event: PointerEvent) => void;
   onPointerMove: (view: EditorView, event: PointerEvent) => void;
   onPointerLeave: (view: EditorView, event: PointerEvent) => void;
+  onScroll: (view: EditorView, e: Event) => void;
 
   onLinkClick: (link: string, view: EditorView, e: Event) => void;
 }
@@ -87,6 +88,8 @@ export class MarkdownBuilder {
   readonly #events: MilkdownEditorEventListeners;
   /// @internal
   #editable: boolean;
+
+  #dom: HTMLElement | null = null;
 
   /// The constructor of the crepe builder.
   /// You can pass configs to the builder to configure the editor.
@@ -251,9 +254,19 @@ export class MarkdownBuilder {
       return original.call(this, mut, added);
     };
 
+    this.#dom = view.dom.parentElement;
+    this.#dom.addEventListener('scroll', (e) => {
+      this.#callEvent('onScroll', view, e);
+    });
+
     this.#onCreate();
     this.#onCreated();
     return editor;
+  };
+
+  /// editor dom.
+  dom = () => {
+    return this.#dom!;
   };
 
   /// Destroy the editor.

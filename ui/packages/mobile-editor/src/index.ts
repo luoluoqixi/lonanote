@@ -37,10 +37,10 @@ const init = () => {
   window.initEditor = initEditor;
   window.invokeCommand = invokeCommand;
   window.getContent = getContent;
-  // window.EditorBridge.postMessage('');
+
   if (!config.isFlutter) {
     const testContent = 'test';
-    window.sourceMode = true;
+    window.sourceMode = false;
     initEditor('default.js', window.sourceMode, testContent);
     window.setColorMode('light');
     appendTestBtn('切换编辑器', () => {

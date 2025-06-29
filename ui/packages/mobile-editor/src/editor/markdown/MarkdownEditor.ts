@@ -9,7 +9,11 @@ import { codemirrorDarkTheme, codemirrorLightTheme } from '../codemirror/theme';
 import { utils } from '../utils';
 import './MarkdownEditor.scss';
 
-export const createMarkdownEditor = (root: HTMLElement, content: string, previewMode: boolean) => {
+export const createMarkdownEditor = async (
+  root: HTMLElement,
+  content: string,
+  previewMode: boolean,
+) => {
   const theme = window.colorMode === 'dark' ? codemirrorDarkTheme : codemirrorLightTheme;
   const editor = new MarkdownEditor({
     root,
@@ -90,7 +94,7 @@ export const createMarkdownEditor = (root: HTMLElement, content: string, preview
       },
     },
   });
-  editor.create();
+  await editor.create();
 
   let updateTimeId: number | null = null;
   const updateState = (ctx: Ctx) => {

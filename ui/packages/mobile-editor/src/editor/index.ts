@@ -66,6 +66,19 @@ const bodyClick = (e: MouseEvent) => {
   }
 };
 
+const onScrollPositionChange = (e: Event) => {
+  if (!window.EditorBridge) return;
+  if (e.target instanceof HTMLElement) {
+    const scrollTop = e.target.scrollTop;
+    window.EditorBridge.postMessage(
+      JSON.stringify({
+        command: 'scroll_position',
+        scrollY: scrollTop,
+      }),
+    );
+  }
+};
+
 export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
   if (window.editor != null) {
     window.editor.destroy();
@@ -84,9 +97,13 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   } else {
     cmRoot.style.display = 'none';
     mdRoot.style.display = 'block';
-    window.editor = createMarkdownEditor(mdRoot, content, window.previewMode || false);
+    window.editor = await createMarkdownEditor(mdRoot, content, window.previewMode || false);
+    window.editor.addListener('onScroll', (_, e) => onScrollPositionChange(e));
   }
 
   document.body.removeEventListener('click', bodyClick);
   document.body.addEventListener('click', bodyClick);
+
+  cmRoot.removeEventListener('scroll', onScrollPositionChange);
+  cmRoot.addEventListener('scroll', onScrollPositionChange);
 };
