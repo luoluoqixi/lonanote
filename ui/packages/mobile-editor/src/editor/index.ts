@@ -27,6 +27,8 @@ export const getContent = () => {
 
 export const getContentJson = () => {
   const content = getContent();
+  // Android 端, 字符串发送到 Flutter 时, 会自动变为 Json
+  if (window.isAndroid) return content;
   return content == null ? null : JSON.stringify(content);
 };
 
