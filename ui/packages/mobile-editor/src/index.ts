@@ -33,13 +33,13 @@ const appendTestBtn = (text: string, onClick: (e: MouseEvent) => void) => {
   btnWrap.appendChild(btn);
 };
 
-const init = () => {
+const init = async () => {
   window.initEditor = initEditor;
   window.invokeCommand = invokeCommand;
   window.getContent = getContentJson;
 
   if (!config.isFlutter) {
-    const testContent = 'test';
+    const testContent = config.testContent || 'test content';
     window.sourceMode = false;
     initEditor('default.js', window.sourceMode, testContent);
     window.setColorMode('light');
