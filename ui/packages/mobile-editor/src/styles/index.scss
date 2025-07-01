@@ -1,46 +1,54 @@
 @use './theme.scss';
 
+html {
+  overflow: hidden;
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
-  scrollbar-width: none;
 }
 
 body {
   overflow: auto;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch; // ios
+  scrollbar-width: none;
 }
 
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  display: none;
+body.web {
+  scrollbar-width: auto;
 }
 
-// body.android {
-//   #root {
-//     // fix scrollbar on Android WebView
-//     // https://issues.chromium.org/issues/40226034
-//     ::-webkit-scrollbar {
-//       scrollbar-width: thin;
-//       scrollbar-width: auto;
-//       width: 8px;
-//       cursor: default;
-//     }
-//     ::-webkit-scrollbar-thumb {
-//       background: rgba(121, 121, 121, 0.332);
-//       border-radius: 4px;
-//       cursor: default;
-//     }
-//     ::-webkit-scrollbar-thumb:hover,
-//     ::-webkit-scrollbar-thumb:active {
-//       background: rgba(121, 121, 121, 0.531);
-//     }
-//   }
-// }
+body.android.web {
+  overflow: visible;
+}
+
+body.android {
+  overflow: hidden;
+  #root {
+    overflow: auto;
+    // fix scrollbar on Android WebView
+    // https://issues.chromium.org/issues/40226034
+    ::-webkit-scrollbar {
+      scrollbar-width: auto;
+      width: 8px !important;
+      cursor: default;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(121, 121, 121, 0.332);
+      border-radius: 4px;
+      cursor: default;
+    }
+    ::-webkit-scrollbar-thumb:hover,
+    ::-webkit-scrollbar-thumb:active {
+      background: rgba(121, 121, 121, 0.531);
+    }
+  }
+}
 
 #root {
   --bottom-safe-height: 30px;
@@ -71,8 +79,6 @@ body::-webkit-scrollbar {
     position: static;
     display: block;
     overflow: visible;
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch; // ios
 
     height: 100%;
     width: 100%;

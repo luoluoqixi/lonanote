@@ -110,7 +110,7 @@ const onScrollContentChange = (el: HTMLElement) => {
   const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
   window.isScrollable = isScrollable;
   // console.log('isScrollable', isScrollable);
-  document.documentElement.classList.toggle('editor-scrollable', isScrollable);
+  document.body.classList.toggle('editor-scrollable', isScrollable);
 };
 
 // const throttledOnRefreshEditor = () => {

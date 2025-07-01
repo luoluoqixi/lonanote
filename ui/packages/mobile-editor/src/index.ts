@@ -39,6 +39,7 @@ const init = async () => {
   window.getContent = getContentJson;
 
   if (!config.isFlutter) {
+    document.body.classList.add('web');
     const testContent = config.testContent || 'test content';
     window.sourceMode = false;
     initEditor('default.js', window.sourceMode, testContent);
