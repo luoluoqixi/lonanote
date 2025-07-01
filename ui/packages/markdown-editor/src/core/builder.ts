@@ -432,6 +432,19 @@ export class MarkdownBuilder {
     });
   };
 
+  focusClick = (e: MouseEvent) => {
+    this.#editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const pos = view.posAtCoords({ left: e.clientX, top: e.clientY });
+      console.log(pos);
+      if (!pos) return;
+      const selection = TextSelection.create(view.state.doc, pos.pos);
+      const tr = view.state.tr.setSelection(selection).scrollIntoView();
+      view.dispatch(tr);
+      view.focus();
+    });
+  };
+
   /// @internal
   /// Call Custom event listeners.
   #callEvent = <K extends keyof MilkdownEditorEvent>(

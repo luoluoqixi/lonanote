@@ -1,4 +1,4 @@
-import { config } from '@/config';
+import { config, getTitleBarHeight } from '@/config';
 
 import { autoSaveUpdate } from './autoSave';
 import { cmFocus, createCMEditor } from './codemirror';
@@ -48,6 +48,14 @@ export const onUpdateState = (state?: {
 };
 
 const bodyClick = (e: MouseEvent) => {
+  if (window.isScrollable) {
+    if (window.editor != null) {
+      const editor = window.editor;
+      editor.focusClick(e);
+      e.preventDefault();
+    }
+    return;
+  }
   if (e.target !== document.body) {
     if (e.target instanceof HTMLElement) {
       const id = e.target.id;
@@ -103,23 +111,38 @@ const observeScrollability = (el: HTMLElement, cb: (e: HTMLElement) => void): ((
 };
 
 const onScrollContentChange = (el: HTMLElement) => {
-  // const root = document.getElementById(config.rootId);
-  // if (!root) return;
-  // const s = window.getComputedStyle(root);
-  // let paddingTop = parseFloat(s.paddingTop) || 0;
-  // let paddingBottom = parseFloat(s.paddingBottom) || 0;
-  // paddingTop = isNaN(paddingTop) ? 0 : paddingTop;
-  // paddingBottom = isNaN(paddingBottom) ? 0 : paddingBottom;
-  // const rootHeight = root.clientHeight - paddingTop - paddingBottom;
-  // const editorContentHeight = el.clientHeight;
-  // const isScrollable = editorContentHeight > rootHeight;
-  // document.body.classList.toggle('editor-scrollable', isScrollable);
-  // root.style.setProperty('--editor-content-height', `${editorContentHeight}px`);
+  if (window.isVirtualScrollEnabled) {
+    const root = document.getElementById(config.rootId);
+    if (!root) return;
+    const s = window.getComputedStyle(root);
+    let paddingTop = parseFloat(s.paddingTop) || 0;
+    let paddingBottom = parseFloat(s.paddingBottom) || 0;
+    paddingTop = isNaN(paddingTop) ? 0 : paddingTop;
+    paddingBottom = isNaN(paddingBottom) ? 0 : paddingBottom;
+    const rootHeight = root.clientHeight - paddingTop - paddingBottom;
+    const editorContentHeight = el.clientHeight;
+    const isScrollable = editorContentHeight > rootHeight;
+    document.documentElement.classList.toggle('editor-scrollable', isScrollable);
+    root.style.setProperty('--editor-content-height', `${editorContentHeight}px`);
+  } else {
+    /// 当内容高度超过可视区域时，添加 editor-scrollable 类
+    const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
+    window.isScrollable = isScrollable;
+    // console.log('isScrollable', isScrollable);
+    document.documentElement.classList.toggle('editor-scrollable', isScrollable);
+  }
+};
 
-  /// 当内容高度超过可视区域时，添加 editor-scrollable 类
-  const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
-  // console.log('isScrollable', isScrollable);
-  document.body.classList.toggle('editor-scrollable', isScrollable);
+const throttledOnRefreshEditor = () => {
+  const lastTimeout = (window as any).throttledOnRefreshEditorTimeout;
+  if (lastTimeout != null) {
+    clearTimeout(lastTimeout);
+    (window as any).throttledOnRefreshEditorTimeout = null;
+  }
+  (window as any).throttledOnRefreshEditorTimeout = setTimeout(() => {
+    (window as any).throttledOnRefreshEditorTimeout = null;
+    window.cmEditor?.requestMeasure();
+  }, 200);
 };
 
 export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
@@ -134,63 +157,40 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
     window.cmEditor.destroy();
     window.cmEditor = null;
   }
-  // const scrollWrap = document.getElementById('virtual-scroll-wrap');
+  const scrollWrap = document.getElementById('virtual-scroll-wrap');
   const cmRoot = document.getElementById(config.cmRootId)!;
   const mdRoot = document.getElementById(config.mdRootId)!;
 
   const cmScrollDom = cmRoot;
   const mdScrollDom = mdRoot;
 
-  // function forwardTouchScroll(fromEl: HTMLElement) {
-  //   let startY = 0;
+  const editorDisplay = 'block';
 
-  //   const touchStart = (e: TouchEvent) => {
-  //     startY = e.touches[0].clientY;
-  //   };
+  // function forwardTouchScroll(fromEl: HTMLElement) {}
 
-  //   const touchMove = (e: TouchEvent) => {
-  //     const dy = startY - e.touches[0].clientY;
-  //     scrollWrap?.scrollBy(0, dy);
-  //     startY = e.touches[0].clientY;
-  //     e.preventDefault();
-  //   };
-
-  //   const wheel = (e: WheelEvent) => {
-  //     scrollWrap?.scrollBy(0, e.deltaY);
-  //     e.preventDefault();
-  //   };
-
-  //   fromEl.addEventListener('touchstart', touchStart, { passive: true });
-  //   fromEl.addEventListener('touchmove', touchMove, { passive: false });
-  //   fromEl.addEventListener('wheel', wheel, { passive: false });
-
-  //   return () => {
-  //     fromEl.removeEventListener('touchstart', touchStart);
-  //     fromEl.removeEventListener('touchmove', touchMove);
-  //     fromEl.removeEventListener('wheel', wheel);
-  //   };
-  // }
-
-  // function onScrollWrapScroll() {
-  //   if (!scrollWrap) return;
-  //   const scrollTop = scrollWrap?.scrollTop;
-  //   cmRoot.style.transform = `translateY(${-scrollTop}px)`;
-  //   mdRoot.style.transform = `translateY(${-scrollTop}px)`;
-  // }
-  // const cmTouchCleanup = forwardTouchScroll(cmScrollDom);
-  // const mdTouchCleanup = forwardTouchScroll(mdScrollDom);
-  // scrollWrap?.addEventListener('scroll', onScrollWrapScroll);
+  function onScrollWrapScroll() {
+    if (!window.isVirtualScrollEnabled) return;
+    if (!scrollWrap) return;
+    const scrollTop = -(scrollWrap?.scrollTop || 0);
+    const titleBarHeight = getTitleBarHeight();
+    const top = titleBarHeight + scrollTop;
+    cmRoot.style.top = `${top}px`;
+    mdRoot.style.top = `${top}px`;
+    throttledOnRefreshEditor();
+  }
+  scrollWrap?.addEventListener('scroll', onScrollWrapScroll);
+  if (scrollWrap) scrollWrap.scrollTop = 0;
 
   let onScrollContentChangeCleanup: (() => void) | null = null;
   if (sourceMode) {
-    cmRoot.style.display = 'block';
     mdRoot.style.display = 'none';
+    cmRoot.style.display = editorDisplay;
     window.cmEditor = createCMEditor(cmRoot, content, fileName);
     cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
     onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
   } else {
     cmRoot.style.display = 'none';
-    mdRoot.style.display = 'block';
+    mdRoot.style.display = editorDisplay;
     window.editor = await createMarkdownEditor(mdRoot, content, window.previewMode || false);
     mdScrollDom?.addEventListener('scroll', onScrollPositionChange);
     onScrollContentChangeCleanup = observeScrollability(mdScrollDom, onScrollContentChange);
@@ -201,7 +201,7 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
     onScrollContentChangeCleanup?.();
     // cmTouchCleanup?.();
     // mdTouchCleanup?.();
-    // scrollWrap?.removeEventListener('scroll', onScrollWrapScroll);
+    scrollWrap?.removeEventListener('scroll', onScrollWrapScroll);
     document.body.removeEventListener('click', bodyClick);
     cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
     mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);

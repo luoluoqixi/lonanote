@@ -4,6 +4,8 @@ interface Window {
   isAndroid: boolean;
   isIOS: boolean;
   statusBarHeight?: number;
+  isVirtualScrollEnabled?: boolean;
+  isScrollable?: boolean;
 
   setupVConsole: () => Promise<any>;
   setAutoSave: (autoSave: boolean, autoSaveInterval: number, autoSaveFocusChange: boolean) => void;

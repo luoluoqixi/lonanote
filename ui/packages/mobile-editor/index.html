@@ -13,12 +13,11 @@
       content="font-src 'self' data:;default-src * blob:; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src * data:;connect-src * blob:;"
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <!-- Color theme for statusbar (Android only) -->
-    <meta name="theme-color" content="#2196f3" />
   </head>
 
   <body style="background-color: transparent">
     <script>
+      window.isVirtualScrollEnabled = false;
       (() => {
         if (/android/i.test(navigator.userAgent)) {
           window.isAndroid = true;
@@ -26,6 +25,17 @@
         } else if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
           window.isIOS = true;
           document.body.classList.add('ios');
+        }
+        if (window.isVirtualScrollEnabled) {
+          document.documentElement.classList.add('virtual-scroll-enabled');
+
+          function setAppHeight() {
+            const height = window.visualViewport?.height || window.innerHeight;
+            document.documentElement.style.setProperty('--app-height', `${height}px`);
+          }
+          window.visualViewport?.addEventListener('resize', setAppHeight);
+          window.visualViewport?.addEventListener('orientationchange', setAppHeight);
+          window.addEventListener('orientationchange', setAppHeight);
         }
       })();
 
