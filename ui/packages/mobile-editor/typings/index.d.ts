@@ -4,7 +4,6 @@ interface Window {
   isAndroid: boolean;
   isIOS: boolean;
   statusBarHeight?: number;
-  isVirtualScrollEnabled?: boolean;
   isScrollable?: boolean;
 
   setupVConsole: () => Promise<any>;

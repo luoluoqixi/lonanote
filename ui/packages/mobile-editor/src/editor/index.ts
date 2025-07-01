@@ -1,4 +1,4 @@
-import { config, getTitleBarHeight } from '@/config';
+import { config } from '@/config';
 
 import { autoSaveUpdate } from './autoSave';
 import { cmFocus, createCMEditor } from './codemirror';
@@ -49,12 +49,6 @@ export const onUpdateState = (state?: {
 
 const bodyClick = (e: MouseEvent) => {
   if (window.isScrollable) {
-    if (window.editor != null) {
-      // 点击编辑器内容时, 手动聚焦, 因为在 ios 端, milkdown 有时会错误的聚焦到文档底部
-      const editor = window.editor;
-      editor.focusClick(e);
-      e.preventDefault();
-    }
     return;
   }
   if (e.target !== document.body) {
@@ -112,40 +106,24 @@ const observeScrollability = (el: HTMLElement, cb: (e: HTMLElement) => void): ((
 };
 
 const onScrollContentChange = (el: HTMLElement) => {
-  if (window.isVirtualScrollEnabled) {
-    // 当启用模拟滚动时, 设置 editor 内容高度
-    const root = document.getElementById(config.rootId);
-    if (!root) return;
-    const s = window.getComputedStyle(root);
-    let paddingTop = parseFloat(s.paddingTop) || 0;
-    let paddingBottom = parseFloat(s.paddingBottom) || 0;
-    paddingTop = isNaN(paddingTop) ? 0 : paddingTop;
-    paddingBottom = isNaN(paddingBottom) ? 0 : paddingBottom;
-    const rootHeight = root.clientHeight - paddingTop - paddingBottom;
-    const editorContentHeight = el.clientHeight;
-    const isScrollable = editorContentHeight > rootHeight;
-    document.documentElement.classList.toggle('editor-scrollable', isScrollable);
-    root.style.setProperty('--editor-content-height', `${editorContentHeight}px`);
-  } else {
-    /// 当内容高度超过可视区域时，添加 editor-scrollable 类
-    const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
-    window.isScrollable = isScrollable;
-    // console.log('isScrollable', isScrollable);
-    document.documentElement.classList.toggle('editor-scrollable', isScrollable);
-  }
+  /// 当内容高度超过可视区域时，添加 editor-scrollable 类
+  const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
+  window.isScrollable = isScrollable;
+  // console.log('isScrollable', isScrollable);
+  document.documentElement.classList.toggle('editor-scrollable', isScrollable);
 };
 
-const throttledOnRefreshEditor = () => {
-  const lastTimeout = (window as any).throttledOnRefreshEditorTimeout;
-  if (lastTimeout != null) {
-    clearTimeout(lastTimeout);
-    (window as any).throttledOnRefreshEditorTimeout = null;
-  }
-  (window as any).throttledOnRefreshEditorTimeout = setTimeout(() => {
-    (window as any).throttledOnRefreshEditorTimeout = null;
-    window.cmEditor?.requestMeasure();
-  }, 200);
-};
+// const throttledOnRefreshEditor = () => {
+//   const lastTimeout = (window as any).throttledOnRefreshEditorTimeout;
+//   if (lastTimeout != null) {
+//     clearTimeout(lastTimeout);
+//     (window as any).throttledOnRefreshEditorTimeout = null;
+//   }
+//   (window as any).throttledOnRefreshEditorTimeout = setTimeout(() => {
+//     (window as any).throttledOnRefreshEditorTimeout = null;
+//     window.cmEditor?.requestMeasure();
+//   }, 200);
+// };
 
 export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
   if ((window as any).onCleanEvents != null) {
@@ -168,18 +146,6 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
 
   const editorDisplay = 'block';
 
-  function onScrollWrapScroll() {
-    // 启用模拟滚动时, 同步编辑器 position
-    if (!window.isVirtualScrollEnabled) return;
-    if (!scrollWrap) return;
-    const scrollTop = -(scrollWrap?.scrollTop || 0);
-    const titleBarHeight = getTitleBarHeight();
-    const top = titleBarHeight + scrollTop;
-    cmRoot.style.top = `${top}px`;
-    mdRoot.style.top = `${top}px`;
-    throttledOnRefreshEditor();
-  }
-  scrollWrap?.addEventListener('scroll', onScrollWrapScroll);
   if (scrollWrap) scrollWrap.scrollTop = 0;
 
   let onScrollContentChangeCleanup: (() => void) | null = null;
@@ -200,7 +166,6 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
 
   (window as any).onCleanEvents = () => {
     onScrollContentChangeCleanup?.();
-    scrollWrap?.removeEventListener('scroll', onScrollWrapScroll);
     document.body.removeEventListener('click', bodyClick);
     cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
     mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);

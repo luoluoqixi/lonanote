@@ -436,7 +436,6 @@ export class MarkdownBuilder {
     this.#editor.action((ctx) => {
       const view = ctx.get(editorViewCtx);
       const pos = view.posAtCoords({ left: e.clientX, top: e.clientY });
-      console.log(pos);
       if (!pos) return;
       const selection = TextSelection.create(view.state.doc, pos.pos);
       const tr = view.state.tr.setSelection(selection).scrollIntoView();
