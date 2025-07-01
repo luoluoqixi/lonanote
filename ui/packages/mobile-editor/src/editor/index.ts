@@ -50,6 +50,7 @@ export const onUpdateState = (state?: {
 const bodyClick = (e: MouseEvent) => {
   if (window.isScrollable) {
     if (window.editor != null) {
+      // 点击编辑器内容时, 手动聚焦, 因为在 ios 端, milkdown 有时会错误的聚焦到文档底部
       const editor = window.editor;
       editor.focusClick(e);
       e.preventDefault();
@@ -112,6 +113,7 @@ const observeScrollability = (el: HTMLElement, cb: (e: HTMLElement) => void): ((
 
 const onScrollContentChange = (el: HTMLElement) => {
   if (window.isVirtualScrollEnabled) {
+    // 当启用模拟滚动时, 设置 editor 内容高度
     const root = document.getElementById(config.rootId);
     if (!root) return;
     const s = window.getComputedStyle(root);
@@ -166,9 +168,8 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
 
   const editorDisplay = 'block';
 
-  // function forwardTouchScroll(fromEl: HTMLElement) {}
-
   function onScrollWrapScroll() {
+    // 启用模拟滚动时, 同步编辑器 position
     if (!window.isVirtualScrollEnabled) return;
     if (!scrollWrap) return;
     const scrollTop = -(scrollWrap?.scrollTop || 0);
@@ -199,8 +200,6 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
 
   (window as any).onCleanEvents = () => {
     onScrollContentChangeCleanup?.();
-    // cmTouchCleanup?.();
-    // mdTouchCleanup?.();
     scrollWrap?.removeEventListener('scroll', onScrollWrapScroll);
     document.body.removeEventListener('click', bodyClick);
     cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
