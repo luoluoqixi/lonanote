@@ -1,6 +1,6 @@
 import { invokeCommand } from './commands';
 import { config } from './config';
-import { createEditor, getContentJson } from './editor';
+import { createEditor, getContentJson, setEditorScrollbarValue } from './editor';
 import './styles/index.scss';
 import './theme';
 import './utils';
@@ -14,7 +14,7 @@ const initEditor = async (fileName: string, sourceMode: boolean, content: string
   }
   console.log('init editor');
   await createEditor(fileName, sourceMode, content);
-  console.log('init editor finish');
+  console.log(`init editor finish: ${fileName}`);
 };
 
 const appendTestBtn = (text: string, onClick: (e: MouseEvent) => void) => {
@@ -37,6 +37,7 @@ const init = async () => {
   window.initEditor = initEditor;
   window.invokeCommand = invokeCommand;
   window.getContent = getContentJson;
+  window.setEditorScrollbarValue = setEditorScrollbarValue;
 
   if (!config.isFlutter) {
     document.body.classList.add('web');

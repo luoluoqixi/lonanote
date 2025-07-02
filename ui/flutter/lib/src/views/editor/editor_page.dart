@@ -35,6 +35,9 @@ class EditorPage extends ConsumerStatefulWidget {
 
 class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
+  /// 使用 flutter 自定义滚动条, 如果为false, 则使用 webview 的滚动条
+  static final _useCustomScrollbar = true;
+
   late WebViewController _controller;
   late CustomWebkitProxy? _webkitProxy;
   bool _webViewLoaded = false;
@@ -80,6 +83,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void didChangePlatformBrightness() {
     super.didChangePlatformBrightness();
     _updateColorMode(true);
+  }
+
+  @override
+  void didPop() {
+    final s = ref.read(settingsProvider.select((s) => s.settings));
+    if (s != null && s.autoSaveFocusChange == true) {
+      // 退出页面前保存文件
+      _save();
+    }
   }
 
   void _initController() {
@@ -131,6 +143,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   Future<void> _initEditorHtml() async {
     await _loadFileContent();
+    if (_useCustomScrollbar) {
+      await _controller.setHorizontalScrollBarEnabled(false);
+      await _controller.setVerticalScrollBarEnabled(false);
+    } else {
+      await _controller.setHorizontalScrollBarEnabled(false);
+      await _controller.setVerticalScrollBarEnabled(true);
+    }
     if (Platform.isIOS) {
       await _setIOSOverScrollMode();
     } else {
@@ -192,7 +211,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Color _getTitleColor(double scrollY, Color baseColor) {
-    final minScrollY = 100.0;
+    final minScrollY = 150.0;
     if (scrollY < minScrollY) {
       return Colors.transparent;
     }
@@ -205,7 +224,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _onHtmlScrollPositionChange(ScrollPositionChange position) {
-    _onScrollPositionChange(position.y);
+    if (_useCustomScrollbar) {
+      // _useCustomScrollbar 模式下, webview 是body在滚动, 和这个监听会重复调用
+      return;
+    }
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    final logicalY = position.y / dpr;
+    _onScrollPositionChange(logicalY);
   }
 
   void _setAppBarColor(Color newBgColor, Color newTextColor) {
@@ -234,6 +259,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final newTextColor = _getTitleColor(scrollY, textColor);
 
     _setAppBarColor(newBgColor, newTextColor);
+  }
+
+  void _setEditorScrollValue(double value) {
+    if (!mounted) return;
+    if (!_webViewLoaded) return;
+    _controller.runJavaScript("window.setEditorScrollbarValue($value)");
   }
 
   void _updateState(Map<String, dynamic>? state) {}
@@ -314,6 +345,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
               window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)});
             } catch (e) {
               console.error('initEditor error:', e.message);
+            }
+            if (window.setWebScrollbar) {
+              window.setWebScrollbar(${(!_useCustomScrollbar).toString()});
             }
           } else {
             setTimeout(init, 100);
@@ -435,13 +469,19 @@ class _EditorPageState extends ConsumerState<EditorPage>
     ];
   }
 
-  @override
-  void didPop() {
-    final s = ref.read(settingsProvider.select((s) => s.settings));
-    if (s != null && s.autoSaveFocusChange == true) {
-      // 退出页面前保存文件
-      _save();
+  Widget _buildWebView(ColorScheme colorScheme) {
+    if (_useCustomScrollbar) {
+      return Stack(
+        children: [
+          WebViewWidget(
+            controller: _controller,
+          ),
+        ],
+      );
     }
+    return WebViewWidget(
+      controller: _controller,
+    );
   }
 
   @override
@@ -468,9 +508,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       titleTextColor: _titleTextColor,
       centerTitle: true,
       noScrollView: true,
-      child: WebViewWidget(
-        controller: _controller,
-      ),
+      child: _buildWebView(colorScheme),
     );
   }
 }

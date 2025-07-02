@@ -48,6 +48,7 @@ export const onUpdateState = (state?: {
 };
 
 const bodyClick = (e: MouseEvent) => {
+  // console.log('bodyClick', e.target, window.isScrollable);
   if (window.isScrollable) {
     return;
   }
@@ -83,6 +84,19 @@ const onScrollPositionChange = (e: Event) => {
         scrollY: scrollTop,
       }),
     );
+  }
+};
+
+export const setEditorScrollbarValue = (value: number) => {
+  let scrollDom: HTMLElement | null = null;
+  if (window.editor != null) {
+    scrollDom = window.isWebScrollbar ? document.getElementById(config.mdRootId)! : document.body;
+  } else if (window.cmEditor != null) {
+    scrollDom = window.isWebScrollbar ? document.getElementById(config.cmRootId)! : document.body;
+  }
+  if (scrollDom != null) {
+    const halfHeight = scrollDom.scrollHeight * value;
+    scrollDom.scrollTop = halfHeight;
   }
 };
 
@@ -137,16 +151,13 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
     window.cmEditor.destroy();
     window.cmEditor = null;
   }
-  const scrollWrap = document.getElementById('virtual-scroll-wrap');
   const cmRoot = document.getElementById(config.cmRootId)!;
   const mdRoot = document.getElementById(config.mdRootId)!;
 
-  const cmScrollDom = cmRoot;
-  const mdScrollDom = mdRoot;
+  const cmScrollDom = window.isWebScrollbar ? cmRoot : document.body;
+  const mdScrollDom = window.isWebScrollbar ? mdRoot : document.body;
 
   const editorDisplay = 'block';
-
-  if (scrollWrap) scrollWrap.scrollTop = 0;
 
   let onScrollContentChangeCleanup: (() => void) | null = null;
   if (sourceMode) {
