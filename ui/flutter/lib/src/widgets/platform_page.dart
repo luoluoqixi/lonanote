@@ -9,9 +9,9 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/app_bar.dart';
 import 'package:lonanote/src/widgets/flutter/custom_refresh_indicator.dart';
 import 'package:lonanote/src/widgets/platform_double_back.dart';
+import 'package:lonanote/src/widgets/platform_scrollbar.dart' as M;
 
 class PlatformPage extends StatefulWidget {
-  final ScrollController? scrollController;
   final ScrollAppBar? appBar;
   final Widget? bottomBar;
   final List<Widget>? stacks;
@@ -33,8 +33,11 @@ class PlatformPage extends StatefulWidget {
   final Future<void> Function()? onRefresh;
 
   final bool? showScrollbar;
+  final ScrollController? scrollController;
   final bool? scrollThumbVisibility;
   final bool? scrollInteractive;
+  final double? scrollThickness;
+  final double? scrollRadius;
 
   final bool? resizeToAvoidBottomInset;
 
@@ -60,6 +63,8 @@ class PlatformPage extends StatefulWidget {
     this.showScrollbar,
     this.scrollThumbVisibility,
     this.scrollInteractive,
+    this.scrollThickness,
+    this.scrollRadius,
     this.resizeToAvoidBottomInset,
   });
 
@@ -144,22 +149,14 @@ class _PlatformPageState extends State<PlatformPage> {
 
     var child = content;
     if (widget.showScrollbar == true) {
-      if (isMaterial(context)) {
-        child = Scrollbar(
-          controller: scrollController,
-          thumbVisibility: widget.scrollThumbVisibility ?? false,
-          interactive: widget.scrollInteractive ?? true,
-          child: content,
-        );
-      } else {
-        // IOS滚动条体验存在问题:
-        // https://github.com/flutter/flutter/issues/83198
-        child = CupertinoScrollbar(
-          controller: scrollController,
-          thumbVisibility: widget.scrollThumbVisibility ?? false,
-          child: content,
-        );
-      }
+      child = M.PlatformScrollbar(
+        controller: scrollController,
+        thumbVisibility: widget.scrollThumbVisibility ?? false,
+        interactive: widget.scrollInteractive ?? true,
+        thickness: widget.scrollThickness,
+        radius: widget.scrollRadius,
+        child: content,
+      );
     }
     return Column(
       children: [
@@ -214,7 +211,6 @@ class _PlatformPageState extends State<PlatformPage> {
 }
 
 class PlatformSimplePage extends StatefulWidget {
-  final ScrollController? scrollController;
   final PlatformAppBar? appBar;
   final Widget? bottomBar;
   final Widget? title;
@@ -236,8 +232,11 @@ class PlatformSimplePage extends StatefulWidget {
   final bool? noScrollView;
 
   final bool? showScrollbar;
+  final ScrollController? scrollController;
   final bool? scrollThumbVisibility;
   final bool? scrollInteractive;
+  final double? scrollThickness;
+  final double? scrollRadius;
 
   final bool? resizeToAvoidBottomInset;
 
@@ -263,6 +262,8 @@ class PlatformSimplePage extends StatefulWidget {
     this.showScrollbar,
     this.scrollThumbVisibility,
     this.scrollInteractive,
+    this.scrollThickness,
+    this.scrollRadius,
     this.resizeToAvoidBottomInset,
   });
 
@@ -445,22 +446,14 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
       return content;
     }
     if (widget.showScrollbar == true) {
-      if (isMaterial(context)) {
-        return Scrollbar(
-          controller: scrollController,
-          thumbVisibility: widget.scrollThumbVisibility ?? false,
-          interactive: widget.scrollInteractive ?? true,
-          child: content,
-        );
-      } else {
-        // IOS滚动条体验存在问题:
-        // https://github.com/flutter/flutter/issues/83198
-        return CupertinoScrollbar(
-          controller: scrollController,
-          thumbVisibility: widget.scrollThumbVisibility ?? false,
-          child: content,
-        );
-      }
+      return M.PlatformScrollbar(
+        controller: scrollController,
+        thumbVisibility: widget.scrollThumbVisibility ?? false,
+        interactive: widget.scrollInteractive ?? true,
+        thickness: widget.scrollThickness,
+        radius: widget.scrollRadius,
+        child: content,
+      );
     }
     return content;
   }
