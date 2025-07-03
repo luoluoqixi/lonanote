@@ -39,7 +39,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   static final _useCustomScrollbar = true;
 
   late WebViewController _controller;
-  late CustomWebkitProxy? _webkitProxy;
+  CustomWebkitProxy? _webkitProxy;
   bool _webViewLoaded = false;
   bool _previewMode = false;
   late bool _sourceMode;

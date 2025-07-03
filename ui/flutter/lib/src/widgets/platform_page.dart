@@ -24,7 +24,7 @@ class PlatformPage extends StatefulWidget {
   final List<Widget>? contents;
 
   final bool? isHome;
-  final bool Function()? onWillPop;
+  final Future<bool> Function()? onWillPop;
 
   final Color? backgroundColor;
   final Color? titleColor;
@@ -33,6 +33,7 @@ class PlatformPage extends StatefulWidget {
   final bool? isLoading;
   final Future<void> Function()? onRefresh;
 
+  final Key? scrollKey;
   final bool? showScrollbar;
   final ScrollController? scrollController;
   final bool? scrollThumbVisibility;
@@ -62,6 +63,7 @@ class PlatformPage extends StatefulWidget {
     this.titleColor,
     this.isLoading,
     this.onRefresh,
+    this.scrollKey,
     this.showScrollbar,
     this.scrollThumbVisibility,
     this.scrollInteractive,
@@ -112,6 +114,7 @@ class _PlatformPageState extends State<PlatformPage> {
   Widget _buildPageContent(ScrollController controller, BuildContext context) {
     final appBar = _buildAppBar();
     return CustomScrollView(
+      key: widget.scrollKey,
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -175,23 +178,35 @@ class _PlatformPageState extends State<PlatformPage> {
     final colorScheme = ThemeColors.getColorScheme(context);
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
     final isHome = widget.isHome == true;
+    final child = Container(
+      color: widget.backgroundColor ?? Colors.transparent,
+      child: SafeArea(
+        left: true,
+        right: true,
+        top: false,
+        bottom: false,
+        child: _buildPage(),
+      ),
+    );
+    final isWillPop = widget.onWillPop != null &&
+        Theme.of(context).platform == TargetPlatform.android;
     return Stack(
       children: [
         PlatformScaffold(
           backgroundColor: backgroundColor,
           body: PlatformDoubleBack(
             isEnable: isHome,
-            onWillPop: widget.onWillPop,
-            child: Container(
-              color: widget.backgroundColor ?? Colors.transparent,
-              child: SafeArea(
-                left: true,
-                right: true,
-                top: false,
-                bottom: false,
-                child: _buildPage(),
-              ),
-            ),
+            child: isWillPop
+                // ignore: deprecated_member_use
+                ? WillPopScope(
+                    child: child,
+                    onWillPop: () {
+                      if (widget.onWillPop != null) {
+                        return widget.onWillPop!();
+                      }
+                      return Future.value(true);
+                    })
+                : child,
           ),
           material: (context, platform) => MaterialScaffoldData(
             resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
@@ -221,7 +236,7 @@ class PlatformSimplePage extends StatefulWidget {
   final Widget? child;
   final List<Widget>? contents;
   final bool? isHome;
-  final bool Function()? onWillPop;
+  final Future<bool> Function()? onWillPop;
 
   final Color? backgroundColor;
   final Color? titleBgColor;
@@ -468,23 +483,35 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     final colorScheme = ThemeColors.getColorScheme(context);
     final backgroundColor = ThemeColors.getBgColor(colorScheme);
     final isHome = widget.isHome == true;
+    final child = Container(
+      color: widget.backgroundColor ?? Colors.transparent,
+      child: SafeArea(
+        left: true,
+        right: true,
+        top: false,
+        bottom: false,
+        child: _buildPage(colorScheme),
+      ),
+    );
+    final isWillPop = widget.onWillPop != null &&
+        Theme.of(context).platform == TargetPlatform.android;
     return Stack(
       children: [
         PlatformScaffold(
           backgroundColor: backgroundColor,
           body: PlatformDoubleBack(
             isEnable: isHome,
-            onWillPop: widget.onWillPop,
-            child: Container(
-              color: widget.backgroundColor ?? Colors.transparent,
-              child: SafeArea(
-                left: true,
-                right: true,
-                top: false,
-                bottom: false,
-                child: _buildPage(colorScheme),
-              ),
-            ),
+            child: isWillPop
+                // ignore: deprecated_member_use
+                ? WillPopScope(
+                    child: child,
+                    onWillPop: () {
+                      if (widget.onWillPop != null) {
+                        return widget.onWillPop!();
+                      }
+                      return Future.value(true);
+                    })
+                : child,
           ),
           material: (context, platform) => MaterialScaffoldData(
             resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,

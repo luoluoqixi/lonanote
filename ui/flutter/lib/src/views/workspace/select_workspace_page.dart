@@ -46,7 +46,9 @@ class SelectWorkspacePage extends ConsumerStatefulWidget {
 
 class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     with SingleTickerProviderStateMixin {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController(
+    keepScrollOffset: true,
+  );
   WorkspaceSortType _sortType = WorkspaceSortType.updateTime;
 
   bool _isLoading = false;
@@ -663,7 +665,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         onLongPress: _isSelectionMode
             ? null
             : () {
-                logger.i("long press");
+                // logger.i("long press");
                 HapticFeedback.selectionClick();
                 _selectWorkspaceMode();
                 _toggleSelection(workspace);
@@ -781,17 +783,19 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
           // ),
         ],
       ),
+      scrollKey: const PageStorageKey("HomePageScrollKey"),
+      scrollController: _scrollController,
       subTitleText: "选择工作区",
       showScrollbar: true,
       isLoading: _isLoading,
       onRefresh: _isSelectionMode ? null : _refreshWorkspaces,
       isHome: true,
-      onWillPop: () {
+      onWillPop: () async {
         if (_isSelectionMode) {
           _closeSelectWorkspaceMode();
-          return false;
+          return Future.value(false);
         }
-        return true;
+        return Future.value(true);
       },
       backgroundColor: ThemeColors.getBgColor(colorScheme),
       titleActions: [

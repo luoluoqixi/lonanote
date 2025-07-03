@@ -44,7 +44,9 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   RustFileNode? fileNode;
   final Set<String> _selectedPaths = {};
 
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController(
+    keepScrollOffset: true,
+  );
 
   @override
   void initState() {
@@ -881,6 +883,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     final floatingToolbar =
         _buildFloatingToolbar(otherSettings.showFloatingToolbar);
     return PlatformPage(
+      scrollKey: const PageStorageKey("WorkspaceFilesPageScrollKey"),
       // titleText: title,
       title: Row(
         children: [
@@ -907,9 +910,9 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       onWillPop: () {
         if (_isSelectionMode) {
           _closeSelectMode();
-          return false;
+          return Future.value(false);
         }
-        return true;
+        return Future.value(true);
       },
       showScrollbar: true,
       isLoading: _isLoading,
