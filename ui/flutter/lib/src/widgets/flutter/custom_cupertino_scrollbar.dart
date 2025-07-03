@@ -7,11 +7,14 @@ library;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:lonanote/src/widgets/flutter/custom_raw_scrollbar.dart';
 
 // All values eyeballed.
 const double _kScrollbarMinLength = 36.0;
 const double _kScrollbarMinOverscrollLength = 8.0;
-const Duration _kScrollbarTimeToFade = Duration(milliseconds: 1200);
+
+/// default TimeToFade
+const Duration _kScrollbarTimeToFade = Duration(milliseconds: 2000);
 const Duration _kScrollbarFadeDuration = Duration(milliseconds: 250);
 const Duration _kScrollbarResizeDuration = Duration(milliseconds: 100);
 
@@ -66,7 +69,7 @@ const double _kScrollbarCrossAxisMargin = 3.0;
 ///  * [Scrollbar], a Material Design scrollbar.
 ///  * [RawScrollbar], a basic scrollbar that fades in and out, extended
 ///    by this class to add more animations and behaviors.
-class CustomCupertinoScrollbar extends RawScrollbar {
+class CustomCupertinoScrollbar extends CustomRawScrollbar {
   /// Creates an iOS style scrollbar that wraps the given [child].
   ///
   /// The [child] should be a source of [ScrollNotification] notifications,
@@ -124,11 +127,12 @@ class CustomCupertinoScrollbar extends RawScrollbar {
   final Radius radiusWhileDragging;
 
   @override
-  RawScrollbarState<CupertinoScrollbar> createState() =>
-      _CupertinoScrollbarState();
+  CustomRawScrollbarState<CustomCupertinoScrollbar> createState() =>
+      _CustomCupertinoScrollbarState();
 }
 
-class _CupertinoScrollbarState extends RawScrollbarState<CupertinoScrollbar> {
+class _CustomCupertinoScrollbarState
+    extends CustomRawScrollbarState<CustomCupertinoScrollbar> {
   late AnimationController _thicknessAnimationController;
 
   double get _thickness {

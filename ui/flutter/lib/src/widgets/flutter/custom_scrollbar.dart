@@ -7,6 +7,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:lonanote/src/widgets/flutter/custom_cupertino_scrollbar.dart';
+import 'package:lonanote/src/widgets/flutter/custom_raw_scrollbar.dart';
 
 const double _kScrollbarThickness = 8.0;
 const double _kScrollbarThicknessWithTrack = 12.0;
@@ -14,7 +16,9 @@ const double _kScrollbarMargin = 2.0;
 const double _kScrollbarMinLength = 48.0;
 const Radius _kScrollbarRadius = Radius.circular(8.0);
 const Duration _kScrollbarFadeDuration = Duration(milliseconds: 300);
-const Duration _kScrollbarTimeToFade = Duration(milliseconds: 600);
+
+/// default TimeToFade
+const Duration _kScrollbarTimeToFade = Duration(milliseconds: 2000);
 
 /// A Material Design scrollbar.
 ///
@@ -146,12 +150,12 @@ class CustomScrollbar extends StatelessWidget {
   final ScrollNotificationPredicate? notificationPredicate;
 
   /// {@macro flutter.widgets.Scrollbar.scrollbarOrientation}
-  final ScrollbarOrientation? scrollbarOrientation;
+  final CustomScrollbarOrientation? scrollbarOrientation;
 
   @override
   Widget build(BuildContext context) {
     if (Theme.of(context).platform == TargetPlatform.iOS) {
-      return CupertinoScrollbar(
+      return CustomCupertinoScrollbar(
         thumbVisibility: thumbVisibility ?? false,
         thickness: thickness ?? CupertinoScrollbar.defaultThickness,
         thicknessWhileDragging:
@@ -179,7 +183,7 @@ class CustomScrollbar extends StatelessWidget {
   }
 }
 
-class _MaterialScrollbar extends RawScrollbar {
+class _MaterialScrollbar extends CustomRawScrollbar {
   const _MaterialScrollbar({
     required super.child,
     super.controller,
@@ -202,7 +206,8 @@ class _MaterialScrollbar extends RawScrollbar {
   _MaterialScrollbarState createState() => _MaterialScrollbarState();
 }
 
-class _MaterialScrollbarState extends RawScrollbarState<_MaterialScrollbar> {
+class _MaterialScrollbarState
+    extends CustomRawScrollbarState<_MaterialScrollbar> {
   late AnimationController _hoverAnimationController;
   bool _dragIsActive = false;
   bool _hoverIsActive = false;
