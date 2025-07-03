@@ -38,7 +38,7 @@ class PlatformScrollbar extends StatelessWidget {
       cupertino: (context, platform) => CustomCupertinoScrollbar(
         controller: controller,
         thumbVisibility: thumbVisibility ?? false,
-        thickness: thickness ?? 8.0,
+        thickness: thickness ?? 3.0,
         radius: Radius.circular(radius ?? 10.0),
         child: child,
       ),

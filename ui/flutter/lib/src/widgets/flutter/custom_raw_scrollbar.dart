@@ -2275,7 +2275,9 @@ class CustomRawScrollbarState<T extends CustomRawScrollbar> extends State<T>
   }
 
   @protected
-  void handleThumbTap() {}
+  void handleThumbTap() {
+    handleThumbUp();
+  }
 
   @protected
   void handleThumbTapUp(TapUpDetails details) {
