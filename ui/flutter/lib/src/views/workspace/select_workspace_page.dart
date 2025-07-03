@@ -786,6 +786,13 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       isLoading: _isLoading,
       onRefresh: _isSelectionMode ? null : _refreshWorkspaces,
       isHome: true,
+      onWillPop: () {
+        if (_isSelectionMode) {
+          _closeSelectWorkspaceMode();
+          return false;
+        }
+        return true;
+      },
       backgroundColor: ThemeColors.getBgColor(colorScheme),
       titleActions: [
         if (_isSelectionMode) ..._buildSelectModeActions(workspaces),

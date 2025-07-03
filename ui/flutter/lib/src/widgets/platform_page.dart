@@ -24,6 +24,7 @@ class PlatformPage extends StatefulWidget {
   final List<Widget>? contents;
 
   final bool? isHome;
+  final bool Function()? onWillPop;
 
   final Color? backgroundColor;
   final Color? titleColor;
@@ -56,6 +57,7 @@ class PlatformPage extends StatefulWidget {
     this.child,
     this.contents,
     this.isHome,
+    this.onWillPop,
     this.backgroundColor,
     this.titleColor,
     this.isLoading,
@@ -179,6 +181,7 @@ class _PlatformPageState extends State<PlatformPage> {
           backgroundColor: backgroundColor,
           body: PlatformDoubleBack(
             isEnable: isHome,
+            onWillPop: widget.onWillPop,
             child: Container(
               color: widget.backgroundColor ?? Colors.transparent,
               child: SafeArea(
@@ -218,6 +221,7 @@ class PlatformSimplePage extends StatefulWidget {
   final Widget? child;
   final List<Widget>? contents;
   final bool? isHome;
+  final bool Function()? onWillPop;
 
   final Color? backgroundColor;
   final Color? titleBgColor;
@@ -250,6 +254,7 @@ class PlatformSimplePage extends StatefulWidget {
     this.child,
     this.contents,
     this.isHome,
+    this.onWillPop,
     this.backgroundColor,
     this.titleBgColor,
     this.titleTextColor,
@@ -469,6 +474,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
           backgroundColor: backgroundColor,
           body: PlatformDoubleBack(
             isEnable: isHome,
+            onWillPop: widget.onWillPop,
             child: Container(
               color: widget.backgroundColor ?? Colors.transparent,
               child: SafeArea(

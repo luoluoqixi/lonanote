@@ -904,6 +904,13 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       ),
       scrollController: _scrollController,
       isHome: widget.parentPath == null,
+      onWillPop: () {
+        if (_isSelectionMode) {
+          _closeSelectMode();
+          return false;
+        }
+        return true;
+      },
       showScrollbar: true,
       isLoading: _isLoading,
       onRefresh: _isSelectionMode ? null : _reinitFileNode,

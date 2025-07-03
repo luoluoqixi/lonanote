@@ -3,7 +3,7 @@ import 'package:logger/logger.dart';
 
 final logger = Logger(
   printer: PrettyPrinter(
-    methodCount: 8, // 堆栈层数
+    methodCount: 0, // 堆栈层数
     errorMethodCount: 8, // 错误堆栈层数,
     noBoxingByDefault: true, // 不显示边框
     printEmojis: true, // 显示emoji
