@@ -2077,6 +2077,20 @@ class CustomRawScrollbarState<T extends CustomRawScrollbar> extends State<T>
         );
     }
 
+    gestures[_ThumbTapDownGestureRecognizer] =
+        GestureRecognizerFactoryWithHandlers<_ThumbTapDownGestureRecognizer>(
+      () => _ThumbTapDownGestureRecognizer(
+        debugOwner: this,
+        customPaintKey: _scrollbarPainterKey,
+      ),
+      (_ThumbTapDownGestureRecognizer instance) {
+        instance.onTapDown = handleThumbTapDown;
+        instance.onTapUp = handleThumbTapUp;
+        instance.onTapCancel = handleThumbTapCancel;
+        instance.onTap = handleThumbTap;
+      },
+    );
+
     gestures[_TrackTapGestureRecognizer] =
         GestureRecognizerFactoryWithHandlers<_TrackTapGestureRecognizer>(
       () => _TrackTapGestureRecognizer(
@@ -2243,6 +2257,37 @@ class CustomRawScrollbarState<T extends CustomRawScrollbar> extends State<T>
   }
 
   @protected
+  void handleThumbDown() {
+    _hoverIsActive = true;
+    _fadeoutAnimationController.forward();
+    _fadeoutTimer?.cancel();
+  }
+
+  @protected
+  void handleThumbUp() {
+    _hoverIsActive = false;
+    _fadeoutTimer?.cancel();
+  }
+
+  @protected
+  void handleThumbTapDown(TapDownDetails details) {
+    handleThumbDown();
+  }
+
+  @protected
+  void handleThumbTap() {}
+
+  @protected
+  void handleThumbTapUp(TapUpDetails details) {
+    handleThumbUp();
+  }
+
+  @protected
+  void handleThumbTapCancel() {
+    handleThumbUp();
+  }
+
+  @protected
   @override
   Widget build(BuildContext context) {
     updateScrollbarPainter();
@@ -2384,6 +2429,26 @@ class _HorizontalThumbDragGestureRecognizer
 
   @override
   bool isPointerAllowed(PointerEvent event) {
+    return _isThumbEvent(_customPaintKey, event) &&
+        super.isPointerAllowed(event);
+  }
+}
+
+class _ThumbTapDownGestureRecognizer extends TapGestureRecognizer {
+  _ThumbTapDownGestureRecognizer({
+    required Object super.debugOwner,
+    required GlobalKey customPaintKey,
+  }) : _customPaintKey = customPaintKey;
+
+  final GlobalKey _customPaintKey;
+
+  @override
+  bool isPointerPanZoomAllowed(PointerPanZoomStartEvent event) {
+    return false;
+  }
+
+  @override
+  bool isPointerAllowed(PointerDownEvent event) {
     return _isThumbEvent(_customPaintKey, event) &&
         super.isPointerAllowed(event);
   }

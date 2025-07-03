@@ -420,6 +420,22 @@ class _MaterialScrollbarState
   }
 
   @override
+  void handleThumbDown() {
+    super.handleThumbDown();
+    setState(() {
+      _dragIsActive = true;
+    });
+  }
+
+  @override
+  void handleThumbUp() {
+    super.handleThumbUp();
+    setState(() {
+      _dragIsActive = false;
+    });
+  }
+
+  @override
   void dispose() {
     _hoverAnimationController.dispose();
     super.dispose();
