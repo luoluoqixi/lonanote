@@ -145,7 +145,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     await _loadFileContent();
     if (_useCustomScrollbar) {
       await _controller.setHorizontalScrollBarEnabled(false);
-      await _controller.setVerticalScrollBarEnabled(false);
+      await _controller.setVerticalScrollBarEnabled(true);
     } else {
       await _controller.setHorizontalScrollBarEnabled(false);
       await _controller.setVerticalScrollBarEnabled(true);
@@ -261,11 +261,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _setAppBarColor(newBgColor, newTextColor);
   }
 
-  void _setEditorScrollValue(double value) {
-    if (!mounted) return;
-    if (!_webViewLoaded) return;
-    _controller.runJavaScript("window.setEditorScrollbarValue($value)");
-  }
+  // void _setEditorScrollValue(double value) {
+  //   if (!mounted) return;
+  //   if (!_webViewLoaded) return;
+  //   _controller.runJavaScript("window.setEditorScrollbarValue($value)");
+  // }
 
   void _updateState(Map<String, dynamic>? state) {}
 
