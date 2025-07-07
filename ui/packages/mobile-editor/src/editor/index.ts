@@ -168,8 +168,8 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   const cmRoot = document.getElementById(config.cmRootId)!;
   const mdRoot = document.getElementById(config.mdRootId)!;
 
-  const cmScrollDom = window.isWebScrollbar ? cmRoot : document.body;
-  const mdScrollDom = window.isWebScrollbar ? mdRoot : document.body;
+  const cmScrollDom = window.isWebScrollbar ? cmRoot : null;
+  const mdScrollDom = window.isWebScrollbar ? mdRoot : null;
 
   const editorDisplay = 'block';
 
@@ -189,8 +189,8 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   }
   document.body.addEventListener('click', bodyClick);
 
-  if (!window.isWebScrollbar && window.isIOS) {
-    // iOS 端, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
+  if (!window.isWebScrollbar) {
+    // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
     document.addEventListener('scroll', onScrollPositionChange);
   }
 
