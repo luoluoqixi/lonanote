@@ -5,7 +5,13 @@ import './styles/index.scss';
 import './theme';
 import './utils';
 
-const initEditor = async (fileName: string, sourceMode: boolean, content: string) => {
+const initEditor = async (
+  fileName: string,
+  sourceMode: boolean,
+  content: string,
+  isWebScrollbar?: boolean,
+) => {
+  window.setWebScrollbar(isWebScrollbar);
   window.sourceMode = sourceMode;
   window.fileName = fileName;
   window.fileContent = content;
@@ -40,15 +46,16 @@ const init = async () => {
   window.setEditorScrollbarValue = setEditorScrollbarValue;
 
   if (!config.isFlutter) {
+    window.isWebScrollbar = true;
     const testContent = config.testContent || 'test content';
     window.sourceMode = false;
-    initEditor('default.js', window.sourceMode, testContent);
+    initEditor('default.js', window.sourceMode, testContent, window.isWebScrollbar);
     window.setColorMode('light');
     appendTestBtn('切换编辑器', () => {
       if (window.sourceMode) {
-        window.initEditor('default.md', false, testContent);
+        window.initEditor('default.md', false, testContent, window.isWebScrollbar);
       } else {
-        window.initEditor('default.js', true, testContent);
+        window.initEditor('default.js', true, testContent, window.isWebScrollbar);
       }
     });
     appendTestBtn('切换主题', () =>

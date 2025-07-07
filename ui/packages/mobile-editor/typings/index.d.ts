@@ -21,11 +21,16 @@ interface Window {
   /** 设置状态栏高度 */
   setStatusBarHeight: (statusBarHeight: number) => void;
   /** 设置是否使用 web scrollbar */
-  setWebScrollbar: (isWebScrollbar: boolean) => void;
+  setWebScrollbar: (isWebScrollbar?: boolean) => void;
   /** 设置编辑器滚动条位置 */
   setEditorScrollbarValue: (value: number) => void;
   /** 设置编辑器 */
-  initEditor: (fileName: string, sourceMode: bool, content: string) => Promise<any>;
+  initEditor: (
+    fileName: string,
+    sourceMode: bool,
+    content: string,
+    isWebScrollbar?: boolean,
+  ) => Promise<any>;
   /** 调用命令 */
   invokeCommand: (command: string, data: any) => Promise<any>;
   /** 获取 Editor 当前内容 */

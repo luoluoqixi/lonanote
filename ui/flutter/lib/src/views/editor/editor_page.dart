@@ -343,12 +343,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
         const init = () => {
           if (window.initEditor) {
             try {
-              window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)});
+              window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)}, ${(!_useCustomScrollbar).toString()});
             } catch (e) {
               console.error('initEditor error:', e.message);
-            }
-            if (window.setWebScrollbar) {
-              window.setWebScrollbar(${(!_useCustomScrollbar).toString()});
             }
           } else {
             setTimeout(init, 100);

@@ -191,13 +191,13 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
 
   if (!window.isWebScrollbar) {
     // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
-    document.addEventListener('scroll', onScrollPositionChange);
+    document?.addEventListener('scroll', onScrollPositionChange);
   }
 
   (window as any).onCleanEvents = () => {
     onScrollContentChangeCleanup?.();
     document.body.removeEventListener('click', bodyClick);
-    document.removeEventListener('scroll', onScrollPositionChange);
+    document?.removeEventListener('scroll', onScrollPositionChange);
     cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
     mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);
   };

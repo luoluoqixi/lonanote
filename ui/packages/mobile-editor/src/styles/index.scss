@@ -37,7 +37,8 @@ body.web-scrollbar.android {
       border-radius: 4px;
       cursor: default;
     }
-    ::-webkit-scrollbar-thumb:hover,
+    // hover 状态在手指松开后还有颜色
+    // ::-webkit-scrollbar-thumb:hover,
     ::-webkit-scrollbar-thumb:active {
       background: rgba(121, 121, 121, 0.831);
     }
