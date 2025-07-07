@@ -1,4 +1,4 @@
-package com.lonalabs.lonanote
+package com.luoluoqixi.lonanote
 
 import androidx.core.view.WindowCompat
 import io.flutter.embedding.android.FlutterActivity

@@ -20,7 +20,7 @@
 
 ## 交流群
 
-[Github Discussions](https://github.com/lona-labs/lonanote/discussions)
+[Github Discussions](https://github.com/luoluoqixi/lonanote/discussions)
 
 QQ 群：978017481
 

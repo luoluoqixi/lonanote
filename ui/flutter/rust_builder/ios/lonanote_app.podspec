@@ -9,7 +9,7 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 lonanote.
                        DESC
-  s.homepage         = 'https://github.com/lona-labs/lonanote'
+  s.homepage         = 'https://github.com/luoluoqixi/lonanote'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'luoluoqixi' => 'luoqixi@luoqixi.com' }
 

@@ -1,6 +1,6 @@
-appId: com.lonalabs.lonanote
+appId: com.luoluoqixi.lonanote
 # productName: ${name}
-copyright: Copyright © 2024 lonalabs
+copyright: Copyright © 2024 luoluoqixi
 compression: maximum
 asar: true
 # 相对于app 目录的glob 模式，指定创建asar存档时要解压的文件
@@ -113,7 +113,7 @@ linux:
     - snap
     - deb
   # 作者
-  maintainer: lona-labs
+  maintainer: luoluoqixi
   # 种类
   category: Utility
 # https://www.electron.build/configuration/appimage
@@ -125,7 +125,6 @@ npmRebuild: false
 publish:
   provider: generic
   url: https://example.com/auto-updates
-
 # 图标生成工具
 # npm install -g  electron-icon-builder
 # electron-icon-builder --input=./ui/build/icon.png --output=./build/icons --flatten

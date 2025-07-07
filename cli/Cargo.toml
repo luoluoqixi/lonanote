@@ -8,7 +8,7 @@ resolver = "2"
 edition = "2021"
 version = "0.0.1"
 authors = ["luoluoqixi"]
-repository = "https://github.com/lona-labs/lonanote"
+repository = "https://github.com/luoluoqixi/lonanote"
 license = ""
 
 [workspace.dependencies]

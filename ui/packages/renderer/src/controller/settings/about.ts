@@ -36,8 +36,8 @@ export interface LatestVersion {
 }
 
 export const checkUpdate = async (currentVersion: string) => {
-  // https://api.github.com/repos/lona-labs/lonanote/releases/latest
-  const getLatestUrl = 'https://api.github.com/repos/lona-labs/lonanote/releases/latest';
+  // https://api.github.com/repos/luoluoqixi/lonanote/releases/latest
+  const getLatestUrl = 'https://api.github.com/repos/luoluoqixi/lonanote/releases/latest';
   const response = await fetch(getLatestUrl);
   if (response.ok) {
     const r: LatestVersion | null = await response.json();
@@ -50,7 +50,7 @@ export const checkUpdate = async (currentVersion: string) => {
       return null;
     }
     return {
-      downloadUrl: 'https://github.com/lona-labs/lonanote/releases/latest',
+      downloadUrl: 'https://github.com/luoluoqixi/lonanote/releases/latest',
       latestVersion: r,
     };
   }

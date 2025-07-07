@@ -17,7 +17,7 @@ def check_convco_install():
     if output is None:
         print("convco is not installed")
         print("run [cargo install convco]")
-        utils.subprocess_run(["cargo", "install", "--git", "https://github.com/lona-labs/convco.git"])
+        utils.subprocess_run(["cargo", "install", "--git", "https://github.com/luoluoqixi/convco.git"])
         utils.subprocess_run(["cargo", "install", "cargo-edit"])
 
 def get_current_version(config_path):

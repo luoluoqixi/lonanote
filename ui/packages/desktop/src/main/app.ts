@@ -201,7 +201,7 @@ export const setupApp = async () => {
     initBindings(ipcMain);
 
     // Set app user model id for windows
-    electronApp.setAppUserModelId('com.lonalabs.lonanote');
+    electronApp.setAppUserModelId('com.luoluoqixi.lonanote');
 
     protocol.handle('media', (request) => {
       const pathToMedia = new URL(request.url).pathname;

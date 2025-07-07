@@ -2,8 +2,8 @@
   "name": "lonanote",
   "version": "0.0.5",
   "description": "lonanote",
-  "author": "lona-labs",
-  "homepage": "https://github.com/lona-labs/lonanote",
+  "author": "luoluoqixi",
+  "homepage": "https://github.com/luoluoqixi/lonanote",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",

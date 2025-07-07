@@ -131,7 +131,7 @@ class UpdateData {
 class AboutController {
   static Future<UpdateData?> checkUpdate(String currentVersion) async {
     const String getLatestUrl =
-        'https://api.github.com/repos/lona-labs/lonanote/releases/latest';
+        'https://api.github.com/repos/luoluoqixi/lonanote/releases/latest';
 
     final response = await http.get(Uri.parse(getLatestUrl));
 
@@ -147,7 +147,7 @@ class AboutController {
       }
 
       return UpdateData(
-        downloadUrl: 'https://github.com/lona-labs/lonanote/releases/latest',
+        downloadUrl: 'https://github.com/luoluoqixi/lonanote/releases/latest',
         latestVersion: latest,
       );
     } else {

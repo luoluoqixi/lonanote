@@ -100,7 +100,7 @@ class RustFs {
 
     final imgPath = "${RustPath.getCacheDir()}/img.png";
     await saveImageUrlToFile(
-        "https://raw.githubusercontent.com/lona-labs/lonanote/refs/heads/main/resources/icons/icon.png",
+        "https://raw.githubusercontent.com/luoluoqixi/lonanote/refs/heads/main/resources/icons/icon.png",
         imgPath);
     logger.i("RustFs.saveImageUrlToFile = ${exists(imgPath)}");
 
