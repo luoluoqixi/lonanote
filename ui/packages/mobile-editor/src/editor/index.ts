@@ -76,6 +76,16 @@ const bodyClick = (e: MouseEvent) => {
 
 const onScrollPositionChange = (e: Event) => {
   if (!window.EditorBridge) return;
+  if (e.target instanceof Document) {
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    window.EditorBridge.postMessage(
+      JSON.stringify({
+        command: 'scroll_position',
+        scrollY: scrollTop,
+      }),
+    );
+    return;
+  }
   if (e.target instanceof HTMLElement) {
     const scrollTop = e.target.scrollTop;
     window.EditorBridge.postMessage(
@@ -100,7 +110,11 @@ export const setEditorScrollbarValue = (value: number) => {
   }
 };
 
-const observeScrollability = (el: HTMLElement, cb: (e: HTMLElement) => void): (() => void) => {
+const observeScrollability = (
+  el: HTMLElement | null,
+  cb: (e: HTMLElement) => void,
+): (() => void) => {
+  el = el || document.body;
   const callback = () => {
     cb(el);
   };
@@ -175,9 +189,15 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   }
   document.body.addEventListener('click', bodyClick);
 
+  if (!window.isWebScrollbar && window.isIOS) {
+    // iOS 端, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
+    document.addEventListener('scroll', onScrollPositionChange);
+  }
+
   (window as any).onCleanEvents = () => {
     onScrollContentChangeCleanup?.();
     document.body.removeEventListener('click', bodyClick);
+    document.removeEventListener('scroll', onScrollPositionChange);
     cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
     mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);
   };

@@ -1,7 +1,8 @@
 @use './theme.scss';
 
 html {
-  overflow: hidden;
+  // iOS 如果设置 hidden, 页面无弹性滚动了
+  overflow: visible;
 }
 
 html,
@@ -13,7 +14,7 @@ body {
 }
 
 body {
-  overflow: auto;
+  overflow-y: auto;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch; // ios
 }

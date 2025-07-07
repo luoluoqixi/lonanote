@@ -145,7 +145,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
     await _loadFileContent();
     if (_useCustomScrollbar) {
       await _controller.setHorizontalScrollBarEnabled(false);
-      await _controller.setVerticalScrollBarEnabled(true);
+      if (Platform.isIOS) {
+        // iOS 可以使用 false 隐藏滚动条, 且并不会阻止页面滚动
+        await _controller.setVerticalScrollBarEnabled(false);
+      } else {
+        await _controller.setVerticalScrollBarEnabled(true);
+      }
     } else {
       await _controller.setHorizontalScrollBarEnabled(false);
       await _controller.setVerticalScrollBarEnabled(true);

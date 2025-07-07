@@ -69,7 +69,7 @@ class PlatformFloatingToolbar extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: CupertinoColors.black.withAlpha(30),
+              color: CupertinoColors.black.withAlpha(20),
               blurRadius: 4,
               offset: Offset(0, 2),
             ),

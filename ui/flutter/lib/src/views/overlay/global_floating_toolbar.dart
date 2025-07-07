@@ -87,10 +87,12 @@ class _GlobalFloatingToolbarState extends ConsumerState<GlobalFloatingToolbar> {
         !hideGlobalFloatingToolbar &&
         isShowToolbar(currentPage);
 
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
     return PlatformFloatingToolbar(
       fixedSize: true,
       visible: isShow,
-      contentPadding: EdgeInsets.all(5),
+      contentPadding: EdgeInsets.all(isIOS ? 0 : 5),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Row(
