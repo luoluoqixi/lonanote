@@ -2077,20 +2077,6 @@ class CustomRawScrollbarState<T extends CustomRawScrollbar> extends State<T>
         );
     }
 
-    gestures[_ThumbTapDownGestureRecognizer] =
-        GestureRecognizerFactoryWithHandlers<_ThumbTapDownGestureRecognizer>(
-      () => _ThumbTapDownGestureRecognizer(
-        debugOwner: this,
-        customPaintKey: _scrollbarPainterKey,
-      ),
-      (_ThumbTapDownGestureRecognizer instance) {
-        instance.onTapDown = handleThumbTapDown;
-        instance.onTapUp = handleThumbTapUp;
-        instance.onTapCancel = handleThumbTapCancel;
-        instance.onTap = handleThumbTap;
-      },
-    );
-
     gestures[_TrackTapGestureRecognizer] =
         GestureRecognizerFactoryWithHandlers<_TrackTapGestureRecognizer>(
       () => _TrackTapGestureRecognizer(
@@ -2270,22 +2256,19 @@ class CustomRawScrollbarState<T extends CustomRawScrollbar> extends State<T>
   }
 
   @protected
-  void handleThumbTapDown(TapDownDetails details) {
-    handleThumbDown();
+  void handlePointerDown(PointerDownEvent details) {
+    if (isPointerOverThumb(details.position, details.kind)) {
+      handleThumbDown();
+    }
   }
 
   @protected
-  void handleThumbTap() {
+  void handlePointerUp(PointerUpEvent details) {
     handleThumbUp();
   }
 
   @protected
-  void handleThumbTapUp(TapUpDetails details) {
-    handleThumbUp();
-  }
-
-  @protected
-  void handleThumbTapCancel() {
+  void handlePointerCancel(PointerCancelEvent details) {
     handleThumbUp();
   }
 
@@ -2301,6 +2284,9 @@ class CustomRawScrollbarState<T extends CustomRawScrollbar> extends State<T>
         child: RepaintBoundary(
           child: Listener(
             onPointerSignal: _receivedPointerSignal,
+            onPointerDown: handlePointerDown,
+            onPointerUp: handlePointerUp,
+            onPointerCancel: handlePointerCancel,
             child: RawGestureDetector(
               key: _gestureDetectorKey,
               gestures: _gestures,
@@ -2431,26 +2417,6 @@ class _HorizontalThumbDragGestureRecognizer
 
   @override
   bool isPointerAllowed(PointerEvent event) {
-    return _isThumbEvent(_customPaintKey, event) &&
-        super.isPointerAllowed(event);
-  }
-}
-
-class _ThumbTapDownGestureRecognizer extends TapGestureRecognizer {
-  _ThumbTapDownGestureRecognizer({
-    required Object super.debugOwner,
-    required GlobalKey customPaintKey,
-  }) : _customPaintKey = customPaintKey;
-
-  final GlobalKey _customPaintKey;
-
-  @override
-  bool isPointerPanZoomAllowed(PointerPanZoomStartEvent event) {
-    return false;
-  }
-
-  @override
-  bool isPointerAllowed(PointerDownEvent event) {
     return _isThumbEvent(_customPaintKey, event) &&
         super.isPointerAllowed(event);
   }
