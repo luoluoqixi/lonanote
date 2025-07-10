@@ -97,6 +97,7 @@ class CustomScrollbar extends StatelessWidget {
     this.notificationPredicate,
     this.interactive,
     this.scrollbarOrientation,
+    this.onDragIsActiveChanged,
   });
 
   /// {@macro flutter.widgets.Scrollbar.child}
@@ -152,6 +153,8 @@ class CustomScrollbar extends StatelessWidget {
   /// {@macro flutter.widgets.Scrollbar.scrollbarOrientation}
   final CustomScrollbarOrientation? scrollbarOrientation;
 
+  final ValueChanged<bool>? onDragIsActiveChanged;
+
   @override
   Widget build(BuildContext context) {
     if (Theme.of(context).platform == TargetPlatform.iOS) {
@@ -178,6 +181,7 @@ class CustomScrollbar extends StatelessWidget {
       notificationPredicate: notificationPredicate,
       interactive: interactive,
       scrollbarOrientation: scrollbarOrientation,
+      onDragIsActiveChanged: onDragIsActiveChanged,
       child: child,
     );
   }
@@ -194,6 +198,7 @@ class _MaterialScrollbar extends CustomRawScrollbar {
     ScrollNotificationPredicate? notificationPredicate,
     super.interactive,
     super.scrollbarOrientation,
+    this.onDragIsActiveChanged,
   }) : super(
           fadeDuration: _kScrollbarFadeDuration,
           timeToFade: _kScrollbarTimeToFade,
@@ -201,6 +206,8 @@ class _MaterialScrollbar extends CustomRawScrollbar {
           notificationPredicate:
               notificationPredicate ?? defaultScrollNotificationPredicate,
         );
+
+  final ValueChanged<bool>? onDragIsActiveChanged;
 
   @override
   _MaterialScrollbarState createState() => _MaterialScrollbarState();
@@ -381,6 +388,7 @@ class _MaterialScrollbarState
     setState(() {
       _dragIsActive = true;
     });
+    widget.onDragIsActiveChanged?.call(true);
   }
 
   @override
@@ -389,6 +397,7 @@ class _MaterialScrollbarState
     setState(() {
       _dragIsActive = false;
     });
+    widget.onDragIsActiveChanged?.call(false);
   }
 
   @override
@@ -425,6 +434,7 @@ class _MaterialScrollbarState
     setState(() {
       _dragIsActive = true;
     });
+    widget.onDragIsActiveChanged?.call(true);
   }
 
   @override
@@ -433,6 +443,7 @@ class _MaterialScrollbarState
     setState(() {
       _dragIsActive = false;
     });
+    widget.onDragIsActiveChanged?.call(false);
   }
 
   @override

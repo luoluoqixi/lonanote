@@ -41,6 +41,9 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   bool _isSelectionMode = false;
   bool _isLoading = false;
 
+  // 当滚动条处于拖拽状态时, 由于 Flutter 手势穿透, 需要禁用一些事件处理保证体验
+  bool _isDragActive = false;
+
   RustFileNode? fileNode;
   final Set<String> _selectedPaths = {};
 
@@ -125,6 +128,13 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         );
       }
     }
+  }
+
+  void _handleDragIsActiveChanged(bool value) {
+    if (value == _isDragActive) return;
+    setState(() {
+      _isDragActive = value;
+    });
   }
 
   void _switchWorkspace() async {
@@ -684,16 +694,20 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       ),
       child: PlatformListTileRaw(
         bgColor: Colors.transparent,
-        onTap: () {
-          if (_isSelectionMode) {
-            _toggleSelection(node);
-          } else {
-            _openFileNode(node);
-          }
-        },
-        onLongPress: _isSelectionMode
+        onTap: _isDragActive
             ? null
             : () {
+                if (_isDragActive) return;
+                if (_isSelectionMode) {
+                  _toggleSelection(node);
+                } else {
+                  _openFileNode(node);
+                }
+              },
+        onLongPress: _isSelectionMode || _isDragActive
+            ? null
+            : () {
+                if (_isDragActive) return;
                 HapticFeedback.selectionClick();
                 _openSelectMode();
                 _toggleSelection(node);
@@ -906,6 +920,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         ],
       ),
       scrollController: _scrollController,
+      onDragIsActiveChanged: _handleDragIsActiveChanged,
       isHome: widget.parentPath == null,
       onWillPop: () {
         if (_isSelectionMode) {

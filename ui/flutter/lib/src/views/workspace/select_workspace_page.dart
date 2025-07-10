@@ -59,6 +59,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   late bool audoOpenWorkspace = false;
   bool loadingWorkspace = true;
 
+  // 当滚动条处于拖拽状态时, 由于 Flutter 手势穿透, 需要禁用一些事件处理保证体验
+  bool _isDragActive = false;
+
   @override
   void initState() {
     super.initState();
@@ -103,6 +106,13 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         logger.e(e);
       }
     }
+  }
+
+  void _handleDragIsActiveChanged(bool value) {
+    if (value == _isDragActive) return;
+    setState(() {
+      _isDragActive = value;
+    });
   }
 
   bool isShowCreateTime() {
@@ -655,16 +665,20 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       ),
       child: PlatformListTileRaw(
         bgColor: Colors.transparent,
-        onTap: () {
-          if (_isSelectionMode) {
-            _toggleSelection(workspace);
-          } else {
-            _openWorkspace(workspace);
-          }
-        },
-        onLongPress: _isSelectionMode
+        onTap: _isDragActive
             ? null
             : () {
+                if (_isDragActive) return;
+                if (_isSelectionMode) {
+                  _toggleSelection(workspace);
+                } else {
+                  _openWorkspace(workspace);
+                }
+              },
+        onLongPress: _isSelectionMode || _isDragActive
+            ? null
+            : () {
+                if (_isDragActive) return;
                 // logger.i("long press");
                 HapticFeedback.selectionClick();
                 _selectWorkspaceMode();
@@ -785,6 +799,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       ),
       scrollKey: const PageStorageKey("HomePageScrollKey"),
       scrollController: _scrollController,
+      onDragIsActiveChanged: _handleDragIsActiveChanged,
       subTitleText: "选择工作区",
       showScrollbar: true,
       isLoading: _isLoading,

@@ -39,6 +39,7 @@ class PlatformPage extends StatefulWidget {
   final bool? scrollInteractive;
   final double? scrollThickness;
   final double? scrollRadius;
+  final ValueChanged<bool>? onDragIsActiveChanged;
 
   final bool? resizeToAvoidBottomInset;
 
@@ -68,6 +69,7 @@ class PlatformPage extends StatefulWidget {
     this.scrollInteractive,
     this.scrollThickness,
     this.scrollRadius,
+    this.onDragIsActiveChanged,
     this.resizeToAvoidBottomInset,
   });
 
@@ -159,6 +161,7 @@ class _PlatformPageState extends State<PlatformPage> {
         interactive: widget.scrollInteractive ?? true,
         thickness: widget.scrollThickness,
         radius: widget.scrollRadius,
+        onDragIsActiveChanged: widget.onDragIsActiveChanged,
         child: content,
       );
     }
@@ -255,6 +258,7 @@ class PlatformSimplePage extends StatefulWidget {
   final bool? scrollInteractive;
   final double? scrollThickness;
   final double? scrollRadius;
+  final ValueChanged<bool>? onDragIsActiveChanged;
 
   final bool? resizeToAvoidBottomInset;
 
@@ -283,6 +287,7 @@ class PlatformSimplePage extends StatefulWidget {
     this.scrollInteractive,
     this.scrollThickness,
     this.scrollRadius,
+    this.onDragIsActiveChanged,
     this.resizeToAvoidBottomInset,
   });
 
@@ -471,6 +476,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
         interactive: widget.scrollInteractive ?? true,
         thickness: widget.scrollThickness,
         radius: widget.scrollRadius,
+        onDragIsActiveChanged: widget.onDragIsActiveChanged,
         child: content,
       );
     }

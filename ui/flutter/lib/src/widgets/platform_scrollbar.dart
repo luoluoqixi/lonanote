@@ -9,6 +9,7 @@ class PlatformScrollbar extends StatelessWidget {
   final bool? interactive;
   final double? thickness;
   final double? radius;
+  final ValueChanged<bool>? onDragIsActiveChanged;
 
   final Widget child;
 
@@ -20,6 +21,7 @@ class PlatformScrollbar extends StatelessWidget {
     this.interactive,
     this.thickness,
     this.radius,
+    this.onDragIsActiveChanged,
   });
 
   @override
@@ -31,6 +33,16 @@ class PlatformScrollbar extends StatelessWidget {
         interactive: interactive ?? true,
         thickness: thickness ?? 8.0,
         radius: Radius.circular(radius ?? 10.0),
+        onDragIsActiveChanged: onDragIsActiveChanged != null
+            ? (isActive) {
+                if (isActive) {
+                  onDragIsActiveChanged!(true);
+                } else {
+                  WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => onDragIsActiveChanged!(false));
+                }
+              }
+            : null,
         child: child,
       ),
       // IOS滚动条体验存在问题:
