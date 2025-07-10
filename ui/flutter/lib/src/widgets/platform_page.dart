@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
@@ -9,7 +8,7 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/app_bar.dart';
 import 'package:lonanote/src/widgets/flutter/custom_refresh_indicator.dart';
 import 'package:lonanote/src/widgets/platform_double_back.dart';
-import 'package:lonanote/src/widgets/platform_scrollbar.dart' as M;
+import 'package:lonanote/src/widgets/platform_scrollbar.dart' as m;
 
 class PlatformPage extends StatefulWidget {
   final ScrollAppBar? appBar;
@@ -154,7 +153,7 @@ class _PlatformPageState extends State<PlatformPage> {
 
     var child = content;
     if (widget.showScrollbar == true) {
-      child = M.PlatformScrollbar(
+      child = m.PlatformScrollbar(
         controller: scrollController,
         thumbVisibility: widget.scrollThumbVisibility ?? false,
         interactive: widget.scrollInteractive ?? true,
@@ -466,7 +465,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
       return content;
     }
     if (widget.showScrollbar == true) {
-      return M.PlatformScrollbar(
+      return m.PlatformScrollbar(
         controller: scrollController,
         thumbVisibility: widget.scrollThumbVisibility ?? false,
         interactive: widget.scrollInteractive ?? true,

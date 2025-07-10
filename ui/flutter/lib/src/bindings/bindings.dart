@@ -56,17 +56,17 @@ class Bindings {
     return command.getCommandAsyncKeys();
   }
 
-  static regDartFunction(
+  static void regDartFunction(
       {required String key,
       required FutureOr<String?> Function(String?) callback}) {
     command.regDartFunction(key: key, callback: callback);
   }
 
-  static unregDartFunction({required String key}) {
+  static void unregDartFunction({required String key}) {
     command.unregDartFunction(key: key);
   }
 
-  static clearDartFunction() {
+  static void clearDartFunction() {
     command.clearDartFunction();
   }
 
