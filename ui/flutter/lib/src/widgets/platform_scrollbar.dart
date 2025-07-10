@@ -24,6 +24,17 @@ class PlatformScrollbar extends StatelessWidget {
     this.onDragIsActiveChanged,
   });
 
+  void _handleDragIsActiveChanged(bool isActive) {
+    if (onDragIsActiveChanged != null) {
+      if (isActive) {
+        onDragIsActiveChanged!(true);
+      } else {
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => onDragIsActiveChanged!(false));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PlatformWidget(
@@ -33,16 +44,8 @@ class PlatformScrollbar extends StatelessWidget {
         interactive: interactive ?? true,
         thickness: thickness ?? 8.0,
         radius: Radius.circular(radius ?? 10.0),
-        onDragIsActiveChanged: onDragIsActiveChanged != null
-            ? (isActive) {
-                if (isActive) {
-                  onDragIsActiveChanged!(true);
-                } else {
-                  WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => onDragIsActiveChanged!(false));
-                }
-              }
-            : null,
+        onDragIsActiveChanged:
+            onDragIsActiveChanged != null ? _handleDragIsActiveChanged : null,
         child: child,
       ),
       // IOS滚动条体验存在问题:
@@ -52,6 +55,8 @@ class PlatformScrollbar extends StatelessWidget {
         thumbVisibility: thumbVisibility ?? false,
         thickness: thickness ?? 3.0,
         radius: Radius.circular(radius ?? 10.0),
+        onDragIsActiveChanged:
+            onDragIsActiveChanged != null ? _handleDragIsActiveChanged : null,
         child: child,
       ),
     );

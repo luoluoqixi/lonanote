@@ -84,6 +84,7 @@ class CustomCupertinoScrollbar extends CustomRawScrollbar {
     Radius super.radius = defaultRadius,
     this.radiusWhileDragging = defaultRadiusWhileDragging,
     ScrollNotificationPredicate? notificationPredicate,
+    this.onDragIsActiveChanged,
     super.scrollbarOrientation,
     super.mainAxisMargin = _kScrollbarMainAxisMargin,
   })  : assert(thickness < double.infinity),
@@ -126,6 +127,8 @@ class CustomCupertinoScrollbar extends CustomRawScrollbar {
   /// dragging the scrollbar.
   final Radius radiusWhileDragging;
 
+  final ValueChanged<bool>? onDragIsActiveChanged;
+
   @override
   CustomRawScrollbarState<CustomCupertinoScrollbar> createState() =>
       _CustomCupertinoScrollbarState();
@@ -148,6 +151,8 @@ class _CustomCupertinoScrollbarState
       _thicknessAnimationController.value,
     )!;
   }
+
+  bool _isDown = false;
 
   @override
   void initState() {
@@ -192,6 +197,8 @@ class _CustomCupertinoScrollbarState
       Axis.vertical => localPosition.dy,
       Axis.horizontal => localPosition.dx,
     };
+
+    widget.onDragIsActiveChanged?.call(true);
   }
 
   @override
@@ -200,9 +207,10 @@ class _CustomCupertinoScrollbarState
       return;
     }
     super.handleThumbPress();
-    _thicknessAnimationController
-        .forward()
-        .then<void>((_) => HapticFeedback.mediumImpact());
+    _thicknessAnimationController.forward().then<void>((_) {
+      HapticFeedback.mediumImpact();
+      widget.onDragIsActiveChanged?.call(true);
+    });
   }
 
   @override
@@ -220,6 +228,7 @@ class _CustomCupertinoScrollbarState
     if (axisPosition != _pressStartAxisPosition && axisVelocity.abs() < 10) {
       HapticFeedback.mediumImpact();
     }
+    widget.onDragIsActiveChanged?.call(false);
   }
 
   @override
@@ -229,6 +238,29 @@ class _CustomCupertinoScrollbarState
         TargetPlatform.iOS) {
       super.handleTrackTapDown(details);
     }
+  }
+
+  @override
+  void handleThumbDown() {
+    super.handleThumbDown();
+
+    _isDown = true;
+    _thicknessAnimationController.forward();
+    HapticFeedback.mediumImpact();
+
+    widget.onDragIsActiveChanged?.call(true);
+  }
+
+  @override
+  void handleThumbUp() {
+    super.handleThumbUp();
+    _thicknessAnimationController.reverse();
+    if (_isDown) {
+      HapticFeedback.mediumImpact();
+      _isDown = false;
+    }
+
+    widget.onDragIsActiveChanged?.call(false);
   }
 
   @override
