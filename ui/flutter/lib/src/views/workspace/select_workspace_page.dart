@@ -226,9 +226,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   void _createWorkspace(String value) async {
     final workspaceName = value.trim();
 
-    setState(() {
-      _isLoading = true;
-    });
+    // setState(() {
+    //   _isLoading = true;
+    // });
 
     try {
       final path =
@@ -272,11 +272,11 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      // if (mounted) {
+      //   setState(() {
+      //     _isLoading = false;
+      //   });
+      // }
     }
   }
 

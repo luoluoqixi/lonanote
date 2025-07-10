@@ -374,9 +374,9 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   void _createFolder(String value) async {
     final folderName = value.trim();
 
-    setState(() {
-      _isLoading = true;
-    });
+    // setState(() {
+    //   _isLoading = true;
+    // });
 
     try {
       WorkspaceController.createFolder(ref, _getFullFilePath(folderName));
@@ -394,20 +394,20 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      // if (mounted) {
+      //   setState(() {
+      //     _isLoading = false;
+      //   });
+      // }
     }
   }
 
   void _createFile(String value) async {
     var fileName = value.trim();
 
-    setState(() {
-      _isLoading = true;
-    });
+    // setState(() {
+    //   _isLoading = true;
+    // });
 
     try {
       fileName = WsUtils.getNameAddMd(fileName);
@@ -425,11 +425,11 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      // if (mounted) {
+      //   setState(() {
+      //     _isLoading = false;
+      //   });
+      // }
     }
   }
 
