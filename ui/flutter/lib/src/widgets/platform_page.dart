@@ -261,6 +261,8 @@ class PlatformSimplePage extends StatefulWidget {
   final List<Widget>? titleActions;
   final bool? centerTitle;
   final bool? extendBodyBehindAppBar;
+  final double? appbarElevation;
+  final double? appbarScrolledUnderElevation;
 
   final bool? isLoading;
   final Future<void> Function()? onRefresh;
@@ -295,6 +297,8 @@ class PlatformSimplePage extends StatefulWidget {
     this.titleActions,
     this.centerTitle,
     this.extendBodyBehindAppBar,
+    this.appbarElevation,
+    this.appbarScrolledUnderElevation,
     this.isLoading,
     this.onRefresh,
     this.noScrollView,
@@ -473,6 +477,8 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
             ),
         titleTextStyle: TextStyle(color: textColor, fontSize: 22),
         backgroundColor: titleBgColor,
+        elevation: widget.appbarElevation,
+        scrolledUnderElevation: widget.appbarScrolledUnderElevation,
         toolbarHeight: SimpleAppBar.defaultHeight,
         actionsPadding: const EdgeInsets.only(right: 15.0),
       );

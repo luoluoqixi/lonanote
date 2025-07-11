@@ -100,9 +100,13 @@ const onScrollPositionChange = (e: Event) => {
 export const setEditorScrollbarValue = (value: number) => {
   let scrollDom: HTMLElement | null = null;
   if (window.editor != null) {
-    scrollDom = window.isWebScrollbar ? document.getElementById(config.mdRootId)! : document.body;
+    scrollDom = window.isEditorScrollbar
+      ? document.getElementById(config.mdRootId)!
+      : document.body;
   } else if (window.cmEditor != null) {
-    scrollDom = window.isWebScrollbar ? document.getElementById(config.cmRootId)! : document.body;
+    scrollDom = window.isEditorScrollbar
+      ? document.getElementById(config.cmRootId)!
+      : document.body;
   }
   if (scrollDom != null) {
     const halfHeight = scrollDom.scrollHeight * value;
@@ -139,6 +143,16 @@ const onScrollContentChange = (el: HTMLElement) => {
   window.isScrollable = isScrollable;
   // console.log('isScrollable', isScrollable);
   document.body.classList.toggle('editor-scrollable', isScrollable);
+
+  if (window.EditorBridge != null) {
+    window.EditorBridge.postMessage(
+      JSON.stringify({
+        command: 'scrollable',
+        scrollHeight: el.scrollHeight,
+        clientHeight: el.clientHeight,
+      }),
+    );
+  }
 };
 
 // const throttledOnRefreshEditor = () => {
@@ -168,8 +182,8 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   const cmRoot = document.getElementById(config.cmRootId)!;
   const mdRoot = document.getElementById(config.mdRootId)!;
 
-  const cmScrollDom = window.isWebScrollbar ? cmRoot : null;
-  const mdScrollDom = window.isWebScrollbar ? mdRoot : null;
+  const cmScrollDom = window.isEditorScrollbar ? cmRoot : null;
+  const mdScrollDom = window.isEditorScrollbar ? mdRoot : null;
 
   const editorDisplay = 'block';
 
@@ -189,7 +203,7 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   }
   document.body.addEventListener('click', bodyClick);
 
-  if (!window.isWebScrollbar) {
+  if (!window.isEditorScrollbar) {
     // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
     document?.addEventListener('scroll', onScrollPositionChange);
   }

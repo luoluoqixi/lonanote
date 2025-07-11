@@ -9,8 +9,8 @@ interface Window {
   statusBarHeight?: number;
   /** editor 内容是否可滚动 */
   isScrollable?: boolean;
-  /** 是否使用 web scrollbar */
-  isWebScrollbar?: boolean;
+  /** 是否使用 editor scrollbar */
+  isEditorScrollbar?: boolean;
 
   /** 安装 VConsole */
   setupVConsole: () => Promise<any>;
@@ -20,16 +20,16 @@ interface Window {
   setColorMode: (mode: string, isUpdateEditor?: boolean) => Promise<any>;
   /** 设置状态栏高度 */
   setStatusBarHeight: (statusBarHeight: number) => void;
-  /** 设置是否使用 web scrollbar */
-  setWebScrollbar: (isWebScrollbar?: boolean) => void;
+  /** 设置是否使用 editor scrollbar */
+  setEditorScrollbar: (isEditorScrollbar?: boolean) => void;
   /** 设置编辑器滚动条位置 */
   setEditorScrollbarValue: (value: number) => void;
   /** 设置编辑器 */
   initEditor: (
     fileName: string,
-    sourceMode: bool,
+    sourceMode: boolean,
     content: string,
-    isWebScrollbar?: boolean,
+    isEditorScrollbar?: boolean,
   ) => Promise<any>;
   /** 调用命令 */
   invokeCommand: (command: string, data: any) => Promise<any>;

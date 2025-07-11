@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -35,9 +36,10 @@ class EditorPage extends ConsumerStatefulWidget {
 
 class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
-  /// 使用 flutter 自定义滚动条, 如果为false, 则使用 webview 的滚动条
-  static final _useCustomScrollbar = true;
+  /// 使用 body 滚动条, 如果为false, 则使用 editor 的滚动条
+  static final _useBodyScrollbar = true;
 
+  // final ScrollController _scrollController = ScrollController();
   late WebViewController _controller;
   CustomWebkitProxy? _webkitProxy;
   bool _webViewLoaded = false;
@@ -47,6 +49,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   Color _titleBgColor = Colors.transparent;
   Color _titleTextColor = Colors.transparent;
+
+  // bool _isLockWebScroll = false;
+  // bool _isLockFlutterScroll = false;
+
+  // Timer? _lockWebScrollTimer;
+  // Timer? _lockFlutterScrollTimer;
+
+  // double? _scrollHeight;
+  // double? _clientHeight;
 
   int _tapCount = 0;
   DateTime? _lastTapTime;
@@ -62,6 +73,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _sourceMode = !_isMarkdown;
     _initController();
     _initEditorHtml();
+
+    // _scrollController.addListener(_onFlutterScrollbarChanged);
   }
 
   @override
@@ -143,12 +156,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   Future<void> _initEditorHtml() async {
     await _loadFileContent();
-    if (_useCustomScrollbar) {
-      await _controller.setHorizontalScrollBarEnabled(false);
-      // iOS 和 Android 可以使用 false 隐藏滚动条, 且并不会阻止页面滚动
+    await _controller.setHorizontalScrollBarEnabled(false);
+    if (_useBodyScrollbar) {
+      // 使用 body 滚动条时, 使用 flutter 自定义滚动条
       await _controller.setVerticalScrollBarEnabled(false);
     } else {
-      await _controller.setHorizontalScrollBarEnabled(false);
       await _controller.setVerticalScrollBarEnabled(true);
     }
     if (Platform.isIOS) {
@@ -208,6 +220,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
     } else if (command == 'scroll_position') {
       final num? scrollY = messageObject['scrollY'];
       _onScrollPositionChange(scrollY?.toDouble());
+    } else if (command == "scrollable") {
+      final scrollHeight = messageObject['scrollHeight'];
+      final clientHeight = messageObject['clientHeight'];
+      _onScrollHeightChange(scrollHeight?.toDouble(), clientHeight?.toDouble());
     }
   }
 
@@ -225,8 +241,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _onHtmlScrollPositionChange(ScrollPositionChange position) {
-    if (_useCustomScrollbar) {
-      // _useCustomScrollbar 模式下, webview 是body在滚动, 和这个监听会重复调用
+    if (_useBodyScrollbar) {
+      // _useBodyScrollbar 模式下, webview 是body在滚动, 和这个监听会重复调用
       return;
     }
     final dpr = MediaQuery.of(context).devicePixelRatio;
@@ -260,7 +276,64 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final newTextColor = _getTitleColor(scrollY, textColor);
 
     _setAppBarColor(newBgColor, newTextColor);
+
+    // if (_useBodyScrollbar && !_getIsLockFlutterScroll()) {
+    //   _lockWebScroll();
+    //   final maxScroll = (_scrollHeight ?? 0) - (_clientHeight ?? 0);
+    //   _scrollController.jumpTo(scrollY.clamp(0, maxScroll));
+    //   _unlockWebScroll();
+    // }
   }
+
+  void _onScrollHeightChange(double? scrollHeight, double? clientHeight) {
+    if (!_webViewLoaded) return;
+    if (!mounted) return;
+    if (scrollHeight == null || clientHeight == null) return;
+    // setState(() {
+    //   _scrollHeight = scrollHeight;
+    //   _clientHeight = clientHeight;
+    // });
+  }
+
+  // bool _getIsLockWebScroll() {
+  //   return _isLockWebScroll;
+  // }
+
+  // void _lockWebScroll() {
+  //   if (_lockWebScrollTimer != null) {
+  //     _lockWebScrollTimer!.cancel();
+  //     _lockWebScrollTimer = null;
+  //   }
+  //   _isLockWebScroll = true;
+  // }
+
+  // void _unlockWebScroll() {
+  //   _lockWebScrollTimer = Timer(Duration(milliseconds: 100), () {
+  //     _lockWebScrollTimer = null;
+  //     if (!mounted) return;
+  //     _isLockWebScroll = false;
+  //   });
+  // }
+
+  // bool _getIsLockFlutterScroll() {
+  //   return _isLockFlutterScroll;
+  // }
+
+  // void _lockFlutterScroll() {
+  //   if (_lockFlutterScrollTimer != null) {
+  //     _lockFlutterScrollTimer!.cancel();
+  //     _lockFlutterScrollTimer = null;
+  //   }
+  //   _isLockFlutterScroll = true;
+  // }
+
+  // void _unlockFlutterScroll() {
+  //   _lockFlutterScrollTimer = Timer(Duration(milliseconds: 100), () {
+  //     _lockFlutterScrollTimer = null;
+  //     if (!mounted) return;
+  //     _isLockFlutterScroll = false;
+  //   });
+  // }
 
   // void _setEditorScrollValue(double value) {
   //   if (!mounted) return;
@@ -343,7 +416,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         const init = () => {
           if (window.initEditor) {
             try {
-              window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)}, ${(!_useCustomScrollbar).toString()});
+              window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)}, ${(!_useBodyScrollbar).toString()});
             } catch (e) {
               console.error('initEditor error:', e.message);
             }
@@ -468,7 +541,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Widget _buildWebView(ColorScheme colorScheme) {
-    if (_useCustomScrollbar) {
+    if (_useBodyScrollbar) {
       return Stack(
         children: [
           WebViewWidget(
@@ -482,17 +555,75 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
   }
 
+  // double _getAppBarMinHeight() {
+  //   final paddingTop = MediaQuery.of(context).padding.top;
+  //   return paddingTop + SimpleAppBar.defaultHeight;
+  // }
+
+  // double _getBottomPadding() {
+  //   final paddingBottom = MediaQuery.of(context).padding.bottom;
+  //   return paddingBottom;
+  // }
+
+  // void _onFlutterScrollbarChanged() {
+  //   if (!_webViewLoaded) return;
+  //   if (!_useBodyScrollbar) return;
+  //   if (!_getIsLockWebScroll()) {
+  //     _lockFlutterScroll();
+  //     final value = _scrollController.offset;
+  //     _controller.runJavaScript('window.scrollTo(0, $value)');
+  //     _unlockFlutterScroll();
+  //   }
+  // }
+
+  // Widget? _buildVirtualScrollbar() {
+  //   if (_scrollHeight == null ||
+  //       _clientHeight == null ||
+  //       _scrollHeight! <= _clientHeight!) {
+  //     return null;
+  //   }
+
+  //   const scrollbarWidth = 20.0;
+  //   return Positioned(
+  //     right: 0,
+  //     top: 0,
+  //     bottom: 0,
+  //     child: SizedBox(
+  //       height: _clientHeight,
+  //       width: scrollbarWidth,
+  //       child: PlatformScrollbar(
+  //         controller: _scrollController,
+  //         scrollPadding: EdgeInsets.only(
+  //             top: _getAppBarMinHeight(), bottom: _getBottomPadding()),
+  //         interactive: true,
+  //         child: SingleChildScrollView(
+  //           controller: _scrollController,
+  //           // physics: const NeverScrollableScrollPhysics(),
+  //           child: SizedBox(
+  //             height: _scrollHeight,
+  //             width: scrollbarWidth,
+  //             child: Container(
+  //               color: Colors.red.withAlpha(50),
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
     final name = Utility.getFileName(widget.path);
     final showName = WsUtils.getFileShowName(name);
     final colorScheme = ThemeColors.getColorScheme(context);
+    // final scrollbar = _buildVirtualScrollbar();
 
     return PlatformSimplePage(
       titleActions: _buildTitleActions(colorScheme),
       // 将 AppBar 背景延伸到屏幕顶部
       extendBodyBehindAppBar: true,
-      // 如果不设置为 false, 键盘弹出与关闭时会显示根 widget 的背景颜色
+      // 如果不设置为 false, 键盘弹出与关闭时会显示 (0.x秒) 根 widget 的背景颜色
       resizeToAvoidBottomInset: false,
       title: GestureDetector(
         onTap: _onTitleTap,
@@ -504,9 +635,16 @@ class _EditorPageState extends ConsumerState<EditorPage>
       ),
       titleBgColor: _titleBgColor,
       titleTextColor: _titleTextColor,
+      // 关闭滚动时 flutter 的 appbar 变色
+      appbarScrolledUnderElevation: 0.0,
       centerTitle: true,
       noScrollView: true,
-      child: _buildWebView(colorScheme),
+      child: Stack(
+        children: [
+          _buildWebView(colorScheme),
+          // if (scrollbar != null) scrollbar,
+        ],
+      ),
     );
   }
 }

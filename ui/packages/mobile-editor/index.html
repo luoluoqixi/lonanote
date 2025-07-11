@@ -17,10 +17,10 @@
 
   <body style="background-color: transparent">
     <script>
-      window.setWebScrollbar = (isWebScrollbar) => {
-        if (typeof isWebScrollbar === 'boolean') {
-          window.isWebScrollbar = isWebScrollbar;
-          document.body.classList.toggle('web-scrollbar', isWebScrollbar);
+      window.setEditorScrollbar = (isEditorScrollbar) => {
+        if (typeof isEditorScrollbar === 'boolean') {
+          window.isEditorScrollbar = isEditorScrollbar;
+          document.body.classList.toggle('editor-scrollbar', isEditorScrollbar);
         }
       };
       window.setAutoSave = (autoSave, autoSaveInterval, autoSaveFocusChange) => {

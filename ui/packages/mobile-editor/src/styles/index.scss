@@ -19,11 +19,11 @@ body {
   -webkit-overflow-scrolling: touch; // ios
 }
 
-body.web-scrollbar {
+body.editor-scrollbar {
   overflow: visible;
 }
 
-body.web-scrollbar.android {
+body.editor-scrollbar.android {
   #root {
     // fix scrollbar on Android WebView
     // https://issues.chromium.org/issues/40226034
@@ -45,7 +45,7 @@ body.web-scrollbar.android {
   }
 }
 
-.web-scrollbar {
+.editor-scrollbar {
   #root {
     height: 100%;
     #cm-root,
