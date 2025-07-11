@@ -84,6 +84,7 @@ class CustomCupertinoScrollbar extends CustomRawScrollbar {
     Radius super.radius = defaultRadius,
     this.radiusWhileDragging = defaultRadiusWhileDragging,
     ScrollNotificationPredicate? notificationPredicate,
+    this.scrollPadding,
     this.onDragIsActiveChanged,
     super.scrollbarOrientation,
     super.mainAxisMargin = _kScrollbarMainAxisMargin,
@@ -127,6 +128,7 @@ class CustomCupertinoScrollbar extends CustomRawScrollbar {
   /// dragging the scrollbar.
   final Radius radiusWhileDragging;
 
+  final EdgeInsets? scrollPadding;
   final ValueChanged<bool>? onDragIsActiveChanged;
 
   @override
@@ -175,7 +177,7 @@ class _CustomCupertinoScrollbarState
       ..mainAxisMargin = widget.mainAxisMargin
       ..crossAxisMargin = _kScrollbarCrossAxisMargin
       ..radius = _radius
-      ..padding = MediaQuery.paddingOf(context)
+      ..padding = widget.scrollPadding ?? MediaQuery.paddingOf(context)
       ..minLength = _kScrollbarMinLength
       ..minOverscrollLength = _kScrollbarMinOverscrollLength
       ..scrollbarOrientation = widget.scrollbarOrientation;

@@ -97,6 +97,7 @@ class CustomScrollbar extends StatelessWidget {
     this.notificationPredicate,
     this.interactive,
     this.scrollbarOrientation,
+    this.scrollPadding,
     this.onDragIsActiveChanged,
   });
 
@@ -153,6 +154,7 @@ class CustomScrollbar extends StatelessWidget {
   /// {@macro flutter.widgets.Scrollbar.scrollbarOrientation}
   final CustomScrollbarOrientation? scrollbarOrientation;
 
+  final EdgeInsets? scrollPadding;
   final ValueChanged<bool>? onDragIsActiveChanged;
 
   @override
@@ -181,6 +183,7 @@ class CustomScrollbar extends StatelessWidget {
       notificationPredicate: notificationPredicate,
       interactive: interactive,
       scrollbarOrientation: scrollbarOrientation,
+      scrollPadding: scrollPadding,
       onDragIsActiveChanged: onDragIsActiveChanged,
       child: child,
     );
@@ -198,6 +201,7 @@ class _MaterialScrollbar extends CustomRawScrollbar {
     ScrollNotificationPredicate? notificationPredicate,
     super.interactive,
     super.scrollbarOrientation,
+    this.scrollPadding,
     this.onDragIsActiveChanged,
   }) : super(
           fadeDuration: _kScrollbarFadeDuration,
@@ -207,6 +211,7 @@ class _MaterialScrollbar extends CustomRawScrollbar {
               notificationPredicate ?? defaultScrollNotificationPredicate,
         );
 
+  final EdgeInsets? scrollPadding;
   final ValueChanged<bool>? onDragIsActiveChanged;
 
   @override
@@ -377,7 +382,7 @@ class _MaterialScrollbarState
           (_useAndroidScrollbar ? 0.0 : _kScrollbarMargin)
       ..mainAxisMargin = _scrollbarTheme.mainAxisMargin ?? 0.0
       ..minLength = _scrollbarTheme.minThumbLength ?? _kScrollbarMinLength
-      ..padding = MediaQuery.paddingOf(context)
+      ..padding = widget.scrollPadding ?? MediaQuery.paddingOf(context)
       ..scrollbarOrientation = widget.scrollbarOrientation
       ..ignorePointer = !enableGestures;
   }

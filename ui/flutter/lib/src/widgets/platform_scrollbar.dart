@@ -9,6 +9,7 @@ class PlatformScrollbar extends StatelessWidget {
   final bool? interactive;
   final double? thickness;
   final double? radius;
+  final EdgeInsets? scrollPadding;
   final ValueChanged<bool>? onDragIsActiveChanged;
 
   final Widget child;
@@ -21,6 +22,7 @@ class PlatformScrollbar extends StatelessWidget {
     this.interactive,
     this.thickness,
     this.radius,
+    this.scrollPadding,
     this.onDragIsActiveChanged,
   });
 
@@ -44,6 +46,7 @@ class PlatformScrollbar extends StatelessWidget {
         interactive: interactive ?? true,
         thickness: thickness ?? 8.0,
         radius: Radius.circular(radius ?? 10.0),
+        scrollPadding: scrollPadding,
         onDragIsActiveChanged:
             onDragIsActiveChanged != null ? _handleDragIsActiveChanged : null,
         child: child,
@@ -55,6 +58,7 @@ class PlatformScrollbar extends StatelessWidget {
         thumbVisibility: thumbVisibility ?? false,
         thickness: thickness ?? 3.0,
         radius: Radius.circular(radius ?? 10.0),
+        scrollPadding: scrollPadding,
         onDragIsActiveChanged:
             onDragIsActiveChanged != null ? _handleDragIsActiveChanged : null,
         child: child,

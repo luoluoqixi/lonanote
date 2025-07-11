@@ -799,7 +799,7 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
       ),
       scrollKey: const PageStorageKey("HomePageScrollKey"),
       scrollController: _scrollController,
-      onDragIsActiveChanged: _handleDragIsActiveChanged,
+      onScrollbarDragIsActiveChanged: _handleDragIsActiveChanged,
       subTitleText: "选择工作区",
       showScrollbar: true,
       isLoading: _isLoading,

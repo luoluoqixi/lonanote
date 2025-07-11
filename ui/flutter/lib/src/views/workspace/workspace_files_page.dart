@@ -920,7 +920,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         ],
       ),
       scrollController: _scrollController,
-      onDragIsActiveChanged: _handleDragIsActiveChanged,
+      onScrollbarDragIsActiveChanged: _handleDragIsActiveChanged,
       isHome: widget.parentPath == null,
       onWillPop: () {
         if (_isSelectionMode) {

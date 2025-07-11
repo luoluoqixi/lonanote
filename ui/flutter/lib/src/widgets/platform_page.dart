@@ -39,7 +39,8 @@ class PlatformPage extends StatefulWidget {
   final bool? scrollInteractive;
   final double? scrollThickness;
   final double? scrollRadius;
-  final ValueChanged<bool>? onDragIsActiveChanged;
+  final EdgeInsets? scrollPadding;
+  final ValueChanged<bool>? onScrollbarDragIsActiveChanged;
 
   final bool? resizeToAvoidBottomInset;
 
@@ -69,7 +70,8 @@ class PlatformPage extends StatefulWidget {
     this.scrollInteractive,
     this.scrollThickness,
     this.scrollRadius,
-    this.onDragIsActiveChanged,
+    this.scrollPadding,
+    this.onScrollbarDragIsActiveChanged,
     this.resizeToAvoidBottomInset,
   });
 
@@ -105,11 +107,21 @@ class _PlatformPageState extends State<PlatformPage> {
     }
   }
 
+  double _getAppBarMinHeight() {
+    final paddingTop = MediaQuery.of(context).padding.top;
+    return paddingTop + SimpleAppBar.defaultHeight;
+  }
+
+  double _getBottomPadding() {
+    final paddingBottom = MediaQuery.of(context).padding.bottom;
+    return paddingBottom;
+  }
+
   double _getAppBarHeight() {
+    final paddingTop = MediaQuery.of(context).padding.top;
     return (widget.title == null && widget.titleText == null)
-        ? 0.0
-        : (ScrollAppBar.defaultExpandedHeight +
-            MediaQuery.of(context).padding.top);
+        ? paddingTop
+        : (ScrollAppBar.defaultExpandedHeight + paddingTop);
   }
 
   Widget _buildPageContent(ScrollController controller, BuildContext context) {
@@ -161,7 +173,10 @@ class _PlatformPageState extends State<PlatformPage> {
         interactive: widget.scrollInteractive ?? true,
         thickness: widget.scrollThickness,
         radius: widget.scrollRadius,
-        onDragIsActiveChanged: widget.onDragIsActiveChanged,
+        scrollPadding: widget.scrollPadding ??
+            EdgeInsets.only(
+                top: _getAppBarMinHeight(), bottom: _getBottomPadding()),
+        onDragIsActiveChanged: widget.onScrollbarDragIsActiveChanged,
         child: content,
       );
     }
@@ -258,7 +273,8 @@ class PlatformSimplePage extends StatefulWidget {
   final bool? scrollInteractive;
   final double? scrollThickness;
   final double? scrollRadius;
-  final ValueChanged<bool>? onDragIsActiveChanged;
+  final EdgeInsets? scrollPadding;
+  final ValueChanged<bool>? onScrollbarDragIsActiveChanged;
 
   final bool? resizeToAvoidBottomInset;
 
@@ -287,7 +303,8 @@ class PlatformSimplePage extends StatefulWidget {
     this.scrollInteractive,
     this.scrollThickness,
     this.scrollRadius,
-    this.onDragIsActiveChanged,
+    this.scrollPadding,
+    this.onScrollbarDragIsActiveChanged,
     this.resizeToAvoidBottomInset,
   });
 
@@ -323,10 +340,21 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
     }
   }
 
+  double _getAppBarMinHeight() {
+    final paddingTop = MediaQuery.of(context).padding.top;
+    return paddingTop + SimpleAppBar.defaultHeight;
+  }
+
+  double _getBottomPadding() {
+    final paddingBottom = MediaQuery.of(context).padding.bottom;
+    return paddingBottom;
+  }
+
   double _getAppBarHeight() {
+    final paddingTop = MediaQuery.of(context).padding.top;
     return (widget.title == null && widget.titleText == null)
-        ? 0.0
-        : (SimpleAppBar.defaultHeight + MediaQuery.of(context).padding.top);
+        ? paddingTop
+        : (SimpleAppBar.defaultHeight + paddingTop);
   }
 
   Widget _buildPageContent(
@@ -476,7 +504,10 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
         interactive: widget.scrollInteractive ?? true,
         thickness: widget.scrollThickness,
         radius: widget.scrollRadius,
-        onDragIsActiveChanged: widget.onDragIsActiveChanged,
+        scrollPadding: widget.scrollPadding ??
+            EdgeInsets.only(
+                top: _getAppBarMinHeight(), bottom: _getBottomPadding()),
+        onDragIsActiveChanged: widget.onScrollbarDragIsActiveChanged,
         child: content,
       );
     }
