@@ -59,6 +59,14 @@ class _PlatformInkkWellState extends State<PlatformInkWell> {
   void _tapDown() {
     // logger.i("onTapDown");
     _pressResetTimer?.cancel();
+    if (widget.onTap == null &&
+        widget.onTapDown == null &&
+        widget.onDoubleTap == null &&
+        widget.onSecondaryTap == null &&
+        widget.onSecondaryTapDown == null &&
+        widget.onLongPress == null) {
+      return;
+    }
     _setIsPress(true);
   }
 
