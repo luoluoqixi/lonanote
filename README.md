@@ -18,33 +18,41 @@
 - Markdown 所见即所得编辑
 - 桌面端使用 Electron，移动端使用 Flutter，核心使用 Rust
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); justify-content: center; gap: 10px;">
-  <img src="./docs/screenshots/screenshot-1.png" width="100%" />
-  <img src="./docs/screenshots/screenshot-dark-1.png" width="100%" />
-</div>
+<table>
+  <tr>
+    <td><img src="./docs/screenshots/screenshot-1.png" width="100%" /></td>
+    <td><img src="./docs/screenshots/screenshot-dark-1.png" width="100%" /></td>
+  </tr>
+</table>
 
 <br />
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); justify-content: center; gap: 10px;">
-  <img src="./docs/screenshots/screenshot-2.png" width="100%" />
-  <img src="./docs/screenshots/screenshot-dark-2.png" width="100%" />
-</div>
+<table>
+  <tr>
+    <td><img src="./docs/screenshots/screenshot-2.png" width="100%" /></td>
+    <td><img src="./docs/screenshots/screenshot-dark-2.png" width="100%" /></td>
+  </tr>
+</table>
 
 <br />
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); justify-content: center; gap: 10px;">
-  <img src="./docs/screenshots/mobile-01.png" width="100%" />
-  <img src="./docs/screenshots/mobile-02.png" width="100%" />
-  <img src="./docs/screenshots/mobile-03.png" width="100%" />
-</div>
+<table>
+  <tr>
+    <td><img src="./docs/screenshots/mobile-01.png" width="100%" /></td>
+    <td><img src="./docs/screenshots/mobile-02.png" width="100%" /></td>
+    <td><img src="./docs/screenshots/mobile-03.png" width="100%" /></td>
+  </tr>
+</table>
 
 <br />
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); justify-content: center; gap: 10px;">
-  <img src="./docs/screenshots/mobile-dark-01.png" width="100%" />
-  <img src="./docs/screenshots/mobile-dark-02.png" width="100%" />
-  <img src="./docs/screenshots/mobile-dark-03.png" width="100%" />
-</div>
+<table>
+  <tr>
+    <td><img src="./docs/screenshots/mobile-dark-01.png" width="100%" /></td>
+    <td><img src="./docs/screenshots/mobile-dark-02.png" width="100%" /></td>
+    <td><img src="./docs/screenshots/mobile-dark-03.png" width="100%" /></td>
+  </tr>
+</table>
 
 
 
