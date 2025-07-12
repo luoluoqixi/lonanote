@@ -446,8 +446,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   Future<void> _updateColorMode(bool updateEditor) async {
     if (_webViewLoaded) {
-      final brightness =
-          WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      final t = ref.read(settingsProvider.notifier);
+      final brightness = t.getResolveTheme();
       final theme = brightness == Brightness.dark ? 'dark' : 'light';
       await _controller
           .runJavaScript('window.setColorMode("$theme", $updateEditor)');

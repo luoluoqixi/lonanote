@@ -75,6 +75,15 @@ class Settings extends _$Settings with WidgetsBindingObserver {
     UIStore.setThemePrimaryColor(color.name);
   }
 
+  Brightness getResolveTheme() {
+    if (state.theme.themeMode == ThemeMode.system) {
+      return state.theme.platformBrightness;
+    }
+    return state.theme.themeMode == ThemeMode.dark
+        ? Brightness.dark
+        : Brightness.light;
+  }
+
   static ThemeMode getThemeMode() {
     final themeMode = UIStore.getThemeMode();
     return themeMode != null ? ThemeMode.values[themeMode] : ThemeMode.system;
