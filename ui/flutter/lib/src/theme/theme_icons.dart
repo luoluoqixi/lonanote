@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:lonanote/src/icons/svg_icons.dart';
 
 class ThemeIcons {
   static IconData add(BuildContext context) {
@@ -82,8 +84,15 @@ class ThemeIcons {
         : Icons.keyboard_arrow_down;
   }
 
-  static IconData markdown(BuildContext context) {
-    return isMaterial(context) ? Icons.article : Icons.article;
+  static SvgPicture markdown(
+    BuildContext context, {
+    Color color = Colors.white,
+    double width = 42,
+    double height = 42,
+  }) {
+    return isMaterial(context)
+        ? SvgIcons.markdown(color: color, width: width, height: height)
+        : SvgIcons.markdown(color: color, width: width, height: height);
   }
 
   static IconData more(BuildContext context) {

@@ -64,6 +64,7 @@ dependencies:
   webview_flutter: ^4.13.0
   webview_flutter_wkwebview: ^3.22.0
   flutter_dotenv: ^5.2.1
+  flutter_svg: ^2.2.0
 
 dev_dependencies:
   integration_test:
@@ -130,5 +131,6 @@ flutter:
   assets:
     - env/
     - assets/icons/
+    - assets/icons/svg/
     - assets/editor/
     - assets/editor/assets/

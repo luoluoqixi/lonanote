@@ -642,17 +642,26 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     );
   }
 
-  IconData _getFileIcon(RustFileNode node) {
+  Widget _getFileIcon(RustFileNode node, Color color) {
     final ext = Utility.getExtName(node.path);
-    if (ext == null) return ThemeIcons.file(context);
-    if (Utility.isMarkdown(ext)) {
-      return ThemeIcons.markdown(context);
-    } else if (Utility.isImage(ext)) {
-      return ThemeIcons.image(context);
-    } else if (Utility.isVideo(ext)) {
-      return ThemeIcons.video(context);
+    if (ext != null && Utility.isMarkdown(ext)) {
+      return ThemeIcons.markdown(context, color: color, width: 48, height: 48);
     }
-    return ThemeIcons.file(context);
+    IconData icon;
+    if (ext == null) {
+      icon = ThemeIcons.file(context);
+    } else if (Utility.isImage(ext)) {
+      icon = ThemeIcons.image(context);
+    } else if (Utility.isVideo(ext)) {
+      icon = ThemeIcons.video(context);
+    } else {
+      icon = ThemeIcons.file(context);
+    }
+    return Icon(
+      icon,
+      size: 48,
+      color: color,
+    );
   }
 
   Widget _buildWorkspaceFile(ColorScheme colorScheme, RustFileNode node) {
@@ -736,11 +745,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isFile)
-              Icon(
-                _getFileIcon(node),
-                size: 48,
-                color: ThemeColors.getPrimaryColor(colorScheme),
-              ),
+              _getFileIcon(node, ThemeColors.getPrimaryColor(colorScheme)),
             if (isDirectory)
               Icon(
                 ThemeIcons.folder(context),
