@@ -66,10 +66,10 @@ pub fn file_tree_compare(a: &FileNode, b: &FileNode, sort_type: &FileTreeSortTyp
         match sort_type {
             FileTreeSortType::Name => file_tree_compare_name(a, b),
             FileTreeSortType::NameRev => file_tree_compare_name(b, a),
-            FileTreeSortType::LastModifiedTime => file_tree_compare_modified_time(a, b),
-            FileTreeSortType::LastModifiedTimeRev => file_tree_compare_modified_time(b, a),
-            FileTreeSortType::CreateTime => file_tree_compare_create_time(a, b),
-            FileTreeSortType::CreateTimeRev => file_tree_compare_create_time(b, a),
+            FileTreeSortType::LastModifiedTime => file_tree_compare_modified_time(b, a),
+            FileTreeSortType::LastModifiedTimeRev => file_tree_compare_modified_time(a, b),
+            FileTreeSortType::CreateTime => file_tree_compare_create_time(b, a),
+            FileTreeSortType::CreateTimeRev => file_tree_compare_create_time(a, b),
         }
     } else if is_dir_a {
         Ordering::Less

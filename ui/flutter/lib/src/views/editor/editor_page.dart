@@ -401,7 +401,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _sourceMode = targetSourceMode;
     });
     await _runWebCommand('change_source_mode', targetSourceMode);
-    _resetAppBarColor();
   }
 
   void _openVConsole() {
