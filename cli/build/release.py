@@ -73,7 +73,7 @@ def chang_pubspec_version(project_path, next_version):
             lines = f.readlines()
             for i, line in enumerate(lines):
                 if line.startswith("version: "):
-                    lines[i] = f"version: {next_version}+1"
+                    lines[i] = f"version: {next_version}+1\n"
                     break
             f.seek(0)
             f.truncate()
