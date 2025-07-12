@@ -1,6 +1,6 @@
 {
   "name": "lonanote-styles",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "exports": {
     "./common-milkdown-theme.scss": {
       "import": "./common-milkdown-theme.scss"
