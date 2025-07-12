@@ -115,6 +115,13 @@ class Utility {
     return path.substring(index + 1);
   }
 
+  static String getFileNameWithoutExt(String path) {
+    final fileName = getFileName(path);
+    final index = fileName.lastIndexOf(".");
+    if (index < 0) return fileName;
+    return fileName.substring(0, index);
+  }
+
   static bool isSupportEditor(String extName) {
     extName = extName.toLowerCase();
     return isMarkdown(extName) || supportEditorExts.contains(extName);

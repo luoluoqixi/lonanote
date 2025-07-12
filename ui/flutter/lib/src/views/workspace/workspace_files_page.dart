@@ -421,9 +421,17 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
 
     try {
       fileName = WsUtils.getNameAddMd(fileName);
-      WorkspaceController.createFile(ref, _getFullFilePath(fileName));
+      final filePath = _getFullFilePath(fileName);
+      WorkspaceController.createFile(
+        ref,
+        filePath,
+      );
       Navigator.of(context).pop();
       await _reinitFileNode();
+      final index = fileNode?.children?.indexWhere((f) => f.path == filePath);
+      if (index != null && index >= 0) {
+        _openFile(fileNode!.children![index]);
+      }
     } catch (e) {
       logger.e(e);
       if (mounted) {
