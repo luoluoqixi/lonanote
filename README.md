@@ -66,7 +66,7 @@
 
 露娜笔记在积极开发中，欢迎贡献代码
 
-[待办事项](./docs/dev/todo.md)
+[待办事项](https://github.com/luoluoqixi/lonanote/issues/1)
 
 ## 💬 社区
 
