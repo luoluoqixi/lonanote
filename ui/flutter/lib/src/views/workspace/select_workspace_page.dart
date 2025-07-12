@@ -757,8 +757,12 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
   Widget _buildFloatingToolbar() {
     final isSelectOnlyOne = _selectedPaths.length == 1;
     final isNotEmpty = _selectedPaths.isNotEmpty;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
     return PlatformFloatingToolbar(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      contentPadding:
+          EdgeInsets.symmetric(horizontal: 20, vertical: isIOS ? 5 : 10),
       children: [
         Text("已选择 ${_selectedPaths.length} 个"),
         Row(
