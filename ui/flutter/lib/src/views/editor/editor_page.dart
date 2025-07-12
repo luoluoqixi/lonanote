@@ -159,7 +159,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     await _controller.setHorizontalScrollBarEnabled(false);
     if (_useBodyScrollbar) {
       // 使用 body 滚动条时, 使用 flutter 自定义滚动条
-      await _controller.setVerticalScrollBarEnabled(false);
+      // await _controller.setVerticalScrollBarEnabled(false);
+      await _controller.setVerticalScrollBarEnabled(true);
     } else {
       await _controller.setVerticalScrollBarEnabled(true);
     }
