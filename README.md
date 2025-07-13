@@ -18,42 +18,27 @@
 - Markdown 所见即所得编辑
 - 桌面端使用 Electron，移动端使用 Flutter，核心使用 Rust
 
-<table>
-  <tr>
-    <td><img src="./docs/screenshots/screenshot-1.png" width="100%" /></td>
-    <td><img src="./docs/screenshots/screenshot-dark-1.png" width="100%" /></td>
-  </tr>
-</table>
+<p>
+    <img src="./docs/screenshots/screenshot-1.png" width="48%" />
+    <img src="./docs/screenshots/screenshot-dark-1.png" width="48%" />
+</p>
 
-<br />
+<p>
+    <img src="./docs/screenshots/screenshot-2.png" width="48%" />
+    <img src="./docs/screenshots/screenshot-dark-2.png" width="48%" />
+</p>
 
-<table>
-  <tr>
-    <td><img src="./docs/screenshots/screenshot-2.png" width="100%" /></td>
-    <td><img src="./docs/screenshots/screenshot-dark-2.png" width="100%" /></td>
-  </tr>
-</table>
+<p>
+    <img src="./docs/screenshots/mobile-01.png" width="33%" />
+    <img src="./docs/screenshots/mobile-02.png" width="33%" />
+    <img src="./docs/screenshots/mobile-03.png" width="33%" />
+</p>
 
-<br />
-
-<table>
-  <tr>
-    <td><img src="./docs/screenshots/mobile-01.png" width="100%" /></td>
-    <td><img src="./docs/screenshots/mobile-02.png" width="100%" /></td>
-    <td><img src="./docs/screenshots/mobile-03.png" width="100%" /></td>
-  </tr>
-</table>
-
-<br />
-
-<table>
-  <tr>
-    <td><img src="./docs/screenshots/mobile-dark-01.png" width="100%" /></td>
-    <td><img src="./docs/screenshots/mobile-dark-02.png" width="100%" /></td>
-    <td><img src="./docs/screenshots/mobile-dark-03.png" width="100%" /></td>
-  </tr>
-</table>
-
+<p>
+    <img src="./docs/screenshots/mobile-dark-01.png" width="33%" />
+    <img src="./docs/screenshots/mobile-dark-02.png" width="33%" />
+    <img src="./docs/screenshots/mobile-dark-03.png" width="33%" />
+</p>
 
 
 ## 🚀 安装
@@ -66,7 +51,9 @@
 
 露娜笔记在积极开发中，欢迎贡献代码
 
-[待办事项](https://github.com/luoluoqixi/lonanote/issues/1)
+- [v0.2.0 TODO](https://github.com/users/luoluoqixi/projects/3)
+
+- [v1.0.0 TODO](https://github.com/users/luoluoqixi/projects/4)
 
 ## 💬 社区
 
