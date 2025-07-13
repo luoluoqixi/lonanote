@@ -29,15 +29,15 @@
 </p>
 
 <p>
-    <img src="./docs/screenshots/mobile-01.png" width="33%" />
-    <img src="./docs/screenshots/mobile-02.png" width="33%" />
-    <img src="./docs/screenshots/mobile-03.png" width="33%" />
+    <img src="./docs/screenshots/mobile-01.png" width="32%" />
+    <img src="./docs/screenshots/mobile-02.png" width="32%" />
+    <img src="./docs/screenshots/mobile-03.png" width="32%" />
 </p>
 
 <p>
-    <img src="./docs/screenshots/mobile-dark-01.png" width="33%" />
-    <img src="./docs/screenshots/mobile-dark-02.png" width="33%" />
-    <img src="./docs/screenshots/mobile-dark-03.png" width="33%" />
+    <img src="./docs/screenshots/mobile-dark-01.png" width="32%" />
+    <img src="./docs/screenshots/mobile-dark-02.png" width="32%" />
+    <img src="./docs/screenshots/mobile-dark-03.png" width="32%" />
 </p>
 
 
