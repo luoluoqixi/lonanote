@@ -1,7 +1,7 @@
 import { config } from '@/config';
 
 import { autoSaveUpdate } from './autoSave';
-import { cmFocus, createCMEditor } from './codemirror';
+import { autoScrollToCursor, cmFocus, createCMEditor } from './codemirror';
 import { createMarkdownEditor } from './markdown/MarkdownEditor';
 
 export const saveContent = (content: string) => {
@@ -167,6 +167,23 @@ const onScrollContentChange = (el: HTMLElement) => {
 //   }, 200);
 // };
 
+function handleWindowResize() {
+  if (window.editor != null) {
+    setTimeout(() => {
+      if (!window.editor) return;
+      const editor = window.editor;
+      editor.autoScrollToCursor(document.body);
+    }, 100);
+  }
+  if (window.cmEditor != null) {
+    setTimeout(() => {
+      if (!window.cmEditor) return;
+      const editor = window.cmEditor;
+      autoScrollToCursor(editor, document.body);
+    }, 100);
+  }
+}
+
 export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
   if ((window as any).onCleanEvents != null) {
     (window as any).onCleanEvents();
@@ -208,8 +225,12 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
     document?.addEventListener('scroll', onScrollPositionChange);
   }
 
+  // 添加 resize 事件监听
+  window.addEventListener('resize', handleWindowResize);
+
   (window as any).onCleanEvents = () => {
     onScrollContentChangeCleanup?.();
+    window?.removeEventListener('resize', handleWindowResize);
     document.body.removeEventListener('click', bodyClick);
     document?.removeEventListener('scroll', onScrollPositionChange);
     cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);

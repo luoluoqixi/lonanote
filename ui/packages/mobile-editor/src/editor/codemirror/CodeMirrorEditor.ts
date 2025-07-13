@@ -140,3 +140,39 @@ export const cmFocus = (editor: EditorView) => {
   });
   editor.focus();
 };
+
+export const isCursorInViewport = (view: EditorView, container?: HTMLElement): boolean => {
+  if (!view.hasFocus) return false;
+
+  container = container || view.scrollDOM;
+  const pos = view.state.selection.main.head;
+  const cursorCoords = view.coordsAtPos(pos);
+  if (!cursorCoords) return false;
+
+  const containerRect = container.getBoundingClientRect();
+
+  return (
+    cursorCoords.top >= containerRect.top &&
+    cursorCoords.bottom <= containerRect.bottom &&
+    cursorCoords.left >= containerRect.left &&
+    cursorCoords.right <= containerRect.right
+  );
+};
+
+export const scrollToCursor = (view: EditorView) => {
+  const pos = view.state.selection.main.head;
+  view.dispatch({
+    effects: EditorView.scrollIntoView(pos, {
+      y: 'nearest',
+      yMargin: 0,
+    }),
+  });
+};
+
+export const autoScrollToCursor = (view: EditorView, container?: HTMLElement) => {
+  if (view.hasFocus) {
+    if (!isCursorInViewport(view, container)) {
+      scrollToCursor(view);
+    }
+  }
+};

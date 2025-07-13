@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -546,6 +548,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
         children: [
           WebViewWidget(
             controller: _controller,
+            gestureRecognizers: Set()
+              ..add(
+                Factory<DragGestureRecognizer>(
+                  () => VerticalDragGestureRecognizer(),
+                ),
+              ),
           ),
         ],
       );
@@ -624,7 +632,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
       // 将 AppBar 背景延伸到屏幕顶部
       extendBodyBehindAppBar: true,
       // 如果不设置为 false, 键盘弹出与关闭时会显示 (0.x秒) 根 widget 的背景颜色
-      resizeToAvoidBottomInset: false,
+      // 相关问题：
+      // https://github.com/flutter/flutter/issues/97054
+      // https://github.com/flutter/flutter/issues/14288#issuecomment-361375791
+      // 在键盘上方插入一个 Editor Toolbar 的 Widget, 应该可以解决此问题
+      resizeToAvoidBottomInset: true,
       title: GestureDetector(
         onTap: _onTitleTap,
         child: Text(

@@ -17,6 +17,7 @@ body {
   overflow-y: auto;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch; // ios
+  height: 100dvh;
 }
 
 body.editor-scrollbar {

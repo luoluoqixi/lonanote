@@ -372,6 +372,43 @@ export class MarkdownBuilder {
     }
   };
 
+  isFocus = (view: EditorView) => {
+    return view.hasFocus();
+  };
+
+  isCursorInViewport = (view: EditorView, container?: HTMLElement): boolean => {
+    if (!this.isFocus(view)) return false;
+    if (container == null) {
+      container = view.dom;
+    }
+    const { from } = view.state.selection;
+    const cursorRect = view.coordsAtPos(from);
+    const containerRect = container.getBoundingClientRect();
+
+    return !(
+      cursorRect.bottom < containerRect.top ||
+      cursorRect.top > containerRect.bottom ||
+      cursorRect.right < containerRect.left ||
+      cursorRect.left > containerRect.right
+    );
+  };
+
+  scrollIntoView = (view: EditorView) => {
+    view.dispatch(view.state.tr.scrollIntoView());
+  };
+
+  autoScrollToCursor = (container?: HTMLElement) => {
+    this.editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      if (container == null) {
+        container = view.dom;
+      }
+      if (!this.isCursorInViewport(view, container)) {
+        this.scrollIntoView(view);
+      }
+    });
+  };
+
   /// Register event listeners.
   on = (fn: (api: ListenerManager) => void) => {
     if (this.#editor.status !== EditorStatus.Created) {
