@@ -17,11 +17,31 @@ types:
   section: 🐛 Fixes
   hidden: false
   increment: Patch
+- type: 🚑️
+  section: 🐛 Fixes
+  hidden: false
+  increment: Patch
+- type: 🔒️
+  section: 🐛 Fixes
+  hidden: false
+  increment: Patch
+- type: 🚨
+  section: 🐛 Fixes
+  hidden: false
+  increment: Patch
+- type: 🩹
+  section: 🐛 Fixes
+  hidden: false
+  increment: Patch
 - type: docs
   section: 📝 Documentation
   hidden: false
   increment: Patch
 - type: 📝
+  section: 📝 Documentation
+  hidden: false
+  increment: Patch
+- type: 📄
   section: 📝 Documentation
   hidden: false
   increment: Patch
@@ -33,12 +53,40 @@ types:
   section: 🎨 Styling
   hidden: false
   increment: Patch
+- type: 💄
+  section: 🎨 Styling
+  hidden: false
+  increment: Patch
 - type: refactor
   section: ♻️ Refactor
   hidden: false
   increment: Patch
 - type: ♻️
   section: ♻️ Refactor
+  hidden: false
+  increment: Patch
+- type: 🔥
+  section: ♻️ Refactor
+  hidden: false
+  increment: Patch
+- type: 🚚
+  section: ♻️ Refactor
+  hidden: false
+  increment: Patch
+- type: 💥
+  section: ♻️ Refactor
+  hidden: false
+  increment: Patch
+- type: 🏗️
+  section: ♻️ Refactor
+  hidden: false
+  increment: Patch
+- type: ⚰️
+  section: ♻️ Refactor
+  hidden: false
+  increment: Patch
+- type: 🌐
+  section: 🌐 Localization
   hidden: false
   increment: Patch
 - type: perf
@@ -61,6 +109,9 @@ types:
   section: 🧪 Testing
   hidden: false
 - type: 🧪
+  section: 🧪 Testing
+  hidden: false
+- type: ✅
   section: 🧪 Testing
   hidden: false
 - type: build
