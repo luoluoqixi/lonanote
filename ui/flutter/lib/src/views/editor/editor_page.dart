@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -548,12 +546,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
         children: [
           WebViewWidget(
             controller: _controller,
-            gestureRecognizers: Set()
-              ..add(
-                Factory<DragGestureRecognizer>(
-                  () => VerticalDragGestureRecognizer(),
-                ),
-              ),
           ),
         ],
       );
