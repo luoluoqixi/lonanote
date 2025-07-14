@@ -61,10 +61,9 @@ dependencies:
   photo_view: ^0.15.0
   video_player: ^2.10.0
   chewie: ^1.12.1
-  webview_flutter: ^4.13.0
-  webview_flutter_wkwebview: ^3.22.0
   flutter_dotenv: ^5.2.1
   flutter_svg: ^2.2.0
+  flutter_inappwebview: ^6.1.5
 
 dev_dependencies:
   integration_test:

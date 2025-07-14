@@ -58,11 +58,6 @@ body.android {
 #root {
   --bottom-safe-height: 30px;
 
-  // --status-bar-height: var(--status-bar-height-app, 0px);
-  // --title-bar-height: 56px;
-
-  // --padding-top: calc(var(--title-bar-height) + var(--status-bar-height));
-
   padding: 0 2px;
   padding-top: 0; // var(--padding-top);
 

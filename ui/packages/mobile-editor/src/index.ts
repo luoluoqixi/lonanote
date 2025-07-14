@@ -5,7 +5,7 @@ import './styles/index.scss';
 import './theme';
 import './utils';
 
-const initEditor = async (fileName: string, sourceMode: boolean, content: string) => {
+const initEditor = async (fileName: string, sourceMode: boolean | undefined, content: string) => {
   window.sourceMode = sourceMode;
   window.fileName = fileName;
   window.fileContent = content;

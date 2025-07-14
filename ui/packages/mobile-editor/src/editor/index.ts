@@ -1,17 +1,12 @@
 import { config } from '@/config';
+import { callFlutter } from '@/utils/flutter';
 
 import { autoSaveUpdate } from './autoSave';
 import { autoScrollToCursor, cmFocus, createCMEditor } from './codemirror';
 import { createMarkdownEditor } from './markdown/MarkdownEditor';
 
 export const saveContent = (content: string) => {
-  if (window.EditorBridge != null) {
-    const msg = {
-      command: 'save_file',
-      content,
-    };
-    window.EditorBridge.postMessage(JSON.stringify(msg));
-  }
+  callFlutter('save_file', content);
 };
 
 export const getContent = () => {
@@ -37,13 +32,7 @@ export const onUpdateState = (state?: {
   rowIndex?: number;
   colIndex?: number;
 }) => {
-  if (window.EditorBridge != null) {
-    const msg = {
-      command: 'update_state',
-      state,
-    };
-    window.EditorBridge.postMessage(JSON.stringify(msg));
-  }
+  callFlutter('update_state', state);
   autoSaveUpdate(getContent);
 };
 
@@ -75,25 +64,15 @@ const bodyClick = (e: MouseEvent) => {
 };
 
 const onScrollPositionChange = (e: Event) => {
-  if (!window.EditorBridge) return;
+  if (!window.flutter_inappwebview) return;
   if (e.target instanceof Document) {
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-    window.EditorBridge.postMessage(
-      JSON.stringify({
-        command: 'scroll_position',
-        scrollY: scrollTop,
-      }),
-    );
+    callFlutter('scroll_position', scrollTop);
     return;
   }
   if (e.target instanceof HTMLElement) {
     const scrollTop = e.target.scrollTop;
-    window.EditorBridge.postMessage(
-      JSON.stringify({
-        command: 'scroll_position',
-        scrollY: scrollTop,
-      }),
-    );
+    callFlutter('scroll_position', scrollTop);
   }
 };
 
@@ -127,15 +106,10 @@ const onScrollContentChange = (el: HTMLElement) => {
   // console.log('isScrollable', isScrollable);
   document.body.classList.toggle('editor-scrollable', isScrollable);
 
-  if (window.EditorBridge != null) {
-    window.EditorBridge.postMessage(
-      JSON.stringify({
-        command: 'scrollable',
-        scrollHeight: el.scrollHeight,
-        clientHeight: el.clientHeight,
-      }),
-    );
-  }
+  callFlutter('scrollable', {
+    scrollHeight: el.scrollHeight,
+    clientHeight: el.clientHeight,
+  });
 };
 
 // const throttledOnRefreshEditor = () => {
@@ -167,7 +141,11 @@ function handleWindowResize() {
   }
 }
 
-export const createEditor = async (fileName: string, sourceMode: boolean, content: string) => {
+export const createEditor = async (
+  fileName: string,
+  sourceMode: boolean | undefined,
+  content: string,
+) => {
   if ((window as any).onCleanEvents != null) {
     (window as any).onCleanEvents();
   }

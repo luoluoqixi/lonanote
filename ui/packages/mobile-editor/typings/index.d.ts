@@ -17,7 +17,7 @@ interface Window {
   /** 设置编辑器 */
   initEditor: (
     fileName: string,
-    sourceMode: boolean,
+    sourceMode: boolean | undefined,
     content: string,
     isEditorScrollbar?: boolean,
   ) => Promise<any>;
@@ -30,7 +30,7 @@ interface Window {
   /** CodeMirror Editor */
   cmEditor?: import('@codemirror/view').EditorView | null;
   /** Flutter Bridge */
-  EditorBridge: any;
+  flutter_inappwebview: any;
 
   /** 当前编辑器的内容 (保存后更新) */
   fileContent?: string;
