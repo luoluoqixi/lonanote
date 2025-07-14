@@ -40,18 +40,19 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   InAppWebViewSettings settings = InAppWebViewSettings(
     isInspectable: kDebugMode,
+    javaScriptEnabled: true,
     allowsBackForwardNavigationGestures: false,
     mediaPlaybackRequiresUserGesture: false,
     allowsInlineMediaPlayback: true,
-    javaScriptEnabled: true,
-    transparentBackground: true,
-    disableVerticalScroll: Platform.isIOS,
-    verticalScrollBarEnabled: false,
-    horizontalScrollBarEnabled: false,
-    disableHorizontalScroll: true,
     supportZoom: false,
     contentInsetAdjustmentBehavior:
         ScrollViewContentInsetAdjustmentBehavior.NEVER,
+    disableInputAccessoryView: true,
+    disableVerticalScroll: Platform.isIOS,
+    disableHorizontalScroll: true,
+    verticalScrollBarEnabled: false,
+    horizontalScrollBarEnabled: false,
+    transparentBackground: true,
   );
 
   bool _webViewLoaded = false;
