@@ -36,10 +36,6 @@ class EditorPage extends ConsumerStatefulWidget {
 
 class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
-  /// 使用 body 滚动条, 如果为false, 则使用 editor 的滚动条
-  static final _useBodyScrollbar = true;
-
-  // final ScrollController _scrollController = ScrollController();
   late WebViewController _controller;
   CustomWebkitProxy? _webkitProxy;
   bool _webViewLoaded = false;
@@ -49,15 +45,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   Color _titleBgColor = Colors.transparent;
   Color _titleTextColor = Colors.transparent;
-
-  // bool _isLockWebScroll = false;
-  // bool _isLockFlutterScroll = false;
-
-  // Timer? _lockWebScrollTimer;
-  // Timer? _lockFlutterScrollTimer;
-
-  // double? _scrollHeight;
-  // double? _clientHeight;
 
   int _tapCount = 0;
   DateTime? _lastTapTime;
@@ -146,10 +133,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
       final webview = _webkitProxy?.webViewInstance;
       if (webview != null) {
         // 设置 iOS WebView 的滚动行为
-        // 允许垂直方向的回弹效果, 禁止水平方向的回弹效果
-        webview.scrollView.setBounces(true);
+        webview.scrollView.setBounces(false);
         webview.scrollView.setAlwaysBounceHorizontal(false);
-        webview.scrollView.setAlwaysBounceVertical(true);
+        webview.scrollView.setAlwaysBounceVertical(false);
+        // final nativeWebView = webview.nativeWebView;
       }
     }
   }
@@ -157,12 +144,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
   Future<void> _initEditorHtml() async {
     await _loadFileContent();
     await _controller.setHorizontalScrollBarEnabled(false);
-    if (_useBodyScrollbar) {
-      // 使用 body 滚动条时, 使用 flutter 自定义滚动条
-      // await _controller.setVerticalScrollBarEnabled(false);
+    if (Platform.isAndroid) {
       await _controller.setVerticalScrollBarEnabled(true);
-    } else {
-      await _controller.setVerticalScrollBarEnabled(true);
+    } else if (Platform.isIOS) {
+      await _controller.setVerticalScrollBarEnabled(false);
     }
     if (Platform.isIOS) {
       await _setIOSOverScrollMode();
@@ -171,7 +156,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     await _controller.clearCache();
-    _controller.setOnScrollPositionChange(_onHtmlScrollPositionChange);
+    // _controller.setOnScrollPositionChange(_onHtmlScrollPositionChange);
     _controller.addJavaScriptChannel(
       'EditorBridge',
       onMessageReceived: _onMessageReceived,
@@ -241,15 +226,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
   }
 
-  void _onHtmlScrollPositionChange(ScrollPositionChange position) {
-    if (_useBodyScrollbar) {
-      // _useBodyScrollbar 模式下, webview 是body在滚动, 和这个监听会重复调用
-      return;
-    }
-    final dpr = MediaQuery.of(context).devicePixelRatio;
-    final logicalY = position.y / dpr;
-    _onScrollPositionChange(logicalY);
-  }
+  // void _onHtmlScrollPositionChange(ScrollPositionChange position) {
+  //   final dpr = MediaQuery.of(context).devicePixelRatio;
+  //   final logicalY = position.y / dpr;
+  //   _onScrollPositionChange(logicalY);
+  // }
 
   void _setAppBarColor(Color newBgColor, Color newTextColor) {
     if (newBgColor != _titleBgColor) {
@@ -277,70 +258,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final newTextColor = _getTitleColor(scrollY, textColor);
 
     _setAppBarColor(newBgColor, newTextColor);
-
-    // if (_useBodyScrollbar && !_getIsLockFlutterScroll()) {
-    //   _lockWebScroll();
-    //   final maxScroll = (_scrollHeight ?? 0) - (_clientHeight ?? 0);
-    //   _scrollController.jumpTo(scrollY.clamp(0, maxScroll));
-    //   _unlockWebScroll();
-    // }
   }
 
   void _onScrollHeightChange(double? scrollHeight, double? clientHeight) {
     if (!_webViewLoaded) return;
     if (!mounted) return;
     if (scrollHeight == null || clientHeight == null) return;
-    // setState(() {
-    //   _scrollHeight = scrollHeight;
-    //   _clientHeight = clientHeight;
-    // });
   }
-
-  // bool _getIsLockWebScroll() {
-  //   return _isLockWebScroll;
-  // }
-
-  // void _lockWebScroll() {
-  //   if (_lockWebScrollTimer != null) {
-  //     _lockWebScrollTimer!.cancel();
-  //     _lockWebScrollTimer = null;
-  //   }
-  //   _isLockWebScroll = true;
-  // }
-
-  // void _unlockWebScroll() {
-  //   _lockWebScrollTimer = Timer(Duration(milliseconds: 100), () {
-  //     _lockWebScrollTimer = null;
-  //     if (!mounted) return;
-  //     _isLockWebScroll = false;
-  //   });
-  // }
-
-  // bool _getIsLockFlutterScroll() {
-  //   return _isLockFlutterScroll;
-  // }
-
-  // void _lockFlutterScroll() {
-  //   if (_lockFlutterScrollTimer != null) {
-  //     _lockFlutterScrollTimer!.cancel();
-  //     _lockFlutterScrollTimer = null;
-  //   }
-  //   _isLockFlutterScroll = true;
-  // }
-
-  // void _unlockFlutterScroll() {
-  //   _lockFlutterScrollTimer = Timer(Duration(milliseconds: 100), () {
-  //     _lockFlutterScrollTimer = null;
-  //     if (!mounted) return;
-  //     _isLockFlutterScroll = false;
-  //   });
-  // }
-
-  // void _setEditorScrollValue(double value) {
-  //   if (!mounted) return;
-  //   if (!_webViewLoaded) return;
-  //   _controller.runJavaScript("window.setEditorScrollbarValue($value)");
-  // }
 
   void _updateState(Map<String, dynamic>? state) {}
 
@@ -416,7 +340,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         const init = () => {
           if (window.initEditor) {
             try {
-              window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)}, ${(!_useBodyScrollbar).toString()});
+              window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)});
             } catch (e) {
               console.error('initEditor error:', e.message);
             }
@@ -471,11 +395,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
         );
       }
       await _updateColorMode(false);
-      if (mounted) {
-        final statusBarHeight = MediaQuery.of(context).padding.top;
-        await _controller
-            .runJavaScript('window.setStatusBarHeight($statusBarHeight)');
-      }
     }
   }
 
@@ -541,83 +460,18 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Widget _buildWebView(ColorScheme colorScheme) {
-    if (_useBodyScrollbar) {
-      return Stack(
-        children: [
-          WebViewWidget(
-            controller: _controller,
-          ),
-        ],
-      );
-    }
     return WebViewWidget(
       controller: _controller,
     );
   }
-
-  // double _getAppBarMinHeight() {
-  //   final paddingTop = MediaQuery.of(context).padding.top;
-  //   return paddingTop + SimpleAppBar.defaultHeight;
-  // }
-
-  // double _getBottomPadding() {
-  //   final paddingBottom = MediaQuery.of(context).padding.bottom;
-  //   return paddingBottom;
-  // }
-
-  // void _onFlutterScrollbarChanged() {
-  //   if (!_webViewLoaded) return;
-  //   if (!_useBodyScrollbar) return;
-  //   if (!_getIsLockWebScroll()) {
-  //     _lockFlutterScroll();
-  //     final value = _scrollController.offset;
-  //     _controller.runJavaScript('window.scrollTo(0, $value)');
-  //     _unlockFlutterScroll();
-  //   }
-  // }
-
-  // Widget? _buildVirtualScrollbar() {
-  //   if (_scrollHeight == null ||
-  //       _clientHeight == null ||
-  //       _scrollHeight! <= _clientHeight!) {
-  //     return null;
-  //   }
-
-  //   const scrollbarWidth = 20.0;
-  //   return Positioned(
-  //     right: 0,
-  //     top: 0,
-  //     bottom: 0,
-  //     child: SizedBox(
-  //       height: _clientHeight,
-  //       width: scrollbarWidth,
-  //       child: PlatformScrollbar(
-  //         controller: _scrollController,
-  //         scrollPadding: EdgeInsets.only(
-  //             top: _getAppBarMinHeight(), bottom: _getBottomPadding()),
-  //         interactive: true,
-  //         child: SingleChildScrollView(
-  //           controller: _scrollController,
-  //           // physics: const NeverScrollableScrollPhysics(),
-  //           child: SizedBox(
-  //             height: _scrollHeight,
-  //             width: scrollbarWidth,
-  //             child: Container(
-  //               color: Colors.red.withAlpha(50),
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 
   @override
   Widget build(BuildContext context) {
     final name = Utility.getFileName(widget.path);
     final showName = WsUtils.getFileShowName(name);
     final colorScheme = ThemeColors.getColorScheme(context);
-    // final scrollbar = _buildVirtualScrollbar();
+    // final mediaQuery = MediaQuery.of(context);
+    // final height = mediaQuery.size.height - mediaQuery.viewInsets.bottom;
 
     return PlatformSimplePage(
       titleActions: _buildTitleActions(colorScheme),
@@ -643,12 +497,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       appbarScrolledUnderElevation: 0.0,
       centerTitle: true,
       noScrollView: true,
-      child: Stack(
-        children: [
-          _buildWebView(colorScheme),
-          // if (scrollbar != null) scrollbar,
-        ],
-      ),
+      child: _buildWebView(colorScheme),
     );
   }
 }

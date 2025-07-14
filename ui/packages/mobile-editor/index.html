@@ -17,12 +17,6 @@
 
   <body style="background-color: transparent">
     <script>
-      window.setEditorScrollbar = (isEditorScrollbar) => {
-        if (typeof isEditorScrollbar === 'boolean') {
-          window.isEditorScrollbar = isEditorScrollbar;
-          document.body.classList.toggle('editor-scrollbar', isEditorScrollbar);
-        }
-      };
       window.setAutoSave = (autoSave, autoSaveInterval, autoSaveFocusChange) => {
         window.autoSaveInterval = autoSaveInterval;
         window.autoSave = autoSave;
@@ -38,19 +32,6 @@
         }
         // console.log(`setColorMode: ${mode}`);
       };
-      window.setStatusBarHeight = (statusBarHeight) => {
-        if (typeof statusBarHeight === 'number') {
-          if (!Number.isNaN(statusBarHeight)) {
-            window.statusBarHeight = statusBarHeight;
-            document.documentElement.style.setProperty(
-              '--status-bar-height-app',
-              `${statusBarHeight}px`,
-            );
-            // document.body.style.paddingTop = `${statusBarHeight}px`;
-            // console.log(`setStatusBarHeight: ${statusBarHeight}`);
-          }
-        }
-      };
 
       (() => {
         if (/android/i.test(navigator.userAgent)) {
@@ -60,8 +41,6 @@
           window.isIOS = true;
           document.body.classList.add('ios');
         }
-        const initEditorScrollbar = false;
-        window.setEditorScrollbar(initEditorScrollbar);
       })();
     </script>
     <div id="root">

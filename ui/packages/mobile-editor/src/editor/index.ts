@@ -97,23 +97,6 @@ const onScrollPositionChange = (e: Event) => {
   }
 };
 
-export const setEditorScrollbarValue = (value: number) => {
-  let scrollDom: HTMLElement | null = null;
-  if (window.editor != null) {
-    scrollDom = window.isEditorScrollbar
-      ? document.getElementById(config.mdRootId)!
-      : document.body;
-  } else if (window.cmEditor != null) {
-    scrollDom = window.isEditorScrollbar
-      ? document.getElementById(config.cmRootId)!
-      : document.body;
-  }
-  if (scrollDom != null) {
-    const halfHeight = scrollDom.scrollHeight * value;
-    scrollDom.scrollTop = halfHeight;
-  }
-};
-
 const observeScrollability = (
   el: HTMLElement | null,
   cb: (e: HTMLElement) => void,
@@ -199,8 +182,8 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   const cmRoot = document.getElementById(config.cmRootId)!;
   const mdRoot = document.getElementById(config.mdRootId)!;
 
-  const cmScrollDom = window.isEditorScrollbar ? cmRoot : null;
-  const mdScrollDom = window.isEditorScrollbar ? mdRoot : null;
+  const cmScrollDom = cmRoot;
+  const mdScrollDom = mdRoot;
 
   const editorDisplay = 'block';
 
@@ -220,13 +203,13 @@ export const createEditor = async (fileName: string, sourceMode: boolean, conten
   }
   document.body.addEventListener('click', bodyClick);
 
-  if (!window.isEditorScrollbar) {
-    // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
-    document?.addEventListener('scroll', onScrollPositionChange);
-  }
+  // if (!window.isEditorScrollbar) {
+  //   // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
+  //   document?.addEventListener('scroll', onScrollPositionChange);
+  // }
 
   // 添加 resize 事件监听
-  window.addEventListener('resize', handleWindowResize);
+  // window.addEventListener('resize', handleWindowResize);
 
   (window as any).onCleanEvents = () => {
     onScrollContentChangeCleanup?.();

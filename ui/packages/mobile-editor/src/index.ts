@@ -1,17 +1,11 @@
 import { invokeCommand } from './commands';
 import { config } from './config';
-import { createEditor, getContentJson, setEditorScrollbarValue } from './editor';
+import { createEditor, getContentJson } from './editor';
 import './styles/index.scss';
 import './theme';
 import './utils';
 
-const initEditor = async (
-  fileName: string,
-  sourceMode: boolean,
-  content: string,
-  isEditorScrollbar?: boolean,
-) => {
-  window.setEditorScrollbar(isEditorScrollbar);
+const initEditor = async (fileName: string, sourceMode: boolean, content: string) => {
   window.sourceMode = sourceMode;
   window.fileName = fileName;
   window.fileContent = content;
@@ -43,19 +37,17 @@ const init = async () => {
   window.initEditor = initEditor;
   window.invokeCommand = invokeCommand;
   window.getContent = getContentJson;
-  window.setEditorScrollbarValue = setEditorScrollbarValue;
 
   if (!config.isFlutter) {
-    window.isEditorScrollbar = true;
     const testContent = config.testContent || 'test content';
     window.sourceMode = false;
-    initEditor('default.js', window.sourceMode, testContent, window.isEditorScrollbar);
+    initEditor('default.js', window.sourceMode, testContent);
     window.setColorMode('light');
     appendTestBtn('切换编辑器', () => {
       if (window.sourceMode) {
-        window.initEditor('default.md', false, testContent, window.isEditorScrollbar);
+        window.initEditor('default.md', false, testContent);
       } else {
-        window.initEditor('default.js', true, testContent, window.isEditorScrollbar);
+        window.initEditor('default.js', true, testContent);
       }
     });
     appendTestBtn('切换主题', () =>

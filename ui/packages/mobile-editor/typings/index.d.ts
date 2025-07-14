@@ -5,12 +5,8 @@ interface Window {
   isAndroid: boolean;
   /** iOS */
   isIOS: boolean;
-  /** 状态栏高度 */
-  statusBarHeight?: number;
   /** editor 内容是否可滚动 */
   isScrollable?: boolean;
-  /** 是否使用 editor scrollbar */
-  isEditorScrollbar?: boolean;
 
   /** 安装 VConsole */
   setupVConsole: () => Promise<any>;
@@ -18,12 +14,6 @@ interface Window {
   setAutoSave: (autoSave: boolean, autoSaveInterval: number, autoSaveFocusChange: boolean) => void;
   /** 设置颜色模式 */
   setColorMode: (mode: string, isUpdateEditor?: boolean) => Promise<any>;
-  /** 设置状态栏高度 */
-  setStatusBarHeight: (statusBarHeight: number) => void;
-  /** 设置是否使用 editor scrollbar */
-  setEditorScrollbar: (isEditorScrollbar?: boolean) => void;
-  /** 设置编辑器滚动条位置 */
-  setEditorScrollbarValue: (value: number) => void;
   /** 设置编辑器 */
   initEditor: (
     fileName: string,

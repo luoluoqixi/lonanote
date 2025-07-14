@@ -107,7 +107,7 @@ class SimpleAppBar extends StatelessWidget {
 
   const SimpleAppBar({
     super.key,
-    required this.title,
+    this.title,
     this.titleText,
     this.titleFontSize,
     this.titleColor,
