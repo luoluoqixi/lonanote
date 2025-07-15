@@ -63,7 +63,7 @@ const bodyClick = (e: MouseEvent) => {
   }
 };
 
-const onScrollPositionChange = (e: Event) => {
+const sendCurrentScrollPosition = (e: Event) => {
   if (!window.flutter_inappwebview) return;
   if (e.target instanceof Document) {
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
@@ -74,6 +74,33 @@ const onScrollPositionChange = (e: Event) => {
     const scrollTop = e.target.scrollTop;
     callFlutter('scroll_position', scrollTop);
   }
+};
+
+const onScrollPositionChange = (e: Event) => {
+  const w = window as any;
+  sendCurrentScrollPosition(e);
+  if (w.scrollPositionChangeAnimId != null) {
+    cancelAnimationFrame(w.scrollPositionChangeAnimId);
+    w.scrollPositionChangeAnimId = null;
+  }
+  if (w.scrollPositionChangeStop != null) {
+    clearTimeout(w.scrollPositionChangeStop);
+    w.scrollPositionChangeStop = null;
+  }
+  function send() {
+    w.scrollPositionChangeAnimId = requestAnimationFrame(() => {
+      sendCurrentScrollPosition(e);
+      send();
+    });
+  }
+  send();
+
+  w.scrollPositionChangeStop = setTimeout(() => {
+    if (w.scrollPositionChangeAnimId != null) {
+      cancelAnimationFrame(w.scrollPositionChangeAnimId);
+      w.scrollPositionChangeAnimId = null;
+    }
+  }, 100);
 };
 
 // const observeScrollability = (

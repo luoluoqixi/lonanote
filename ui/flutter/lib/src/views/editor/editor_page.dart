@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -179,8 +180,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
         if (arguments.isNotEmpty) {
           final data = arguments[0];
           if (data != null) {
-            final scrollY = jsonDecode(data) as num?;
-            _onScrollPositionChange(scrollY?.toDouble());
+            // 直接使用 webviewController 的监听, 速度快很多
+            // final scrollY = jsonDecode(data) as num?;
+            // _onScrollPositionChange(scrollY?.toDouble());
           }
         }
       },
@@ -219,11 +221,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
   }
 
-  // void _onHtmlScrollPositionChange(ScrollPositionChange position) {
-  //   final dpr = MediaQuery.of(context).devicePixelRatio;
-  //   final logicalY = position.y / dpr;
-  //   _onScrollPositionChange(logicalY);
-  // }
+  void _onHtmlScrollPositionChange(int x, int y) {
+    _onScrollPositionChange(y.toDouble());
+  }
 
   void _setAppBarColor(Color newBgColor, Color newTextColor) {
     if (newBgColor != _titleBgColor) {
@@ -505,6 +505,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
           }
         }
       },
+      onScrollChanged: (controller, x, y) {
+        _onHtmlScrollPositionChange(x, y);
+      },
     );
   }
 
@@ -544,6 +547,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
       noScrollView: true,
       child: Stack(
         children: [
+          // AnimatedPositioned(
+          //   top: _titleOffset,
+          //   left: 0,
+          //   right: 0,
+          //   duration: Duration(milliseconds: 5),
           Transform.translate(
             offset: Offset(0, _titleOffset),
             child: SizedBox(
