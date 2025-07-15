@@ -5,13 +5,14 @@
     // overflow: visible;
     overflow-y: visible;
     box-sizing: border-box;
+    background-color: transparent;
 
     .cm-gutters {
       color: var(--gray-10) !important;
     }
     .ProseMirror {
       box-sizing: border-box;
-      padding: 10px 20px var(--bottom-safe-height) 20px;
+      padding: 0px 20px var(--bottom-safe-height) 20px;
     }
   }
 }

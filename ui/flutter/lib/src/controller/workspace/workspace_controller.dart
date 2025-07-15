@@ -3,7 +3,6 @@ import 'package:lonanote/src/bindings/api/fs/fs.dart';
 import 'package:lonanote/src/bindings/api/workspace/types.dart';
 import 'package:lonanote/src/bindings/api/workspace/workspace.dart';
 import 'package:lonanote/src/bindings/api/workspace/workspace_manager.dart';
-import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 
@@ -153,11 +152,11 @@ class WorkspaceController {
       final targetPath = "$wsPath/$filePath";
       if (!RustFs.exists(targetPath)) {
         var content = "";
-        final extName = Utility.getExtName(filePath);
-        if (extName != null && Utility.isMarkdown(extName)) {
-          final fileName = Utility.getFileNameWithoutExt(filePath);
-          content = "# $fileName\n\n";
-        }
+        // final extName = Utility.getExtName(filePath);
+        // if (extName != null && Utility.isMarkdown(extName)) {
+        //   final fileName = Utility.getFileNameWithoutExt(filePath);
+        //   content = "# $fileName\n\n";
+        // }
         RustFs.createFile(targetPath, content);
       } else {
         throw Exception("文件已存在: $targetPath");

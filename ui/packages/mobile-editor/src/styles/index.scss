@@ -52,9 +52,10 @@ body.android {
   padding: 0 2px;
   padding-top: var(--padding-top);
 
-  overflow-y: auto;
+  overflow: visible;
 
-  background-color: var(--color-background);
+  // background-color: var(--color-background);
+  background-color: transparent;
   color: var(--text-color);
 
   // min-height: 100%;

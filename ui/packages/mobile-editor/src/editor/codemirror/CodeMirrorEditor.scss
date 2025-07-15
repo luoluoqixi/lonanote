@@ -1,12 +1,14 @@
 #cm-root {
-  background-color: var(--cm-background-color);
+  // background-color: var(--cm-background-color);
+  background-color: transparent;
 
   .ͼ1 .cm-lineNumbers .cm-gutterElement {
     // padding-top: 2px;
     min-width: 40px;
   }
   .cm-editor {
-    background-color: var(--cm-background-color);
+    // background-color: var(--cm-background-color);
+    background-color: transparent;
     overflow: visible;
   }
   // 行号
@@ -14,7 +16,8 @@
     color: var(--gray-10) !important;
     // font-size: var(--font-size-1);
     border-width: 0 !important;
-    background-color: var(--cm-background-color) !important;
+    // background-color: var(--cm-background-color) !important;
+    background-color: transparent !important;
   }
   .cm-scroller {
     justify-content: start;

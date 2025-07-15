@@ -34,6 +34,8 @@ class EditorPage extends ConsumerStatefulWidget {
 
 class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
+  static final double _defaultTitleHeight = 82.0;
+
   InAppWebViewController? _webViewController;
   final GlobalKey webViewKey = GlobalKey();
 
@@ -66,6 +68,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   int _tapCount = 0;
   DateTime? _lastTapTime;
+
+  double _titleOffset = 0.0;
 
   String fileContent = "";
 
@@ -203,12 +207,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Color _getTitleColor(double scrollY, Color baseColor) {
-    final minScrollY = 150.0;
+    const maxOffset = 30.0;
+    final minScrollY = _defaultTitleHeight - maxOffset;
     if (scrollY < minScrollY) {
       return Colors.transparent;
     }
     final offset = scrollY - minScrollY;
-    const maxOffset = 30.0;
     final opacity = (offset / maxOffset).clamp(0.0, 1.0); // 0.0 ~ 1.0
     return baseColor.withAlpha(
       (255.0 * opacity).round(),
@@ -238,6 +242,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (!_webViewLoaded) return;
     if (!mounted) return;
     if (scrollY == null) return;
+
+    final newOffset = scrollY > 0 ? -scrollY : 0.0;
+    setState(() {
+      _titleOffset = newOffset;
+    });
 
     final colorScheme = ThemeColors.getColorScheme(context);
     final bgColor = ThemeColors.getBgColor(colorScheme);
@@ -381,7 +390,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       }
       await _updateColorMode(false);
       if (mounted) {
-        final titleHeight = MediaQuery.of(context).padding.top;
+        final titleHeight = _defaultTitleHeight;
         await _webViewController?.evaluateJavascript(
             source: 'window.setTitleHeight($titleHeight)');
       }
@@ -506,6 +515,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final colorScheme = ThemeColors.getColorScheme(context);
     // final mediaQuery = MediaQuery.of(context);
     // final height = mediaQuery.size.height - mediaQuery.viewInsets.bottom;
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final titleHeight = _defaultTitleHeight + kToolbarHeight + statusBarHeight;
 
     return PlatformSimplePage(
       titleActions: _buildTitleActions(colorScheme),
@@ -531,7 +542,41 @@ class _EditorPageState extends ConsumerState<EditorPage>
       appbarScrolledUnderElevation: 0.0,
       centerTitle: true,
       noScrollView: true,
-      child: _buildWebView(colorScheme),
+      child: Stack(
+        children: [
+          Transform.translate(
+            offset: Offset(0, _titleOffset),
+            child: SizedBox(
+              child: Container(
+                height: titleHeight,
+                color: ThemeColors.getPrimaryColor(colorScheme),
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 20, left: 20),
+                    child: Text(
+                      showName,
+                      style: TextStyle(
+                        color: ThemeColors.getTextColor(colorScheme),
+                        fontSize: 30,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              AppBar(backgroundColor: Colors.transparent),
+              Expanded(
+                child: _buildWebView(colorScheme),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
