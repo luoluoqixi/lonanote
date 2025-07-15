@@ -32,6 +32,16 @@
         }
         // console.log(`setColorMode: ${mode}`);
       };
+      window.setTitleHeight = (titleHeight) => {
+        if (typeof titleHeight === 'number') {
+          if (!Number.isNaN(titleHeight)) {
+            window.titleHeight = titleHeight;
+            document.documentElement.style.setProperty('--title-height-app', `${titleHeight}px`);
+            // document.body.style.paddingTop = `${titleHeight}px`;
+            // console.log(`setTitleHeight: ${titleHeight}`);
+          }
+        }
+      };
 
       (() => {
         if (/android/i.test(navigator.userAgent)) {

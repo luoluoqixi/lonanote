@@ -63,7 +63,8 @@ dependencies:
   chewie: ^1.12.1
   flutter_dotenv: ^5.2.1
   flutter_svg: ^2.2.0
-  flutter_inappwebview: ^6.1.5
+  # https://github.com/pichillilorenzo/flutter_inappwebview/issues/1947
+  flutter_inappwebview: ^6.2.0-beta.2
 
 dev_dependencies:
   integration_test:

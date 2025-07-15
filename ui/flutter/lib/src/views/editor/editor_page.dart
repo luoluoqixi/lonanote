@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -48,9 +47,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
     contentInsetAdjustmentBehavior:
         ScrollViewContentInsetAdjustmentBehavior.NEVER,
     disableInputAccessoryView: true,
-    disableVerticalScroll: Platform.isIOS,
+    disableVerticalScroll: false,
     disableHorizontalScroll: true,
-    verticalScrollBarEnabled: false,
+    alwaysBounceHorizontal: false,
+    alwaysBounceVertical: true,
+    verticalScrollBarEnabled: true,
     horizontalScrollBarEnabled: false,
     transparentBackground: true,
   );
@@ -180,25 +181,25 @@ class _EditorPageState extends ConsumerState<EditorPage>
         }
       },
     );
-    _webViewController!.addJavaScriptHandler(
-      handlerName: 'scrollable',
-      callback: (List<dynamic> arguments) {
-        if (arguments.isNotEmpty) {
-          final data = arguments[0];
-          if (data != null) {
-            final obj = jsonDecode(data) as Map<String, dynamic>?;
-            if (obj != null) {
-              final scrollHeight = obj['scrollHeight'];
-              final clientHeight = obj['clientHeight'];
-              _onScrollHeightChange(
-                scrollHeight?.toDouble(),
-                clientHeight?.toDouble(),
-              );
-            }
-          }
-        }
-      },
-    );
+    // _webViewController!.addJavaScriptHandler(
+    //   handlerName: 'scrollable',
+    //   callback: (List<dynamic> arguments) {
+    //     if (arguments.isNotEmpty) {
+    //       final data = arguments[0];
+    //       if (data != null) {
+    //         final obj = jsonDecode(data) as Map<String, dynamic>?;
+    //         if (obj != null) {
+    //           final scrollHeight = obj['scrollHeight'];
+    //           final clientHeight = obj['clientHeight'];
+    //           _onScrollHeightChange(
+    //             scrollHeight?.toDouble(),
+    //             clientHeight?.toDouble(),
+    //           );
+    //         }
+    //       }
+    //     }
+    //   },
+    // );
   }
 
   Color _getTitleColor(double scrollY, Color baseColor) {
@@ -246,12 +247,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final newTextColor = _getTitleColor(scrollY, textColor);
 
     _setAppBarColor(newBgColor, newTextColor);
-  }
-
-  void _onScrollHeightChange(double? scrollHeight, double? clientHeight) {
-    if (!_webViewLoaded) return;
-    if (!mounted) return;
-    if (scrollHeight == null || clientHeight == null) return;
   }
 
   void _updateState(Map<String, dynamic>? state) {}
@@ -385,6 +380,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
         );
       }
       await _updateColorMode(false);
+      if (mounted) {
+        final titleHeight = MediaQuery.of(context).padding.top;
+        await _webViewController?.evaluateJavascript(
+            source: 'window.setTitleHeight($titleHeight)');
+      }
     }
   }
 

@@ -76,69 +76,63 @@ const onScrollPositionChange = (e: Event) => {
   }
 };
 
-const observeScrollability = (
-  el: HTMLElement | null,
-  cb: (e: HTMLElement) => void,
-): (() => void) => {
-  el = el || document.body;
-  const callback = () => {
-    cb(el);
-  };
-  callback();
-  const resizeObserver = new ResizeObserver(callback);
-  resizeObserver.observe(el);
-  const mutationObserver = new MutationObserver(callback);
-  mutationObserver.observe(el, {
-    childList: true,
-    subtree: true,
-    characterData: true,
-  });
-  return () => {
-    resizeObserver.disconnect();
-    mutationObserver.disconnect();
-  };
-};
-
-const onScrollContentChange = (el: HTMLElement) => {
-  /// 当内容高度超过可视区域时，添加 editor-scrollable 类
-  const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
-  window.isScrollable = isScrollable;
-  // console.log('isScrollable', isScrollable);
-  document.body.classList.toggle('editor-scrollable', isScrollable);
-
-  callFlutter('scrollable', {
-    scrollHeight: el.scrollHeight,
-    clientHeight: el.clientHeight,
-  });
-};
-
-// const throttledOnRefreshEditor = () => {
-//   const lastTimeout = (window as any).throttledOnRefreshEditorTimeout;
-//   if (lastTimeout != null) {
-//     clearTimeout(lastTimeout);
-//     (window as any).throttledOnRefreshEditorTimeout = null;
-//   }
-//   (window as any).throttledOnRefreshEditorTimeout = setTimeout(() => {
-//     (window as any).throttledOnRefreshEditorTimeout = null;
-//     window.cmEditor?.requestMeasure();
-//   }, 200);
+// const observeScrollability = (
+//   el: HTMLElement | null,
+//   cb: (e: HTMLElement) => void,
+// ): (() => void) => {
+//   el = el || document.body;
+//   const callback = () => {
+//     cb(el);
+//   };
+//   callback();
+//   const resizeObserver = new ResizeObserver(callback);
+//   resizeObserver.observe(el);
+//   const mutationObserver = new MutationObserver(callback);
+//   mutationObserver.observe(el, {
+//     childList: true,
+//     subtree: true,
+//     characterData: true,
+//   });
+//   return () => {
+//     resizeObserver.disconnect();
+//     mutationObserver.disconnect();
+//   };
 // };
 
-function handleWindowResize() {
+// const onScrollContentChange = (el: HTMLElement) => {
+//   /// 当内容高度超过可视区域时，添加 editor-scrollable 类
+//   const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
+//   window.isScrollable = isScrollable;
+//   // console.log('isScrollable', isScrollable);
+//   document.body.classList.toggle('editor-scrollable', isScrollable);
+
+//   callFlutter('scrollable', {
+//     scrollHeight: el.scrollHeight,
+//     clientHeight: el.clientHeight,
+//   });
+// };
+
+const autoScrollToCursorStart = () => {
   if (window.editor != null) {
-    setTimeout(() => {
-      if (!window.editor) return;
-      const editor = window.editor;
-      editor.autoScrollToCursor(document.body);
-    }, 100);
+    const editor = window.editor;
+    editor.autoScrollToCursor(document.body);
+  } else if (window.cmEditor != null) {
+    const editor = window.cmEditor;
+    autoScrollToCursor(editor, document.body);
   }
-  if (window.cmEditor != null) {
-    setTimeout(() => {
-      if (!window.cmEditor) return;
-      const editor = window.cmEditor;
-      autoScrollToCursor(editor, document.body);
-    }, 100);
+};
+
+function handleWindowResize() {
+  // autoScrollToCursorStart();
+  const w = window as any;
+  if (w.autoScrollToCursorStartTimeout != null) {
+    clearTimeout(w.autoScrollToCursorStartTimeout);
+    w.autoScrollToCursorStartTimeout = null;
   }
+  w.autoScrollToCursorStartTimeout = setTimeout(() => {
+    w.autoScrollToCursorStartTimeout = null;
+    autoScrollToCursorStart();
+  }, 50);
 }
 
 export const createEditor = async (
@@ -160,41 +154,39 @@ export const createEditor = async (
   const cmRoot = document.getElementById(config.cmRootId)!;
   const mdRoot = document.getElementById(config.mdRootId)!;
 
-  const cmScrollDom = cmRoot;
-  const mdScrollDom = mdRoot;
+  // const cmScrollDom = cmRoot;
+  // const mdScrollDom = mdRoot;
 
   const editorDisplay = 'block';
 
-  let onScrollContentChangeCleanup: (() => void) | null = null;
+  // let onScrollContentChangeCleanup: (() => void) | null = null;
   if (sourceMode) {
     mdRoot.style.display = 'none';
     cmRoot.style.display = editorDisplay;
     window.cmEditor = createCMEditor(cmRoot, content, fileName);
-    cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
-    onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
+    // cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
+    // onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
   } else {
     cmRoot.style.display = 'none';
     mdRoot.style.display = editorDisplay;
     window.editor = await createMarkdownEditor(mdRoot, content, window.previewMode || false);
-    mdScrollDom?.addEventListener('scroll', onScrollPositionChange);
-    onScrollContentChangeCleanup = observeScrollability(mdScrollDom, onScrollContentChange);
+    // mdScrollDom?.addEventListener('scroll', onScrollPositionChange);
+    // onScrollContentChangeCleanup = observeScrollability(mdScrollDom, onScrollContentChange);
   }
   document.body.addEventListener('click', bodyClick);
 
-  // if (!window.isEditorScrollbar) {
-  //   // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
-  //   document?.addEventListener('scroll', onScrollPositionChange);
-  // }
+  // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
+  document?.addEventListener('scroll', onScrollPositionChange);
 
   // 添加 resize 事件监听
-  // window.addEventListener('resize', handleWindowResize);
+  window.addEventListener('resize', handleWindowResize);
 
   (window as any).onCleanEvents = () => {
-    onScrollContentChangeCleanup?.();
+    // onScrollContentChangeCleanup?.();
     window?.removeEventListener('resize', handleWindowResize);
     document.body.removeEventListener('click', bodyClick);
     document?.removeEventListener('scroll', onScrollPositionChange);
-    cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
-    mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);
+    // cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
+    // mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);
   };
 };

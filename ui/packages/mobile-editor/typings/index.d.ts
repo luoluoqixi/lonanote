@@ -14,6 +14,8 @@ interface Window {
   setAutoSave: (autoSave: boolean, autoSaveInterval: number, autoSaveFocusChange: boolean) => void;
   /** 设置颜色模式 */
   setColorMode: (mode: string, isUpdateEditor?: boolean) => Promise<any>;
+  /** 设置标题高度 */
+  setTitleHeight: (titleHeight: number) => void;
   /** 设置编辑器 */
   initEditor: (
     fileName: string,
