@@ -78,6 +78,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
   Timer? _pollStopTimer;
   double _titleOffset = 0.0;
 
+  bool _isDisposing = false;
+
   String fileContent = "";
 
   @override
@@ -92,8 +94,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   @override
   void dispose() {
+    setState(() {
+      _isDisposing = true;
+    });
     AppRouter.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
+    _webViewController?.clearFocus();
+    _webViewController = null;
     _ticker.dispose();
     super.dispose();
   }
@@ -118,6 +125,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
       // 退出页面前保存文件
       _save();
     }
+  }
+
+  Future<bool> _onWillPop() async {
+    setState(() {
+      _isDisposing = true;
+    });
+    return true;
   }
 
   void _onTick(Duration duration) {
@@ -485,6 +499,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Widget _buildWebView(ColorScheme colorScheme) {
+    if (_isDisposing) {
+      return SizedBox.shrink();
+    }
     return InAppWebView(
       key: webViewKey,
       initialSettings: _webviewSettings,
@@ -549,6 +566,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
     return PlatformSimplePage(
       titleActions: _buildTitleActions(colorScheme),
+      onWillPop: Platform.isAndroid ? _onWillPop : null,
       // 将 AppBar 背景延伸到屏幕顶部
       extendBodyBehindAppBar: true,
       // 如果不设置为 false, 键盘弹出与关闭时会显示 (0.x秒) 根 widget 的背景颜色
