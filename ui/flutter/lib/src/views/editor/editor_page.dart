@@ -587,7 +587,18 @@ class _EditorPageState extends ConsumerState<EditorPage>
             child: SizedBox(
               child: Container(
                 height: titleHeight,
-                color: ThemeColors.getPrimaryColor(colorScheme),
+                // 考虑增加背景颜色、图片调节设置
+                // color: ThemeColors.getPrimaryColor(colorScheme),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      ThemeColors.getPrimaryColor(colorScheme),
+                      ThemeColors.getBgColor(colorScheme),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
                 child: Align(
                   alignment: Alignment.bottomLeft,
                   child: Padding(
