@@ -30,12 +30,25 @@ def main():
                 line = line.strip()
                 if line.startswith(f"### [v") and current_version:
                     break
-                if line.startswith(f"## [v"):
-                    if current_version == False:
-                        current_version = True
-                        print(line)
-                elif current_version:
+                if line.startswith(f"## [v") and current_version:
+                    break
+                if line.startswith(f"# [v") and current_version:
+                    break
+                if current_version:
                     print(line)
+                else:
+                    if line.startswith(f"# [v"):
+                        if current_version == False:
+                            current_version = True
+                            print(line)
+                    elif line.startswith(f"## [v"):
+                        if current_version == False:
+                            current_version = True
+                            print(line)
+                    elif line.startswith(f"### [v"):
+                        if current_version == False:
+                            current_version = True
+                            print(line)
     else:
         print(f"{release_title}")
 
