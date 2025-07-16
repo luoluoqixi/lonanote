@@ -1,6 +1,38 @@
 # Changelog
 
-## [v0.1.0](https://github.com/luoluoqixi/lonanote/compare/v0.0.5...266c789e890eb9c1cc8b15e726cd969283cc485c) (2025-07-13)
+## [v0.1.1](https://github.com/luoluoqixi/lonanote/compare/v0.1.0...37666be43ba64ada913139e4097455839b0432c3) (2025-07-17)
+
+### ✨ Features
+
+* editor title and fix ios keyboard
+([455596a](https://github.com/luoluoqixi/lonanote/commit/455596a19b8bdc7dabbdda8e47c96b5240d99cc5))
+* mobile auto scroll to cursor, close #26
+([649dd11](https://github.com/luoluoqixi/lonanote/commit/649dd118fe575e26a8f5cd588a36c0d862f911aa)),
+closes [#26](https://github.com/luoluoqixi/lonanote/issues/26)
+
+### 🐛 Fixes
+
+* fix android release error
+([37666be](https://github.com/luoluoqixi/lonanote/commit/37666be43ba64ada913139e4097455839b0432c3))
+* fix click focus pos, fix dispose error
+([7173b75](https://github.com/luoluoqixi/lonanote/commit/7173b7515b2904406020912ab068f9e333f397ec))
+* fix release pub version
+([6df0cd4](https://github.com/luoluoqixi/lonanote/commit/6df0cd4e1ae85839bcc96115f219b8a74b92b7e7))
+
+### 📝 Documentation
+
+* delete todo.md
+([8223407](https://github.com/luoluoqixi/lonanote/commit/82234075990d58ebd12487a8989c872dd888fbcc))
+* update english document
+([5cb2da4](https://github.com/luoluoqixi/lonanote/commit/5cb2da4a73acaa58c20fe84503987669137ffbf9))
+* update README.md
+([82f6213](https://github.com/luoluoqixi/lonanote/commit/82f62137f314a9c1a25df12cacc0e4ef1e9cd562))
+* update README.md
+([e0984d3](https://github.com/luoluoqixi/lonanote/commit/e0984d36b196ad05f31d5c1ed0ff817258533ccb))
+* update mobile docs
+([bd6e971](https://github.com/luoluoqixi/lonanote/commit/bd6e97117962d17f17625a9d78f4e9d9091fe61d))
+
+## [v0.1.0](https://github.com/luoluoqixi/lonanote/compare/v0.0.5...v0.1.0) (2025-07-13)
 
 ### ✨ Features
 
@@ -49,6 +81,8 @@ https://github.com/irondash/cargokit/issues/93
 
 * update document
 ([266c789](https://github.com/luoluoqixi/lonanote/commit/266c789e890eb9c1cc8b15e726cd969283cc485c))
+* update license
+([446257c](https://github.com/luoluoqixi/lonanote/commit/446257cc7a44fedf7f955bd86484f3c53be94a9c))
 * update README.md
 ([44c0997](https://github.com/luoluoqixi/lonanote/commit/44c09974b222774a13f92b716dddf91e67f616a2))
 
@@ -63,6 +97,11 @@ closes [#13](https://github.com/luoluoqixi/lonanote/issues/13)
 ([7befe2a](https://github.com/luoluoqixi/lonanote/commit/7befe2aea95e0002bf89fbe3857269f783809dd7))
 * apply clippy style
 ([8d27bca](https://github.com/luoluoqixi/lonanote/commit/8d27bca1e5a9e927f4b53da8c21d7de9221fcf74))
+
+### ♻️ Refactor
+
+* delete Tauri
+([88f445b](https://github.com/luoluoqixi/lonanote/commit/88f445b2b0abd072a876850e538a17ef848c9271))
 
 ### 🧪 Testing
 
@@ -173,3 +212,12 @@ closes [#2](https://github.com/luoluoqixi/lonanote/issues/2)
 ([941935c](https://github.com/luoluoqixi/lonanote/commit/941935c8c3ed540c36d81e83f8cdb891ae643d33))
 * todo
 ([45246b1](https://github.com/luoluoqixi/lonanote/commit/45246b1d818047b461ec2954236cac0a6717793b))
+
+#### ♻️ Refactor
+
+* update milkdown
+([d75f0a5](https://github.com/luoluoqixi/lonanote/commit/d75f0a5ced34de84f89d12ecffbefec94edee955))
+* monorepo
+([5f85bf3](https://github.com/luoluoqixi/lonanote/commit/5f85bf3be3c8ff2952fc35c656dc055c1a8c220b))
+* change to radix-ui
+([a311263](https://github.com/luoluoqixi/lonanote/commit/a311263dc09160cb47bf8158ace32ab4ea15e438))
