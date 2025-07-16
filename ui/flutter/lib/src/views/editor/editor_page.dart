@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +41,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   InAppWebViewController? _webViewController;
   final GlobalKey webViewKey = GlobalKey();
 
-  InAppWebViewSettings settings = InAppWebViewSettings(
+  final InAppWebViewSettings _webviewSettings = InAppWebViewSettings(
     isInspectable: kDebugMode,
     javaScriptEnabled: true,
     allowsBackForwardNavigationGestures: false,
@@ -52,11 +53,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
     disableInputAccessoryView: true,
     disableVerticalScroll: false,
     disableHorizontalScroll: true,
+    disallowOverScroll: false,
     alwaysBounceHorizontal: false,
     alwaysBounceVertical: true,
     verticalScrollBarEnabled: true,
     horizontalScrollBarEnabled: false,
     transparentBackground: true,
+    overScrollMode: OverScrollMode.ALWAYS,
   );
 
   bool _webViewLoaded = false;
@@ -84,7 +87,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final ext = Utility.getExtName(widget.path);
     _isMarkdown = ext != null && Utility.isMarkdown(ext);
     _sourceMode = !_isMarkdown;
-    _ticker = createTicker(_onTick)..start();
+    _ticker = createTicker(_onTick);
   }
 
   @override
@@ -197,25 +200,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
         }
       },
     );
-    // _webViewController!.addJavaScriptHandler(
-    //   handlerName: 'scrollable',
-    //   callback: (List<dynamic> arguments) {
-    //     if (arguments.isNotEmpty) {
-    //       final data = arguments[0];
-    //       if (data != null) {
-    //         final obj = jsonDecode(data) as Map<String, dynamic>?;
-    //         if (obj != null) {
-    //           final scrollHeight = obj['scrollHeight'];
-    //           final clientHeight = obj['clientHeight'];
-    //           _onScrollHeightChange(
-    //             scrollHeight?.toDouble(),
-    //             clientHeight?.toDouble(),
-    //           );
-    //         }
-    //       }
-    //     }
-    //   },
-    // );
   }
 
   Color _getTitleColor(double scrollY, Color baseColor) {
@@ -243,8 +227,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _onHtmlScrollPositionChange(int x, int y) {
+    if (!_isPolling) {
+      _ticker.start();
+      _isPolling = true;
+    }
     _onScrollPositionChange(y.toDouble());
-    _isPolling = true;
     if (_pollStopTimer != null) {
       _pollStopTimer?.cancel();
       _pollStopTimer = null;
@@ -252,6 +239,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _pollStopTimer = Timer(Duration(milliseconds: 1000), () {
       _pollStopTimer = null;
       _isPolling = false;
+      _ticker.stop();
     });
   }
 
@@ -273,7 +261,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (!mounted) return;
     if (scrollY == null) return;
 
-    final newOffset = -scrollY; // scrollY > 0 ? -scrollY : 0.0;
+    late final double adjustedScrollY;
+    if (Platform.isAndroid) {
+      adjustedScrollY = scrollY / MediaQuery.of(context).devicePixelRatio;
+    } else {
+      adjustedScrollY = scrollY;
+    }
+
+    final newOffset =
+        -adjustedScrollY; // adjustedScrollY > 0 ? -adjustedScrollY : 0.0;
     setState(() {
       _titleOffset = newOffset;
     });
@@ -282,8 +278,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final bgColor = ThemeColors.getBgColor(colorScheme);
     final textColor = ThemeColors.getTextColor(colorScheme);
 
-    final newBgColor = _getTitleColor(scrollY, bgColor);
-    final newTextColor = _getTitleColor(scrollY, textColor);
+    final newBgColor = _getTitleColor(adjustedScrollY, bgColor);
+    final newTextColor = _getTitleColor(adjustedScrollY, textColor);
 
     _setAppBarColor(newBgColor, newTextColor);
   }
@@ -491,7 +487,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   Widget _buildWebView(ColorScheme colorScheme) {
     return InAppWebView(
       key: webViewKey,
-      initialSettings: settings,
+      initialSettings: _webviewSettings,
       onWebViewCreated: (controller) {
         _webViewController = controller;
         _bindMessageReceived();

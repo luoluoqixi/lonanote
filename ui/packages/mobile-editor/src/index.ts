@@ -38,7 +38,7 @@ const init = async () => {
   window.invokeCommand = invokeCommand;
   window.getContent = getContentJson;
 
-  if (!config.isFlutter) {
+  if (config.isDev && !config.isFlutter) {
     const testContent = config.testContent || 'test content';
     window.sourceMode = false;
     initEditor('default.js', window.sourceMode, testContent);
