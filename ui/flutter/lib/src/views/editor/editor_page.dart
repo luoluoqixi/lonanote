@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -34,7 +34,7 @@ class EditorPage extends ConsumerStatefulWidget {
 }
 
 class _EditorPageState extends ConsumerState<EditorPage>
-    with WidgetsBindingObserver, RouteAware {
+    with WidgetsBindingObserver, RouteAware, SingleTickerProviderStateMixin {
   static final double _defaultTitleHeight = 82.0;
 
   InAppWebViewController? _webViewController;
@@ -70,6 +70,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
   int _tapCount = 0;
   DateTime? _lastTapTime;
 
+  late final Ticker _ticker;
+  bool _isPolling = false;
+  Timer? _pollStopTimer;
   double _titleOffset = 0.0;
 
   String fileContent = "";
@@ -81,12 +84,14 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final ext = Utility.getExtName(widget.path);
     _isMarkdown = ext != null && Utility.isMarkdown(ext);
     _sourceMode = !_isMarkdown;
+    _ticker = createTicker(_onTick)..start();
   }
 
   @override
   void dispose() {
     AppRouter.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
+    _ticker.dispose();
     super.dispose();
   }
 
@@ -110,6 +115,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
       // 退出页面前保存文件
       _save();
     }
+  }
+
+  void _onTick(Duration duration) {
+    // logger.i("Ticker tick: $duration");
+    _pollTick();
   }
 
   Future<void> _loadFileContent() async {
@@ -221,8 +231,28 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
   }
 
+  void _pollTick() {
+    if (!_isPolling) return;
+    if (!_webViewLoaded) return;
+    if (_webViewController == null) return;
+    _webViewController!.getScrollY().then((y) {
+      if (y != null) {
+        _onScrollPositionChange(y.toDouble());
+      }
+    });
+  }
+
   void _onHtmlScrollPositionChange(int x, int y) {
     _onScrollPositionChange(y.toDouble());
+    _isPolling = true;
+    if (_pollStopTimer != null) {
+      _pollStopTimer?.cancel();
+      _pollStopTimer = null;
+    }
+    _pollStopTimer = Timer(Duration(milliseconds: 1000), () {
+      _pollStopTimer = null;
+      _isPolling = false;
+    });
   }
 
   void _setAppBarColor(Color newBgColor, Color newTextColor) {
@@ -243,7 +273,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (!mounted) return;
     if (scrollY == null) return;
 
-    final newOffset = scrollY > 0 ? -scrollY : 0.0;
+    final newOffset = -scrollY; // scrollY > 0 ? -scrollY : 0.0;
     setState(() {
       _titleOffset = newOffset;
     });
