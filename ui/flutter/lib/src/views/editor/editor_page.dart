@@ -94,12 +94,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   @override
   void dispose() {
-    setState(() {
-      _isDisposing = true;
-    });
     AppRouter.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
-    _webViewController?.clearFocus();
+    _webViewController?.dispose();
     _webViewController = null;
     _ticker.dispose();
     super.dispose();
@@ -179,7 +176,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _webViewController!.addJavaScriptHandler(
       handlerName: 'update_state',
       callback: (List<dynamic> arguments) {
-        logger.i("update_state: $arguments");
+        // logger.i("update_state: $arguments");
         if (arguments.isNotEmpty) {
           final data = arguments[0];
           if (data != null) {
@@ -233,6 +230,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (!_isPolling) return;
     if (!_webViewLoaded) return;
     if (_webViewController == null) return;
+    if (!mounted) return;
+    if (_isDisposing) return;
     _webViewController!.getScrollY().then((y) {
       if (y != null) {
         _onScrollPositionChange(y.toDouble());
@@ -529,10 +528,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
         await _initWebEditor();
       },
       onReceivedError: (controller, request, error) {
-        logger.e("WebView error: $error");
+        logger.e("Webview Error: ${request.url} -> $error");
       },
       onReceivedHttpError: (controller, request, error) {
-        logger.e("WebView HTTP error: $error");
+        logger.e(
+            "HTTP Error: ${request.url} -> ${error.statusCode} ${error.reasonPhrase}");
       },
       onConsoleMessage: (controller, consoleMessage) {
         if (kDebugMode) {

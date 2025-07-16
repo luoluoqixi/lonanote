@@ -41,9 +41,9 @@ export const onUpdateState = (state?: {
 
 const bodyClick = (e: MouseEvent) => {
   // console.log('bodyClick', e.target, window.isScrollable);
-  if (window.isScrollable) {
-    return;
-  }
+  // if (window.isScrollable) {
+  //   return;
+  // }
   if (e.target !== document.body) {
     if (e.target instanceof HTMLElement) {
       const id = e.target.id;
@@ -59,10 +59,16 @@ const bodyClick = (e: MouseEvent) => {
   }
   if (window.editor != null) {
     const editor = window.editor;
-    editor.focus();
+    editor.focus({
+      x: e.clientX,
+      y: e.clientY,
+    });
   }
   if (window.cmEditor != null) {
-    cmFocus(window.cmEditor);
+    cmFocus(window.cmEditor, {
+      x: e.clientX,
+      y: e.clientY,
+    });
   }
 };
 

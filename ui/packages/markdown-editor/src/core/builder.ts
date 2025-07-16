@@ -458,12 +458,29 @@ export class MarkdownBuilder {
     this.#events[type] = undefined;
   };
 
-  focus = () => {
+  focus = (pos?: { x: number; y: number }) => {
     this.#editor.action((ctx) => {
       const view = ctx.get(editorViewCtx);
-      const pos = view.state.doc.content.size;
       const { state } = view;
-      const selection = TextSelection.create(state.doc, pos);
+      let targetPos: number;
+      if (pos) {
+        const found = view.posAtCoords({ left: pos.x, top: pos.y });
+        if (found) {
+          targetPos = found.pos;
+        } else {
+          const domRect = view.dom.getBoundingClientRect();
+          if (pos.y < domRect.top) {
+            targetPos = 0; // 顶部：光标放开头
+          } else if (pos.y > domRect.bottom) {
+            targetPos = state.doc.content.size; // 底部：光标放末尾
+          } else {
+            targetPos = state.doc.content.size;
+          }
+        }
+      } else {
+        targetPos = state.doc.content.size;
+      }
+      const selection = TextSelection.create(state.doc, targetPos);
       view.focus();
       view.dispatch(state.tr.setSelection(selection));
     });

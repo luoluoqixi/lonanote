@@ -131,12 +131,32 @@ export const createCMEditor = (root: HTMLElement, content: string, fileName: str
 };
 
 /// 获取焦点并设置光标到最后位置
-export const cmFocus = (editor: EditorView) => {
+export const cmFocus = (editor: EditorView, pos?: { x: number; y: number }) => {
   const lastLine = editor.state.doc.lines;
   const lastPos = editor.state.doc.line(lastLine).to;
+
+  let targetPos: number;
+  if (pos) {
+    const found = editor.posAtCoords(pos);
+    if (found !== null) {
+      targetPos = found;
+    } else {
+      const domRect = editor.dom.getBoundingClientRect();
+      if (pos.y < domRect.top) {
+        targetPos = 0; // 在编辑器上方，光标放文档开头
+      } else if (pos.y > domRect.bottom) {
+        targetPos = lastPos; // 在编辑器下方，光标放文档末尾
+      } else {
+        targetPos = lastPos;
+      }
+    }
+  } else {
+    targetPos = lastPos;
+  }
+
   editor.dispatch({
-    selection: { anchor: lastPos, head: lastPos },
-    effects: EditorView.scrollIntoView(lastPos, { y: 'center' }),
+    selection: { anchor: targetPos, head: targetPos },
+    effects: EditorView.scrollIntoView(targetPos, { y: 'center' }),
   });
   editor.focus();
 };
