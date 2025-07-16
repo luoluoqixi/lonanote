@@ -32,6 +32,16 @@ closes [#26](https://github.com/luoluoqixi/lonanote/issues/26)
 * update mobile docs
 ([bd6e971](https://github.com/luoluoqixi/lonanote/commit/bd6e97117962d17f17625a9d78f4e9d9091fe61d))
 
+### ♻️ Refactor
+
+* refactor: use flutter_inappwebview
+([73bdecf](https://github.com/luoluoqixi/lonanote/commit/73bdecf98ef559a3c2f1436e5be35243cb0c0111))
+
+### ⚡ Performance
+
+* scroll change event
+([f5f112e](https://github.com/luoluoqixi/lonanote/commit/f5f112e917e279290a2fdcd73cdcad7b5496a006))
+
 ## [v0.1.0](https://github.com/luoluoqixi/lonanote/compare/v0.0.5...v0.1.0) (2025-07-13)
 
 ### ✨ Features
@@ -100,8 +110,20 @@ closes [#13](https://github.com/luoluoqixi/lonanote/issues/13)
 
 ### ♻️ Refactor
 
+* ignore generate code
+([07fc8b6](https://github.com/luoluoqixi/lonanote/commit/07fc8b6ef0ef11eb14d30a62c4ea483445ca37e2))
+* clean ignore code
+([98f08ce](https://github.com/luoluoqixi/lonanote/commit/98f08ce86aa6417ab72df08141f5072b1afbd7ff))
 * delete Tauri
 ([88f445b](https://github.com/luoluoqixi/lonanote/commit/88f445b2b0abd072a876850e538a17ef848c9271))
+* clean code
+([2fd36cf](https://github.com/luoluoqixi/lonanote/commit/2fd36cf955c052f1f78840f6ff912b5b9bd89f48))
+
+### ⚡ Performance
+
+* mobile ui: input autofocus delay #15
+([853a448](https://github.com/luoluoqixi/lonanote/commit/853a448545f72e397bca16f5c7eeb29baeab69ea)),
+closes [#15](https://github.com/luoluoqixi/lonanote/issues/15)
 
 ### 🧪 Testing
 
@@ -152,6 +174,12 @@ closes [#23](https://github.com/luoluoqixi/lonanote/issues/23)
 ([dcc712c](https://github.com/luoluoqixi/lonanote/commit/dcc712c7db8f087b57f5341951af5dd847672e0c))
 * fix pnpm install
 ([b74f3d7](https://github.com/luoluoqixi/lonanote/commit/b74f3d77877d7943adc87ac4c925b5ffc9534a77))
+
+#### ♻️ Refactor
+
+* remove module css, add mobile entry, close #12
+([988af4b](https://github.com/luoluoqixi/lonanote/commit/988af4b75d7e416621abaae7e50fe98a451a49e3)),
+closes [#12](https://github.com/luoluoqixi/lonanote/issues/12)
 
 ### [v0.0.2](https://github.com/luoluoqixi/lonanote/compare/v0.0.1...v0.0.2) (2025-05-09)
 
@@ -221,3 +249,5 @@ closes [#2](https://github.com/luoluoqixi/lonanote/issues/2)
 ([5f85bf3](https://github.com/luoluoqixi/lonanote/commit/5f85bf3be3c8ff2952fc35c656dc055c1a8c220b))
 * change to radix-ui
 ([a311263](https://github.com/luoluoqixi/lonanote/commit/a311263dc09160cb47bf8158ace32ab4ea15e438))
+* refactor ui components
+([9ce5ba7](https://github.com/luoluoqixi/lonanote/commit/9ce5ba76a41e399857fd280c0d0d94609dc91435))
