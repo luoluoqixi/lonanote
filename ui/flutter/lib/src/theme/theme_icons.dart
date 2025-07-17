@@ -107,6 +107,10 @@ class ThemeIcons {
     return check ? Icons.check_circle : Icons.radio_button_unchecked;
   }
 
+  static IconData redo(BuildContext context) {
+    return isMaterial(context) ? Icons.redo : Icons.redo;
+  }
+
   static IconData refresh(BuildContext context) {
     return isMaterial(context) ? Icons.refresh : Icons.refresh;
   }
@@ -153,6 +157,10 @@ class ThemeIcons {
 
   static IconData tune(BuildContext context) {
     return isMaterial(context) ? Icons.tune : Icons.tune;
+  }
+
+  static IconData undo(BuildContext context) {
+    return isMaterial(context) ? Icons.undo : Icons.undo;
   }
 
   static IconData video(BuildContext context) {

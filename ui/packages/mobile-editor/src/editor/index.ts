@@ -2,7 +2,7 @@ import { config } from '@/config';
 import { callFlutter } from '@/utils/flutter';
 
 import { autoSaveUpdate } from './autoSave';
-import { autoScrollToCursor, cmFocus, createCMEditor } from './codemirror';
+import { cmAutoScrollToCursor, cmFocus, createCMEditor } from './codemirror';
 import { createMarkdownEditor } from './markdown/MarkdownEditor';
 
 export const saveContent = (content: string) => {
@@ -154,7 +154,7 @@ const autoScrollToCursorStart = () => {
     editor.autoScrollToCursor(document.body);
   } else if (window.cmEditor != null) {
     const editor = window.cmEditor;
-    autoScrollToCursor(editor, document.body);
+    cmAutoScrollToCursor(editor, document.body);
   }
 };
 

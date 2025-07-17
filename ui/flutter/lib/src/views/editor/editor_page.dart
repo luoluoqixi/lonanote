@@ -78,6 +78,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
   Timer? _pollStopTimer;
   double _titleOffset = 0.0;
 
+  bool _canRedo = false;
+  bool _canUndo = false;
+
   bool _isDisposing = false;
 
   String fileContent = "";
@@ -240,6 +243,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _onHtmlScrollPositionChange(int x, int y) {
+    if (_isDisposing) return;
+    if (!_webViewLoaded) return;
+    if (!mounted) return;
     if (!_isPolling) {
       _ticker.start();
       _isPolling = true;
@@ -270,6 +276,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _onScrollPositionChange(double? scrollY) {
+    if (_isDisposing) return;
     if (!_webViewLoaded) return;
     if (!mounted) return;
     if (scrollY == null) return;
@@ -297,7 +304,31 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _setAppBarColor(newBgColor, newTextColor);
   }
 
-  void _updateState(Map<String, dynamic>? state) {}
+  void _updateState(Map<String, dynamic>? state) async {
+    if (_isDisposing) return;
+    if (!_webViewLoaded) return;
+    if (!mounted) return;
+    final canUndo = await _runWebCommandResult<bool>("canUndo", null);
+    final canRedo = await _runWebCommandResult<bool>("canRedo", null);
+    logger.i("Update state: canUndo: $canUndo, canRedo: $canRedo");
+
+    setState(() {
+      _canUndo = canUndo ?? false;
+      _canRedo = canRedo ?? false;
+    });
+  }
+
+  void _undo() async {
+    if (!_webViewLoaded) return;
+    if (!_canUndo) return;
+    await _runWebCommand('undo', null);
+  }
+
+  void _redo() async {
+    if (!_webViewLoaded) return;
+    if (!_canRedo) return;
+    await _runWebCommand('redo', null);
+  }
 
   void _saveFile(String? content) {
     if (!_webViewLoaded) return;
@@ -318,6 +349,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
+  }
+
+  void _openWorkspaceSettings() {
+    AppRouter.jumpToWorkspaceSettingsPage(context);
   }
 
   void _refreshWebview() async {
@@ -399,6 +434,25 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
   }
 
+  Future<T?> _runWebCommandResult<T>(String command, dynamic data) async {
+    if (!_webViewLoaded) return null;
+    final dataStr = data == null ? "null" : jsonEncode(data);
+    final result = await _webViewController?.evaluateJavascript(
+      source: """
+      (function() {
+        try {
+          return window.invokeCommand("$command", $dataStr);
+        } catch(e) {
+          console.error('invokeComrror:', e);
+          return null;
+        }
+      })()
+      """,
+    );
+    if (result == null) return null;
+    return result as T;
+  }
+
   Future<void> _updateColorMode(bool updateEditor) async {
     if (_webViewLoaded) {
       final t = ref.read(settingsProvider.notifier);
@@ -436,7 +490,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
   }
 
-  void _onTitleTap() {
+  void _onTitleTap() async {
     final now = DateTime.now();
     if (_lastTapTime == null ||
         now.difference(_lastTapTime!) > Duration(seconds: 2)) {
@@ -455,6 +509,16 @@ class _EditorPageState extends ConsumerState<EditorPage>
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
     final theme = AppTheme.getPullDownMenuRouteThemeNoAlpha(context);
     return [
+      // IconButton(
+      //   icon: Icon(ThemeIcons.undo(context)),
+      //   tooltip: '撤销',
+      //   onPressed: _canUndo ? _undo : null,
+      // ),
+      // IconButton(
+      //   icon: Icon(ThemeIcons.redo(context)),
+      //   tooltip: '重做',
+      //   onPressed: _canRedo ? _redo : null,
+      // ),
       // 如果 PullDown 下面是 webview, 背景会错误的变为透明
       // https://github.com/notDmDrl/pull_down_button/issues/28
       PlatformPullDownButton(
@@ -464,6 +528,18 @@ class _EditorPageState extends ConsumerState<EditorPage>
             title: "保存",
             onTap: _save,
             icon: ThemeIcons.save(context),
+          ),
+          PullDownMenuItem(
+            title: "撤销",
+            onTap: _canUndo ? _undo : null,
+            icon: ThemeIcons.undo(context),
+            enabled: _canUndo,
+          ),
+          PullDownMenuItem(
+            title: "重做",
+            onTap: _canRedo ? _redo : null,
+            icon: ThemeIcons.redo(context),
+            enabled: _canRedo,
           ),
           PullDownMenuItem.selectable(
             title: "预览模式",
@@ -481,6 +557,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
             title: "刷新",
             onTap: _refreshWebview,
             icon: ThemeIcons.refresh(context),
+          ),
+          PullDownMenuItem(
+            title: "工作区设置",
+            onTap: _openWorkspaceSettings,
+            icon: ThemeIcons.tune(context),
           ),
           PullDownMenuItem(
             title: "设置",

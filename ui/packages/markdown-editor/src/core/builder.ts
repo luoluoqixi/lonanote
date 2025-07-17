@@ -13,7 +13,6 @@ import {
 import type { DefaultValue } from '@milkdown/kit/core';
 import { Ctx } from '@milkdown/kit/ctx';
 import { clipboard } from '@milkdown/kit/plugin/clipboard';
-import { history } from '@milkdown/kit/plugin/history';
 import { indent, indentConfig } from '@milkdown/kit/plugin/indent';
 import type { ListenerManager } from '@milkdown/kit/plugin/listener';
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
@@ -30,6 +29,7 @@ import { Slice } from 'prosemirror-model';
 import { DefineFeature } from '@/features/types';
 
 import { FeaturesConfig, MarkdownFeature } from '../features';
+import { canRedo, canUndo, history, redoCommand, undoCommand } from '../plugins/history';
 import { FeaturesCtx, MarkdownEditorCtx, editableCtx } from './slice';
 
 /// The builder configuration.Add commentMore actions
@@ -405,6 +405,34 @@ export class MarkdownBuilder {
       }
       if (!this.isCursorInViewport(view, container)) {
         this.scrollIntoView(view);
+      }
+    });
+  };
+
+  canUndo = () => {
+    return canUndo(this.#editor.ctx);
+  };
+
+  canRedo = () => {
+    return canRedo(this.#editor.ctx);
+  };
+
+  undo = () => {
+    this.editor?.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const commands = ctx.get(commandsCtx);
+      if (view != null && commands != null) {
+        return commands.call(undoCommand.key);
+      }
+    });
+  };
+
+  redo = () => {
+    this.editor?.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const commands = ctx.get(commandsCtx);
+      if (view != null && commands != null) {
+        return commands.call(redoCommand.key);
       }
     });
   };

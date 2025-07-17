@@ -1,5 +1,6 @@
 import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
+import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands';
 import { bracketMatching, foldGutter, indentOnInput } from '@codemirror/language';
 import { searchKeymap } from '@codemirror/search';
 import { Compartment, EditorState } from '@codemirror/state';
@@ -179,7 +180,7 @@ export const isCursorInViewport = (view: EditorView, container?: HTMLElement): b
   );
 };
 
-export const scrollToCursor = (view: EditorView) => {
+export const cmScrollToCursor = (view: EditorView) => {
   const pos = view.state.selection.main.head;
   view.dispatch({
     effects: EditorView.scrollIntoView(pos, {
@@ -189,10 +190,26 @@ export const scrollToCursor = (view: EditorView) => {
   });
 };
 
-export const autoScrollToCursor = (view: EditorView, container?: HTMLElement) => {
+export const cmAutoScrollToCursor = (view: EditorView, container?: HTMLElement) => {
   if (view.hasFocus) {
     if (!isCursorInViewport(view, container)) {
-      scrollToCursor(view);
+      cmScrollToCursor(view);
     }
   }
+};
+
+export const cmCanUndo = (view: EditorView): boolean => {
+  return undoDepth(view.state) > 0;
+};
+
+export const cmCanRedo = (view: EditorView): boolean => {
+  return redoDepth(view.state) > 0;
+};
+
+export const cmUndo = (view: EditorView): void => {
+  undo(view);
+};
+
+export const cmRedo = (view: EditorView): void => {
+  redo(view);
 };

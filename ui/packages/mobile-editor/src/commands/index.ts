@@ -1,14 +1,23 @@
 import { changeColorMode } from './changeColorMode';
 import { changePreviewMode } from './changePreviewMode';
 import { changeSourceMode } from './changeSourceMode';
+import { canRedo, canUndo, redo, undo } from './undoRedo';
 
-export const invokeCommand = async (command: string, data: any): Promise<any> => {
+export const invokeCommand = (command: string, data: any): any => {
   if (command === 'change_preview_mode') {
-    await changePreviewMode(data);
+    changePreviewMode(data);
   } else if (command === 'change_source_mode') {
-    await changeSourceMode(data);
+    changeSourceMode(data);
   } else if (command === 'change_color_mode') {
-    await changeColorMode(data);
+    changeColorMode(data);
+  } else if (command === 'canUndo') {
+    return canUndo();
+  } else if (command === 'canRedo') {
+    return canRedo();
+  } else if (command === 'undo') {
+    undo();
+  } else if (command === 'redo') {
+    redo();
   } else {
     console.log('command::', command, data);
   }
