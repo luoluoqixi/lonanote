@@ -20,8 +20,8 @@ interface Window {
   initEditor: (
     fileName: string,
     sourceMode: boolean | undefined,
+    isSourceModeShowLine: boolean | undefined,
     content: string,
-    isEditorScrollbar?: boolean,
   ) => Promise<any>;
   /** 调用命令 */
   invokeCommand: (command: string, data: any) => Promise<any>;
@@ -44,6 +44,8 @@ interface Window {
   sourceMode?: boolean;
   /** 颜色模式 dark light */
   colorMode?: string;
+  /** 是否显示源码模式行号 */
+  isSourceModeShowLine?: boolean;
 
   /** 自动保存间隔 */
   autoSaveInterval?: number;

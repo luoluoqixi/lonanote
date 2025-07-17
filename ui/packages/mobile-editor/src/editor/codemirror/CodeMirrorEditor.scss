@@ -1,6 +1,17 @@
+#root {
+  --cm-root-padding: 12px;
+}
+
+#cm-root.source-mode-show-line {
+  padding: 0 var(--cm-root-padding) 0 0;
+}
+
 #cm-root {
   // background-color: var(--cm-background-color);
   background-color: transparent;
+
+  padding: 0 var(--cm-root-padding);
+  width: calc(100% - calc(var(--cm-root-padding) * 2)) !important;
 
   .ͼ1 .cm-lineNumbers .cm-gutterElement {
     // padding-top: 2px;
@@ -25,6 +36,6 @@
   }
 
   .cm-content {
-    padding-bottom: var(--bottom-safe-height);
+    padding: 0 0px var(--bottom-safe-height) 0px;
   }
 }

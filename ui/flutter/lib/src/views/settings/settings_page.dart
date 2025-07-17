@@ -66,6 +66,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     SettingsController.setShowFloatingToolbar(ref, value);
   }
 
+  void _setShowLineNumberInSourceMode(bool value) {
+    SettingsController.setShowLineNumberInSourceMode(ref, value);
+  }
+
   Widget _buildBasicSettings(
     RustSettingsData settings,
     OtherSettings otherSettings,
@@ -125,6 +129,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           title: Text("显示悬浮工具栏"),
           value: otherSettings.showFloatingToolbar,
           onChanged: _setShowFloatingToolbar,
+        ),
+        PlatformSwitchListTile(
+          title: Text("源码模式显示行号"),
+          value: otherSettings.showLineNumberInSourceMode,
+          onChanged: _setShowLineNumberInSourceMode,
         ),
       ],
     );

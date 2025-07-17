@@ -174,6 +174,7 @@ function handleWindowResize() {
 export const createEditor = async (
   fileName: string,
   sourceMode: boolean | undefined,
+  isSourceModeShowLine: boolean | undefined,
   content: string,
 ) => {
   if ((window as any).onCleanEvents != null) {
@@ -199,7 +200,7 @@ export const createEditor = async (
   if (sourceMode) {
     mdRoot.style.display = 'none';
     cmRoot.style.display = editorDisplay;
-    window.cmEditor = createCMEditor(cmRoot, content, fileName);
+    window.cmEditor = createCMEditor(cmRoot, content, fileName, isSourceModeShowLine);
     // cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
     // onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
   } else {

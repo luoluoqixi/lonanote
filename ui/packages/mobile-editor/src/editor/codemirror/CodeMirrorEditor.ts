@@ -28,11 +28,17 @@ export const setCMReadOnly = (readOnly: boolean) => {
   });
 };
 
-export const createCMEditor = (root: HTMLElement, content: string, fileName: string) => {
+export const createCMEditor = (
+  root: HTMLElement,
+  content: string,
+  fileName: string,
+  isSourceModeShowLine: boolean | undefined,
+) => {
   readOnlyEx = new Compartment();
   // console.log('codemirror create');
   let view: EditorView | null = null;
   if (root) {
+    root.classList.toggle('source-mode-show-line', isSourceModeShowLine);
     const saveBinding: KeyBinding = {
       key: 'Mod-s', // Mod 代表 Ctrl（Windows）或 Cmd（Mac）
       preventDefault: true,
@@ -73,7 +79,7 @@ export const createCMEditor = (root: HTMLElement, content: string, fileName: str
         EditorView.lineWrapping,
         updateListener,
         // 行号
-        lineNumbers(),
+        isSourceModeShowLine ? lineNumbers() : null,
         // 用占位符替换不可打印字符
         highlightSpecialChars(),
         // 撤销历史
@@ -121,7 +127,7 @@ export const createCMEditor = (root: HTMLElement, content: string, fileName: str
           // Redo/undo 快捷键
           ...historyKeymap,
         ]),
-      ],
+      ].filter((ext) => ext !== null),
     });
     view = new EditorView({
       parent: root,

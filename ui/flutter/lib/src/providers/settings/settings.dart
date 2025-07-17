@@ -29,6 +29,7 @@ class Settings extends _$Settings with WidgetsBindingObserver {
       otherSettings: OtherSettings(
         showFloatingToolbar: getShowFloatingToolbar(),
         fileSortType: getFileSortType(),
+        showLineNumberInSourceMode: getShowLineNumberInSourceMode(),
       ),
     );
   }
@@ -116,6 +117,20 @@ class Settings extends _$Settings with WidgetsBindingObserver {
     UIStore.setShowFloatingToolbar(value);
   }
 
+  static bool getShowLineNumberInSourceMode() {
+    final v = UIStore.getShowLineNumberInSourceMode();
+    return v ?? false;
+  }
+
+  void setShowLineNumberInSourceMode(bool value) {
+    state = state.copyWith(
+      otherSettings: state.otherSettings.copyWith(
+        showLineNumberInSourceMode: value,
+      ),
+    );
+    UIStore.setShowLineNumberInSourceMode(value);
+  }
+
   static RustFileSortType getFileSortType() {
     final v = UIStore.getFileSortType();
     if (v != null) {
@@ -179,6 +194,7 @@ sealed class OtherSettings with _$OtherSettings {
   const factory OtherSettings({
     required bool showFloatingToolbar,
     required RustFileSortType fileSortType,
+    required bool showLineNumberInSourceMode,
   }) = _OtherSettings;
 }
 

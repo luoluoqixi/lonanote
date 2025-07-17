@@ -65,6 +65,14 @@ class SettingsController {
     s.setShowFloatingToolbar(value);
   }
 
+  static Future<void> setShowLineNumberInSourceMode(
+    WidgetRef ref,
+    bool value,
+  ) async {
+    final s = ref.read(settingsProvider.notifier);
+    s.setShowLineNumberInSourceMode(value);
+  }
+
   static Future<void> resetSettingsAutoSaveInterval(WidgetRef ref) async {
     await RustSettings.resetSettingsAutoSaveInterval();
     await refreshSettings(ref);

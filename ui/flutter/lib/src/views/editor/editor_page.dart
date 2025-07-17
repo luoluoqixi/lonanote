@@ -67,6 +67,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
   late bool _sourceMode;
   late bool _isMarkdown;
 
+  bool _isSourceModeShowLine = false;
+
   Color _titleBgColor = Colors.transparent;
   Color _titleTextColor = Colors.transparent;
 
@@ -93,6 +95,23 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _isMarkdown = ext != null && Utility.isMarkdown(ext);
     _sourceMode = !_isMarkdown;
     _ticker = createTicker(_onTick);
+
+    _isSourceModeShowLine = ref
+        .read(settingsProvider.select((s) => s.otherSettings))
+        .showLineNumberInSourceMode;
+
+    ref.listenManual<OtherSettings>(
+        settingsProvider.select((s) => s.otherSettings), (previous, next) {
+      if (!mounted) return;
+      if (_isDisposing) return;
+      if (previous?.showLineNumberInSourceMode !=
+          next.showLineNumberInSourceMode) {
+        _isSourceModeShowLine = next.showLineNumberInSourceMode;
+        if (_sourceMode) {
+          _refreshWebview();
+        }
+      }
+    });
   }
 
   @override
@@ -310,7 +329,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (!mounted) return;
     final canUndo = await _runWebCommandResult<bool>("canUndo", null);
     final canRedo = await _runWebCommandResult<bool>("canRedo", null);
-    logger.i("Update state: canUndo: $canUndo, canRedo: $canRedo");
+    // logger.i("Update state: canUndo: $canUndo, canRedo: $canRedo");
 
     setState(() {
       _canUndo = canUndo ?? false;
@@ -406,7 +425,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         const init = () => {
           if (window.initEditor) {
             try {
-              window.initEditor("${widget.path}", $_sourceMode, ${jsonEncode(fileContent)});
+              window.initEditor("${widget.path}", $_sourceMode, $_isSourceModeShowLine, ${jsonEncode(fileContent)});
             } catch (e) {
               console.error('initEditor error:', e.message);
             }
