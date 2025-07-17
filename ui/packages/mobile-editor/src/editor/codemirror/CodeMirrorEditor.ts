@@ -38,7 +38,11 @@ export const createCMEditor = (
   // console.log('codemirror create');
   let view: EditorView | null = null;
   if (root) {
-    root.classList.toggle('source-mode-show-line', isSourceModeShowLine);
+    if (isSourceModeShowLine) {
+      root.classList.add('source-mode-show-line');
+    } else {
+      root.classList.remove('source-mode-show-line');
+    }
     const saveBinding: KeyBinding = {
       key: 'Mod-s', // Mod 代表 Ctrl（Windows）或 Cmd（Mac）
       preventDefault: true,
