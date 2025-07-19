@@ -17,7 +17,7 @@ import { indent, indentConfig } from '@milkdown/kit/plugin/indent';
 import type { ListenerManager } from '@milkdown/kit/plugin/listener';
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
 import { trailing } from '@milkdown/kit/plugin/trailing';
-import { commonmark, remarkPreserveEmptyLinePlugin } from '@milkdown/kit/preset/commonmark';
+import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { EditorState, Selection, TextSelection } from '@milkdown/kit/prose/state';
 import { EditorView } from '@milkdown/kit/prose/view';
@@ -27,6 +27,7 @@ import { $command, $useKeymap, getMarkdown } from '@milkdown/utils';
 import { Slice } from 'prosemirror-model';
 
 import { DefineFeature } from '@/features/types';
+import { remarkSerializerPlugin } from '@/plugins/serializer';
 
 import { FeaturesConfig, MarkdownFeature } from '../features';
 import { canRedo, canUndo, history, redoCommand, undoCommand } from '../plugins/history';
@@ -204,7 +205,8 @@ export class MarkdownBuilder {
       .use(automd)
       .use([saveCommand, saveKeyMap].flat());
 
-    this.#editor.remove(remarkPreserveEmptyLinePlugin);
+    // this.#editor.remove(remarkPreserveEmptyLinePlugin);
+    this.#editor.use(remarkSerializerPlugin);
 
     // https://github.com/orgs/Milkdown/discussions/1733
     // this.#editor.editor.use(diagram).config((ctx) => {

@@ -8,8 +8,8 @@
     "watch": "vite build --watch"
   },
   "devDependencies": {
-    "@types/lodash-es": "^4.17.12",
     "@floating-ui/dom": "^1.5.1",
+    "@types/lodash-es": "^4.17.12",
     "lodash-es": "^4.17.21",
     "remark-frontmatter": "^5.0.0",
     "turndown-plugin-gfm": "^1.0.2",
@@ -27,5 +27,6 @@
     "src"
   ],
   "packageManager": "pnpm@9.15.0",
-  "node": ">=20.0.0"
+  "node": ">=20.0.0",
+  "dependencies": {}
 }
