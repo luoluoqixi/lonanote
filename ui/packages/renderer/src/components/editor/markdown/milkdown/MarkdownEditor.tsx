@@ -1,6 +1,5 @@
 import { editorViewCtx } from '@milkdown/core';
 import { Ctx } from '@milkdown/kit/ctx';
-import { TextSelection } from '@milkdown/kit/prose/state';
 import markdownEditorLanguages from 'lonanote-languages/zh/markdown_editor_languages.json';
 import {
   ImageMenuKey,
@@ -268,7 +267,7 @@ export default forwardRef((props: MarkdownEditorProps, ref: Ref<MarkdownEditorRe
               label: markdownEditorLanguages.slashMenuH6Label,
             },
             quote: {
-              label: markdownEditorLanguages.slashMenuH6Label,
+              label: markdownEditorLanguages.slashMenuQuoteLabel,
             },
             divider: {
               label: markdownEditorLanguages.slashMenuDividerLabel,
