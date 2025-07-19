@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
@@ -17,6 +18,7 @@ import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/app_theme.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
+import 'package:lonanote/src/views/editor/editor_add_action.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
@@ -144,6 +146,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       // 退出页面前保存文件
       _save();
     }
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
   }
 
   Future<bool> _onWillPop() async {
@@ -274,7 +277,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _pollStopTimer?.cancel();
       _pollStopTimer = null;
     }
-    _pollStopTimer = Timer(Duration(milliseconds: 1000), () {
+    _pollStopTimer = Timer(Duration(milliseconds: 500), () {
       _pollStopTimer = null;
       _isPolling = false;
       _ticker.stop();
@@ -327,8 +330,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (_isDisposing) return;
     if (!_webViewLoaded) return;
     if (!mounted) return;
-    final canUndo = await _runWebCommandResult<bool>("canUndo", null);
-    final canRedo = await _runWebCommandResult<bool>("canRedo", null);
+    final canUndo = await _runWebCommandResult<bool>("can_undo", null);
+    final canRedo = await _runWebCommandResult<bool>("can_redo", null);
     // logger.i("Update state: canUndo: $canUndo, canRedo: $canRedo");
 
     setState(() {
@@ -340,12 +343,14 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _undo() async {
     if (!_webViewLoaded) return;
     if (!_canUndo) return;
+    HapticFeedback.mediumImpact();
     await _runWebCommand('undo', null);
   }
 
   void _redo() async {
     if (!_webViewLoaded) return;
     if (!_canRedo) return;
+    HapticFeedback.mediumImpact();
     await _runWebCommand('redo', null);
   }
 
@@ -484,6 +489,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Future<void> _updateWebViewUI() async {
+    if (_isDisposing) return;
+    if (_webViewController == null) return;
+    if (!mounted) return;
     // 设置 webview 的背景颜色
     // final bgColor = ThemeColors.getBgColor(ThemeColors.getColorScheme(context));
     // await _controller.setBackgroundColor(bgColor);
@@ -523,6 +531,31 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _tapCount = 0;
       _openVConsole();
     }
+  }
+
+  void _onToolbarActionAdd() {
+    HapticFeedback.mediumImpact();
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    AppRouter.showListSheet(
+      context,
+      title: "添加",
+      items: editorAddActionItems,
+      onChange: (val) {
+        if (_isDisposing) return;
+        if (!mounted) return;
+        if (!_webViewLoaded) return;
+        if (_webViewController == null) return;
+        _runWebCommand("add_markdown_action", val);
+        Navigator.of(context).pop();
+      },
+      pageName: "/editor_add_action_sheet",
+      barrierColor: Colors.transparent,
+      galleryMode: true,
+      galleryRowCount: 4,
+    ).then((_) {
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+      _webViewController?.requestFocus();
+    });
   }
 
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
@@ -654,15 +687,89 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
   }
 
+  Widget? _buildBottomBar(BuildContext context, MediaQueryData mediaQuery,
+      ColorScheme colorScheme) {
+    final bottom = mediaQuery.viewInsets.bottom;
+    final bgColor = ThemeColors.getBgColor(colorScheme);
+
+    return bottom > 20
+        ? SizedBox(
+            height: 45.0,
+            child: Container(
+              padding: EdgeInsets.only(
+                left: 10,
+                right: 10,
+              ),
+              decoration: BoxDecoration(
+                color: bgColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(10),
+                    blurRadius: 20.0,
+                    spreadRadius: 10.0,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      IconButton(
+                        icon: Icon(ThemeIcons.add(context)),
+                        onPressed: _onToolbarActionAdd,
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      IconButton(
+                        icon: Icon(ThemeIcons.undo(context)),
+                        tooltip: '撤销',
+                        onPressed: _canUndo ? _undo : null,
+                      ),
+                      IconButton(
+                        icon: Icon(ThemeIcons.redo(context)),
+                        tooltip: '重做',
+                        onPressed: _canRedo ? _redo : null,
+                      ),
+                      VerticalDivider(
+                        indent: 8,
+                        endIndent: 8,
+                        thickness: 1,
+                        width: 20,
+                        color: Colors.grey.withAlpha(100),
+                      ),
+                      IconButton(
+                        icon: Icon(ThemeIcons.keyboardHide(context)),
+                        tooltip: '关闭键盘',
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          SystemChannels.textInput
+                              .invokeMethod('TextInput.hide');
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          )
+        : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = Utility.getFileName(widget.path);
     final showName = WsUtils.getFileShowName(name);
     final colorScheme = ThemeColors.getColorScheme(context);
-    // final mediaQuery = MediaQuery.of(context);
-    // final height = mediaQuery.size.height - mediaQuery.viewInsets.bottom;
-    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final mediaQuery = MediaQuery.of(context);
+    final statusBarHeight = mediaQuery.padding.top;
     final titleHeight = _defaultTitleHeight + kToolbarHeight + statusBarHeight;
+    final bottomBar = _buildBottomBar(context, mediaQuery, colorScheme);
 
     return PlatformSimplePage(
       titleActions: _buildTitleActions(colorScheme),
@@ -733,9 +840,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
           Column(
             children: [
               AppBar(backgroundColor: Colors.transparent),
-              Expanded(
+              Flexible(
                 child: _buildWebView(colorScheme),
               ),
+              if (bottomBar != null) bottomBar,
             ],
           ),
         ],

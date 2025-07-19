@@ -1,21 +1,6 @@
-import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
-import {
-  addBlockTypeCommand,
-  blockquoteSchema,
-  bulletListSchema,
-  clearTextInCurrentBlockCommand,
-  codeBlockSchema,
-  headingSchema,
-  hrSchema,
-  listItemSchema,
-  orderedListSchema,
-  paragraphSchema,
-  selectTextNearPosCommand,
-  setBlockTypeCommand,
-  wrapInBlockTypeCommand,
-} from '@milkdown/kit/preset/commonmark';
-import { createTable } from '@milkdown/kit/preset/gfm';
+
+import { editorActionList } from '@/utils';
 
 import { useMarkdownFeatures } from '../../../core/slice';
 import { MarkdownFeature } from '../../../features';
@@ -38,9 +23,8 @@ import {
   todoListIcon,
 } from '../../../icons';
 import { GroupBuilder, type MenuItemGroup } from '../../../utils/group-builder';
-import { imageBlockSchema } from '../../image/image-block';
 import type { BlockEditFeatureConfig } from '../index';
-import { type SlashMenuItem, clearContentAndInsertText } from './utils';
+import { type SlashMenuItem } from './utils';
 
 export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?: Ctx) {
   const flags = ctx && useMarkdownFeatures(ctx).get();
@@ -56,13 +40,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.text?.label ?? 'Text',
         icon: config?.textGroup?.text?.icon ?? textIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const paragraph = paragraphSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(setBlockTypeCommand.key, {
-            nodeType: paragraph,
-          });
+          editorActionList.text.run(ctx);
         },
       });
     }
@@ -72,16 +50,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.h1?.label ?? 'Heading 1',
         icon: config?.textGroup?.h1?.icon ?? h1Icon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const heading = headingSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(setBlockTypeCommand.key, {
-            nodeType: heading,
-            attrs: {
-              level: 1,
-            },
-          });
+          editorActionList.h1.run(ctx);
         },
       });
     }
@@ -91,16 +60,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.h2?.label ?? 'Heading 2',
         icon: config?.textGroup?.h2?.icon ?? h2Icon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const heading = headingSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(setBlockTypeCommand.key, {
-            nodeType: heading,
-            attrs: {
-              level: 2,
-            },
-          });
+          editorActionList.h2.run(ctx);
         },
       });
     }
@@ -110,16 +70,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.h3?.label ?? 'Heading 3',
         icon: config?.textGroup?.h3?.icon ?? h3Icon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const heading = headingSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(setBlockTypeCommand.key, {
-            nodeType: heading,
-            attrs: {
-              level: 3,
-            },
-          });
+          editorActionList.h3.run(ctx);
         },
       });
     }
@@ -129,16 +80,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.h4?.label ?? 'Heading 4',
         icon: config?.textGroup?.h4?.icon ?? h4Icon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const heading = headingSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(setBlockTypeCommand.key, {
-            nodeType: heading,
-            attrs: {
-              level: 4,
-            },
-          });
+          editorActionList.h4.run(ctx);
         },
       });
     }
@@ -148,16 +90,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.h5?.label ?? 'Heading 5',
         icon: config?.textGroup?.h5?.icon ?? h5Icon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const heading = headingSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(setBlockTypeCommand.key, {
-            nodeType: heading,
-            attrs: {
-              level: 5,
-            },
-          });
+          editorActionList.h5.run(ctx);
         },
       });
     }
@@ -167,16 +100,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.h6?.label ?? 'Heading 6',
         icon: config?.textGroup?.h6?.icon ?? h6Icon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const heading = headingSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(setBlockTypeCommand.key, {
-            nodeType: heading,
-            attrs: {
-              level: 6,
-            },
-          });
+          editorActionList.h6.run(ctx);
         },
       });
     }
@@ -186,13 +110,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.quote?.label ?? 'Quote',
         icon: config?.textGroup?.quote?.icon ?? quoteIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const blockquote = blockquoteSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(wrapInBlockTypeCommand.key, {
-            nodeType: blockquote,
-          });
+          editorActionList.quote.run(ctx);
         },
       });
     }
@@ -202,13 +120,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.textGroup?.divider?.label ?? 'Divider',
         icon: config?.textGroup?.divider?.icon ?? dividerIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const hr = hrSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(addBlockTypeCommand.key, {
-            nodeType: hr,
-          });
+          editorActionList.divider.run(ctx);
         },
       });
     }
@@ -221,13 +133,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.listGroup?.bulletList?.label ?? 'Bullet List',
         icon: config?.listGroup?.bulletList?.icon ?? bulletListIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const bulletList = bulletListSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(wrapInBlockTypeCommand.key, {
-            nodeType: bulletList,
-          });
+          editorActionList['bullet-list'].run(ctx);
         },
       });
     }
@@ -237,13 +143,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.listGroup?.orderedList?.label ?? 'Ordered List',
         icon: config?.listGroup?.orderedList?.icon ?? orderedListIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const orderedList = orderedListSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(wrapInBlockTypeCommand.key, {
-            nodeType: orderedList,
-          });
+          editorActionList['ordered-list'].run(ctx);
         },
       });
     }
@@ -253,14 +153,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.listGroup?.taskList?.label ?? 'Task List',
         icon: config?.listGroup?.taskList?.icon ?? todoListIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const listItem = listItemSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(wrapInBlockTypeCommand.key, {
-            nodeType: listItem,
-            attrs: { checked: false },
-          });
+          editorActionList['task-list'].run(ctx);
         },
       });
     }
@@ -277,13 +170,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.advancedGroup?.image?.label ?? 'Image',
         icon: config?.advancedGroup?.image?.icon ?? imageIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const imageBlock = imageBlockSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(addBlockTypeCommand.key, {
-            nodeType: imageBlock,
-          });
+          editorActionList['image-block'].run(ctx);
         },
       });
     }
@@ -294,11 +181,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.advancedGroup?.imageLink?.label ?? 'Image Link',
         icon: config?.advancedGroup?.imageLink?.icon ?? imageIcon,
         onRun: (ctx) => {
-          const view = ctx.get(editorViewCtx);
-          const { dispatch, state } = view;
-
-          const command = clearContentAndInsertText('[![]()]()');
-          command(state, dispatch);
+          editorActionList['image-inline'].run(ctx);
         },
       });
     }
@@ -308,13 +191,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.advancedGroup?.codeBlock?.label ?? 'Code',
         icon: config?.advancedGroup?.codeBlock?.icon ?? codeIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const codeBlock = codeBlockSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(setBlockTypeCommand.key, {
-            nodeType: codeBlock,
-          });
+          editorActionList['code-block'].run(ctx);
         },
       });
     }
@@ -324,20 +201,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.advancedGroup?.table?.label ?? 'Table',
         icon: config?.advancedGroup?.table?.icon ?? tableIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const view = ctx.get(editorViewCtx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-
-          // record the position before the table is inserted
-          const { from } = view.state.selection;
-          commands.call(addBlockTypeCommand.key, {
-            nodeType: createTable(ctx, 3, 3),
-          });
-
-          commands.call(selectTextNearPosCommand.key, {
-            pos: from,
-          });
+          editorActionList.table.run(ctx);
         },
       });
     }
@@ -347,14 +211,7 @@ export function getGroups(filter?: string, config?: BlockEditFeatureConfig, ctx?
         label: config?.advancedGroup?.math?.label ?? 'Math',
         icon: config?.advancedGroup?.math?.icon ?? functionsIcon,
         onRun: (ctx) => {
-          const commands = ctx.get(commandsCtx);
-          const codeBlock = codeBlockSchema.type(ctx);
-
-          commands.call(clearTextInCurrentBlockCommand.key);
-          commands.call(addBlockTypeCommand.key, {
-            nodeType: codeBlock,
-            attrs: { language: 'LaTex' },
-          });
+          editorActionList.math.run(ctx);
         },
       });
     }

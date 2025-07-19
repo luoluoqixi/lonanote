@@ -148,6 +148,10 @@ class _PlatformInkkWellState extends State<PlatformInkWell> {
                     ThemeColors.getColorScheme(context)))
             : Colors.transparent,
         child: InkWell(
+          highlightColor: widget.pressBgColor,
+          overlayColor: widget.pressBgColor != null
+              ? WidgetStateProperty.all(widget.pressBgColor)
+              : null,
           onTap: widget.onTap,
           onDoubleTap: widget.onDoubleTap,
           onLongPress: widget.onLongPress,

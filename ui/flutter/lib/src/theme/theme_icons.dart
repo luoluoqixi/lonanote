@@ -84,6 +84,10 @@ class ThemeIcons {
         : Icons.keyboard_arrow_down;
   }
 
+  static IconData keyboardHide(BuildContext context) {
+    return isMaterial(context) ? Icons.keyboard_hide : Icons.keyboard_hide;
+  }
+
   static SvgPicture markdown(
     BuildContext context, {
     Color color = Colors.white,

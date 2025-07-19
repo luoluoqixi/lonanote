@@ -4,39 +4,44 @@ import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/widgets/platform_ink_well.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 
-class SelectItem {
+class SelectSheetItem {
   final int value;
   final String title;
   final IconData? icon;
+  final Widget? Function(BuildContext context)? getIcon;
 
-  const SelectItem({
+  const SelectSheetItem({
     required this.value,
     required this.title,
     this.icon,
+    this.getIcon,
   });
 }
 
 class SelectSheet extends StatelessWidget {
-  final int currentSortType;
-  final void Function(int sortType) onChange;
-  final List<SelectItem> sortTypes;
+  final int currentValue;
+  final void Function(int value) onChange;
+  final List<SelectSheetItem> items;
   final String? title;
+  final double? desiredHeight;
 
   const SelectSheet({
     super.key,
-    required this.currentSortType,
+    required this.currentValue,
     required this.onChange,
-    required this.sortTypes,
+    required this.items,
     this.title,
+    this.desiredHeight,
   });
 
-  Widget _buildSortOption(
+  Widget _buildItem(
     BuildContext context,
     String title,
     IconData? icon,
-    int type,
+    Widget? Function(BuildContext context)? getIcon,
+    int value,
   ) {
-    final isSelected = type == currentSortType;
+    final isSelected = value == currentValue;
     final colorScheme = ThemeColors.getColorScheme(context);
     final textColor = isSelected
         ? ThemeColors.getPrimaryColor(colorScheme)
@@ -45,14 +50,18 @@ class SelectSheet extends StatelessWidget {
         ? ThemeColors.getPrimaryColor(colorScheme)
         : ThemeColors.getTextGreyColor(colorScheme);
 
+    final iconWidget = icon != null
+        ? Icon(icon, size: 20, color: iconColor)
+        : getIcon?.call(context);
+
     return PlatformInkWell(
-      onTap: () => onChange(type),
+      onTap: () => onChange(value),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            if (icon != null) Icon(icon, size: 20, color: iconColor),
-            if (icon != null) const SizedBox(width: 12),
+            if (iconWidget != null) iconWidget,
+            if (iconWidget != null) const SizedBox(width: 12),
             Expanded(
               child: Text(
                 title,
@@ -79,13 +88,13 @@ class SelectSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = ThemeColors.getColorScheme(context);
     return PlatformSheetPage(
-      titleText: title ?? "排序方式",
+      titleText: title ?? "选择",
       contentPadding: EdgeInsets.zero,
-      desiredHeight: 360,
+      desiredHeight: desiredHeight ?? 360,
       allowScroll: true,
       contentBgColor: ThemeColors.getBg1Color(colorScheme),
-      children: sortTypes
-          .map((v) => _buildSortOption(context, v.title, v.icon, v.value))
+      children: items
+          .map((v) => _buildItem(context, v.title, v.icon, v.getIcon, v.value))
           .toList(),
     );
   }

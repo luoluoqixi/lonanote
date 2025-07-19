@@ -305,32 +305,32 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
 
   void _sortClick() {
     final sortTypes = [
-      SelectItem(
+      SelectSheetItem(
         value: WorkspaceSortType.updateTime.index,
         title: "按打开时间排序",
         icon: ThemeIcons.schedule(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: WorkspaceSortType.updateTimeRev.index,
         title: "按打开时间倒序",
         icon: ThemeIcons.schedule(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: WorkspaceSortType.createTime.index,
         title: "按创建时间排序",
         icon: ThemeIcons.schedule(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: WorkspaceSortType.createTimeRev.index,
         title: "按创建时间倒序",
         icon: ThemeIcons.schedule(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: WorkspaceSortType.name.index,
         title: "按名称排序",
         icon: ThemeIcons.sortName(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: WorkspaceSortType.nameRev.index,
         title: "按名称倒序",
         icon: ThemeIcons.sortName(context),
@@ -338,8 +338,9 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
     ];
     AppRouter.showSelectSheet(
       context,
-      sortTypes: sortTypes,
-      currentSortType: _sortType.index,
+      title: "排序方式",
+      items: sortTypes,
+      currentValue: _sortType.index,
       onChange: (t) {
         setState(() {
           _sortType = WorkspaceSortType.values[t];

@@ -11,6 +11,7 @@ import 'package:lonanote/src/views/settings/workspace_settings_page.dart';
 import 'package:lonanote/src/views/workspace/select_workspace_page.dart';
 import 'package:lonanote/src/views/workspace/workspace_home_page.dart';
 import 'package:lonanote/src/widgets/tools/edit_sheet.dart';
+import 'package:lonanote/src/widgets/tools/list_sheet.dart';
 import 'package:lonanote/src/widgets/tools/select_sheet.dart';
 
 class AppRouter {
@@ -52,6 +53,7 @@ class AppRouter {
     bool isScrollControlled = true,
     bool isDismissible = true,
     bool showDragHandle = false,
+    Color? barrierColor,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -59,6 +61,7 @@ class AppRouter {
       isDismissible: isDismissible,
       showDragHandle: showDragHandle,
       backgroundColor: Colors.transparent,
+      barrierColor: barrierColor,
       builder: builder,
       routeSettings: RouteSettings(name: pageName),
     );
@@ -179,6 +182,7 @@ class AppRouter {
     final String? customButtonText,
     final void Function(String value, bool Function() validate)?
         onCustomButtonTap,
+    final Color? barrierColor,
   }) {
     builder(context) => EditSheet(
           isPage: isPage,
@@ -201,26 +205,61 @@ class AppRouter {
         pageName: "/edit_sheet",
       );
     }
-    return AppRouter.showBottomSheet(context, builder, pageName: pageName);
+    return AppRouter.showBottomSheet(
+      context,
+      builder,
+      pageName: pageName,
+      barrierColor: barrierColor,
+    );
   }
 
   static Future<T?> showSelectSheet<T>(
     BuildContext context, {
-    required String pageName,
-    required int currentSortType,
-    required void Function(int sortType) onChange,
-    required List<SelectItem> sortTypes,
-    String? title,
+    required final String pageName,
+    required final int currentValue,
+    required final void Function(int value) onChange,
+    required final List<SelectSheetItem> items,
+    final String? title,
+    final double? desiredHeight,
+    final Color? barrierColor,
   }) {
     return AppRouter.showBottomSheet(
       context,
       (context) => SelectSheet(
         title: title,
-        currentSortType: currentSortType,
+        currentValue: currentValue,
         onChange: onChange,
-        sortTypes: sortTypes,
+        items: items,
+        desiredHeight: desiredHeight,
       ),
       pageName: pageName,
+      barrierColor: barrierColor,
+    );
+  }
+
+  static Future<T?> showListSheet<T>(
+    BuildContext context, {
+    required final String pageName,
+    required final void Function(int value) onChange,
+    required final List<ListSheetItem> items,
+    final String? title,
+    final double? desiredHeight,
+    final Color? barrierColor,
+    final bool? galleryMode,
+    final int? galleryRowCount,
+  }) {
+    return AppRouter.showBottomSheet(
+      context,
+      (context) => ListSheet(
+        title: title,
+        onChange: onChange,
+        items: items,
+        desiredHeight: desiredHeight,
+        galleryMode: galleryMode,
+        galleryRowCount: galleryRowCount,
+      ),
+      pageName: pageName,
+      barrierColor: barrierColor,
     );
   }
 }

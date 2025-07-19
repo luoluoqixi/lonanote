@@ -42,6 +42,8 @@ class PlatformPage extends StatefulWidget {
   final EdgeInsets? scrollPadding;
   final ValueChanged<bool>? onScrollbarDragIsActiveChanged;
 
+  final PlatformNavBar? bottomNavBar;
+
   final bool? resizeToAvoidBottomInset;
 
   const PlatformPage({
@@ -72,6 +74,7 @@ class PlatformPage extends StatefulWidget {
     this.scrollRadius,
     this.scrollPadding,
     this.onScrollbarDragIsActiveChanged,
+    this.bottomNavBar,
     this.resizeToAvoidBottomInset,
   });
 
@@ -211,6 +214,7 @@ class _PlatformPageState extends State<PlatformPage> {
       children: [
         PlatformScaffold(
           backgroundColor: backgroundColor,
+          bottomNavBar: widget.bottomNavBar,
           body: PlatformDoubleBack(
             isEnable: isHome,
             child: isWillPop
@@ -278,6 +282,8 @@ class PlatformSimplePage extends StatefulWidget {
   final EdgeInsets? scrollPadding;
   final ValueChanged<bool>? onScrollbarDragIsActiveChanged;
 
+  final PlatformNavBar? bottomNavBar;
+
   final bool? resizeToAvoidBottomInset;
 
   const PlatformSimplePage({
@@ -309,6 +315,7 @@ class PlatformSimplePage extends StatefulWidget {
     this.scrollRadius,
     this.scrollPadding,
     this.onScrollbarDragIsActiveChanged,
+    this.bottomNavBar,
     this.resizeToAvoidBottomInset,
   });
 
@@ -541,6 +548,7 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
       children: [
         PlatformScaffold(
           backgroundColor: backgroundColor,
+          bottomNavBar: widget.bottomNavBar,
           body: PlatformDoubleBack(
             isEnable: isHome,
             child: isWillPop
@@ -780,34 +788,47 @@ class _PlatformSheetPageState extends State<PlatformSheetPage> {
         expand: widget.expand ?? false,
         builder: (context, scrollController) {
           final colorScheme = ThemeColors.getColorScheme(context);
-          return Stack(
-            children: [
-              Column(
-                children: [
-                  _buildAppBar(context, colorScheme),
-                  Expanded(
-                    child: Container(
-                      color: widget.contentBgColor ??
-                          ThemeColors.getBg1Color(colorScheme),
-                      child: SafeArea(
-                        left: true,
-                        right: true,
-                        top: false,
-                        bottom: false,
-                        child: _buildContent(context),
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(14),
+                  blurRadius: 8.0,
+                  spreadRadius: 8.0,
+                  offset: Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    _buildAppBar(context, colorScheme),
+                    Expanded(
+                      child: Container(
+                        color: widget.contentBgColor ??
+                            ThemeColors.getBg1Color(colorScheme),
+                        child: SafeArea(
+                          left: true,
+                          right: true,
+                          top: false,
+                          bottom: false,
+                          child: _buildContent(context),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              if (_isLoading == true)
-                Container(
-                  color: Colors.black45,
-                  child: Center(
-                    child: PlatformCircularProgressIndicator(),
-                  ),
+                  ],
                 ),
-            ],
+                if (_isLoading == true)
+                  Container(
+                    color: Colors.black45,
+                    child: Center(
+                      child: PlatformCircularProgressIndicator(),
+                    ),
+                  ),
+              ],
+            ),
           );
         },
       ),

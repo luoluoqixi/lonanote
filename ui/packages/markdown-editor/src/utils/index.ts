@@ -1,3 +1,4 @@
+export * from './actions';
 export * from './checker';
 export * from './common';
 export * from './consts';

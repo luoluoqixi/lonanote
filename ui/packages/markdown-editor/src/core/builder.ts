@@ -28,6 +28,7 @@ import { Slice } from 'prosemirror-model';
 
 import { DefineFeature } from '@/features/types';
 import { remarkSerializerPlugin } from '@/plugins/serializer';
+import { ActionType, EditorAction, editorActionList } from '@/utils';
 
 import { FeaturesConfig, MarkdownFeature } from '../features';
 import { canRedo, canUndo, history, redoCommand, undoCommand } from '../plugins/history';
@@ -437,6 +438,25 @@ export class MarkdownBuilder {
         return commands.call(redoCommand.key);
       }
     });
+  };
+
+  runAction = (type: ActionType) => {
+    editorActionList[type]?.run(this.#editor.ctx);
+  };
+
+  runActionValue = (val: number) => {
+    for (const key in editorActionList) {
+      const v: EditorAction | undefined = editorActionList[key];
+      if (!v) continue;
+      if (v.value === val) {
+        v.run(this.#editor.ctx);
+        return;
+      }
+    }
+  };
+
+  action = <T>(action: (ctx: Ctx) => T): T => {
+    return this.#editor.action(action);
   };
 
   /// Register event listeners.

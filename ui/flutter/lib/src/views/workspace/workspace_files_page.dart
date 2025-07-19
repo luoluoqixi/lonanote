@@ -482,32 +482,32 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
         ref.read(settingsProvider.select((w) => w.otherSettings));
     final currentSortType = otherSettings.fileSortType;
     final sortTypes = [
-      SelectItem(
+      SelectSheetItem(
         value: RustFileSortType.lastModifiedTime.index,
         title: "按修改时间排序",
         icon: ThemeIcons.schedule(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: RustFileSortType.lastModifiedTimeRev.index,
         title: "按修改时间倒序",
         icon: ThemeIcons.schedule(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: RustFileSortType.createTime.index,
         title: "按创建时间排序",
         icon: ThemeIcons.schedule(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: RustFileSortType.createTimeRev.index,
         title: "按创建时间倒序",
         icon: ThemeIcons.schedule(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: RustFileSortType.name.index,
         title: "按名称排序",
         icon: ThemeIcons.sortName(context),
       ),
-      SelectItem(
+      SelectSheetItem(
         value: RustFileSortType.nameRev.index,
         title: "按名称倒序",
         icon: ThemeIcons.sortName(context),
@@ -515,8 +515,9 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     ];
     AppRouter.showSelectSheet(
       context,
-      sortTypes: sortTypes,
-      currentSortType: currentSortType.index,
+      title: "排序方式",
+      items: sortTypes,
+      currentValue: currentSortType.index,
       onChange: (t) {
         setState(() {
           final sortType = RustFileSortType.values[t];
