@@ -21,6 +21,7 @@ export const createMarkdownEditor = async (
     defaultValue: content,
     features: {
       [MarkdownFeature.BlockEdit]: false,
+      [MarkdownFeature.Toolbar]: false,
     },
     featureConfigs: {
       [MarkdownFeature.Image]: {
