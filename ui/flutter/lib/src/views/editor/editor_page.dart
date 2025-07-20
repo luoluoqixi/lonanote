@@ -373,10 +373,16 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
+    if (Platform.isAndroid) {
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+    } else if (Platform.isIOS) {}
   }
 
   void _openWorkspaceSettings() {
     AppRouter.jumpToWorkspaceSettingsPage(context);
+    if (Platform.isAndroid) {
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+    } else if (Platform.isIOS) {}
   }
 
   void _refreshWebview() async {
@@ -535,7 +541,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _onToolbarActionAdd() {
     HapticFeedback.mediumImpact();
-    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    if (Platform.isAndroid) {
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+    } else if (Platform.isIOS) {}
     AppRouter.showListSheet(
       context,
       title: "添加",
@@ -553,8 +561,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
       galleryMode: true,
       galleryRowCount: 4,
     ).then((_) {
-      SystemChannels.textInput.invokeMethod('TextInput.show');
-      _webViewController?.requestFocus();
+      if (Platform.isAndroid) {
+        SystemChannels.textInput.invokeMethod('TextInput.show');
+        _webViewController?.requestFocus();
+      } else if (Platform.isIOS) {}
     });
   }
 

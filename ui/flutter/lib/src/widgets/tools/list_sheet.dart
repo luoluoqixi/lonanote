@@ -165,8 +165,16 @@ class _ListSheetGalleryItemState extends State<_ListSheetGalleryItem> {
               ? (widget.tileBgPressColor ??
                   ThemeColors.getPrimaryColor(colorScheme).withAlpha(240))
               : (widget.tileBgColor ??
-                  ThemeColors.getPrimaryColor(colorScheme).withAlpha(180)),
+                  ThemeColors.getPrimaryColor(colorScheme).withAlpha(130)),
           borderRadius: BorderRadius.circular(24.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(20),
+              blurRadius: 2.0,
+              spreadRadius: 2.0,
+              offset: Offset(-4, 4),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
