@@ -159,7 +159,7 @@ const autoScrollToCursorStart = () => {
 };
 
 function handleWindowResize() {
-  // autoScrollToCursorStart();
+  autoScrollToCursorStart();
   const w = window as any;
   if (w.autoScrollToCursorStartTimeout != null) {
     clearTimeout(w.autoScrollToCursorStartTimeout);

@@ -387,10 +387,10 @@ export class MarkdownBuilder {
     const { from } = view.state.selection;
     const cursorRect = view.coordsAtPos(from);
     const containerRect = container.getBoundingClientRect();
-
+    const lineHeight = 20;
     return !(
-      cursorRect.bottom < containerRect.top ||
-      cursorRect.top > containerRect.bottom ||
+      cursorRect.bottom < containerRect.top + lineHeight ||
+      cursorRect.top > containerRect.bottom - lineHeight ||
       cursorRect.right < containerRect.left ||
       cursorRect.left > containerRect.right
     );
