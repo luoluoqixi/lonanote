@@ -13,10 +13,8 @@ import { fs } from '@/bindings/api';
 import { Dropdown, DropdownMenuItem } from '@/components';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import Editor from '@/components/editor/Editor';
-import { supportMarkdownEditorModeChange } from '@/components/editor/markdown';
 import { EditorMode } from '@/components/editor/types';
 import {
-  defaultEditorBackEnd,
   defaultEditorIsReadOnly,
   defaultEditorMode,
   setCurrentEditFileIf,
@@ -144,34 +142,9 @@ const editorModeMenu: DropdownMenuItem[] = [
   },
 ];
 
-// 切换编辑器功能, 可能没什么卵用, 会造成体验不一致, 不如专心做好一个
-// const editorBackEndMenu: DropdownMenuItem[] = [
-//   {
-//     id: 'milkdown',
-//     label: 'Milkdown',
-//     icon: undefined,
-//   },
-//   {
-//     id: 'vditor',
-//     label: 'Vditor',
-//     icon: undefined,
-//   },
-//   // {
-//   //   id: 'hypermd',
-//   //   label: 'HyperMD',
-//   //   icon: undefined,
-//   // },
-//   // {
-//   //   id: 'codemirror',
-//   //   label: 'CodeMirror',
-//   //   icon: undefined,
-//   // },
-// ];
-
 const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath: string }) => {
   const editorIsReadOnly = useEditorData((s) => s.editorIsReadOnly) || defaultEditorIsReadOnly;
   const editorMode = useEditorData((s) => s.editorMode) || defaultEditorMode;
-  const editorBackEnd = useEditorData((s) => s.editorBackEnd) || defaultEditorBackEnd;
   const isDirty = useEditorData((s) => s.currentEditorIsDirty);
   const autoSave = useSettings((s) => s.settings?.autoSave);
   const autoSaveFocusChange = useSettings((s) => s.settings?.autoSaveFocusChange);
@@ -274,27 +247,11 @@ const TopToolbar = ({ filePath, relativePath }: { filePath: string; relativePath
         <div style={{ height: '20px', marginLeft: 2 }}>{showDirty && isDirty && '*'}</div>
       </div>
       <div className="desktopIndexContentTopToolbarRight">
-        {/** 切换编辑器功能 */
-        /* <Dropdown
-          items={editorBackEndMenu}
-          onMenuClick={changeEditorBackEndClick}
-          selectId={editorBackEnd}
-          contentWidth={200}
-        >
-          <Button className={styles.indexContentTopToolbarRightBtn} color="gray" variant="ghost">
-            <Tooltip content="切换编辑器" side="bottom">
-              <BsMarkdown style={{ width: '16px', height: '16px' }} />
-            </Tooltip>
-          </Button>
-        </Dropdown> */}
         <Dropdown
           items={editorModeMenu}
           onMenuClick={changeEditorModeClick}
           selectId={editorMode}
           contentWidth={200}
-          triggerProps={{
-            disabled: !supportMarkdownEditorModeChange(editorBackEnd),
-          }}
         >
           <Button className="desktopIndexContentTopToolbarRightBtn" color="gray" variant="ghost">
             <Tooltip content="切换编辑模式" side="bottom">

@@ -1,0 +1,24 @@
+{
+  "name": "lonanote-editor",
+  "version": "0.1.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "vite build",
+    "watch": "vite build --watch"
+  },
+  "devDependencies": {},
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./src/index.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "packageManager": "pnpm@9.15.0",
+  "node": ">=20.0.0",
+  "dependencies": {}
+}

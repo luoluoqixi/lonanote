@@ -5,14 +5,12 @@ import { toast } from 'react-toastify';
 import { fs } from '@/bindings/api';
 import { dialog } from '@/components';
 import {
-  EditorBackEnd,
   EditorMode,
   EditorState,
-  defaultEditorBackEnd,
   defaultEditorIsReadOnly,
   defaultEditorMode,
 } from '@/components/editor/types';
-import { saveEditorBackEnd, saveEditorMode, useEditorStore } from '@/models/editor';
+import { saveEditorMode, useEditorStore } from '@/models/editor';
 
 import { useSettings } from '../settings';
 import { workspaceController } from '../workspace';
@@ -190,9 +188,4 @@ export const setEditorMode = async (editorMode: EditorMode) => {
   saveEditorMode(editorMode);
 };
 
-export const setEditorBackEnd = async (editorBackEnd: EditorBackEnd) => {
-  useEditorStore.setState((state) => ({ ...state, editorBackEnd }));
-  saveEditorBackEnd(editorBackEnd);
-};
-
-export { defaultEditorMode, defaultEditorIsReadOnly, defaultEditorBackEnd };
+export { defaultEditorMode, defaultEditorIsReadOnly };

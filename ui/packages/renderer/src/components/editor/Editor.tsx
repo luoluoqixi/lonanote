@@ -1,4 +1,9 @@
 import { Button, Text } from '@radix-ui/themes';
+import {
+  CodeMirrorEditor,
+  CodeMirrorEditorRef,
+  isSupportCodeMirrorLanguage,
+} from 'lonanote-editor';
 import path from 'path-browserify-esm';
 import {
   CSSProperties,
@@ -24,10 +29,9 @@ import {
 import { utils } from '@/utils';
 
 import './Editor.scss';
-import { CodeMirrorEditor, CodeMirrorEditorRef, isSupportCodeMirrorLanguage } from './codemirror';
 import { ImageView, isSupportImageView } from './image';
 import { MarkdownEditor, MarkdownEditorRef, isSupportMarkdown } from './markdown';
-import { defaultEditorBackEnd, defaultEditorMode } from './types';
+import { defaultEditorMode } from './types';
 import { VideoView, isSupportVideoView } from './video';
 
 export interface EditorProps {
@@ -69,7 +73,6 @@ export default function Editor({
   style,
 }: EditorProps) {
   const editorMode = useEditorData((s) => s.editorMode) || defaultEditorMode;
-  const editorBackEnd = useEditorData((s) => s.editorBackEnd) || defaultEditorBackEnd;
   const editorRef = useRef<CodeMirrorEditorRef>(null);
   const mdEditorRef = useRef<MarkdownEditorRef>(null);
   const { fullPath, folderPath, uploadImagePath, uploadAttachmentPath } = useMemo(() => {
@@ -130,7 +133,7 @@ export default function Editor({
       updateContent(null);
       setInitContent(null);
     }
-  }, [fullPath, editorBackEnd, editorMode]);
+  }, [fullPath, editorMode]);
 
   const saveFile = useCallback((content: string) => {
     saveContent(content, true);
@@ -187,7 +190,6 @@ export default function Editor({
           <MarkdownEditor
             ref={mdEditorRef}
             initValue={initContent}
-            editorBackEnd={editorBackEnd}
             workspaceRootPath={currentWorkspace.metadata.path}
             defaultUploadPath={uploadImagePath}
             defaultUploadAttachmentPath={uploadAttachmentPath}

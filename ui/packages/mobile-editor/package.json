@@ -8,13 +8,11 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
-    "dev": "pnpm --filter \"../markdown-editor\" run build && vite --host",
-    "build": "pnpm --filter \"../markdown-editor\" run build && vite build --emptyOutDir"
+    "dev": "pnpm --filter \"../editor\" run build && vite --host",
+    "build": "pnpm --filter \"../editor\" run build && vite build --emptyOutDir"
   },
   "dependencies": {
-    "lonanote-languages": "workspace:*",
-    "lonanote-markdown-editor": "workspace:*",
-    "lonanote-styles": "workspace:*"
+    "lonanote-editor": "workspace:*"
   },
   "packageManager": "pnpm@9.15.0",
   "node": ">=20.0.0"

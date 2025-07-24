@@ -2,7 +2,6 @@
   width: 100%;
   -webkit-user-select: auto;
   user-select: auto;
-  --editor-wrap-padding: 4px;
 }
 
 .codemirror-editor {
@@ -11,15 +10,4 @@
   border: none;
   border-width: 0;
   border-color: transparent;
-}
-
-.markdown-editor {
-  height: 100%;
-  display: flex;
-  width: 100%;
-  -webkit-user-select: auto;
-  user-select: auto;
-  overflow-y: auto;
-  padding: var(--editor-wrap-padding);
-  box-sizing: border-box;
 }

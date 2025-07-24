@@ -22,12 +22,7 @@ const copyFileContext = {
   warn: console.warn,
 };
 
-const copyFiles: CopyFileItem[] = [
-  {
-    from: 'node_modules/vditor',
-    to: 'packages/renderer/public/libs/vditor',
-  },
-];
+const copyFiles: CopyFileItem[] = [];
 
 const main = async () => {
   console.log('');

@@ -3,7 +3,6 @@ import { callFlutter } from '@/utils/flutter';
 
 import { autoSaveUpdate } from './autoSave';
 import { cmAutoScrollToCursor, cmFocus, createCMEditor } from './codemirror';
-import { createMarkdownEditor } from './markdown/MarkdownEditor';
 
 export const saveContent = (content: string) => {
   callFlutter('save_file', content);
@@ -11,10 +10,7 @@ export const saveContent = (content: string) => {
 
 export const getContent = () => {
   if (window.editor != null) {
-    const content = window.editor.getMarkdown();
-    return content;
-  } else if (window.cmEditor != null) {
-    const content = window.cmEditor.state.doc.toString();
+    const content = window.editor.state.doc.toString();
     return content;
   }
   return null;
@@ -47,25 +43,14 @@ const bodyClick = (e: MouseEvent) => {
   if (e.target !== document.body) {
     if (e.target instanceof HTMLElement) {
       const id = e.target.id;
-      if (
-        id !== config.rootId &&
-        id !== config.cmRootId &&
-        id !== config.mdRootId &&
-        !e.target.classList.contains('milkdown')
-      ) {
+      if (id !== config.rootId && id !== config.cmRootId) {
         return;
       }
     }
   }
   if (window.editor != null) {
     const editor = window.editor;
-    editor.focus({
-      x: e.clientX,
-      y: e.clientY,
-    });
-  }
-  if (window.cmEditor != null) {
-    cmFocus(window.cmEditor, {
+    cmFocus(editor, {
       x: e.clientX,
       y: e.clientY,
     });
@@ -151,9 +136,6 @@ const onScrollPositionChange = (e: Event) => {
 const autoScrollToCursorStart = () => {
   if (window.editor != null) {
     const editor = window.editor;
-    editor.autoScrollToCursor(document.body);
-  } else if (window.cmEditor != null) {
-    const editor = window.cmEditor;
     cmAutoScrollToCursor(editor, document.body);
   }
 };
@@ -184,32 +166,19 @@ export const createEditor = async (
     window.editor.destroy();
     window.editor = null;
   }
-  if (window.cmEditor != null) {
-    window.cmEditor.destroy();
-    window.cmEditor = null;
-  }
   const cmRoot = document.getElementById(config.cmRootId)!;
-  const mdRoot = document.getElementById(config.mdRootId)!;
 
   // const cmScrollDom = cmRoot;
-  // const mdScrollDom = mdRoot;
-
   const editorDisplay = 'block';
 
   // let onScrollContentChangeCleanup: (() => void) | null = null;
-  if (sourceMode) {
-    mdRoot.style.display = 'none';
-    cmRoot.style.display = editorDisplay;
-    window.cmEditor = createCMEditor(cmRoot, content, fileName, isSourceModeShowLine);
-    // cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
-    // onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
-  } else {
-    cmRoot.style.display = 'none';
-    mdRoot.style.display = editorDisplay;
-    window.editor = await createMarkdownEditor(mdRoot, content, window.previewMode || false);
-    // mdScrollDom?.addEventListener('scroll', onScrollPositionChange);
-    // onScrollContentChangeCleanup = observeScrollability(mdScrollDom, onScrollContentChange);
-  }
+  // if (sourceMode) {
+  // }
+  cmRoot.style.display = editorDisplay;
+  window.editor = createCMEditor(cmRoot, content, fileName, isSourceModeShowLine);
+  // cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
+  // onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
+
   document.body.addEventListener('click', bodyClick);
 
   // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
@@ -224,6 +193,5 @@ export const createEditor = async (
     document.body.removeEventListener('click', bodyClick);
     document?.removeEventListener('scroll', onScrollPositionChange);
     // cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
-    // mdScrollDom?.removeEventListener('scroll', onScrollPositionChange);
   };
 };

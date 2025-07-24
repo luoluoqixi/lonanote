@@ -27,10 +27,8 @@ interface Window {
   invokeCommand: (command: string, data: any) => Promise<any>;
   /** 获取 Editor 当前内容 */
   getContent?: () => string | null;
-  /** Markdown Editor */
-  editor?: import('lonanote-markdown-editor').MarkdownEditor | null;
   /** CodeMirror Editor */
-  cmEditor?: import('@codemirror/view').EditorView | null;
+  editor?: import('@codemirror/view').EditorView | null;
   /** Flutter Bridge */
   flutter_inappwebview: any;
 

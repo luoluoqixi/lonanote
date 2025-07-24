@@ -10,5 +10,4 @@ export const config = {
 
   rootId: 'root',
   cmRootId: 'cm-root',
-  mdRootId: 'md-root',
 };

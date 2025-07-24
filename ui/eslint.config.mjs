@@ -101,10 +101,4 @@ export default [
       '@typescript-eslint/no-unused-expressions': 'warn',
     },
   },
-  {
-    files: ['packages/markdown-editor/**/*.{js,ts,jsx,tsx}'],
-    rules: {
-      '@typescript-eslint/no-unused-expressions': 'off',
-    },
-  },
 ];
