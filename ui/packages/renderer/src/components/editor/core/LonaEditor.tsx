@@ -72,6 +72,9 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
       defaultValue: initValue,
       theme: resolvedColorMode,
       root: editorRootRef.current,
+      extensionsConfig: {
+        enableLineWrapping: true,
+      },
     });
     editor.addListener('onSave', (editor) => {
       onSave?.(editor.getValue() || '');

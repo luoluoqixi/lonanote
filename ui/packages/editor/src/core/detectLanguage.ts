@@ -15,6 +15,7 @@ import { sql } from '@codemirror/lang-sql';
 import { vue } from '@codemirror/lang-vue';
 import { xml } from '@codemirror/lang-xml';
 import { yaml } from '@codemirror/lang-yaml';
+import { languages } from '@codemirror/language-data';
 
 // import { markdown } from './extensions/markdown';
 
@@ -72,9 +73,9 @@ export const defaultDetectLanguage = (fileName: string) => {
     case 'yaml':
     case 'yml':
       return yaml();
-    case 'md':
-    case 'markdown':
-      return markdown();
+    // case 'md':
+    // case 'markdown':
+    //   return markdown({ codeLanguages: languages });
     case 'txt':
       return [json(), yaml()];
     default:
@@ -91,8 +92,7 @@ export const isSupportEditorLanguage = (fileName: string) => {
 
 export const defaultDetectMarkdown = (fileName: string) => {
   if (isSupportMarkdown(fileName)) {
-    // TODO custom markdown extensions
-    return null;
+    return markdown({ codeLanguages: languages });
   }
   return null;
 };
