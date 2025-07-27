@@ -20,15 +20,15 @@ interface Window {
   initEditor: (
     fileName: string,
     sourceMode: boolean | undefined,
-    isSourceModeShowLine: boolean | undefined,
+    isShowLineNumber: boolean | undefined,
     content: string,
   ) => Promise<any>;
   /** 调用命令 */
   invokeCommand: (command: string, data: any) => Promise<any>;
   /** 获取 Editor 当前内容 */
   getContent?: () => string | null;
-  /** CodeMirror Editor */
-  editor?: import('@codemirror/view').EditorView | null;
+  /** Editor */
+  editor?: import('lonanote-editor').LonaEditor | null;
   /** Flutter Bridge */
   flutter_inappwebview: any;
 
@@ -43,7 +43,7 @@ interface Window {
   /** 颜色模式 dark light */
   colorMode?: string;
   /** 是否显示源码模式行号 */
-  isSourceModeShowLine?: boolean;
+  isShowLineNumber?: boolean;
 
   /** 自动保存间隔 */
   autoSaveInterval?: number;

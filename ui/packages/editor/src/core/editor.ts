@@ -3,7 +3,16 @@
 // 此bug是Chrome的bug, 似乎已经修复, 但需要升级Chrome和Electron
 // https://github.com/codemirror/dev/issues/1396
 import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+  redo,
+  redoDepth,
+  undo,
+  undoDepth,
+} from '@codemirror/commands';
 import {
   LanguageSupport,
   bracketMatching,
@@ -319,6 +328,37 @@ export class LonaEditor {
     }
   };
 
+  /// 获取焦点并设置光标到最后位置
+  focus = (pos?: { x: number; y: number }) => {
+    if (!this.#editor) throw new Error('Editor not initialized');
+    const lastLine = this.#editor.state.doc.lines;
+    const lastPos = this.#editor.state.doc.line(lastLine).to;
+    let targetPos: number;
+    if (pos) {
+      const found = this.#editor.posAtCoords(pos);
+      if (found !== null) {
+        targetPos = found;
+      } else {
+        const domRect = this.#editor.dom.getBoundingClientRect();
+        if (pos.y < domRect.top) {
+          targetPos = 0; // 在编辑器上方，光标放文档开头
+        } else if (pos.y > domRect.bottom) {
+          targetPos = lastPos; // 在编辑器下方，光标放文档末尾
+        } else {
+          targetPos = lastPos;
+        }
+      }
+    } else {
+      targetPos = lastPos;
+    }
+
+    this.#editor.dispatch({
+      selection: { anchor: targetPos, head: targetPos },
+      effects: EditorView.scrollIntoView(targetPos, { y: 'center' }),
+    });
+    this.#editor.focus();
+  };
+
   getStatusInfo = (): LonaEditorStatusInfo => {
     if (!this.#editor) throw new Error('Editor not initialized');
     const charCount = this.#editor.state.doc.length;
@@ -327,6 +367,60 @@ export class LonaEditor {
     const rowIndex = line.number;
     const colIndex = cursorPos - line.from;
     return { charCount, rowIndex, colIndex };
+  };
+
+  isCursorInViewport = (container?: HTMLElement): boolean => {
+    if (!this.#editor || !this.#editor.hasFocus) return false;
+
+    container = container || this.#editor.scrollDOM;
+    const pos = this.#editor.state.selection.main.head;
+    const cursorCoords = this.#editor.coordsAtPos(pos);
+    if (!cursorCoords) return false;
+
+    const containerRect = container.getBoundingClientRect();
+
+    return (
+      cursorCoords.top >= containerRect.top &&
+      cursorCoords.bottom <= containerRect.bottom &&
+      cursorCoords.left >= containerRect.left &&
+      cursorCoords.right <= containerRect.right
+    );
+  };
+
+  scrollToCursor = () => {
+    if (!this.#editor) return;
+    const pos = this.#editor.state.selection.main.head;
+    this.#editor.dispatch({
+      effects: EditorView.scrollIntoView(pos, {
+        y: 'nearest',
+        yMargin: 0,
+      }),
+    });
+  };
+
+  autoScrollToCursor = (container?: HTMLElement) => {
+    if (!this.#editor) return;
+    if (this.#editor.hasFocus) {
+      if (!this.isCursorInViewport(container)) {
+        this.scrollToCursor();
+      }
+    }
+  };
+
+  canUndo = () => {
+    return undoDepth(this.#editor.state) > 0;
+  };
+
+  canRedo = () => {
+    return redoDepth(this.#editor.state) > 0;
+  };
+
+  undo = () => {
+    undo(this.#editor);
+  };
+
+  redo = () => {
+    redo(this.#editor);
   };
 
   addListener = <K extends keyof LonaEditorEvent>(type: K, listener: LonaEditorEvent[K]): void => {

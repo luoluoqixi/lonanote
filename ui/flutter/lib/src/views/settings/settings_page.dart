@@ -66,8 +66,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     SettingsController.setShowFloatingToolbar(ref, value);
   }
 
-  void _setShowLineNumberInSourceMode(bool value) {
-    SettingsController.setShowLineNumberInSourceMode(ref, value);
+  void _setShowLineNumber(bool value) {
+    SettingsController.setShowLineNumber(ref, value);
   }
 
   Widget _buildBasicSettings(
@@ -131,9 +131,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           onChanged: _setShowFloatingToolbar,
         ),
         PlatformSwitchListTile(
-          title: Text("源码模式显示行号"),
-          value: otherSettings.showLineNumberInSourceMode,
-          onChanged: _setShowLineNumberInSourceMode,
+          title: Text("显示行号"),
+          value: otherSettings.showLineNumber,
+          onChanged: _setShowLineNumber,
         ),
       ],
     );

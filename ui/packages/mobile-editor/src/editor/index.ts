@@ -2,7 +2,7 @@ import { config } from '@/config';
 import { callFlutter } from '@/utils/flutter';
 
 import { autoSaveUpdate } from './autoSave';
-import { cmAutoScrollToCursor, cmFocus, createCMEditor } from './codemirror';
+import { create } from './core/editor';
 
 export const saveContent = (content: string) => {
   callFlutter('save_file', content);
@@ -10,8 +10,7 @@ export const saveContent = (content: string) => {
 
 export const getContent = () => {
   if (window.editor != null) {
-    const content = window.editor.state.doc.toString();
-    return content;
+    return window.editor.getValue();
   }
   return null;
 };
@@ -50,7 +49,7 @@ const bodyClick = (e: MouseEvent) => {
   }
   if (window.editor != null) {
     const editor = window.editor;
-    cmFocus(editor, {
+    editor.focus({
       x: e.clientX,
       y: e.clientY,
     });
@@ -136,7 +135,7 @@ const onScrollPositionChange = (e: Event) => {
 const autoScrollToCursorStart = () => {
   if (window.editor != null) {
     const editor = window.editor;
-    cmAutoScrollToCursor(editor, document.body);
+    editor.autoScrollToCursor(document.body);
   }
 };
 
@@ -156,7 +155,7 @@ function handleWindowResize() {
 export const createEditor = async (
   fileName: string,
   sourceMode: boolean | undefined,
-  isSourceModeShowLine: boolean | undefined,
+  isShowLineNumber: boolean | undefined,
   content: string,
 ) => {
   if ((window as any).onCleanEvents != null) {
@@ -175,7 +174,7 @@ export const createEditor = async (
   // if (sourceMode) {
   // }
   cmRoot.style.display = editorDisplay;
-  window.editor = createCMEditor(cmRoot, content, fileName, isSourceModeShowLine);
+  window.editor = create(cmRoot, content, fileName, isShowLineNumber);
   // cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
   // onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
 

@@ -65,12 +65,12 @@ class SettingsController {
     s.setShowFloatingToolbar(value);
   }
 
-  static Future<void> setShowLineNumberInSourceMode(
+  static Future<void> setShowLineNumber(
     WidgetRef ref,
     bool value,
   ) async {
     final s = ref.read(settingsProvider.notifier);
-    s.setShowLineNumberInSourceMode(value);
+    s.setShowLineNumber(value);
   }
 
   static Future<void> resetSettingsAutoSaveInterval(WidgetRef ref) async {

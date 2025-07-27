@@ -4,7 +4,7 @@ export const changeColorMode = async (mode: string) => {
     window.initEditor!(
       window.fileName!,
       window.sourceMode,
-      window.isSourceModeShowLine,
+      window.isShowLineNumber,
       window.fileContent!,
     );
   }

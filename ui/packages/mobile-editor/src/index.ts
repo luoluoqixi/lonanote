@@ -8,7 +8,7 @@ import './utils';
 const initEditor = async (
   fileName: string,
   sourceMode: boolean | undefined,
-  isSourceModeShowLine: boolean | undefined,
+  isShowLineNumber: boolean | undefined,
   content: string,
 ) => {
   window.sourceMode = sourceMode;
@@ -18,7 +18,7 @@ const initEditor = async (
     window.previewMode = false;
   }
   console.log('init editor');
-  await createEditor(fileName, sourceMode, isSourceModeShowLine, content);
+  await createEditor(fileName, sourceMode, isShowLineNumber, content);
   console.log(`init editor finish: ${fileName}`);
 };
 
@@ -46,14 +46,16 @@ const init = async () => {
   if (config.isDev && !config.isFlutter) {
     const testContent = config.testContent || 'test content';
     window.sourceMode = false;
-    initEditor('default.js', window.sourceMode, window.isSourceModeShowLine, testContent);
+    initEditor('default.js', window.sourceMode, window.isShowLineNumber, testContent);
     window.setColorMode('light');
     appendTestBtn('切换编辑器', () => {
-      if (window.sourceMode) {
-        window.initEditor('default.md', false, window.isSourceModeShowLine, testContent);
-      } else {
-        window.initEditor('default.js', true, window.isSourceModeShowLine, testContent);
-      }
+      const targetSourceMode = !window.sourceMode;
+      window.initEditor(
+        targetSourceMode ? 'default.js' : 'default.md',
+        targetSourceMode,
+        window.isShowLineNumber,
+        testContent,
+      );
     });
     appendTestBtn('切换主题', () =>
       window.setColorMode(window.colorMode === 'light' ? 'dark' : 'light', true),

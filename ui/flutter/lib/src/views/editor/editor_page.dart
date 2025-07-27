@@ -69,7 +69,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   late bool _sourceMode;
   late bool _isMarkdown;
 
-  bool _isSourceModeShowLine = false;
+  bool _isShowLineNumber = false;
 
   Color _titleBgColor = Colors.transparent;
   Color _titleTextColor = Colors.transparent;
@@ -98,17 +98,16 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _sourceMode = !_isMarkdown;
     _ticker = createTicker(_onTick);
 
-    _isSourceModeShowLine = ref
+    _isShowLineNumber = ref
         .read(settingsProvider.select((s) => s.otherSettings))
-        .showLineNumberInSourceMode;
+        .showLineNumber;
 
     ref.listenManual<OtherSettings>(
         settingsProvider.select((s) => s.otherSettings), (previous, next) {
       if (!mounted) return;
       if (_isDisposing) return;
-      if (previous?.showLineNumberInSourceMode !=
-          next.showLineNumberInSourceMode) {
-        _isSourceModeShowLine = next.showLineNumberInSourceMode;
+      if (previous?.showLineNumber != next.showLineNumber) {
+        _isShowLineNumber = next.showLineNumber;
         if (_sourceMode) {
           _refreshWebview();
         }
@@ -436,7 +435,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         const init = () => {
           if (window.initEditor) {
             try {
-              window.initEditor("${widget.path}", $_sourceMode, $_isSourceModeShowLine, ${jsonEncode(fileContent)});
+              window.initEditor("${widget.path}", $_sourceMode, $_isShowLineNumber, ${jsonEncode(fileContent)});
             } catch (e) {
               console.error('initEditor error:', e.message);
             }
