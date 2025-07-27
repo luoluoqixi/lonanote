@@ -23,7 +23,7 @@ export const create = (
       filePath: fileName,
       defaultValue: content,
       extensionsConfig: {
-        enableLineNumbers: isShowLineNumber,
+        enableLineNumbers: isShowLineNumber || false,
         enableLineWrapping: true,
       },
     });
