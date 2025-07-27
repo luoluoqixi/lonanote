@@ -1,9 +1,4 @@
 import { Button, Text } from '@radix-ui/themes';
-import {
-  CodeMirrorEditor,
-  CodeMirrorEditorRef,
-  isSupportCodeMirrorLanguage,
-} from 'lonanote-editor';
 import path from 'path-browserify-esm';
 import {
   CSSProperties,
@@ -29,8 +24,8 @@ import {
 import { utils } from '@/utils';
 
 import './Editor.scss';
+import { LonaEditor, LonaEditorRef, isSupportEditorLanguage, isSupportMarkdown } from './core';
 import { ImageView, isSupportImageView } from './image';
-import { MarkdownEditor, MarkdownEditorRef, isSupportMarkdown } from './markdown';
 import { defaultEditorMode } from './types';
 import { VideoView, isSupportVideoView } from './video';
 
@@ -73,8 +68,7 @@ export default function Editor({
   style,
 }: EditorProps) {
   const editorMode = useEditorData((s) => s.editorMode) || defaultEditorMode;
-  const editorRef = useRef<CodeMirrorEditorRef>(null);
-  const mdEditorRef = useRef<MarkdownEditorRef>(null);
+  const editorRef = useRef<LonaEditorRef>(null);
   const { fullPath, folderPath, uploadImagePath, uploadAttachmentPath } = useMemo(() => {
     const fullPath = path.join(currentWorkspace.metadata.path, file);
     const folderPath = path.dirname(fullPath);
@@ -88,7 +82,7 @@ export default function Editor({
   const [initContent, setInitContent] = useState<string | null>(null);
   const state = useMemo(() => {
     let isMdEditor = isSupportMarkdown(path.basename(file));
-    let isCMEditor = isSupportCodeMirrorLanguage(path.basename(file));
+    let isCMEditor = isSupportEditorLanguage(path.basename(file));
     const isImage = isSupportImageView(path.basename(file));
     const isVideo = isSupportVideoView(path.basename(file));
     if (editorMode === 'source' && !readOnly) {
@@ -146,17 +140,11 @@ export default function Editor({
   }, []);
 
   const getEditorValue = useCallback(() => {
-    if (state.isMdEditor) {
-      if (mdEditorRef.current) {
-        return mdEditorRef.current.getValue();
-      }
-    } else if (state.isCMEditor) {
-      if (editorRef.current) {
-        return editorRef.current.getValue();
-      }
+    if (editorRef.current) {
+      return editorRef.current.getValue();
     }
     return null;
-  }, [editorRef, mdEditorRef, state.isCMEditor, state.isMdEditor]);
+  }, [editorRef]);
 
   const onUpdate = useCallback(() => {
     updateContentAutoSave(getEditorValue);
@@ -185,17 +173,18 @@ export default function Editor({
 
   return (
     <div id="editor-root" style={style} className={className}>
-      {state.isMdEditor ? (
+      {state.isCMEditor ? (
         initContent != null && (
-          <MarkdownEditor
-            ref={mdEditorRef}
+          <LonaEditor
+            ref={editorRef}
+            isMdEditor={state.isMdEditor}
             initValue={initContent}
             workspaceRootPath={currentWorkspace.metadata.path}
             defaultUploadPath={uploadImagePath}
             defaultUploadAttachmentPath={uploadAttachmentPath}
             mediaRootPath={folderPath}
-            editorId="markdown-editor"
-            className="markdown-editor"
+            editorId="lona-editor"
+            className="lona-editor"
             filePath={file}
             readOnly={readOnly}
             editMode={editorMode}
@@ -204,20 +193,6 @@ export default function Editor({
             onUpdateStateListener={setCurrentEditorState}
             onUpdate={onUpdate}
             onClickAnyLink={onClickAnyLink}
-          />
-        )
-      ) : state.isCMEditor ? (
-        initContent != null && (
-          <CodeMirrorEditor
-            ref={editorRef}
-            initValue={initContent}
-            filePath={file}
-            className="codemirror-editor"
-            readOnly={readOnly}
-            onSave={saveFile}
-            onFocusChange={onFocusChange}
-            onUpdateStateListener={setCurrentEditorState}
-            onUpdate={onUpdate}
           />
         )
       ) : state.isImage ? (

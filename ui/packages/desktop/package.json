@@ -18,19 +18,19 @@
     "fix:electron": "electron-fix start"
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "electron-store": "^10.0.1",
-    "electron-updater": "^6.6.3",
+    "electron-store": "^10.1.0",
+    "electron-updater": "^6.6.7",
     "lonanote-core-node": "link:../../../rust/node"
   },
   "devDependencies": {
     "@electron-toolkit/tsconfig": "^1.0.1",
-    "electron": "^36.2.0",
+    "electron": "^37.2.4",
     "electron-builder": "^26.0.15",
-    "electron-builder-squirrel-windows": "^26.0.13",
-    "electron-fix": "^1.1.4",
-    "electron-vite": "^3.1.0"
+    "electron-builder-squirrel-windows": "^26.0.19",
+    "electron-fix": "^1.1.6",
+    "electron-vite": "^4.0.0"
   },
   "packageManager": "pnpm@9.15.0",
   "node": ">=20.0.0"

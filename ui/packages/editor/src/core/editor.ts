@@ -30,7 +30,7 @@ import {
 import { vsCodeDark } from '@fsegurai/codemirror-theme-vscode-dark';
 import { vsCodeLight } from '@fsegurai/codemirror-theme-vscode-light';
 
-import { defaultDetectLanguage } from './detectLanguage';
+import { defaultDetectLanguage, defaultDetectMarkdown } from './detectLanguage';
 
 export interface LonaEditorConfig {
   /** root */
@@ -38,7 +38,7 @@ export interface LonaEditorConfig {
   /** 文件路径 @default undefined */
   filePath?: string;
   /** 默认值 @default '' */
-  defaultValue?: string;
+  defaultValue?: string | null;
   /** 只读模式 @default false */
   readOnly?: boolean;
   /** 扩展配置 */
@@ -81,11 +81,13 @@ export interface LonaEditorConfig {
     allowMultipleSelections?: boolean;
   };
   /** 自定义快捷键 */
-  keyBindings?: KeyBinding[];
+  keyBindings?: KeyBinding[] | null;
   /** 主题 @default light */
-  theme?: 'light' | 'dark' | Extension | undefined;
-  /** 语言检测函数 */
-  detectLanguage?: (filePath: string) => LanguageSupport[];
+  theme?: 'light' | 'dark' | 'none' | Extension | undefined;
+  /** 语言检测函数并获取插件 */
+  detectLanguage?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
+  /** 检测Markdown语言并获取插件 */
+  detectMarkdown?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
 }
 
 export interface LonaEditorStatusInfo {
@@ -139,6 +141,7 @@ export class LonaEditor {
     extensionsConfig,
     keyBindings,
     detectLanguage,
+    detectMarkdown,
     theme,
   }: LonaEditorConfig) => {
     const {
@@ -149,7 +152,7 @@ export class LonaEditor {
       enableDrawSelection = false,
       enableDropCursor = false,
       enableAutoIndent = true,
-      enableSyntaxHighlighting = true,
+      enableSyntaxHighlighting = false,
       enableBracketMatching = true,
       enableCloseBrackets = true,
       enableAutoCompletion = true,
@@ -181,13 +184,29 @@ export class LonaEditor {
     const updateListener = EditorView.updateListener.of((update) => {
       this.#onUpdate(update);
     });
-    const resolveTheme =
-      typeof theme === 'string' ? (theme === 'light' ? vsCodeLight : vsCodeDark) : theme;
+    let resolveTheme = null;
+    if (typeof theme === 'string') {
+      if (theme !== 'none') {
+        resolveTheme = theme === 'dark' ? vsCodeDark : vsCodeLight;
+      }
+    } else if (theme) {
+      resolveTheme = theme;
+    }
+    const languages: LanguageSupport[] = [];
+    const pushLanguage = (lang: LanguageSupport | LanguageSupport[] | null) => {
+      if (Array.isArray(lang)) {
+        languages.push(...lang);
+      } else if (lang) {
+        languages.push(lang);
+      }
+    };
+    pushLanguage(detectLanguage ? detectLanguage(filePath) : defaultDetectLanguage(filePath));
+    pushLanguage(detectMarkdown ? detectMarkdown(filePath) : defaultDetectMarkdown(filePath));
     const state = EditorState.create({
       doc: defaultValue || this.defaultValue || '',
       extensions: [
         this.#readOnlyEx.of(EditorView.editable.of(readOnly ? false : true)),
-        detectLanguage ? detectLanguage(filePath) : defaultDetectLanguage(filePath),
+        ...languages,
         focusChangeListener,
         // 自动换行
         enableLineWrapping ? EditorView.lineWrapping : null,
@@ -234,14 +253,14 @@ export class LonaEditor {
             // 按Tab键缩进
             enableDefaultKeymap ? indentWithTab : null,
             // 关闭括号支持退格
-            ...(enableDefaultKeymap ? closeBracketsKeymap : null),
+            ...(enableDefaultKeymap ? closeBracketsKeymap : []),
             // 大量基本键绑定
-            ...(enableDefaultKeymap ? defaultKeymap : null),
+            ...(enableDefaultKeymap ? defaultKeymap : []),
             // 搜索相关的键
-            ...(enableDefaultKeymap ? searchKeymap : null),
+            ...(enableDefaultKeymap ? searchKeymap : []),
             // Redo/undo 快捷键
-            ...(enableDefaultKeymap ? historyKeymap : null),
-            ...keyBindings,
+            ...(enableDefaultKeymap ? historyKeymap : []),
+            ...(keyBindings || []),
           ].filter(Boolean) as KeyBinding[],
         ),
       ].filter(Boolean),
