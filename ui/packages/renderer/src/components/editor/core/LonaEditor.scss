@@ -11,10 +11,9 @@
   }
   .cm-scroller {
     justify-content: start;
+    outline: none;
   }
-}
 
-.lona-editor {
   .cm-editor {
     --cm-editor-wrap-padding: 4px;
     --cm-editor-primary-color: var(--accent-a5, '#4a90e2');
@@ -33,19 +32,6 @@
 
   .cm-focused {
     box-shadow: 0 0 0 0 !important;
-  }
-
-  .cm-scroller {
-    justify-content: start;
-    outline: none;
-  }
-
-  // 行号
-  .cm-gutters {
-    color: var(--gray-10) !important;
-    // font-size: var(--font-size-1);
-    border-width: 0 !important;
-    // background-color: var(--cm-background-color) !important;
   }
 }
 

@@ -21,21 +21,52 @@
     // background-color: var(--cm-background-color);
     background-color: transparent;
     overflow: visible;
+
+    --cm-editor-wrap-padding: 4px;
+    --cm-editor-primary-color: var(--accent-a5, '#4a90e2');
+    height: 100%;
+    padding: var(--cm-editor-wrap-padding);
+    outline: 0 !important;
+    -webkit-user-select: auto;
+    user-select: auto;
   }
   // 行号
   .cm-gutters {
     color: var(--gray-10) !important;
-    // font-size: var(--font-size-1);
     border-width: 0 !important;
+    // font-size: var(--font-size-1);
     // background-color: var(--cm-background-color) !important;
-    background-color: transparent !important;
+    // background-color: transparent !important;
   }
   .cm-scroller {
     justify-content: start;
     overflow: visible;
+    outline: none;
   }
 
   .cm-content {
     padding: 0 0px var(--bottom-safe-height) 0px;
+  }
+
+  .cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+  .cm-selectionBackground,
+  .cm-content ::selection {
+    background-color: var(--cm-editor-primary-color) !important;
+  }
+
+  .cm-focused {
+    box-shadow: 0 0 0 0 !important;
+  }
+}
+
+.dark {
+  .cm-gutters {
+    background-color: #1e1e1e !important;
+  }
+}
+
+.light {
+  .cm-gutters {
+    background-color: #ffffff !important;
   }
 }
