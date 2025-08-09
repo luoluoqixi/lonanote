@@ -6,7 +6,6 @@ import { java } from '@codemirror/lang-java';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { less } from '@codemirror/lang-less';
-import { markdown } from '@codemirror/lang-markdown';
 import { php } from '@codemirror/lang-php';
 import { python } from '@codemirror/lang-python';
 import { rust } from '@codemirror/lang-rust';
@@ -15,7 +14,7 @@ import { sql } from '@codemirror/lang-sql';
 import { vue } from '@codemirror/lang-vue';
 import { xml } from '@codemirror/lang-xml';
 import { yaml } from '@codemirror/lang-yaml';
-import { languages } from '@codemirror/language-data';
+import { FormattingDisplayMode, purrmd, purrmdTheme } from 'purrmd';
 
 // import { markdown } from './extensions/markdown';
 
@@ -90,9 +89,20 @@ export const isSupportEditorLanguage = (fileName: string) => {
   return supportEditorExts.findIndex((x) => x === extName) >= 0;
 };
 
-export const defaultDetectMarkdown = (fileName: string) => {
-  if (isSupportMarkdown(fileName)) {
-    return markdown({ codeLanguages: languages });
+export const defaultDetectMarkdown = (config: {
+  fileName: string;
+  isDark: boolean;
+  formattingDisplayMode: FormattingDisplayMode;
+}) => {
+  if (isSupportMarkdown(config.fileName)) {
+    return [
+      purrmd({
+        formattingDisplayMode: config.formattingDisplayMode,
+      }),
+      purrmdTheme({
+        mode: config.isDark ? 'dark' : 'light',
+      }),
+    ];
   }
   return null;
 };

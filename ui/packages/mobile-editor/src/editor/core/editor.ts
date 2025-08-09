@@ -8,6 +8,7 @@ export const create = (
   content: string,
   fileName: string,
   isShowLineNumber: boolean | undefined,
+  sourceMode: boolean | undefined,
 ) => {
   if (root) {
     if (isShowLineNumber) {
@@ -25,6 +26,9 @@ export const create = (
       extensionsConfig: {
         enableLineNumbers: isShowLineNumber || false,
         enableLineWrapping: true,
+      },
+      markdownConfig: {
+        formattingDisplayMode: sourceMode ? 'show' : 'auto',
       },
     });
 

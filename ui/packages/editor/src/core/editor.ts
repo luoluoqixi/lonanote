@@ -38,6 +38,7 @@ import {
 } from '@codemirror/view';
 import { vsCodeDark } from '@fsegurai/codemirror-theme-vscode-dark';
 import { vsCodeLight } from '@fsegurai/codemirror-theme-vscode-light';
+import { FormattingDisplayMode } from 'purrmd';
 
 import { defaultDetectLanguage, defaultDetectMarkdown } from './detectLanguage';
 
@@ -97,6 +98,9 @@ export interface LonaEditorConfig {
   detectLanguage?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
   /** 检测Markdown语言并获取插件 */
   detectMarkdown?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
+  markdownConfig?: {
+    formattingDisplayMode?: FormattingDisplayMode;
+  };
 }
 
 export interface LonaEditorStatusInfo {
@@ -152,6 +156,7 @@ export class LonaEditor {
     detectLanguage,
     detectMarkdown,
     theme,
+    markdownConfig,
   }: LonaEditorConfig) => {
     const {
       enableLineWrapping = false,
@@ -201,8 +206,8 @@ export class LonaEditor {
     } else if (theme) {
       resolveTheme = theme;
     }
-    const languages: LanguageSupport[] = [];
-    const pushLanguage = (lang: LanguageSupport | LanguageSupport[] | null) => {
+    const languages: Extension[] = [];
+    const pushLanguage = (lang: Extension | Extension[] | null) => {
       if (Array.isArray(lang)) {
         languages.push(...lang);
       } else if (lang) {
@@ -210,7 +215,15 @@ export class LonaEditor {
       }
     };
     pushLanguage(detectLanguage ? detectLanguage(filePath) : defaultDetectLanguage(filePath));
-    pushLanguage(detectMarkdown ? detectMarkdown(filePath) : defaultDetectMarkdown(filePath));
+    pushLanguage(
+      detectMarkdown
+        ? detectMarkdown(filePath)
+        : defaultDetectMarkdown({
+            fileName: filePath,
+            isDark: theme === 'dark',
+            formattingDisplayMode: markdownConfig?.formattingDisplayMode || 'auto',
+          }),
+    );
     const state = EditorState.create({
       doc: defaultValue || this.defaultValue || '',
       extensions: [

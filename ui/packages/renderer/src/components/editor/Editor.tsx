@@ -81,14 +81,14 @@ export default function Editor({
   }, [file, currentWorkspace]);
   const [initContent, setInitContent] = useState<string | null>(null);
   const state = useMemo(() => {
-    let isMdEditor = isSupportMarkdown(path.basename(file));
-    let isCMEditor = isSupportEditorLanguage(path.basename(file));
+    const isMdEditor = isSupportMarkdown(path.basename(file));
+    const isCMEditor = isSupportEditorLanguage(path.basename(file));
     const isImage = isSupportImageView(path.basename(file));
     const isVideo = isSupportVideoView(path.basename(file));
-    if (editorMode === 'source' && !readOnly) {
-      isMdEditor = false;
-      isCMEditor = true;
-    }
+    // if (editorMode === 'source' && !readOnly) {
+    //   isMdEditor = false;
+    //   isCMEditor = true;
+    // }
     return {
       isEditor: isMdEditor || isCMEditor,
       isMdEditor,

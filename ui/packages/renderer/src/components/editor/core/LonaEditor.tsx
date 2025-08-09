@@ -56,6 +56,7 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
     onUpdate,
     onClickAnyLink,
     initValue,
+    editMode,
   } = props;
   const { resolvedColorMode } = useColorMode();
   const editorRootRef = useRef<HTMLDivElement>(null);
@@ -74,6 +75,9 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
       root: editorRootRef.current,
       extensionsConfig: {
         enableLineWrapping: true,
+      },
+      markdownConfig: {
+        formattingDisplayMode: editMode === 'source' ? 'show' : 'auto',
       },
     });
     editor.addListener('onSave', (editor) => {

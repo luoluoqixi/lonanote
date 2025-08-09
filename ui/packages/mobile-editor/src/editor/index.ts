@@ -174,7 +174,7 @@ export const createEditor = async (
   // if (sourceMode) {
   // }
   cmRoot.style.display = editorDisplay;
-  window.editor = create(cmRoot, content, fileName, isShowLineNumber);
+  window.editor = create(cmRoot, content, fileName, isShowLineNumber, sourceMode);
   // cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
   // onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
 

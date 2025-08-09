@@ -7,7 +7,6 @@
     "build": "vite build",
     "watch": "vite build --watch"
   },
-  "devDependencies": {},
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -20,5 +19,7 @@
   ],
   "packageManager": "pnpm@9.15.0",
   "node": ">=20.0.0",
-  "dependencies": {}
+  "dependencies": {
+    "purrmd": "^0.0.2"
+  }
 }
