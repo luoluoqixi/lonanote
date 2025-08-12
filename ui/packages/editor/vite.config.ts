@@ -24,7 +24,7 @@ export default defineConfig({
       deps: false,
       devDeps: true,
       nodeBuiltins: true,
-      include: [/@codemirror\/*/],
+      include: [/@codemirror\/*/, 'purrmd', 'codemirror'],
     }),
   ],
   resolve: {

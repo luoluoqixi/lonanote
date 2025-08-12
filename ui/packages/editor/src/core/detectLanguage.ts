@@ -16,9 +16,14 @@ import { xml } from '@codemirror/lang-xml';
 import { yaml } from '@codemirror/lang-yaml';
 import { FormattingDisplayMode, purrmd, purrmdTheme } from 'purrmd';
 
-// import { markdown } from './extensions/markdown';
-
-export const defaultDetectLanguage = (fileName: string) => {
+export const defaultDetectLanguage = (
+  fileName: string,
+  markdownConfig: {
+    fileName: string;
+    isDark: boolean;
+    formattingDisplayMode: FormattingDisplayMode;
+  },
+) => {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
   switch (ext) {
     case 'c':
@@ -78,6 +83,16 @@ export const defaultDetectLanguage = (fileName: string) => {
     case 'txt':
       return [json(), yaml()];
     default:
+      if (supportEditorExts.findIndex((x) => x === ext) >= 0) {
+        return [
+          purrmd({
+            formattingDisplayMode: markdownConfig.formattingDisplayMode,
+          }),
+          purrmdTheme({
+            mode: markdownConfig.isDark ? 'dark' : 'light',
+          }),
+        ];
+      }
       return [];
   }
 };
@@ -87,24 +102,6 @@ export const isSupportEditorLanguage = (fileName: string) => {
   if (index < 0) return false;
   const extName = fileName.substring(index + 1).toLowerCase();
   return supportEditorExts.findIndex((x) => x === extName) >= 0;
-};
-
-export const defaultDetectMarkdown = (config: {
-  fileName: string;
-  isDark: boolean;
-  formattingDisplayMode: FormattingDisplayMode;
-}) => {
-  if (isSupportMarkdown(config.fileName)) {
-    return [
-      purrmd({
-        formattingDisplayMode: config.formattingDisplayMode,
-      }),
-      purrmdTheme({
-        mode: config.isDark ? 'dark' : 'light',
-      }),
-    ];
-  }
-  return null;
 };
 
 /** 支持编辑器的扩展名 */

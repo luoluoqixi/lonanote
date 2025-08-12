@@ -40,7 +40,7 @@ import { vsCodeDark } from '@fsegurai/codemirror-theme-vscode-dark';
 import { vsCodeLight } from '@fsegurai/codemirror-theme-vscode-light';
 import { FormattingDisplayMode } from 'purrmd';
 
-import { defaultDetectLanguage, defaultDetectMarkdown } from './detectLanguage';
+import { defaultDetectLanguage } from './detectLanguage';
 
 export interface LonaEditorConfig {
   /** root */
@@ -53,6 +53,8 @@ export interface LonaEditorConfig {
   readOnly?: boolean;
   /** 扩展配置 */
   extensionsConfig?: {
+    /** 禁用所有插件 @default false */
+    disableAll?: boolean;
     /** 自动换行 @default false */
     enableLineWrapping?: boolean;
     /** 行号 @default true */
@@ -154,11 +156,11 @@ export class LonaEditor {
     extensionsConfig,
     keyBindings,
     detectLanguage,
-    detectMarkdown,
     theme,
     markdownConfig,
   }: LonaEditorConfig) => {
     const {
+      disableAll = false,
       enableLineWrapping = false,
       enableLineNumbers = true,
       enableHighlightSpecialChars = true,
@@ -214,11 +216,10 @@ export class LonaEditor {
         languages.push(lang);
       }
     };
-    pushLanguage(detectLanguage ? detectLanguage(filePath) : defaultDetectLanguage(filePath));
     pushLanguage(
-      detectMarkdown
-        ? detectMarkdown(filePath)
-        : defaultDetectMarkdown({
+      detectLanguage
+        ? detectLanguage(filePath)
+        : defaultDetectLanguage(filePath, {
             fileName: filePath,
             isDark: theme === 'dark',
             formattingDisplayMode: markdownConfig?.formattingDisplayMode || 'auto',
@@ -231,57 +232,59 @@ export class LonaEditor {
         ...languages,
         focusChangeListener,
         // 自动换行
-        enableLineWrapping ? EditorView.lineWrapping : null,
+        !disableAll && enableLineWrapping ? EditorView.lineWrapping : null,
         updateListener,
         // 行号
-        enableLineNumbers ? lineNumbers() : null,
+        !disableAll && enableLineNumbers ? lineNumbers() : null,
         // 用占位符替换不可打印字符
-        enableHighlightSpecialChars ? highlightSpecialChars() : null,
+        !disableAll && enableHighlightSpecialChars ? highlightSpecialChars() : null,
         // 撤销历史
-        enableHistory ? history() : null,
+        !disableAll && enableHistory ? history() : null,
         // 替换原始光标选区
-        enableDrawSelection ? drawSelection() : null,
+        !disableAll && enableDrawSelection ? drawSelection() : null,
         // 替换拖拽时的放置光标
-        enableDropCursor ? dropCursor() : null,
+        !disableAll && enableDropCursor ? dropCursor() : null,
         // Allow multiple cursors/selections
-        allowMultipleSelections ? EditorState.allowMultipleSelections.of(true) : null,
+        !disableAll && allowMultipleSelections
+          ? EditorState.allowMultipleSelections.of(true)
+          : null,
         // 输入特定输入时自动缩进
-        enableAutoIndent ? indentOnInput() : null,
+        !disableAll && enableAutoIndent ? indentOnInput() : null,
         // 高亮显示
-        enableSyntaxHighlighting ? syntaxHighlighting(defaultHighlightStyle) : null,
+        !disableAll && enableSyntaxHighlighting ? syntaxHighlighting(defaultHighlightStyle) : null,
         // 高亮光标旁边的匹配括号
-        enableBracketMatching ? bracketMatching() : null,
+        !disableAll && enableBracketMatching ? bracketMatching() : null,
         // 自动补全右括号
-        enableCloseBrackets ? closeBrackets() : null,
+        !disableAll && enableCloseBrackets ? closeBrackets() : null,
         // 自动完成系统
-        enableAutoCompletion ? autocompletion() : null,
+        !disableAll && enableAutoCompletion ? autocompletion() : null,
         // alt-drag 选择矩形区域
-        enableRectangularSelection ? rectangularSelection() : null,
+        !disableAll && enableRectangularSelection ? rectangularSelection() : null,
         // 按住 alt 时, 光标更改为十字
-        enableCrosshairCursor ? crosshairCursor() : null,
+        !disableAll && enableCrosshairCursor ? crosshairCursor() : null,
         // 高亮激活的行
-        enableHighlightActiveLine ? highlightActiveLine() : null,
+        !disableAll && enableHighlightActiveLine ? highlightActiveLine() : null,
         // Style the gutter for current line specially
         // highlightActiveLineGutter(),
         // 突出显示与所选文本匹配的文本
-        enableHighlightSelectionMatches ? highlightSelectionMatches() : null,
+        !disableAll && enableHighlightSelectionMatches ? highlightSelectionMatches() : null,
         // 折叠功能
-        enableFoldGutter ? foldGutter() : null,
+        !disableAll && enableFoldGutter ? foldGutter() : null,
         resolveTheme,
         keymap.of(
           [
             // 保存功能
             saveBinding,
             // 按Tab键缩进
-            enableDefaultKeymap ? indentWithTab : null,
+            !disableAll && enableDefaultKeymap ? indentWithTab : null,
             // 关闭括号支持退格
-            ...(enableDefaultKeymap ? closeBracketsKeymap : []),
+            ...(!disableAll && enableDefaultKeymap ? closeBracketsKeymap : []),
             // 大量基本键绑定
-            ...(enableDefaultKeymap ? defaultKeymap : []),
+            ...(!disableAll && enableDefaultKeymap ? defaultKeymap : []),
             // 搜索相关的键
-            ...(enableDefaultKeymap ? searchKeymap : []),
+            ...(!disableAll && enableDefaultKeymap ? searchKeymap : []),
             // Redo/undo 快捷键
-            ...(enableDefaultKeymap ? historyKeymap : []),
+            ...(!disableAll && enableDefaultKeymap ? historyKeymap : []),
             ...(keyBindings || []),
           ].filter(Boolean) as KeyBinding[],
         ),

@@ -75,6 +75,7 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
       root: editorRootRef.current,
       extensionsConfig: {
         enableLineWrapping: true,
+        disableAll: true,
       },
       markdownConfig: {
         formattingDisplayMode: editMode === 'source' ? 'show' : 'auto',
