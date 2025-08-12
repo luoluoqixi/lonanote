@@ -83,7 +83,7 @@ export const defaultDetectLanguage = (
     case 'txt':
       return [json(), yaml()];
     default:
-      if (supportEditorExts.findIndex((x) => x === ext) >= 0) {
+      if (supportMarkdownExts.findIndex((x) => x === ext) >= 0) {
         return [
           purrmd({
             formattingDisplayMode: markdownConfig.formattingDisplayMode,

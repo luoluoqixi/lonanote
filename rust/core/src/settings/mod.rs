@@ -28,6 +28,12 @@ pub struct Settings {
     /// 编辑器失去焦点时自动保存
     #[serde(default = "Settings::default_auto_save_focus_change")]
     pub auto_save_focus_change: bool,
+    /// 显示行号
+    #[serde(default = "Settings::default_show_line_number")]
+    pub show_line_number: bool,
+    /// 禁用自动换行
+    #[serde(default = "Settings::default_disable_line_wrap")]
+    pub disable_line_wrap: bool,
 }
 
 impl Settings {
@@ -54,6 +60,14 @@ impl Settings {
     pub const fn default_auto_save_focus_change() -> bool {
         true
     }
+
+    pub const fn default_show_line_number() -> bool {
+        false
+    }
+
+    pub const fn default_disable_line_wrap() -> bool {
+        false
+    }
 }
 
 impl Settings {
@@ -75,6 +89,8 @@ impl Settings {
             auto_save: Settings::default_auto_save(),
             auto_save_interval: Settings::default_auto_save_interval(),
             auto_save_focus_change: Settings::default_auto_save_focus_change(),
+            show_line_number: Settings::default_show_line_number(),
+            disable_line_wrap: Settings::default_disable_line_wrap(),
         }
     }
 

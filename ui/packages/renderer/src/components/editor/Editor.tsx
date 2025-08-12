@@ -21,6 +21,7 @@ import {
   updateContentAutoSave,
   useEditorData,
 } from '@/controller/editor';
+import { useSettings } from '@/controller/settings';
 import { utils } from '@/utils';
 
 import './Editor.scss';
@@ -68,6 +69,7 @@ export default function Editor({
   style,
 }: EditorProps) {
   const editorMode = useEditorData((s) => s.editorMode) || defaultEditorMode;
+  const settings = useSettings((s) => s.settings);
   const editorRef = useRef<LonaEditorRef>(null);
   const { fullPath, folderPath, uploadImagePath, uploadAttachmentPath } = useMemo(() => {
     const fullPath = path.join(currentWorkspace.metadata.path, file);
@@ -188,6 +190,8 @@ export default function Editor({
             filePath={file}
             readOnly={readOnly}
             editMode={editorMode}
+            showLineNumber={settings?.showLineNumber}
+            lineWrap={!settings?.disableLineWrap}
             onFocusChange={onFocusChange}
             onSave={saveFile}
             onUpdateStateListener={setCurrentEditorState}

@@ -6,6 +6,8 @@ export interface Settings {
   autoSave: boolean;
   autoSaveInterval: number;
   autoSaveFocusChange: boolean;
+  showLineNumber: boolean;
+  disableLineWrap: boolean;
 }
 
 export const settings = {

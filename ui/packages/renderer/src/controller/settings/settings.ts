@@ -54,6 +54,18 @@ export const setSettingsAutoSaveFocusChange = async (autoSaveFocusChange: boolea
   });
 };
 
+export const setSettingsShowLineNumber = async (showLineNumber: boolean) => {
+  setSettingsCallback((s) => {
+    s.showLineNumber = showLineNumber;
+  });
+};
+
+export const setSettingsDisableLineWrap = async (disableLineWrap: boolean) => {
+  setSettingsCallback((s) => {
+    s.disableLineWrap = disableLineWrap;
+  });
+};
+
 export const resetSettingsAutoSaveInterval = async () => {
   await settings.resetSettingsAutoSaveInterval();
   const ss = await settings.getSettings();

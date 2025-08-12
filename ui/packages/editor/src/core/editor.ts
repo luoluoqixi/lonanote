@@ -71,7 +71,7 @@ export interface LonaEditorConfig {
     enableAutoIndent?: boolean;
     /** 是否启用默认语法高亮 @default false */
     enableSyntaxHighlighting?: boolean;
-    /** 是否启用括号匹配 @default true */
+    /** 是否启用括号匹配 @default false */
     enableBracketMatching?: boolean;
     /** 是否启用自动补全右括号 @default true */
     enableCloseBrackets?: boolean;
@@ -81,7 +81,7 @@ export interface LonaEditorConfig {
     enableRectangularSelection?: boolean;
     /** 是否启用十字光标 @default true */
     enableCrosshairCursor?: boolean;
-    /** 是否启用高亮激活行 @default true */
+    /** 是否启用高亮激活行 @default false */
     enableHighlightActiveLine?: boolean;
     /** 是否启用高亮匹配的文本 @default false */
     enableHighlightSelectionMatches?: boolean;
@@ -169,12 +169,12 @@ export class LonaEditor {
       enableDropCursor = false,
       enableAutoIndent = true,
       enableSyntaxHighlighting = false,
-      enableBracketMatching = true,
+      enableBracketMatching = false,
       enableCloseBrackets = true,
       enableAutoCompletion = true,
       enableRectangularSelection = true,
       enableCrosshairCursor = true,
-      enableHighlightActiveLine = true,
+      enableHighlightActiveLine = false,
       enableHighlightSelectionMatches = false,
       enableFoldGutter = true,
       enableDefaultKeymap = true,

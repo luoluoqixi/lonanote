@@ -9,6 +9,8 @@ import {
   setSettingsAutoSave,
   setSettingsAutoSaveFocusChange,
   setSettingsAutoSaveInterval,
+  setSettingsDisableLineWrap,
+  setSettingsShowLineNumber,
   useSettings,
 } from '@/controller/settings';
 
@@ -85,6 +87,28 @@ export const GlobalSettings: React.FC<GlobalSettingsProps> = () => {
           <Switch
             checked={settings.autoSaveFocusChange}
             onCheckedChange={(v) => setSettingsAutoSaveFocusChange(v)}
+          />
+        </div>
+      </div>
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
+          显示行号：
+        </Text>
+        <div className="rowSettingsRight">
+          <Switch
+            checked={settings.showLineNumber}
+            onCheckedChange={(v) => setSettingsShowLineNumber(v)}
+          />
+        </div>
+      </div>
+      <div className="rowSettings">
+        <Text as="div" size="2" className="rowSettingsLeft">
+          自动换行：
+        </Text>
+        <div className="rowSettingsRight">
+          <Switch
+            checked={!settings.disableLineWrap}
+            onCheckedChange={(v) => setSettingsDisableLineWrap(!v)}
           />
         </div>
       </div>
