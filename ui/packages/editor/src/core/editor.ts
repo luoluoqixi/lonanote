@@ -36,9 +36,7 @@ import {
   lineNumbers,
   rectangularSelection,
 } from '@codemirror/view';
-import { vsCodeDark } from '@fsegurai/codemirror-theme-vscode-dark';
-import { vsCodeLight } from '@fsegurai/codemirror-theme-vscode-light';
-import { FormattingDisplayMode } from 'purrmd';
+import { PurrMDConfig, PurrMDThemeConfig } from 'purrmd';
 
 import { defaultDetectLanguage } from './detectLanguage';
 
@@ -95,14 +93,18 @@ export interface LonaEditorConfig {
   /** 自定义快捷键 */
   keyBindings?: KeyBinding[] | null;
   /** 主题 @default light */
-  theme?: 'light' | 'dark' | 'none' | Extension | undefined;
+  theme?:
+    | 'light'
+    | 'dark'
+    | 'none'
+    | { mode: 'light' | 'dark'; theme: Extension | null }
+    | undefined;
   /** 语言检测函数并获取插件 */
   detectLanguage?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
   /** 检测Markdown语言并获取插件 */
   detectMarkdown?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
-  markdownConfig?: {
-    formattingDisplayMode?: FormattingDisplayMode;
-  };
+  markdownConfig?: PurrMDConfig;
+  markdownTheme?: PurrMDThemeConfig;
 }
 
 export interface LonaEditorStatusInfo {
@@ -158,6 +160,7 @@ export class LonaEditor {
     detectLanguage,
     theme,
     markdownConfig,
+    markdownTheme,
   }: LonaEditorConfig) => {
     const {
       disableAll = false,
@@ -200,14 +203,6 @@ export class LonaEditor {
     const updateListener = EditorView.updateListener.of((update) => {
       this.#onUpdate(update);
     });
-    let resolveTheme = null;
-    if (typeof theme === 'string') {
-      if (theme !== 'none') {
-        resolveTheme = theme === 'dark' ? vsCodeDark : vsCodeLight;
-      }
-    } else if (theme) {
-      resolveTheme = theme;
-    }
     const languages: Extension[] = [];
     const pushLanguage = (lang: Extension | Extension[] | null) => {
       if (Array.isArray(lang)) {
@@ -216,20 +211,32 @@ export class LonaEditor {
         languages.push(lang);
       }
     };
+
+    let resolveMode = 'light';
+    let resolveTheme = null;
+    if (typeof theme === 'string') {
+      resolveMode = theme;
+    } else if (theme) {
+      resolveMode = theme.mode;
+      resolveTheme = theme.theme;
+    }
     pushLanguage(
       detectLanguage
         ? detectLanguage(filePath)
         : defaultDetectLanguage(filePath, {
             fileName: filePath,
-            isDark: theme === 'dark',
-            formattingDisplayMode: markdownConfig?.formattingDisplayMode || 'auto',
+            theme: {
+              mode: resolveMode === 'none' ? 'base' : resolveMode === 'dark' ? 'dark' : 'light',
+              ...(markdownTheme || {}),
+            },
+            config: markdownConfig,
           }),
     );
+
     const state = EditorState.create({
       doc: defaultValue || this.defaultValue || '',
       extensions: [
         this.#readOnlyEx.of(EditorView.editable.of(readOnly ? false : true)),
-        ...languages,
         focusChangeListener,
         // 自动换行
         !disableAll && enableLineWrapping ? EditorView.lineWrapping : null,
@@ -270,6 +277,7 @@ export class LonaEditor {
         !disableAll && enableHighlightSelectionMatches ? highlightSelectionMatches() : null,
         // 折叠功能
         !disableAll && enableFoldGutter ? foldGutter() : null,
+        ...languages,
         resolveTheme,
         keymap.of(
           [

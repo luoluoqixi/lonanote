@@ -14,16 +14,19 @@ import { sql } from '@codemirror/lang-sql';
 import { vue } from '@codemirror/lang-vue';
 import { xml } from '@codemirror/lang-xml';
 import { yaml } from '@codemirror/lang-yaml';
-import { FormattingDisplayMode, purrmd, purrmdTheme } from 'purrmd';
+import { vsCodeDark } from '@fsegurai/codemirror-theme-vscode-dark';
+import { vsCodeLight } from '@fsegurai/codemirror-theme-vscode-light';
+import { PurrMDConfig, PurrMDThemeConfig, purrmd, purrmdTheme } from 'purrmd';
 
 export const defaultDetectLanguage = (
   fileName: string,
   markdownConfig: {
     fileName: string;
-    isDark: boolean;
-    formattingDisplayMode: FormattingDisplayMode;
+    config: PurrMDConfig;
+    theme: PurrMDThemeConfig;
   },
 ) => {
+  const extensions = [];
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
   switch (ext) {
     case 'c':
@@ -33,17 +36,22 @@ export const defaultDetectLanguage = (
     case 'hpp':
     case 'mm':
     case 'cs':
-      return cpp();
+      extensions.push(cpp());
+      break;
     case 'css':
-      return css();
+      extensions.push(css());
+      break;
     case 'go':
-      return go();
+      extensions.push(go());
+      break;
     case 'html':
-      return html();
+      extensions.push(html());
+      break;
     case 'java':
     case 'kt':
     case 'kts':
-      return java();
+      extensions.push(java());
+      break;
     case 'js':
     case 'ts':
     case 'jsx':
@@ -52,49 +60,62 @@ export const defaultDetectLanguage = (
     case 'cjs':
     case 'mts':
     case 'cts':
-      return javascript();
+      extensions.push(javascript());
+      break;
     case 'json':
-      return json();
+      extensions.push(json());
+      break;
     case 'less':
-      return less();
+      extensions.push(less());
+      break;
     case 'php':
-      return php();
+      extensions.push(php());
+      break;
     case 'python':
-      return python();
+      extensions.push(python());
+      break;
     case 'rs':
-      return rust();
+      extensions.push(rust());
+      break;
     case 'sass':
     case 'scss':
-      return sass();
+      extensions.push(sass());
+      break;
     case 'sql':
-      return sql();
+      extensions.push(sql());
+      break;
     case 'vue':
-      return vue();
+      extensions.push(vue());
+      break;
     case 'xml':
     case 'plist':
     case 'storyboard':
-      return xml();
+      extensions.push(xml());
+      break;
     case 'yaml':
     case 'yml':
-      return yaml();
+      extensions.push(yaml());
+      break;
     // case 'md':
     // case 'markdown':
     //   return markdown({ codeLanguages: languages });
     case 'txt':
-      return [json(), yaml()];
+      extensions.push(json());
+      extensions.push(yaml());
+      break;
     default:
       if (supportMarkdownExts.findIndex((x) => x === ext) >= 0) {
-        return [
-          purrmd({
-            formattingDisplayMode: markdownConfig.formattingDisplayMode,
-          }),
-          purrmdTheme({
-            mode: markdownConfig.isDark ? 'dark' : 'light',
-          }),
-        ];
+        return [purrmd(markdownConfig.config), purrmdTheme(markdownConfig.theme)];
       }
       return [];
   }
+  let resolveTheme = null;
+  const themeMode = markdownConfig.theme.mode;
+  if (themeMode !== 'base') {
+    resolveTheme = themeMode === 'dark' ? vsCodeDark : vsCodeLight;
+  }
+  if (resolveTheme) extensions.push(resolveTheme);
+  return extensions;
 };
 
 export const isSupportEditorLanguage = (fileName: string) => {
