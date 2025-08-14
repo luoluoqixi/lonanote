@@ -13,10 +13,6 @@
   padding: 0 var(--cm-root-padding);
   width: calc(100% - calc(var(--cm-root-padding) * 2)) !important;
 
-  .ͼ1 .cm-lineNumbers .cm-gutterElement {
-    // padding-top: 2px;
-    min-width: 40px;
-  }
   .cm-editor {
     // background-color: var(--cm-background-color);
     background-color: transparent;
@@ -29,23 +25,30 @@
     outline: 0 !important;
     -webkit-user-select: auto;
     user-select: auto;
-  }
-  // 行号
-  .cm-gutters {
-    color: var(--gray-10) !important;
-    border-width: 0 !important;
-    // font-size: var(--font-size-1);
-    // background-color: var(--cm-background-color) !important;
-    // background-color: transparent !important;
-  }
-  .cm-scroller {
-    justify-content: start;
-    overflow: visible;
-    outline: none;
-  }
 
-  .cm-content {
-    padding: 0 0px var(--bottom-safe-height) 0px;
+    .cm-scroller {
+      justify-content: start;
+      overflow: visible;
+      outline: none;
+
+      .cm-content {
+        padding: 0 0px var(--bottom-safe-height) 0px;
+      }
+
+      // 行号
+      .cm-gutters {
+        color: var(--gray-10) !important;
+        border-width: 0 !important;
+        // font-size: var(--font-size-1);
+        // background-color: var(--cm-background-color) !important;
+        // background-color: transparent !important;
+
+        .cm-lineNumbers .cm-gutterElement {
+          // padding-top: 2px;
+          min-width: 40px;
+        }
+      }
+    }
   }
 
   .cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,

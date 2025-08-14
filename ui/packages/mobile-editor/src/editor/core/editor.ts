@@ -1,5 +1,7 @@
 import { LonaEditor } from 'lonanote-editor';
 
+import { callFlutter } from '@/utils/flutter';
+
 import { onUpdateState, saveContent } from '..';
 import './editor.scss';
 
@@ -29,6 +31,18 @@ export const create = (
       },
       markdownConfig: {
         formattingDisplayMode: sourceMode ? 'show' : 'auto',
+        featuresConfigs: {
+          Link: {
+            onLinkClickPreview(url, event) {
+              event.preventDefault();
+              callFlutter('on_link_click_preview', url);
+            },
+            onLinkClickSource(url, event) {
+              event.preventDefault();
+              callFlutter('on_link_click_source', url);
+            },
+          },
+        },
       },
     });
 

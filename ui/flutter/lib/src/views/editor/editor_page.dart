@@ -235,6 +235,46 @@ class _EditorPageState extends ConsumerState<EditorPage>
         }
       },
     );
+
+    _webViewController!.addJavaScriptHandler(
+      handlerName: 'on_link_click_preview',
+      callback: (List<dynamic> arguments) {
+        if (arguments.isNotEmpty) {
+          final data = arguments[0];
+          if (data != null) {
+            final url = jsonDecode(data) as String?;
+            _onClickPreviewLink(url);
+          }
+        }
+      },
+    );
+
+    _webViewController!.addJavaScriptHandler(
+      handlerName: 'on_link_click_source',
+      callback: (List<dynamic> arguments) {
+        if (arguments.isNotEmpty) {
+          final data = arguments[0];
+          if (data != null) {
+            final url = jsonDecode(data) as String?;
+            _onClickSourceLink(url);
+          }
+        }
+      },
+    );
+  }
+
+  void _onClickPreviewLink(String? url) async {
+    _openUrl(url);
+  }
+
+  void _onClickSourceLink(String? url) async {
+    _openUrl(url);
+  }
+
+  void _openUrl(String? url) {
+    if (url != null) {
+      Utility.openUrl(url);
+    }
   }
 
   Color _getTitleColor(double scrollY, Color baseColor) {
