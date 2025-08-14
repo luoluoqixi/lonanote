@@ -1,5 +1,4 @@
 import { Button, Text } from '@radix-ui/themes';
-import { useThemeContext } from '@radix-ui/themes';
 import path from 'path-browserify-esm';
 import {
   CSSProperties,
@@ -71,8 +70,6 @@ export default function Editor({
 }: EditorProps) {
   const editorMode = useEditorData((s) => s.editorMode) || defaultEditorMode;
   const settings = useSettings((s) => s.settings);
-  const theme = useThemeContext();
-  const primaryColor = theme.accentColor;
   const editorRef = useRef<LonaEditorRef>(null);
   const { fullPath, folderPath, uploadImagePath, uploadAttachmentPath } = useMemo(() => {
     const fullPath = path.join(currentWorkspace.metadata.path, file);
@@ -195,7 +192,6 @@ export default function Editor({
             editMode={editorMode}
             showLineNumber={settings?.showLineNumber}
             lineWrap={!settings?.disableLineWrap}
-            primaryColor={primaryColor}
             onFocusChange={onFocusChange}
             onSave={saveFile}
             onUpdateStateListener={setCurrentEditorState}

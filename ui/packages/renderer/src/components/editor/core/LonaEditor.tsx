@@ -39,7 +39,6 @@ export interface LonaEditorProps {
   initValue: string | null;
   showLineNumber?: boolean;
   lineWrap?: boolean;
-  primaryColor?: string;
   onFocusChange?: (focus: boolean) => void;
   onSave?: (content: string) => void;
   onUpdateStateListener?: (state: UpdateState) => void;
@@ -62,7 +61,6 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
     editMode,
     showLineNumber,
     lineWrap,
-    primaryColor,
   } = props;
   const { resolvedColorMode } = useColorMode();
   const editorRootRef = useRef<HTMLDivElement>(null);
@@ -85,9 +83,6 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
       },
       markdownConfig: {
         formattingDisplayMode: editMode === 'source' ? 'show' : 'auto',
-      },
-      markdownTheme: {
-        primaryColor,
       },
     });
     editor.addListener('onSave', (editor) => {
@@ -117,7 +112,6 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
     resolvedColorMode,
     showLineNumber,
     lineWrap,
-    primaryColor,
   ]);
 
   useEffect(() => {
