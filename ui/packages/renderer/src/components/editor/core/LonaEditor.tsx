@@ -83,6 +83,20 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
       },
       markdownConfig: {
         formattingDisplayMode: editMode === 'source' ? 'show' : 'auto',
+        featuresConfigs: {
+          Link: {
+            onLinkClickPreview(url, event) {
+              event.preventDefault();
+              onClickAnyLink?.(url);
+            },
+            onLinkClickSource(url, event) {
+              event.preventDefault();
+              onClickAnyLink?.(url);
+            },
+            clickToOpenInSource: 'controlOrCommand',
+            clickToOpenInPreview: 'click',
+          },
+        },
       },
     });
     editor.addListener('onSave', (editor) => {
