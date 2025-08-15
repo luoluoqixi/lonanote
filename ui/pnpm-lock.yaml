@@ -199,8 +199,8 @@ importers:
   packages/editor:
     dependencies:
       purrmd:
-        specifier: ^0.0.3
-        version: 0.0.3(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3)
+        specifier: ^0.0.4
+        version: 0.0.4(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3)
 
   packages/mobile-editor:
     dependencies:
@@ -4145,8 +4145,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  purrmd@0.0.3:
-    resolution: {integrity: sha512-pMstqDLgrrECJHBFoKfB84dhYiNtsXmlF9WDbKsAOv9k3FBf1RSsACVXhAAA62L6l8qRkmAX9l44gkP51ojKnQ==}
+  purrmd@0.0.4:
+    resolution: {integrity: sha512-g3Wgz5JbGYIL5IyME1lz5htAS5aKS8erc3VEAwAbpB7mi/EnME2dJJAEmDE836DjgzFddKFBpG6ypWWUhQhoIw==}
     peerDependencies:
       '@codemirror/autocomplete': ^6.18.6
       '@codemirror/commands': ^6.8.1
@@ -9730,7 +9730,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  purrmd@0.0.3(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3):
+  purrmd@0.0.4(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3):
     dependencies:
       '@codemirror/autocomplete': 6.18.6
       '@codemirror/commands': 6.8.1
