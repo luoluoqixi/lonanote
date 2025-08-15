@@ -1,8 +1,10 @@
 import clsx from 'clsx';
 import { LonaEditor } from 'lonanote-editor';
+import path from 'path-browserify-esm';
 import { CSSProperties, Ref, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
 import { useColorMode } from '@/components/provider/ColorModeProvider';
+import { utils } from '@/utils';
 
 import { EditorMode } from '../types';
 import './LonaEditor.scss';
@@ -57,6 +59,7 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
     onUpdateStateListener,
     onUpdate,
     onClickAnyLink,
+    mediaRootPath,
     initValue,
     editMode,
     showLineNumber,
@@ -90,11 +93,29 @@ export default forwardRef((props: LonaEditorProps, ref: Ref<LonaEditorRef>) => {
               onClickAnyLink?.(url);
             },
             onLinkClickSource(url, event) {
-              event.preventDefault();
-              onClickAnyLink?.(url);
+              if (event.ctrlKey || event.metaKey) {
+                event.preventDefault();
+                onClickAnyLink?.(url);
+              }
             },
             clickToOpenInSource: 'controlOrCommand',
             clickToOpenInPreview: 'click',
+          },
+          Image: {
+            proxyURL: (url) => {
+              if (url === '') return url;
+              if (utils.isImgUrl(url)) {
+                return url;
+              }
+              const f = path.resolve(mediaRootPath, url);
+              // if (!(await fs.exists(f))) {
+              //   const f = path.resolve(path.resolve(workspaceRootPath, defaultUploadPath), url);
+              //   if (await fs.exists(f)) {
+              //     return utils.getMediaPath(f);
+              //   }
+              // }
+              return utils.getMediaPath(f);
+            },
           },
         },
       },
