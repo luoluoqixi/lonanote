@@ -1,6 +1,7 @@
 .cm6-theme {
   .cm-editor {
     --cm-editor-primary-color: var(--accent-a5, '#4a90e2');
+    background-color: var(--color-background);
 
     height: 100%;
     padding: 0 5px 0 20px;
@@ -19,7 +20,7 @@
 
       // 行号
       .cm-gutters {
-        background-color: var(--color-background) !important;
+        background-color: var(--color-background);
         color: var(--gray-10) !important;
         // font-size: var(--font-size-1);
         border-width: 0 !important;

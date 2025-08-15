@@ -199,8 +199,8 @@ importers:
   packages/editor:
     dependencies:
       purrmd:
-        specifier: ^0.0.2
-        version: 0.0.2(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3)
+        specifier: ^0.0.3
+        version: 0.0.3(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3)
 
   packages/mobile-editor:
     dependencies:
@@ -2181,6 +2181,19 @@ packages:
     resolution: {integrity: sha512-W8FQi6kEh2e8zVhQ0eeRnxdvIoOkAp/CPAahcNio6nO9dsIwb9b34z90KOlheoyuVf6LSOEdjlkxSkapNEc+4A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@uiw/codemirror-theme-dracula@4.25.1':
+    resolution: {integrity: sha512-xuAWO8z8F9zDTmFJCkGtH9LN1Wq2d86CgnPZGoWHnVe3eeXc75erJWJE5ZJLN6H1E6VfBqLGUkwHxX9I6O5z0A==}
+
+  '@uiw/codemirror-theme-vscode@4.25.1':
+    resolution: {integrity: sha512-vZXvErVDvHLFWCo78Y22R2grisGkWJFFKkdOu9+tcRjWfOVb7K3fDu/H4fDr6JujLTaL+LY/vP/LZYAGJXVqgA==}
+
+  '@uiw/codemirror-themes@4.25.1':
+    resolution: {integrity: sha512-6o8tQ8bdq14RuVFpZ7l9u8KnuPq824uG3U1VV933Uhv8mfaxaoaOQSjv6T2bQUPhjH6ZlEu5+tAMkOfIL21eIQ==}
+    peerDependencies:
+      '@codemirror/language': '>=6.0.0'
+      '@codemirror/state': '>=6.0.0'
+      '@codemirror/view': '>=6.0.0'
+
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
@@ -4132,8 +4145,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  purrmd@0.0.2:
-    resolution: {integrity: sha512-gphU+Jcfm4Z8kadZqNGwpr0b7bp3LdIjFZXTiuOmLyxbj7NJqqEZKZ1R4evihdTdyYUWk8tUbn7zIugGZeKeWw==}
+  purrmd@0.0.3:
+    resolution: {integrity: sha512-pMstqDLgrrECJHBFoKfB84dhYiNtsXmlF9WDbKsAOv9k3FBf1RSsACVXhAAA62L6l8qRkmAX9l44gkP51ojKnQ==}
     peerDependencies:
       '@codemirror/autocomplete': ^6.18.6
       '@codemirror/commands': ^6.8.1
@@ -7343,6 +7356,28 @@ snapshots:
       '@typescript-eslint/types': 8.39.1
       eslint-visitor-keys: 4.2.1
 
+  '@uiw/codemirror-theme-dracula@4.25.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)':
+    dependencies:
+      '@uiw/codemirror-themes': 4.25.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
+    transitivePeerDependencies:
+      - '@codemirror/language'
+      - '@codemirror/state'
+      - '@codemirror/view'
+
+  '@uiw/codemirror-theme-vscode@4.25.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)':
+    dependencies:
+      '@uiw/codemirror-themes': 4.25.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
+    transitivePeerDependencies:
+      - '@codemirror/language'
+      - '@codemirror/state'
+      - '@codemirror/view'
+
+  '@uiw/codemirror-themes@4.25.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)':
+    dependencies:
+      '@codemirror/language': 6.11.2
+      '@codemirror/state': 6.5.2
+      '@codemirror/view': 6.38.1
+
   '@ungap/structured-clone@1.3.0': {}
 
   '@vitejs/plugin-react@4.7.0(vite@7.1.2(@types/node@22.17.1)(jiti@2.5.1)(sass-embedded@1.90.0)(sass@1.90.0)(tsx@4.20.4))':
@@ -9695,7 +9730,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  purrmd@0.0.2(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3):
+  purrmd@0.0.3(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3):
     dependencies:
       '@codemirror/autocomplete': 6.18.6
       '@codemirror/commands': 6.8.1
@@ -9707,6 +9742,8 @@ snapshots:
       '@codemirror/state': 6.5.2
       '@codemirror/view': 6.38.1
       '@lezer/markdown': 1.4.3
+      '@uiw/codemirror-theme-dracula': 4.25.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
+      '@uiw/codemirror-theme-vscode': 4.25.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
       ts-deepmerge: 7.0.3
 
   quansync@0.2.10: {}
