@@ -56,46 +56,6 @@ const bodyClick = (e: MouseEvent) => {
   }
 };
 
-// const sendCurrentScrollPosition = (e: Event) => {
-//   if (!window.flutter_inappwebview) return;
-//   if (e.target instanceof Document) {
-//     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-//     callFlutter('scroll_position', scrollTop);
-//     return;
-//   }
-//   if (e.target instanceof HTMLElement) {
-//     const scrollTop = e.target.scrollTop;
-//     callFlutter('scroll_position', scrollTop);
-//   }
-// };
-
-// const onScrollPositionChange = (e: Event) => {
-//   const w = window as any;
-//   sendCurrentScrollPosition(e);
-//   if (w.scrollPositionChangeAnimId != null) {
-//     cancelAnimationFrame(w.scrollPositionChangeAnimId);
-//     w.scrollPositionChangeAnimId = null;
-//   }
-//   if (w.scrollPositionChangeStop != null) {
-//     clearTimeout(w.scrollPositionChangeStop);
-//     w.scrollPositionChangeStop = null;
-//   }
-//   function send() {
-//     w.scrollPositionChangeAnimId = requestAnimationFrame(() => {
-//       sendCurrentScrollPosition(e);
-//       send();
-//     });
-//   }
-//   send();
-
-//   w.scrollPositionChangeStop = setTimeout(() => {
-//     if (w.scrollPositionChangeAnimId != null) {
-//       cancelAnimationFrame(w.scrollPositionChangeAnimId);
-//       w.scrollPositionChangeAnimId = null;
-//     }
-//   }, 100);
-// };
-
 const autoScrollToCursorStart = () => {
   if (window.editor != null) {
     const editor = window.editor;
@@ -109,7 +69,7 @@ const autoScrollToCursorStart = () => {
         }
       }
     } else if (window.isAndroid) {
-      editor.autoScrollToCursor(document.body);
+      editor.scrollToCursor(document.body);
     }
   }
 };
@@ -148,8 +108,6 @@ export const createEditor = async (
 
   document.body.addEventListener('click', bodyClick);
 
-  // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
-  // document?.addEventListener('scroll', onScrollPositionChange);
   // 添加 resize 事件监听
   window.addEventListener('resize', handleWindowResize);
 
@@ -171,6 +129,5 @@ export const createEditor = async (
   (window as any).onCleanEvents = () => {
     window?.removeEventListener('resize', handleWindowResize);
     document.body.removeEventListener('click', bodyClick);
-    // document?.removeEventListener('scroll', onScrollPositionChange);
   };
 };

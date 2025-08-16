@@ -397,6 +397,18 @@ export class LonaEditor {
     return { charCount, rowIndex, colIndex };
   };
 
+  getScrollContainer = (): HTMLElement | null => {
+    const node = this.#editor.scrollDOM;
+    for (let cur: any | null = node; cur; ) {
+      if (cur.scrollHeight <= cur.clientHeight) {
+        cur = cur.parentNode;
+        continue;
+      }
+      return cur;
+    }
+    return null;
+  };
+
   isCursorInViewport = (container?: HTMLElement): boolean => {
     if (!this.#editor || !this.#editor.hasFocus) return false;
 
@@ -426,8 +438,42 @@ export class LonaEditor {
     return isViewport;
   };
 
-  getScrollToCursorValue = (container?: HTMLElement): number | undefined => {
+  getScrollToCursorValue = (container?: Element | null): number | undefined => {
     if (!this.#editor) return undefined;
+
+    const pos = this.#editor.state.selection.main.head;
+    const coords = this.#editor.coordsAtPos(pos);
+    if (!coords) return undefined;
+
+    container = container || this.getScrollContainer();
+    const containerRect = container.getBoundingClientRect();
+    let containerTop = containerRect.top;
+    let containerBottom = containerRect.bottom;
+
+    if (containerTop < 0) {
+      const top = containerTop;
+      containerTop = 0;
+      containerBottom += -top;
+    }
+
+    if (coords.top < containerTop) {
+      // 在上方
+      const relativeTop = coords.top - containerRect.top;
+      const scrollTop = container.scrollTop + relativeTop;
+      // console.log('上方', coords.top, containerRect.top, scrollTop);
+      return scrollTop;
+    } else if (coords.bottom > containerBottom) {
+      // 在下方
+      const relativeTop = coords.bottom - containerRect.bottom;
+      const scrollTop = container.scrollTop + relativeTop;
+      // console.log('下方', coords.bottom, containerRect.bottom, scrollTop);
+      return scrollTop;
+    }
+    return undefined;
+  };
+
+  scrollToCursor = (container?: Element | null) => {
+    if (!this.#editor) return;
 
     const pos = this.#editor.state.selection.main.head;
     const coords = this.#editor.coordsAtPos(pos);
@@ -446,35 +492,20 @@ export class LonaEditor {
 
     if (coords.top < containerTop) {
       // 在上方
-      const relativeTop = coords.top - containerRect.top;
-      const scrollTop = container.scrollTop + relativeTop;
-      return scrollTop;
+      this.#editor.dispatch({
+        effects: EditorView.scrollIntoView(pos, {
+          y: 'start',
+          yMargin: 0,
+        }),
+      });
     } else if (coords.bottom > containerBottom) {
       // 在下方
-      const relativeTop = coords.bottom - containerRect.bottom;
-      const scrollTop = container.scrollTop + relativeTop;
-      return scrollTop;
-    }
-    return undefined;
-  };
-
-  scrollToCursor = () => {
-    if (!this.#editor) return;
-    const pos = this.#editor.state.selection.main.head;
-    this.#editor.dispatch({
-      effects: EditorView.scrollIntoView(pos, {
-        y: 'nearest',
-        yMargin: 0,
-      }),
-    });
-  };
-
-  autoScrollToCursor = (container?: HTMLElement) => {
-    if (!this.#editor) return;
-    if (this.#editor.hasFocus) {
-      if (!this.isCursorInViewport(container)) {
-        this.scrollToCursor();
-      }
+      this.#editor.dispatch({
+        effects: EditorView.scrollIntoView(pos, {
+          y: 'end',
+          yMargin: 0,
+        }),
+      });
     }
   };
 

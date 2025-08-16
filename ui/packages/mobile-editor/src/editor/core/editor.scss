@@ -6,14 +6,16 @@
   padding: 0 var(--cm-root-padding) 0 0;
 }
 
-// @keyframes blink_input_opacity_to_prevent_scrolling_when_focus {
-//   0% {
-//     opacity: 0;
-//   }
-//   100% {
-//     opacity: 1;
-//   }
-// }
+.android {
+  #cm-root {
+    .cm-editor {
+      overflow: auto;
+      .cm-scroller {
+        overflow: auto;
+      }
+    }
+  }
+}
 
 #cm-root {
   // background-color: var(--cm-background-color);
