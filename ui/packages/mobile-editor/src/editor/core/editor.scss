@@ -1,11 +1,3 @@
-#root {
-  --cm-root-padding: 12px;
-}
-
-#cm-root.source-mode-show-line {
-  padding: 0 var(--cm-root-padding) 0 0;
-}
-
 .android {
   #cm-root {
     .cm-editor {
@@ -20,9 +12,7 @@
 #cm-root {
   // background-color: var(--cm-background-color);
   background-color: transparent;
-
-  padding: 0 var(--cm-root-padding);
-  width: calc(100% - calc(var(--cm-root-padding) * 2)) !important;
+  width: 100%;
 
   .cm-editor {
     // background-color: var(--cm-background-color);
@@ -33,6 +23,7 @@
     --cm-editor-primary-color: var(--accent-a5, '#4a90e2');
     height: 100%;
     padding: var(--cm-editor-wrap-padding);
+
     outline: 0 !important;
     -webkit-user-select: auto;
     user-select: auto;
