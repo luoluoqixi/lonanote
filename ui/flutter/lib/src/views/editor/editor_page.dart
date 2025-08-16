@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -37,9 +36,7 @@ class EditorPage extends ConsumerStatefulWidget {
 }
 
 class _EditorPageState extends ConsumerState<EditorPage>
-    with WidgetsBindingObserver, RouteAware, SingleTickerProviderStateMixin {
-  static final double _defaultTitleHeight = 82.0;
-
+    with WidgetsBindingObserver, RouteAware {
   InAppWebViewController? _webViewController;
   final GlobalKey webViewKey = GlobalKey();
 
@@ -71,16 +68,14 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   bool _isShowLineNumber = false;
 
-  Color _titleBgColor = Colors.transparent;
-  Color _titleTextColor = Colors.transparent;
+  static const Color _defaultTitleBgColor = Colors.transparent;
+  static const Color _defaultTitleTextColor = Colors.transparent;
+
+  Color _titleBgColor = _defaultTitleBgColor;
+  Color _titleTextColor = _defaultTitleTextColor;
 
   int _tapCount = 0;
   DateTime? _lastTapTime;
-
-  late final Ticker _ticker;
-  bool _isPolling = false;
-  Timer? _pollStopTimer;
-  double _titleOffset = 0.0;
 
   bool _canRedo = false;
   bool _canUndo = false;
@@ -96,7 +91,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final ext = Utility.getExtName(widget.path);
     _isMarkdown = ext != null && Utility.isMarkdown(ext);
     _sourceMode = !_isMarkdown;
-    _ticker = createTicker(_onTick);
 
     _isShowLineNumber = ref
         .read(settingsProvider.select((s) => s.otherSettings))
@@ -121,7 +115,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     WidgetsBinding.instance.removeObserver(this);
     _webViewController?.dispose();
     _webViewController = null;
-    _ticker.dispose();
     super.dispose();
   }
 
@@ -155,11 +148,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _isDisposing = true;
     });
     return true;
-  }
-
-  void _onTick(Duration duration) {
-    // logger.i("Ticker tick: $duration");
-    _pollTick();
   }
 
   void hideKeyboard() {
@@ -299,49 +287,24 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Color _getTitleColor(double scrollY, Color baseColor) {
-    const maxOffset = 30.0;
-    final minScrollY = _defaultTitleHeight - maxOffset;
-    if (scrollY < minScrollY) {
-      return Colors.transparent;
-    }
-    final offset = scrollY - minScrollY;
-    final opacity = (offset / maxOffset).clamp(0.0, 1.0); // 0.0 ~ 1.0
-    return baseColor.withAlpha(
-      (255.0 * opacity).round(),
-    );
-  }
-
-  void _pollTick() {
-    if (!_isPolling) return;
-    if (!_webViewLoaded) return;
-    if (_webViewController == null) return;
-    if (!mounted) return;
-    if (_isDisposing) return;
-    _webViewController!.getScrollY().then((y) {
-      if (y != null) {
-        _onScrollPositionChange(y.toDouble());
-      }
-    });
+    // const maxOffset = 30.0;
+    // final minScrollY = maxOffset;
+    // if (scrollY < minScrollY) {
+    //   return Colors.transparent;
+    // }
+    // final offset = scrollY - minScrollY;
+    // final opacity = (offset / maxOffset).clamp(0.0, 1.0); // 0.0 ~ 1.0
+    // return baseColor.withAlpha(
+    //   (255.0 * opacity).round(),
+    // );
+    return baseColor;
   }
 
   void _onHtmlScrollPositionChange(int x, int y) {
     if (_isDisposing) return;
     if (!_webViewLoaded) return;
     if (!mounted) return;
-    if (!_isPolling) {
-      _ticker.start();
-      _isPolling = true;
-    }
     _onScrollPositionChange(y.toDouble());
-    if (_pollStopTimer != null) {
-      _pollStopTimer?.cancel();
-      _pollStopTimer = null;
-    }
-    _pollStopTimer = Timer(Duration(milliseconds: 500), () {
-      _pollStopTimer = null;
-      _isPolling = false;
-      _ticker.stop();
-    });
   }
 
   void _setAppBarColor(Color newBgColor, Color newTextColor) {
@@ -354,7 +317,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _resetAppBarColor() {
-    _setAppBarColor(Colors.transparent, Colors.transparent);
+    // _setAppBarColor(_defaultTitleBgColor, _defaultTitleTextColor);
+    _setAppBarColor(
+      ThemeColors.getBgColor(ThemeColors.getColorScheme(context)),
+      ThemeColors.getTextColor(ThemeColors.getColorScheme(context)),
+    );
   }
 
   void _onScrollPositionChange(double? scrollY) {
@@ -369,12 +336,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     } else {
       adjustedScrollY = scrollY;
     }
-
-    final newOffset =
-        -adjustedScrollY; // adjustedScrollY > 0 ? -adjustedScrollY : 0.0;
-    setState(() {
-      _titleOffset = newOffset;
-    });
 
     final colorScheme = ThemeColors.getColorScheme(context);
     final bgColor = ThemeColors.getBgColor(colorScheme);
@@ -579,10 +540,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
         );
       }
       await _updateColorMode(false);
+      _onScrollPositionChange(0);
       if (mounted) {
-        final titleHeight = _defaultTitleHeight;
         await _webViewController?.evaluateJavascript(
-            source: 'window.setTitleHeight($titleHeight)');
+            source: 'window.setTitleHeight(0)');
       }
     }
   }
@@ -631,16 +592,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
     final theme = AppTheme.getPullDownMenuRouteThemeNoAlpha(context);
     return [
-      // IconButton(
-      //   icon: Icon(ThemeIcons.undo(context)),
-      //   tooltip: '撤销',
-      //   onPressed: _canUndo ? _undo : null,
-      // ),
-      // IconButton(
-      //   icon: Icon(ThemeIcons.redo(context)),
-      //   tooltip: '重做',
-      //   onPressed: _canRedo ? _redo : null,
-      // ),
       // 如果 PullDown 下面是 webview, 背景会错误的变为透明
       // https://github.com/notDmDrl/pull_down_button/issues/28
       PlatformPullDownButton(
@@ -675,11 +626,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
             selected: _sourceMode,
             enabled: _isMarkdown,
           ),
-          PullDownMenuItem(
-            title: "刷新",
-            onTap: _refreshWebview,
-            icon: ThemeIcons.refresh(context),
-          ),
+          if (AppConfig.isDebug)
+            PullDownMenuItem(
+              title: "刷新",
+              onTap: _refreshWebview,
+              icon: ThemeIcons.refresh(context),
+            ),
           PullDownMenuItem(
             title: "工作区设置",
             onTap: _openWorkspaceSettings,
@@ -836,8 +788,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final showName = WsUtils.getFileShowName(name);
     final colorScheme = ThemeColors.getColorScheme(context);
     final mediaQuery = MediaQuery.of(context);
-    final statusBarHeight = mediaQuery.padding.top;
-    final titleHeight = _defaultTitleHeight + kToolbarHeight + statusBarHeight;
     final bottomBar = _buildBottomBar(context, mediaQuery, colorScheme);
 
     return PlatformSimplePage(
@@ -867,45 +817,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
       noScrollView: true,
       child: Stack(
         children: [
-          // AnimatedPositioned(
-          //   top: _titleOffset,
-          //   left: 0,
-          //   right: 0,
-          //   duration: Duration(milliseconds: 5),
-          Transform.translate(
-            offset: Offset(0, _titleOffset),
-            child: SizedBox(
-              child: Container(
-                height: titleHeight,
-                // 考虑增加背景颜色、图片调节设置
-                // color: ThemeColors.getPrimaryColor(colorScheme),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      ThemeColors.getPrimaryColor(colorScheme),
-                      ThemeColors.getBgColor(colorScheme),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: 20, left: 20),
-                    child: Text(
-                      showName,
-                      style: TextStyle(
-                        color: ThemeColors.getTextColor(colorScheme),
-                        fontSize: 30,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
           Column(
             children: [
               AppBar(backgroundColor: Colors.transparent),
