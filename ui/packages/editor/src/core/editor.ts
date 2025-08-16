@@ -406,13 +406,24 @@ export class LonaEditor {
     if (!cursorCoords) return false;
 
     const containerRect = container.getBoundingClientRect();
+    let containerTop = containerRect.top;
+    let containerBottom = containerRect.bottom;
 
-    return (
-      cursorCoords.top >= containerRect.top &&
-      cursorCoords.bottom <= containerRect.bottom &&
-      cursorCoords.left >= containerRect.left &&
-      cursorCoords.right <= containerRect.right
-    );
+    if (containerTop < 0) {
+      const top = containerTop;
+      containerTop = 0;
+      containerBottom += -top;
+    }
+    const isViewport = cursorCoords.top >= containerTop && cursorCoords.bottom <= containerBottom;
+    // console.log(
+    //   'isViewport:',
+    //   isViewport,
+    //   cursorCoords.top,
+    //   cursorCoords.bottom,
+    //   containerTop,
+    //   containerBottom,
+    // );
+    return isViewport;
   };
 
   scrollToCursor = () => {
