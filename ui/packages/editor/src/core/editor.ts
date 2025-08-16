@@ -426,6 +426,38 @@ export class LonaEditor {
     return isViewport;
   };
 
+  getScrollToCursorValue = (container?: HTMLElement): number | undefined => {
+    if (!this.#editor) return undefined;
+
+    const pos = this.#editor.state.selection.main.head;
+    const coords = this.#editor.coordsAtPos(pos);
+    if (!coords) return undefined;
+
+    container = container || this.#editor.scrollDOM;
+    const containerRect = container.getBoundingClientRect();
+    let containerTop = containerRect.top;
+    let containerBottom = containerRect.bottom;
+
+    if (containerTop < 0) {
+      const top = containerTop;
+      containerTop = 0;
+      containerBottom += -top;
+    }
+
+    if (coords.top < containerTop) {
+      // 在上方
+      const relativeTop = coords.top - containerRect.top;
+      const scrollTop = container.scrollTop + relativeTop;
+      return scrollTop;
+    } else if (coords.bottom > containerBottom) {
+      // 在下方
+      const relativeTop = coords.bottom - containerRect.bottom;
+      const scrollTop = container.scrollTop + relativeTop;
+      return scrollTop;
+    }
+    return undefined;
+  };
+
   scrollToCursor = () => {
     if (!this.#editor) return;
     const pos = this.#editor.state.selection.main.head;

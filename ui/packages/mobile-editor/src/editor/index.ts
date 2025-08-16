@@ -99,7 +99,14 @@ const bodyClick = (e: MouseEvent) => {
 const autoScrollToCursorStart = () => {
   if (window.editor != null) {
     const editor = window.editor;
-    editor.autoScrollToCursor(document.body);
+    if (editor.editor.hasFocus && !editor.isCursorInViewport(document.body)) {
+      const scrollTop = editor.getScrollToCursorValue(document.body);
+      if (scrollTop) {
+        window.flutter_inappwebview.callHandler('setContentOffsetFromJS', {
+          scrollTop,
+        });
+      }
+    }
   }
 };
 

@@ -206,6 +206,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _bindMessageReceived() {
     if (_webViewController == null) return;
+    if (Platform.isIOS) {
+      // 禁用 ios 弹出键盘时的自动滚动
+      _webViewController!.disableAutoScrollWhenKeyboardShows(true);
+    }
     _webViewController!.addJavaScriptHandler(
       handlerName: 'update_state',
       callback: (List<dynamic> arguments) {
