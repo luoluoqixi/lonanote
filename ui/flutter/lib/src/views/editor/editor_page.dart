@@ -145,7 +145,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
       // 退出页面前保存文件
       _save();
     }
-    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    if (Platform.isAndroid) {
+      hideKeyboard();
+    }
   }
 
   Future<bool> _onWillPop() async {
@@ -158,6 +160,25 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _onTick(Duration duration) {
     // logger.i("Ticker tick: $duration");
     _pollTick();
+  }
+
+  void hideKeyboard() {
+    if (Platform.isAndroid) {
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+    } else if (Platform.isIOS) {
+      final webView = _webViewController;
+      if (webView != null) {
+        webView.evaluateJavascript(source: "document.activeElement?.blur()");
+      }
+    }
+  }
+
+  void disableKeyboard() {
+    _webViewController?.setInputMethodEnabled(false);
+  }
+
+  void enableKeyboard() {
+    _webViewController?.setInputMethodEnabled(true);
   }
 
   Future<void> _loadFileContent() async {
@@ -413,15 +434,19 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
     if (Platform.isAndroid) {
-      SystemChannels.textInput.invokeMethod('TextInput.hide');
-    } else if (Platform.isIOS) {}
+      hideKeyboard();
+    } else if (Platform.isIOS) {
+      // iOS切换页面时似乎会自动关闭键盘
+    }
   }
 
   void _openWorkspaceSettings() {
     AppRouter.jumpToWorkspaceSettingsPage(context);
     if (Platform.isAndroid) {
-      SystemChannels.textInput.invokeMethod('TextInput.hide');
-    } else if (Platform.isIOS) {}
+      hideKeyboard();
+    } else if (Platform.isIOS) {
+      // iOS切换页面时似乎会自动关闭键盘
+    }
   }
 
   void _refreshWebview() async {
@@ -580,9 +605,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _onToolbarActionAdd() {
     HapticFeedback.mediumImpact();
-    if (Platform.isAndroid) {
-      SystemChannels.textInput.invokeMethod('TextInput.hide');
-    } else if (Platform.isIOS) {}
+    disableKeyboard();
     AppRouter.showListSheet(
       context,
       title: "添加",
@@ -600,10 +623,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
       galleryMode: true,
       galleryRowCount: 4,
     ).then((_) {
-      if (Platform.isAndroid) {
-        SystemChannels.textInput.invokeMethod('TextInput.show');
-        _webViewController?.requestFocus();
-      } else if (Platform.isIOS) {}
+      enableKeyboard();
+      // _webViewController?.requestFocus();
     });
   }
 
@@ -797,8 +818,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
                         tooltip: '关闭键盘',
                         onPressed: () {
                           HapticFeedback.mediumImpact();
-                          SystemChannels.textInput
-                              .invokeMethod('TextInput.hide');
+                          hideKeyboard();
                         },
                       ),
                     ],
