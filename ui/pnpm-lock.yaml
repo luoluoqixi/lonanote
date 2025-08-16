@@ -199,14 +199,21 @@ importers:
   packages/editor:
     dependencies:
       purrmd:
-        specifier: ^0.0.4
-        version: 0.0.4(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3)
+        specifier: ^0.0.5
+        version: 0.0.5(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3)
 
   packages/mobile-editor:
     dependencies:
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       lonanote-editor:
         specifier: workspace:*
         version: link:../editor
+    devDependencies:
+      '@types/lodash':
+        specifier: ^4.17.20
+        version: 4.17.20
 
   packages/renderer:
     devDependencies:
@@ -2086,6 +2093,9 @@ packages:
 
   '@types/keyv@3.1.4':
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
+
+  '@types/lodash@4.17.20':
+    resolution: {integrity: sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA==}
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
@@ -4145,8 +4155,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  purrmd@0.0.4:
-    resolution: {integrity: sha512-g3Wgz5JbGYIL5IyME1lz5htAS5aKS8erc3VEAwAbpB7mi/EnME2dJJAEmDE836DjgzFddKFBpG6ypWWUhQhoIw==}
+  purrmd@0.0.5:
+    resolution: {integrity: sha512-WhhaKpOJ5JHm6eWnoL4Ml0Hn+1jT2KKyo5xCJ3k7gd0Jcr7eGwlTgSPxvmpHoXUBK4Z4SNnqU9IwrP5OELxJKg==}
     peerDependencies:
       '@codemirror/autocomplete': ^6.18.6
       '@codemirror/commands': ^6.8.1
@@ -7221,6 +7231,8 @@ snapshots:
     dependencies:
       '@types/node': 22.17.1
 
+  '@types/lodash@4.17.20': {}
+
   '@types/mdast@4.0.4':
     dependencies:
       '@types/unist': 3.0.3
@@ -9730,7 +9742,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  purrmd@0.0.4(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3):
+  purrmd@0.0.5(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3):
     dependencies:
       '@codemirror/autocomplete': 6.18.6
       '@codemirror/commands': 6.8.1

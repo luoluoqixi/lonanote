@@ -49,6 +49,8 @@ export interface LonaEditorConfig {
   defaultValue?: string | null;
   /** 只读模式 @default false */
   readOnly?: boolean;
+  /** 扩展 */
+  extensions?: Extension[] | null;
   /** 扩展配置 */
   extensionsConfig?: {
     /** 禁用所有插件 @default false */
@@ -157,6 +159,7 @@ export class LonaEditor {
     filePath,
     extensionsConfig,
     keyBindings,
+    extensions,
     detectLanguage,
     theme,
     markdownConfig,
@@ -277,6 +280,7 @@ export class LonaEditor {
         !disableAll && enableHighlightSelectionMatches ? highlightSelectionMatches() : null,
         // 折叠功能
         !disableAll && enableFoldGutter ? foldGutter() : null,
+        ...(extensions || []),
         ...languages,
         resolveTheme,
         keymap.of(

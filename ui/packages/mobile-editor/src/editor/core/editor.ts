@@ -1,3 +1,4 @@
+import { Extension } from '@codemirror/state';
 import { LonaEditor } from 'lonanote-editor';
 
 import { callFlutter } from '@/utils/flutter';
@@ -11,6 +12,7 @@ export const create = (
   fileName: string,
   isShowLineNumber: boolean | undefined,
   sourceMode: boolean | undefined,
+  extensions?: Extension[],
 ) => {
   if (root) {
     if (isShowLineNumber) {
@@ -25,6 +27,7 @@ export const create = (
       theme,
       filePath: fileName,
       defaultValue: content,
+      extensions,
       extensionsConfig: {
         enableLineNumbers: isShowLineNumber || false,
         enableLineWrapping: true,

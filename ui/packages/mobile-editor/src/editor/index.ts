@@ -96,42 +96,6 @@ const onScrollPositionChange = (e: Event) => {
   }, 100);
 };
 
-// const observeScrollability = (
-//   el: HTMLElement | null,
-//   cb: (e: HTMLElement) => void,
-// ): (() => void) => {
-//   el = el || document.body;
-//   const callback = () => {
-//     cb(el);
-//   };
-//   callback();
-//   const resizeObserver = new ResizeObserver(callback);
-//   resizeObserver.observe(el);
-//   const mutationObserver = new MutationObserver(callback);
-//   mutationObserver.observe(el, {
-//     childList: true,
-//     subtree: true,
-//     characterData: true,
-//   });
-//   return () => {
-//     resizeObserver.disconnect();
-//     mutationObserver.disconnect();
-//   };
-// };
-
-// const onScrollContentChange = (el: HTMLElement) => {
-//   /// 当内容高度超过可视区域时，添加 editor-scrollable 类
-//   const isScrollable = el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
-//   window.isScrollable = isScrollable;
-//   // console.log('isScrollable', isScrollable);
-//   document.body.classList.toggle('editor-scrollable', isScrollable);
-
-//   callFlutter('scrollable', {
-//     scrollHeight: el.scrollHeight,
-//     clientHeight: el.clientHeight,
-//   });
-// };
-
 const autoScrollToCursorStart = () => {
   if (window.editor != null) {
     const editor = window.editor;
@@ -166,31 +130,21 @@ export const createEditor = async (
     window.editor = null;
   }
   const cmRoot = document.getElementById(config.cmRootId)!;
-
-  // const cmScrollDom = cmRoot;
   const editorDisplay = 'block';
 
-  // let onScrollContentChangeCleanup: (() => void) | null = null;
-  // if (sourceMode) {
-  // }
   cmRoot.style.display = editorDisplay;
   window.editor = create(cmRoot, content, fileName, isShowLineNumber, sourceMode);
-  // cmScrollDom?.addEventListener('scroll', onScrollPositionChange);
-  // onScrollContentChangeCleanup = observeScrollability(cmScrollDom, onScrollContentChange);
 
   document.body.addEventListener('click', bodyClick);
 
   // iOS 和 Android, 需要监听 document 的滚动事件, 因为 body 的滚动事件不生效
   document?.addEventListener('scroll', onScrollPositionChange);
-
   // 添加 resize 事件监听
   window.addEventListener('resize', handleWindowResize);
 
   (window as any).onCleanEvents = () => {
-    // onScrollContentChangeCleanup?.();
     window?.removeEventListener('resize', handleWindowResize);
     document.body.removeEventListener('click', bodyClick);
     document?.removeEventListener('scroll', onScrollPositionChange);
-    // cmScrollDom?.removeEventListener('scroll', onScrollPositionChange);
   };
 };

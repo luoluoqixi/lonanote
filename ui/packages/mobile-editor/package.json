@@ -12,8 +12,12 @@
     "build": "pnpm --filter \"../editor\" run build && vite build --emptyOutDir"
   },
   "dependencies": {
+    "lodash": "^4.17.21",
     "lonanote-editor": "workspace:*"
   },
   "packageManager": "pnpm@9.15.0",
-  "node": ">=20.0.0"
+  "node": ">=20.0.0",
+  "devDependencies": {
+    "@types/lodash": "^4.17.20"
+  }
 }
