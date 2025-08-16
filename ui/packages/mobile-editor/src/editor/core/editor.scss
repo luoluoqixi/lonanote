@@ -19,10 +19,11 @@
     background-color: transparent;
     overflow: visible;
 
-    --cm-editor-wrap-padding: 4px;
+    --cm-editor-wrap-padding-x: 14px;
+    --cm-editor-wrap-padding-y: 4px;
     --cm-editor-primary-color: var(--accent-a5, '#4a90e2');
     height: 100%;
-    padding: var(--cm-editor-wrap-padding);
+    padding: var(--cm-editor-wrap-padding-y) var(--cm-editor-wrap-padding-x);
 
     outline: 0 !important;
     -webkit-user-select: auto;
