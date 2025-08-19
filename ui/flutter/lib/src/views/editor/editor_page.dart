@@ -641,12 +641,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
     final theme = AppTheme.getPullDownMenuRouteThemeNoAlpha(context);
-    final previewIcon =
-        _previewMode ? ThemeIcons.edit(context) : ThemeIcons.preview(context);
     return [
       PlatformIconButton(
         icon: Icon(
-          previewIcon,
+          _previewMode ? ThemeIcons.edit(context) : ThemeIcons.preview(context),
           color: ThemeColors.getTextColor(colorScheme),
         ),
         padding: const EdgeInsets.all(2),
@@ -682,7 +680,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
             title: "预览模式",
             onTap: _changeEditModeCommand,
             selected: _previewMode,
-            icon: previewIcon,
+            icon: ThemeIcons.preview(context),
           ),
           PullDownMenuItem.selectable(
             title: "源码模式",

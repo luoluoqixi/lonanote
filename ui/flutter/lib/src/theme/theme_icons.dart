@@ -104,7 +104,9 @@ class ThemeIcons {
   }
 
   static IconData preview(BuildContext context) {
-    return isMaterial(context) ? Icons.preview : Icons.preview;
+    return isMaterial(context)
+        ? Icons.chrome_reader_mode_outlined
+        : Icons.chrome_reader_mode_outlined;
   }
 
   static IconData radio(BuildContext context, bool check) {
