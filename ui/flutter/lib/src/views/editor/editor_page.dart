@@ -187,11 +187,20 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void disableKeyboard() {
-    _webViewController?.setInputMethodEnabled(false);
+    if (Platform.isIOS) {
+      _webViewController?.setInputMethodEnabled(false);
+    } else {
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+    }
   }
 
   void enableKeyboard() {
-    _webViewController?.setInputMethodEnabled(true);
+    if (Platform.isIOS) {
+      _webViewController?.setInputMethodEnabled(true);
+    } else {
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+      _webViewController?.requestFocus();
+    }
   }
 
   Future<void> _loadFileContent() async {
@@ -635,7 +644,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
       galleryRowCount: 4,
     ).then((_) {
       enableKeyboard();
-      // _webViewController?.requestFocus();
     });
   }
 
