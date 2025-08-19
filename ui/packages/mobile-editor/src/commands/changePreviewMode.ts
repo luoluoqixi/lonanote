@@ -1,6 +1,10 @@
 export const changePreviewMode = (mode: boolean) => {
   window.previewMode = mode;
   if (window.editor != null) {
-    window.editor.setReadonly(mode);
+    if (window.sourceMode) {
+      window.initEditor!(window.fileName!, window.fileContent!);
+    } else {
+      window.editor.setReadonly(mode);
+    }
   }
 };

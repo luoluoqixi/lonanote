@@ -29,7 +29,6 @@ class Settings extends _$Settings with WidgetsBindingObserver {
       otherSettings: OtherSettings(
         showFloatingToolbar: getShowFloatingToolbar(),
         fileSortType: getFileSortType(),
-        showLineNumber: getShowLineNumber(),
       ),
     );
   }
@@ -77,10 +76,14 @@ class Settings extends _$Settings with WidgetsBindingObserver {
   }
 
   Brightness getResolveTheme() {
-    if (state.theme.themeMode == ThemeMode.system) {
-      return state.theme.platformBrightness;
+    return getResolveThemeFromThemeSettings(state.theme);
+  }
+
+  static Brightness getResolveThemeFromThemeSettings(ThemeSettings theme) {
+    if (theme.themeMode == ThemeMode.system) {
+      return theme.platformBrightness;
     }
-    return state.theme.themeMode == ThemeMode.dark
+    return theme.themeMode == ThemeMode.dark
         ? Brightness.dark
         : Brightness.light;
   }
@@ -115,20 +118,6 @@ class Settings extends _$Settings with WidgetsBindingObserver {
       ),
     );
     UIStore.setShowFloatingToolbar(value);
-  }
-
-  static bool getShowLineNumber() {
-    final v = UIStore.getShowLineNumber();
-    return v ?? false;
-  }
-
-  void setShowLineNumber(bool value) {
-    state = state.copyWith(
-      otherSettings: state.otherSettings.copyWith(
-        showLineNumber: value,
-      ),
-    );
-    UIStore.setShowLineNumber(value);
   }
 
   static RustFileSortType getFileSortType() {
@@ -194,7 +183,6 @@ sealed class OtherSettings with _$OtherSettings {
   const factory OtherSettings({
     required bool showFloatingToolbar,
     required RustFileSortType fileSortType,
-    required bool showLineNumber,
   }) = _OtherSettings;
 }
 

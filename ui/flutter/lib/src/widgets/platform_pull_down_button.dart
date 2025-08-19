@@ -13,6 +13,7 @@ class PlatformPullDownButton extends StatelessWidget {
   final void Function()? buttonOnLongPress;
   final bool? disable;
   final bool? disableHaptic;
+  final EdgeInsets? padding;
 
   final PullDownMenuRouteTheme? routeTheme;
 
@@ -28,6 +29,7 @@ class PlatformPullDownButton extends StatelessWidget {
     this.buttonOnLongPress,
     this.disable,
     this.disableHaptic,
+    this.padding,
     this.routeTheme,
     this.material,
     this.cupertino,
@@ -41,6 +43,7 @@ class PlatformPullDownButton extends StatelessWidget {
           (context, showMenu) => PlatformIconBtn(
                 disable: disable,
                 onLongPress: buttonOnLongPress,
+                padding: padding,
                 onPressed: (disable == true)
                     ? null
                     : () {

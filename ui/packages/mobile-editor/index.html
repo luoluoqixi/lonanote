@@ -23,13 +23,14 @@
         window.autoSave = autoSave;
         window.autoSaveFocusChange = autoSaveFocusChange;
       };
-      window.setColorMode = (mode, isUpdateEditor) => {
+      window.setColorMode = (mode, primaryColor, isUpdateEditor) => {
         if (!mode) return;
         window.colorMode = mode;
+        window.primaryColor = primaryColor;
         document.documentElement.classList.remove('light', 'dark');
         document.documentElement.classList.add(mode);
         if (isUpdateEditor && window.invokeCommand) {
-          window.invokeCommand('change_color_mode', mode);
+          window.invokeCommand('reinit_editor');
         }
         // console.log(`setColorMode: ${mode}`);
       };

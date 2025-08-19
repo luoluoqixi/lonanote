@@ -753,7 +753,6 @@ class __$ThemeSettingsCopyWithImpl<$Res>
 mixin _$OtherSettings {
   bool get showFloatingToolbar;
   RustFileSortType get fileSortType;
-  bool get showLineNumber;
 
   /// Create a copy of OtherSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -771,18 +770,16 @@ mixin _$OtherSettings {
             (identical(other.showFloatingToolbar, showFloatingToolbar) ||
                 other.showFloatingToolbar == showFloatingToolbar) &&
             (identical(other.fileSortType, fileSortType) ||
-                other.fileSortType == fileSortType) &&
-            (identical(other.showLineNumber, showLineNumber) ||
-                other.showLineNumber == showLineNumber));
+                other.fileSortType == fileSortType));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType, showFloatingToolbar, fileSortType, showLineNumber);
+  int get hashCode =>
+      Object.hash(runtimeType, showFloatingToolbar, fileSortType);
 
   @override
   String toString() {
-    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar, fileSortType: $fileSortType, showLineNumber: $showLineNumber)';
+    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar, fileSortType: $fileSortType)';
   }
 }
 
@@ -792,10 +789,7 @@ abstract mixin class $OtherSettingsCopyWith<$Res> {
           OtherSettings value, $Res Function(OtherSettings) _then) =
       _$OtherSettingsCopyWithImpl;
   @useResult
-  $Res call(
-      {bool showFloatingToolbar,
-      RustFileSortType fileSortType,
-      bool showLineNumber});
+  $Res call({bool showFloatingToolbar, RustFileSortType fileSortType});
 }
 
 /// @nodoc
@@ -813,7 +807,6 @@ class _$OtherSettingsCopyWithImpl<$Res>
   $Res call({
     Object? showFloatingToolbar = null,
     Object? fileSortType = null,
-    Object? showLineNumber = null,
   }) {
     return _then(_self.copyWith(
       showFloatingToolbar: null == showFloatingToolbar
@@ -824,10 +817,6 @@ class _$OtherSettingsCopyWithImpl<$Res>
           ? _self.fileSortType
           : fileSortType // ignore: cast_nullable_to_non_nullable
               as RustFileSortType,
-      showLineNumber: null == showLineNumber
-          ? _self.showLineNumber
-          : showLineNumber // ignore: cast_nullable_to_non_nullable
-              as bool,
     ));
   }
 }
@@ -923,16 +912,14 @@ extension OtherSettingsPatterns on OtherSettings {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(bool showFloatingToolbar, RustFileSortType fileSortType,
-            bool showLineNumber)?
+    TResult Function(bool showFloatingToolbar, RustFileSortType fileSortType)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _OtherSettings() when $default != null:
-        return $default(_that.showFloatingToolbar, _that.fileSortType,
-            _that.showLineNumber);
+        return $default(_that.showFloatingToolbar, _that.fileSortType);
       case _:
         return orElse();
     }
@@ -953,15 +940,13 @@ extension OtherSettingsPatterns on OtherSettings {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(bool showFloatingToolbar, RustFileSortType fileSortType,
-            bool showLineNumber)
+    TResult Function(bool showFloatingToolbar, RustFileSortType fileSortType)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _OtherSettings():
-        return $default(_that.showFloatingToolbar, _that.fileSortType,
-            _that.showLineNumber);
+        return $default(_that.showFloatingToolbar, _that.fileSortType);
     }
   }
 
@@ -979,15 +964,13 @@ extension OtherSettingsPatterns on OtherSettings {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(bool showFloatingToolbar, RustFileSortType fileSortType,
-            bool showLineNumber)?
+    TResult? Function(bool showFloatingToolbar, RustFileSortType fileSortType)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _OtherSettings() when $default != null:
-        return $default(_that.showFloatingToolbar, _that.fileSortType,
-            _that.showLineNumber);
+        return $default(_that.showFloatingToolbar, _that.fileSortType);
       case _:
         return null;
     }
@@ -998,16 +981,12 @@ extension OtherSettingsPatterns on OtherSettings {
 
 class _OtherSettings implements OtherSettings {
   const _OtherSettings(
-      {required this.showFloatingToolbar,
-      required this.fileSortType,
-      required this.showLineNumber});
+      {required this.showFloatingToolbar, required this.fileSortType});
 
   @override
   final bool showFloatingToolbar;
   @override
   final RustFileSortType fileSortType;
-  @override
-  final bool showLineNumber;
 
   /// Create a copy of OtherSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -1025,18 +1004,16 @@ class _OtherSettings implements OtherSettings {
             (identical(other.showFloatingToolbar, showFloatingToolbar) ||
                 other.showFloatingToolbar == showFloatingToolbar) &&
             (identical(other.fileSortType, fileSortType) ||
-                other.fileSortType == fileSortType) &&
-            (identical(other.showLineNumber, showLineNumber) ||
-                other.showLineNumber == showLineNumber));
+                other.fileSortType == fileSortType));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType, showFloatingToolbar, fileSortType, showLineNumber);
+  int get hashCode =>
+      Object.hash(runtimeType, showFloatingToolbar, fileSortType);
 
   @override
   String toString() {
-    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar, fileSortType: $fileSortType, showLineNumber: $showLineNumber)';
+    return 'OtherSettings(showFloatingToolbar: $showFloatingToolbar, fileSortType: $fileSortType)';
   }
 }
 
@@ -1048,10 +1025,7 @@ abstract mixin class _$OtherSettingsCopyWith<$Res>
       __$OtherSettingsCopyWithImpl;
   @override
   @useResult
-  $Res call(
-      {bool showFloatingToolbar,
-      RustFileSortType fileSortType,
-      bool showLineNumber});
+  $Res call({bool showFloatingToolbar, RustFileSortType fileSortType});
 }
 
 /// @nodoc
@@ -1069,7 +1043,6 @@ class __$OtherSettingsCopyWithImpl<$Res>
   $Res call({
     Object? showFloatingToolbar = null,
     Object? fileSortType = null,
-    Object? showLineNumber = null,
   }) {
     return _then(_OtherSettings(
       showFloatingToolbar: null == showFloatingToolbar
@@ -1080,10 +1053,6 @@ class __$OtherSettingsCopyWithImpl<$Res>
           ? _self.fileSortType
           : fileSortType // ignore: cast_nullable_to_non_nullable
               as RustFileSortType,
-      showLineNumber: null == showLineNumber
-          ? _self.showLineNumber
-          : showLineNumber // ignore: cast_nullable_to_non_nullable
-              as bool,
     ));
   }
 }

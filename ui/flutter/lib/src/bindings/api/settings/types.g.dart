@@ -13,6 +13,8 @@ RustSettingsData _$RustSettingsDataFromJson(Map<String, dynamic> json) =>
       autoSave: json['autoSave'] as bool?,
       autoSaveInterval: (json['autoSaveInterval'] as num?)?.toDouble(),
       autoSaveFocusChange: json['autoSaveFocusChange'] as bool?,
+      showLineNumber: json['showLineNumber'] as bool?,
+      sourceMode: json['sourceMode'] as bool?,
     );
 
 Map<String, dynamic> _$RustSettingsDataToJson(RustSettingsData instance) =>
@@ -22,4 +24,6 @@ Map<String, dynamic> _$RustSettingsDataToJson(RustSettingsData instance) =>
       'autoSave': instance.autoSave,
       'autoSaveInterval': instance.autoSaveInterval,
       'autoSaveFocusChange': instance.autoSaveFocusChange,
+      'showLineNumber': instance.showLineNumber,
+      'sourceMode': instance.sourceMode,
     };

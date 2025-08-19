@@ -35,14 +35,6 @@ class UIStore {
     Store.setSyncValue(syncKey, "show_floating_toolbar", value);
   }
 
-  static bool? getShowLineNumber() {
-    return Store.getSyncValue(syncKey, "show_line_number");
-  }
-
-  static void setShowLineNumber(bool value) {
-    Store.setSyncValue(syncKey, "show_line_number", value);
-  }
-
   static int? getFileSortType() {
     return Store.getSyncValue(syncKey, "file_sort_type");
   }

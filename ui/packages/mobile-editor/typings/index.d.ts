@@ -13,16 +13,11 @@ interface Window {
   /** 设置自动保存配置 */
   setAutoSave: (autoSave: boolean, autoSaveInterval: number, autoSaveFocusChange: boolean) => void;
   /** 设置颜色模式 */
-  setColorMode: (mode: string, isUpdateEditor?: boolean) => Promise<any>;
+  setColorMode: (mode: string, primaryColor?: string, isUpdateEditor?: boolean) => Promise<any>;
   /** 设置标题高度 */
   setTitleHeight: (titleHeight: number) => void;
   /** 设置编辑器 */
-  initEditor: (
-    fileName: string,
-    sourceMode: boolean | undefined,
-    isShowLineNumber: boolean | undefined,
-    content: string,
-  ) => Promise<any>;
+  initEditor: (fileName: string, content: string) => any;
   /** 调用命令 */
   invokeCommand: (command: string, data: any) => Promise<any>;
   /** 获取 Editor 当前内容 */
@@ -42,6 +37,8 @@ interface Window {
   sourceMode?: boolean;
   /** 颜色模式 dark light */
   colorMode?: string;
+  /** 主颜色 */
+  primaryColor?: string;
   /** 是否显示源码模式行号 */
   isShowLineNumber?: boolean;
 

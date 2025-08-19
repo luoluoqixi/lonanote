@@ -10,27 +10,33 @@ export const create = (
   root: HTMLElement,
   content: string,
   fileName: string,
-  isShowLineNumber: boolean | undefined,
-  sourceMode: boolean | undefined,
   extensions?: Extension[],
 ) => {
   if (root) {
+    const isShowLineNumber = window.isShowLineNumber;
+    const readOnly = window.previewMode ? true : false;
+    const sourceMode = readOnly ? false : window.sourceMode;
     if (isShowLineNumber) {
       root.classList.add('source-mode-show-line');
     } else {
       root.classList.remove('source-mode-show-line');
     }
     const theme = window.colorMode === 'dark' ? 'dark' : 'light';
+    const primaryColor = window.primaryColor || '#1890ff';
     const editor = new LonaEditor();
     editor.create({
       root,
       theme,
       filePath: fileName,
       defaultValue: content,
+      readOnly,
       extensions,
       extensionsConfig: {
         enableLineNumbers: isShowLineNumber || false,
         enableLineWrapping: true,
+      },
+      markdownTheme: {
+        primaryColor,
       },
       markdownConfig: {
         formattingDisplayMode: sourceMode ? 'show' : 'auto',

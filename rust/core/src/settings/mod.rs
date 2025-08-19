@@ -34,6 +34,9 @@ pub struct Settings {
     /// 禁用自动换行
     #[serde(default = "Settings::default_disable_line_wrap")]
     pub disable_line_wrap: bool,
+    /// 源码模式
+    #[serde(default = "Settings::default_source_mode")]
+    pub source_mode: bool,
 }
 
 impl Settings {
@@ -68,6 +71,10 @@ impl Settings {
     pub const fn default_disable_line_wrap() -> bool {
         false
     }
+
+    pub const fn default_source_mode() -> bool {
+        false
+    }
 }
 
 impl Settings {
@@ -91,6 +98,7 @@ impl Settings {
             auto_save_focus_change: Settings::default_auto_save_focus_change(),
             show_line_number: Settings::default_show_line_number(),
             disable_line_wrap: Settings::default_disable_line_wrap(),
+            source_mode: Settings::default_source_mode(),
         }
     }
 

@@ -10,6 +10,8 @@ class RustSettingsData {
     this.autoSave,
     this.autoSaveInterval,
     this.autoSaveFocusChange,
+    this.showLineNumber,
+    this.sourceMode,
   });
 
   bool? autoCheckUpdate;
@@ -17,6 +19,8 @@ class RustSettingsData {
   bool? autoSave;
   double? autoSaveInterval;
   bool? autoSaveFocusChange;
+  bool? showLineNumber;
+  bool? sourceMode;
 
   factory RustSettingsData.fromJson(Map<String, dynamic> json) =>
       _$RustSettingsDataFromJson(json);

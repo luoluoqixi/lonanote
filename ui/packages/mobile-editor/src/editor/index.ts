@@ -87,12 +87,7 @@ function handleWindowResize() {
   }, 50);
 }
 
-export const createEditor = async (
-  fileName: string,
-  sourceMode: boolean | undefined,
-  isShowLineNumber: boolean | undefined,
-  content: string,
-) => {
+export const createEditor = (fileName: string, content: string) => {
   if ((window as any).onCleanEvents != null) {
     (window as any).onCleanEvents();
   }
@@ -104,27 +99,12 @@ export const createEditor = async (
   const editorDisplay = 'block';
 
   cmRoot.style.display = editorDisplay;
-  window.editor = create(cmRoot, content, fileName, isShowLineNumber, sourceMode);
+  window.editor = create(cmRoot, content, fileName);
 
   document.body.addEventListener('click', bodyClick);
 
   // 添加 resize 事件监听
   window.addEventListener('resize', handleWindowResize);
-
-  // window.editor?.addListener('onFocus', (editor, focus) => {
-  //   if (focus) {
-  //     const editorDom = window.editor?.editor.dom;
-  //     if (editorDom) {
-  //       editorDom.style.opacity = '0';
-  //       setTimeout(() => (editorDom.style.opacity = '1'), 100);
-  //       requestAnimationFrame(() => {
-  //         requestAnimationFrame(() => {
-  //           editorDom.style.opacity = '1';
-  //         });
-  //       });
-  //     }
-  //   }
-  // });
 
   (window as any).onCleanEvents = () => {
     window?.removeEventListener('resize', handleWindowResize);

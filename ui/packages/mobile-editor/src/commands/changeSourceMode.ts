@@ -6,10 +6,5 @@ export const changeSourceMode = (mode: boolean) => {
     saveForce(getContent);
   }
   window.sourceMode = mode;
-  window.initEditor!(
-    window.fileName!,
-    window.sourceMode,
-    window.isShowLineNumber,
-    window.fileContent!,
-  );
+  window.initEditor!(window.fileName!, window.fileContent!);
 };

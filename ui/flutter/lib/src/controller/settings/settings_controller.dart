@@ -57,24 +57,30 @@ class SettingsController {
     setSettingsValue(ref, (s) => s.autoSaveFocusChange = value);
   }
 
+  static Future<void> setShowLineNumber(
+    WidgetRef ref,
+    bool value,
+  ) async {
+    setSettingsValue(ref, (s) => s.showLineNumber = value);
+  }
+
+  static Future<void> setSourceMode(
+    WidgetRef ref,
+    bool value,
+  ) async {
+    setSettingsValue(ref, (s) => s.sourceMode = value);
+  }
+
+  static Future<void> resetSettingsAutoSaveInterval(WidgetRef ref) async {
+    await RustSettings.resetSettingsAutoSaveInterval();
+    await refreshSettings(ref);
+  }
+
   static Future<void> setShowFloatingToolbar(
     WidgetRef ref,
     bool value,
   ) async {
     final s = ref.read(settingsProvider.notifier);
     s.setShowFloatingToolbar(value);
-  }
-
-  static Future<void> setShowLineNumber(
-    WidgetRef ref,
-    bool value,
-  ) async {
-    final s = ref.read(settingsProvider.notifier);
-    s.setShowLineNumber(value);
-  }
-
-  static Future<void> resetSettingsAutoSaveInterval(WidgetRef ref) async {
-    await RustSettings.resetSettingsAutoSaveInterval();
-    await refreshSettings(ref);
   }
 }

@@ -6,12 +6,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/common/ws_utils.dart';
+import 'package:lonanote/src/controller/settings/settings_controller.dart';
 import 'package:lonanote/src/controller/workspace/workspace_controller.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/app_theme.dart';
@@ -90,21 +92,44 @@ class _EditorPageState extends ConsumerState<EditorPage>
     WidgetsBinding.instance.addObserver(this);
     final ext = Utility.getExtName(widget.path);
     _isMarkdown = ext != null && Utility.isMarkdown(ext);
-    _sourceMode = !_isMarkdown;
-
-    _isShowLineNumber = ref
-        .read(settingsProvider.select((s) => s.otherSettings))
-        .showLineNumber;
-
-    ref.listenManual<OtherSettings>(
-        settingsProvider.select((s) => s.otherSettings), (previous, next) {
+    final settings = ref.read(settingsProvider.select((s) => s.settings));
+    if (!_isMarkdown) {
+      _sourceMode = false;
+    } else {
+      _sourceMode = settings?.sourceMode == true;
+    }
+    _isShowLineNumber = settings?.showLineNumber == true;
+    ref.listenManual(settingsProvider.select((s) => s.settings),
+        (previous, next) {
       if (!mounted) return;
       if (_isDisposing) return;
-      if (previous?.showLineNumber != next.showLineNumber) {
-        _isShowLineNumber = next.showLineNumber;
-        if (_sourceMode) {
-          _refreshWebview();
+      if (previous?.showLineNumber != next?.showLineNumber ||
+          previous?.sourceMode != next?.sourceMode) {
+        _isShowLineNumber = next?.showLineNumber == true;
+        if (_isMarkdown) {
+          _sourceMode = next?.sourceMode == true;
         }
+        _reinitEditor();
+      }
+    });
+    ref.listenManual(settingsProvider.select((s) => s.theme), (previous, next) {
+      if (!mounted) return;
+      if (_isDisposing) return;
+      var needUpdate = false;
+      if (previous != null) {
+        final theme = Settings.getResolveThemeFromThemeSettings(previous);
+        final nextTheme = Settings.getResolveThemeFromThemeSettings(next);
+        if (theme != nextTheme) {
+          needUpdate = true;
+        }
+        if (previous.primaryColor != next.primaryColor) {
+          needUpdate = true;
+        }
+      } else {
+        needUpdate = true;
+      }
+      if (needUpdate) {
+        _updateColorMode(true);
       }
     });
   }
@@ -436,6 +461,17 @@ class _EditorPageState extends ConsumerState<EditorPage>
     return null;
   }
 
+  Future<void> _reinitEditor() async {
+    if (!_webViewLoaded) return;
+    await _webViewController?.evaluateJavascript(
+      source: """
+        window.isShowLineNumber = $_isShowLineNumber;
+        window.sourceMode = $_sourceMode;
+      """,
+    );
+    await _runWebCommand('reinit_editor', null);
+  }
+
   Future<void> _changeEditModeCommand() async {
     final targetPreviewMode = !_previewMode;
     setState(() {
@@ -449,6 +485,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     setState(() {
       _sourceMode = targetSourceMode;
     });
+    SettingsController.setSourceMode(ref, targetSourceMode);
     await _runWebCommand('change_source_mode', targetSourceMode);
   }
 
@@ -465,7 +502,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
         const init = () => {
           if (window.initEditor) {
             try {
-              window.initEditor("${widget.path}", $_sourceMode, $_isShowLineNumber, ${jsonEncode(fileContent)});
+              window.isShowLineNumber = $_isShowLineNumber;
+              window.sourceMode = $_sourceMode;
+              window.initEditor("${widget.path}", ${jsonEncode(fileContent)});
             } catch (e) {
               console.error('initEditor error:', e.message);
             }
@@ -514,11 +553,18 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   Future<void> _updateColorMode(bool updateEditor) async {
     if (_webViewLoaded) {
-      final t = ref.read(settingsProvider.notifier);
-      final brightness = t.getResolveTheme();
+      final t = ref.read(settingsProvider.select((s) => s.theme));
+      final sn = ref.read(settingsProvider.notifier);
+      final brightness = sn.getResolveTheme();
       final theme = brightness == Brightness.dark ? 'dark' : 'light';
+      final primaryColor = t.primaryColor
+          .toARGB32()
+          .toRadixString(16)
+          .padLeft(8, '0')
+          .substring(2);
       await _webViewController?.evaluateJavascript(
-        source: 'window.setColorMode("$theme", $updateEditor)',
+        source:
+            'window.setColorMode("$theme", "#$primaryColor", $updateEditor)',
       );
     }
   }
@@ -595,11 +641,25 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
     final theme = AppTheme.getPullDownMenuRouteThemeNoAlpha(context);
+    final previewIcon =
+        _previewMode ? ThemeIcons.edit(context) : ThemeIcons.preview(context);
     return [
+      PlatformIconButton(
+        icon: Icon(
+          previewIcon,
+          color: ThemeColors.getTextColor(colorScheme),
+        ),
+        padding: const EdgeInsets.all(2),
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          _changeEditModeCommand();
+        },
+      ),
       // 如果 PullDown 下面是 webview, 背景会错误的变为透明
       // https://github.com/notDmDrl/pull_down_button/issues/28
       PlatformPullDownButton(
         routeTheme: theme,
+        padding: const EdgeInsets.all(2),
         itemBuilder: (context) => [
           PullDownMenuItem(
             title: "保存",
@@ -622,7 +682,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
             title: "预览模式",
             onTap: _changeEditModeCommand,
             selected: _previewMode,
-            icon: ThemeIcons.preview(context),
+            icon: previewIcon,
           ),
           PullDownMenuItem.selectable(
             title: "源码模式",

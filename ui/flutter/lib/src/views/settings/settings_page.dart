@@ -70,6 +70,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     SettingsController.setShowLineNumber(ref, value);
   }
 
+  void _setSourceMode(bool value) {
+    SettingsController.setSourceMode(ref, value);
+  }
+
   Widget _buildBasicSettings(
     RustSettingsData settings,
     OtherSettings otherSettings,
@@ -126,14 +130,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           onChanged: _setAutoSaveFocusChange,
         ),
         PlatformSwitchListTile(
+          title: Text("显示行号"),
+          value: settings.showLineNumber == true,
+          onChanged: _setShowLineNumber,
+        ),
+        PlatformSwitchListTile(
+          title: Text("源码模式"),
+          value: settings.sourceMode == true,
+          onChanged: _setSourceMode,
+        ),
+        PlatformSwitchListTile(
           title: Text("显示悬浮工具栏"),
           value: otherSettings.showFloatingToolbar,
           onChanged: _setShowFloatingToolbar,
-        ),
-        PlatformSwitchListTile(
-          title: Text("显示行号"),
-          value: otherSettings.showLineNumber,
-          onChanged: _setShowLineNumber,
         ),
       ],
     );
