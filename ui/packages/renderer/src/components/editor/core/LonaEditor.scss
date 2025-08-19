@@ -29,6 +29,8 @@
           .cm-gutterElement {
             // padding-top: 2px;
             min-width: 40px;
+            -webkit-user-select: none;
+            user-select: none;
           }
         }
       }

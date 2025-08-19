@@ -22,14 +22,7 @@ body {
 }
 
 body.android {
-  overflow: hidden;
   #root {
-    overflow: hidden;
-    #cm-root {
-      overflow-y: hidden;
-      height: 100dvh;
-    }
-
     // fix scrollbar on Android WebView
     // https://issues.chromium.org/issues/40226034
     ::-webkit-scrollbar {

@@ -103,8 +103,6 @@ export interface LonaEditorConfig {
     | undefined;
   /** 语言检测函数并获取插件 */
   detectLanguage?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
-  /** 检测Markdown语言并获取插件 */
-  detectMarkdown?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
   markdownConfig?: PurrMDConfig;
   markdownTheme?: PurrMDThemeConfig;
 }
@@ -400,6 +398,7 @@ export class LonaEditor {
   getScrollContainer = (): HTMLElement | null => {
     const node = this.#editor.scrollDOM;
     for (let cur: any | null = node; cur; ) {
+      if (cur == null) break;
       if (cur.scrollHeight <= cur.clientHeight) {
         cur = cur.parentNode;
         continue;
@@ -474,38 +473,19 @@ export class LonaEditor {
 
   scrollToCursor = (container?: Element | null) => {
     if (!this.#editor) return;
-
-    const pos = this.#editor.state.selection.main.head;
-    const coords = this.#editor.coordsAtPos(pos);
-    if (!coords) return undefined;
-
-    container = container || this.#editor.scrollDOM;
-    const containerRect = container.getBoundingClientRect();
-    let containerTop = containerRect.top;
-    let containerBottom = containerRect.bottom;
-
-    if (containerTop < 0) {
-      const top = containerTop;
-      containerTop = 0;
-      containerBottom += -top;
-    }
-
-    if (coords.top < containerTop) {
-      // 在上方
-      this.#editor.dispatch({
-        effects: EditorView.scrollIntoView(pos, {
-          y: 'start',
-          yMargin: 0,
-        }),
-      });
-    } else if (coords.bottom > containerBottom) {
-      // 在下方
-      this.#editor.dispatch({
-        effects: EditorView.scrollIntoView(pos, {
-          y: 'end',
-          yMargin: 0,
-        }),
-      });
+    const scrollTop = this.getScrollToCursorValue(container);
+    // console.log('scrollTop', scrollTop);
+    if (scrollTop) {
+      let scrollDom = document.scrollingElement;
+      if (!scrollDom) {
+        scrollDom = this.getScrollContainer();
+      }
+      if (scrollDom) {
+        document.scrollingElement.scrollTo({
+          top: scrollTop,
+          behavior: 'instant',
+        });
+      }
     }
   };
 
