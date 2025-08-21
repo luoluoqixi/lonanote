@@ -35,10 +35,6 @@ export const onUpdateState = (state?: {
 };
 
 const bodyClick = (e: MouseEvent) => {
-  // console.log('bodyClick', e.target, window.isScrollable);
-  // if (window.isScrollable) {
-  //   return;
-  // }
   if (e.target !== document.body) {
     if (e.target instanceof HTMLElement) {
       const id = e.target.id;
@@ -57,6 +53,8 @@ const bodyClick = (e: MouseEvent) => {
 };
 
 const autoScrollToCursorStart = () => {
+  // iOS端是 body 在滚动
+  // Android 端是 <html> 在滚动
   if (window.editor != null) {
     const editor = window.editor;
     if (window.isIOS) {
@@ -69,12 +67,12 @@ const autoScrollToCursorStart = () => {
         }
       }
     } else if (window.isAndroid) {
-      editor.scrollToCursor(document.body);
+      // editor.scrollToCursor(document.body);
     }
   }
 };
 
-function handleWindowResize() {
+const updateCursorIsViewport = () => {
   autoScrollToCursorStart();
   const w = window as any;
   if (w.autoScrollToCursorStartTimeout != null) {
@@ -85,7 +83,7 @@ function handleWindowResize() {
     w.autoScrollToCursorStartTimeout = null;
     autoScrollToCursorStart();
   }, 50);
-}
+};
 
 export const createEditor = (fileName: string, content: string) => {
   if ((window as any).onCleanEvents != null) {
@@ -96,12 +94,11 @@ export const createEditor = (fileName: string, content: string) => {
     window.editor = null;
   }
   const cmRoot = document.getElementById(config.cmRootId)!;
-  const editorDisplay = 'block';
-
-  cmRoot.style.display = editorDisplay;
   window.editor = create(cmRoot, content, fileName);
 
   document.body.addEventListener('click', bodyClick);
+
+  const handleWindowResize = () => updateCursorIsViewport();
 
   // 添加 resize 事件监听
   window.addEventListener('resize', handleWindowResize);
