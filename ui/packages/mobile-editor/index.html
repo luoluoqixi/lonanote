@@ -48,10 +48,10 @@
       (() => {
         if (/android/i.test(navigator.userAgent)) {
           window.isAndroid = true;
-          document.body.classList.add('android');
+          document.documentElement.classList.add('android');
         } else if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
           window.isIOS = true;
-          document.body.classList.add('ios');
+          document.documentElement.classList.add('ios');
         }
       })();
     </script>

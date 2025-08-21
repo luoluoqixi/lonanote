@@ -2,7 +2,7 @@
 
 html {
   // iOS 如果设置 hidden, 页面无弹性滚动了
-  overflow: hidden;
+  overflow: visible;
 }
 
 html,
@@ -21,31 +21,34 @@ body {
   // overflow: hidden;
 }
 
-body.android {
+html.android {
   overflow: hidden;
-  #root {
-    height: 100%;
+  body {
+    overflow: hidden;
+    #root {
+      height: 100%;
 
-    #cm-root {
-      overflow-y: auto;
-    }
+      #cm-root {
+        overflow-y: auto;
+      }
 
-    // fix scrollbar on Android WebView
-    // https://issues.chromium.org/issues/40226034
-    ::-webkit-scrollbar {
-      scrollbar-width: auto;
-      width: 8px !important;
-      cursor: default;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(121, 121, 121, 0.158);
-      border-radius: 4px;
-      cursor: default;
-    }
-    // hover 状态在手指松开后还有颜色
-    // ::-webkit-scrollbar-thumb:hover,
-    ::-webkit-scrollbar-thumb:active {
-      background: rgba(121, 121, 121, 0.603);
+      // fix scrollbar on Android WebView
+      // https://issues.chromium.org/issues/40226034
+      ::-webkit-scrollbar {
+        scrollbar-width: auto;
+        width: 8px !important;
+        cursor: default;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(121, 121, 121, 0.158);
+        border-radius: 4px;
+        cursor: default;
+      }
+      // hover 状态在手指松开后还有颜色
+      // ::-webkit-scrollbar-thumb:hover,
+      ::-webkit-scrollbar-thumb:active {
+        background: rgba(121, 121, 121, 0.603);
+      }
     }
   }
 }
