@@ -83,8 +83,8 @@ class _ImageViewPageState extends ConsumerState<ImageViewPage> {
           ),
           Positioned(
             bottom: 16,
-            left: 0,
-            right: 0,
+            left: 10,
+            right: 10,
             child: SafeArea(
               bottom: true,
               top: false,
