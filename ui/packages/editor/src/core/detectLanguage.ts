@@ -14,8 +14,8 @@ import { sql } from '@codemirror/lang-sql';
 import { vue } from '@codemirror/lang-vue';
 import { xml } from '@codemirror/lang-xml';
 import { yaml } from '@codemirror/lang-yaml';
-import { vsCodeDark } from '@fsegurai/codemirror-theme-vscode-dark';
-import { vsCodeLight } from '@fsegurai/codemirror-theme-vscode-light';
+import { dracula } from '@uiw/codemirror-theme-dracula';
+import { vscodeDark, vscodeLight } from '@uiw/codemirror-theme-vscode';
 import { PurrMDConfig, PurrMDThemeConfig, purrmd, purrmdTheme } from 'purrmd';
 
 export const defaultDetectLanguage = (
@@ -112,7 +112,8 @@ export const defaultDetectLanguage = (
   let resolveTheme = null;
   const themeMode = markdownConfig.theme.mode;
   if (themeMode !== 'base') {
-    resolveTheme = themeMode === 'dark' ? vsCodeDark : vsCodeLight;
+    resolveTheme =
+      themeMode === 'dark' ? vscodeDark : themeMode === 'dracula' ? dracula : vscodeLight;
   }
   if (resolveTheme) extensions.push(resolveTheme);
   return extensions;

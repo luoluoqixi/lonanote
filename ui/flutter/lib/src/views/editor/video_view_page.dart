@@ -61,9 +61,12 @@ class _VideoViewPageState extends ConsumerState<VideoViewPage> {
         right: false,
         child: _chewieController != null &&
                 _chewieController!.videoPlayerController.value.isInitialized
-            ? AspectRatio(
-                aspectRatio: _chewieController!.aspectRatio!,
-                child: Chewie(controller: _chewieController!),
+            ? Padding(
+                padding: const EdgeInsets.only(left: 10, right: 10),
+                child: AspectRatio(
+                  aspectRatio: _chewieController!.aspectRatio!,
+                  child: Chewie(controller: _chewieController!),
+                ),
               )
             : const Center(child: CircularProgressIndicator()),
       ),

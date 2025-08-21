@@ -8,9 +8,13 @@
     background-color: transparent;
     overflow: visible;
 
-    --cm-editor-wrap-padding-x: 14px;
+    --cm-editor-wrap-padding-x: 4px;
     --cm-editor-wrap-padding-y: 4px;
     --cm-editor-primary-color: var(--accent-a5, '#4a90e2');
+
+    --cm-editor-content-padding-left: 18px;
+    --cm-editor-content-padding-right: 20px;
+
     height: 100%;
     padding: var(--cm-editor-wrap-padding-y) var(--cm-editor-wrap-padding-x);
 
@@ -25,6 +29,10 @@
 
       .cm-content {
         padding: 0 0px var(--bottom-safe-height) 0px;
+
+        .cm-line {
+          padding: 0 var(--cm-editor-content-padding-right) 0 var(--cm-editor-content-padding-left);
+        }
       }
 
       // 行号
@@ -36,8 +44,11 @@
         // background-color: transparent !important;
 
         .cm-lineNumbers .cm-gutterElement {
-          // padding-top: 2px;
-          min-width: 40px;
+          -webkit-user-select: none;
+          user-select: none;
+        }
+        .cm-foldGutter .cm-gutterElement {
+          padding-left: 5px;
           -webkit-user-select: none;
           user-select: none;
         }

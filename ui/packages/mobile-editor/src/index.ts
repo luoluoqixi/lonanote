@@ -38,17 +38,42 @@ const init = () => {
   window.getContent = getContentJson;
 
   if (config.isDev && !config.isFlutter) {
-    const testContent = config.testContent || 'test content';
+    let testFileName = 'default.md';
+    let testContent = config.testContent || 'test content';
     window.sourceMode = false;
     window.setColorMode('light', window.primaryColor);
-    initEditor('default.js', testContent);
-    appendTestBtn('切换编辑器', () => {
-      const targetSourceMode = !window.sourceMode;
-      window.initEditor(targetSourceMode ? 'default.js' : 'default.md', testContent);
+    initEditor(testFileName, testContent);
+    appendTestBtn('源码模式', () => {
+      window.sourceMode = !window.sourceMode;
+      window.initEditor(testFileName, testContent);
     });
-    appendTestBtn('切换主题', () =>
-      window.setColorMode(window.colorMode === 'light' ? 'dark' : 'light', window.primaryColor),
-    );
+    appendTestBtn('切换主题', () => {
+      window.setColorMode(
+        window.colorMode === 'light' ? 'dark' : 'light',
+        window.primaryColor,
+        true,
+      );
+      let backgroundColor;
+      if (window.colorMode === 'light') {
+        backgroundColor = '#ffffff';
+      } else {
+        backgroundColor = '#000000';
+      }
+      document.body.style.backgroundColor = backgroundColor;
+    });
+    appendTestBtn('显示行号', () => {
+      window.isShowLineNumber = !window.isShowLineNumber;
+      initEditor(testFileName, testContent);
+    });
+    appendTestBtn('更换文件', () => {
+      testFileName = testFileName.endsWith('.js') ? 'default.md' : 'default.js';
+      testContent =
+        (testFileName.endsWith('.md')
+          ? config.testContent
+          : '\n\nconsole.log("test content")\n\nfunction test() {\n  console.log("test content");\n}\n\n\n') ||
+        'test content';
+      initEditor(testFileName, testContent);
+    });
   }
 };
 

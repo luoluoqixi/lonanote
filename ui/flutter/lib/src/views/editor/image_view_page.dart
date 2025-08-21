@@ -62,29 +62,32 @@ class _ImageViewPageState extends ConsumerState<ImageViewPage> {
       noScrollView: true,
       child: Stack(
         children: [
-          PhotoViewGallery.builder(
-            pageController: _pageController,
-            itemCount: widget.paths.length,
-            builder: (context, index) {
-              final path = widget.paths[index];
-              return PhotoViewGalleryPageOptions(
-                imageProvider: FileImage(File(path)),
-                heroAttributes: PhotoViewHeroAttributes(tag: path),
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 2.5,
-                basePosition: const Alignment(0, -0.2),
-              );
-            },
-            scrollPhysics: const BouncingScrollPhysics(),
-            loadingBuilder: (context, _) =>
-                const Center(child: CircularProgressIndicator()),
-            backgroundDecoration:
-                BoxDecoration(color: ThemeColors.getBgColor(colorScheme)),
+          Padding(
+            padding: const EdgeInsets.only(left: 10, right: 10),
+            child: PhotoViewGallery.builder(
+              pageController: _pageController,
+              itemCount: widget.paths.length,
+              builder: (context, index) {
+                final path = widget.paths[index];
+                return PhotoViewGalleryPageOptions(
+                  imageProvider: FileImage(File(path)),
+                  heroAttributes: PhotoViewHeroAttributes(tag: path),
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2.5,
+                  basePosition: const Alignment(0, -0.2),
+                );
+              },
+              scrollPhysics: const BouncingScrollPhysics(),
+              loadingBuilder: (context, _) =>
+                  const Center(child: CircularProgressIndicator()),
+              backgroundDecoration:
+                  BoxDecoration(color: ThemeColors.getBgColor(colorScheme)),
+            ),
           ),
           Positioned(
             bottom: 16,
-            left: 10,
-            right: 10,
+            left: 0,
+            right: 0,
             child: SafeArea(
               bottom: true,
               top: false,
