@@ -88,6 +88,7 @@ const updateCursorIsViewport = () => {
 };
 
 export const createEditor = (fileName: string, content: string) => {
+  let isSelectionChange = false;
   if ((window as any).onCleanEvents != null) {
     (window as any).onCleanEvents();
   }
@@ -98,7 +99,10 @@ export const createEditor = (fileName: string, content: string) => {
   const eventHandler = EditorView.domEventHandlers({
     click() {
       if (window.isIOS) {
-        updateCursorIsViewport();
+        requestAnimationFrame(() => {
+          if (isSelectionChange) return;
+          updateCursorIsViewport();
+        });
       }
     },
   });
@@ -115,7 +119,11 @@ export const createEditor = (fileName: string, content: string) => {
   window.editor?.addListener('onUpdate', (editor, update) => {
     if (update.selectionSet) {
       if (window.isIOS) {
+        isSelectionChange = true;
         updateCursorIsViewport();
+        requestAnimationFrame(() => {
+          isSelectionChange = false;
+        });
       }
     }
   });
