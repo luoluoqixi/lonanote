@@ -19,6 +19,7 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/views/editor/editor_add_action.dart';
 import 'package:lonanote/src/widgets/custom_webview.dart';
+import 'package:lonanote/src/widgets/custom_webview_inapp.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
@@ -670,9 +671,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (_isDisposing) {
       return SizedBox.shrink();
     }
-    return CustomWebview(
+    return CustomWebviewInApp(
       controller: _webviewController,
-      mode: CustomWebviewMode.inAppWebView,
       onWebviewCreate: () {
         _bindMessageReceived();
         _loadFileContent().then((_) {
