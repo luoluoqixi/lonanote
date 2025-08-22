@@ -1,3 +1,5 @@
+import { EditorView } from '@codemirror/view';
+
 import { config } from '@/config';
 import { callFlutter } from '@/utils/flutter';
 
@@ -93,8 +95,16 @@ export const createEditor = (fileName: string, content: string) => {
     window.editor.destroy();
     window.editor = null;
   }
+  const eventHandler = EditorView.domEventHandlers({
+    click() {
+      if (window.isIOS) {
+        updateCursorIsViewport();
+      }
+    },
+  });
+
   const cmRoot = document.getElementById(config.cmRootId)!;
-  window.editor = create(cmRoot, content, fileName);
+  window.editor = create(cmRoot, content, fileName, [eventHandler]);
 
   document.body.addEventListener('click', bodyClick);
 
@@ -102,6 +112,13 @@ export const createEditor = (fileName: string, content: string) => {
 
   // 添加 resize 事件监听
   window.addEventListener('resize', handleWindowResize);
+  window.editor?.addListener('onUpdate', (editor, update) => {
+    if (update.selectionSet) {
+      if (window.isIOS) {
+        updateCursorIsViewport();
+      }
+    }
+  });
 
   (window as any).onCleanEvents = () => {
     window?.removeEventListener('resize', handleWindowResize);
