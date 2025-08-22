@@ -5,7 +5,7 @@ export const config = {
   buildMode: import.meta.env['LONANOTE_BUILD_MODE'],
   testContent: import.meta.env['LONANOTE_TEST_CONTENT'] || null,
   version: __APP_VERSION__,
-  isFlutter: window.flutter_inappwebview != null,
+  isFlutter: window.flutter_inappwebview != null || window.EditorBridge != null,
   titleBarHeight: null as number | null,
 
   rootId: 'root',

@@ -71,6 +71,8 @@ dependencies:
         ref: master
         path: flutter_inappwebview
     # path: ../../../flutter_inappwebview/flutter_inappwebview
+  webview_flutter: 4.13.0
+  webview_flutter_wkwebview: ^3.23.0
 
 dev_dependencies:
   integration_test:

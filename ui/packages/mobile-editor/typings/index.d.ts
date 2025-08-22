@@ -26,6 +26,7 @@ interface Window {
   editor?: import('lonanote-editor').LonaEditor | null;
   /** Flutter Bridge */
   flutter_inappwebview: any;
+  EditorBridge: any;
 
   /** 当前编辑器的内容 (保存后更新) */
   fileContent?: string;

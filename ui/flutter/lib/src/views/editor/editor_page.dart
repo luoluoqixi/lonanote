@@ -194,10 +194,10 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _bindMessageReceived() {
     _webviewController.addJavaScriptHandler(
       'update_state',
-      (List<dynamic> arguments) {
-        // logger.i("update_state: $arguments");
-        if (arguments.isNotEmpty) {
-          final data = arguments[0];
+      (dynamic argument) {
+        // logger.i("update_state: $argument");
+        if (argument != null) {
+          final data = argument;
           if (data != null) {
             final state = jsonDecode(data) as Map<String, dynamic>?;
             _updateState(state);
@@ -207,9 +207,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
     _webviewController.addJavaScriptHandler(
       'save_file',
-      (List<dynamic> arguments) {
-        if (arguments.isNotEmpty) {
-          final data = arguments[0];
+      (dynamic argument) {
+        if (argument != null) {
+          final data = argument;
           if (data != null) {
             final content = jsonDecode(data) as String?;
             _saveFile(content);
@@ -219,9 +219,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
     _webviewController.addJavaScriptHandler(
       'scroll_position',
-      (List<dynamic> arguments) {
-        if (arguments.isNotEmpty) {
-          final data = arguments[0];
+      (dynamic argument) {
+        if (argument != null) {
+          final data = argument;
           if (data != null) {
             // 直接使用 webviewController 的监听, 速度快很多
             // final scrollY = jsonDecode(data) as num?;
@@ -233,9 +233,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
     _webviewController.addJavaScriptHandler(
       'on_link_click_preview',
-      (List<dynamic> arguments) {
-        if (arguments.isNotEmpty) {
-          final data = arguments[0];
+      (dynamic argument) {
+        if (argument != null) {
+          final data = argument;
           if (data != null) {
             final url = jsonDecode(data) as String?;
             _onClickPreviewLink(url);
@@ -246,9 +246,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
     _webviewController.addJavaScriptHandler(
       'on_link_click_source',
-      (List<dynamic> arguments) {
-        if (arguments.isNotEmpty) {
-          final data = arguments[0];
+      (dynamic argument) {
+        if (argument != null) {
+          final data = argument;
           if (data != null) {
             final url = jsonDecode(data) as String?;
             _onClickSourceLink(url);
@@ -286,11 +286,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
     return baseColor;
   }
 
-  void _onHtmlScrollPositionChange(int x, int y) {
+  void _onHtmlScrollPositionChange(double x, double y) {
     if (_isDisposing) return;
     if (!_webviewController.isLoaded()) return;
     if (!mounted) return;
-    _onScrollPositionChange(y.toDouble());
+    _onScrollPositionChange(y);
   }
 
   void _setAppBarColor(Color newBgColor, Color newTextColor) {
@@ -411,6 +411,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (!_webviewController.isLoaded()) return null;
     final s = await _webviewController.executeJavaScript(
       "window.getContent()",
+      hasResult: true,
     ) as String?;
     if (s != null) {
       return jsonDecode(s);
@@ -502,6 +503,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         }
       })()
       """,
+      hasResult: true,
     );
     if (result == null) return null;
     return result as T;
@@ -670,6 +672,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
     return CustomWebview(
       controller: _webviewController,
+      mode: CustomWebviewMode.inAppWebView,
       onWebviewCreate: () {
         _bindMessageReceived();
         _loadFileContent().then((_) {
