@@ -29,7 +29,7 @@ html.android {
       height: 100%;
 
       #cm-root {
-        overflow-y: auto;
+        overflow-y: hidden;
       }
 
       // fix scrollbar on Android WebView

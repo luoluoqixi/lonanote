@@ -2,7 +2,14 @@ html.android {
   #cm-root {
     .cm-editor {
       height: 100%;
-      overflow: unset;
+      overflow: hidden;
+
+      .cm-line {
+        min-height: 1em;
+      }
+      .cm-scroller {
+        overflow: auto;
+      }
     }
   }
 }
