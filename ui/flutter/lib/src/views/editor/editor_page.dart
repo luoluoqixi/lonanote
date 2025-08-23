@@ -18,6 +18,7 @@ import 'package:lonanote/src/theme/app_theme.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/views/editor/editor_toolbar/editor_add_toolbar.dart';
+import 'package:lonanote/src/views/editor/editor_toolbar/editor_text_style_toolbar.dart';
 import 'package:lonanote/src/widgets/custom_webview.dart';
 import 'package:lonanote/src/widgets/custom_webview_inapp.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
@@ -662,24 +663,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
     } else {
       _hideCustomToolbar(true);
     }
-    // AppRouter.showListSheet(
-    //   context,
-    //   title: "添加",
-    //   items: editorAddActionItems,
-    //   onChange: (val) {
-    //     if (_isDisposing) return;
-    //     if (!mounted) return;
-    //     if (!_webviewController.isLoaded()) return;
-    //     _runWebCommand("add_markdown_action", val);
-    //     Navigator.of(context).pop();
-    //   },
-    //   pageName: "/editor_add_action_sheet",
-    //   barrierColor: Colors.transparent,
-    //   galleryMode: true,
-    //   galleryRowCount: 4,
-    // ).then((_) {
-    //   enableKeyboard();
-    // });
+  }
+
+  void _onToolbarActionTextStyle() {
+    HapticFeedback.mediumImpact();
+    if (_showToolbarType != _EditorCustomToolbarType.textStyleToolbar) {
+      _showCustomToolbar(_EditorCustomToolbarType.textStyleToolbar, true);
+    } else {
+      _hideCustomToolbar(true);
+    }
   }
 
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
@@ -798,16 +790,45 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
     if (type == _EditorCustomToolbarType.addToolbar) {
       return EditorAddToolbar(
-        onAddAction: (action) {
+        onAction: (action) {
           if (_isDisposing) return;
           if (!mounted) return;
           if (!_webviewController.isLoaded()) return;
           _runWebCommand("add_markdown_action", action);
         },
       );
+    } else if (type == _EditorCustomToolbarType.textStyleToolbar) {
+      return EditorTextStyleToolbar(
+        onAction: (action) {
+          if (_isDisposing) return;
+          if (!mounted) return;
+          if (!_webviewController.isLoaded()) return;
+          _runWebCommand("text_style_action", action);
+        },
+      );
     } else {
       return null;
     }
+  }
+
+  Widget _buildToolbarIconButton({
+    required _EditorCustomToolbarType type,
+    required Widget icon,
+    required Color selectBgColor,
+    required VoidCallback onPressed,
+  }) {
+    final isSelect = _showToolbarType == type;
+    return IconButton(
+      icon: icon,
+      style: IconButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        highlightColor: Colors.transparent,
+        backgroundColor: isSelect ? selectBgColor : null,
+      ),
+      onPressed: onPressed,
+    );
   }
 
   Widget? _buildBottomToolbarPanel(ColorScheme colorScheme) {
@@ -817,6 +838,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final isShow = _isShowKeyboard ||
         _showToolbarType != _EditorCustomToolbarType.none ||
         _reShowKeyboard;
+    final selectBgColor = ThemeColors.getBg1Color(colorScheme);
     return isShow
         ? Column(
             mainAxisSize: MainAxisSize.min,
@@ -826,14 +848,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
                 decoration: BoxDecoration(
                   color: bgColor,
                   border: Border.all(color: textColor.withAlpha(20)),
-                  // boxShadow: [
-                  //   BoxShadow(
-                  //     color: textColor.withAlpha(20),
-                  //     blurRadius: 10.0,
-                  //     spreadRadius: 4.0,
-                  //     offset: Offset(0, -2),
-                  //   ),
-                  // ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -841,9 +855,25 @@ class _EditorPageState extends ConsumerState<EditorPage>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        IconButton(
+                        _buildToolbarIconButton(
                           icon: Icon(ThemeIcons.add(context)),
+                          type: _EditorCustomToolbarType.addToolbar,
+                          selectBgColor: selectBgColor,
                           onPressed: _onToolbarActionAdd,
+                        ),
+                        _buildToolbarIconButton(
+                          icon: FittedBox(
+                            child: Text(
+                              "Aa",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          type: _EditorCustomToolbarType.textStyleToolbar,
+                          selectBgColor: selectBgColor,
+                          onPressed: _onToolbarActionTextStyle,
                         ),
                       ],
                     ),
@@ -950,4 +980,5 @@ class _EditorPageState extends ConsumerState<EditorPage>
 enum _EditorCustomToolbarType {
   none,
   addToolbar,
+  textStyleToolbar,
 }

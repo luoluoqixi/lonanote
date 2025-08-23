@@ -192,11 +192,11 @@ final List<PlatformListGridItem> editorAddActionItems = [
 ];
 
 class EditorAddToolbar extends StatelessWidget {
-  final void Function(int value)? onAddAction;
+  final void Function(int value)? onAction;
 
   const EditorAddToolbar({
     super.key,
-    required this.onAddAction,
+    required this.onAction,
   });
 
   @override
@@ -204,7 +204,7 @@ class EditorAddToolbar extends StatelessWidget {
     return PlatformListGrid(
       items: editorAddActionItems,
       onChange: (val) {
-        onAddAction?.call(val);
+        onAction?.call(val);
       },
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
       galleryMode: true,
