@@ -20,19 +20,15 @@ html.android {
   width: 100%;
 
   .cm-editor {
-    // background-color: var(--cm-background-color);
-    background-color: transparent;
-    overflow: visible;
-
-    --cm-editor-wrap-padding-x: 4px;
-    --cm-editor-wrap-padding-y: 4px;
     --cm-editor-primary-color: var(--accent-a5, '#4a90e2');
-
     --cm-editor-content-padding-left: 18px;
     --cm-editor-content-padding-right: 20px;
 
+    background-color: transparent;
+    overflow: visible;
+
     height: 100%;
-    padding: var(--cm-editor-wrap-padding-y) var(--cm-editor-wrap-padding-x);
+    padding: 0;
 
     outline: 0 !important;
     -webkit-user-select: auto;

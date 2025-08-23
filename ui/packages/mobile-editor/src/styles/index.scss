@@ -11,6 +11,8 @@ body {
   padding: 0;
   width: 100%;
   height: 100%;
+
+  box-sizing: border-box;
 }
 
 body {
@@ -56,12 +58,8 @@ html.android {
 #root {
   --bottom-safe-height: 30px;
 
-  --title-height: var(--title-height-app, 0px);
-  --padding-top: var(--title-height);
-
-  padding: 0 2px;
-  padding-top: var(--padding-top);
-
+  // CodeMirror不能有 Y 轴的 Padding 或 Margin, 否则会导致 Android 端的 Chrome 上点击空行时跳会顶部
+  padding: 0 2px 0 6px;
   overflow: visible;
 
   // background-color: var(--color-background);
@@ -77,6 +75,8 @@ html.android {
   flex-direction: column;
 
   #cm-root {
+    padding: 0;
+
     position: static;
     overflow-y: visible;
 
