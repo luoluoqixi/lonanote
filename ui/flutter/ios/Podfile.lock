@@ -11,6 +11,8 @@ PODS:
     - Flutter
   - integration_test (0.0.1):
     - Flutter
+  - keyboard_height_plugin (0.0.1):
+    - Flutter
   - lonanote_app (0.0.1):
     - Flutter
   - OrderedSet (6.0.3)
@@ -38,6 +40,7 @@ DEPENDENCIES:
   - flutter_inappwebview_ios (from `.symlinks/plugins/flutter_inappwebview_ios/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
+  - keyboard_height_plugin (from `.symlinks/plugins/keyboard_height_plugin/ios`)
   - lonanote_app (from `.symlinks/plugins/lonanote_app/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
@@ -60,6 +63,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/fluttertoast/ios"
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
+  keyboard_height_plugin:
+    :path: ".symlinks/plugins/keyboard_height_plugin/ios"
   lonanote_app:
     :path: ".symlinks/plugins/lonanote_app/ios"
   package_info_plus:
@@ -82,6 +87,7 @@ SPEC CHECKSUMS:
   flutter_inappwebview_ios: 6f63631e2c62a7c350263b13fa5427aedefe81d4
   fluttertoast: 21eecd6935e7064cc1fcb733a4c5a428f3f24f0f
   integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
+  keyboard_height_plugin: 43fa8bba20fd5c4fdeed5076466b8b9d43cc6b86
   lonanote_app: 851b2ae5f4df026189b0b8115cb1ee19bb88a341
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4

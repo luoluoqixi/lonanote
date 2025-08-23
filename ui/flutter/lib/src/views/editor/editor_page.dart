@@ -89,7 +89,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         }
       }
       if (_currentkeyboardHeight != height) {
-        logger.i("keyboard height: $height");
+        // logger.i("keyboard height: $height");
         late bool targetShow;
         if (height > 0) {
           targetShow = true;
@@ -623,7 +623,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         setState(() {
           _reShowKeyboard = true;
         });
-        Future.delayed(const Duration(milliseconds: 500), () {
+        Future.delayed(const Duration(milliseconds: 600), () {
           if (mounted) {
             setState(() {
               _reShowKeyboard = false;
@@ -814,9 +814,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
   Widget _buildToolbarIconButton({
     required _EditorCustomToolbarType type,
     required Widget icon,
-    required Color selectBgColor,
     required VoidCallback onPressed,
   }) {
+    final colorScheme = ThemeColors.getColorScheme(context);
+    final selectBgColor = ThemeColors.getBg1Color(colorScheme);
+    final textColor = ThemeColors.getTextColor(colorScheme);
     final isSelect = _showToolbarType == type;
     return IconButton(
       icon: icon,
@@ -826,6 +828,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         ),
         highlightColor: Colors.transparent,
         backgroundColor: isSelect ? selectBgColor : null,
+        foregroundColor: textColor,
       ),
       onPressed: onPressed,
     );
@@ -838,7 +841,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final isShow = _isShowKeyboard ||
         _showToolbarType != _EditorCustomToolbarType.none ||
         _reShowKeyboard;
-    final selectBgColor = ThemeColors.getBg1Color(colorScheme);
     return isShow
         ? Column(
             mainAxisSize: MainAxisSize.min,
@@ -858,7 +860,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
                         _buildToolbarIconButton(
                           icon: Icon(ThemeIcons.add(context)),
                           type: _EditorCustomToolbarType.addToolbar,
-                          selectBgColor: selectBgColor,
                           onPressed: _onToolbarActionAdd,
                         ),
                         _buildToolbarIconButton(
@@ -872,7 +873,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
                             ),
                           ),
                           type: _EditorCustomToolbarType.textStyleToolbar,
-                          selectBgColor: selectBgColor,
                           onPressed: _onToolbarActionTextStyle,
                         ),
                       ],
@@ -904,6 +904,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
                             HapticFeedback.mediumImpact();
                             _hideKeyboard();
                             _hideCustomToolbar(false);
+                            if (Platform.isIOS) {
+                              _enableKeyboard();
+                            }
                           },
                         ),
                       ],
