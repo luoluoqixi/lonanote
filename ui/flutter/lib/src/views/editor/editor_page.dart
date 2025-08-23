@@ -17,13 +17,13 @@ import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/app_theme.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
-import 'package:lonanote/src/views/editor/editor_add_action.dart';
 import 'package:lonanote/src/widgets/custom_webview.dart';
 import 'package:lonanote/src/widgets/custom_webview_inapp.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
 import 'package:pull_down_button/pull_down_button.dart';
+import 'package:keyboard_height_plugin/keyboard_height_plugin.dart';
 
 class EditorPage extends ConsumerStatefulWidget {
   const EditorPage({
@@ -63,10 +63,48 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   String fileContent = "";
 
+  _EditorCustomToolbarType _showToolbarType = _EditorCustomToolbarType.none;
+
+  bool _reShowKeyboard = false;
+  bool _isShowKeyboard = false;
+  double _currentkeyboardHeight = 0;
+  double _openKeyboardHeight = 0;
+  final KeyboardHeightPlugin _keyboardHeightPlugin = KeyboardHeightPlugin();
+
+  static final double _toolbarHeight = 45.0;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    _keyboardHeightPlugin.onKeyboardHeightChanged((double height) {
+      if (!mounted) return;
+      if (Platform.isAndroid) {
+        if (height > 0) {
+          height += MediaQuery.of(context).viewPadding.bottom;
+        }
+      }
+      if (_currentkeyboardHeight != height) {
+        logger.i("keyboard height: $height");
+        late bool targetShow;
+        if (height > 0) {
+          targetShow = true;
+        } else {
+          targetShow = false;
+        }
+        setState(() {
+          _currentkeyboardHeight = height;
+          if (_currentkeyboardHeight > 0) {
+            _openKeyboardHeight = _currentkeyboardHeight;
+          }
+          if (targetShow != _isShowKeyboard) {
+            _isShowKeyboard = targetShow;
+          }
+        });
+      }
+    });
+
     final ext = Utility.getExtName(widget.path);
     _isMarkdown = ext != null && Utility.isMarkdown(ext);
     final settings = ref.read(settingsProvider.select((s) => s.settings));
@@ -140,7 +178,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _save();
     }
     if (Platform.isAndroid) {
-      hideKeyboard();
+      _hideKeyboard();
     }
   }
 
@@ -151,15 +189,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
     return true;
   }
 
-  void hideKeyboard() {
+  void _hideKeyboard() {
     _webviewController.hideKeyboard();
   }
 
-  void disableKeyboard() {
+  void _disableKeyboard() {
     _webviewController.disableKeyboard();
   }
 
-  void enableKeyboard() {
+  void _enableKeyboard() {
     _webviewController.enableKeyboard();
   }
 
@@ -382,7 +420,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _openSettings() {
     AppRouter.jumpToSettingsPage(context);
     if (Platform.isAndroid) {
-      hideKeyboard();
+      _hideKeyboard();
     } else if (Platform.isIOS) {
       // iOS切换页面时似乎会自动关闭键盘
     }
@@ -391,7 +429,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _openWorkspaceSettings() {
     AppRouter.jumpToWorkspaceSettingsPage(context);
     if (Platform.isAndroid) {
-      hideKeyboard();
+      _hideKeyboard();
     } else if (Platform.isIOS) {
       // iOS切换页面时似乎会自动关闭键盘
     }
@@ -569,27 +607,65 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
   }
 
+  void _showCustomToolbar(
+    _EditorCustomToolbarType type,
+    bool handleKeyboard,
+  ) {
+    if (type == _EditorCustomToolbarType.none) {
+      if (handleKeyboard) {
+        // 重新显示出键盘, 会有一瞬间关闭再弹出的状态, 增加一个状态延迟后清除
+        setState(() {
+          _reShowKeyboard = true;
+        });
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {
+              _reShowKeyboard = false;
+            });
+          }
+        });
+        _enableKeyboard();
+      }
+    } else {
+      if (handleKeyboard) {
+        _disableKeyboard();
+      }
+    }
+    setState(() {
+      _showToolbarType = type;
+    });
+  }
+
+  void _hideCustomToolbar(bool handleKeyboard) {
+    _showCustomToolbar(_EditorCustomToolbarType.none, handleKeyboard);
+  }
+
   void _onToolbarActionAdd() {
     HapticFeedback.mediumImpact();
-    disableKeyboard();
-    AppRouter.showListSheet(
-      context,
-      title: "添加",
-      items: editorAddActionItems,
-      onChange: (val) {
-        if (_isDisposing) return;
-        if (!mounted) return;
-        if (!_webviewController.isLoaded()) return;
-        _runWebCommand("add_markdown_action", val);
-        Navigator.of(context).pop();
-      },
-      pageName: "/editor_add_action_sheet",
-      barrierColor: Colors.transparent,
-      galleryMode: true,
-      galleryRowCount: 4,
-    ).then((_) {
-      enableKeyboard();
-    });
+    if (_showToolbarType != _EditorCustomToolbarType.addToolbar) {
+      _showCustomToolbar(_EditorCustomToolbarType.addToolbar, true);
+    } else {
+      _hideCustomToolbar(true);
+    }
+
+    // AppRouter.showListSheet(
+    //   context,
+    //   title: "添加",
+    //   items: editorAddActionItems,
+    //   onChange: (val) {
+    //     if (_isDisposing) return;
+    //     if (!mounted) return;
+    //     if (!_webviewController.isLoaded()) return;
+    //     _runWebCommand("add_markdown_action", val);
+    //     Navigator.of(context).pop();
+    //   },
+    //   pageName: "/editor_add_action_sheet",
+    //   barrierColor: Colors.transparent,
+    //   galleryMode: true,
+    //   galleryRowCount: 4,
+    // ).then((_) {
+    //   enableKeyboard();
+    // });
   }
 
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
@@ -689,75 +765,94 @@ class _EditorPageState extends ConsumerState<EditorPage>
     );
   }
 
-  Widget? _buildBottomBar(BuildContext context, MediaQueryData mediaQuery,
-      ColorScheme colorScheme) {
+  Widget? _buildBottomBarPlaceholder(MediaQueryData mediaQuery) {
+    final isShow = _isShowKeyboard ||
+        _showToolbarType != _EditorCustomToolbarType.none ||
+        _reShowKeyboard;
     final bottom = mediaQuery.viewInsets.bottom;
-    final bgColor = ThemeColors.getBgColor(colorScheme);
-
-    return bottom > 20
+    final placeholderHeight = _openKeyboardHeight - bottom;
+    return isShow
         ? SizedBox(
-            height: 45.0,
-            child: Container(
-              padding: EdgeInsets.only(
-                left: 10,
-                right: 10,
+            height: _toolbarHeight + placeholderHeight,
+          )
+        : null;
+  }
+
+  Widget? _buildBottomToolbarPanel(ColorScheme colorScheme) {
+    final bgColor = ThemeColors.getBgColor(colorScheme);
+    final isShow = _isShowKeyboard ||
+        _showToolbarType != _EditorCustomToolbarType.none ||
+        _reShowKeyboard;
+    return isShow
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(10),
+                      blurRadius: 20.0,
+                      spreadRadius: 10.0,
+                      offset: Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        IconButton(
+                          icon: Icon(ThemeIcons.add(context)),
+                          onPressed: _onToolbarActionAdd,
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        IconButton(
+                          icon: Icon(ThemeIcons.undo(context)),
+                          tooltip: '撤销',
+                          onPressed: _canUndo ? _undo : null,
+                        ),
+                        IconButton(
+                          icon: Icon(ThemeIcons.redo(context)),
+                          tooltip: '重做',
+                          onPressed: _canRedo ? _redo : null,
+                        ),
+                        VerticalDivider(
+                          indent: 8,
+                          endIndent: 8,
+                          thickness: 1,
+                          width: 20,
+                          color: Colors.grey.withAlpha(100),
+                        ),
+                        IconButton(
+                          icon: Icon(ThemeIcons.keyboardHide(context)),
+                          tooltip: '关闭键盘',
+                          onPressed: () {
+                            HapticFeedback.mediumImpact();
+                            _hideKeyboard();
+                            _hideCustomToolbar(false);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              decoration: BoxDecoration(
-                color: bgColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(10),
-                    blurRadius: 20.0,
-                    spreadRadius: 10.0,
-                    offset: Offset(0, -2),
-                  ),
-                ],
+              SizedBox(
+                height: _openKeyboardHeight,
+                child: Container(
+                  color: Colors.red,
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      IconButton(
-                        icon: Icon(ThemeIcons.add(context)),
-                        onPressed: _onToolbarActionAdd,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      IconButton(
-                        icon: Icon(ThemeIcons.undo(context)),
-                        tooltip: '撤销',
-                        onPressed: _canUndo ? _undo : null,
-                      ),
-                      IconButton(
-                        icon: Icon(ThemeIcons.redo(context)),
-                        tooltip: '重做',
-                        onPressed: _canRedo ? _redo : null,
-                      ),
-                      VerticalDivider(
-                        indent: 8,
-                        endIndent: 8,
-                        thickness: 1,
-                        width: 20,
-                        color: Colors.grey.withAlpha(100),
-                      ),
-                      IconButton(
-                        icon: Icon(ThemeIcons.keyboardHide(context)),
-                        tooltip: '关闭键盘',
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          hideKeyboard();
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            ],
           )
         : null;
   }
@@ -768,11 +863,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final showName = WsUtils.getFileShowName(name);
     final colorScheme = ThemeColors.getColorScheme(context);
     final mediaQuery = MediaQuery.of(context);
-    final bottomBar = _buildBottomBar(context, mediaQuery, colorScheme);
+    final bottomBarPlaceholder = _buildBottomBarPlaceholder(mediaQuery);
+    final bottomPanel = _buildBottomToolbarPanel(colorScheme);
 
     return PlatformSimplePage(
       titleActions: _buildTitleActions(colorScheme),
       onWillPop: Platform.isAndroid ? _onWillPop : null,
+      bottomBar: bottomPanel,
       // 将 AppBar 背景延伸到屏幕顶部
       extendBodyBehindAppBar: true,
       // 如果不设置为 false, 键盘弹出与关闭时会显示 (0.x秒) 根 widget 的背景颜色
@@ -803,11 +900,16 @@ class _EditorPageState extends ConsumerState<EditorPage>
               Flexible(
                 child: _buildWebView(colorScheme),
               ),
-              if (bottomBar != null) bottomBar,
+              if (bottomBarPlaceholder != null) bottomBarPlaceholder,
             ],
           ),
         ],
       ),
     );
   }
+}
+
+enum _EditorCustomToolbarType {
+  none,
+  addToolbar,
 }
