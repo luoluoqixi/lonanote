@@ -29,23 +29,13 @@
     <img src="./docs/screenshots/screenshot-dark-1.png" width="48%" />
 </p>
 
-<p>
-    <img src="./docs/screenshots/screenshot-2.png" width="48%" />
-    <img src="./docs/screenshots/screenshot-dark-2.png" width="48%" />
-</p>
-
 #### 移动端 (白天/黑夜模式)
-<p>
-    <img src="./docs/screenshots/mobile-01.png" width="32%" />
-    <img src="./docs/screenshots/mobile-02.png" width="32%" />
-    <img src="./docs/screenshots/mobile-03.png" width="32%" />
-</p>
 
 <p>
-    <img src="./docs/screenshots/mobile-dark-01.png" width="32%" />
-    <img src="./docs/screenshots/mobile-dark-02.png" width="32%" />
-    <img src="./docs/screenshots/mobile-dark-03.png" width="32%" />
+    <img src="./docs/screenshots/mobile-02.png" width="30%" />
+    <img src="./docs/screenshots/mobile-dark-02.png" width="30%" />
 </p>
+
 
 
 ## 🚀 安装

@@ -23,27 +23,17 @@ Notes are stored offline in plain Markdown format, allowing seamless migration t
 ### 📸 Screenshots
 
 #### Desktop (Light/Dark Mode)
+
 <p>
     <img src="./docs/screenshots/screenshot-1.png" width="48%" />
     <img src="./docs/screenshots/screenshot-dark-1.png" width="48%" />
 </p>
 
-<p>
-    <img src="./docs/screenshots/screenshot-2.png" width="48%" />
-    <img src="./docs/screenshots/screenshot-dark-2.png" width="48%" />
-</p>
-
 #### Mobile (Light/Dark Mode)
-<p>
-    <img src="./docs/screenshots/mobile-01.png" width="32%" />
-    <img src="./docs/screenshots/mobile-02.png" width="32%" />
-    <img src="./docs/screenshots/mobile-03.png" width="32%" />
-</p>
 
 <p>
-    <img src="./docs/screenshots/mobile-dark-01.png" width="32%" />
-    <img src="./docs/screenshots/mobile-dark-02.png" width="32%" />
-    <img src="./docs/screenshots/mobile-dark-03.png" width="32%" />
+    <img src="./docs/screenshots/mobile-02.png" width="30%" />
+    <img src="./docs/screenshots/mobile-dark-02.png" width="30%" />
 </p>
 
 ## 🚀 Installation
