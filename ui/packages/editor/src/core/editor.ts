@@ -471,21 +471,46 @@ export class LonaEditor {
     return undefined;
   };
 
-  scrollToCursor = (container?: Element | null) => {
+  scrollToCursor = (
+    container?: Element | null,
+    force?: boolean,
+    getY?: (isTop: boolean) => 'nearest' | 'start' | 'end' | 'center',
+  ) => {
     if (!this.#editor) return;
-    const scrollTop = this.getScrollToCursorValue(container);
-    // console.log('scrollTop', scrollTop);
-    if (scrollTop) {
-      let scrollDom = document.scrollingElement;
-      if (!scrollDom) {
-        scrollDom = this.getScrollContainer();
+    if (!this.#editor) return undefined;
+
+    const pos = this.#editor.state.selection.main.head;
+    const coords = this.#editor.coordsAtPos(pos);
+    if (!coords) return undefined;
+
+    const scrollDispatch = (isTop: boolean) => {
+      this.#editor.dispatch({
+        effects: EditorView.scrollIntoView(pos, {
+          y: getY?.(isTop) || 'center',
+          yMargin: 0,
+        }),
+      });
+    };
+
+    container = container || this.getScrollContainer();
+    const containerRect = container.getBoundingClientRect();
+    let containerTop = containerRect.top;
+    let containerBottom = containerRect.bottom;
+
+    if (containerTop < 0) {
+      const top = containerTop;
+      containerTop = 0;
+      containerBottom += -top;
+    }
+
+    if (coords.top < containerTop) {
+      // 在上方
+      if (force) {
+        scrollDispatch(true);
       }
-      if (scrollDom) {
-        document.scrollingElement.scrollTo({
-          top: scrollTop,
-          behavior: 'instant',
-        });
-      }
+    } else if (coords.bottom > containerBottom) {
+      // 在下方
+      scrollDispatch(false);
     }
   };
 

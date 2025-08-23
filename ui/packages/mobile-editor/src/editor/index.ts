@@ -69,7 +69,7 @@ const autoScrollToCursorStart = () => {
         }
       }
     } else if (window.isAndroid) {
-      // editor.scrollToCursor(document.body);
+      editor.scrollToCursor(document.body);
     }
   }
 };
