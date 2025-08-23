@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lonanote/src/icons/editor_action_icons.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
-import 'package:lonanote/src/widgets/tools/list_sheet.dart';
+import 'package:lonanote/src/widgets/platform_list_grid.dart';
 
 enum EditorAddActionValues {
   text,
@@ -29,8 +29,8 @@ enum EditorAddActionValues {
 Widget _getEditorActionIcon(BuildContext context, EditorAddActionValues value) {
   final colorScheme = ThemeColors.getColorScheme(context);
   final iconColor = ThemeColors.getTextColor(colorScheme);
-  final width = 40.0;
-  final height = 40.0;
+  final width = 36.0;
+  final height = 36.0;
   switch (value) {
     case EditorAddActionValues.text:
       return EditorActionIcons.text(
@@ -86,107 +86,131 @@ Widget _getEditorActionIcon(BuildContext context, EditorAddActionValues value) {
   }
 }
 
-final List<ListSheetItem> editorAddActionItems = [
-  ListSheetItem(
+final List<PlatformListGridItem> editorAddActionItems = [
+  PlatformListGridItem(
     value: EditorAddActionValues.text.index,
     title: "文本",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.text),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.h1.index,
     title: "一级标题",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.h1),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.h2.index,
     title: "二级标题",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.h2),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.h3.index,
     title: "三级标题",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.h3),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.h4.index,
     title: "四级标题",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.h4),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.h5.index,
     title: "五级标题",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.h5),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.h6.index,
     title: "六级标题",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.h6),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.quote.index,
     title: "引用",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.quote),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.divider.index,
     title: "分割线",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.divider),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.bulletList.index,
     title: "无序列表",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.bulletList),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.orderedList.index,
     title: "有序列表",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.orderedList),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.taskList.index,
     title: "待办列表",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.taskList),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.imageBlock.index,
     title: "图片",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.imageBlock),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.imageInline.index,
     title: "图片链接",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.imageInline),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.codeBlock.index,
     title: "代码块",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.codeBlock),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.table.index,
     title: "表格",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.table),
   ),
-  ListSheetItem(
+  PlatformListGridItem(
     value: EditorAddActionValues.math.index,
     title: "数学公式",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.math),
   ),
 ];
+
+class EditorAddToolbar extends StatelessWidget {
+  final void Function(int value)? onAddAction;
+
+  const EditorAddToolbar({
+    super.key,
+    required this.onAddAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PlatformListGrid(
+      items: editorAddActionItems,
+      onChange: (val) {
+        onAddAction?.call(val);
+      },
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+      galleryMode: true,
+      galleryRowCount: 4,
+      galleryCrossAxisSpacing: 14,
+      galleryMainAxisSpacing: 14,
+    );
+  }
+}

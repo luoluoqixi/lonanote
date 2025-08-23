@@ -17,6 +17,7 @@ import 'package:lonanote/src/providers/settings/settings.dart';
 import 'package:lonanote/src/theme/app_theme.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
+import 'package:lonanote/src/views/editor/editor_toolbar/editor_add_toolbar.dart';
 import 'package:lonanote/src/widgets/custom_webview.dart';
 import 'package:lonanote/src/widgets/custom_webview_inapp.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
@@ -66,6 +67,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   _EditorCustomToolbarType _showToolbarType = _EditorCustomToolbarType.none;
 
   bool _reShowKeyboard = false;
+  bool _reHideKeyboard = false;
   bool _isShowKeyboard = false;
   double _currentkeyboardHeight = 0;
   double _openKeyboardHeight = 0;
@@ -100,6 +102,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
           }
           if (targetShow != _isShowKeyboard) {
             _isShowKeyboard = targetShow;
+            if (_isShowKeyboard && !_reHideKeyboard && !_reShowKeyboard) {
+              _showToolbarType = _EditorCustomToolbarType.none;
+            }
           }
         });
       }
@@ -628,6 +633,16 @@ class _EditorPageState extends ConsumerState<EditorPage>
       }
     } else {
       if (handleKeyboard) {
+        setState(() {
+          _reHideKeyboard = true;
+        });
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            setState(() {
+              _reHideKeyboard = false;
+            });
+          }
+        });
         _disableKeyboard();
       }
     }
@@ -647,7 +662,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     } else {
       _hideCustomToolbar(true);
     }
-
     // AppRouter.showListSheet(
     //   context,
     //   title: "添加",
@@ -778,8 +792,28 @@ class _EditorPageState extends ConsumerState<EditorPage>
         : null;
   }
 
+  Widget? _buildBottomPanel(_EditorCustomToolbarType type) {
+    if (type == _EditorCustomToolbarType.none) {
+      return null;
+    }
+    if (type == _EditorCustomToolbarType.addToolbar) {
+      return EditorAddToolbar(
+        onAddAction: (action) {
+          if (_isDisposing) return;
+          if (!mounted) return;
+          if (!_webviewController.isLoaded()) return;
+          _runWebCommand("add_markdown_action", action);
+        },
+      );
+    } else {
+      return null;
+    }
+  }
+
   Widget? _buildBottomToolbarPanel(ColorScheme colorScheme) {
     final bgColor = ThemeColors.getBgColor(colorScheme);
+    final textColor = ThemeColors.getTextColor(colorScheme);
+    final bg1Color = ThemeColors.getBg1Color(colorScheme);
     final isShow = _isShowKeyboard ||
         _showToolbarType != _EditorCustomToolbarType.none ||
         _reShowKeyboard;
@@ -791,14 +825,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
                 padding: EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: bgColor,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(10),
-                      blurRadius: 20.0,
-                      spreadRadius: 10.0,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
+                  border: Border.all(color: textColor.withAlpha(20)),
+                  // boxShadow: [
+                  //   BoxShadow(
+                  //     color: textColor.withAlpha(20),
+                  //     blurRadius: 10.0,
+                  //     spreadRadius: 4.0,
+                  //     offset: Offset(0, -2),
+                  //   ),
+                  // ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -848,8 +883,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
               ),
               SizedBox(
                 height: _openKeyboardHeight,
-                child: Container(
-                  color: Colors.red,
+                child: SingleChildScrollView(
+                  child: _buildBottomPanel(_showToolbarType) ??
+                      Container(
+                        color: bg1Color,
+                      ),
                 ),
               ),
             ],
