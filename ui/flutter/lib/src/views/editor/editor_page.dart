@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -776,7 +777,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         _showToolbarType != _EditorCustomToolbarType.none ||
         _reShowKeyboard;
     final bottom = mediaQuery.viewInsets.bottom;
-    final placeholderHeight = _openKeyboardHeight - bottom;
+    final placeholderHeight = math.max(0, _openKeyboardHeight - bottom);
     return isShow
         ? SizedBox(
             height: _toolbarHeight + placeholderHeight,
@@ -812,14 +813,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Widget _buildToolbarIconButton({
-    required _EditorCustomToolbarType type,
     required Widget icon,
-    required VoidCallback onPressed,
+    VoidCallback? onPressed,
+    _EditorCustomToolbarType? type,
+    String? tooltip,
   }) {
     final colorScheme = ThemeColors.getColorScheme(context);
     final selectBgColor = ThemeColors.getBg1Color(colorScheme);
     final textColor = ThemeColors.getTextColor(colorScheme);
-    final isSelect = _showToolbarType == type;
+    final isSelect = type != null && _showToolbarType == type;
     return IconButton(
       icon: icon,
       style: IconButton.styleFrom(
@@ -831,6 +833,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         foregroundColor: textColor,
       ),
       onPressed: onPressed,
+      tooltip: tooltip,
     );
   }
 
@@ -846,81 +849,94 @@ class _EditorPageState extends ConsumerState<EditorPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
+                height: _toolbarHeight,
                 padding: EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: bgColor,
                   border: Border.all(color: textColor.withAlpha(20)),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        _buildToolbarIconButton(
-                          icon: Icon(ThemeIcons.add(context)),
-                          type: _EditorCustomToolbarType.addToolbar,
-                          onPressed: _onToolbarActionAdd,
-                        ),
-                        _buildToolbarIconButton(
-                          icon: FittedBox(
-                            child: Text(
-                              "Aa",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                child: SafeArea(
+                  left: true,
+                  right: true,
+                  bottom: false,
+                  top: false,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          _buildToolbarIconButton(
+                            icon: Icon(ThemeIcons.add(context)),
+                            type: _EditorCustomToolbarType.addToolbar,
+                            onPressed: _onToolbarActionAdd,
+                          ),
+                          _buildToolbarIconButton(
+                            icon: FittedBox(
+                              child: Text(
+                                "Aa",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
+                            type: _EditorCustomToolbarType.textStyleToolbar,
+                            onPressed: _onToolbarActionTextStyle,
                           ),
-                          type: _EditorCustomToolbarType.textStyleToolbar,
-                          onPressed: _onToolbarActionTextStyle,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        IconButton(
-                          icon: Icon(ThemeIcons.undo(context)),
-                          tooltip: '撤销',
-                          onPressed: _canUndo ? _undo : null,
-                        ),
-                        IconButton(
-                          icon: Icon(ThemeIcons.redo(context)),
-                          tooltip: '重做',
-                          onPressed: _canRedo ? _redo : null,
-                        ),
-                        VerticalDivider(
-                          indent: 8,
-                          endIndent: 8,
-                          thickness: 1,
-                          width: 20,
-                          color: Colors.grey.withAlpha(100),
-                        ),
-                        IconButton(
-                          icon: Icon(ThemeIcons.keyboardHide(context)),
-                          tooltip: '关闭键盘',
-                          onPressed: () {
-                            HapticFeedback.mediumImpact();
-                            _hideKeyboard();
-                            _hideCustomToolbar(false);
-                            if (Platform.isIOS) {
-                              _enableKeyboard();
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          _buildToolbarIconButton(
+                            icon: Icon(ThemeIcons.undo(context)),
+                            tooltip: '撤销',
+                            onPressed: _canUndo ? _undo : null,
+                          ),
+                          _buildToolbarIconButton(
+                            icon: Icon(ThemeIcons.redo(context)),
+                            tooltip: '重做',
+                            onPressed: _canRedo ? _redo : null,
+                          ),
+                          VerticalDivider(
+                            indent: 8,
+                            endIndent: 8,
+                            thickness: 1,
+                            width: 20,
+                            color: Colors.grey.withAlpha(100),
+                          ),
+                          _buildToolbarIconButton(
+                            icon: Icon(ThemeIcons.keyboardHide(context)),
+                            tooltip: '关闭键盘',
+                            onPressed: () {
+                              HapticFeedback.mediumImpact();
+                              _hideKeyboard();
+                              _hideCustomToolbar(false);
+                              if (Platform.isIOS) {
+                                _enableKeyboard();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               SizedBox(
-                height: _openKeyboardHeight,
+                height: math.max(0, _openKeyboardHeight),
                 child: SingleChildScrollView(
-                  child: _buildBottomPanel(_showToolbarType) ??
-                      Container(
-                        color: bg1Color,
-                      ),
+                  child: SafeArea(
+                    left: true,
+                    right: true,
+                    bottom: false,
+                    top: false,
+                    child: _buildBottomPanel(_showToolbarType) ??
+                        Container(
+                          color: bg1Color,
+                        ),
+                  ),
                 ),
               ),
             ],

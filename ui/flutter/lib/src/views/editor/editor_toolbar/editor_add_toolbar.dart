@@ -199,8 +199,17 @@ class EditorAddToolbar extends StatelessWidget {
     required this.onAction,
   });
 
+  int _calculateRowCount(double screenWidth) {
+    if (screenWidth > 1200) return 8; // 超大屏幕
+    if (screenWidth > 900) return 6; // 大屏幕/横屏
+    if (screenWidth > 600) return 5; // 中等屏幕
+    return 4; // 默认/竖屏
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final rowCount = _calculateRowCount(screenWidth);
     return PlatformListGrid(
       items: editorAddActionItems,
       onChange: (val) {
@@ -208,7 +217,7 @@ class EditorAddToolbar extends StatelessWidget {
       },
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
       galleryMode: true,
-      galleryRowCount: 4,
+      galleryRowCount: rowCount,
       galleryCrossAxisSpacing: 14,
       galleryMainAxisSpacing: 14,
     );
