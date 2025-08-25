@@ -68,8 +68,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   _EditorCustomToolbarType _showToolbarType = _EditorCustomToolbarType.none;
 
-  bool _reShowKeyboard = false;
-  bool _reHideKeyboard = false;
+  Timer? _updateKeyboardEvent;
+  bool _cahUpdateKeyboard = true;
   bool _isShowKeyboard = false;
   double _currentkeyboardHeight = 0;
   double _openKeyboardHeight = 0;
@@ -84,31 +84,28 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
     _keyboardHeightPlugin.onKeyboardHeightChanged((double height) {
       if (!mounted) return;
+      if (!_cahUpdateKeyboard) return;
       if (Platform.isAndroid) {
         if (height > 0) {
           height += MediaQuery.of(context).viewPadding.bottom;
         }
       }
-      if (_currentkeyboardHeight != height) {
-        // logger.i("keyboard height: $height");
-        late bool targetShow;
-        if (height > 0) {
-          targetShow = true;
-        } else {
-          targetShow = false;
-        }
-        setState(() {
-          _currentkeyboardHeight = height;
-          if (_currentkeyboardHeight > 0) {
-            _openKeyboardHeight = _currentkeyboardHeight;
-          }
-          if (targetShow != _isShowKeyboard) {
-            _isShowKeyboard = targetShow;
-            if (_isShowKeyboard && !_reHideKeyboard && !_reShowKeyboard) {
-              _showToolbarType = _EditorCustomToolbarType.none;
-            }
+      if (_updateKeyboardEvent != null) {
+        _updateKeyboardEvent!.cancel();
+        _updateKeyboardEvent = null;
+      }
+      if (Platform.isIOS && _currentkeyboardHeight != 0.0 && height != 0.0) {
+        // logger.e("keyboard height: $height");
+        _updateKeyboardEvent = Timer(const Duration(milliseconds: 400), () {
+          if (mounted) {
+            _updateKeyboard(height);
+            _updateKeyboardEvent = null;
           }
         });
+      } else {
+        if (_currentkeyboardHeight != height) {
+          _updateKeyboard(height);
+        }
       }
     });
 
@@ -189,11 +186,43 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
   }
 
+  @override
+  void didPushNext() {
+    super.didPushNext();
+    _hideKeyboard();
+    _hideCustomToolbar(false);
+    if (Platform.isIOS) {
+      _enableKeyboard();
+    }
+  }
+
   Future<bool> _onWillPop() async {
     setState(() {
       _isDisposing = true;
     });
     return true;
+  }
+
+  void _updateKeyboard(double height) {
+    // logger.i("keyboard height: $height");
+    late bool targetShow;
+    if (height > 0) {
+      targetShow = true;
+    } else {
+      targetShow = false;
+    }
+    setState(() {
+      _currentkeyboardHeight = height;
+      if (_currentkeyboardHeight > 0) {
+        _openKeyboardHeight = _currentkeyboardHeight;
+      }
+      if (targetShow != _isShowKeyboard) {
+        _isShowKeyboard = targetShow;
+        if (_isShowKeyboard) {
+          _showToolbarType = _EditorCustomToolbarType.none;
+        }
+      }
+    });
   }
 
   void _hideKeyboard() {
@@ -622,12 +651,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
       if (handleKeyboard) {
         // 重新显示出键盘, 会有一瞬间关闭再弹出的状态, 增加一个状态延迟后清除
         setState(() {
-          _reShowKeyboard = true;
+          _cahUpdateKeyboard = false;
+          _isShowKeyboard = true;
         });
         Future.delayed(const Duration(milliseconds: 600), () {
           if (mounted) {
             setState(() {
-              _reShowKeyboard = false;
+              _cahUpdateKeyboard = true;
             });
           }
         });
@@ -636,12 +666,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
     } else {
       if (handleKeyboard) {
         setState(() {
-          _reHideKeyboard = true;
+          _cahUpdateKeyboard = false;
         });
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
             setState(() {
-              _reHideKeyboard = false;
+              _cahUpdateKeyboard = true;
             });
           }
         });
@@ -773,14 +803,16 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Widget? _buildBottomBarPlaceholder(MediaQueryData mediaQuery) {
-    final isShow = _isShowKeyboard ||
-        _showToolbarType != _EditorCustomToolbarType.none ||
-        _reShowKeyboard;
+    final isShow =
+        _isShowKeyboard || _showToolbarType != _EditorCustomToolbarType.none;
     final bottom = mediaQuery.viewInsets.bottom;
-    final placeholderHeight = math.max(0, _openKeyboardHeight - bottom);
+    final placeholderHeight = math.max(0.0, _openKeyboardHeight - bottom);
+    final height = math.min(_toolbarHeight + placeholderHeight,
+        _toolbarHeight + _openKeyboardHeight);
     return isShow
-        ? SizedBox(
-            height: _toolbarHeight + placeholderHeight,
+        ? Container(
+            // color: Colors.red,
+            height: height,
           )
         : null;
   }
@@ -841,9 +873,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final bgColor = ThemeColors.getBgColor(colorScheme);
     final textColor = ThemeColors.getTextColor(colorScheme);
     final bg1Color = ThemeColors.getBg1Color(colorScheme);
-    final isShow = _isShowKeyboard ||
-        _showToolbarType != _EditorCustomToolbarType.none ||
-        _reShowKeyboard;
+    final isShow =
+        _isShowKeyboard || _showToolbarType != _EditorCustomToolbarType.none;
+    final keyboardHeight = math.max(0.0, _openKeyboardHeight);
     return isShow
         ? Column(
             mainAxisSize: MainAxisSize.min,
@@ -924,8 +956,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
                   ),
                 ),
               ),
-              SizedBox(
-                height: math.max(0, _openKeyboardHeight),
+              Container(
+                color: Colors.transparent,
+                height: keyboardHeight,
                 child: SingleChildScrollView(
                   child: SafeArea(
                     left: true,
