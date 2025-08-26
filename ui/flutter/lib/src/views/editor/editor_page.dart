@@ -69,7 +69,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   _EditorCustomToolbarType _showToolbarType = _EditorCustomToolbarType.none;
 
   Timer? _updateKeyboardEvent;
-  bool _cahUpdateKeyboard = true;
+  bool _canUpdateKeyboard = true;
   bool _isShowKeyboard = false;
   double _currentkeyboardHeight = 0;
   double _openKeyboardHeight = 0;
@@ -84,7 +84,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
     _keyboardHeightPlugin.onKeyboardHeightChanged((double height) {
       if (!mounted) return;
-      if (!_cahUpdateKeyboard) return;
+      if (!_canUpdateKeyboard) return;
       if (Platform.isAndroid) {
         if (height > 0) {
           height += MediaQuery.of(context).viewPadding.bottom;
@@ -96,7 +96,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       }
       if (Platform.isIOS && _currentkeyboardHeight != 0.0 && height != 0.0) {
         // logger.e("keyboard height: $height");
-        _updateKeyboardEvent = Timer(const Duration(milliseconds: 400), () {
+        _updateKeyboardEvent = Timer(const Duration(milliseconds: 300), () {
           if (mounted) {
             _updateKeyboard(height);
             _updateKeyboardEvent = null;
@@ -651,13 +651,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
       if (handleKeyboard) {
         // 重新显示出键盘, 会有一瞬间关闭再弹出的状态, 增加一个状态延迟后清除
         setState(() {
-          _cahUpdateKeyboard = false;
+          _canUpdateKeyboard = false;
           _isShowKeyboard = true;
         });
         Future.delayed(const Duration(milliseconds: 600), () {
           if (mounted) {
             setState(() {
-              _cahUpdateKeyboard = true;
+              _canUpdateKeyboard = true;
             });
           }
         });
@@ -666,12 +666,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
     } else {
       if (handleKeyboard) {
         setState(() {
-          _cahUpdateKeyboard = false;
+          _canUpdateKeyboard = false;
         });
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
             setState(() {
-              _cahUpdateKeyboard = true;
+              _canUpdateKeyboard = true;
             });
           }
         });
