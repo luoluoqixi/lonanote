@@ -73,7 +73,7 @@ mac:
   icon: build/icons/icon_mac.icns
   target:
     # 目标封装类型: default, dmg, mas, mas-dev, pkg, 7z, zip, tar.xz, tar.lz, tar.gz, tar.bz2, dir
-    target: default
+    target: dmg
     # x64 | ia32 | armv7l | arm64 | x64 | ia32
     arch:
       - arm64
