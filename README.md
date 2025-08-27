@@ -47,7 +47,7 @@
 ## ❓ 常见问题
 
 - **Mac** 提示 `lonanote.app已损坏，无法打开， 你应该将它移到废纸篓。`
-  - 由于未签名, 需要执行 `xattr -c lonanote.app` 才能打开
+  - 由于未签名, 首次运行需要执行 `xattr -c lonanote.app` 才能打开
   - 相关链接: [electron-builder #8191](https://github.com/electron-userland/electron-builder/issues/8191)、[discussions](https://discussions.apple.com/thread/253714860?sortBy=best)
 
 

@@ -44,7 +44,7 @@ Notes are stored offline in plain Markdown format, allowing seamless migration t
 ## ❓ FAQ
 
 - Mac prompts `lonanote.app Is Damaged and Can’t Be Opened. You Should Move It To The Trash`
-  - Since it is not signed, you need to execute `xattr -c lonanote.app` to open it
+  - Due to being unsigned, you need to execute `xattr -c lonanote.app` to open it for the first time.
   - Related links: [electron-builder #8191](https://github.com/electron-userland/electron-builder/issues/8191), [discussions](https://discussions.apple.com/thread/253714860?sortBy=best)
 
 ## 🗺 Roadmap
