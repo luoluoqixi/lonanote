@@ -41,6 +41,12 @@ Notes are stored offline in plain Markdown format, allowing seamless migration t
 - **Windows | macOS | Linux | Android**: [Download from Releases](https://github.com/luoluoqixi/lonanote/releases)
 - **iOS**: *Coming soon...*
 
+## ❓ FAQ
+
+- Mac prompts `lonanote.app Is Damaged and Can’t Be Opened. You Should Move It To The Trash`
+  - Since it is not signed, you need to execute `xattr -c lonanote.app` to open it
+  - Related links: [electron-builder #8191](https://github.com/electron-userland/electron-builder/issues/8191), [discussions](https://discussions.apple.com/thread/253714860?sortBy=best)
+
 ## 🗺 Roadmap
 
 LonaNote is under active development—contributions welcome!
