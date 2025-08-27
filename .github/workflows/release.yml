@@ -65,15 +65,12 @@ jobs:
             suffix: 'windows.exe'
           - os: macos-latest
             name: build mac-arm64
-            arch: arm64
             suffix: 'mac-arm64.dmg'
-          - os: macos-latest
+          - os: macos-13
             name: build mac-x64
-            arch: x64
             suffix: 'mac-x64.dmg'
 
     runs-on: ${{ matrix.config.os }}
-    arch: ${{ matrix.config.arch }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
