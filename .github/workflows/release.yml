@@ -63,12 +63,12 @@ jobs:
           - os: windows-latest
             name: build windows
             suffix: 'windows.exe'
-          # - os: macos-latest
-          #   name: build mac-arm64
-          #   suffix: 'mac-arm64.zip'
-          # - os: macos-latest
-          #   name: build mac-amd64
-          #   suffix: 'mac-amd64.zip'
+          - os: macos-latest
+            name: build mac-arm64
+            suffix: 'mac-arm64.dmg'
+          - os: macos-latest
+            name: build mac-x64
+            suffix: 'mac-x64.dmg'
 
     runs-on: ${{ matrix.config.os }}
     steps:

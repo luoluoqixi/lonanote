@@ -88,7 +88,7 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
             platform = "win"
         elif runner_name == "build mac-arm64":
             platform = "mac"
-        elif runner_name == "build mac-amd64":
+        elif runner_name == "build mac-x64":
             platform = "mac"
     if platform is None:
         sys_platform = sys.platform
@@ -120,7 +120,19 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
         dist_exe = os.path.join(repo_root, f"ui/packages/desktop/dist/lonanote Setup {version}.exe")
         output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
         move_file_to_file(dist_exe, output_file)
-
+    elif platform == "mac":
+        if suffix is None:
+            suffix = "mac-arm64.zip"
+        dist_suffix = ""
+        if runner_name == "build mac-arm64":
+            dist_suffix = "-arm64.dmg"
+        elif runner_name == "build mac-x64":
+            dist_suffix = ""
+        dist_dmg = os.path.join(
+            repo_root, f"ui/packages/desktop/dist/lonanote-{version}{dist_suffix}.dmg"
+        )
+        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        move_file_to_file(dist_dmg, output_file)
 
 def main():
     # 修复 windows 编码问题
