@@ -21,9 +21,7 @@ const commonConfig: UserConfig = {
   },
   css: {
     preprocessorOptions: {
-      scss: {
-        api: 'modern-compiler', // 或 "modern"，"legacy"
-      },
+      scss: {},
     },
   },
   server: {

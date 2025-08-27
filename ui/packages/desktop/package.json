@@ -26,8 +26,8 @@
   },
   "devDependencies": {
     "@electron-toolkit/tsconfig": "^1.0.1",
-    "electron": "^37.2.4",
-    "electron-builder": "^26.0.15",
+    "electron": "^37.3.1",
+    "electron-builder": "^26.0.19",
     "electron-builder-squirrel-windows": "^26.0.19",
     "electron-fix": "^1.1.6",
     "electron-vite": "^4.0.0"
