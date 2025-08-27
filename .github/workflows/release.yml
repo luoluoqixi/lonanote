@@ -108,7 +108,7 @@ jobs:
         env:
           RELEASE_TITLE: ${{ needs.release.outputs.release_title }}
           RUNNER_OS: ${{ runner.os }}
-          RUNNER_NAME: ${{ matrix.config.name }}
+          RUNNER_CONFIG_NAME: ${{ matrix.config.name }}
           SUFFIX: ${{ matrix.config.suffix }}
 
       - name: Upload artifacts

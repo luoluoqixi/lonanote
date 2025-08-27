@@ -125,7 +125,7 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
             suffix = "mac-arm64.zip"
         dist_suffix = ""
         if runner_name == "build mac-arm64":
-            dist_suffix = "-arm64.dmg"
+            dist_suffix = "-arm64"
         elif runner_name == "build mac-x64":
             dist_suffix = ""
         dist_dmg = os.path.join(
@@ -144,7 +144,7 @@ def main():
     build_dir = os.environ.get('BUILD_DIR')
     build_name = os.environ.get('BUILD_NAME')
     runner_os = os.environ.get('RUNNER_OS')
-    runner_name = os.environ.get('RUNNER_NAME')
+    runner_name = os.environ.get("RUNNER_CONFIG_NAME")
     suffix = os.environ.get('SUFFIX')
 
     current_dir = os.getcwd()
