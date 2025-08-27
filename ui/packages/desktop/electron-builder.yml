@@ -79,14 +79,15 @@ mac:
       - arm64
       - x64
   # 签名框架和发行包的安全设置的plist
-  entitlements: ./build/entitlements.mac.plist
-  entitlementsInherit: ./build/entitlements.mac.plist
+  # entitlements: ./build/entitlements.mac.plist
+  # entitlementsInherit: ./build/entitlements.mac.plist
   # distribution | development | undefined
-  type: distribution
+  # type: distribution
   # 您的应用程序是否必须使用强化运行时进行签名
-  hardenedRuntime: true
+  hardenedRuntime: false
   # 是否让 @electron/osx-sign 验证签名
   gatekeeperAssess: false
+  identity: null
   # # 公证
   # notarize: false
   # Info.plist的额外条目
