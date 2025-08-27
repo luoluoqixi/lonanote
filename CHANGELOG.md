@@ -1,8 +1,77 @@
 # Changelog
 
-## [v0.1.1](https://github.com/luoluoqixi/lonanote/compare/v0.1.0...37666be43ba64ada913139e4097455839b0432c3) (2025-07-17)
+## [v0.1.2](https://github.com/luoluoqixi/lonanote/compare/v0.1.1...0320d2855e879770e519527144c6a96d0dcfa56b) (2025-08-27)
 
 ### ✨ Features
+
+* line number, line wrap settings
+([05072b3](https://github.com/luoluoqixi/lonanote/commit/05072b305e9770b9fcb6ce57a5b1f9b8b810ce82))
+* keyboard toolbar #27
+([b368823](https://github.com/luoluoqixi/lonanote/commit/b368823c632596cbc36b4dc0dd98baa2659d21ed)),
+closes [#27](https://github.com/luoluoqixi/lonanote/issues/27)
+* mobile source mode linenum config
+([56a4673](https://github.com/luoluoqixi/lonanote/commit/56a46734543b343df424f0e659581d60df8293a4))
+* mobile undo and redo, close #33
+([a87a836](https://github.com/luoluoqixi/lonanote/commit/a87a8364418f2c7d3c67b0834b02b75883ea9767)),
+closes [#33](https://github.com/luoluoqixi/lonanote/issues/33)
+
+### 🐛 Fixes
+
+* fix android auto scroll
+([cfe77c5](https://github.com/luoluoqixi/lonanote/commit/cfe77c59cb38bc92ff30b82e8b415cc8a896f92c))
+* fix ios auto scroll when keyboard shows
+([b681177](https://github.com/luoluoqixi/lonanote/commit/b681177f2a28c60381ce611c15e0c54002a7fac8))
+* fix ios bounding client rect
+([23671a4](https://github.com/luoluoqixi/lonanote/commit/23671a46f75e8a3298c3339f483e0173d0b8bb9b))
+* fix ios keyboard handler
+([8dc1a0c](https://github.com/luoluoqixi/lonanote/commit/8dc1a0cbb5e8fc7582de812c4f320f25789caa20))
+* fix ios focus keyboard
+([4441f04](https://github.com/luoluoqixi/lonanote/commit/4441f0418c8fcdd0748540ada859fb416f3b0af9))
+* fix editor bundle deps error
+([2b256ce](https://github.com/luoluoqixi/lonanote/commit/2b256ce9548ed0b1052b6eadda88b094534d80d1))
+* fix slash menu quote label
+([6e90f78](https://github.com/luoluoqixi/lonanote/commit/6e90f78b7f5c6a5c1fec902f3e8ed72a3116ea99))
+
+### 📝 Documentation
+
+* update readme
+([e9ada07](https://github.com/luoluoqixi/lonanote/commit/e9ada07313d7169c765651bdcf08b9b7fc6d57f9))
+* update screenshots
+([9540567](https://github.com/luoluoqixi/lonanote/commit/9540567b386c395e356973c4f6ba7d1be895d816))
+* update changelog
+([3ae0a79](https://github.com/luoluoqixi/lonanote/commit/3ae0a7925d160a62e7ebefee447c33399c7722b6))
+
+### 🎨 Styling
+
+* android style
+([3457997](https://github.com/luoluoqixi/lonanote/commit/3457997333ea614debf6efc65b23e1ef1f1c3693))
+* android style
+([c12240a](https://github.com/luoluoqixi/lonanote/commit/c12240a10dec0468ad18fdeef66b614acf1e32a2))
+* editor style
+([7a0b6b8](https://github.com/luoluoqixi/lonanote/commit/7a0b6b81c350a0096fd3a77ebec0b93aa1f51441))
+* editor style
+([d180dfb](https://github.com/luoluoqixi/lonanote/commit/d180dfb3024c558929e46b663c78108351763f72))
+* empty line #30
+([c642cb0](https://github.com/luoluoqixi/lonanote/commit/c642cb03d751c8d11b5fe841747ebf28041d39fd)),
+closes [#30](https://github.com/luoluoqixi/lonanote/issues/30)
+* source mode show line
+([5cf7e11](https://github.com/luoluoqixi/lonanote/commit/5cf7e119fc5be2345b7e352f830b8c5f6b0bca42))
+* revert list item height
+([4ecedf0](https://github.com/luoluoqixi/lonanote/commit/4ecedf03e8c8925257b539c1e835af88c7abf95b))
+* mobile editor css, close #31
+([9fddf74](https://github.com/luoluoqixi/lonanote/commit/9fddf7486b72d445e3caf4f79f0ce1ac32943bb0)),
+closes [#31](https://github.com/luoluoqixi/lonanote/issues/31)
+
+### ♻️ Refactor
+
+* refactor webview
+([03af85e](https://github.com/luoluoqixi/lonanote/commit/03af85e2bafc35c3bfe6292443c5ccb79dd45559))
+* refactor webview widget
+([5710bad](https://github.com/luoluoqixi/lonanote/commit/5710bad8dde16865263865d6e58c4ee825dbfa3b))
+
+### [v0.1.1](https://github.com/luoluoqixi/lonanote/compare/v0.1.0...v0.1.1) (2025-07-17)
+
+#### ✨ Features
 
 * editor title and fix ios keyboard
 ([455596a](https://github.com/luoluoqixi/lonanote/commit/455596a19b8bdc7dabbdda8e47c96b5240d99cc5))
@@ -10,7 +79,7 @@
 ([649dd11](https://github.com/luoluoqixi/lonanote/commit/649dd118fe575e26a8f5cd588a36c0d862f911aa)),
 closes [#26](https://github.com/luoluoqixi/lonanote/issues/26)
 
-### 🐛 Fixes
+#### 🐛 Fixes
 
 * fix android release error
 ([37666be](https://github.com/luoluoqixi/lonanote/commit/37666be43ba64ada913139e4097455839b0432c3))
@@ -19,7 +88,7 @@ closes [#26](https://github.com/luoluoqixi/lonanote/issues/26)
 * fix release pub version
 ([6df0cd4](https://github.com/luoluoqixi/lonanote/commit/6df0cd4e1ae85839bcc96115f219b8a74b92b7e7))
 
-### 📝 Documentation
+#### 📝 Documentation
 
 * delete todo.md
 ([8223407](https://github.com/luoluoqixi/lonanote/commit/82234075990d58ebd12487a8989c872dd888fbcc))
@@ -32,12 +101,12 @@ closes [#26](https://github.com/luoluoqixi/lonanote/issues/26)
 * update mobile docs
 ([bd6e971](https://github.com/luoluoqixi/lonanote/commit/bd6e97117962d17f17625a9d78f4e9d9091fe61d))
 
-### ♻️ Refactor
+#### ♻️ Refactor
 
 * refactor: use flutter_inappwebview
 ([73bdecf](https://github.com/luoluoqixi/lonanote/commit/73bdecf98ef559a3c2f1436e5be35243cb0c0111))
 
-### ⚡ Performance
+#### ⚡ Performance
 
 * scroll change event
 ([f5f112e](https://github.com/luoluoqixi/lonanote/commit/f5f112e917e279290a2fdcd73cdcad7b5496a006))
