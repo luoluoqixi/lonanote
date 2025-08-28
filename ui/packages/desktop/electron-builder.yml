@@ -111,8 +111,8 @@ linux:
   # AppImage, snap, deb, rpm, freebsd, pacman, p5p, apk, 7z, zip, tar.xz, tar.lz, tar.gz, tar.bz2, dir
   target:
     - AppImage
-    - snap
-    - deb
+    # - snap
+    # - deb
   # 作者
   maintainer: luoluoqixi
   # 种类
