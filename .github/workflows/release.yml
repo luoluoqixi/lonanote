@@ -57,9 +57,9 @@ jobs:
     strategy:
       matrix:
         config:
-          # - os: ubuntu-22.04
-          #   name: build linux
-          #   suffix: 'linux.tar.gz'
+          - os: ubuntu-22.04
+            name: build linux
+            suffix: 'linux.AppImage'
           - os: windows-latest
             name: build windows
             suffix: 'windows.exe'

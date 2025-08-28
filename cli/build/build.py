@@ -133,6 +133,12 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
         )
         output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
         move_file_to_file(dist_dmg, output_file)
+    elif platform == "linux":
+        if suffix is None:
+            suffix = "linux.AppImage"
+        dist_appimage = os.path.join(repo_root, f"ui/packages/desktop/dist/lonanote-{version}.AppImage")
+        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        move_file_to_file(dist_appimage, output_file)
 
 def main():
     # 修复 windows 编码问题
