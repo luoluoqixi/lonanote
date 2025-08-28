@@ -165,6 +165,10 @@ jobs:
           flutter-version: '3.32.1'
           channel: 'stable'
 
+      - name: Setup Android Signing
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ui/flutter/android/app/release.keystore
+
       - name: Create key.properties file
         run: |
           cd ui/flutter/android
