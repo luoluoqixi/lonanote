@@ -90,8 +90,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # cache-dependency-path: 'ui/pnpm-lock.yaml'
-          # cache: 'pnpm'
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -119,4 +117,90 @@ jobs:
           upload_url: ${{ needs.release.outputs.upload_url }}
           asset_path: ${{ github.workspace }}/${{ env.BUILD_DIR }}/${{ env.BUILD_NAME }}-${{ needs.release.outputs.release_title }}-${{ matrix.config.suffix }}
           asset_name: ${{ env.BUILD_NAME }}-${{ needs.release.outputs.release_title }}-${{ matrix.config.suffix }}
+          asset_content_type: application/octet-stream
+
+  build-android:
+    name: Build Android
+    needs: release
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+      - name: Check Cargo
+        run: cargo --version
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.1'
+          channel: 'stable'
+
+      - name: Create key.properties file
+        run: |
+          cd ui/flutter/android
+          cat > key.properties << EOF
+          storeFile=../lonanote.keystore
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          EOF
+
+          echo "key.properties: "
+          cat key.properties
+
+      - name: Accept Android Licenses
+        run: |
+          yes | sdkmanager --licenses || true
+          flutter doctor --android-licenses
+
+      - name: Check Flutter Installation
+        run: flutter doctor -v
+
+      - name: Run build script
+        run: |
+          python cli/build/build.py
+        env:
+          RELEASE_TITLE: ${{ needs.release.outputs.release_title }}
+          RUNNER_OS: ${{ runner.os }}
+          RUNNER_CONFIG_NAME: 'build android'
+          SUFFIX: 'android.apk'
+
+      - name: Upload artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/${{ env.BUILD_DIR }}/${{ env.BUILD_NAME }}-${{ needs.release.outputs.release_title }}-android.apk
+          asset_name: ${{ env.BUILD_NAME }}-${{ needs.release.outputs.release_title }}-android.apk
           asset_content_type: application/octet-stream

@@ -90,6 +90,8 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
             platform = "mac"
         elif runner_name == "build mac-x64":
             platform = "mac"
+        elif runner_name == "build android":
+            platform = "android"
     if platform is None:
         sys_platform = sys.platform
         if sys_platform == "win32":
@@ -139,6 +141,14 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
         dist_appimage = os.path.join(repo_root, f"ui/packages/desktop/dist/lonanote-{version}.AppImage")
         output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
         move_file_to_file(dist_appimage, output_file)
+    elif platform == "android":
+        if suffix is None:
+            suffix = "android.apk"
+        dist_apk = os.path.join(
+            repo_root, f"ui/flutter/build/app/outputs/flutter-apk/app-release.apk"
+        )
+        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        move_file_to_file(dist_apk, output_file)
 
 def main():
     # 修复 windows 编码问题
