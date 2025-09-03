@@ -146,7 +146,7 @@ importers:
         version: 37.3.1
       electron-builder:
         specifier: ^26.0.19
-        version: 26.0.19(electron-builder-squirrel-windows@26.0.19(dmg-builder@26.0.19))
+        version: 26.0.19(electron-builder-squirrel-windows@26.0.19)
       electron-builder-squirrel-windows:
         specifier: ^26.0.19
         version: 26.0.19(dmg-builder@26.0.19)
@@ -199,8 +199,8 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
       purrmd:
-        specifier: ^0.0.7
-        version: 0.0.7(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.3)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3)
+        specifier: ^0.0.9
+        version: 0.0.9(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.3)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3)
 
   packages/mobile-editor:
     dependencies:
@@ -3959,8 +3959,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  purrmd@0.0.7:
-    resolution: {integrity: sha512-x8aSY1+HnndpgagUHXKYvaKsBRchF99S6aMftFectpb7bsB0OKMoTCj/euOfkOzAmy7HAGkPkv28OLTuS9LetQ==}
+  purrmd@0.0.9:
+    resolution: {integrity: sha512-WdaOD8FB0vOQuEuTCtzzb5KVBpFYPiLee5DWZYSO1hlE66p1w7nFPqhyclGnlMEIRv8JGi+wKZHP6EJJ2aH5iw==}
     peerDependencies:
       '@codemirror/autocomplete': ^6.18.6
       '@codemirror/commands': ^6.8.1
@@ -7153,7 +7153,7 @@ snapshots:
 
   app-builder-bin@5.0.0-alpha.12: {}
 
-  app-builder-lib@26.0.19(dmg-builder@26.0.19(electron-builder-squirrel-windows@26.0.19))(electron-builder-squirrel-windows@26.0.19(dmg-builder@26.0.19)):
+  app-builder-lib@26.0.19(dmg-builder@26.0.19)(electron-builder-squirrel-windows@26.0.19):
     dependencies:
       '@develar/schema-utils': 2.6.5
       '@electron/asar': 3.4.1
@@ -7683,7 +7683,7 @@ snapshots:
 
   dmg-builder@26.0.19(electron-builder-squirrel-windows@26.0.19):
     dependencies:
-      app-builder-lib: 26.0.19(dmg-builder@26.0.19(electron-builder-squirrel-windows@26.0.19))(electron-builder-squirrel-windows@26.0.19(dmg-builder@26.0.19))
+      app-builder-lib: 26.0.19(dmg-builder@26.0.19)(electron-builder-squirrel-windows@26.0.19)
       builder-util: 26.0.19
       fs-extra: 10.1.0
       iconv-lite: 0.6.3
@@ -7735,7 +7735,7 @@ snapshots:
 
   electron-builder-squirrel-windows@26.0.19(dmg-builder@26.0.19):
     dependencies:
-      app-builder-lib: 26.0.19(dmg-builder@26.0.19(electron-builder-squirrel-windows@26.0.19))(electron-builder-squirrel-windows@26.0.19(dmg-builder@26.0.19))
+      app-builder-lib: 26.0.19(dmg-builder@26.0.19)(electron-builder-squirrel-windows@26.0.19)
       builder-util: 26.0.19
       electron-winstaller: 5.4.0
     transitivePeerDependencies:
@@ -7743,9 +7743,9 @@ snapshots:
       - dmg-builder
       - supports-color
 
-  electron-builder@26.0.19(electron-builder-squirrel-windows@26.0.19(dmg-builder@26.0.19)):
+  electron-builder@26.0.19(electron-builder-squirrel-windows@26.0.19):
     dependencies:
-      app-builder-lib: 26.0.19(dmg-builder@26.0.19(electron-builder-squirrel-windows@26.0.19))(electron-builder-squirrel-windows@26.0.19(dmg-builder@26.0.19))
+      app-builder-lib: 26.0.19(dmg-builder@26.0.19)(electron-builder-squirrel-windows@26.0.19)
       builder-util: 26.0.19
       builder-util-runtime: 9.3.3
       chalk: 4.1.2
@@ -9346,7 +9346,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  purrmd@0.0.7(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.3)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3):
+  purrmd@0.0.9(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.8.1)(@codemirror/highlight@0.19.8)(@codemirror/lang-markdown@6.3.4)(@codemirror/language-data@6.5.1)(@codemirror/language@6.11.3)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)(@lezer/markdown@1.4.3):
     dependencies:
       '@codemirror/autocomplete': 6.18.6
       '@codemirror/commands': 6.8.1
