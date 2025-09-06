@@ -29,7 +29,7 @@ export const setMarkdownAction = (action: string | null) => {
       } else if (action === 'text') {
         commands.setParagraphCommand(view);
       } else if (action === 'blockquote') {
-        commands.setBlockquoteCommand(view);
+        commands.toggleBlockquoteCommand(view);
       } else if (action === 'unorderedList') {
         commands.toggleUnorderedListCommand(view);
       } else if (action === 'orderedList') {
