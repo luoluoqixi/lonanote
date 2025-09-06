@@ -121,6 +121,12 @@ final List<PlatformListGridItem> editorAddActionItems = [
         _getEditorActionIcon(context, EditorAddActionValues.h6),
   ),
   PlatformListGridItem(
+    value: EditorAddActionValues.text.index,
+    title: "正文",
+    getIcon: (context) =>
+        _getEditorActionIcon(context, EditorAddActionValues.text),
+  ),
+  PlatformListGridItem(
     value: EditorAddActionValues.quote.index,
     title: "引用",
     getIcon: (context) =>
@@ -149,6 +155,12 @@ final List<PlatformListGridItem> editorAddActionItems = [
     title: "待办列表",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.taskList),
+  ),
+  PlatformListGridItem(
+    value: EditorAddActionValues.link.index,
+    title: "链接",
+    getIcon: (context) =>
+        _getEditorActionIcon(context, EditorAddActionValues.link),
   ),
   PlatformListGridItem(
     value: EditorAddActionValues.imageBlock.index,
