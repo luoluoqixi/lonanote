@@ -1,6 +1,7 @@
 import { electronAPI } from '@electron-toolkit/preload';
 import { contextBridge } from 'electron';
 
+import { contextMenu } from './contextMenu';
 import { dialog } from './dialog';
 import { invoke } from './invoke';
 import { shell } from './shell';
@@ -14,6 +15,7 @@ export const api = {
   dialog,
   shell,
   system,
+  contextMenu,
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

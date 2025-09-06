@@ -1,4 +1,4 @@
-import { MenuItem, ipcMain as ipc } from 'electron';
+import { ipcMain as ipc } from 'electron';
 
 import { getActiveWin } from '../app';
 

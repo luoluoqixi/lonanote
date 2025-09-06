@@ -19,6 +19,8 @@ export interface ContextMenuItem {
   icon?: ReactNode | undefined;
   separator?: boolean;
   props?: RadixContextMenu.ItemProps;
+
+  children?: ContextMenuItem[];
 }
 
 export interface VirtualEvent {
@@ -77,30 +79,46 @@ export const ContextMenu = forwardRef((props: ContextMenuProps, ref: Ref<Context
     [menuRef],
   );
 
+  const getRenderItem = (m: ContextMenuItem) => {
+    const children = m.children;
+    const hasChildren = children != null && children.length > 0;
+    if (hasChildren) {
+      return (
+        <RadixContextMenu.Sub key={m.id}>
+          <RadixContextMenu.SubTrigger>
+            {m.icon} {m.label}
+          </RadixContextMenu.SubTrigger>
+          <RadixContextMenu.SubContent>
+            {children.map((m) => getRenderItem(m))}
+          </RadixContextMenu.SubContent>
+        </RadixContextMenu.Sub>
+      );
+    }
+    return m.separator ? (
+      <RadixContextMenu.Separator key={m.id} />
+    ) : (
+      <RadixContextMenu.Item
+        key={m.id}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          close();
+          onMenuClick?.(m.id);
+        }}
+        {...m.props}
+      >
+        {m.icon} {m.label}
+      </RadixContextMenu.Item>
+    );
+  };
+
   return (
     <RadixContextMenu.Root onOpenChange={onOpenChange} {...rootProps}>
       <RadixContextMenu.Trigger ref={menuRef} {...triggerProps}>
         {children || <span></span>}
       </RadixContextMenu.Trigger>
       <RadixContextMenu.Content style={{ width: contentWidth }} {...contentProps}>
-        {items.map((m) =>
-          m.separator ? (
-            <RadixContextMenu.Separator key={m.id} />
-          ) : (
-            <RadixContextMenu.Item
-              key={m.id}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                close();
-                onMenuClick?.(m.id);
-              }}
-              {...m.props}
-            >
-              {m.icon} {m.label}
-            </RadixContextMenu.Item>
-          ),
-        )}
+        {items.map((m) => getRenderItem(m))}
       </RadixContextMenu.Content>
     </RadixContextMenu.Root>
   );

@@ -2,6 +2,7 @@ import { app } from 'electron';
 
 import { getActiveWin } from '../app';
 import * as bindings from './bindings';
+import { initContextMenuIPC } from './contextMenu';
 import { initDialogIPC } from './dialog';
 import { initShellIPC } from './shell';
 import { initSystemIPC } from './system';
@@ -109,4 +110,5 @@ export const initBindings = async (ipcMain: Electron.IpcMain) => {
   initShellIPC();
   initDialogIPC();
   initSystemIPC();
+  initContextMenuIPC();
 };
