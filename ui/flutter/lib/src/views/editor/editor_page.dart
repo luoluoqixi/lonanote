@@ -40,7 +40,7 @@ class EditorPage extends ConsumerStatefulWidget {
   ConsumerState<ConsumerStatefulWidget> createState() => _EditorPageState();
 }
 
-class _EditorSelectionData {
+class EditorSelectionData {
   bool isSelectionRange = false;
   bool isBold = false;
   bool isItalic = false;
@@ -88,7 +88,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   _EditorCustomToolbarType _showToolbarType = _EditorCustomToolbarType.none;
 
-  _EditorSelectionData _selectionData = _EditorSelectionData();
+  final EditorSelectionData _selectionData = EditorSelectionData();
 
   Timer? _updateKeyboardEvent;
   bool _canUpdateKeyboard = true;
@@ -989,11 +989,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
       );
     } else if (type == _EditorCustomToolbarType.textStyleToolbar) {
       return EditorTextStyleToolbar(
+        selectionData: _selectionData,
         onAction: (action) {
           if (_isDisposing) return;
           if (!mounted) return;
           if (!_webviewController.isLoaded()) return;
-          _runWebCommand("text_style_action", action);
+          _runWebCommand("set_markdown_action", action);
         },
       );
     } else {

@@ -14,6 +14,28 @@ export const setMarkdownAction = (action: string | null) => {
         commands.toggleHighlightCommand(view);
       } else if (action === 'inlineCode') {
         commands.toggleInlineCodeCommand(view);
+      } else if (action === 'h1') {
+        commands.setHeading1Command(view);
+      } else if (action === 'h2') {
+        commands.setHeading2Command(view);
+      } else if (action === 'h3') {
+        commands.setHeading3Command(view);
+      } else if (action === 'h4') {
+        commands.setHeading4Command(view);
+      } else if (action === 'h5') {
+        commands.setHeading5Command(view);
+      } else if (action === 'h6') {
+        commands.setHeading6Command(view);
+      } else if (action === 'text') {
+        commands.setParagraphCommand(view);
+      } else if (action === 'blockquote') {
+        commands.setBlockquoteCommand(view);
+      } else if (action === 'unorderedList') {
+        commands.toggleUnorderedListCommand(view);
+      } else if (action === 'orderedList') {
+        commands.toggleOrderedListCommand(view);
+      } else if (action === 'taskList') {
+        commands.toggleTaskListCommand(view);
       }
     }
   }

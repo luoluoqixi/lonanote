@@ -30,8 +30,18 @@ class ThemeIcons {
         : Icons.arrow_back_ios_new;
   }
 
+  static IconData blockquote(BuildContext context) {
+    return isMaterial(context) ? Icons.format_quote : Icons.format_quote;
+  }
+
   static IconData bold(BuildContext context) {
     return isMaterial(context) ? Icons.format_bold : Icons.format_bold;
+  }
+
+  static IconData bulletedList(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.format_list_bulleted
+        : Icons.format_list_bulleted;
   }
 
   static IconData check(BuildContext context) {
@@ -119,6 +129,12 @@ class ThemeIcons {
     return isMaterial(context) ? Icons.more_vert : Icons.more_horiz;
   }
 
+  static IconData orderedList(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.format_list_numbered
+        : Icons.format_list_numbered;
+  }
+
   static IconData preview(BuildContext context) {
     return isMaterial(context)
         ? Icons.chrome_reader_mode_outlined
@@ -179,6 +195,12 @@ class ThemeIcons {
 
   static IconData swap(BuildContext context) {
     return isMaterial(context) ? Icons.swap_horiz : Icons.swap_horiz;
+  }
+
+  static IconData taskList(BuildContext context) {
+    return isMaterial(context)
+        ? Icons.check_box_outline_blank
+        : Icons.check_box_outline_blank;
   }
 
   static IconData tune(BuildContext context) {
