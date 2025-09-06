@@ -30,6 +30,10 @@ class ThemeIcons {
         : Icons.arrow_back_ios_new;
   }
 
+  static IconData bold(BuildContext context) {
+    return isMaterial(context) ? Icons.format_bold : Icons.format_bold;
+  }
+
   static IconData check(BuildContext context) {
     return isMaterial(context) ? Icons.check : Icons.check;
   }
@@ -74,8 +78,20 @@ class ThemeIcons {
         : FontAwesomeIcons.folderOpen;
   }
 
+  static IconData highlight(BuildContext context) {
+    return isMaterial(context) ? Icons.highlight_sharp : Icons.highlight_sharp;
+  }
+
   static IconData image(BuildContext context) {
     return isMaterial(context) ? Icons.image : Icons.image;
+  }
+
+  static IconData inlineCode(BuildContext context) {
+    return isMaterial(context) ? Icons.code : Icons.code;
+  }
+
+  static IconData italic(BuildContext context) {
+    return isMaterial(context) ? Icons.format_italic : Icons.format_italic;
   }
 
   static IconData keyboardArrowDown(BuildContext context) {
@@ -155,6 +171,10 @@ class ThemeIcons {
 
   static IconData sortName(BuildContext context) {
     return isMaterial(context) ? Icons.sort_by_alpha : Icons.sort_by_alpha;
+  }
+
+  static IconData strikethrough(BuildContext context) {
+    return isMaterial(context) ? Icons.strikethrough_s : Icons.strikethrough_s;
   }
 
   static IconData swap(BuildContext context) {

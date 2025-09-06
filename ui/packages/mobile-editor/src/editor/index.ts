@@ -1,4 +1,5 @@
 import { EditorView } from '@codemirror/view';
+import { commands } from 'purrmd';
 
 import { config } from '@/config';
 import { callFlutter } from '@/utils/flutter';
@@ -27,6 +28,54 @@ export const getContentJson = () => {
   return content == null ? null : JSON.stringify(content);
 };
 
+const updateSelectionState = () => {
+  const editor = window.editor?.editor;
+  if (!editor) return;
+  try {
+    const state = editor.state;
+    const selection = state.selection.main;
+    const isSelectionRange = selection.from === selection.to;
+    const isBold = commands.isStrong(state);
+    const isItalic = commands.isItalic(state);
+    const isStrikethrough = commands.isStrikethrough(state);
+    const isHighlight = commands.isHighlight(state);
+    const isInlineCode = commands.isInlineCode(state);
+
+    const isHeading1 = commands.isHeading1(state);
+    const isHeading2 = commands.isHeading2(state);
+    const isHeading3 = commands.isHeading3(state);
+    const isHeading4 = commands.isHeading4(state);
+    const isHeading5 = commands.isHeading5(state);
+    const isHeading6 = commands.isHeading6(state);
+    const isUnorderedList = commands.isUnorderedList(state);
+    const isOrderedList = commands.isOrderedList(state);
+    const isTaskList = commands.isTaskList(state);
+    const isBlockquote = commands.isBlockquote(state);
+
+    callFlutter('update_selection', {
+      isSelectionRange,
+      isBold,
+      isItalic,
+      isStrikethrough,
+      isHighlight,
+      isInlineCode,
+
+      isHeading1,
+      isHeading2,
+      isHeading3,
+      isHeading4,
+      isHeading5,
+      isHeading6,
+      isUnorderedList,
+      isOrderedList,
+      isTaskList,
+      isBlockquote,
+    });
+  } catch (e) {
+    console.error(`update_selection error: ${e}`);
+  }
+};
+
 export const onUpdateState = (state?: {
   charCount?: number;
   rowIndex?: number;
@@ -34,6 +83,7 @@ export const onUpdateState = (state?: {
 }) => {
   callFlutter('update_state', state);
   autoSaveUpdate(getContent);
+  updateSelectionState();
 };
 
 const bodyClick = (e: MouseEvent) => {

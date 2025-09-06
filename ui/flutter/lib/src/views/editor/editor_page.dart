@@ -40,6 +40,26 @@ class EditorPage extends ConsumerStatefulWidget {
   ConsumerState<ConsumerStatefulWidget> createState() => _EditorPageState();
 }
 
+class _EditorSelectionData {
+  bool isSelectionRange = false;
+  bool isBold = false;
+  bool isItalic = false;
+  bool isStrikethrough = false;
+  bool isHighlight = false;
+  bool isInlineCode = false;
+
+  bool isHeading1 = false;
+  bool isHeading2 = false;
+  bool isHeading3 = false;
+  bool isHeading4 = false;
+  bool isHeading5 = false;
+  bool isHeading6 = false;
+  bool isUnorderedList = false;
+  bool isOrderedList = false;
+  bool isTaskList = false;
+  bool isBlockquote = false;
+}
+
 class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
   final CustomWebviewController _webviewController = CustomWebviewController();
@@ -67,6 +87,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
   String fileContent = "";
 
   _EditorCustomToolbarType _showToolbarType = _EditorCustomToolbarType.none;
+
+  _EditorSelectionData _selectionData = _EditorSelectionData();
 
   Timer? _updateKeyboardEvent;
   bool _canUpdateKeyboard = true;
@@ -281,6 +303,19 @@ class _EditorPageState extends ConsumerState<EditorPage>
       },
     );
     _webviewController.addJavaScriptHandler(
+      'update_selection',
+      (dynamic argument) {
+        // logger.i("update_selection: $argument");
+        if (argument != null) {
+          final data = argument;
+          if (data != null) {
+            final state = jsonDecode(data) as Map<String, dynamic>?;
+            _updateSelectionData(state);
+          }
+        }
+      },
+    );
+    _webviewController.addJavaScriptHandler(
       'save_file',
       (dynamic argument) {
         if (argument != null) {
@@ -420,6 +455,102 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _canUndo = canUndo ?? false;
       _canRedo = canRedo ?? false;
     });
+  }
+
+  void _updateSelectionData(Map<String, dynamic>? state) async {
+    if (_isDisposing) return;
+    if (!_webviewController.isLoaded()) return;
+    if (!mounted) return;
+    if (state == null) return;
+
+    final isSelectionRange = state['isSelectionRange'] == true;
+    final isBold = state['isBold'] == true;
+    final isItalic = state['isItalic'] == true;
+    final isStrikethrough = state['isStrikethrough'] == true;
+    final isHighlight = state['isHighlight'] == true;
+    final isInlineCode = state['isInlineCode'] == true;
+
+    final isHeading1 = state['isHeading1'] == true;
+    final isHeading2 = state['isHeading2'] == true;
+    final isHeading3 = state['isHeading3'] == true;
+    final isHeading4 = state['isHeading4'] == true;
+    final isHeading5 = state['isHeading5'] == true;
+    final isHeading6 = state['isHeading6'] == true;
+    final isUnorderedList = state['isUnorderedList'] == true;
+    final isOrderedList = state['isOrderedList'] == true;
+    final isTaskList = state['isTaskList'] == true;
+    final isBlockquote = state['isBlockquote'] == true;
+
+    bool needUpdate = false;
+
+    if (isSelectionRange != _selectionData.isSelectionRange) {
+      _selectionData.isSelectionRange = isSelectionRange;
+      needUpdate = true;
+    }
+    if (isBold != _selectionData.isBold) {
+      _selectionData.isBold = isBold;
+      needUpdate = true;
+    }
+    if (isItalic != _selectionData.isItalic) {
+      _selectionData.isItalic = isItalic;
+      needUpdate = true;
+    }
+    if (isStrikethrough != _selectionData.isStrikethrough) {
+      _selectionData.isStrikethrough = isStrikethrough;
+      needUpdate = true;
+    }
+    if (isHighlight != _selectionData.isHighlight) {
+      _selectionData.isHighlight = isHighlight;
+      needUpdate = true;
+    }
+    if (isInlineCode != _selectionData.isInlineCode) {
+      _selectionData.isInlineCode = isInlineCode;
+      needUpdate = true;
+    }
+    if (isHeading1 != _selectionData.isHeading1) {
+      _selectionData.isHeading1 = isHeading1;
+      needUpdate = true;
+    }
+    if (isHeading2 != _selectionData.isHeading2) {
+      _selectionData.isHeading2 = isHeading2;
+      needUpdate = true;
+    }
+    if (isHeading3 != _selectionData.isHeading3) {
+      _selectionData.isHeading3 = isHeading3;
+      needUpdate = true;
+    }
+    if (isHeading4 != _selectionData.isHeading4) {
+      _selectionData.isHeading4 = isHeading4;
+      needUpdate = true;
+    }
+    if (isHeading5 != _selectionData.isHeading5) {
+      _selectionData.isHeading5 = isHeading5;
+      needUpdate = true;
+    }
+    if (isHeading6 != _selectionData.isHeading6) {
+      _selectionData.isHeading6 = isHeading6;
+      needUpdate = true;
+    }
+    if (isUnorderedList != _selectionData.isUnorderedList) {
+      _selectionData.isUnorderedList = isUnorderedList;
+      needUpdate = true;
+    }
+    if (isOrderedList != _selectionData.isOrderedList) {
+      _selectionData.isOrderedList = isOrderedList;
+      needUpdate = true;
+    }
+    if (isTaskList != _selectionData.isTaskList) {
+      _selectionData.isTaskList = isTaskList;
+      needUpdate = true;
+    }
+    if (isBlockquote != _selectionData.isBlockquote) {
+      _selectionData.isBlockquote = isBlockquote;
+      needUpdate = true;
+    }
+
+    if (needUpdate) {
+      setState(() {});
+    }
   }
 
   void _undo() async {
@@ -705,6 +836,31 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
   }
 
+  void _onToolbarActionBold() {
+    HapticFeedback.mediumImpact();
+    _runWebCommand("set_markdown_action", "bold");
+  }
+
+  void _onToolbarActionItalic() {
+    HapticFeedback.mediumImpact();
+    _runWebCommand("set_markdown_action", "italic");
+  }
+
+  void _onToolbarActionStrikethrough() {
+    HapticFeedback.mediumImpact();
+    _runWebCommand("set_markdown_action", "strikethrough");
+  }
+
+  void _onToolbarActionHighlight() {
+    HapticFeedback.mediumImpact();
+    _runWebCommand("set_markdown_action", "highlight");
+  }
+
+  void _onToolbarActionInlineCode() {
+    HapticFeedback.mediumImpact();
+    _runWebCommand("set_markdown_action", "inlineCode");
+  }
+
   List<Widget> _buildTitleActions(ColorScheme colorScheme) {
     final theme = AppTheme.getPullDownMenuRouteThemeNoAlpha(context);
     return [
@@ -849,12 +1005,13 @@ class _EditorPageState extends ConsumerState<EditorPage>
     required Widget icon,
     VoidCallback? onPressed,
     _EditorCustomToolbarType? type,
+    bool? isSelect,
     String? tooltip,
   }) {
     final colorScheme = ThemeColors.getColorScheme(context);
     final selectBgColor = ThemeColors.getBg1Color(colorScheme);
     final textColor = ThemeColors.getTextColor(colorScheme);
-    final isSelect = type != null && _showToolbarType == type;
+    final select = isSelect ?? type != null && _showToolbarType == type;
     return IconButton(
       icon: icon,
       style: IconButton.styleFrom(
@@ -862,7 +1019,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
           borderRadius: BorderRadius.circular(10.0),
         ),
         highlightColor: Colors.transparent,
-        backgroundColor: isSelect ? selectBgColor : null,
+        backgroundColor: select ? selectBgColor : null,
         foregroundColor: textColor,
       ),
       onPressed: onPressed,
@@ -896,28 +1053,61 @@ class _EditorPageState extends ConsumerState<EditorPage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          _buildToolbarIconButton(
-                            icon: Icon(ThemeIcons.add(context)),
-                            type: _EditorCustomToolbarType.addToolbar,
-                            onPressed: _onToolbarActionAdd,
-                          ),
-                          _buildToolbarIconButton(
-                            icon: FittedBox(
-                              child: Text(
-                                "Aa",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width - 180,
+                        ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              _buildToolbarIconButton(
+                                icon: Icon(ThemeIcons.add(context)),
+                                type: _EditorCustomToolbarType.addToolbar,
+                                onPressed: _onToolbarActionAdd,
                               ),
-                            ),
-                            type: _EditorCustomToolbarType.textStyleToolbar,
-                            onPressed: _onToolbarActionTextStyle,
+                              _buildToolbarIconButton(
+                                icon: FittedBox(
+                                  child: Text(
+                                    "Aa",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                type: _EditorCustomToolbarType.textStyleToolbar,
+                                onPressed: _onToolbarActionTextStyle,
+                              ),
+                              _buildToolbarIconButton(
+                                icon: Icon(ThemeIcons.bold(context)),
+                                isSelect: _selectionData.isBold,
+                                onPressed: _onToolbarActionBold,
+                              ),
+                              _buildToolbarIconButton(
+                                icon: Icon(ThemeIcons.italic(context)),
+                                isSelect: _selectionData.isItalic,
+                                onPressed: _onToolbarActionItalic,
+                              ),
+                              _buildToolbarIconButton(
+                                icon: Icon(ThemeIcons.strikethrough(context)),
+                                isSelect: _selectionData.isStrikethrough,
+                                onPressed: _onToolbarActionStrikethrough,
+                              ),
+                              _buildToolbarIconButton(
+                                icon: Icon(ThemeIcons.highlight(context)),
+                                isSelect: _selectionData.isHighlight,
+                                onPressed: _onToolbarActionHighlight,
+                              ),
+                              _buildToolbarIconButton(
+                                icon: Icon(ThemeIcons.inlineCode(context)),
+                                isSelect: _selectionData.isInlineCode,
+                                onPressed: _onToolbarActionInlineCode,
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -936,7 +1126,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
                             indent: 8,
                             endIndent: 8,
                             thickness: 1,
-                            width: 20,
+                            width: 10,
                             color: Colors.grey.withAlpha(100),
                           ),
                           _buildToolbarIconButton(

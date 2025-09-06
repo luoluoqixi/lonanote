@@ -2,6 +2,7 @@ import { addMarkdownAction } from './addMarkdownAction';
 import { changePreviewMode } from './changePreviewMode';
 import { changeSourceMode } from './changeSourceMode';
 import { reinitEditor } from './reinitEditor';
+import { setMarkdownAction } from './setMarkdownAction';
 import { canRedo, canUndo, redo, undo } from './undoRedo';
 
 // import { restoreCursorSelection, saveCursorSelection } from './cursorSelection';
@@ -23,6 +24,8 @@ export const invokeCommand = (command: string, data: any): any => {
     redo();
   } else if (command === 'add_markdown_action') {
     addMarkdownAction(data);
+  } else if (command === 'set_markdown_action') {
+    setMarkdownAction(data);
   } else {
     console.log('command::', command, data);
   }
