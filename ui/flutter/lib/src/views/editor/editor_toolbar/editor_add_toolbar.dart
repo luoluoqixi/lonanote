@@ -4,13 +4,14 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/widgets/platform_list_grid.dart';
 
 enum EditorAddActionValues {
-  text,
   h1,
   h2,
   h3,
   h4,
   h5,
   h6,
+
+  text,
 
   quote,
   divider,
@@ -19,11 +20,10 @@ enum EditorAddActionValues {
   orderedList,
   taskList,
 
+  link,
   imageBlock,
-  imageInline,
   codeBlock,
   table,
-  math,
 }
 
 Widget _getEditorActionIcon(BuildContext context, EditorAddActionValues value) {
@@ -32,9 +32,6 @@ Widget _getEditorActionIcon(BuildContext context, EditorAddActionValues value) {
   final width = 36.0;
   final height = 36.0;
   switch (value) {
-    case EditorAddActionValues.text:
-      return EditorActionIcons.text(
-          color: iconColor, width: width, height: height);
     case EditorAddActionValues.h1:
       return EditorActionIcons.h1(
           color: iconColor, width: width, height: height);
@@ -53,6 +50,9 @@ Widget _getEditorActionIcon(BuildContext context, EditorAddActionValues value) {
     case EditorAddActionValues.h6:
       return EditorActionIcons.h6(
           color: iconColor, width: width, height: height);
+    case EditorAddActionValues.text:
+      return EditorActionIcons.text(
+          color: iconColor, width: width, height: height);
     case EditorAddActionValues.quote:
       return EditorActionIcons.quote(
           color: iconColor, width: width, height: height);
@@ -68,11 +68,11 @@ Widget _getEditorActionIcon(BuildContext context, EditorAddActionValues value) {
     case EditorAddActionValues.taskList:
       return EditorActionIcons.taskList(
           color: iconColor, width: width, height: height);
+    case EditorAddActionValues.link:
+      return EditorActionIcons.link(
+          color: iconColor, width: width, height: height);
     case EditorAddActionValues.imageBlock:
       return EditorActionIcons.imageBlock(
-          color: iconColor, width: width, height: height);
-    case EditorAddActionValues.imageInline:
-      return EditorActionIcons.imageInline(
           color: iconColor, width: width, height: height);
     case EditorAddActionValues.codeBlock:
       return EditorActionIcons.codeBlock(
@@ -80,19 +80,10 @@ Widget _getEditorActionIcon(BuildContext context, EditorAddActionValues value) {
     case EditorAddActionValues.table:
       return EditorActionIcons.table(
           color: iconColor, width: width, height: height);
-    case EditorAddActionValues.math:
-      return EditorActionIcons.math(
-          color: iconColor, width: width, height: height);
   }
 }
 
 final List<PlatformListGridItem> editorAddActionItems = [
-  PlatformListGridItem(
-    value: EditorAddActionValues.text.index,
-    title: "文本",
-    getIcon: (context) =>
-        _getEditorActionIcon(context, EditorAddActionValues.text),
-  ),
   PlatformListGridItem(
     value: EditorAddActionValues.h1.index,
     title: "一级标题",
@@ -166,12 +157,6 @@ final List<PlatformListGridItem> editorAddActionItems = [
         _getEditorActionIcon(context, EditorAddActionValues.imageBlock),
   ),
   PlatformListGridItem(
-    value: EditorAddActionValues.imageInline.index,
-    title: "图片链接",
-    getIcon: (context) =>
-        _getEditorActionIcon(context, EditorAddActionValues.imageInline),
-  ),
-  PlatformListGridItem(
     value: EditorAddActionValues.codeBlock.index,
     title: "代码块",
     getIcon: (context) =>
@@ -182,12 +167,6 @@ final List<PlatformListGridItem> editorAddActionItems = [
     title: "表格",
     getIcon: (context) =>
         _getEditorActionIcon(context, EditorAddActionValues.table),
-  ),
-  PlatformListGridItem(
-    value: EditorAddActionValues.math.index,
-    title: "数学公式",
-    getIcon: (context) =>
-        _getEditorActionIcon(context, EditorAddActionValues.math),
   ),
 ];
 
@@ -203,7 +182,7 @@ class EditorAddToolbar extends StatelessWidget {
     if (screenWidth > 1200) return 8; // 超大屏幕
     if (screenWidth > 900) return 6; // 大屏幕/横屏
     if (screenWidth > 600) return 5; // 中等屏幕
-    return 4; // 默认/竖屏
+    return 2; // 默认/竖屏
   }
 
   @override
@@ -220,6 +199,8 @@ class EditorAddToolbar extends StatelessWidget {
       galleryRowCount: rowCount,
       galleryCrossAxisSpacing: 14,
       galleryMainAxisSpacing: 14,
+      galleryChildAspectRatio: 3,
+      galleryIsHorizontal: true,
     );
   }
 }

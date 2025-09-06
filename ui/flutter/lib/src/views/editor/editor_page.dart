@@ -828,6 +828,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
           if (!mounted) return;
           if (!_webviewController.isLoaded()) return;
           _runWebCommand("add_markdown_action", action);
+          _hideCustomToolbar(true);
         },
       );
     } else if (type == _EditorCustomToolbarType.textStyleToolbar) {

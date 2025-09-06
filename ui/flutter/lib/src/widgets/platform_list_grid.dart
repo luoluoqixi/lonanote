@@ -27,6 +27,9 @@ class PlatformListGrid extends StatelessWidget {
   final double? galleryMainAxisSpacing;
   final Color? galleryBgColor;
   final BorderRadius? galleryBorderRadius;
+  final double? galleryChildAspectRatio;
+  final bool? galleryIsHorizontal;
+  final MainAxisAlignment? galleryMainAxisAlignment;
 
   final EdgeInsetsGeometry? padding;
   final double? iconSize;
@@ -46,6 +49,9 @@ class PlatformListGrid extends StatelessWidget {
     this.galleryMainAxisSpacing,
     this.galleryBgColor,
     this.galleryBorderRadius,
+    this.galleryChildAspectRatio,
+    this.galleryIsHorizontal,
+    this.galleryMainAxisAlignment,
     this.padding,
     this.iconSize,
     this.tileBgColor,
@@ -101,7 +107,7 @@ class PlatformListGrid extends StatelessWidget {
             crossAxisCount: galleryRowCount ?? 3,
             crossAxisSpacing: galleryCrossAxisSpacing ?? 12,
             mainAxisSpacing: galleryMainAxisSpacing ?? 12,
-            childAspectRatio: 1.0,
+            childAspectRatio: galleryChildAspectRatio ?? 1.0,
             children: items
                 .map((item) => _PlatformListGridGalleryItem(
                       item: item,
@@ -110,6 +116,8 @@ class PlatformListGrid extends StatelessWidget {
                       tileTextColor: tileTextColor,
                       iconSize: iconSize,
                       borderRadius: galleryBorderRadius,
+                      isHorizontal: galleryIsHorizontal,
+                      mainAxisAlignment: galleryMainAxisAlignment,
                     ))
                 .toList(),
           )
@@ -127,6 +135,8 @@ class _PlatformListGridGalleryItem extends StatefulWidget {
   final Color? tileTextColor;
   final double? iconSize;
   final BorderRadius? borderRadius;
+  final bool? isHorizontal;
+  final MainAxisAlignment? mainAxisAlignment;
 
   const _PlatformListGridGalleryItem({
     required this.item,
@@ -135,6 +145,8 @@ class _PlatformListGridGalleryItem extends StatefulWidget {
     this.tileTextColor,
     this.iconSize,
     this.borderRadius,
+    this.isHorizontal,
+    this.mainAxisAlignment,
   });
 
   @override
@@ -156,6 +168,30 @@ class _PlatformListGridGalleryItemState
         ? Icon(widget.item.icon, size: widget.iconSize ?? 24, color: iconColor)
         : widget.item.getIcon?.call(context);
     final border = widget.borderRadius ?? BorderRadius.circular(22.0);
+    final isHorizontal = widget.isHorizontal == true;
+    final child = [
+      if (iconWidget != null) ...[
+        iconWidget,
+        SizedBox(
+          width: isHorizontal ? 2 : 0,
+          height: isHorizontal ? 0 : 2,
+        ),
+      ],
+      DefaultTextStyle(
+        style: const TextStyle(),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            widget.item.title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: textColor,
+            ),
+          ),
+        ),
+      ),
+    ];
 
     return ClipRRect(
       borderRadius: border,
@@ -168,29 +204,17 @@ class _PlatformListGridGalleryItemState
                 ThemeColors.getPrimaryColor(colorScheme).withAlpha(100),
             borderRadius: border,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (iconWidget != null) ...[
-                iconWidget,
-                const SizedBox(height: 2),
-              ],
-              DefaultTextStyle(
-                style: const TextStyle(),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    widget.item.title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: textColor,
-                    ),
-                  ),
+          child: isHorizontal
+              ? Row(
+                  mainAxisAlignment:
+                      widget.mainAxisAlignment ?? MainAxisAlignment.center,
+                  children: child,
+                )
+              : Column(
+                  mainAxisAlignment:
+                      widget.mainAxisAlignment ?? MainAxisAlignment.center,
+                  children: child,
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );

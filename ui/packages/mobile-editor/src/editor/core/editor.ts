@@ -47,6 +47,7 @@ export const create = (
             },
           },
         },
+        defaultSlashMenu: { show: false },
       },
     });
 

@@ -179,6 +179,19 @@ class EditorActionIcons {
     );
   }
 
+  static SvgPicture link({
+    Color color = defaultColor,
+    double width = defaultWidth,
+    double height = defaultHeight,
+  }) {
+    return _getIcon(
+      'link.svg',
+      color,
+      width,
+      height,
+    );
+  }
+
   static SvgPicture imageBlock({
     Color color = defaultColor,
     double width = defaultWidth,
