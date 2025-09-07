@@ -61,6 +61,11 @@ export const create = (
               return url;
             },
           },
+          List: {
+            onTaskItemChecked(checked) {
+              callFlutter('on_task_item_checked', checked);
+            },
+          },
         },
         defaultSlashMenu: { show: false },
       },

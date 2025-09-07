@@ -369,10 +369,27 @@ class _EditorPageState extends ConsumerState<EditorPage>
     //     }
     //   },
     // );
+
+    _webviewController.addJavaScriptHandler(
+      'on_task_item_checked',
+      (dynamic argument) {
+        if (argument != null) {
+          final data = argument;
+          if (data != null) {
+            final checked = jsonDecode(data) as bool?;
+            _onTaskItemChecked(checked);
+          }
+        }
+      },
+    );
   }
 
   void _onClickPreviewLink(String? url) async {
     _openUrl(url);
+  }
+
+  void _onTaskItemChecked(bool? checked) async {
+    HapticFeedback.mediumImpact();
   }
 
   void _openUrl(String? url) {
