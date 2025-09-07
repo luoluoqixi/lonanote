@@ -40,9 +40,10 @@ class CustomAnyPathHandler extends CustomPathHandler {
 class CustomWebviewInApp extends StatefulWidget {
   final CustomWebviewController controller;
 
-  final String? assetDomain;
-  final String? assetPrefix;
-  final String? assetDirectory;
+  final bool? assetAndroidHandlerEnable;
+  final String? assetAndroidDomain;
+  final String? assetAndroidPrefix;
+  final String? assetAndroidDirectory;
   final String? assetScheme;
 
   final void Function()? onWebviewCreate;
@@ -55,9 +56,10 @@ class CustomWebviewInApp extends StatefulWidget {
     this.onWebviewCreate,
     this.onLoadFinish,
     this.onScrollChanged,
-    this.assetDomain,
-    this.assetPrefix,
-    this.assetDirectory,
+    this.assetAndroidHandlerEnable,
+    this.assetAndroidDomain,
+    this.assetAndroidPrefix,
+    this.assetAndroidDirectory,
     this.assetScheme,
   });
 
@@ -72,7 +74,6 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
   bool _webViewLoaded = false;
 
   late final String assetScheme;
-  late final String assetDirectory;
 
   static final InAppWebViewSettings _webviewSettings = InAppWebViewSettings(
     isInspectable: kDebugMode,
@@ -118,9 +119,10 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     widget.controller.bindRequestFocus(_requestFocus);
     widget.controller.bindDispose(_dispose);
     assetScheme = widget.assetScheme ?? "assets";
-    assetDirectory = widget.assetDirectory ?? RustPath.getHomeDir();
     _webviewSettings.resourceCustomSchemes = [assetScheme];
-    if (Platform.isAndroid) createAssetLoader();
+    if (Platform.isAndroid && widget.assetAndroidHandlerEnable == true) {
+      createAssetLoader();
+    }
   }
 
   void _dispose() {
@@ -130,14 +132,16 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
   }
 
   void createAssetLoader() async {
+    final assetDirectory =
+        widget.assetAndroidDirectory ?? RustPath.getHomeDir();
     _webviewSettings.webViewAssetLoader = WebViewAssetLoader(
       pathHandlers: [
         CustomAnyPathHandler(
-          path: widget.assetPrefix ?? "/files/",
+          path: widget.assetAndroidPrefix ?? "/files/",
           directory: assetDirectory,
         ),
       ],
-      domain: widget.assetDomain ?? "appassets.androidplatform.net",
+      domain: widget.assetAndroidDomain ?? "appassets.androidplatform.net",
       httpAllowed: true,
     );
   }

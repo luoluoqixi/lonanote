@@ -65,8 +65,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
   final CustomWebviewController _webviewController = CustomWebviewController();
 
-  static String assetsDomain = "lonanoteappassets.androidplatform.net";
-  static String assetsPrefix = "/files/";
   static String assetScheme = "assets";
 
   bool _previewMode = false;
@@ -753,13 +751,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
     if (_webviewController.isLoaded()) {
       var basePath = "";
-      if (Platform.isAndroid) {
-        final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
-        basePath = "https://$assetsDomain$assetsPrefix$wsName";
-      } else {
-        final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
-        basePath = "$assetScheme://$wsPath";
-      }
+      // if (Platform.isAndroid) {
+      //   final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
+      //   basePath = "https://$assetsDomain$assetsPrefix$wsName";
+      // } else {
+      //   final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
+      //   basePath = "$assetScheme://$wsPath";
+      // }
+      final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
+      basePath = "$assetScheme://$wsPath";
       await _webviewController.executeJavaScript(
         'window.setBasePath(${jsonEncode(basePath)})',
       );
@@ -978,8 +978,6 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
     return CustomWebviewInApp(
       controller: _webviewController,
-      assetDomain: assetsDomain,
-      assetPrefix: assetsPrefix,
       assetScheme: assetScheme,
       onWebviewCreate: () {
         _bindMessageReceived();
