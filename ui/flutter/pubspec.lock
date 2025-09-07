@@ -336,7 +336,7 @@ packages:
     description:
       path: flutter_inappwebview
       ref: master
-      resolved-ref: "419fbf8762859541cda90dd7958da953d00557fc"
+      resolved-ref: "105756c32853901695eead6e30b2ee681940e5f8"
       url: "https://github.com/luoluoqixi/flutter_inappwebview.git"
     source: git
     version: "6.2.0-beta.3"
@@ -345,7 +345,7 @@ packages:
     description:
       path: flutter_inappwebview_android
       ref: master
-      resolved-ref: "419fbf8762859541cda90dd7958da953d00557fc"
+      resolved-ref: "105756c32853901695eead6e30b2ee681940e5f8"
       url: "https://github.com/luoluoqixi/flutter_inappwebview.git"
     source: git
     version: "1.2.0-beta.3"
@@ -362,7 +362,7 @@ packages:
     description:
       path: flutter_inappwebview_ios
       ref: master
-      resolved-ref: "419fbf8762859541cda90dd7958da953d00557fc"
+      resolved-ref: "105756c32853901695eead6e30b2ee681940e5f8"
       url: "https://github.com/luoluoqixi/flutter_inappwebview.git"
     source: git
     version: "1.2.0-beta.3"
@@ -371,7 +371,7 @@ packages:
     description:
       path: flutter_inappwebview_macos
       ref: master
-      resolved-ref: "419fbf8762859541cda90dd7958da953d00557fc"
+      resolved-ref: "105756c32853901695eead6e30b2ee681940e5f8"
       url: "https://github.com/luoluoqixi/flutter_inappwebview.git"
     source: git
     version: "1.2.0-beta.3"
@@ -380,7 +380,7 @@ packages:
     description:
       path: flutter_inappwebview_platform_interface
       ref: master
-      resolved-ref: "419fbf8762859541cda90dd7958da953d00557fc"
+      resolved-ref: "105756c32853901695eead6e30b2ee681940e5f8"
       url: "https://github.com/luoluoqixi/flutter_inappwebview.git"
     source: git
     version: "1.4.0-beta.3"
@@ -389,7 +389,7 @@ packages:
     description:
       path: flutter_inappwebview_web
       ref: master
-      resolved-ref: "419fbf8762859541cda90dd7958da953d00557fc"
+      resolved-ref: "105756c32853901695eead6e30b2ee681940e5f8"
       url: "https://github.com/luoluoqixi/flutter_inappwebview.git"
     source: git
     version: "1.2.0-beta.3"
@@ -398,7 +398,7 @@ packages:
     description:
       path: flutter_inappwebview_windows
       ref: master
-      resolved-ref: "419fbf8762859541cda90dd7958da953d00557fc"
+      resolved-ref: "105756c32853901695eead6e30b2ee681940e5f8"
       url: "https://github.com/luoluoqixi/flutter_inappwebview.git"
     source: git
     version: "0.7.0-beta.3"
