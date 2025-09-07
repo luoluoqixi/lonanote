@@ -4,11 +4,44 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:lonanote/src/bindings/api/fs/fs.dart';
+import 'package:lonanote/src/bindings/api/path/path.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/widgets/custom_webview.dart';
+import 'package:mime/mime.dart';
+
+class CustomAnyPathHandler extends CustomPathHandler {
+  final String directory;
+
+  CustomAnyPathHandler({required super.path, required this.directory});
+
+  @override
+  Future<WebResourceResponse?> handle(String path) async {
+    try {
+      final fullPath = "$directory/$path";
+      // logger.i("CustomAnyPathHandler handle: $fullPath");
+      if (RustFs.exists(fullPath)) {
+        final data = RustFs.readBinary(fullPath);
+        return WebResourceResponse(
+          contentType: lookupMimeType(path),
+          data: Uint8List.fromList(data),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        logger.e(e);
+      }
+    }
+    return WebResourceResponse(data: null);
+  }
+}
 
 class CustomWebviewInApp extends StatefulWidget {
   final CustomWebviewController controller;
+
+  final String? assetDomain;
+  final String? assetPrefix;
+  final String? assetDirectory;
 
   final void Function()? onWebviewCreate;
   final void Function()? onLoadFinish;
@@ -20,6 +53,9 @@ class CustomWebviewInApp extends StatefulWidget {
     this.onWebviewCreate,
     this.onLoadFinish,
     this.onScrollChanged,
+    this.assetDomain,
+    this.assetPrefix,
+    this.assetDirectory,
   });
 
   @override
@@ -51,6 +87,12 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     horizontalScrollBarEnabled: false,
     transparentBackground: true,
     overScrollMode: OverScrollMode.ALWAYS,
+    allowFileAccess: false,
+    allowFileAccessFromFileURLs: false,
+    allowUniversalAccessFromFileURLs: false,
+    allowContentAccess: false,
+    domStorageEnabled: true,
+    databaseEnabled: true,
   );
 
   @override
@@ -69,12 +111,27 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     widget.controller.bindClearFocus(_clearFocus);
     widget.controller.bindRequestFocus(_requestFocus);
     widget.controller.bindDispose(_dispose);
+    createAssetLoader();
   }
 
   void _dispose() {
     _controller?.dispose();
     _controller = null;
     _webViewLoaded = false;
+  }
+
+  void createAssetLoader() async {
+    final docDir = RustPath.getHomeDir();
+    _webviewSettings.webViewAssetLoader = WebViewAssetLoader(
+      pathHandlers: [
+        CustomAnyPathHandler(
+          path: widget.assetPrefix ?? "/files/",
+          directory: widget.assetDirectory ?? docDir,
+        ),
+      ],
+      domain: widget.assetDomain ?? "appassets.androidplatform.net",
+      httpAllowed: true,
+    );
   }
 
   Future<dynamic>? _executeJavaScript(String code, bool hasResult) async {

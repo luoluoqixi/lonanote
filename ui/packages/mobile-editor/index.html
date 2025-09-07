@@ -44,6 +44,10 @@
           }
         }
       };
+      window.setBasePath = (basePath) => {
+        // console.log('basePath: ', basePath);
+        window.basePath = basePath;
+      };
 
       (() => {
         if (/android/i.test(navigator.userAgent)) {

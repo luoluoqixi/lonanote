@@ -48,8 +48,13 @@ export const create = (
           },
           Image: {
             NoImageAvailableLabel: '没有图片',
-            ImageLoadFailedLabel: (url) => `图片加载失败: ${url}`,
+            ImageLoadFailedLabel: (url) => {
+              return `图片加载失败: ${url}`;
+            },
             proxyURL(url) {
+              if (window.basePath) {
+                return `${window.basePath}/${url}`;
+              }
               return url;
             },
           },

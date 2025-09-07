@@ -49,4 +49,7 @@ interface Window {
   autoSave?: boolean;
   /** 失去焦点自动保存 */
   autoSaveFocusChange?: boolean;
+
+  /** 基础路径 */
+  basePath?: string | null;
 }

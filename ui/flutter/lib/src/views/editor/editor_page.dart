@@ -64,6 +64,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
   final CustomWebviewController _webviewController = CustomWebviewController();
 
+  static String assetsDomain = "lonanoteappassets.androidplatform.net";
+  static String assetsPrefix = "/files/";
+
   bool _previewMode = false;
   late bool _sourceMode;
   late bool _isMarkdown;
@@ -737,6 +740,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
     // await _controller.setBackgroundColor(Colors.transparent);
 
     if (_webviewController.isLoaded()) {
+      final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
+      final basePath = "https://$assetsDomain$assetsPrefix$wsName";
+      await _webviewController.executeJavaScript(
+        'window.setBasePath(${jsonEncode(basePath)})',
+      );
+
       final s = ref.read(settingsProvider.select((s) => s.settings));
       if (s != null) {
         final autoSave = s.autoSave;
@@ -951,6 +960,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     }
     return CustomWebviewInApp(
       controller: _webviewController,
+      assetDomain: assetsDomain,
+      assetPrefix: assetsPrefix,
       onWebviewCreate: () {
         _bindMessageReceived();
         _loadFileContent().then((_) {

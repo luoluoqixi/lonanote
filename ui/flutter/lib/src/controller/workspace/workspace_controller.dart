@@ -128,6 +128,14 @@ class WorkspaceController {
     return null;
   }
 
+  static String? getCurrentWorkspaceName(WidgetRef ref) {
+    final ws = ref.read(workspaceProvider.select((w) => w.currentWorkspace));
+    if (ws != null) {
+      return ws.metadata.name;
+    }
+    return null;
+  }
+
   static void createFolder(
     WidgetRef ref,
     String folderPath,
