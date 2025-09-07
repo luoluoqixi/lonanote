@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lonanote/src/bindings/api/fs/fs.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
@@ -377,7 +378,17 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _openUrl(String? url) {
     if (url != null) {
-      Utility.openUrl(url);
+      if (Utility.isImgUrl(url)) {
+        Utility.openUrl(url);
+      } else {
+        final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
+        final filePath = "$wsPath/$url";
+        if (RustFs.exists(filePath)) {
+          AppRouter.openFile(context, filePath, url);
+        } else {
+          logger.e("file notfound: $filePath");
+        }
+      }
     }
   }
 

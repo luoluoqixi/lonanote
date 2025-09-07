@@ -97,6 +97,12 @@ const supportVideoExts = [
 ];
 
 class Utility {
+  static bool isImgUrl(String url) {
+    return url.startsWith("http://") ||
+        url.startsWith("https://") ||
+        url.startsWith("data:image");
+  }
+
   static Future<void> openUrl(String url) async {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
@@ -107,6 +113,12 @@ class Utility {
     final index = fileName.lastIndexOf(".");
     if (index < 0) return null;
     return fileName.substring(index + 1).toLowerCase();
+  }
+
+  static String getBasePath(String path) {
+    final index = path.lastIndexOf("/");
+    if (index < 0) return path;
+    return path.substring(0, index);
   }
 
   static String getFileName(String path) {

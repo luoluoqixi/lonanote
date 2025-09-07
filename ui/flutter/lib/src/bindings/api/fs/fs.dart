@@ -72,6 +72,24 @@ class RustFs {
         value: {"imageUrl": imageUrl, "filePath": filePath});
   }
 
+  static List<String>? getFileList(
+    String fullPath, {
+    bool recursive = false,
+  }) {
+    if (!exists(fullPath)) {
+      return null;
+    }
+    if (!isDir(fullPath)) {
+      return null;
+    }
+    final res = Bindings.invoke(
+      key: "fs.get_file_list",
+      value: {"path": fullPath, "recursive": recursive},
+    );
+    final list = res as List<dynamic>;
+    return list.cast<String>();
+  }
+
   static void test() async {
     if (!AppConfig.isDebug) return;
 

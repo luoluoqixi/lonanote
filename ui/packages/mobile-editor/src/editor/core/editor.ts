@@ -4,6 +4,7 @@ import { LonaEditor } from 'lonanote-editor';
 import { callFlutter } from '@/utils/flutter';
 
 import { onUpdateState, saveContent } from '..';
+import { utils } from '../utils';
 import './editor.scss';
 
 export const create = (
@@ -52,8 +53,10 @@ export const create = (
               return `图片加载失败: ${url}`;
             },
             proxyURL(url) {
-              if (window.basePath) {
-                return `${window.basePath}/${url}`;
+              if (!utils.isImgUrl(url)) {
+                if (window.basePath) {
+                  return `${window.basePath}/${url}`;
+                }
               }
               return url;
             },

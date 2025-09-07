@@ -539,43 +539,10 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     AppRouter.jumpToWorkspaceSettingsPage(context);
   }
 
-  void _openImage(RustFileNode node, String rawPath) {
-    final count = fileNode?.children?.length ?? 0;
-    List<String> list = [];
-    var index = 0;
-    for (var i = 0; i < count; i++) {
-      final f = fileNode!.children![i];
-      final extName = Utility.getExtName(f.path);
-      if (extName == null) continue;
-      if (Utility.isImage(extName)) {
-        final path = _getRawFullFilePath(f.path);
-        if (path != null) {
-          if (node == f) {
-            index = list.length;
-          }
-          list.add(path);
-        }
-      }
-    }
-    AppRouter.jumpToImageViewPage(context, list, index);
-  }
-
-  void _openVideo(String rawPath) {
-    AppRouter.jumpToVideoViewPage(context, rawPath);
-  }
-
-  void _openEditor(String path) {
-    AppRouter.jumpToEditorPage(context, path);
-  }
-
-  void _openNotSupport(String rawPath) {
-    AppRouter.jumpToNotSupportFilePage(context, rawPath);
-  }
-
   void _openFile(RustFileNode node) {
     if (node.isDirectory()) return;
-    final extName = Utility.getExtName(node.path);
     final rawPath = _getRawFullFilePath(node.path);
+    final fullPath = _getFullFilePath(node.path);
     if (rawPath == null) {
       DialogTools.showDialog(
         context: context,
@@ -585,22 +552,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       );
       return;
     }
-
-    if (extName == null) {
-      _openNotSupport(rawPath);
-      return;
-    }
-    if (Utility.isImage(extName)) {
-      _openImage(node, rawPath);
-    } else if (Utility.isVideo(extName)) {
-      _openVideo(rawPath);
-    } else if (Utility.isSupportEditor(extName)) {
-      final path = _getFullFilePath(node.path);
-      _openEditor(path);
-    } else {
-      _openNotSupport(rawPath);
-      return;
-    }
+    AppRouter.openFile(context, rawPath, fullPath);
   }
 
   void _openFileNode(RustFileNode node) {

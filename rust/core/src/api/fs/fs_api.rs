@@ -11,6 +11,7 @@ use lonanote_commands::{
     result::{CommandResponse, CommandResult},
 };
 use serde::{Deserialize, Serialize};
+use walkdir::WalkDir;
 
 use crate::utils::{self, fs_utils};
 
@@ -371,6 +372,35 @@ async fn save_image_url_to_file(Json(args): Json<SaveImageUrlToFileArgs>) -> Com
     Ok(CommandResponse::None)
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GetFileListArgs {
+    path: String,
+    recursive: bool,
+}
+
+fn get_file_list(Json(args): Json<GetFileListArgs>) -> CommandResult {
+    let recursive = args.recursive;
+    let path = PathBuf::from(args.path);
+    let mut list = Vec::new();
+    if !path.exists() {
+        return CommandResponse::json(list);
+    }
+    if !path.is_dir() {
+        return CommandResponse::json(list);
+    }
+    let depth = if recursive { usize::MAX } else { 1 };
+    for entry in WalkDir::new(&path)
+        .max_depth(depth)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|e| e.file_type().is_file())
+    {
+        list.push(entry.path().display().to_string());
+    }
+    CommandResponse::json(list)
+}
+
 pub fn reg_commands() -> Result<()> {
     reg_command("fs.exists", exists)?;
     reg_command("fs.is_dir", is_dir)?;
@@ -385,6 +415,7 @@ pub fn reg_commands() -> Result<()> {
     reg_command("fs.copy", copy)?;
     reg_command("fs.write", write)?;
     reg_command("fs.show_in_folder", show_in_folder)?;
+    reg_command("fs.get_file_list", get_file_list)?;
     reg_command_async("fs.show_select_dialog", show_select_dialog)?;
     reg_command_async("fs.save_image_url_to_file", save_image_url_to_file)?;
 

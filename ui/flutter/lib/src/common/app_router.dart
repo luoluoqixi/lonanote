@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:lonanote/src/bindings/api/fs/fs.dart';
+import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/views/editor/editor_page.dart';
 import 'package:lonanote/src/views/editor/image_view_page.dart';
 import 'package:lonanote/src/views/editor/not_support_file_page.dart';
@@ -261,5 +263,58 @@ class AppRouter {
       pageName: pageName,
       barrierColor: barrierColor,
     );
+  }
+
+  static void _openImage(BuildContext context, String rawPath) {
+    List<String> list = [];
+    var index = 0;
+    final dir = Utility.getBasePath(rawPath);
+    final files = RustFs.getFileList(dir);
+    if (files != null) {
+      final count = files.length;
+      for (var i = 0; i < count; i++) {
+        final f = files[i];
+        final extName = Utility.getExtName(f);
+        if (extName == null) continue;
+        if (Utility.isImage(extName)) {
+          if (f == rawPath) {
+            index = list.length;
+          }
+          list.add(f);
+        }
+      }
+    }
+    AppRouter.jumpToImageViewPage(context, list, index);
+  }
+
+  static void _openVideo(BuildContext context, String rawPath) {
+    AppRouter.jumpToVideoViewPage(context, rawPath);
+  }
+
+  static void _openEditor(BuildContext context, String path) {
+    AppRouter.jumpToEditorPage(context, path);
+  }
+
+  static void _openNotSupport(BuildContext context, String rawPath) {
+    AppRouter.jumpToNotSupportFilePage(context, rawPath);
+  }
+
+  static void openFile(BuildContext context, String fullPath, String path) {
+    final extName = Utility.getExtName(path);
+    final rawPath = fullPath;
+    if (extName == null) {
+      _openNotSupport(context, rawPath);
+      return;
+    }
+    if (Utility.isImage(extName)) {
+      _openImage(context, rawPath);
+    } else if (Utility.isVideo(extName)) {
+      _openVideo(context, rawPath);
+    } else if (Utility.isSupportEditor(extName)) {
+      _openEditor(context, path);
+    } else {
+      _openNotSupport(context, rawPath);
+      return;
+    }
   }
 }
