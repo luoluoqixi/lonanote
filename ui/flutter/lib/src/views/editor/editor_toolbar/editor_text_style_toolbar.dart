@@ -33,19 +33,23 @@ class EditorTextStyleToolbar extends StatelessWidget {
     return IconButton(
       onPressed: onPressed,
       icon: icon ??
-          Text(
-            label ?? "",
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 14,
+          FittedBox(
+            fit: BoxFit.contain,
+            child: Text(
+              label ?? "",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 12,
+              ),
             ),
           ),
       style: ElevatedButton.styleFrom(
         backgroundColor:
             isSelected ? primaryColor.withAlpha(51) : Colors.transparent,
         foregroundColor: isSelected ? primaryColor : Colors.grey[700],
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        minimumSize: size ?? const Size(48, 36),
+        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+        minimumSize: size ?? const Size(0, 0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
           side: BorderSide(
@@ -66,12 +70,14 @@ class EditorTextStyleToolbar extends StatelessWidget {
     double width,
     double height,
   ) {
-    return _buildToggleButton(
-      colorScheme: colorScheme,
-      label: label,
-      isSelected: isSelected,
-      onPressed: () => onAction?.call('h$level'),
-      size: Size(width, height),
+    return Flexible(
+      child: _buildToggleButton(
+        colorScheme: colorScheme,
+        label: label,
+        isSelected: isSelected,
+        onPressed: () => onAction?.call('h$level'),
+        size: Size(width, height),
+      ),
     );
   }
 
@@ -103,12 +109,14 @@ class EditorTextStyleToolbar extends StatelessWidget {
                   selectionData.isHeading5, buttonWidth, buttonHeight),
               _buildHeadingButton(colorScheme, 'H6', 6,
                   selectionData.isHeading6, buttonWidth, buttonHeight),
-              _buildToggleButton(
-                colorScheme: colorScheme,
-                label: '正文',
-                isSelected: !_isAnyHeadingSelected,
-                onPressed: () => onAction?.call('text'),
-                size: Size(buttonWidth, buttonHeight),
+              Flexible(
+                child: _buildToggleButton(
+                  colorScheme: colorScheme,
+                  label: '正文',
+                  isSelected: !_isAnyHeadingSelected,
+                  onPressed: () => onAction?.call('text'),
+                  size: Size(buttonWidth, buttonHeight),
+                ),
               ),
             ],
           ),
