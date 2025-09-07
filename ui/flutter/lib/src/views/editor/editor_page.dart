@@ -67,6 +67,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   static String assetsDomain = "lonanoteappassets.androidplatform.net";
   static String assetsPrefix = "/files/";
+  static String assetScheme = "assets";
 
   bool _previewMode = false;
   late bool _sourceMode;
@@ -751,8 +752,14 @@ class _EditorPageState extends ConsumerState<EditorPage>
     // await _controller.setBackgroundColor(Colors.transparent);
 
     if (_webviewController.isLoaded()) {
-      final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
-      final basePath = "https://$assetsDomain$assetsPrefix$wsName";
+      var basePath = "";
+      if (Platform.isAndroid) {
+        final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
+        basePath = "https://$assetsDomain$assetsPrefix$wsName";
+      } else {
+        final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
+        basePath = "$assetScheme://$wsPath";
+      }
       await _webviewController.executeJavaScript(
         'window.setBasePath(${jsonEncode(basePath)})',
       );
@@ -973,6 +980,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       controller: _webviewController,
       assetDomain: assetsDomain,
       assetPrefix: assetsPrefix,
+      assetScheme: assetScheme,
       onWebviewCreate: () {
         _bindMessageReceived();
         _loadFileContent().then((_) {

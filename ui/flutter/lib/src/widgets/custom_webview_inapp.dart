@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -42,6 +43,7 @@ class CustomWebviewInApp extends StatefulWidget {
   final String? assetDomain;
   final String? assetPrefix;
   final String? assetDirectory;
+  final String? assetScheme;
 
   final void Function()? onWebviewCreate;
   final void Function()? onLoadFinish;
@@ -56,6 +58,7 @@ class CustomWebviewInApp extends StatefulWidget {
     this.assetDomain,
     this.assetPrefix,
     this.assetDirectory,
+    this.assetScheme,
   });
 
   @override
@@ -67,6 +70,9 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
 
   final GlobalKey webViewKey = GlobalKey();
   bool _webViewLoaded = false;
+
+  late final String assetScheme;
+  late final String assetDirectory;
 
   static final InAppWebViewSettings _webviewSettings = InAppWebViewSettings(
     isInspectable: kDebugMode,
@@ -111,7 +117,10 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     widget.controller.bindClearFocus(_clearFocus);
     widget.controller.bindRequestFocus(_requestFocus);
     widget.controller.bindDispose(_dispose);
-    createAssetLoader();
+    assetScheme = widget.assetScheme ?? "assets";
+    assetDirectory = widget.assetDirectory ?? RustPath.getHomeDir();
+    _webviewSettings.resourceCustomSchemes = [assetScheme];
+    if (Platform.isAndroid) createAssetLoader();
   }
 
   void _dispose() {
@@ -121,12 +130,11 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
   }
 
   void createAssetLoader() async {
-    final docDir = RustPath.getHomeDir();
     _webviewSettings.webViewAssetLoader = WebViewAssetLoader(
       pathHandlers: [
         CustomAnyPathHandler(
           path: widget.assetPrefix ?? "/files/",
-          directory: widget.assetDirectory ?? docDir,
+          directory: assetDirectory,
         ),
       ],
       domain: widget.assetDomain ?? "appassets.androidplatform.net",
@@ -235,6 +243,31 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     }
   }
 
+  FutureOr<CustomSchemeResponse?> _customSchemeHandler(
+    InAppWebViewController controller,
+    WebResourceRequest request,
+  ) async {
+    if (request.url.scheme == assetScheme) {
+      final filePath =
+          request.url.toString().replaceFirst("$assetScheme://", "");
+      if (RustFs.exists(filePath)) {
+        final data = RustFs.readBinary(filePath);
+        return CustomSchemeResponse(
+          contentType: lookupMimeType(filePath) ?? "application/octet-stream",
+          data: Uint8List.fromList(data),
+        );
+      } else {
+        logger.e("File not found: $filePath");
+        return CustomSchemeResponse(
+          data: Uint8List.fromList([]),
+          contentType: "text/plain",
+          contentEncoding: "utf-8",
+        );
+      }
+    }
+    return null;
+  }
+
   Widget buildInappWebview() {
     return InAppWebView(
       key: webViewKey,
@@ -291,6 +324,7 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
       onScrollChanged: (controller, x, y) {
         widget.onScrollChanged?.call(x.toDouble(), y.toDouble());
       },
+      onLoadResourceWithCustomScheme: _customSchemeHandler,
     );
   }
 
