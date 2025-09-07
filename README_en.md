@@ -2,13 +2,13 @@
 
 [中文](./README.md) | [English](./README_en.md)
 
-A local-first, open-source note-taking app built with TypeScript, Dart, and Rust.
+A local-first, open-source note-taking app built with **TypeScript**, **Dart**, and **Rust**.
 
 ## 🎉 Introduction
 
-LonaNote is an open-source, cross-platform, local-first Markdown note-taking app with WYSIWYG (What You See Is What You Get) editing.
+**LonaNote** is an open-source, cross-platform, local-first Markdown note-taking app with WYSIWYG (What You See Is What You Get) editing.
 
-Notes are stored offline in plain Markdown format, allowing seamless migration to other note-taking apps without import/export hassles.
+Notes are **stored offline** in plain Markdown format, allowing seamless migration to other note-taking apps without import/export hassles.
 
 **Supported Platforms**: `Windows`, `macOS`, `Linux`, `Android`, `iOS`.
 
@@ -17,7 +17,7 @@ Notes are stored offline in plain Markdown format, allowing seamless migration t
 
 - **Local storage** - Plain Markdown files, no vendor lock-in
 - **File-system based** - No proprietary databases
-- **WYSIWYG Markdown editing** - Real-time preview
+- **WYSIWYG editing** - Real-time preview
 - **Hybrid architecture** - Electron (desktop), Flutter (mobile), Rust (core)
 
 ### 📸 Screenshots
@@ -35,6 +35,24 @@ Notes are stored offline in plain Markdown format, allowing seamless migration t
     <img src="./docs/screenshots/mobile-02.png" width="30%" />
     <img src="./docs/screenshots/mobile-dark-02.png" width="30%" />
 </p>
+
+### 🎹 Shortcuts
+
+**LonaNote** provides the following shortcuts to improve editing efficiency:
+
+`Ctrl+B` - Bold
+
+`Ctrl+I` - Italic
+
+`Ctrl+D` - Strikethrough
+
+`Ctrl+H` - Highlight
+
+
+### 🔧 Slash Menu
+
+Typing the / character in the editor triggers a slash menu, allowing quick insertion of various Markdown syntax elements
+
 
 ## 🚀 Installation
 
@@ -63,6 +81,18 @@ LonaNote is under active development—contributions welcome!
 ## 🔨 Development Guide
 
 See [Developer Documentation](./ui/README.md).
+
+
+## 🙏 Acknowledgments
+
+Special thanks to these excellent projects for inspiration:
+
+- [PurrMD](https://github.com/luoluoqixi/purrmd) - WYSIWYG editor support
+- [HyperMD](https://github.com/laobubu/HyperMD) - Pioneering WYSIWYG Markdown editing experience
+- [CodeMirror6](https://codemirror.net/) - Powerful editor core
+
+Without the above projects, PurrMD would not exist.
+
 
 ## 📝 License
 
