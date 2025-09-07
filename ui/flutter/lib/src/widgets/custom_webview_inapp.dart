@@ -65,6 +65,9 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     widget.controller.bindDisableKeyboard(_disableKeyboard);
     widget.controller.bindEnableKeyboard(_enableKeyboard);
     widget.controller.bindHideKeyboard(_hideKeyboard);
+    widget.controller.bindHasFocus(_hasFocus);
+    widget.controller.bindClearFocus(_clearFocus);
+    widget.controller.bindRequestFocus(_requestFocus);
     widget.controller.bindDispose(_dispose);
   }
 
@@ -151,6 +154,27 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
         _controller!
             .evaluateJavascript(source: "document.activeElement?.blur()");
       }
+    }
+  }
+
+  Future<bool> _hasFocus() async {
+    if (_controller != null) {
+      final result = await _controller!
+          .evaluateJavascript(source: "document.activeElement != null");
+      return result == true;
+    }
+    return false;
+  }
+
+  Future<void> _clearFocus() async {
+    if (_controller != null) {
+      await _controller!.clearFocus();
+    }
+  }
+
+  Future<void> _requestFocus() async {
+    if (_controller != null) {
+      await _controller!.requestFocus();
     }
   }
 

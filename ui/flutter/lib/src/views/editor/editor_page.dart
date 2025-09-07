@@ -354,25 +354,21 @@ class _EditorPageState extends ConsumerState<EditorPage>
       },
     );
 
-    _webviewController.addJavaScriptHandler(
-      'on_link_click_source',
-      (dynamic argument) {
-        if (argument != null) {
-          final data = argument;
-          if (data != null) {
-            final url = jsonDecode(data) as String?;
-            _onClickSourceLink(url);
-          }
-        }
-      },
-    );
+    // _webviewController.addJavaScriptHandler(
+    //   'on_link_click_source',
+    //   (dynamic argument) {
+    //     if (argument != null) {
+    //       final data = argument;
+    //       if (data != null) {
+    //         final url = jsonDecode(data) as String?;
+    //         _onClickSourceLink(url);
+    //       }
+    //     }
+    //   },
+    // );
   }
 
   void _onClickPreviewLink(String? url) async {
-    _openUrl(url);
-  }
-
-  void _onClickSourceLink(String? url) async {
     _openUrl(url);
   }
 
@@ -777,7 +773,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void _showCustomToolbar(
     _EditorCustomToolbarType type,
     bool handleKeyboard,
-  ) {
+  ) async {
     if (type == _EditorCustomToolbarType.none) {
       if (handleKeyboard) {
         // 重新显示出键盘, 会有一瞬间关闭再弹出的状态, 增加一个状态延迟后清除
@@ -793,6 +789,19 @@ class _EditorPageState extends ConsumerState<EditorPage>
           }
         });
         _enableKeyboard();
+        if (Platform.isIOS) {
+          final isFocus = await _webviewController
+              .executeJavaScript("window.editor?.editor?.hasFocus");
+          if (!isFocus) {
+            // iOS 下, 如果在打开 ToolbarPanel 的情况下后台, 那么会失去焦点, 此时需要重新弹出键盘
+            _webviewController
+                .executeJavaScript("window.editor?.editor?.focus()");
+            // iOS 后台时, 会自动将键盘高度设置为 0, 如果此时弹出键盘， 又停止了键盘高度更新, 那么 _currentkeyboardHeight 将一直保持 0, 导致真正隐藏键盘时 _currentkeyboardHeight 未更新
+            setState(() {
+              _currentkeyboardHeight = _openKeyboardHeight;
+            });
+          }
+        }
       }
     } else {
       if (handleKeyboard) {
@@ -983,6 +992,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
           if (_isDisposing) return;
           if (!mounted) return;
           if (!_webviewController.isLoaded()) return;
+          HapticFeedback.mediumImpact();
           _runWebCommand("add_markdown_action", action);
           _hideCustomToolbar(true);
         },
@@ -994,6 +1004,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
           if (_isDisposing) return;
           if (!mounted) return;
           if (!_webviewController.isLoaded()) return;
+          HapticFeedback.mediumImpact();
           _runWebCommand("set_markdown_action", action);
         },
       );
@@ -1041,7 +1052,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
             children: [
               Container(
                 height: _toolbarHeight,
-                padding: EdgeInsets.symmetric(horizontal: 10),
+                padding: EdgeInsets.zero,
                 decoration: BoxDecoration(
                   color: bgColor,
                   border: Border.all(color: textColor.withAlpha(20)),
@@ -1056,13 +1067,15 @@ class _EditorPageState extends ConsumerState<EditorPage>
                     children: [
                       ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width - 180,
+                          maxWidth: MediaQuery.of(context).size.width - 160,
                         ),
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
+                            spacing: 1,
                             children: [
+                              const SizedBox(width: 10),
                               _buildToolbarIconButton(
                                 icon: Icon(ThemeIcons.add(context)),
                                 type: _EditorCustomToolbarType.addToolbar,
@@ -1106,6 +1119,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
                                 isSelect: _selectionData.isInlineCode,
                                 onPressed: _onToolbarActionInlineCode,
                               ),
+                              const SizedBox(width: 10),
                             ],
                           ),
                         ),

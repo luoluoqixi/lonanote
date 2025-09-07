@@ -41,9 +41,16 @@ export const create = (
               event.preventDefault();
               callFlutter('on_link_click_preview', url);
             },
-            onLinkClickSource(url, event) {
-              event.preventDefault();
-              callFlutter('on_link_click_source', url);
+            // onLinkClickSource(url, event) {
+            //   event.preventDefault();
+            //   callFlutter('on_link_click_source', url);
+            // },
+          },
+          Image: {
+            NoImageAvailableLabel: '没有图片',
+            ImageLoadFailedLabel: (url) => `图片加载失败: ${url}`,
+            proxyURL(url) {
+              return url;
             },
           },
         },

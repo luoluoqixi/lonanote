@@ -18,6 +18,9 @@ class CustomWebviewController {
   void Function()? _disableKeyboard;
   void Function()? _enableKeyboard;
   void Function()? _hideKeyboard;
+  Future<bool>? Function()? _hasFocus;
+  Future<void>? Function()? _clearFocus;
+  Future<void>? Function()? _requestFocus;
   void Function()? _dispose;
 
   void bindIsLoaded(bool Function() callback) {
@@ -54,6 +57,18 @@ class CustomWebviewController {
 
   void bindHideKeyboard(Function() callback) {
     _hideKeyboard = callback;
+  }
+
+  void bindHasFocus(Future<bool>? Function() callback) {
+    _hasFocus = callback;
+  }
+
+  void bindClearFocus(Future<void>? Function() callback) {
+    _clearFocus = callback;
+  }
+
+  void bindRequestFocus(Future<void>? Function() callback) {
+    _requestFocus = callback;
   }
 
   void bindDispose(Function() callback) {
@@ -94,6 +109,18 @@ class CustomWebviewController {
 
   void hideKeyboard() async {
     _hideKeyboard?.call();
+  }
+
+  Future<bool>? hasFocus() {
+    return _hasFocus?.call();
+  }
+
+  Future<void> clearFocus() async {
+    return _clearFocus?.call();
+  }
+
+  Future<void> requestFocus() async {
+    return _requestFocus?.call();
   }
 
   void dispose() {
