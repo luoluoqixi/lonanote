@@ -1,8 +1,54 @@
 # Changelog
 
-## [v0.1.2](https://github.com/luoluoqixi/lonanote/compare/v0.1.1...0320d2855e879770e519527144c6a96d0dcfa56b) (2025-08-27)
+## [v0.1.3](https://github.com/luoluoqixi/lonanote/compare/v0.1.2...cdf250c000d799c8df1376409629a80c933e6ed4) (2025-09-09)
 
 ### ✨ Features
+
+* click task item shake
+([2f5e39e](https://github.com/luoluoqixi/lonanote/commit/2f5e39e7fe48a3d93df1725d9161bc287a70a868))
+* android use custom scheme
+([188636b](https://github.com/luoluoqixi/lonanote/commit/188636bf80939ba47cb0d45bdf693c1fbe9f090c))
+* ios custom scheme
+([722cee2](https://github.com/luoluoqixi/lonanote/commit/722cee24b1a9b986232571df467c829b2c993106))
+* local file link jump
+([c295eb4](https://github.com/luoluoqixi/lonanote/commit/c295eb4728cd0e230b53ceaab08917fd6b49d884))
+* android webview image loading
+([b291ffa](https://github.com/luoluoqixi/lonanote/commit/b291ffafdba9840ce574372e33118a8486ec33bd))
+* paragraph toolbar
+([25772c3](https://github.com/luoluoqixi/lonanote/commit/25772c3f171aa4e8879f162942cb6845eeac8c15))
+* mobile toolbar: bold italic strikethrough highlight inlineCode
+([46e1036](https://github.com/luoluoqixi/lonanote/commit/46e10360b0549b3f5fac7b92ea8666923a1a14df))
+* mobile insert actions
+([86c9a31](https://github.com/luoluoqixi/lonanote/commit/86c9a31d9af0dafd0d42a93a51c2f1698b85d934))
+* context menu: text formatting, paragraph
+([7cbe194](https://github.com/luoluoqixi/lonanote/commit/7cbe194f22e275f4d782e9aa70f984b594aa52ae))
+
+### 🐛 Fixes
+
+* asset scheme base path
+([b66c703](https://github.com/luoluoqixi/lonanote/commit/b66c7037b9efae82fb15c839936c76a956094198))
+* fix ios 16.4 keyboard bug
+([9a4332b](https://github.com/luoluoqixi/lonanote/commit/9a4332be29b564bf40d4d0a0afb291e68fe2e32f))
+* fix ios toolbar layout
+([26109f0](https://github.com/luoluoqixi/lonanote/commit/26109f01762332fea38772bd263ecec09bdfb57d))
+* ios background keyboard focus, source mode url click, toolbar ui style
+([43b291c](https://github.com/luoluoqixi/lonanote/commit/43b291c836b4618fc01cfeaf05e5e3f6396b4441))
+* fix blockquote, update purrmd
+([449ec1d](https://github.com/luoluoqixi/lonanote/commit/449ec1d46e58d5cd62d89cd64c64233cbb4d6363))
+
+### 📝 Documentation
+
+* update docs
+([8914f2c](https://github.com/luoluoqixi/lonanote/commit/8914f2c32bdee9468c3b3b007ab41e6e4903a37c))
+
+### 🎨 Styling
+
+* update icon
+([cdf250c](https://github.com/luoluoqixi/lonanote/commit/cdf250c000d799c8df1376409629a80c933e6ed4))
+
+### [v0.1.2](https://github.com/luoluoqixi/lonanote/compare/v0.1.1...v0.1.2) (2025-08-28)
+
+#### ✨ Features
 
 * line number, line wrap settings
 ([05072b3](https://github.com/luoluoqixi/lonanote/commit/05072b305e9770b9fcb6ce57a5b1f9b8b810ce82))
@@ -15,7 +61,7 @@ closes [#27](https://github.com/luoluoqixi/lonanote/issues/27)
 ([a87a836](https://github.com/luoluoqixi/lonanote/commit/a87a8364418f2c7d3c67b0834b02b75883ea9767)),
 closes [#33](https://github.com/luoluoqixi/lonanote/issues/33)
 
-### 🐛 Fixes
+#### 🐛 Fixes
 
 * fix android auto scroll
 ([cfe77c5](https://github.com/luoluoqixi/lonanote/commit/cfe77c59cb38bc92ff30b82e8b415cc8a896f92c))
@@ -32,8 +78,12 @@ closes [#33](https://github.com/luoluoqixi/lonanote/issues/33)
 * fix slash menu quote label
 ([6e90f78](https://github.com/luoluoqixi/lonanote/commit/6e90f78b7f5c6a5c1fec902f3e8ed72a3116ea99))
 
-### 📝 Documentation
+#### 📝 Documentation
 
+* update readme
+([e93c370](https://github.com/luoluoqixi/lonanote/commit/e93c370a82e5c3aa6a6d74a83b8781e6cd36f726))
+* update readme
+([52f0021](https://github.com/luoluoqixi/lonanote/commit/52f002122117fcd73de45f930acb77f9c33ee9aa))
 * update readme
 ([e9ada07](https://github.com/luoluoqixi/lonanote/commit/e9ada07313d7169c765651bdcf08b9b7fc6d57f9))
 * update screenshots
@@ -41,7 +91,7 @@ closes [#33](https://github.com/luoluoqixi/lonanote/issues/33)
 * update changelog
 ([3ae0a79](https://github.com/luoluoqixi/lonanote/commit/3ae0a7925d160a62e7ebefee447c33399c7722b6))
 
-### 🎨 Styling
+#### 🎨 Styling
 
 * android style
 ([3457997](https://github.com/luoluoqixi/lonanote/commit/3457997333ea614debf6efc65b23e1ef1f1c3693))
@@ -62,7 +112,7 @@ closes [#30](https://github.com/luoluoqixi/lonanote/issues/30)
 ([9fddf74](https://github.com/luoluoqixi/lonanote/commit/9fddf7486b72d445e3caf4f79f0ce1ac32943bb0)),
 closes [#31](https://github.com/luoluoqixi/lonanote/issues/31)
 
-### ♻️ Refactor
+#### ♻️ Refactor
 
 * refactor webview
 ([03af85e](https://github.com/luoluoqixi/lonanote/commit/03af85e2bafc35c3bfe6292443c5ccb79dd45559))
