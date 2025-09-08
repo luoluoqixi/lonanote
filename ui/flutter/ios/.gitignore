@@ -32,6 +32,3 @@ Runner/GeneratedPluginRegistrant.*
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
-
-Runner/en.lproj/InfoPlist.strings
-Runner/zh-Hans.lproj/InfoPlist.strings
