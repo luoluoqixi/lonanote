@@ -45,6 +45,7 @@ class CustomWebviewInApp extends StatefulWidget {
   final String? assetAndroidPrefix;
   final String? assetAndroidDirectory;
   final String? assetScheme;
+  final String? assetSchemeBaseDirectory;
 
   final void Function()? onWebviewCreate;
   final void Function()? onLoadFinish;
@@ -61,6 +62,7 @@ class CustomWebviewInApp extends StatefulWidget {
     this.assetAndroidPrefix,
     this.assetAndroidDirectory,
     this.assetScheme,
+    this.assetSchemeBaseDirectory,
   });
 
   @override
@@ -252,16 +254,18 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     WebResourceRequest request,
   ) async {
     if (request.url.scheme == assetScheme) {
+      final baseFolder = widget.assetSchemeBaseDirectory;
       final filePath =
           request.url.toString().replaceFirst("$assetScheme://", "");
-      if (RustFs.exists(filePath)) {
-        final data = RustFs.readBinary(filePath);
+      final fullPath = baseFolder != null ? "$baseFolder/$filePath" : filePath;
+      if (RustFs.exists(fullPath)) {
+        final data = RustFs.readBinary(fullPath);
         return CustomSchemeResponse(
-          contentType: lookupMimeType(filePath) ?? "application/octet-stream",
+          contentType: lookupMimeType(fullPath) ?? "application/octet-stream",
           data: Uint8List.fromList(data),
         );
       } else {
-        logger.e("File not found: $filePath");
+        logger.e("File not found: $fullPath");
         return CustomSchemeResponse(
           data: Uint8List.fromList([]),
           contentType: "text/plain",

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/bindings/api/fs/fs.dart';
+import 'package:lonanote/src/bindings/api/workspace/workspace_manager.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
@@ -66,6 +67,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   final CustomWebviewController _webviewController = CustomWebviewController();
 
   static String assetScheme = "assets";
+  late final String assetBasePath;
 
   bool _previewMode = false;
   late bool _sourceMode;
@@ -176,6 +178,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
         _updateColorMode(true);
       }
     });
+
+    assetBasePath = RustWorkspaceManager.getWorkspaceDir();
   }
 
   @override
@@ -775,8 +779,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
       //   final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
       //   basePath = "$assetScheme://$wsPath";
       // }
-      final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
-      basePath = "$assetScheme://$wsPath";
+      final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
+      basePath = "$assetScheme://$wsName";
       await _webviewController.executeJavaScript(
         'window.setBasePath(${jsonEncode(basePath)})',
       );
@@ -996,6 +1000,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     return CustomWebviewInApp(
       controller: _webviewController,
       assetScheme: assetScheme,
+      assetSchemeBaseDirectory: assetBasePath,
       onWebviewCreate: () {
         _bindMessageReceived();
         _loadFileContent().then((_) {
