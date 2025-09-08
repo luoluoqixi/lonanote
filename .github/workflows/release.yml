@@ -173,7 +173,7 @@ jobs:
         run: |
           cd ui/flutter/android
           cat > key.properties << EOF
-          storeFile=../lonanote.keystore
+          storeFile=./release.keystore
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
