@@ -255,6 +255,8 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
   ) async {
     if (request.url.scheme == assetScheme) {
       final baseFolder = widget.assetSchemeBaseDirectory;
+      request.url.forceToStringRawValue = true;
+      // logger.i("Custom scheme request: ${request.url.forceToStringRawValue}");
       final filePath =
           request.url.toString().replaceFirst("$assetScheme://", "");
       final fullPath = baseFolder != null ? "$baseFolder/$filePath" : filePath;
