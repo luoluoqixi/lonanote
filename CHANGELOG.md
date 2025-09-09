@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.0.0](https://github.com/luoluoqixi/lonanote/compare/v0.1.3...279da1aa42dedab2a5ed891192b4831bc64ed081) (2025-09-09)
+
+### 🐛 Fixes
+
+* fix custom scheme url case
+([279da1a](https://github.com/luoluoqixi/lonanote/commit/279da1aa42dedab2a5ed891192b4831bc64ed081))
+* ios min os version to 13.0
+([04acd9a](https://github.com/luoluoqixi/lonanote/commit/04acd9af282fd6b208a229e853659e81322aa279))
+
 ### [v0.1.3](https://github.com/luoluoqixi/lonanote/compare/v0.1.2...v0.1.3) (2025-09-09)
 
 #### ✨ Features
