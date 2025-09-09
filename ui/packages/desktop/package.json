@@ -1,6 +1,6 @@
 {
   "name": "lonanote",
-  "version": "0.1.3",
+  "version": "1.0.0",
   "main": "./out/main/index.js",
   "type": "module",
   "scripts": {
