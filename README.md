@@ -32,8 +32,8 @@
 #### 移动端 (白天/黑夜模式)
 
 <p>
-    <img src="./docs/screenshots/mobile-02.png" width="30%" />
-    <img src="./docs/screenshots/mobile-dark-02.png" width="30%" />
+    <img src="./docs/screenshots/mobile-01.png" width="30%" />
+    <img src="./docs/screenshots/mobile-dark-01.png" width="30%" />
 </p>
 
 ### 🎹 快捷键
