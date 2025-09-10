@@ -69,9 +69,7 @@ Typing the / character in the editor triggers a slash menu, allowing quick inser
 
 LonaNote is under active development—contributions welcome!
 
-- [v0.2.0 TODO](https://github.com/users/luoluoqixi/projects/3)
-
-- [v1.0.0 TODO](https://github.com/users/luoluoqixi/projects/4)
+- [v1.1.0 TODO](https://github.com/users/luoluoqixi/projects/4)
 
 ## 💬 Community
 

@@ -44,9 +44,6 @@
 
 露娜笔记在积极开发中，欢迎贡献代码
 
-- [v0.2.0 TODO](https://github.com/users/luoluoqixi/projects/3)
-
-- [v1.0.0 TODO](https://github.com/users/luoluoqixi/projects/4)
 
 ## 💬 社区
 

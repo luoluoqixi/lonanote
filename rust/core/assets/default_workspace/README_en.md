@@ -44,9 +44,6 @@ Notes are **stored offline** in plain Markdown format, allowing seamless migrati
 
 LonaNote is under active development—contributions welcome!
 
-- [v0.2.0 TODO](https://github.com/users/luoluoqixi/projects/3)
-
-- [v1.0.0 TODO](https://github.com/users/luoluoqixi/projects/4)
 
 ## 💬 Community
 
