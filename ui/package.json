@@ -13,7 +13,7 @@
     "dev:mobile": "concurrently --handleInput --kill-others \"cd ./flutter && flutter run\" \"pnpm -C \"./packages/mobile-editor\" dev\"",
     "build": "pnpm run build:rust:node && pnpm --filter=\"./packages/desktop\" run build",
     "build:android": "pnpm -C \"./packages/mobile-editor\" build && cd ./flutter && flutter build apk --release",
-    "build:ios": "pnpm -C \"./packages/mobile-editor\" build && cd ./flutter && flutter build ios --release",
+    "build:ios": "pnpm -C \"./packages/mobile-editor\" build && cd ./flutter && flutter build ipa --release",
     "build:mobile": "pnpm -C \"./packages/mobile-editor\" build && cd ./flutter && flutter run --release",
     "build:web": "pnpm --filter=\"./packages/renderer\" run build",
     "flutter:build_runner": "cd flutter && dart run build_runner build",
