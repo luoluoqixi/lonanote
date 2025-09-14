@@ -256,12 +256,12 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     if (request.url.scheme == assetScheme) {
       final baseFolder = widget.assetSchemeBaseDirectory;
       request.url.forceToStringRawValue = true;
-      // logger.i("Custom scheme request: ${request.url.forceToStringRawValue}");
-      final filePath =
-          request.url.toString().replaceFirst("$assetScheme://", "");
+      final url = Uri.decodeFull(request.url.toString());
+      // logger.i("Custom scheme request: $url");
+      final filePath = url.replaceFirst("$assetScheme://", "");
       final fullPath = baseFolder != null ? "$baseFolder/$filePath" : filePath;
       if (RustFs.exists(fullPath)) {
-        final data = RustFs.readBinary(fullPath);
+        final data = await RustFs.readBinaryAsync(fullPath);
         return CustomSchemeResponse(
           contentType: lookupMimeType(fullPath) ?? "application/octet-stream",
           data: Uint8List.fromList(data),

@@ -27,6 +27,23 @@ class RustFs {
     return list.cast<int>();
   }
 
+  static Future<String> readToStringAsync(String path) async {
+    final res = await Bindings.invokeAsync(
+      key: "fs.read_to_string_async",
+      value: {"path": path},
+    );
+    return res as String;
+  }
+
+  static Future<List<int>> readBinaryAsync(String path) async {
+    final res = await Bindings.invokeAsync(
+      key: "fs.read_binary_async",
+      value: {"path": path},
+    );
+    final list = res as List<dynamic>;
+    return list.cast<int>();
+  }
+
   static void createDir(String path) {
     Bindings.invoke(key: "fs.create_dir", value: {"path": path});
   }
@@ -62,14 +79,17 @@ class RustFs {
 
   static void write(String path, String contents) {
     Bindings.invoke(
-        key: "fs.write", value: {"path": path, "contents": contents});
+      key: "fs.write",
+      value: {"path": path, "contents": contents},
+    );
   }
 
   static Future<void> saveImageUrlToFile(
       String imageUrl, String filePath) async {
     await Bindings.invokeAsync(
-        key: "fs.save_image_url_to_file",
-        value: {"imageUrl": imageUrl, "filePath": filePath});
+      key: "fs.save_image_url_to_file",
+      value: {"imageUrl": imageUrl, "filePath": filePath},
+    );
   }
 
   static List<String>? getFileList(

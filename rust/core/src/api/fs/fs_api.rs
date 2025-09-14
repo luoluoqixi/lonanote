@@ -53,6 +53,16 @@ fn read_binary(Json(args): Json<PathArg>) -> CommandResult {
     CommandResponse::json(s)
 }
 
+async fn read_to_string_async(Json(args): Json<PathArg>) -> CommandResult {
+    let s = tokio::fs::read_to_string(args.path).await?;
+    CommandResponse::json(s)
+}
+
+async fn read_binary_async(Json(args): Json<PathArg>) -> CommandResult {
+    let s = tokio::fs::read(args.path).await?;
+    CommandResponse::json(s)
+}
+
 fn create_dir(Json(args): Json<PathArg>) -> CommandResult {
     if !PathBuf::from(&args.path).exists() {
         fs::create_dir(args.path)?;
@@ -416,6 +426,8 @@ pub fn reg_commands() -> Result<()> {
     reg_command("fs.write", write)?;
     reg_command("fs.show_in_folder", show_in_folder)?;
     reg_command("fs.get_file_list", get_file_list)?;
+    reg_command_async("fs.read_to_string_async", read_to_string_async)?;
+    reg_command_async("fs.read_binary_async", read_binary_async)?;
     reg_command_async("fs.show_select_dialog", show_select_dialog)?;
     reg_command_async("fs.save_image_url_to_file", save_image_url_to_file)?;
 
