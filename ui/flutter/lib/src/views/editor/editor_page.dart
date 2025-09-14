@@ -1095,7 +1095,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final bg1Color = ThemeColors.getBg1Color(colorScheme);
     final isShow =
         _isShowKeyboard || _showToolbarType != _EditorCustomToolbarType.none;
-    final keyboardHeight = math.max(0.0, _openKeyboardHeight);
+    final keyboardHeight = math.max(200.0, _openKeyboardHeight);
     return isShow
         ? Column(
             mainAxisSize: MainAxisSize.min,
