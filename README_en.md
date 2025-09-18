@@ -57,7 +57,7 @@ Typing the / character in the editor triggers a slash menu, allowing quick inser
 ## 🚀 Installation
 
 - **Windows | macOS | Linux | Android**: [Download from Releases](https://github.com/luoluoqixi/lonanote/releases)
-- **iOS**: *Coming soon...*
+- **iOS**: [App Store](https://apps.apple.com/app/app/id6752297620)
 
 ## ❓ FAQ
 
