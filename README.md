@@ -57,7 +57,7 @@
 ## 🚀 安装
 
 - **Windows | Mac | Linux | Android**： [从Release下载](https://github.com/luoluoqixi/lonanote/releases)
-- **iOS**： App Store
+- **iOS**：[App Store](https://apps.apple.com/app/app/id6752297620)
 
 
 ## ❓ 常见问题
