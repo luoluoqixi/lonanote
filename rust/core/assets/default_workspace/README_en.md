@@ -37,7 +37,7 @@ Notes are **stored offline** in plain Markdown format, allowing seamless migrati
 ## 🚀 Installation
 
 - **Windows | macOS | Linux | Android**: [Download from Releases](https://github.com/luoluoqixi/lonanote/releases)
-- **iOS**: *Coming soon...*
+- **iOS**: [App Store](https://apps.apple.com/app/app/id6752297620)
 
 
 ## 🗺 Roadmap
