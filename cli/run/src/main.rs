@@ -21,6 +21,7 @@ async fn main() {
     match opt.cmd.as_str() {
         "install" => cmd::install().await.unwrap(),
         "dev" => cmd::dev().await.unwrap(),
+        "build:run" => cmd::build_run().await.unwrap(),
         "build:win" => cmd::build(cmd::BuildPlatform::Windows).await.unwrap(),
         "build:mac" => cmd::build(cmd::BuildPlatform::MacOS).await.unwrap(),
         "build:linux" => cmd::build(cmd::BuildPlatform::Linux).await.unwrap(),

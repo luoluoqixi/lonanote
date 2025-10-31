@@ -61,6 +61,14 @@ pub async fn run_flutter_dev<S: AsRef<str>>(
     Ok(child)
 }
 
+pub async fn run_flutter_dev_release<S: AsRef<str>>(
+    project_path: S,
+) -> anyhow::Result<tokio::process::Child> {
+    let child = run_flutter(project_path.as_ref(), vec!["run", "--release"]).await?;
+
+    Ok(child)
+}
+
 pub async fn run_flutter_build<S: AsRef<str>>(
     project_path: S,
     build_type: S,

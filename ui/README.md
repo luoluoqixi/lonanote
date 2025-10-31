@@ -18,20 +18,13 @@
 #### 🚀 安装 pnpm
 
 ```shell
-pnpm -C ui install
+.\run.cmd install
 ```
 
 #### 🧑‍💻 运行 Windows / Mac / Linux
 
 ```shell
-pnpm -C ui dev
-```
-
-#### 🧑‍💻 运行 Android / IOS
-
-```shell
-# 提前使用 USB 连接真机或启动 Android 模拟器
-pnpm -C ui dev:mobile
+.\run.cmd dev
 ```
 
 > 首次运行应用程序时会被阻止
@@ -46,23 +39,23 @@ pnpm -C ui dev:mobile
 #### 🏗 打包
 
 ```shell
+# build && 运行
+.\run.cmd build:run
+
 # windows
-pnpm -C ui build:win
+.\run.cmd build:win
 
 # macos
-pnpm -C ui build:mac
+.\run.cmd build:mac
 
 # linux
-pnpm -C ui build:linux
-
-# build & run mobile
-pnpm -C ui build:mobile
+.\run.cmd build:linux
 
 # android
-pnpm -C ui build:android
+.\run.cmd build:android
 
 # ios
-pnpm -C ui build:ios
+.\run.cmd build:ios
 ```
 
 #### 🎨 提交
