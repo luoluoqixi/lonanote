@@ -437,7 +437,10 @@ fn generate_flutter_icon(input_path: &Path, default_mask: &Option<PathBuf>) -> R
     let flutter_path = &UI_PATH.join("flutter");
     let android_icon_path = &flutter_path.join("assets/icons/icon_android.png");
     let ios_path = &flutter_path.join("assets/icons/icon_ios.png");
+    let win_icon_path = &flutter_path.join("assets/icons/icon_win.png");
+    let mac_path = &flutter_path.join("assets/icons/icon_mac.png");
 
+    // android
     process_image(
         input_path,
         android_icon_path,
@@ -446,39 +449,14 @@ fn generate_flutter_icon(input_path: &Path, default_mask: &Option<PathBuf>) -> R
         None,
         None,
     )?;
+
+    // ios
     process_image(input_path, ios_path, None, None, None, None)?;
 
-    start_flutter_launcher_icons(flutter_path)?;
-
-    Ok(())
-}
-
-fn _main() -> Result<()> {
-    let input_path = &INPUT_ICON_PATH.to_path_buf();
-    let input_folder = &input_path.parent().unwrap().to_path_buf();
-    let output_folder = UI_PATH.join("packages/desktop/build/icons");
-    let res_icon_path = &UI_PATH.join("packages/desktop/resources/icon.png");
-    let windows_path = &output_folder.join("icon_windows.ico");
-    let mac_path = &output_folder.join("icon_mac.icns");
-    let linux_path = &output_folder.join("icon_linux.icns");
-    let web_path = &UI_PATH.join("packages/renderer/public/favicon.ico");
-    let default_workspace_icon_path =
-        &RS_PATH.join("core/assets/default_workspace/assets/images/icon.png");
-
-    let default_mask = Some(input_folder.join("mask.png"));
-    // resources
-    process_image(
-        input_path,
-        res_icon_path,
-        default_mask.as_deref(),
-        None,
-        None,
-        None,
-    )?;
     // windows
     process_image(
         input_path,
-        windows_path,
+        win_icon_path,
         default_mask.as_deref(),
         None,
         None,
@@ -493,24 +471,21 @@ fn _main() -> Result<()> {
         Some((1024, 1024)),
         None,
     )?;
-    // linux
-    process_image(
-        input_path,
-        linux_path,
-        default_mask.as_deref(),
-        None,
-        None,
-        None,
-    )?;
-    // web
-    process_image(
-        input_path,
-        web_path,
-        default_mask.as_deref(),
-        None,
-        None,
-        None,
-    )?;
+
+    start_flutter_launcher_icons(flutter_path)?;
+
+    Ok(())
+}
+
+fn _main() -> Result<()> {
+    let input_path = &INPUT_ICON_PATH.to_path_buf();
+    let input_folder = &input_path.parent().unwrap().to_path_buf();
+
+    let default_workspace_icon_path =
+        &RS_PATH.join("core/assets/default_workspace/assets/images/icon.png");
+
+    let default_mask = Some(input_folder.join("mask.png"));
+
     // default_workspace
     process_image(
         input_path,

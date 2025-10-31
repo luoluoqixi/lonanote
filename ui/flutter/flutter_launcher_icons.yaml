@@ -21,10 +21,11 @@ flutter_launcher_icons:
     generate: false
 
   windows:
-    generate: false
+    generate: true
+    image_path: "assets/icons/icon_win.png"
+    icon_size: 256
 
   macos:
-    generate: false
+    generate: true
+    image_path: "assets/icons/icon_mac.png"
 
-  linux:
-    generate: false
