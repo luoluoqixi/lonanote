@@ -1,22 +1,18 @@
 [package]
-name = "icon-gen"
+name = "run"
 version = { workspace = true }
 authors = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 
-[lib]
-name = "icon_gen"
-# crate-type = ["staticlib", "cdylib", "rlib", "lib"]
-crate-type = ["staticlib", "lib"]
-path = "src/lib.rs"
-
-
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
 fern = { workspace = true }
-image = { workspace = true, features = ["png", "ico"] }
 log = { workspace = true }
-icns = { workspace = true }
+libc = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+encoding_rs = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+icon-gen = { path = "../icon_gen" }
