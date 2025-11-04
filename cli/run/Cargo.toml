@@ -15,4 +15,6 @@ libc = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 encoding_rs = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
+ctrlc = { workspace = true }
+kill_tree = { workspace = true }
 icon-gen = { path = "../icon_gen" }

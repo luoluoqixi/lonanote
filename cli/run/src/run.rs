@@ -6,32 +6,32 @@ use crate::utils;
 
 static NPM: &str = "pnpm";
 
-pub async fn run_npm_install<S: AsRef<str>>(project_path: S) -> anyhow::Result<()> {
-    let child = run_npm(NPM, project_path.as_ref(), "install").await?;
-    child.wait_with_output().await?;
+pub fn run_npm_install<S: AsRef<str>>(project_path: S) -> anyhow::Result<()> {
+    let child = run_npm(NPM, project_path.as_ref(), "install")?;
+    child.wait_with_output()?;
 
     Ok(())
 }
 
-pub async fn run_npm_dev<S: AsRef<str>>(project_path: S) -> anyhow::Result<tokio::process::Child> {
-    let child = run_npm(NPM, project_path.as_ref(), "dev").await?;
+pub fn run_npm_dev<S: AsRef<str>>(project_path: S) -> anyhow::Result<std::process::Child> {
+    let child = run_npm(NPM, project_path.as_ref(), "dev")?;
 
     Ok(child)
 }
 
-pub async fn run_npm_build<S: AsRef<str>>(project_path: S) -> anyhow::Result<()> {
-    let child = run_npm(NPM, project_path.as_ref(), "build").await?;
-    child.wait_with_output().await?;
+pub fn run_npm_build<S: AsRef<str>>(project_path: S) -> anyhow::Result<()> {
+    let child = run_npm(NPM, project_path.as_ref(), "build")?;
+    child.wait_with_output()?;
 
     Ok(())
 }
 
-pub async fn run_npm<S: AsRef<str>>(
+pub fn run_npm<S: AsRef<str>>(
     npm: S,
     project_path: S,
     command: S,
-) -> anyhow::Result<tokio::process::Child> {
-    let child = utils::run_command_callback_async(
+) -> anyhow::Result<std::process::Child> {
+    let child = utils::run_command_callback(
         format!(
             "{}{}",
             npm.as_ref(),
@@ -46,48 +46,48 @@ pub async fn run_npm<S: AsRef<str>>(
             error!("{stderr}");
         },
         None,
+        None,
     )
-    .await
     .map_err(|e| anyhow::anyhow!("Failed to run [pnpm {}]: {e}", command.as_ref()))?;
 
     Ok(child)
 }
 
-pub async fn run_flutter_dev<S: AsRef<str>>(
-    project_path: S,
-) -> anyhow::Result<tokio::process::Child> {
-    let child = run_flutter(project_path.as_ref(), vec!["run"]).await?;
+pub fn run_flutter_dev<S: AsRef<str>>(project_path: S) -> anyhow::Result<std::process::Child> {
+    let child = run_flutter(
+        project_path.as_ref(),
+        vec!["run"],
+        Some(std::process::Stdio::piped()),
+    )?;
 
     Ok(child)
 }
 
-pub async fn run_flutter_dev_release<S: AsRef<str>>(
+pub fn run_flutter_dev_release<S: AsRef<str>>(
     project_path: S,
-) -> anyhow::Result<tokio::process::Child> {
-    let child = run_flutter(project_path.as_ref(), vec!["run", "--release"]).await?;
+) -> anyhow::Result<std::process::Child> {
+    let child = run_flutter(project_path.as_ref(), vec!["run", "--release"], None)?;
 
     Ok(child)
 }
 
-pub async fn run_flutter_build<S: AsRef<str>>(
-    project_path: S,
-    build_type: S,
-) -> anyhow::Result<()> {
+pub fn run_flutter_build<S: AsRef<str>>(project_path: S, build_type: S) -> anyhow::Result<()> {
     let child = run_flutter(
         project_path.as_ref(),
         vec!["build", build_type.as_ref(), "--release"],
-    )
-    .await?;
-    child.wait_with_output().await?;
+        None,
+    )?;
+    child.wait_with_output()?;
 
     Ok(())
 }
 
-pub async fn run_flutter<S: AsRef<str>>(
+pub fn run_flutter<S: AsRef<str>>(
     project_path: S,
     commands: Vec<S>,
-) -> anyhow::Result<tokio::process::Child> {
-    let child = utils::run_command_callback_async(
+    stdin: Option<std::process::Stdio>,
+) -> anyhow::Result<std::process::Child> {
+    let child = utils::run_command_callback(
         format!("flutter{}", if cfg!(windows) { ".bat" } else { "" }).as_str(),
         commands.iter().map(|s| s.as_ref()),
         |stdout| {
@@ -97,8 +97,8 @@ pub async fn run_flutter<S: AsRef<str>>(
             error!("{stderr}");
         },
         PathBuf::from(project_path.as_ref()).as_path().into(),
+        stdin,
     )
-    .await
     .map_err(|e| {
         anyhow::anyhow!(
             "Failed to run [flutter {}]: {e}",
