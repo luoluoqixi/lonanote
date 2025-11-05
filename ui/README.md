@@ -6,7 +6,7 @@
   - [Rust](https://rustup.rs/) >= 1.85.0-nightly
   - [Node](https://nodejs.org/) >= 20
   - [pnpm](https://pnpm.io/) >= 9.15.0
-  - [NuGet](https://dist.nuget.org/win-x86-commandline/latest/nuget.exe)
+  - [NuGet](https://dist.nuget.org/win-x86-commandline/latest/nuget.exe) - [需要添加至环境变量](https://inappwebview.dev/docs/intro/#setup-windows)
 - Android / IOS
   - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.32.1
   - Android 和 IOS 环境配置参考 Flutter 文档
@@ -18,13 +18,17 @@
 #### 🚀 安装 pnpm
 
 ```shell
-.\run.cmd install
+run.cmd install
+# or
+sh run.sh install
 ```
 
 #### 🧑‍💻 运行 Windows / Mac / Linux
 
 ```shell
-.\run.cmd dev
+run.cmd dev
+# or
+sh run.sh dev
 ```
 
 > 首次运行应用程序时会被阻止
@@ -40,22 +44,34 @@
 
 ```shell
 # build && 运行
-.\run.cmd build:run
+run.cmd build
+# or
+sh run.sh build
 
 # windows
-.\run.cmd build:win
+run build:win
+# or
+sh run.sh build:win
 
 # macos
-.\run.cmd build:mac
+run build:mac
+# or
+sh run.sh build:mac
 
 # linux
-.\run.cmd build:linux
+run build:linux
+# or
+sh run.sh build:linux
 
 # android
-.\run.cmd build:android
+run build:android
+# or
+sh run.sh build:android
 
 # ios
-.\run.cmd build:ios
+run build:ios
+# or
+sh run.sh build:ios
 ```
 
 #### 🎨 提交

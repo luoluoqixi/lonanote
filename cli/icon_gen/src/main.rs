@@ -1,4 +1,5 @@
 use anyhow::Result;
+use colored::Colorize;
 use log::error;
 
 fn _main() -> Result<()> {
@@ -30,6 +31,6 @@ fn init_logger() {
 fn main() {
     init_logger();
     if let Err(err) = _main() {
-        error!("{err:#?}");
+        error!("{:#?}", err.to_string().red());
     }
 }

@@ -17,4 +17,6 @@ encoding_rs = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 ctrlc = { workspace = true }
 kill_tree = { workspace = true }
+colored = { workspace = true }
+which = { workspace = true }
 icon-gen = { path = "../icon_gen" }

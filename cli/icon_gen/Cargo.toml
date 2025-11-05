@@ -20,3 +20,4 @@ fern = { workspace = true }
 image = { workspace = true, features = ["png", "ico"] }
 log = { workspace = true }
 icns = { workspace = true }
+colored = { workspace = true }

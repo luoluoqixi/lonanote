@@ -17,3 +17,7 @@ pub static EDITOR_PROJECT_PATH: LazyLock<PathBuf> =
 
 pub static FLUTTER_PROJECT_PATH: LazyLock<PathBuf> =
     LazyLock::new(|| CURRENT_PATH.join("../ui/flutter"));
+pub static FLUTTER_RUST_BUILDER_PROJECT_PATH: LazyLock<PathBuf> =
+    LazyLock::new(|| FLUTTER_PROJECT_PATH.join("rust_builder"));
+pub static FLUTTER_RUST_BUILDTOOL_PROJECT_PATH: LazyLock<PathBuf> =
+    LazyLock::new(|| FLUTTER_RUST_BUILDER_PROJECT_PATH.join("cargokit/build_tool"));
