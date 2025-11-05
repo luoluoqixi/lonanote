@@ -101,46 +101,52 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
         elif sys_platform == "linux":
             platform = "linux"
 
-    print("pnpm -C ui install...")
+    print("run install...")
     if platform == "win":
-        utils.subprocess_run(["cmd", "/c", "pnpm", "-C", "ui", "install"], working_dir=repo_root)
+        utils.subprocess_run(["cmd", "/c", ".\\run.cmd", "install"], working_dir=repo_root)
     else:
-        utils.subprocess_run(["pnpm", "-C", "ui", "install"], working_dir=repo_root)
-    print("pnpm -C ui install finish")
+        utils.subprocess_run(["sh", "./run.sh", "install"], working_dir=repo_root)
 
-    print(f"pnpm -C ui build:{platform}...")
+    print("run install finish")
+
+    print(f"run build:{platform}...")
     if platform == "win":
-        utils.subprocess_run(["cmd", "/c", "pnpm", "-C", "ui", f"build:{platform}"], working_dir=repo_root)
+        utils.subprocess_run(["cmd", "/c", ".\\run.cmd", f"build:{platform}"], working_dir=repo_root)
     else:
-        utils.subprocess_run(["pnpm", "-C", "ui", f"build:{platform}"], working_dir=repo_root)
-    print(f"pnpm -C ui build:{platform} finish")
+        utils.subprocess_run(["sh", "./run.sh", f"build:{platform}"], working_dir=repo_root)
+    print(f"run build:{platform} finish")
 
     # zip output
     if platform == "win":
         if suffix is None:
             suffix = "windows.exe"
-        dist_exe = os.path.join(repo_root, f"ui/packages/desktop/dist/lonanote Setup {version}.exe")
-        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        move_file_to_file(dist_exe, output_file)
+        # TODO: windows flutter support
+        # dist_exe = os.path.join(repo_root, f"ui/flutter/build/windows/x64/runner/Release/lonanote.exe")
+        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        # move_file_to_file(dist_exe, output_file)
     elif platform == "mac":
-        if suffix is None:
-            suffix = "mac-arm64.zip"
-        dist_suffix = ""
-        if runner_name == "build mac-arm64":
-            dist_suffix = "-arm64"
-        elif runner_name == "build mac-x64":
-            dist_suffix = ""
-        dist_dmg = os.path.join(
-            repo_root, f"ui/packages/desktop/dist/lonanote-{version}{dist_suffix}.dmg"
-        )
-        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        move_file_to_file(dist_dmg, output_file)
+        # TODO: mac flutter support
+        pass
+        # if suffix is None:
+        #     suffix = "mac-arm64.zip"
+        # dist_suffix = ""
+        # if runner_name == "build mac-arm64":
+        #     dist_suffix = "-arm64"
+        # elif runner_name == "build mac-x64":
+        #     dist_suffix = ""
+        # dist_dmg = os.path.join(
+        #     repo_root, f"ui/packages/desktop/dist/lonanote-{version}{dist_suffix}.dmg"
+        # )
+        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        # move_file_to_file(dist_dmg, output_file)
     elif platform == "linux":
-        if suffix is None:
-            suffix = "linux.AppImage"
-        dist_appimage = os.path.join(repo_root, f"ui/packages/desktop/dist/lonanote-{version}.AppImage")
-        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        move_file_to_file(dist_appimage, output_file)
+        # TODO: linux flutter support
+        pass
+        # if suffix is None:
+        #     suffix = "linux.AppImage"
+        # dist_appimage = os.path.join(repo_root, f"ui/packages/desktop/dist/lonanote-{version}.AppImage")
+        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        # move_file_to_file(dist_appimage, output_file)
     elif platform == "android":
         if suffix is None:
             suffix = "android.apk"
