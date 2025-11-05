@@ -20,6 +20,22 @@ pub fn run_npm_build<S: AsRef<str>>(project_path: S) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn run_npm_version<S: AsRef<str>>(project_path: S, next_version: &str) -> anyhow::Result<()> {
+    let mut child = run_npm(
+        NPM,
+        project_path.as_ref(),
+        &[
+            "version",
+            next_version,
+            "--no-git-tag-version",
+            "--allow-same-version",
+        ],
+    )?;
+    child.wait()?;
+
+    Ok(())
+}
+
 pub fn run_npm<N: AsRef<str>, P: AsRef<str>, S: AsRef<str>>(
     npm: N,
     project_path: P,

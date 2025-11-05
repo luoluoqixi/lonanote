@@ -23,6 +23,13 @@ pub fn run_cargo_bin<S: AsRef<str>, P: AsRef<str>, C: AsRef<str>>(
     super::run_command_which_log(package.as_ref(), project_path, commands)
 }
 
+pub fn run_cargo_version<S: AsRef<str>>(project_path: S, next_version: &str) -> anyhow::Result<()> {
+    let mut child = run_cargo(project_path, &["set-version", next_version])?;
+    child.wait()?;
+
+    Ok(())
+}
+
 pub fn run_cargo<P: AsRef<str>, S: AsRef<str>>(
     project_path: P,
     commands: &[S],

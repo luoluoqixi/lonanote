@@ -11,6 +11,16 @@ use log::{error, info};
 #[command(version, about, long_about = None)]
 struct Opt {
     cmd: String,
+
+    // <release> args
+    #[arg(long, default_value_t = false)]
+    major: bool,
+    #[arg(long, default_value_t = false)]
+    minor: bool,
+    #[arg(long, default_value_t = false)]
+    patch: bool,
+    #[arg(long, default_value_t = false)]
+    push: bool,
 }
 
 fn main() {
@@ -30,6 +40,7 @@ fn main() {
         "gen:rust" => cmd::generate_rust_code().unwrap(),
         "gen:dart" => cmd::generate_dart_code().unwrap(),
         "icon" => icon_gen::generate_icons().unwrap(),
+        "release" => cmd::release(opt.major, opt.minor, opt.patch, opt.push).unwrap(),
         _ => {
             error!("{}", format!("Unknown command: {}", opt.cmd).red());
         }
