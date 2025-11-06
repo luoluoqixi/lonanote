@@ -124,6 +124,15 @@ class SimpleAppBar extends StatelessWidget {
     final colorScheme = ThemeColors.getColorScheme(context);
     final backgroundColor = bgColor ?? ThemeColors.getBgColor(colorScheme);
     final textColor = titleColor ?? ThemeColors.getTextColor(colorScheme);
+
+    // 判断是否需要显示返回按钮
+    // final ModalRoute<dynamic>? parentRoute = ModalRoute.of(context);
+    // final bool useCloseButton =
+    //     parentRoute is PageRoute<dynamic> && parentRoute.fullscreenDialog;
+    // if (parentRoute?.impliesAppBarDismissal ?? false) {
+    //   leading = useCloseButton ? const CloseButton() : const BackButton();
+    // }
+
     return SliverAppBar(
       pinned: true,
       backgroundColor: backgroundColor,

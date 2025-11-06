@@ -5,6 +5,7 @@ import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
+import 'package:lonanote/src/localizations/zh.dart';
 
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/providers/router/router.dart';
@@ -39,6 +40,9 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
         platformStyle: const PlatformStyleData(
           android: PlatformStyle.Material,
           ios: PlatformStyle.Cupertino,
+          macos: PlatformStyle.Cupertino,
+          windows: PlatformStyle.Material,
+          linux: PlatformStyle.Material,
         ),
       ),
       builder: (context) => PlatformTheme(
@@ -67,6 +71,13 @@ class _AppState extends ConsumerState<App> with SingleTickerProviderStateMixin {
                 DefaultMaterialLocalizations.delegate,
                 DefaultWidgetsLocalizations.delegate,
                 DefaultCupertinoLocalizations.delegate,
+                ZHMaterialLocalizations.delegate,
+                ZHWidgetsLocalizations.delegate,
+                ZHCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const <Locale>[
+                Locale('zh', 'CN'),
+                Locale('en', 'US'),
               ],
               navigatorObservers: [
                 RouterNavigatorObserver(ref),
