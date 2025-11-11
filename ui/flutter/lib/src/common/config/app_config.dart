@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AppConfig {
   static final bool isDesktop =
       Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  static final bool isMobile = Platform.isAndroid || Platform.isIOS;
   static final bool isMaterial =
       Platform.isWindows || Platform.isLinux || Platform.isAndroid;
   static const bool isDebug = kDebugMode;

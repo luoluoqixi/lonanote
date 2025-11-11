@@ -7,9 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:lonanote/src/bindings/api/fs/fs.dart';
 import 'package:lonanote/src/bindings/api/path/path.dart';
+import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/widgets/custom_webview.dart';
 import 'package:mime/mime.dart';
+
+final isMobile = AppConfig.isMobile;
 
 class CustomAnyPathHandler extends CustomPathHandler {
   final String directory;
@@ -207,6 +210,7 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
   }
 
   void _enableKeyboard() {
+    if (!isMobile) return;
     if (_controller != null) {
       if (Platform.isIOS) {
         _controller!.setInputMethodEnabled(true);
@@ -218,6 +222,7 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
   }
 
   void _hideKeyboard() {
+    if (!isMobile) return;
     if (_controller != null) {
       if (Platform.isAndroid) {
         SystemChannels.textInput.invokeMethod('TextInput.hide');
@@ -229,6 +234,7 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
   }
 
   Future<bool> _hasFocus() async {
+    if (!isMobile) return false;
     if (_controller != null) {
       final result = await _controller!
           .evaluateJavascript(source: "document.activeElement != null");
@@ -238,12 +244,14 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
   }
 
   Future<void> _clearFocus() async {
+    if (!isMobile) return;
     if (_controller != null) {
       await _controller!.clearFocus();
     }
   }
 
   Future<void> _requestFocus() async {
+    if (!isMobile) return;
     if (_controller != null) {
       await _controller!.requestFocus();
     }

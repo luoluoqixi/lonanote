@@ -30,6 +30,8 @@ import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:keyboard_height_plugin/keyboard_height_plugin.dart';
 
+final isMobile = AppConfig.isMobile;
+
 class EditorPage extends ConsumerStatefulWidget {
   const EditorPage({
     super.key,
@@ -109,32 +111,9 @@ class _EditorPageState extends ConsumerState<EditorPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    _keyboardHeightPlugin.onKeyboardHeightChanged((double height) {
-      if (!mounted) return;
-      if (!_canUpdateKeyboard) return;
-      if (Platform.isAndroid) {
-        if (height > 0) {
-          height += MediaQuery.of(context).viewPadding.bottom;
-        }
-      }
-      if (_updateKeyboardEvent != null) {
-        _updateKeyboardEvent!.cancel();
-        _updateKeyboardEvent = null;
-      }
-      if (Platform.isIOS && _currentkeyboardHeight != 0.0 && height != 0.0) {
-        // logger.e("keyboard height: $height");
-        _updateKeyboardEvent = Timer(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            _updateKeyboard(height);
-            _updateKeyboardEvent = null;
-          }
-        });
-      } else {
-        if (_currentkeyboardHeight != height) {
-          _updateKeyboard(height);
-        }
-      }
-    });
+    if (isMobile) {
+      _keyboardHeightPlugin.onKeyboardHeightChanged(_onKeyboardChange);
+    }
 
     final ext = Utility.getExtName(widget.path);
     _isMarkdown = ext != null && Utility.isMarkdown(ext);
@@ -218,10 +197,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
   @override
   void didPushNext() {
     super.didPushNext();
-    _hideKeyboard();
-    _hideCustomToolbar(false);
-    if (Platform.isIOS) {
-      _enableKeyboard();
+    if (isMobile) {
+      _hideKeyboard();
+      _hideCustomToolbar(false);
+      if (Platform.isIOS) {
+        _enableKeyboard();
+      }
     }
   }
 
@@ -230,6 +211,33 @@ class _EditorPageState extends ConsumerState<EditorPage>
       _isDisposing = true;
     });
     return true;
+  }
+
+  void _onKeyboardChange(double height) {
+    if (!mounted) return;
+    if (!_canUpdateKeyboard) return;
+    if (Platform.isAndroid) {
+      if (height > 0) {
+        height += MediaQuery.of(context).viewPadding.bottom;
+      }
+    }
+    if (_updateKeyboardEvent != null) {
+      _updateKeyboardEvent!.cancel();
+      _updateKeyboardEvent = null;
+    }
+    if (Platform.isIOS && _currentkeyboardHeight != 0.0 && height != 0.0) {
+      // logger.e("keyboard height: $height");
+      _updateKeyboardEvent = Timer(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _updateKeyboard(height);
+          _updateKeyboardEvent = null;
+        }
+      });
+    } else {
+      if (_currentkeyboardHeight != height) {
+        _updateKeyboard(height);
+      }
+    }
   }
 
   void _updateKeyboard(double height) {
@@ -779,6 +787,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
       //   final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
       //   basePath = "$assetScheme://$wsPath";
       // }
+
+      await _webviewController.executeJavaScript(
+        'window.setPlatform("${Platform.operatingSystem}")',
+      );
+
       final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
       basePath = "$assetScheme://$wsName";
       await _webviewController.executeJavaScript(
@@ -822,6 +835,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
     _EditorCustomToolbarType type,
     bool handleKeyboard,
   ) async {
+    if (!isMobile) return;
     if (type == _EditorCustomToolbarType.none) {
       if (handleKeyboard) {
         // 重新显示出键盘, 会有一瞬间关闭再弹出的状态, 增加一个状态延迟后清除
@@ -1093,8 +1107,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final bgColor = ThemeColors.getBgColor(colorScheme);
     final textColor = ThemeColors.getTextColor(colorScheme);
     final bg1Color = ThemeColors.getBg1Color(colorScheme);
-    final isShow =
-        _isShowKeyboard || _showToolbarType != _EditorCustomToolbarType.none;
+    final isShow = isMobile &&
+        (_isShowKeyboard || _showToolbarType != _EditorCustomToolbarType.none);
     final keyboardHeight = math.max(200.0, _openKeyboardHeight);
     return isShow
         ? Column(

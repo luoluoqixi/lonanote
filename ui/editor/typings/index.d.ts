@@ -1,10 +1,13 @@
 declare const __APP_VERSION__: string;
 
 interface Window {
-  /** Android */
+  platform: string;
   isAndroid: boolean;
-  /** iOS */
   isIOS: boolean;
+  isWindows: boolean;
+  isMacOS: boolean;
+  isLinux: boolean;
+
   /** editor 内容是否可滚动 */
   isScrollable?: boolean;
 

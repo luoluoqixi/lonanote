@@ -24,6 +24,17 @@
 
   <body style="background-color: transparent">
     <script>
+      window.setPlatform = (platform) => {
+        window.platform = platform;
+        window.isAndroid = platform === 'android';
+        window.isIOS = platform === 'ios';
+        window.isWindows = platform === 'windows';
+        window.isMacOS = platform === 'macos';
+        window.isLinux = platform === 'linux';
+        document.documentElement.classList.remove('windows', 'macos', 'linux', 'android', 'ios');
+        document.documentElement.classList.add(platform);
+        // console.log(`setPlatform: ${platform}`);
+      };
       window.setAutoSave = (autoSave, autoSaveInterval, autoSaveFocusChange) => {
         window.autoSaveInterval = autoSaveInterval;
         window.autoSave = autoSave;
@@ -54,16 +65,6 @@
         // console.log('basePath: ', basePath);
         window.basePath = basePath;
       };
-
-      (() => {
-        if (/android/i.test(navigator.userAgent)) {
-          window.isAndroid = true;
-          document.documentElement.classList.add('android');
-        } else if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-          window.isIOS = true;
-          document.documentElement.classList.add('ios');
-        }
-      })();
     </script>
     <div id="root">
       <div id="cm-root"></div>
