@@ -56,12 +56,17 @@ class RustPath {
     return Bindings.invoke(key: "path.get_download_dir");
   }
 
+  static String getRootDir() {
+    return Bindings.invoke(key: "path.get_root_dir");
+  }
+
   static void test() {
     if (kDebugMode) {
       print("RustPath.getCacheDir = ${getCacheDir()}");
       print("RustPath.getHomeDir = ${getHomeDir()}");
       print("RustPath.getDataDir = ${getDataDir()}");
       print("RustPath.getDownloadDir = ${getDownloadDir()}");
+      print("RustPath.getRootDir = ${getRootDir()}");
     }
   }
 }

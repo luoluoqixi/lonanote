@@ -23,6 +23,10 @@ fn get_download_dir() -> CommandResult {
     CommandResponse::json(app_path::get_download_dir())
 }
 
+fn get_root_dir() -> CommandResult {
+    CommandResponse::json(app_path::get_root_dir())
+}
+
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct InitDir {
@@ -50,6 +54,7 @@ pub fn reg_commands() -> Result<()> {
     reg_command("path.get_home_dir", get_home_dir)?;
     reg_command("path.get_data_dir", get_data_dir)?;
     reg_command("path.get_download_dir", get_download_dir)?;
+    reg_command("path.get_root_dir", get_root_dir)?;
     reg_command("path.init_dir", init_dir)?;
 
     Ok(())

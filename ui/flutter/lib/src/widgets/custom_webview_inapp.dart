@@ -137,7 +137,7 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
 
   void createAssetLoader() async {
     final assetDirectory =
-        widget.assetAndroidDirectory ?? RustPath.getHomeDir();
+        widget.assetAndroidDirectory ?? RustWorkspaceManager.getWorkspaceDir();
     _webviewSettings.webViewAssetLoader = WebViewAssetLoader(
       pathHandlers: [
         CustomAnyPathHandler(
