@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:lonanote/src/bindings/api/settings/types.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/common/app_router.dart';
 import 'package:lonanote/src/controller/settings/settings_controller.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';

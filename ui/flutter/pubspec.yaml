@@ -34,9 +34,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  lonanote_app:
-    path: rust_builder
-  flutter_rust_bridge: 2.11.1
+  lonanote_flutter_core:
+    path: ../core
   flutter_launcher_icons: ^0.14.4
   flutter_platform_widgets: ^9.0.0
   freezed_annotation: ^3.1.0
@@ -46,7 +45,7 @@ dependencies:
   hooks_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
 
-  logger: ^2.6.0
+  logger: ^2.6.2
   path_provider: ^2.1.5
   json_annotation: ^4.9.0
   pull_down_button: ^0.10.2

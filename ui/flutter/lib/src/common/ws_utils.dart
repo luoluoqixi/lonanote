@@ -1,4 +1,4 @@
-import 'package:lonanote/src/bindings/api/workspace/types.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/common/utility.dart';
 
 class WsUtils {

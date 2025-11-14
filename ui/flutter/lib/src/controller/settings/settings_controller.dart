@@ -1,6 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:lonanote/src/bindings/api/settings/settings.dart';
-import 'package:lonanote/src/bindings/api/settings/types.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/providers/settings/settings.dart';
 
 class SettingsController {

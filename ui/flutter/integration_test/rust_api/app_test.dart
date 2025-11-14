@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lonanote/src/bindings/api/app/app.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lonanote/src/startup/startup.dart';
 

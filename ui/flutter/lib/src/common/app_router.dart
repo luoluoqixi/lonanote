@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:lonanote/src/bindings/api/fs/fs.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/views/editor/editor_page.dart';
 import 'package:lonanote/src/views/editor/image_view_page.dart';

@@ -1,8 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:lonanote/src/bindings/api/fs/fs.dart';
-import 'package:lonanote/src/bindings/api/workspace/types.dart';
-import 'package:lonanote/src/bindings/api/workspace/workspace.dart';
-import 'package:lonanote/src/bindings/api/workspace/workspace_manager.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/controller/workspace/workspace_manager_controller.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 

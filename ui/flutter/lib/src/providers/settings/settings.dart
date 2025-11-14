@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:lonanote/src/bindings/api/settings/settings.dart';
-import 'package:lonanote/src/bindings/api/settings/types.dart';
-import 'package:lonanote/src/bindings/api/workspace/types.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:lonanote/src/common/store/ui_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

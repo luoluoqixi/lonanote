@@ -1,7 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:lonanote/src/bindings/api/workspace/types.dart';
-import 'package:lonanote/src/bindings/api/workspace/workspace.dart';
-import 'package:lonanote/src/bindings/api/workspace/workspace_manager.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace.g.dart';

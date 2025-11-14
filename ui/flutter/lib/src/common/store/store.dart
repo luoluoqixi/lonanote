@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import 'package:lonanote/src/bindings/api/fs/fs.dart';
-import 'package:lonanote/src/bindings/api/path/path.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/common/log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
