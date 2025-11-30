@@ -8,7 +8,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
 import 'package:lonanote/src/common/log.dart';
-import 'package:lonanote/src/widgets/custom_webview.dart';
+import 'package:lonanote/src/widgets/webview/custom_webview.dart';
 import 'package:mime/mime.dart';
 
 final isMobile = AppConfig.isMobile;
@@ -125,7 +125,7 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     assetScheme = widget.assetScheme ?? "assets";
     _webviewSettings.resourceCustomSchemes = [assetScheme];
     if (Platform.isAndroid && widget.assetAndroidHandlerEnable == true) {
-      createAssetLoader();
+      _createAssetLoader();
     }
   }
 
@@ -135,7 +135,7 @@ class _CustomWebviewInAppState extends State<CustomWebviewInApp> {
     _webViewLoaded = false;
   }
 
-  void createAssetLoader() async {
+  void _createAssetLoader() async {
     final assetDirectory =
         widget.assetAndroidDirectory ?? RustWorkspaceManager.getWorkspaceDir();
     _webviewSettings.webViewAssetLoader = WebViewAssetLoader(

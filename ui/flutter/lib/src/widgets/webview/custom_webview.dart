@@ -1,12 +1,11 @@
-// import 'package:lonanote/src/widgets/custom_webview_flutter.dart';
-// import 'package:lonanote/src/widgets/custom_webview_inapp.dart';
+import 'dart:io';
 
-// import 'package:flutter/material.dart';
+import 'package:lonanote/src/common/config/app_config.dart';
+import 'package:lonanote/src/widgets/webview/custom_webview_windows.dart';
 
-// enum CustomWebviewMode {
-//   inAppWebView,
-//   webViewFlutter,
-// }
+import 'custom_webview_inapp.dart';
+
+import 'package:flutter/material.dart';
 
 class CustomWebviewController {
   bool Function()? _isLoaded;
@@ -128,39 +127,64 @@ class CustomWebviewController {
   }
 }
 
-// class CustomWebview extends StatelessWidget {
-//   final CustomWebviewController controller;
+class CustomWebview extends StatelessWidget {
+  final CustomWebviewController controller;
 
-//   final CustomWebviewMode mode;
-//   final void Function()? onWebviewCreate;
-//   final void Function()? onLoadFinish;
-//   final void Function(double x, double y)? onScrollChanged;
+  final bool? assetAndroidHandlerEnable;
+  final String? assetAndroidDomain;
+  final String? assetAndroidPrefix;
+  final String? assetAndroidDirectory;
+  final String? assetScheme;
+  final String? assetSchemeBaseDirectory;
 
-//   const CustomWebview({
-//     super.key,
-//     required this.controller,
-//     required this.mode,
-//     this.onWebviewCreate,
-//     this.onLoadFinish,
-//     this.onScrollChanged,
-//   });
+  final void Function()? onWebviewCreate;
+  final void Function()? onLoadFinish;
+  final void Function(double x, double y)? onScrollChanged;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     if (mode == CustomWebviewMode.inAppWebView) {
-//       return CustomWebviewInApp(
-//         controller: controller,
-//         onWebviewCreate: onWebviewCreate,
-//         onLoadFinish: onLoadFinish,
-//         onScrollChanged: onScrollChanged,
-//       );
-//     } else {
-//       return CustomWebviewFlutter(
-//         controller: controller,
-//         onWebviewCreate: onWebviewCreate,
-//         onLoadFinish: onLoadFinish,
-//         onScrollChanged: onScrollChanged,
-//       );
-//     }
-//   }
-// }
+  const CustomWebview({
+    super.key,
+    required this.controller,
+    this.onWebviewCreate,
+    this.onLoadFinish,
+    this.onScrollChanged,
+    this.assetAndroidHandlerEnable,
+    this.assetAndroidDomain,
+    this.assetAndroidPrefix,
+    this.assetAndroidDirectory,
+    this.assetScheme,
+    this.assetSchemeBaseDirectory,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (AppConfig.isMobile) {
+      return CustomWebviewInApp(
+        controller: controller,
+        onWebviewCreate: onWebviewCreate,
+        onLoadFinish: onLoadFinish,
+        onScrollChanged: onScrollChanged,
+        assetAndroidHandlerEnable: assetAndroidHandlerEnable,
+        assetAndroidDomain: assetAndroidDomain,
+        assetAndroidPrefix: assetAndroidPrefix,
+        assetAndroidDirectory: assetAndroidDirectory,
+        assetScheme: assetScheme,
+        assetSchemeBaseDirectory: assetSchemeBaseDirectory,
+      );
+    } else if (Platform.isWindows) {
+      return CustomWebviewWindows(
+        controller: controller,
+        onWebviewCreate: onWebviewCreate,
+        onLoadFinish: onLoadFinish,
+        onScrollChanged: onScrollChanged,
+        assetAndroidHandlerEnable: assetAndroidHandlerEnable,
+        assetAndroidDomain: assetAndroidDomain,
+        assetAndroidPrefix: assetAndroidPrefix,
+        assetAndroidDirectory: assetAndroidDirectory,
+        assetScheme: assetScheme,
+        assetSchemeBaseDirectory: assetSchemeBaseDirectory,
+      );
+    } else {
+      return const SizedBox.shrink();
+    }
+  }
+}

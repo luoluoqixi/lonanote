@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 // ignore: implementation_imports
-import 'package:lonanote/src/widgets/custom_webview.dart';
+import 'package:lonanote/src/widgets/webview/custom_webview.dart';
 // ignore: implementation_imports
 import 'package:webview_flutter_wkwebview/src/webkit_proxy.dart';
 // ignore: implementation_imports

@@ -72,6 +72,8 @@ dependencies:
     # path: ../../../flutter_inappwebview/flutter_inappwebview
   webview_flutter: 4.13.0
   webview_flutter_wkwebview: ^3.23.0
+  webview_windows: ^0.4.0
+  window_manager: ^0.5.1
   keyboard_height_plugin: ^0.1.5
   mime: ^2.0.0
 
