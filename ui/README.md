@@ -6,7 +6,6 @@
   - [Rust](https://rustup.rs/) >= 1.85.0-nightly
   - [Node](https://nodejs.org/) >= 20
   - [pnpm](https://pnpm.io/) >= 9.15.0
-  - [NuGet](https://dist.nuget.org/win-x86-commandline/latest/nuget.exe) - [需要添加至环境变量](https://inappwebview.dev/docs/intro/#setup-windows)
 - Android / IOS
   - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.32.1
   - Android 和 IOS 环境配置参考 Flutter 文档
@@ -31,6 +30,14 @@ run.cmd dev
 sh run.sh dev
 ```
 
+#### 🧑‍💻 运行 Android / iOS
+
+```shell
+run.cmd dev:mobile
+# or
+sh run.sh dev:mobile
+```
+
 > 首次运行应用程序时会被阻止
 >
 > 转到手机 Settings > Privacy & Security > Developer Mode 以启用开发者模式
@@ -43,11 +50,6 @@ sh run.sh dev
 #### 🏗 打包
 
 ```shell
-# build && 运行
-run.cmd build
-# or
-sh run.sh build
-
 # windows
 run build:win
 # or
