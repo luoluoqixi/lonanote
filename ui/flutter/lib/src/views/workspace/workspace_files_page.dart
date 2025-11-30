@@ -786,6 +786,11 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
             onTap: _sortModeClick,
             icon: ThemeIcons.sort(context),
           ),
+          PullDownMenuItem(
+            title: "刷新",
+            onTap: _reinitFileNode,
+            icon: ThemeIcons.refresh(context),
+          ),
           const PullDownMenuDivider.large(),
           PullDownMenuItem(
             title: "切换工作区",

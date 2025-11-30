@@ -570,7 +570,11 @@ class _SelectWorkspacePageState extends ConsumerState<SelectWorkspacePage>
             icon: ThemeIcons.sort(context),
             onTap: _sortClick,
           ),
-
+          PullDownMenuItem(
+            title: "刷新",
+            onTap: _refreshWorkspaces,
+            icon: ThemeIcons.refresh(context),
+          ),
           // PullDownMenuItem(
           //   title: "打开文件夹...",
           //   onTap: _selectOpenWorkspace,
