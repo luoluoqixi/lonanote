@@ -1,0 +1,74 @@
+@use '../../styles/index.scss';
+
+.desktopLayoutActivityBarTitle {
+  @extend %window-title-drag;
+  height: 100%;
+  // width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-background);
+  overflow: visible;
+  border-right: 1px solid var(--gray-6);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.desktopLayoutActivityBarTitleTop {
+  margin: 0;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 2px;
+}
+
+.windows {
+  .desktopLayoutActivityBarTitleTop::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
+.desktopLayoutActivityBarTitleTabRoot {
+  @extend %window-title-no-drag;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+}
+
+.desktopLayoutActivityBarTitleTabItem {
+  @extend %window-title-no-drag;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  justify-content: center;
+}
+.desktopLayoutActivityBarTitleTabItem span {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.desktopLayoutActivityBarTitleBottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: visible;
+  margin-bottom: 4px;
+}
+
+.desktopLayoutActivityBarTitleBottomItem {
+  @extend %window-title-no-drag;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+}

@@ -20,6 +20,17 @@ pub fn run_npm_build<S: AsRef<str>>(project_path: S) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn run_npm_build_platform<S: AsRef<str>>(project_path: S, platform: S) -> anyhow::Result<()> {
+    let mut child = run_npm(
+        NPM,
+        project_path.as_ref(),
+        &[format!("build:{}", platform.as_ref())],
+    )?;
+    child.wait()?;
+
+    Ok(())
+}
+
 pub fn run_npm_version<S: AsRef<str>>(project_path: S, next_version: &str) -> anyhow::Result<()> {
     let mut child = run_npm(
         NPM,

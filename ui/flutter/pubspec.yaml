@@ -35,7 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   lonanote_flutter_core:
-    path: ../core
+    path: ./core
   flutter_launcher_icons: ^0.14.4
   flutter_platform_widgets: ^9.0.0
   freezed_annotation: ^3.1.0
@@ -71,9 +71,6 @@ dependencies:
         path: flutter_inappwebview
     # path: ../../../flutter_inappwebview/flutter_inappwebview
   webview_flutter: 4.13.0
-  webview_flutter_wkwebview: ^3.23.0
-  webview_windows: ^0.4.0
-  window_manager: ^0.5.1
   keyboard_height_plugin: ^0.1.5
   mime: ^2.0.0
 
@@ -144,5 +141,5 @@ flutter:
     - assets/icons/
     - assets/icons/svg/
     - assets/icons/svg/actions/
-    - assets/editor/
-    - assets/editor/assets/
+    - assets/editor/dist/
+    - assets/editor/dist/assets/

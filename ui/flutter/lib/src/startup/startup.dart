@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
-import 'package:window_manager/window_manager.dart';
 
 import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/common/config/app_config.dart';
@@ -60,7 +59,6 @@ Future<void> startup() async {
   final startTime = DateTime.now().millisecondsSinceEpoch;
 
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
 
   await loadEnv();
   await initRust();

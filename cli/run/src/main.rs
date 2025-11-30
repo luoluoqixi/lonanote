@@ -30,13 +30,17 @@ fn main() {
 
     match opt.cmd.as_str() {
         "install" => cmd::install().unwrap(),
-        "dev" => cmd::dev().unwrap(),
-        "build" => cmd::build_run().unwrap(),
+        "dev" => cmd::dev_ts().unwrap(),
+        "dev:mobile" => cmd::dev_flutter().unwrap(),
+
         "build:win" => cmd::build(cmd::BuildPlatform::Windows).unwrap(),
         "build:mac" => cmd::build(cmd::BuildPlatform::MacOS).unwrap(),
         "build:linux" => cmd::build(cmd::BuildPlatform::Linux).unwrap(),
+
+        "build:mobile" => cmd::build_run_mobile().unwrap(),
         "build:android" => cmd::build(cmd::BuildPlatform::Android).unwrap(),
         "build:ios" => cmd::build(cmd::BuildPlatform::iOS).unwrap(),
+
         "gen:rust" => cmd::generate_rust_code().unwrap(),
         "gen:dart" => cmd::generate_dart_code().unwrap(),
         "icon" => icon_gen::generate_icons().unwrap(),

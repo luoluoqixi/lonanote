@@ -297,7 +297,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
       //   assetFilePath: 'assets/editor/index.html',
       // );
     } else {
-      _webviewController.loadFile('assets/editor/index.html');
+      _webviewController.loadFile('assets/editor/dist/index.html');
     }
   }
 

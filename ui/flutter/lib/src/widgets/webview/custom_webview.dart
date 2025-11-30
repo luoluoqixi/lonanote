@@ -1,7 +1,5 @@
-import 'dart:io';
-
 import 'package:lonanote/src/common/config/app_config.dart';
-import 'package:lonanote/src/widgets/webview/custom_webview_windows.dart';
+// import 'package:lonanote/src/widgets/webview/custom_webview_windows.dart';
 
 import 'custom_webview_inapp.dart';
 
@@ -170,20 +168,22 @@ class CustomWebview extends StatelessWidget {
         assetScheme: assetScheme,
         assetSchemeBaseDirectory: assetSchemeBaseDirectory,
       );
-    } else if (Platform.isWindows) {
-      return CustomWebviewWindows(
-        controller: controller,
-        onWebviewCreate: onWebviewCreate,
-        onLoadFinish: onLoadFinish,
-        onScrollChanged: onScrollChanged,
-        assetAndroidHandlerEnable: assetAndroidHandlerEnable,
-        assetAndroidDomain: assetAndroidDomain,
-        assetAndroidPrefix: assetAndroidPrefix,
-        assetAndroidDirectory: assetAndroidDirectory,
-        assetScheme: assetScheme,
-        assetSchemeBaseDirectory: assetSchemeBaseDirectory,
-      );
-    } else {
+    }
+    // else if (Platform.isWindows) {
+    //   return CustomWebviewWindows(
+    //     controller: controller,
+    //     onWebviewCreate: onWebviewCreate,
+    //     onLoadFinish: onLoadFinish,
+    //     onScrollChanged: onScrollChanged,
+    //     assetAndroidHandlerEnable: assetAndroidHandlerEnable,
+    //     assetAndroidDomain: assetAndroidDomain,
+    //     assetAndroidPrefix: assetAndroidPrefix,
+    //     assetAndroidDirectory: assetAndroidDirectory,
+    //     assetScheme: assetScheme,
+    //     assetSchemeBaseDirectory: assetSchemeBaseDirectory,
+    //   );
+    // }
+    else {
       return const SizedBox.shrink();
     }
   }

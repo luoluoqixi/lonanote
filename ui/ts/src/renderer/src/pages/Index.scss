@@ -1,0 +1,66 @@
+$content-top-toolbar-height: 50px;
+
+.desktopIndexRoot {
+  width: 100%;
+  height: 100%;
+}
+
+.desktopIndexContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.desktopIndexContentEditor {
+  width: 100%;
+  height: calc(100% - $content-top-toolbar-height);
+  flex-grow: 1;
+}
+
+.desktopIndexContentTopToolbar {
+  height: $content-top-toolbar-height;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  margin: 0 20px 0 10px;
+  justify-content: space-between;
+  gap: 10px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.desktopIndexContentTopToolbarCommon {
+  display: flex;
+  flex-wrap: nowrap;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  align-items: center;
+  flex-direction: row;
+}
+
+.desktopIndexContentTopToolbarLeft {
+  @extend .desktopIndexContentTopToolbarCommon;
+  gap: 15px;
+}
+
+.desktopIndexContentTopToolbarCenter {
+  @extend .desktopIndexContentTopToolbarCommon;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.desktopIndexContentTopToolbarRight {
+  @extend .desktopIndexContentTopToolbarCommon;
+  gap: 15px;
+}
+
+.desktopIndexContentTopToolbarRightBtn {
+  width: 18px;
+  height: 18px;
+  padding: 6px;
+}
+.desktopIndexContentTopToolbarRightBtn svg {
+  width: 18px;
+  height: 18px;
+}

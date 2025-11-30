@@ -1,0 +1,17 @@
+export const langs = {
+  menuHeading1: '标题 1',
+  menuHeading2: '标题 2',
+  menuHeading3: '标题 3',
+  menuHeading4: '标题 4',
+  menuHeading5: '标题 5',
+  menuHeading6: '标题 6',
+  menuUnorderedList: '无序列表',
+  menuOrderedList: '有序列表',
+  menuTaskList: '任务列表',
+  menuBlockquote: '引用',
+  menuCodeBlock: '代码块',
+  menuHorizontalRule: '分割线',
+  menuLink: '链接',
+  menuImage: '图片',
+  menuTable: '表格',
+};
