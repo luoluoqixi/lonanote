@@ -202,7 +202,11 @@ pub fn run_command_which_log<C: AsRef<str>, P: AsRef<str>, S: AsRef<str>>(
             info!("{stdout}");
         },
         |stderr| {
-            error!("{}", stderr.red());
+            if stderr.starts_with("Compiling ") || stderr.starts_with("Finished `") {
+                info!("{stderr}");
+            } else {
+                error!("{}", stderr.red());
+            }
         },
     )
 }
