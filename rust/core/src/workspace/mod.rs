@@ -14,7 +14,7 @@ use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use workspace_manager::WorkspaceManager;
 
-static WORKSPACE_MANAGER: LazyLock<Arc<RwLock<WorkspaceManager>>> =
+pub static WORKSPACE_MANAGER: LazyLock<Arc<RwLock<WorkspaceManager>>> =
     LazyLock::new(|| Arc::new(RwLock::new(WorkspaceManager::new())));
 
 pub async fn get_workspace_manager() -> RwLockReadGuard<'static, WorkspaceManager> {

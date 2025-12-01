@@ -52,11 +52,18 @@ async fn is_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult 
 
 async fn get_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
+    let path = WorkspacePath::from(&args.path);
     let workspace = workspace_manager
-        .get_workspace(&WorkspacePath::from(&args.path))
+        .get_workspace(&path)
         .ok_or(anyhow!("workspace is not open: {}", &args.path))?;
+    let metadata = workspace_manager.get_workspace_metadata(&path);
 
-    CommandResponse::json(workspace)
+    let ws = serde_json::json!({
+        "settings": &workspace.settings,
+        "metadata": &metadata,
+    });
+
+    CommandResponse::json(ws)
 }
 
 async fn set_open_workspace_settings(

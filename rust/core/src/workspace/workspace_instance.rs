@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
 
@@ -9,15 +9,13 @@ use super::{
     error::WorkspaceError,
     file_tree::{FileNode, FileTreeSortType},
     workspace_index::WorkspaceIndex,
-    workspace_metadata::WorkspaceMetadata,
     workspace_path::WorkspacePath,
     workspace_settings::WorkspaceSettings,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceInstance {
-    pub metadata: WorkspaceMetadata,
     pub settings: WorkspaceSettings,
 
     #[serde(skip)]
@@ -25,15 +23,15 @@ pub struct WorkspaceInstance {
 }
 
 impl WorkspaceInstance {
-    pub fn new(workspace_path: &WorkspacePath) -> Result<Self, WorkspaceError> {
+    pub fn new(
+        workspace_path: &WorkspacePath,
+        settings: WorkspaceSettings,
+    ) -> Result<Self, WorkspaceError> {
         create_workspace_config_folder(workspace_path)?;
         create_workspace_init_files(workspace_path)?;
-        let settings = WorkspaceSettings::new(workspace_path)?;
-        let metadata = WorkspaceMetadata::new(workspace_path)?;
         let index = WorkspaceIndex::new(workspace_path, settings.file_tree_sort_type.clone())?;
 
         Ok(Self {
-            metadata,
             settings,
             index: Arc::new(RwLock::new(index)),
         })
@@ -148,7 +146,6 @@ impl WorkspaceInstance {
         settings: WorkspaceSettings,
     ) -> Result<(), WorkspaceError> {
         self.settings = settings;
-        self.settings.workspace_path = self.metadata.path.clone();
         self.save().await?;
 
         Ok(())

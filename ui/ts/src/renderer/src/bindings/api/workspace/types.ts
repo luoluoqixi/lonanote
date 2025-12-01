@@ -13,7 +13,6 @@ export interface WorkspaceSettings {
   uploadImagePath: string;
   uploadAttachmentPath: string;
   histroySnapshootCount: number;
-  updateTime?: number | null;
   createTime?: number | null;
 }
 

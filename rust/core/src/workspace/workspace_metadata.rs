@@ -34,9 +34,12 @@ impl WorkspaceMetadata {
         })
     }
 
-    pub fn update_time(&mut self, create_time: Option<u64>, update_time: Option<u64>) {
-        self.create_time = create_time;
-        self.update_time = update_time;
+    pub fn update_create_time(&mut self, create_time: u64) {
+        self.create_time = Some(create_time);
+    }
+
+    pub fn update_update_time(&mut self, update_time: u64) {
+        self.update_time = Some(update_time);
     }
 
     pub fn get_file_name(path: impl AsRef<Path>) -> Result<String, WorkspaceError> {

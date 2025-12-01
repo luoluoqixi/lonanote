@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     config::app_path::get_root_dir,
     utils::{fs_utils, time_utils::get_now_timestamp},
-    workspace::config::DefaultWorkspace,
+    workspace::{config::DefaultWorkspace, workspace_settings::WorkspaceSettings},
 };
 
 use super::{
@@ -129,9 +129,12 @@ impl WorkspaceManager {
                 path_buf.display().to_string(),
             ));
         }
+        let time = get_now_timestamp();
+        let mut metadata = WorkspaceMetadata::new(path)?;
+        metadata.update_create_time(time);
+        metadata.update_update_time(time);
+        self.workspaces.push(metadata);
 
-        let workspace = WorkspaceInstance::new(path)?;
-        self.workspaces.push(workspace.metadata.clone());
         self.save()?;
 
         Ok(())
@@ -147,36 +150,45 @@ impl WorkspaceManager {
                 workspace_path.display().to_string(),
             ));
         }
-        let mut workspace = WorkspaceInstance::new(path)?;
-        if workspace.settings.create_time.is_none() {
-            workspace
-                .settings
-                .update_create_time(get_now_timestamp())
-                .await?;
-        } else {
-            workspace.settings.update_time(get_now_timestamp()).await?;
+        let now_timestamp = get_now_timestamp();
+
+        if !self.workspaces.iter().any(|x| x.path == *path) {
+            let mut metadata = WorkspaceMetadata::new(path)?;
+            metadata.update_create_time(now_timestamp);
+            metadata.update_update_time(now_timestamp);
+            self.workspaces.push(metadata);
         }
 
-        let f = self.workspaces.iter_mut().find(|w| w.path == *path);
-
-        if let Some(metadata) = f {
-            metadata.update_time(
-                workspace.settings.create_time,
-                workspace.settings.update_time,
-            );
-        } else {
-            self.workspaces.push(workspace.metadata.clone());
+        let mut settings = WorkspaceSettings::new(path)?;
+        if settings.create_time.is_none() {
+            settings.update_create_time(get_now_timestamp()).await?;
         }
+
+        {
+            let metadata = self
+                .workspaces
+                .iter_mut()
+                .find(|w| w.path == *path)
+                .unwrap();
+
+            metadata.update_create_time(settings.create_time.unwrap_or(now_timestamp));
+            metadata.update_update_time(now_timestamp);
+        }
+
+        let workspace = WorkspaceInstance::new(path, settings)?;
 
         if !self.workspaces_savedata.contains_key(path) {
             self.workspaces_savedata
                 .insert(path.clone(), WorkspaceSaveData::new());
         }
-        self.last_workspace = Some(workspace.metadata.path.clone());
+
+        self.last_workspace = Some(path.clone());
 
         workspace.reinit().await?;
+
         // println!("open workspace: {:?}", &self.last_workspace);
         self.open_workspaces.insert(path.clone(), workspace);
+
         self.save()?;
 
         Ok(())
@@ -194,6 +206,11 @@ impl WorkspaceManager {
 
     pub fn get_workspaces_metadata(&self) -> &Vec<WorkspaceMetadata> {
         &self.workspaces
+    }
+
+    pub fn get_workspace_metadata(&self, path: &WorkspacePath) -> Option<&WorkspaceMetadata> {
+        let metadata = self.workspaces.iter().find(|w| w.path == *path);
+        metadata
     }
 
     pub fn set_workspace_savedata(

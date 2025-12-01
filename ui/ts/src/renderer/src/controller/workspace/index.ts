@@ -18,6 +18,7 @@ export { workspaceController, workspaceManagerController };
 
 export const getInitWorkspace = async () => {
   const ws = getCurrentOpenWorkspace();
+
   if (ws) {
     const isOpen = await workspace.isOpenWorkspace(ws);
     if (!isOpen) {
