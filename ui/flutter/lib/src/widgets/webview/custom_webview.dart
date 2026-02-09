@@ -155,7 +155,7 @@ class CustomWebview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (AppConfig.isMobile) {
+    if (AppConfig.isMobile || AppConfig.isDesktop) {
       return CustomWebviewInApp(
         controller: controller,
         onWebviewCreate: onWebviewCreate,

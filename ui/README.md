@@ -7,7 +7,7 @@
   - [Node](https://nodejs.org/) >= 20
   - [pnpm](https://pnpm.io/) >= 9.15.0
 - Android / IOS
-  - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.32.1
+  - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.38.9
   - Android 和 IOS 环境配置参考 Flutter 文档
   - VSCode 中保存 dart 时长时间无法保存
     - [#60335](https://github.com/dart-lang/sdk/issues/60335)
