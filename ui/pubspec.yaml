@@ -62,15 +62,6 @@ dependencies:
   chewie: ^1.12.1
   flutter_dotenv: ^5.2.1
   flutter_svg: ^2.2.0
-  # https://github.com/pichillilorenzo/flutter_inappwebview/issues/1947
-  flutter_inappwebview:
-    git:
-        # url: https://github.com/pichillilorenzo/flutter_inappwebview.git
-        url: https://github.com/luoluoqixi/flutter_inappwebview.git
-        ref: master
-        path: flutter_inappwebview
-    # path: ../../flutter_inappwebview/flutter_inappwebview
-  webview_flutter: 4.13.0
   keyboard_height_plugin: ^0.1.5
   mime: ^2.0.0
 
