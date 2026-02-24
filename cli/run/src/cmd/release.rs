@@ -123,6 +123,7 @@ fn generate_changelog(
     }
 }
 
+#[allow(dead_code)]
 fn change_package_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
     info!("change package version in {}...", project_path.display());
     npm::run_npm_version(project_path.to_str().unwrap(), next_version)?;
@@ -161,9 +162,7 @@ fn change_cargo_version(project_path: &Path, next_version: &str) -> anyhow::Resu
 }
 
 fn change_version(repo_root: &Path, next_version: &str) -> anyhow::Result<()> {
-    change_package_version(&repo_root.join("ui/flutter/assets/editor"), next_version)?;
-    change_package_version(&repo_root.join("ui/ts"), next_version)?;
-    change_pubspec_version(&repo_root.join("ui/flutter"), next_version)?;
+    change_pubspec_version(&repo_root.join("ui"), next_version)?;
     change_cargo_version(&repo_root.join("rust"), next_version)?;
 
     Ok(())

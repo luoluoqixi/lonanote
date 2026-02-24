@@ -118,36 +118,41 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
 
     # zip output
     if platform == "win":
-        if suffix is None:
-            suffix = "windows.exe"
-        dist_exe = os.path.join(repo_root, f"ui/ts/dist/lonanote Setup {version}.exe")
-        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        move_file_to_file(dist_exe, output_file)
-    elif platform == "mac":
+        # TODO windows flutter support
         pass
-        if suffix is None:
-            suffix = "mac-arm64.zip"
-        dist_suffix = ""
-        if runner_name == "build mac-arm64":
-            dist_suffix = "-arm64"
-        elif runner_name == "build mac-x64":
-            dist_suffix = ""
-        dist_dmg = os.path.join(
-            repo_root, f"ui/ts/dist/lonanote-{version}{dist_suffix}.dmg"
-        )
-        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        move_file_to_file(dist_dmg, output_file)
+        # if suffix is None:
+        #     suffix = "windows.exe"
+        # dist_exe = os.path.join(repo_root, f"ui/ts/dist/lonanote Setup {version}.exe")
+        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        # move_file_to_file(dist_exe, output_file)
+    elif platform == "mac":
+        # TODO macos flutter support
+        pass
+        # if suffix is None:
+        #     suffix = "mac-arm64.zip"
+        # dist_suffix = ""
+        # if runner_name == "build mac-arm64":
+        #     dist_suffix = "-arm64"
+        # elif runner_name == "build mac-x64":
+        #     dist_suffix = ""
+        # dist_dmg = os.path.join(
+        #     repo_root, f"ui/ts/dist/lonanote-{version}{dist_suffix}.dmg"
+        # )
+        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        # move_file_to_file(dist_dmg, output_file)
     elif platform == "linux":
-        if suffix is None:
-            suffix = "linux.AppImage"
-        dist_appimage = os.path.join(repo_root, f"ui/ts/dist/lonanote-{version}.AppImage")
-        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        move_file_to_file(dist_appimage, output_file)
+        # TODO linux flutter support
+        pass
+        # if suffix is None:
+        #     suffix = "linux.AppImage"
+        # dist_appimage = os.path.join(repo_root, f"ui/ts/dist/lonanote-{version}.AppImage")
+        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        # move_file_to_file(dist_appimage, output_file)
     elif platform == "android":
         if suffix is None:
             suffix = "android.apk"
         dist_apk = os.path.join(
-            repo_root, f"ui/flutter/build/app/outputs/flutter-apk/app-release.apk"
+            repo_root, f"ui/build/app/outputs/flutter-apk/app-release.apk"
         )
         output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
         move_file_to_file(dist_apk, output_file)

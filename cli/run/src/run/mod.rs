@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub mod cargo;
 pub mod dart;
 pub mod flutter;

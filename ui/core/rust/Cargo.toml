@@ -14,7 +14,7 @@ anyhow = { version = "1.0", features = ["backtrace"] }
 flutter_rust_bridge = "=2.11.1"
 anyhow = "1.0"
 
-lonanote-core = { path = "../../../../rust/core" }
+lonanote-core = { path = "../../../rust/core" }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
