@@ -18,8 +18,5 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "scss.lint.validProperties": ["app-region", "user-drag"],
-  "prettier.ignorePath": "ui/ts/.prettierignore",
-  "eslint.workingDirectories": ["ui/ts"],
   "cmake.ignoreCMakeListsMissing": true
 }
