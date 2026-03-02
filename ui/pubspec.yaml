@@ -69,7 +69,7 @@ dependencies:
         url: https://github.com/luoluoqixi/flutter_inappwebview.git
         ref: master
         path: flutter_inappwebview
-    # path: ../../../flutter_inappwebview/flutter_inappwebview
+    # path: ../../flutter_inappwebview/flutter_inappwebview
   webview_flutter: 4.13.0
   keyboard_height_plugin: ^0.1.5
   mime: ^2.0.0

@@ -18,7 +18,7 @@ Notes are **stored offline** in plain Markdown format, allowing seamless migrati
 - **Local storage** - Plain Markdown files, no vendor lock-in
 - **File-system based** - No proprietary databases
 - **WYSIWYG editing** - Real-time preview
-- **Hybrid architecture** - Electron (desktop), Flutter (mobile), Rust (core)
+- **Hybrid architecture** - Flutter (ui), Rust (core)
 
 ### 📸 Screenshots
 

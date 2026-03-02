@@ -20,6 +20,7 @@ pub fn run_npm_build<S: AsRef<str>>(project_path: S) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn run_npm_build_platform<S: AsRef<str>>(project_path: S, platform: S) -> anyhow::Result<()> {
     let mut child = run_npm(
         NPM,

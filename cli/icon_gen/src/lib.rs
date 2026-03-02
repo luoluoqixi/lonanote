@@ -440,7 +440,7 @@ fn start_flutter_launcher_icons(flutter_project_path: &PathBuf) -> Result<()> {
 }
 
 fn generate_flutter_icon(input_path: &Path, default_mask: &Option<PathBuf>) -> Result<()> {
-    let flutter_path = &UI_PATH.join("flutter");
+    let flutter_path = &UI_PATH.to_path_buf();
     let android_icon_path = &flutter_path.join("assets/icons/icon_android.png");
     let ios_path = &flutter_path.join("assets/icons/icon_ios.png");
     let win_icon_path = &flutter_path.join("assets/icons/icon_win.png");

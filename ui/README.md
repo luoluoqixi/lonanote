@@ -8,8 +8,6 @@
 - VSCode 中保存 dart 时长时间无法保存
   - [#60335](https://github.com/dart-lang/sdk/issues/60335)
 
-- [flutter 相关文档](./flutter/README.md)
-
 #### 🚀 安装
 
 ```shell
@@ -18,20 +16,12 @@ run.cmd install
 sh run.sh install
 ```
 
-#### 🧑‍💻 运行 Windows / Mac / Linux
+#### 🧑‍💻 运行
 
 ```shell
 run.cmd dev
 # or
 sh run.sh dev
-```
-
-#### 🧑‍💻 运行 Android / iOS
-
-```shell
-run.cmd dev:mobile
-# or
-sh run.sh dev:mobile
 ```
 
 > 首次运行应用程序时会被阻止
@@ -71,6 +61,14 @@ run build:ios
 sh run.sh build:ios
 ```
 
+#### 🧑‍💻 打包 & 运行
+
+```shell
+run.cmd preview
+# or
+sh run.sh preview
+```
+
 ### generate
 
 #### generate rust code
@@ -80,7 +78,7 @@ sh run.sh build:ios
 cargo install flutter_rust_bridge_codegen
 
 # generate rust code
-cd ui/flutter
+cd ui
 flutter_rust_bridge_codegen generate
 
 # or
@@ -93,13 +91,22 @@ sh run.sh gen:rust
 
 ```
 # generate dart
-cd ui/flutter
+cd ui
 dart run build_runner build
 
 # or
 run.cmd gen:dart
 # or
 sh run.sh gen:dart
+```
+
+#### generate icon
+
+```
+# generate icon
+run.cmd icon
+# or
+sh run.sh icon
 ```
 
 #### 🎨 提交

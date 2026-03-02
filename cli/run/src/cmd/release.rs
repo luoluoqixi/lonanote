@@ -6,7 +6,10 @@ use std::{
 use log::info;
 
 use crate::{
-    config::{CURRENT_PATH, REPO_ROOT},
+    config::{
+        CURRENT_PATH, FLUTTER_EDITOR_PROJECT_PATH, FLUTTER_PROJECT_PATH, REPO_ROOT,
+        RUST_PROJECT_PATH,
+    },
     run::{self, cargo, git, npm},
 };
 
@@ -160,11 +163,10 @@ fn change_cargo_version(project_path: &Path, next_version: &str) -> anyhow::Resu
     Ok(())
 }
 
-fn change_version(repo_root: &Path, next_version: &str) -> anyhow::Result<()> {
-    change_package_version(&repo_root.join("ui/flutter/assets/editor"), next_version)?;
-    change_package_version(&repo_root.join("ui/ts"), next_version)?;
-    change_pubspec_version(&repo_root.join("ui/flutter"), next_version)?;
-    change_cargo_version(&repo_root.join("rust"), next_version)?;
+fn change_version(next_version: &str) -> anyhow::Result<()> {
+    change_package_version(&FLUTTER_EDITOR_PROJECT_PATH, next_version)?;
+    change_pubspec_version(&FLUTTER_PROJECT_PATH, next_version)?;
+    change_cargo_version(&RUST_PROJECT_PATH, next_version)?;
 
     Ok(())
 }
@@ -218,7 +220,7 @@ pub fn release(major: bool, minor: bool, patch: bool, push: bool) -> anyhow::Res
     )?;
 
     // 2. 修改版本号
-    change_version(REPO_ROOT.as_path(), &next_version)?;
+    change_version(&next_version)?;
 
     if push {
         // 3. 提交, 添加tag, push
