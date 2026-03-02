@@ -2,19 +2,15 @@
 
 #### 🔨 开发环境
 
-- Windows / Mac / Linux
-  - [Rust](https://rustup.rs/) >= 1.85.0-nightly
-  - [Node](https://nodejs.org/) >= 20
-  - [pnpm](https://pnpm.io/) >= 9.15.0
-- Android / IOS
-  - [Flutter](https://docs.flutter.dev/get-started/install) >= 3.38.9
-  - Android 和 IOS 环境配置参考 Flutter 文档
-  - VSCode 中保存 dart 时长时间无法保存
-    - [#60335](https://github.com/dart-lang/sdk/issues/60335)
+- [Rust](https://rustup.rs/) >= 1.85.0-nightly
+- [Flutter](https://docs.flutter.dev/get-started/install) >= 3.38.9
+- Android 和 IOS 环境配置参考 Flutter 文档
+- VSCode 中保存 dart 时长时间无法保存
+  - [#60335](https://github.com/dart-lang/sdk/issues/60335)
+
 - [flutter 相关文档](./flutter/README.md)
 
-
-#### 🚀 安装 pnpm
+#### 🚀 安装
 
 ```shell
 run.cmd install
@@ -46,7 +42,6 @@ sh run.sh dev:mobile
 >
 > 按 "Apple Development: APPLE_ID"->"信任"
 
-
 #### 🏗 打包
 
 ```shell
@@ -74,6 +69,37 @@ sh run.sh build:android
 run build:ios
 # or
 sh run.sh build:ios
+```
+
+### generate
+
+#### generate rust code
+
+```
+# install flutter_rust_bridge_codegen
+cargo install flutter_rust_bridge_codegen
+
+# generate rust code
+cd ui/flutter
+flutter_rust_bridge_codegen generate
+
+# or
+run.cmd gen:rust
+# or
+sh run.sh gen:rust
+```
+
+#### generate dart code
+
+```
+# generate dart
+cd ui/flutter
+dart run build_runner build
+
+# or
+run.cmd gen:dart
+# or
+sh run.sh gen:dart
 ```
 
 #### 🎨 提交
