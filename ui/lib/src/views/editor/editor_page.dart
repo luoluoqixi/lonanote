@@ -21,7 +21,6 @@ import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/theme/theme_icons.dart';
 import 'package:lonanote/src/views/editor/editor_toolbar/editor_add_toolbar.dart';
 import 'package:lonanote/src/views/editor/editor_toolbar/editor_text_style_toolbar.dart';
-import 'package:lonanote/src/widgets/webview/custom_webview.dart';
 import 'package:lonanote/src/widgets/platform_page.dart';
 import 'package:lonanote/src/widgets/platform_pull_down_button.dart';
 import 'package:lonanote/src/widgets/tools/dialog_tools.dart';
@@ -64,7 +63,7 @@ class EditorSelectionData {
 
 class _EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
-  final CustomWebviewController _webviewController = CustomWebviewController();
+  // final CustomWebviewController _webviewController = CustomWebviewController();
 
   static String assetScheme = "assets";
   late final String assetBasePath;
@@ -163,7 +162,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
   void dispose() {
     AppRouter.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
-    _webviewController.dispose();
+    // _webviewController.dispose();
     super.dispose();
   }
 
@@ -261,15 +260,20 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _hideKeyboard() {
-    _webviewController.hideKeyboard();
+    // _webviewController.hideKeyboard();
   }
 
   void _disableKeyboard() {
-    _webviewController.disableKeyboard();
+    // _webviewController.disableKeyboard();
   }
 
   void _enableKeyboard() {
-    _webviewController.enableKeyboard();
+    // _webviewController.enableKeyboard();
+  }
+
+  bool _isLoaded() {
+    // return _webviewController.isLoaded();
+    return false;
   }
 
   Future<void> _loadFileContent() async {
@@ -292,107 +296,107 @@ class _EditorPageState extends ConsumerState<EditorPage>
   Future<void> _initWebView() async {
     if (AppConfig.isDebug) {
       final ip = "http://${AppConfig.devServerIp}:${AppConfig.devServerPort}";
-      await _webviewController.loadUrl(ip);
+      // await _webviewController.loadUrl(ip);
       // await _webviewController?.loadFile(
       //   assetFilePath: 'assets/editor/index.html',
       // );
     } else {
-      _webviewController.loadFile('assets/editor/dist/index.html');
+      // _webviewController.loadFile('assets/editor/dist/index.html');
     }
   }
 
-  void _bindMessageReceived() {
-    _webviewController.addJavaScriptHandler(
-      'update_state',
-      (dynamic argument) {
-        // logger.i("update_state: $argument");
-        if (argument != null) {
-          final data = argument;
-          if (data != null) {
-            final state = jsonDecode(data) as Map<String, dynamic>?;
-            _updateState(state);
-          }
-        }
-      },
-    );
-    _webviewController.addJavaScriptHandler(
-      'update_selection',
-      (dynamic argument) {
-        // logger.i("update_selection: $argument");
-        if (argument != null) {
-          final data = argument;
-          if (data != null) {
-            final state = jsonDecode(data) as Map<String, dynamic>?;
-            _updateSelectionData(state);
-          }
-        }
-      },
-    );
-    _webviewController.addJavaScriptHandler(
-      'save_file',
-      (dynamic argument) {
-        if (argument != null) {
-          final data = argument;
-          if (data != null) {
-            final content = jsonDecode(data) as String?;
-            _saveFile(content);
-          }
-        }
-      },
-    );
-    _webviewController.addJavaScriptHandler(
-      'scroll_position',
-      (dynamic argument) {
-        if (argument != null) {
-          final data = argument;
-          if (data != null) {
-            // 直接使用 webviewController 的监听, 速度快很多
-            // final scrollY = jsonDecode(data) as num?;
-            // _onScrollPositionChange(scrollY?.toDouble());
-          }
-        }
-      },
-    );
+  // void _bindMessageReceived() {
+  //   _webviewController.addJavaScriptHandler(
+  //     'update_state',
+  //     (dynamic argument) {
+  //       // logger.i("update_state: $argument");
+  //       if (argument != null) {
+  //         final data = argument;
+  //         if (data != null) {
+  //           final state = jsonDecode(data) as Map<String, dynamic>?;
+  //           _updateState(state);
+  //         }
+  //       }
+  //     },
+  //   );
+  //   _webviewController.addJavaScriptHandler(
+  //     'update_selection',
+  //     (dynamic argument) {
+  //       // logger.i("update_selection: $argument");
+  //       if (argument != null) {
+  //         final data = argument;
+  //         if (data != null) {
+  //           final state = jsonDecode(data) as Map<String, dynamic>?;
+  //           _updateSelectionData(state);
+  //         }
+  //       }
+  //     },
+  //   );
+  //   _webviewController.addJavaScriptHandler(
+  //     'save_file',
+  //     (dynamic argument) {
+  //       if (argument != null) {
+  //         final data = argument;
+  //         if (data != null) {
+  //           final content = jsonDecode(data) as String?;
+  //           _saveFile(content);
+  //         }
+  //       }
+  //     },
+  //   );
+  //   _webviewController.addJavaScriptHandler(
+  //     'scroll_position',
+  //     (dynamic argument) {
+  //       if (argument != null) {
+  //         final data = argument;
+  //         if (data != null) {
+  //           // 直接使用 webviewController 的监听, 速度快很多
+  //           // final scrollY = jsonDecode(data) as num?;
+  //           // _onScrollPositionChange(scrollY?.toDouble());
+  //         }
+  //       }
+  //     },
+  //   );
 
-    _webviewController.addJavaScriptHandler(
-      'on_link_click_preview',
-      (dynamic argument) {
-        if (argument != null) {
-          final data = argument;
-          if (data != null) {
-            final url = jsonDecode(data) as String?;
-            _onClickPreviewLink(url);
-          }
-        }
-      },
-    );
+  //   _webviewController.addJavaScriptHandler(
+  //     'on_link_click_preview',
+  //     (dynamic argument) {
+  //       if (argument != null) {
+  //         final data = argument;
+  //         if (data != null) {
+  //           final url = jsonDecode(data) as String?;
+  //           _onClickPreviewLink(url);
+  //         }
+  //       }
+  //     },
+  //   );
 
-    // _webviewController.addJavaScriptHandler(
-    //   'on_link_click_source',
-    //   (dynamic argument) {
-    //     if (argument != null) {
-    //       final data = argument;
-    //       if (data != null) {
-    //         final url = jsonDecode(data) as String?;
-    //         _onClickSourceLink(url);
-    //       }
-    //     }
-    //   },
-    // );
+  //   // _webviewController.addJavaScriptHandler(
+  //   //   'on_link_click_source',
+  //   //   (dynamic argument) {
+  //   //     if (argument != null) {
+  //   //       final data = argument;
+  //   //       if (data != null) {
+  //   //         final url = jsonDecode(data) as String?;
+  //   //         _onClickSourceLink(url);
+  //   //       }
+  //   //     }
+  //   //   },
+  //   // );
 
-    _webviewController.addJavaScriptHandler(
-      'on_task_item_checked',
-      (dynamic argument) {
-        if (argument != null) {
-          final data = argument;
-          if (data != null) {
-            final checked = jsonDecode(data) as bool?;
-            _onTaskItemChecked(checked);
-          }
-        }
-      },
-    );
-  }
+  //   _webviewController.addJavaScriptHandler(
+  //     'on_task_item_checked',
+  //     (dynamic argument) {
+  //       if (argument != null) {
+  //         final data = argument;
+  //         if (data != null) {
+  //           final checked = jsonDecode(data) as bool?;
+  //           _onTaskItemChecked(checked);
+  //         }
+  //       }
+  //     },
+  //   );
+  // }
 
   void _onClickPreviewLink(String? url) async {
     _openUrl(url);
@@ -432,12 +436,12 @@ class _EditorPageState extends ConsumerState<EditorPage>
     return baseColor;
   }
 
-  void _onHtmlScrollPositionChange(double x, double y) {
-    if (_isDisposing) return;
-    if (!_webviewController.isLoaded()) return;
-    if (!mounted) return;
-    _onScrollPositionChange(y);
-  }
+  // void _onHtmlScrollPositionChange(double x, double y) {
+  //   if (_isDisposing) return;
+  //   if (!_isLoaded()) return;
+  //   if (!mounted) return;
+  //   _onScrollPositionChange(y);
+  // }
 
   void _setAppBarColor(Color newBgColor, Color newTextColor) {
     if (newBgColor != _titleBgColor) {
@@ -458,7 +462,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _onScrollPositionChange(double? scrollY) {
     if (_isDisposing) return;
-    if (!_webviewController.isLoaded()) return;
+    if (!_isLoaded()) return;
     if (!mounted) return;
     if (scrollY == null) return;
 
@@ -481,7 +485,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _updateState(Map<String, dynamic>? state) async {
     if (_isDisposing) return;
-    if (!_webviewController.isLoaded()) return;
+    if (!_isLoaded()) return;
     if (!mounted) return;
     final canUndo = await _runWebCommandResult<bool>("can_undo", null);
     final canRedo = await _runWebCommandResult<bool>("can_redo", null);
@@ -495,7 +499,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
 
   void _updateSelectionData(Map<String, dynamic>? state) async {
     if (_isDisposing) return;
-    if (!_webviewController.isLoaded()) return;
+    if (!_isLoaded()) return;
     if (!mounted) return;
     if (state == null) return;
 
@@ -590,21 +594,21 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _undo() async {
-    if (!_webviewController.isLoaded()) return;
+    if (!_isLoaded()) return;
     if (!_canUndo) return;
     HapticFeedback.mediumImpact();
     await _runWebCommand('undo', null);
   }
 
   void _redo() async {
-    if (!_webviewController.isLoaded()) return;
+    if (!_isLoaded()) return;
     if (!_canRedo) return;
     HapticFeedback.mediumImpact();
     await _runWebCommand('redo', null);
   }
 
   void _saveFile(String? content) {
-    if (!_webviewController.isLoaded()) return;
+    if (!_isLoaded()) return;
     if (!mounted) return;
     if (content == null) {
       logger.w("content is null, not saving file");
@@ -639,8 +643,8 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _refreshWebview() async {
-    if (!_webviewController.isLoaded()) return;
-    await _webviewController.reload();
+    if (!_isLoaded()) return;
+    // await _webviewController.reload();
     _resetAppBarColor();
   }
 
@@ -650,25 +654,25 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   Future<String?> _getContentCommand() async {
-    if (!_webviewController.isLoaded()) return null;
-    final s = await _webviewController.executeJavaScript(
-      "window.getContent()",
-      hasResult: true,
-    ) as String?;
-    if (s != null) {
-      return jsonDecode(s);
-    }
+    if (!_isLoaded()) return null;
+    // final s = await _webviewController.executeJavaScript(
+    //   "window.getContent()",
+    //   hasResult: true,
+    // ) as String?;
+    // if (s != null) {
+    //   return jsonDecode(s);
+    // }
     return null;
   }
 
   Future<void> _reinitEditor() async {
-    if (!_webviewController.isLoaded()) return;
-    await _webviewController.executeJavaScript(
-      """
-        window.isShowLineNumber = $_isShowLineNumber;
-        window.sourceMode = $_sourceMode;
-      """,
-    );
+    if (!_isLoaded()) return;
+    // await _webviewController.executeJavaScript(
+    //   """
+    //     window.isShowLineNumber = $_isShowLineNumber;
+    //     window.sourceMode = $_sourceMode;
+    //   """,
+    // );
     await _runWebCommand('reinit_editor', null);
   }
 
@@ -690,69 +694,69 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   void _openVConsole() {
-    if (!_webviewController.isLoaded()) return;
-    _webviewController.executeJavaScript("window.setupVConsole()");
+    if (!_isLoaded()) return;
+    // _webviewController.executeJavaScript("window.setupVConsole()");
   }
 
-  Future<void> _initWebEditor() async {
-    await _webviewController.executeJavaScript(
-      """
-      (() => {
-        const init = () => {
-          if (window.initEditor) {
-            try {
-              window.isShowLineNumber = $_isShowLineNumber;
-              window.sourceMode = $_sourceMode;
-              window.initEditor("${widget.path}", ${jsonEncode(fileContent)});
-            } catch (e) {
-              console.error('initEditor error:', e.message);
-            }
-          } else {
-            setTimeout(init, 100);
-          }
-        };
-        init();
-      })();
-      """,
-    );
-  }
+  // Future<void> _initWebEditor() async {
+  //   await _webviewController.executeJavaScript(
+  //     """
+  //     (() => {
+  //       const init = () => {
+  //         if (window.initEditor) {
+  //           try {
+  //             window.isShowLineNumber = $_isShowLineNumber;
+  //             window.sourceMode = $_sourceMode;
+  //             window.initEditor("${widget.path}", ${jsonEncode(fileContent)});
+  //           } catch (e) {
+  //             console.error('initEditor error:', e.message);
+  //           }
+  //         } else {
+  //           setTimeout(init, 100);
+  //         }
+  //       };
+  //       init();
+  //     })();
+  //     """,
+  //   );
+  // }
 
   Future<void> _runWebCommand(String command, dynamic data) async {
-    if (!_webviewController.isLoaded()) return;
+    if (!_isLoaded()) return;
     final dataStr = data == null ? "null" : jsonEncode(data);
-    await _webviewController.executeJavaScript(
-      """
-      try {
-        window.invokeCommand("$command", $dataStr);
-      } catch(e) {
-        console.error('invokeComrror:', e);
-      }
-      """,
-    );
+    // await _webviewController.executeJavaScript(
+    //   """
+    //   try {
+    //     window.invokeCommand("$command", $dataStr);
+    //   } catch(e) {
+    //     console.error('invokeComrror:', e);
+    //   }
+    //   """,
+    // );
   }
 
   Future<T?> _runWebCommandResult<T>(String command, dynamic data) async {
-    if (!_webviewController.isLoaded()) return null;
-    final dataStr = data == null ? "null" : jsonEncode(data);
-    final result = await _webviewController.executeJavaScript(
-      """
-      (function() {
-        try {
-          return window.invokeCommand("$command", $dataStr);
-        } catch(e) {
-          console.error('invokeComrror:', e);
-          return null;
-        }
-      })()
-      """,
-      hasResult: true,
-    );
-    if (result == null) return null;
-    return result as T;
+    if (!_isLoaded()) return null;
+    // final dataStr = data == null ? "null" : jsonEncode(data);
+    // final result = await _webviewController.executeJavaScript(
+    //   """
+    //   (function() {
+    //     try {
+    //       return window.invokeCommand("$command", $dataStr);
+    //     } catch(e) {
+    //       console.error('invokeComrror:', e);
+    //       return null;
+    //     }
+    //   })()
+    //   """,
+    //   hasResult: true,
+    // );
+    // if (result == null) return null;
+    // return result as T;
   }
 
   Future<void> _updateColorMode(bool updateEditor) async {
-    if (_webviewController.isLoaded()) {
+    if (_isLoaded()) {
       final t = ref.read(settingsProvider.select((s) => s.theme));
       final sn = ref.read(settingsProvider.notifier);
       final brightness = sn.getResolveTheme();
@@ -762,55 +766,55 @@ class _EditorPageState extends ConsumerState<EditorPage>
           .toRadixString(16)
           .padLeft(8, '0')
           .substring(2);
-      await _webviewController.executeJavaScript(
-        'window.setColorMode("$theme", "#$primaryColor", $updateEditor)',
-      );
+      // await _webviewController.executeJavaScript(
+      //   'window.setColorMode("$theme", "#$primaryColor", $updateEditor)',
+      // );
     }
   }
 
   Future<void> _updateWebViewUI() async {
-    if (_isDisposing) return;
-    if (!mounted) return;
-    // 设置 webview 的背景颜色
-    // final bgColor = ThemeColors.getBgColor(ThemeColors.getColorScheme(context));
-    // await _controller.setBackgroundColor(bgColor);
-    // await _controller.setBackgroundColor(Colors.transparent);
+    // if (_isDisposing) return;
+    // if (!mounted) return;
+    // // 设置 webview 的背景颜色
+    // // final bgColor = ThemeColors.getBgColor(ThemeColors.getColorScheme(context));
+    // // await _controller.setBackgroundColor(bgColor);
+    // // await _controller.setBackgroundColor(Colors.transparent);
 
-    if (_webviewController.isLoaded()) {
-      var basePath = "";
-      // if (Platform.isAndroid) {
-      //   final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
-      //   basePath = "https://$assetsDomain$assetsPrefix$wsName";
-      // } else {
-      //   final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
-      //   basePath = "$assetScheme://$wsPath";
-      // }
+    // if (_isLoaded()) {
+    //   var basePath = "";
+    //   // if (Platform.isAndroid) {
+    //   //   final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
+    //   //   basePath = "https://$assetsDomain$assetsPrefix$wsName";
+    //   // } else {
+    //   //   final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
+    //   //   basePath = "$assetScheme://$wsPath";
+    //   // }
 
-      await _webviewController.executeJavaScript(
-        'window.setPlatform("${Platform.operatingSystem}")',
-      );
+    //   await _webviewController.executeJavaScript(
+    //     'window.setPlatform("${Platform.operatingSystem}")',
+    //   );
 
-      final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
-      basePath = "$assetScheme://$wsName";
-      await _webviewController.executeJavaScript(
-        'window.setBasePath(${jsonEncode(basePath)})',
-      );
+    //   final wsName = WorkspaceController.getCurrentWorkspaceName(ref);
+    //   basePath = "$assetScheme://$wsName";
+    //   await _webviewController.executeJavaScript(
+    //     'window.setBasePath(${jsonEncode(basePath)})',
+    //   );
 
-      final s = ref.read(settingsProvider.select((s) => s.settings));
-      if (s != null) {
-        final autoSave = s.autoSave;
-        final autoSaveInterval = s.autoSaveInterval;
-        final autoSaveFocusChange = s.autoSaveFocusChange;
-        await _webviewController.executeJavaScript(
-          'window.setAutoSave($autoSave, $autoSaveInterval, $autoSaveFocusChange)',
-        );
-      }
-      await _updateColorMode(false);
-      _onScrollPositionChange(0);
-      if (mounted) {
-        await _webviewController.executeJavaScript('window.setTitleHeight(0)');
-      }
-    }
+    //   final s = ref.read(settingsProvider.select((s) => s.settings));
+    //   if (s != null) {
+    //     final autoSave = s.autoSave;
+    //     final autoSaveInterval = s.autoSaveInterval;
+    //     final autoSaveFocusChange = s.autoSaveFocusChange;
+    //     await _webviewController.executeJavaScript(
+    //       'window.setAutoSave($autoSave, $autoSaveInterval, $autoSaveFocusChange)',
+    //     );
+    //   }
+    //   await _updateColorMode(false);
+    //   _onScrollPositionChange(0);
+    //   if (mounted) {
+    //     await _webviewController.executeJavaScript('window.setTitleHeight(0)');
+    //   }
+    // }
   }
 
   void _onTitleTap() async {
@@ -850,17 +854,17 @@ class _EditorPageState extends ConsumerState<EditorPage>
         });
         _enableKeyboard();
         if (Platform.isIOS) {
-          final isFocus = await _webviewController
-              .executeJavaScript("window.editor?.editor?.hasFocus");
-          if (!isFocus) {
-            // iOS 下, 如果在打开 ToolbarPanel 的情况下后台, 那么会失去焦点, 此时需要重新弹出键盘
-            _webviewController
-                .executeJavaScript("window.editor?.editor?.focus()");
-            // iOS 后台时, 会自动将键盘高度设置为 0, 如果此时弹出键盘， 又停止了键盘高度更新, 那么 _currentkeyboardHeight 将一直保持 0, 导致真正隐藏键盘时 _currentkeyboardHeight 未更新
-            setState(() {
-              _currentkeyboardHeight = _openKeyboardHeight;
-            });
-          }
+          // final isFocus = await _webviewController
+          //     .executeJavaScript("window.editor?.editor?.hasFocus");
+          // if (!isFocus) {
+          //   // iOS 下, 如果在打开 ToolbarPanel 的情况下后台, 那么会失去焦点, 此时需要重新弹出键盘
+          //   _webviewController
+          //       .executeJavaScript("window.editor?.editor?.focus()");
+          //   // iOS 后台时, 会自动将键盘高度设置为 0, 如果此时弹出键盘， 又停止了键盘高度更新, 那么 _currentkeyboardHeight 将一直保持 0, 导致真正隐藏键盘时 _currentkeyboardHeight 未更新
+          //   setState(() {
+          //     _currentkeyboardHeight = _openKeyboardHeight;
+          //   });
+          // }
         }
       }
     } else {
@@ -1009,24 +1013,25 @@ class _EditorPageState extends ConsumerState<EditorPage>
     if (_isDisposing) {
       return SizedBox.shrink();
     }
-    return CustomWebview(
-      controller: _webviewController,
-      assetScheme: assetScheme,
-      assetSchemeBaseDirectory: assetBasePath,
-      onWebviewCreate: () {
-        _bindMessageReceived();
-        _loadFileContent().then((_) {
-          _initWebView();
-        });
-      },
-      onLoadFinish: () async {
-        await _updateWebViewUI();
-        await _initWebEditor();
-      },
-      onScrollChanged: (x, y) {
-        _onHtmlScrollPositionChange(x, y);
-      },
-    );
+    return SizedBox.shrink();
+    // return CustomWebview(
+    //   controller: _webviewController,
+    //   assetScheme: assetScheme,
+    //   assetSchemeBaseDirectory: assetBasePath,
+    //   onWebviewCreate: () {
+    //     _bindMessageReceived();
+    //     _loadFileContent().then((_) {
+    //       _initWebView();
+    //     });
+    //   },
+    //   onLoadFinish: () async {
+    //     await _updateWebViewUI();
+    //     await _initWebEditor();
+    //   },
+    //   onScrollChanged: (x, y) {
+    //     _onHtmlScrollPositionChange(x, y);
+    //   },
+    // );
   }
 
   Widget? _buildBottomBarPlaceholder(MediaQueryData mediaQuery) {
@@ -1053,7 +1058,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         onAction: (action) {
           if (_isDisposing) return;
           if (!mounted) return;
-          if (!_webviewController.isLoaded()) return;
+          if (!_isLoaded()) return;
           HapticFeedback.mediumImpact();
           _runWebCommand("add_markdown_action", action);
           _hideCustomToolbar(true);
@@ -1065,7 +1070,7 @@ class _EditorPageState extends ConsumerState<EditorPage>
         onAction: (action) {
           if (_isDisposing) return;
           if (!mounted) return;
-          if (!_webviewController.isLoaded()) return;
+          if (!_isLoaded()) return;
           HapticFeedback.mediumImpact();
           _runWebCommand("set_markdown_action", action);
         },

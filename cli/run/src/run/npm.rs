@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 static NPM: &str = "pnpm";
 
 pub fn run_npm_install<S: AsRef<str>>(project_path: S) -> anyhow::Result<()> {

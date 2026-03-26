@@ -8,33 +8,17 @@ use std::{
     },
 };
 
-use crate::{
-    config::{FLUTTER_EDITOR_PROJECT_PATH, FLUTTER_PROJECT_PATH},
-    run::{flutter, npm},
-    utils,
-};
+use crate::{config::FLUTTER_PROJECT_PATH, run::flutter, utils};
 
 pub fn dev() -> anyhow::Result<()> {
     let running = Arc::new(AtomicBool::new(true));
-
-    let dist_folder = FLUTTER_EDITOR_PROJECT_PATH.join("dist/assets");
-    if !dist_folder.exists() {
-        std::fs::create_dir_all(&dist_folder)?;
-    }
-
-    #[allow(clippy::zombie_processes)]
-    let dev_child = npm::run_npm_dev(FLUTTER_EDITOR_PROJECT_PATH.to_str().unwrap())
-        .map_err(|err| error!("{}", format!("run dev failed: {err}").red()))
-        .unwrap();
 
     #[allow(clippy::zombie_processes)]
     let mut flutter_child = flutter::run_flutter_dev(FLUTTER_PROJECT_PATH.to_str().unwrap())
         .map_err(|err| error!("{}", format!("run flutter failed: {err}").red()))
         .unwrap();
 
-    let dev_id = dev_child.id();
     let flutter_id = flutter_child.id();
-    info!("dev pid: {dev_id}");
     info!("flutter pid: {flutter_id}");
 
     let (tx, rx) = std::sync::mpsc::channel::<String>();
@@ -44,7 +28,6 @@ pub fn dev() -> anyhow::Result<()> {
         let running = Arc::clone(&running);
         ctrlc::set_handler(move || {
             info!("stop signal...");
-            utils::stop_pid(dev_id).unwrap_or_else(|e| error!("{}", e.to_string().red()));
             utils::stop_pid(flutter_id).unwrap_or_else(|e| error!("{}", e.to_string().red()));
             running.store(false, Ordering::SeqCst);
             info!("stop finish");

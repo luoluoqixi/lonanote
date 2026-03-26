@@ -6,11 +6,8 @@ use std::{
 use log::info;
 
 use crate::{
-    config::{
-        CURRENT_PATH, FLUTTER_EDITOR_PROJECT_PATH, FLUTTER_PROJECT_PATH, REPO_ROOT,
-        RUST_PROJECT_PATH,
-    },
-    run::{self, cargo, git, npm},
+    config::{CURRENT_PATH, FLUTTER_PROJECT_PATH, REPO_ROOT, RUST_PROJECT_PATH},
+    run::{self, cargo, git},
 };
 
 static COMMIT_MESSAGE: &str = "🔖 release";
@@ -126,12 +123,14 @@ fn generate_changelog(
     }
 }
 
-fn change_package_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
-    info!("change package version in {}...", project_path.display());
-    npm::run_npm_version(project_path.to_str().unwrap(), next_version)?;
-    info!("change package version finish: v{next_version}");
-    Ok(())
-}
+// fn change_package_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
+//     use crate::run::npm;
+
+//     info!("change package version in {}...", project_path.display());
+//     npm::run_npm_version(project_path.to_str().unwrap(), next_version)?;
+//     info!("change package version finish: v{next_version}");
+//     Ok(())
+// }
 
 fn change_pubspec_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
     info!("change pubspec version in {}...", project_path.display());
@@ -164,7 +163,6 @@ fn change_cargo_version(project_path: &Path, next_version: &str) -> anyhow::Resu
 }
 
 fn change_version(next_version: &str) -> anyhow::Result<()> {
-    change_package_version(&FLUTTER_EDITOR_PROJECT_PATH, next_version)?;
     change_pubspec_version(&FLUTTER_PROJECT_PATH, next_version)?;
     change_cargo_version(&RUST_PROJECT_PATH, next_version)?;
 
