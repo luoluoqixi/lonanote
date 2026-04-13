@@ -11,9 +11,11 @@ class VideoViewPage extends ConsumerStatefulWidget {
   const VideoViewPage({
     super.key,
     required this.path,
+    this.onBack,
   });
 
   final String path;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _VideoViewPageState();
@@ -54,6 +56,12 @@ class _VideoViewPageState extends ConsumerState<VideoViewPage> {
     return PlatformSimplePage(
       titleText: name,
       noScrollView: true,
+      leading: widget.onBack != null
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: widget.onBack,
+            )
+          : null,
       child: SafeArea(
         bottom: true,
         top: false,

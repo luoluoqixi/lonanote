@@ -49,6 +49,9 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   RustFileNode? fileNode;
   final Set<String> _selectedPaths = {};
 
+  String? _currentParentPath;
+  final List<String?> _pathHistory = [];
+
   final ScrollController _scrollController = ScrollController(
     keepScrollOffset: true,
   );
@@ -56,6 +59,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   @override
   void initState() {
     super.initState();
+    _currentParentPath = widget.parentPath;
     setState(() {
       _isLoading = true;
     });
@@ -93,7 +97,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
 
   Future<void> _reinitFileNode() async {
     // 刷新太快了, 加个延时假装一下在干活
-    await Future.delayed(Duration(milliseconds: 300));
+    // await Future.delayed(Duration(milliseconds: 300));
     final ws = ref.read(workspaceProvider.select((s) => s.currentWorkspace));
     if (ws == null) {
       logger.e("current workspace is null");
@@ -113,7 +117,7 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
           ref.read(settingsProvider.select((w) => w.otherSettings));
       final fileNode = await WorkspaceController.getWorkspaceFileNode(
         ref,
-        widget.parentPath,
+        _currentParentPath,
         otherSettings.fileSortType,
       );
       setState(() {
@@ -359,8 +363,8 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   }
 
   String _getFullFilePath(String name) {
-    if (widget.parentPath != null) {
-      name = "${widget.parentPath}/$name";
+    if (_currentParentPath != null) {
+      name = "$_currentParentPath/$name";
     }
     return name;
   }
@@ -561,21 +565,43 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
     }
   }
 
+  void _navigateToFolder(String parentPath) {
+    _pathHistory.add(_currentParentPath);
+    setState(() {
+      _currentParentPath = parentPath;
+      _isLoading = true;
+    });
+    _reinitFileNode().then((_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
+
+  void _navigateBack() {
+    if (_pathHistory.isEmpty) return;
+    setState(() {
+      _currentParentPath = _pathHistory.removeLast();
+      _isLoading = true;
+    });
+    _reinitFileNode().then((_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
+
   void _openFileNode(RustFileNode node) {
     if (node.isDirectory()) {
       String parentPath = node.path;
-      if (widget.parentPath != null) {
-        parentPath = "${widget.parentPath}/$parentPath";
+      if (_currentParentPath != null) {
+        parentPath = "$_currentParentPath/$parentPath";
       }
-      AppRouter.jumpToPage(
-        context,
-        (context) {
-          return WorkspaceFilesPage(
-            parentPath: parentPath,
-          );
-        },
-        pageName: "/workspace_files",
-      );
+      _navigateToFolder(parentPath);
     } else if (node.isFile()) {
       _openFile(node);
     } else {
@@ -864,15 +890,16 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
   @override
   Widget build(BuildContext context) {
     _listenFloatingToolbar(context);
-    final isRoot = widget.parentPath == null;
+    final isRoot = _currentParentPath == null;
+    final canGoBack = _pathHistory.isNotEmpty;
     final workspace =
         ref.watch(workspaceProvider.select((s) => s.currentWorkspace));
     final otherSettings =
         ref.watch(settingsProvider.select((s) => s.otherSettings));
     final colorScheme = ThemeColors.getColorScheme(context);
     var title = workspace?.metadata.name ?? "";
-    if (widget.parentPath != null) {
-      final paths = widget.parentPath!.split("/");
+    if (_currentParentPath != null) {
+      final paths = _currentParentPath!.split("/");
       title = paths[paths.length - 1];
     }
     final floatingToolbar =
@@ -882,6 +909,15 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       // titleText: title,
       title: Row(
         children: [
+          if (canGoBack)
+            PlatformIconBtn(
+              icon: Icon(
+                ThemeIcons.arrowBack(context),
+                size: 18,
+                color: ThemeColors.getTextColor(colorScheme),
+              ),
+              onPressed: _navigateBack,
+            ),
           Icon(
             isRoot
                 ? ThemeIcons.workspace(context)
@@ -902,10 +938,14 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       ),
       scrollController: _scrollController,
       onScrollbarDragIsActiveChanged: _handleDragIsActiveChanged,
-      isHome: widget.parentPath == null,
+      isHome: _currentParentPath == null,
       onWillPop: () {
         if (_isSelectionMode) {
           _closeSelectMode();
+          return Future.value(false);
+        }
+        if (_pathHistory.isNotEmpty) {
+          _navigateBack();
           return Future.value(false);
         }
         return Future.value(true);

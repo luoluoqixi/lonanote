@@ -13,10 +13,12 @@ class ImageViewPage extends ConsumerStatefulWidget {
     super.key,
     required this.paths,
     required this.index,
+    this.onBack,
   });
 
   final List<String> paths;
   final int index;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _ImageViewPageState();
@@ -60,6 +62,12 @@ class _ImageViewPageState extends ConsumerState<ImageViewPage> {
     return PlatformSimplePage(
       titleText: currentName ?? "预览图片",
       noScrollView: true,
+      leading: widget.onBack != null
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: widget.onBack,
+            )
+          : null,
       child: Stack(
         children: [
           Padding(

@@ -7,9 +7,11 @@ class NotSupportFilePage extends ConsumerStatefulWidget {
   const NotSupportFilePage({
     super.key,
     required this.path,
+    this.onBack,
   });
 
   final String path;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -23,6 +25,12 @@ class _NotSupportFilePageState extends ConsumerState<NotSupportFilePage> {
 
     return PlatformSimplePage(
       titleText: name,
+      leading: widget.onBack != null
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: widget.onBack,
+            )
+          : null,
       child: Center(
         child: SizedBox(height: 300, child: Center(child: Text("不支持查看的文件"))),
       ),

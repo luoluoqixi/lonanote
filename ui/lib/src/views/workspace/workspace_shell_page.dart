@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:lonanote/src/common/app_router.dart';
+import 'package:lonanote_flutter_core/lonanote_flutter_core.dart';
 import 'package:lonanote/src/common/utility.dart';
 import 'package:lonanote/src/providers/workspace/open_file.dart';
 import 'package:lonanote/src/providers/workspace/workspace.dart';
 import 'package:lonanote/src/theme/theme_colors.dart';
 import 'package:lonanote/src/views/editor/editor_page.dart';
+import 'package:lonanote/src/views/editor/image_view_page.dart';
+import 'package:lonanote/src/views/editor/not_support_file_page.dart';
+import 'package:lonanote/src/views/editor/video_view_page.dart';
 import 'package:lonanote/src/views/workspace/workspace_files_page.dart';
 
 class WorkspaceShellPage extends ConsumerStatefulWidget {
@@ -30,15 +33,54 @@ class _WorkspaceShellPageState extends ConsumerState<WorkspaceShellPage> {
 
   void _openFile(String fullPath, String path) async {
     final extName = Utility.getExtName(path);
+    await _saveCurrentEditor();
+
     if (extName != null && Utility.isSupportEditor(extName)) {
-      await _saveCurrentEditor();
       ref.read(currentOpenFileProvider.notifier).state = OpenFileInfo(
         fullPath: fullPath,
         path: path,
+        type: OpenFileType.editor,
+      );
+    } else if (extName != null && Utility.isImage(extName)) {
+      // 扫描同目录下的所有图片
+      final dir = Utility.getBasePath(fullPath);
+      final files = RustFs.getFileList(dir);
+      List<String> imagePaths = [];
+      var imageIndex = 0;
+      if (files != null) {
+        for (final f in files) {
+          final ext = Utility.getExtName(f);
+          if (ext != null && Utility.isImage(ext)) {
+            if (f == fullPath) {
+              imageIndex = imagePaths.length;
+            }
+            imagePaths.add(f);
+          }
+        }
+      }
+      if (imagePaths.isEmpty) {
+        imagePaths = [fullPath];
+        imageIndex = 0;
+      }
+      ref.read(currentOpenFileProvider.notifier).state = OpenFileInfo(
+        fullPath: fullPath,
+        path: path,
+        type: OpenFileType.image,
+        imagePaths: imagePaths,
+        imageIndex: imageIndex,
+      );
+    } else if (extName != null && Utility.isVideo(extName)) {
+      ref.read(currentOpenFileProvider.notifier).state = OpenFileInfo(
+        fullPath: fullPath,
+        path: path,
+        type: OpenFileType.video,
       );
     } else {
-      // 图片/视频/不支持的文件类型，仍然走路由
-      AppRouter.openFile(context, fullPath, path);
+      ref.read(currentOpenFileProvider.notifier).state = OpenFileInfo(
+        fullPath: fullPath,
+        path: path,
+        type: OpenFileType.notSupported,
+      );
     }
   }
 
@@ -69,6 +111,34 @@ class _WorkspaceShellPageState extends ConsumerState<WorkspaceShellPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildViewer(OpenFileInfo file) {
+    switch (file.type) {
+      case OpenFileType.editor:
+        return EditorPage(
+          key: _editorKey,
+          path: file.path,
+          onBack: _closeFile,
+          onOpenFile: _openFile,
+        );
+      case OpenFileType.image:
+        return ImageViewPage(
+          paths: file.imagePaths ?? [file.fullPath],
+          index: file.imageIndex ?? 0,
+          onBack: _closeFile,
+        );
+      case OpenFileType.video:
+        return VideoViewPage(
+          path: file.fullPath,
+          onBack: _closeFile,
+        );
+      case OpenFileType.notSupported:
+        return NotSupportFilePage(
+          path: file.fullPath,
+          onBack: _closeFile,
+        );
+    }
   }
 
   @override
@@ -124,7 +194,7 @@ class _WorkspaceShellPageState extends ConsumerState<WorkspaceShellPage> {
                   ),
                 ),
               ),
-              // Index 2: 编辑器区域 —— 始终在树中，保持索引稳定
+              // Index 2: 查看器区域 —— 始终在树中，保持索引稳定
               Positioned(
                 left: isWide ? _fileListWidth + 1 : 0,
                 top: 0,
@@ -133,12 +203,7 @@ class _WorkspaceShellPageState extends ConsumerState<WorkspaceShellPage> {
                 child: Offstage(
                   offstage: !showEditor,
                   child: hasFile
-                      ? EditorPage(
-                          key: _editorKey,
-                          path: currentFile.path,
-                          onBack: _closeFile,
-                          onOpenFile: _openFile,
-                        )
+                      ? _buildViewer(currentFile)
                       : _buildEmptyPlaceholder(colorScheme),
                 ),
               ),
