@@ -1,0 +1,131 @@
+appId: com.luoluoqixi.lonanote
+# productName: ${name}
+copyright: Copyright © 2024 luoluoqixi
+compression: maximum
+asar: true
+# 相对于app 目录的glob 模式，指定创建asar存档时要解压的文件
+asarUnpack:
+  - resources/**
+  # - "**\\*.{node,dll}"
+directories:
+  buildResources: build
+  output: dist/
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  # - out
+  # - node_modules
+  # - package.json
+# # electron版本
+# electronVersion:
+# extraResources:
+#   - from: ./assets/
+#     to: assets
+# # 打包和签名之后运行脚本
+# afterSign: xxx/xxx.js
+# 是否从package.json文件中删除scripts字段
+removePackageScripts: true
+# https://www.electron.build/win
+win:
+  # 可执行程序名称
+  executableName: lonanote
+  # 图标路径
+  icon: build/icons/icon_windows.ico
+  target:
+    # 目标封装类型: nsis, nsis-web, portable, appx, msi, squirrel, 7z, zip, tar.xz, tar.lz, tar.gz, tar.bz2, dir
+    target: nsis
+    # x64 | ia32 | armv7l | arm64 | x64 | ia32
+    arch:
+      - x64
+# https://www.electron.build/nsis
+nsis:
+  # 一键安装
+  oneClick: false
+  # 允许请求权限提升。false则用户必须使用提升的权限重新启动安装程序
+  allowElevation: true
+  # 允许修改安装目录
+  allowToChangeInstallationDirectory: true
+  # # 安装包名称
+  # artifactName: ${name}-${version}-setup.${ext}
+  # # 图标名称
+  # shortcutName: ${name}
+  # # 卸载显示名称
+  # uninstallDisplayName: uninstall-${name}
+  # 创建桌面图标
+  createDesktopShortcut: always
+  # 创建开始菜单图标
+  createStartMenuShortcut: true
+  # # 注册表名 不推荐修改
+  # guid:
+  # # 安装图标
+  # installerIcon:
+  # # 卸载图标
+  # uninstallerIcon:
+  # # 安装Header图标
+  # installerHeaderIcon:
+# https://www.electron.build/mac
+mac:
+  # 图标路径
+  icon: build/icons/icon_mac.icns
+  target:
+    # 目标封装类型: default, dmg, mas, mas-dev, pkg, 7z, zip, tar.xz, tar.lz, tar.gz, tar.bz2, dir
+    target: dmg
+    # x64 | ia32 | armv7l | arm64 | x64 | ia32
+    arch:
+      - arm64
+      - x64
+  # 签名框架和发行包的安全设置的plist
+  # entitlements: ./build/entitlements.mac.plist
+  # entitlementsInherit: ./build/entitlements.mac.plist
+  # distribution | development | undefined
+  # type: distribution
+  # 您的应用程序是否必须使用强化运行时进行签名
+  hardenedRuntime: false
+  # 是否让 @electron/osx-sign 验证签名
+  gatekeeperAssess: false
+  identity: null
+  # # 公证
+  # notarize: false
+  # Info.plist的额外条目
+  # extendInfo:
+  #   - NSCameraUsageDescription: Application requests access to the device's camera.
+  #   - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+  #   - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+  #   - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+# https://www.electron.build/configuration/dmg
+dmg:
+  # # 安装包名称
+  # artifactName: ${name}-${version}.${ext}
+  # # 生成的DMG的标题，将在安装时显示
+  # title: "${name} ${version}"
+  # # 背景图片的路径
+  # background:
+# https://www.electron.build/linux
+linux:
+  # 图标路径: 图标集目录或一个 png 文件的路径，相对于构建资源或项目目录。图标文件名必须包含图标的大小（例如 32x32.png）。默认情况下将根据 macOS icns 文件自动生成
+  icon: build/icons/icon_linux.icns
+  # AppImage, snap, deb, rpm, freebsd, pacman, p5p, apk, 7z, zip, tar.xz, tar.lz, tar.gz, tar.bz2, dir
+  target:
+    - AppImage
+    # - snap
+    # - deb
+  # 作者
+  maintainer: luoluoqixi
+  # 种类
+  category: Utility
+# https://www.electron.build/configuration/appimage
+appImage:
+  # # 安装包名称
+  # artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+# https://www.electron.build/configuration/publish
+publish:
+  provider: generic
+  url: https://example.com/auto-updates
+# 图标生成工具
+# npm install -g  electron-icon-builder
+# electron-icon-builder --input=./ui/build/icon.png --output=./build/icons --flatten
