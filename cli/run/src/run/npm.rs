@@ -53,5 +53,5 @@ pub fn run_npm<N: AsRef<str>, P: AsRef<str>, S: AsRef<str>>(
     project_path: P,
     commands: &[S],
 ) -> anyhow::Result<std::process::Child> {
-    super::run_command_which_log(npm, project_path, commands)
+    utils::cmd::run_command_which_println(npm, project_path, commands)
 }

@@ -306,6 +306,7 @@ fn add_blank(img: &RgbaImage, blank_size: u32) -> RgbaImage {
     bordered_img
 }
 
+#[allow(dead_code)]
 fn process_tauri_android(
     image_path: &Path,
     android_path: &Path,
@@ -356,6 +357,7 @@ fn process_tauri_android(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn process_tauri_ios(
     image_path: &Path,
     ios_path: &Path,
@@ -405,17 +407,34 @@ fn process_tauri_ios(
 }
 
 #[allow(dead_code)]
-fn generate_tauri_icon(input_path: &Path, default_mask: &Option<PathBuf>) -> Result<()> {
-    let mobile_path = &RS_PATH.join("mobile");
-    let android_path = &mobile_path.join("gen/android");
-    let ios_path = &mobile_path.join("gen/apple");
+fn generate_tauri_icon(input_path: &Path) -> Result<()> {
+    // let tauri_rs_path = &UI_PATH.join("src-rs");
+    // let android_path = &tauri_rs_path.join("gen/android");
+    // let ios_path = &tauri_rs_path.join("gen/apple");
 
-    // android
-    process_tauri_android(input_path, android_path, default_mask.as_deref(), None)?;
-    // ios
-    process_tauri_ios(input_path, ios_path, None, None)?;
+    // // android
+    // process_tauri_android(input_path, android_path, default_mask.as_deref(), None)?;
+    // // ios
+    // process_tauri_ios(input_path, ios_path, None, None)?;
 
-    Ok(())
+    let ui_path = &UI_PATH;
+    std::env::set_current_dir(ui_path.to_path_buf())?;
+    let mut result = utils::cmd::run_command_which_println(
+        "pnpm",
+        ui_path.to_str().unwrap(),
+        &["tauri", "icon", input_path.to_str().unwrap()],
+    )?;
+    let status = result.wait()?;
+    if !status.success() {
+        Err(anyhow::anyhow!(
+            "[pnpm tauri icon {}] error: {:#?}",
+            input_path.to_str().unwrap(),
+            result
+        ))
+    } else {
+        info!("pnpm tauri icon {} success", input_path.to_str().unwrap());
+        Ok(())
+    }
 }
 
 fn start_flutter_launcher_icons(flutter_project_path: &PathBuf) -> Result<()> {
@@ -439,6 +458,7 @@ fn start_flutter_launcher_icons(flutter_project_path: &PathBuf) -> Result<()> {
     }
 }
 
+#[allow(dead_code)]
 fn generate_flutter_icon(input_path: &Path, default_mask: &Option<PathBuf>) -> Result<()> {
     let flutter_path = &UI_PATH.to_path_buf();
     let android_icon_path = &flutter_path.join("assets/icons/icon_android.png");
@@ -502,8 +522,8 @@ pub fn generate_icons() -> Result<()> {
         None,
     )?;
 
-    // generate_tauri_icon(input_path, &default_mask)?;
-    generate_flutter_icon(input_path, &default_mask)?;
+    generate_tauri_icon(input_path)?;
+    // generate_flutter_icon(input_path, &default_mask)?;
 
     info!("all finish!");
 

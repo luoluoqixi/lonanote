@@ -163,7 +163,7 @@ where
 {
     match which(command.as_ref()) {
         Ok(path) => {
-            let child = super::run_command_callback(
+            let child = run_command_callback(
                 path.to_str().unwrap(),
                 commands.iter().map(|s| s.as_ref()),
                 stdout_callback,

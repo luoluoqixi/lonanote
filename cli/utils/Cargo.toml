@@ -1,5 +1,5 @@
 [package]
-name = "run"
+name = "utils"
 version = { workspace = true }
 authors = { workspace = true }
 license = { workspace = true }
@@ -11,11 +11,7 @@ anyhow = { workspace = true }
 chrono = { workspace = true }
 fern = { workspace = true }
 log = { workspace = true }
-libc = { workspace = true }
-clap = { workspace = true, features = ["derive"] }
-tokio = { workspace = true, features = ["full"] }
-colored = { workspace = true }
 which = { workspace = true }
-ctrlc = { workspace = true }
-icon-gen = { path = "../icon_gen" }
-utils = { path = "../utils" }
+colored = { workspace = true }
+kill_tree = { workspace = true }
+encoding_rs = { workspace = true }
