@@ -28,9 +28,11 @@ import 'package:pull_down_button/pull_down_button.dart';
 
 class WorkspaceFilesPage extends ConsumerStatefulWidget {
   final String? parentPath;
+  final void Function(String fullPath, String path)? onOpenFile;
   const WorkspaceFilesPage({
     super.key,
     this.parentPath,
+    this.onOpenFile,
   });
 
   @override
@@ -552,7 +554,11 @@ class _WorkspaceFilesPageState extends ConsumerState<WorkspaceFilesPage> {
       );
       return;
     }
-    AppRouter.openFile(context, rawPath, fullPath);
+    if (widget.onOpenFile != null) {
+      widget.onOpenFile!(rawPath, fullPath);
+    } else {
+      AppRouter.openFile(context, rawPath, fullPath);
+    }
   }
 
   void _openFileNode(RustFileNode node) {

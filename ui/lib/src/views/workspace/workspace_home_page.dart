@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:lonanote/src/views/workspace/workspace_files_page.dart';
+import 'package:lonanote/src/views/workspace/workspace_shell_page.dart';
 
 class WorkspaceHomePage extends ConsumerStatefulWidget {
   const WorkspaceHomePage({super.key});
@@ -22,6 +22,6 @@ class _WorkspaceHomePageState extends ConsumerState<WorkspaceHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return WorkspaceFilesPage();
+    return WorkspaceShellPage();
   }
 }

@@ -282,6 +282,8 @@ class PlatformSimplePage extends StatefulWidget {
   final EdgeInsets? scrollPadding;
   final ValueChanged<bool>? onScrollbarDragIsActiveChanged;
 
+  final Widget? leading;
+
   final PlatformNavBar? bottomNavBar;
 
   final bool? resizeToAvoidBottomInset;
@@ -317,6 +319,7 @@ class PlatformSimplePage extends StatefulWidget {
     this.onScrollbarDragIsActiveChanged,
     this.bottomNavBar,
     this.resizeToAvoidBottomInset,
+    this.leading,
   });
 
   @override
@@ -476,6 +479,8 @@ class _PlatformSimplePageState extends State<PlatformSimplePage> {
       return AppBar(
         centerTitle: widget.centerTitle ?? false,
         actions: widget.titleActions,
+        leading: widget.leading,
+        automaticallyImplyLeading: widget.leading == null,
         title: widget.title ??
             Text(
               widget.titleText ?? "",

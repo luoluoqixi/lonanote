@@ -34,12 +34,16 @@ class EditorPage extends ConsumerStatefulWidget {
   const EditorPage({
     super.key,
     required this.path,
+    this.onBack,
+    this.onOpenFile,
   });
 
   final String path;
+  final VoidCallback? onBack;
+  final void Function(String fullPath, String path)? onOpenFile;
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _EditorPageState();
+  ConsumerState<ConsumerStatefulWidget> createState() => EditorPageState();
 }
 
 class EditorSelectionData {
@@ -62,9 +66,14 @@ class EditorSelectionData {
   bool isBlockquote = false;
 }
 
-class _EditorPageState extends ConsumerState<EditorPage>
+class EditorPageState extends ConsumerState<EditorPage>
     with WidgetsBindingObserver, RouteAware {
   final CustomWebviewController _webviewController = CustomWebviewController();
+
+  /// 供外部在切换文件前调用，同步获取内容并保存
+  Future<void> saveBeforeSwitch() async {
+    await _save();
+  }
 
   static String assetScheme = "assets";
   late final String assetBasePath;
@@ -160,6 +169,18 @@ class _EditorPageState extends ConsumerState<EditorPage>
   }
 
   @override
+  void deactivate() {
+    // 嵌入模式下切换文件时，在 widget 移出树之前尝试保存
+    if (widget.onBack != null) {
+      final s = ref.read(settingsProvider.select((s) => s.settings));
+      if (s != null && s.autoSaveFocusChange == true) {
+        _save();
+      }
+    }
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
     AppRouter.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
@@ -170,8 +191,29 @@ class _EditorPageState extends ConsumerState<EditorPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    AppRouter.routeObserver.subscribe(this, ModalRoute.of(context)!);
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      AppRouter.routeObserver.subscribe(this, route);
+    }
     _updateWebViewUI();
+  }
+
+  @override
+  void didUpdateWidget(covariant EditorPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.path != widget.path) {
+      _switchToNewFile();
+    }
+  }
+
+  /// 切换到新文件：重新加载内容并重新初始化编辑器
+  Future<void> _switchToNewFile() async {
+    final ext = Utility.getExtName(widget.path);
+    _isMarkdown = ext != null && Utility.isMarkdown(ext);
+    _previewMode = false;
+    _resetAppBarColor();
+    await _loadFileContent();
+    await _initWebEditor();
   }
 
   @override
@@ -410,7 +452,11 @@ class _EditorPageState extends ConsumerState<EditorPage>
         final wsPath = WorkspaceController.getCurrentWorkspacePath(ref);
         final filePath = "$wsPath/$url";
         if (RustFs.exists(filePath)) {
-          AppRouter.openFile(context, filePath, url);
+          if (widget.onOpenFile != null) {
+            widget.onOpenFile!(filePath, url);
+          } else {
+            AppRouter.openFile(context, filePath, url);
+          }
         } else {
           logger.e("file notfound: $filePath");
         }
@@ -1253,10 +1299,23 @@ class _EditorPageState extends ConsumerState<EditorPage>
     final mediaQuery = MediaQuery.of(context);
     final bottomBarPlaceholder = _buildBottomBarPlaceholder(mediaQuery);
     final bottomPanel = _buildBottomToolbarPanel(colorScheme);
+    final isEmbedded = widget.onBack != null;
 
     return PlatformSimplePage(
       titleActions: _buildTitleActions(colorScheme),
-      onWillPop: Platform.isAndroid ? _onWillPop : null,
+      onWillPop: isEmbedded ? null : (Platform.isAndroid ? _onWillPop : null),
+      leading: isEmbedded
+          ? IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () {
+                final s = ref.read(settingsProvider.select((s) => s.settings));
+                if (s != null && s.autoSaveFocusChange == true) {
+                  _save();
+                }
+                widget.onBack!();
+              },
+            )
+          : null,
       bottomBar: bottomPanel,
       // 将 AppBar 背景延伸到屏幕顶部
       extendBodyBehindAppBar: true,
