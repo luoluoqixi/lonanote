@@ -522,7 +522,7 @@ pub fn generate_icons() -> Result<()> {
         None,
     )?;
 
-    generate_tauri_icon(input_path)?;
+    generate_tauri_icon(default_workspace_icon_path)?;
     // generate_flutter_icon(input_path, &default_mask)?;
 
     info!("all finish!");
