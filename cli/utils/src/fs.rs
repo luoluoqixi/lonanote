@@ -12,21 +12,23 @@ pub fn copy(src_path: impl AsRef<Path>, target_path: impl AsRef<Path>) -> Result
     if src_path.is_file() {
         copy_file(src_path, target_path)
     } else if src_path.is_dir() {
-        let abs_src = src_path.canonicalize().with_context(|| {
-            format!("failed to canonicalize source path: {}", src_path.display())
-        })?;
-        let abs_target = target_path.canonicalize().with_context(|| {
-            format!(
-                "failed to canonicalize target path: {}",
-                target_path.display()
-            )
-        })?;
+        if target_path.exists() {
+            let abs_src = src_path.canonicalize().with_context(|| {
+                format!("failed to canonicalize source path: {}", src_path.display())
+            })?;
+            let abs_target = target_path.canonicalize().with_context(|| {
+                format!(
+                    "failed to canonicalize target path: {}",
+                    target_path.display()
+                )
+            })?;
 
-        if abs_target.starts_with(&abs_src) {
-            bail!(
-                "target path cannot be inside source directory: {}",
-                target_path.display()
-            );
+            if abs_target.starts_with(&abs_src) {
+                bail!(
+                    "target path cannot be inside source directory: {}",
+                    target_path.display()
+                );
+            }
         }
         copy_dir(src_path, target_path)
     } else {
