@@ -1,8 +1,8 @@
 
 [[release_projects]]
 name = "rust"
-path = "rust"
-package_type = "."
+path = "."
+package_type = "cargo"
 
 
 # dev command
