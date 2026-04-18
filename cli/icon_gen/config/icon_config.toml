@@ -34,7 +34,7 @@ default_mask = true
 
 
 [[icons]]
-name = "flutter icon"
-type = "flutter"
-project_path = "ui"
-output_path = "ui/assets/icons"
+name = "tauri icon"
+type = "tauri"
+project_path = "ui/src-rs"
+output_path = "resources/icons"
