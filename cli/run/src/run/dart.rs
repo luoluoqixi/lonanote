@@ -9,5 +9,5 @@ pub fn run_dart<P: AsRef<str>, S: AsRef<str>>(
     project_path: P,
     commands: &[S],
 ) -> anyhow::Result<std::process::Child> {
-    utils::cmd::run_command_which_log("dart", project_path, commands)
+    super::run_command_which_log("dart", project_path, commands)
 }

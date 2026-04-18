@@ -6,8 +6,11 @@ use std::{
 use log::info;
 
 use crate::{
-    config::{CURRENT_PATH, REPO_ROOT, UI_PROJECT_PATH},
-    run::{cargo, git, npm},
+    config::{
+        CURRENT_PATH, FLUTTER_EDITOR_PROJECT_PATH, FLUTTER_PROJECT_PATH, REPO_ROOT,
+        RUST_PROJECT_PATH,
+    },
+    run::{self, cargo, git, npm},
 };
 
 static COMMIT_MESSAGE: &str = "🔖 release";
@@ -48,8 +51,7 @@ fn run_convco<S: AsRef<str>>(
         .collect::<Vec<_>>();
     args.push(OsStr::new("--config"));
     args.push(OsStr::new(config_path.to_str().unwrap()));
-    let output =
-        utils::cmd::run_command_output(convco_path.as_os_str(), args, Some(REPO_ROOT.as_path()))?;
+    let output = run::run_command_output(convco_path.as_os_str(), args, Some(REPO_ROOT.as_path()))?;
     Ok(output)
 }
 
@@ -59,7 +61,7 @@ fn run_convco_output<S: AsRef<str>>(
     args: &[S],
 ) -> anyhow::Result<String> {
     let output = run_convco(convco_path, config_path, args)?;
-    let v = utils::cmd::parse_bytes(&output.stdout).map_err(|e| anyhow::anyhow!("{e}"))?;
+    let v = run::parse_bytes(&output.stdout).map_err(|e| anyhow::anyhow!("{e}"))?;
 
     Ok(v)
 }
@@ -131,7 +133,6 @@ fn change_package_version(project_path: &Path, next_version: &str) -> anyhow::Re
     Ok(())
 }
 
-#[allow(dead_code)]
 fn change_pubspec_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
     info!("change pubspec version in {}...", project_path.display());
     let pubspec_path = project_path.join("pubspec.yaml");
@@ -163,8 +164,9 @@ fn change_cargo_version(project_path: &Path, next_version: &str) -> anyhow::Resu
 }
 
 fn change_version(next_version: &str) -> anyhow::Result<()> {
-    change_package_version(&UI_PROJECT_PATH, next_version)?;
-    change_cargo_version(&REPO_ROOT, next_version)?;
+    change_package_version(&FLUTTER_EDITOR_PROJECT_PATH, next_version)?;
+    change_pubspec_version(&FLUTTER_PROJECT_PATH, next_version)?;
+    change_cargo_version(&RUST_PROJECT_PATH, next_version)?;
 
     Ok(())
 }

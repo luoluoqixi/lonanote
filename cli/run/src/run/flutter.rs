@@ -33,5 +33,5 @@ pub fn run_flutter<S: AsRef<str>>(
     project_path: S,
     commands: &[S],
 ) -> anyhow::Result<std::process::Child> {
-    utils::cmd::run_command_which_log("flutter", project_path, commands)
+    super::run_command_which_log("flutter", project_path, commands)
 }

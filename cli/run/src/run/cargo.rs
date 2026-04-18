@@ -20,7 +20,7 @@ pub fn run_cargo_bin<S: AsRef<str>, P: AsRef<str>, C: AsRef<str>>(
     if which(package.as_ref()).is_err() {
         run_cargo_install(CURRENT_PATH.to_str().unwrap(), package.as_ref())?;
     }
-    utils::cmd::run_command_which_log(package.as_ref(), project_path, commands)
+    super::run_command_which_log(package.as_ref(), project_path, commands)
 }
 
 pub fn run_cargo_version<S: AsRef<str>>(project_path: S, next_version: &str) -> anyhow::Result<()> {
@@ -34,5 +34,5 @@ pub fn run_cargo<P: AsRef<str>, S: AsRef<str>>(
     project_path: P,
     commands: &[S],
 ) -> anyhow::Result<std::process::Child> {
-    utils::cmd::run_command_which_println("cargo", project_path, commands)
+    super::run_command_which_println("cargo", project_path, commands)
 }

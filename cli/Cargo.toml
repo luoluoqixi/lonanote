@@ -1,7 +1,7 @@
 
 
 [workspace]
-members = ["icon_gen", "run", "utils"]
+members = ["icon_gen", "run"]
 resolver = "2"
 
 [workspace.package]
