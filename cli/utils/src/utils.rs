@@ -2,24 +2,24 @@
 use colored::Colorize;
 use log::{error, info};
 
-pub fn init_logger() {
-    fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "{: <5}: {}: {}",
-                record.level(),
-                chrono::Local::now().format("%H:%M:%S"),
-                message
-            ))
-        })
-        .chain(
+pub fn init_logger(module: &[&str]) {
+    let mut dispatch = fern::Dispatch::new().format(|out, message, record| {
+        out.finish(format_args!(
+            "{: <5}: {}: {}",
+            record.level(),
+            chrono::Local::now().format("%H:%M:%S"),
+            message
+        ))
+    });
+    for m in module.iter() {
+        dispatch = dispatch.chain(
             fern::Dispatch::new()
                 .level(log::LevelFilter::Warn)
-                .level_for("run", log::LevelFilter::Info)
+                .level_for(m.to_string(), log::LevelFilter::Info)
                 .chain(std::io::stdout()),
-        )
-        .apply()
-        .unwrap();
+        );
+    }
+    dispatch.apply().unwrap();
 }
 
 pub fn stop_pid(pid: u32) -> anyhow::Result<()> {

@@ -1,0 +1,195 @@
+
+[[release_projects]]
+name = "editor"
+path = "ui/assets/editor"
+package_type = "npm"
+
+[[release_projects]]
+name = "ui"
+path = "ui"
+package_type = "pubspec"
+
+[[release_projects]]
+name = "rust"
+path = "rust"
+package_type = "cargo"
+
+
+# install command
+[[commands]]
+name = "install"
+description = "Install the application"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["install"]
+run_dir = "ui/assets/editor"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["build"]
+run_dir = "ui/assets/editor"
+
+[[commands.cmds]]
+cmd = "flutter"
+args = ["pub", "get"]
+run_dir = "ui"
+
+
+# dev command
+[[commands]]
+name = "dev"
+description = "Run the application in development mode"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["dev"]
+run_dir = "ui/assets/editor"
+always_run = true
+
+[[commands.cmds]]
+cmd = "flutter"
+args = ["run"]
+run_dir = "ui"
+always_run = true
+always_run_receive_input = true
+
+
+# preview command
+[[commands]]
+name = "preview"
+description = "Run the application in preview mode"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["build"]
+run_dir = "ui/assets/editor"
+
+[[commands.cmds]]
+cmd = "flutter"
+args = ["run", "--release"]
+run_dir = "ui"
+
+
+# build:win command
+[[commands]]
+name = "build:win"
+description = "Build the application for Windows"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["build"]
+run_dir = "ui/assets/editor"
+
+[[commands.cmds]]
+cmd = "flutter"
+args = ["build", "win", "--release"]
+run_dir = "ui"
+
+
+# build:mac command
+[[commands]]
+name = "build:mac"
+description = "Build the application for macOS"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["build"]
+run_dir = "ui/assets/editor"
+
+[[commands.cmds]]
+cmd = "flutter"
+args = ["build", "mac", "--release"]
+run_dir = "ui"
+
+
+# build:linux command
+[[commands]]
+name = "build:linux"
+description = "Build the application for Linux"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["build"]
+run_dir = "ui/assets/editor"
+
+[[commands.cmds]]
+cmd = "flutter"
+args = ["build", "linux", "--release"]
+run_dir = "ui"
+
+
+# build:android command
+[[commands]]
+name = "build:android"
+description = "Build the application for Android"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["build"]
+run_dir = "ui/assets/editor"
+
+[[commands.cmds]]
+cmd = "flutter"
+args = ["build", "apk", "--release"]
+run_dir = "ui"
+
+
+# build:ios command
+[[commands]]
+name = "build:ios"
+description = "Build the application for iOS"
+
+[[commands.cmds]]
+cmd = "pnpm"
+args = ["build"]
+run_dir = "ui/assets/editor"
+
+[[commands.cmds]]
+cmd = "flutter"
+args = ["build", "ipa", "--release"]
+run_dir = "ui"
+
+
+# gen:rust command
+[[commands]]
+name = "gen:rust"
+description = "Generate Rust code"
+
+[[commands.cmds]]
+cmd = "flutter_rust_bridge_codegen"
+args = ["generate"]
+run_dir = "ui/core"
+which_cargo_install = true
+
+
+# gen:dart command
+[[commands]]
+name = "gen:dart"
+description = "Generate Dart code"
+
+[[commands.cmds]]
+cmd = "dart"
+args = ["run", "build_runner", "build"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "dart"
+args = ["run", "build_runner", "build"]
+run_dir = "ui/core"
+
+
+# icon command
+[[commands]]
+name = "icon"
+description = "Generate Icon"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = [
+    "run",
+    "--manifest-path=cli/Cargo.toml",
+    "--release",
+    "--package",
+    "icon-gen",
+]

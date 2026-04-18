@@ -44,7 +44,8 @@ pub fn run_git_tag<S: AsRef<str>>(
     message: Option<&str>,
 ) -> anyhow::Result<()> {
     let output = run_git_output(project_path.as_ref(), &["tag"])?;
-    let tag_output = super::parse_bytes(&output.stdout).map_err(|err| anyhow::anyhow!("{err}"))?;
+    let tag_output =
+        utils::cmd::parse_bytes(&output.stdout).map_err(|err| anyhow::anyhow!("{err}"))?;
     if tag_output.contains(&tag.to_string()) {
         info!("tag {tag} is already exists, delete tag {tag}");
         run_git_delete_tag(project_path.as_ref(), tag)?;
@@ -52,7 +53,7 @@ pub fn run_git_tag<S: AsRef<str>>(
     info!("create tag {tag}");
     // git rev-parse HEAD
     let output = run_git_output(project_path.as_ref(), &["rev-parse", "HEAD"])?;
-    let commit_hash = super::parse_bytes(&output.stdout)
+    let commit_hash = utils::cmd::parse_bytes(&output.stdout)
         .map_err(|err| anyhow::anyhow!("parse git rev stdout error: {err}"))?;
     let commit_hash = commit_hash.trim();
 
@@ -80,14 +81,14 @@ pub fn run_git<P: AsRef<str>, S: AsRef<str>>(
     project_path: P,
     commands: &[S],
 ) -> anyhow::Result<std::process::Child> {
-    super::run_command_which_println("git", project_path, commands)
+    utils::cmd::run_command_which_println("git", project_path, commands)
 }
 
 pub fn run_git_output<P: AsRef<str>, S: AsRef<str>>(
     project_path: P,
     commands: &[S],
 ) -> anyhow::Result<std::process::Output> {
-    super::run_command_output(
+    utils::cmd::run_command_output(
         "git",
         commands.iter().map(|s| s.as_ref()),
         Some(&PathBuf::from(project_path.as_ref())),

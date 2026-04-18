@@ -1,0 +1,40 @@
+
+[common]
+icon = "resources/icons/icon.png"
+mask_path = "resources/icons/mask.png"
+
+[common.transform]
+default_mask = true
+
+[common.transform_win]
+default_mask = true
+
+[common.transform_mac]
+default_mask = true
+blank_size = 100
+resize = { width = 1024, height = 1024 }
+
+[common.transform_linux]
+default_mask = true
+
+[common.transform_android]
+default_mask = true
+
+[common.transform_ios]
+default_mask = false
+
+
+[[icons]]
+name = "default_workspace"
+type = "custom"
+output_path = "rust/core/assets/default_workspace/assets/images/icon.png"
+
+[icons.transform]
+default_mask = true
+
+
+[[icons]]
+name = "flutter icon"
+type = "flutter"
+project_path = "ui"
+output_path = "ui/assets/icons"
