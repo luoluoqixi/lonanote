@@ -3,7 +3,6 @@
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
   "files.eol": "\n",
-  "rust-analyzer.linkedProjects": ["${workspaceFolder}/rust/Cargo.toml"],
   "rust-analyzer.check.command": "clippy",
   "[rust]": {
     "editor.tabSize": 4,
@@ -19,7 +18,5 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "scss.lint.validProperties": ["app-region", "user-drag"],
-  "prettier.ignorePath": "ui/ts/.prettierignore",
-  "eslint.workingDirectories": ["ui/ts"],
   "cmake.ignoreCMakeListsMissing": true
 }

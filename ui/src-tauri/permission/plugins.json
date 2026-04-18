@@ -1,0 +1,31 @@
+{
+  "plugins": [
+    {
+      "name": "path",
+      "commands": ["data_path", "local_data_path"]
+    },
+    {
+      "name": "store",
+      "commands": [
+        "file_path",
+        "file_name",
+        "reload",
+        "save",
+        "clear",
+        "delete",
+        "has",
+        "get",
+        "set",
+        "keys",
+        "values",
+        "len",
+        "is_empty",
+        "all"
+      ]
+    },
+    {
+      "name": "utils",
+      "commands": ["show_in_folder"]
+    }
+  ]
+}
