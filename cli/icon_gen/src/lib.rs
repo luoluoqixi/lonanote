@@ -1,3 +1,5 @@
+mod config;
+
 use anyhow::Result;
 use image::{
     codecs::{
@@ -10,202 +12,9 @@ use log::info;
 use std::{
     io::BufWriter,
     path::{Path, PathBuf},
-    process::Command,
-    sync::LazyLock,
 };
 
-static CURRENT_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-    std::env::current_exe()
-        .unwrap()
-        .parent()
-        .unwrap() // /release
-        .parent()
-        .unwrap() // /target
-        .parent()
-        .unwrap() // /cli
-        .to_path_buf()
-});
-
-static UI_PATH: LazyLock<PathBuf> = LazyLock::new(|| CURRENT_PATH.join("../ui"));
-static RS_PATH: LazyLock<PathBuf> = LazyLock::new(|| CURRENT_PATH.join("../rust"));
-static RES_PATH: LazyLock<PathBuf> = LazyLock::new(|| CURRENT_PATH.join("../resources"));
-static INPUT_ICON_PATH: LazyLock<PathBuf> = LazyLock::new(|| RES_PATH.join("icons/icon.png"));
-
-struct IcnsConf {
-    name: String,
-    size: u32,
-    ostype: String,
-}
-
-struct AndroidConf {
-    name: String,
-    size: u32,
-    foreground_size: u32,
-}
-
-struct IOSConf {
-    size: f32,
-    multipliers: Vec<u32>,
-    has_extra: bool,
-}
-
-static ICNS_CONF: LazyLock<Vec<IcnsConf>> = LazyLock::new(|| {
-    vec![
-        IcnsConf {
-            name: "16x16".to_string(),
-            size: 16,
-            ostype: "is32".to_string(),
-        },
-        IcnsConf {
-            name: "16x16@2x".to_string(),
-            size: 32,
-            ostype: "ic11".to_string(),
-        },
-        IcnsConf {
-            name: "32x32".to_string(),
-            size: 32,
-            ostype: "il32".to_string(),
-        },
-        IcnsConf {
-            name: "32x32@2x".to_string(),
-            size: 64,
-            ostype: "ic12".to_string(),
-        },
-        IcnsConf {
-            name: "128x128".to_string(),
-            size: 128,
-            ostype: "ic07".to_string(),
-        },
-        IcnsConf {
-            name: "128x128@2x".to_string(),
-            size: 256,
-            ostype: "ic13".to_string(),
-        },
-        IcnsConf {
-            name: "256x256".to_string(),
-            size: 256,
-            ostype: "ic08".to_string(),
-        },
-        IcnsConf {
-            name: "256x256@2x".to_string(),
-            size: 512,
-            ostype: "ic14".to_string(),
-        },
-        IcnsConf {
-            name: "512x512".to_string(),
-            size: 512,
-            ostype: "ic09".to_string(),
-        },
-        IcnsConf {
-            name: "512x512@2x".to_string(),
-            size: 1024,
-            ostype: "ic10".to_string(),
-        },
-    ]
-});
-
-static TAURI_ANDROID_CONF: LazyLock<Vec<AndroidConf>> = LazyLock::new(|| {
-    vec![
-        AndroidConf {
-            name: "hdpi".to_string(),
-            size: 49,
-            foreground_size: 162,
-        },
-        AndroidConf {
-            name: "mdpi".to_string(),
-            size: 48,
-            foreground_size: 108,
-        },
-        AndroidConf {
-            name: "xhdpi".to_string(),
-            size: 96,
-            foreground_size: 216,
-        },
-        AndroidConf {
-            name: "xxhdpi".to_string(),
-            size: 144,
-            foreground_size: 324,
-        },
-        AndroidConf {
-            name: "xxxhdpi".to_string(),
-            size: 192,
-            foreground_size: 432,
-        },
-    ]
-});
-
-static TAURI_IOS_CONF: LazyLock<Vec<IOSConf>> = LazyLock::new(|| {
-    vec![
-        IOSConf {
-            size: 20.0,
-            multipliers: vec![1, 2, 3],
-            has_extra: true,
-        },
-        IOSConf {
-            size: 29.0,
-            multipliers: vec![1, 2, 3],
-            has_extra: true,
-        },
-        IOSConf {
-            size: 40.0,
-            multipliers: vec![1, 2, 3],
-            has_extra: true,
-        },
-        IOSConf {
-            size: 60.0,
-            multipliers: vec![2, 3],
-            has_extra: false,
-        },
-        IOSConf {
-            size: 76.0,
-            multipliers: vec![1, 2],
-            has_extra: false,
-        },
-        IOSConf {
-            size: 83.5,
-            multipliers: vec![2],
-            has_extra: false,
-        },
-        IOSConf {
-            size: 512.0,
-            multipliers: vec![2],
-            has_extra: false,
-        },
-    ]
-});
-
-fn process_image(
-    image_path: &Path,
-    output_path: &Path,
-    mask_path: Option<&Path>,
-    blank_size: Option<u32>,
-    resize: Option<(u32, u32)>,
-    prefix: Option<&String>,
-) -> Result<()> {
-    let mut img = image::open(image_path)?.into_rgba8();
-    if let Some(mask_path) = mask_path {
-        let mask = image::open(mask_path)?.into_rgba8();
-        apply_mask(&mut img, &mask);
-    }
-    if let Some(blank_size) = blank_size {
-        img = add_blank(&img, blank_size);
-    }
-    if let Some(target_size) = resize {
-        img = image::imageops::resize(
-            &img,
-            target_size.0,
-            target_size.1,
-            image::imageops::FilterType::Lanczos3,
-        );
-    }
-    save_img(&img, output_path)?;
-    info!(
-        "generate icon {}{}",
-        prefix.unwrap_or(&String::new()),
-        output_path.file_stem().unwrap().to_str().unwrap()
-    );
-    Ok(())
-}
+use crate::config::{GenerateIconType, IconTransformConf, ICON_CONFIG, REPO_PATH};
 
 fn save_img(img: &RgbaImage, file_path: &Path) -> Result<()> {
     let parent_dir = file_path
@@ -233,7 +42,7 @@ fn save_img(img: &RgbaImage, file_path: &Path) -> Result<()> {
         image::codecs::ico::IcoEncoder::new(writer).encode_images(&frames)?;
     } else if lower_file_path.ends_with(".icns") {
         let mut family = icns::IconFamily::new();
-        for conf in ICNS_CONF.iter() {
+        for conf in config::ICNS_CONF.iter() {
             let _name = &conf.name;
             let size = &conf.size;
             let ostype = &conf.ostype;
@@ -246,7 +55,8 @@ fn save_img(img: &RgbaImage, file_path: &Path) -> Result<()> {
                 PngEncoder::new_with_quality(writer, CompressionType::Best, FilterType::NoFilter);
             resized_img.write_with_encoder(encoder)?;
 
-            let image = icns::Image::read_png(&buf[..])
+            let cursor = std::io::Cursor::new(buf);
+            let image = icns::Image::read_png(cursor)
                 .map_err(|e| anyhow::anyhow!("read png icon to icns error: {e:#?}"))?;
             family
                 .add_icon_with_type(
@@ -306,150 +116,270 @@ fn add_blank(img: &RgbaImage, blank_size: u32) -> RgbaImage {
     bordered_img
 }
 
-#[allow(dead_code)]
-fn process_tauri_android(
+fn process_image(
+    name: &str,
     image_path: &Path,
-    android_path: &Path,
-    mask_path: Option<&Path>,
+    output_path: &Path,
+    mask_path: &Option<PathBuf>,
     blank_size: Option<u32>,
+    resize: Option<(u32, u32)>,
 ) -> Result<()> {
-    let res_path = android_path.join("app/src/main/res");
-    for conf in TAURI_ANDROID_CONF.iter() {
-        let folder_name = format!("mipmap-{}/", &conf.name);
-        let out_folder = res_path.join(&folder_name);
-        if !out_folder.exists() {
-            std::fs::create_dir_all(&out_folder).unwrap_or_else(|_| {
-                panic!("create folder error: {}", out_folder.to_str().unwrap())
-            });
-        }
-        let file_name = "ic_launcher_foreground.png";
-        let output_path = out_folder.join(file_name);
-        process_image(
-            image_path,
-            &output_path,
-            mask_path,
-            blank_size,
-            Some((conf.foreground_size, conf.foreground_size)),
-            Some(&folder_name),
-        )?;
-        let file_name = "ic_launcher_round.png";
-        let output_path = out_folder.join(file_name);
-        process_image(
-            image_path,
-            &output_path,
-            mask_path,
-            blank_size,
-            Some((conf.size, conf.size)),
-            Some(&folder_name),
-        )?;
-        let file_name = "ic_launcher.png";
-        let output_path = out_folder.join(file_name);
-        process_image(
-            image_path,
-            &output_path,
-            mask_path,
-            blank_size,
-            Some((conf.size, conf.size)),
-            Some(&folder_name),
-        )?;
+    let mut img = image::open(image_path)?.into_rgba8();
+    if let Some(mask_path) = mask_path {
+        let mask = image::open(mask_path)?.into_rgba8();
+        apply_mask(&mut img, &mask);
     }
-
+    if let Some(blank_size) = blank_size {
+        img = add_blank(&img, blank_size);
+    }
+    if let Some(target_size) = resize {
+        img = image::imageops::resize(
+            &img,
+            target_size.0,
+            target_size.1,
+            image::imageops::FilterType::Lanczos3,
+        );
+    }
+    save_img(&img, output_path)?;
+    info!(
+        "generate {} icon {}",
+        name,
+        output_path.file_stem().unwrap().to_str().unwrap()
+    );
     Ok(())
 }
 
-#[allow(dead_code)]
-fn process_tauri_ios(
+fn process_image_transform(
+    name: &str,
     image_path: &Path,
-    ios_path: &Path,
-    mask_path: Option<&Path>,
-    blank_size: Option<u32>,
+    output_path: &Path,
+    default_mask: Option<&PathBuf>,
+    transform: Option<&IconTransformConf>,
 ) -> Result<()> {
-    let icon_path = ios_path.join("Assets.xcassets/AppIcon.appiconset");
-    if !icon_path.exists() {
-        std::fs::create_dir_all(&icon_path)
-            .unwrap_or_else(|_| panic!("create dir error: {}", icon_path.to_str().unwrap()));
-    }
-    for conf in TAURI_IOS_CONF.iter() {
-        let size_str = if (conf.size - 512.0).abs() < 0.01 {
-            "512".to_string()
+    fn get_mask_path<'a>(
+        transform: Option<&'a IconTransformConf>,
+        default_mask: Option<&'a PathBuf>,
+    ) -> Option<PathBuf> {
+        if let Some(transform) = transform {
+            if let Some(custom_mask) = &transform.custom_mask {
+                Some(REPO_PATH.join(custom_mask))
+            } else if transform.default_mask.unwrap_or(false) {
+                default_mask.cloned()
+            } else {
+                None
+            }
         } else {
-            format!("{}x{}", conf.size, conf.size)
-        };
-        if conf.has_extra {
-            let size = (conf.size * 2.0).round() as u32;
-            let file_name = format!("AppIcon-{size_str}@2x-1.png");
-            let output_path = icon_path.join(file_name);
-            process_image(
-                image_path,
-                &output_path,
-                mask_path,
-                blank_size,
-                Some((size, size)),
-                None,
-            )?;
-        }
-        for multiplier in conf.multipliers.iter() {
-            let size = (conf.size * (*multiplier as f32)).round() as u32;
-            let file_name = format!("AppIcon-{size_str}@{multiplier}x.png");
-            let output_path = icon_path.join(file_name);
-            process_image(
-                image_path,
-                &output_path,
-                mask_path,
-                blank_size,
-                Some((size, size)),
-                None,
-            )?;
+            None
         }
     }
+    let mask_path = get_mask_path(transform, default_mask);
+    let blank_size = transform.and_then(|t| t.blank_size);
+    let resize = transform
+        .and_then(|t| t.resize.clone())
+        .map(|s| (s.width, s.height));
 
-    Ok(())
+    process_image(
+        name,
+        image_path,
+        output_path,
+        &mask_path,
+        blank_size,
+        resize,
+    )
 }
 
-#[allow(dead_code)]
-fn generate_tauri_icon(input_path: &Path) -> Result<()> {
-    // let tauri_rs_path = &UI_PATH.join("src-rs");
-    // let android_path = &tauri_rs_path.join("gen/android");
-    // let ios_path = &tauri_rs_path.join("gen/apple");
+#[allow(clippy::too_many_arguments)]
+fn generate_platform_icons(
+    name: &str,
+    input_path: &Path,
+    output_path: &Path,
+    default_mask: Option<&PathBuf>,
+    transform: Option<&IconTransformConf>,
+    transform_win: Option<&IconTransformConf>,
+    transform_mac: Option<&IconTransformConf>,
+    transform_linux: Option<&IconTransformConf>,
+    transform_android: Option<&IconTransformConf>,
+    transform_ios: Option<&IconTransformConf>,
+) -> Result<(PathBuf, PathBuf, PathBuf, PathBuf, PathBuf)> {
+    let win_icon_path = output_path.join("icon_win.png");
+    let mac_path = output_path.join("icon_mac.png");
+    let linux_path = output_path.join("icon_linux.png");
+    let android_icon_path = output_path.join("icon_android.png");
+    let ios_path = output_path.join("icon_ios.png");
 
-    // // android
-    // process_tauri_android(input_path, android_path, default_mask.as_deref(), None)?;
-    // // ios
-    // process_tauri_ios(input_path, ios_path, None, None)?;
+    let generate_icon =
+        |platform: &str, output: &Path, tr: Option<&IconTransformConf>| -> Result<()> {
+            info!("generate flutter {} icon to {:?}", platform, tr);
+            process_image_transform(
+                format!("{} {}", name, platform).as_str(),
+                input_path,
+                output,
+                default_mask,
+                tr.or(transform),
+            )
+        };
 
-    let ui_path = &UI_PATH;
-    std::env::set_current_dir(ui_path.to_path_buf())?;
-    let mut result = utils::cmd::run_command_which_println(
-        "pnpm",
-        ui_path.to_str().unwrap(),
-        &["tauri", "icon", input_path.to_str().unwrap()],
+    // windows
+    generate_icon("windows", &win_icon_path, transform_win)?;
+    // mac
+    generate_icon("macos", &mac_path, transform_mac)?;
+    // linux
+    generate_icon("linux", &linux_path, transform_linux)?;
+    // android
+    generate_icon("android", &android_icon_path, transform_android)?;
+    // ios
+    generate_icon("ios", &ios_path, transform_ios)?;
+
+    Ok((
+        win_icon_path,
+        mac_path,
+        linux_path,
+        android_icon_path,
+        ios_path,
+    ))
+}
+
+fn run_tauri_icons(
+    tauri_project_path: &Path,
+    icon_path: &Path,
+    output_folder: &Path,
+) -> Result<()> {
+    // cargo tauri icon <icon_pathicon_path> --output <output_folder>
+    let mut child = utils::cmd::run_command_which_println(
+        "cargo",
+        tauri_project_path.to_str().unwrap(),
+        &[
+            "tauri",
+            "icon",
+            icon_path.to_str().unwrap(),
+            "--output",
+            output_folder.to_str().unwrap(),
+        ],
     )?;
-    let status = result.wait()?;
+    let status = child.wait()?;
     if !status.success() {
         Err(anyhow::anyhow!(
-            "[pnpm tauri icon {}] error: {:#?}",
-            input_path.to_str().unwrap(),
-            result
+            "[cargo tauri icon {} --output {}] error",
+            icon_path.display(),
+            output_folder.display()
         ))
     } else {
-        info!("pnpm tauri icon {} success", input_path.to_str().unwrap());
         Ok(())
     }
 }
 
-fn start_flutter_launcher_icons(flutter_project_path: &PathBuf) -> Result<()> {
-    // dart run flutter_launcher_icons
-    std::env::set_current_dir(flutter_project_path)?;
-    let dart_command = if cfg!(target_os = "windows") {
-        "dart.bat"
-    } else {
-        "dart"
+#[allow(clippy::too_many_arguments)]
+fn generate_tauri_icons(
+    name: &str,
+    project_path: &Path,
+    input_path: &Path,
+    output_path: &Path,
+    custom_tauri_icon_folder: Option<&String>,
+    default_mask: Option<&PathBuf>,
+    transform: Option<&IconTransformConf>,
+    transform_win: Option<&IconTransformConf>,
+    transform_mac: Option<&IconTransformConf>,
+    transform_linux: Option<&IconTransformConf>,
+    transform_android: Option<&IconTransformConf>,
+    transform_ios: Option<&IconTransformConf>,
+) -> Result<()> {
+    let (win, mac, _, android, ios) = generate_platform_icons(
+        name,
+        input_path,
+        output_path,
+        default_mask,
+        transform,
+        transform_win,
+        transform_mac,
+        transform_linux,
+        transform_android,
+        transform_ios,
+    )?;
+
+    let generate_icon = |platform: &str, icon_path: &Path| -> Result<PathBuf> {
+        let temp_folder = output_path.join("temp_icons");
+        if !temp_folder.exists() {
+            std::fs::create_dir_all(&temp_folder)
+                .unwrap_or_else(|_| panic!("create dir error: {}", temp_folder.to_str().unwrap()));
+        }
+        run_tauri_icons(project_path, icon_path, &temp_folder)?;
+        info!("run tauri {} icon success", platform);
+        Ok(temp_folder)
     };
-    let status = Command::new(dart_command)
-        .args(["run", "flutter_launcher_icons"])
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
-        .status()?;
+
+    let tauri_icon_folder =
+        project_path.join(custom_tauri_icon_folder.unwrap_or(&"icons".to_string()));
+
+    // windows and linux, linux use windows icon config
+    {
+        let output_dir = generate_icon("windows", &win)?;
+        let readdir = std::fs::read_dir(&output_dir)
+            .unwrap_or_else(|_| panic!("read dir error: {}", output_dir.to_str().unwrap()));
+
+        for entry in readdir {
+            let entry = entry?;
+            let file_type = entry.file_type()?;
+            if file_type.is_file() {
+                let file_name = entry.file_name();
+                let dest_path = tauri_icon_folder.join(file_name);
+                utils::fs::copy(entry.path(), &dest_path)?;
+                info!("tauri windows icon {}", dest_path.display());
+            }
+        }
+
+        if output_dir.exists() {
+            std::fs::remove_dir_all(output_dir)?;
+        }
+    }
+
+    // macos
+    {
+        let output_dir = generate_icon("macos", &mac)?;
+        let mac_icon_path = output_dir.join("icon.icns");
+        let dest_path = tauri_icon_folder.join(mac_icon_path.file_name().unwrap());
+        utils::fs::copy(&mac_icon_path, &dest_path)?;
+        info!("tauri macos icon {}", dest_path.display());
+
+        if output_dir.exists() {
+            std::fs::remove_dir_all(output_dir)?;
+        }
+    }
+
+    // android
+    {
+        let output_dir = generate_icon("android", &android)?;
+        let android_icon_path = output_dir.join("android");
+        let android_dest_path = project_path.join("gen/android/app/src/main/res");
+        utils::fs::copy(&android_icon_path, &android_dest_path)?;
+        info!("tauri android icon {}", android_dest_path.display());
+        if output_dir.exists() {
+            std::fs::remove_dir_all(output_dir)?;
+        }
+    }
+
+    // ios
+    {
+        let output_dir = generate_icon("ios", &ios)?;
+        let ios_icon_path = output_dir.join("ios");
+        let ios_dest_path = project_path.join("gen/apple/Assets.xcassets/AppIcon.appiconset");
+        utils::fs::copy(&ios_icon_path, &ios_dest_path)?;
+        info!("tauri ios icon {}", ios_dest_path.display());
+        if output_dir.exists() {
+            std::fs::remove_dir_all(output_dir)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn run_flutter_launcher_icons(flutter_project_path: &Path) -> Result<()> {
+    // dart run flutter_launcher_icons
+    let mut child = utils::cmd::run_command_which_println(
+        "dart",
+        flutter_project_path.to_str().unwrap(),
+        &["run", "flutter_launcher_icons"],
+    )?;
+    let status = child.wait()?;
     if !status.success() {
         Err(anyhow::anyhow!("[dart run flutter_launcher_icons] error"))
     } else {
@@ -458,72 +388,126 @@ fn start_flutter_launcher_icons(flutter_project_path: &PathBuf) -> Result<()> {
     }
 }
 
-#[allow(dead_code)]
-fn generate_flutter_icon(input_path: &Path, default_mask: &Option<PathBuf>) -> Result<()> {
-    let flutter_path = &UI_PATH.to_path_buf();
-    let android_icon_path = &flutter_path.join("assets/icons/icon_android.png");
-    let ios_path = &flutter_path.join("assets/icons/icon_ios.png");
-    let win_icon_path = &flutter_path.join("assets/icons/icon_win.png");
-    let mac_path = &flutter_path.join("assets/icons/icon_mac.png");
-
-    // android
-    process_image(
+#[allow(clippy::too_many_arguments)]
+fn generate_flutter_icons(
+    name: &str,
+    project_path: &Path,
+    input_path: &Path,
+    output_path: &Path,
+    default_mask: Option<&PathBuf>,
+    transform: Option<&IconTransformConf>,
+    transform_win: Option<&IconTransformConf>,
+    transform_mac: Option<&IconTransformConf>,
+    transform_linux: Option<&IconTransformConf>,
+    transform_android: Option<&IconTransformConf>,
+    transform_ios: Option<&IconTransformConf>,
+) -> Result<()> {
+    let _ = generate_platform_icons(
+        name,
         input_path,
-        android_icon_path,
-        default_mask.as_deref(),
-        None,
-        None,
-        None,
+        output_path,
+        default_mask,
+        transform,
+        transform_win,
+        transform_mac,
+        transform_linux,
+        transform_android,
+        transform_ios,
     )?;
-
-    // ios
-    process_image(input_path, ios_path, None, None, None, None)?;
-
-    // windows
-    process_image(
-        input_path,
-        win_icon_path,
-        default_mask.as_deref(),
-        None,
-        None,
-        None,
-    )?;
-    // mac
-    process_image(
-        input_path,
-        mac_path,
-        default_mask.as_deref(),
-        Some(100),
-        Some((1024, 1024)),
-        None,
-    )?;
-
-    start_flutter_launcher_icons(flutter_path)?;
+    run_flutter_launcher_icons(project_path)?;
 
     Ok(())
 }
 
+fn generate_custom_icon(
+    name: &str,
+    input_path: &Path,
+    output_path: &Path,
+    default_mask: Option<&PathBuf>,
+    transform: Option<&IconTransformConf>,
+) -> Result<()> {
+    process_image_transform(name, input_path, output_path, default_mask, transform)
+}
+
 pub fn generate_icons() -> Result<()> {
-    let input_path = &INPUT_ICON_PATH.to_path_buf();
-    let input_folder = &input_path.parent().unwrap().to_path_buf();
+    let config = &ICON_CONFIG;
+    let common = &config.common;
 
-    let default_workspace_icon_path =
-        &RS_PATH.join("core/assets/default_workspace/assets/images/icon.png");
+    let input_path = &config.common.icon;
+    let input_path = REPO_PATH.join(input_path);
 
-    let default_mask = Some(input_folder.join("mask.png"));
+    let default_mask = config
+        .common
+        .mask_path
+        .as_ref()
+        .map(|mask_path| REPO_PATH.join(mask_path));
 
-    // default_workspace
-    process_image(
-        input_path,
-        default_workspace_icon_path,
-        default_mask.as_deref(),
-        None,
-        None,
-        None,
-    )?;
+    for icon_conf in config.icons.iter() {
+        let name = &icon_conf.name;
+        let t = &icon_conf.r#type;
+        let output_path = REPO_PATH.join(&icon_conf.output_path);
+        let (
+            transform,
+            transform_win,
+            transform_mac,
+            transform_linux,
+            transform_android,
+            transform_ios,
+        ) = icon_conf.get_transform(common);
 
-    generate_tauri_icon(default_workspace_icon_path)?;
-    // generate_flutter_icon(input_path, &default_mask)?;
+        match t {
+            GenerateIconType::Flutter => {
+                if icon_conf.project_path.is_none() {
+                    panic!("flutter icon must have project_path");
+                }
+                let project_path = icon_conf.project_path.as_ref().unwrap();
+                let project_path = REPO_PATH.join(project_path);
+                generate_flutter_icons(
+                    name,
+                    &project_path,
+                    &input_path,
+                    &output_path,
+                    default_mask.as_ref(),
+                    transform,
+                    transform_win,
+                    transform_mac,
+                    transform_linux,
+                    transform_android,
+                    transform_ios,
+                )?;
+            }
+            GenerateIconType::Tauri => {
+                if icon_conf.project_path.is_none() {
+                    panic!("tauri icon must have project_path");
+                }
+                let project_path = icon_conf.project_path.as_ref().unwrap();
+                let project_path = REPO_PATH.join(project_path);
+                generate_tauri_icons(
+                    name,
+                    &project_path,
+                    &input_path,
+                    &output_path,
+                    common.custom_tauri_icon_folder.as_ref(),
+                    default_mask.as_ref(),
+                    transform,
+                    transform_win,
+                    transform_mac,
+                    transform_linux,
+                    transform_android,
+                    transform_ios,
+                )?;
+            }
+            GenerateIconType::Custom => {
+                generate_custom_icon(
+                    name,
+                    &input_path,
+                    &output_path,
+                    default_mask.as_ref(),
+                    transform,
+                )?;
+            }
+        }
+    }
 
     info!("all finish!");
 

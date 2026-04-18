@@ -6,8 +6,8 @@ use std::{
 use log::info;
 
 use crate::{
-    config::{CURRENT_PATH, REPO_ROOT, UI_PROJECT_PATH},
-    run::{cargo, git, npm},
+    config::{ReleaseProject, CURRENT_PATH, REPO_ROOT},
+    run::{cargo, git},
 };
 
 static COMMIT_MESSAGE: &str = "🔖 release";
@@ -62,6 +62,22 @@ fn run_convco_output<S: AsRef<str>>(
     let v = utils::cmd::parse_bytes(&output.stdout).map_err(|e| anyhow::anyhow!("{e}"))?;
 
     Ok(v)
+}
+
+pub fn run_npm_version<S: AsRef<str>>(project_path: S, next_version: &str) -> anyhow::Result<()> {
+    let mut child = utils::cmd::run_command_which_log(
+        "pnpm",
+        project_path.as_ref(),
+        &[
+            "version",
+            next_version,
+            "--no-git-tag-version",
+            "--allow-same-version",
+        ],
+    )?;
+    child.wait()?;
+
+    Ok(())
 }
 
 fn get_current_version(convco_path: &Path, config_path: &Path) -> anyhow::Result<String> {
@@ -126,12 +142,11 @@ fn generate_changelog(
 
 fn change_package_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
     info!("change package version in {}...", project_path.display());
-    npm::run_npm_version(project_path.to_str().unwrap(), next_version)?;
+    run_npm_version(project_path.to_str().unwrap(), next_version)?;
     info!("change package version finish: v{next_version}");
     Ok(())
 }
 
-#[allow(dead_code)]
 fn change_pubspec_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
     info!("change pubspec version in {}...", project_path.display());
     let pubspec_path = project_path.join("pubspec.yaml");
@@ -162,10 +177,24 @@ fn change_cargo_version(project_path: &Path, next_version: &str) -> anyhow::Resu
     Ok(())
 }
 
-fn change_version(next_version: &str) -> anyhow::Result<()> {
-    change_package_version(&UI_PROJECT_PATH, next_version)?;
-    change_cargo_version(&REPO_ROOT, next_version)?;
-
+fn change_version(next_version: &str, release_projects: &[ReleaseProject]) -> anyhow::Result<()> {
+    let repo_root = REPO_ROOT.as_path();
+    for project in release_projects.iter() {
+        let name = &project.name;
+        let path = repo_root.join(&project.path);
+        let pkg_type = &project.package_type;
+        let result = match pkg_type {
+            crate::config::ReleaseProjectType::Pubspec => {
+                change_pubspec_version(&path, next_version)
+            }
+            crate::config::ReleaseProjectType::Cargo => change_cargo_version(&path, next_version),
+            crate::config::ReleaseProjectType::Npm => change_package_version(&path, next_version),
+        };
+        match result {
+            Ok(_) => info!("change version finish for project: {name}"),
+            Err(_) => anyhow::bail!("change version failed for project: {name}"),
+        }
+    }
     Ok(())
 }
 
@@ -196,7 +225,13 @@ fn git_push(repo_root: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn release(major: bool, minor: bool, patch: bool, push: bool) -> anyhow::Result<()> {
+pub fn release(
+    major: bool,
+    minor: bool,
+    patch: bool,
+    push: bool,
+    release_projects: &[ReleaseProject],
+) -> anyhow::Result<()> {
     info!("repo root: {}", REPO_ROOT.display());
     let changelog_config_path = absolute(REPO_ROOT.join("cli/build/.versionrc")).unwrap();
     info!("changelog config path: {}", changelog_config_path.display());
@@ -218,7 +253,7 @@ pub fn release(major: bool, minor: bool, patch: bool, push: bool) -> anyhow::Res
     )?;
 
     // 2. 修改版本号
-    change_version(&next_version)?;
+    change_version(&next_version, release_projects)?;
 
     if push {
         // 3. 提交, 添加tag, push
