@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use lonanote_commands::{
     body::Json,
-    invoke_command_js_lazy, reg_command, reg_command_async,
+    invoke_command_callback_lazy, reg_command, reg_command_async,
     result::{CommandResponse, CommandResult},
 };
 
@@ -19,10 +19,11 @@ pub async fn hello_command_async(Json(args): Json<Vec<String>>) -> CommandResult
     CommandResponse::json(args.clone())
 }
 
-pub async fn hello_rust_call_js() -> CommandResult {
+pub async fn hello_rust_call_callback() -> CommandResult {
     let ret: Option<String> =
-        invoke_command_js_lazy("rust_call_js_fn_key", Some("rust args".to_string())).await?;
-    println!("hello_rust_call_js: {ret:?}");
+        invoke_command_callback_lazy("rust_call_callback_key", Some("rust args".to_string()))
+            .await?;
+    println!("hello_rust_call_callback: {ret:?}");
 
     Ok(CommandResponse::None)
 }
@@ -30,7 +31,7 @@ pub async fn hello_rust_call_js() -> CommandResult {
 pub fn reg_hello_commands() -> Result<()> {
     reg_command("hello_command", hello_command)?;
     reg_command_async("hello_command_async", hello_command_async)?;
-    reg_command_async("hello_rust_call_js", hello_rust_call_js)?;
+    reg_command_async("hello_rust_call_callback", hello_rust_call_callback)?;
 
     Ok(())
 }

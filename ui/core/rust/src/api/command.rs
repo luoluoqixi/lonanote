@@ -58,36 +58,36 @@ pub fn reg_dart_function(
     callback: impl Fn(Option<String>) -> DartFnFuture<Option<String>> + Send + Sync + 'static,
 ) -> Result<()> {
     let callback = Arc::new(callback);
-    let wrapped_fn = move |args: Option<String>| -> lonanote_core::CommandHandlerValueJsResult {
+    let wrapped_fn = move |args: Option<String>| -> lonanote_core::CommandHandlerValueCallbackResult {
         let callback = Arc::clone(&callback);
         Box::pin(async move {
             let r = callback(args).await;
             Ok(r)
         })
     };
-    lonanote_core::reg_command_js(key, Box::new(wrapped_fn))?;
+    lonanote_core::reg_command_callback(key, Box::new(wrapped_fn))?;
 
     Ok(())
 }
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn unreg_dart_function(key: String) -> Result<()> {
-    lonanote_core::unreg_command_js(&key)?;
+    lonanote_core::unreg_command_callback(&key)?;
     Ok(())
 }
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn clear_dart_function() -> Result<()> {
-    lonanote_core::clear_command_js()?;
+    lonanote_core::clear_command_callback()?;
     Ok(())
 }
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn get_command_dart_keys() -> Result<Vec<String>> {
-    lonanote_core::get_command_js_keys()
+    lonanote_core::get_command_callback_keys()
 }
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn get_command_dart_len() -> Result<usize> {
-    lonanote_core::get_command_js_len()
+    lonanote_core::get_command_callback_len()
 }

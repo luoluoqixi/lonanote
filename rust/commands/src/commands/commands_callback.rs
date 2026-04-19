@@ -9,62 +9,63 @@ use tokio::sync::RwLock;
 
 use super::super::Commands;
 
-pub type CommandHandlerValueJsResult = Pin<Box<dyn Future<Output = Result<Option<String>>> + Send>>;
+pub type CommandHandlerValueCallbackResult =
+    Pin<Box<dyn Future<Output = Result<Option<String>>> + Send>>;
 
-pub type CommandHandlerValueJs =
-    Box<dyn Fn(Option<String>) -> CommandHandlerValueJsResult + Send + Sync>;
+pub type CommandHandlerValueCallback =
+    Box<dyn Fn(Option<String>) -> CommandHandlerValueCallbackResult + Send + Sync>;
 
-pub type CommandsJsSync = Commands<String, CommandHandlerValueJs>;
+pub type CommandsCallbackSync = Commands<String, CommandHandlerValueCallback>;
 
-static COMMANDS_JS: LazyLock<Arc<RwLock<CommandsJsSync>>> =
-    LazyLock::new(|| Arc::new(RwLock::new(CommandsJsSync::new())));
+static COMMANDS_CALLBACK: LazyLock<Arc<RwLock<CommandsCallbackSync>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(CommandsCallbackSync::new())));
 
-pub fn reg_command_js(command: String, handler: CommandHandlerValueJs) -> Result<()> {
+pub fn reg_command_callback(command: String, handler: CommandHandlerValueCallback) -> Result<()> {
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(async {
-        let mut commands = COMMANDS_JS.write().await;
+        let mut commands = COMMANDS_CALLBACK.write().await;
         commands.reg(command, handler);
     });
 
     Ok(())
 }
-pub fn unreg_command_js(command: &String) -> Result<()> {
+pub fn unreg_command_callback(command: &String) -> Result<()> {
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(async {
-        let mut commands = COMMANDS_JS.write().await;
+        let mut commands = COMMANDS_CALLBACK.write().await;
         commands.unreg(command);
     });
     Ok(())
 }
-pub fn clear_command_js() -> Result<()> {
+pub fn clear_command_callback() -> Result<()> {
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(async {
-        let mut commands = COMMANDS_JS.write().await;
+        let mut commands = COMMANDS_CALLBACK.write().await;
         commands.clear();
     });
     Ok(())
 }
-pub fn get_command_js_keys() -> Result<Vec<String>> {
+pub fn get_command_callback_keys() -> Result<Vec<String>> {
     let rt = tokio::runtime::Runtime::new()?;
     let keys = rt.block_on(async {
-        let commands = COMMANDS_JS.read().await;
+        let commands = COMMANDS_CALLBACK.read().await;
         commands.get_keys()
     });
     Ok(keys)
 }
-pub fn get_command_js_len() -> Result<usize> {
+pub fn get_command_callback_len() -> Result<usize> {
     let rt = tokio::runtime::Runtime::new()?;
     let len = rt.block_on(async {
-        let commands = COMMANDS_JS.read().await;
+        let commands = COMMANDS_CALLBACK.read().await;
         commands.len()
     });
     Ok(len)
 }
-pub async fn invoke_command_js(
+pub async fn invoke_command_callback(
     key: impl AsRef<str>,
     args: Option<String>,
 ) -> Result<Option<String>> {
-    let commands = COMMANDS_JS.read().await;
+    let commands = COMMANDS_CALLBACK.read().await;
     let k = key.as_ref().to_string();
     if let Some(cmd) = commands.get(&k) {
         cmd(args).await
@@ -73,7 +74,7 @@ pub async fn invoke_command_js(
     }
 }
 
-pub async fn invoke_command_js_lazy<T, TRet>(
+pub async fn invoke_command_callback_lazy<T, TRet>(
     key: impl AsRef<str>,
     args: Option<T>,
 ) -> Result<Option<TRet>>
@@ -85,7 +86,7 @@ where
         Some(args) => Some(serde_json::to_string(&args)?),
         None => None,
     };
-    let res = invoke_command_js(key, args).await?;
+    let res = invoke_command_callback(key, args).await?;
     match res {
         Some(res) => Ok(Some(serde_json::from_str::<TRet>(res.as_str())?)),
         None => Ok(None),

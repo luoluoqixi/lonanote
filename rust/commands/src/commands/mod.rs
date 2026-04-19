@@ -49,9 +49,9 @@ impl<K, F> Deref for Commands<K, F> {
 }
 
 mod commands_async;
-mod commands_js;
+mod commands_callback;
 mod commands_sync;
 
 pub use commands_async::*;
-pub use commands_js::*;
+pub use commands_callback::*;
 pub use commands_sync::*;
