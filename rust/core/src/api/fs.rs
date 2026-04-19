@@ -5,11 +5,7 @@ use std::{
 };
 
 use anyhow::Result;
-use lonanote_commands::{
-    body::Json,
-    reg_command, reg_command_async,
-    result::{CommandResponse, CommandResult},
-};
+use cmdreg::{command, CommandResponse, CommandResult, Json};
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
@@ -21,24 +17,28 @@ struct PathArg {
     path: String,
 }
 
+#[command("fs")]
 fn exists(Json(args): Json<PathArg>) -> CommandResult {
     let path = PathBuf::from(args.path);
     let exists = path.exists();
     CommandResponse::json(exists)
 }
 
+#[command("fs")]
 fn is_dir(Json(args): Json<PathArg>) -> CommandResult {
     let path = PathBuf::from(args.path);
     let is_dir = path.exists() && path.is_dir();
     CommandResponse::json(is_dir)
 }
 
+#[command("fs")]
 fn is_file(Json(args): Json<PathArg>) -> CommandResult {
     let path = PathBuf::from(args.path);
     let is_file = path.exists() && path.is_file();
     CommandResponse::json(is_file)
 }
 
+#[command("fs")]
 fn read_to_string(Json(args): Json<PathArg>) -> CommandResult {
     // let s = fs::read_to_string(args.path)?;
     let mut file = fs::File::open(args.path)?;
@@ -48,21 +48,25 @@ fn read_to_string(Json(args): Json<PathArg>) -> CommandResult {
     CommandResponse::json(contents)
 }
 
+#[command("fs")]
 fn read_binary(Json(args): Json<PathArg>) -> CommandResult {
     let s = fs::read(args.path)?;
     CommandResponse::json(s)
 }
 
+#[command("fs")]
 async fn read_to_string_async(Json(args): Json<PathArg>) -> CommandResult {
     let s = tokio::fs::read_to_string(args.path).await?;
     CommandResponse::json(s)
 }
 
+#[command("fs")]
 async fn read_binary_async(Json(args): Json<PathArg>) -> CommandResult {
     let s = tokio::fs::read(args.path).await?;
     CommandResponse::json(s)
 }
 
+#[command("fs")]
 fn create_dir(Json(args): Json<PathArg>) -> CommandResult {
     if !PathBuf::from(&args.path).exists() {
         fs::create_dir(args.path)?;
@@ -70,6 +74,7 @@ fn create_dir(Json(args): Json<PathArg>) -> CommandResult {
     Ok(CommandResponse::None)
 }
 
+#[command("fs")]
 fn create_dir_all(Json(args): Json<PathArg>) -> CommandResult {
     if !PathBuf::from(&args.path).exists() {
         fs::create_dir_all(args.path)?;
@@ -77,6 +82,7 @@ fn create_dir_all(Json(args): Json<PathArg>) -> CommandResult {
     Ok(CommandResponse::None)
 }
 
+#[command("fs")]
 fn create_file(Json(args): Json<WriteArg>) -> CommandResult {
     let path = PathBuf::from(&args.path);
     if path.exists() {
@@ -100,6 +106,7 @@ struct DeleteArg {
     trash: bool,
 }
 
+#[command("fs")]
 fn delete(Json(args): Json<DeleteArg>) -> CommandResult {
     let path = PathBuf::from(args.path);
     if path.exists() {
@@ -135,6 +142,7 @@ struct CopyArg {
     r#override: bool,
 }
 
+#[command("fs")]
 fn r#move(Json(args): Json<CopyArg>) -> CommandResult {
     let src_path = PathBuf::from(args.src_path);
     let target_path = PathBuf::from(args.target_path);
@@ -146,6 +154,7 @@ fn r#move(Json(args): Json<CopyArg>) -> CommandResult {
     }
 }
 
+#[command("fs")]
 fn copy(Json(args): Json<CopyArg>) -> CommandResult {
     let src_path = PathBuf::from(args.src_path);
     let target_path = PathBuf::from(args.target_path);
@@ -164,11 +173,13 @@ struct WriteArg {
     contents: String,
 }
 
+#[command("fs")]
 fn write(Json(args): Json<WriteArg>) -> CommandResult {
     fs::write(args.path, args.contents)?;
     Ok(CommandResponse::None)
 }
 
+#[command("fs")]
 fn show_in_folder(Json(args): Json<PathArg>) -> CommandResult {
     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
     {
@@ -281,6 +292,7 @@ struct SelectDialogArgs {
     default_file_name: Option<String>,
 }
 
+#[command("fs")]
 async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> CommandResult {
     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
     {
@@ -360,6 +372,7 @@ struct SaveImageUrlToFileArgs {
     file_path: String,
 }
 
+#[command("fs")]
 async fn save_image_url_to_file(Json(args): Json<SaveImageUrlToFileArgs>) -> CommandResult {
     use futures::StreamExt;
 
@@ -389,6 +402,7 @@ struct GetFileListArgs {
     recursive: bool,
 }
 
+#[command("fs")]
 fn get_file_list(Json(args): Json<GetFileListArgs>) -> CommandResult {
     let recursive = args.recursive;
     let path = PathBuf::from(args.path);
@@ -409,27 +423,4 @@ fn get_file_list(Json(args): Json<GetFileListArgs>) -> CommandResult {
         list.push(entry.path().display().to_string());
     }
     CommandResponse::json(list)
-}
-
-pub fn reg_commands() -> Result<()> {
-    reg_command("fs.exists", exists)?;
-    reg_command("fs.is_dir", is_dir)?;
-    reg_command("fs.is_file", is_file)?;
-    reg_command("fs.read_to_string", read_to_string)?;
-    reg_command("fs.read_binary", read_binary)?;
-    reg_command("fs.create_dir", create_dir)?;
-    reg_command("fs.create_dir_all", create_dir_all)?;
-    reg_command("fs.create_file", create_file)?;
-    reg_command("fs.delete", delete)?;
-    reg_command("fs.move", r#move)?;
-    reg_command("fs.copy", copy)?;
-    reg_command("fs.write", write)?;
-    reg_command("fs.show_in_folder", show_in_folder)?;
-    reg_command("fs.get_file_list", get_file_list)?;
-    reg_command_async("fs.read_to_string_async", read_to_string_async)?;
-    reg_command_async("fs.read_binary_async", read_binary_async)?;
-    reg_command_async("fs.show_select_dialog", show_select_dialog)?;
-    reg_command_async("fs.save_image_url_to_file", save_image_url_to_file)?;
-
-    Ok(())
 }

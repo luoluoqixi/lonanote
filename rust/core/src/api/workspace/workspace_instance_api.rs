@@ -1,15 +1,11 @@
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 
 use crate::workspace::{
     file_tree::FileTreeSortType, get_workspace_manager, get_workspace_manager_mut,
     workspace_path::WorkspacePath, workspace_settings::WorkspaceSettings,
 };
 
-use lonanote_commands::{
-    body::Json,
-    reg_command_async,
-    result::{CommandResponse, CommandResult},
-};
+use cmdreg::{command, CommandResponse, CommandResult, Json};
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,6 +20,7 @@ struct SetOpenWorkspaceSettingsArgs {
     pub settings: WorkspaceSettings,
 }
 
+#[command("workspace")]
 async fn import_init_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
 
@@ -41,6 +38,7 @@ async fn import_init_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandRes
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn is_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let is_open = workspace_manager
@@ -50,6 +48,7 @@ async fn is_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult 
     CommandResponse::json(is_open)
 }
 
+#[command("workspace")]
 async fn get_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let path = WorkspacePath::from(&args.path);
@@ -66,6 +65,7 @@ async fn get_open_workspace(Json(args): Json<GetWorkspaceArgs>) -> CommandResult
     CommandResponse::json(ws)
 }
 
+#[command("workspace")]
 async fn set_open_workspace_settings(
     Json(args): Json<SetOpenWorkspaceSettingsArgs>,
 ) -> CommandResult {
@@ -78,6 +78,7 @@ async fn set_open_workspace_settings(
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn get_open_workspace_settings(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
@@ -87,6 +88,7 @@ async fn get_open_workspace_settings(Json(args): Json<GetWorkspaceArgs>) -> Comm
     CommandResponse::json(&workspace.settings)
 }
 
+#[command("workspace")]
 async fn get_open_workspace_file_tree(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
@@ -107,6 +109,7 @@ struct GetWorkspaceFileNodeArgs {
     pub recursive: bool,
 }
 
+#[command("workspace")]
 async fn get_open_workspace_file_node(Json(args): Json<GetWorkspaceFileNodeArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
@@ -135,6 +138,7 @@ struct SetWorkspaceFileTreeSortTypeArgs {
     pub sort_type: FileTreeSortType,
 }
 
+#[command("workspace")]
 async fn set_open_workspace_file_tree_sort_type(
     Json(args): Json<SetWorkspaceFileTreeSortTypeArgs>,
 ) -> CommandResult {
@@ -154,6 +158,7 @@ struct SetWorkspaceFollowGitignoreArgs {
     pub follow_gitignore: bool,
 }
 
+#[command("workspace")]
 async fn set_open_workspace_follow_gitignore(
     Json(args): Json<SetWorkspaceFollowGitignoreArgs>,
 ) -> CommandResult {
@@ -175,6 +180,7 @@ struct SetWorkspaceCustomIgnoreArgs {
     pub custom_ignore: String,
 }
 
+#[command("workspace")]
 async fn set_open_workspace_custom_ignore(
     Json(args): Json<SetWorkspaceCustomIgnoreArgs>,
 ) -> CommandResult {
@@ -187,6 +193,7 @@ async fn set_open_workspace_custom_ignore(
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn reset_open_workspace_custom_ignore(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     let workspace = workspace_manager
@@ -197,6 +204,7 @@ async fn reset_open_workspace_custom_ignore(Json(args): Json<GetWorkspaceArgs>) 
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspace = workspace_manager
@@ -207,6 +215,7 @@ async fn call_open_workspace_reinit(Json(args): Json<GetWorkspaceArgs>) -> Comma
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn reset_open_workspace_histroy_snapshoot_count(
     Json(args): Json<GetWorkspaceArgs>,
 ) -> CommandResult {
@@ -219,6 +228,7 @@ async fn reset_open_workspace_histroy_snapshoot_count(
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn reset_open_workspace_upload_attachment_path(
     Json(args): Json<GetWorkspaceArgs>,
 ) -> CommandResult {
@@ -231,6 +241,7 @@ async fn reset_open_workspace_upload_attachment_path(
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn reset_open_workspace_upload_image_path(
     Json(args): Json<GetWorkspaceArgs>,
 ) -> CommandResult {
@@ -241,60 +252,4 @@ async fn reset_open_workspace_upload_image_path(
     workspace.reset_pload_image_path().await?;
 
     Ok(CommandResponse::None)
-}
-
-pub fn reg_commands() -> Result<()> {
-    reg_command_async("workspace.import_init_workspace", import_init_workspace)?;
-    reg_command_async("workspace.is_open_workspace", is_open_workspace)?;
-    reg_command_async("workspace.get_open_workspace", get_open_workspace)?;
-    reg_command_async(
-        "workspace.set_open_workspace_settings",
-        set_open_workspace_settings,
-    )?;
-    reg_command_async(
-        "workspace.get_open_workspace_settings",
-        get_open_workspace_settings,
-    )?;
-    reg_command_async(
-        "workspace.get_open_workspace_file_tree",
-        get_open_workspace_file_tree,
-    )?;
-    reg_command_async(
-        "workspace.set_open_workspace_file_tree_sort_type",
-        set_open_workspace_file_tree_sort_type,
-    )?;
-    reg_command_async(
-        "workspace.set_open_workspace_follow_gitignore",
-        set_open_workspace_follow_gitignore,
-    )?;
-    reg_command_async(
-        "workspace.set_open_workspace_custom_ignore",
-        set_open_workspace_custom_ignore,
-    )?;
-    reg_command_async(
-        "workspace.reset_open_workspace_custom_ignore",
-        reset_open_workspace_custom_ignore,
-    )?;
-    reg_command_async(
-        "workspace.call_open_workspace_reinit",
-        call_open_workspace_reinit,
-    )?;
-    reg_command_async(
-        "workspace.reset_open_workspace_histroy_snapshoot_count",
-        reset_open_workspace_histroy_snapshoot_count,
-    )?;
-    reg_command_async(
-        "workspace.reset_open_workspace_upload_attachment_path",
-        reset_open_workspace_upload_attachment_path,
-    )?;
-    reg_command_async(
-        "workspace.reset_open_workspace_upload_image_path",
-        reset_open_workspace_upload_image_path,
-    )?;
-    reg_command_async(
-        "workspace.get_open_workspace_file_node",
-        get_open_workspace_file_node,
-    )?;
-
-    Ok(())
 }

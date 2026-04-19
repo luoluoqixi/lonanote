@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 
 use crate::{
     settings::get_settings,
@@ -10,11 +10,7 @@ use crate::{
     },
 };
 
-use lonanote_commands::{
-    body::Json,
-    reg_command_async,
-    result::{CommandResponse, CommandResult},
-};
+use cmdreg::{command, CommandResponse, CommandResult, Json};
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,6 +20,7 @@ struct SetWorkspaceRootPathArgs {
     pub is_move: bool,
 }
 
+#[command("workspace")]
 async fn init_setup(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
@@ -34,6 +31,7 @@ async fn init_setup(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult 
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn set_workspace_root_path(Json(args): Json<SetWorkspaceRootPathArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
@@ -55,6 +53,7 @@ struct SetWorkspaceNameArgs {
     pub is_move: bool,
 }
 
+#[command("workspace")]
 async fn set_workspace_name(Json(args): Json<SetWorkspaceNameArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
@@ -82,6 +81,7 @@ impl RemoveWorkspaceArgs {
     }
 }
 
+#[command("workspace")]
 async fn remove_workspace(Json(args): Json<RemoveWorkspaceArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
@@ -91,6 +91,7 @@ async fn remove_workspace(Json(args): Json<RemoveWorkspaceArgs>) -> CommandResul
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn get_workspaces_metadata() -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let workspaces = workspace_manager.get_workspaces_metadata();
@@ -104,6 +105,7 @@ struct OpenWorkspaceByPathArgs {
     pub path: String,
 }
 
+#[command("workspace")]
 async fn open_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
@@ -113,6 +115,7 @@ async fn open_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> Co
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn create_workspace(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
@@ -122,6 +125,7 @@ async fn create_workspace(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandR
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn unload_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
@@ -131,6 +135,7 @@ async fn unload_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> 
     Ok(CommandResponse::None)
 }
 
+#[command("workspace")]
 async fn get_last_workspace() -> CommandResult {
     let auto_open_list_workspace = get_settings().await.auto_open_last_workspace;
     if !auto_open_list_workspace {
@@ -147,11 +152,15 @@ async fn get_last_workspace() -> CommandResult {
 struct CheckWorkspacePathArgs {
     pub workspace_path: String,
 }
+
+#[command("workspace")]
 async fn check_workspace_path_exist(Json(args): Json<CheckWorkspacePathArgs>) -> CommandResult {
     let path = PathBuf::from(args.workspace_path);
     let exists = path.exists() && path.is_dir();
     CommandResponse::json(exists)
 }
+
+#[command("workspace")]
 async fn check_workspace_path_legal(Json(args): Json<CheckWorkspacePathArgs>) -> CommandResult {
     let legal = !args.workspace_path.is_empty();
     CommandResponse::json(legal)
@@ -162,6 +171,8 @@ async fn check_workspace_path_legal(Json(args): Json<CheckWorkspacePathArgs>) ->
 struct GetWorkspaceSaveDataArgs {
     pub workspace_path: String,
 }
+
+#[command("workspace")]
 async fn get_workspace_savedata(Json(args): Json<GetWorkspaceSaveDataArgs>) -> CommandResult {
     let workspace_manager = get_workspace_manager().await;
     let savedata =
@@ -178,36 +189,12 @@ struct SetWorkspaceSaveDataArgs {
     pub workspace_path: String,
     pub data: WorkspaceSaveData,
 }
+
+#[command("workspace")]
 async fn set_workspace_savedata(Json(args): Json<SetWorkspaceSaveDataArgs>) -> CommandResult {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
         .set_workspace_savedata(&WorkspacePath::from(&args.workspace_path), args.data)?;
 
     Ok(CommandResponse::None)
-}
-
-pub fn reg_commands() -> Result<()> {
-    reg_command_async("workspace.init_setup", init_setup)?;
-    reg_command_async("workspace.set_workspace_root_path", set_workspace_root_path)?;
-    reg_command_async("workspace.set_workspace_name", set_workspace_name)?;
-    reg_command_async("workspace.remove_workspace", remove_workspace)?;
-    reg_command_async("workspace.get_workspaces_metadata", get_workspaces_metadata)?;
-    reg_command_async("workspace.open_workspace_by_path", open_workspace_by_path)?;
-    reg_command_async("workspace.create_workspace", create_workspace)?;
-    reg_command_async(
-        "workspace.unload_workspace_by_path",
-        unload_workspace_by_path,
-    )?;
-    reg_command_async("workspace.get_last_workspace", get_last_workspace)?;
-    reg_command_async(
-        "workspace.check_workspace_path_exist",
-        check_workspace_path_exist,
-    )?;
-    reg_command_async(
-        "workspace.check_workspace_path_legal",
-        check_workspace_path_legal,
-    )?;
-    reg_command_async("workspace.get_workspace_savedata", get_workspace_savedata)?;
-    reg_command_async("workspace.set_workspace_savedata", set_workspace_savedata)?;
-    Ok(())
 }

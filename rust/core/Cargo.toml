@@ -10,7 +10,7 @@ edition = { workspace = true }
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
-lonanote-commands = { path = "../commands" }
+cmdreg = { workspace = true, features = ["full"] }
 
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -30,7 +30,7 @@ alphanumeric-sort = { workspace = true }
 encoding_rs = { workspace = true }
 reqwest = { workspace = true, default-features = false, features = [
   "stream",
-  "rustls-tls",
+  "rustls",
 ] }
 futures = { workspace = true }
 rust-embed = { workspace = true, features = ["debug-embed"]}
