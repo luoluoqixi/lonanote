@@ -1,28 +1,28 @@
-use anyhow::Result;
-use lonanote_commands::{
-    body::Json,
-    reg_command,
-    result::{CommandResponse, CommandResult},
-};
+use cmdreg::{command, CommandResponse, CommandResult, Json};
 
 use crate::config::app_path;
 
+#[command("path")]
 fn get_cache_dir() -> CommandResult {
     CommandResponse::json(app_path::get_cache_dir())
 }
 
+#[command("path")]
 fn get_home_dir() -> CommandResult {
     CommandResponse::json(app_path::get_home_dir())
 }
 
+#[command("path")]
 fn get_data_dir() -> CommandResult {
     CommandResponse::json(app_path::get_data_dir())
 }
 
+#[command("path")]
 fn get_download_dir() -> CommandResult {
     CommandResponse::json(app_path::get_download_dir())
 }
 
+#[command("path")]
 fn get_root_dir() -> CommandResult {
     CommandResponse::json(app_path::get_root_dir())
 }
@@ -37,6 +37,7 @@ struct InitDir {
     pub root_dir: Option<String>,
 }
 
+#[command("path")]
 fn init_dir(Json(dirs): Json<InitDir>) -> CommandResult {
     app_path::init_dir(
         dirs.data_dir,
@@ -47,15 +48,4 @@ fn init_dir(Json(dirs): Json<InitDir>) -> CommandResult {
     );
 
     Ok(CommandResponse::None)
-}
-
-pub fn reg_commands() -> Result<()> {
-    reg_command("path.get_cache_dir", get_cache_dir)?;
-    reg_command("path.get_home_dir", get_home_dir)?;
-    reg_command("path.get_data_dir", get_data_dir)?;
-    reg_command("path.get_download_dir", get_download_dir)?;
-    reg_command("path.get_root_dir", get_root_dir)?;
-    reg_command("path.init_dir", init_dir)?;
-
-    Ok(())
 }

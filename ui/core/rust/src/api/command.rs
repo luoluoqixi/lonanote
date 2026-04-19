@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use flutter_rust_bridge::DartFnFuture;
-use lonanote_core::{
-    context::CommandContext, invoke_command, invoke_command_async, result::CommandResult,
-};
+use lonanote_core::{invoke_command, invoke_command_async, CommandContext, CommandResult};
 
 fn parse_invoke_result(res: CommandResult) -> Result<Option<String>> {
     let res = res?;
@@ -58,13 +56,14 @@ pub fn reg_dart_function(
     callback: impl Fn(Option<String>) -> DartFnFuture<Option<String>> + Send + Sync + 'static,
 ) -> Result<()> {
     let callback = Arc::new(callback);
-    let wrapped_fn = move |args: Option<String>| -> lonanote_core::CommandHandlerValueCallbackResult {
-        let callback = Arc::clone(&callback);
-        Box::pin(async move {
-            let r = callback(args).await;
-            Ok(r)
-        })
-    };
+    let wrapped_fn =
+        move |args: Option<String>| -> lonanote_core::CommandHandlerValueCallbackResult {
+            let callback = Arc::clone(&callback);
+            Box::pin(async move {
+                let r = callback(args).await;
+                Ok(r)
+            })
+        };
     lonanote_core::reg_command_callback(key, Box::new(wrapped_fn))?;
 
     Ok(())

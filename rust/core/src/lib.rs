@@ -5,12 +5,12 @@ pub mod utils;
 pub(crate) mod workspace;
 
 use anyhow::Result;
+pub use cmdreg::*;
 use log::info;
-pub use lonanote_commands::*;
 
 pub fn init() -> Result<()> {
     info!("init...");
-    api::reg_commands()?;
+    cmdreg::reg_all_commands()?;
     info!("init finish!");
     Ok(())
 }
