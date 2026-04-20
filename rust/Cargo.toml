@@ -34,7 +34,8 @@ reqwest  = { version = "0.13", default-features = false }
 futures = "0.3"
 rust-embed = "8.11"
 
-cmdreg = "0.1"
+# cmdreg = "0.1"
+cmdreg = { git = "https://github.com/luoluoqixi/cmdreg", branch = "main" }
 
 [profile.release]
 codegen-units = 1 # Compile crates one after another so the compiler can optimize better

@@ -1,7 +1,6 @@
-use cmdreg::{command, CommandResponse, CommandResult};
+use cmdreg::command;
 
 #[command("app")]
-fn get_version() -> CommandResult {
-    let version = env!("CARGO_PKG_VERSION");
-    CommandResponse::json(version)
+fn get_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
 }
