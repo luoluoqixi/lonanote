@@ -535,8 +535,7 @@ dependencies = [
 [[package]]
 name = "cmdreg"
 version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c79340f12df3d6c77f4f5f3988e65ff5fb70bddcd34659c38a32382b5e6359f8"
+source = "git+https://github.com/luoluoqixi/cmdreg?branch=main#641a6a7fa3a8fd2a1fad195554d798b1c5774347"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -550,12 +549,12 @@ dependencies = [
 [[package]]
 name = "cmdreg-macros"
 version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03d3b97331010278194356a2f1ddc9c36175f21814b672120cca476d961e5f39"
+source = "git+https://github.com/luoluoqixi/cmdreg?branch=main#641a6a7fa3a8fd2a1fad195554d798b1c5774347"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+ "toml 0.8.2",
 ]
 
 [[package]]

@@ -1,90 +1,74 @@
+use anyhow::Result;
+use cmdreg::{command, Json};
+use serde::{Deserialize, Serialize};
 use std::{
     fs,
     io::{Read, Write},
     path::PathBuf,
 };
-
-use anyhow::Result;
-use cmdreg::{command, CommandResponse, CommandResult, Json};
-use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
 use crate::utils::{self, fs_utils};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PathArg {
-    path: String,
+#[command("fs")]
+fn exists(path: String) -> bool {
+    PathBuf::from(path).exists()
 }
 
 #[command("fs")]
-fn exists(Json(args): Json<PathArg>) -> CommandResult {
-    let path = PathBuf::from(args.path);
-    let exists = path.exists();
-    CommandResponse::json(exists)
+fn is_dir(path: String) -> bool {
+    let p = PathBuf::from(path);
+    p.exists() && p.is_dir()
 }
 
 #[command("fs")]
-fn is_dir(Json(args): Json<PathArg>) -> CommandResult {
-    let path = PathBuf::from(args.path);
-    let is_dir = path.exists() && path.is_dir();
-    CommandResponse::json(is_dir)
+fn is_file(path: String) -> bool {
+    let p = PathBuf::from(path);
+    p.exists() && p.is_file()
 }
 
 #[command("fs")]
-fn is_file(Json(args): Json<PathArg>) -> CommandResult {
-    let path = PathBuf::from(args.path);
-    let is_file = path.exists() && path.is_file();
-    CommandResponse::json(is_file)
-}
-
-#[command("fs")]
-fn read_to_string(Json(args): Json<PathArg>) -> CommandResult {
-    // let s = fs::read_to_string(args.path)?;
-    let mut file = fs::File::open(args.path)?;
+fn read_to_string(path: String) -> anyhow::Result<String> {
+    let mut file = fs::File::open(path)?;
     let mut buf = vec![];
     file.read_to_end(&mut buf)?;
-    let contents = utils::read_string(&buf);
-    CommandResponse::json(contents)
+    Ok(utils::read_string(&buf))
 }
 
 #[command("fs")]
-fn read_binary(Json(args): Json<PathArg>) -> CommandResult {
-    let s = fs::read(args.path)?;
-    CommandResponse::json(s)
+fn read_binary(path: String) -> anyhow::Result<Vec<u8>> {
+    Ok(fs::read(path)?)
 }
 
 #[command("fs")]
-async fn read_to_string_async(Json(args): Json<PathArg>) -> CommandResult {
-    let s = tokio::fs::read_to_string(args.path).await?;
-    CommandResponse::json(s)
+async fn read_to_string_async(path: String) -> anyhow::Result<String> {
+    Ok(tokio::fs::read_to_string(path).await?)
 }
 
 #[command("fs")]
-async fn read_binary_async(Json(args): Json<PathArg>) -> CommandResult {
-    let s = tokio::fs::read(args.path).await?;
-    CommandResponse::json(s)
+async fn read_binary_async(path: String) -> anyhow::Result<Vec<u8>> {
+    Ok(tokio::fs::read(path).await?)
 }
 
 #[command("fs")]
-fn create_dir(Json(args): Json<PathArg>) -> CommandResult {
-    if !PathBuf::from(&args.path).exists() {
-        fs::create_dir(args.path)?;
+fn create_dir(path: String) -> Result<()> {
+    if !PathBuf::from(&path).exists() {
+        fs::create_dir(path)?;
     }
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[command("fs")]
-fn create_dir_all(Json(args): Json<PathArg>) -> CommandResult {
-    if !PathBuf::from(&args.path).exists() {
-        fs::create_dir_all(args.path)?;
+fn create_dir_all(path: String) -> Result<()> {
+    if !PathBuf::from(&path).exists() {
+        fs::create_dir_all(path)?;
     }
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[command("fs")]
-fn create_file(Json(args): Json<WriteArg>) -> CommandResult {
-    let path = PathBuf::from(&args.path);
+fn create_file(path: String, contents: String) -> Result<()> {
+    let path = PathBuf::from(&path);
     if path.exists() {
         return Err(anyhow::anyhow!("path already exists: {}", path.display()));
     }
@@ -92,29 +76,21 @@ fn create_file(Json(args): Json<WriteArg>) -> CommandResult {
         if !parent.exists() {
             fs::create_dir_all(parent)?;
         }
-        fs::write(path, args.contents)?;
-        Ok(CommandResponse::None)
+        fs::write(path, contents)?;
+        Ok(())
     } else {
         Err(anyhow::anyhow!("path parent is None: {}", path.display()))
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct DeleteArg {
-    path: String,
-    trash: bool,
-}
-
 #[command("fs")]
-fn delete(Json(args): Json<DeleteArg>) -> CommandResult {
-    let path = PathBuf::from(args.path);
+fn delete(path: String, trash: bool) -> Result<()> {
+    let path = PathBuf::from(path);
     if path.exists() {
-        if args.trash {
+        if trash {
             #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
             {
-                use trash;
-                trash::delete(path)?;
+                ::trash::delete(path)?;
             }
             #[cfg(all(
                 not(target_os = "windows"),
@@ -130,61 +106,44 @@ fn delete(Json(args): Json<DeleteArg>) -> CommandResult {
             fs_extra::dir::remove(path)?;
         }
     }
-    Ok(CommandResponse::None)
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CopyArg {
-    src_path: String,
-    target_path: String,
-    #[serde(rename = "override")]
-    r#override: bool,
+    Ok(())
 }
 
 #[command("fs")]
-fn r#move(Json(args): Json<CopyArg>) -> CommandResult {
-    let src_path = PathBuf::from(args.src_path);
-    let target_path = PathBuf::from(args.target_path);
+fn r#move(src_path: String, target_path: String, r#override: bool) -> Result<()> {
+    let src_path = PathBuf::from(src_path);
+    let target_path = PathBuf::from(target_path);
     if src_path.exists() {
-        fs_utils::r#move(src_path, target_path, args.r#override)?;
-        Ok(CommandResponse::None)
+        fs_utils::r#move(src_path, target_path, r#override)?;
+        Ok(())
     } else {
         Err(anyhow::anyhow!("src path notfound: {}", src_path.display()))
     }
 }
 
 #[command("fs")]
-fn copy(Json(args): Json<CopyArg>) -> CommandResult {
-    let src_path = PathBuf::from(args.src_path);
-    let target_path = PathBuf::from(args.target_path);
+fn copy(src_path: String, target_path: String, r#override: bool) -> Result<()> {
+    let src_path = PathBuf::from(src_path);
+    let target_path = PathBuf::from(target_path);
     if src_path.exists() {
-        fs_utils::copy(src_path, target_path, args.r#override)?;
-        Ok(CommandResponse::None)
+        fs_utils::copy(src_path, target_path, r#override)?;
+        Ok(())
     } else {
         Err(anyhow::anyhow!("src path notfound: {}", src_path.display()))
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct WriteArg {
-    path: String,
-    contents: String,
+#[command("fs")]
+fn write(path: String, contents: String) -> Result<()> {
+    fs::write(path, contents)?;
+    Ok(())
 }
 
 #[command("fs")]
-fn write(Json(args): Json<WriteArg>) -> CommandResult {
-    fs::write(args.path, args.contents)?;
-    Ok(CommandResponse::None)
-}
-
-#[command("fs")]
-fn show_in_folder(Json(args): Json<PathArg>) -> CommandResult {
+fn show_in_folder(path: String) -> Result<()> {
     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
     {
         use std::process::Command;
-        let path = args.path;
         #[cfg(target_os = "windows")]
         let path = path.replace("/", "\\");
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -198,7 +157,7 @@ fn show_in_folder(Json(args): Json<PathArg>) -> CommandResult {
             None
         };
         if path.is_none() {
-            return Ok(CommandResponse::None);
+            return Ok(());
         }
         let path = path.unwrap();
 
@@ -255,7 +214,7 @@ fn show_in_folder(Json(args): Json<PathArg>) -> CommandResult {
         }
     }
 
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -292,8 +251,15 @@ struct SelectDialogArgs {
     default_file_name: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SelectDialogResult {
+    paths: Option<Vec<String>>,
+    path: Option<String>,
+}
+
 #[command("fs")]
-async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> CommandResult {
+async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> Result<SelectDialogResult> {
     #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
     {
         use rfd::AsyncFileDialog;
@@ -316,44 +282,74 @@ async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> CommandResult
             SelectDialogType::OpenFile => {
                 let f = file.pick_file().await;
                 match f {
-                    Some(f) => CommandResponse::json(f.path().display().to_string()),
-                    None => Ok(CommandResponse::None),
+                    Some(f) => Ok(SelectDialogResult {
+                        path: Some(f.path().display().to_string()),
+                        paths: None,
+                    }),
+                    None => Ok(SelectDialogResult {
+                        path: None,
+                        paths: None,
+                    }),
                 }
             }
             SelectDialogType::OpenFiles => {
                 let files = file.pick_files().await;
                 match files {
-                    Some(fs) => CommandResponse::json(
-                        fs.iter()
-                            .map(|f| f.path().display().to_string())
-                            .collect::<Vec<String>>(),
-                    ),
-                    None => Ok(CommandResponse::None),
+                    Some(fs) => Ok(SelectDialogResult {
+                        path: None,
+                        paths: Some(
+                            fs.iter()
+                                .map(|f| f.path().display().to_string())
+                                .collect::<Vec<String>>(),
+                        ),
+                    }),
+                    None => Ok(SelectDialogResult {
+                        path: None,
+                        paths: None,
+                    }),
                 }
             }
             SelectDialogType::OpenFolder => {
                 let f = file.pick_folder().await;
                 match f {
-                    Some(f) => CommandResponse::json(f.path().display().to_string()),
-                    None => Ok(CommandResponse::None),
+                    Some(f) => Ok(SelectDialogResult {
+                        path: Some(f.path().display().to_string()),
+                        paths: None,
+                    }),
+                    None => Ok(SelectDialogResult {
+                        path: None,
+                        paths: None,
+                    }),
                 }
             }
             SelectDialogType::OpenFolders => {
                 let folders = file.pick_folders().await;
                 match folders {
-                    Some(fs) => CommandResponse::json(
-                        fs.iter()
-                            .map(|f| f.path().display().to_string())
-                            .collect::<Vec<String>>(),
-                    ),
-                    None => Ok(CommandResponse::None),
+                    Some(fs) => Ok(SelectDialogResult {
+                        path: None,
+                        paths: Some(
+                            fs.iter()
+                                .map(|f| f.path().display().to_string())
+                                .collect::<Vec<String>>(),
+                        ),
+                    }),
+                    None => Ok(SelectDialogResult {
+                        path: None,
+                        paths: None,
+                    }),
                 }
             }
             SelectDialogType::SaveFile => {
                 let f = file.save_file().await;
                 match f {
-                    Some(f) => CommandResponse::json(f.path().display().to_string()),
-                    None => Ok(CommandResponse::None),
+                    Some(f) => Ok(SelectDialogResult {
+                        path: Some(f.path().display().to_string()),
+                        paths: None,
+                    }),
+                    None => Ok(SelectDialogResult {
+                        path: None,
+                        paths: None,
+                    }),
                 }
             }
         }
@@ -365,22 +361,12 @@ async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> CommandResult
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SaveImageUrlToFileArgs {
-    image_url: String,
-    file_path: String,
-}
-
 #[command("fs")]
-async fn save_image_url_to_file(Json(args): Json<SaveImageUrlToFileArgs>) -> CommandResult {
+async fn save_image_url_to_file(image_url: String, file_path: String) -> Result<()> {
     use futures::StreamExt;
 
-    let img_url = args.image_url;
-    let file_path = args.file_path;
-
     let client = reqwest::Client::new();
-    let response = client.get(img_url).send().await?;
+    let response = client.get(image_url).send().await?;
     if !response.status().is_success() {
         anyhow::bail!("request error: {}", response.status());
     }
@@ -392,26 +378,15 @@ async fn save_image_url_to_file(Json(args): Json<SaveImageUrlToFileArgs>) -> Com
         file.write_all(&chunk)?;
     }
 
-    Ok(CommandResponse::None)
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct GetFileListArgs {
-    path: String,
-    recursive: bool,
+    Ok(())
 }
 
 #[command("fs")]
-fn get_file_list(Json(args): Json<GetFileListArgs>) -> CommandResult {
-    let recursive = args.recursive;
-    let path = PathBuf::from(args.path);
+fn get_file_list(path: String, recursive: bool) -> Vec<String> {
+    let path = PathBuf::from(path);
     let mut list = Vec::new();
-    if !path.exists() {
-        return CommandResponse::json(list);
-    }
-    if !path.is_dir() {
-        return CommandResponse::json(list);
+    if !path.exists() || !path.is_dir() {
+        return list;
     }
     let depth = if recursive { usize::MAX } else { 1 };
     for entry in WalkDir::new(&path)
@@ -422,5 +397,5 @@ fn get_file_list(Json(args): Json<GetFileListArgs>) -> CommandResult {
     {
         list.push(entry.path().display().to_string());
     }
-    CommandResponse::json(list)
+    list
 }
