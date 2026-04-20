@@ -132,7 +132,7 @@ impl WorkspaceInstance {
         Ok(())
     }
 
-    pub async fn reset_pload_image_path(&mut self) -> Result<(), WorkspaceError> {
+    pub async fn reset_upload_image_path(&mut self) -> Result<(), WorkspaceError> {
         let mut settings = self.settings.clone();
         settings.upload_image_path = WorkspaceSettings::default_upload_image_path();
         self.set_settings(settings).await?;

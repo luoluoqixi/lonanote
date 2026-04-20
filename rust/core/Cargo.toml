@@ -6,6 +6,9 @@ license = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 
+[package.metadata.cmdreg]
+rename_all = "camelCase"
+
 [lib]
 crate-type = ["cdylib", "staticlib", "rlib"]
 
@@ -33,7 +36,7 @@ reqwest = { workspace = true, default-features = false, features = [
   "rustls",
 ] }
 futures = { workspace = true }
-rust-embed = { workspace = true, features = ["debug-embed"]}
+rust-embed = { workspace = true, features = ["debug-embed"] }
 
 # [target.'cfg(target_os = "windows")'.dependencies]
 # [target.'cfg(target_os = "macos")'.dependencies]

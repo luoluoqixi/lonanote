@@ -1,6 +1,6 @@
+use anyhow::{anyhow, Result};
+use cmdreg::{command, Json};
 use std::path::PathBuf;
-
-use anyhow::anyhow;
 
 use crate::{
     settings::get_settings,
@@ -10,61 +10,35 @@ use crate::{
     },
 };
 
-use cmdreg::{command, CommandResponse, CommandResult, Json};
-
-#[derive(Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SetWorkspaceRootPathArgs {
-    pub path: String,
-    pub new_path: String,
-    pub is_move: bool,
-}
-
 #[command("workspace")]
-async fn init_setup(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
+async fn init_setup(path: String) -> Result<()> {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
-        .init_setup(&WorkspacePath::from(&args.path))
+        .init_setup(&WorkspacePath::from(&path))
         .await
         .map_err(|err| anyhow!("workspace init_setup error: {}", err,))?;
 
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[command("workspace")]
-async fn set_workspace_root_path(Json(args): Json<SetWorkspaceRootPathArgs>) -> CommandResult {
+async fn set_workspace_root_path(path: String, new_path: String, is_move: bool) -> Result<()> {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
-        .set_workspace_root_path(
-            &WorkspacePath::from(&args.path),
-            args.new_path,
-            args.is_move,
-        )
+        .set_workspace_root_path(&WorkspacePath::from(&path), new_path, is_move)
         .await?;
 
-    Ok(CommandResponse::None)
-}
-
-#[derive(Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SetWorkspaceNameArgs {
-    pub path: String,
-    pub new_name: String,
-    pub is_move: bool,
+    Ok(())
 }
 
 #[command("workspace")]
-async fn set_workspace_name(Json(args): Json<SetWorkspaceNameArgs>) -> CommandResult {
+async fn set_workspace_name(path: String, new_name: String, is_move: bool) -> Result<()> {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
-        .set_workspace_name(
-            &WorkspacePath::from(&args.path),
-            args.new_name,
-            args.is_move,
-        )
+        .set_workspace_name(&WorkspacePath::from(&path), new_name, is_move)
         .await?;
 
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -82,119 +56,95 @@ impl RemoveWorkspaceArgs {
 }
 
 #[command("workspace")]
-async fn remove_workspace(Json(args): Json<RemoveWorkspaceArgs>) -> CommandResult {
+async fn remove_workspace(Json(args): Json<RemoveWorkspaceArgs>) -> Result<()> {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
         .remove_workspace(&WorkspacePath::from(&args.path), args.delete_file)
         .await?;
 
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[command("workspace")]
-async fn get_workspaces_metadata() -> CommandResult {
+async fn get_workspaces_metadata() -> Result<serde_json::Value> {
     let workspace_manager = get_workspace_manager().await;
     let workspaces = workspace_manager.get_workspaces_metadata();
 
-    CommandResponse::json(workspaces)
-}
-
-#[derive(Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct OpenWorkspaceByPathArgs {
-    pub path: String,
+    // 使用 json 返回可以少一次 clone
+    Ok(serde_json::json!(workspaces))
 }
 
 #[command("workspace")]
-async fn open_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
+async fn open_workspace_by_path(path: String) -> Result<()> {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
-        .load_workspace(&WorkspacePath::from(&args.path))
+        .load_workspace(&WorkspacePath::from(&path))
         .await?;
 
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[command("workspace")]
-async fn create_workspace(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
+async fn create_workspace(path: String) -> Result<()> {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
-        .create_workspace(&WorkspacePath::from(&args.path))
+        .create_workspace(&WorkspacePath::from(&path))
         .await?;
 
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[command("workspace")]
-async fn unload_workspace_by_path(Json(args): Json<OpenWorkspaceByPathArgs>) -> CommandResult {
+async fn unload_workspace_by_path(path: String) -> Result<()> {
     let mut workspace_manager = get_workspace_manager_mut().await;
     workspace_manager
-        .unload_workspace(&WorkspacePath::from(&args.path))
+        .unload_workspace(&WorkspacePath::from(&path))
         .await?;
 
-    Ok(CommandResponse::None)
+    Ok(())
 }
 
 #[command("workspace")]
-async fn get_last_workspace() -> CommandResult {
+async fn get_last_workspace() -> Result<Option<serde_json::Value>> {
     let auto_open_list_workspace = get_settings().await.auto_open_last_workspace;
     if !auto_open_list_workspace {
-        Ok(CommandResponse::None)
+        Ok(None)
     } else {
         let workspace_manager = get_workspace_manager().await;
 
-        CommandResponse::json(&workspace_manager.last_workspace)
+        Ok(Some(serde_json::json!(workspace_manager.last_workspace)))
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CheckWorkspacePathArgs {
-    pub workspace_path: String,
-}
-
 #[command("workspace")]
-async fn check_workspace_path_exist(Json(args): Json<CheckWorkspacePathArgs>) -> CommandResult {
-    let path = PathBuf::from(args.workspace_path);
+async fn check_workspace_path_exist(workspace_path: String) -> Result<bool> {
+    let path = PathBuf::from(workspace_path);
     let exists = path.exists() && path.is_dir();
-    CommandResponse::json(exists)
+    Ok(exists)
 }
 
 #[command("workspace")]
-async fn check_workspace_path_legal(Json(args): Json<CheckWorkspacePathArgs>) -> CommandResult {
-    let legal = !args.workspace_path.is_empty();
-    CommandResponse::json(legal)
-}
-
-#[derive(Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct GetWorkspaceSaveDataArgs {
-    pub workspace_path: String,
+async fn check_workspace_path_legal(workspace_path: String) -> Result<bool> {
+    let legal = !workspace_path.is_empty();
+    Ok(legal)
 }
 
 #[command("workspace")]
-async fn get_workspace_savedata(Json(args): Json<GetWorkspaceSaveDataArgs>) -> CommandResult {
+async fn get_workspace_savedata(workspace_path: String) -> Result<serde_json::Value> {
     let workspace_manager = get_workspace_manager().await;
     let savedata =
-        workspace_manager.get_workspace_savedata(&WorkspacePath::from(&args.workspace_path))?;
-    if savedata.is_none() {
-        CommandResponse::json(WorkspaceSaveData::new())
+        workspace_manager.get_workspace_savedata(&WorkspacePath::from(&workspace_path))?;
+    if let Some(savedata) = savedata {
+        Ok(serde_json::json!(savedata))
     } else {
-        CommandResponse::json(savedata)
+        Ok(serde_json::json!(WorkspaceSaveData::new()))
     }
-}
-#[derive(Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SetWorkspaceSaveDataArgs {
-    pub workspace_path: String,
-    pub data: WorkspaceSaveData,
 }
 
 #[command("workspace")]
-async fn set_workspace_savedata(Json(args): Json<SetWorkspaceSaveDataArgs>) -> CommandResult {
+async fn set_workspace_savedata(workspace_path: String, data: WorkspaceSaveData) -> Result<()> {
     let mut workspace_manager = get_workspace_manager_mut().await;
-    workspace_manager
-        .set_workspace_savedata(&WorkspacePath::from(&args.workspace_path), args.data)?;
+    workspace_manager.set_workspace_savedata(&WorkspacePath::from(&workspace_path), data)?;
 
-    Ok(CommandResponse::None)
+    Ok(())
 }
