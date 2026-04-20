@@ -598,8 +598,8 @@ dependencies = [
 
 [[package]]
 name = "cmdreg"
-version = "0.1.4"
-source = "git+https://github.com/luoluoqixi/cmdreg?branch=main#641a6a7fa3a8fd2a1fad195554d798b1c5774347"
+version = "0.2.2"
+source = "git+https://github.com/luoluoqixi/cmdreg?branch=main#00afa13a902f748a3a57df08e1df1542c90f0754"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -612,13 +612,13 @@ dependencies = [
 
 [[package]]
 name = "cmdreg-macros"
-version = "0.1.4"
-source = "git+https://github.com/luoluoqixi/cmdreg?branch=main#641a6a7fa3a8fd2a1fad195554d798b1c5774347"
+version = "0.2.2"
+source = "git+https://github.com/luoluoqixi/cmdreg?branch=main#00afa13a902f748a3a57df08e1df1542c90f0754"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
- "toml 0.8.2",
+ "toml 1.1.2+spec-1.1.0",
 ]
 
 [[package]]
@@ -6316,10 +6316,12 @@ version = "1.1.2+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81f3d15e84cbcd896376e6730314d59fb5a87f31e4b038454184435cd57defee"
 dependencies = [
+ "indexmap 2.14.0",
  "serde_core",
  "serde_spanned 1.1.1",
  "toml_datetime 1.1.1+spec-1.1.0",
  "toml_parser",
+ "toml_writer",
  "winnow 1.0.1",
 ]
 

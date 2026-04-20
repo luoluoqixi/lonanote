@@ -34,7 +34,7 @@ reqwest  = { version = "0.13", default-features = false }
 futures = "0.3"
 rust-embed = "8.11"
 
-# cmdreg = "0.1"
+# cmdreg = "0.2"
 cmdreg = { git = "https://github.com/luoluoqixi/cmdreg", branch = "main" }
 
 # tauri

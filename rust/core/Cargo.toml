@@ -6,14 +6,11 @@ license = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 
-[package.metadata.cmdreg]
-rename_all = "camelCase"
-
 [lib]
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
-cmdreg = { workspace = true, features = ["full"] }
+cmdreg = { workspace = true, features = ["macros"] }
 
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -46,3 +43,17 @@ fork = { workspace = true }
 [target.'cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))'.dependencies]
 rfd = { workspace = true }
 trash = { workspace = true }
+
+
+# cargo run --features generate_api --bin generate_api -- assets/commands.json
+[[bin]]
+name = "generate_api"
+path = "src/api/generate/generate_api.rs"
+required-features = ["generate_api"]
+
+[package.metadata.cmdreg]
+rename_all = "camelCase"
+
+[features]
+generate_api = ["cmdreg/metadata"]
+
