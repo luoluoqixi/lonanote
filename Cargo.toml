@@ -50,14 +50,6 @@ tauri-plugin-dialog = { version = "2.7.0" }
 tauri-plugin-shell = { version = "2.3.5" }
 # tauri-plugin-updater = { version = "2.10.1" }
 
-# leptos
-leptos = "0.8"
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
-js-sys = "0.3"
-serde-wasm-bindgen = "0.6"
-console_error_panic_hook = "0.1"
-
 [profile.release]
 codegen-units = 1 # Compile crates one after another so the compiler can optimize better
 lto = true        # Enables link to optimizations

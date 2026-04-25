@@ -15,9 +15,6 @@ run.cmd install
 # or
 sh run.sh install
 
-cargo install trunk
-rustup target add wasm32-unknown-unknown
-
 ```
 
 #### 🧑‍💻 运行
