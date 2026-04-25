@@ -6,15 +6,15 @@ source_dir = "src"
 package_name = "rs.craby.lonanoteuicore"
 
 # Android Targets
-# aarch64-linux-android
-# armv7-linux-androideabi
-# x86_64-linux-android
-# i686-linux-android
+# rustup target add aarch64-linux-android
+# rustup target add armv7-linux-androideabi
+# rustup target add x86_64-linux-android
+# rustup target add i686-linux-android
 targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
 
 [ios]
 # iOS Targets
-# aarch64-apple-ios
-# aarch64-apple-ios-sim
-# x86_64-apple-ios
+# rustup target add aarch64-apple-ios
+# rustup target add aarch64-apple-ios-sim
+# rustup target add x86_64-apple-ios
 targets = []
