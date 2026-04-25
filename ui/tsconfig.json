@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
+}
