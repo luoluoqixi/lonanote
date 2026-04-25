@@ -9,6 +9,8 @@ import { SplashScreen, Stack } from 'expo-router';
 import { Provider } from '@/components/Provider';
 import { useTheme } from 'tamagui';
 
+import { LonanoteUiCore } from 'lonanote_ui_core';
+
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -27,6 +29,8 @@ export default function RootLayout() {
     Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
     InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
   });
+
+  console.log('LonanoteUiCore: ', LonanoteUiCore.add(10, 5));
 
   useEffect(() => {
     if (interLoaded || interError) {

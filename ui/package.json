@@ -33,6 +33,7 @@
     "expo-status-bar": "~55.0.4",
     "expo-system-ui": "~55.0.9",
     "expo-web-browser": "~55.0.9",
+    "lonanote_ui_core": "link:lonanote_ui_core",
     "react": ">=19",
     "react-dom": "*",
     "react-native": "0.83.2",

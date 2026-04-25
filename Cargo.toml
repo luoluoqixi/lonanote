@@ -1,5 +1,5 @@
 [workspace]
-members = ["rust/core", "ui", "ui/src-tauri"]
+members = ["rust/core", "ui/src-tauri"]
 resolver = "2"
 
 [workspace.package]

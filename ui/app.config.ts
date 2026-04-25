@@ -22,7 +22,7 @@ const config: ExpoConfig = {
       foregroundImage: "./src/assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff",
     },
-    package: "com.luoluoqixi.lonanote",
+    package: "com.luoluoqixi.lonanotern",
   },
   web: {
     bundler: "metro",

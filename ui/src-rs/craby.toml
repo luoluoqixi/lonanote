@@ -1,0 +1,20 @@
+[project]
+name = "lonanote_ui_core"
+source_dir = "src"
+
+[android]
+package_name = "rs.craby.lonanoteuicore"
+
+# Android Targets
+# aarch64-linux-android
+# armv7-linux-androideabi
+# x86_64-linux-android
+# i686-linux-android
+targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
+
+[ios]
+# iOS Targets
+# aarch64-apple-ios
+# aarch64-apple-ios-sim
+# x86_64-apple-ios
+targets = []
