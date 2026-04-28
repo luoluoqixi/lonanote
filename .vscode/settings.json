@@ -18,5 +18,6 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "scss.lint.validProperties": ["app-region", "user-drag"],
-  "cmake.ignoreCMakeListsMissing": true
+  "cmake.ignoreCMakeListsMissing": true,
+  "css.lint.unknownAtRules": "ignore"
 }
