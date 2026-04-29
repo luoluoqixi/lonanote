@@ -2,27 +2,36 @@
 import eslintPlugin from "@eslint/js";
 import prettierConfig from "eslint-config-prettier";
 import prettierRecommended from "eslint-plugin-prettier/recommended";
+import { defineConfig, globalIgnores } from "eslint/config";
 import globals from "globals";
 import tsEslint from "typescript-eslint";
 
-/** @type {import("eslint").Linter.Config[]} */
-export default [
-  eslintPlugin.configs.recommended,
-  ...tsEslint.configs.recommended,
-  prettierRecommended,
-  prettierConfig,
+export default defineConfig([
+  globalIgnores([
+    "**/out",
+    "**/dist",
+    "**/node_modules",
+    "public",
+    "src-tauri/**",
+    "src/vite-env.d.ts",
+    "metro.config.js",
+    "src/uniwind-types.d.ts",
+  ]),
   {
-    ignores: [
-      "**/out",
-      "**/dist",
-      "**/node_modules",
-      "src-tauri/**",
-      "metro.config.js",
-      "src/uniwind-types.d.ts",
+    files: [
+      "src/**/*.{js,ts,jsx,tsx}",
+      "typings/**.ts",
+      "eslint.config.js",
+      "eslint.config.mjs",
+      "app.config.ts",
+      "vite.config.ts",
     ],
-  },
-  {
-    files: ["src/**/*.{js,ts,jsx,tsx}", "typings/**.ts", "eslint.config.mjs", "app.config.ts"],
+    extends: [
+      eslintPlugin.configs.recommended,
+      ...tsEslint.configs.recommended,
+      prettierRecommended,
+      prettierConfig,
+    ],
     plugins: {},
     languageOptions: {
       globals: {
@@ -101,4 +110,4 @@ export default [
       "@typescript-eslint/no-unused-expressions": "warn",
     },
   },
-];
+]);
