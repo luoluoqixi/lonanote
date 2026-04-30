@@ -58,6 +58,7 @@
     "uniwind": "^1.6.3"
   },
   "devDependencies": {
+    "@expo/config-plugins": "^55.0.8",
     "@types/react": "~19.2.5",
     "typescript": "~5.9.2"
   },

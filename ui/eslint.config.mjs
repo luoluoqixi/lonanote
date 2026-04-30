@@ -20,6 +20,7 @@ export default defineConfig([
   {
     files: [
       "src/**/*.{js,ts,jsx,tsx}",
+      "tools/**/*.{js,ts}",
       "typings/**.ts",
       "eslint.config.js",
       "eslint.config.mjs",
