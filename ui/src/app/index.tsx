@@ -1,10 +1,14 @@
+import { LonanoteRustModule } from "lonanote_rust_module";
 import { StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
+  const result = LonanoteRustModule.add(1, 2);
+  console.log("Result from Rust module:", result);
   return (
     <View style={styles.container}>
       <Text style={styles.title}>lonanote</Text>
       <Text style={styles.subtitle}>A minimal Expo starter screen.</Text>
+      <Text style={styles.subtitle}>Result from Rust module: 1 + 2 = {result}</Text>
     </View>
   );
 }
