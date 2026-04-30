@@ -2,6 +2,9 @@
   "name": "lonanote",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "workspaces": [
+    "rust"
+  ],
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",
@@ -36,6 +39,7 @@
     "expo-web-browser": "~55.0.14",
     "globals": "^17.5.0",
     "heroui-native": "^1.0.2",
+    "lonanote_rust_module": "workspace:*",
     "prettier": "^3.8.3",
     "react": "19.2.5",
     "react-dom": "19.2.5",
