@@ -10,9 +10,12 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "prebuild": "expo prebuild --clean",
-    "prebuild:ios": "expo prebuild --clean --platform ios",
-    "prebuild:android": "expo prebuild --clean --platform android",
+    "prebuild": "cross-env APP_VARIANT=development expo prebuild --clean",
+    "prebuild:ios": "cross-env APP_VARIANT=development expo prebuild --clean --platform ios",
+    "prebuild:android": "cross-env APP_VARIANT=development expo prebuild --clean --platform android",
+    "prebuild:prod": "expo prebuild --clean",
+    "prebuild:ios:prod": "expo prebuild --clean --platform ios",
+    "prebuild:android:prod": "expo prebuild --clean --platform android",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -60,6 +63,7 @@
   "devDependencies": {
     "@expo/config-plugins": "^55.0.8",
     "@types/react": "~19.2.5",
+    "cross-env": "^10.1.0",
     "typescript": "~5.9.2"
   },
   "private": true
