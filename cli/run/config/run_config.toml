@@ -52,11 +52,52 @@ always_run = true
 # build command
 [[commands]]
 name = "build"
-description = "Build the application for Windows"
+description = "Build the application"
 
 [[commands.cmds]]
 cmd = "cargo"
 args = ["tauri", "build"]
+run_dir = "."
+
+
+# build:win command
+[[commands]]
+name = "build:win"
+description = "Build the application for Windows"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-pc-windows-msvc"]
+run_dir = "."
+
+# build:mac:x64 command
+[[commands]]
+name = "build:mac:x64"
+description = "Build the application for macOS x64"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-apple-darwin"]
+run_dir = "."
+
+# build:mac:arm64 command
+[[commands]]
+name = "build:mac:arm64"
+description = "Build the application for macOS arm64"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build", "--target", "aarch64-apple-darwin"]
+run_dir = "."
+
+# build:linux command
+[[commands]]
+name = "build:linux"
+description = "Build the application for Linux"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-unknown-linux-gnu"]
 run_dir = "."
 
 

@@ -2,7 +2,7 @@
 
 [中文](./README.md) | [English](./README_en.md)
 
-A local-first, open-source note-taking app built with **TypeScript**, **Dart**, and **Rust**.
+A local-first, open-source note-taking app built with **TypeScript** and **Rust**.
 
 ## 🎉 Introduction
 
@@ -18,7 +18,7 @@ Notes are **stored offline** in plain Markdown format, allowing seamless migrati
 - **Local storage** - Plain Markdown files, no vendor lock-in
 - **File-system based** - No proprietary databases
 - **WYSIWYG editing** - Real-time preview
-- **Hybrid architecture** - Flutter (ui), Rust (core)
+- **Architecture** - React Native (ui), Rust (core)
 
 ### 📸 Screenshots
 
@@ -68,8 +68,6 @@ Typing the / character in the editor triggers a slash menu, allowing quick inser
 ## 🗺 Roadmap
 
 LonaNote is under active development—contributions welcome!
-
-- [v1.1.0 TODO](https://github.com/users/luoluoqixi/projects/4)
 
 ## 💬 Community
 

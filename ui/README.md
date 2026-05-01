@@ -2,11 +2,8 @@
 
 #### 🔨 开发环境
 
-- [Rust](https://rustup.rs/) >= 1.85.0-nightly
-- [Flutter](https://docs.flutter.dev/get-started/install) >= 3.38.9
-- Android 和 IOS 环境配置参考 Flutter 文档
-- VSCode 中保存 dart 时长时间无法保存
-  - [#60335](https://github.com/dart-lang/sdk/issues/60335)
+- [Rust](https://rustup.rs/) >= 1.94.0-nightly
+- Android 和 IOS 开发环境
 
 #### 🚀 安装
 
@@ -41,10 +38,15 @@ run build:win
 # or
 sh run.sh build:win
 
-# macos
-run build:mac
+# macos x64
+run build:mac:x64
 # or
-sh run.sh build:mac
+sh run.sh build:mac:x64
+
+# macos arm64
+run build:mac:arm64
+# or
+sh run.sh build:mac:arm64
 
 # linux
 run build:linux
@@ -68,37 +70,6 @@ sh run.sh build:ios
 run.cmd preview
 # or
 sh run.sh preview
-```
-
-### generate
-
-#### generate rust code
-
-```
-# install flutter_rust_bridge_codegen
-cargo install flutter_rust_bridge_codegen
-
-# generate rust code
-cd ui
-flutter_rust_bridge_codegen generate
-
-# or
-run.cmd gen:rust
-# or
-sh run.sh gen:rust
-```
-
-#### generate dart code
-
-```
-# generate dart
-cd ui
-dart run build_runner build
-
-# or
-run.cmd gen:dart
-# or
-sh run.sh gen:dart
 ```
 
 #### generate icon

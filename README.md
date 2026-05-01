@@ -2,7 +2,7 @@
 
 [中文](./README.md) | [English](./README_en.md)
 
-一款本地优先的开源笔记软件，使用 **TypeScript**、**Dart** 和 **Rust** 编写。
+一款本地优先的开源笔记软件，使用 **TypeScript** 和 **Rust** 编写。
 
 ## 🎉 简介
 
@@ -18,7 +18,7 @@
 - **本地存储** - 完全本地存储 Markdown 文本文件
 - **使用原始文件系统** - 无数据库
 - **所见即所得编辑** - 实时预览
-- **架构** - 界面使用 Flutter，核心使用 Rust
+- **架构** - 界面使用 React Native，核心使用 Rust
 
 ### 📸 屏幕截图
 
@@ -70,8 +70,6 @@
 ## 🗺 待办
 
 露娜笔记在积极开发中，欢迎贡献代码
-
-- [v1.1.0 TODO](https://github.com/users/luoluoqixi/projects/4)
 
 ## 💬 社区
 
