@@ -1,0 +1,2 @@
+# Android SDK / NDK settings
+ANDROID_NDK_VERSION=27.1.12297006

@@ -57,6 +57,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
       },
     ],
+    "./tools/prebuild/withAndroidNdkVersion.cjs",
     ["./tools/prebuild/withAndroidAdaptiveIconInset.cjs", { inset: "16%" }],
   ],
   experiments: {

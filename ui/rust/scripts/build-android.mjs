@@ -8,9 +8,11 @@ const __filename = fileURLToPath(import.meta.url);
 const scriptDir = path.dirname(__filename);
 const rustRoot = path.resolve(scriptDir, "..");
 const uiRoot = path.resolve(rustRoot, "..");
+const sdkConfigPath = path.join(uiRoot, "tools", "prebuild", "sdk_config.txt");
 const rootAndroidGradleProperties = path.join(uiRoot, "android", "gradle.properties");
 const moduleAndroidGradleProperties = path.join(rustRoot, "android", "gradle.properties");
 const crabyTomlPath = path.join(rustRoot, "craby.toml");
+const ANDROID_NDK_VERSION_KEY = "ANDROID_NDK_VERSION";
 
 const androidToolchains = new Map([
   [
@@ -77,6 +79,14 @@ function readProperties(filePath) {
   return properties;
 }
 
+function readEnvStyleConfig(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
+
+  return readProperties(filePath);
+}
+
 function getAndroidSdkRoot() {
   const sdkRoot = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
   if (!sdkRoot) {
@@ -86,11 +96,13 @@ function getAndroidSdkRoot() {
 }
 
 function getConfiguredNdkVersion() {
+  const sdkConfig = readEnvStyleConfig(sdkConfigPath);
   const rootProperties = readProperties(rootAndroidGradleProperties);
   const moduleProperties = readProperties(moduleAndroidGradleProperties);
 
   return (
     process.env.LONANOTE_ANDROID_NDK_VERSION ||
+    sdkConfig[ANDROID_NDK_VERSION_KEY] ||
     rootProperties["android.ndkVersion"] ||
     moduleProperties["android.ndkVersion"] ||
     moduleProperties.LonanoteRustModule_ndkVersion
