@@ -1,7 +1,6 @@
 import { type ConfigContext, type ExpoConfig } from "expo/config";
 
 import pkg from "./package.json";
-import withAndroidAdaptiveIconInset from "./tools/prebuild/withAndroidAdaptiveIconInset.cjs";
 
 const IS_DEV = process.env.APP_VARIANT === "development";
 
@@ -58,7 +57,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
       },
     ],
-    [withAndroidAdaptiveIconInset, { inset: "16%" }],
+    ["./tools/prebuild/withAndroidAdaptiveIconInset.cjs", { inset: "16%" }],
   ],
   experiments: {
     typedRoutes: true,
