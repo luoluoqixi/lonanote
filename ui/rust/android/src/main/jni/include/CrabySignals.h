@@ -9,9 +9,13 @@
 
 namespace craby {
 namespace lonanoterustmodule {
+namespace bridging {
+struct LonanoteRustModuleSignal;
+}
+
 namespace signals {
 
-using Delegate = std::function<void(const std::string& signalName)>;
+using Delegate = std::function<void(const std::string& signalName, void* signal)>;
 
 class SignalManager {
 public:
@@ -20,11 +24,11 @@ public:
     return instance;
   }
 
-  void emit(uintptr_t id, rust::Str name) const {
+  void emit(uintptr_t id, rust::Str name, bridging::LonanoteRustModuleSignal* signal) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = delegates_.find(id);
     if (it != delegates_.end()) {
-      it->second(std::string(name));
+      it->second(std::string(name), signal);
     }
   }
 

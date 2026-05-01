@@ -120,6 +120,28 @@ struct Bridging<rust::Vec<T>> {
 };
 
 template <>
+struct Bridging<craby::lonanoterustmodule::bridging::NullableString> {
+  static craby::lonanoterustmodule::bridging::NullableString fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    if (value.isNull()) {
+      return craby::lonanoterustmodule::bridging::NullableString{true, rust::String()};
+    }
+
+    auto val = react::bridging::fromJs<rust::String>(rt, value, callInvoker);
+    auto ret = craby::lonanoterustmodule::bridging::NullableString{false, val};
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::lonanoterustmodule::bridging::NullableString value) {
+    if (value.null) {
+      return jsi::Value::null();
+    }
+
+    return react::bridging::toJs(rt, value.val);
+  }
+};
+
+template <>
 struct Bridging<craby::lonanoterustmodule::bridging::CallbackRequest> {
   static craby::lonanoterustmodule::bridging::CallbackRequest fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto obj = value.asObject(rt);
@@ -151,28 +173,6 @@ struct Bridging<craby::lonanoterustmodule::bridging::CallbackRequest> {
     obj.setProperty(rt, "args", _obj$args);
 
     return jsi::Value(rt, obj);
-  }
-};
-
-template <>
-struct Bridging<craby::lonanoterustmodule::bridging::NullableString> {
-  static craby::lonanoterustmodule::bridging::NullableString fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
-    if (value.isNull()) {
-      return craby::lonanoterustmodule::bridging::NullableString{true, rust::String()};
-    }
-
-    auto val = react::bridging::fromJs<rust::String>(rt, value, callInvoker);
-    auto ret = craby::lonanoterustmodule::bridging::NullableString{false, val};
-
-    return ret;
-  }
-
-  static jsi::Value toJs(jsi::Runtime &rt, craby::lonanoterustmodule::bridging::NullableString value) {
-    if (value.null) {
-      return jsi::Value::null();
-    }
-
-    return react::bridging::toJs(rt, value.val);
   }
 };
 

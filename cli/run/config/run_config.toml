@@ -26,6 +26,7 @@ args = ["tauri", "dev"]
 run_dir = "."
 always_run = true
 
+
 # dev:android command
 [[commands]]
 name = "dev:android"
@@ -33,9 +34,15 @@ description = "Run the application in development mode on Android"
 
 [[commands.cmds]]
 cmd = "bun"
+args = ["run", "build:android"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
 args = ["android"]
 run_dir = "ui"
 always_run = true
+
 
 # dev:ios command
 [[commands]]
@@ -44,9 +51,111 @@ description = "Run the application in development mode on iOS"
 
 [[commands.cmds]]
 cmd = "bun"
+args = ["run", "build:ios"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
 args = ["ios"]
 run_dir = "ui"
 always_run = true
+
+
+# build command
+[[commands]]
+name = "build"
+description = "Build the application"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build"]
+run_dir = "."
+
+
+# build:win command
+[[commands]]
+name = "build:win"
+description = "Build the application for Windows"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-pc-windows-msvc"]
+run_dir = "."
+
+
+# build:mac:x64 command
+[[commands]]
+name = "build:mac:x64"
+description = "Build the application for macOS x64"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-apple-darwin"]
+run_dir = "."
+
+
+# build:mac:arm64 command
+[[commands]]
+name = "build:mac:arm64"
+description = "Build the application for macOS arm64"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build", "--target", "aarch64-apple-darwin"]
+run_dir = "."
+
+
+# build:linux command
+[[commands]]
+name = "build:linux"
+description = "Build the application for Linux"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-unknown-linux-gnu"]
+run_dir = "."
+
+
+# build:android command
+[[commands]]
+name = "build:android"
+description = "Build the application for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:android"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["prebuild:android:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:android"]
+run_dir = "ui"
+
+
+# build:ios command
+[[commands]]
+name = "build:ios"
+description = "Build the application for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:ios"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["prebuild:ios:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:ios"]
+run_dir = "ui"
 
 
 # prebuild:android command
@@ -71,88 +180,26 @@ args = ["prebuild:ios"]
 run_dir = "ui"
 
 
-# build command
+# build:module:android command
 [[commands]]
-name = "build"
-description = "Build the application"
-
-[[commands.cmds]]
-cmd = "cargo"
-args = ["tauri", "build"]
-run_dir = "."
-
-
-# build:win command
-[[commands]]
-name = "build:win"
-description = "Build the application for Windows"
-
-[[commands.cmds]]
-cmd = "cargo"
-args = ["tauri", "build", "--target", "x86_64-pc-windows-msvc"]
-run_dir = "."
-
-# build:mac:x64 command
-[[commands]]
-name = "build:mac:x64"
-description = "Build the application for macOS x64"
-
-[[commands.cmds]]
-cmd = "cargo"
-args = ["tauri", "build", "--target", "x86_64-apple-darwin"]
-run_dir = "."
-
-# build:mac:arm64 command
-[[commands]]
-name = "build:mac:arm64"
-description = "Build the application for macOS arm64"
-
-[[commands.cmds]]
-cmd = "cargo"
-args = ["tauri", "build", "--target", "aarch64-apple-darwin"]
-run_dir = "."
-
-# build:linux command
-[[commands]]
-name = "build:linux"
-description = "Build the application for Linux"
-
-[[commands.cmds]]
-cmd = "cargo"
-args = ["tauri", "build", "--target", "x86_64-unknown-linux-gnu"]
-run_dir = "."
-
-
-# build:android command
-[[commands]]
-name = "build:android"
-description = "Build the application for Android"
+name = "build:module:android"
+description = "Build Android Module"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["prebuild:android:prod"]
-run_dir = "ui"
-
-[[commands.cmds]]
-cmd = "bun"
-args = ["build:android"]
-run_dir = "ui"
+args = ["run", "build:android"]
+run_dir = "ui/rust"
 
 
-# build:ios command
+# build:module:ios command
 [[commands]]
-name = "build:ios"
-description = "Build the application for iOS"
+name = "build:module:ios"
+description = "Build iOS Module"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["prebuild:ios:prod"]
-run_dir = "ui"
-
-[[commands.cmds]]
-cmd = "bun"
-args = ["build:ios"]
-run_dir = "ui"
+args = ["run", "build:ios"]
+run_dir = "ui/rust"
 
 
 # icon command

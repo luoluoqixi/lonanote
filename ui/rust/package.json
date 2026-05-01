@@ -43,6 +43,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
     "build": "craby build && tsdown",
+    "build:android": "craby build && tsdown",
+    "build:ios": "craby build && tsdown",
     "clean": "craby clean",
     "generate": "crabygen"
   },
