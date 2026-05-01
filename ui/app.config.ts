@@ -1,5 +1,7 @@
 import { type ConfigContext, type ExpoConfig } from "expo/config";
 
+import pkg from "./package.json";
+
 const IS_DEV = process.env.APP_VARIANT === "development";
 
 const getUniqueIdentifier = () => {
@@ -20,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: getAppName(),
   slug: "lonanote",
-  version: "1.1.0",
+  version: pkg.version,
   orientation: "default",
   icon: "./assets/images/icon.png",
   scheme: "lonanote",
@@ -31,12 +33,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // icon: "./assets/expo.icon",
   },
   android: {
-    adaptiveIcon: {
-      backgroundColor: "#E6F4FE",
-      foregroundImage: "./assets/images/android-icon-foreground.png",
-      backgroundImage: "./assets/images/android-icon-background.png",
-      monochromeImage: "./assets/images/android-icon-monochrome.png",
-    },
     predictiveBackGestureEnabled: false,
     package: getUniqueIdentifier(),
   },

@@ -18,7 +18,7 @@ resize = { width = 1024, height = 1024 }
 default_mask = true
 
 [common.transform_android]
-default_mask = true
+default_mask = false
 
 [common.transform_ios]
 default_mask = false
@@ -32,9 +32,63 @@ output_path = "rust/core/assets/default_workspace/assets/images/icon.png"
 [icons.transform]
 default_mask = true
 
+[[icons]]
+name = "android"
+type = "custom"
+output_path = "resources/icons/icon_android.png"
+
+[icons.transform]
+default_mask = false
+
+[[icons]]
+name = "ios"
+type = "custom"
+output_path = "resources/icons/icon_ios.png"
+
+[icons.transform]
+default_mask = false
+resize = { width = 1024, height = 1024 }
+
+[[icons]]
+name = "ios"
+type = "custom"
+output_path = "resources/icons/icon_ios.png"
+
+[icons.transform]
+default_mask = false
+resize = { width = 1024, height = 1024 }
+
 
 [[icons]]
 name = "tauri icon"
 type = "tauri"
 project_path = "ui/src-tauri"
 output_path = "resources/icons"
+targets = ["win", "mac", "linux"]
+
+[[icons]]
+name = "react-native icon"
+type = "custom"
+output_path = "ui/assets/images/icon.png"
+
+[icons.transform]
+default_mask = false
+resize = { width = 1024, height = 1024 }
+
+[[icons]]
+name = "react-native splash-icon"
+type = "custom"
+output_path = "ui/assets/images/splash-icon.png"
+
+[icons.transform]
+default_mask = false
+resize = { width = 2048, height = 2048 }
+
+[[icons]]
+name = "react-native favicon"
+type = "custom"
+output_path = "ui/assets/images/favicon.png"
+
+[icons.transform]
+default_mask = true
+resize = { width = 48, height = 48 }

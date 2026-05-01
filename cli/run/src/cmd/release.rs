@@ -64,9 +64,13 @@ fn run_convco_output<S: AsRef<str>>(
     Ok(v)
 }
 
-pub fn run_npm_version<S: AsRef<str>>(project_path: S, next_version: &str) -> anyhow::Result<()> {
+pub fn run_npm_version<S: AsRef<str>>(
+    pkg_manager: &str,
+    project_path: S,
+    next_version: &str,
+) -> anyhow::Result<()> {
     let mut child = utils::cmd::run_command_which_log(
-        "pnpm",
+        pkg_manager,
         project_path.as_ref(),
         &[
             "version",
@@ -140,9 +144,13 @@ fn generate_changelog(
     }
 }
 
-fn change_package_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
+fn change_package_version(
+    pkg_manager: &str,
+    project_path: &Path,
+    next_version: &str,
+) -> anyhow::Result<()> {
     info!("change package version in {}...", project_path.display());
-    run_npm_version(project_path.to_str().unwrap(), next_version)?;
+    run_npm_version(pkg_manager, project_path.to_str().unwrap(), next_version)?;
     info!("change package version finish: v{next_version}");
     Ok(())
 }
@@ -177,6 +185,58 @@ fn change_cargo_version(project_path: &Path, next_version: &str) -> anyhow::Resu
     Ok(())
 }
 
+fn change_tauri_toml_version(project_path: &Path, next_version: &str) -> anyhow::Result<()> {
+    let tauri_toml_path = if project_path.is_dir() {
+        project_path.join("Tauri.toml")
+    } else {
+        project_path.to_path_buf()
+    };
+
+    info!(
+        "change tauri toml version in {}...",
+        tauri_toml_path.display()
+    );
+
+    let content = std::fs::read_to_string(&tauri_toml_path)?;
+    let newline = if content.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    let mut replaced = false;
+
+    let new_content = content
+        .split_inclusive(newline)
+        .map(|segment| {
+            let (line, suffix) = if let Some(line) = segment.strip_suffix(newline) {
+                (line, newline)
+            } else {
+                (segment, "")
+            };
+
+            let trimmed = line.trim_start();
+            let leading_len = line.len() - trimmed.len();
+            let indent = &line[..leading_len];
+
+            if !replaced && trimmed.starts_with("version = \"") {
+                replaced = true;
+                format!("{indent}version = \"{next_version}\"{suffix}")
+            } else {
+                segment.to_string()
+            }
+        })
+        .collect::<String>();
+
+    if !replaced {
+        anyhow::bail!("version line not found in {}", tauri_toml_path.display());
+    }
+
+    std::fs::write(&tauri_toml_path, new_content)?;
+
+    info!("change tauri toml version finish: v{next_version}");
+    Ok(())
+}
+
 fn change_version(next_version: &str, release_projects: &[ReleaseProject]) -> anyhow::Result<()> {
     let repo_root = REPO_ROOT.as_path();
     for project in release_projects.iter() {
@@ -188,7 +248,18 @@ fn change_version(next_version: &str, release_projects: &[ReleaseProject]) -> an
                 change_pubspec_version(&path, next_version)
             }
             crate::config::ReleaseProjectType::Cargo => change_cargo_version(&path, next_version),
-            crate::config::ReleaseProjectType::Npm => change_package_version(&path, next_version),
+            crate::config::ReleaseProjectType::Npm => {
+                change_package_version("npm", &path, next_version)
+            }
+            crate::config::ReleaseProjectType::Pnpm => {
+                change_package_version("pnpm", &path, next_version)
+            }
+            crate::config::ReleaseProjectType::Bun => {
+                change_package_version("bun", &path, next_version)
+            }
+            crate::config::ReleaseProjectType::TauriToml => {
+                change_tauri_toml_version(&path, next_version)
+            }
         };
         match result {
             Ok(_) => info!("change version finish for project: {name}"),

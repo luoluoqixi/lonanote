@@ -4,6 +4,16 @@ name = "rust"
 path = "."
 package_type = "cargo"
 
+[[release_projects]]
+name = "ui"
+path = "ui"
+package_type = "bun"
+
+[[release_projects]]
+name = "rust"
+path = "ui/src-tauri"
+package_type = "tauri-toml"
+
 
 # dev command
 [[commands]]
@@ -13,7 +23,29 @@ description = "Run the application in development mode"
 [[commands.cmds]]
 cmd = "cargo"
 args = ["tauri", "dev"]
-run_dir = "ui/src-tauri"
+run_dir = "."
+always_run = true
+
+# dev:android command
+[[commands]]
+name = "dev:android"
+description = "Run the application in development mode on Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["android"]
+run_dir = "ui"
+always_run = true
+
+# dev:ios command
+[[commands]]
+name = "dev:ios"
+description = "Run the application in development mode on iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["ios"]
+run_dir = "ui"
 always_run = true
 
 
@@ -25,7 +57,7 @@ description = "Build the application for Windows"
 [[commands.cmds]]
 cmd = "cargo"
 args = ["tauri", "build"]
-run_dir = "ui/src-tauri"
+run_dir = "."
 
 
 # build:android command
@@ -34,9 +66,14 @@ name = "build:android"
 description = "Build the application for Android"
 
 [[commands.cmds]]
-cmd = "cargo"
-args = ["tauri", "android", "build"]
-run_dir = "ui/src-tauri"
+cmd = "bun"
+args = ["prebuild:android:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:android"]
+run_dir = "ui"
 
 
 # build:ios command
@@ -45,9 +82,14 @@ name = "build:ios"
 description = "Build the application for iOS"
 
 [[commands.cmds]]
-cmd = "cargo"
-args = ["tauri", "ios", "build"]
-run_dir = "ui/src-tauri"
+cmd = "bun"
+args = ["prebuild:ios:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:ios"]
+run_dir = "ui"
 
 
 # icon command
@@ -58,9 +100,9 @@ description = "Generate Icon"
 [[commands.cmds]]
 cmd = "cargo"
 args = [
-    "run",
-    "--manifest-path=cli/Cargo.toml",
-    "--release",
-    "--package",
-    "icon-gen",
+  "run",
+  "--manifest-path=cli/Cargo.toml",
+  "--release",
+  "--package",
+  "icon-gen",
 ]

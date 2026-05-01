@@ -57,9 +57,24 @@ pub struct IconSize {
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
+pub enum GenerateTarget {
+    #[serde(rename = "win")]
+    Win,
+    #[serde(rename = "mac")]
+    Mac,
+    #[serde(rename = "linux")]
+    Linux,
+    #[serde(rename = "android")]
+    Android,
+    #[serde(rename = "ios")]
+    Ios,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct Icon {
     #[serde(rename = "type")]
     pub r#type: GenerateIconType,
+    pub targets: Option<Vec<GenerateTarget>>,
     pub name: String,
     pub output_path: String,
     pub project_path: Option<String>,

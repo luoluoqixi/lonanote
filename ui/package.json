@@ -15,11 +15,11 @@
     "build:ios": "expo run:ios --configuration Release",
     "build:web": "expo export --platform web",
     "prebuild": "cross-env APP_VARIANT=development expo prebuild --clean",
-    "prebuild:ios": "cross-env APP_VARIANT=development expo prebuild --clean --platform ios",
     "prebuild:android": "cross-env APP_VARIANT=development expo prebuild --clean --platform android",
+    "prebuild:ios": "cross-env APP_VARIANT=development expo prebuild --clean --platform ios",
     "prebuild:prod": "expo prebuild --clean",
-    "prebuild:ios:prod": "expo prebuild --clean --platform ios",
     "prebuild:android:prod": "expo prebuild --clean --platform android",
+    "prebuild:ios:prod": "expo prebuild --clean --platform ios",
     "lint": "expo lint"
   },
   "dependencies": {

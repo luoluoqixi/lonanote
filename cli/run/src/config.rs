@@ -42,6 +42,12 @@ pub enum ReleaseProjectType {
     Cargo,
     #[serde(rename = "npm")]
     Npm,
+    #[serde(rename = "pnpm")]
+    Pnpm,
+    #[serde(rename = "bun")]
+    Bun,
+    #[serde(rename = "tauri-toml")]
+    TauriToml,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
