@@ -1,6 +1,7 @@
 import { type ConfigContext, type ExpoConfig } from "expo/config";
 
 import pkg from "./package.json";
+import withAndroidAdaptiveIconInset from "./tools/prebuild/withAndroidAdaptiveIconInset.cjs";
 
 const IS_DEV = process.env.APP_VARIANT === "development";
 
@@ -35,6 +36,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     predictiveBackGestureEnabled: false,
     package: getUniqueIdentifier(),
+    adaptiveIcon: {
+      foregroundImage: "./assets/images/icon.png",
+      backgroundImage: "./assets/images/icon.png",
+      backgroundColor: "#2d2e30",
+    },
   },
   web: {
     output: "static",
@@ -45,13 +51,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "expo-splash-screen",
       {
-        backgroundColor: "#208AEF",
+        backgroundColor: "#2d2e30",
         android: {
           image: "./assets/images/splash-icon.png",
           imageWidth: 76,
         },
       },
     ],
+    [withAndroidAdaptiveIconInset, { inset: "16%" }],
   ],
   experiments: {
     typedRoutes: true,

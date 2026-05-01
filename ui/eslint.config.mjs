@@ -20,7 +20,7 @@ export default defineConfig([
   {
     files: [
       "src/**/*.{js,ts,jsx,tsx}",
-      "tools/**/*.{js,ts}",
+      "tools/**/*.{js,ts,cjs,mjs}",
       "typings/**.ts",
       "eslint.config.js",
       "eslint.config.mjs",
@@ -109,6 +109,7 @@ export default defineConfig([
       "prettier/prettier": "warn",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-unused-expressions": "warn",
+      "@typescript-eslint/no-require-imports": "off", // 允许require引入模块
     },
   },
 ]);
