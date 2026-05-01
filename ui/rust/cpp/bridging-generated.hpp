@@ -119,5 +119,62 @@ struct Bridging<rust::Vec<T>> {
   }
 };
 
+template <>
+struct Bridging<craby::lonanoterustmodule::bridging::CallbackRequest> {
+  static craby::lonanoterustmodule::bridging::CallbackRequest fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto obj = value.asObject(rt);
+    auto obj$id = obj.getProperty(rt, "id");
+    auto obj$key = obj.getProperty(rt, "key");
+    auto obj$args = obj.getProperty(rt, "args");
+
+    auto _obj$id = react::bridging::fromJs<rust::String>(rt, obj$id, callInvoker);
+    auto _obj$key = react::bridging::fromJs<rust::String>(rt, obj$key, callInvoker);
+    auto _obj$args = react::bridging::fromJs<craby::lonanoterustmodule::bridging::NullableString>(rt, obj$args, callInvoker);
+
+    craby::lonanoterustmodule::bridging::CallbackRequest ret = {
+      _obj$id,
+      _obj$key,
+      _obj$args
+    };
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::lonanoterustmodule::bridging::CallbackRequest value) {
+    jsi::Object obj = jsi::Object(rt);
+    auto _obj$id = react::bridging::toJs(rt, value.id);
+    auto _obj$key = react::bridging::toJs(rt, value.key);
+    auto _obj$args = react::bridging::toJs(rt, value.args);
+
+    obj.setProperty(rt, "id", _obj$id);
+    obj.setProperty(rt, "key", _obj$key);
+    obj.setProperty(rt, "args", _obj$args);
+
+    return jsi::Value(rt, obj);
+  }
+};
+
+template <>
+struct Bridging<craby::lonanoterustmodule::bridging::NullableString> {
+  static craby::lonanoterustmodule::bridging::NullableString fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    if (value.isNull()) {
+      return craby::lonanoterustmodule::bridging::NullableString{true, rust::String()};
+    }
+
+    auto val = react::bridging::fromJs<rust::String>(rt, value, callInvoker);
+    auto ret = craby::lonanoterustmodule::bridging::NullableString{false, val};
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::lonanoterustmodule::bridging::NullableString value) {
+    if (value.null) {
+      return jsi::Value::null();
+    }
+
+    return react::bridging::toJs(rt, value.val);
+  }
+};
+
 } // namespace react
 } // namespace facebook

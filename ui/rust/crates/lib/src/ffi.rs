@@ -2,30 +2,129 @@
 #[rustfmt::skip]
 use craby::prelude::*;
 
-use crate::lonanote_rust_module_impl::*;
 use crate::generated::*;
+use crate::lonanote_rust_module_impl::*;
 
 use bridging::*;
 
 #[cxx::bridge(namespace = "craby::lonanoterustmodule::bridging")]
 pub mod bridging {
+    #[derive(Clone)]
+    struct NullableString {
+        null: bool,
+        val: String,
+    }
+
+    #[derive(Clone)]
+    struct CallbackRequest {
+        id: String,
+        key: String,
+        args: NullableString,
+    }
+
     extern "Rust" {
         type LonanoteRustModule;
 
         #[cxx_name = "createLonanoteRustModule"]
         fn create_lonanote_rust_module(id: usize, data_path: &str) -> Box<LonanoteRustModule>;
 
-        #[cxx_name = "add"]
-        fn lonanote_rust_module_add(it_: &mut LonanoteRustModule, a: f64, b: f64) -> Result<f64>;
+        #[cxx_name = "clearCallbackFunction"]
+        fn lonanote_rust_module_clear_callback_function(it_: &mut LonanoteRustModule)
+            -> Result<()>;
 
-        #[cxx_name = "divide"]
-        fn lonanote_rust_module_divide(it_: &mut LonanoteRustModule, a: f64, b: f64) -> Result<f64>;
+        #[cxx_name = "getCommandAsyncKeys"]
+        fn lonanote_rust_module_get_command_async_keys(
+            it_: &mut LonanoteRustModule,
+        ) -> Result<Vec<String>>;
 
-        #[cxx_name = "multiply"]
-        fn lonanote_rust_module_multiply(it_: &mut LonanoteRustModule, a: f64, b: f64) -> Result<f64>;
+        #[cxx_name = "getCommandAsyncLength"]
+        fn lonanote_rust_module_get_command_async_length(
+            it_: &mut LonanoteRustModule,
+        ) -> Result<f64>;
 
-        #[cxx_name = "subtract"]
-        fn lonanote_rust_module_subtract(it_: &mut LonanoteRustModule, a: f64, b: f64) -> Result<f64>;
+        #[cxx_name = "getCommandCallbackKeys"]
+        fn lonanote_rust_module_get_command_callback_keys(
+            it_: &mut LonanoteRustModule,
+        ) -> Result<Vec<String>>;
+
+        #[cxx_name = "getCommandCallbackLength"]
+        fn lonanote_rust_module_get_command_callback_length(
+            it_: &mut LonanoteRustModule,
+        ) -> Result<f64>;
+
+        #[cxx_name = "getCommandKeys"]
+        fn lonanote_rust_module_get_command_keys(
+            it_: &mut LonanoteRustModule,
+        ) -> Result<Vec<String>>;
+
+        #[cxx_name = "getCommandLength"]
+        fn lonanote_rust_module_get_command_length(it_: &mut LonanoteRustModule) -> Result<f64>;
+
+        #[cxx_name = "init"]
+        fn lonanote_rust_module_init(it_: &mut LonanoteRustModule) -> Result<NullableString>;
+
+        #[cxx_name = "invoke"]
+        fn lonanote_rust_module_invoke(
+            it_: &mut LonanoteRustModule,
+            command: &str,
+            args: NullableString,
+        ) -> Result<NullableString>;
+
+        #[cxx_name = "invokeAsync"]
+        fn lonanote_rust_module_invoke_async(
+            it_: &mut LonanoteRustModule,
+            command: &str,
+            args: NullableString,
+        ) -> Result<NullableString>;
+
+        #[cxx_name = "regCallbackFunction"]
+        fn lonanote_rust_module_reg_callback_function(
+            it_: &mut LonanoteRustModule,
+            key: &str,
+        ) -> Result<()>;
+
+        #[cxx_name = "rejectCallback"]
+        fn lonanote_rust_module_reject_callback(
+            it_: &mut LonanoteRustModule,
+            id: &str,
+            error: &str,
+        ) -> Result<()>;
+
+        #[cxx_name = "resolveCallback"]
+        fn lonanote_rust_module_resolve_callback(
+            it_: &mut LonanoteRustModule,
+            id: &str,
+            result: NullableString,
+        ) -> Result<()>;
+
+        #[cxx_name = "unregCallbackFunction"]
+        fn lonanote_rust_module_unreg_callback_function(
+            it_: &mut LonanoteRustModule,
+            key: &str,
+        ) -> Result<()>;
+    }
+
+    extern "Rust" {
+        type LonanoteRustModuleSignal;
+        fn get_on_callback_request_payload(s: &LonanoteRustModuleSignal) -> CallbackRequest;
+        unsafe fn drop_signal(signal: *mut LonanoteRustModuleSignal);
+    }
+
+    #[namespace = "craby::lonanoterustmodule::signals"]
+    unsafe extern "C++" {
+        include!("CrabySignals.h");
+
+        type SignalManager;
+
+        unsafe fn emit(
+            self: &SignalManager,
+            id: usize,
+            name: &str,
+            signal: *mut LonanoteRustModuleSignal,
+        );
+
+        #[rust_name = "get_signal_manager"]
+        fn getSignalManager() -> &'static SignalManager;
     }
 }
 
@@ -34,32 +133,156 @@ fn create_lonanote_rust_module(id: usize, data_path: &str) -> Box<LonanoteRustMo
     Box::new(LonanoteRustModule::new(ctx))
 }
 
-fn lonanote_rust_module_add(it_: &mut LonanoteRustModule, a: f64, b: f64) -> Result<f64, anyhow::Error> {
+fn lonanote_rust_module_clear_callback_function(
+    it_: &mut LonanoteRustModule,
+) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
-        let ret = it_.add(a, b);
+        let ret = it_.clear_callback_function();
+        ret
+    })
+    .and_then(|r| r)
+}
+
+fn lonanote_rust_module_get_command_async_keys(
+    it_: &mut LonanoteRustModule,
+) -> Result<Vec<String>, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.get_command_async_keys();
         ret
     })
 }
 
-fn lonanote_rust_module_divide(it_: &mut LonanoteRustModule, a: f64, b: f64) -> Result<f64, anyhow::Error> {
+fn lonanote_rust_module_get_command_async_length(
+    it_: &mut LonanoteRustModule,
+) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
-        let ret = it_.divide(a, b);
+        let ret = it_.get_command_async_length();
         ret
     })
 }
 
-fn lonanote_rust_module_multiply(it_: &mut LonanoteRustModule, a: f64, b: f64) -> Result<f64, anyhow::Error> {
+fn lonanote_rust_module_get_command_callback_keys(
+    it_: &mut LonanoteRustModule,
+) -> Result<Vec<String>, anyhow::Error> {
     craby::catch_panic!({
-        let ret = it_.multiply(a, b);
+        let ret = it_.get_command_callback_keys();
         ret
     })
 }
 
-fn lonanote_rust_module_subtract(it_: &mut LonanoteRustModule, a: f64, b: f64) -> Result<f64, anyhow::Error> {
+fn lonanote_rust_module_get_command_callback_length(
+    it_: &mut LonanoteRustModule,
+) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
-        let ret = it_.subtract(a, b);
+        let ret = it_.get_command_callback_length();
         ret
     })
 }
 
+fn lonanote_rust_module_get_command_keys(
+    it_: &mut LonanoteRustModule,
+) -> Result<Vec<String>, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.get_command_keys();
+        ret
+    })
+}
 
+fn lonanote_rust_module_get_command_length(
+    it_: &mut LonanoteRustModule,
+) -> Result<f64, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.get_command_length();
+        ret
+    })
+}
+
+fn lonanote_rust_module_init(
+    it_: &mut LonanoteRustModule,
+) -> Result<NullableString, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.init();
+        ret.into()
+    })
+}
+
+fn lonanote_rust_module_invoke(
+    it_: &mut LonanoteRustModule,
+    command: &str,
+    args: NullableString,
+) -> Result<NullableString, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.invoke(command, args.into());
+        ret.into()
+    })
+}
+
+fn lonanote_rust_module_invoke_async(
+    it_: &mut LonanoteRustModule,
+    command: &str,
+    args: NullableString,
+) -> Result<NullableString, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.invoke_async(command, args.into());
+        ret
+    })
+    .and_then(|r| r)
+    .map(Into::into)
+}
+
+fn lonanote_rust_module_reg_callback_function(
+    it_: &mut LonanoteRustModule,
+    key: &str,
+) -> Result<(), anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.reg_callback_function(key);
+        ret
+    })
+    .and_then(|r| r)
+}
+
+fn lonanote_rust_module_reject_callback(
+    it_: &mut LonanoteRustModule,
+    id: &str,
+    error: &str,
+) -> Result<(), anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.reject_callback(id, error);
+        ret
+    })
+}
+
+fn lonanote_rust_module_resolve_callback(
+    it_: &mut LonanoteRustModule,
+    id: &str,
+    result: NullableString,
+) -> Result<(), anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.resolve_callback(id, result.into());
+        ret
+    })
+}
+
+fn lonanote_rust_module_unreg_callback_function(
+    it_: &mut LonanoteRustModule,
+    key: &str,
+) -> Result<(), anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.unreg_callback_function(key);
+        ret
+    })
+    .and_then(|r| r)
+}
+
+fn get_on_callback_request_payload(s: &LonanoteRustModuleSignal) -> CallbackRequest {
+    match s {
+        LonanoteRustModuleSignal::OnCallbackRequest(payload) => (*payload).clone(),
+        _ => panic!("Invalid signal type for get_on_callback_request_payload"),
+    }
+}
+
+unsafe fn drop_signal(signal: *mut LonanoteRustModuleSignal) {
+    if !signal.is_null() {
+        drop(Box::from_raw(signal));
+    }
+}

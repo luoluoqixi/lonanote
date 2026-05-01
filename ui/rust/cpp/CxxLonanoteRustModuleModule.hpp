@@ -20,23 +20,80 @@ public:
   ~CxxLonanoteRustModuleModule();
 
   void invalidate();
+  void emit(std::string name, bridging::LonanoteRustModuleSignal* signal);
+
   static facebook::jsi::Value
-  add(facebook::jsi::Runtime &rt,
+  clearCallbackFunction(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  divide(facebook::jsi::Runtime &rt,
+  getCommandAsyncKeys(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  multiply(facebook::jsi::Runtime &rt,
+  getCommandAsyncLength(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  subtract(facebook::jsi::Runtime &rt,
+  getCommandCallbackKeys(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  getCommandCallbackLength(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  getCommandKeys(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  getCommandLength(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  init(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  invoke(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  invokeAsync(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  regCallbackFunction(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  rejectCallback(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  resolveCallback(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  unregCallbackFunction(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  onCallbackRequest(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
