@@ -18,7 +18,7 @@ export default function HomeScreen() {
       >
         Call Rust
       </Button>
-      <Text>Rust add result: {result}</Text>
+      <Text>Rust version result: {result}</Text>
     </View>
   );
 }

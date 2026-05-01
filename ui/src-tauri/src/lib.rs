@@ -11,6 +11,8 @@ pub static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 pub const APP_NAME: &str = env!("CARGO_PKG_NAME");
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+pub static MAIN_WINDOW_NAME: &str = "main";
+
 pub static APP_TITLE: LazyLock<String> =
     LazyLock::new(|| format!("{} - {}", APP_NAME, APP_VERSION));
 
@@ -28,11 +30,13 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         // .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            if let Some(win) = app.get_webview_window("main") {
+            if let Some(win) = app.get_webview_window(MAIN_WINDOW_NAME) {
                 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos",))]
                 {
                     win.set_title(&APP_TITLE)
                         .unwrap_or_else(|err| log::error!("set_title error: {}", err));
+
+                    commands::init_commands()?;
 
                     // 开发模式下自动打开devtools
                     #[cfg(debug_assertions)]
