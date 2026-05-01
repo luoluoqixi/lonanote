@@ -1,5 +1,5 @@
 productName = "lonanote"
-version = "1.0.0"
+version = "1.1.0"
 identifier = "com.luoluoqixi.lonanote"
 
 [build]
@@ -22,7 +22,14 @@ createUpdaterArtifacts = false
 
 [app]
 withGlobalTauri = true
-# windows = [{ decorations = false }]
+
+[[app.windows]]
+decorations = false
+label = "main"
+title = "lonanote"
+tabbingIdentifier = "main"
+width = 1024
+height = 576
 
 [app.security]
 # csp = "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost"

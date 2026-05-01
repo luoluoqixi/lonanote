@@ -24,7 +24,6 @@
     "core:window:allow-set-focus",
     "core:window:allow-show",
     "core:window:allow-start-dragging",
-    "core:window:allow-toggle-maximize",
-    "decorum:allow-show-snap-overlay"
+    "core:window:allow-toggle-maximize"
   ]
 }

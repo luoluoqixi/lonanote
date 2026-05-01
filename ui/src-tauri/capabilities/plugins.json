@@ -13,8 +13,6 @@
     "os:allow-os-type",
     "os:allow-platform",
     "os:allow-version",
-    "path:default",
-    "store:default",
     "utils:default",
     "clipboard-manager:default",
     "clipboard-manager:allow-clear",
