@@ -1,11 +1,34 @@
+import java.util.Properties
+
 def reactNativeArchitectures() {
   def value = rootProject.getProperties().get("reactNativeArchitectures")
   return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
 }
 
+def sharedAndroidProperties = new Properties()
+def sharedAndroidPropertiesFile = new File(rootDir, "../../android/gradle.properties")
+if (sharedAndroidPropertiesFile.exists()) {
+  sharedAndroidPropertiesFile.withInputStream { stream ->
+    sharedAndroidProperties.load(stream)
+  }
+}
+
+def getSharedAndroidProperty(name) {
+  return sharedAndroidProperties.getProperty(name)
+}
+
 buildscript {
   ext.getExtOrDefault = {name ->
-    return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['LonanoteRustModule_' + name]
+    if (rootProject.ext.has(name)) {
+      return rootProject.ext.get(name)
+    }
+
+    def sharedAndroidValue = getSharedAndroidProperty("android.${name}")
+    if (sharedAndroidValue != null) {
+      return sharedAndroidValue
+    }
+
+    return project.properties['LonanoteRustModule_' + name]
   }
 
   repositories {
@@ -25,7 +48,16 @@ apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["LonanoteRustModule_" + name]).toInteger()
+  if (rootProject.ext.has(name)) {
+    return rootProject.ext.get(name)
+  }
+
+  def sharedAndroidValue = getSharedAndroidProperty("android.${name}")
+  if (sharedAndroidValue != null) {
+    return sharedAndroidValue.toInteger()
+  }
+
+  return (project.properties["LonanoteRustModule_" + name]).toInteger()
 }
 
 android {

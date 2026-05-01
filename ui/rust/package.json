@@ -42,11 +42,10 @@
     "prepack": "yarn build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
-    "build": "craby build && tsdown",
-    "build:android": "craby build && tsdown",
-    "build:ios": "craby build && tsdown",
-    "clean": "craby clean",
-    "generate": "crabygen"
+    "build:android": "node ./scripts/build-android.mjs",
+    "build:ios": "bun x craby build && tsdown",
+    "clean": "bun x craby clean",
+    "generate": "bun x crabygen"
   },
   "dependencies": {
     "craby-modules": "^0.1.0-rc.5"

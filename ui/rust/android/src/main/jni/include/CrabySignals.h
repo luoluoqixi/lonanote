@@ -1,7 +1,6 @@
 #pragma once
 
 #include "cxx.h"
-
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -10,9 +9,16 @@
 namespace craby {
 namespace lonanoterustmodule {
 namespace bridging {
-struct LonanoteRustModuleSignal;
+  struct LonanoteRustModuleSignal;
+}
+namespace modules {
+  class CxxLonanoteRustModule;
+}
+}
 }
 
+namespace craby {
+namespace lonanoterustmodule {
 namespace signals {
 
 using Delegate = std::function<void(const std::string& signalName, void* signal)>;
@@ -24,11 +30,11 @@ public:
     return instance;
   }
 
-  void emit(uintptr_t id, rust::Str name, bridging::LonanoteRustModuleSignal* signal) const {
+  void emit(uintptr_t id, rust::Str name, craby::lonanoterustmodule::bridging::LonanoteRustModuleSignal* signal) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = delegates_.find(id);
     if (it != delegates_.end()) {
-      it->second(std::string(name), signal);
+      it->second(std::string(name), reinterpret_cast<void*>(signal));
     }
   }
 
