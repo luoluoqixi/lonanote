@@ -49,6 +49,28 @@ run_dir = "ui"
 always_run = true
 
 
+# prebuild:android command
+[[commands]]
+name = "prebuild:android"
+description = "Prebuild the application for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["prebuild:android"]
+run_dir = "ui"
+
+
+# prebuild:ios command
+[[commands]]
+name = "prebuild:ios"
+description = "Prebuild the application for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["prebuild:ios"]
+run_dir = "ui"
+
+
 # build command
 [[commands]]
 name = "build"
