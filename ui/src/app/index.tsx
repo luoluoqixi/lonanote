@@ -1,21 +1,22 @@
 import { Button } from "heroui-native";
-import { LonanoteRustModule } from "lonanote_rust_module";
 import { useState } from "react";
 import { Text, View } from "react-native";
 
+import { app } from "@/api";
+
 export default function HomeScreen() {
-  const [result, setResult] = useState(0);
+  const [result, setResult] = useState("");
   return (
     <View className="flex-1 justify-center items-center bg-background">
       <Button
         variant="primary"
-        onPress={() => {
-          const result = LonanoteRustModule.add(1, 2);
+        onPress={async () => {
+          const result = await app.getVersion();
           console.log("rust add result", result);
           setResult(result);
         }}
       >
-        Call Rust Module
+        Call Rust
       </Button>
       <Text>Rust add result: {result}</Text>
     </View>

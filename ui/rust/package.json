@@ -52,6 +52,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.7",
     "@react-native-community/cli-types": "^20.0.2",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.0.0",
     "crabygen": "^0.1.0-rc.5",
     "tsdown": "^0.15.10",

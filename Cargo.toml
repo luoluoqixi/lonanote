@@ -1,5 +1,5 @@
 [workspace]
-members = ["rust/core", "ui", "ui/src-tauri"]
+members = ["rust/core", "ui/src-tauri"]
 resolver = "2"
 
 [workspace.package]
@@ -7,7 +7,7 @@ edition = "2021"
 version = "1.0.0"
 authors = ["luoluoqixi"]
 repository = "https://github.com/luoluoqixi/lonanote"
-license = ""
+license = "MIT"
 
 [workspace.dependencies]
 serde = "1.0"

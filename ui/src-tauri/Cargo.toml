@@ -1,5 +1,5 @@
 [package]
-name = "lonanote_ui"
+name = "lonanote"
 description = "LonaNote"
 version = { workspace = true }
 authors = { workspace = true }

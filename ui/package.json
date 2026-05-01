@@ -9,7 +9,11 @@
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
+    "web": "expo start --web --no-open",
+    "start:prod": "expo start --no-dev --minify",
+    "build:android": "expo run:android --variant release",
+    "build:ios": "expo run:ios --configuration Release",
+    "build:web": "expo export --platform web",
     "prebuild": "cross-env APP_VARIANT=development expo prebuild --clean",
     "prebuild:ios": "cross-env APP_VARIANT=development expo prebuild --clean --platform ios",
     "prebuild:android": "cross-env APP_VARIANT=development expo prebuild --clean --platform android",
@@ -23,6 +27,7 @@
     "@react-navigation/bottom-tabs": "^7.15.10",
     "@react-navigation/elements": "^2.9.15",
     "@react-navigation/native": "^7.2.2",
+    "@tauri-apps/api": "^2.11.0",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
@@ -61,6 +66,7 @@
     "uniwind": "^1.6.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@expo/config-plugins": "^55.0.8",
     "@types/react": "~19.2.5",
     "cross-env": "^10.1.0",

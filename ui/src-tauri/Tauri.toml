@@ -3,10 +3,10 @@ version = "1.0.0"
 identifier = "com.luoluoqixi.lonanote"
 
 [build]
-beforeDevCommand = "trunk serve"
-beforeBuildCommand = "trunk build"
+beforeDevCommand = "bun web"
+beforeBuildCommand = "bun build:web"
 frontendDist = "../dist"
-devUrl = "http://localhost:8000"
+devUrl = "http://localhost:8081"
 
 [bundle]
 icon = [
