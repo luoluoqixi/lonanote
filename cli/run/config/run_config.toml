@@ -180,6 +180,72 @@ args = ["n:prebuild:ios"]
 run_dir = "ui"
 
 
+# prebuild:android:prod command
+[[commands]]
+name = "prebuild:android:prod"
+description = "Prebuild the application for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["n:prebuild:android:prod"]
+run_dir = "ui"
+
+
+# prebuild:ios:prod command
+[[commands]]
+name = "prebuild:ios:prod"
+description = "Prebuild the application for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["n:prebuild:ios:prod"]
+run_dir = "ui"
+
+
+# clean:prebuild:android command
+[[commands]]
+name = "clean:prebuild:android"
+description = "Clean the prebuild for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:android"]
+run_dir = "ui"
+
+
+# clean:prebuild:ios command
+[[commands]]
+name = "clean:prebuild:ios"
+description = "Clean the prebuild for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:ios"]
+run_dir = "ui"
+
+
+# clean:prebuild:android:prod command
+[[commands]]
+name = "clean:prebuild:android:prod"
+description = "Clean the prebuild for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:android:prod"]
+run_dir = "ui"
+
+
+# clean:prebuild:ios:prod command
+[[commands]]
+name = "clean:prebuild:ios:prod"
+description = "Clean the prebuild for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:ios:prod"]
+run_dir = "ui"
+
+
 # build:module:android command
 [[commands]]
 name = "build:module:android"
