@@ -7,6 +7,7 @@ const { withFinalizedMod } = require("@expo/config-plugins");
 
 const NINJA_RELATIVE_PATH = path.join("rust", "scripts", "ninja_1.13.2_fix_long_path.exe");
 const OBJECT_PATH_MAX = 1024;
+const CMAKE_STAGING_ROOT = "./.cxx";
 const TARGET_LIBRARY_PROJECTS = [
   "expo-modules-core",
   "react-native-gesture-handler",
@@ -46,7 +47,7 @@ function createAppExternalNativeBuildBlock() {
   return [
     "    externalNativeBuild {",
     "        cmake {",
-    "            buildStagingDirectory rootProject.file('.cxx-lonanote/app')",
+    `            buildStagingDirectory rootProject.file('${CMAKE_STAGING_ROOT}/app')`,
     "        }",
     "    }",
   ].join("\n");
@@ -80,7 +81,7 @@ function createLibraryGradleBlock({ ninjaPath, targetProjects }) {
     "      return",
     "    }",
     "",
-    '    moduleCmake.buildStagingDirectory = rootProject.file(".cxx-lonanote/${subproject.name}")',
+    `    moduleCmake.buildStagingDirectory = rootProject.file("${CMAKE_STAGING_ROOT}/\${subproject.name}")`,
     "",
     "    def longPathArgs = [",
     ...longPathArgs,
@@ -127,14 +128,14 @@ function patchAndroidExternalNativeBuild(content, block) {
     /(\n {4}externalNativeBuild \{\n(?: {8}.*\n)+ {4}\}\n)+(?=\n {4}signingConfigs \{)/;
 
   if (topLevelExternalNativeBuildPattern.test(content)) {
-    return content.replace(topLevelExternalNativeBuildPattern, `${block}\n`);
+    return content.replace(topLevelExternalNativeBuildPattern, `\n${block}\n`);
   }
 
   if (!content.includes(anchor)) {
     throw new Error("Could not find app android.signingConfigs block in android/app/build.gradle");
   }
 
-  return content.replace(anchor, `\n${block}\n${anchor}`);
+  return content.replace(anchor, `\n\n${block}\n${anchor}`);
 }
 
 function patchRootBuildGradle(content, block) {

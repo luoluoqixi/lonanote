@@ -123,7 +123,7 @@ description = "Build the application for Android"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["native:prebuild:android:prod"]
+args = ["n:prebuild:android:prod"]
 run_dir = "ui"
 
 [[commands.cmds]]
@@ -144,7 +144,7 @@ description = "Build the application for iOS"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["native:prebuild:ios:prod"]
+args = ["n:prebuild:ios:prod"]
 run_dir = "ui"
 
 [[commands.cmds]]
@@ -165,7 +165,7 @@ description = "Prebuild the application for Android"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["native:prebuild:android"]
+args = ["n:prebuild:android"]
 run_dir = "ui"
 
 
@@ -176,7 +176,7 @@ description = "Prebuild the application for iOS"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["native:prebuild:ios"]
+args = ["n:prebuild:ios"]
 run_dir = "ui"
 
 
