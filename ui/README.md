@@ -3,11 +3,16 @@
 #### 🔨 开发环境
 
 - [Rust](https://rustup.rs/) >= 1.94.0-nightly
-- Android 和 IOS 开发环境
+- Node.js >= 22
+- Android 开发环境
   - Android SDK 36
   - buildTools 36.0.0
   - ndkVersion 27.1.12297006
   - java 17
+- iOS 开发环境
+  - Xcode 26.2
+  - CocoaPods 1.16.2
+  - Ruby 3.2
 
 #### 🚀 安装
 
