@@ -49,6 +49,16 @@ function createExternalNativeBuildBlock({ ninjaPath, objectPathMax }) {
   ].join("\n");
 }
 
+function createAppExternalNativeBuildBlock() {
+  return [
+    "    externalNativeBuild {",
+    "        cmake {",
+    "            buildStagingDirectory rootProject.file('.cxx-lonanote/app')",
+    "        }",
+    "    }",
+  ].join("\n");
+}
+
 function createLibraryGradleBlock({ ninjaPath, objectPathMax, targetProjects }) {
   const projectNames = targetProjects.map((name) => `    '${name}',`).join("\n");
   const longPathArgs = createCmakeArguments({
@@ -97,10 +107,13 @@ function createLibraryGradleBlock({ ninjaPath, objectPathMax, targetProjects }) 
     "    }",
     "",
     "    def androidExt = subproject.extensions.findByName('android')",
-    "    def cmake = androidExt?.defaultConfig?.externalNativeBuild?.cmake",
-    "    if (cmake == null) {",
+    "    def defaultConfigCmake = androidExt?.defaultConfig?.externalNativeBuild?.cmake",
+    "    def moduleCmake = androidExt?.externalNativeBuild?.cmake",
+    "    if (defaultConfigCmake == null || moduleCmake == null) {",
     "      return",
     "    }",
+    "",
+    '    moduleCmake.buildStagingDirectory = rootProject.file(".cxx-lonanote/${subproject.name}")',
     "",
     "    def lonanoteToolchainFilePath = rootProject.ext.lonanoteWriteAndroidToolchainWrapper(androidExt.ndkDirectory, lonanoteLibraryNativeBuildLongPathFix.objectPathMax)",
     "",
@@ -109,8 +122,8 @@ function createLibraryGradleBlock({ ninjaPath, objectPathMax, targetProjects }) 
     "    ]",
     "",
     "    longPathArgs.each { arg ->",
-    "      if (!cmake.arguments.contains(arg)) {",
-    "        cmake.arguments.add(arg)",
+    "      if (!defaultConfigCmake.arguments.contains(arg)) {",
+    "        defaultConfigCmake.arguments.add(arg)",
     "      }",
     "    }",
     "  }",
@@ -141,6 +154,22 @@ function patchDefaultConfig(content, block) {
   const trimmedBody = body.replace(/\s+$/, "");
   const updatedBody = `${trimmedBody}\n${block}\n`;
   return `${content.slice(0, match.index)}${prefix}${updatedBody}${suffix}${content.slice(match.index + match[0].length)}`;
+}
+
+function patchAndroidExternalNativeBuild(content, block) {
+  const anchor = "\n    signingConfigs {";
+  const topLevelExternalNativeBuildPattern =
+    /(\n {4}externalNativeBuild \{\n[\s\S]*?\n {4}\}\n)(?=\n {4}signingConfigs \{)/;
+
+  if (topLevelExternalNativeBuildPattern.test(content)) {
+    return content.replace(topLevelExternalNativeBuildPattern, `${block}\n`);
+  }
+
+  if (!content.includes(anchor)) {
+    throw new Error("Could not find app android.signingConfigs block in android/app/build.gradle");
+  }
+
+  return content.replace(anchor, `\n${block}\n${anchor}`);
 }
 
 function patchRootBuildGradle(content, block) {
@@ -190,6 +219,7 @@ module.exports = function withAndroidNativeBuildLongPathFix(config) {
         ninjaPath: ninjaAbsolutePath,
         objectPathMax: OBJECT_PATH_MAX,
       });
+      const appExternalNativeBuildBlock = createAppExternalNativeBuildBlock();
       const libraryGradleBlock = createLibraryGradleBlock({
         ninjaPath: ninjaGradlePath,
         objectPathMax: OBJECT_PATH_MAX,
@@ -205,14 +235,18 @@ module.exports = function withAndroidNativeBuildLongPathFix(config) {
         originalAppBuildGradle,
         externalNativeBuildBlock,
       );
+      const updatedAppBuildGradleWithStagingDir = patchAndroidExternalNativeBuild(
+        updatedAppBuildGradle,
+        appExternalNativeBuildBlock,
+      );
       const updatedRootBuildGradle = patchRootBuildGradle(
         originalRootBuildGradle,
         libraryGradleBlock,
       );
 
       await Promise.all([
-        updatedAppBuildGradle !== originalAppBuildGradle
-          ? fs.writeFile(appBuildGradlePath, updatedAppBuildGradle, "utf8")
+        updatedAppBuildGradleWithStagingDir !== originalAppBuildGradle
+          ? fs.writeFile(appBuildGradlePath, updatedAppBuildGradleWithStagingDir, "utf8")
           : Promise.resolve(),
         updatedRootBuildGradle !== originalRootBuildGradle
           ? fs.writeFile(rootBuildGradlePath, updatedRootBuildGradle, "utf8")
