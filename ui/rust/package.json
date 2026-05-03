@@ -42,8 +42,8 @@
     "prepack": "yarn build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
-    "build:android": "node ./scripts/build-android.mjs",
-    "build:ios": "bun x craby build && tsdown",
+    "build:android": "node ./scripts/build.mjs android",
+    "build:ios": "node ./scripts/build.mjs ios",
     "clean": "bun x craby clean",
     "generate": "bun x crabygen"
   },

@@ -1,10 +1,4 @@
-[project]
-name = "lonanote_rust_module"
-source_dir = "src"
-
 [android]
-package_name = "rs.craby.lonanoterustmodule"
-
 # aarch64-linux-android
 # armv7-linux-androideabi
 # x86_64-linux-android
@@ -17,9 +11,7 @@ targets = [
 ]
 
 [ios]
-
 # aarch64-apple-ios
 # aarch64-apple-ios-sim
 # x86_64-apple-ios
-# targets = ["aarch64-apple-ios", "aarch64-apple-ios-sim", "x86_64-apple-ios"]
 targets = []

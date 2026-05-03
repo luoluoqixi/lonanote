@@ -12,6 +12,10 @@ const sdkConfigPath = path.join(uiRoot, "tools", "prebuild", "sdk_config.txt");
 const rootAndroidGradleProperties = path.join(uiRoot, "android", "gradle.properties");
 const moduleAndroidGradleProperties = path.join(rustRoot, "android", "gradle.properties");
 const crabyTomlPath = path.join(rustRoot, "craby.toml");
+const platformConfigPaths = {
+  android: path.join(rustRoot, "craby.android.toml"),
+  ios: path.join(rustRoot, "craby.ios.toml"),
+};
 const ANDROID_NDK_VERSION_KEY = "ANDROID_NDK_VERSION";
 
 const androidToolchains = new Map([
@@ -109,25 +113,6 @@ function getConfiguredNdkVersion() {
   );
 }
 
-function getCrabyAndroidTargets() {
-  if (!fs.existsSync(crabyTomlPath)) {
-    throw new Error(`craby.toml not found: ${crabyTomlPath}`);
-  }
-
-  const content = fs.readFileSync(crabyTomlPath, "utf8");
-  const androidSectionMatch = content.match(/\[android\]([\s\S]*?)(?:\n\[[^\]]+\]|$)/);
-  if (!androidSectionMatch) {
-    return [];
-  }
-
-  const targetsMatch = androidSectionMatch[1].match(/targets\s*=\s*\[((?:.|\r|\n)*?)\]/m);
-  if (!targetsMatch) {
-    return [];
-  }
-
-  return Array.from(targetsMatch[1].matchAll(/"([^"]+)"/g), (match) => match[1]);
-}
-
 function getPrebuiltTag(ndkRoot) {
   const prebuiltRoot = path.join(ndkRoot, "toolchains", "llvm", "prebuilt");
   const entries = fs
@@ -175,6 +160,85 @@ function getExecutableName(baseName) {
   return process.platform === "win32" ? `${baseName}.cmd` : baseName;
 }
 
+function extractSectionContent(content, sectionName) {
+  const sectionMatch = content.match(
+    new RegExp(`\\[${sectionName}\\]([\\s\\S]*?)(?:\\r?\\n\\[[^\\]]+\\]|$)`),
+  );
+
+  if (!sectionMatch) {
+    throw new Error(`Section [${sectionName}] not found.`);
+  }
+
+  return sectionMatch[1];
+}
+
+function extractSectionTargets(content, sectionName) {
+  const sectionContent = extractSectionContent(content, sectionName);
+  const targetsMatch = sectionContent.match(/targets\s*=\s*\[((?:.|\r|\n)*?)\]/m);
+
+  if (!targetsMatch) {
+    throw new Error(`targets not found in [${sectionName}] section.`);
+  }
+
+  return Array.from(targetsMatch[1].matchAll(/"([^"]+)"/g), (match) => match[1]);
+}
+
+function renderTargets(targets) {
+  if (targets.length === 0) {
+    return "targets = []";
+  }
+
+  const lines = targets.map((target) => `  "${target}",`);
+  return ["targets = [", ...lines, "]"].join("\n");
+}
+
+function replaceSectionTargets(content, sectionName, targets) {
+  const sectionContent = extractSectionContent(content, sectionName);
+  const currentTargetsMatch = sectionContent.match(/targets\s*=\s*\[((?:.|\r|\n)*?)\]/m);
+
+  if (!currentTargetsMatch) {
+    throw new Error(`targets not found in [${sectionName}] section.`);
+  }
+
+  const nextSectionContent = sectionContent.replace(
+    /targets\s*=\s*\[((?:.|\r|\n)*?)\]/m,
+    renderTargets(targets),
+  );
+
+  return content.replace(sectionContent, nextSectionContent);
+}
+
+function syncCrabyTargets(configPath) {
+  if (!fs.existsSync(crabyTomlPath)) {
+    throw new Error(`craby.toml not found: ${crabyTomlPath}`);
+  }
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Platform config not found: ${configPath}`);
+  }
+
+  const originalContent = fs.readFileSync(crabyTomlPath, "utf8");
+  const sourceContent = fs.readFileSync(configPath, "utf8");
+  const androidTargets = extractSectionTargets(sourceContent, "android");
+  const iosTargets = extractSectionTargets(sourceContent, "ios");
+
+  let nextContent = replaceSectionTargets(originalContent, "android", androidTargets);
+  nextContent = replaceSectionTargets(nextContent, "ios", iosTargets);
+
+  if (nextContent !== originalContent) {
+    fs.writeFileSync(crabyTomlPath, nextContent, "utf8");
+  }
+
+  return {
+    originalContent,
+    androidTargets,
+    iosTargets,
+  };
+}
+
+function restoreCrabyToml(originalContent) {
+  fs.writeFileSync(crabyTomlPath, originalContent, "utf8");
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     stdio: "inherit",
@@ -190,16 +254,20 @@ function run(command, args, options = {}) {
   }
 }
 
-function main() {
+function buildIos() {
+  run("bun", ["x", "craby", "build"]);
+  run("bun", ["x", "tsdown"]);
+}
+
+function buildAndroid(androidTargets) {
   const sdkRoot = getAndroidSdkRoot();
   const ndkVersion = getConfiguredNdkVersion();
   const ndkRoot = getAndroidNdkRoot(sdkRoot, ndkVersion);
   const prebuiltTag = getPrebuiltTag(ndkRoot);
   const toolchainBin = path.join(ndkRoot, "toolchains", "llvm", "prebuilt", prebuiltTag, "bin");
-  const androidTargets = getCrabyAndroidTargets();
 
   if (androidTargets.length === 0) {
-    throw new Error("No Android targets configured in craby.toml.");
+    throw new Error("No Android targets configured in the selected Craby config.");
   }
 
   console.log(`Using Android SDK: ${sdkRoot}`);
@@ -216,7 +284,7 @@ function main() {
   for (const target of androidTargets) {
     const toolchain = androidToolchains.get(target);
     if (!toolchain) {
-      throw new Error(`Unsupported Android target in craby.toml: ${target}`);
+      throw new Error(`Unsupported Android target in Craby config: ${target}`);
     }
 
     const clang = path.join(toolchainBin, getExecutableName(toolchain.clang));
@@ -236,6 +304,54 @@ function main() {
 
   run("bun", ["x", "craby", "build"], { env });
   run("bun", ["x", "tsdown"], { env });
+}
+
+function parsePlatformArg() {
+  const platform = process.argv[2];
+  if (!platform || !(platform in platformConfigPaths)) {
+    throw new Error("Usage: node ./scripts/build.mjs <android|ios>");
+  }
+
+  return platform;
+}
+
+function main() {
+  const platform = parsePlatformArg();
+  const configPath = platformConfigPaths[platform];
+  const { originalContent, androidTargets, iosTargets } = syncCrabyTargets(configPath);
+  let buildError;
+
+  try {
+    console.log(`Using Craby config: ${path.basename(configPath)}`);
+    console.log(`Using Craby iOS targets: ${iosTargets.join(", ") || "(none)"}`);
+
+    if (platform === "android") {
+      buildAndroid(androidTargets);
+      return;
+    }
+
+    buildIos();
+  } catch (error) {
+    buildError = error;
+  } finally {
+    try {
+      restoreCrabyToml(originalContent);
+      console.log("Restored craby.toml");
+    } catch (restoreError) {
+      if (buildError) {
+        throw new AggregateError(
+          [buildError, restoreError],
+          "Build failed and craby.toml could not be restored.",
+        );
+      }
+
+      throw restoreError;
+    }
+  }
+
+  if (buildError) {
+    throw buildError;
+  }
 }
 
 main();
