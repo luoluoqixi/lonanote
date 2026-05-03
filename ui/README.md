@@ -7,6 +7,7 @@
   - Android SDK 36
   - buildTools 36.0.0
   - ndkVersion 27.1.12297006
+  - java 17
 
 #### 🚀 安装
 
