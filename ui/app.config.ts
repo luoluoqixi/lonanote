@@ -20,6 +20,13 @@ const getAppName = () => {
   return "lonanote";
 };
 
+const getScheme = () => {
+  if (IS_DEV) {
+    return "lonanote-dev";
+  }
+  return "lonanote";
+};
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: getAppName(),
@@ -27,7 +34,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   version: pkg.version,
   orientation: "default",
   icon: "./assets/images/icon.png",
-  scheme: "lonanote",
+  scheme: getScheme(),
   userInterfaceStyle: "automatic",
   ios: {
     supportsTablet: true,
