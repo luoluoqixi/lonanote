@@ -81,6 +81,22 @@ run.cmd icon
 sh run.sh icon
 ```
 
+
+#### 其他
+
+Windows 长路径限制:
+
+1. 右键管理员运行 PowerShell, 移除路径长度限制（从 Windows 10 版本 1607 开始）：
+
+```powershell
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+-Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+```
+
+2. 运行 gpedit.msc，依次展开：计算机配置 > 管理模板 > 系统 > 文件系统，启用 "启用 Win32 长路径" 选项。
+
+
+
 #### 🎨 提交
 
 [commit_emoji](../docs/dev/commit_emoji.md)

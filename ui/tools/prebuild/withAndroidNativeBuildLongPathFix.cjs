@@ -1,3 +1,5 @@
+/* eslint-disable quotes */
+
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -22,11 +24,26 @@ function escapeForGradleString(value) {
   return value.replace(/\\/g, "\\\\");
 }
 
+function createCmakeArguments({ ninjaPath, toolchainFilePathExpression }) {
+  return [
+    `-DCMAKE_MAKE_PROGRAM=${ninjaPath}`,
+    `-DCMAKE_TOOLCHAIN_FILE=${toolchainFilePathExpression}`,
+  ];
+}
+
 function createExternalNativeBuildBlock({ ninjaPath, objectPathMax }) {
+  const argumentsList = createCmakeArguments({
+    ninjaPath,
+    toolchainFilePathExpression: "${lonanoteToolchainFilePath}",
+  })
+    .map((argument) => `"${argument}"`)
+    .join(", ");
+
   return [
     "        externalNativeBuild {",
     "            cmake {",
-    `                arguments "-DCMAKE_MAKE_PROGRAM=${ninjaPath}", "-DCMAKE_OBJECT_PATH_MAX=${objectPathMax}"`,
+    `                def lonanoteToolchainFilePath = rootProject.ext.lonanoteWriteAndroidToolchainWrapper(android.ndkDirectory, ${objectPathMax})`,
+    `                arguments ${argumentsList}`,
     "            }",
     "        }",
   ].join("\n");
@@ -34,8 +51,37 @@ function createExternalNativeBuildBlock({ ninjaPath, objectPathMax }) {
 
 function createLibraryGradleBlock({ ninjaPath, objectPathMax, targetProjects }) {
   const projectNames = targetProjects.map((name) => `    '${name}',`).join("\n");
+  const longPathArgs = createCmakeArguments({
+    ninjaPath: "${lonanoteLibraryNativeBuildLongPathFix.ninjaPath}",
+    toolchainFilePathExpression: "${lonanoteToolchainFilePath}",
+  }).map((argument) => `      "${argument}",`);
 
   return [
+    "def lonanoteWriteAndroidToolchainWrapper = { ndkDirectory, objectPathMax ->",
+    "  def lonanoteToolchainDir = new File(rootProject.buildDir, 'lonanote-cmake')",
+    "  if (!lonanoteToolchainDir.exists()) {",
+    "    lonanoteToolchainDir.mkdirs()",
+    "  }",
+    "",
+    "  def lonanoteNdkToolchainFile = new File(ndkDirectory, 'build/cmake/android.toolchain.cmake')",
+    '  def lonanoteWrapperFile = new File(lonanoteToolchainDir, "android.toolchain.wrapper.${objectPathMax}.cmake")',
+    "  def lonanoteNdkToolchainPath = lonanoteNdkToolchainFile.absolutePath.replace(File.separatorChar, '/' as char)",
+    "",
+    '  lonanoteWrapperFile.text = """if(DEFINED LONANOTE_ANDROID_TOOLCHAIN_WRAPPER_INCLUDED)',
+    "  return()",
+    "endif()",
+    "set(LONANOTE_ANDROID_TOOLCHAIN_WRAPPER_INCLUDED TRUE)",
+    "",
+    'set(CMAKE_OBJECT_PATH_MAX \\"${objectPathMax}\\" CACHE STRING \\"LonaNote object path max\\" FORCE)',
+    "",
+    'include(\\"${lonanoteNdkToolchainPath}\\")',
+    '"""',
+    "",
+    "  return lonanoteWrapperFile.absolutePath.replace(File.separatorChar, '/' as char)",
+    "}",
+    "",
+    "rootProject.ext.lonanoteWriteAndroidToolchainWrapper = lonanoteWriteAndroidToolchainWrapper",
+    "",
     "def lonanoteLibraryNativeBuildLongPathFix = [",
     `  ninjaPath: '${ninjaPath}',`,
     `  objectPathMax: ${objectPathMax},`,
@@ -56,11 +102,10 @@ function createLibraryGradleBlock({ ninjaPath, objectPathMax, targetProjects }) 
     "      return",
     "    }",
     "",
+    "    def lonanoteToolchainFilePath = rootProject.ext.lonanoteWriteAndroidToolchainWrapper(androidExt.ndkDirectory, lonanoteLibraryNativeBuildLongPathFix.objectPathMax)",
+    "",
     "    def longPathArgs = [",
-    // eslint-disable-next-line quotes
-    '      "-DCMAKE_MAKE_PROGRAM=${lonanoteLibraryNativeBuildLongPathFix.ninjaPath}",',
-    // eslint-disable-next-line quotes
-    '      "-DCMAKE_OBJECT_PATH_MAX=${lonanoteLibraryNativeBuildLongPathFix.objectPathMax}",',
+    ...longPathArgs,
     "    ]",
     "",
     "    longPathArgs.each { arg ->",
@@ -83,11 +128,12 @@ function patchDefaultConfig(content, block) {
 
   const [, prefix, body, suffix] = match;
 
-  if (body.includes("externalNativeBuild {") && body.includes("-DCMAKE_OBJECT_PATH_MAX=")) {
-    const updatedBody = body.replace(
-      /if \(System\.getProperty\('os\.name'\)\.toLowerCase\(\)\.contains\('windows'\)\) \{\s*arguments\s+"-DCMAKE_MAKE_PROGRAM=[^"]*",\s*"-DCMAKE_OBJECT_PATH_MAX=\d+"\s*\}|arguments\s+"-DCMAKE_MAKE_PROGRAM=[^"]*",\s*"-DCMAKE_OBJECT_PATH_MAX=\d+"/,
-      block.trim(),
-    );
+  const externalNativeBuildStart = body.indexOf("\n        externalNativeBuild {");
+  if (externalNativeBuildStart !== -1) {
+    const bodyBeforeExternalNativeBuild = body
+      .slice(0, externalNativeBuildStart)
+      .replace(/\s+$/, "");
+    const updatedBody = `${bodyBeforeExternalNativeBuild}\n${block}\n`;
 
     return `${content.slice(0, match.index)}${prefix}${updatedBody}${suffix}${content.slice(match.index + match[0].length)}`;
   }
@@ -98,6 +144,20 @@ function patchDefaultConfig(content, block) {
 }
 
 function patchRootBuildGradle(content, block) {
+  const wrapperStart = "def lonanoteWriteAndroidToolchainWrapper = {";
+  const anchor = 'apply plugin: "expo-root-project"';
+
+  if (content.includes(wrapperStart)) {
+    const startIndex = content.indexOf(wrapperStart);
+    const anchorIndex = content.indexOf(anchor);
+
+    if (anchorIndex === -1) {
+      throw new Error("Could not find insertion point in android/build.gradle");
+    }
+
+    return `${content.slice(0, startIndex)}${block}\n\n${content.slice(anchorIndex)}`;
+  }
+
   if (content.includes("def lonanoteLibraryNativeBuildLongPathFix = [")) {
     return content.replace(
       /def lonanoteLibraryNativeBuildLongPathFix = \[[\s\S]*?^}\n/m,
@@ -105,8 +165,6 @@ function patchRootBuildGradle(content, block) {
     );
   }
 
-  // eslint-disable-next-line quotes
-  const anchor = 'apply plugin: "expo-root-project"';
   if (!content.includes(anchor)) {
     throw new Error("Could not find insertion point in android/build.gradle");
   }
