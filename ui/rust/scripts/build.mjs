@@ -160,6 +160,10 @@ function getExecutableName(baseName) {
   return process.platform === "win32" ? `${baseName}.cmd` : baseName;
 }
 
+function ensureDir(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
 function extractSectionContent(content, sectionName) {
   const sectionMatch = content.match(
     new RegExp(`\\[${sectionName}\\]([\\s\\S]*?)(?:\\r?\\n\\[[^\\]]+\\]|$)`),
@@ -239,6 +243,51 @@ function restoreCrabyToml(originalContent) {
   fs.writeFileSync(crabyTomlPath, originalContent, "utf8");
 }
 
+function syncIosXcframeworkArtifacts() {
+  const xcframeworkRoot = path.join(
+    rustRoot,
+    "ios",
+    "framework",
+    "liblonanoterustmodule.xcframework",
+  );
+  const slices = [
+    {
+      identifier: "ios-arm64",
+      source: path.join(
+        rustRoot,
+        "target",
+        "aarch64-apple-ios",
+        "release",
+        "liblonanoterustmodule.a",
+      ),
+    },
+    {
+      identifier: "ios-arm64_x86_64-simulator",
+      source: path.join(
+        rustRoot,
+        "target",
+        "ios-arm64_x86_64-simulator",
+        "release",
+        "liblonanoterustmodule.a",
+      ),
+    },
+  ];
+
+  if (!fs.existsSync(xcframeworkRoot)) {
+    throw new Error(`XCFramework not found: ${xcframeworkRoot}`);
+  }
+
+  for (const slice of slices) {
+    if (!fs.existsSync(slice.source)) {
+      throw new Error(`Expected iOS static library not found: ${slice.source}`);
+    }
+
+    const sliceDir = path.join(xcframeworkRoot, slice.identifier);
+    ensureDir(sliceDir);
+    fs.copyFileSync(slice.source, path.join(sliceDir, "liblonanoterustmodule-prebuilt.a"));
+  }
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     stdio: "inherit",
@@ -256,6 +305,7 @@ function run(command, args, options = {}) {
 
 function buildIos() {
   run("bun", ["x", "craby", "build"]);
+  syncIosXcframeworkArtifacts();
   run("bun", ["x", "tsdown"]);
 }
 
