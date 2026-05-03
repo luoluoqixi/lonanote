@@ -12,6 +12,7 @@ const TARGET_LIBRARY_PROJECTS = [
   "react-native-screens",
   "react-native-worklets",
 ];
+const IS_WINDOWS = process.platform === "win32";
 
 function toGradlePath(value) {
   return value.replace(/\\/g, "/");
@@ -84,8 +85,8 @@ function patchDefaultConfig(content, block) {
 
   if (body.includes("externalNativeBuild {") && body.includes("-DCMAKE_OBJECT_PATH_MAX=")) {
     const updatedBody = body.replace(
-      /arguments\s+.*-DCMAKE_MAKE_PROGRAM=[^"]*",\s*"-DCMAKE_OBJECT_PATH_MAX=\d+"/,
-      `arguments "-DCMAKE_MAKE_PROGRAM=${block.match(/-DCMAKE_MAKE_PROGRAM=([^"]+)/)[1]}", "-DCMAKE_OBJECT_PATH_MAX=${block.match(/-DCMAKE_OBJECT_PATH_MAX=(\d+)/)[1]}"`,
+      /if \(System\.getProperty\('os\.name'\)\.toLowerCase\(\)\.contains\('windows'\)\) \{\s*arguments\s+"-DCMAKE_MAKE_PROGRAM=[^"]*",\s*"-DCMAKE_OBJECT_PATH_MAX=\d+"\s*\}|arguments\s+"-DCMAKE_MAKE_PROGRAM=[^"]*",\s*"-DCMAKE_OBJECT_PATH_MAX=\d+"/,
+      block.trim(),
     );
 
     return `${content.slice(0, match.index)}${prefix}${updatedBody}${suffix}${content.slice(match.index + match[0].length)}`;
@@ -117,6 +118,10 @@ module.exports = function withAndroidNativeBuildLongPathFix(config) {
   return withFinalizedMod(config, [
     "android",
     async (modConfig) => {
+      if (!IS_WINDOWS) {
+        return modConfig;
+      }
+
       const projectRoot = modConfig.modRequest.projectRoot;
       const platformProjectRoot = modConfig.modRequest.platformProjectRoot;
       const appBuildGradlePath = path.join(platformProjectRoot, "app", "build.gradle");
