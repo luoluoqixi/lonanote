@@ -2,7 +2,9 @@ import { type ConfigContext, type ExpoConfig } from "expo/config";
 
 import pkg from "./package.json";
 
-const IS_DEV = process.env.APP_VARIANT === "development";
+const IS_DEV = process.env.APP_MODE === "development";
+
+console.log(`Running in ${IS_DEV ? "development" : "production"} mode`);
 
 const getUniqueIdentifier = () => {
   if (IS_DEV) {
@@ -58,6 +60,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     "./tools/prebuild/withAndroidNdkVersion.cjs",
+    "./tools/prebuild/withAndroidNativeBuildLongPathFix.cjs",
     ["./tools/prebuild/withAndroidAdaptiveIconInset.cjs", { inset: "16%" }],
   ],
   experiments: {
