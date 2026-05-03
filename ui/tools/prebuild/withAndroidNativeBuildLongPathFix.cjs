@@ -24,25 +24,18 @@ function escapeForGradleString(value) {
   return value.replace(/\\/g, "\\\\");
 }
 
-function createCmakeArguments({ ninjaPath, toolchainFilePathExpression }) {
-  return [
-    `-DCMAKE_MAKE_PROGRAM=${ninjaPath}`,
-    `-DCMAKE_TOOLCHAIN_FILE=${toolchainFilePathExpression}`,
-  ];
+function createCmakeArguments({ ninjaPath }) {
+  return [`-DCMAKE_MAKE_PROGRAM=${ninjaPath}`, `-DCMAKE_OBJECT_PATH_MAX=${OBJECT_PATH_MAX}`];
 }
 
-function createExternalNativeBuildBlock({ ninjaPath, objectPathMax }) {
-  const argumentsList = createCmakeArguments({
-    ninjaPath,
-    toolchainFilePathExpression: "${lonanoteToolchainFilePath}",
-  })
+function createExternalNativeBuildBlock({ ninjaPath }) {
+  const argumentsList = createCmakeArguments({ ninjaPath })
     .map((argument) => `"${argument}"`)
     .join(", ");
 
   return [
     "        externalNativeBuild {",
     "            cmake {",
-    `                def lonanoteToolchainFilePath = rootProject.ext.lonanoteWriteAndroidToolchainWrapper(android.ndkDirectory, ${objectPathMax})`,
     `                arguments ${argumentsList}`,
     "            }",
     "        }",
@@ -59,42 +52,16 @@ function createAppExternalNativeBuildBlock() {
   ].join("\n");
 }
 
-function createLibraryGradleBlock({ ninjaPath, objectPathMax, targetProjects }) {
+function createLibraryGradleBlock({ ninjaPath, targetProjects }) {
   const projectNames = targetProjects.map((name) => `    '${name}',`).join("\n");
   const longPathArgs = createCmakeArguments({
     ninjaPath: "${lonanoteLibraryNativeBuildLongPathFix.ninjaPath}",
-    toolchainFilePathExpression: "${lonanoteToolchainFilePath}",
   }).map((argument) => `      "${argument}",`);
 
   return [
-    "def lonanoteWriteAndroidToolchainWrapper = { ndkDirectory, objectPathMax ->",
-    "  def lonanoteToolchainDir = new File(rootProject.buildDir, 'lonanote-cmake')",
-    "  if (!lonanoteToolchainDir.exists()) {",
-    "    lonanoteToolchainDir.mkdirs()",
-    "  }",
-    "",
-    "  def lonanoteNdkToolchainFile = new File(ndkDirectory, 'build/cmake/android.toolchain.cmake')",
-    '  def lonanoteWrapperFile = new File(lonanoteToolchainDir, "android.toolchain.wrapper.${objectPathMax}.cmake")',
-    "  def lonanoteNdkToolchainPath = lonanoteNdkToolchainFile.absolutePath.replace(File.separatorChar, '/' as char)",
-    "",
-    '  lonanoteWrapperFile.text = """if(DEFINED LONANOTE_ANDROID_TOOLCHAIN_WRAPPER_INCLUDED)',
-    "  return()",
-    "endif()",
-    "set(LONANOTE_ANDROID_TOOLCHAIN_WRAPPER_INCLUDED TRUE)",
-    "",
-    'set(CMAKE_OBJECT_PATH_MAX \\"${objectPathMax}\\" CACHE STRING \\"LonaNote object path max\\" FORCE)',
-    "",
-    'include(\\"${lonanoteNdkToolchainPath}\\")',
-    '"""',
-    "",
-    "  return lonanoteWrapperFile.absolutePath.replace(File.separatorChar, '/' as char)",
-    "}",
-    "",
-    "rootProject.ext.lonanoteWriteAndroidToolchainWrapper = lonanoteWriteAndroidToolchainWrapper",
-    "",
     "def lonanoteLibraryNativeBuildLongPathFix = [",
     `  ninjaPath: '${ninjaPath}',`,
-    `  objectPathMax: ${objectPathMax},`,
+    `  objectPathMax: ${OBJECT_PATH_MAX},`,
     "  projectNames: [",
     projectNames,
     "  ],",
@@ -114,8 +81,6 @@ function createLibraryGradleBlock({ ninjaPath, objectPathMax, targetProjects }) 
     "    }",
     "",
     '    moduleCmake.buildStagingDirectory = rootProject.file(".cxx-lonanote/${subproject.name}")',
-    "",
-    "    def lonanoteToolchainFilePath = rootProject.ext.lonanoteWriteAndroidToolchainWrapper(androidExt.ndkDirectory, lonanoteLibraryNativeBuildLongPathFix.objectPathMax)",
     "",
     "    def longPathArgs = [",
     ...longPathArgs,
@@ -159,7 +124,7 @@ function patchDefaultConfig(content, block) {
 function patchAndroidExternalNativeBuild(content, block) {
   const anchor = "\n    signingConfigs {";
   const topLevelExternalNativeBuildPattern =
-    /(\n {4}externalNativeBuild \{\n[\s\S]*?\n {4}\}\n)(?=\n {4}signingConfigs \{)/;
+    /(\n {4}externalNativeBuild \{\n(?: {8}.*\n)+ {4}\}\n)+(?=\n {4}signingConfigs \{)/;
 
   if (topLevelExternalNativeBuildPattern.test(content)) {
     return content.replace(topLevelExternalNativeBuildPattern, `${block}\n`);
@@ -174,10 +139,13 @@ function patchAndroidExternalNativeBuild(content, block) {
 
 function patchRootBuildGradle(content, block) {
   const wrapperStart = "def lonanoteWriteAndroidToolchainWrapper = {";
+  const blockStart = "def lonanoteLibraryNativeBuildLongPathFix = [";
   const anchor = 'apply plugin: "expo-root-project"';
 
-  if (content.includes(wrapperStart)) {
-    const startIndex = content.indexOf(wrapperStart);
+  if (content.includes(wrapperStart) || content.includes(blockStart)) {
+    const startIndex = content.includes(wrapperStart)
+      ? content.indexOf(wrapperStart)
+      : content.indexOf(blockStart);
     const anchorIndex = content.indexOf(anchor);
 
     if (anchorIndex === -1) {
@@ -185,13 +153,6 @@ function patchRootBuildGradle(content, block) {
     }
 
     return `${content.slice(0, startIndex)}${block}\n\n${content.slice(anchorIndex)}`;
-  }
-
-  if (content.includes("def lonanoteLibraryNativeBuildLongPathFix = [")) {
-    return content.replace(
-      /def lonanoteLibraryNativeBuildLongPathFix = \[[\s\S]*?^}\n/m,
-      `${block}\n`,
-    );
   }
 
   if (!content.includes(anchor)) {
@@ -217,12 +178,10 @@ module.exports = function withAndroidNativeBuildLongPathFix(config) {
       const ninjaGradlePath = toGradlePath(path.join(projectRoot, NINJA_RELATIVE_PATH));
       const externalNativeBuildBlock = createExternalNativeBuildBlock({
         ninjaPath: ninjaAbsolutePath,
-        objectPathMax: OBJECT_PATH_MAX,
       });
       const appExternalNativeBuildBlock = createAppExternalNativeBuildBlock();
       const libraryGradleBlock = createLibraryGradleBlock({
         ninjaPath: ninjaGradlePath,
-        objectPathMax: OBJECT_PATH_MAX,
         targetProjects: TARGET_LIBRARY_PROJECTS,
       });
 
