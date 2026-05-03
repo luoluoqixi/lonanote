@@ -9,12 +9,7 @@ package_name = "rs.craby.lonanoterustmodule"
 # armv7-linux-androideabi
 # x86_64-linux-android
 # i686-linux-android
-targets = [
-  "aarch64-linux-android",
-  "armv7-linux-androideabi",
-  "x86_64-linux-android",
-  "i686-linux-android",
-]
+targets = []
 
 [ios]
 
@@ -22,4 +17,8 @@ targets = [
 # aarch64-apple-ios-sim
 # x86_64-apple-ios
 # targets = ["aarch64-apple-ios", "aarch64-apple-ios-sim", "x86_64-apple-ios"]
-targets = []
+targets = [
+  "aarch64-apple-ios",
+  "aarch64-apple-ios-sim",
+  "x86_64-apple-ios",
+]

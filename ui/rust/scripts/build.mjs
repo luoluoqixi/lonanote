@@ -174,7 +174,7 @@ function extractSectionContent(content, sectionName) {
 
 function extractSectionTargets(content, sectionName) {
   const sectionContent = extractSectionContent(content, sectionName);
-  const targetsMatch = sectionContent.match(/targets\s*=\s*\[((?:.|\r|\n)*?)\]/m);
+  const targetsMatch = sectionContent.match(/^[ \t]*targets\s*=\s*\[((?:.|\r|\n)*?)\]/m);
 
   if (!targetsMatch) {
     throw new Error(`targets not found in [${sectionName}] section.`);
@@ -194,14 +194,14 @@ function renderTargets(targets) {
 
 function replaceSectionTargets(content, sectionName, targets) {
   const sectionContent = extractSectionContent(content, sectionName);
-  const currentTargetsMatch = sectionContent.match(/targets\s*=\s*\[((?:.|\r|\n)*?)\]/m);
+  const currentTargetsMatch = sectionContent.match(/^[ \t]*targets\s*=\s*\[((?:.|\r|\n)*?)\]/m);
 
   if (!currentTargetsMatch) {
     throw new Error(`targets not found in [${sectionName}] section.`);
   }
 
   const nextSectionContent = sectionContent.replace(
-    /targets\s*=\s*\[((?:.|\r|\n)*?)\]/m,
+    /^[ \t]*targets\s*=\s*\[((?:.|\r|\n)*?)\]/m,
     renderTargets(targets),
   );
 

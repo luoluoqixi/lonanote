@@ -1,46 +1,53 @@
 #pragma once
+#include "CrabySignals.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <initializer_list>
-#include <iosfwd>
 #include <iterator>
 #include <new>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <vector>
-#if defined(_WIN32)
-#include <basetsd.h>
-#else
-#include <sys/types.h>
-#endif
-
 #if __cplusplus >= 201703L
 #include <string_view>
 #endif
-
 #if __cplusplus >= 202002L
 #include <ranges>
 #endif
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
+#endif // __clang__
+
 namespace rust {
 inline namespace cxxbridge1 {
+// #include "rust/cxx.h"
+
+#ifndef CXXBRIDGE1_PANIC
+#define CXXBRIDGE1_PANIC
+template <typename Exception>
+void panic [[noreturn]] (const char *msg);
+#endif // CXXBRIDGE1_PANIC
 
 struct unsafe_bitcopy_t;
 
 namespace {
 template <typename T>
 class impl;
-}
+} // namespace
+
+template <typename T>
+::std::size_t size_of();
+template <typename T>
+::std::size_t align_of();
 
 #ifndef CXXBRIDGE1_RUST_STRING
 #define CXXBRIDGE1_RUST_STRING
-// https://cxx.rs/binding/string.html
 class String final {
 public:
   String() noexcept;
@@ -58,7 +65,6 @@ public:
   String(const char8_t *s, std::size_t len);
 #endif
 
-  // Replace invalid Unicode data with the replacement character (U+FFFD).
   static String lossy(const std::string &) noexcept;
   static String lossy(const char *) noexcept;
   static String lossy(const char *, std::size_t) noexcept;
@@ -70,7 +76,6 @@ public:
 
   explicit operator std::string() const;
 
-  // Note: no null terminator.
   const char *data() const noexcept;
   std::size_t size() const noexcept;
   std::size_t length() const noexcept;
@@ -100,7 +105,6 @@ public:
 
   void swap(String &) noexcept;
 
-  // Internal API only intended for the cxxbridge code generator.
   String(unsafe_bitcopy_t, const String &) noexcept;
 
 private:
@@ -109,14 +113,12 @@ private:
   String(lossy_t, const char16_t *, std::size_t) noexcept;
   friend void swap(String &lhs, String &rhs) noexcept { lhs.swap(rhs); }
 
-  // Size and alignment statically verified by rust_string.rs.
   std::array<std::uintptr_t, 3> repr;
 };
 #endif // CXXBRIDGE1_RUST_STRING
 
 #ifndef CXXBRIDGE1_RUST_STR
 #define CXXBRIDGE1_RUST_STR
-// https://cxx.rs/binding/str.html
 class Str final {
 public:
   Str() noexcept;
@@ -132,13 +134,11 @@ public:
   explicit operator std::string_view() const;
 #endif
 
-  // Note: no null terminator.
   const char *data() const noexcept;
   std::size_t size() const noexcept;
   std::size_t length() const noexcept;
   bool empty() const noexcept;
 
-  // Important in order for System V ABI to pass in registers.
   Str(const Str &) noexcept = default;
   ~Str() noexcept = default;
 
@@ -168,6 +168,7 @@ private:
 #endif // CXXBRIDGE1_RUST_STR
 
 #ifndef CXXBRIDGE1_RUST_SLICE
+#define CXXBRIDGE1_RUST_SLICE
 namespace detail {
 template <bool>
 struct copy_assignable_if {};
@@ -181,7 +182,6 @@ struct copy_assignable_if<false> {
 };
 } // namespace detail
 
-// https://cxx.rs/binding/slice.html
 template <typename T>
 class Slice final
     : private detail::copy_assignable_if<std::is_const<T>::value> {
@@ -207,7 +207,6 @@ public:
   T &front() const noexcept;
   T &back() const noexcept;
 
-  // Important in order for System V ABI to pass in registers.
   Slice(const Slice<T> &) noexcept = default;
   ~Slice() noexcept = default;
 
@@ -246,10 +245,6 @@ public:
   using difference_type = std::ptrdiff_t;
   using pointer = typename std::add_pointer<T>::type;
   using reference = typename std::add_lvalue_reference<T>::type;
-  using element_type = T;
-  using element_type = T;
-  using element_type = T;
-  using element_type = T;
 
   reference operator*() const noexcept;
   pointer operator->() const noexcept;
@@ -287,277 +282,6 @@ static_assert(std::ranges::contiguous_range<rust::Slice<const uint8_t>>);
 static_assert(std::contiguous_iterator<rust::Slice<const uint8_t>::iterator>);
 #endif
 
-#endif // CXXBRIDGE1_RUST_SLICE
-
-#ifndef CXXBRIDGE1_RUST_BOX
-// https://cxx.rs/binding/box.html
-template <typename T>
-class Box final {
-public:
-  using element_type = T;
-  using const_pointer =
-      typename std::add_pointer<typename std::add_const<T>::type>::type;
-  using pointer = typename std::add_pointer<T>::type;
-
-  Box() = delete;
-  Box(Box &&) noexcept;
-  ~Box() noexcept;
-
-  explicit Box(const T &);
-  explicit Box(T &&);
-
-  Box &operator=(Box &&) & noexcept;
-
-  const T *operator->() const noexcept;
-  const T &operator*() const noexcept;
-  T *operator->() noexcept;
-  T &operator*() noexcept;
-
-  template <typename... Fields>
-  static Box in_place(Fields &&...);
-
-  void swap(Box &) noexcept;
-
-  // Important: requires that `raw` came from an into_raw call. Do not pass a
-  // pointer from `new` or any other source.
-  static Box from_raw(T *) noexcept;
-
-  T *into_raw() noexcept;
-
-  /* Deprecated */ using value_type = element_type;
-
-private:
-  class uninit;
-  class allocation;
-  Box(uninit) noexcept;
-  void drop() noexcept;
-
-  friend void swap(Box &lhs, Box &rhs) noexcept { lhs.swap(rhs); }
-
-  T *ptr;
-};
-#endif // CXXBRIDGE1_RUST_BOX
-
-#ifndef CXXBRIDGE1_RUST_VEC
-// https://cxx.rs/binding/vec.html
-template <typename T>
-class Vec final {
-public:
-  using value_type = T;
-
-  Vec() noexcept;
-  Vec(std::initializer_list<T>);
-  Vec(const Vec &);
-  Vec(Vec &&) noexcept;
-  ~Vec() noexcept;
-
-  Vec &operator=(Vec &&) & noexcept;
-  Vec &operator=(const Vec &) &;
-
-  std::size_t size() const noexcept;
-  bool empty() const noexcept;
-  const T *data() const noexcept;
-  T *data() noexcept;
-  std::size_t capacity() const noexcept;
-
-  const T &operator[](std::size_t n) const noexcept;
-  const T &at(std::size_t n) const;
-  const T &front() const noexcept;
-  const T &back() const noexcept;
-
-  T &operator[](std::size_t n) noexcept;
-  T &at(std::size_t n);
-  T &front() noexcept;
-  T &back() noexcept;
-
-  void reserve(std::size_t new_cap);
-  void push_back(const T &value);
-  void push_back(T &&value);
-  template <typename... Args>
-  void emplace_back(Args &&...args);
-  void truncate(std::size_t len);
-  void clear();
-
-  using iterator = typename Slice<T>::iterator;
-  iterator begin() noexcept;
-  iterator end() noexcept;
-
-  using const_iterator = typename Slice<const T>::iterator;
-  const_iterator begin() const noexcept;
-  const_iterator end() const noexcept;
-  const_iterator cbegin() const noexcept;
-  const_iterator cend() const noexcept;
-
-  void swap(Vec &) noexcept;
-
-  // Internal API only intended for the cxxbridge code generator.
-  Vec(unsafe_bitcopy_t, const Vec &) noexcept;
-
-private:
-  void reserve_total(std::size_t new_cap) noexcept;
-  void set_len(std::size_t len) noexcept;
-  void drop() noexcept;
-
-  friend void swap(Vec &lhs, Vec &rhs) noexcept { lhs.swap(rhs); }
-
-  // Size and alignment statically verified by rust_vec.rs.
-  std::array<std::uintptr_t, 3> repr;
-};
-#endif // CXXBRIDGE1_RUST_VEC
-
-#ifndef CXXBRIDGE1_RUST_FN
-// https://cxx.rs/binding/fn.html
-template <typename Signature>
-class Fn;
-
-template <typename Ret, typename... Args>
-class Fn<Ret(Args...)> final {
-public:
-  Ret operator()(Args... args) const noexcept;
-  Fn operator*() const noexcept;
-
-private:
-  Ret (*trampoline)(Args..., void *fn) noexcept;
-  void *fn;
-};
-#endif // CXXBRIDGE1_RUST_FN
-
-#ifndef CXXBRIDGE1_RUST_ERROR
-#define CXXBRIDGE1_RUST_ERROR
-// https://cxx.rs/binding/result.html
-class Error final : public std::exception {
-public:
-  Error(const Error &);
-  Error(Error &&) noexcept;
-  ~Error() noexcept override;
-
-  Error &operator=(const Error &) &;
-  Error &operator=(Error &&) & noexcept;
-
-  const char *what() const noexcept override;
-
-private:
-  Error() noexcept = default;
-  friend impl<Error>;
-  const char *msg;
-  std::size_t len;
-};
-#endif // CXXBRIDGE1_RUST_ERROR
-
-#ifndef CXXBRIDGE1_RUST_ISIZE
-#define CXXBRIDGE1_RUST_ISIZE
-#if defined(_WIN32)
-using isize = SSIZE_T;
-#else
-using isize = ssize_t;
-#endif
-#endif // CXXBRIDGE1_RUST_ISIZE
-
-std::ostream &operator<<(std::ostream &, const String &);
-std::ostream &operator<<(std::ostream &, const Str &);
-
-#ifndef CXXBRIDGE1_RUST_OPAQUE
-#define CXXBRIDGE1_RUST_OPAQUE
-// Base class of generated opaque Rust types.
-class Opaque {
-public:
-  Opaque() = delete;
-  Opaque(const Opaque &) = delete;
-  ~Opaque() = delete;
-};
-#endif // CXXBRIDGE1_RUST_OPAQUE
-
-template <typename T>
-std::size_t size_of();
-template <typename T>
-std::size_t align_of();
-
-// IsRelocatable<T> is used in assertions that a C++ type passed by value
-// between Rust and C++ is soundly relocatable by Rust.
-//
-// There may be legitimate reasons to opt out of the check for support of types
-// that the programmer knows are soundly Rust-movable despite not being
-// recognized as such by the C++ type system due to a move constructor or
-// destructor. To opt out of the relocatability check, do either of the
-// following things in any header used by `include!` in the bridge.
-//
-//      --- if you define the type:
-//      struct MyType {
-//        ...
-//    +   using IsRelocatable = std::true_type;
-//      };
-//
-//      --- otherwise:
-//    + template <>
-//    + struct rust::IsRelocatable<MyType> : std::true_type {};
-template <typename T>
-struct IsRelocatable;
-
-using u8 = std::uint8_t;
-using u16 = std::uint16_t;
-using u32 = std::uint32_t;
-using u64 = std::uint64_t;
-using usize = std::size_t; // see static asserts in cxx.cc
-using i8 = std::int8_t;
-using i16 = std::int16_t;
-using i32 = std::int32_t;
-using i64 = std::int64_t;
-using f32 = float;
-using f64 = double;
-
-// Snake case aliases for use in code that uses this style for type names.
-using string = String;
-using str = Str;
-template <typename T>
-using slice = Slice<T>;
-template <typename T>
-using box = Box<T>;
-template <typename T>
-using vec = Vec<T>;
-using error = Error;
-template <typename Signature>
-using fn = Fn<Signature>;
-template <typename T>
-using is_relocatable = IsRelocatable<T>;
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-/// end public API, begin implementation details
-
-#ifndef CXXBRIDGE1_PANIC
-#define CXXBRIDGE1_PANIC
-template <typename Exception>
-void panic [[noreturn]] (const char *msg);
-#endif // CXXBRIDGE1_PANIC
-
-#ifndef CXXBRIDGE1_RUST_FN
-#define CXXBRIDGE1_RUST_FN
-template <typename Ret, typename... Args>
-Ret Fn<Ret(Args...)>::operator()(Args... args) const noexcept {
-  return (*this->trampoline)(std::forward<Args>(args)..., this->fn);
-}
-
-template <typename Ret, typename... Args>
-Fn<Ret(Args...)> Fn<Ret(Args...)>::operator*() const noexcept {
-  return *this;
-}
-#endif // CXXBRIDGE1_RUST_FN
-
-#ifndef CXXBRIDGE1_RUST_BITCOPY_T
-#define CXXBRIDGE1_RUST_BITCOPY_T
-struct unsafe_bitcopy_t final {
-  explicit unsafe_bitcopy_t() = default;
-};
-#endif // CXXBRIDGE1_RUST_BITCOPY_T
-
-#ifndef CXXBRIDGE1_RUST_BITCOPY
-#define CXXBRIDGE1_RUST_BITCOPY
-constexpr unsafe_bitcopy_t unsafe_bitcopy{};
-#endif // CXXBRIDGE1_RUST_BITCOPY
-
-#ifndef CXXBRIDGE1_RUST_SLICE
-#define CXXBRIDGE1_RUST_SLICE
 template <typename T>
 Slice<T>::Slice() noexcept {
   sliceInit(this, reinterpret_cast<void *>(align_of<T>()), 0);
@@ -758,6 +482,50 @@ void Slice<T>::swap(Slice &rhs) noexcept {
 #ifndef CXXBRIDGE1_RUST_BOX
 #define CXXBRIDGE1_RUST_BOX
 template <typename T>
+class Box final {
+public:
+  using element_type = T;
+  using const_pointer =
+      typename std::add_pointer<typename std::add_const<T>::type>::type;
+  using pointer = typename std::add_pointer<T>::type;
+
+  Box() = delete;
+  Box(Box &&) noexcept;
+  ~Box() noexcept;
+
+  explicit Box(const T &);
+  explicit Box(T &&);
+
+  Box &operator=(Box &&) & noexcept;
+
+  const T *operator->() const noexcept;
+  const T &operator*() const noexcept;
+  T *operator->() noexcept;
+  T &operator*() noexcept;
+
+  template <typename... Fields>
+  static Box in_place(Fields &&...);
+
+  void swap(Box &) noexcept;
+
+  static Box from_raw(T *) noexcept;
+
+  T *into_raw() noexcept;
+
+  /* Deprecated */ using value_type = element_type;
+
+private:
+  class uninit;
+  class allocation;
+  Box(uninit) noexcept;
+  void drop() noexcept;
+
+  friend void swap(Box &lhs, Box &rhs) noexcept { lhs.swap(rhs); }
+
+  T *ptr;
+};
+
+template <typename T>
 class Box<T>::uninit {};
 
 template <typename T>
@@ -867,8 +635,77 @@ template <typename T>
 Box<T>::Box(uninit) noexcept {}
 #endif // CXXBRIDGE1_RUST_BOX
 
+#ifndef CXXBRIDGE1_RUST_BITCOPY_T
+#define CXXBRIDGE1_RUST_BITCOPY_T
+struct unsafe_bitcopy_t final {
+  explicit unsafe_bitcopy_t() = default;
+};
+#endif // CXXBRIDGE1_RUST_BITCOPY_T
+
 #ifndef CXXBRIDGE1_RUST_VEC
 #define CXXBRIDGE1_RUST_VEC
+template <typename T>
+class Vec final {
+public:
+  using value_type = T;
+
+  Vec() noexcept;
+  Vec(std::initializer_list<T>);
+  Vec(const Vec &);
+  Vec(Vec &&) noexcept;
+  ~Vec() noexcept;
+
+  Vec &operator=(Vec &&) & noexcept;
+  Vec &operator=(const Vec &) &;
+
+  std::size_t size() const noexcept;
+  bool empty() const noexcept;
+  const T *data() const noexcept;
+  T *data() noexcept;
+  std::size_t capacity() const noexcept;
+
+  const T &operator[](std::size_t n) const noexcept;
+  const T &at(std::size_t n) const;
+  const T &front() const noexcept;
+  const T &back() const noexcept;
+
+  T &operator[](std::size_t n) noexcept;
+  T &at(std::size_t n);
+  T &front() noexcept;
+  T &back() noexcept;
+
+  void reserve(std::size_t new_cap);
+  void push_back(const T &value);
+  void push_back(T &&value);
+  template <typename... Args>
+  void emplace_back(Args &&...args);
+  void truncate(std::size_t len);
+  void clear();
+
+  using iterator = typename Slice<T>::iterator;
+  iterator begin() noexcept;
+  iterator end() noexcept;
+
+  using const_iterator = typename Slice<const T>::iterator;
+  const_iterator begin() const noexcept;
+  const_iterator end() const noexcept;
+  const_iterator cbegin() const noexcept;
+  const_iterator cend() const noexcept;
+
+  void swap(Vec &) noexcept;
+
+  Vec(unsafe_bitcopy_t, const Vec &) noexcept;
+
+private:
+  void reserve_total(std::size_t new_cap) noexcept;
+  void set_len(std::size_t len) noexcept;
+  void drop() noexcept;
+
+  friend void swap(Vec &lhs, Vec &rhs) noexcept { lhs.swap(rhs); }
+
+  std::array<std::uintptr_t, 3> repr;
+};
+
 template <typename T>
 Vec<T>::Vec(std::initializer_list<T> init) : Vec{} {
   this->reserve_total(init.size());
@@ -1039,10 +876,19 @@ void Vec<T>::swap(Vec &rhs) noexcept {
   swap(this->repr, rhs.repr);
 }
 
-// Internal API only intended for the cxxbridge code generator.
 template <typename T>
 Vec<T>::Vec(unsafe_bitcopy_t, const Vec &bits) noexcept : repr(bits.repr) {}
 #endif // CXXBRIDGE1_RUST_VEC
+
+#ifndef CXXBRIDGE1_RUST_OPAQUE
+#define CXXBRIDGE1_RUST_OPAQUE
+class Opaque {
+public:
+  Opaque() = delete;
+  Opaque(const Opaque &) = delete;
+  ~Opaque() = delete;
+};
+#endif // CXXBRIDGE1_RUST_OPAQUE
 
 #ifndef CXXBRIDGE1_IS_COMPLETE
 #define CXXBRIDGE1_IS_COMPLETE
@@ -1111,43 +957,118 @@ std::size_t align_of() {
   return layout::align_of<T>();
 }
 #endif // CXXBRIDGE1_LAYOUT
-
-#ifndef CXXBRIDGE1_RELOCATABLE
-#define CXXBRIDGE1_RELOCATABLE
-namespace detail {
-template <typename... Ts>
-struct make_void {
-  using type = void;
-};
-
-template <typename... Ts>
-using void_t = typename make_void<Ts...>::type;
-
-template <typename Void, template <typename...> class, typename...>
-struct detect : std::false_type {};
-template <template <typename...> class T, typename... A>
-struct detect<void_t<T<A...>>, T, A...> : std::true_type {};
-
-template <template <typename...> class T, typename... A>
-using is_detected = detect<void, T, A...>;
-
-template <typename T>
-using detect_IsRelocatable = typename T::IsRelocatable;
-
-template <typename T>
-struct get_IsRelocatable
-    : std::is_same<typename T::IsRelocatable, std::true_type> {};
-} // namespace detail
-
-template <typename T>
-struct IsRelocatable
-    : std::conditional<
-          detail::is_detected<detail::detect_IsRelocatable, T>::value,
-          detail::get_IsRelocatable<T>,
-          std::integral_constant<
-              bool, std::is_trivially_move_constructible<T>::value &&
-                        std::is_trivially_destructible<T>::value>>::type {};
-#endif // CXXBRIDGE1_RELOCATABLE
-
 } // namespace cxxbridge1
 } // namespace rust
+
+#if __cplusplus >= 201402L
+#define CXX_DEFAULT_VALUE(value) = value
+#else
+#define CXX_DEFAULT_VALUE(value)
+#endif
+
+namespace craby {
+  namespace lonanoterustmodule {
+    namespace bridging {
+      struct NullableString;
+      struct CallbackRequest;
+      struct LonanoteRustModule;
+      struct LonanoteRustModuleSignal;
+    }
+    namespace signals {
+      using SignalManager = ::craby::lonanoterustmodule::signals::SignalManager;
+    }
+  }
+}
+
+namespace craby {
+namespace lonanoterustmodule {
+namespace bridging {
+#ifndef CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$NullableString
+#define CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$NullableString
+struct NullableString final {
+  bool null CXX_DEFAULT_VALUE(false);
+  ::rust::String val;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$NullableString
+
+#ifndef CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$CallbackRequest
+#define CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$CallbackRequest
+struct CallbackRequest final {
+  ::rust::String id;
+  ::rust::String key;
+  ::craby::lonanoterustmodule::bridging::NullableString args;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$CallbackRequest
+
+#ifndef CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$LonanoteRustModule
+#define CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$LonanoteRustModule
+struct LonanoteRustModule final : public ::rust::Opaque {
+  ~LonanoteRustModule() = delete;
+
+private:
+  friend ::rust::layout;
+  struct layout {
+    static ::std::size_t size() noexcept;
+    static ::std::size_t align() noexcept;
+  };
+};
+#endif // CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$LonanoteRustModule
+
+#ifndef CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$LonanoteRustModuleSignal
+#define CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$LonanoteRustModuleSignal
+struct LonanoteRustModuleSignal final : public ::rust::Opaque {
+  ~LonanoteRustModuleSignal() = delete;
+
+private:
+  friend ::rust::layout;
+  struct layout {
+    static ::std::size_t size() noexcept;
+    static ::std::size_t align() noexcept;
+  };
+};
+#endif // CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$LonanoteRustModuleSignal
+
+::rust::Box<::craby::lonanoterustmodule::bridging::LonanoteRustModule> createLonanoteRustModule(::std::size_t id, ::rust::Str data_path) noexcept;
+
+void clearCallbackFunction(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+
+::rust::Vec<::rust::String> getCommandAsyncKeys(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+
+double getCommandAsyncLength(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+
+::rust::Vec<::rust::String> getCommandCallbackKeys(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+
+double getCommandCallbackLength(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+
+::rust::Vec<::rust::String> getCommandKeys(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+
+double getCommandLength(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+
+::craby::lonanoterustmodule::bridging::NullableString init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+
+::craby::lonanoterustmodule::bridging::NullableString invoke(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str command, ::craby::lonanoterustmodule::bridging::NullableString args);
+
+::craby::lonanoterustmodule::bridging::NullableString invokeAsync(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str command, ::craby::lonanoterustmodule::bridging::NullableString args);
+
+void regCallbackFunction(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str key);
+
+void rejectCallback(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str id, ::rust::Str error);
+
+void resolveCallback(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str id, ::craby::lonanoterustmodule::bridging::NullableString result);
+
+void unregCallbackFunction(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str key);
+
+::craby::lonanoterustmodule::bridging::CallbackRequest get_on_callback_request_payload(::craby::lonanoterustmodule::bridging::LonanoteRustModuleSignal const &s) noexcept;
+
+void drop_signal(::craby::lonanoterustmodule::bridging::LonanoteRustModuleSignal *signal) noexcept;
+} // namespace bridging
+} // namespace lonanoterustmodule
+} // namespace craby
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif // __clang__

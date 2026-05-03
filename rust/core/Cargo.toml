@@ -28,10 +28,6 @@ chrono = { workspace = true }
 indexmap = { workspace = true }
 alphanumeric-sort = { workspace = true }
 encoding_rs = { workspace = true }
-reqwest = { workspace = true, default-features = false, features = [
-  "stream",
-  "rustls",
-] }
 futures = { workspace = true }
 rust-embed = { workspace = true, features = ["debug-embed"] }
 
@@ -39,6 +35,18 @@ rust-embed = { workspace = true, features = ["debug-embed"] }
 # [target.'cfg(target_os = "macos")'.dependencies]
 [target.'cfg(target_os = "linux")'.dependencies]
 fork = { workspace = true }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+reqwest = { workspace = true, default-features = false, features = [
+  "stream",
+  "native-tls",
+] }
+
+[target.'cfg(not(target_os = "ios"))'.dependencies]
+reqwest = { workspace = true, default-features = false, features = [
+  "stream",
+  "rustls",
+] }
 
 [target.'cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))'.dependencies]
 rfd = { workspace = true }
@@ -56,4 +64,3 @@ rename_all = "camelCase"
 
 [features]
 generate_api = ["cmdreg/metadata"]
-
