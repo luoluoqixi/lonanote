@@ -4,6 +4,9 @@
 
 - [Rust](https://rustup.rs/) >= 1.94.0-nightly
 - Android 和 IOS 开发环境
+  - Android SDK 36
+  - buildTools 36.0.0
+  - ndkVersion 27.1.12297006
 
 #### 🚀 安装
 

@@ -15,6 +15,17 @@ path = "ui/src-tauri"
 package_type = "tauri-toml"
 
 
+# install command
+[[commands]]
+name = "install"
+description = "install"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["install"]
+run_dir = "./ui"
+
+
 # dev command
 [[commands]]
 name = "dev"
