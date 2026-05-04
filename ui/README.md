@@ -8,6 +8,7 @@
 - [Node.js](https://nodejs.org/) >= 22
 - Android 开发环境
   - Android Studio Windows 平台目前使用 2025.3.3 测试, 建议使用此版本或更高版本
+  - 更具体 SDK 版本可查看 [sdk_config.txt](./sdk_config.txt)
   - Android SDK == 36
   - buildTools == 36.0.0
   - ndkVersion == 27.1.12297006
