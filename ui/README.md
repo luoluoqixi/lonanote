@@ -7,16 +7,17 @@
 - [Bun](https://bun.sh/) ^1.3.13
 - [Node.js](https://nodejs.org/) >= 22
 - Android 开发环境
-  - Android SDK 36
-  - buildTools 36.0.0
-  - ndkVersion 27.1.12297006
-  - java 17
+  - Android SDK == 36
+  - buildTools == 36.0.0
+  - ndkVersion == 27.1.12297006
+  - java >= 17
   - ANDROID_SDK_ROOT 环境变量指向 Android SDK 安装路径
+  - JAVA_HOME Android Studio 安装路径下的 jbr 目录，例如 `C:\Program Files\Android\Android Studio\jbr`
   - `rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android`
 - iOS 开发环境
-  - Xcode 26.2
-  - CocoaPods 1.16.2
-  - Ruby 3.2
+  - Xcode >= 26.2
+  - CocoaPods >= 1.16.2
+  - Ruby >= 3.2
 
 #### 🚀 安装
 
