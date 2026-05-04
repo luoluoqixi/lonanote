@@ -12,15 +12,20 @@ pub fn run_cargo_install<S: AsRef<str>, P: AsRef<str>>(
     Ok(())
 }
 
-pub fn run_cargo_bin<S: AsRef<str>, P: AsRef<str>, C: AsRef<str>>(
+pub fn run_cargo_bin_with_mode<S: AsRef<str>, P: AsRef<str>, C: AsRef<str>>(
     package: P,
     project_path: S,
     commands: &[C],
+    inherit_stdio: bool,
 ) -> anyhow::Result<std::process::Child> {
     if which(package.as_ref()).is_err() {
         run_cargo_install(CURRENT_PATH.to_str().unwrap(), package.as_ref())?;
     }
-    utils::cmd::run_command_which_log(package.as_ref(), project_path, commands)
+    if inherit_stdio {
+        utils::cmd::run_command_which_inherit(package.as_ref(), project_path, commands)
+    } else {
+        utils::cmd::run_command_which_log(package.as_ref(), project_path, commands)
+    }
 }
 
 pub fn run_cargo_version<S: AsRef<str>>(project_path: S, next_version: &str) -> anyhow::Result<()> {

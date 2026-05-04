@@ -25,13 +25,27 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<std::ffi::OsStr>,
 {
+    create_command_with_options(cmd, args, true)
+}
+
+pub fn create_command_with_options<S, I>(
+    cmd: S,
+    args: I,
+    hide_window: bool,
+) -> std::process::Command
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr>,
+{
     let mut command = std::process::Command::new(cmd.as_ref());
     #[cfg(target_os = "windows")]
     {
-        // windows平台隐藏黑窗
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-        command.creation_flags(CREATE_NO_WINDOW);
+        if hide_window {
+            // windows平台隐藏黑窗
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            command.creation_flags(CREATE_NO_WINDOW);
+        }
     }
     command.args(args);
 
@@ -62,7 +76,7 @@ where
             .collect::<Vec<_>>()
             .join(" ")
     );
-    let mut command = create_command(cmd, args);
+    let mut command = create_command_with_options(cmd, args, false);
     if let Some(current_dir) = current_dir {
         command.current_dir(current_dir);
     }
@@ -150,6 +164,51 @@ where
     Ok(child)
 }
 
+pub fn run_command<S, I>(
+    cmd: S,
+    args: I,
+    current_dir: Option<&std::path::Path>,
+    stdin: Option<std::process::Stdio>,
+    stdout: Option<std::process::Stdio>,
+    stderr: Option<std::process::Stdio>,
+) -> anyhow::Result<std::process::Child>
+where
+    I: IntoIterator<Item = S> + Clone,
+    S: AsRef<std::ffi::OsStr>,
+{
+    info!(
+        "{}",
+        current_dir
+            .map(|p| format!("cd {}", p.display()))
+            .unwrap_or_default()
+    );
+    info!(
+        "{} {}",
+        cmd.as_ref().display(),
+        args.clone()
+            .into_iter()
+            .map(|s| s.as_ref().display().to_string())
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
+
+    let mut command = create_command_with_options(cmd, args, false);
+    if let Some(current_dir) = current_dir {
+        command.current_dir(current_dir);
+    }
+    if let Some(stdin) = stdin {
+        command.stdin(stdin);
+    }
+    if let Some(stdout) = stdout {
+        command.stdout(stdout);
+    }
+    if let Some(stderr) = stderr {
+        command.stderr(stderr);
+    }
+
+    Ok(command.spawn()?)
+}
+
 pub fn run_command_which_callback<C: AsRef<str>, P: AsRef<str>, S: AsRef<str>, FO, FE>(
     command: C,
     project_path: P,
@@ -227,4 +286,33 @@ pub fn run_command_which_println<C: AsRef<str>, P: AsRef<str>, S: AsRef<str>>(
             eprintln!("{stderr}");
         },
     )
+}
+
+pub fn run_command_which_inherit<C: AsRef<str>, P: AsRef<str>, S: AsRef<str>>(
+    command: C,
+    project_path: P,
+    commands: &[S],
+) -> anyhow::Result<std::process::Child> {
+    match which(command.as_ref()) {
+        Ok(path) => run_command(
+            path.to_str().unwrap(),
+            commands.iter().map(|s| s.as_ref()),
+            Some(PathBuf::from(project_path.as_ref()).as_path()),
+            Some(std::process::Stdio::inherit()),
+            Some(std::process::Stdio::inherit()),
+            Some(std::process::Stdio::inherit()),
+        )
+        .map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to run [{} {}]: {e}",
+                command.as_ref(),
+                commands
+                    .iter()
+                    .map(|s| s.as_ref())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
+        }),
+        Err(_) => anyhow::bail!("{} not found in PATH", command.as_ref()),
+    }
 }

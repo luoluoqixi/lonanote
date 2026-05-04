@@ -75,6 +75,7 @@ pub struct Cmd {
     pub run_dir: Option<String>,
 
     pub always_run: Option<bool>,
+    pub inherit_stdio: Option<bool>,
     pub always_run_receive_input: Option<bool>,
 
     pub which_cargo_install: Option<bool>,

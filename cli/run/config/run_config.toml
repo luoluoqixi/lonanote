@@ -36,6 +36,7 @@ cmd = "cargo"
 args = ["tauri", "dev"]
 run_dir = "."
 always_run = true
+inherit_stdio = true
 
 
 # dev:android command
@@ -53,6 +54,7 @@ cmd = "bun"
 args = ["android"]
 run_dir = "ui"
 always_run = true
+inherit_stdio = true
 
 
 # dev:ios command
@@ -70,6 +72,7 @@ cmd = "bun"
 args = ["ios"]
 run_dir = "ui"
 always_run = true
+inherit_stdio = true
 
 
 # build command
