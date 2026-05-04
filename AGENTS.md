@@ -101,7 +101,12 @@ sh run.sh dev
 ## Frontend Notes
 
 - `ui/` 不是 Flutter 工程，当前是 React Native / Expo Router 架构。
-- 样式体系可见 `global.css`、`uniwind`、`tailwind-variants`、`heroui-native` 等依赖。
+- 样式体系以 `uniwind` 为统一 Tailwind 层，唯一全局样式入口是 `ui/src/global.css`。
+- 全局主题与主要 UI 组件统一基于 `heroui-native`；不要再引入 `@heroui/react`、`@heroui/styles` 这套 Web 主题入口。
+- 若桌面 / Web 侧个别弹出层、菜单、浮层原语存在能力缺口，可在 `ui/src/components/ui/` 包装层内按需使用 `@rn-primitives/*`，但只用于局部补位，不作为第二套全局设计系统。
+- `ui/src/` 下的应用代码不要使用 CommonJS `require`；平台差异优先通过 `.web.tsx`、`.native.tsx`、`.ios.tsx`、`.android.tsx` 解决。
+- `require` 仅保留在 Node 风格脚本与配置文件中，例如 `ui/tools/prebuild/`、`ui/metro.config.js`。
+- 页面与业务组件不要直接依赖 `heroui-native` 或 `@rn-primitives/*`，统一通过 `ui/src/components/ui/` 包装层导入。
 - 桌面端仍共享 React Native 代码，通过 Tauri 提供桌面壳与 Rust 能力。
 - `ui/android/` 与 `ui/ios/` 是 Expo prebuild 后的原生工程输出；修改原生配置时要注意 prebuild 的覆盖关系。
 - 如果只改移动端原生桥，不要误改 Tauri API；反之亦然。
@@ -207,4 +212,7 @@ npm run lint
 - 修改 `ui/rust/src/NativeLonanoteRustModule.ts` 后，通常需要重新跑 `npm run generate`。
 - 修改 `rust/core/` 的 command 签名、参数或返回值后，必须检查 Tauri 和 Craby 两侧桥接是否同步。
 - 桌面与移动端共用前端 invoke 抽象，新增 API 时优先保持命名与返回类型一致。
+- 前端新增 UI 组件时，优先放到 `ui/src/components/ui/<component>/` 包装层，并拆分 `*.web.tsx` / `*.native.tsx`，不要让业务层直接 import 第三方 UI 库。
+- 新增对话框、Popover、DropdownMenu、ContextMenu 这类高风险浮层组件时，优先保持项目内统一 API，再在 `.web.tsx` 中按需接 `@rn-primitives/*`，`.native.tsx` 中优先复用 `heroui-native`。
+- 对于 Expo Router 的 `ui/src/app/` 路由文件，如需平台拆分，必须保留非平台基础文件，再额外提供 `.web.tsx` 或其他平台文件。
 - 不要把旧 Flutter / flutter_rust_bridge 时代的约定继续写入新代码或新文档。

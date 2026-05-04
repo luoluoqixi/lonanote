@@ -106,6 +106,55 @@ run.cmd icon
 sh run.sh icon
 ```
 
+#### 🎨 跨平台 UI 约定
+
+前端以 `heroui-native` 作为唯一的全局主题和主要 UI 基础库，但页面层不要直接依赖第三方 UI 库。
+
+- Android / iOS / Web：主要 UI 统一走 `heroui-native`
+- Tailwind 能力统一走 `uniwind`
+- 桌面 / Web 端个别高风险浮层可在包装层内按需使用 `@rn-primitives/*` 补位
+
+当前样式入口只有一个：
+
+- `src/global.css`：提供 `tailwindcss + uniwind + heroui-native/styles`
+
+因此，不要再在 `src/app/*` 里直接导入某个 UI 库的样式文件，也不要重新引入第二套全局主题 CSS。
+
+关于模块系统：
+
+- `ui/src/` 下的应用代码不要使用 CommonJS `require`
+- 平台分发优先使用 `*.web.tsx`、`*.native.tsx`、`*.ios.tsx`、`*.android.tsx`
+- 允许使用 `require` 的位置仅限 Node 风格脚本和配置文件，例如 `ui/tools/prebuild/`、`metro.config.js`
+
+组件接入规则：
+
+- 页面和业务组件统一从 `src/components/ui/` 导入
+- 平台差异放在 `*.native.tsx` / `*.web.tsx` 包装文件里
+- 对外暴露稳定的项目内 API，不把第三方库的 props 直接扩散到业务层
+- `@rn-primitives/*` 仅用于 dialog、popover、dropdown-menu 这类局部 Web / 桌面补位，不作为第二套全局设计系统
+
+当前已经提供的包装层示例：
+
+- `src/components/ui/provider/`：统一应用级 Provider
+- `src/components/ui/button/`：统一 Button 入口
+- `src/components/ui/dialog/`：统一 Dialog 入口，web 走 `@rn-primitives/dialog`，native 走 `heroui-native`
+
+后续如果要新增 `Input`、`Modal`、`Dropdown` 等组件，沿用同样结构：
+
+```text
+src/components/ui/input/
+  input.native.tsx
+  input.web.tsx
+  index.ts
+  types.ts
+```
+
+这样做的目的：
+
+- 避免业务层直接绑定第三方 UI 库
+- 把 Web / Native 的差异限制在包装层内部
+- 后续替换 UI 库或调整 props 映射时，影响面只停留在包装层
+
 
 #### 其他
 
