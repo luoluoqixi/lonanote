@@ -18,7 +18,7 @@
 - **本地存储** - 完全本地存储 Markdown 文本文件
 - **使用原始文件系统** - 无数据库
 - **所见即所得编辑** - 实时预览
-- **架构** - 界面使用 React Native，核心使用 Rust
+- **架构** - 桌面端使用 Tauri + React Native Web，移动端使用 Expo / React Native，核心使用 Rust
 
 ### 📸 屏幕截图
 
@@ -64,7 +64,7 @@
 
 - **Mac** 提示 `lonanote.app已损坏，无法打开， 你应该将它移到废纸篓。`
   - 由于未签名, 首次运行需要执行 `xattr -c lonanote.app` 才能打开
-  - 相关链接: [electron-builder #8191](https://github.com/electron-userland/electron-builder/issues/8191)、[discussions](https://discussions.apple.com/thread/253714860?sortBy=best)
+  - 相关链接: [Apple Discussions](https://discussions.apple.com/thread/253714860?sortBy=best)
 
 
 ## 🗺 待办

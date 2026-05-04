@@ -3,7 +3,9 @@
 #### 🔨 开发环境
 
 - [Rust](https://rustup.rs/) >= 1.94.0-nightly
+- [Bun](https://bun.sh/)
 - Node.js >= 22
+- cargo-tauri CLI（桌面端开发与构建需要）
 - Android 开发环境
   - Android SDK 36
   - buildTools 36.0.0
@@ -23,12 +25,34 @@ sh run.sh install
 
 ```
 
+根目录脚本会读取 [cli/run/config/run_config.toml](../cli/run/config/run_config.toml) 中定义的命令。
+
 #### 🧑‍💻 运行
 
 ```shell
 run.cmd dev
 # or
 sh run.sh dev
+```
+
+移动端开发：
+
+```shell
+run.cmd dev:android
+run.cmd dev:ios
+# or
+sh run.sh dev:android
+sh run.sh dev:ios
+```
+
+`ui/android/` 与 `ui/ios/` 是 Expo prebuild 生成的原生工程；需要刷新原生工程时可运行：
+
+```shell
+run.cmd prebuild:android
+run.cmd prebuild:ios
+# or
+sh run.sh prebuild:android
+sh run.sh prebuild:ios
 ```
 
 > 首次运行应用程序时会被阻止
@@ -43,42 +67,34 @@ sh run.sh dev
 
 ```shell
 # windows
-run build:win
+run.cmd build:win
 # or
 sh run.sh build:win
 
 # macos x64
-run build:mac:x64
+run.cmd build:mac:x64
 # or
 sh run.sh build:mac:x64
 
 # macos arm64
-run build:mac:arm64
+run.cmd build:mac:arm64
 # or
 sh run.sh build:mac:arm64
 
 # linux
-run build:linux
+run.cmd build:linux
 # or
 sh run.sh build:linux
 
 # android
-run build:android
+run.cmd build:android
 # or
 sh run.sh build:android
 
 # ios
-run build:ios
+run.cmd build:ios
 # or
 sh run.sh build:ios
-```
-
-#### 🧑‍💻 打包 & 运行
-
-```shell
-run.cmd preview
-# or
-sh run.sh preview
 ```
 
 #### generate icon

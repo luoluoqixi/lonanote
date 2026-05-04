@@ -1,8 +1,8 @@
 # 露娜笔记 (LonaNote)
 
-[中文](README.md) | [English](README_en.md)
+[中文](./README.md) | [English](./README_en.md)
 
-一款本地优先的开源笔记软件，使用 **TypeScript**、**Dart** 和 **Rust** 编写。
+一款本地优先的开源笔记软件，使用 **TypeScript** 和 **Rust** 编写。
 
 ## 🎉 简介
 
@@ -18,7 +18,7 @@
 - **本地存储** - 完全本地存储 Markdown 文本文件
 - **使用原始文件系统** - 无数据库
 - **所见即所得编辑** - 实时预览
-- **架构** - 桌面端使用 Electron，移动端使用 Flutter，核心使用 Rust
+- **架构** - 桌面端使用 Tauri + React Native Web，移动端使用 Expo / React Native，核心使用 Rust
 
 
 ### 🎹 快捷键

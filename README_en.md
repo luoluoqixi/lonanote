@@ -18,7 +18,7 @@ Notes are **stored offline** in plain Markdown format, allowing seamless migrati
 - **Local storage** - Plain Markdown files, no vendor lock-in
 - **File-system based** - No proprietary databases
 - **WYSIWYG editing** - Real-time preview
-- **Architecture** - React Native (ui), Rust (core)
+- **Architecture** - Tauri + React Native Web on desktop, Expo / React Native on mobile, Rust in the core layer
 
 ### 📸 Screenshots
 
@@ -63,7 +63,7 @@ Typing the / character in the editor triggers a slash menu, allowing quick inser
 
 - Mac prompts `lonanote.app Is Damaged and Can’t Be Opened. You Should Move It To The Trash`
   - Due to being unsigned, you need to execute `xattr -c lonanote.app` to open it for the first time.
-  - Related links: [electron-builder #8191](https://github.com/electron-userland/electron-builder/issues/8191), [discussions](https://discussions.apple.com/thread/253714860?sortBy=best)
+  - Related links: [Apple Discussions](https://discussions.apple.com/thread/253714860?sortBy=best)
 
 ## 🗺 Roadmap
 

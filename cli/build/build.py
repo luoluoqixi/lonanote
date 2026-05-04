@@ -10,12 +10,14 @@ import zipfile
 
 import utils
 
+
 def zip_file(folder_path, target_zip_path):
-    with zipfile.ZipFile(target_zip_path, 'w', zipfile.ZIP_LZMA) as zipf:
+    with zipfile.ZipFile(target_zip_path, "w", zipfile.ZIP_LZMA) as zipf:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
                 zipf.write(file_path, os.path.relpath(file_path, folder_path))
+
 
 def get_current_version():
     tags = utils.subprocess_check_output(["git", "tag"])
@@ -25,12 +27,31 @@ def get_current_version():
         if not tag.startswith("v") or "-" in tag:
             continue
         versions.append(tag[1:])
-    versions.sort(key=lambda x:tuple(int(v) for v in x.split(".")))
-    last_version = versions.pop();
+    versions.sort(key=lambda x: tuple(int(v) for v in x.split(".")))
+    last_version = versions.pop()
     return last_version
+
 
 def get_output_file_path(repo_root, build_dir, build_name, release_title, suffix):
     return os.path.join(repo_root, build_dir, f"{build_name}-{release_title}-{suffix}")
+
+
+def find_latest_artifact(repo_root, patterns):
+    repo_root_path = pathlib.Path(repo_root)
+    matches = []
+
+    for pattern in patterns:
+        matches.extend(path for path in repo_root_path.glob(pattern) if path.is_file())
+
+    if not matches:
+        joined_patterns = ", ".join(patterns)
+        raise FileNotFoundError(
+            f"No build artifact found for patterns: {joined_patterns}"
+        )
+
+    matches.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    return str(matches[0])
+
 
 def zip_folder_to_file(dist_folder, output_file):
     output_file_path = pathlib.Path(output_file)
@@ -53,6 +74,7 @@ def zip_folder_to_file(dist_folder, output_file):
 
     zip_file(target_folder, output_file)
 
+
 def move_file_to_file(dist_file, output_file):
     output_file_path = pathlib.Path(output_file)
     dir_folder = os.path.dirname(output_file)
@@ -66,6 +88,7 @@ def move_file_to_file(dist_file, output_file):
         # shutil.rmtree(output_file_path)
     print(f"move {dist_file} to {output_file_path}")
     shutil.move(dist_file, output_file_path)
+
 
 def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
     if build_dir is None:
@@ -103,7 +126,9 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
 
     print("run install...")
     if platform == "win":
-        utils.subprocess_run(["cmd", "/c", ".\\run.cmd", "install"], working_dir=repo_root)
+        utils.subprocess_run(
+            ["cmd", "/c", ".\\run.cmd", "install"], working_dir=repo_root
+        )
     else:
         utils.subprocess_run(["sh", "./run.sh", "install"], working_dir=repo_root)
 
@@ -111,64 +136,65 @@ def build(repo_root, runner_name, build_dir, build_name, release_title, suffix):
 
     print(f"run build:{platform}...")
     if platform == "win":
-        utils.subprocess_run(["cmd", "/c", ".\\run.cmd", f"build:{platform}"], working_dir=repo_root)
+        utils.subprocess_run(
+            ["cmd", "/c", ".\\run.cmd", f"build:{platform}"], working_dir=repo_root
+        )
     else:
-        utils.subprocess_run(["sh", "./run.sh", f"build:{platform}"], working_dir=repo_root)
+        utils.subprocess_run(
+            ["sh", "./run.sh", f"build:{platform}"], working_dir=repo_root
+        )
     print(f"run build:{platform} finish")
 
-    # zip output
     if platform == "win":
-        # TODO windows flutter support
-        pass
-        # if suffix is None:
-        #     suffix = "windows.exe"
-        # dist_exe = os.path.join(repo_root, f"ui/ts/dist/lonanote Setup {version}.exe")
-        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        # move_file_to_file(dist_exe, output_file)
+        if suffix is None:
+            suffix = "windows.exe"
+        dist_exe = find_latest_artifact(repo_root, ["target/**/bundle/nsis/*.exe"])
+        output_file = get_output_file_path(
+            repo_root, build_dir, build_name, release_title, suffix
+        )
+        move_file_to_file(dist_exe, output_file)
     elif platform == "mac":
-        # TODO macos flutter support
-        pass
-        # if suffix is None:
-        #     suffix = "mac-arm64.zip"
-        # dist_suffix = ""
-        # if runner_name == "build mac-arm64":
-        #     dist_suffix = "-arm64"
-        # elif runner_name == "build mac-x64":
-        #     dist_suffix = ""
-        # dist_dmg = os.path.join(
-        #     repo_root, f"ui/ts/dist/lonanote-{version}{dist_suffix}.dmg"
-        # )
-        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        # move_file_to_file(dist_dmg, output_file)
+        if suffix is None:
+            suffix = "mac.dmg"
+        dist_dmg = find_latest_artifact(repo_root, ["target/**/bundle/dmg/*.dmg"])
+        output_file = get_output_file_path(
+            repo_root, build_dir, build_name, release_title, suffix
+        )
+        move_file_to_file(dist_dmg, output_file)
     elif platform == "linux":
-        # TODO linux flutter support
-        pass
-        # if suffix is None:
-        #     suffix = "linux.AppImage"
-        # dist_appimage = os.path.join(repo_root, f"ui/ts/dist/lonanote-{version}.AppImage")
-        # output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
-        # move_file_to_file(dist_appimage, output_file)
+        if suffix is None:
+            suffix = "linux.AppImage"
+        dist_appimage = find_latest_artifact(
+            repo_root, ["target/**/bundle/appimage/*.AppImage"]
+        )
+        output_file = get_output_file_path(
+            repo_root, build_dir, build_name, release_title, suffix
+        )
+        move_file_to_file(dist_appimage, output_file)
     elif platform == "android":
         if suffix is None:
             suffix = "android.apk"
-        dist_apk = os.path.join(
-            repo_root, f"ui/build/app/outputs/flutter-apk/app-release.apk"
+        dist_apk = find_latest_artifact(
+            repo_root, ["ui/android/app/build/outputs/apk/release/*.apk"]
         )
-        output_file = get_output_file_path(repo_root, build_dir, build_name, release_title, suffix)
+        output_file = get_output_file_path(
+            repo_root, build_dir, build_name, release_title, suffix
+        )
         move_file_to_file(dist_apk, output_file)
+
 
 def main():
     # 修复 windows 编码问题
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stderr = codecs.getwriter("utf-8")(sys.stderr.detach())
 
-    repo_root = os.environ.get('GITHUB_WORKSPACE')
-    release_title = os.environ.get('RELEASE_TITLE')
-    build_dir = os.environ.get('BUILD_DIR')
-    build_name = os.environ.get('BUILD_NAME')
-    runner_os = os.environ.get('RUNNER_OS')
+    repo_root = os.environ.get("GITHUB_WORKSPACE")
+    release_title = os.environ.get("RELEASE_TITLE")
+    build_dir = os.environ.get("BUILD_DIR")
+    build_name = os.environ.get("BUILD_NAME")
+    runner_os = os.environ.get("RUNNER_OS")
     runner_name = os.environ.get("RUNNER_CONFIG_NAME")
-    suffix = os.environ.get('SUFFIX')
+    suffix = os.environ.get("SUFFIX")
 
     current_dir = os.getcwd()
 
@@ -186,5 +212,6 @@ def main():
 
     build(repo_root, runner_name, build_dir, build_name, release_title, suffix)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
