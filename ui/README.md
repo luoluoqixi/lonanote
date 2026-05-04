@@ -3,14 +3,16 @@
 #### 🔨 开发环境
 
 - [Rust](https://rustup.rs/) >= 1.94.0-nightly
-- [Bun](https://bun.sh/)
-- Node.js >= 22
-- cargo-tauri CLI（桌面端开发与构建需要） ^2.1.0
+  - `cargo install tauri-cli --version ^2.1.0 --locked` 桌面开发需要
+- [Bun](https://bun.sh/) ^1.3.13
+- [Node.js](https://nodejs.org/) >= 22
 - Android 开发环境
   - Android SDK 36
   - buildTools 36.0.0
   - ndkVersion 27.1.12297006
   - java 17
+  - ANDROID_SDK_ROOT 环境变量指向 Android SDK 安装路径
+  - `rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android`
 - iOS 开发环境
   - Xcode 26.2
   - CocoaPods 1.16.2
