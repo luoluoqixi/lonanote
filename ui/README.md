@@ -5,7 +5,7 @@
 - [Rust](https://rustup.rs/) >= 1.94.0-nightly
 - [Bun](https://bun.sh/)
 - Node.js >= 22
-- cargo-tauri CLI（桌面端开发与构建需要）
+- cargo-tauri CLI（桌面端开发与构建需要） ^2.1.0
 - Android 开发环境
   - Android SDK 36
   - buildTools 36.0.0

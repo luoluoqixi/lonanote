@@ -38,15 +38,15 @@ rust-embed = "8.11"
 cmdreg = { git = "https://github.com/luoluoqixi/cmdreg", branch = "main" }
 
 # tauri
-tauri-build = { version = "2.5.6" }
-tauri = { version = "2.10.3" }
+tauri-build = { version = "2.6.0" }
+tauri = { version = "2.11.0" }
 specta = { version = "=2.0.0-rc.24" }
 tauri-plugin-clipboard-manager = { version = "2.3.2" }
 tauri-plugin-decorum = { version = "1.1.1" }
-tauri-plugin-fs = { version = "2.5.0" }
+tauri-plugin-fs = { version = "2.5.1" }
 tauri-plugin-log = { version = "2.8.0" }
 tauri-plugin-os = { version = "2.3.2" }
-tauri-plugin-dialog = { version = "2.7.0" }
+tauri-plugin-dialog = { version = "2.7.1" }
 tauri-plugin-shell = { version = "2.3.5" }
 # tauri-plugin-updater = { version = "2.10.1" }
 
