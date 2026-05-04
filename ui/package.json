@@ -36,6 +36,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "expo": "~55.0.18",
+    "expo-build-properties": "~55.0.13",
     "expo-constants": "~55.0.15",
     "expo-device": "~55.0.15",
     "expo-font": "~55.0.6",

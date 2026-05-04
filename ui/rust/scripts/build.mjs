@@ -10,7 +10,7 @@ const scriptDir = path.dirname(__filename);
 const rustRoot = path.resolve(scriptDir, "..");
 const uiRoot = path.resolve(rustRoot, "..");
 const workspaceRoot = path.resolve(rustRoot, "..", "..");
-const sdkConfigPath = path.join(uiRoot, "tools", "prebuild", "sdk_config.txt");
+const sdkConfigPath = path.join(uiRoot, "sdk_config.txt");
 const rootAndroidGradleProperties = path.join(uiRoot, "android", "gradle.properties");
 const moduleAndroidGradleProperties = path.join(rustRoot, "android", "gradle.properties");
 const crabyTomlPath = path.join(rustRoot, "craby.toml");
@@ -23,7 +23,6 @@ const platformConfigPaths = {
   android: path.join(rustRoot, "craby.android.toml"),
   ios: path.join(rustRoot, "craby.ios.toml"),
 };
-const ANDROID_NDK_VERSION_KEY = "ANDROID_NDK_VERSION";
 const CACHE_VERSION = 1;
 const codeFileExtensions = new Set([
   ".c",
@@ -245,7 +244,7 @@ function getConfiguredNdkVersion() {
 
   return (
     process.env.LONANOTE_ANDROID_NDK_VERSION ||
-    sdkConfig[ANDROID_NDK_VERSION_KEY] ||
+    sdkConfig.ANDROID_NDK_VERSION ||
     rootProperties["android.ndkVersion"] ||
     moduleProperties["android.ndkVersion"] ||
     moduleProperties.LonanoteRustModule_ndkVersion
