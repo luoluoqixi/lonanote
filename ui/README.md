@@ -7,10 +7,11 @@
 - [Bun](https://bun.sh/) ^1.3.13
 - [Node.js](https://nodejs.org/) >= 22
 - Android 开发环境
+  - Android Studio Windows 平台目前使用 2025.3.3 测试, 建议使用此版本或更高版本
   - Android SDK == 36
   - buildTools == 36.0.0
   - ndkVersion == 27.1.12297006
-  - java >= 17
+  - java >= 17  Windows 平台使用 Android Studio 内置的 JBR（java 21.0.10） 测试通过, MacOS使用 openjdk 17 测试通过
   - ANDROID_SDK_ROOT 环境变量指向 Android SDK 安装路径
   - JAVA_HOME Android Studio 安装路径下的 jbr 目录，例如 `C:\Program Files\Android\Android Studio\jbr`
   - `rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android`
