@@ -14,29 +14,24 @@ export function Dialog({
   return (
     <DialogPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="absolute inset-0 bg-black/45" />
-        <View
-          className="absolute inset-0 items-center justify-center px-4"
-          pointerEvents="box-none"
-        >
-          <DialogPrimitive.Content className="w-full max-w-105 rounded-2xl bg-content1 p-6 shadow-xl">
-            <DialogPrimitive.Close className="self-end rounded-md px-2 py-1">
-              <Text className="text-sm text-foreground/70">关闭</Text>
-            </DialogPrimitive.Close>
-            <View className="mt-1 mb-4 gap-1.5">
-              <DialogPrimitive.Title className="text-lg font-semibold text-foreground">
-                {title}
-              </DialogPrimitive.Title>
-              {description ? (
-                <DialogPrimitive.Description className="text-sm leading-6 text-foreground/70">
-                  {description}
-                </DialogPrimitive.Description>
-              ) : null}
-            </View>
-            {children ? <View className="mb-4">{children}</View> : null}
-            {actions ? <View className="flex-row justify-end gap-3">{actions}</View> : null}
-          </DialogPrimitive.Content>
-        </View>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/45" />
+        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-overlay p-6 shadow-overlay outline-none">
+          <DialogPrimitive.Close className="absolute top-3 right-2.5 z-10 rounded-md px-2 py-1">
+            <Text className="text-sm text-foreground/70">关闭</Text>
+          </DialogPrimitive.Close>
+          <View className="mb-4 gap-1.5 pr-12">
+            <DialogPrimitive.Title className="text-lg font-semibold text-foreground">
+              {title}
+            </DialogPrimitive.Title>
+            {description ? (
+              <DialogPrimitive.Description className="text-sm leading-6 text-foreground/70">
+                {description}
+              </DialogPrimitive.Description>
+            ) : null}
+          </View>
+          {children ? <View className="mb-4">{children}</View> : null}
+          {actions ? <View className="flex-row justify-end gap-3">{actions}</View> : null}
+        </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
   );

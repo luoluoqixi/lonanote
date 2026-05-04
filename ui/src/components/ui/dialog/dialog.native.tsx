@@ -16,8 +16,8 @@ export function Dialog({
       <HeroUIDialog.Portal>
         <HeroUIDialog.Overlay />
         <HeroUIDialog.Content>
-          <HeroUIDialog.Close variant="ghost" />
-          <View className="mb-4 gap-1.5">
+          <HeroUIDialog.Close variant="ghost" className="absolute top-3 right-2.5 z-50" />
+          <View className="mb-4 gap-1.5 pr-10">
             <HeroUIDialog.Title>{title}</HeroUIDialog.Title>
             {description ? (
               <HeroUIDialog.Description>{description}</HeroUIDialog.Description>
