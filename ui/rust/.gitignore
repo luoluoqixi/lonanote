@@ -81,6 +81,7 @@ android/generated
 
 # Craby
 .craby/
+.build-cache/
 target/
 android/src/main/jni/libs/
 ios/framework/

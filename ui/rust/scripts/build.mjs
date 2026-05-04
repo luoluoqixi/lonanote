@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -8,15 +9,51 @@ const __filename = fileURLToPath(import.meta.url);
 const scriptDir = path.dirname(__filename);
 const rustRoot = path.resolve(scriptDir, "..");
 const uiRoot = path.resolve(rustRoot, "..");
+const workspaceRoot = path.resolve(rustRoot, "..", "..");
 const sdkConfigPath = path.join(uiRoot, "tools", "prebuild", "sdk_config.txt");
 const rootAndroidGradleProperties = path.join(uiRoot, "android", "gradle.properties");
 const moduleAndroidGradleProperties = path.join(rustRoot, "android", "gradle.properties");
 const crabyTomlPath = path.join(rustRoot, "craby.toml");
+
+const CACHE_DIR = ".build-cache";
+
+const buildCacheDir = path.join(rustRoot, CACHE_DIR);
+const buildCacheManifestPath = path.join(buildCacheDir, "rust-module-build.json");
 const platformConfigPaths = {
   android: path.join(rustRoot, "craby.android.toml"),
   ios: path.join(rustRoot, "craby.ios.toml"),
 };
 const ANDROID_NDK_VERSION_KEY = "ANDROID_NDK_VERSION";
+const CACHE_VERSION = 1;
+const codeFileExtensions = new Set([
+  ".c",
+  ".cc",
+  ".cpp",
+  ".h",
+  ".hpp",
+  ".js",
+  ".jsx",
+  ".m",
+  ".mm",
+  ".rs",
+  ".ts",
+  ".tsx",
+]);
+const ignoredDirectoryNames = new Set([
+  CACHE_DIR,
+  ".craby",
+  ".git",
+  "build",
+  "dist",
+  "node_modules",
+  "target",
+]);
+const androidTargetToAbi = new Map([
+  ["aarch64-linux-android", "arm64-v8a"],
+  ["armv7-linux-androideabi", "armeabi-v7a"],
+  ["x86_64-linux-android", "x86_64"],
+  ["i686-linux-android", "x86"],
+]);
 
 const androidToolchains = new Map([
   [
@@ -57,6 +94,26 @@ const androidToolchains = new Map([
   ],
 ]);
 
+function normalizePath(filePath) {
+  return filePath.split(path.sep).join("/");
+}
+
+function toWorkspaceRelativePath(filePath) {
+  return normalizePath(path.relative(workspaceRoot, filePath));
+}
+
+function hashBuffer(buffer) {
+  return crypto.createHash("sha256").update(buffer).digest("hex");
+}
+
+function hashString(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function hashFile(filePath) {
+  return hashBuffer(fs.readFileSync(filePath));
+}
+
 function readProperties(filePath) {
   if (!fs.existsSync(filePath)) {
     return {};
@@ -89,6 +146,88 @@ function readEnvStyleConfig(filePath) {
   }
 
   return readProperties(filePath);
+}
+
+function collectCodeFiles(rootPath) {
+  const files = [];
+
+  function walk(currentPath) {
+    if (!fs.existsSync(currentPath)) {
+      return;
+    }
+
+    const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+
+    for (const entry of entries) {
+      const entryPath = path.join(currentPath, entry.name);
+
+      if (entry.isDirectory()) {
+        if (ignoredDirectoryNames.has(entry.name)) {
+          continue;
+        }
+
+        walk(entryPath);
+        continue;
+      }
+
+      if (!entry.isFile()) {
+        continue;
+      }
+
+      if (!codeFileExtensions.has(path.extname(entry.name))) {
+        continue;
+      }
+
+      files.push(entryPath);
+    }
+  }
+
+  walk(rootPath);
+
+  return files;
+}
+
+function createFileSnapshot(filePaths) {
+  const snapshot = {};
+
+  for (const filePath of [...filePaths].sort((left, right) => left.localeCompare(right))) {
+    snapshot[toWorkspaceRelativePath(filePath)] = hashFile(filePath);
+  }
+
+  return snapshot;
+}
+
+function createSnapshotFingerprint(snapshot) {
+  return hashString(
+    Object.entries(snapshot)
+      .map(([filePath, fileHash]) => `${filePath}:${fileHash}`)
+      .join("\n"),
+  );
+}
+
+function getSourceFileSnapshot() {
+  const sourceRoots = [
+    path.join(rustRoot, "src"),
+    path.join(rustRoot, "crates"),
+    path.join(workspaceRoot, "rust"),
+  ];
+  const sourceFiles = sourceRoots.flatMap((rootPath) => collectCodeFiles(rootPath));
+  const files = createFileSnapshot(sourceFiles);
+
+  return {
+    files,
+    fingerprint: createSnapshotFingerprint(files),
+  };
+}
+
+function getCommonArtifactPaths() {
+  return [
+    path.join(rustRoot, "dist", "index.js"),
+    path.join(rustRoot, "dist", "index.mjs"),
+    path.join(rustRoot, "dist", "index.d.ts"),
+    path.join(rustRoot, "dist", "index.d.mts"),
+  ];
 }
 
 function getAndroidSdkRoot() {
@@ -222,11 +361,11 @@ function syncCrabyTargets(configPath) {
 
   const originalContent = fs.readFileSync(crabyTomlPath, "utf8");
   const sourceContent = fs.readFileSync(configPath, "utf8");
-  const androidTargets = extractSectionTargets(sourceContent, "android");
-  const iosTargets = extractSectionTargets(sourceContent, "ios");
+  const selectedAndroidTargets = extractSectionTargets(sourceContent, "android");
+  const selectedIosTargets = extractSectionTargets(sourceContent, "ios");
 
-  let nextContent = replaceSectionTargets(originalContent, "android", androidTargets);
-  nextContent = replaceSectionTargets(nextContent, "ios", iosTargets);
+  let nextContent = replaceSectionTargets(originalContent, "android", selectedAndroidTargets);
+  nextContent = replaceSectionTargets(nextContent, "ios", selectedIosTargets);
 
   if (nextContent !== originalContent) {
     fs.writeFileSync(crabyTomlPath, nextContent, "utf8");
@@ -234,13 +373,180 @@ function syncCrabyTargets(configPath) {
 
   return {
     originalContent,
-    androidTargets,
-    iosTargets,
+    androidTargets: selectedAndroidTargets,
+    iosTargets: selectedIosTargets,
   };
 }
 
 function restoreCrabyToml(originalContent) {
   fs.writeFileSync(crabyTomlPath, originalContent, "utf8");
+}
+
+function getAndroidArtifactPaths(androidTargets) {
+  const artifactPaths = [
+    path.join(rustRoot, "android", "src", "main", "jni", "include", "ffi.rs.h"),
+    path.join(rustRoot, "android", "src", "main", "jni", "src", "ffi.rs.cc"),
+  ];
+
+  for (const target of androidTargets) {
+    const abi = androidTargetToAbi.get(target);
+    if (!abi) {
+      throw new Error(`Unsupported Android target in cache config: ${target}`);
+    }
+
+    artifactPaths.push(
+      path.join(
+        rustRoot,
+        "android",
+        "src",
+        "main",
+        "jni",
+        "libs",
+        abi,
+        "liblonanoterustmodule-prebuilt.a",
+      ),
+    );
+  }
+
+  return artifactPaths;
+}
+
+function getIosArtifactPaths() {
+  const xcframeworkRoot = path.join(
+    rustRoot,
+    "ios",
+    "framework",
+    "liblonanoterustmodule.xcframework",
+  );
+
+  return [
+    path.join(rustRoot, "ios", "include", "ffi.rs.h"),
+    path.join(xcframeworkRoot, "Info.plist"),
+    path.join(xcframeworkRoot, "ios-arm64", "liblonanoterustmodule-prebuilt.a"),
+    path.join(xcframeworkRoot, "ios-arm64_x86_64-simulator", "liblonanoterustmodule-prebuilt.a"),
+  ];
+}
+
+function getExpectedArtifactPaths(platform, androidTargets) {
+  const commonArtifacts = getCommonArtifactPaths();
+
+  if (platform === "android") {
+    return [...getAndroidArtifactPaths(androidTargets), ...commonArtifacts];
+  }
+
+  return [...getIosArtifactPaths(), ...commonArtifacts];
+}
+
+function createArtifactSnapshot(platform, androidTargets) {
+  const expectedArtifactPaths = getExpectedArtifactPaths(platform, androidTargets);
+  const missingFiles = expectedArtifactPaths.filter((filePath) => !fs.existsSync(filePath));
+
+  if (missingFiles.length > 0) {
+    return {
+      missingFiles: missingFiles.map((filePath) => toWorkspaceRelativePath(filePath)),
+    };
+  }
+
+  const files = createFileSnapshot(expectedArtifactPaths);
+
+  return {
+    files,
+    fingerprint: createSnapshotFingerprint(files),
+    missingFiles: [],
+  };
+}
+
+function loadBuildCache() {
+  if (!fs.existsSync(buildCacheManifestPath)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(buildCacheManifestPath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function saveBuildCache(platform, entry) {
+  ensureDir(buildCacheDir);
+
+  const currentCache = loadBuildCache() || {};
+  const nextCache = {
+    version: CACHE_VERSION,
+    platforms: {
+      ...(currentCache.platforms || {}),
+      [platform]: entry,
+    },
+  };
+
+  fs.writeFileSync(buildCacheManifestPath, `${JSON.stringify(nextCache, null, 2)}\n`, "utf8");
+}
+
+function getTargetFingerprint(targets) {
+  return hashString(targets.join("\n"));
+}
+
+function shouldSkipBuild({ force, platform, sourceSnapshot, platformTargets }) {
+  if (force) {
+    return {
+      skip: false,
+      reason: "Force rebuild requested.",
+    };
+  }
+
+  const buildCache = loadBuildCache();
+  if (!buildCache || buildCache.version !== CACHE_VERSION) {
+    return {
+      skip: false,
+      reason: "Build cache is missing or outdated.",
+    };
+  }
+
+  const cachedEntry = buildCache.platforms?.[platform];
+  if (!cachedEntry) {
+    return {
+      skip: false,
+      reason: `No cached ${platform} build was found.`,
+    };
+  }
+
+  if (cachedEntry.targetFingerprint !== getTargetFingerprint(platformTargets)) {
+    return {
+      skip: false,
+      reason: `${platform} target list changed.`,
+    };
+  }
+
+  if (cachedEntry.sourceFingerprint !== sourceSnapshot.fingerprint) {
+    return {
+      skip: false,
+      reason: "Source files changed.",
+    };
+  }
+
+  const artifactSnapshot = createArtifactSnapshot(
+    platform,
+    platform === "android" ? platformTargets : [],
+  );
+  if (artifactSnapshot.missingFiles.length > 0) {
+    return {
+      skip: false,
+      reason: `Missing build artifacts: ${artifactSnapshot.missingFiles.join(", ")}`,
+    };
+  }
+
+  if (cachedEntry.artifactFingerprint !== artifactSnapshot.fingerprint) {
+    return {
+      skip: false,
+      reason: "Build artifacts changed or were replaced.",
+    };
+  }
+
+  return {
+    skip: true,
+    reason: `${platform} build cache hit.`,
+  };
 }
 
 function syncIosXcframeworkArtifacts() {
@@ -356,18 +662,46 @@ function buildAndroid(androidTargets) {
   run("bun", ["x", "tsdown"], { env });
 }
 
-function parsePlatformArg() {
+function parseArgs() {
   const platform = process.argv[2];
+  const flags = new Set(process.argv.slice(3));
+
   if (!platform || !(platform in platformConfigPaths)) {
-    throw new Error("Usage: node ./scripts/build.mjs <android|ios>");
+    throw new Error("Usage: node ./scripts/build.mjs <android|ios> [--force]");
   }
 
-  return platform;
+  for (const flag of flags) {
+    if (flag !== "--force") {
+      throw new Error(`Unknown option: ${flag}`);
+    }
+  }
+
+  return {
+    platform,
+    force: flags.has("--force"),
+  };
 }
 
 function main() {
-  const platform = parsePlatformArg();
+  const { platform, force } = parseArgs();
   const configPath = platformConfigPaths[platform];
+  const configContent = fs.readFileSync(configPath, "utf8");
+  const configuredAndroidTargets = extractSectionTargets(configContent, "android");
+  const configuredIosTargets = extractSectionTargets(configContent, "ios");
+  const platformTargets = platform === "android" ? configuredAndroidTargets : configuredIosTargets;
+  const sourceSnapshot = getSourceFileSnapshot();
+  const cacheDecision = shouldSkipBuild({
+    force,
+    platform,
+    sourceSnapshot,
+    platformTargets,
+  });
+
+  console.log(cacheDecision.reason);
+  if (cacheDecision.skip) {
+    return;
+  }
+
   const { originalContent, androidTargets, iosTargets } = syncCrabyTargets(configPath);
   let buildError;
 
@@ -377,10 +711,30 @@ function main() {
 
     if (platform === "android") {
       buildAndroid(androidTargets);
-      return;
+    } else {
+      buildIos();
     }
 
-    buildIos();
+    const artifactSnapshot = createArtifactSnapshot(
+      platform,
+      platform === "android" ? androidTargets : [],
+    );
+    if (artifactSnapshot.missingFiles.length > 0) {
+      throw new Error(
+        `Build completed but required artifacts are missing: ${artifactSnapshot.missingFiles.join(", ")}`,
+      );
+    }
+
+    saveBuildCache(platform, {
+      updatedAt: new Date().toISOString(),
+      targetFingerprint: getTargetFingerprint(platformTargets),
+      targets: platformTargets,
+      sourceFingerprint: sourceSnapshot.fingerprint,
+      sourceFiles: sourceSnapshot.files,
+      artifactFingerprint: artifactSnapshot.fingerprint,
+      artifacts: artifactSnapshot.files,
+    });
+    console.log(`Saved ${platform} build cache.`);
   } catch (error) {
     buildError = error;
   } finally {

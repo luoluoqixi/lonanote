@@ -46,7 +46,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
     "build:android": "node ./scripts/build.mjs android",
+    "build:android:force": "node ./scripts/build.mjs android --force",
     "build:ios": "node ./scripts/build.mjs ios",
+    "build:ios:force": "node ./scripts/build.mjs ios --force",
     "clean": "bun x craby clean",
     "generate": "bun x crabygen"
   },

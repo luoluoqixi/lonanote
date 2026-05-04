@@ -268,6 +268,17 @@ args = ["run", "build:android"]
 run_dir = "ui/rust"
 
 
+# build:module:android:force command
+[[commands]]
+name = "build:module:android:force"
+description = "Force Build Android Module"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:android:force"]
+run_dir = "ui/rust"
+
+
 # build:module:ios command
 [[commands]]
 name = "build:module:ios"
@@ -276,6 +287,17 @@ description = "Build iOS Module"
 [[commands.cmds]]
 cmd = "bun"
 args = ["run", "build:ios"]
+run_dir = "ui/rust"
+
+
+# build:module:ios:force command
+[[commands]]
+name = "build:module:ios:force"
+description = "Force Build iOS Module"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:ios:force"]
 run_dir = "ui/rust"
 
 
