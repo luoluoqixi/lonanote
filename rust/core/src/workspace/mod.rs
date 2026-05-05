@@ -11,6 +11,9 @@ pub mod workspace_runtime;
 pub mod workspace_savedata;
 pub mod workspace_settings;
 
+#[cfg(test)]
+mod tests;
+
 use std::sync::{Arc, LazyLock};
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
