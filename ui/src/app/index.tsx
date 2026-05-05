@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { app } from "@/api";
+import { PathDebugPanel } from "@/components/debug";
 import { Button, Dialog } from "@/components/ui";
 
 export default function HomeScreen() {
@@ -15,14 +16,20 @@ export default function HomeScreen() {
   }
 
   return (
-    <View className="flex-1 items-center justify-center gap-4 bg-background px-6">
-      <Button variant="primary" onPress={handleCallRust}>
-        Call Rust
-      </Button>
-      <Button variant="outline" onPress={() => setIsDialogOpen(true)}>
-        Open Dialog
-      </Button>
-      <Text className="text-foreground">Rust version result: {result || "未调用"}</Text>
+    <>
+      <ScrollView className="flex-1 bg-background" contentContainerClassName="gap-4 px-6 py-10">
+        <View className="gap-4">
+          <Button variant="primary" onPress={handleCallRust}>
+            Call Rust
+          </Button>
+          <Button variant="outline" onPress={() => setIsDialogOpen(true)}>
+            Open Dialog
+          </Button>
+          <Text className="text-foreground">Rust version result: {result || "未调用"}</Text>
+        </View>
+
+        <PathDebugPanel />
+      </ScrollView>
 
       <Dialog
         isOpen={isDialogOpen}
@@ -49,6 +56,6 @@ export default function HomeScreen() {
           业务层只使用统一的 Dialog 包装层，不直接依赖具体第三方实现。
         </Text>
       </Dialog>
-    </View>
+    </>
   );
 }
