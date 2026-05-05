@@ -70,11 +70,17 @@
     "uniwind": "^1.6.3"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
     "@eslint/js": "^10.0.1",
     "@expo/config-plugins": "^55.0.8",
     "@types/react": "~19.2.5",
+    "babel-preset-expo": "^55.0.20",
     "cross-env": "^10.1.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "patchedDependencies": {
+    "heroui-native@1.0.2": "patches/heroui-native@1.0.2.patch",
+    "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch"
+  }
 }
