@@ -47,6 +47,11 @@ where
             command.creation_flags(CREATE_NO_WINDOW);
         }
     }
+    #[cfg(not(target_os = "windows"))]
+    {
+        // 在非Windows平台上，hide_window参数没有实际作用
+        let _ = hide_window;
+    }
     command.args(args);
 
     command
