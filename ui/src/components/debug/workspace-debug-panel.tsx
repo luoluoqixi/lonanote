@@ -4,18 +4,20 @@ import { Text, View } from "react-native";
 import {
   WorkspaceRecord,
   WorkspaceRoot,
-  WorkspaceState,
   WorkspaceSyncSummary,
+  useCurrentWorkspaceState,
   useWorkspaceSession,
   workspaceRegistry,
-  workspaceRuntime,
 } from "@/api/commands/workspace";
 import { Button } from "@/components/ui";
 
 type WorkspaceDebugSnapshot = {
   roots: WorkspaceRoot[];
   records: WorkspaceRecord[];
-  currentState: WorkspaceState | null;
+};
+
+type RefreshPanelOptions = {
+  includeWorkspaceState?: boolean;
 };
 
 function formatRootSource(root: WorkspaceRoot) {
@@ -31,19 +33,15 @@ function formatRootSource(root: WorkspaceRoot) {
   }
 }
 
-async function loadWorkspaceDebugSnapshot(
-  currentWorkspaceId: string | null,
-): Promise<WorkspaceDebugSnapshot> {
-  const [roots, records, currentState] = await Promise.all([
+async function loadWorkspaceDebugSnapshot(): Promise<WorkspaceDebugSnapshot> {
+  const [roots, records] = await Promise.all([
     workspaceRegistry.getRoots(),
     workspaceRegistry.listRecords(),
-    currentWorkspaceId ? workspaceRuntime.getState(currentWorkspaceId) : Promise.resolve(null),
   ]);
 
   return {
     roots,
     records,
-    currentState,
   };
 }
 
@@ -78,27 +76,48 @@ function KeyValueRow({ label, value }: { label: string; value: string }) {
 
 export function WorkspaceDebugPanel() {
   const { currentWorkspaceId } = useWorkspaceSession();
+  const {
+    state: currentState,
+    error: workspaceError,
+    isLoading: isWorkspaceLoading,
+    isRefreshing: isWorkspaceRefreshing,
+    isOpening: isWorkspaceOpening,
+    isClosing: isWorkspaceClosing,
+    refresh: refreshWorkspaceState,
+    open: openWorkspace,
+    close: closeWorkspace,
+    clearError: clearWorkspaceError,
+  } = useCurrentWorkspaceState();
   const [roots, setRoots] = useState<WorkspaceRoot[]>([]);
   const [records, setRecords] = useState<WorkspaceRecord[]>([]);
-  const [currentState, setCurrentState] = useState<WorkspaceState | null>(null);
   const [lastSyncSummary, setLastSyncSummary] = useState<WorkspaceSyncSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [panelError, setPanelError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingWorkspaceId, setPendingWorkspaceId] = useState<string | null>(null);
 
-  async function refreshPanel() {
+  const error = panelError ?? workspaceError;
+  const isRefreshingPanel = isRefreshing || isWorkspaceRefreshing;
+
+  async function refreshPanel(options?: RefreshPanelOptions) {
+    const includeWorkspaceState = options?.includeWorkspaceState ?? true;
+
     setIsRefreshing(true);
-    setError(null);
+    setPanelError(null);
+    clearWorkspaceError();
 
     try {
-      const snapshot = await loadWorkspaceDebugSnapshot(currentWorkspaceId);
+      const snapshot = await loadWorkspaceDebugSnapshot();
+
+      if (includeWorkspaceState) {
+        await refreshWorkspaceState();
+      }
+
       setRoots(snapshot.roots);
       setRecords(snapshot.records);
-      setCurrentState(snapshot.currentState);
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : String(nextError);
-      setError(message);
+      setPanelError(message);
     } finally {
       setIsRefreshing(false);
     }
@@ -106,7 +125,7 @@ export function WorkspaceDebugPanel() {
 
   async function handleSyncRoots() {
     setIsSyncing(true);
-    setError(null);
+    setPanelError(null);
 
     try {
       const summary = await workspaceRegistry.syncRoots();
@@ -114,7 +133,7 @@ export function WorkspaceDebugPanel() {
       await refreshPanel();
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : String(nextError);
-      setError(message);
+      setPanelError(message);
     } finally {
       setIsSyncing(false);
     }
@@ -122,15 +141,15 @@ export function WorkspaceDebugPanel() {
 
   async function handleOpenWorkspace(workspaceId: string) {
     setPendingWorkspaceId(workspaceId);
-    setError(null);
+    setPanelError(null);
+    clearWorkspaceError();
 
     try {
-      const nextState = await workspaceRuntime.open(workspaceId);
-      setCurrentState(nextState);
+      await openWorkspace(workspaceId);
       await refreshPanel();
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : String(nextError);
-      setError(message);
+      setPanelError(message);
     } finally {
       setPendingWorkspaceId(null);
     }
@@ -138,22 +157,22 @@ export function WorkspaceDebugPanel() {
 
   async function handleCloseWorkspace(workspaceId: string) {
     setPendingWorkspaceId(workspaceId);
-    setError(null);
+    setPanelError(null);
+    clearWorkspaceError();
 
     try {
-      await workspaceRuntime.close(workspaceId);
-      setCurrentState(null);
+      await closeWorkspace(workspaceId);
       await refreshPanel();
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : String(nextError);
-      setError(message);
+      setPanelError(message);
     } finally {
       setPendingWorkspaceId(null);
     }
   }
 
   useEffect(() => {
-    void refreshPanel();
+    void refreshPanel({ includeWorkspaceState: false });
   }, [currentWorkspaceId]);
 
   return (
@@ -167,13 +186,17 @@ export function WorkspaceDebugPanel() {
         </View>
 
         <View className="flex-row flex-wrap gap-2">
-          <Button variant="outline" onPress={refreshPanel} isDisabled={isRefreshing || isSyncing}>
-            {isRefreshing ? "刷新中..." : "刷新数据"}
+          <Button
+            variant="outline"
+            onPress={refreshPanel}
+            isDisabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
+          >
+            {isRefreshingPanel ? "刷新中..." : "刷新数据"}
           </Button>
           <Button
             variant="outline"
             onPress={handleSyncRoots}
-            isDisabled={isRefreshing || isSyncing}
+            isDisabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
           >
             {isSyncing ? "同步中..." : "同步 Roots"}
           </Button>
@@ -189,7 +212,9 @@ export function WorkspaceDebugPanel() {
           <KeyValueRow label="currentWorkspaceId" value={currentWorkspaceId ?? "null"} />
           <KeyValueRow
             label="runtimeStatus"
-            value={currentState?.runtimeStatus ?? "no-open-workspace"}
+            value={
+              isWorkspaceLoading ? "loading" : (currentState?.runtimeStatus ?? "no-open-workspace")
+            }
           />
           <KeyValueRow
             label="workspacePath"
@@ -251,7 +276,8 @@ export function WorkspaceDebugPanel() {
             records.map((record) => {
               const workspaceId = record.metadata.id;
               const isCurrent = currentWorkspaceId === workspaceId;
-              const isPending = pendingWorkspaceId === workspaceId;
+              const isPending =
+                pendingWorkspaceId === workspaceId && (isWorkspaceOpening || isWorkspaceClosing);
 
               return (
                 <View
