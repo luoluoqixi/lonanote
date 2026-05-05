@@ -21,7 +21,7 @@ function normalizeFilePath(uri: string): string {
 function resolveDefaultPathArgs(): string {
   const dataDir = normalizeFilePath(Paths.document.uri);
   const cacheDir = normalizeFilePath(Paths.cache.uri);
-  const downloadDir = Paths.join(dataDir, "downloads");
+  const downloadDir = normalizeFilePath(Paths.join(dataDir, "downloads"));
   const homeDir = normalizeFilePath(Paths.dirname(Paths.document));
 
   return JSON.stringify({
