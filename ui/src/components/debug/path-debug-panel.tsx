@@ -11,12 +11,11 @@ type PathDebugItem = {
 };
 
 async function loadPathDebugItems(): Promise<PathDebugItem[]> {
-  const [dataDir, cacheDir, downloadDir, homeDir, rootDir] = await Promise.all([
+  const [dataDir, cacheDir, downloadDir, homeDir] = await Promise.all([
     path.getDataDir(),
     path.getCacheDir(),
     path.getDownloadDir(),
     path.getHomeDir(),
-    path.getRootDir(),
   ]);
 
   return [
@@ -25,7 +24,6 @@ async function loadPathDebugItems(): Promise<PathDebugItem[]> {
     { key: "cacheDir", label: "cacheDir", value: cacheDir },
     { key: "downloadDir", label: "downloadDir", value: downloadDir },
     { key: "homeDir", label: "homeDir", value: homeDir },
-    { key: "rootDir", label: "rootDir", value: rootDir },
   ];
 }
 
@@ -58,7 +56,7 @@ export function PathDebugPanel() {
       <View className="flex-row items-center justify-between gap-3">
         <View className="shrink gap-1">
           <Text className="text-base font-semibold text-foreground">路径测试</Text>
-          <Text className="text-sm text-foreground/70">用于观察各平台默认路径和当前 rootDir。</Text>
+          <Text className="text-sm text-foreground/70">用于观察各平台默认路径。</Text>
         </View>
         <Button variant="outline" onPress={refreshPaths} isDisabled={isLoading}>
           {isLoading ? "读取中..." : "刷新路径"}

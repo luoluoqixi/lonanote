@@ -33,6 +33,7 @@ encoding_rs = "0.8"
 reqwest  = { version = "0.13", default-features = false }
 futures = "0.3"
 rust-embed = "8.11"
+uuid = { version = "1.18", features = ["v4", "serde"] }
 
 # cmdreg = "0.2"
 cmdreg = { git = "https://github.com/luoluoqixi/cmdreg", branch = "main" }

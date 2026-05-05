@@ -1,3 +1,4 @@
-export * from "./workspace";
-export * from "./workspaceManager";
+export * from "./workspaceRegistry";
+export * from "./workspaceRuntime";
+export * from "./workspaceSession";
 export * from "./types";

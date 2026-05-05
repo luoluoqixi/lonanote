@@ -28,7 +28,6 @@ impl AppPaths {
 }
 
 static DEFAULT_APP_PATHS: LazyLock<RwLock<Option<AppPaths>>> = LazyLock::new(|| RwLock::new(None));
-static DEFAULT_ROOT_DIR: LazyLock<RwLock<Option<String>>> = LazyLock::new(|| RwLock::new(None));
 
 fn require_app_paths() -> AppPaths {
     DEFAULT_APP_PATHS
@@ -85,12 +84,6 @@ pub fn resolve_default_paths(data_dir: impl AsRef<Path>) -> AppPaths {
     }
 }
 
-pub fn get_root_dir() -> Option<String> {
-    let binding = DEFAULT_ROOT_DIR.read().unwrap();
-    let dir = binding.as_ref();
-    dir.map(|s| s.to_string())
-}
-
 pub fn get_cache_dir() -> String {
     require_app_paths().cache_dir
 }
@@ -109,11 +102,6 @@ pub fn get_download_dir() -> String {
 
 pub fn init_paths(paths: AppPaths) {
     DEFAULT_APP_PATHS.write().unwrap().replace(paths);
-}
-
-pub fn set_root_dir(root_dir: Option<String>) {
-    let mut binding = DEFAULT_ROOT_DIR.write().unwrap();
-    *binding = root_dir;
 }
 
 pub fn init_dir(

@@ -4,9 +4,6 @@ export const path = {
   getCacheDir: async (): Promise<string> => {
     return (await invoke("path.get_cache_dir"))!;
   },
-  getRootDir: async (): Promise<string | null> => {
-    return (await invoke("path.get_root_dir")) ?? null;
-  },
   getHomeDir: async (): Promise<string> => {
     return (await invoke("path.get_home_dir"))!;
   },
@@ -15,9 +12,6 @@ export const path = {
   },
   getDownloadDir: async (): Promise<string> => {
     return (await invoke("path.get_download_dir"))!;
-  },
-  setRootDir: async (rootDir?: string | null): Promise<void> => {
-    await invoke("path.set_root_dir", JSON.stringify({ rootDir: rootDir ?? null }));
   },
   getDocumentDir: async () => {
     // TODO

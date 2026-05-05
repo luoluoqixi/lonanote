@@ -1,9 +1,22 @@
 import { Paths } from "expo-file-system";
 import { LonanoteRustModule } from "lonanote_rust_module";
+import { Platform } from "react-native";
 
 import type { InvokeCommand } from "./types";
 
 const state: any = {};
+
+type StartupWorkspaceRootKind =
+  | "mobileAppSandbox"
+  | "mobileAppCloud"
+  | "mobileAppExternalSandbox"
+  | "custom";
+
+type StartupWorkspaceRoot = {
+  key: string;
+  path: string;
+  kind: StartupWorkspaceRootKind;
+};
 
 function normalizeArgs(args?: string | null | undefined): string | null {
   return args ?? null;
@@ -18,6 +31,39 @@ function normalizeFilePath(uri: string): string {
   return path || "/";
 }
 
+function getDirectoryUri(directory: { uri: string } | string | null | undefined): string | null {
+  if (!directory) {
+    return null;
+  }
+  if (typeof directory === "string") {
+    return normalizeFilePath(directory);
+  }
+  return normalizeFilePath(directory.uri);
+}
+
+function normalizeWorkspaceRootKey(key: string): string {
+  return key
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function pushWorkspaceRoot(
+  roots: StartupWorkspaceRoot[],
+  root: StartupWorkspaceRoot | null,
+  seenPaths: Set<string>,
+) {
+  if (!root) {
+    return;
+  }
+  if (!root.key || !root.path || seenPaths.has(root.path)) {
+    return;
+  }
+  seenPaths.add(root.path);
+  roots.push(root);
+}
+
 function resolveDefaultPathArgs(): string {
   const dataDir = normalizeFilePath(Paths.document.uri);
   const cacheDir = normalizeFilePath(Paths.cache.uri);
@@ -30,6 +76,40 @@ function resolveDefaultPathArgs(): string {
     downloadDir,
     homeDir,
   });
+}
+
+function resolveStartupWorkspaceRoots(): StartupWorkspaceRoot[] {
+  const roots: StartupWorkspaceRoot[] = [];
+  const seenPaths = new Set<string>();
+
+  pushWorkspaceRoot(
+    roots,
+    {
+      key: normalizeWorkspaceRootKey(`${Platform.OS}-app-sandbox`),
+      path: normalizeFilePath(Paths.document.uri),
+      kind: "mobileAppSandbox",
+    },
+    seenPaths,
+  );
+
+  if (Platform.OS === "ios") {
+    for (const [containerId, directory] of Object.entries(Paths.appleSharedContainers ?? {})) {
+      const path = getDirectoryUri(directory);
+      pushWorkspaceRoot(
+        roots,
+        path
+          ? {
+              key: normalizeWorkspaceRootKey(`ios-shared-${containerId}`),
+              path,
+              kind: "mobileAppCloud",
+            }
+          : null,
+        seenPaths,
+      );
+    }
+  }
+
+  return roots;
 }
 
 function throwInitError() {
@@ -60,9 +140,31 @@ async function ensureDefaultPathsInitialized() {
   await state.pathsInitPromise;
 }
 
+async function ensureWorkspaceRootsInitialized() {
+  if (state.workspaceRootsInitialized) {
+    return;
+  }
+
+  if (!state.workspaceRootsInitPromise) {
+    state.workspaceRootsInitPromise = (async () => {
+      const roots = resolveStartupWorkspaceRoots();
+      await LonanoteRustModule.invoke(
+        "workspace.registry.set_workspace_roots",
+        JSON.stringify({ roots }),
+      );
+      state.workspaceRootsInitialized = true;
+    })().finally(() => {
+      state.workspaceRootsInitPromise = null;
+    });
+  }
+
+  await state.workspaceRootsInitPromise;
+}
+
 async function ensureNativeRuntimeReady() {
   throwInitError();
   await ensureDefaultPathsInitialized();
+  await ensureWorkspaceRootsInitialized();
 }
 
 function listenCallbackRequests() {

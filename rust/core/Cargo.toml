@@ -30,6 +30,7 @@ alphanumeric-sort = { workspace = true }
 encoding_rs = { workspace = true }
 futures = { workspace = true }
 rust-embed = { workspace = true, features = ["debug-embed"] }
+uuid = { workspace = true }
 
 # [target.'cfg(target_os = "windows")'.dependencies]
 # [target.'cfg(target_os = "macos")'.dependencies]

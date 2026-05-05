@@ -23,16 +23,6 @@ fn get_download_dir() -> String {
 }
 
 #[command("path")]
-fn get_root_dir() -> Option<String> {
-    app_path::get_root_dir()
-}
-
-#[command("path")]
-fn set_root_dir(root_dir: Option<String>) {
-    app_path::set_root_dir(root_dir);
-}
-
-#[command("path")]
 fn init_dir(data_dir: String, cache_dir: String, download_dir: String, home_dir: String) {
     app_path::init_dir(data_dir, cache_dir, download_dir, home_dir);
 }
