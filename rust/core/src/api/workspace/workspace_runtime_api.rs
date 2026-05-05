@@ -1,20 +1,71 @@
 use anyhow::{anyhow, Result};
 use cmdreg::command;
+use serde::Serialize;
 use std::sync::Arc;
 
 use crate::workspace::{
     file_tree::{FileNode, FileTreeSortType},
     get_workspace_registry, get_workspace_registry_mut, get_workspace_runtime,
     get_workspace_runtime_mut,
-    workspace_instance::WorkspaceInstance,
+    workspace_instance::{WorkspaceInstance, WorkspaceRuntimeConfig, WorkspaceRuntimeStatus},
     workspace_path::WorkspacePath,
+    workspace_registry::WorkspaceRecord,
+    workspace_settings::WorkspaceSettings,
 };
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct WorkspaceStateSnapshot {
+    record: WorkspaceRecord,
+    settings: WorkspaceSettings,
+    runtime_config: WorkspaceRuntimeConfig,
+    runtime_status: WorkspaceRuntimeStatus,
+}
 
 async fn get_open_workspace_or_err(workspace_id: &str) -> Result<Arc<WorkspaceInstance>> {
     let workspace_runtime = get_workspace_runtime().await;
     workspace_runtime
         .get_open_workspace(workspace_id)
         .ok_or(anyhow!("workspace is not open: {}", workspace_id))
+}
+
+async fn cleanup_failed_workspace_open(workspace_id: &str) {
+    let workspace = {
+        let mut workspace_runtime = get_workspace_runtime_mut().await;
+        workspace_runtime.close_workspace(workspace_id)
+    };
+
+    if let Some(workspace) = workspace {
+        if let Err(err) = workspace.unload().await {
+            log::warn!(
+                "cleanup failed workspace open error, workspace_id: {}, err: {}",
+                workspace_id,
+                err,
+            );
+        }
+    }
+}
+
+async fn build_workspace_state_snapshot(
+    workspace_id: &str,
+    workspace: &WorkspaceInstance,
+) -> Result<WorkspaceStateSnapshot> {
+    let (record, settings) = {
+        let workspace_registry = get_workspace_registry().await;
+        let record = workspace_registry
+            .get_workspace_record(workspace_id)
+            .cloned()
+            .ok_or(anyhow!("workspace is not found: {}", workspace_id))?;
+        let settings = workspace_registry.get_workspace_settings(workspace_id)?;
+        (record, settings)
+    };
+
+    Ok(WorkspaceStateSnapshot {
+        record,
+        settings,
+        runtime_config: workspace.get_runtime_config().await,
+        runtime_status: workspace.get_runtime_status().await,
+    })
 }
 
 #[command("workspace.runtime")]
@@ -53,10 +104,17 @@ async fn open_workspace(workspace_id: String) -> Result<serde_json::Value> {
     };
 
     if should_reinit {
-        workspace.reinit().await?;
+        if let Err(err) = workspace.reinit().await {
+            cleanup_failed_workspace_open(&workspace_id).await;
+            return Err(err.into());
+        }
     }
 
-    Ok(serde_json::json!(workspace.snapshot().await))
+    workspace.mark_opened().await;
+
+    Ok(serde_json::json!(
+        build_workspace_state_snapshot(&workspace_id, workspace.as_ref(),).await?
+    ))
 }
 
 #[command("workspace.runtime")]
@@ -67,6 +125,7 @@ async fn close_workspace(workspace_id: String) -> Result<()> {
     };
 
     if let Some(workspace) = workspace {
+        workspace.mark_closing().await;
         workspace.unload().await?;
     }
 
@@ -77,21 +136,9 @@ async fn close_workspace(workspace_id: String) -> Result<()> {
 async fn get_open_workspace(workspace_id: String) -> Result<serde_json::Value> {
     let workspace = get_open_workspace_or_err(&workspace_id).await?;
 
-    let (record, settings) = {
-        let workspace_registry = get_workspace_registry().await;
-        let record = workspace_registry
-            .get_workspace_record(&workspace_id)
-            .cloned()
-            .ok_or(anyhow!("workspace is not found: {}", &workspace_id))?;
-        let settings = workspace_registry.get_workspace_settings(&workspace_id)?;
-        (record, settings)
-    };
-
-    Ok(serde_json::json!({
-        "record": record,
-        "settings": settings,
-        "runtimeConfig": workspace.get_runtime_config().await,
-    }))
+    Ok(serde_json::json!(
+        build_workspace_state_snapshot(&workspace_id, workspace.as_ref(),).await?
+    ))
 }
 
 #[command("workspace.runtime")]

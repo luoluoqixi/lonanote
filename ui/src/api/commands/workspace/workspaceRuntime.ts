@@ -1,6 +1,6 @@
 import { invoke } from "@/api/invoke";
 
-import { FileNode, FileTree, FileTreeSortType, OpenWorkspace, WorkspaceState } from "./types";
+import { FileNode, FileTree, FileTreeSortType, WorkspaceState } from "./types";
 import { workspaceSession } from "./workspaceSession";
 
 const invokeWorkspaceRuntime = (command: string, args?: Record<string, unknown>) => {
@@ -16,7 +16,7 @@ export const workspaceRuntime = {
       ? (await invokeWorkspaceRuntime("is_workspace_open", { workspaceId }))!
       : false;
   },
-  open: async (workspaceId: string): Promise<OpenWorkspace> => {
+  open: async (workspaceId: string): Promise<WorkspaceState> => {
     const workspace = (await invokeWorkspaceRuntime("open_workspace", { workspaceId }))!;
     workspaceSession.setCurrentWorkspaceId(workspaceId);
     return workspace;

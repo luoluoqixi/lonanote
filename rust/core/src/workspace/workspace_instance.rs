@@ -29,25 +29,25 @@ impl From<&WorkspaceSettings> for WorkspaceRuntimeConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct OpenWorkspaceSnapshot {
-    pub workspace_id: String,
-    pub path: WorkspacePath,
-    pub runtime_config: WorkspaceRuntimeConfig,
+pub enum WorkspaceRuntimeStatus {
+    Opening,
+    Opened,
+    Reinitializing,
+    Closing,
 }
 
 #[derive(Debug)]
 pub struct WorkspaceInstance {
-    pub workspace_id: String,
-    pub workspace_path: WorkspacePath,
     pub runtime_config: Arc<RwLock<WorkspaceRuntimeConfig>>,
+    pub runtime_status: Arc<RwLock<WorkspaceRuntimeStatus>>,
     pub index: Arc<RwLock<WorkspaceIndex>>,
 }
 
 impl WorkspaceInstance {
     pub fn new(
-        workspace_id: impl Into<String>,
+        _workspace_id: impl Into<String>,
         workspace_path: &WorkspacePath,
         settings: &WorkspaceSettings,
     ) -> Result<Self, WorkspaceError> {
@@ -56,23 +56,32 @@ impl WorkspaceInstance {
         let index = WorkspaceIndex::new(workspace_path, settings.file_tree_sort_type.clone())?;
 
         Ok(Self {
-            workspace_id: workspace_id.into(),
-            workspace_path: workspace_path.clone(),
             runtime_config: Arc::new(RwLock::new(WorkspaceRuntimeConfig::from(settings))),
+            runtime_status: Arc::new(RwLock::new(WorkspaceRuntimeStatus::Opening)),
             index: Arc::new(RwLock::new(index)),
         })
     }
 
-    pub async fn snapshot(&self) -> OpenWorkspaceSnapshot {
-        OpenWorkspaceSnapshot {
-            workspace_id: self.workspace_id.clone(),
-            path: self.workspace_path.clone(),
-            runtime_config: self.get_runtime_config().await,
-        }
-    }
-
     pub async fn get_runtime_config(&self) -> WorkspaceRuntimeConfig {
         self.runtime_config.read().await.clone()
+    }
+
+    pub async fn get_runtime_status(&self) -> WorkspaceRuntimeStatus {
+        self.runtime_status.read().await.clone()
+    }
+
+    pub async fn set_runtime_status(&self, status: WorkspaceRuntimeStatus) {
+        *self.runtime_status.write().await = status;
+    }
+
+    pub async fn mark_opened(&self) {
+        self.set_runtime_status(WorkspaceRuntimeStatus::Opened)
+            .await;
+    }
+
+    pub async fn mark_closing(&self) {
+        self.set_runtime_status(WorkspaceRuntimeStatus::Closing)
+            .await;
     }
 
     pub async fn apply_settings(&self, settings: &WorkspaceSettings) -> Result<(), WorkspaceError> {
@@ -103,9 +112,15 @@ impl WorkspaceInstance {
     }
 
     pub async fn reinit(&self) -> Result<(), WorkspaceError> {
+        let previous_status = self.get_runtime_status().await;
+        if previous_status != WorkspaceRuntimeStatus::Opening {
+            self.set_runtime_status(WorkspaceRuntimeStatus::Reinitializing)
+                .await;
+        }
+
         let runtime_config = self.get_runtime_config().await;
         let index = Arc::clone(&self.index);
-        index
+        let result = index
             .write()
             .await
             .reinit(
@@ -113,9 +128,11 @@ impl WorkspaceInstance {
                 runtime_config.follow_gitignore,
                 runtime_config.custom_ignore,
             )
-            .map_err(WorkspaceError::InitError)?;
+            .map_err(WorkspaceError::InitError);
+        self.set_runtime_status(WorkspaceRuntimeStatus::Opened)
+            .await;
 
-        Ok(())
+        result
     }
 
     pub async fn get_node(
@@ -141,6 +158,7 @@ impl WorkspaceInstance {
     }
 
     pub async fn unload(&self) -> Result<(), WorkspaceError> {
+        self.mark_closing().await;
         Ok(())
     }
 }

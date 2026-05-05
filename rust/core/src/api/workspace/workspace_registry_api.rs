@@ -5,14 +5,9 @@ use std::path::PathBuf;
 use crate::{
     settings::get_settings,
     workspace::{
-        error::WorkspaceError,
-        get_workspace_registry, get_workspace_registry_mut, get_workspace_runtime,
-        workspace_locator::{
-            get_workspace_roots, set_workspace_roots as set_runtime_workspace_roots, WorkspaceRoot,
-        },
-        workspace_path::WorkspacePath,
-        workspace_savedata::WorkspaceSaveData,
-        workspace_settings::WorkspaceSettings,
+        error::WorkspaceError, get_workspace_registry, get_workspace_registry_mut,
+        get_workspace_runtime, workspace_locator::WorkspaceRoot, workspace_path::WorkspacePath,
+        workspace_savedata::WorkspaceSaveData, workspace_settings::WorkspaceSettings,
     },
 };
 
@@ -143,8 +138,8 @@ async fn get_last_workspace_id() -> Result<Option<String>> {
 
 #[command("workspace.registry")]
 async fn set_workspace_roots(roots: Vec<WorkspaceRoot>) -> Result<serde_json::Value> {
-    set_runtime_workspace_roots(roots);
     let mut workspace_registry = get_workspace_registry_mut().await;
+    workspace_registry.set_workspace_roots(roots)?;
     let summary = workspace_registry.sync_workspace_roots()?;
 
     Ok(serde_json::json!(summary))
@@ -152,7 +147,8 @@ async fn set_workspace_roots(roots: Vec<WorkspaceRoot>) -> Result<serde_json::Va
 
 #[command("workspace.registry")]
 async fn get_workspace_roots_config() -> Result<serde_json::Value> {
-    Ok(serde_json::json!(get_workspace_roots()))
+    let workspace_registry = get_workspace_registry().await;
+    Ok(serde_json::json!(workspace_registry.get_workspace_roots()))
 }
 
 #[command("workspace.registry")]

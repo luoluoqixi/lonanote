@@ -16,6 +16,9 @@ type StartupWorkspaceRoot = {
   key: string;
   path: string;
   kind: StartupWorkspaceRootKind;
+  source: {
+    kind: "systemDefault";
+  };
 };
 
 function normalizeArgs(args?: string | null | undefined): string | null {
@@ -88,6 +91,7 @@ function resolveStartupWorkspaceRoots(): StartupWorkspaceRoot[] {
       key: normalizeWorkspaceRootKey(`${Platform.OS}-app-sandbox`),
       path: normalizeFilePath(Paths.document.uri),
       kind: "mobileAppSandbox",
+      source: { kind: "systemDefault" },
     },
     seenPaths,
   );
@@ -102,6 +106,7 @@ function resolveStartupWorkspaceRoots(): StartupWorkspaceRoot[] {
               key: normalizeWorkspaceRootKey(`ios-shared-${containerId}`),
               path,
               kind: "mobileAppCloud",
+              source: { kind: "systemDefault" },
             }
           : null,
         seenPaths,

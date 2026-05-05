@@ -40,6 +40,34 @@ pub enum WorkspaceRootKind {
     Custom,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum WorkspaceRootSourceKind {
+    SystemDefault,
+    UserAdded,
+    IosBookmark,
+    AndroidTreeUri,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum WorkspaceRootSource {
+    SystemDefault,
+    UserAdded,
+    IosBookmark { bookmark_id: String },
+    AndroidTreeUri { tree_uri: String },
+}
+
+impl WorkspaceRootSource {
+    pub const fn kind(&self) -> WorkspaceRootSourceKind {
+        match self {
+            Self::SystemDefault => WorkspaceRootSourceKind::SystemDefault,
+            Self::UserAdded => WorkspaceRootSourceKind::UserAdded,
+            Self::IosBookmark { .. } => WorkspaceRootSourceKind::IosBookmark,
+            Self::AndroidTreeUri { .. } => WorkspaceRootSourceKind::AndroidTreeUri,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceRoot {
@@ -47,11 +75,17 @@ pub struct WorkspaceRoot {
     pub path: PathBuf,
     #[serde(default = "WorkspaceRoot::default_kind")]
     pub kind: WorkspaceRootKind,
+    #[serde(default = "WorkspaceRoot::default_source")]
+    pub source: WorkspaceRootSource,
 }
 
 impl WorkspaceRoot {
     pub const fn default_kind() -> WorkspaceRootKind {
         WorkspaceRootKind::Custom
+    }
+
+    pub const fn default_source() -> WorkspaceRootSource {
+        WorkspaceRootSource::UserAdded
     }
 }
 
@@ -139,7 +173,7 @@ pub fn find_workspace_root(key: &str) -> Option<WorkspaceRoot> {
         .find(|root| root.key == key)
 }
 
-pub fn set_workspace_roots(roots: Vec<WorkspaceRoot>) {
+pub fn normalize_workspace_roots(roots: Vec<WorkspaceRoot>) -> Vec<WorkspaceRoot> {
     let mut seen = HashSet::new();
     let mut normalized = Vec::new();
     for root in roots {
@@ -152,10 +186,15 @@ pub fn set_workspace_roots(roots: Vec<WorkspaceRoot>) {
             key: key.to_string(),
             path: workspace_root_path(root.path),
             kind: root.kind,
+            source: root.source,
         });
     }
 
-    *WORKSPACE_ROOTS.write().unwrap() = normalized;
+    normalized
+}
+
+pub fn set_workspace_roots(roots: Vec<WorkspaceRoot>) {
+    *WORKSPACE_ROOTS.write().unwrap() = normalize_workspace_roots(roots);
 }
 
 pub fn scan_workspace_roots() -> Result<Vec<DiscoveredWorkspace>, WorkspaceError> {

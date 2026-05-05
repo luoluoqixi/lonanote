@@ -54,10 +54,27 @@ export type WorkspaceRootKind =
   | "mobileAppExternalSandbox"
   | "custom";
 
+export type WorkspaceRootSource =
+  | {
+      kind: "systemDefault";
+    }
+  | {
+      kind: "userAdded";
+    }
+  | {
+      kind: "iosBookmark";
+      bookmarkId: string;
+    }
+  | {
+      kind: "androidTreeUri";
+      treeUri: string;
+    };
+
 export interface WorkspaceRoot {
   key: string;
   path: string;
   kind: WorkspaceRootKind;
+  source: WorkspaceRootSource;
 }
 
 export interface WorkspaceSyncSummary {
@@ -71,16 +88,13 @@ export interface WorkspaceRuntimeConfig {
   customIgnore: string;
 }
 
-export interface OpenWorkspace {
-  workspaceId: string;
-  path: string;
-  runtimeConfig: WorkspaceRuntimeConfig;
-}
+export type WorkspaceRuntimeStatus = "opening" | "opened" | "reinitializing" | "closing";
 
 export interface WorkspaceState {
   record: WorkspaceRecord;
   settings: WorkspaceSettings;
   runtimeConfig: WorkspaceRuntimeConfig;
+  runtimeStatus: WorkspaceRuntimeStatus;
 }
 
 export type FileType = "file" | "directory";

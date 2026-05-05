@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 import { app } from "@/api";
-import { PathDebugPanel } from "@/components/debug";
+import { PathDebugPanel, WorkspaceDebugPanel } from "@/components/debug";
 import { Button, Dialog } from "@/components/ui";
 
 export default function HomeScreen() {
@@ -29,6 +29,7 @@ export default function HomeScreen() {
         </View>
 
         <PathDebugPanel />
+        <WorkspaceDebugPanel />
       </ScrollView>
 
       <Dialog

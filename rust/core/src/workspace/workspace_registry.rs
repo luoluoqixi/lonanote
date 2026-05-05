@@ -14,8 +14,9 @@ use super::{
     config::get_workspace_global_config_path,
     error::WorkspaceError,
     workspace_locator::{
-        find_workspace_root, get_workspace_roots, scan_workspace_roots, DiscoveredWorkspace,
-        WorkspaceLocator,
+        find_workspace_root, get_workspace_roots, normalize_workspace_roots, scan_workspace_roots,
+        set_workspace_roots, DiscoveredWorkspace, WorkspaceLocator, WorkspaceRoot,
+        WorkspaceRootSourceKind,
     },
     workspace_metadata::WorkspaceMetadata,
     workspace_path::WorkspacePath,
@@ -43,6 +44,8 @@ pub struct WorkspaceRegistry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_workspace_id: Option<String>,
     #[serde(default)]
+    pub workspace_roots: Vec<WorkspaceRoot>,
+    #[serde(default)]
     pub workspace_records: HashMap<String, WorkspaceRecord>,
 }
 
@@ -55,6 +58,7 @@ impl WorkspaceRegistry {
                 .expect("read workspace config error");
             let registry = serde_json::from_str::<WorkspaceRegistry>(&data);
             if let Ok(mut registry) = registry {
+                set_workspace_roots(registry.workspace_roots.clone());
                 if registry.normalize_loaded_state() {
                     if let Err(err) = registry.save() {
                         log::warn!("normalize workspace registry state error: {err}");
@@ -69,10 +73,49 @@ impl WorkspaceRegistry {
             }
         }
 
+        set_workspace_roots(Vec::new());
         Self {
             last_workspace_id: None,
+            workspace_roots: Vec::new(),
             workspace_records: HashMap::new(),
         }
+    }
+
+    pub fn get_workspace_roots(&self) -> Vec<WorkspaceRoot> {
+        self.workspace_roots.clone()
+    }
+
+    pub fn set_workspace_roots(&mut self, roots: Vec<WorkspaceRoot>) -> Result<(), WorkspaceError> {
+        let incoming_roots = normalize_workspace_roots(roots);
+        let incoming_source_kinds = incoming_roots
+            .iter()
+            .map(|root| root.source.kind())
+            .collect::<HashSet<WorkspaceRootSourceKind>>();
+
+        let mut next_roots = incoming_roots;
+        next_roots.extend(
+            self.workspace_roots
+                .iter()
+                .filter(|root| !incoming_source_kinds.contains(&root.source.kind()))
+                .cloned(),
+        );
+        let next_roots = normalize_workspace_roots(next_roots);
+
+        if self.workspace_roots == next_roots {
+            set_workspace_roots(next_roots);
+            return Ok(());
+        }
+
+        self.workspace_roots = next_roots.clone();
+        set_workspace_roots(next_roots);
+
+        for workspace_id in self.workspace_records.keys().cloned().collect::<Vec<_>>() {
+            self.refresh_workspace_record(&workspace_id);
+        }
+
+        self.save()?;
+
+        Ok(())
     }
 
     pub async fn init_setup(&mut self, path: &WorkspacePath) -> Result<(), WorkspaceError> {
@@ -542,6 +585,14 @@ impl WorkspaceRegistry {
 
     fn normalize_loaded_state(&mut self) -> bool {
         let mut changed = false;
+
+        let current_roots = std::mem::take(&mut self.workspace_roots);
+        let normalized_roots = normalize_workspace_roots(current_roots);
+        if self.workspace_roots != normalized_roots {
+            changed = true;
+        }
+        self.workspace_roots = normalized_roots;
+        set_workspace_roots(self.workspace_roots.clone());
 
         let current_records = std::mem::take(&mut self.workspace_records);
         let mut normalized_records = HashMap::new();
