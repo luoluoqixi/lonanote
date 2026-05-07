@@ -1,2 +1,2 @@
-export * from "./path-debug-panel";
-export * from "./workspace-debug-panel";
+export * from "./path_debug_panel";
+export * from "./workspace_debug_panel";

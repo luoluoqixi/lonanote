@@ -1,8 +1,8 @@
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 
-import { WorkspaceState } from "./types";
+import { type WorkspaceState, workspaceRuntime } from "@/api/commands/workspace";
+
 import { useCurrentWorkspaceId } from "./useWorkspaceSession";
-import { workspaceRuntime } from "./workspaceRuntime";
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);

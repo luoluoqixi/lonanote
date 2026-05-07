@@ -1,7 +1,7 @@
 import { invoke } from "@/api/invoke";
+import { workspaceSessionStore } from "@/stores/workspace";
 
 import { FileNode, FileTree, FileTreeSortType, WorkspaceState } from "./types";
-import { workspaceSession } from "./workspaceSession";
 
 const invokeWorkspaceRuntime = (command: string, args?: Record<string, unknown>) => {
   return invoke(`workspace.runtime.${command}`, args);
@@ -18,14 +18,14 @@ export const workspaceRuntime = {
   },
   open: async (workspaceId: string): Promise<WorkspaceState> => {
     const workspace = (await invokeWorkspaceRuntime("open_workspace", { workspaceId }))!;
-    workspaceSession.setCurrentWorkspaceId(workspaceId);
+    workspaceSessionStore.setCurrentWorkspaceId(workspaceId);
     return workspace;
   },
   close: async (workspaceId: string): Promise<void> => {
     await invokeWorkspaceRuntime("close_workspace", { workspaceId });
 
-    if (workspaceSession.getCurrentWorkspaceId() === workspaceId) {
-      workspaceSession.clearCurrentWorkspaceId();
+    if (workspaceSessionStore.getCurrentWorkspaceId() === workspaceId) {
+      workspaceSessionStore.clearCurrentWorkspaceId();
     }
   },
   getState: async (workspaceId: string): Promise<WorkspaceState | null> => {
@@ -53,24 +53,24 @@ export const workspaceRuntime = {
     }))!;
   },
   getCurrentWorkspaceId: (): string | null => {
-    return workspaceSession.getCurrentWorkspaceId();
+    return workspaceSessionStore.getCurrentWorkspaceId();
   },
   setCurrentWorkspaceId: (workspaceId: string | null): void => {
-    workspaceSession.setCurrentWorkspaceId(workspaceId);
+    workspaceSessionStore.setCurrentWorkspaceId(workspaceId);
   },
   clearCurrentWorkspaceId: (): void => {
-    workspaceSession.clearCurrentWorkspaceId();
+    workspaceSessionStore.clearCurrentWorkspaceId();
   },
   getCurrentState: async (): Promise<WorkspaceState | null> => {
-    const workspaceId = workspaceSession.requireCurrentWorkspaceId();
+    const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
     return await workspaceRuntime.getState(workspaceId);
   },
   getCurrentFileTree: async (): Promise<FileTree> => {
-    const workspaceId = workspaceSession.requireCurrentWorkspaceId();
+    const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
     return await workspaceRuntime.getFileTree(workspaceId);
   },
   reinitCurrent: async (): Promise<void> => {
-    const workspaceId = workspaceSession.requireCurrentWorkspaceId();
+    const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
     await workspaceRuntime.reinit(workspaceId);
   },
   getCurrentFileNode: async (
@@ -78,7 +78,7 @@ export const workspaceRuntime = {
     sortType: FileTreeSortType,
     recursive: boolean,
   ): Promise<FileNode> => {
-    const workspaceId = workspaceSession.requireCurrentWorkspaceId();
+    const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
     return await workspaceRuntime.getFileNode(workspaceId, nodePath, sortType, recursive);
   },
 };

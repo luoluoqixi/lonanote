@@ -5,11 +5,10 @@ import {
   WorkspaceRecord,
   WorkspaceRoot,
   WorkspaceSyncSummary,
-  useCurrentWorkspaceState,
-  useWorkspaceSession,
   workspaceRegistry,
 } from "@/api/commands/workspace";
 import { Button } from "@/components/ui";
+import { useCurrentWorkspaceState, useWorkspaceSession } from "@/hooks/workspace";
 
 type WorkspaceDebugSnapshot = {
   roots: WorkspaceRoot[];
