@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { os } from "@/api/common";
 import type { OSType } from "@/api/common";
@@ -92,11 +92,28 @@ const MacExpandIcon = () => (
 function WindowsControls() {
   const [isMaximized, setIsMaximized] = useState(false);
 
+  // 在 Windows 上使用鼠标拖拽标题栏中间区域, 从最大化状态返回时, 有可能不正确的 hover 到最右侧按钮
+  const [isResizeTransitioning, setIsResizeTransitioning] = useState(false);
+
   const appWindow = getCurrentWindow();
+  const resizeTransitionTimeoutRef = useRef<number | undefined>(undefined);
 
   const updateMaximized = useCallback(async () => {
     setIsMaximized(await appWindow.isMaximized());
   }, [appWindow]);
+
+  const markResizeTransition = useCallback(() => {
+    setIsResizeTransitioning(true);
+
+    if (resizeTransitionTimeoutRef.current !== undefined) {
+      window.clearTimeout(resizeTransitionTimeoutRef.current);
+    }
+
+    resizeTransitionTimeoutRef.current = window.setTimeout(() => {
+      setIsResizeTransitioning(false);
+      resizeTransitionTimeoutRef.current = undefined;
+    }, 160);
+  }, []);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -107,18 +124,25 @@ function WindowsControls() {
     });
 
     appWindow
-      .onResized(() => updateMaximized())
+      .onResized(() => {
+        markResizeTransition();
+        void updateMaximized();
+      })
       .then((fn) => {
         unlisten = fn;
       });
+
     return () => {
       cancelled = true;
+      if (resizeTransitionTimeoutRef.current !== undefined) {
+        window.clearTimeout(resizeTransitionTimeoutRef.current);
+      }
       unlisten?.();
     };
-  }, [appWindow, updateMaximized]);
+  }, [appWindow, markResizeTransition, updateMaximized]);
 
   return (
-    <div className="wc-win">
+    <div className={`wc-win${isResizeTransitioning ? " wc-win-hover-disabled" : ""}`}>
       <button className="wc-btn wc-btn-min" onClick={() => appWindow.minimize()} title="最小化">
         <MinimizeIcon />
       </button>

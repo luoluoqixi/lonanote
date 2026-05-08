@@ -32,6 +32,10 @@
   display: flex;
 }
 
+.wc-win-hover-disabled {
+  pointer-events: none;
+}
+
 .wc-btn {
   display: flex;
   align-items: center;
@@ -51,7 +55,7 @@
   app-region: no-drag;
 }
 
-.wc-btn:hover {
+.wc-win:not(.wc-win-hover-disabled) .wc-btn:hover {
   background: #0000001a;
   color: var(--text-color);
 }
@@ -61,7 +65,7 @@
 }
 
 /* 关闭按钮悬停为红色 */
-.wc-btn-close:hover {
+.wc-win:not(.wc-win-hover-disabled) .wc-btn-close:hover {
   background-color: #e81123;
   color: #ffffff;
 }
@@ -71,7 +75,7 @@
   color: #ffffff;
 }
 
-html.dark .wc-btn-close:hover {
+html.dark .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:hover {
   background-color: #e81123;
   color: #ffffff;
 }
