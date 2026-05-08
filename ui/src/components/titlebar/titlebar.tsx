@@ -9,14 +9,11 @@ const TitleBar = () => {
   return (
     <>
       <div
-        className="titlebar-drag-overlay titlebar-drag fixed top-0 left-0 right-0 bg-transparent"
+        className="titlebar-drag-overlay titlebar-drag"
         style={{ height: `${TITLE_HEIGHT}px` }}
         data-tauri-drag-region
       />
-      <div
-        className="titlebar fixed top-0 left-0 right-0 bg-transparent"
-        style={{ height: `${TITLE_HEIGHT}px` }}
-      >
+      <div className="titlebar" style={{ height: `${TITLE_HEIGHT}px` }}>
         <WindowControls />
       </div>
     </>
