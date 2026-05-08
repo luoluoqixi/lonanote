@@ -1,0 +1,117 @@
+.titlebar-drag {
+  pointer-events: auto;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.titlebar-drag-overlay {
+  z-index: 9998;
+}
+
+.titlebar {
+  pointer-events: auto;
+  z-index: 9999;
+}
+
+.wc-win {
+  display: flex;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.wc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--text-color) 88%, transparent);
+  cursor: default;
+  transition:
+    background-color 0.1s ease,
+    color 0.1s ease;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.wc-btn:hover {
+  background: #0000001a;
+  color: var(--text-color);
+}
+
+.wc-btn:active {
+  background: #00000033;
+}
+
+html.dark .wc-btn:hover {
+  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
+}
+
+html.dark .wc-btn:active {
+  background: color-mix(in srgb, var(--surface-hover) 54%, transparent);
+}
+
+/* 关闭按钮悬停为红色 */
+.wc-btn-close:hover {
+  background-color: #e81123;
+  color: #ffffff;
+}
+
+.wc-btn-close:active {
+  background-color: #f1717c;
+  color: #ffffff;
+}
+
+html.dark .wc-btn-close:hover {
+  background-color: #c42b1c;
+  color: #ffffff;
+}
+
+html.dark .wc-btn-close:active {
+  background-color: rgba(196, 43, 28, 0.9);
+  color: #ffffff;
+}
+
+.wc-mac {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.wc-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  outline: none;
+  border-radius: 50%;
+  cursor: default;
+  color: rgba(0, 0, 0, 0.6);
+  transition: filter 0.1s ease;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.wc-dot:active {
+  filter: brightness(0.85);
+}
+
+.wc-dot-close {
+  background-color: #ff544d;
+}
+.wc-dot-min {
+  background-color: #ffbd2e;
+}
+.wc-dot-full {
+  background-color: #28c93f;
+}

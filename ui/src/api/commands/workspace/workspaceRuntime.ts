@@ -3,8 +3,11 @@ import { workspaceSessionStore } from "@/stores/workspace";
 
 import { FileNode, FileTree, FileTreeSortType, WorkspaceState } from "./types";
 
-const invokeWorkspaceRuntime = (command: string, args?: Record<string, unknown>) => {
-  return invoke(`workspace.runtime.${command}`, args);
+const invokeWorkspaceRuntime = <T = unknown>(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<T | undefined> => {
+  return invoke<T>(`workspace.runtime.${command}`, args);
 };
 
 export const workspaceRuntime = {
@@ -17,7 +20,9 @@ export const workspaceRuntime = {
       : false;
   },
   open: async (workspaceId: string): Promise<WorkspaceState> => {
-    const workspace = (await invokeWorkspaceRuntime("open_workspace", { workspaceId }))!;
+    const workspace = (await invokeWorkspaceRuntime<WorkspaceState>("open_workspace", {
+      workspaceId,
+    }))!;
     workspaceSessionStore.setCurrentWorkspaceId(workspaceId);
     return workspace;
   },

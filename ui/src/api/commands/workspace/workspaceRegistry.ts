@@ -12,8 +12,11 @@ export const normalizeWorkspacePath = (path: string) => {
   return path.replace(/\\/g, "/");
 };
 
-const invokeWorkspaceRegistry = (command: string, args?: Record<string, unknown>) => {
-  return invoke(`workspace.registry.${command}`, args);
+const invokeWorkspaceRegistry = <T = unknown>(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<T | undefined> => {
+  return invoke<T>(`workspace.registry.${command}`, args);
 };
 
 export const workspaceRegistry = {

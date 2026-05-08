@@ -1,19 +1,23 @@
 import { Platform } from "react-native";
 
+import { os } from "../common";
+import type { OSType } from "../common";
+
 export function isTauri() {
   return !!((globalThis || window) as any)?.isTauri;
 }
 
 export function isNative(): boolean {
-  return Platform.OS === "android" || Platform.OS === "ios";
+  const t = os();
+  return t === "android" || t === "ios";
 }
 
 export function isWeb(): boolean {
   return Platform.OS === "web";
 }
 
-export function OS(): "ios" | "android" | "windows" | "macos" | "web" {
-  return Platform.OS;
+export function OS(): OSType {
+  return os();
 }
 
 export function isInvokeAvailable(): boolean {

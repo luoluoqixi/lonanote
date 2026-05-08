@@ -23,5 +23,6 @@
   "scss.lint.validProperties": ["app-region", "user-drag"],
   "cmake.ignoreCMakeListsMissing": true,
   "css.lint.unknownAtRules": "ignore",
-  "prettier.configPath": "ui/.prettierrc.yaml"
+  "prettier.configPath": "ui/.prettierrc.yaml",
+  "css.customData": [".vscode/custom-data.json"]
 }
