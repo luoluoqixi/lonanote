@@ -1,6 +1,7 @@
 mod commands;
 mod plugins;
 mod setup;
+mod utils;
 
 use tauri::{AppHandle, Manager};
 
@@ -41,6 +42,10 @@ pub fn run() {
                     // 开发模式下自动打开devtools
                     #[cfg(debug_assertions)]
                     win.open_devtools();
+
+                    utils::win::fix_window_resize(&win);
+                    utils::win::set_win_bg_rgba(&win, (255, 255, 255, 255))
+                        .unwrap_or_else(|e| log::error!("{}", e));
                 }
             }
             plugins::init_plugins(app)?;
