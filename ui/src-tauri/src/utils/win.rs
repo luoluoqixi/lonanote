@@ -49,6 +49,8 @@ pub fn set_win_bg_hex(win: &WebviewWindow, color: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+// 添加了 features devtools 后，tauri 内置了 devtools 的快捷键
+#[allow(dead_code)]
 pub fn add_devtools_listener(win: &WebviewWindow) {
     use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 

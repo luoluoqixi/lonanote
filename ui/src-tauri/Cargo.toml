@@ -35,7 +35,7 @@ lonanote-core = { path = "../../rust/core" }
 cmdreg = { workspace = true }
 
 # tauri
-tauri = { workspace = true, features = ["config-toml", "protocol-asset"] }
+tauri = { workspace = true, features = ["config-toml", "protocol-asset", "devtools"] }
 specta = { workspace = true }
 tauri-plugin-clipboard-manager = { workspace = true }
 tauri-plugin-log = { workspace = true }
