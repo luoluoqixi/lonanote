@@ -48,3 +48,31 @@ pub fn set_win_bg_hex(win: &WebviewWindow, color: &str) -> anyhow::Result<()> {
     .map_err(|e| anyhow::anyhow!("set_background_color error: {}", e))?;
     Ok(())
 }
+
+pub fn add_devtools_listener(win: &WebviewWindow) {
+    use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+
+    let label = win.label().to_string();
+    win.global_shortcut()
+        .on_shortcut("CommandOrControl+Shift+I", move |_, _, event| {
+            if event.state != ShortcutState::Pressed {
+                return;
+            }
+            if let Some(win) = get_window(&label) {
+                #[cfg(target_os = "windows")]
+                {
+                    // Windows 上没有 close_devtools 接口, 无法关闭
+                    win.open_devtools();
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    if win.is_devtools_open() {
+                        win.close_devtools();
+                    } else {
+                        win.open_devtools();
+                    }
+                }
+            }
+        })
+        .unwrap_or_else(|err| log::error!("add_devtools_listener error: {}", err));
+}

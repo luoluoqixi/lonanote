@@ -23,6 +23,7 @@ pub fn run() {
     let builder = { commands::reg_commands(builder) };
 
     let app = builder
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(setup::log::init_tauri_log())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_fs::init())
@@ -39,13 +40,13 @@ pub fn run() {
 
                     commands::init_commands()?;
 
-                    // 开发模式下自动打开devtools
-                    #[cfg(debug_assertions)]
-                    win.open_devtools();
-
+                    utils::win::add_devtools_listener(&win);
                     utils::win::fix_window_resize(&win);
                     utils::win::set_win_bg_rgba(&win, (255, 255, 255, 255))
                         .unwrap_or_else(|e| log::error!("{}", e));
+
+                    #[cfg(debug_assertions)]
+                    win.open_devtools();
                 }
             }
             plugins::init_plugins(app)?;
