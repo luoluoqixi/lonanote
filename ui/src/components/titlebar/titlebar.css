@@ -57,20 +57,18 @@
 
 .wc-win:not(.wc-win-hover-disabled) .wc-btn:hover {
   background: #0000001a;
-  color: var(--text-color);
 }
 
-.wc-btn:active {
+.wc-win:not(.wc-win-hover-disabled) .wc-btn:active {
   background: #00000033;
 }
 
-/* 关闭按钮悬停为红色 */
 .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:hover {
   background-color: #e81123;
   color: #ffffff;
 }
 
-.wc-btn-close:active {
+.wc-win:not(.wc-win-hover-disabled) .wc-btn-close:active {
   background-color: #f1717c;
   color: #ffffff;
 }
@@ -80,7 +78,7 @@ html.dark .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:hover {
   color: #ffffff;
 }
 
-html.dark .wc-btn-close:active {
+html.dark .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:active {
   background-color: #f1717c;
   color: #ffffff;
 }
