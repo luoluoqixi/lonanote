@@ -5,6 +5,8 @@ identifier = "com.luoluoqixi.lonanote"
 [build]
 beforeDevCommand = "bun web"
 beforeBuildCommand = "bun build:web"
+# beforeBuildCommand = "bun build:web:sourcemap"
+# beforeBuildCommand = "bun build:web:dev"
 frontendDist = "../dist"
 devUrl = "http://localhost:8081"
 

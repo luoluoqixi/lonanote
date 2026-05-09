@@ -13,6 +13,8 @@
     "build:android": "cross-env APP_MODE=production expo run:android --variant release --device",
     "build:ios": "cross-env APP_MODE=production expo run:ios --configuration Release --device",
     "build:web": "cross-env APP_MODE=production expo export --platform web",
+    "build:web:sourcemap": "cross-env APP_MODE=production expo export --platform web --source-maps inline --no-minify",
+    "build:web:dev": "cross-env APP_MODE=production expo export --platform web --dev",
     "n:prebuild:android": "cross-env APP_MODE=development expo prebuild --platform android",
     "n:prebuild:ios": "cross-env APP_MODE=development expo prebuild --platform ios",
     "n:prebuild:android:prod": "cross-env APP_MODE=production expo prebuild --platform android",

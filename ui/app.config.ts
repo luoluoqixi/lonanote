@@ -51,7 +51,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   web: {
-    output: "static",
+    output: "single",
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
