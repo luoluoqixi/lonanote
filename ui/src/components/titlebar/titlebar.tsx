@@ -26,8 +26,8 @@ const TitleLeft = () => {
 
 const TitleCenter = () => {
   const [title, setTitle] = useState("");
-  const platform = os();
-  const isMac = platform === "macos";
+  // const platform = os();
+  // const isMac = platform === "macos";
 
   useEffect(() => {
     const title = getAppTitle();
@@ -48,7 +48,8 @@ const TitleCenter = () => {
           textAlignVertical: "center",
         }}
       >
-        {!isMac && title}
+        {/* {!isMac && title} */}
+        {title}
       </Text>
     </View>
   );
@@ -74,8 +75,27 @@ const TitleBar = () => {
   const desktop = isDesktop();
   const platform = os();
   const isMac = platform === "macos";
+  const [isMacFullScreen, setIsMacFullScreen] = useState(false);
 
-  if (isMac) {
+  useEffect(() => {
+    let closeListener: (() => void) | undefined;
+    if (isMac) {
+      import("@tauri-apps/api/window").then(async ({ getCurrentWindow }) => {
+        const appWindow = getCurrentWindow();
+        closeListener = await appWindow.onResized(async () => {
+          const fullscreen = await appWindow.isFullscreen();
+          setIsMacFullScreen(fullscreen);
+        });
+      });
+    }
+    return () => {
+      if (closeListener) {
+        closeListener();
+      }
+    };
+  }, []);
+
+  if (isMac && !isMacFullScreen) {
     // macOS 暂时使用原生标题栏, 因为自定义标题栏时窗口圆角、阴影没了
     return <></>;
   }
