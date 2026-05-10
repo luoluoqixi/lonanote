@@ -260,6 +260,8 @@ export class SplitViewModel {
   }
 
   startSashDrag(index: number, start: number) {
+    if (index < 0 || index + 1 >= this.viewItems.length) return;
+
     const sizes = this.viewItems.map((item) => item.size);
     const upIndexes = range(index, -1, -1);
     const downIndexes = range(index + 1, this.viewItems.length);
@@ -287,8 +289,8 @@ export class SplitViewModel {
           );
     const minDelta = Math.max(minDeltaUp, minDeltaDown);
     const maxDelta = Math.min(maxDeltaDown, maxDeltaUp);
-    const snapBeforeIndex = this.findFirstSnapIndex(upIndexes);
-    const snapAfterIndex = this.findFirstSnapIndex(downIndexes);
+    const beforeItem = this.viewItems[index];
+    const afterItem = this.viewItems[index + 1];
 
     this.sashDragState = {
       index,
@@ -296,8 +298,8 @@ export class SplitViewModel {
       sizes,
       minDelta,
       maxDelta,
-      snapBefore: this.createSnapState(snapBeforeIndex, minDelta, true),
-      snapAfter: this.createSnapState(snapAfterIndex, maxDelta, false),
+      snapBefore: beforeItem.snap ? this.createSnapState(index, minDelta, true) : undefined,
+      snapAfter: afterItem.snap ? this.createSnapState(index + 1, maxDelta, false) : undefined,
     };
   }
 
