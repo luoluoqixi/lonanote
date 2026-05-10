@@ -1,7 +1,8 @@
 import clsx from "clsx";
 import { useEffect, useState } from "react";
+import { Text, View } from "react-native";
 
-import { os } from "@/api/common";
+import { isWeb, os } from "@/api/common";
 import { TITLE_HEIGHT, getAppTitle } from "@/config";
 
 import "./titlebar.css";
@@ -14,13 +15,13 @@ const TitleLeft = () => {
   const isMac = platform === "macos";
   const isWin = platform === "windows" || platform === "linux";
   return (
-    <div
+    <View
       className={clsx(
         "titlebar-title-left",
         isMac && "titlebar-title-left--mac",
         isWin && "titlebar-title-left--win",
       )}
-    ></div>
+    ></View>
   );
 };
 
@@ -30,13 +31,15 @@ const TitleCenter = () => {
   useEffect(() => {
     const title = getAppTitle();
     setTitle(title);
-    document.title = title;
+    if (isWeb()) {
+      document.title = title;
+    }
   }, []);
   return (
-    <div className="titlebar-title-center">
+    <View className="titlebar-title-center">
       {/* <img src={favicon} width={20} alt="favicon" /> */}
-      {title}
-    </div>
+      <Text style={{ height: "100%", alignContent: "center" }}>{title}</Text>
+    </View>
   );
 };
 
@@ -46,30 +49,32 @@ const TitleRight = () => {
   const isWin = platform === "windows" || platform === "linux";
 
   return (
-    <div
+    <View
       className={clsx(
         "titlebar-title-right",
         isMac && "titlebar-title-right--mac",
         isWin && "titlebar-title-right--win",
       )}
-    ></div>
+    ></View>
   );
 };
 
 const TitleBar = () => {
   return (
     <>
-      <div
+      <View
         className="titlebar-drag-overlay titlebar-drag"
-        style={{ height: `${TITLE_HEIGHT}px` }}
+        style={{
+          height: TITLE_HEIGHT,
+        }}
         data-tauri-drag-region
       />
-      <div className="titlebar" style={{ height: `${TITLE_HEIGHT}px` }}>
+      <View className="titlebar" style={{ height: TITLE_HEIGHT }}>
         <TitleLeft />
         <TitleCenter />
         <TitleRight />
         <WindowControls />
-      </div>
+      </View>
     </>
   );
 };

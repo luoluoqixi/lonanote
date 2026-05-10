@@ -1,3 +1,5 @@
+import { Text } from "react-native";
+
 export function SmallScreenHome() {
-  return <>SmallScreenHome</>;
+  return <Text>SmallScreenHome</Text>;
 }

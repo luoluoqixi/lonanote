@@ -1,3 +1,5 @@
+import { Text } from "react-native";
+
 export function WideScreenHome() {
-  return <>WideScreenHome</>;
+  return <Text>WideScreenHome</Text>;
 }

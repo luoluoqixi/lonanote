@@ -153,7 +153,7 @@ async function ensureWorkspaceRootsInitialized() {
   if (!state.workspaceRootsInitPromise) {
     state.workspaceRootsInitPromise = (async () => {
       const roots = resolveStartupWorkspaceRoots();
-      await LonanoteRustModule.invoke(
+      await LonanoteRustModule.invokeAsync(
         "workspace.registry.set_workspace_roots",
         JSON.stringify({ roots }),
       );

@@ -9,3 +9,13 @@ export function os(): OSType {
   if (os === "android" || os === "ios") return os;
   return UNKNOWN;
 }
+
+export function isMobile(): boolean {
+  const os = Platform.OS;
+  return os === "android" || os === "ios";
+}
+
+export function isWeb(): boolean {
+  const os = Platform.OS;
+  return os === "web";
+}
