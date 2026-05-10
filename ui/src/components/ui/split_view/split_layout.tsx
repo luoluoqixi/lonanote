@@ -11,12 +11,13 @@ import React, {
 import {
   type LayoutChangeEvent,
   PanResponder,
-  Platform,
   type StyleProp,
   StyleSheet,
   View,
   type ViewStyle,
 } from "react-native";
+
+import { isMobile, isWeb } from "@/api/common/platform";
 
 import { LayoutService } from "./layout_service";
 import { PaneView } from "./pane_view";
@@ -32,7 +33,10 @@ import {
 } from "./types";
 
 const DEFAULT_SASH_SIZE = 8;
-const IS_WEB = Platform.OS === "web";
+const MOBILE_SASH_SIZE = 20;
+const MOBILE_SASH_INDICATOR_SIZE = 3;
+const IS_WEB = isWeb();
+const IS_MOBILE = isMobile();
 
 const getPointerCoordinate = (
   event: Pick<PointerEvent, "clientX" | "clientY">,
@@ -435,20 +439,25 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
           {panes.slice(0, -1).map((pane, index) => {
             if (!canRenderSash(panes, index)) return null;
 
-            const sashOffset = (offsets[index] ?? 0) + (sizes[index] ?? 0) - DEFAULT_SASH_SIZE / 2;
+            const sashSize = IS_MOBILE ? MOBILE_SASH_SIZE : DEFAULT_SASH_SIZE;
+
+            const sashOffset = (offsets[index] ?? 0) + (sizes[index] ?? 0) - sashSize / 2;
             const sashStyle = vertical
               ? ({
                   top: sashOffset,
-                  height: DEFAULT_SASH_SIZE,
+                  height: sashSize,
                   left: 0,
                   right: 0,
                 } satisfies ViewStyle)
               : ({
                   left: sashOffset,
-                  width: DEFAULT_SASH_SIZE,
+                  width: sashSize,
                   top: 0,
                   bottom: 0,
                 } satisfies ViewStyle);
+            const mobileIndicatorStyle = vertical
+              ? styles.mobileSashIndicatorHorizontal
+              : styles.mobileSashIndicatorVertical;
 
             return (
               <View
@@ -464,7 +473,15 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
                       onPointerDown: startWebSashDrag(index),
                     } as any)
                   : sashPanResponders[index]?.panHandlers)}
-              />
+              >
+                {IS_MOBILE ? (
+                  <View
+                    pointerEvents="none"
+                    className={clsx("bg-foreground/20", activeSashIndex === index && "bg-accent")}
+                    style={[styles.mobileSashIndicator, mobileIndicatorStyle]}
+                  />
+                ) : null}
+              </View>
             );
           })}
         </View>
@@ -623,5 +640,20 @@ const styles = StyleSheet.create({
   sash: {
     position: "absolute",
     zIndex: 20,
+  },
+  mobileSashIndicator: {
+    position: "absolute",
+  },
+  mobileSashIndicatorHorizontal: {
+    height: MOBILE_SASH_INDICATOR_SIZE,
+    left: 0,
+    right: 0,
+    top: (MOBILE_SASH_SIZE - MOBILE_SASH_INDICATOR_SIZE) / 2,
+  },
+  mobileSashIndicatorVertical: {
+    bottom: 0,
+    top: 0,
+    width: MOBILE_SASH_INDICATOR_SIZE,
+    left: (MOBILE_SASH_SIZE - MOBILE_SASH_INDICATOR_SIZE) / 2,
   },
 });
