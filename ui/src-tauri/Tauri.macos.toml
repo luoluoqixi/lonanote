@@ -1,1 +1,4 @@
 identifier = "com.luoluoqixi.lonanote"
+
+[app]
+windows = []

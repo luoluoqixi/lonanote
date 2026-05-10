@@ -26,6 +26,8 @@ const TitleLeft = () => {
 
 const TitleCenter = () => {
   const [title, setTitle] = useState("");
+  const platform = os();
+  const isMac = platform === "macos";
 
   useEffect(() => {
     const title = getAppTitle();
@@ -35,8 +37,9 @@ const TitleCenter = () => {
     }
   }, []);
   return (
-    <View className={clsx("titlebar-title-center")}>
+    <View data-tauri-drag-region className={clsx("titlebar-title-center")}>
       <Text
+        data-tauri-drag-region
         style={{
           height: "100%",
           includeFontPadding: false,
@@ -45,7 +48,7 @@ const TitleCenter = () => {
           textAlignVertical: "center",
         }}
       >
-        {title}
+        {!isMac && title}
       </Text>
     </View>
   );
@@ -69,20 +72,28 @@ const TitleRight = () => {
 
 const TitleBar = () => {
   const desktop = isDesktop();
+  const platform = os();
+  const isMac = platform === "macos";
+
+  if (isMac) {
+    // macOS 暂时使用原生标题栏, 因为自定义标题栏时窗口圆角、阴影没了
+    return <></>;
+  }
+
   return (
     <>
       {desktop && (
         <View
+          data-tauri-drag-region
           className="titlebar-drag-overlay titlebar-drag"
           style={{ height: TITLE_HEIGHT }}
-          data-tauri-drag-region
         />
       )}
-      <View className={clsx("titlebar")} style={{ height: TITLE_HEIGHT }}>
+      <View data-tauri-drag-region className={clsx("titlebar")} style={{ height: TITLE_HEIGHT }}>
         <TitleLeft />
         <TitleCenter />
         <TitleRight />
-        <WindowControls />
+        {!isMac && <WindowControls />}
       </View>
     </>
   );

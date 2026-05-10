@@ -191,7 +191,14 @@ function MacOSControls() {
       </button>
       <button
         className="wc-dot wc-dot-full"
-        onClick={() => (altKey ? appWindow.toggleMaximize() : appWindow.setFullscreen(true))}
+        onClick={async () => {
+          if (altKey) {
+            appWindow.toggleMaximize();
+          } else {
+            const isFullscreen = await appWindow.isFullscreen();
+            appWindow.setFullscreen(!isFullscreen);
+          }
+        }}
         title={altKey ? "最大化" : "全屏"}
       >
         {hovering && (altKey ? <MacExpandIcon /> : <MacFullIcon />)}

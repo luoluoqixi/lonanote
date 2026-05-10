@@ -11,6 +11,7 @@
   left: 0;
   right: 0;
   background: transparent;
+  user-select: none;
 }
 
 .titlebar {
@@ -21,6 +22,7 @@
   flex-direction: row;
   width: 100%;
   background: var(--background);
+  user-select: none;
 }
 
 .titlebar-title-left {
@@ -36,7 +38,7 @@
 }
 
 .titlebar-title-left--mac {
-  margin-left: 76px;
+  margin-left: 80px;
 }
 
 .titlebar-title-center {
@@ -130,10 +132,14 @@ html.dark .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:active {
 }
 
 .wc-mac {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 10px;
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
@@ -142,8 +148,8 @@ html.dark .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   padding: 0;
   border: none;
   outline: none;
