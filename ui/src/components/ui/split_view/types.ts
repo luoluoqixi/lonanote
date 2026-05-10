@@ -15,7 +15,14 @@ export type SplitLayoutState = {
 export type SplitLayoutHandle = {
   reset: () => void;
   resize: (sizes: number[]) => void;
+  setVisible: (index: number, visible: boolean) => void;
   getState: () => SplitLayoutState;
+};
+
+export type SplitLayoutProviderProps = {
+  children: ReactNode;
+  storageKey?: string;
+  fallbackState?: SplitLayoutState;
 };
 
 export type SplitLayoutCommonProps = {
@@ -39,6 +46,7 @@ export type SplitLayoutProps = SplitLayoutCommonProps & {
   proportionalLayout?: boolean;
   separator?: boolean;
   storageKey?: string;
+  storageFallbackState?: SplitLayoutState;
   vertical?: boolean;
   onChange?: (sizes: number[]) => void;
   onDragEnd?: (sizes: number[]) => void;

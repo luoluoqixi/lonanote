@@ -1,17 +1,21 @@
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TitleBar } from "@/components/titlebar";
-import { SplitLayout, SplitLayoutPriority, readSplitLayoutState } from "@/components/ui";
+import { SplitLayout, type SplitLayoutHandle, SplitLayoutPriority } from "@/components/ui";
 
 const LAYOUT_STORAGE_KEY = "lonanote.wideScreenHome.layout";
+const DEFAULT_LAYOUT_STATE = {
+  sizes: [],
+  visible: [true, true, true, false],
+};
 
 export function WideScreenHome() {
-  const initialLayoutState = useMemo(() => readSplitLayoutState(LAYOUT_STORAGE_KEY), []);
-  const [showSidebar, setShowSidebar] = useState(() => initialLayoutState?.visible[1] ?? true);
+  const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
+  const [showSidebar, setShowSidebar] = useState(DEFAULT_LAYOUT_STATE.visible[1] ?? true);
   const [showAssistSidebar, setShowAssistSidebar] = useState(
-    () => initialLayoutState?.visible[3] ?? false,
+    DEFAULT_LAYOUT_STATE.visible[3] ?? false,
   );
 
   return (
@@ -21,20 +25,30 @@ export function WideScreenHome() {
         <SplitLayout vertical separator={false}>
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
             <SplitLayout
+              ref={contentLayoutRef}
               proportionalLayout={false}
               separator={false}
+              storageFallbackState={DEFAULT_LAYOUT_STATE}
               storageKey={LAYOUT_STORAGE_KEY}
-              onVisibleChange={(index, visible) => {
-                if (index === 1) setShowSidebar(visible);
-                if (index === 3) setShowAssistSidebar(visible);
+              onStateChange={(state) => {
+                const nextShowSidebar = state.visible[1] ?? true;
+                const nextShowAssistSidebar = state.visible[3] ?? false;
+                setShowSidebar((prev) => (prev === nextShowSidebar ? prev : nextShowSidebar));
+                setShowAssistSidebar((prev) =>
+                  prev === nextShowAssistSidebar ? prev : nextShowAssistSidebar,
+                );
               }}
             >
               <SplitLayout.Pane minSize={48} maxSize={48} visible>
                 <ActivityBar
                   showAssistSidebar={showAssistSidebar}
                   showSidebar={showSidebar}
-                  onToggleAssistSidebar={() => setShowAssistSidebar((visible) => !visible)}
-                  onToggleSidebar={() => setShowSidebar((visible) => !visible)}
+                  onToggleAssistSidebar={() => {
+                    contentLayoutRef.current?.setVisible(3, !showAssistSidebar);
+                  }}
+                  onToggleSidebar={() => {
+                    contentLayoutRef.current?.setVisible(1, !showSidebar);
+                  }}
                 />
               </SplitLayout.Pane>
               <SplitLayout.Pane
@@ -42,7 +56,6 @@ export function WideScreenHome() {
                 preferredSize={300}
                 priority={SplitLayoutPriority.Low}
                 snap
-                visible={showSidebar}
               >
                 <SidePanel />
               </SplitLayout.Pane>
@@ -54,7 +67,6 @@ export function WideScreenHome() {
                 preferredSize={300}
                 priority={SplitLayoutPriority.Low}
                 snap
-                visible={showAssistSidebar}
               >
                 <AssistPanel />
               </SplitLayout.Pane>

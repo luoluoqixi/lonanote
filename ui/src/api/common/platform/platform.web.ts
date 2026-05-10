@@ -14,6 +14,10 @@ export function isWeb(): boolean {
   return true;
 }
 
+export function isWebOnly(): boolean {
+  return false;
+}
+
 export function isDesktop(): boolean {
   const platfrom = os();
   return platfrom === "windows" || platfrom === "macos" || platfrom === "linux";

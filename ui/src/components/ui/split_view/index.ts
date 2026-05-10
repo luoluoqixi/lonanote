@@ -5,5 +5,6 @@ export type {
   SplitLayoutHandle,
   SplitLayoutPaneProps,
   SplitLayoutProps,
+  SplitLayoutProviderProps,
   SplitLayoutState,
 } from "./types";

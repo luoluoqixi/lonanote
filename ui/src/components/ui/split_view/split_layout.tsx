@@ -11,6 +11,7 @@ import React, {
 import {
   type LayoutChangeEvent,
   PanResponder,
+  Platform,
   type StyleProp,
   StyleSheet,
   View,
@@ -19,8 +20,8 @@ import {
 
 import { LayoutService } from "./layout_service";
 import { PaneView } from "./pane_view";
+import { SplitLayoutProvider, useSplitLayoutStorage } from "./split_layout_provider";
 import { type SplitViewDescriptor, SplitViewModel } from "./split_view_model";
-import { readSplitLayoutState, writeSplitLayoutState } from "./storage";
 import {
   type PaneDescriptor,
   type SplitLayoutHandle,
@@ -31,6 +32,457 @@ import {
 } from "./types";
 
 const DEFAULT_SASH_SIZE = 8;
+const IS_WEB = Platform.OS === "web";
+
+const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
+  (
+    {
+      children,
+      className,
+      defaultSizes,
+      maxSize = Number.POSITIVE_INFINITY,
+      minSize = 30,
+      onChange,
+      onDragEnd,
+      onDragStart,
+      onReset,
+      onStateChange,
+      onVisibleChange,
+      proportionalLayout = true,
+      separator = true,
+      snap = false,
+      storageKey,
+      style,
+      vertical = false,
+    },
+    ref,
+  ) => {
+    const layoutServiceRef = useRef(new LayoutService());
+    const modelRef = useRef<SplitViewModel | null>(null);
+    const initialStoredStateHydratedRef = useRef(false);
+    const initialStoredStateRef = useRef<SplitLayoutState | undefined>(undefined);
+    const panesRef = useRef<PaneDescriptor[]>([]);
+    const callbacksRef = useRef({
+      onChange,
+      onDragEnd,
+      onDragStart,
+      onStateChange,
+      onVisibleChange,
+    });
+    const webDragCleanupRef = useRef<(() => void) | null>(null);
+    const webDraggingRef = useRef(false);
+    const [activeSashIndex, setActiveSashIndex] = useState<number | null>(null);
+    const [dragging, setDragging] = useState(false);
+    const [layoutSize, setLayoutSize] = useState(0);
+    const [sizes, setSizes] = useState<number[]>([]);
+    const [visible, setVisible] = useState<boolean[]>([]);
+    const {
+      ready: storageReady,
+      state: storedState,
+      setState: setStoredState,
+    } = useSplitLayoutStorage(storageKey);
+
+    useEffect(() => {
+      callbacksRef.current = {
+        onChange,
+        onDragEnd,
+        onDragStart,
+        onStateChange,
+        onVisibleChange,
+      };
+    }, [onChange, onDragEnd, onDragStart, onStateChange, onVisibleChange]);
+
+    useEffect(() => {
+      return () => {
+        webDragCleanupRef.current?.();
+        webDragCleanupRef.current = null;
+      };
+    }, []);
+
+    const panes = useMemo(
+      () => normalizePanes(children, minSize, maxSize, snap),
+      [children, maxSize, minSize, snap],
+    );
+    const paneConfigKey = useMemo(() => getPaneConfigKey(panes), [panes]);
+    panesRef.current = panes;
+
+    const emitState = useCallback((model: SplitViewModel) => {
+      const state = model.getState();
+      setSizes(state.sizes);
+      setVisible(state.visible);
+      callbacksRef.current.onStateChange?.(state);
+      return state;
+    }, []);
+
+    const persistState = useCallback(
+      (state?: SplitLayoutState) => {
+        const nextState = state ?? modelRef.current?.getState();
+        if (nextState) {
+          setStoredState(nextState);
+        }
+      },
+      [setStoredState],
+    );
+
+    useEffect(() => {
+      if (!storageReady) {
+        initialStoredStateHydratedRef.current = false;
+        initialStoredStateRef.current = undefined;
+        return;
+      }
+
+      if (!initialStoredStateHydratedRef.current) {
+        initialStoredStateRef.current = storedState;
+        initialStoredStateHydratedRef.current = true;
+      }
+    }, [storageReady, storedState]);
+
+    const createModel = useCallback(() => {
+      const currentPanes = panesRef.current;
+      if (!storageReady || layoutSize <= 0 || currentPanes.length === 0) return null;
+
+      layoutServiceRef.current.setSize(layoutSize);
+      const sourceState = modelRef.current?.getState() ?? initialStoredStateRef.current;
+      const canUseStoredState =
+        sourceState?.sizes.length === currentPanes.length &&
+        sourceState.visible.length === currentPanes.length;
+      const canUseDefaultSizes = defaultSizes?.length === currentPanes.length;
+
+      const descriptorViews: SplitViewDescriptor["views"] = currentPanes.map((pane, index) => {
+        const view = new PaneView(layoutServiceRef.current, {
+          maximumSize: pane.maxSize,
+          minimumSize: pane.minSize,
+          preferredSize: pane.preferredSize,
+          priority: pane.priority,
+          snap: pane.snap,
+        });
+        const preferredSize = resolvePreferredSize(pane.preferredSize, layoutSize) ?? pane.minSize;
+        const storedSize = canUseStoredState ? sourceState.sizes[index] : undefined;
+        const defaultSize = canUseDefaultSizes ? defaultSizes[index] : undefined;
+        const visibleSize = clamp(
+          storedSize ?? defaultSize ?? preferredSize,
+          pane.minSize,
+          Math.min(pane.maxSize, layoutSize),
+        );
+        const isVisible = pane.visible ?? (canUseStoredState ? sourceState.visible[index] : true);
+
+        return {
+          size: isVisible ? visibleSize : { cachedVisibleSize: visibleSize || preferredSize },
+          view,
+        };
+      });
+
+      const descriptor: SplitViewDescriptor = {
+        size: descriptorViews.reduce(
+          (sum, item) => sum + (typeof item.size === "number" ? item.size : 0),
+          0,
+        ),
+        views: descriptorViews,
+      };
+      const model = new SplitViewModel({ descriptor, proportionalLayout });
+
+      model.onDidChange = (nextSizes) => {
+        setSizes(nextSizes);
+        callbacksRef.current.onChange?.(nextSizes);
+        callbacksRef.current.onStateChange?.(model.getState());
+      };
+      model.onDidVisibleChange = (index, nextVisible) => {
+        setVisible(model.getState().visible);
+        callbacksRef.current.onVisibleChange?.(index, nextVisible);
+        persistState(model.getState());
+      };
+      model.layout(layoutSize);
+      modelRef.current = model;
+      persistState(emitState(model));
+      return model;
+    }, [defaultSizes, emitState, layoutSize, persistState, proportionalLayout, storageReady]);
+
+    useEffect(() => {
+      createModel();
+    }, [createModel, paneConfigKey]);
+
+    useEffect(() => {
+      if (!dragging || typeof document === "undefined") return;
+
+      const cursor = vertical ? "ns-resize" : "ew-resize";
+      const previousBodyCursor = document.body.style.cursor;
+      const previousDocumentCursor = document.documentElement.style.cursor;
+      const previousBodyUserSelect = document.body.style.userSelect;
+      const previousDocumentUserSelect = document.documentElement.style.userSelect;
+
+      document.body.style.cursor = cursor;
+      document.documentElement.style.cursor = cursor;
+      document.body.style.userSelect = "none";
+      document.documentElement.style.userSelect = "none";
+
+      return () => {
+        document.body.style.cursor = previousBodyCursor;
+        document.documentElement.style.cursor = previousDocumentCursor;
+        document.body.style.userSelect = previousBodyUserSelect;
+        document.documentElement.style.userSelect = previousDocumentUserSelect;
+      };
+    }, [dragging, vertical]);
+
+    useEffect(() => {
+      const model = modelRef.current;
+      if (!model) return;
+
+      panes.forEach((pane, index) => {
+        if (pane.visible !== undefined && model.isViewVisible(index) !== pane.visible) {
+          model.setViewVisible(index, pane.visible);
+          persistState(model.getState());
+        }
+      });
+    }, [paneConfigKey, panes, persistState]);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        getState: () => modelRef.current?.getState() ?? { sizes, visible },
+        reset: () => {
+          if (onReset) {
+            onReset();
+            return;
+          }
+
+          const model = modelRef.current;
+          if (!model) return;
+          model.distributeViewSizes();
+          panes.forEach((pane, index) => {
+            const preferredSize = resolvePreferredSize(pane.preferredSize, layoutSize);
+            if (preferredSize !== undefined) model.resizeView(index, preferredSize);
+          });
+          persistState(emitState(model));
+        },
+        resize: (nextSizes) => {
+          const model = modelRef.current;
+          if (!model) return;
+          model.resizeViews(nextSizes);
+          persistState(emitState(model));
+        },
+        setVisible: (index, nextVisible) => {
+          const model = modelRef.current;
+          if (!model) return;
+          model.setViewVisible(index, nextVisible);
+          persistState(emitState(model));
+        },
+      }),
+      [emitState, layoutSize, onReset, panes, persistState, sizes, visible],
+    );
+
+    const handleLayout = useCallback(
+      (event: LayoutChangeEvent) => {
+        const nextLayoutSize = vertical
+          ? event.nativeEvent.layout.height
+          : event.nativeEvent.layout.width;
+        if (nextLayoutSize > 0 && Math.round(nextLayoutSize) !== Math.round(layoutSize)) {
+          setLayoutSize(nextLayoutSize);
+          layoutServiceRef.current.setSize(nextLayoutSize);
+          modelRef.current?.layout(nextLayoutSize);
+        }
+      },
+      [layoutSize, vertical],
+    );
+
+    const offsets = useMemo(() => getOffsets(sizes), [sizes]);
+
+    const beginDrag = useCallback((index: number) => {
+      const model = modelRef.current;
+      if (!model) return false;
+
+      model.startSashDrag(index, 0);
+      setActiveSashIndex(index);
+      setDragging(true);
+      callbacksRef.current.onDragStart?.(model.getState().sizes);
+      return true;
+    }, []);
+
+    const updateDrag = useCallback((delta: number) => {
+      const model = modelRef.current;
+      if (!model) return;
+      model.changeSashDrag(delta);
+    }, []);
+
+    const endDrag = useCallback(() => {
+      const model = modelRef.current;
+      if (!model) return;
+
+      model.endSashDrag();
+      const state = emitState(model);
+      persistState(state);
+      setActiveSashIndex(null);
+      setDragging(false);
+      webDraggingRef.current = false;
+      callbacksRef.current.onDragEnd?.(state.sizes);
+    }, [emitState, persistState]);
+
+    const startWebSashDragAt = useCallback(
+      (index: number, startPointer: number, usePointerEvents: boolean) => {
+        if (!IS_WEB || typeof document === "undefined") return;
+        if (webDraggingRef.current) return;
+
+        webDragCleanupRef.current?.();
+
+        if (!beginDrag(index)) return;
+        webDraggingRef.current = true;
+
+        const handlePointerMove = (moveEvent: PointerEvent | MouseEvent) => {
+          const currentPointer = vertical ? moveEvent.clientY : moveEvent.clientX;
+          updateDrag(currentPointer - startPointer);
+        };
+        const handlePointerUp = () => {
+          webDragCleanupRef.current?.();
+          webDragCleanupRef.current = null;
+          endDrag();
+        };
+
+        const cleanup = () => {
+          if (usePointerEvents) {
+            document.removeEventListener("pointermove", handlePointerMove);
+            document.removeEventListener("pointerup", handlePointerUp);
+            document.removeEventListener("pointercancel", handlePointerUp);
+          } else {
+            document.removeEventListener("mousemove", handlePointerMove);
+            document.removeEventListener("mouseup", handlePointerUp);
+          }
+          webDraggingRef.current = false;
+        };
+
+        webDragCleanupRef.current = cleanup;
+        if (usePointerEvents) {
+          document.addEventListener("pointermove", handlePointerMove);
+          document.addEventListener("pointerup", handlePointerUp);
+          document.addEventListener("pointercancel", handlePointerUp);
+        } else {
+          document.addEventListener("mousemove", handlePointerMove);
+          document.addEventListener("mouseup", handlePointerUp);
+        }
+      },
+      [beginDrag, endDrag, updateDrag, vertical],
+    );
+
+    const startWebSashDrag = useCallback(
+      (index: number) =>
+        (event: MouseEvent | PointerEvent | React.MouseEvent | React.PointerEvent) => {
+          if (!IS_WEB) return;
+          event.preventDefault?.();
+          const startPointer = vertical ? event.clientY : event.clientX;
+          startWebSashDragAt(index, startPointer, "pointerId" in event);
+        },
+      [startWebSashDragAt, vertical],
+    );
+
+    const startWebSashResponderDrag = useCallback(
+      (index: number) => (event: { nativeEvent?: { pageX?: number; pageY?: number } }) => {
+        if (!IS_WEB) return;
+        const nativeEvent = event.nativeEvent;
+        const startPointer = vertical ? nativeEvent?.pageY : nativeEvent?.pageX;
+        if (typeof startPointer !== "number") return;
+        startWebSashDragAt(index, startPointer, false);
+      },
+      [startWebSashDragAt, vertical],
+    );
+
+    const sashPanResponders = useMemo(() => {
+      if (IS_WEB) return [];
+
+      return Array.from({ length: Math.max(panes.length - 1, 0) }, (_, index) =>
+        PanResponder.create({
+          onMoveShouldSetPanResponder: () => true,
+          onPanResponderGrant: () => {
+            beginDrag(index);
+          },
+          onPanResponderMove: (_event, gestureState) => {
+            updateDrag(vertical ? gestureState.dy : gestureState.dx);
+          },
+          onPanResponderRelease: () => {
+            endDrag();
+          },
+          onPanResponderTerminate: () => {
+            endDrag();
+          },
+          onStartShouldSetPanResponder: () => true,
+        }),
+      );
+    }, [beginDrag, endDrag, panes.length, updateDrag, vertical]);
+
+    return (
+      <View
+        className={clsx(
+          "split-layout",
+          vertical ? "split-layout--vertical" : "split-layout--horizontal",
+          separator && "split-layout--separator",
+          dragging && "split-layout--dragging",
+          className,
+        )}
+        onLayout={handleLayout}
+        style={[styles.root, style]}
+      >
+        <View className="split-layout__container" style={styles.container}>
+          {panes.map((pane, index) => {
+            const paneSize = sizes[index] ?? 0;
+            const paneOffset = offsets[index] ?? 0;
+            const paneStyle = vertical
+              ? ({ top: paneOffset, height: paneSize, left: 0, right: 0 } satisfies ViewStyle)
+              : ({ left: paneOffset, width: paneSize, top: 0, bottom: 0 } satisfies ViewStyle);
+
+            return (
+              <View
+                key={pane.key}
+                className={clsx(
+                  "split-layout__pane",
+                  !visible[index] && "split-layout__pane--hidden",
+                  pane.className,
+                )}
+                style={[styles.pane, paneStyle, pane.style] as StyleProp<ViewStyle>}
+              >
+                {pane.children}
+              </View>
+            );
+          })}
+          {panes.slice(0, -1).map((pane, index) => {
+            if (!canRenderSash(panes, index)) return null;
+
+            const sashOffset = (offsets[index] ?? 0) + (sizes[index] ?? 0) - DEFAULT_SASH_SIZE / 2;
+            const sashStyle = vertical
+              ? ({
+                  top: sashOffset,
+                  height: DEFAULT_SASH_SIZE,
+                  left: 0,
+                  right: 0,
+                } satisfies ViewStyle)
+              : ({
+                  left: sashOffset,
+                  width: DEFAULT_SASH_SIZE,
+                  top: 0,
+                  bottom: 0,
+                } satisfies ViewStyle);
+
+            return (
+              <View
+                key={`${pane.key}-sash`}
+                className={clsx(
+                  "split-layout__sash",
+                  activeSashIndex === index && "split-layout__sash--active",
+                  vertical ? "split-layout__sash--horizontal" : "split-layout__sash--vertical",
+                )}
+                style={[styles.sash, sashStyle]}
+                {...(IS_WEB
+                  ? ({
+                      onMouseDown: startWebSashDrag(index),
+                      onPointerDown: startWebSashDrag(index),
+                      onResponderGrant: startWebSashResponderDrag(index),
+                      onStartShouldSetResponder: () => true,
+                    } as any)
+                  : sashPanResponders[index]?.panHandlers)}
+              />
+            );
+          })}
+        </View>
+      </View>
+    );
+  },
+);
 
 const SplitLayoutPane = forwardRef<View, SplitLayoutPaneProps>(
   ({ className, children, style }, ref) => {
@@ -145,331 +597,19 @@ const canRenderSash = (panes: PaneDescriptor[], index: number) => {
 
 export const SplitLayout = Object.assign(
   forwardRef<SplitLayoutHandle, SplitLayoutProps>(
-    (
-      {
-        children,
-        className,
-        defaultSizes,
-        maxSize = Number.POSITIVE_INFINITY,
-        minSize = 30,
-        onChange,
-        onDragEnd,
-        onDragStart,
-        onReset,
-        onStateChange,
-        onVisibleChange,
-        proportionalLayout = true,
-        separator = true,
-        snap = false,
-        storageKey,
-        style,
-        vertical = false,
-      },
-      ref,
-    ) => {
-      const layoutServiceRef = useRef(new LayoutService());
-      const modelRef = useRef<SplitViewModel | null>(null);
-      const panesRef = useRef<PaneDescriptor[]>([]);
-      const [activeSashIndex, setActiveSashIndex] = useState<number | null>(null);
-      const [dragging, setDragging] = useState(false);
-      const [layoutSize, setLayoutSize] = useState(0);
-      const [sizes, setSizes] = useState<number[]>([]);
-      const [visible, setVisible] = useState<boolean[]>([]);
-
-      const panes = useMemo(
-        () => normalizePanes(children, minSize, maxSize, snap),
-        [children, maxSize, minSize, snap],
-      );
-      const paneConfigKey = useMemo(() => getPaneConfigKey(panes), [panes]);
-      panesRef.current = panes;
-
-      const emitState = useCallback(
-        (model: SplitViewModel) => {
-          const state = model.getState();
-          setSizes(state.sizes);
-          setVisible(state.visible);
-          onStateChange?.(state);
-          return state;
-        },
-        [onStateChange],
-      );
-
-      const persistState = useCallback(
-        (state?: SplitLayoutState) => {
-          const nextState = state ?? modelRef.current?.getState();
-          if (nextState) writeSplitLayoutState(storageKey, nextState);
-        },
-        [storageKey],
-      );
-
-      const createModel = useCallback(() => {
-        const currentPanes = panesRef.current;
-        if (layoutSize <= 0 || currentPanes.length === 0) return null;
-
-        layoutServiceRef.current.setSize(layoutSize);
-        const storedState = readSplitLayoutState(storageKey);
-        const canUseStoredState =
-          storedState?.sizes.length === currentPanes.length &&
-          storedState.visible.length === currentPanes.length;
-        const canUseDefaultSizes = defaultSizes?.length === currentPanes.length;
-
-        const descriptorViews: SplitViewDescriptor["views"] = currentPanes.map((pane, index) => {
-          const view = new PaneView(layoutServiceRef.current, {
-            maximumSize: pane.maxSize,
-            minimumSize: pane.minSize,
-            preferredSize: pane.preferredSize,
-            priority: pane.priority,
-            snap: pane.snap,
-          });
-          const preferredSize =
-            resolvePreferredSize(pane.preferredSize, layoutSize) ?? pane.minSize;
-          const storedSize = canUseStoredState ? storedState.sizes[index] : undefined;
-          const defaultSize = canUseDefaultSizes ? defaultSizes[index] : undefined;
-          const visibleSize = clamp(
-            storedSize ?? defaultSize ?? preferredSize,
-            pane.minSize,
-            Math.min(pane.maxSize, layoutSize),
-          );
-          const isVisible = pane.visible ?? (canUseStoredState ? storedState.visible[index] : true);
-
-          return {
-            size: isVisible ? visibleSize : { cachedVisibleSize: visibleSize || preferredSize },
-            view,
-          };
-        });
-
-        const descriptor: SplitViewDescriptor = {
-          size: descriptorViews.reduce(
-            (sum, item) => sum + (typeof item.size === "number" ? item.size : 0),
-            0,
-          ),
-          views: descriptorViews,
-        };
-        const model = new SplitViewModel({ descriptor, proportionalLayout });
-
-        model.onDidChange = (nextSizes) => {
-          setSizes(nextSizes);
-          onChange?.(nextSizes);
-          onStateChange?.(model.getState());
-        };
-        model.onDidVisibleChange = (index, nextVisible) => {
-          setVisible(model.getState().visible);
-          onVisibleChange?.(index, nextVisible);
-          persistState(model.getState());
-        };
-        model.layout(layoutSize);
-        modelRef.current = model;
-        persistState(emitState(model));
-        return model;
-      }, [
-        defaultSizes,
-        emitState,
-        layoutSize,
-        onChange,
-        onStateChange,
-        onVisibleChange,
-        persistState,
-        proportionalLayout,
-        storageKey,
-      ]);
-
-      useEffect(() => {
-        createModel();
-      }, [createModel, paneConfigKey]);
-
-      useEffect(() => {
-        if (!dragging || typeof document === "undefined") return;
-
-        const cursor = vertical ? "ns-resize" : "ew-resize";
-        const previousBodyCursor = document.body.style.cursor;
-        const previousDocumentCursor = document.documentElement.style.cursor;
-        const previousBodyUserSelect = document.body.style.userSelect;
-        const previousDocumentUserSelect = document.documentElement.style.userSelect;
-
-        document.body.style.cursor = cursor;
-        document.documentElement.style.cursor = cursor;
-        document.body.style.userSelect = "none";
-        document.documentElement.style.userSelect = "none";
-
-        return () => {
-          document.body.style.cursor = previousBodyCursor;
-          document.documentElement.style.cursor = previousDocumentCursor;
-          document.body.style.userSelect = previousBodyUserSelect;
-          document.documentElement.style.userSelect = previousDocumentUserSelect;
-        };
-      }, [dragging, vertical]);
-
-      useEffect(() => {
-        const model = modelRef.current;
-        if (!model) return;
-
-        panes.forEach((pane, index) => {
-          if (pane.visible !== undefined && model.isViewVisible(index) !== pane.visible) {
-            model.setViewVisible(index, pane.visible);
-            persistState(model.getState());
-          }
-        });
-      }, [paneConfigKey, panes, persistState]);
-
-      useImperativeHandle(
-        ref,
-        () => ({
-          getState: () => modelRef.current?.getState() ?? { sizes, visible },
-          reset: () => {
-            if (onReset) {
-              onReset();
-              return;
-            }
-
-            const model = modelRef.current;
-            if (!model) return;
-            model.distributeViewSizes();
-            panes.forEach((pane, index) => {
-              const preferredSize = resolvePreferredSize(pane.preferredSize, layoutSize);
-              if (preferredSize !== undefined) model.resizeView(index, preferredSize);
-            });
-            persistState(emitState(model));
-          },
-          resize: (nextSizes) => {
-            const model = modelRef.current;
-            if (!model) return;
-            model.resizeViews(nextSizes);
-            persistState(emitState(model));
-          },
-        }),
-        [emitState, layoutSize, onReset, panes, persistState, sizes, visible],
-      );
-
-      const handleLayout = useCallback(
-        (event: LayoutChangeEvent) => {
-          const nextLayoutSize = vertical
-            ? event.nativeEvent.layout.height
-            : event.nativeEvent.layout.width;
-          if (nextLayoutSize > 0 && Math.round(nextLayoutSize) !== Math.round(layoutSize)) {
-            setLayoutSize(nextLayoutSize);
-            layoutServiceRef.current.setSize(nextLayoutSize);
-            modelRef.current?.layout(nextLayoutSize);
-          }
-        },
-        [layoutSize, vertical],
-      );
-
-      const offsets = useMemo(() => getOffsets(sizes), [sizes]);
-
-      const sashPanResponders = useMemo(() => {
-        return Array.from({ length: Math.max(panes.length - 1, 0) }, (_, index) =>
-          PanResponder.create({
-            onMoveShouldSetPanResponder: () => true,
-            onPanResponderGrant: () => {
-              const model = modelRef.current;
-              if (!model) return;
-              model.startSashDrag(index, 0);
-              setActiveSashIndex(index);
-              setDragging(true);
-              onDragStart?.(model.getState().sizes);
-            },
-            onPanResponderMove: (_event, gestureState) => {
-              const model = modelRef.current;
-              if (!model) return;
-              model.changeSashDrag(vertical ? gestureState.dy : gestureState.dx);
-            },
-            onPanResponderRelease: () => {
-              const model = modelRef.current;
-              if (!model) return;
-              model.endSashDrag();
-              const state = emitState(model);
-              persistState(state);
-              setActiveSashIndex(null);
-              setDragging(false);
-              onDragEnd?.(state.sizes);
-            },
-            onPanResponderTerminate: () => {
-              const model = modelRef.current;
-              if (!model) return;
-              model.endSashDrag();
-              const state = emitState(model);
-              persistState(state);
-              setActiveSashIndex(null);
-              setDragging(false);
-              onDragEnd?.(state.sizes);
-            },
-            onStartShouldSetPanResponder: () => true,
-          }),
+    ({ storageFallbackState, storageKey, ...props }, ref) => {
+      if (storageKey || storageFallbackState) {
+        return (
+          <SplitLayoutProvider fallbackState={storageFallbackState} storageKey={storageKey}>
+            <SplitLayoutInner ref={ref} {...props} />
+          </SplitLayoutProvider>
         );
-      }, [emitState, onDragEnd, onDragStart, panes.length, persistState, vertical]);
+      }
 
-      return (
-        <View
-          className={clsx(
-            "split-layout",
-            vertical ? "split-layout--vertical" : "split-layout--horizontal",
-            separator && "split-layout--separator",
-            dragging && "split-layout--dragging",
-            className,
-          )}
-          onLayout={handleLayout}
-          style={[styles.root, style]}
-        >
-          <View className="split-layout__container" style={styles.container}>
-            {panes.map((pane, index) => {
-              const paneSize = sizes[index] ?? 0;
-              const paneOffset = offsets[index] ?? 0;
-              const paneStyle = vertical
-                ? ({ top: paneOffset, height: paneSize, left: 0, right: 0 } satisfies ViewStyle)
-                : ({ left: paneOffset, width: paneSize, top: 0, bottom: 0 } satisfies ViewStyle);
-
-              return (
-                <View
-                  key={pane.key}
-                  className={clsx(
-                    "split-layout__pane",
-                    !visible[index] && "split-layout__pane--hidden",
-                    pane.className,
-                  )}
-                  style={[styles.pane, paneStyle, pane.style] as StyleProp<ViewStyle>}
-                >
-                  {pane.children}
-                </View>
-              );
-            })}
-            {panes.slice(0, -1).map((pane, index) => {
-              if (!canRenderSash(panes, index)) return null;
-
-              const sashOffset =
-                (offsets[index] ?? 0) + (sizes[index] ?? 0) - DEFAULT_SASH_SIZE / 2;
-              const sashStyle = vertical
-                ? ({
-                    top: sashOffset,
-                    height: DEFAULT_SASH_SIZE,
-                    left: 0,
-                    right: 0,
-                  } satisfies ViewStyle)
-                : ({
-                    left: sashOffset,
-                    width: DEFAULT_SASH_SIZE,
-                    top: 0,
-                    bottom: 0,
-                  } satisfies ViewStyle);
-
-              return (
-                <View
-                  key={`${pane.key}-sash`}
-                  className={clsx(
-                    "split-layout__sash",
-                    activeSashIndex === index && "split-layout__sash--active",
-                    vertical ? "split-layout__sash--horizontal" : "split-layout__sash--vertical",
-                  )}
-                  style={[styles.sash, sashStyle]}
-                  {...sashPanResponders[index]?.panHandlers}
-                />
-              );
-            })}
-          </View>
-        </View>
-      );
+      return <SplitLayoutInner ref={ref} {...props} />;
     },
   ),
-  { Pane: SplitLayoutPane },
+  { Pane: SplitLayoutPane, Provider: SplitLayoutProvider },
 );
 
 const styles = StyleSheet.create({

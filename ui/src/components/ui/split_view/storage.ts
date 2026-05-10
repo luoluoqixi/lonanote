@@ -1,3 +1,6 @@
+import { store } from "@/api/commands";
+import { isInvokeAvailable } from "@/api/invoke";
+
 import type { SplitLayoutState } from "./types";
 
 const canUseLocalStorage = () => {
@@ -14,27 +17,64 @@ const isBooleanArray = (value: unknown): value is boolean[] => {
   return Array.isArray(value) && value.every((item) => typeof item === "boolean");
 };
 
-export function readSplitLayoutState(storageKey?: string): SplitLayoutState | undefined {
-  if (!storageKey || !canUseLocalStorage()) return undefined;
+const parseSplitLayoutState = (value: unknown): SplitLayoutState | undefined => {
+  if (typeof value === "undefined" || value === null) return undefined;
+
+  const parsed =
+    typeof value === "string" ? (JSON.parse(value) as Partial<SplitLayoutState>) : value;
+
+  if (!parsed || typeof parsed !== "object") return undefined;
+
+  const state = parsed as Partial<SplitLayoutState>;
+  if (!isFiniteNumberArray(state.sizes) || !isBooleanArray(state.visible)) return undefined;
+
+  return {
+    sizes: state.sizes,
+    visible: state.visible,
+  };
+};
+
+export async function readSplitLayoutState(
+  storageKey?: string,
+): Promise<SplitLayoutState | undefined> {
+  if (!storageKey) return undefined;
+
+  if (isInvokeAvailable()) {
+    try {
+      const value = await store.commonGet<unknown>(storageKey);
+      return parseSplitLayoutState(value);
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (!canUseLocalStorage()) return undefined;
 
   try {
     const raw = window.localStorage.getItem(storageKey);
-    if (!raw) return undefined;
-
-    const parsed = JSON.parse(raw) as Partial<SplitLayoutState>;
-    if (!isFiniteNumberArray(parsed.sizes) || !isBooleanArray(parsed.visible)) return undefined;
-
-    return {
-      sizes: parsed.sizes,
-      visible: parsed.visible,
-    };
+    return parseSplitLayoutState(raw);
   } catch {
     return undefined;
   }
 }
 
-export function writeSplitLayoutState(storageKey: string | undefined, state: SplitLayoutState) {
-  if (!storageKey || !canUseLocalStorage()) return;
+export async function writeSplitLayoutState(
+  storageKey: string | undefined,
+  state: SplitLayoutState,
+): Promise<void> {
+  if (!storageKey) return;
+
+  if (isInvokeAvailable()) {
+    try {
+      await store.commonSet(storageKey, state);
+      await store.commonSave();
+      return;
+    } catch {
+      return;
+    }
+  }
+
+  if (!canUseLocalStorage()) return;
 
   try {
     window.localStorage.setItem(storageKey, JSON.stringify(state));
