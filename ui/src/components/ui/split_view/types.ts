@@ -1,0 +1,61 @@
+import type { ReactNode } from "react";
+import type { StyleProp, ViewStyle } from "react-native";
+
+export enum SplitLayoutPriority {
+  Normal = "NORMAL",
+  Low = "LOW",
+  High = "HIGH",
+}
+
+export type SplitLayoutState = {
+  sizes: number[];
+  visible: boolean[];
+};
+
+export type SplitLayoutHandle = {
+  reset: () => void;
+  resize: (sizes: number[]) => void;
+  getState: () => SplitLayoutState;
+};
+
+export type SplitLayoutCommonProps = {
+  className?: string;
+  maxSize?: number;
+  minSize?: number;
+  snap?: boolean;
+  style?: StyleProp<ViewStyle>;
+};
+
+export type SplitLayoutPaneProps = SplitLayoutCommonProps & {
+  children: ReactNode;
+  preferredSize?: number | string;
+  priority?: SplitLayoutPriority;
+  visible?: boolean;
+};
+
+export type SplitLayoutProps = SplitLayoutCommonProps & {
+  children: ReactNode;
+  defaultSizes?: number[];
+  proportionalLayout?: boolean;
+  separator?: boolean;
+  storageKey?: string;
+  vertical?: boolean;
+  onChange?: (sizes: number[]) => void;
+  onDragEnd?: (sizes: number[]) => void;
+  onDragStart?: (sizes: number[]) => void;
+  onReset?: () => void;
+  onStateChange?: (state: SplitLayoutState) => void;
+  onVisibleChange?: (index: number, visible: boolean) => void;
+};
+
+export type PaneDescriptor = Required<Pick<SplitLayoutPaneProps, "priority">> & {
+  key: string;
+  children: ReactNode;
+  className?: string;
+  maxSize: number;
+  minSize: number;
+  preferredSize?: number | string;
+  snap: boolean;
+  style?: StyleProp<ViewStyle>;
+  visible?: boolean;
+};

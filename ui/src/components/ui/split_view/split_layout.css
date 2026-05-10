@@ -1,0 +1,66 @@
+.split-layout {
+  touch-action: none;
+  user-select: none;
+}
+
+.split-layout__container {
+  min-height: 0;
+  min-width: 0;
+}
+
+.split-layout__pane {
+  background: var(--background);
+  min-height: 0;
+  min-width: 0;
+}
+
+.split-layout__pane--hidden {
+  pointer-events: none;
+}
+
+.split-layout__sash {
+  background: transparent;
+  pointer-events: auto;
+  transition: background-color 0.1s ease;
+}
+
+.split-layout__sash--vertical {
+  cursor: ew-resize;
+}
+
+.split-layout__sash--horizontal {
+  cursor: ns-resize;
+}
+
+.split-layout__sash::after {
+  background: transparent;
+  content: "";
+  position: absolute;
+  transition: background-color 0.1s ease;
+}
+
+.split-layout__sash--vertical::after {
+  bottom: 0;
+  left: 3px;
+  top: 0;
+  width: 1px;
+}
+
+.split-layout__sash--horizontal::after {
+  height: 1px;
+  left: 0;
+  right: 0;
+  top: 3px;
+}
+
+.split-layout--separator .split-layout__sash::after,
+.split-layout__sash:hover::after,
+.split-layout--dragging .split-layout__sash::after {
+  background: color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+.split-layout--dragging,
+.split-layout--dragging * {
+  cursor: inherit;
+  user-select: none;
+}
