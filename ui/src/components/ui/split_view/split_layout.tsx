@@ -26,6 +26,9 @@ import { type SplitViewDescriptor, SplitViewModel } from "./split_view_model";
 import {
   type PaneDescriptor,
   type SplitLayoutHandle,
+  type SplitLayoutMobileHandleOffsets,
+  type SplitLayoutMobileHandlePosition,
+  type SplitLayoutMobileHandlePositions,
   type SplitLayoutPaneProps,
   SplitLayoutPriority,
   type SplitLayoutProps,
@@ -34,7 +37,9 @@ import {
 
 const DEFAULT_SASH_SIZE = 8;
 const MOBILE_SASH_SIZE = 20;
-const MOBILE_SASH_INDICATOR_SIZE = 3;
+const MOBILE_SASH_HANDLE_THICKNESS = 6;
+const MOBILE_SASH_HANDLE_LENGTH = 56;
+const MOBILE_SASH_HANDLE_INSET = 4;
 const IS_WEB = isWeb();
 const IS_MOBILE = isMobile();
 
@@ -57,6 +62,71 @@ const bindDocumentPointerDrag = (onMove: (event: PointerEvent) => void, onEnd: (
   };
 };
 
+const resolveMobileHandlePosition = (
+  vertical: boolean,
+  position: SplitLayoutMobileHandlePosition,
+): SplitLayoutMobileHandlePosition => {
+  if (vertical) {
+    return position === "top" || position === "bottom" || position === "center"
+      ? position
+      : "center";
+  }
+
+  return position === "left" || position === "right" || position === "center" ? position : "center";
+};
+
+const getMobileHandleStyle = (
+  vertical: boolean,
+  position: SplitLayoutMobileHandlePosition,
+  offset: number,
+): ViewStyle => {
+  const resolvedPosition = resolveMobileHandlePosition(vertical, position);
+
+  if (vertical) {
+    return {
+      borderRadius: MOBILE_SASH_HANDLE_THICKNESS / 2,
+      height: MOBILE_SASH_HANDLE_THICKNESS,
+      left: "50%",
+      transform: [{ translateX: -MOBILE_SASH_HANDLE_LENGTH / 2 }],
+      width: MOBILE_SASH_HANDLE_LENGTH,
+      ...(resolvedPosition === "top"
+        ? { top: MOBILE_SASH_HANDLE_INSET + offset }
+        : resolvedPosition === "bottom"
+          ? { bottom: MOBILE_SASH_HANDLE_INSET + offset }
+          : { top: (MOBILE_SASH_SIZE - MOBILE_SASH_HANDLE_THICKNESS) / 2 + offset }),
+    };
+  }
+
+  return {
+    borderRadius: MOBILE_SASH_HANDLE_THICKNESS / 2,
+    height: MOBILE_SASH_HANDLE_LENGTH,
+    top: "50%",
+    transform: [{ translateY: -MOBILE_SASH_HANDLE_LENGTH / 2 }],
+    width: MOBILE_SASH_HANDLE_THICKNESS,
+    ...(resolvedPosition === "left"
+      ? { left: MOBILE_SASH_HANDLE_INSET + offset }
+      : resolvedPosition === "right"
+        ? { right: MOBILE_SASH_HANDLE_INSET + offset }
+        : { left: (MOBILE_SASH_SIZE - MOBILE_SASH_HANDLE_THICKNESS) / 2 + offset }),
+  };
+};
+
+const getMobileHandlePositionForSash = (
+  index: number,
+  fallbackPosition: SplitLayoutMobileHandlePosition,
+  positions?: SplitLayoutMobileHandlePositions,
+) => {
+  return positions?.[index] ?? fallbackPosition;
+};
+
+const getMobileHandleOffsetForSash = (
+  index: number,
+  fallbackOffset: number,
+  offsets?: SplitLayoutMobileHandleOffsets,
+) => {
+  return offsets?.[index] ?? fallbackOffset;
+};
+
 const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
   (
     {
@@ -65,6 +135,10 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
       defaultSizes,
       maxSize = Number.POSITIVE_INFINITY,
       minSize = 30,
+      mobileHandleOffset = 0,
+      mobileHandlePosition = "center",
+      mobileHandleOffsets,
+      mobileHandlePositions,
       onChange,
       onDragEnd,
       onDragStart,
@@ -440,6 +514,13 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
             if (!canRenderSash(panes, index)) return null;
 
             const sashSize = IS_MOBILE ? MOBILE_SASH_SIZE : DEFAULT_SASH_SIZE;
+            const showMobileHandle =
+              IS_MOBILE && (visible[index] ?? true) && (visible[index + 1] ?? true);
+            const mobileHandleStyle = getMobileHandleStyle(
+              vertical,
+              getMobileHandlePositionForSash(index, mobileHandlePosition, mobileHandlePositions),
+              getMobileHandleOffsetForSash(index, mobileHandleOffset, mobileHandleOffsets),
+            );
 
             const sashOffset = (offsets[index] ?? 0) + (sizes[index] ?? 0) - sashSize / 2;
             const sashStyle = vertical
@@ -455,9 +536,6 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
                   top: 0,
                   bottom: 0,
                 } satisfies ViewStyle);
-            const mobileIndicatorStyle = vertical
-              ? styles.mobileSashIndicatorHorizontal
-              : styles.mobileSashIndicatorVertical;
 
             return (
               <View
@@ -474,11 +552,14 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
                     } as any)
                   : sashPanResponders[index]?.panHandlers)}
               >
-                {IS_MOBILE ? (
+                {showMobileHandle ? (
                   <View
                     pointerEvents="none"
-                    className={clsx("bg-foreground/20", activeSashIndex === index && "bg-accent")}
-                    style={[styles.mobileSashIndicator, mobileIndicatorStyle]}
+                    className={clsx(
+                      "bg-foreground/12",
+                      activeSashIndex === index && "bg-accent/70",
+                    )}
+                    style={[styles.mobileSashHandle, mobileHandleStyle]}
                   />
                 ) : null}
               </View>
@@ -641,19 +722,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     zIndex: 20,
   },
-  mobileSashIndicator: {
+  mobileSashHandle: {
     position: "absolute",
-  },
-  mobileSashIndicatorHorizontal: {
-    height: MOBILE_SASH_INDICATOR_SIZE,
-    left: 0,
-    right: 0,
-    top: (MOBILE_SASH_SIZE - MOBILE_SASH_INDICATOR_SIZE) / 2,
-  },
-  mobileSashIndicatorVertical: {
-    bottom: 0,
-    top: 0,
-    width: MOBILE_SASH_INDICATOR_SIZE,
-    left: (MOBILE_SASH_SIZE - MOBILE_SASH_INDICATOR_SIZE) / 2,
   },
 });

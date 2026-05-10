@@ -3,6 +3,9 @@ export { readSplitLayoutState, writeSplitLayoutState } from "./storage";
 export { SplitLayoutPriority } from "./types";
 export type {
   SplitLayoutHandle,
+  SplitLayoutMobileHandleOffsets,
+  SplitLayoutMobileHandlePosition,
+  SplitLayoutMobileHandlePositions,
   SplitLayoutPaneProps,
   SplitLayoutProps,
   SplitLayoutProviderProps,

@@ -12,6 +12,14 @@ export type SplitLayoutState = {
   visible: boolean[];
 };
 
+export type SplitLayoutMobileHandlePosition = "center" | "left" | "right" | "top" | "bottom";
+
+export type SplitLayoutMobileHandlePositions = Partial<
+  Record<number, SplitLayoutMobileHandlePosition>
+>;
+
+export type SplitLayoutMobileHandleOffsets = Partial<Record<number, number>>;
+
 export type SplitLayoutHandle = {
   reset: () => void;
   resize: (sizes: number[]) => void;
@@ -43,6 +51,10 @@ export type SplitLayoutPaneProps = SplitLayoutCommonProps & {
 export type SplitLayoutProps = SplitLayoutCommonProps & {
   children: ReactNode;
   defaultSizes?: number[];
+  mobileHandleOffset?: number;
+  mobileHandlePosition?: SplitLayoutMobileHandlePosition;
+  mobileHandleOffsets?: SplitLayoutMobileHandleOffsets;
+  mobileHandlePositions?: SplitLayoutMobileHandlePositions;
   proportionalLayout?: boolean;
   separator?: boolean;
   storageKey?: string;

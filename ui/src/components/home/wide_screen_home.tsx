@@ -30,6 +30,8 @@ export function WideScreenHome() {
               separator={false}
               storageFallbackState={DEFAULT_LAYOUT_STATE}
               storageKey={LAYOUT_STORAGE_KEY}
+              mobileHandlePositions={{ 1: "right", 2: "left" }}
+              mobileHandleOffset={-2}
               onStateChange={(state) => {
                 const nextShowSidebar = state.visible[1] ?? true;
                 const nextShowAssistSidebar = state.visible[3] ?? false;
