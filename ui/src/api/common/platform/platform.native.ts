@@ -1,10 +1,12 @@
 import { Platform } from "react-native";
 
-import { isTauri } from "@/api/invoke";
-
 import type { OSType } from "./types";
 
 const UNKNOWN: OSType = "unknown";
+
+export function isTauri() {
+  return false;
+}
 
 export function os(): OSType {
   const os = Platform.OS;
@@ -23,7 +25,7 @@ export function isWeb(): boolean {
 }
 
 export function isWebOnly(): boolean {
-  return isTauri() ? false : true;
+  return false;
 }
 
 export function isDesktop(): boolean {

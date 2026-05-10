@@ -2,6 +2,10 @@ import { type } from "@tauri-apps/plugin-os";
 
 import type { OSType } from "./types";
 
+export function isTauri() {
+  return !!((globalThis || window) as any)?.isTauri;
+}
+
 export function os(): OSType {
   return type();
 }
@@ -15,7 +19,7 @@ export function isWeb(): boolean {
 }
 
 export function isWebOnly(): boolean {
-  return false;
+  return isTauri() ? false : true;
 }
 
 export function isDesktop(): boolean {

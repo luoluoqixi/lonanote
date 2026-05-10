@@ -9,12 +9,12 @@ import {
   regCallbackFunction as rawRegCallbackFunction,
   unregCallbackFunction as rawUnregCallbackFunction,
 } from "./invoke";
-import { OS, isNative, isTauri } from "./runtime";
+import { isMobile, isTauri, os } from "./runtime";
 import type { InvokeArgs, InvokeCommand } from "./types";
 import { InvokeError } from "./types";
 
 export type { InvokeArgs, InvokeCommand } from "./types";
-export { isTauri, isNative, isWeb, isInvokeAvailable, OS } from "./runtime";
+export { isTauri, isMobile, isWeb, isInvokeAvailable, os as OS } from "./runtime";
 
 const state: any = {};
 
@@ -65,8 +65,8 @@ export async function invoke<TResult = unknown>(
   command: InvokeCommand,
   args?: InvokeArgs,
 ): Promise<TResult | undefined> {
-  if (!isTauri() && !isNative()) {
-    throw new InvokeError(`invoke: not support Rust(runtime=${OS()})`, OS(), command);
+  if (!isTauri() && !isMobile()) {
+    throw new InvokeError(`invoke: not support Rust(runtime=${os()})`, os(), command);
   }
   if (await isSyncCommand(command)) {
     const jsonArgs = getJson(args);
@@ -78,7 +78,7 @@ export async function invoke<TResult = unknown>(
     const res = await rawInvokeAsync(command, jsonArgs);
     return getObject(res);
   }
-  throw new InvokeError(`invoke: command [${command}] not found(runtime=${OS()})`, OS(), command);
+  throw new InvokeError(`invoke: command [${command}] not found(runtime=${os()})`, os(), command);
 }
 
 export async function regCallbackFunction<T, TRet>(
