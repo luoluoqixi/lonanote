@@ -36,7 +36,12 @@
   background: transparent;
   content: "";
   position: absolute;
-  transition: background-color 0.1s ease;
+  transition:
+    background-color 0.1s ease,
+    width 0.1s ease,
+    height 0.1s ease,
+    left 0.1s ease,
+    top 0.1s ease;
 }
 
 .split-layout__sash--vertical::after {
@@ -53,10 +58,25 @@
   top: 3px;
 }
 
-.split-layout--separator .split-layout__sash::after,
+.split-layout--separator .split-layout__sash::after {
+  background: var(--color-separator, var(--separator));
+}
+
 .split-layout__sash:hover::after,
-.split-layout--dragging .split-layout__sash::after {
-  background: color-mix(in srgb, var(--foreground) 18%, transparent);
+.split-layout__sash--active::after {
+  background: var(--color-accent-hover, var(--accent));
+}
+
+.split-layout__sash--vertical:hover::after,
+.split-layout__sash--vertical.split-layout__sash--active::after {
+  left: 2px;
+  width: 3px;
+}
+
+.split-layout__sash--horizontal:hover::after,
+.split-layout__sash--horizontal.split-layout__sash--active::after {
+  height: 3px;
+  top: 2px;
 }
 
 .split-layout--dragging,

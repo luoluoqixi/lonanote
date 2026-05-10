@@ -170,6 +170,7 @@ export const SplitLayout = Object.assign(
       const layoutServiceRef = useRef(new LayoutService());
       const modelRef = useRef<SplitViewModel | null>(null);
       const panesRef = useRef<PaneDescriptor[]>([]);
+      const [activeSashIndex, setActiveSashIndex] = useState<number | null>(null);
       const [dragging, setDragging] = useState(false);
       const [layoutSize, setLayoutSize] = useState(0);
       const [sizes, setSizes] = useState<number[]>([]);
@@ -363,6 +364,7 @@ export const SplitLayout = Object.assign(
               const model = modelRef.current;
               if (!model) return;
               model.startSashDrag(index, 0);
+              setActiveSashIndex(index);
               setDragging(true);
               onDragStart?.(model.getState().sizes);
             },
@@ -377,6 +379,7 @@ export const SplitLayout = Object.assign(
               model.endSashDrag();
               const state = emitState(model);
               persistState(state);
+              setActiveSashIndex(null);
               setDragging(false);
               onDragEnd?.(state.sizes);
             },
@@ -386,6 +389,7 @@ export const SplitLayout = Object.assign(
               model.endSashDrag();
               const state = emitState(model);
               persistState(state);
+              setActiveSashIndex(null);
               setDragging(false);
               onDragEnd?.(state.sizes);
             },
@@ -452,6 +456,7 @@ export const SplitLayout = Object.assign(
                   key={`${pane.key}-sash`}
                   className={clsx(
                     "split-layout__sash",
+                    activeSashIndex === index && "split-layout__sash--active",
                     vertical ? "split-layout__sash--horizontal" : "split-layout__sash--vertical",
                   )}
                   style={[styles.sash, sashStyle]}

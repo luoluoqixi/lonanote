@@ -38,5 +38,7 @@ export function writeSplitLayoutState(storageKey: string | undefined, state: Spl
 
   try {
     window.localStorage.setItem(storageKey, JSON.stringify(state));
-  } catch {}
+  } catch {
+    /* empty */
+  }
 }
