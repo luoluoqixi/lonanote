@@ -1,5 +1,4 @@
 use std::str::FromStr;
-
 use tauri::utils::config::Color;
 use tauri::{Manager, WebviewWindow};
 
@@ -37,26 +36,6 @@ pub fn fix_window_resize(win: &WebviewWindow) {
     {
         let _ = win;
     }
-}
-
-#[cfg(target_os = "macos")]
-fn set_mac_bg_color(win: &WebviewWindow, color: (u8, u8, u8, u8)) -> anyhow::Result<()> {
-    use objc2::runtime::AnyObject;
-    use objc2_app_kit::{NSColor, NSWindow};
-
-    let ns_window_ptr = win.ns_window().unwrap() as *mut AnyObject;
-    let ns_window = unsafe { ns_window_ptr.as_ref() }
-        .and_then(|obj| obj.downcast_ref::<NSWindow>())
-        .expect("failed to get macOS NSWindow");
-    let bg_color = NSColor::colorWithSRGBRed_green_blue_alpha(
-        color.0 as f64 / 255.0,
-        color.1 as f64 / 255.0,
-        color.2 as f64 / 255.0,
-        color.3 as f64 / 255.0,
-    );
-    ns_window.setBackgroundColor(Some(&bg_color));
-
-    Ok(())
 }
 
 pub fn set_win_bg_rgba(win: &WebviewWindow, color: (u8, u8, u8, u8)) -> anyhow::Result<()> {
@@ -119,4 +98,24 @@ pub fn add_devtools_listener(win: &WebviewWindow) {
             }
         })
         .unwrap_or_else(|err| log::error!("add_devtools_listener error: {}", err));
+}
+
+#[cfg(target_os = "macos")]
+fn set_mac_bg_color(win: &WebviewWindow, color: (u8, u8, u8, u8)) -> anyhow::Result<()> {
+    use objc2::runtime::AnyObject;
+    use objc2_app_kit::{NSColor, NSWindow};
+
+    let ns_window_ptr = win.ns_window().unwrap() as *mut AnyObject;
+    let ns_window = unsafe { ns_window_ptr.as_ref() }
+        .and_then(|obj| obj.downcast_ref::<NSWindow>())
+        .expect("failed to get macOS NSWindow");
+    let bg_color = NSColor::colorWithSRGBRed_green_blue_alpha(
+        color.0 as f64 / 255.0,
+        color.1 as f64 / 255.0,
+        color.2 as f64 / 255.0,
+        color.3 as f64 / 255.0,
+    );
+    ns_window.setBackgroundColor(Some(&bg_color));
+
+    Ok(())
 }

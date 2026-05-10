@@ -31,20 +31,6 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         // .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            #[cfg(target_os = "macos")]
-            {
-                use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
-
-                let win_builder =
-                    WebviewWindowBuilder::new(app, MAIN_WINDOW_NAME, WebviewUrl::default())
-                        .inner_size(1024.0, 576.0);
-
-                // 保持标准原生标题栏，让系统按默认方式布局原生标题和 traffic lights。
-                let win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
-
-                let _ = win_builder.build().unwrap();
-            }
-
             if let Some(win) = app.get_webview_window(MAIN_WINDOW_NAME) {
                 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos",))]
                 {

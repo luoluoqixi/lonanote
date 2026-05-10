@@ -1,4 +1,13 @@
 identifier = "com.luoluoqixi.lonanote"
 
 [app]
-windows = []
+
+[[app.windows]]
+label = "main"
+tabbingIdentifier = "main"
+title = "lonanote"
+titleBarStyle = "Transparent"
+resizable = true
+fullscreen = false
+width = 1024
+height = 576
