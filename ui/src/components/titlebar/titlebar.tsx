@@ -5,7 +5,6 @@ import { Text, View } from "react-native";
 import { isWeb, os } from "@/api/common";
 import { TITLE_HEIGHT, getAppTitle } from "@/config";
 
-import "./titlebar.css";
 import { WindowControls } from "./window_controls";
 
 // interface TitleBarProps {}
@@ -36,9 +35,18 @@ const TitleCenter = () => {
     }
   }, []);
   return (
-    <View className="titlebar-title-center">
-      {/* <img src={favicon} width={20} alt="favicon" /> */}
-      <Text style={{ height: "100%", alignContent: "center" }}>{title}</Text>
+    <View className={clsx("titlebar-title-center")}>
+      <Text
+        style={{
+          height: "100%",
+          includeFontPadding: false,
+          textAlign: "center",
+          alignContent: "center",
+          textAlignVertical: "center",
+        }}
+      >
+        {title}
+      </Text>
     </View>
   );
 };
@@ -60,16 +68,17 @@ const TitleRight = () => {
 };
 
 const TitleBar = () => {
+  const web = isWeb();
   return (
     <>
-      <View
-        className="titlebar-drag-overlay titlebar-drag"
-        style={{
-          height: TITLE_HEIGHT,
-        }}
-        data-tauri-drag-region
-      />
-      <View className="titlebar" style={{ height: TITLE_HEIGHT }}>
+      {web && (
+        <View
+          className="titlebar-drag-overlay titlebar-drag"
+          style={{ height: TITLE_HEIGHT }}
+          data-tauri-drag-region
+        />
+      )}
+      <View className={clsx("titlebar")} style={{ height: TITLE_HEIGHT }}>
         <TitleLeft />
         <TitleCenter />
         <TitleRight />

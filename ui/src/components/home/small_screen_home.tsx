@@ -1,5 +1,10 @@
 import { Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export function SmallScreenHome() {
-  return <Text>SmallScreenHome</Text>;
+  return (
+    <SafeAreaView>
+      <Text>SmallScreenHome</Text>
+    </SafeAreaView>
+  );
 }
