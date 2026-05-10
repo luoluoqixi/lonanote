@@ -16,11 +16,56 @@
 .titlebar {
   pointer-events: auto;
   z-index: 9999;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: transparent;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  background: var(--background);
+}
+
+.titlebar-title-left {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.titlebar-title-left--win {
+  margin-left: 0;
+}
+
+.titlebar-title-left--mac {
+  margin-left: 76px;
+}
+
+.titlebar-title-center {
+  position: absolute;
+  left: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.titlebar-title-right {
+  margin-left: auto;
+  margin-right: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.titlebar-title-right--win {
+  margin-right: calc(46px * 3);
+}
+
+.titlebar-title-right--mac {
+  margin-right: 0;
 }
 
 .wc-win {
@@ -30,6 +75,7 @@
   right: 0;
   height: 100%;
   display: flex;
+  background: transparent;
 }
 
 .wc-win-hover-disabled {
@@ -46,7 +92,7 @@
   border: none;
   outline: none;
   background: transparent;
-  color: color-mix(in srgb, var(--text-color) 88%, transparent);
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
   cursor: default;
   transition:
     background-color 0.1s ease,

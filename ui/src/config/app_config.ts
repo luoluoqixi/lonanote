@@ -31,5 +31,5 @@ export const getVersion = () => {
 export const getAppTitle = () => {
   const appName = getAppName();
   const version = getVersion();
-  return `${appName} - v${version}`;
+  return `${appName} ${version}`;
 };
