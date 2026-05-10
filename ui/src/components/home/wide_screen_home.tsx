@@ -17,52 +17,54 @@ export function WideScreenHome() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <TitleBar />
-      <SplitLayout vertical separator={false}>
-        <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
-          <SplitLayout
-            proportionalLayout={false}
-            separator={false}
-            storageKey={LAYOUT_STORAGE_KEY}
-            onVisibleChange={(index, visible) => {
-              if (index === 1) setShowSidebar(visible);
-              if (index === 3) setShowAssistSidebar(visible);
-            }}
-          >
-            <SplitLayout.Pane minSize={48} maxSize={48} visible>
-              <ActivityBar
-                showAssistSidebar={showAssistSidebar}
-                showSidebar={showSidebar}
-                onToggleAssistSidebar={() => setShowAssistSidebar((visible) => !visible)}
-                onToggleSidebar={() => setShowSidebar((visible) => !visible)}
-              />
-            </SplitLayout.Pane>
-            <SplitLayout.Pane
-              minSize={170}
-              preferredSize={300}
-              priority={SplitLayoutPriority.Low}
-              snap
-              visible={showSidebar}
+      <View className="border-t border-separator/40" style={{ flex: 1 }}>
+        <SplitLayout vertical separator={false}>
+          <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
+            <SplitLayout
+              proportionalLayout={false}
+              separator={false}
+              storageKey={LAYOUT_STORAGE_KEY}
+              onVisibleChange={(index, visible) => {
+                if (index === 1) setShowSidebar(visible);
+                if (index === 3) setShowAssistSidebar(visible);
+              }}
             >
-              <SidePanel />
-            </SplitLayout.Pane>
-            <SplitLayout.Pane minSize={300} priority={SplitLayoutPriority.High}>
-              <EditorPanel />
-            </SplitLayout.Pane>
-            <SplitLayout.Pane
-              minSize={170}
-              preferredSize={300}
-              priority={SplitLayoutPriority.Low}
-              snap
-              visible={showAssistSidebar}
-            >
-              <AssistPanel />
-            </SplitLayout.Pane>
-          </SplitLayout>
-        </SplitLayout.Pane>
-        <SplitLayout.Pane minSize={24} maxSize={24}>
-          <StatusBar />
-        </SplitLayout.Pane>
-      </SplitLayout>
+              <SplitLayout.Pane minSize={48} maxSize={48} visible>
+                <ActivityBar
+                  showAssistSidebar={showAssistSidebar}
+                  showSidebar={showSidebar}
+                  onToggleAssistSidebar={() => setShowAssistSidebar((visible) => !visible)}
+                  onToggleSidebar={() => setShowSidebar((visible) => !visible)}
+                />
+              </SplitLayout.Pane>
+              <SplitLayout.Pane
+                minSize={170}
+                preferredSize={300}
+                priority={SplitLayoutPriority.Low}
+                snap
+                visible={showSidebar}
+              >
+                <SidePanel />
+              </SplitLayout.Pane>
+              <SplitLayout.Pane minSize={300} priority={SplitLayoutPriority.High}>
+                <EditorPanel />
+              </SplitLayout.Pane>
+              <SplitLayout.Pane
+                minSize={170}
+                preferredSize={300}
+                priority={SplitLayoutPriority.Low}
+                snap
+                visible={showAssistSidebar}
+              >
+                <AssistPanel />
+              </SplitLayout.Pane>
+            </SplitLayout>
+          </SplitLayout.Pane>
+          <SplitLayout.Pane minSize={24} maxSize={24}>
+            <StatusBar />
+          </SplitLayout.Pane>
+        </SplitLayout>
+      </View>
     </SafeAreaView>
   );
 }
@@ -81,7 +83,7 @@ function ActivityBar({
   onToggleSidebar,
 }: ActivityBarProps) {
   return (
-    <View className="h-full w-full items-center border-r border-zinc-200 bg-white py-2 dark:border-zinc-800 dark:bg-zinc-950">
+    <View className="h-full w-full items-center border-r border-separator/40 bg-background py-2">
       <ActivityButton active={showSidebar} label="⌘" onPress={onToggleSidebar} />
       <ActivityButton active={false} label="⌕" onPress={() => {}} />
       <View className="flex-1" />
@@ -100,20 +102,23 @@ type ActivityButtonProps = {
 function ActivityButton({ active, label, onPress }: ActivityButtonProps) {
   return (
     <Pressable
-      className="mb-1 h-10 w-10 items-center justify-center"
+      className={
+        active
+          ? "mb-1 h-10 w-10 items-center justify-center bg-accent/10"
+          : "mb-1 h-10 w-10 items-center justify-center bg-transparent"
+      }
       onPress={onPress}
-      style={{ backgroundColor: active ? "rgba(147, 51, 234, 0.12)" : "transparent" }}
     >
-      <Text className={active ? "text-xl text-purple-600" : "text-xl text-zinc-500"}>{label}</Text>
+      <Text className={active ? "text-xl text-accent" : "text-xl text-foreground/50"}>{label}</Text>
     </Pressable>
   );
 }
 
 function SidePanel() {
   return (
-    <View className="h-full border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+    <View className="h-full border-r border-separator/40 bg-background">
       <View className="h-9 flex-row items-center px-2">
-        <Text className="text-lg text-zinc-950 dark:text-zinc-100">SidePanel</Text>
+        <Text className="text-lg text-foreground">SidePanel</Text>
       </View>
     </View>
   );
@@ -121,9 +126,9 @@ function SidePanel() {
 
 function EditorPanel() {
   return (
-    <View className="h-full bg-white dark:bg-zinc-950">
-      <View className="h-10 flex-row items-center justify-center border-b border-zinc-100 dark:border-zinc-900">
-        <Text className="text-base text-zinc-950 dark:text-zinc-100">Editor</Text>
+    <View className="h-full bg-background">
+      <View className="h-10 flex-row items-center justify-center">
+        <Text className="text-base text-foreground">Editor</Text>
       </View>
     </View>
   );
@@ -131,16 +136,16 @@ function EditorPanel() {
 
 function AssistPanel() {
   return (
-    <View className="h-full border-l border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
-      <Text className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">辅助面板</Text>
+    <View className="h-full border-l border-separator/40 bg-background p-3">
+      <Text className="text-lg font-semibold text-foreground">辅助面板</Text>
     </View>
   );
 }
 
 function StatusBar() {
   return (
-    <View className="h-full flex-row items-center justify-end border-t border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-950">
-      <Text className="text-sm text-zinc-600 dark:text-zinc-400">状态栏</Text>
+    <View className="h-full flex-row items-center justify-end border-t border-separator/40 bg-background px-3">
+      <Text className="text-sm text-foreground/60">状态栏</Text>
     </View>
   );
 }
