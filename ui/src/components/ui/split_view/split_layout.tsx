@@ -34,6 +34,25 @@ import {
 const DEFAULT_SASH_SIZE = 8;
 const IS_WEB = Platform.OS === "web";
 
+const getPointerCoordinate = (
+  event: Pick<PointerEvent, "clientX" | "clientY">,
+  vertical: boolean,
+) => {
+  return vertical ? event.clientY : event.clientX;
+};
+
+const bindDocumentPointerDrag = (onMove: (event: PointerEvent) => void, onEnd: () => void) => {
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onEnd);
+  document.addEventListener("pointercancel", onEnd);
+
+  return () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onEnd);
+    document.removeEventListener("pointercancel", onEnd);
+  };
+};
+
 const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
   (
     {
@@ -286,7 +305,7 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
 
     const offsets = useMemo(() => getOffsets(sizes), [sizes]);
 
-    const beginDrag = useCallback((index: number) => {
+    const startDrag = useCallback((index: number) => {
       const model = modelRef.current;
       if (!model) return false;
 
@@ -297,13 +316,13 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
       return true;
     }, []);
 
-    const updateDrag = useCallback((delta: number) => {
+    const moveDrag = useCallback((delta: number) => {
       const model = modelRef.current;
       if (!model) return;
       model.changeSashDrag(delta);
     }, []);
 
-    const endDrag = useCallback(() => {
+    const finishDrag = useCallback(() => {
       const model = modelRef.current;
       if (!model) return;
 
@@ -316,71 +335,44 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
       callbacksRef.current.onDragEnd?.(state.sizes);
     }, [emitState, persistState]);
 
-    const startWebSashDragAt = useCallback(
-      (index: number, startPointer: number, usePointerEvents: boolean) => {
+    const bindWebPointerTracking = useCallback(
+      (startPointer: number) => {
         if (!IS_WEB || typeof document === "undefined") return;
-        if (webDraggingRef.current) return;
 
-        webDragCleanupRef.current?.();
-
-        if (!beginDrag(index)) return;
-        webDraggingRef.current = true;
-
-        const handlePointerMove = (moveEvent: PointerEvent | MouseEvent) => {
-          const currentPointer = vertical ? moveEvent.clientY : moveEvent.clientX;
-          updateDrag(currentPointer - startPointer);
+        const handlePointerMove = (moveEvent: PointerEvent) => {
+          const currentPointer = getPointerCoordinate(moveEvent, vertical);
+          moveDrag(currentPointer - startPointer);
         };
         const handlePointerUp = () => {
           webDragCleanupRef.current?.();
           webDragCleanupRef.current = null;
-          endDrag();
+          finishDrag();
         };
 
-        const cleanup = () => {
-          if (usePointerEvents) {
-            document.removeEventListener("pointermove", handlePointerMove);
-            document.removeEventListener("pointerup", handlePointerUp);
-            document.removeEventListener("pointercancel", handlePointerUp);
-          } else {
-            document.removeEventListener("mousemove", handlePointerMove);
-            document.removeEventListener("mouseup", handlePointerUp);
-          }
+        const removeListeners = bindDocumentPointerDrag(handlePointerMove, handlePointerUp);
+        webDragCleanupRef.current = () => {
+          removeListeners();
           webDraggingRef.current = false;
         };
-
-        webDragCleanupRef.current = cleanup;
-        if (usePointerEvents) {
-          document.addEventListener("pointermove", handlePointerMove);
-          document.addEventListener("pointerup", handlePointerUp);
-          document.addEventListener("pointercancel", handlePointerUp);
-        } else {
-          document.addEventListener("mousemove", handlePointerMove);
-          document.addEventListener("mouseup", handlePointerUp);
-        }
       },
-      [beginDrag, endDrag, updateDrag, vertical],
+      [finishDrag, moveDrag, vertical],
     );
 
     const startWebSashDrag = useCallback(
-      (index: number) =>
-        (event: MouseEvent | PointerEvent | React.MouseEvent | React.PointerEvent) => {
-          if (!IS_WEB) return;
-          event.preventDefault?.();
-          const startPointer = vertical ? event.clientY : event.clientX;
-          startWebSashDragAt(index, startPointer, "pointerId" in event);
-        },
-      [startWebSashDragAt, vertical],
-    );
-
-    const startWebSashResponderDrag = useCallback(
-      (index: number) => (event: { nativeEvent?: { pageX?: number; pageY?: number } }) => {
+      (index: number) => (event: PointerEvent | React.PointerEvent) => {
         if (!IS_WEB) return;
-        const nativeEvent = event.nativeEvent;
-        const startPointer = vertical ? nativeEvent?.pageY : nativeEvent?.pageX;
-        if (typeof startPointer !== "number") return;
-        startWebSashDragAt(index, startPointer, false);
+        if (webDraggingRef.current) return;
+
+        event.preventDefault?.();
+        webDragCleanupRef.current?.();
+
+        if (!startDrag(index)) return;
+
+        webDraggingRef.current = true;
+        const startPointer = getPointerCoordinate(event, vertical);
+        bindWebPointerTracking(startPointer);
       },
-      [startWebSashDragAt, vertical],
+      [bindWebPointerTracking, startDrag, vertical],
     );
 
     const sashPanResponders = useMemo(() => {
@@ -390,21 +382,21 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
         PanResponder.create({
           onMoveShouldSetPanResponder: () => true,
           onPanResponderGrant: () => {
-            beginDrag(index);
+            startDrag(index);
           },
           onPanResponderMove: (_event, gestureState) => {
-            updateDrag(vertical ? gestureState.dy : gestureState.dx);
+            moveDrag(vertical ? gestureState.dy : gestureState.dx);
           },
           onPanResponderRelease: () => {
-            endDrag();
+            finishDrag();
           },
           onPanResponderTerminate: () => {
-            endDrag();
+            finishDrag();
           },
           onStartShouldSetPanResponder: () => true,
         }),
       );
-    }, [beginDrag, endDrag, panes.length, updateDrag, vertical]);
+    }, [finishDrag, moveDrag, panes.length, startDrag, vertical]);
 
     return (
       <View
@@ -469,10 +461,7 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
                 style={[styles.sash, sashStyle]}
                 {...(IS_WEB
                   ? ({
-                      onMouseDown: startWebSashDrag(index),
                       onPointerDown: startWebSashDrag(index),
-                      onResponderGrant: startWebSashResponderDrag(index),
-                      onStartShouldSetResponder: () => true,
                     } as any)
                   : sashPanResponders[index]?.panHandlers)}
               />
