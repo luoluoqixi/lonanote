@@ -13,3 +13,8 @@ export function isMobile(): boolean {
 export function isWeb(): boolean {
   return true;
 }
+
+export function isDesktop(): boolean {
+  const platfrom = os();
+  return platfrom === "windows" || platfrom === "macos" || platfrom === "linux";
+}

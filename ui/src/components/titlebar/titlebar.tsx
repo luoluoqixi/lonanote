@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
-import { isWeb, os } from "@/api/common";
+import { isDesktop, isWeb, os } from "@/api/common";
 import { TITLE_HEIGHT, getAppTitle } from "@/config";
 
 import { WindowControls } from "./window_controls";
@@ -68,10 +68,10 @@ const TitleRight = () => {
 };
 
 const TitleBar = () => {
-  const web = isWeb();
+  const desktop = isDesktop();
   return (
     <>
-      {web && (
+      {desktop && (
         <View
           className="titlebar-drag-overlay titlebar-drag"
           style={{ height: TITLE_HEIGHT }}

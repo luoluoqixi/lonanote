@@ -19,3 +19,7 @@ export function isWeb(): boolean {
   const os = Platform.OS;
   return os === "web";
 }
+
+export function isDesktop(): boolean {
+  return false;
+}
