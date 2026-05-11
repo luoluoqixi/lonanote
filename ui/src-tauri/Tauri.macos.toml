@@ -6,8 +6,10 @@ identifier = "com.luoluoqixi.lonanote"
 label = "main"
 tabbingIdentifier = "main"
 title = "lonanote"
-titleBarStyle = "Transparent"
+titleBarStyle = "Overlay"
 resizable = true
+hiddenTitle = true
 fullscreen = false
+trafficLightPosition = { x = 15, y = 20 }
 width = 1024
 height = 576
