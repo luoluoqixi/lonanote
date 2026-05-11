@@ -7,8 +7,6 @@ import { TITLE_HEIGHT, getAppTitle } from "@/config";
 
 import { WindowControls } from "./window_controls";
 
-// interface TitleBarProps {}
-
 const TitleLeft = () => {
   const platform = os();
   const isMac = platform === "macos";
@@ -26,8 +24,6 @@ const TitleLeft = () => {
 
 const TitleCenter = () => {
   const [title, setTitle] = useState("");
-  // const platform = os();
-  // const isMac = platform === "macos";
 
   useEffect(() => {
     const title = getAppTitle();
@@ -48,7 +44,6 @@ const TitleCenter = () => {
           textAlignVertical: "center",
         }}
       >
-        {/* {!isMac && title} */}
         {title}
       </Text>
     </View>
