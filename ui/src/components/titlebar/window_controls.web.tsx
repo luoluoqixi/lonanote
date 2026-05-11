@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { os } from "@/api/common";
 import type { OSType } from "@/api/common";
@@ -95,7 +95,7 @@ function WindowsControls() {
   // 在 Windows 上使用鼠标拖拽标题栏中间区域, 从最大化状态返回时, 有可能不正确的 hover 到最右侧按钮
   const [isResizeTransitioning, setIsResizeTransitioning] = useState(false);
 
-  const appWindow = getCurrentWindow();
+  const appWindow = useMemo(() => getCurrentWindow(), []);
   const resizeTransitionTimeoutRef = useRef<number | undefined>(undefined);
 
   const updateMaximized = useCallback(async () => {
@@ -114,6 +114,23 @@ function WindowsControls() {
       resizeTransitionTimeoutRef.current = undefined;
     }, 160);
   }, []);
+
+  // 延迟调用最小化和关闭, 否则在窗口重新打开时会有 hover 状态残留
+  const delayedCallback = useCallback((fn: () => void) => {
+    setTimeout(() => {
+      fn();
+    }, 60);
+  }, []);
+  const delayedClose = useCallback(() => {
+    delayedCallback(() => {
+      appWindow.close();
+    });
+  }, [appWindow, delayedCallback]);
+  const delayedMinimize = useCallback(() => {
+    delayedCallback(() => {
+      appWindow.minimize();
+    });
+  }, [appWindow, delayedCallback]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -143,7 +160,7 @@ function WindowsControls() {
 
   return (
     <div className={`wc-win${isResizeTransitioning ? " wc-win-hover-disabled" : ""}`}>
-      <button className="wc-btn wc-btn-min" onClick={() => appWindow.minimize()} title="最小化">
+      <button className="wc-btn wc-btn-min" onClick={delayedMinimize} title="最小化">
         <MinimizeIcon />
       </button>
       <button
@@ -153,7 +170,7 @@ function WindowsControls() {
       >
         {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
       </button>
-      <button className="wc-btn wc-btn-close" onClick={() => appWindow.close()} title="关闭">
+      <button className="wc-btn wc-btn-close" onClick={delayedClose} title="关闭">
         <CloseIcon />
       </button>
     </div>
@@ -164,7 +181,7 @@ function MacOSControls() {
   const [hovering, setHovering] = useState(false);
   const [altKey, setAltKey] = useState(false);
 
-  const appWindow = getCurrentWindow();
+  const appWindow = useMemo(() => getCurrentWindow(), []);
 
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => e.key === "Alt" && setAltKey(true);
