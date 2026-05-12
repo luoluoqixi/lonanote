@@ -115,12 +115,14 @@ function WindowsControls() {
     }, 160);
   }, []);
 
-  // 延迟调用最小化和关闭, 否则在窗口重新打开时会有 hover 状态残留
+  // 延迟调用, 否则在窗口重新打开时会有 hover 状态残留
   const delayedCallback = useCallback((fn: () => void) => {
-    setTimeout(() => {
-      fn();
-    }, 60);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setTimeout(fn, 60);
   }, []);
+
   const delayedClose = useCallback(() => {
     delayedCallback(() => {
       appWindow.close();
@@ -129,6 +131,11 @@ function WindowsControls() {
   const delayedMinimize = useCallback(() => {
     delayedCallback(() => {
       appWindow.minimize();
+    });
+  }, [appWindow, delayedCallback]);
+  const delayedMaximize = useCallback(() => {
+    delayedCallback(() => {
+      appWindow.toggleMaximize();
     });
   }, [appWindow, delayedCallback]);
 
@@ -165,7 +172,7 @@ function WindowsControls() {
       </button>
       <button
         className="wc-btn wc-btn-max"
-        onClick={() => appWindow.toggleMaximize()}
+        onClick={delayedMaximize}
         title={isMaximized ? "还原" : "最大化"}
       >
         {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
