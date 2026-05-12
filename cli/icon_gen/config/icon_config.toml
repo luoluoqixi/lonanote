@@ -76,9 +76,9 @@ default_mask = false
 resize = { width = 1024, height = 1024 }
 
 [[icons]]
-name = "react-native splash-icon"
+name = "react-native splash_icon"
 type = "custom"
-output_path = "ui/assets/images/splash-icon.png"
+output_path = "ui/assets/images/splash_icon.png"
 
 [icons.transform]
 default_mask = false
