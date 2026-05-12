@@ -1,6 +1,6 @@
-import { initHelloTest } from "./helloTest";
+import { initHelloTest } from "./hello_test";
 
-export * from "./helloTest";
+export * from "./hello_test";
 
 export const initTest = async () => {
   await initHelloTest();

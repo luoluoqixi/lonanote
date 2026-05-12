@@ -17,7 +17,7 @@ export function Dialog({
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/45" />
         <DialogPrimitive.Content
           className="fixed left-1/2 top-1/2 z-50 max-w-104 -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-overlay p-6 shadow-overlay outline-none"
-          style={{ width: "calc(100% - 2rem)" }}
+          style={{ width: "98%" }}
         >
           <DialogPrimitive.Close className="absolute top-3 right-2.5 z-10 rounded-md px-2 py-1">
             <Text className="text-sm text-foreground/70">关闭</Text>

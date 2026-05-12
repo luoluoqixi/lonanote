@@ -1,3 +1,3 @@
-export { RootProvider } from "./root-provider.web";
-export { UIProvider } from "./ui-provider.web";
+export { RootProvider } from "./root_provider.web";
+export { UIProvider } from "./ui_provider.web";
 export type { RootProviderProps, UIProviderProps } from "./types";

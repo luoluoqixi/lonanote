@@ -2,7 +2,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import type { RootProviderProps } from "./types";
-import { UIProvider } from "./ui-provider.native";
+import { UIProvider } from "./ui_provider.web";
 
 export function RootProvider({ children, nativeConfig }: RootProviderProps) {
   return (

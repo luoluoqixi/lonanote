@@ -2,7 +2,7 @@ import { startTransition, useEffect, useEffectEvent, useRef, useState } from "re
 
 import { type WorkspaceState, workspaceRuntime } from "@/api/commands/workspace";
 
-import { useCurrentWorkspaceId } from "./useWorkspaceSession";
+import { useCurrentWorkspaceId } from "./use_workspace_session";
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
