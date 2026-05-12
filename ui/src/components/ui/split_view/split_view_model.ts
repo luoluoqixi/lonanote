@@ -231,6 +231,67 @@ export class SplitViewModel {
     this.layout(this.size);
   }
 
+  restoreState(state: SplitLayoutState) {
+    if (
+      state.sizes.length !== this.viewItems.length ||
+      state.visible.length !== this.viewItems.length
+    ) {
+      return;
+    }
+
+    this.sashDragState = undefined;
+
+    for (let index = 0; index < this.viewItems.length; index++) {
+      this.applyViewState(index, state.visible[index], state.sizes[index]);
+    }
+
+    this.distributeEmptySpace();
+    this.layoutViews();
+    this.saveProportions();
+  }
+
+  resetSash(index: number, state: SplitLayoutState) {
+    if (index < 0 || index + 1 >= this.viewItems.length) return;
+    if (
+      state.sizes.length !== this.viewItems.length ||
+      state.visible.length !== this.viewItems.length
+    ) {
+      return;
+    }
+
+    const beforeItem = this.viewItems[index];
+    const afterItem = this.viewItems[index + 1];
+    if (!beforeItem.visible || !afterItem.visible) return;
+
+    const currentCombinedSize = beforeItem.size + afterItem.size;
+    if (currentCombinedSize <= 0) return;
+
+    const initialBeforeSize = state.visible[index] ? state.sizes[index] : 0;
+    const initialAfterSize = state.visible[index + 1] ? state.sizes[index + 1] : 0;
+    const initialCombinedSize = initialBeforeSize + initialAfterSize;
+    const beforeRatio = initialCombinedSize > 0 ? initialBeforeSize / initialCombinedSize : 0.5;
+
+    const minimumBeforeSize = Math.max(
+      beforeItem.minimumSize,
+      currentCombinedSize - afterItem.maximumSize,
+    );
+    const maximumBeforeSize = Math.min(
+      beforeItem.maximumSize,
+      currentCombinedSize - afterItem.minimumSize,
+    );
+    const nextBeforeSize = clamp(
+      Math.round(currentCombinedSize * beforeRatio),
+      minimumBeforeSize,
+      maximumBeforeSize,
+    );
+
+    this.sashDragState = undefined;
+    beforeItem.size = nextBeforeSize;
+    afterItem.size = currentCombinedSize - nextBeforeSize;
+    this.layoutViews();
+    this.saveProportions();
+  }
+
   distributeViewSizes() {
     const resizableItems = this.viewItems.filter((item) => item.maximumSize - item.minimumSize > 0);
     const totalSize = resizableItems.reduce((sum, item) => sum + item.size, 0);
@@ -511,6 +572,24 @@ export class SplitViewModel {
   private saveProportions() {
     if (this.proportionalLayout && this.contentSize > 0) {
       this.proportions = this.viewItems.map((item) => item.size / this.contentSize);
+    }
+  }
+
+  private applyViewState(index: number, visible: boolean, size: number) {
+    const item = this.viewItems[index];
+    const nextSize = clamp(Math.round(size), item.viewMinimumSize, item.viewMaximumSize);
+    const visibilityChanged = item.visible !== visible;
+
+    if (visible) {
+      item.cachedVisibleSize = undefined;
+      item.size = nextSize;
+    } else {
+      item.cachedVisibleSize = nextSize;
+      item.size = 0;
+    }
+
+    if (visibilityChanged) {
+      this.onDidVisibleChange?.(index, visible);
     }
   }
 

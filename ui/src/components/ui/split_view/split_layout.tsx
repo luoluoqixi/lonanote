@@ -40,6 +40,8 @@ const MOBILE_SASH_SIZE = 20;
 const MOBILE_SASH_HANDLE_THICKNESS = 6;
 const MOBILE_SASH_HANDLE_LENGTH = 56;
 const MOBILE_SASH_HANDLE_INSET = 4;
+const SASH_DOUBLE_TAP_DELAY = 280;
+const SASH_TAP_MOVE_TOLERANCE = 4;
 const IS_WEB = isWeb();
 const IS_MOBILE = isMobile();
 
@@ -156,8 +158,13 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
   ) => {
     const layoutServiceRef = useRef(new LayoutService());
     const modelRef = useRef<SplitViewModel | null>(null);
+    const initialLayoutStateRef = useRef<SplitLayoutState | null>(null);
     const initialStoredStateHydratedRef = useRef(false);
     const initialStoredStateRef = useRef<SplitLayoutState | undefined>(undefined);
+    const nativePendingDoubleTapRef = useRef<number | null>(null);
+    const nativeLastTapRef = useRef<{ index: number; time: number } | null>(null);
+    const webLastTapRef = useRef<{ index: number; time: number } | null>(null);
+    const webPendingDoubleTapRef = useRef<number | null>(null);
     const panesRef = useRef<PaneDescriptor[]>([]);
     const callbacksRef = useRef({
       onChange,
@@ -225,6 +232,7 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
       if (!storageReady) {
         initialStoredStateHydratedRef.current = false;
         initialStoredStateRef.current = undefined;
+        initialLayoutStateRef.current = null;
         return;
       }
 
@@ -234,10 +242,54 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
       }
     }, [storageReady, storedState]);
 
+    const createInitialLayoutState = useCallback(() => {
+      const currentPanes = panesRef.current;
+      if (layoutSize <= 0 || currentPanes.length === 0) return null;
+
+      const initialLayoutService = new LayoutService();
+      initialLayoutService.setSize(layoutSize);
+      const canUseDefaultSizes = defaultSizes?.length === currentPanes.length;
+
+      const descriptorViews: SplitViewDescriptor["views"] = currentPanes.map((pane, index) => {
+        const view = new PaneView(initialLayoutService, {
+          maximumSize: pane.maxSize,
+          minimumSize: pane.minSize,
+          preferredSize: pane.preferredSize,
+          priority: pane.priority,
+          snap: pane.snap,
+        });
+        const preferredSize = resolvePreferredSize(pane.preferredSize, layoutSize) ?? pane.minSize;
+        const defaultSize = canUseDefaultSizes ? defaultSizes[index] : undefined;
+        const visibleSize = clamp(
+          defaultSize ?? preferredSize,
+          pane.minSize,
+          Math.min(pane.maxSize, layoutSize),
+        );
+        const isVisible = pane.visible ?? true;
+
+        return {
+          size: isVisible ? visibleSize : { cachedVisibleSize: visibleSize || preferredSize },
+          view,
+        };
+      });
+
+      const descriptor: SplitViewDescriptor = {
+        size: descriptorViews.reduce(
+          (sum, item) => sum + (typeof item.size === "number" ? item.size : 0),
+          0,
+        ),
+        views: descriptorViews,
+      };
+      const model = new SplitViewModel({ descriptor, proportionalLayout });
+      model.layout(layoutSize);
+      return model.getState();
+    }, [defaultSizes, layoutSize, proportionalLayout]);
+
     const createModel = useCallback(() => {
       const currentPanes = panesRef.current;
       if (!storageReady || layoutSize <= 0 || currentPanes.length === 0) return null;
 
+      initialLayoutStateRef.current = createInitialLayoutState();
       layoutServiceRef.current.setSize(layoutSize);
       const sourceState = modelRef.current?.getState() ?? initialStoredStateRef.current;
       const canUseStoredState =
@@ -292,7 +344,15 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
       modelRef.current = model;
       persistState(emitState(model));
       return model;
-    }, [defaultSizes, emitState, layoutSize, persistState, proportionalLayout, storageReady]);
+    }, [
+      createInitialLayoutState,
+      defaultSizes,
+      emitState,
+      layoutSize,
+      persistState,
+      proportionalLayout,
+      storageReady,
+    ]);
 
     useEffect(() => {
       createModel();
@@ -344,11 +404,18 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
 
           const model = modelRef.current;
           if (!model) return;
-          model.distributeViewSizes();
-          panes.forEach((pane, index) => {
-            const preferredSize = resolvePreferredSize(pane.preferredSize, layoutSize);
-            if (preferredSize !== undefined) model.resizeView(index, preferredSize);
-          });
+
+          const initialLayoutState = initialLayoutStateRef.current;
+          if (initialLayoutState) {
+            model.restoreState(initialLayoutState);
+          } else {
+            model.distributeViewSizes();
+            panes.forEach((pane, index) => {
+              const preferredSize = resolvePreferredSize(pane.preferredSize, layoutSize);
+              if (preferredSize !== undefined) model.resizeView(index, preferredSize);
+            });
+          }
+
           persistState(emitState(model));
         },
         resize: (nextSizes) => {
@@ -383,6 +450,28 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
 
     const offsets = useMemo(() => getOffsets(sizes), [sizes]);
 
+    const resetSash = useCallback(
+      (index: number) => {
+        const model = modelRef.current;
+        const initialLayoutState = initialLayoutStateRef.current;
+        if (!model || !initialLayoutState) return;
+
+        webDragCleanupRef.current?.();
+        webDragCleanupRef.current = null;
+        webDraggingRef.current = false;
+        webLastTapRef.current = null;
+        webPendingDoubleTapRef.current = null;
+        nativeLastTapRef.current = null;
+        nativePendingDoubleTapRef.current = null;
+        model.endSashDrag();
+        model.resetSash(index, initialLayoutState);
+        setActiveSashIndex(null);
+        setDragging(false);
+        persistState(emitState(model));
+      },
+      [emitState, persistState],
+    );
+
     const startDrag = useCallback((index: number) => {
       const model = modelRef.current;
       if (!model) return false;
@@ -414,16 +503,33 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
     }, [emitState, persistState]);
 
     const bindWebPointerTracking = useCallback(
-      (startPointer: number) => {
+      (index: number, startPointer: number) => {
         if (!IS_WEB || typeof document === "undefined") return;
+
+        let maxMovement = 0;
 
         const handlePointerMove = (moveEvent: PointerEvent) => {
           const currentPointer = getPointerCoordinate(moveEvent, vertical);
-          moveDrag(currentPointer - startPointer);
+          const delta = currentPointer - startPointer;
+          maxMovement = Math.max(maxMovement, Math.abs(delta));
+          if (maxMovement > SASH_TAP_MOVE_TOLERANCE && webPendingDoubleTapRef.current === index) {
+            webPendingDoubleTapRef.current = null;
+          }
+          moveDrag(delta);
         };
         const handlePointerUp = () => {
           webDragCleanupRef.current?.();
           webDragCleanupRef.current = null;
+
+          if (webPendingDoubleTapRef.current === index && maxMovement <= SASH_TAP_MOVE_TOLERANCE) {
+            webPendingDoubleTapRef.current = null;
+            webLastTapRef.current = null;
+            resetSash(index);
+            return;
+          }
+
+          webLastTapRef.current =
+            maxMovement <= SASH_TAP_MOVE_TOLERANCE ? { index, time: Date.now() } : null;
           finishDrag();
         };
 
@@ -433,13 +539,22 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
           webDraggingRef.current = false;
         };
       },
-      [finishDrag, moveDrag, vertical],
+      [finishDrag, moveDrag, resetSash, vertical],
     );
 
     const startWebSashDrag = useCallback(
       (index: number) => (event: PointerEvent | React.PointerEvent) => {
         if (!IS_WEB) return;
         if (webDraggingRef.current) return;
+
+        const now = Date.now();
+        const lastTap = webLastTapRef.current;
+        if (lastTap && lastTap.index === index && now - lastTap.time <= SASH_DOUBLE_TAP_DELAY) {
+          webPendingDoubleTapRef.current = index;
+          webLastTapRef.current = null;
+        } else {
+          webPendingDoubleTapRef.current = null;
+        }
 
         event.preventDefault?.();
         webDragCleanupRef.current?.();
@@ -448,9 +563,9 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
 
         webDraggingRef.current = true;
         const startPointer = getPointerCoordinate(event, vertical);
-        bindWebPointerTracking(startPointer);
+        bindWebPointerTracking(index, startPointer);
       },
-      [bindWebPointerTracking, startDrag, vertical],
+      [bindWebPointerTracking, resetSash, startDrag, vertical],
     );
 
     const sashPanResponders = useMemo(() => {
@@ -460,21 +575,54 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
         PanResponder.create({
           onMoveShouldSetPanResponder: () => true,
           onPanResponderGrant: () => {
+            const now = Date.now();
+            const lastTap = nativeLastTapRef.current;
+
+            if (lastTap && lastTap.index === index && now - lastTap.time <= SASH_DOUBLE_TAP_DELAY) {
+              nativePendingDoubleTapRef.current = index;
+              nativeLastTapRef.current = null;
+            } else {
+              nativePendingDoubleTapRef.current = null;
+            }
+
             startDrag(index);
           },
           onPanResponderMove: (_event, gestureState) => {
-            moveDrag(vertical ? gestureState.dy : gestureState.dx);
+            const movement = vertical ? gestureState.dy : gestureState.dx;
+            if (
+              nativePendingDoubleTapRef.current === index &&
+              Math.abs(movement) > SASH_TAP_MOVE_TOLERANCE
+            ) {
+              nativePendingDoubleTapRef.current = null;
+            }
+            moveDrag(movement);
           },
-          onPanResponderRelease: () => {
+          onPanResponderRelease: (_event, gestureState) => {
+            const movement = vertical ? Math.abs(gestureState.dy) : Math.abs(gestureState.dx);
+
+            if (
+              nativePendingDoubleTapRef.current === index &&
+              movement <= SASH_TAP_MOVE_TOLERANCE
+            ) {
+              nativePendingDoubleTapRef.current = null;
+              nativeLastTapRef.current = null;
+              resetSash(index);
+              return;
+            }
+
+            nativeLastTapRef.current =
+              movement <= SASH_TAP_MOVE_TOLERANCE ? { index, time: Date.now() } : null;
             finishDrag();
           },
           onPanResponderTerminate: () => {
+            nativePendingDoubleTapRef.current = null;
+            nativeLastTapRef.current = null;
             finishDrag();
           },
           onStartShouldSetPanResponder: () => true,
         }),
       );
-    }, [finishDrag, moveDrag, panes.length, startDrag, vertical]);
+    }, [finishDrag, moveDrag, panes.length, resetSash, startDrag, vertical]);
 
     return (
       <View

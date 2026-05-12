@@ -55,18 +55,18 @@ export function WideScreenHome() {
               </SplitLayout.Pane>
               <SplitLayout.Pane
                 minSize={170}
-                preferredSize={300}
+                preferredSize={240}
                 priority={SplitLayoutPriority.Low}
                 snap
               >
                 <SidePanel />
               </SplitLayout.Pane>
-              <SplitLayout.Pane minSize={300} priority={SplitLayoutPriority.High}>
+              <SplitLayout.Pane minSize={20} priority={SplitLayoutPriority.High}>
                 <EditorPanel />
               </SplitLayout.Pane>
               <SplitLayout.Pane
                 minSize={170}
-                preferredSize={300}
+                preferredSize={240}
                 priority={SplitLayoutPriority.Low}
                 snap
               >
