@@ -268,6 +268,8 @@ sh run.sh dev
 ### Frontend API/common/platform rules
 
 - `ui/src/api/commands/` 默认存放 Rust / Native command 的 TypeScript wrapper；只要某个能力已经或应该进入共享 Rust command 层，就让它和 `rust/core/src/api/` 中的暴露模块保持同步演进。
+- `ui/src/api/commands/store/` 当前用于 UI / shell / appearance / desktop window 相关持久化状态；已经收口到这里的偏好包括主题模式、主题色、桌面缩放、窗口恢复开关与最近窗口几何状态。
+- `ui/src/api/commands/settings/settings.ts` 与 Rust `rust/core/src/settings/mod.rs` 当前不再承担这些 UI 偏好；不要把 `themeMode`、`restoreWindowState`、`accentColor`、`zoomFactor` 或类似字段重新加回 business settings / Rust settings。
 - `ui/src/api/common/` 用于纯 TypeScript 侧的公共逻辑、运行时适配、工具函数和平台抽象；不要把 Rust command wrapper 混放到这里。
 - 平台判断逻辑统一通过 `ui/src/api/common/platform/` 暴露的接口完成，不要在业务代码里直接使用 React Native 自带的 `Platform`。
 - 只有平台抽象实现层、invoke 底层、少量调试代码，才允许直接接触 `Platform` 或其他原始平台 API。
@@ -341,6 +343,11 @@ sh run.sh dev
 - 当前 `invoke.rs` 会将 command 名放在 header `key` 中，把 `args` 作为 JSON body 中的字符串传给 Rust core。
 - 这意味着 command key 本身只是普通字符串透传；只要前后端一致，`workspace.registry.*` / `workspace.runtime.*` 这类分组 key 可以直接工作。
 - 当前明确属于 Tauri 强耦合例外的能力，典型如 `win.*` 这类窗口 API；这种能力在 TypeScript 侧也必须明确限定仅桌面端可用，不支持移动端。
+- 如果前端直接使用 Tauri `window` / `webview` API，例如 `setPosition`、`setSize`、`setFullscreen`、`setZoom`，必须同步检查 `ui/src-tauri/capabilities/*.json` 是否已声明对应 permission；当前桌面窗口恢复与桌面缩放至少依赖：
+	- `core:window:allow-set-position`
+	- `core:window:allow-set-size`
+	- `core:window:allow-set-fullscreen`
+	- `core:webview:allow-set-webview-zoom`
 - 如果未来新增 Tauri 专属命令，优先保持它们集中在单独 namespace，并在调用侧通过 `ui/src/api/common/platform/` 或 API 底层显式处理平台限制。
 
 ### Craby side
@@ -391,6 +398,17 @@ cargo check
 ```
 
 或至少验证相关 crate。
+
+### Rust command-level integration tests
+
+```bash
+cargo test -p lonanote-core --test workspace_api_commands -- --nocapture
+```
+
+补充说明：
+
+- `rust/core/tests/workspace_api_commands/` 这组 async 测试当前需要通过 `support.rs` 中的 `spawn_blocking` 初始化命令注册。
+- 原因是 `cmdreg` 的 async command 注册会自行创建 tokio runtime；不要在 `#[tokio::test]` 中直接同步调用 `init()`，否则容易触发 nested runtime panic。
 
 ### React Native app
 

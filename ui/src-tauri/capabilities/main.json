@@ -20,11 +20,13 @@
     "core:window:allow-maximize",
     "core:window:allow-set-decorations",
     "core:window:allow-is-decorated",
+    "core:window:allow-set-position",
     "core:window:allow-set-size",
     "core:window:allow-set-focus",
     "core:window:allow-show",
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
-    "core:window:allow-set-fullscreen"
+    "core:window:allow-set-fullscreen",
+    "core:webview:allow-set-webview-zoom"
   ]
 }

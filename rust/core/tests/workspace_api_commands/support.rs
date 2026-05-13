@@ -23,7 +23,7 @@ pub(crate) struct TestCommandEnv {
 
 impl TestCommandEnv {
     pub(crate) async fn new(name: &str) -> Self {
-        init_commands_once();
+        init_commands_once_async().await;
 
         let guard = TEST_GUARD.lock().await;
         let base_dir = workspace_api_tests_root().join(format!("{name}-{}", uuid::Uuid::new_v4()));
@@ -76,6 +76,16 @@ pub(crate) fn init_commands_once() {
     COMMANDS_INIT.get_or_init(|| {
         init().expect("init commands");
     });
+}
+
+pub(crate) async fn init_commands_once_async() {
+    if COMMANDS_INIT.get().is_some() {
+        return;
+    }
+
+    tokio::task::spawn_blocking(init_commands_once)
+        .await
+        .expect("join init commands blocking task");
 }
 
 pub(crate) async fn cleanup_workspace_state() {
