@@ -224,6 +224,10 @@ sh run.sh dev
 - `build:ios`
 - `icon`
 
+- 开发、构建、prebuild 默认统一走根目录 `run.cmd` / `run.sh`；不要把 `ui/package.json`、`ui/rust/package.json` 里的原始命令当成团队默认入口。
+- 只有在局部验证、排查单层问题或生成特定产物时，才直接在 `ui/`、`ui/rust/`、`ui/src-tauri/` 中执行原始 Bun / npm / Cargo 命令。
+- Desktop/Web 调试入口是 Tauri 桌面客户端；不要把 `expo start --web`、`bun web` 或其他纯 Web dev server 当成当前项目的常规启动方式。
+
 ## Environment Requirements
 
 - Rust nightly（根工程和 `ui/rust/` 都需要）
@@ -247,29 +251,68 @@ sh run.sh dev
 - `ui/android/` 与 `ui/ios/` 是 Expo prebuild 后的原生工程输出；修改原生配置时要注意 prebuild 的覆盖关系。
 - 如果只改移动端原生桥，不要误改 Tauri API；反之亦然。
 
+### Frontend naming and file layout
+
+- `ui/src/` 下的手写 TypeScript / TSX 文件默认统一使用 `snake_case` 文件名，例如 `workspace_session_store.ts`、`use_workspace_state.ts`。
+- TypeScript 代码中的变量、函数、参数、普通对象字段统一使用小驼峰；React 组件、类型、interface、type alias 可继续使用 PascalCase。
+- 常规例外仅包括框架约定文件与聚合文件，例如 `index.ts`、`index.tsx`、平台入口文件，以及框架/工具要求的生成文件。
+- 手写 `.d.ts` 文件默认放在 `ui/src/types/`；当前允许的固定路径例外主要是 `ui/src/uniwind-types.d.ts` 与 Expo 约定的 `ui/expo-env.d.ts` 这类无法自由迁移的文件。
+
+### Frontend state management
+
+- 全局状态、跨页面状态、跨组件共享状态统一放在 `ui/src/stores/` 中定义；当前项目默认使用 `zustand`，store 定义优先保持 `zustand/vanilla + hook wrapper` 这一现有模式。
+- 组件局部状态、一次性 UI 交互状态、仅当前组件树需要的短生命周期状态，优先使用 React 原生 hooks，不要为了局部状态额外创建全局 store。
+- 组件层消费共享状态时，优先经由 `ui/src/hooks/` 暴露的 hooks 访问，不要在业务组件中直接 import store 实例。
+- 如果某个状态最终会被多个组件、多个页面或多个平台实现共享，先考虑补 hook，再决定是否新增 store；不要让业务组件各自复制一套订阅逻辑。
+
+### Frontend API/common/platform rules
+
+- `ui/src/api/commands/` 默认存放 Rust / Native command 的 TypeScript wrapper；只要某个能力已经或应该进入共享 Rust command 层，就让它和 `rust/core/src/api/` 中的暴露模块保持同步演进。
+- `ui/src/api/common/` 用于纯 TypeScript 侧的公共逻辑、运行时适配、工具函数和平台抽象；不要把 Rust command wrapper 混放到这里。
+- 平台判断逻辑统一通过 `ui/src/api/common/platform/` 暴露的接口完成，不要在业务代码里直接使用 React Native 自带的 `Platform`。
+- 只有平台抽象实现层、invoke 底层、少量调试代码，才允许直接接触 `Platform` 或其他原始平台 API。
+- 如果某个能力只支持桌面端 / Tauri，请尽量把平台判断和兜底行为焊在 API 底层，而不是把平台分支散落到页面和业务组件中。
+
+### Frontend styling rules
+
+- 项目允许使用 CSS 文件，但 TypeScript / TSX 侧唯一允许直接 import 的 CSS 入口是 `ui/src/global.css`；其他 CSS 必须通过 `global.css` 的 `@import` 链路间接纳入构建。
+- 这是因为当前样式编译链以 `uniwind` 为中心，只会稳定处理 `global.css` 及其级联引入的 CSS；不要在业务 `.ts` / `.tsx` 文件里直接 import 其他 CSS。
+- 简单样式、一次性样式、局部布局样式优先使用 Tailwind / Uniwind 写法。
+- 当 Tailwind 片段变得复杂、重复、难维护，或者需要抽出更稳定的复用样式时，再考虑提取到 CSS 文件。
+- 明显属于全局范畴的 CSS 优先放在 `ui/src/styles/`；局部 CSS 可以和对应 TS / TSX 文件放在一起，但仍需要通过某个已被 `global.css` 间接引入的 CSS 文件接入。
+
+### Frontend component layering
+
+- 所有基础组件、跨平台组件包装层、第三方 UI 组件适配层，都优先放在 `ui/src/components/ui/` 下统一封装后再给业务层使用。
+- 业务组件不要直接依赖 `heroui-native`、`@rn-primitives/*` 等第三方 UI 库；这些依赖应当收敛在 `ui/src/components/ui/`。
+- 业务组件可以直接使用 `react-native` 的基础原语做布局与文本承载，例如 `View`、`Text`、`Pressable`；但按钮、对话框、菜单、输入框、浮层等可复用 UI 原语应优先走包装层。
+- 由于项目同时面向移动端与 Tauri 桌面端，新增基础组件时优先从一开始就考虑 `.web.tsx` / `.native.tsx` 或更细平台拆分，而不是先写死单端实现。
+
 ### Frontend workspace command layer
 
 - 前端 workspace command wrapper 当前位于 `ui/src/api/commands/workspace/`，并已按职责拆分：
-	- `workspaceRegistry.ts`
-	- `workspaceRuntime.ts`
-	- `workspaceSession.ts`
-	- `useWorkspaceSession.ts`
+	- `workspace_registry.ts`
+	- `workspace_runtime.ts`
 	- `types.ts`
+- workspace 相关前端内存态与 hook 当前分别位于：
+	- `ui/src/stores/workspace/`
+	- `ui/src/hooks/workspace/`
 - 当前前端约定：
 	- `workspaceRegistry` 对应 `workspace.registry.*`。
 	- `workspaceRuntime` 对应 `workspace.runtime.*`。
-	- `workspaceSession` 是前端内存态 session store，只维护 `currentWorkspaceId`，不承担持久化职责。
-- `workspaceSession` 当前提供：
+	- `workspaceSessionStore` 是前端内存态 session store，只维护 `currentWorkspaceId`，不承担持久化职责。
+	- `workspaceEditorStore` 用于 editor 相关前端内存态；新增 editor 共享状态时优先延续这层分工，而不是塞回 command wrapper。
+- `workspaceSessionStore` 当前提供：
 	- `getCurrentWorkspaceId`
 	- `requireCurrentWorkspaceId`
 	- `setCurrentWorkspaceId`
 	- `clearCurrentWorkspaceId`
 	- `subscribe`
-- 页面层如需消费 current workspace，优先通过 `useWorkspaceSession()` / `useCurrentWorkspaceId()`，而不是在业务组件里直接手写 `subscribe`。
-- 当前 `workspaceRuntime.open()` / `workspaceRuntime.close()` 会自动维护 `workspaceSession` 的 current workspace。
+- 页面层如需消费 current workspace，优先通过 `ui/src/hooks/workspace/` 提供的 `useWorkspaceSession()` / `useCurrentWorkspaceId()`，而不是在业务组件里直接手写 `subscribe`。
+- 当前 `workspaceRuntime.open()` / `workspaceRuntime.close()` 会自动维护 `workspaceSessionStore` 的 current workspace。
 - `workspaceRuntime.open()` 与 `workspaceRuntime.getState()` 当前都返回同一份完整 `WorkspaceState` 结构，包含 `record/settings/runtimeConfig/runtimeStatus`，前端不需要再区分“刚打开”和“已打开查询”两种结构。
 - 当前首页已经接入 `WorkspaceDebugPanel`，可直接查看 roots、手动 sync summary、registry records，以及 current workspace 的 runtime state。
-- 如果后续要做自动恢复、最近工作区恢复、跨重启记忆，不要把这些逻辑塞进 `workspaceSession`；应当走 `settings + workspace.registry.get_last_workspace_id()` 这条持久化链路。
+- 如果后续要做自动恢复、最近工作区恢复、跨重启记忆，不要把这些逻辑塞进 `workspaceSessionStore`；应当走 `settings + workspace.registry.get_last_workspace_id()` 这条持久化链路。
 
 ## Rust Command Integration Notes
 
@@ -277,6 +320,8 @@ sh run.sh dev
 
 - `rust/core/` 是共享 command 的权威来源。
 - `lonanote_core::init()` 负责注册 command，运行时侧通常只做薄封装。
+- 大部分 Rust 命令如果能在 `rust/core/src/api/` 中实现，就不要下沉到 `ui/src-tauri/src/commands/`；优先减少对 Tauri runtime 的直接依赖。
+- `ui/src/api/commands/` 中面向业务层暴露的 wrapper，也应优先对应共享 Rust API；只有明确和 Tauri 窗口、WebView、桌面壳能力强耦合的命令，才保留在 Tauri 专属层。
 - `workspace` 相关 command 当前已经按 registry/runtime 分组；修改这组命令时，要同时检查：
 	- Rust command namespace 是否仍然符合 `workspace.registry.*` / `workspace.runtime.*`
 	- 前端 wrapper 是否同步更新了 invoke key
@@ -295,6 +340,8 @@ sh run.sh dev
 - 桌面端桥接位于 `ui/src-tauri/src/commands/`。
 - 当前 `invoke.rs` 会将 command 名放在 header `key` 中，把 `args` 作为 JSON body 中的字符串传给 Rust core。
 - 这意味着 command key 本身只是普通字符串透传；只要前后端一致，`workspace.registry.*` / `workspace.runtime.*` 这类分组 key 可以直接工作。
+- 当前明确属于 Tauri 强耦合例外的能力，典型如 `win.*` 这类窗口 API；这种能力在 TypeScript 侧也必须明确限定仅桌面端可用，不支持移动端。
+- 如果未来新增 Tauri 专属命令，优先保持它们集中在单独 namespace，并在调用侧通过 `ui/src/api/common/platform/` 或 API 底层显式处理平台限制。
 
 ### Craby side
 
@@ -305,6 +352,7 @@ sh run.sh dev
 	- `ui/rust/crates/lib/src/ffi.rs`
 	- `ui/rust/cpp/*` 中的桥接代码
 - Rust 具体实现位于 `ui/rust/crates/lib/src/lonanote_rust_module_impl.rs`。
+- `ui/rust/` 的职责是 React Native 到 Rust 的绑定桥，默认不要在这里扩散业务逻辑；如果只是为了接入移动端原生能力，优先先评估是否应通过 Expo config plugin / Expo 原生能力解决。
 
 ## Craby Caveats
 
