@@ -22,6 +22,7 @@
   flex-direction: row;
   width: 100%;
   background: var(--background);
+  border-bottom: 1px solid color-mix(in srgb, var(--separator, var(--foreground)) 40%, transparent);
   user-select: none;
 }
 
@@ -104,11 +105,13 @@
 }
 
 .wc-win:not(.wc-win-hover-disabled) .wc-btn:hover {
-  background: #0000001a;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: var(--foreground);
 }
 
 .wc-win:not(.wc-win-hover-disabled) .wc-btn:active {
-  background: #00000033;
+  background: color-mix(in srgb, var(--foreground) 18%, transparent);
+  color: var(--foreground);
 }
 
 .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:hover {

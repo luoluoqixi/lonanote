@@ -36,6 +36,7 @@ const TitleCenter = () => {
     <View data-tauri-drag-region className={clsx("titlebar-title-center")}>
       <Text
         data-tauri-drag-region
+        className="text-sm font-medium text-foreground/85"
         style={{
           height: "100%",
           includeFontPadding: false,

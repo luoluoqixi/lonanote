@@ -25,7 +25,7 @@ export function WideScreenHome() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
       <TitleBar />
-      <View className="border-t border-separator/40" style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         <SplitLayout vertical separator={false}>
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
             <SplitLayout
