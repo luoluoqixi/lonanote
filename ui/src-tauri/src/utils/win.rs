@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::str::FromStr;
 use tauri::utils::config::Color;
-use tauri::{Manager, PhysicalPosition, PhysicalSize, Position, Size, Theme, WebviewWindow};
+use tauri::{Manager, Theme, WebviewWindow};
 
 const UI_THEME_MODE_KEY: &str = "ui.appearance.themeMode";
 const UI_RESTORE_WINDOW_STATE_KEY: &str = "ui.window.restoreWindowState";
@@ -11,13 +11,25 @@ const DARK_WINDOW_BACKGROUND_RGBA: (u8, u8, u8, u8) = (24, 24, 27, 255);
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct StoredWindowState {
-    height: u32,
-    is_fullscreen: bool,
-    is_maximized: bool,
-    width: u32,
-    x: i32,
-    y: i32,
+pub struct StartupWindowState {
+    pub height: u32,
+    pub is_fullscreen: bool,
+    pub is_maximized: bool,
+    pub width: u32,
+    pub x: i32,
+    pub y: i32,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct StartupWindowPreferences {
+    pub background_color: Option<Color>,
+    pub window_state: Option<StartupWindowState>,
+}
+
+impl StartupWindowPreferences {
+    pub fn should_apply_runtime_background(&self) -> bool {
+        self.background_color.is_none()
+    }
 }
 
 pub fn get_app_handle() -> Option<&'static tauri::AppHandle> {
@@ -37,22 +49,23 @@ pub fn get_main_window() -> Option<tauri::WebviewWindow> {
     get_window(crate::MAIN_WINDOW_NAME)
 }
 
-pub fn restore_preferred_window_state(win: &WebviewWindow) -> anyhow::Result<()> {
-    restore_initial_window_state(win)
+pub fn resolve_startup_window_preferences() -> StartupWindowPreferences {
+    StartupWindowPreferences {
+        background_color: resolve_startup_window_background_color(),
+        window_state: resolve_startup_window_state(),
+    }
 }
 
 pub fn apply_preferred_window_background(win: &WebviewWindow) -> anyhow::Result<()> {
     set_win_bg_rgba(win, resolve_preferred_window_background(win))
 }
 
-fn restore_initial_window_state(win: &WebviewWindow) -> anyhow::Result<()> {
+fn resolve_startup_window_state() -> Option<StartupWindowState> {
     if !should_restore_window_state() {
-        return Ok(());
+        return None;
     }
 
-    let Some(window_state) = read_preferred_window_state() else {
-        return Ok(());
-    };
+    let window_state = read_preferred_window_state()?;
 
     if window_state.width == 0 || window_state.height == 0 {
         log::warn!(
@@ -60,33 +73,18 @@ fn restore_initial_window_state(win: &WebviewWindow) -> anyhow::Result<()> {
             window_state.width,
             window_state.height
         );
-        return Ok(());
+        return None;
     }
 
-    if !window_state.is_maximized && !window_state.is_fullscreen {
-        win.set_size(Size::Physical(PhysicalSize::new(
-            window_state.width,
-            window_state.height,
-        )))
-        .map_err(|e| anyhow::anyhow!("set startup window size error: {}", e))?;
-        win.set_position(Position::Physical(PhysicalPosition::new(
-            window_state.x,
-            window_state.y,
-        )))
-        .map_err(|e| anyhow::anyhow!("set startup window position error: {}", e))?;
-    }
+    Some(window_state)
+}
 
-    if window_state.is_maximized {
-        win.maximize()
-            .map_err(|e| anyhow::anyhow!("maximize startup window error: {}", e))?;
+fn resolve_startup_window_background_color() -> Option<Color> {
+    match read_preferred_theme_mode().as_deref() {
+        Some("dark") => Some(Color::from(DARK_WINDOW_BACKGROUND_RGBA)),
+        Some("light") => Some(Color::from(LIGHT_WINDOW_BACKGROUND_RGBA)),
+        _ => None,
     }
-
-    if window_state.is_fullscreen {
-        win.set_fullscreen(true)
-            .map_err(|e| anyhow::anyhow!("set startup window fullscreen error: {}", e))?;
-    }
-
-    Ok(())
 }
 
 fn resolve_preferred_window_background(win: &WebviewWindow) -> (u8, u8, u8, u8) {
@@ -124,9 +122,9 @@ fn should_restore_window_state() -> bool {
     }
 }
 
-fn read_preferred_window_state() -> Option<StoredWindowState> {
+fn read_preferred_window_state() -> Option<StartupWindowState> {
     match lonanote_core::api::store::common_get(UI_WINDOW_LAST_STATE_KEY.to_string()) {
-        Ok(Some(value)) => match serde_json::from_value::<StoredWindowState>(value) {
+        Ok(Some(value)) => match serde_json::from_value::<StartupWindowState>(value) {
             Ok(window_state) => Some(window_state),
             Err(err) => {
                 log::warn!("parse startup window state error: {}", err);
