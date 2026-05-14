@@ -10,6 +10,7 @@ import {
   useDesktopZoomFactor,
 } from "@/hooks/settings";
 import { useDesktopWindowState } from "@/hooks/settings/use_desktop_window_state";
+import { applyDocumentTheme } from "@/stores/ui";
 
 import type { RootProviderProps } from "./types";
 import { UIProvider } from "./ui_provider.web";
@@ -23,6 +24,7 @@ export function RootProvider({ children, nativeConfig }: RootProviderProps) {
   useDesktopWindowState();
 
   useEffect(() => {
+    applyDocumentTheme(resolvedColorScheme);
     Uniwind.setTheme(resolvedColorScheme);
   }, [resolvedColorScheme]);
 
