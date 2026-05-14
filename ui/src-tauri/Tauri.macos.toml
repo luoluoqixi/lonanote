@@ -2,7 +2,23 @@ identifier = "com.luoluoqixi.lonanote"
 
 [app]
 
+# Legacy auto-created macOS main window template kept for reference during
+# manual window bootstrap migration.
+# [[app.windows]]
+# label = "main"
+# tabbingIdentifier = "main"
+# title = "lonanote"
+# titleBarStyle = "Overlay"
+# resizable = true
+# hiddenTitle = true
+# fullscreen = false
+# trafficLightPosition = { x = 15, y = 20 }
+# width = 1024
+# height = 576
+
 [[app.windows]]
+create = false
+visible = false
 label = "main"
 tabbingIdentifier = "main"
 title = "lonanote"

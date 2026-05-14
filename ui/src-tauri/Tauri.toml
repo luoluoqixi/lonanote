@@ -25,11 +25,23 @@ createUpdaterArtifacts = false
 [app]
 withGlobalTauri = true
 
+# Legacy auto-created main window template kept for reference during
+# manual window bootstrap migration.
+# [[app.windows]]
+# decorations = false
+# label = "main"
+# title = "lonanote"
+# tabbingIdentifier = "main"
+# width = 1024
+# height = 576
+
 [[app.windows]]
+create = false
 decorations = false
 label = "main"
 title = "lonanote"
 tabbingIdentifier = "main"
+visible = false
 width = 1024
 height = 576
 

@@ -5,8 +5,6 @@ use anyhow::Result;
 use invoke::*;
 use tauri::{AppHandle, Builder, Manager, Runtime};
 
-use crate::APP_HANDLE;
-
 pub fn resolve_default_paths(app: &AppHandle) -> Result<lonanote_core::config::app_path::AppPaths> {
     fn path_to_string(path: std::path::PathBuf, field: &str) -> Result<String> {
         path.to_str()
@@ -49,12 +47,8 @@ pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {
     ])
 }
 
-pub fn init_commands() -> Result<()> {
-    let app = APP_HANDLE
-        .get()
-        .expect("APP_HANDLE not initialized")
-        .to_owned();
-    let paths = resolve_default_paths(&app)?;
+pub fn init_commands(app: &AppHandle) -> Result<()> {
+    let paths = resolve_default_paths(app)?;
     lonanote_core::config::app_path::init_paths(paths);
     lonanote_core::init()?;
     Ok(())

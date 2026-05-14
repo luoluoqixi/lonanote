@@ -15,10 +15,10 @@ import type { RootProviderProps } from "./types";
 import { UIProvider } from "./ui_provider.web";
 
 export function RootProvider({ children, nativeConfig }: RootProviderProps) {
-  const { isLoaded, resolvedColorScheme } = useColorSchemeSettings();
+  const { isLoaded, preferredColorScheme, resolvedColorScheme } = useColorSchemeSettings();
 
   useDesktopAccentColor();
-  useDesktopWindowBackground(resolvedColorScheme, isLoaded);
+  useDesktopWindowBackground(preferredColorScheme, resolvedColorScheme, isLoaded);
   useDesktopZoomFactor();
   useDesktopWindowState();
 

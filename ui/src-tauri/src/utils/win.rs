@@ -37,32 +37,12 @@ pub fn get_main_window() -> Option<tauri::WebviewWindow> {
     get_window(crate::MAIN_WINDOW_NAME)
 }
 
-pub fn init_window(win: &WebviewWindow) -> anyhow::Result<()> {
-    restore_initial_window_state(win)?;
-    set_initial_window_background(win)
+pub fn restore_preferred_window_state(win: &WebviewWindow) -> anyhow::Result<()> {
+    restore_initial_window_state(win)
 }
 
-pub fn fix_window_resize(win: &WebviewWindow) {
-    #[cfg(target_os = "windows")]
-    {
-        // 修复 Windows 上窗口调整大小时 webview 调整慢的问题
-        // https://github.com/tauri-apps/tauri/issues/6322#issuecomment-1448141495
-        win.on_window_event(|e| {
-            use tauri::WindowEvent;
-
-            if let WindowEvent::Resized(_) = e {
-                std::thread::sleep(std::time::Duration::from_millis(1));
-            }
-        });
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = win;
-    }
-}
-
-pub fn set_initial_window_background(win: &WebviewWindow) -> anyhow::Result<()> {
-    set_win_bg_rgba(win, resolve_initial_window_background(win))
+pub fn apply_preferred_window_background(win: &WebviewWindow) -> anyhow::Result<()> {
+    set_win_bg_rgba(win, resolve_preferred_window_background(win))
 }
 
 fn restore_initial_window_state(win: &WebviewWindow) -> anyhow::Result<()> {
@@ -109,7 +89,7 @@ fn restore_initial_window_state(win: &WebviewWindow) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn resolve_initial_window_background(win: &WebviewWindow) -> (u8, u8, u8, u8) {
+fn resolve_preferred_window_background(win: &WebviewWindow) -> (u8, u8, u8, u8) {
     match read_preferred_theme_mode().as_deref() {
         Some("dark") => DARK_WINDOW_BACKGROUND_RGBA,
         Some("light") => LIGHT_WINDOW_BACKGROUND_RGBA,
@@ -214,36 +194,6 @@ pub fn set_win_bg_hex(win: &WebviewWindow, color: &str) -> anyhow::Result<()> {
         set_mac_bg_color(win, (color.0, color.1, color.2, color.3))?;
     }
     Ok(())
-}
-
-// 添加了 features devtools 后，tauri 内置了 devtools 的快捷键, 但是似乎只内置了 windows 的
-#[allow(dead_code)]
-pub fn add_devtools_listener(win: &WebviewWindow) {
-    use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
-
-    let label = win.label().to_string();
-    win.global_shortcut()
-        .on_shortcut("CommandOrControl+Shift+I", move |_, _, event| {
-            if event.state != ShortcutState::Pressed {
-                return;
-            }
-            if let Some(win) = get_window(&label) {
-                #[cfg(target_os = "windows")]
-                {
-                    // Windows 上没有 close_devtools 接口, 无法关闭
-                    win.open_devtools();
-                }
-                #[cfg(not(target_os = "windows"))]
-                {
-                    if win.is_devtools_open() {
-                        win.close_devtools();
-                    } else {
-                        win.open_devtools();
-                    }
-                }
-            }
-        })
-        .unwrap_or_else(|err| log::error!("add_devtools_listener error: {}", err));
 }
 
 #[cfg(target_os = "macos")]

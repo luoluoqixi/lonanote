@@ -19,7 +19,7 @@ pub static APP_TITLE: LazyLock<String> = LazyLock::new(|| format!("{} {}", APP_N
 pub fn run() {
     let ctx = tauri::generate_context!();
     let builder = tauri::Builder::default();
-    let builder = { commands::reg_commands(builder) };
+    let builder = commands::reg_commands(builder);
 
     let app = builder
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -31,24 +31,9 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         // .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            if let Some(win) = app.get_webview_window(MAIN_WINDOW_NAME) {
-                #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos",))]
-                {
-                    win.set_title(&APP_TITLE)
-                        .unwrap_or_else(|err| log::error!("set_title error: {}", err));
+            #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
+            setup::window::init_main_window(app)?;
 
-                    commands::init_commands()?;
-
-                    utils::win::fix_window_resize(&win);
-                    utils::win::init_window(&win).unwrap_or_else(|e| log::error!("{}", e));
-
-                    #[cfg(not(target_os = "windows"))]
-                    utils::win::add_devtools_listener(&win);
-
-                    #[cfg(debug_assertions)]
-                    win.open_devtools();
-                }
-            }
             plugins::init_plugins(app)?;
 
             Ok(())
