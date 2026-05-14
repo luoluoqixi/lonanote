@@ -9,11 +9,11 @@ import type { RootProviderProps } from "./types";
 import { UIProvider } from "./ui_provider.native";
 
 export function RootProvider({ children, nativeConfig }: RootProviderProps) {
-  const { preferredColorScheme } = useColorSchemeSettings();
+  const { resolvedColorScheme } = useColorSchemeSettings();
 
   useEffect(() => {
-    Uniwind.setTheme(preferredColorScheme);
-  }, [preferredColorScheme]);
+    Uniwind.setTheme(resolvedColorScheme);
+  }, [resolvedColorScheme]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

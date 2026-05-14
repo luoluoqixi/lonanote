@@ -1,7 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 
 import type { GlobalSettings } from "@/api/commands/settings";
-import type { AccentColorSetting, ColorSchemeSetting } from "@/api/commands/store";
 import {
   clampZoomFactor,
   getAccentColorPreset,
@@ -9,6 +8,7 @@ import {
   useGlobalSettings,
   useUiPreferences,
 } from "@/hooks/settings";
+import type { AccentColorSetting, ColorSchemeSetting } from "@/stores/ui";
 
 import { Button } from "../ui";
 

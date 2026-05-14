@@ -40,8 +40,7 @@ pub fn run() {
                     commands::init_commands()?;
 
                     utils::win::fix_window_resize(&win);
-                    utils::win::set_win_bg_rgba(&win, (245, 245, 245, 255))
-                        .unwrap_or_else(|e| log::error!("{}", e));
+                    utils::win::init_window(&win).unwrap_or_else(|e| log::error!("{}", e));
 
                     #[cfg(not(target_os = "windows"))]
                     utils::win::add_devtools_listener(&win);

@@ -1,6 +1,6 @@
 import { type ColorSchemeName, useColorScheme } from "react-native";
 
-import type { ColorSchemeSetting } from "@/api/commands/store";
+import type { ColorSchemeSetting } from "@/stores/ui";
 
 import { useUiPreferences } from "./use_ui_preferences";
 

@@ -1,3 +1,20 @@
+html,
+body,
+#root,
+#expo-root,
+body > div:first-child {
+  min-height: 100%;
+  background: var(--background);
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 img {
   -webkit-user-select: none;
   user-select: none;

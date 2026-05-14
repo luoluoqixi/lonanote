@@ -17,7 +17,7 @@ export function SmallScreenHome() {
           <Text className="text-sm leading-6 text-foreground/70">从这里进入全局设置。</Text>
         </View>
 
-        <View className="gap-3 rounded-[24px] border border-foreground/10 bg-accent/5 px-4 py-4">
+        <View className="gap-3 rounded-3xl border border-foreground/10 bg-accent/5 px-4 py-4">
           <Text className="text-base font-medium text-foreground">全局设置</Text>
           <Text className="text-sm leading-6 text-foreground/65">主题、窗口和编辑器默认值。</Text>
           <Button onPress={() => router.push(SETTINGS_HREF)}>打开全局设置</Button>

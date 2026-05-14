@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
-import type { AccentColorSetting } from "@/api/commands/store";
 import { isDesktop, isTauri } from "@/api/common";
+import type { AccentColorSetting } from "@/stores/ui";
 
 import { useUiPreferences } from "./use_ui_preferences";
 

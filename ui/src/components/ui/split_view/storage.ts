@@ -1,11 +1,6 @@
-import { store } from "@/api/commands";
-import { isInvokeAvailable } from "@/api/invoke";
+import { store } from "@/api/common";
 
 import type { SplitLayoutState } from "./types";
-
-const canUseLocalStorage = () => {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-};
 
 const isFiniteNumberArray = (value: unknown): value is number[] => {
   return (
@@ -39,20 +34,8 @@ export async function readSplitLayoutState(
 ): Promise<SplitLayoutState | undefined> {
   if (!storageKey) return undefined;
 
-  if (isInvokeAvailable()) {
-    try {
-      const value = await store.commonGet<unknown>(storageKey);
-      return parseSplitLayoutState(value);
-    } catch {
-      return undefined;
-    }
-  }
-
-  if (!canUseLocalStorage()) return undefined;
-
   try {
-    const raw = window.localStorage.getItem(storageKey);
-    return parseSplitLayoutState(raw);
+    return parseSplitLayoutState(store.commonGetSync(storageKey));
   } catch {
     return undefined;
   }
@@ -64,20 +47,9 @@ export async function writeSplitLayoutState(
 ): Promise<void> {
   if (!storageKey) return;
 
-  if (isInvokeAvailable()) {
-    try {
-      await store.commonSet(storageKey, state);
-      await store.commonSave();
-      return;
-    } catch {
-      return;
-    }
-  }
-
-  if (!canUseLocalStorage()) return;
-
   try {
-    window.localStorage.setItem(storageKey, JSON.stringify(state));
+    store.commonSetSync(storageKey, state);
+    store.commonSaveSync();
   } catch {
     /* empty */
   }

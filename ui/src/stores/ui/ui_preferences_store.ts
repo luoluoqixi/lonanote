@@ -1,11 +1,6 @@
 import { createStore } from "zustand/vanilla";
 
-import {
-  type DesktopWindowState,
-  type UiPreferences,
-  createDefaultUiPreferences,
-  uiPreferences,
-} from "@/api/commands/store/ui_preferences";
+import { type DesktopWindowState, type UiPreferences, uiPreferences } from "./ui_preferences";
 
 type UiPreferencesUpdater = UiPreferences | ((current: UiPreferences) => UiPreferences);
 
@@ -32,9 +27,11 @@ function resolvePreferencesUpdater(
   return typeof updater === "function" ? updater(currentPreferences) : updater;
 }
 
+const initialPreferences = uiPreferences.getPreferences();
+
 const uiPreferencesStoreApi = createStore<UiPreferencesStoreState>()((set, get) => ({
-  preferences: createDefaultUiPreferences(),
-  isLoaded: false,
+  preferences: initialPreferences,
+  isLoaded: true,
   isLoading: false,
   error: null,
   setPreferences: (nextPreferences) => {
@@ -75,11 +72,11 @@ const uiPreferencesStoreApi = createStore<UiPreferencesStoreState>()((set, get) 
     });
   },
   setLoadedPreferences: (nextPreferences) => {
-    set((state) => ({
+    set(() => ({
       preferences: nextPreferences,
       isLoaded: true,
       isLoading: false,
-      error: state.error,
+      error: null,
     }));
   },
   setError: (error) => {
@@ -122,23 +119,18 @@ export const uiPreferencesStore = {
   load: async (force = false): Promise<UiPreferences> => {
     const state = uiPreferencesStoreApi.getState();
 
-    if (state.isLoading) {
-      return state.preferences;
-    }
-
     if (state.isLoaded && !force) {
       return state.preferences;
     }
-
-    state.setLoading(true);
     state.setError(null);
 
     try {
-      const nextPreferences = await uiPreferences.getPreferences();
+      const nextPreferences = force
+        ? uiPreferences.reloadPreferences()
+        : uiPreferences.getPreferences();
       uiPreferencesStoreApi.getState().setLoadedPreferences(nextPreferences);
       return nextPreferences;
     } catch (error) {
-      uiPreferencesStoreApi.getState().setLoading(false);
       uiPreferencesStoreApi.getState().setError(toErrorMessage(error));
       throw error;
     }

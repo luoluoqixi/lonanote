@@ -2,6 +2,6 @@ mod app;
 mod fs;
 mod path;
 mod settings;
-mod store;
+pub mod store;
 mod test;
 mod workspace;

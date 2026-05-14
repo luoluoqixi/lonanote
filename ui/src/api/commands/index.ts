@@ -3,7 +3,6 @@ export * from "./dialog";
 export * from "./fs";
 export * from "./path";
 export * from "./settings";
-export * from "./store";
 export * from "./test";
 export * from "./win";
 export * from "./workspace";

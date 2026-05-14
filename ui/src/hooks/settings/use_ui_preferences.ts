@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useStore } from "zustand";
 
 import { uiPreferencesStore } from "@/stores/ui";
@@ -8,12 +7,6 @@ export function useUiPreferences() {
   const isLoaded = useStore(uiPreferencesStore.store, (state) => state.isLoaded);
   const isLoading = useStore(uiPreferencesStore.store, (state) => state.isLoading);
   const error = useStore(uiPreferencesStore.store, (state) => state.error);
-
-  useEffect(() => {
-    if (!isLoaded && !isLoading) {
-      void uiPreferencesStore.load();
-    }
-  }, [isLoaded, isLoading]);
 
   return {
     preferences,

@@ -4,6 +4,8 @@ const invokeStore = <T = unknown>(command: string, args?: Record<string, unknown
   return invoke<T>(`store.${command}`, args);
 };
 
+export { invokeStore };
+
 const normalizeOptional = <T>(value: T | null | undefined): T | undefined => {
   return value ?? undefined;
 };

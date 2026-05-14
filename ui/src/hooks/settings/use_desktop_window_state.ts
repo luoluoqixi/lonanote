@@ -1,9 +1,9 @@
-import { PhysicalPosition, PhysicalSize, getCurrentWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef } from "react";
 
-import { uiPreferences } from "@/api/commands/store";
 import { isDesktop, isTauri } from "@/api/common";
 import { uiPreferencesStore } from "@/stores/ui";
+import { uiPreferences } from "@/stores/ui";
 
 import { useUiPreferences } from "./use_ui_preferences";
 
@@ -30,8 +30,7 @@ async function captureCurrentWindowState() {
 
 // Persist desktop window geometry into store so shell state stays outside business settings.
 export function useDesktopWindowState() {
-  const { isLoaded, preferences } = useUiPreferences();
-  const restoredRef = useRef(false);
+  const { isLoaded } = useUiPreferences();
   const saveTimeoutRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -77,25 +76,6 @@ export function useDesktopWindowState() {
 
     const initializeWindowState = async () => {
       try {
-        const windowState = preferences.window.lastWindowState;
-
-        if (!restoredRef.current && preferences.window.restoreWindowState && windowState) {
-          restoredRef.current = true;
-
-          if (!windowState.isMaximized && !windowState.isFullscreen) {
-            await appWindow.setSize(new PhysicalSize(windowState.width, windowState.height));
-            await appWindow.setPosition(new PhysicalPosition(windowState.x, windowState.y));
-          }
-
-          if (windowState.isMaximized) {
-            await appWindow.maximize();
-          }
-
-          if (windowState.isFullscreen) {
-            await appWindow.setFullscreen(true);
-          }
-        }
-
         schedulePersistWindowState();
         [unlistenResized, unlistenMoved] = await Promise.all([
           appWindow.onResized(() => {
@@ -121,5 +101,5 @@ export function useDesktopWindowState() {
       unlistenResized?.();
       unlistenMoved?.();
     };
-  }, [isLoaded, preferences.window.restoreWindowState]);
+  }, [isLoaded]);
 }
