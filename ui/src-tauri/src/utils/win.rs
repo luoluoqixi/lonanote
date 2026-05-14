@@ -80,10 +80,14 @@ fn resolve_startup_window_state() -> Option<StartupWindowState> {
 }
 
 fn resolve_startup_window_background_color() -> Option<Color> {
+    resolve_startup_window_background_rgba().map(Color::from)
+}
+
+fn resolve_startup_window_background_rgba() -> Option<(u8, u8, u8, u8)> {
     match read_preferred_theme_mode().as_deref() {
-        Some("dark") => Some(Color::from(DARK_WINDOW_BACKGROUND_RGBA)),
-        Some("light") => Some(Color::from(LIGHT_WINDOW_BACKGROUND_RGBA)),
-        _ => None,
+        Some("dark") => Some(DARK_WINDOW_BACKGROUND_RGBA),
+        Some("light") => Some(LIGHT_WINDOW_BACKGROUND_RGBA),
+        _ => resolve_system_theme().map(resolve_window_background_rgba_from_theme),
     }
 }
 
@@ -96,14 +100,39 @@ fn resolve_preferred_window_background(win: &WebviewWindow) -> (u8, u8, u8, u8) 
 }
 
 fn resolve_system_window_background(win: &WebviewWindow) -> (u8, u8, u8, u8) {
+    resolve_window_theme(win)
+        .or_else(resolve_system_theme)
+        .map(resolve_window_background_rgba_from_theme)
+        .unwrap_or(LIGHT_WINDOW_BACKGROUND_RGBA)
+}
+
+fn resolve_window_theme(win: &WebviewWindow) -> Option<Theme> {
     match win.theme() {
-        Ok(Theme::Dark) => DARK_WINDOW_BACKGROUND_RGBA,
-        Ok(Theme::Light) => LIGHT_WINDOW_BACKGROUND_RGBA,
-        Ok(_) => LIGHT_WINDOW_BACKGROUND_RGBA,
+        Ok(theme) => Some(theme),
         Err(err) => {
             log::warn!("read window theme error: {}", err);
-            LIGHT_WINDOW_BACKGROUND_RGBA
+            None
         }
+    }
+}
+
+fn resolve_system_theme() -> Option<Theme> {
+    match dark_light::detect() {
+        Ok(dark_light::Mode::Dark) => Some(Theme::Dark),
+        Ok(dark_light::Mode::Light) => Some(Theme::Light),
+        Ok(dark_light::Mode::Unspecified) => None,
+        Err(err) => {
+            log::warn!("detect system theme error: {}", err);
+            None
+        }
+    }
+}
+
+fn resolve_window_background_rgba_from_theme(theme: Theme) -> (u8, u8, u8, u8) {
+    match theme {
+        Theme::Dark => DARK_WINDOW_BACKGROUND_RGBA,
+        Theme::Light => LIGHT_WINDOW_BACKGROUND_RGBA,
+        _ => LIGHT_WINDOW_BACKGROUND_RGBA,
     }
 }
 

@@ -30,6 +30,7 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true }
+dark-light = { workspace = true }
 
 lonanote-core = { path = "../../rust/core" }
 cmdreg = { workspace = true }
