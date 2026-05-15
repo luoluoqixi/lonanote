@@ -24,6 +24,7 @@ function getVariantOverrideClassName(variant: NonNullable<ButtonProps["variant"]
 }
 
 export function Button({
+  accessibilityLabel,
   children,
   className,
   isDisabled,
@@ -39,6 +40,7 @@ export function Button({
 
   return (
     <HeroUINativeButton
+      accessibilityLabel={accessibilityLabel}
       className={buttonClassName}
       isDisabled={isDisabled}
       onPress={onPress}

@@ -1,10 +1,14 @@
 export { Button } from "./button/button.native";
 export { Dialog } from "./dialog/dialog.native";
+export { IconButton } from "./icon_button";
 export { RootProvider } from "./provider/root_provider.native";
 export { SplitLayout } from "./split_view";
+export { Switch } from "./switch";
 export { UIProvider } from "./provider/ui_provider.native";
 export type { ButtonProps } from "./button/types";
 export type { DialogProps } from "./dialog/types";
+export type { IconButtonProps } from "./icon_button";
 export type { RootProviderProps, UIProviderProps } from "./provider/types";
+export type { SwitchProps } from "./switch";
 export type * from "./split_view";
 export * from "./split_view";

@@ -10,7 +10,7 @@ import {
 } from "@/hooks/settings";
 import type { AccentColorSetting, ColorSchemeSetting } from "@/stores/ui";
 
-import { Button } from "../ui";
+import { Button, IconButton, Switch } from "../ui";
 
 export type SettingsTabKey = "appearance" | "global" | "window";
 
@@ -147,20 +147,14 @@ function SettingsToggleRow({ label, onChange, value }: ToggleRowProps) {
     <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
       <View className="flex-row items-center gap-4">
         <Text className="flex-1 text-base font-medium text-foreground">{label}</Text>
-        <Pressable
-          className={
-            value
-              ? "rounded-full border border-accent/20 bg-accent/10 px-4 py-2"
-              : "rounded-full border border-foreground/10 bg-background px-4 py-2"
-          }
-          onPress={() => onChange(!value)}
-        >
+        <View className="flex-row items-center gap-3">
           <Text
             className={value ? "text-sm font-medium text-accent" : "text-sm text-foreground/70"}
           >
             {value ? "已开启" : "已关闭"}
           </Text>
-        </Pressable>
+          <Switch accessibilityLabel={label} onValueChange={onChange} value={value} />
+        </View>
       </View>
     </View>
   );
@@ -191,12 +185,22 @@ function SettingsStepperRow({
           <Text className="text-sm text-foreground/65">{valueLabel}</Text>
         </View>
         <View className="flex-row gap-2">
-          <Button onPress={onDecrease} size="sm" variant="outline">
-            {decreaseLabel}
-          </Button>
-          <Button onPress={onIncrease} size="sm" variant="outline">
-            {increaseLabel}
-          </Button>
+          <IconButton
+            accessibilityLabel={`${label}${decreaseLabel}`}
+            onPress={onDecrease}
+            size="sm"
+            variant="outline"
+          >
+            <Text className="text-base font-semibold text-foreground">-</Text>
+          </IconButton>
+          <IconButton
+            accessibilityLabel={`${label}${increaseLabel}`}
+            onPress={onIncrease}
+            size="sm"
+            variant="outline"
+          >
+            <Text className="text-base font-semibold text-foreground">+</Text>
+          </IconButton>
         </View>
       </View>
     </View>

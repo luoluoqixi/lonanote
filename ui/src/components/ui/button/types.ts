@@ -12,6 +12,7 @@ export type AppButtonVariant =
 export type AppButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps {
+  accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
   isDisabled?: boolean;
