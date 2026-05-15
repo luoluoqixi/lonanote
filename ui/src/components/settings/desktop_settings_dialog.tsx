@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import { useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
-import { Dialog } from "../ui";
+import { Button, Dialog } from "../ui";
 import {
   AppearanceSettingsPanel,
   GlobalSettingsPanel,
@@ -55,24 +55,17 @@ export function DesktopSettingsDialog({ isOpen, onOpenChange }: DesktopSettingsD
           style={{ minHeight: 0 }}
         >
           {settingsTabs.map((tab) => {
-            const active = tab.key === selectedTab;
-
             return (
-              <Pressable
+              <Button
+                accessibilityLabel={tab.label}
+                className="mb-2 w-full justify-start"
                 key={tab.key}
-                className={
-                  active ? "mb-2 rounded-xl bg-accent/10 px-3 py-3" : "mb-2 rounded-xl px-3 py-3"
-                }
                 onPress={() => setSelectedTab(tab.key)}
+                size="sm"
+                variant={tab.key === selectedTab ? "secondary" : "ghost"}
               >
-                <Text
-                  className={
-                    active ? "text-sm font-medium text-accent" : "text-sm text-foreground/75"
-                  }
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
+                {tab.label}
+              </Button>
             );
           })}
         </View>

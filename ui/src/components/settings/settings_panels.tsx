@@ -10,7 +10,7 @@ import {
 } from "@/hooks/settings";
 import type { AccentColorSetting, ColorSchemeSetting } from "@/stores/ui";
 
-import { Button, IconButton, Switch } from "../ui";
+import { Button, IconButton, Select, type SelectOption, Switch } from "../ui";
 
 export type SettingsTabKey = "appearance" | "global" | "window";
 
@@ -212,44 +212,56 @@ type OptionGroupProps = {
   selectedValue: ColorSchemeSetting;
 };
 
+type SettingsSelectRowProps<T extends string> = {
+  label: string;
+  onSelect: (value: T) => void;
+  options: SelectOption<T>[];
+  placeholder: string;
+  selectedValue: T;
+};
+
+function SettingsSelectRow<T extends string>({
+  label,
+  onSelect,
+  options,
+  placeholder,
+  selectedValue,
+}: SettingsSelectRowProps<T>) {
+  const selectedOption = options.find((option) => option.value === selectedValue);
+
+  return (
+    <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
+      <View className="flex-row items-center justify-between gap-3">
+        <Text className="text-base font-medium text-foreground">{label}</Text>
+        <View className="w-44 max-w-[60%]">
+          <Select
+            accessibilityLabel={label}
+            onValueChange={onSelect}
+            options={options}
+            placeholder={placeholder}
+            value={selectedOption?.value}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function ColorSchemeOptionGroup({ onSelect, selectedValue }: OptionGroupProps) {
-  const options: Array<{ label: string; value: ColorSchemeSetting }> = [
+  const options: SelectOption<ColorSchemeSetting>[] = [
     { label: "浅色", value: "light" },
     { label: "深色", value: "dark" },
     { label: "跟随系统", value: "system" },
   ];
 
   return (
-    <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
-      <View className="gap-1">
-        <Text className="text-base font-medium text-foreground">主题模式</Text>
-      </View>
-      <View className="mt-4 flex-row flex-wrap gap-3">
-        {options.map((option) => {
-          const active = option.value === selectedValue;
-
-          return (
-            <Pressable
-              key={option.value}
-              className={
-                active
-                  ? "rounded-full border border-accent/20 bg-accent/10 px-4 py-3"
-                  : "rounded-full border border-foreground/10 bg-background px-4 py-3"
-              }
-              onPress={() => onSelect(option.value)}
-            >
-              <Text
-                className={
-                  active ? "text-sm font-medium text-accent" : "text-sm text-foreground/70"
-                }
-              >
-                {option.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
+    <SettingsSelectRow
+      label="主题模式"
+      onSelect={onSelect}
+      options={options}
+      placeholder="选择主题模式"
+      selectedValue={selectedValue}
+    />
   );
 }
 
@@ -259,43 +271,28 @@ type AccentColorOptionGroupProps = {
 };
 
 function AccentColorOptionGroup({ onSelect, selectedValue }: AccentColorOptionGroupProps) {
-  const options: AccentColorSetting[] = ["blue", "emerald", "orange", "rose"];
+  const options: SelectOption<AccentColorSetting>[] = (
+    ["blue", "emerald", "orange", "rose"] as AccentColorSetting[]
+  ).map((option) => {
+    const preset = getAccentColorPreset(option);
+
+    return {
+      label: preset.label,
+      startContent: (
+        <View className="h-3 w-3 rounded-full" style={{ backgroundColor: preset.accent }} />
+      ),
+      value: option,
+    };
+  });
 
   return (
-    <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
-      <View className="gap-1">
-        <Text className="text-base font-medium text-foreground">主题色</Text>
-      </View>
-      <View className="mt-4 flex-row flex-wrap gap-3">
-        {options.map((option) => {
-          const active = option === selectedValue;
-          const preset = getAccentColorPreset(option);
-
-          return (
-            <Pressable
-              key={option}
-              className={
-                active
-                  ? "rounded-full border border-accent/20 bg-accent/10 px-4 py-3"
-                  : "rounded-full border border-foreground/10 bg-background px-4 py-3"
-              }
-              onPress={() => onSelect(option)}
-            >
-              <View className="flex-row items-center gap-2">
-                <View className="h-3 w-3 rounded-full" style={{ backgroundColor: preset.accent }} />
-                <Text
-                  className={
-                    active ? "text-sm font-medium text-accent" : "text-sm text-foreground/70"
-                  }
-                >
-                  {preset.label}
-                </Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
+    <SettingsSelectRow
+      label="主题色"
+      onSelect={onSelect}
+      options={options}
+      placeholder="选择主题色"
+      selectedValue={selectedValue}
+    />
   );
 }
 
