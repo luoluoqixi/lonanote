@@ -7,7 +7,6 @@ export function Dialog({
   actions,
   children,
   contentStyle,
-  description,
   isOpen,
   onOpenChange,
   title,
@@ -17,13 +16,8 @@ export function Dialog({
       <HeroUIDialog.Portal>
         <HeroUIDialog.Overlay />
         <HeroUIDialog.Content style={[{ overflow: "hidden" }, contentStyle]}>
-          <HeroUIDialog.Close variant="ghost" className="absolute top-3 right-2.5 z-50" />
-          <View className="mb-4 gap-1.5 pr-10">
-            <HeroUIDialog.Title>{title}</HeroUIDialog.Title>
-            {description ? (
-              <HeroUIDialog.Description>{description}</HeroUIDialog.Description>
-            ) : null}
-          </View>
+          <HeroUIDialog.Close />
+          <HeroUIDialog.Title>{title}</HeroUIDialog.Title>
           {children ? (
             <View className="mb-4" style={{ flex: 1, minHeight: 0 }}>
               {children}

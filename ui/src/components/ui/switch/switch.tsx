@@ -1,5 +1,5 @@
+import { Switch as HeroUISwitch } from "@heroui/react";
 import clsx from "clsx";
-import { Switch as HeroUINativeSwitch } from "heroui-native";
 
 import type { SwitchProps } from "./types";
 
@@ -11,12 +11,12 @@ export function Switch({
   value,
 }: SwitchProps) {
   return (
-    <HeroUINativeSwitch
-      accessibilityLabel={accessibilityLabel}
+    <HeroUISwitch
+      aria-label={accessibilityLabel}
       className={clsx("h-7 w-12", className)}
       isDisabled={isDisabled}
       isSelected={value}
-      onSelectedChange={onValueChange}
+      onChange={onValueChange}
     />
   );
 }

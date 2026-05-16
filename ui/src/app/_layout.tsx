@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { RootProvider } from "@/components/ui";
 import { applyThemeBootstrap } from "@/stores/ui";
 
-import "../global.css";
+import "../initialize";
 
 applyThemeBootstrap();
 

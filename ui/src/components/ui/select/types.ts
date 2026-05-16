@@ -1,18 +1,18 @@
-export interface SelectOption<T extends string = string> {
+export interface SelectOption {
   description?: string;
   isDisabled?: boolean;
   label: string;
   startContent?: React.ReactNode;
-  value: T;
+  value: string;
 }
 
-export interface SelectProps<T extends string = string> {
+export interface SelectProps {
   accessibilityLabel?: string;
   className?: string;
   contentClassName?: string;
   isDisabled?: boolean;
-  onValueChange?: (nextValue: T) => void;
-  options: SelectOption<T>[];
+  onValueChange?: (nextValue: string | null) => void;
+  options: SelectOption[];
   placeholder: string;
-  value?: T;
+  value?: string;
 }
