@@ -2,27 +2,6 @@ import { Button as HeroUIButton } from "@heroui/react";
 
 import type { ButtonProps } from "./types";
 
-function getWebSafeVariant(variant: NonNullable<ButtonProps["variant"]>) {
-  switch (variant) {
-    case "outline":
-    case "ghost":
-      return "tertiary" as const;
-    default:
-      return variant;
-  }
-}
-
-function getVariantOverrideClassName(variant: NonNullable<ButtonProps["variant"]>) {
-  switch (variant) {
-    case "outline":
-      return "border border-border bg-transparent";
-    case "ghost":
-      return "bg-transparent";
-    default:
-      return undefined;
-  }
-}
-
 export function Button({
   accessibilityLabel,
   children,
@@ -32,20 +11,14 @@ export function Button({
   size = "md",
   variant = "primary",
 }: ButtonProps) {
-  const buttonClassName = [getVariantOverrideClassName(variant), className]
-    .filter(Boolean)
-    .join(" ");
-
-  const heroVariant = getWebSafeVariant(variant);
-
   return (
     <HeroUIButton
       aria-label={accessibilityLabel}
-      className={buttonClassName}
+      className={className}
       isDisabled={isDisabled}
       onPress={onPress}
       size={size}
-      variant={heroVariant}
+      variant={variant}
     >
       {children}
     </HeroUIButton>

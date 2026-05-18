@@ -1,2 +1,2 @@
-export { Button } from "./button.native";
-export type { AppButtonSize, AppButtonVariant, ButtonProps } from "./types";
+export * from "./button.native";
+export type * from "./types";

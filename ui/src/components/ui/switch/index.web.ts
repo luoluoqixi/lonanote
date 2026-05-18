@@ -1,2 +1,2 @@
-export * from "./button.web";
+export * from "./switch.web";
 export type * from "./types";

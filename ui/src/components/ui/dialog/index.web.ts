@@ -1,2 +1,2 @@
-export { Dialog } from "./dialog.web";
-export type { DialogProps } from "./types";
+export * from "./dialog.web";
+export type * from "./types";

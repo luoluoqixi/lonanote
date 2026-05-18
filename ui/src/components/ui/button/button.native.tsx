@@ -1,4 +1,4 @@
-import { Button as HeroUINativeButton } from "heroui-native";
+import { Button as HeroUIButton } from "heroui-native";
 
 import type { ButtonProps } from "./types";
 
@@ -12,7 +12,7 @@ export function Button({
   variant = "primary",
 }: ButtonProps) {
   return (
-    <HeroUINativeButton
+    <HeroUIButton
       accessibilityLabel={accessibilityLabel}
       className={className}
       isDisabled={isDisabled}
@@ -21,6 +21,6 @@ export function Button({
       variant={variant}
     >
       {children}
-    </HeroUINativeButton>
+    </HeroUIButton>
   );
 }

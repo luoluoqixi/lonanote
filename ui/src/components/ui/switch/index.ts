@@ -1,2 +1,2 @@
-export { Switch } from "./switch";
-export type { SwitchProps } from "./types";
+// TypeScript fallback entry. Runtime platform resolution uses index.web.ts and index.native.ts.
+export * from "./index.native";

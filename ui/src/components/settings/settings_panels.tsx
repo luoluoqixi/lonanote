@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 
 import type { GlobalSettings } from "@/api/commands/settings";
+import { Button, IconButton, Select, type SelectOption, Switch } from "@/components/ui";
 import {
   clampZoomFactor,
   getAccentColorPreset,
@@ -9,8 +10,6 @@ import {
   useUiPreferences,
 } from "@/hooks/settings";
 import type { AccentColorSetting, ColorSchemeSetting } from "@/stores/ui";
-
-import { Button, IconButton, Select, type SelectOption, Switch } from "../ui";
 
 export type SettingsTabKey = "appearance" | "global" | "window";
 
@@ -208,25 +207,25 @@ function SettingsStepperRow({
 }
 
 type OptionGroupProps = {
-  onSelect: (value: ColorSchemeSetting) => void;
+  onSelect: (value: string | null) => void;
   selectedValue: ColorSchemeSetting;
 };
 
-type SettingsSelectRowProps<T extends string> = {
+type SettingsSelectRowProps = {
   label: string;
-  onSelect: (value: T) => void;
-  options: SelectOption<T>[];
+  onSelect: (value: string | null) => void;
+  options: SelectOption[];
   placeholder: string;
-  selectedValue: T;
+  selectedValue: string;
 };
 
-function SettingsSelectRow<T extends string>({
+function SettingsSelectRow({
   label,
   onSelect,
   options,
   placeholder,
   selectedValue,
-}: SettingsSelectRowProps<T>) {
+}: SettingsSelectRowProps) {
   const selectedOption = options.find((option) => option.value === selectedValue);
 
   return (
@@ -248,7 +247,7 @@ function SettingsSelectRow<T extends string>({
 }
 
 function ColorSchemeOptionGroup({ onSelect, selectedValue }: OptionGroupProps) {
-  const options: SelectOption<ColorSchemeSetting>[] = [
+  const options: SelectOption[] = [
     { label: "浅色", value: "light" },
     { label: "深色", value: "dark" },
     { label: "跟随系统", value: "system" },
@@ -266,12 +265,12 @@ function ColorSchemeOptionGroup({ onSelect, selectedValue }: OptionGroupProps) {
 }
 
 type AccentColorOptionGroupProps = {
-  onSelect: (value: AccentColorSetting) => void;
-  selectedValue: AccentColorSetting;
+  onSelect: (value: string | null) => void;
+  selectedValue: string;
 };
 
 function AccentColorOptionGroup({ onSelect, selectedValue }: AccentColorOptionGroupProps) {
-  const options: SelectOption<AccentColorSetting>[] = (
+  const options: SelectOption[] = (
     ["blue", "emerald", "orange", "rose"] as AccentColorSetting[]
   ).map((option) => {
     const preset = getAccentColorPreset(option);
@@ -501,13 +500,14 @@ export function AppearanceSettingsPanel() {
       <SettingsSection title="主题">
         <AccentColorOptionGroup
           onSelect={(nextValue) => {
+            if (nextValue == null) return;
             runSettingsAction(
               "set accent color",
               updateAndSave((currentPreferences) => ({
                 ...currentPreferences,
                 appearance: {
                   ...currentPreferences.appearance,
-                  accentColor: nextValue,
+                  accentColor: nextValue as AccentColorSetting,
                 },
               })),
             );
@@ -516,9 +516,10 @@ export function AppearanceSettingsPanel() {
         />
         <ColorSchemeOptionGroup
           onSelect={(nextValue) => {
+            if (nextValue == null) return;
             runSettingsAction(
               "set preferred color scheme",
-              setPreferredColorSchemeAndSave(nextValue),
+              setPreferredColorSchemeAndSave(nextValue as ColorSchemeSetting),
             );
           }}
           selectedValue={preferredColorScheme}

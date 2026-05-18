@@ -187,14 +187,14 @@ export function WorkspaceDebugPanel() {
         <View className="flex-row flex-wrap gap-2">
           <Button
             variant="outline"
-            onPress={refreshPanel}
+            onPress={() => refreshPanel()}
             isDisabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
           >
             {isRefreshingPanel ? "刷新中..." : "刷新数据"}
           </Button>
           <Button
             variant="outline"
-            onPress={handleSyncRoots}
+            onPress={() => handleSyncRoots()}
             isDisabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
           >
             {isSyncing ? "同步中..." : "同步 Roots"}

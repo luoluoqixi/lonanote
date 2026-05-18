@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import type { AppButtonSize, AppButtonVariant } from "../button/types";
+import type { ButtonSize, ButtonVariant } from "../button/types";
 
 export interface IconButtonProps {
   accessibilityLabel: string;
@@ -8,6 +8,6 @@ export interface IconButtonProps {
   className?: string;
   isDisabled?: boolean;
   onPress?: () => void | Promise<void>;
-  size?: AppButtonSize;
-  variant?: AppButtonVariant;
+  size?: ButtonSize;
+  variant?: ButtonVariant;
 }

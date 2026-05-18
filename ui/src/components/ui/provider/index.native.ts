@@ -1,3 +1,3 @@
-export { RootProvider } from "./root_provider.native";
-export { UIProvider } from "./ui_provider.native";
-export type { RootProviderProps, UIProviderProps } from "./types";
+export * from "./root_provider.native";
+export * from "./ui_provider.native";
+export type * from "./types";
