@@ -1,7 +1,7 @@
 import { uiPreferences } from "./ui_preferences";
 
 const LIGHT_WINDOW_BACKGROUND = "#F5F5F5";
-const DARK_WINDOW_BACKGROUND = "#18181B";
+const DARK_WINDOW_BACKGROUND = "#060607";
 
 type BootstrappedColorScheme = "light" | "dark";
 

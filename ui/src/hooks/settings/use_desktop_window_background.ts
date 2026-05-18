@@ -8,7 +8,7 @@ import type { ResolvedColorScheme } from "./use_color_scheme_settings";
 
 const DESKTOP_WINDOW_BACKGROUND_COLORS: Record<ResolvedColorScheme, string> = {
   light: "#F5F5F5",
-  dark: "#18181B",
+  dark: "#060607",
 };
 
 export function getDesktopWindowBackgroundColor(colorScheme: ResolvedColorScheme): string {

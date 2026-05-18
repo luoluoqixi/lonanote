@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { DesktopSettingsDialog } from "@/components/settings";
+import { WideSettingsDialog } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
 import { SplitLayout, type SplitLayoutHandle, SplitLayoutPriority } from "@/components/ui";
 
@@ -86,7 +86,7 @@ export function WideScreenHome() {
           </SplitLayout.Pane>
         </SplitLayout>
       </View>
-      <DesktopSettingsDialog isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      <WideSettingsDialog isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </SafeAreaView>
   );
 }

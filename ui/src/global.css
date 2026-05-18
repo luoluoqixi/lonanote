@@ -10,5 +10,6 @@
  */
 @source "../node_modules/heroui-native/lib";
 
+@import "./styles/theme_overrides.css";
 @import "./styles/root.css";
 @import "./components/index.css";

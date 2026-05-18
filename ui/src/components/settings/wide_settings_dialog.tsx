@@ -13,7 +13,7 @@ import {
   settingsTabs,
 } from "./settings_panels";
 
-type DesktopSettingsDialogProps = {
+type WideSettingsDialogProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 };
@@ -30,8 +30,8 @@ function renderSettingsTab(tab: SettingsTabKey) {
   }
 }
 
-// Desktop settings follows the legacy renderer and opens as a dialog; compact layout keeps route-based access.
-export function DesktopSettingsDialog({ isOpen, onOpenChange }: DesktopSettingsDialogProps) {
+// Wide settings follows the legacy renderer and opens as a dialog; compact layout keeps route-based access.
+export function WideSettingsDialog({ isOpen, onOpenChange }: WideSettingsDialogProps) {
   const [selectedTab, setSelectedTab] = useState<SettingsTabKey>("global");
   const globalSettingsState = useGlobalSettings();
   const uiPreferencesState = useUiPreferences();

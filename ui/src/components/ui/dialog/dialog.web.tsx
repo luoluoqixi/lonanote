@@ -14,7 +14,7 @@ export function Dialog({
   const flattened = StyleSheet.flatten(contentStyle);
   return (
     <HeroUIDialog isOpen={isOpen} onOpenChange={onOpenChange}>
-      <HeroUIDialog.Backdrop>
+      <HeroUIDialog.Backdrop variant="opaque" isDismissable>
         <HeroUIDialog.Container>
           <HeroUIDialog.Dialog style={{ overflow: "hidden", ...flattened }}>
             <HeroUIDialog.CloseTrigger />
