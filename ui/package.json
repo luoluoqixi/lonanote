@@ -10,6 +10,7 @@
     "android": "cross-env APP_MODE=development expo run:android --device",
     "ios": "cross-env APP_MODE=development expo run:ios --device",
     "web": "cross-env APP_MODE=development expo start --web",
+    "web:ci": "cross-env APP_MODE=development CI=1 expo start --web",
     "build:android": "cross-env APP_MODE=production expo run:android --variant release --device",
     "build:ios": "cross-env APP_MODE=production expo run:ios --configuration Release --device",
     "build:web": "cross-env APP_MODE=production expo export --platform web",
