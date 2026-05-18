@@ -6,8 +6,11 @@ export function isTauri() {
   return !!((globalThis || window) as any)?.isTauri;
 }
 
-export function os(): OSType {
-  return type();
+export function os(): OSType | "web" {
+  if (isTauri()) {
+    return type();
+  }
+  return "web";
 }
 
 export function isMobile(): boolean {

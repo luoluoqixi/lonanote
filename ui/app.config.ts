@@ -3,6 +3,7 @@ import { type ConfigContext, type ExpoConfig } from "expo/config";
 import pkg from "./package.json";
 
 const IS_DEV = process.env.APP_MODE === "development";
+const ENABLE_REACT_COMPILER = true; // !IS_DEV;
 
 console.log(`Running in ${IS_DEV ? "development" : "production"} mode`);
 
@@ -72,6 +73,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   experiments: {
     typedRoutes: true,
-    reactCompiler: true,
+    reactCompiler: ENABLE_REACT_COMPILER,
   },
 });

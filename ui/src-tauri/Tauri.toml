@@ -3,7 +3,7 @@ version = "1.1.0"
 identifier = "com.luoluoqixi.lonanote"
 
 [build]
-beforeDevCommand = "bun web:ci"
+beforeDevCommand = "bun web"
 beforeBuildCommand = "bun build:web"
 # beforeBuildCommand = "bun build:web:sourcemap"
 # beforeBuildCommand = "bun build:web:dev"
