@@ -1,9 +1,18 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
 const { withUniwindConfig } = require("uniwind/metro");
+const { blockList } = require("./tools/metro_ignore");
+
+const defaultConfig = getDefaultConfig(__dirname);
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname);
+const config = {
+  ...defaultConfig,
+  resolver: {
+    ...defaultConfig.resolver,
+    blockList: blockList,
+  },
+};
 
 module.exports = {
   ...withUniwindConfig(config, {
@@ -13,5 +22,5 @@ module.exports = {
     // defaults to project's root
     dtsFile: "./src/uniwind-types.d.ts",
   }),
-  transformerPath: require.resolve("./tools/metro-transformer.cjs"),
+  transformerPath: require.resolve("./tools/metro_transformer.cjs"),
 };
