@@ -8,6 +8,8 @@
 /android_dev
 /android_release
 
+/.copilot-patch-orig
+
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies

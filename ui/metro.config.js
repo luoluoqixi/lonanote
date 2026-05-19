@@ -1,7 +1,7 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
 const { withUniwindConfig } = require("uniwind/metro");
-const { blockList } = require("./tools/metro_ignore");
+const { blockList, watchBlockList } = require("./tools/metro_ignore");
 
 const defaultConfig = getDefaultConfig(__dirname);
 
@@ -11,6 +11,10 @@ const config = {
   resolver: {
     ...defaultConfig.resolver,
     blockList: blockList,
+  },
+  watcher: {
+    ...defaultConfig.watcher,
+    watchBlockList: watchBlockList,
   },
 };
 
