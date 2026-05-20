@@ -1,6 +1,7 @@
-import { PressEvent } from "@heroui/react";
-import type { ReactNode } from "react";
-import { GestureResponderEvent } from "react-native";
+import { type PressEvent, Button as WebButton } from "@heroui/react";
+import { Button as NativeButton } from "heroui-native";
+import type { ComponentProps, ReactNode } from "react";
+import type { GestureResponderEvent } from "react-native";
 
 export type ButtonVariant =
   | "primary"
@@ -13,7 +14,32 @@ export type ButtonVariant =
 
 export type ButtonSize = "sm" | "md" | "lg";
 
-export interface ButtonProps {
+type ButtonPlatformProps = {
+  nativeProps?: Omit<
+    ComponentProps<typeof NativeButton>,
+    | "accessibilityLabel"
+    | "children"
+    | "className"
+    | "isDisabled"
+    | "isIconOnly"
+    | "onPress"
+    | "size"
+    | "variant"
+  >;
+  webProps?: Omit<
+    ComponentProps<typeof WebButton>,
+    | "aria-label"
+    | "children"
+    | "className"
+    | "isDisabled"
+    | "isIconOnly"
+    | "onPress"
+    | "size"
+    | "variant"
+  >;
+};
+
+export interface ButtonProps extends ButtonPlatformProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;

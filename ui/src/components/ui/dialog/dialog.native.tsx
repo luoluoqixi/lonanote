@@ -8,11 +8,15 @@ export function Dialog({
   children,
   contentStyle,
   isOpen,
+  nativeProps,
   onOpenChange,
   title,
+  webProps,
 }: DialogProps) {
+  void webProps;
+
   return (
-    <HeroUIDialog isOpen={isOpen} onOpenChange={onOpenChange}>
+    <HeroUIDialog isOpen={isOpen} onOpenChange={onOpenChange} {...(nativeProps as any)}>
       <HeroUIDialog.Portal>
         <HeroUIDialog.Overlay />
         <HeroUIDialog.Content style={[{ overflow: "hidden" }, contentStyle]}>

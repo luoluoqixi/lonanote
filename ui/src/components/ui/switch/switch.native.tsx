@@ -7,9 +7,12 @@ export function Switch({
   accessibilityLabel,
   className,
   isDisabled,
+  nativeProps,
   onValueChange,
   value,
+  webProps,
 }: SwitchProps) {
+  void webProps;
   return (
     <HeroUISwitch
       accessibilityLabel={accessibilityLabel}
@@ -17,6 +20,7 @@ export function Switch({
       isDisabled={isDisabled}
       isSelected={value}
       onSelectedChange={onValueChange}
+      {...(nativeProps as any)}
     />
   );
 }

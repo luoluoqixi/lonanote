@@ -1,21 +1,19 @@
-import { Label as HeroUILabel } from "heroui-native";
+import { TextField as HeroUITextField } from "heroui-native";
 
-import type { LabelProps } from "./types";
+import type { TextFieldProps } from "./types";
 
-export function Label({
+export function TextField({
   children,
   className,
-  htmlFor,
   isDisabled,
   isInvalid,
   isRequired,
   nativeProps,
   webProps,
-}: LabelProps) {
-  void htmlFor;
+}: TextFieldProps) {
   void webProps;
   return (
-    <HeroUILabel
+    <HeroUITextField
       className={className}
       isDisabled={isDisabled}
       isInvalid={isInvalid}
@@ -23,6 +21,6 @@ export function Label({
       {...(nativeProps as any)}
     >
       {children}
-    </HeroUILabel>
+    </HeroUITextField>
   );
 }

@@ -14,13 +14,16 @@ export function Input({
   isDisabled,
   isInvalid,
   keyboardType,
+  nativeProps,
   onValueChange,
   placeholder,
   placeholderColorClassName,
   secureTextEntry,
   selectionColorClassName,
   value,
+  webProps,
 }: InputProps) {
+  void webProps;
   return (
     <HeroUIInput
       accessibilityLabel={accessibilityLabel}
@@ -40,6 +43,7 @@ export function Input({
       secureTextEntry={secureTextEntry}
       selectionColorClassName={selectionColorClassName}
       value={value}
+      {...(nativeProps as any)}
     />
   );
 }

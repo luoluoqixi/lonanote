@@ -30,7 +30,7 @@ export interface InputGroupProps extends InputGroupPlatformProps<
 export interface InputGroupInputProps
   extends
     InputGroupPlatformProps<WebInputGroupInputProps, NativeInputGroupInputProps>,
-    InputProps {}
+    Omit<InputProps, "nativeProps" | "webProps"> {}
 
 export interface InputGroupPrefixProps extends InputGroupPlatformProps<
   WebInputGroupPrefixProps,

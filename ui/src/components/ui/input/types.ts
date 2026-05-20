@@ -1,3 +1,6 @@
+import { Input as WebInput } from "@heroui/react";
+import { Input as NativeInput } from "heroui-native";
+import type { ComponentProps } from "react";
 import type { TextInputProps } from "react-native";
 
 export type InputMode =
@@ -10,7 +13,48 @@ export type InputMode =
   | "text"
   | "url";
 
-export interface InputProps {
+type InputPlatformProps = {
+  nativeProps?: Omit<
+    ComponentProps<typeof NativeInput>,
+    | "accessibilityLabel"
+    | "autoCapitalize"
+    | "autoCorrect"
+    | "autoFocus"
+    | "className"
+    | "defaultValue"
+    | "inputMode"
+    | "isDisabled"
+    | "isInvalid"
+    | "keyboardType"
+    | "nativeID"
+    | "onChangeText"
+    | "placeholder"
+    | "placeholderColorClassName"
+    | "secureTextEntry"
+    | "selectionColorClassName"
+    | "value"
+  >;
+  webProps?: Omit<
+    ComponentProps<typeof WebInput>,
+    | "aria-invalid"
+    | "aria-label"
+    | "autoCapitalize"
+    | "autoCorrect"
+    | "autoFocus"
+    | "className"
+    | "defaultValue"
+    | "disabled"
+    | "id"
+    | "inputMode"
+    | "name"
+    | "onChange"
+    | "placeholder"
+    | "type"
+    | "value"
+  >;
+};
+
+export interface InputProps extends InputPlatformProps {
   accessibilityLabel?: string;
   autoCapitalize?: TextInputProps["autoCapitalize"];
   autoCorrect?: boolean;

@@ -1,4 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
+import { AlertDialog as WebDialog } from "@heroui/react";
+import { Dialog as NativeDialog } from "heroui-native";
+import type { CSSProperties, ComponentProps, ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 
 type DialogContentStyle = Pick<
@@ -6,7 +8,12 @@ type DialogContentStyle = Pick<
   "width" | "height" | "minWidth" | "minHeight" | "maxWidth" | "maxHeight" | "overflow"
 >;
 
-export interface DialogProps {
+type DialogPlatformProps = {
+  nativeProps?: Omit<ComponentProps<typeof NativeDialog>, "children" | "isOpen" | "onOpenChange">;
+  webProps?: Omit<ComponentProps<typeof WebDialog>, "children" | "isOpen" | "onOpenChange">;
+};
+
+export interface DialogProps extends DialogPlatformProps {
   actions?: ReactNode;
   children?: ReactNode;
   contentStyle?: StyleProp<DialogContentStyle>;

@@ -9,9 +9,12 @@ export function Button({
   isDisabled,
   onPress,
   isIconOnly,
+  nativeProps,
   size = "md",
   variant = "primary",
+  webProps,
 }: ButtonProps) {
+  void nativeProps;
   return (
     <HeroUIButton
       aria-label={accessibilityLabel}
@@ -21,6 +24,7 @@ export function Button({
       size={size}
       variant={variant}
       isIconOnly={isIconOnly}
+      {...(webProps as any)}
     >
       {children}
     </HeroUIButton>

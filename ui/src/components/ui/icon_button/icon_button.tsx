@@ -8,18 +8,22 @@ export function IconButton({
   children,
   className,
   isDisabled,
+  nativeProps,
   onPress,
   size = "md",
   variant = "ghost",
+  webProps,
 }: IconButtonProps) {
   return (
     <Button
       accessibilityLabel={accessibilityLabel}
       className={clsx(className)}
       isDisabled={isDisabled}
+      nativeProps={nativeProps}
       onPress={onPress}
       size={size}
       variant={variant}
+      webProps={webProps}
       isIconOnly
     >
       {children}

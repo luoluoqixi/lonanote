@@ -46,7 +46,10 @@ export interface SearchFieldGroupProps extends SearchFieldPlatformProps<
 export interface SearchFieldInputProps
   extends
     SearchFieldPlatformProps<WebSearchFieldInputProps, NativeSearchFieldInputProps>,
-    Omit<InputProps, "isDisabled" | "isInvalid" | "onValueChange" | "value"> {}
+    Omit<
+      InputProps,
+      "isDisabled" | "isInvalid" | "nativeProps" | "onValueChange" | "value" | "webProps"
+    > {}
 
 export interface SearchFieldSearchIconProps extends SearchFieldPlatformProps<
   WebSearchFieldSearchIconProps,

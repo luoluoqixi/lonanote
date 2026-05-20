@@ -9,38 +9,53 @@ import type {
   CardTitleProps,
 } from "./types";
 
-export function Card({ children, className }: CardProps) {
-  return <HeroUICard className={className}>{children}</HeroUICard>;
-}
-
-export function CardHeader({ className, ...props }: CardHeaderProps) {
-  return <HeroUICard.Header className={className} {...props} />;
-}
-
-export function CardTitle({ children, className, ...props }: CardTitleProps) {
+export function Card({ children, className, nativeProps, webProps }: CardProps) {
+  void webProps;
   return (
-    <HeroUICard.Title className={className} {...props}>
+    <HeroUICard className={className} {...(nativeProps as any)}>
+      {children}
+    </HeroUICard>
+  );
+}
+
+export function CardHeader({ className, nativeProps, webProps }: CardHeaderProps) {
+  void webProps;
+  return <HeroUICard.Header className={className} {...(nativeProps as any)} />;
+}
+
+export function CardTitle({ children, className, nativeProps, webProps }: CardTitleProps) {
+  void webProps;
+  return (
+    <HeroUICard.Title className={className} {...(nativeProps as any)}>
       {children}
     </HeroUICard.Title>
   );
 }
 
-export function CardDescription({ children, className, ...props }: CardDescriptionProps) {
+export function CardDescription({
+  children,
+  className,
+  nativeProps,
+  webProps,
+}: CardDescriptionProps) {
+  void webProps;
   return (
-    <HeroUICard.Description className={className} {...props}>
+    <HeroUICard.Description className={className} {...(nativeProps as any)}>
       {children}
     </HeroUICard.Description>
   );
 }
 
-export function CardBody({ children, className, ...props }: CardBodyProps) {
+export function CardBody({ children, className, nativeProps, webProps }: CardBodyProps) {
+  void webProps;
   return (
-    <HeroUICard.Body className={className} {...props}>
+    <HeroUICard.Body className={className} {...(nativeProps as any)}>
       {children}
     </HeroUICard.Body>
   );
 }
 
-export function CardFooter({ className, ...props }: CardFooterProps) {
-  return <HeroUICard.Footer className={className} {...props} />;
+export function CardFooter({ className, nativeProps, webProps }: CardFooterProps) {
+  void webProps;
+  return <HeroUICard.Footer className={className} {...(nativeProps as any)} />;
 }

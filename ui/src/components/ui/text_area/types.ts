@@ -35,6 +35,7 @@ type TextAreaPlatformProps = {
   >;
 };
 
-export interface TextAreaProps extends TextAreaPlatformProps, Omit<InputProps, "secureTextEntry"> {
+export interface TextAreaProps
+  extends TextAreaPlatformProps, Omit<InputProps, "nativeProps" | "secureTextEntry" | "webProps"> {
   rows?: number;
 }

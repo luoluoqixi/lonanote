@@ -8,12 +8,16 @@ export function Select({
   className,
   contentClassName,
   isDisabled,
+  nativeProps,
   onValueChange,
   options,
   placeholder,
   value,
+  webProps,
 }: SelectProps) {
   const selectedOption = value ? options.find((option) => option.value === value) : undefined;
+
+  void webProps;
 
   return (
     <HeroUINativeSelect
@@ -27,6 +31,7 @@ export function Select({
       value={
         selectedOption ? { label: selectedOption.label, value: selectedOption.value } : undefined
       }
+      {...(nativeProps as any)}
     >
       <HeroUINativeSelect.Trigger className={clsx(className)}>
         <HeroUINativeSelect.Value placeholder={placeholder} />

@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 
-import type { ButtonSize, ButtonVariant } from "../button/types";
+import type { ButtonProps, ButtonSize, ButtonVariant } from "../button/types";
 
-export interface IconButtonProps {
+type IconButtonPlatformProps = Pick<ButtonProps, "nativeProps" | "webProps">;
+
+export interface IconButtonProps extends IconButtonPlatformProps {
   accessibilityLabel: string;
   children: ReactNode;
   className?: string;

@@ -9,12 +9,16 @@ export function Slider({
   isDisabled,
   maxValue,
   minValue,
+  nativeProps,
   onValueChange,
   onValueChangeEnd,
   orientation,
   step,
   value,
+  webProps,
 }: SliderProps) {
+  void nativeProps;
+
   return (
     <HeroUISlider
       aria-label={accessibilityLabel}
@@ -28,6 +32,7 @@ export function Slider({
       orientation={orientation}
       step={step}
       value={value}
+      {...(webProps as any)}
     />
   );
 }

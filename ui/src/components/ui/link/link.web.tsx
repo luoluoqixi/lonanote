@@ -11,7 +11,10 @@ export function Link({
   onPress,
   rel,
   target,
+  nativeProps,
+  webProps,
 }: LinkProps) {
+  void nativeProps;
   return (
     <HeroUILink
       aria-label={accessibilityLabel}
@@ -21,6 +24,7 @@ export function Link({
       onPress={onPress}
       rel={href ? rel : undefined}
       target={href ? target : undefined}
+      {...(webProps as any)}
     >
       {children}
     </HeroUILink>

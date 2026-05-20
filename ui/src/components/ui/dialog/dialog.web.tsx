@@ -8,12 +8,17 @@ export function Dialog({
   children,
   contentStyle,
   isOpen,
+  nativeProps,
   onOpenChange,
   title,
+  webProps,
 }: DialogProps) {
   const flattened = StyleSheet.flatten(contentStyle);
+
+  void nativeProps;
+
   return (
-    <HeroUIDialog isOpen={isOpen} onOpenChange={onOpenChange}>
+    <HeroUIDialog isOpen={isOpen} onOpenChange={onOpenChange} {...(webProps as any)}>
       <HeroUIDialog.Backdrop variant="opaque" isDismissable>
         <HeroUIDialog.Container>
           <HeroUIDialog.Dialog style={{ overflow: "hidden", ...flattened }}>

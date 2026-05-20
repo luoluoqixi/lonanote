@@ -9,41 +9,70 @@ import type {
   TabsTabProps,
 } from "./types";
 
-export function Tabs({ children, className, onValueChange, value }: TabsProps) {
+export function Tabs({
+  children,
+  className,
+  nativeProps,
+  onValueChange,
+  value,
+  webProps,
+}: TabsProps) {
+  void webProps;
   return (
-    <HeroUITabs className={className} onValueChange={onValueChange} value={value}>
+    <HeroUITabs
+      className={className}
+      onValueChange={onValueChange}
+      value={value}
+      {...(nativeProps as any)}
+    >
       {children}
     </HeroUITabs>
   );
 }
 
-export function TabsList({ children, className, ...props }: TabsListProps) {
+export function TabsList({ children, className, nativeProps, webProps }: TabsListProps) {
+  void webProps;
   return (
-    <HeroUITabs.List className={className} {...props}>
+    <HeroUITabs.List className={className} {...(nativeProps as any)}>
       {children}
     </HeroUITabs.List>
   );
 }
 
-export function TabsTab({ children, className, value, ...props }: TabsTabProps) {
+export function TabsTab({ children, className, nativeProps, value, webProps }: TabsTabProps) {
+  void webProps;
   return (
-    <HeroUITabs.Trigger className={className} value={value} {...props}>
+    <HeroUITabs.Trigger className={className} value={value} {...(nativeProps as any)}>
       {children}
     </HeroUITabs.Trigger>
   );
 }
 
-export function TabsIndicator({ className, ...props }: TabsIndicatorProps) {
-  return <HeroUITabs.Indicator className={className} {...props} />;
+export function TabsIndicator({ className, nativeProps, webProps }: TabsIndicatorProps) {
+  void webProps;
+  return <HeroUITabs.Indicator className={className} {...(nativeProps as any)} />;
 }
 
-export function TabsSeparator({ betweenValues, className, ...props }: TabsSeparatorProps) {
-  return <HeroUITabs.Separator betweenValues={betweenValues} className={className} {...props} />;
-}
-
-export function TabsPanel({ children, className, value, ...props }: TabsPanelProps) {
+export function TabsSeparator({
+  betweenValues,
+  className,
+  nativeProps,
+  webProps,
+}: TabsSeparatorProps) {
+  void webProps;
   return (
-    <HeroUITabs.Content className={className} value={value} {...props}>
+    <HeroUITabs.Separator
+      betweenValues={betweenValues}
+      className={className}
+      {...(nativeProps as any)}
+    />
+  );
+}
+
+export function TabsPanel({ children, className, nativeProps, value, webProps }: TabsPanelProps) {
+  void webProps;
+  return (
+    <HeroUITabs.Content className={className} value={value} {...(nativeProps as any)}>
       {children}
     </HeroUITabs.Content>
   );

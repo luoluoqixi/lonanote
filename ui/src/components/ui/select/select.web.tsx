@@ -8,11 +8,15 @@ export function Select({
   className,
   contentClassName,
   isDisabled,
+  nativeProps,
   onValueChange,
   options,
   placeholder,
   value,
+  webProps,
 }: SelectProps) {
+  void nativeProps;
+
   return (
     <HeroUISelect
       aria-label={accessibilityLabel}
@@ -20,6 +24,7 @@ export function Select({
       onChange={(nextValue) => onValueChange?.(nextValue as string)}
       value={value}
       placeholder={placeholder}
+      {...(webProps as any)}
     >
       <HeroUISelect.Trigger className={clsx(className)}>
         <HeroUISelect.Value />

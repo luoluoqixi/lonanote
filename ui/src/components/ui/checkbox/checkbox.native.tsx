@@ -8,9 +8,12 @@ export function Checkbox({
   className,
   isDisabled,
   isInvalid,
+  nativeProps,
   onValueChange,
   value,
+  webProps,
 }: CheckboxProps) {
+  void webProps;
   return (
     <HeroUICheckbox
       accessibilityLabel={accessibilityLabel}
@@ -19,6 +22,7 @@ export function Checkbox({
       isInvalid={isInvalid}
       isSelected={value}
       onSelectedChange={onValueChange}
+      {...(nativeProps as any)}
     >
       {children}
     </HeroUICheckbox>

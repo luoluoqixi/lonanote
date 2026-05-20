@@ -9,8 +9,11 @@ export function Link({
   className,
   href,
   isDisabled,
+  nativeProps,
   onPress,
+  webProps,
 }: LinkProps) {
+  void webProps;
   return (
     <HeroUILinkButton
       accessibilityLabel={accessibilityLabel}
@@ -25,6 +28,7 @@ export function Link({
           return openURL(href);
         }
       }}
+      {...(nativeProps as any)}
     >
       {children}
     </HeroUILinkButton>

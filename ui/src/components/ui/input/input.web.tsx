@@ -35,11 +35,14 @@ export function Input({
   isInvalid,
   keyboardType,
   name,
+  nativeProps,
   onValueChange,
   placeholder,
   secureTextEntry,
   value,
+  webProps,
 }: InputProps) {
+  void nativeProps;
   return (
     <HeroUIInput
       aria-label={accessibilityLabel}
@@ -57,6 +60,7 @@ export function Input({
       placeholder={placeholder}
       type={secureTextEntry ? "password" : undefined}
       value={value}
+      {...(webProps as any)}
     />
   );
 }
