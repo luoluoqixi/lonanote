@@ -21,4 +21,5 @@ export interface ButtonProps {
   onPress?: (e: PressEvent | GestureResponderEvent) => void | Promise<void>;
   size?: ButtonSize;
   variant?: ButtonVariant;
+  isIconOnly?: boolean;
 }

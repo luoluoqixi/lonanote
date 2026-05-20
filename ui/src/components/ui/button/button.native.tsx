@@ -8,6 +8,7 @@ export function Button({
   className,
   isDisabled,
   onPress,
+  isIconOnly,
   size = "md",
   variant = "primary",
 }: ButtonProps) {
@@ -19,6 +20,7 @@ export function Button({
       onPress={onPress}
       size={size}
       variant={variant}
+      isIconOnly={isIconOnly}
     >
       {children}
     </HeroUIButton>
