@@ -1,2 +1,2 @@
-export { IconButton } from "./icon_button";
-export type { IconButtonProps } from "./types";
+export * from "./icon_button";
+export type * from "./types";
