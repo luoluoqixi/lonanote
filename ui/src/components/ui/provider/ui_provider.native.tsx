@@ -1,4 +1,4 @@
-import { HeroUINativeProvider, ToastProvider } from "heroui-native";
+import { HeroUINativeProvider } from "heroui-native";
 
 import { DEFAULT_TOAST_CONFIG } from "./config";
 import type { UIProviderProps } from "./types";
@@ -15,7 +15,7 @@ export function UIProvider({ children, nativeConfig, toastConfig }: UIProviderPr
     nativeVariant,
   } = toastConfig || DEFAULT_TOAST_CONFIG;
 
-  const defaultToastProps =
+  const defaultProps =
     nativeAnimation == null &&
     nativeIsSwipeable == null &&
     nativePlacement == null &&
@@ -29,17 +29,20 @@ export function UIProvider({ children, nativeConfig, toastConfig }: UIProviderPr
         };
 
   return (
-    <HeroUINativeProvider config={nativeConfig}>
+    <HeroUINativeProvider
+      config={{
+        toast: {
+          defaultProps,
+          maxVisibleToasts,
+          insets: nativeInsets,
+          disableFullWindowOverlay: nativeDisableFullWindowOverlay,
+          unstable_accessibilityContainerViewIsModal:
+            nativeUnstable_accessibilityContainerViewIsModal,
+        },
+        ...nativeConfig,
+      }}
+    >
       {children}
-      <ToastProvider
-        maxVisibleToasts={maxVisibleToasts}
-        disableFullWindowOverlay={nativeDisableFullWindowOverlay}
-        insets={nativeInsets}
-        unstable_accessibilityContainerViewIsModal={
-          nativeUnstable_accessibilityContainerViewIsModal
-        }
-        defaultProps={defaultToastProps}
-      />
     </HeroUINativeProvider>
   );
 }
