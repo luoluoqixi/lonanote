@@ -18,6 +18,8 @@ export * from "./link";
 export * from "./list_box";
 export * from "./popover";
 export * from "./provider";
+export * from "./description";
+export * from "./field_error";
 export * from "./search_field";
 export * from "./select";
 export * from "./separator";
