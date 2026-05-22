@@ -38,6 +38,7 @@ export interface PopoverContentProps extends PopoverPlatformProps<
   WebPopoverContentProps,
   NativePopoverContentProps
 > {
+  accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
 }

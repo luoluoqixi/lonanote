@@ -64,10 +64,21 @@ export function DropdownPopover({
   );
 }
 
-export function DropdownMenu({ children, className, nativeProps, webProps }: DropdownMenuProps) {
+export function DropdownMenu({
+  accessibilityLabel,
+  children,
+  className,
+  nativeProps,
+  webProps,
+}: DropdownMenuProps) {
   void webProps;
   return (
-    <HeroUIMenu.Content className={className} presentation="popover" {...(nativeProps as any)}>
+    <HeroUIMenu.Content
+      accessibilityLabel={accessibilityLabel}
+      className={className}
+      presentation="popover"
+      {...(nativeProps as any)}
+    >
       {children}
     </HeroUIMenu.Content>
   );

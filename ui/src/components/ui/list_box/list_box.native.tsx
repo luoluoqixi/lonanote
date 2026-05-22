@@ -7,19 +7,29 @@ import type {
   ListBoxSectionProps,
 } from "./types";
 
-function ListBoxRoot({ children, className, nativeProps, webProps }: ListBoxProps) {
+function ListBoxRoot({
+  accessibilityLabel,
+  children,
+  className,
+  nativeProps,
+  webProps,
+}: ListBoxProps) {
   void webProps;
   return (
-    <HeroUIListGroup className={className} {...(nativeProps as any)}>
+    <HeroUIListGroup
+      accessibilityLabel={accessibilityLabel}
+      className={className}
+      {...(nativeProps as any)}
+    >
       {children}
     </HeroUIListGroup>
   );
 }
 
-function ListBoxItem({ children, className, nativeProps, webProps }: ListBoxItemProps) {
+function ListBoxItem({ children, className, nativeProps, textValue, webProps }: ListBoxItemProps) {
   void webProps;
   return (
-    <HeroUIListGroup.Item className={className} {...(nativeProps as any)}>
+    <HeroUIListGroup.Item className={className} textValue={textValue} {...(nativeProps as any)}>
       {children}
     </HeroUIListGroup.Item>
   );

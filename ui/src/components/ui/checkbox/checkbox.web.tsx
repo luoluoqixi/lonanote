@@ -24,7 +24,10 @@ export function Checkbox({
       onChange={onValueChange}
       {...(webProps as any)}
     >
-      {children}
+      <HeroUICheckbox.Control>
+        <HeroUICheckbox.Indicator />
+      </HeroUICheckbox.Control>
+      {children ? <HeroUICheckbox.Content>{children}</HeroUICheckbox.Content> : null}
     </HeroUICheckbox>
   );
 }

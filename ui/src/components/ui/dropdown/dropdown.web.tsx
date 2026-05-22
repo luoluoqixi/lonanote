@@ -62,10 +62,20 @@ export function DropdownPopover({
   );
 }
 
-export function DropdownMenu({ children, className, nativeProps, webProps }: DropdownMenuProps) {
+export function DropdownMenu({
+  accessibilityLabel,
+  children,
+  className,
+  nativeProps,
+  webProps,
+}: DropdownMenuProps) {
   void nativeProps;
   return (
-    <HeroUIDropdown.Menu className={className} {...(webProps as any)}>
+    <HeroUIDropdown.Menu
+      aria-label={accessibilityLabel}
+      className={className}
+      {...(webProps as any)}
+    >
       {children}
     </HeroUIDropdown.Menu>
   );

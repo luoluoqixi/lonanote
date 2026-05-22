@@ -9,6 +9,7 @@ import type {
 } from "./types";
 
 function SearchFieldRoot({
+  accessibilityLabel,
   children,
   className,
   defaultValue,
@@ -23,6 +24,7 @@ function SearchFieldRoot({
   void nativeProps;
   return (
     <HeroUISearchField
+      aria-label={accessibilityLabel}
       className={className}
       defaultValue={defaultValue}
       isDisabled={isDisabled}
@@ -46,9 +48,22 @@ function SearchFieldGroup({ children, className, nativeProps, webProps }: Search
   );
 }
 
-function SearchFieldInput({ className, nativeProps, webProps, ...props }: SearchFieldInputProps) {
+function SearchFieldInput({
+  accessibilityLabel,
+  className,
+  nativeProps,
+  webProps,
+  ...props
+}: SearchFieldInputProps) {
   void nativeProps;
-  return <HeroUISearchField.Input className={className} {...props} {...(webProps as any)} />;
+  return (
+    <HeroUISearchField.Input
+      aria-label={accessibilityLabel}
+      className={className}
+      {...props}
+      {...(webProps as any)}
+    />
+  );
 }
 
 function SearchFieldSearchIcon({

@@ -9,6 +9,7 @@ import type {
 } from "./types";
 
 function SearchFieldRoot({
+  accessibilityLabel,
   children,
   className,
   defaultValue,
@@ -23,6 +24,7 @@ function SearchFieldRoot({
   void webProps;
   return (
     <HeroUISearchField
+      accessibilityLabel={accessibilityLabel}
       className={className}
       defaultValue={defaultValue}
       isDisabled={isDisabled}

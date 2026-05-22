@@ -21,6 +21,10 @@ export function Switch({
       isSelected={value}
       onChange={onValueChange}
       {...(webProps as any)}
-    />
+    >
+      <HeroUISwitch.Control>
+        <HeroUISwitch.Thumb />
+      </HeroUISwitch.Control>
+    </HeroUISwitch>
   );
 }

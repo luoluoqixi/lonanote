@@ -20,6 +20,7 @@ export * from "./popover";
 export * from "./provider";
 export * from "./description";
 export * from "./field_error";
+export * from "./header";
 export * from "./search_field";
 export * from "./select";
 export * from "./separator";

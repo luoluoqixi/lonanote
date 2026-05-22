@@ -72,6 +72,7 @@ export interface DropdownPopoverProps extends DropdownPopoverPlatformProps {
 }
 
 export interface DropdownMenuProps extends DropdownMenuPlatformProps {
+  accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
 }

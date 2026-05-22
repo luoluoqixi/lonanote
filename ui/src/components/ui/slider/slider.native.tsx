@@ -2,8 +2,21 @@ import { Slider as HeroUISlider } from "heroui-native";
 
 import type { SliderProps } from "./types";
 
+function getThumbCount(value?: SliderProps["value"], defaultValue?: SliderProps["defaultValue"]) {
+  if (Array.isArray(value)) {
+    return value.length;
+  }
+
+  if (Array.isArray(defaultValue)) {
+    return defaultValue.length;
+  }
+
+  return 1;
+}
+
 export function Slider({
   accessibilityLabel,
+  children,
   className,
   defaultValue,
   isDisabled,
@@ -19,6 +32,8 @@ export function Slider({
 }: SliderProps) {
   void webProps;
 
+  const thumbCount = getThumbCount(value, defaultValue);
+
   return (
     <HeroUISlider
       accessibilityLabel={accessibilityLabel}
@@ -33,6 +48,15 @@ export function Slider({
       step={step}
       value={value}
       {...(nativeProps as any)}
-    />
+    >
+      {children ?? (
+        <HeroUISlider.Track>
+          <HeroUISlider.Fill />
+          {Array.from({ length: thumbCount }, (_, index) => (
+            <HeroUISlider.Thumb key={index} />
+          ))}
+        </HeroUISlider.Track>
+      )}
+    </HeroUISlider>
   );
 }

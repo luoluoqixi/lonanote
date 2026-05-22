@@ -23,6 +23,7 @@ export interface InputOTPProps extends InputOTPPlatformProps<
   WebInputOTPRootProps,
   NativeInputOTPRootProps
 > {
+  accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
   defaultValue?: string;

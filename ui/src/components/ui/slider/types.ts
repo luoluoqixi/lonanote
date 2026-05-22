@@ -1,6 +1,6 @@
 import { Slider as WebSlider } from "@heroui/react";
 import { Slider as NativeSlider } from "heroui-native";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 export type SliderOrientation = "horizontal" | "vertical";
 export type SliderValue = number | number[];
@@ -38,6 +38,7 @@ type SliderPlatformProps = {
 
 export interface SliderProps extends SliderPlatformProps {
   accessibilityLabel?: string;
+  children?: ReactNode;
   className?: string;
   defaultValue?: SliderValue;
   isDisabled?: boolean;

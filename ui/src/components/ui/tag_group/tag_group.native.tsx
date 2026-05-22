@@ -1,8 +1,9 @@
 import { TagGroup as HeroUITagGroup } from "heroui-native";
 
-import type { TagGroupListProps, TagGroupProps } from "./types";
+import type { TagGroupItemProps, TagGroupListProps, TagGroupProps } from "./types";
 
 function TagGroupRoot({
+  accessibilityLabel,
   children,
   className,
   nativeProps,
@@ -12,7 +13,13 @@ function TagGroupRoot({
 }: TagGroupProps) {
   void webProps;
   return (
-    <HeroUITagGroup className={className} size={size} variant={variant} {...(nativeProps as any)}>
+    <HeroUITagGroup
+      accessibilityLabel={accessibilityLabel}
+      className={className}
+      size={size}
+      variant={variant}
+      {...(nativeProps as any)}
+    >
       {children}
     </HeroUITagGroup>
   );
@@ -27,7 +34,17 @@ function TagGroupList({ children, className, nativeProps, webProps }: TagGroupLi
   );
 }
 
+function TagGroupItem({ children, className, nativeProps, webProps }: TagGroupItemProps) {
+  void webProps;
+  return (
+    <HeroUITagGroup.Item className={className} {...(nativeProps as any)}>
+      {children}
+    </HeroUITagGroup.Item>
+  );
+}
+
 export const TagGroup = Object.assign(TagGroupRoot, {
   Root: TagGroupRoot,
   List: TagGroupList,
+  Item: TagGroupItem,
 });

@@ -15,6 +15,7 @@ type DialogPlatformProps = {
 
 export interface DialogProps extends DialogPlatformProps {
   actions?: ReactNode;
+  accessibilityLabel?: string;
   children?: ReactNode;
   contentStyle?: StyleProp<DialogContentStyle>;
   isOpen: boolean;

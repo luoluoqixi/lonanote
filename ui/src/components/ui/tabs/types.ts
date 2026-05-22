@@ -1,6 +1,7 @@
 import { Tabs as WebTabs } from "@heroui/react";
 import { Tabs as NativeTabs } from "heroui-native";
 import type { ComponentProps, ReactNode } from "react";
+import type { ViewProps as NativeViewProps } from "react-native";
 
 export type TabsOrientation = "horizontal" | "vertical";
 export type TabsVariant = "line" | "underline" | "solid";
@@ -19,6 +20,11 @@ type TabsRootPlatformProps = {
 type TabsListPlatformProps = {
   nativeProps?: Omit<ComponentProps<typeof NativeTabs.List>, "children" | "className">;
   webProps?: Omit<ComponentProps<typeof WebTabs.List>, "children" | "className">;
+};
+
+type TabsListContainerPlatformProps = {
+  nativeProps?: Omit<NativeViewProps, "children">;
+  webProps?: Omit<ComponentProps<typeof WebTabs.ListContainer>, "children" | "className">;
 };
 
 type TabsTabPlatformProps = {
@@ -42,13 +48,14 @@ type TabsPanelPlatformProps = {
 };
 
 export interface TabsProps extends TabsRootPlatformProps {
+  accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
   onValueChange: (nextValue: string) => void;
   value: string;
 }
 
-export interface TabsListContainerProps extends TabsListPlatformProps {
+export interface TabsListContainerProps extends TabsListContainerPlatformProps {
   children?: ReactNode;
   className?: string;
 }

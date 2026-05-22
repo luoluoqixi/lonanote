@@ -31,6 +31,7 @@ export interface SearchFieldProps extends SearchFieldPlatformProps<
   isDisabled?: boolean;
   isInvalid?: boolean;
   isRequired?: boolean;
+  accessibilityLabel?: string;
   onValueChange?: (value: string) => void;
   value?: string;
 }

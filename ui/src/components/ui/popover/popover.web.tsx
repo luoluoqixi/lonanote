@@ -22,11 +22,17 @@ function PopoverTrigger({ children, className, nativeProps, webProps }: PopoverT
   );
 }
 
-function PopoverContent({ children, className, nativeProps, webProps }: PopoverContentProps) {
+function PopoverContent({
+  accessibilityLabel,
+  children,
+  className,
+  nativeProps,
+  webProps,
+}: PopoverContentProps) {
   void nativeProps;
   return (
     <HeroUIPopover.Content className={className} {...(webProps as any)}>
-      <HeroUIPopover.Dialog>{children}</HeroUIPopover.Dialog>
+      <HeroUIPopover.Dialog aria-label={accessibilityLabel}>{children}</HeroUIPopover.Dialog>
     </HeroUIPopover.Content>
   );
 }

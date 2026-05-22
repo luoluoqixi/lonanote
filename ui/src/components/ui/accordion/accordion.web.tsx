@@ -9,6 +9,7 @@ import type {
 } from "./types";
 
 function AccordionRoot({
+  accessibilityLabel,
   children,
   className,
   hideSeparator,
@@ -19,6 +20,7 @@ function AccordionRoot({
   void nativeProps;
   return (
     <HeroUIAccordion
+      aria-label={accessibilityLabel}
       className={className}
       hideSeparator={hideSeparator}
       variant={variant}

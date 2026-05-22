@@ -1,33 +1,40 @@
-import type {
-  TagGroupListProps as WebTagGroupListProps,
-  TagGroupProps as WebTagGroupProps,
-} from "@heroui/react";
-import type {
-  TagGroupListProps as NativeTagGroupListProps,
-  TagGroupProps as NativeTagGroupProps,
-  TagGroupSize,
-  TagGroupVariant,
-} from "heroui-native";
-import type { ReactNode } from "react";
+import { Tag as WebTag, TagGroup as WebTagGroup } from "@heroui/react";
+import type { TagGroupSize, TagGroupVariant } from "heroui-native";
+import { TagGroup as NativeTagGroup } from "heroui-native";
+import type { ComponentProps, ReactNode } from "react";
 
 type TagGroupPlatformProps<TWeb, TNative> = {
   nativeProps?: Omit<TNative, "children" | "className">;
   webProps?: Omit<TWeb, "children" | "className">;
 };
 
+type TagGroupItemPlatformProps<TWeb, TNative> = {
+  nativeProps?: Omit<TNative, "children" | "className">;
+  webProps?: Omit<TWeb, "children" | "className">;
+};
+
 export interface TagGroupProps extends TagGroupPlatformProps<
-  WebTagGroupProps,
-  NativeTagGroupProps
+  ComponentProps<typeof WebTagGroup>,
+  ComponentProps<typeof NativeTagGroup>
 > {
   children?: ReactNode;
+  accessibilityLabel?: string;
   className?: string;
   size?: TagGroupSize;
   variant?: TagGroupVariant;
 }
 
 export interface TagGroupListProps extends TagGroupPlatformProps<
-  WebTagGroupListProps<any>,
-  NativeTagGroupListProps
+  ComponentProps<typeof WebTagGroup.List>,
+  ComponentProps<typeof NativeTagGroup.List>
+> {
+  children?: ReactNode;
+  className?: string;
+}
+
+export interface TagGroupItemProps extends TagGroupItemPlatformProps<
+  ComponentProps<typeof WebTag>,
+  ComponentProps<typeof NativeTagGroup.Item>
 > {
   children?: ReactNode;
   className?: string;

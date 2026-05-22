@@ -10,6 +10,7 @@ import type {
 export { REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS } from "heroui-native";
 
 function InputOTPRoot({
+  accessibilityLabel,
   children,
   className,
   defaultValue,
@@ -29,6 +30,7 @@ function InputOTPRoot({
   void webProps;
   return (
     <HeroUIInputOTP
+      accessibilityLabel={accessibilityLabel}
       className={className}
       defaultValue={defaultValue}
       inputMode={inputMode}

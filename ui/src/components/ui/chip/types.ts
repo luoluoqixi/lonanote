@@ -17,6 +17,9 @@ export interface ChipProps extends ChipPlatformProps<
 > {
   children?: ReactNode;
   className?: string;
+  color?: ChipColor;
+  size?: ChipSize;
+  variant?: ChipVariant;
 }
 
 export interface ChipLabelProps extends ChipPlatformProps<

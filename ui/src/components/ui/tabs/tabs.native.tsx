@@ -1,7 +1,9 @@
 import { Tabs as HeroUITabs } from "heroui-native";
+import { View } from "react-native";
 
 import type {
   TabsIndicatorProps,
+  TabsListContainerProps,
   TabsListProps,
   TabsPanelProps,
   TabsProps,
@@ -10,6 +12,7 @@ import type {
 } from "./types";
 
 export function Tabs({
+  accessibilityLabel,
   children,
   className,
   nativeProps,
@@ -20,6 +23,7 @@ export function Tabs({
   void webProps;
   return (
     <HeroUITabs
+      accessibilityLabel={accessibilityLabel}
       className={className}
       onValueChange={onValueChange}
       value={value}
@@ -27,6 +31,20 @@ export function Tabs({
     >
       {children}
     </HeroUITabs>
+  );
+}
+
+export function TabsListContainer({
+  children,
+  className,
+  nativeProps,
+  webProps,
+}: TabsListContainerProps) {
+  void webProps;
+  return (
+    <View className={className} {...(nativeProps as any)}>
+      {children}
+    </View>
   );
 }
 

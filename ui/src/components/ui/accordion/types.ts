@@ -24,6 +24,7 @@ export interface AccordionProps extends AccordionPlatformProps<
   WebAccordionRootProps,
   NativeAccordionRootProps
 > {
+  accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
   hideSeparator?: boolean;

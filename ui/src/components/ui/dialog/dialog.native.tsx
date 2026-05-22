@@ -5,6 +5,7 @@ import type { DialogProps } from "./types";
 
 export function Dialog({
   actions,
+  accessibilityLabel,
   children,
   contentStyle,
   isOpen,
@@ -19,7 +20,10 @@ export function Dialog({
     <HeroUIDialog isOpen={isOpen} onOpenChange={onOpenChange} {...(nativeProps as any)}>
       <HeroUIDialog.Portal>
         <HeroUIDialog.Overlay />
-        <HeroUIDialog.Content style={[{ overflow: "hidden" }, contentStyle]}>
+        <HeroUIDialog.Content
+          accessibilityLabel={accessibilityLabel}
+          style={[{ overflow: "hidden" }, contentStyle]}
+        >
           <HeroUIDialog.Close />
           <HeroUIDialog.Title>{title}</HeroUIDialog.Title>
           {children ? (

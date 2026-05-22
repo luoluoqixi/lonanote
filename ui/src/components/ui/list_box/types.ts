@@ -17,6 +17,7 @@ export interface ListBoxProps extends ListBoxPlatformProps<
   NativeListGroupRootProps
 > {
   children?: ReactNode;
+  accessibilityLabel?: string;
   className?: string;
 }
 
@@ -26,6 +27,7 @@ export interface ListBoxItemProps extends ListBoxPlatformProps<
 > {
   children?: ReactNode;
   className?: string;
+  textValue?: string;
 }
 
 export interface ListBoxItemIndicatorProps extends ListBoxPlatformProps<

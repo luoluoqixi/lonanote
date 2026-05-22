@@ -2,10 +2,24 @@ import { Chip as HeroUIChip } from "heroui-native";
 
 import type { ChipLabelProps, ChipProps } from "./types";
 
-export function Chip({ children, className, nativeProps, webProps }: ChipProps) {
+export function Chip({
+  children,
+  className,
+  color,
+  nativeProps,
+  size,
+  variant,
+  webProps,
+}: ChipProps) {
   void webProps;
   return (
-    <HeroUIChip className={className} {...(nativeProps as any)}>
+    <HeroUIChip
+      className={className}
+      color={color}
+      size={size}
+      variant={variant}
+      {...(nativeProps as any)}
+    >
       {children}
     </HeroUIChip>
   );
