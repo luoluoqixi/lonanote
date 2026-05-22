@@ -1,4 +1,4 @@
-import { isMobile, isTauri, isWeb, os } from "../common";
+import { isMobile, isTauri, isWeb, os } from "../common/platform";
 
 export { isTauri, isMobile, isWeb, os };
 

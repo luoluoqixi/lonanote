@@ -19,6 +19,7 @@ export function Dialog({
 
   return (
     <HeroUIDialog isOpen={isOpen} onOpenChange={onOpenChange} {...(webProps as any)}>
+      <HeroUIDialog.Trigger></HeroUIDialog.Trigger>
       <HeroUIDialog.Backdrop variant="opaque" isDismissable>
         <HeroUIDialog.Container>
           <HeroUIDialog.Dialog style={{ overflow: "hidden", ...flattened }}>
