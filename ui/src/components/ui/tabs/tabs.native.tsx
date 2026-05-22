@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { Tabs as HeroUITabs } from "heroui-native";
 import { View } from "react-native";
 
@@ -15,12 +16,51 @@ export function Tabs({
   accessibilityLabel,
   children,
   className,
+  indicatorClassName,
+  items,
+  listClassName,
+  listContainerClassName,
   nativeProps,
   onValueChange,
+  panelClassName,
+  tabClassName,
   value,
   webProps,
 }: TabsProps) {
   void webProps;
+
+  const content =
+    children ??
+    (items ? (
+      <>
+        <View className={listContainerClassName}>
+          <HeroUITabs.List className={listClassName}>
+            {items.map((item) => (
+              <HeroUITabs.Trigger
+                className={clsx(tabClassName, item.tabClassName)}
+                key={item.value}
+                value={item.value}
+              >
+                <HeroUITabs.Indicator className={indicatorClassName} />
+                {item.label}
+              </HeroUITabs.Trigger>
+            ))}
+          </HeroUITabs.List>
+        </View>
+        {items.map((item) =>
+          item.content === undefined ? null : (
+            <HeroUITabs.Content
+              className={clsx(panelClassName, item.panelClassName)}
+              key={item.value}
+              value={item.value}
+            >
+              {item.content}
+            </HeroUITabs.Content>
+          ),
+        )}
+      </>
+    ) : null);
+
   return (
     <HeroUITabs
       accessibilityLabel={accessibilityLabel}
@@ -29,7 +69,7 @@ export function Tabs({
       value={value}
       {...(nativeProps as any)}
     >
-      {children}
+      {content}
     </HeroUITabs>
   );
 }

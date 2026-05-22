@@ -52,12 +52,28 @@ type DropdownItemIndicatorPlatformProps = {
   webProps?: Omit<ComponentProps<typeof WebDropdown.ItemIndicator>, "className">;
 };
 
+export interface DropdownItemData extends DropdownItemPlatformProps {
+  className?: string;
+  isDisabled?: boolean;
+  key: string;
+  label: ReactNode;
+  textValue?: string;
+}
+
 export interface DropdownProps extends DropdownRootPlatformProps {
+  accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
+  contentClassName?: string;
   isDefaultOpen?: boolean;
+  isDisabled?: boolean;
   isOpen?: boolean;
+  itemClassName?: string;
+  items?: DropdownItemData[];
+  onAction?: (key: string) => void;
   onOpenChange?: (open: boolean) => void;
+  trigger?: ReactNode;
+  triggerClassName?: string;
 }
 
 export interface DropdownTriggerProps extends DropdownTriggerPlatformProps {
@@ -75,6 +91,7 @@ export interface DropdownMenuProps extends DropdownMenuPlatformProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
+  onAction?: (key: string) => void;
 }
 
 export interface DropdownSectionProps extends DropdownSectionPlatformProps {
@@ -86,6 +103,7 @@ export interface DropdownItemProps extends DropdownItemPlatformProps {
   children?: ReactNode;
   className?: string;
   isDisabled?: boolean;
+  textValue?: string;
 }
 
 export interface DropdownItemIndicatorProps extends DropdownItemIndicatorPlatformProps {

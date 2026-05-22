@@ -6,6 +6,14 @@ import type { ViewProps as NativeViewProps } from "react-native";
 export type TabsOrientation = "horizontal" | "vertical";
 export type TabsVariant = "line" | "underline" | "solid";
 
+export interface TabsItem {
+  content?: ReactNode;
+  label: ReactNode;
+  panelClassName?: string;
+  tabClassName?: string;
+  value: string;
+}
+
 type TabsRootPlatformProps = {
   nativeProps?: Omit<
     ComponentProps<typeof NativeTabs>,
@@ -51,7 +59,13 @@ export interface TabsProps extends TabsRootPlatformProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
+  indicatorClassName?: string;
+  items?: TabsItem[];
+  listClassName?: string;
+  listContainerClassName?: string;
   onValueChange: (nextValue: string) => void;
+  panelClassName?: string;
+  tabClassName?: string;
   value: string;
 }
 

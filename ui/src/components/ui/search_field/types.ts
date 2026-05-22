@@ -27,12 +27,21 @@ export interface SearchFieldProps extends SearchFieldPlatformProps<
 > {
   children?: ReactNode;
   className?: string;
+  clearButtonClassName?: string;
   defaultValue?: string;
+  groupClassName?: string;
+  hideClearButton?: boolean;
+  hideSearchIcon?: boolean;
   isDisabled?: boolean;
   isInvalid?: boolean;
   isRequired?: boolean;
   accessibilityLabel?: string;
+  inputClassName?: string;
+  label?: ReactNode;
+  labelClassName?: string;
   onValueChange?: (value: string) => void;
+  placeholder?: string;
+  searchIconClassName?: string;
   value?: string;
 }
 

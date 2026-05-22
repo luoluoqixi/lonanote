@@ -1,4 +1,5 @@
 import { Dropdown as HeroUIDropdown } from "@heroui/react";
+import clsx from "clsx";
 
 import type {
   DropdownItemIndicatorProps,
@@ -11,15 +12,57 @@ import type {
 } from "./types";
 
 export function Dropdown({
+  accessibilityLabel,
   children,
   className,
+  contentClassName,
   isDefaultOpen,
+  isDisabled,
   isOpen,
+  itemClassName,
+  items,
   nativeProps,
+  onAction,
   onOpenChange,
+  trigger,
+  triggerClassName,
   webProps,
 }: DropdownProps) {
   void nativeProps;
+
+  const content = children ?? (
+    <>
+      <DropdownTrigger className={triggerClassName} isDisabled={isDisabled}>
+        {trigger}
+      </DropdownTrigger>
+      <DropdownPopover>
+        <DropdownMenu
+          accessibilityLabel={accessibilityLabel}
+          className={contentClassName}
+          onAction={onAction}
+        >
+          {(items ?? []).map((item) => (
+            <DropdownItem
+              key={item.key}
+              className={clsx(itemClassName, item.className)}
+              isDisabled={item.isDisabled}
+              nativeProps={item.nativeProps}
+              textValue={
+                item.textValue ??
+                (typeof item.label === "string" || typeof item.label === "number"
+                  ? String(item.label)
+                  : undefined)
+              }
+              webProps={item.webProps}
+            >
+              {item.label}
+            </DropdownItem>
+          ))}
+        </DropdownMenu>
+      </DropdownPopover>
+    </>
+  );
+
   return (
     <HeroUIDropdown
       className={className}
@@ -28,7 +71,7 @@ export function Dropdown({
       onOpenChange={onOpenChange}
       {...(webProps as any)}
     >
-      {children}
+      {content}
     </HeroUIDropdown>
   );
 }
@@ -67,6 +110,7 @@ export function DropdownMenu({
   children,
   className,
   nativeProps,
+  onAction,
   webProps,
 }: DropdownMenuProps) {
   void nativeProps;
@@ -74,6 +118,7 @@ export function DropdownMenu({
     <HeroUIDropdown.Menu
       aria-label={accessibilityLabel}
       className={className}
+      onAction={(key: string | number) => onAction?.(String(key))}
       {...(webProps as any)}
     >
       {children}
@@ -100,11 +145,17 @@ export function DropdownItem({
   className,
   isDisabled,
   nativeProps,
+  textValue,
   webProps,
 }: DropdownItemProps) {
   void nativeProps;
   return (
-    <HeroUIDropdown.Item className={className} isDisabled={isDisabled} {...(webProps as any)}>
+    <HeroUIDropdown.Item
+      className={className}
+      isDisabled={isDisabled}
+      textValue={textValue}
+      {...(webProps as any)}
+    >
       {children}
     </HeroUIDropdown.Item>
   );

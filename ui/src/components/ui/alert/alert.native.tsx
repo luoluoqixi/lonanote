@@ -8,11 +8,43 @@ import type {
   AlertTitleProps,
 } from "./types";
 
-function AlertRoot({ children, className, nativeProps, status, webProps }: AlertProps) {
+function AlertRoot({
+  children,
+  className,
+  contentClassName,
+  description,
+  descriptionClassName,
+  indicator,
+  indicatorClassName,
+  nativeProps,
+  status,
+  title,
+  titleClassName,
+  webProps,
+}: AlertProps) {
   void webProps;
+
+  const content = children ?? (
+    <>
+      {indicator == null ? null : (
+        <HeroUIAlert.Indicator className={indicatorClassName}>{indicator}</HeroUIAlert.Indicator>
+      )}
+      <HeroUIAlert.Content className={contentClassName}>
+        {title == null ? null : (
+          <HeroUIAlert.Title className={titleClassName}>{title}</HeroUIAlert.Title>
+        )}
+        {description == null ? null : (
+          <HeroUIAlert.Description className={descriptionClassName}>
+            {description}
+          </HeroUIAlert.Description>
+        )}
+      </HeroUIAlert.Content>
+    </>
+  );
+
   return (
     <HeroUIAlert className={className} status={status} {...(nativeProps as any)}>
-      {children}
+      {content}
     </HeroUIAlert>
   );
 }

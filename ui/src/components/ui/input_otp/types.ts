@@ -27,6 +27,7 @@ export interface InputOTPProps extends InputOTPPlatformProps<
   children?: ReactNode;
   className?: string;
   defaultValue?: string;
+  groupClassName?: string;
   inputMode?: "decimal" | "email" | "none" | "numeric" | "search" | "tel" | "text" | "url";
   isDisabled?: boolean;
   isInvalid?: boolean;
@@ -35,6 +36,9 @@ export interface InputOTPProps extends InputOTPPlatformProps<
   onValueChange?: (value: string) => void;
   pattern?: string;
   placeholder?: string;
+  separatorClassName?: string;
+  separatorIndices?: number[];
+  slotClassName?: string;
   value?: string;
   variant?: InputOTPVariant;
 }

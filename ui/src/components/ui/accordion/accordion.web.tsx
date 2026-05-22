@@ -1,4 +1,5 @@
 import { Accordion as HeroUIAccordion } from "@heroui/react";
+import clsx from "clsx";
 
 import type {
   AccordionContentProps,
@@ -12,12 +13,40 @@ function AccordionRoot({
   accessibilityLabel,
   children,
   className,
+  contentClassName,
   hideSeparator,
+  indicatorClassName,
+  itemClassName,
+  items,
   nativeProps,
+  triggerClassName,
   variant,
   webProps,
 }: AccordionProps) {
   void nativeProps;
+
+  const content =
+    children ??
+    items?.map((item) => (
+      <HeroUIAccordion.Item className={clsx(itemClassName, item.itemClassName)} key={item.key}>
+        <HeroUIAccordion.Trigger
+          className={clsx(
+            "flex-row items-center justify-between gap-3",
+            triggerClassName,
+            item.triggerClassName,
+          )}
+        >
+          {item.title}
+          <HeroUIAccordion.Indicator
+            className={clsx(indicatorClassName, item.indicatorClassName)}
+          />
+        </HeroUIAccordion.Trigger>
+        <HeroUIAccordion.Panel className={clsx(contentClassName, item.contentClassName)}>
+          {item.content}
+        </HeroUIAccordion.Panel>
+      </HeroUIAccordion.Item>
+    ));
+
   return (
     <HeroUIAccordion
       aria-label={accessibilityLabel}
@@ -26,7 +55,7 @@ function AccordionRoot({
       variant={variant}
       {...(webProps as any)}
     >
-      {children}
+      {content}
     </HeroUIAccordion>
   );
 }

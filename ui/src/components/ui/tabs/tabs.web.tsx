@@ -1,4 +1,5 @@
 import { Tabs as HeroUITabs } from "@heroui/react";
+import clsx from "clsx";
 
 import type {
   TabsIndicatorProps,
@@ -14,12 +15,51 @@ export function Tabs({
   accessibilityLabel,
   children,
   className,
+  indicatorClassName,
+  items,
+  listClassName,
+  listContainerClassName,
   nativeProps,
   onValueChange,
+  panelClassName,
+  tabClassName,
   value,
   webProps,
 }: TabsProps) {
   void nativeProps;
+
+  const content =
+    children ??
+    (items ? (
+      <>
+        <HeroUITabs.ListContainer className={listContainerClassName}>
+          <HeroUITabs.List className={listClassName}>
+            {items.map((item) => (
+              <HeroUITabs.Tab
+                className={clsx(tabClassName, item.tabClassName)}
+                id={item.value}
+                key={item.value}
+              >
+                <HeroUITabs.Indicator className={indicatorClassName} />
+                {item.label}
+              </HeroUITabs.Tab>
+            ))}
+          </HeroUITabs.List>
+        </HeroUITabs.ListContainer>
+        {items.map((item) =>
+          item.content === undefined ? null : (
+            <HeroUITabs.Panel
+              className={clsx(panelClassName, item.panelClassName)}
+              id={item.value}
+              key={item.value}
+            >
+              {item.content}
+            </HeroUITabs.Panel>
+          ),
+        )}
+      </>
+    ) : null);
+
   return (
     <HeroUITabs
       aria-label={accessibilityLabel}
@@ -28,7 +68,7 @@ export function Tabs({
       selectedKey={value}
       {...(webProps as any)}
     >
-      {children}
+      {content}
     </HeroUITabs>
   );
 }

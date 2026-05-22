@@ -12,6 +12,26 @@ type ListBoxPlatformProps<TWeb, TNative> = {
   webProps?: Omit<TWeb, "children" | "className">;
 };
 
+export interface ListBoxItemData {
+  className?: string;
+  description?: ReactNode;
+  endContent?: ReactNode;
+  key: string;
+  label: ReactNode;
+  startContent?: ReactNode;
+  textValue?: string;
+  variant?: "danger";
+}
+
+export interface ListBoxSectionData {
+  accessibilityLabel?: string;
+  className?: string;
+  headerClassName?: string;
+  items: ListBoxItemData[];
+  key: string;
+  title?: ReactNode;
+}
+
 export interface ListBoxProps extends ListBoxPlatformProps<
   WebListBoxRootProps<any>,
   NativeListGroupRootProps
@@ -19,6 +39,15 @@ export interface ListBoxProps extends ListBoxPlatformProps<
   children?: ReactNode;
   accessibilityLabel?: string;
   className?: string;
+  descriptionClassName?: string;
+  itemClassName?: string;
+  itemContentClassName?: string;
+  itemTextContainerClassName?: string;
+  items?: ListBoxItemData[];
+  labelClassName?: string;
+  sectionClassName?: string;
+  sectionHeaderClassName?: string;
+  sections?: ListBoxSectionData[];
 }
 
 export interface ListBoxItemProps extends ListBoxPlatformProps<

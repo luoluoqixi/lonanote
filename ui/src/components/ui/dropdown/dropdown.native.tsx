@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { Menu as HeroUIMenu } from "heroui-native";
 
 import type {
@@ -11,15 +12,51 @@ import type {
 } from "./types";
 
 export function Dropdown({
+  accessibilityLabel,
   children,
   className,
+  contentClassName,
   isDefaultOpen,
+  isDisabled,
   isOpen,
+  itemClassName,
+  items,
   nativeProps,
+  onAction,
   onOpenChange,
+  trigger,
+  triggerClassName,
   webProps,
 }: DropdownProps) {
   void webProps;
+
+  const content = children ?? (
+    <>
+      <DropdownTrigger className={triggerClassName} isDisabled={isDisabled}>
+        {trigger}
+      </DropdownTrigger>
+      <DropdownPopover>
+        <DropdownMenu
+          accessibilityLabel={accessibilityLabel}
+          className={contentClassName}
+          onAction={onAction}
+        >
+          {(items ?? []).map((item) => (
+            <DropdownItem
+              key={item.key}
+              className={clsx(itemClassName, item.className)}
+              isDisabled={item.isDisabled}
+              nativeProps={item.nativeProps}
+              webProps={item.webProps}
+            >
+              {item.label}
+            </DropdownItem>
+          ))}
+        </DropdownMenu>
+      </DropdownPopover>
+    </>
+  );
+
   return (
     <HeroUIMenu
       className={className}
@@ -28,7 +65,7 @@ export function Dropdown({
       onOpenChange={onOpenChange}
       {...(nativeProps as any)}
     >
-      {children}
+      {content}
     </HeroUIMenu>
   );
 }
@@ -69,6 +106,7 @@ export function DropdownMenu({
   children,
   className,
   nativeProps,
+  onAction,
   webProps,
 }: DropdownMenuProps) {
   void webProps;
@@ -76,6 +114,7 @@ export function DropdownMenu({
     <HeroUIMenu.Content
       accessibilityLabel={accessibilityLabel}
       className={className}
+      onAction={(key: string | number) => onAction?.(String(key))}
       presentation="popover"
       {...(nativeProps as any)}
     >
@@ -103,8 +142,10 @@ export function DropdownItem({
   className,
   isDisabled,
   nativeProps,
+  textValue,
   webProps,
 }: DropdownItemProps) {
+  void textValue;
   void webProps;
   return (
     <HeroUIMenu.Item className={className} isDisabled={isDisabled} {...(nativeProps as any)}>

@@ -24,7 +24,14 @@ export type AlertStatus = WebAlertRootProps["status"];
 export interface AlertProps extends AlertPlatformProps<WebAlertRootProps, NativeAlertRootProps> {
   children?: ReactNode;
   className?: string;
+  contentClassName?: string;
+  description?: ReactNode;
+  descriptionClassName?: string;
+  indicator?: ReactNode;
+  indicatorClassName?: string;
   status?: AlertStatus;
+  title?: ReactNode;
+  titleClassName?: string;
 }
 
 export interface AlertIndicatorProps extends AlertPlatformProps<

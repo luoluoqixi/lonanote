@@ -1,4 +1,5 @@
 import { Tag as HeroUITag, TagGroup as HeroUITagGroup } from "@heroui/react";
+import clsx from "clsx";
 
 import type { TagGroupItemProps, TagGroupListProps, TagGroupProps } from "./types";
 
@@ -6,12 +7,26 @@ function TagGroupRoot({
   accessibilityLabel,
   children,
   className,
+  itemClassName,
+  items,
+  listClassName,
   nativeProps,
   size,
   variant,
   webProps,
 }: TagGroupProps) {
   void nativeProps;
+
+  const content = children ?? (
+    <HeroUITagGroup.List className={listClassName}>
+      {items?.map((item) => (
+        <HeroUITag className={clsx(itemClassName, item.className)} id={item.key} key={item.key}>
+          {item.label}
+        </HeroUITag>
+      ))}
+    </HeroUITagGroup.List>
+  );
+
   return (
     <HeroUITagGroup
       aria-label={accessibilityLabel}
@@ -20,7 +35,7 @@ function TagGroupRoot({
       variant={variant}
       {...(webProps as any)}
     >
-      {children}
+      {content}
     </HeroUITagGroup>
   );
 }

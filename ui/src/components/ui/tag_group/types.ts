@@ -13,6 +13,12 @@ type TagGroupItemPlatformProps<TWeb, TNative> = {
   webProps?: Omit<TWeb, "children" | "className">;
 };
 
+export interface TagGroupItemData {
+  className?: string;
+  key: string;
+  label: ReactNode;
+}
+
 export interface TagGroupProps extends TagGroupPlatformProps<
   ComponentProps<typeof WebTagGroup>,
   ComponentProps<typeof NativeTagGroup>
@@ -20,6 +26,9 @@ export interface TagGroupProps extends TagGroupPlatformProps<
   children?: ReactNode;
   accessibilityLabel?: string;
   className?: string;
+  itemClassName?: string;
+  items?: TagGroupItemData[];
+  listClassName?: string;
   size?: TagGroupSize;
   variant?: TagGroupVariant;
 }

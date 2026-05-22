@@ -15,20 +15,11 @@ import {
   Checkbox,
   Chip,
   CloseButton,
-  Description,
   Dialog,
   Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownPopover,
-  DropdownTrigger,
-  FieldError,
-  Header,
   IconButton,
-  Input,
   InputGroup,
   InputOTP as InputOtp,
-  Label,
   Link,
   ListBox,
   Popover,
@@ -43,11 +34,6 @@ import {
   Surface,
   Switch,
   Tabs,
-  TabsIndicator,
-  TabsList,
-  TabsListContainer,
-  TabsPanel,
-  TabsTab,
   TagGroup,
   TextArea,
   TextField,
@@ -112,12 +98,13 @@ function DemoField() {
   const [value, setValue] = useState("lonanote");
 
   return (
-    <TextField>
-      <Label>用户名</Label>
-      <Input accessibilityLabel="用户名输入框" onValueChange={setValue} value={value} />
-      <Description>支持输入普通文本。</Description>
-      <FieldError>这里只是 FieldError 的示例。</FieldError>
-    </TextField>
+    <TextField
+      accessibilityLabel="用户名输入框"
+      description="支持输入普通文本。"
+      errorMessage="这里只是 FieldError 的示例。"
+      inputProps={{ onValueChange: setValue, value }}
+      label="用户名"
+    />
   );
 }
 
@@ -197,20 +184,19 @@ function DemoPopover() {
   );
 }
 
-function DemoDropdown() {
+function DemoDropdown({ onAction }: { onAction: (key: string) => void }) {
   return (
-    <Dropdown>
-      <DropdownTrigger className="rounded-xl border border-foreground/15 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-foreground/5">
-        打开 Dropdown
-      </DropdownTrigger>
-      <DropdownPopover>
-        <DropdownMenu accessibilityLabel="组件操作菜单">
-          <DropdownItem>新建笔记</DropdownItem>
-          <DropdownItem>重命名</DropdownItem>
-          <DropdownItem>删除</DropdownItem>
-        </DropdownMenu>
-      </DropdownPopover>
-    </Dropdown>
+    <Dropdown
+      accessibilityLabel="组件操作菜单"
+      items={[
+        { key: "new-note", label: "新建笔记" },
+        { key: "rename", label: "重命名" },
+        { key: "delete", label: "删除" },
+      ]}
+      onAction={onAction}
+      trigger="打开 Dropdown"
+      triggerClassName="rounded-xl border border-foreground/15 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-foreground/5"
+    />
   );
 }
 
@@ -219,17 +205,13 @@ function DemoSearchField() {
 
   return (
     <SearchField
-      accessibilityLabel="组件搜索"
-      className="w-full"
+      accessibilityLabel="Search"
+      inputClassName="w-[280px]"
+      label="Search"
       onValueChange={setSearchValue}
+      placeholder="Search..."
       value={searchValue}
-    >
-      <SearchField.Group className="flex-row items-center gap-2 rounded-2xl border border-foreground/10 bg-background px-3 py-2 shadow-sm">
-        <SearchField.SearchIcon className="text-foreground/45" />
-        <SearchField.Input className="flex-1 bg-transparent" placeholder="搜索组件" />
-        <SearchField.ClearButton className="text-foreground/45" />
-      </SearchField.Group>
-    </SearchField>
+    />
   );
 }
 
@@ -237,15 +219,13 @@ function DemoOtpField() {
   const [otp, setOtp] = useState("1234");
 
   return (
-    <InputOtp accessibilityLabel="验证码输入" maxLength={4} onValueChange={setOtp} value={otp}>
-      <InputOtp.Group>
-        <InputOtp.Slot index={0} />
-        <InputOtp.Slot index={1} />
-        <InputOtp.Separator />
-        <InputOtp.Slot index={2} />
-        <InputOtp.Slot index={3} />
-      </InputOtp.Group>
-    </InputOtp>
+    <InputOtp
+      accessibilityLabel="验证码输入"
+      maxLength={4}
+      onValueChange={setOtp}
+      separatorIndices={[1]}
+      value={otp}
+    />
   );
 }
 
@@ -382,13 +362,12 @@ export function UiComponentsDebugPanel() {
                 </Chip>
               </View>
             </DemoRow>
-            <Alert status="default">
-              <Alert.Indicator>ℹ</Alert.Indicator>
-              <Alert.Content>
-                <Alert.Title>提示</Alert.Title>
-                <Alert.Description>这是 Alert 组件的实际展示。</Alert.Description>
-              </Alert.Content>
-            </Alert>
+            <Alert
+              description="这是 Alert 组件的实际展示。"
+              indicator="ℹ"
+              status="default"
+              title="提示"
+            />
           </ShowcaseBlock>
         </View>
       </SectionCard>
@@ -408,11 +387,11 @@ export function UiComponentsDebugPanel() {
                 <DemoField />
               </View>
               <View className="min-w-[320px] flex-1 gap-4">
-                <TextField>
-                  <Label>受控输入</Label>
-                  <Input onValueChange={setTextFieldValue} value={textFieldValue} />
-                  <Description>当前值：{textFieldValue}</Description>
-                </TextField>
+                <TextField
+                  description={`当前值：${textFieldValue}`}
+                  inputProps={{ onValueChange: setTextFieldValue, value: textFieldValue }}
+                  label="受控输入"
+                />
               </View>
             </View>
           </ShowcaseBlock>
@@ -509,7 +488,7 @@ export function UiComponentsDebugPanel() {
             </DemoRow>
             <DemoRow>
               <DemoPopover />
-              <DemoDropdown />
+              <DemoDropdown onAction={(key) => toastInfo(`选择了 ${key}`)} />
             </DemoRow>
           </ShowcaseBlock>
 
@@ -519,44 +498,50 @@ export function UiComponentsDebugPanel() {
             title="页内导航与折叠"
           >
             <View className="gap-4">
-              <Tabs accessibilityLabel="预览选项卡" onValueChange={setTabsValue} value={tabsValue}>
-                <TabsListContainer>
-                  <TabsList>
-                    <TabsTab value="preview">
-                      <TabsIndicator />
-                      预览
-                    </TabsTab>
-                    <TabsTab value="notes">
-                      <TabsIndicator />
-                      说明
-                    </TabsTab>
-                  </TabsList>
-                </TabsListContainer>
-                <TabsPanel value="preview">
-                  <View className="rounded-xl border border-foreground/10 bg-background px-3 py-3">
-                    <Text className="text-sm text-foreground">当前选中的 tab 是 {tabsValue}</Text>
-                  </View>
-                </TabsPanel>
-                <TabsPanel value="notes">
-                  <View className="rounded-xl border border-foreground/10 bg-background px-3 py-3">
-                    <Text className="text-sm text-foreground">
-                      Tabs 这里单独展示页内内容切换，不再和别的类型混排。
-                    </Text>
-                  </View>
-                </TabsPanel>
-              </Tabs>
+              <Tabs
+                accessibilityLabel="预览选项卡"
+                items={[
+                  {
+                    content: (
+                      <View className="rounded-xl border border-foreground/10 bg-background px-3 py-3">
+                        <Text className="text-sm text-foreground">
+                          当前选中的 tab 是 {tabsValue}
+                        </Text>
+                      </View>
+                    ),
+                    label: "预览",
+                    value: "preview",
+                  },
+                  {
+                    content: (
+                      <View className="rounded-xl border border-foreground/10 bg-background px-3 py-3">
+                        <Text className="text-sm text-foreground">
+                          Tabs 这里单独展示页内内容切换，不再和别的类型混排。
+                        </Text>
+                      </View>
+                    ),
+                    label: "说明",
+                    value: "notes",
+                  },
+                ]}
+                onValueChange={setTabsValue}
+                value={tabsValue}
+              />
 
-              <Accordion accessibilityLabel="折叠展示示例">
-                <Accordion.Item>
-                  <Accordion.Trigger className="flex-row items-center justify-between gap-3">
-                    <UiText className="text-base font-medium text-foreground">展开面板</UiText>
-                    <Accordion.Indicator />
-                  </Accordion.Trigger>
-                  <Accordion.Content>
-                    <UiText className="text-sm text-foreground/70">Accordion 的内容区。</UiText>
-                  </Accordion.Content>
-                </Accordion.Item>
-              </Accordion>
+              <Accordion
+                accessibilityLabel="折叠展示示例"
+                items={[
+                  {
+                    content: (
+                      <UiText className="text-sm text-foreground/70">Accordion 的内容区。</UiText>
+                    ),
+                    key: "expand-panel",
+                    title: (
+                      <UiText className="text-base font-medium text-foreground">展开面板</UiText>
+                    ),
+                  },
+                ]}
+              />
             </View>
           </ShowcaseBlock>
         </View>
@@ -597,6 +582,12 @@ export function UiComponentsDebugPanel() {
                   <UiText className="text-sm font-medium text-foreground">TagGroup</UiText>
                   <TagGroup
                     accessibilityLabel="标签组示例"
+                    items={[
+                      { key: "tag-a", label: "Tag A" },
+                      { key: "tag-b", label: "Tag B" },
+                      { key: "tag-c", label: "Tag C" },
+                    ]}
+                    listClassName="flex-row flex-wrap gap-2"
                     nativeProps={{
                       defaultSelectedKeys: ["tag-b"],
                       selectionMode: "single",
@@ -606,85 +597,98 @@ export function UiComponentsDebugPanel() {
                       defaultSelectedKeys: ["tag-b"],
                       selectionMode: "single",
                     }}
-                  >
-                    <TagGroup.List className="flex-row flex-wrap gap-2">
-                      <TagGroup.Item key="tag-a">Tag A</TagGroup.Item>
-                      <TagGroup.Item key="tag-b">Tag B</TagGroup.Item>
-                      <TagGroup.Item key="tag-c">Tag C</TagGroup.Item>
-                    </TagGroup.List>
-                  </TagGroup>
+                  />
                 </View>
 
                 <Surface className="overflow-hidden rounded-3xl border border-foreground/10 bg-background shadow-none">
                   <ListBox
                     accessibilityLabel="文件操作列表"
                     className="w-full p-2"
+                    itemClassName="rounded-2xl px-3 py-2"
+                    sections={[
+                      {
+                        accessibilityLabel: "Actions",
+                        headerClassName:
+                          "px-3 pb-2 pt-1 text-xs font-medium uppercase tracking-wide text-foreground/45",
+                        items: [
+                          {
+                            description: "Create a new file",
+                            endContent: (
+                              <View className="rounded-lg border border-foreground/10 bg-foreground/5 px-2 py-1">
+                                <UiText className="text-xs font-medium text-foreground/60">
+                                  N
+                                </UiText>
+                              </View>
+                            ),
+                            key: "new-file",
+                            label: "New file",
+                            startContent: (
+                              <View className="mt-0.5 h-8 w-8 items-center justify-center rounded-xl bg-accent/10">
+                                <UiText className="text-sm font-semibold text-accent">+</UiText>
+                              </View>
+                            ),
+                            textValue: "新建文件",
+                          },
+                          {
+                            description: "Make changes",
+                            endContent: (
+                              <View className="rounded-lg border border-foreground/10 bg-foreground/5 px-2 py-1">
+                                <UiText className="text-xs font-medium text-foreground/60">
+                                  E
+                                </UiText>
+                              </View>
+                            ),
+                            key: "edit-file",
+                            label: "Edit file",
+                            startContent: (
+                              <View className="mt-0.5 h-8 w-8 items-center justify-center rounded-xl bg-foreground/5">
+                                <UiText className="text-sm font-semibold text-foreground/65">
+                                  ✎
+                                </UiText>
+                              </View>
+                            ),
+                            textValue: "编辑文件",
+                          },
+                        ],
+                        key: "actions",
+                        title: "Actions",
+                      },
+                      {
+                        accessibilityLabel: "Danger zone",
+                        className: "mt-2 border-t border-foreground/10 pt-2",
+                        headerClassName:
+                          "px-3 pb-2 pt-1 text-xs font-medium uppercase tracking-wide text-danger/70",
+                        items: [
+                          {
+                            className: "rounded-2xl px-3 py-2",
+                            description: "Move to trash",
+                            endContent: (
+                              <View className="rounded-lg border border-foreground/10 bg-foreground/5 px-2 py-1">
+                                <UiText className="text-xs font-medium text-foreground/60">
+                                  ⇧D
+                                </UiText>
+                              </View>
+                            ),
+                            key: "delete-file",
+                            label: "Delete file",
+                            startContent: (
+                              <View className="mt-0.5 h-8 w-8 items-center justify-center rounded-xl bg-danger/10">
+                                <UiText className="text-sm font-semibold text-danger">×</UiText>
+                              </View>
+                            ),
+                            textValue: "删除文件",
+                            variant: "danger",
+                          },
+                        ],
+                        key: "danger-zone",
+                        title: "Danger zone",
+                      },
+                    ]}
                     webProps={{
                       onAction: (key) => toastInfo(`选择了 ${String(key)}`),
                       selectionMode: "none",
                     }}
-                  >
-                    <ListBox.Section webProps={{ "aria-label": "Actions" }}>
-                      <Header className="px-3 pb-2 pt-1 text-xs font-medium uppercase tracking-wide text-foreground/45">
-                        Actions
-                      </Header>
-                      <ListBox.Item className="rounded-2xl px-3 py-2" textValue="新建文件">
-                        <View className="flex-row items-start gap-3">
-                          <View className="mt-0.5 h-8 w-8 items-center justify-center rounded-xl bg-accent/10">
-                            <UiText className="text-sm font-semibold text-accent">+</UiText>
-                          </View>
-                          <View className="min-w-0 flex-1 gap-0.5">
-                            <Label>New file</Label>
-                            <Description>Create a new file</Description>
-                          </View>
-                          <View className="rounded-lg border border-foreground/10 bg-foreground/5 px-2 py-1">
-                            <UiText className="text-xs font-medium text-foreground/60">N</UiText>
-                          </View>
-                        </View>
-                      </ListBox.Item>
-                      <ListBox.Item className="rounded-2xl px-3 py-2" textValue="编辑文件">
-                        <View className="flex-row items-start gap-3">
-                          <View className="mt-0.5 h-8 w-8 items-center justify-center rounded-xl bg-foreground/5">
-                            <UiText className="text-sm font-semibold text-foreground/65">✎</UiText>
-                          </View>
-                          <View className="min-w-0 flex-1 gap-0.5">
-                            <Label>Edit file</Label>
-                            <Description>Make changes</Description>
-                          </View>
-                          <View className="rounded-lg border border-foreground/10 bg-foreground/5 px-2 py-1">
-                            <UiText className="text-xs font-medium text-foreground/60">E</UiText>
-                          </View>
-                        </View>
-                      </ListBox.Item>
-                    </ListBox.Section>
-
-                    <ListBox.Section
-                      className="mt-2 border-t border-foreground/10 pt-2"
-                      webProps={{ "aria-label": "Danger zone" }}
-                    >
-                      <Header className="px-3 pb-2 pt-1 text-xs font-medium uppercase tracking-wide text-danger/70">
-                        Danger zone
-                      </Header>
-                      <ListBox.Item
-                        className="rounded-2xl px-3 py-2"
-                        textValue="删除文件"
-                        webProps={{ variant: "danger" }}
-                      >
-                        <View className="flex-row items-start gap-3">
-                          <View className="mt-0.5 h-8 w-8 items-center justify-center rounded-xl bg-danger/10">
-                            <UiText className="text-sm font-semibold text-danger">×</UiText>
-                          </View>
-                          <View className="min-w-0 flex-1 gap-0.5">
-                            <Label>Delete file</Label>
-                            <Description>Move to trash</Description>
-                          </View>
-                          <View className="rounded-lg border border-foreground/10 bg-foreground/5 px-2 py-1">
-                            <UiText className="text-xs font-medium text-foreground/60">⇧D</UiText>
-                          </View>
-                        </View>
-                      </ListBox.Item>
-                    </ListBox.Section>
-                  </ListBox>
+                  />
                 </Surface>
               </View>
 

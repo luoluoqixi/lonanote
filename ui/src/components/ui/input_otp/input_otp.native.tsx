@@ -14,6 +14,7 @@ function InputOTPRoot({
   children,
   className,
   defaultValue,
+  groupClassName,
   inputMode,
   isDisabled,
   isInvalid,
@@ -23,11 +24,29 @@ function InputOTPRoot({
   onValueChange,
   pattern,
   placeholder,
+  separatorClassName,
+  separatorIndices,
+  slotClassName,
   value,
   variant,
   webProps,
 }: InputOTPProps) {
   void webProps;
+
+  const defaultChildren = children ?? (
+    <HeroUIInputOTP.Group className={groupClassName}>
+      {Array.from({ length: maxLength }, (_, index) => {
+        const showSeparator = separatorIndices?.includes(index) && index < maxLength - 1;
+        return [
+          <HeroUIInputOTP.Slot className={slotClassName} index={index} key={`slot-${index}`} />,
+          showSeparator ? (
+            <HeroUIInputOTP.Separator className={separatorClassName} key={`separator-${index}`} />
+          ) : null,
+        ];
+      })}
+    </HeroUIInputOTP.Group>
+  );
+
   return (
     <HeroUIInputOTP
       accessibilityLabel={accessibilityLabel}
@@ -45,7 +64,7 @@ function InputOTPRoot({
       variant={variant}
       {...(nativeProps as any)}
     >
-      {children}
+      {defaultChildren}
     </HeroUIInputOTP>
   );
 }
