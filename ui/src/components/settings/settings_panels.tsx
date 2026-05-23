@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import type { GlobalSettings } from "@/api/commands/settings";
 import { Button, IconButton, Select, type SelectOption, Switch } from "@/components/ui";
@@ -112,26 +112,6 @@ function SettingsSection({ children, title }: SectionProps) {
       </View>
       <View className="gap-3">{children}</View>
     </View>
-  );
-}
-
-type LinkCardProps = {
-  onPress: () => void;
-  summary: string;
-  title: string;
-};
-
-function SettingsLinkCard({ onPress, summary, title }: LinkCardProps) {
-  return (
-    <Pressable
-      className="rounded-2xl border border-foreground/10 bg-background px-4 py-4 active:opacity-90"
-      onPress={onPress}
-    >
-      <View className="flex-row items-center gap-3">
-        <Text className="flex-1 text-base font-medium text-foreground">{title}</Text>
-        <Text className="max-w-36 text-right text-sm text-foreground/70">{summary}</Text>
-      </View>
-    </Pressable>
   );
 }
 
@@ -313,35 +293,11 @@ export function SettingsSyncState({ error, isLoading }: PanelHeaderProps) {
   );
 }
 
-type GlobalSettingsPanelProps = {
-  onSelectTab?: (tab: SettingsTabKey) => void;
-  showNavigation?: boolean;
-};
-
-export function GlobalSettingsPanel({
-  onSelectTab,
-  showNavigation = false,
-}: GlobalSettingsPanelProps) {
+export function GlobalSettingsPanel() {
   const { settings, updateAndSave } = useGlobalSettings();
-  const { preferences } = useUiPreferences();
 
   return (
     <View className="gap-4">
-      {showNavigation ? (
-        <SettingsSection title="分类">
-          <SettingsLinkCard
-            onPress={() => onSelectTab?.("appearance")}
-            summary={`${preferences.appearance.themeMode} / ${formatAccentColor(preferences.appearance.accentColor)}`}
-            title="外观"
-          />
-          <SettingsLinkCard
-            onPress={() => onSelectTab?.("window")}
-            summary={preferences.window.restoreWindowState ? "恢复上次状态" : "默认窗口状态"}
-            title="窗口"
-          />
-        </SettingsSection>
-      ) : null}
-
       <SettingsSection title="应用行为">
         <SettingsToggleRow
           label="自动检查更新"

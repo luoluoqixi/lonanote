@@ -58,6 +58,7 @@ type TabsPanelPlatformProps = {
 export interface TabsProps extends TabsRootPlatformProps {
   accessibilityLabel?: string;
   children?: ReactNode;
+  variant?: "secondary" | "primary";
   className?: string;
   indicatorClassName?: string;
   items?: TabsItem[];

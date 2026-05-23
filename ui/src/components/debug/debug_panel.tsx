@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 import { Dialog, Tabs, TabsIndicator, TabsList, TabsListContainer, TabsTab } from "@/components/ui";
@@ -50,13 +50,51 @@ function renderDebugTab(tab: DebugTabKey) {
   }
 }
 
+function DebugTabScrollPane({
+  children,
+  isActive,
+}: {
+  children: React.ReactNode;
+  isActive: boolean;
+}) {
+  const scrollViewRef = useRef<ScrollView | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
+    scrollViewRef.current?.scrollTo({ animated: false, y: 0 });
+  }, [isActive]);
+
+  return (
+    <View className="flex-1 min-h-0" style={{ display: isActive ? "flex" : "none" }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 12 }}
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator
+        style={{ flex: 1, minHeight: 0 }}
+      >
+        {children}
+      </ScrollView>
+    </View>
+  );
+}
+
 export function DebugPanelHost() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState<DebugTabKey>("workspace");
+  const [mountedTabs, setMountedTabs] = useState<DebugTabKey[]>(["workspace"]);
 
   useDebugPanelShortcut(() => {
     setIsOpen((current) => !current);
   });
+
+  useEffect(() => {
+    setMountedTabs((currentTabs) =>
+      currentTabs.includes(selectedTab) ? currentTabs : [...currentTabs, selectedTab],
+    );
+  }, [selectedTab]);
 
   if (!__DEV__) {
     return null;
@@ -107,33 +145,11 @@ export function DebugPanelHost() {
         </View>
 
         <View className="flex-1 min-w-0 min-h-0 overflow-hidden rounded-2xl border border-foreground/10 bg-background p-4">
-          {selectedTab === "workspace" ? (
-            <ScrollView
-              contentContainerStyle={{ paddingBottom: 12 }}
-              showsVerticalScrollIndicator
-              style={{ flex: 1, minHeight: 0 }}
-            >
-              {renderDebugTab(selectedTab)}
-            </ScrollView>
-          ) : selectedTab === "path" ? (
-            <ScrollView
-              contentContainerStyle={{ paddingBottom: 12 }}
-              showsVerticalScrollIndicator
-              style={{ flex: 1, minHeight: 0 }}
-            >
-              {renderDebugTab(selectedTab)}
-            </ScrollView>
-          ) : selectedTab === "components" ? (
-            <ScrollView
-              contentContainerStyle={{ paddingBottom: 12 }}
-              showsVerticalScrollIndicator
-              style={{ flex: 1, minHeight: 0 }}
-            >
-              {renderDebugTab(selectedTab)}
-            </ScrollView>
-          ) : (
-            <View className="flex-1 min-h-0">{renderDebugTab(selectedTab)}</View>
-          )}
+          {mountedTabs.map((tab) => (
+            <DebugTabScrollPane key={tab} isActive={tab === selectedTab}>
+              {renderDebugTab(tab)}
+            </DebugTabScrollPane>
+          ))}
         </View>
       </View>
     </Dialog>

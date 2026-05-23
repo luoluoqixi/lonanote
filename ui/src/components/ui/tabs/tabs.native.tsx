@@ -15,6 +15,7 @@ import type {
 export function Tabs({
   accessibilityLabel,
   children,
+  variant = "secondary",
   className,
   indicatorClassName,
   items,
@@ -66,6 +67,7 @@ export function Tabs({
       accessibilityLabel={accessibilityLabel}
       className={className}
       onValueChange={onValueChange}
+      variant={variant}
       value={value}
       {...(nativeProps as any)}
     >

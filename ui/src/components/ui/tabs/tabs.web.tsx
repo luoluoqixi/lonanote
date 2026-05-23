@@ -14,6 +14,7 @@ import type {
 export function Tabs({
   accessibilityLabel,
   children,
+  variant = "secondary",
   className,
   indicatorClassName,
   items,
@@ -66,6 +67,7 @@ export function Tabs({
       className={className}
       onSelectionChange={(nextValue) => onValueChange(String(nextValue))}
       selectedKey={value}
+      variant={variant}
       {...(webProps as any)}
     >
       {content}
