@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use super::{
     config::{from_json_config, save_json_config, WORKSPACE_SETTINGS_FILE},
@@ -12,7 +13,11 @@ use super::{
 pub struct WorkspaceSettings {
     #[serde(skip)]
     pub workspace_path: WorkspacePath,
-    /// 创建时间
+    #[serde(default = "WorkspaceSettings::default_id")]
+    pub id: String,
+    /// 工作区首次被应用识别时记录的创建时间。
+    ///
+    /// 这个时间不是路径索引字段，而是为了在路径迁移或 roots 重扫后仍然保留工作区的时间语义。
     #[serde(default = "WorkspaceSettings::default_create_time")]
     pub create_time: Option<u64>,
     /// 文件树排序类型
@@ -36,6 +41,10 @@ pub struct WorkspaceSettings {
 }
 
 impl WorkspaceSettings {
+    pub fn default_id() -> String {
+        String::new()
+    }
+
     pub fn default_create_time() -> Option<u64> {
         None
     }
@@ -75,6 +84,7 @@ impl WorkspaceSettings {
         } else {
             Ok(Self {
                 workspace_path: workspace_path.clone(),
+                id: WorkspaceSettings::default_id(),
                 create_time: WorkspaceSettings::default_create_time(),
                 file_tree_sort_type: WorkspaceSettings::default_file_tree_sort_type(),
                 follow_gitignore: WorkspaceSettings::default_follow_gitignore(),
@@ -86,12 +96,16 @@ impl WorkspaceSettings {
         }
     }
 
-    pub async fn update_create_time(&mut self, time: u64) -> Result<(), WorkspaceError> {
-        self.create_time.replace(time);
-        self.save().await
+    pub fn ensure_id(&mut self) -> bool {
+        if self.id.trim().is_empty() {
+            self.id = Uuid::new_v4().to_string();
+            return true;
+        }
+
+        false
     }
 
-    pub async fn save(&self) -> Result<(), WorkspaceError> {
+    pub fn save_sync(&self) -> Result<(), WorkspaceError> {
         save_json_config(&self.workspace_path, WORKSPACE_SETTINGS_FILE, self)?;
 
         Ok(())

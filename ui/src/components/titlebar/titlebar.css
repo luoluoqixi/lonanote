@@ -1,0 +1,179 @@
+.titlebar-drag {
+  pointer-events: auto;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.titlebar-drag-overlay {
+  z-index: 9998;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: transparent;
+  user-select: none;
+}
+
+.titlebar {
+  pointer-events: auto;
+  z-index: 9999;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  background: var(--background);
+  border-bottom: 1px solid color-mix(in srgb, var(--separator, var(--foreground)) 40%, transparent);
+  user-select: none;
+}
+
+.titlebar-title-left {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.titlebar-title-left--win {
+  margin-left: 0;
+}
+
+.titlebar-title-left--mac {
+  margin-left: 80px;
+}
+
+.titlebar-title-center {
+  position: absolute;
+  left: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.titlebar-title-right {
+  margin-left: auto;
+  margin-right: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.titlebar-title-right--win {
+  margin-right: calc(46px * 3);
+}
+
+.titlebar-title-right--mac {
+  margin-right: 0;
+}
+
+.wc-win {
+  position: absolute;
+  height: 100%;
+  top: 0;
+  right: 0;
+  height: 100%;
+  display: flex;
+  background: transparent;
+}
+
+.wc-win-hover-disabled {
+  pointer-events: none;
+}
+
+.wc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+  cursor: default;
+  transition:
+    background-color 0.1s ease,
+    color 0.1s ease;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.wc-win:not(.wc-win-hover-disabled) .wc-btn:hover {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: var(--foreground);
+}
+
+.wc-win:not(.wc-win-hover-disabled) .wc-btn:active {
+  background: color-mix(in srgb, var(--foreground) 18%, transparent);
+  color: var(--foreground);
+}
+
+.wc-win:not(.wc-win-hover-disabled) .wc-btn-close:hover {
+  background-color: #e81123;
+  color: #ffffff;
+}
+
+.wc-win:not(.wc-win-hover-disabled) .wc-btn-close:active {
+  background-color: #f1717c;
+  color: #ffffff;
+}
+
+html.dark .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:hover {
+  background-color: #e81123;
+  color: #ffffff;
+}
+
+html.dark .wc-win:not(.wc-win-hover-disabled) .wc-btn-close:active {
+  background-color: #f1717c;
+  color: #ffffff;
+}
+
+.wc-mac {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.wc-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  outline: none;
+  border-radius: 50%;
+  cursor: default;
+  color: rgba(0, 0, 0, 0.6);
+  transition: filter 0.1s ease;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.wc-dot:active {
+  filter: brightness(0.85);
+}
+
+.wc-dot-close {
+  background-color: #ff544d;
+}
+.wc-dot-min {
+  background-color: #ffbd2e;
+}
+.wc-dot-full {
+  background-color: #28c93f;
+}

@@ -357,7 +357,10 @@ async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> Result<Select
 
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos",)))]
     {
-        Ok(CommandResponse::None)
+        Ok(SelectDialogResult {
+            paths: None,
+            path: None,
+        })
     }
 }
 

@@ -77,6 +77,22 @@ impl Settings {
     }
 }
 
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            first_setup: Self::default_first_setup(),
+            auto_check_update: Self::default_auto_check_update(),
+            auto_open_last_workspace: Self::default_auto_open_last_workspace(),
+            auto_save: Self::default_auto_save(),
+            auto_save_interval: Self::default_auto_save_interval(),
+            auto_save_focus_change: Self::default_auto_save_focus_change(),
+            show_line_number: Self::default_show_line_number(),
+            disable_line_wrap: Self::default_disable_line_wrap(),
+            source_mode: Self::default_source_mode(),
+        }
+    }
+}
+
 impl Settings {
     pub fn new() -> Self {
         let config_path = get_settings_config_path();
@@ -89,17 +105,7 @@ impl Settings {
                 eprintln!("Error parsing settings json: {:?}", manager.err());
             }
         }
-        Self {
-            first_setup: Settings::default_first_setup(),
-            auto_check_update: Settings::default_auto_check_update(),
-            auto_open_last_workspace: Settings::default_auto_open_last_workspace(),
-            auto_save: Settings::default_auto_save(),
-            auto_save_interval: Settings::default_auto_save_interval(),
-            auto_save_focus_change: Settings::default_auto_save_focus_change(),
-            show_line_number: Settings::default_show_line_number(),
-            disable_line_wrap: Settings::default_disable_line_wrap(),
-            source_mode: Settings::default_source_mode(),
-        }
+        Self::default()
     }
 
     pub fn save(&self) -> Result<()> {

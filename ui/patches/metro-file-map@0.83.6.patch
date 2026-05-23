@@ -1,0 +1,110 @@
+diff --git a/src/index.js b/src/index.js
+index 438108b..a4d57f0 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -102,6 +102,20 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
+   "suffix-set",
+   "wildmatch",
+ ];
++function normalizeIgnorePattern(ignorePattern, optionName) {
++  if (ignorePattern == null) {
++    return null;
++  }
++  if (!(ignorePattern instanceof RegExp)) {
++    throw new Error(
++      `metro-file-map: the \`${optionName}\` option must be a RegExp`,
++    );
++  }
++  return new RegExp(
++    ignorePattern.source.concat("|" + VCS_DIRECTORIES),
++    ignorePattern.flags,
++  );
++}
+ class FileMap extends _events.default {
+   #buildPromise;
+   #cacheManager;
+@@ -127,22 +141,14 @@ class FileMap extends _events.default {
+         options.perfLoggerFactory?.("START_UP").subSpan("fileMap") ?? null;
+       this.#startupPerfLogger?.point("constructor_start");
+     }
+-    let ignorePattern;
+-    if (options.ignorePattern) {
+-      const inputIgnorePattern = options.ignorePattern;
+-      if (inputIgnorePattern instanceof RegExp) {
+-        ignorePattern = new RegExp(
+-          inputIgnorePattern.source.concat("|" + VCS_DIRECTORIES),
+-          inputIgnorePattern.flags,
+-        );
+-      } else {
+-        throw new Error(
+-          "metro-file-map: the `ignorePattern` option must be a RegExp",
+-        );
+-      }
+-    } else {
+-      ignorePattern = new RegExp(VCS_DIRECTORIES);
+-    }
++    const ignorePattern =
++      normalizeIgnorePattern(options.ignorePattern, "ignorePattern") ??
++      new RegExp(VCS_DIRECTORIES);
++    const watchIgnorePattern =
++      normalizeIgnorePattern(
++        options.watchIgnorePattern,
++        "watchIgnorePattern",
++      ) ?? ignorePattern;
+     this.#console = options.console || global.console;
+     let dataSlot = _constants.default.PLUGINDATA;
+     const indexedPlugins = [];
+@@ -178,6 +184,7 @@ class FileMap extends _events.default {
+       resetCache: options.resetCache,
+       useWatchman: options.useWatchman == null ? true : options.useWatchman,
+       watch: !!options.watch,
++      watchIgnorePattern,
+       watchmanDeferStates: options.watchmanDeferStates ?? [],
+     };
+     const cacheFactoryOptions = {
+@@ -357,7 +364,7 @@ class FileMap extends _events.default {
+           ignoreMatched || (!retainAllFiles && filePath.includes(NODE_MODULES))
+         );
+       },
+-      ignorePatternForWatch: ignorePattern,
++      ignorePatternForWatch: this.#options.watchIgnorePattern,
+       perfLogger: this.#startupPerfLogger,
+       previousState,
+       rootDir,
+diff --git a/src/watchers/common.js b/src/watchers/common.js
+index 4807fd0..c213de0 100644
+--- a/src/watchers/common.js
++++ b/src/watchers/common.js
+@@ -32,6 +32,7 @@ const posixPathMatchesPattern = (exports.posixPathMatchesPattern =
+   _path.default.sep === "/"
+     ? (pattern, filePath) => pattern.test(filePath)
+     : (pattern, filePath) =>
++        pattern.test(filePath) ||
+         pattern.test(filePath.replaceAll(_path.default.sep, "/")));
+ function typeFromStat(stat) {
+   if (stat.isSymbolicLink()) {
+diff --git a/src/watchers/AbstractWatcher.js b/src/watchers/AbstractWatcher.js
+index 90bbf0b..c1a5485 100644
+--- a/src/watchers/AbstractWatcher.js
++++ b/src/watchers/AbstractWatcher.js
+@@ -44,10 +44,18 @@ class AbstractWatcher {
+  this.dot = dot || false;
+  this.ignored = ignored;
+  this.globs = globs;
++    this.root = path.resolve(dir);
+  this.doIgnore = ignored
+-      ? (filePath) => (0, _common.posixPathMatchesPattern)(ignored, filePath)
++      ? (filePath) => {
++          if ((0, _common.posixPathMatchesPattern)(ignored, filePath)) {
++            return true;
++          }
++          if (path.isAbsolute(filePath)) {
++            return false;
++          }
++          return ignored.test(path.resolve(this.root, filePath));
++        }
+    : () => false;
+-    this.root = path.resolve(dir);
+   }
+   onFileEvent(listener) {
+  this.#emitter.on("fileevent", listener);

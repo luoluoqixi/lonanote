@@ -1,39 +1,34 @@
 
 [[release_projects]]
-name = "editor"
-path = "ui/assets/editor"
-package_type = "npm"
+name = "rust"
+path = "."
+package_type = "cargo"
 
 [[release_projects]]
 name = "ui"
 path = "ui"
-package_type = "pubspec"
+package_type = "bun"
 
 [[release_projects]]
 name = "rust"
-path = "rust"
-package_type = "cargo"
+path = "ui/src-tauri"
+package_type = "tauri-toml"
 
 
 # install command
 [[commands]]
 name = "install"
-description = "Install the application"
+description = "install"
 
 [[commands.cmds]]
-cmd = "pnpm"
+cmd = "bun"
 args = ["install"]
-run_dir = "ui/assets/editor"
+run_dir = "./ui"
 
 [[commands.cmds]]
-cmd = "pnpm"
-args = ["build"]
-run_dir = "ui/assets/editor"
-
-[[commands.cmds]]
-cmd = "flutter"
-args = ["pub", "get"]
-run_dir = "ui"
+cmd = "cargo"
+args = ["install", "tauri-cli", "--version", "^2.1.0", "--locked"]
+run_dir = "."
 
 
 # dev command
@@ -42,33 +37,58 @@ name = "dev"
 description = "Run the application in development mode"
 
 [[commands.cmds]]
-cmd = "pnpm"
-args = ["dev"]
-run_dir = "ui/assets/editor"
+cmd = "cargo"
+args = ["tauri", "dev"]
+run_dir = "."
 always_run = true
-
-[[commands.cmds]]
-cmd = "flutter"
-args = ["run"]
-run_dir = "ui"
-always_run = true
-always_run_receive_input = true
+inherit_stdio = true
 
 
-# preview command
+# dev:android command
 [[commands]]
-name = "preview"
-description = "Run the application in preview mode"
+name = "dev:android"
+description = "Run the application in development mode on Android"
 
 [[commands.cmds]]
-cmd = "pnpm"
-args = ["build"]
-run_dir = "ui/assets/editor"
+cmd = "bun"
+args = ["run", "build:android"]
+run_dir = "ui/rust"
 
 [[commands.cmds]]
-cmd = "flutter"
-args = ["run", "--release"]
+cmd = "bun"
+args = ["android"]
 run_dir = "ui"
+always_run = true
+inherit_stdio = true
+
+
+# dev:ios command
+[[commands]]
+name = "dev:ios"
+description = "Run the application in development mode on iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:ios"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["ios"]
+run_dir = "ui"
+always_run = true
+inherit_stdio = true
+
+
+# build command
+[[commands]]
+name = "build"
+description = "Build the application"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["tauri", "build"]
+run_dir = "."
 
 
 # build:win command
@@ -77,30 +97,31 @@ name = "build:win"
 description = "Build the application for Windows"
 
 [[commands.cmds]]
-cmd = "pnpm"
-args = ["build"]
-run_dir = "ui/assets/editor"
-
-[[commands.cmds]]
-cmd = "flutter"
-args = ["build", "win", "--release"]
-run_dir = "ui"
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-pc-windows-msvc"]
+run_dir = "."
 
 
-# build:mac command
+# build:mac:x64 command
 [[commands]]
-name = "build:mac"
-description = "Build the application for macOS"
+name = "build:mac:x64"
+description = "Build the application for macOS x64"
 
 [[commands.cmds]]
-cmd = "pnpm"
-args = ["build"]
-run_dir = "ui/assets/editor"
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-apple-darwin"]
+run_dir = "."
+
+
+# build:mac:arm64 command
+[[commands]]
+name = "build:mac:arm64"
+description = "Build the application for macOS arm64"
 
 [[commands.cmds]]
-cmd = "flutter"
-args = ["build", "mac", "--release"]
-run_dir = "ui"
+cmd = "cargo"
+args = ["tauri", "build", "--target", "aarch64-apple-darwin"]
+run_dir = "."
 
 
 # build:linux command
@@ -109,14 +130,9 @@ name = "build:linux"
 description = "Build the application for Linux"
 
 [[commands.cmds]]
-cmd = "pnpm"
-args = ["build"]
-run_dir = "ui/assets/editor"
-
-[[commands.cmds]]
-cmd = "flutter"
-args = ["build", "linux", "--release"]
-run_dir = "ui"
+cmd = "cargo"
+args = ["tauri", "build", "--target", "x86_64-unknown-linux-gnu"]
+run_dir = "."
 
 
 # build:android command
@@ -125,13 +141,18 @@ name = "build:android"
 description = "Build the application for Android"
 
 [[commands.cmds]]
-cmd = "pnpm"
-args = ["build"]
-run_dir = "ui/assets/editor"
+cmd = "bun"
+args = ["n:prebuild:android:prod"]
+run_dir = "ui"
 
 [[commands.cmds]]
-cmd = "flutter"
-args = ["build", "apk", "--release"]
+cmd = "bun"
+args = ["run", "build:android"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:android"]
 run_dir = "ui"
 
 
@@ -141,42 +162,151 @@ name = "build:ios"
 description = "Build the application for iOS"
 
 [[commands.cmds]]
-cmd = "pnpm"
-args = ["build"]
-run_dir = "ui/assets/editor"
-
-[[commands.cmds]]
-cmd = "flutter"
-args = ["build", "ipa", "--release"]
-run_dir = "ui"
-
-
-# gen:rust command
-[[commands]]
-name = "gen:rust"
-description = "Generate Rust code"
-
-[[commands.cmds]]
-cmd = "flutter_rust_bridge_codegen"
-args = ["generate"]
-run_dir = "ui/core"
-which_cargo_install = true
-
-
-# gen:dart command
-[[commands]]
-name = "gen:dart"
-description = "Generate Dart code"
-
-[[commands.cmds]]
-cmd = "dart"
-args = ["run", "build_runner", "build"]
+cmd = "bun"
+args = ["n:prebuild:ios:prod"]
 run_dir = "ui"
 
 [[commands.cmds]]
-cmd = "dart"
-args = ["run", "build_runner", "build"]
-run_dir = "ui/core"
+cmd = "bun"
+args = ["run", "build:ios"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:ios"]
+run_dir = "ui"
+
+
+# prebuild:android command
+[[commands]]
+name = "prebuild:android"
+description = "Prebuild the application for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["n:prebuild:android"]
+run_dir = "ui"
+
+
+# prebuild:ios command
+[[commands]]
+name = "prebuild:ios"
+description = "Prebuild the application for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["n:prebuild:ios"]
+run_dir = "ui"
+
+
+# prebuild:android:prod command
+[[commands]]
+name = "prebuild:android:prod"
+description = "Prebuild the application for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["n:prebuild:android:prod"]
+run_dir = "ui"
+
+
+# prebuild:ios:prod command
+[[commands]]
+name = "prebuild:ios:prod"
+description = "Prebuild the application for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["n:prebuild:ios:prod"]
+run_dir = "ui"
+
+
+# clean:prebuild:android command
+[[commands]]
+name = "clean:prebuild:android"
+description = "Clean the prebuild for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:android"]
+run_dir = "ui"
+
+
+# clean:prebuild:ios command
+[[commands]]
+name = "clean:prebuild:ios"
+description = "Clean the prebuild for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:ios"]
+run_dir = "ui"
+
+
+# clean:prebuild:android:prod command
+[[commands]]
+name = "clean:prebuild:android:prod"
+description = "Clean the prebuild for Android"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:android:prod"]
+run_dir = "ui"
+
+
+# clean:prebuild:ios:prod command
+[[commands]]
+name = "clean:prebuild:ios:prod"
+description = "Clean the prebuild for iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:ios:prod"]
+run_dir = "ui"
+
+
+# build:module:android command
+[[commands]]
+name = "build:module:android"
+description = "Build Android Module"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:android"]
+run_dir = "ui/rust"
+
+
+# build:module:android:force command
+[[commands]]
+name = "build:module:android:force"
+description = "Force Build Android Module"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:android:force"]
+run_dir = "ui/rust"
+
+
+# build:module:ios command
+[[commands]]
+name = "build:module:ios"
+description = "Build iOS Module"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:ios"]
+run_dir = "ui/rust"
+
+
+# build:module:ios:force command
+[[commands]]
+name = "build:module:ios:force"
+description = "Force Build iOS Module"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:ios:force"]
+run_dir = "ui/rust"
 
 
 # icon command
@@ -187,9 +317,9 @@ description = "Generate Icon"
 [[commands.cmds]]
 cmd = "cargo"
 args = [
-    "run",
-    "--manifest-path=cli/Cargo.toml",
-    "--release",
-    "--package",
-    "icon-gen",
+  "run",
+  "--manifest-path=cli/Cargo.toml",
+  "--release",
+  "--package",
+  "icon-gen",
 ]

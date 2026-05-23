@@ -1,0 +1,159 @@
+import java.util.Properties
+
+def reactNativeArchitectures() {
+  def value = rootProject.getProperties().get("reactNativeArchitectures")
+  return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+}
+
+def sharedAndroidProperties = new Properties()
+def sharedAndroidPropertiesFile = new File(rootDir, "../../android/gradle.properties")
+if (sharedAndroidPropertiesFile.exists()) {
+  sharedAndroidPropertiesFile.withInputStream { stream ->
+    sharedAndroidProperties.load(stream)
+  }
+}
+
+def getSharedAndroidProperty(name) {
+  return sharedAndroidProperties.getProperty(name)
+}
+
+def isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
+def cmakeArguments = [
+  "-DANDROID_STL=c++_shared",
+  "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+]
+
+if (isWindows) {
+  def ninjaPath = file("../scripts/ninja_1.13.2_fix_long_path.exe")
+    .absolutePath
+    .replace('\\', '/')
+
+  cmakeArguments += [
+    "-DCMAKE_MAKE_PROGRAM=${ninjaPath}",
+    "-DCMAKE_OBJECT_PATH_MAX=1024",
+  ]
+}
+
+buildscript {
+  ext.getExtOrDefault = {name ->
+    if (rootProject.ext.has(name)) {
+      return rootProject.ext.get(name)
+    }
+
+    def sharedAndroidValue = getSharedAndroidProperty("android.${name}")
+    if (sharedAndroidValue != null) {
+      return sharedAndroidValue
+    }
+
+    return project.properties['LonanoteRustModule_' + name]
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "com.android.tools.build:gradle:8.7.2"
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+  }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+apply plugin: "com.facebook.react"
+
+def getExtOrIntegerDefault(name) {
+  if (rootProject.ext.has(name)) {
+    return rootProject.ext.get(name)
+  }
+
+  def sharedAndroidValue = getSharedAndroidProperty("android.${name}")
+  if (sharedAndroidValue != null) {
+    return sharedAndroidValue.toInteger()
+  }
+
+  return (project.properties["LonanoteRustModule_" + name]).toInteger()
+}
+
+android {
+  namespace "rs.craby.lonanoterustmodule"
+
+  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion getExtOrIntegerDefault("minSdkVersion")
+    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+
+    externalNativeBuild {
+      cmake {
+        targets "cxx-lonanote-rust-module"
+        cppFlags "-frtti -fexceptions -Wall -Wextra -fstack-protector-all"
+        arguments(*cmakeArguments)
+        abiFilters (*reactNativeArchitectures())
+        buildTypes {
+          debug {
+            cppFlags "-O1 -g"
+          }
+          release {
+            cppFlags "-O2"
+          }
+        }
+      }
+    }
+  }
+
+  externalNativeBuild {
+    cmake {
+      path "CMakeLists.txt"
+    }
+  }
+
+  buildFeatures {
+    buildConfig true
+    prefab true
+  }
+
+  buildTypes {
+    debug {
+      jniDebuggable true
+    }
+    release {
+      minifyEnabled false
+      externalNativeBuild {
+        cmake {
+          arguments "-DCMAKE_BUILD_TYPE=Release"
+        }
+      }
+    }
+  }
+
+  lintOptions {
+    disable "GradleCompatible"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+}
+
+repositories {
+  mavenCentral()
+  google()
+}
+
+def kotlin_version = getExtOrDefault("kotlinVersion")
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  implementation "com.facebook.react:hermes-engine"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+}
+
+react {
+  jsRootDir = file("../src/")
+  libraryName = "LonanoteRustModule_stub"
+  codegenJavaPackageName = "rs.craby.lonanoterustmodule"
+}

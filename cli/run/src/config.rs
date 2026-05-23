@@ -42,6 +42,12 @@ pub enum ReleaseProjectType {
     Cargo,
     #[serde(rename = "npm")]
     Npm,
+    #[serde(rename = "pnpm")]
+    Pnpm,
+    #[serde(rename = "bun")]
+    Bun,
+    #[serde(rename = "tauri-toml")]
+    TauriToml,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -69,6 +75,7 @@ pub struct Cmd {
     pub run_dir: Option<String>,
 
     pub always_run: Option<bool>,
+    pub inherit_stdio: Option<bool>,
     pub always_run_receive_input: Option<bool>,
 
     pub which_cargo_install: Option<bool>,

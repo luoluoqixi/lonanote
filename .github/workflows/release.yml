@@ -80,11 +80,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 10
-          run_install: false
+          bun-version: latest
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -99,6 +98,9 @@ jobs:
           override: true
       - name: Check Cargo
         run: cargo --version
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version '^2.0'
 
       - name: Run build script
         run: |
@@ -133,11 +135,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 10
-          run_install: false
+          bun-version: latest
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -159,19 +160,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.32.1'
-          channel: 'stable'
-
       - name: Setup Android Signing
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ui/flutter/android/app/release.keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ui/android/app/release.keystore
 
       - name: Create key.properties file
         run: |
-          cd ui/flutter/android
+          cd ui/android
           cat > key.properties << EOF
           storeFile=./release.keystore
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -184,12 +179,11 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        # run: |
-        #   yes | sdkmanager --licenses || true
-        #   flutter doctor --android-licenses
 
-      - name: Check Flutter Installation
-        run: flutter doctor -v
+      - name: Check Bun and Expo
+        run: |
+          bun --version
+          bun x expo --version
 
       - name: Run build script
         run: |

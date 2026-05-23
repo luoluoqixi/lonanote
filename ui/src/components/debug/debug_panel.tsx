@@ -1,0 +1,125 @@
+import { useEffect, useState } from "react";
+import { ScrollView, Text, View } from "react-native";
+
+import { Dialog, Tabs, TabsIndicator, TabsList, TabsListContainer, TabsTab } from "@/components/ui";
+
+import { PathDebugPanel } from "./path_debug_panel";
+import { UiComponentsDebugPanel } from "./ui_components_panel";
+import { WorkspaceDebugPanel } from "./workspace_debug_panel";
+
+type DebugTabKey = "workspace" | "path" | "components";
+
+const DEBUG_TABS: Array<{ key: DebugTabKey; label: string }> = [
+  { key: "workspace", label: "工作区" },
+  { key: "path", label: "路径" },
+  { key: "components", label: "组件总览" },
+];
+
+function useDebugPanelShortcut(onToggle: () => void) {
+  useEffect(() => {
+    if (!__DEV__ || typeof window === "undefined") {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "F6") {
+        return;
+      }
+
+      event.preventDefault();
+      onToggle();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onToggle]);
+}
+
+function renderDebugTab(tab: DebugTabKey) {
+  switch (tab) {
+    case "workspace":
+      return <WorkspaceDebugPanel />;
+    case "path":
+      return <PathDebugPanel />;
+    case "components":
+    default:
+      return <UiComponentsDebugPanel />;
+  }
+}
+
+export function DebugPanelHost() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedTab, setSelectedTab] = useState<DebugTabKey>("workspace");
+
+  useDebugPanelShortcut(() => {
+    setIsOpen((current) => !current);
+  });
+
+  if (!__DEV__) {
+    return null;
+  }
+
+  return (
+    <Dialog
+      contentStyle={{
+        height: "84%",
+        maxHeight: 780,
+        maxWidth: 1400,
+        minHeight: 540,
+        width: "94%",
+      }}
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      title="调试面板"
+    >
+      <View className="flex-1 min-h-0 flex-row gap-4 overflow-hidden">
+        <View
+          className="w-44 shrink-0 rounded-2xl border border-foreground/10 bg-background p-2"
+          style={{ minHeight: 0 }}
+        >
+          <View className="mb-3 gap-1 px-2 pt-1">
+            <Text className="text-sm text-foreground/65">
+              F6 打开或关闭，当前仅在开发模式启用。
+            </Text>
+          </View>
+
+          <Tabs
+            accessibilityLabel="调试面板导航"
+            className="w-full"
+            onValueChange={(nextValue) => setSelectedTab(nextValue as DebugTabKey)}
+            value={selectedTab}
+            webProps={{ orientation: "vertical" }}
+          >
+            <TabsListContainer className="w-full">
+              <TabsList className="w-full">
+                {DEBUG_TABS.map((tab) => (
+                  <TabsTab className="justify-start px-4 text-left" key={tab.key} value={tab.key}>
+                    <TabsIndicator />
+                    {tab.label}
+                  </TabsTab>
+                ))}
+              </TabsList>
+            </TabsListContainer>
+          </Tabs>
+        </View>
+
+        <View className="flex-1 min-w-0 min-h-0 overflow-hidden rounded-2xl border border-foreground/10 bg-background p-4">
+          {selectedTab === "components" ? (
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 12 }}
+              showsVerticalScrollIndicator
+              style={{ flex: 1, minHeight: 0 }}
+            >
+              {renderDebugTab(selectedTab)}
+            </ScrollView>
+          ) : (
+            <View className="flex-1 min-h-0">{renderDebugTab(selectedTab)}</View>
+          )}
+        </View>
+      </View>
+    </Dialog>
+  );
+}

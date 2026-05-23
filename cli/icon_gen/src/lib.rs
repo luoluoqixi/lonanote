@@ -14,7 +14,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::config::{GenerateIconType, IconTransformConf, ICON_CONFIG, REPO_PATH};
+use crate::config::{GenerateIconType, GenerateTarget, IconTransformConf, ICON_CONFIG, REPO_PATH};
 
 fn save_img(img: &RgbaImage, file_path: &Path) -> Result<()> {
     let parent_dir = file_path
@@ -271,6 +271,7 @@ fn run_tauri_icons(
 #[allow(clippy::too_many_arguments)]
 fn generate_tauri_icons(
     name: &str,
+    targets: &Option<Vec<GenerateTarget>>,
     project_path: &Path,
     input_path: &Path,
     output_path: &Path,
@@ -310,8 +311,23 @@ fn generate_tauri_icons(
     let tauri_icon_folder =
         project_path.join(custom_tauri_icon_folder.unwrap_or(&"icons".to_string()));
 
+    let all_targets = vec![
+        GenerateTarget::Win,
+        GenerateTarget::Mac,
+        GenerateTarget::Linux,
+        GenerateTarget::Android,
+        GenerateTarget::Ios,
+    ];
+    let targets = targets.as_ref().unwrap_or(&all_targets);
+
+    let is_windows = targets.iter().any(|t| matches!(t, GenerateTarget::Win));
+    let is_macos = targets.iter().any(|t| matches!(t, GenerateTarget::Mac));
+    let is_linux = targets.iter().any(|t| matches!(t, GenerateTarget::Linux));
+    let is_android = targets.iter().any(|t| matches!(t, GenerateTarget::Android));
+    let is_ios = targets.iter().any(|t| matches!(t, GenerateTarget::Ios));
+
     // windows and linux, linux use windows icon config
-    {
+    if is_windows || is_linux {
         let output_dir = generate_icon("windows", &win)?;
         let readdir = std::fs::read_dir(&output_dir)
             .unwrap_or_else(|_| panic!("read dir error: {}", output_dir.to_str().unwrap()));
@@ -333,7 +349,7 @@ fn generate_tauri_icons(
     }
 
     // macos
-    {
+    if is_macos {
         let output_dir = generate_icon("macos", &mac)?;
         let mac_icon_path = output_dir.join("icon.icns");
         let dest_path = tauri_icon_folder.join(mac_icon_path.file_name().unwrap());
@@ -346,7 +362,7 @@ fn generate_tauri_icons(
     }
 
     // android
-    {
+    if is_android {
         let output_dir = generate_icon("android", &android)?;
         let android_icon_path = output_dir.join("android");
         let android_dest_path = project_path.join("gen/android/app/src/main/res");
@@ -358,7 +374,7 @@ fn generate_tauri_icons(
     }
 
     // ios
-    {
+    if is_ios {
         let output_dir = generate_icon("ios", &ios)?;
         let ios_icon_path = output_dir.join("ios");
         let ios_dest_path = project_path.join("gen/apple/Assets.xcassets/AppIcon.appiconset");
@@ -477,6 +493,7 @@ pub fn generate_icons() -> Result<()> {
                 )?;
             }
             GenerateIconType::Tauri => {
+                let targets = &icon_conf.targets;
                 if icon_conf.project_path.is_none() {
                     panic!("tauri icon must have project_path");
                 }
@@ -484,6 +501,7 @@ pub fn generate_icons() -> Result<()> {
                 let project_path = REPO_PATH.join(project_path);
                 generate_tauri_icons(
                     name,
+                    targets,
                     &project_path,
                     &input_path,
                     &output_path,

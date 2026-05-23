@@ -1,0 +1,10 @@
+/assets
+/dist
+/node_modules
+/public
+/rust
+
+/src
+/tools
+
+/Cargo.toml

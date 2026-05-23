@@ -2,6 +2,7 @@ use std::{
     borrow::Cow,
     ffi::OsStr,
     hash::{Hash, Hasher},
+    path::Path,
     path::PathBuf,
 };
 
@@ -10,8 +11,6 @@ use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
 };
 
-use crate::config::app_path::get_root_dir;
-
 #[derive(Debug, Clone, Default)]
 pub struct WorkspacePath {
     pub path: PathBuf,
@@ -19,19 +18,19 @@ pub struct WorkspacePath {
 
 impl WorkspacePath {
     pub fn to_path_buf(&self) -> PathBuf {
-        if let Some(root_dir) = get_root_dir() {
-            PathBuf::from(root_dir).join(&self.path)
-        } else {
-            self.path.clone()
-        }
+        self.path.clone()
     }
 
-    pub fn to_path_buf_cow(&self) -> Cow<'_, std::path::Path> {
-        if let Some(root_dir) = get_root_dir() {
-            Cow::Owned(PathBuf::from(root_dir).join(&self.path))
-        } else {
-            Cow::Borrowed(self.path.as_path())
-        }
+    pub fn to_path_buf_cow(&self) -> Cow<'_, Path> {
+        Cow::Borrowed(self.path.as_path())
+    }
+
+    pub fn as_path(&self) -> &Path {
+        self.path.as_path()
+    }
+
+    pub fn to_string_lossy(&self) -> String {
+        self.path.to_string_lossy().into_owned()
     }
 
     pub fn exists(&self) -> bool {

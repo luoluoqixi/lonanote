@@ -1,2 +1,2 @@
-mod workspace_instance_api;
-mod workspace_manager_api;
+mod workspace_registry_api;
+mod workspace_runtime_api;

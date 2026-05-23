@@ -1,0 +1,40 @@
+diff --git a/src/node-haste/DependencyGraph/createFileMap.js b/src/node-haste/DependencyGraph/createFileMap.js
+index fedef2b..baa38c4 100644
+--- a/src/node-haste/DependencyGraph/createFileMap.js
++++ b/src/node-haste/DependencyGraph/createFileMap.js
+@@ -36,11 +36,9 @@ function _interopRequireWildcard(e, t) {
+ function _interopRequireDefault(e) {
+   return e && e.__esModule ? e : { default: e };
+ }
+-function getIgnorePattern(config) {
+-  const { blockList, blacklistRE } = config.resolver;
+-  const ignorePattern = blacklistRE || blockList;
++function normalizeIgnorePattern(ignorePattern) {
+   if (!ignorePattern) {
+-    return / ^/;
++    return null;
+   }
+   const combine = (regexes) =>
+     new RegExp(
+@@ -66,6 +64,13 @@ function getIgnorePattern(config) {
+   }
+   return ignorePattern;
+ }
++function getIgnorePattern(config) {
++  const { blockList, blacklistRE } = config.resolver;
++  return normalizeIgnorePattern(blacklistRE || blockList) ?? / ^/;
++}
++function getWatchIgnorePattern(config) {
++  return normalizeIgnorePattern(config.watcher.watchBlockList) ?? getIgnorePattern(config);
++}
+ function createFileMap(config, options) {
+   const watch = options?.watch == null ? !_ciInfo.default.isCI : options.watch;
+   const { enabled: autoSaveEnabled, ...autoSaveOpts } =
+@@ -126,6 +131,7 @@ function createFileMap(config, options) {
+     roots: config.watchFolders,
+     useWatchman: config.resolver.useWatchman,
+     watch,
++    watchIgnorePattern: getWatchIgnorePattern(config),
+     watchmanDeferStates: config.watcher.watchman.deferStates,
+   });
+   return {

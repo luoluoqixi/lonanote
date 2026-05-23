@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "uniwind";
+@import "@heroui/styles";
+
+@import "./styles/theme_overrides.css";
+@import "./styles/root.css";
+@import "./components/index.css";
