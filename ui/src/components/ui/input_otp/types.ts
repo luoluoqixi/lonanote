@@ -1,28 +1,8 @@
-import type {
-  InputOTPGroupProps as WebInputOTPGroupProps,
-  InputOTPRootProps as WebInputOTPRootProps,
-  InputOTPSeparatorProps as WebInputOTPSeparatorProps,
-  InputOTPSlotProps as WebInputOTPSlotProps,
-} from "@heroui/react";
-import type {
-  InputOTPGroupProps as NativeInputOTPGroupProps,
-  InputOTPRootProps as NativeInputOTPRootProps,
-  InputOTPSeparatorProps as NativeInputOTPSeparatorProps,
-  InputOTPSlotProps as NativeInputOTPSlotProps,
-} from "heroui-native";
 import type { ReactNode } from "react";
 
 export type InputOTPVariant = "primary" | "secondary";
 
-type InputOTPPlatformProps<TWeb, TNative> = {
-  nativeProps?: Omit<TNative, "children" | "className">;
-  webProps?: Omit<TWeb, "children" | "className">;
-};
-
-export interface InputOTPProps extends InputOTPPlatformProps<
-  WebInputOTPRootProps,
-  NativeInputOTPRootProps
-> {
+export interface InputOTPProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
@@ -43,26 +23,18 @@ export interface InputOTPProps extends InputOTPPlatformProps<
   variant?: InputOTPVariant;
 }
 
-export interface InputOTPGroupProps extends InputOTPPlatformProps<
-  WebInputOTPGroupProps,
-  NativeInputOTPGroupProps
-> {
+export interface InputOTPGroupProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface InputOTPSlotProps extends InputOTPPlatformProps<
-  WebInputOTPSlotProps,
-  NativeInputOTPSlotProps
-> {
+export interface InputOTPSlotProps {
   className?: string;
   index: number;
+  variant?: InputOTPVariant;
 }
 
-export interface InputOTPSeparatorProps extends InputOTPPlatformProps<
-  WebInputOTPSeparatorProps,
-  NativeInputOTPSeparatorProps
-> {
+export interface InputOTPSeparatorProps {
   children?: ReactNode;
   className?: string;
 }

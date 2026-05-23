@@ -1,66 +1,13 @@
-import { Dropdown as WebDropdown } from "@heroui/react";
-import { Menu as NativeMenu } from "heroui-native";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 
-type DropdownRootPlatformProps = {
-  nativeProps?: Omit<
-    ComponentProps<typeof NativeMenu>,
-    "children" | "className" | "isDefaultOpen" | "isOpen" | "onOpenChange"
-  >;
-  webProps?: Omit<
-    ComponentProps<typeof WebDropdown>,
-    "children" | "className" | "defaultOpen" | "isOpen" | "onOpenChange"
-  >;
-};
-
-type DropdownTriggerPlatformProps = {
-  nativeProps?: Omit<
-    ComponentProps<typeof NativeMenu.Trigger>,
-    "children" | "className" | "isDisabled"
-  >;
-  webProps?: Omit<
-    ComponentProps<typeof WebDropdown.Trigger>,
-    "children" | "className" | "isDisabled"
-  >;
-};
-
-type DropdownPopoverPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeMenu.Portal>, "children">;
-  webProps?: Omit<ComponentProps<typeof WebDropdown.Popover>, "children" | "className">;
-};
-
-type DropdownMenuPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeMenu.Content>, "children" | "className">;
-  webProps?: Omit<ComponentProps<typeof WebDropdown.Menu>, "children" | "className">;
-};
-
-type DropdownSectionPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeMenu.Group>, "children" | "className">;
-  webProps?: Omit<ComponentProps<typeof WebDropdown.Section>, "children" | "className">;
-};
-
-type DropdownItemPlatformProps = {
-  nativeProps?: Omit<
-    ComponentProps<typeof NativeMenu.Item>,
-    "children" | "className" | "isDisabled"
-  >;
-  webProps?: Omit<ComponentProps<typeof WebDropdown.Item>, "children" | "className" | "isDisabled">;
-};
-
-type DropdownItemIndicatorPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeMenu.ItemIndicator>, "className">;
-  webProps?: Omit<ComponentProps<typeof WebDropdown.ItemIndicator>, "className">;
-};
-
-export interface DropdownItemData extends DropdownItemPlatformProps {
+export interface DropdownItemData {
   className?: string;
   isDisabled?: boolean;
   key: string;
   label: ReactNode;
-  textValue?: string;
 }
 
-export interface DropdownProps extends DropdownRootPlatformProps {
+export interface DropdownProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
@@ -76,36 +23,35 @@ export interface DropdownProps extends DropdownRootPlatformProps {
   triggerClassName?: string;
 }
 
-export interface DropdownTriggerProps extends DropdownTriggerPlatformProps {
+export interface DropdownTriggerProps {
   children?: ReactNode;
   className?: string;
   isDisabled?: boolean;
 }
 
-export interface DropdownPopoverProps extends DropdownPopoverPlatformProps {
+export interface DropdownPopoverProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface DropdownMenuProps extends DropdownMenuPlatformProps {
+export interface DropdownMenuProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
-  onAction?: (key: string) => void;
 }
 
-export interface DropdownSectionProps extends DropdownSectionPlatformProps {
+export interface DropdownSectionProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface DropdownItemProps extends DropdownItemPlatformProps {
+export interface DropdownItemProps {
   children?: ReactNode;
   className?: string;
   isDisabled?: boolean;
-  textValue?: string;
+  onPress?: () => void;
 }
 
-export interface DropdownItemIndicatorProps extends DropdownItemIndicatorPlatformProps {
+export interface DropdownItemIndicatorProps {
   className?: string;
 }

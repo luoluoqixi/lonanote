@@ -1,16 +1,6 @@
-import { FieldError as WebFieldError } from "@heroui/react";
-import { FieldError as NativeFieldError } from "heroui-native";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 
-type FieldErrorPlatformProps = {
-  nativeProps?: Omit<
-    ComponentProps<typeof NativeFieldError>,
-    "children" | "className" | "isInvalid"
-  >;
-  webProps?: Omit<ComponentProps<typeof WebFieldError>, "children" | "className">;
-};
-
-export interface FieldErrorProps extends FieldErrorPlatformProps {
+export interface FieldErrorProps {
   children?: ReactNode;
   className?: string;
   isInvalid?: boolean;

@@ -1,2 +1,2 @@
-// TypeScript fallback entry. Runtime platform resolution uses index.web.ts and index.native.ts.
-export * from "./index.native";
+export * from "./radio_group";
+export type * from "./types";

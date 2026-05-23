@@ -6,7 +6,7 @@ import { Uniwind } from "uniwind";
 import { useColorSchemeSettings } from "@/hooks/settings";
 
 import type { RootProviderProps } from "./types";
-import { UIProvider } from "./ui_provider.native";
+import { UIProvider } from "./ui_provider";
 
 export function RootProvider({ children, nativeConfig }: RootProviderProps) {
   const { resolvedColorScheme } = useColorSchemeSettings();

@@ -1,13 +1,6 @@
-import { Header as WebHeader } from "@heroui/react";
-import type { ComponentProps, ReactNode } from "react";
-import type { TextProps as NativeTextProps } from "react-native";
+import type { ReactNode } from "react";
 
-type HeaderPlatformProps = {
-  nativeProps?: Omit<NativeTextProps, "children" | "className">;
-  webProps?: Omit<ComponentProps<typeof WebHeader>, "children" | "className">;
-};
-
-export interface HeaderProps extends HeaderPlatformProps {
+export interface HeaderProps {
   children?: ReactNode;
   className?: string;
 }

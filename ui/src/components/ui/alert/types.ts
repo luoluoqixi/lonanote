@@ -1,27 +1,9 @@
-import type {
-  AlertContentProps as WebAlertContentProps,
-  AlertDescriptionProps as WebAlertDescriptionProps,
-  AlertIndicatorProps as WebAlertIndicatorProps,
-  AlertRootProps as WebAlertRootProps,
-  AlertTitleProps as WebAlertTitleProps,
-} from "@heroui/react";
-import type {
-  AlertContentProps as NativeAlertContentProps,
-  AlertDescriptionProps as NativeAlertDescriptionProps,
-  AlertIndicatorProps as NativeAlertIndicatorProps,
-  AlertRootProps as NativeAlertRootProps,
-  AlertTitleProps as NativeAlertTitleProps,
-} from "heroui-native";
+import type { AlertRootProps as NativeAlertRootProps } from "heroui-native";
 import type { ReactNode } from "react";
 
-type AlertPlatformProps<TWeb, TNative> = {
-  nativeProps?: Omit<TNative, "children" | "className">;
-  webProps?: Omit<TWeb, "children" | "className">;
-};
+export type AlertStatus = NativeAlertRootProps["status"];
 
-export type AlertStatus = WebAlertRootProps["status"];
-
-export interface AlertProps extends AlertPlatformProps<WebAlertRootProps, NativeAlertRootProps> {
+export interface AlertProps {
   children?: ReactNode;
   className?: string;
   contentClassName?: string;
@@ -34,34 +16,22 @@ export interface AlertProps extends AlertPlatformProps<WebAlertRootProps, Native
   titleClassName?: string;
 }
 
-export interface AlertIndicatorProps extends AlertPlatformProps<
-  WebAlertIndicatorProps,
-  NativeAlertIndicatorProps
-> {
+export interface AlertIndicatorProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface AlertContentProps extends AlertPlatformProps<
-  WebAlertContentProps,
-  NativeAlertContentProps
-> {
+export interface AlertContentProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface AlertTitleProps extends AlertPlatformProps<
-  WebAlertTitleProps,
-  NativeAlertTitleProps
-> {
+export interface AlertTitleProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface AlertDescriptionProps extends AlertPlatformProps<
-  WebAlertDescriptionProps,
-  NativeAlertDescriptionProps
-> {
+export interface AlertDescriptionProps {
   children?: ReactNode;
   className?: string;
 }

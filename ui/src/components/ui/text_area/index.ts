@@ -1,2 +1,2 @@
-// TypeScript fallback entry. Runtime platform resolution uses index.web.ts and index.native.ts.
-export * from "./index.native";
+export * from "./text_area";
+export type * from "./types";

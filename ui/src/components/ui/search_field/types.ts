@@ -1,30 +1,8 @@
-import type {
-  SearchFieldClearButtonProps as WebSearchFieldClearButtonProps,
-  SearchFieldGroupProps as WebSearchFieldGroupProps,
-  SearchFieldInputProps as WebSearchFieldInputProps,
-  SearchFieldRootProps as WebSearchFieldRootProps,
-  SearchFieldSearchIconProps as WebSearchFieldSearchIconProps,
-} from "@heroui/react";
-import type {
-  SearchFieldClearButtonProps as NativeSearchFieldClearButtonProps,
-  SearchFieldGroupProps as NativeSearchFieldGroupProps,
-  SearchFieldInputProps as NativeSearchFieldInputProps,
-  SearchFieldProps as NativeSearchFieldRootProps,
-  SearchFieldSearchIconProps as NativeSearchFieldSearchIconProps,
-} from "heroui-native";
 import type { ReactNode } from "react";
 
 import type { InputProps } from "../input";
 
-type SearchFieldPlatformProps<TWeb, TNative> = {
-  nativeProps?: Omit<TNative, "children" | "className">;
-  webProps?: Omit<TWeb, "children" | "className">;
-};
-
-export interface SearchFieldProps extends SearchFieldPlatformProps<
-  WebSearchFieldRootProps,
-  NativeSearchFieldRootProps
-> {
+export interface SearchFieldProps {
   children?: ReactNode;
   className?: string;
   clearButtonClassName?: string;
@@ -45,33 +23,21 @@ export interface SearchFieldProps extends SearchFieldPlatformProps<
   value?: string;
 }
 
-export interface SearchFieldGroupProps extends SearchFieldPlatformProps<
-  WebSearchFieldGroupProps,
-  NativeSearchFieldGroupProps
-> {
+export interface SearchFieldGroupProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface SearchFieldInputProps
-  extends
-    SearchFieldPlatformProps<WebSearchFieldInputProps, NativeSearchFieldInputProps>,
-    Omit<
-      InputProps,
-      "isDisabled" | "isInvalid" | "nativeProps" | "onValueChange" | "value" | "webProps"
-    > {}
+export interface SearchFieldInputProps extends Omit<
+  InputProps,
+  "isDisabled" | "isInvalid" | "onValueChange" | "value"
+> {}
 
-export interface SearchFieldSearchIconProps extends SearchFieldPlatformProps<
-  WebSearchFieldSearchIconProps,
-  NativeSearchFieldSearchIconProps
-> {
+export interface SearchFieldSearchIconProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface SearchFieldClearButtonProps extends SearchFieldPlatformProps<
-  WebSearchFieldClearButtonProps,
-  NativeSearchFieldClearButtonProps
-> {
+export interface SearchFieldClearButtonProps {
   className?: string;
 }

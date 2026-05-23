@@ -1,60 +1,29 @@
-import type {
-  PopoverArrowProps as WebPopoverArrowProps,
-  PopoverContentProps as WebPopoverContentProps,
-  PopoverHeadingProps as WebPopoverHeadingProps,
-  PopoverRootProps as WebPopoverRootProps,
-  PopoverTriggerProps as WebPopoverTriggerProps,
-} from "@heroui/react";
-import type {
-  PopoverArrowProps as NativePopoverArrowProps,
-  PopoverContentProps as NativePopoverContentProps,
-  PopoverRootProps as NativePopoverRootProps,
-  PopoverTitleProps as NativePopoverTitleProps,
-  PopoverTriggerProps as NativePopoverTriggerProps,
-} from "heroui-native";
 import type { ReactNode } from "react";
 
-type PopoverPlatformProps<TWeb, TNative> = {
-  nativeProps?: Omit<TNative, "children" | "className">;
-  webProps?: Omit<TWeb, "children" | "className">;
-};
-
-export interface PopoverProps extends PopoverPlatformProps<
-  WebPopoverRootProps,
-  NativePopoverRootProps
-> {
+export interface PopoverProps {
   children?: ReactNode;
+  isDefaultOpen?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
-export interface PopoverTriggerProps extends PopoverPlatformProps<
-  WebPopoverTriggerProps,
-  NativePopoverTriggerProps
-> {
+export interface PopoverTriggerProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface PopoverContentProps extends PopoverPlatformProps<
-  WebPopoverContentProps,
-  NativePopoverContentProps
-> {
+export interface PopoverContentProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
 }
 
-export interface PopoverArrowProps extends PopoverPlatformProps<
-  WebPopoverArrowProps,
-  NativePopoverArrowProps
-> {
+export interface PopoverArrowProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface PopoverTitleProps extends PopoverPlatformProps<
-  WebPopoverHeadingProps,
-  NativePopoverTitleProps
-> {
+export interface PopoverTitleProps {
   children?: ReactNode;
   className?: string;
 }

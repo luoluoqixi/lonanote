@@ -242,11 +242,10 @@ sh run.sh dev
 
 - `ui/` 不是 Flutter 工程，当前是 React Native / Expo Router 架构。
 - 样式体系以 `uniwind` 为统一 Tailwind 层，唯一全局样式入口是 `ui/src/global.css`。
-- 全局主题与主要 UI 组件统一基于 `heroui-native`；不要再引入 `@heroui/react`、`@heroui/styles` 这套 Web 主题入口。
-- 若桌面 / Web 侧个别弹出层、菜单、浮层原语存在能力缺口，可在 `ui/src/components/ui/` 包装层内按需使用 `@rn-primitives/*`，但只用于局部补位，不作为第二套全局设计系统。
+- 全局主题与主要 UI 组件统一基于 `heroui-native`。
 - `ui/src/` 下的应用代码不要使用 CommonJS `require`；平台差异优先通过 `.web.tsx`、`.native.tsx`、`.ios.tsx`、`.android.tsx` 解决。
 - `require` 仅保留在 Node 风格脚本与配置文件中，例如 `ui/tools/prebuild/`、`ui/metro.config.js`。
-- 页面与业务组件不要直接依赖 `heroui-native` 或 `@rn-primitives/*`，统一通过 `ui/src/components/ui/` 包装层导入。
+- 页面与业务组件不要直接依赖 `heroui-native`，统一通过 `ui/src/components/ui/` 包装层导入。
 - 桌面端仍共享 React Native 代码，通过 Tauri 提供桌面壳与 Rust 能力。
 - `ui/android/` 与 `ui/ios/` 是 Expo prebuild 后的原生工程输出；修改原生配置时要注意 prebuild 的覆盖关系。
 - 如果只改移动端原生桥，不要误改 Tauri API；反之亦然。

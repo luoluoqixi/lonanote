@@ -1,16 +1,4 @@
-import type {
-  ListBoxItemIndicatorProps as WebListBoxItemIndicatorProps,
-  ListBoxItemProps as WebListBoxItemProps,
-  ListBoxProps as WebListBoxRootProps,
-  ListBoxSectionProps as WebListBoxSectionProps,
-} from "@heroui/react";
-import type { ListGroupRootProps as NativeListGroupRootProps } from "heroui-native";
 import type { ReactNode } from "react";
-
-type ListBoxPlatformProps<TWeb, TNative> = {
-  nativeProps?: Omit<TNative, "children" | "className">;
-  webProps?: Omit<TWeb, "children" | "className">;
-};
 
 export interface ListBoxItemData {
   className?: string;
@@ -32,12 +20,9 @@ export interface ListBoxSectionData {
   title?: ReactNode;
 }
 
-export interface ListBoxProps extends ListBoxPlatformProps<
-  WebListBoxRootProps<any>,
-  NativeListGroupRootProps
-> {
-  children?: ReactNode;
+export interface ListBoxProps {
   accessibilityLabel?: string;
+  children?: ReactNode;
   className?: string;
   descriptionClassName?: string;
   itemClassName?: string;
@@ -45,32 +30,27 @@ export interface ListBoxProps extends ListBoxPlatformProps<
   itemTextContainerClassName?: string;
   items?: ListBoxItemData[];
   labelClassName?: string;
+  onAction?: (key: string) => void;
   sectionClassName?: string;
   sectionHeaderClassName?: string;
+  selectionMode?: "none";
   sections?: ListBoxSectionData[];
 }
 
-export interface ListBoxItemProps extends ListBoxPlatformProps<
-  WebListBoxItemProps,
-  NativeListGroupRootProps
-> {
+export interface ListBoxItemProps {
   children?: ReactNode;
   className?: string;
+  onPress?: () => void;
   textValue?: string;
 }
 
-export interface ListBoxItemIndicatorProps extends ListBoxPlatformProps<
-  WebListBoxItemIndicatorProps,
-  NativeListGroupRootProps
-> {
+export interface ListBoxItemIndicatorProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface ListBoxSectionProps extends ListBoxPlatformProps<
-  WebListBoxSectionProps,
-  NativeListGroupRootProps
-> {
+export interface ListBoxSectionProps {
+  accessibilityLabel?: string;
   children?: ReactNode;
   className?: string;
 }

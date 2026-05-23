@@ -1,49 +1,24 @@
-import type {
-  InputGroupInputProps as WebInputGroupInputProps,
-  InputGroupPrefixProps as WebInputGroupPrefixProps,
-  InputGroupRootProps as WebInputGroupRootProps,
-  InputGroupSuffixProps as WebInputGroupSuffixProps,
-} from "@heroui/react";
-import type {
-  InputGroupInputProps as NativeInputGroupInputProps,
-  InputGroupPrefixProps as NativeInputGroupPrefixProps,
-  InputGroupProps as NativeInputGroupRootProps,
-  InputGroupSuffixProps as NativeInputGroupSuffixProps,
-} from "heroui-native";
 import type { ReactNode } from "react";
 
 import type { InputProps } from "../input";
 
-type InputGroupPlatformProps<TWeb, TNative> = {
-  nativeProps?: Omit<TNative, "children" | "className">;
-  webProps?: Omit<TWeb, "children" | "className">;
-};
-
-export interface InputGroupProps extends InputGroupPlatformProps<
-  WebInputGroupRootProps,
-  NativeInputGroupRootProps
-> {
+export interface InputGroupProps {
+  animation?: "disable-all";
   children?: ReactNode;
   className?: string;
+  isDisabled?: boolean;
 }
 
-export interface InputGroupInputProps
-  extends
-    InputGroupPlatformProps<WebInputGroupInputProps, NativeInputGroupInputProps>,
-    Omit<InputProps, "nativeProps" | "webProps"> {}
+export interface InputGroupInputProps extends InputProps {}
 
-export interface InputGroupPrefixProps extends InputGroupPlatformProps<
-  WebInputGroupPrefixProps,
-  NativeInputGroupPrefixProps
-> {
+export interface InputGroupPrefixProps {
   children?: ReactNode;
   className?: string;
+  isDecorative?: boolean;
 }
 
-export interface InputGroupSuffixProps extends InputGroupPlatformProps<
-  WebInputGroupSuffixProps,
-  NativeInputGroupSuffixProps
-> {
+export interface InputGroupSuffixProps {
   children?: ReactNode;
   className?: string;
+  isDecorative?: boolean;
 }

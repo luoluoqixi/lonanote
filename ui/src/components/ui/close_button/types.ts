@@ -1,6 +1,3 @@
-import type { CloseButtonRootProps as WebCloseButtonRootProps } from "@heroui/react";
-import type { CloseButtonProps as NativeCloseButtonProps } from "heroui-native";
-
 import type { ButtonProps } from "../button";
 
 export interface CloseButtonIconProps {
@@ -8,15 +5,7 @@ export interface CloseButtonIconProps {
   size?: number;
 }
 
-type CloseButtonPlatformProps = {
-  nativeProps?: Omit<
-    NativeCloseButtonProps,
-    "accessibilityLabel" | "className" | "iconProps" | "isDisabled" | "onPress"
-  >;
-  webProps?: Omit<WebCloseButtonRootProps, "aria-label" | "className" | "isDisabled" | "onPress">;
-};
-
-export interface CloseButtonProps extends CloseButtonPlatformProps {
+export interface CloseButtonProps {
   accessibilityLabel?: string;
   className?: string;
   iconProps?: CloseButtonIconProps;

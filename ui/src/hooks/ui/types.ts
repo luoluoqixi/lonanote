@@ -1,15 +1,11 @@
-import type { toast } from "@heroui/react";
 import type { ToastShowConfig as NativeToastShowConfig } from "heroui-native";
-
-export type WebToastProps = Parameters<typeof toast>[1];
 
 export type { NativeToastShowConfig };
 
 export type ToastVariant = "default" | "accent" | "success" | "warning" | "danger";
 
 export interface ToastShowOptions {
-  nativeOptions?: NativeToastShowConfig;
-  webOptions?: WebToastProps;
+  options?: NativeToastShowConfig;
 
   message?: string;
   description?: string;

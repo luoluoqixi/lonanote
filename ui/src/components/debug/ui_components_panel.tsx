@@ -588,15 +588,9 @@ export function UiComponentsDebugPanel() {
                       { key: "tag-c", label: "Tag C" },
                     ]}
                     listClassName="flex-row flex-wrap gap-2"
-                    nativeProps={{
-                      defaultSelectedKeys: ["tag-b"],
-                      selectionMode: "single",
-                    }}
+                    defaultSelectedKeys={["tag-b"]}
+                    selectionMode="single"
                     variant="surface"
-                    webProps={{
-                      defaultSelectedKeys: ["tag-b"],
-                      selectionMode: "single",
-                    }}
                   />
                 </View>
 
@@ -684,10 +678,8 @@ export function UiComponentsDebugPanel() {
                         title: "Danger zone",
                       },
                     ]}
-                    webProps={{
-                      onAction: (key) => toastInfo(`选择了 ${String(key)}`),
-                      selectionMode: "none",
-                    }}
+                    onAction={(key) => toastInfo(`选择了 ${String(key)}`)}
+                    selectionMode="none"
                   />
                 </Surface>
               </View>

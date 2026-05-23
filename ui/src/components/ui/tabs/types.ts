@@ -1,7 +1,4 @@
-import { Tabs as WebTabs } from "@heroui/react";
-import { Tabs as NativeTabs } from "heroui-native";
-import type { ComponentProps, ReactNode } from "react";
-import type { ViewProps as NativeViewProps } from "react-native";
+import type { ReactNode } from "react";
 
 export type TabsOrientation = "horizontal" | "vertical";
 export type TabsVariant = "line" | "underline" | "solid";
@@ -14,48 +11,7 @@ export interface TabsItem {
   value: string;
 }
 
-type TabsRootPlatformProps = {
-  nativeProps?: Omit<
-    ComponentProps<typeof NativeTabs>,
-    "children" | "className" | "onValueChange" | "value"
-  >;
-  webProps?: Omit<
-    ComponentProps<typeof WebTabs>,
-    "children" | "className" | "onSelectionChange" | "selectedKey"
-  >;
-};
-
-type TabsListPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeTabs.List>, "children" | "className">;
-  webProps?: Omit<ComponentProps<typeof WebTabs.List>, "children" | "className">;
-};
-
-type TabsListContainerPlatformProps = {
-  nativeProps?: Omit<NativeViewProps, "children">;
-  webProps?: Omit<ComponentProps<typeof WebTabs.ListContainer>, "children" | "className">;
-};
-
-type TabsTabPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeTabs.Trigger>, "children" | "className" | "value">;
-  webProps?: Omit<ComponentProps<typeof WebTabs.Tab>, "children" | "className" | "id">;
-};
-
-type TabsIndicatorPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeTabs.Indicator>, "className">;
-  webProps?: Omit<ComponentProps<typeof WebTabs.Indicator>, "className">;
-};
-
-type TabsSeparatorPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeTabs.Separator>, "betweenValues" | "className">;
-  webProps?: Omit<ComponentProps<typeof WebTabs.Separator>, "className">;
-};
-
-type TabsPanelPlatformProps = {
-  nativeProps?: Omit<ComponentProps<typeof NativeTabs.Content>, "children" | "className" | "value">;
-  webProps?: Omit<ComponentProps<typeof WebTabs.Panel>, "children" | "className" | "id">;
-};
-
-export interface TabsProps extends TabsRootPlatformProps {
+export interface TabsProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   variant?: "secondary" | "primary";
@@ -71,32 +27,32 @@ export interface TabsProps extends TabsRootPlatformProps {
   value: string;
 }
 
-export interface TabsListContainerProps extends TabsListContainerPlatformProps {
+export interface TabsListContainerProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface TabsListProps extends TabsListPlatformProps {
+export interface TabsListProps {
   children?: ReactNode;
   className?: string;
 }
 
-export interface TabsTabProps extends TabsTabPlatformProps {
+export interface TabsTabProps {
   children?: ReactNode;
   className?: string;
   value: string;
 }
 
-export interface TabsIndicatorProps extends TabsIndicatorPlatformProps {
+export interface TabsIndicatorProps {
   className?: string;
 }
 
-export interface TabsSeparatorProps extends TabsSeparatorPlatformProps {
+export interface TabsSeparatorProps {
   betweenValues: string[];
   className?: string;
 }
 
-export interface TabsPanelProps extends TabsPanelPlatformProps {
+export interface TabsPanelProps {
   children?: ReactNode;
   className?: string;
   value: string;

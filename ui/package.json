@@ -30,8 +30,6 @@
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.2.10",
-    "@heroui/react": "^3.0.5",
-    "@heroui/styles": "^3.0.5",
     "@react-navigation/bottom-tabs": "^7.15.10",
     "@react-navigation/elements": "^2.9.15",
     "@react-navigation/native": "^7.2.2",
@@ -50,6 +48,7 @@
     "expo-font": "~55.0.6",
     "expo-glass-effect": "~55.0.10",
     "expo-image": "~55.0.9",
+    "expo-linear-gradient": "~55.0.14",
     "expo-linking": "~55.0.14",
     "expo-router": "~55.0.13",
     "expo-splash-screen": "~55.0.19",
@@ -58,7 +57,7 @@
     "expo-system-ui": "~55.0.16",
     "expo-web-browser": "~55.0.14",
     "globals": "^17.5.0",
-    "heroui-native": "=1.0.2",
+    "heroui-native": "git+https://github.com/luoluoqixi/heroui-native.git#heroui-native-1.0.3",
     "lonanote_rust_module": "workspace:*",
     "prettier": "^3.8.3",
     "react": "19.2.5",
@@ -105,7 +104,6 @@
     "metro-transform-worker": "=0.83.6"
   },
   "patchedDependencies": {
-    "heroui-native@1.0.2": "patches/heroui-native@1.0.2.patch",
     "metro-file-map@0.83.6": "patches/metro-file-map@0.83.6.patch",
     "metro@0.83.6": "patches/metro@0.83.6.patch",
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch"
