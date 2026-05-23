@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { DeviceEventEmitter, Platform, ScrollView, Text, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 
-import { Dialog, Tabs, TabsIndicator, TabsList, TabsListContainer, TabsTab } from "@/components/ui";
+import { Dialog, Tabs } from "@/components/ui";
 
 import { PathDebugPanel } from "./path_debug_panel";
 import { UiComponentsDebugPanel } from "./ui_components_panel";
 import { WorkspaceDebugPanel } from "./workspace_debug_panel";
 
 type DebugTabKey = "workspace" | "path" | "components";
+const DEBUG_PANEL_TOGGLE_EVENT = "lonanote.debug-panel.toggle";
 
 const DEBUG_TABS: Array<{ key: DebugTabKey; label: string }> = [
   { key: "workspace", label: "工作区" },
@@ -15,9 +18,13 @@ const DEBUG_TABS: Array<{ key: DebugTabKey; label: string }> = [
   { key: "components", label: "组件总览" },
 ];
 
+function emitDebugPanelToggle() {
+  DeviceEventEmitter.emit(DEBUG_PANEL_TOGGLE_EVENT);
+}
+
 function useDebugPanelShortcut(onToggle: () => void) {
   useEffect(() => {
-    if (!__DEV__ || typeof window === "undefined") {
+    if (!__DEV__ || Platform.OS !== "web") {
       return;
     }
 
@@ -36,6 +43,49 @@ function useDebugPanelShortcut(onToggle: () => void) {
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [onToggle]);
+}
+
+function useDebugPanelNativeToggle(onToggle: () => void) {
+  useEffect(() => {
+    if (!__DEV__ || Platform.OS === "web") {
+      return;
+    }
+
+    const subscription = DeviceEventEmitter.addListener(DEBUG_PANEL_TOGGLE_EVENT, onToggle);
+    return () => {
+      subscription.remove();
+    };
+  }, [onToggle]);
+}
+
+export function DebugPanelGestureLayer({ children }: { children: React.ReactNode }) {
+  const gesture = useMemo(() => {
+    if (!__DEV__ || Platform.OS === "web") {
+      return null;
+    }
+
+    return Gesture.Pan()
+      .minPointers(3)
+      .onEnd((event) => {
+        "worklet";
+
+        if (event.translationY < 72 || Math.abs(event.translationX) > 48) {
+          return;
+        }
+
+        runOnJS(emitDebugPanelToggle)();
+      });
+  }, []);
+
+  if (!gesture) {
+    return children;
+  }
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <View style={{ flex: 1 }}>{children}</View>
+    </GestureDetector>
+  );
 }
 
 function renderDebugTab(tab: DebugTabKey) {
@@ -90,6 +140,10 @@ export function DebugPanelHost() {
     setIsOpen((current) => !current);
   });
 
+  useDebugPanelNativeToggle(() => {
+    setIsOpen((current) => !current);
+  });
+
   useEffect(() => {
     setMountedTabs((currentTabs) =>
       currentTabs.includes(selectedTab) ? currentTabs : [...currentTabs, selectedTab],
@@ -126,22 +180,15 @@ export function DebugPanelHost() {
 
           <Tabs
             accessibilityLabel="调试面板导航"
+            orientation="vertical"
             className="w-full"
             onValueChange={(nextValue) => setSelectedTab(nextValue as DebugTabKey)}
             value={selectedTab}
-            webProps={{ orientation: "vertical" }}
-          >
-            <TabsListContainer className="w-full">
-              <TabsList className="w-full">
-                {DEBUG_TABS.map((tab) => (
-                  <TabsTab className="justify-start px-4 text-left" key={tab.key} value={tab.key}>
-                    <TabsIndicator />
-                    {tab.label}
-                  </TabsTab>
-                ))}
-              </TabsList>
-            </TabsListContainer>
-          </Tabs>
+            items={DEBUG_TABS.map((tab) => ({
+              label: tab.label,
+              value: tab.key,
+            }))}
+          />
         </View>
 
         <View className="flex-1 min-w-0 min-h-0 overflow-hidden rounded-2xl border border-foreground/10 bg-background p-4">

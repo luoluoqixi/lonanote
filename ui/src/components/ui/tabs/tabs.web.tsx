@@ -15,6 +15,7 @@ export function Tabs({
   accessibilityLabel,
   children,
   variant = "secondary",
+  orientation,
   className,
   indicatorClassName,
   items,
@@ -68,6 +69,7 @@ export function Tabs({
       onSelectionChange={(nextValue) => onValueChange(String(nextValue))}
       selectedKey={value}
       variant={variant}
+      orientation={orientation}
       {...(webProps as any)}
     >
       {content}

@@ -59,6 +59,7 @@ export interface TabsProps extends TabsRootPlatformProps {
   accessibilityLabel?: string;
   children?: ReactNode;
   variant?: "secondary" | "primary";
+  orientation?: TabsOrientation;
   className?: string;
   indicatorClassName?: string;
   items?: TabsItem[];

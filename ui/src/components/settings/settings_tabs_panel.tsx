@@ -66,7 +66,7 @@ export function SettingsTabsPanel({ initialTab = "global" }: SettingsTabsPanelPr
         tabClassName="h-10 border-b-2 border-transparent hover:bg-[var(--default-hover)] hover:text-foreground data-[selected=true]:border-b-[var(--accent)] data-[selected=true]:text-foreground"
         panelClassName="flex flex-1 min-h-0 overflow-hidden bg-overlay p-0"
         value={selectedTab}
-        webProps={{ orientation: "vertical" }}
+        orientation="vertical"
       />
     </View>
   );

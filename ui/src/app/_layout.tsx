@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-import { DebugPanelHost } from "@/components/debug";
+import { DebugPanelGestureLayer, DebugPanelHost } from "@/components/debug";
 import { RootProvider } from "@/components/ui";
 import { applyThemeBootstrap } from "@/stores/ui";
 
@@ -11,8 +11,10 @@ applyThemeBootstrap();
 export default function RootLayout() {
   return (
     <RootProvider>
-      <Stack screenOptions={{ headerShown: false }} />
-      <DebugPanelHost />
+      <DebugPanelGestureLayer>
+        <Stack screenOptions={{ headerShown: false }} />
+        <DebugPanelHost />
+      </DebugPanelGestureLayer>
     </RootProvider>
   );
 }

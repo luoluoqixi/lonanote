@@ -21,7 +21,6 @@ const blockListEntries = [
   "android",
   "dist",
   "ios",
-  "rust",
   "src-tauri",
   "target",
   "tools",
@@ -29,7 +28,7 @@ const blockListEntries = [
 
 const watchBlockListEntries = [
   ...blockListEntries,
-  ...[".expo", "node_modules"].map(createRootDirPattern),
+  ...[".expo", "node_modules", "rust"].map(createRootDirPattern),
 ];
 
 module.exports = {

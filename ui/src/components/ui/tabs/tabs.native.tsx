@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Tabs as HeroUITabs } from "heroui-native";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 
 import type {
   TabsIndicatorProps,
@@ -16,6 +16,7 @@ export function Tabs({
   accessibilityLabel,
   children,
   variant = "secondary",
+  orientation,
   className,
   indicatorClassName,
   items,
@@ -30,12 +31,15 @@ export function Tabs({
 }: TabsProps) {
   void webProps;
 
+  const isVertical = orientation === "vertical";
   const content =
     children ??
     (items ? (
       <>
         <View className={listContainerClassName}>
-          <HeroUITabs.List className={listClassName}>
+          <HeroUITabs.List
+            className={clsx(`${isVertical ? "flex-col w-full" : ""}`, listClassName)}
+          >
             {items.map((item) => (
               <HeroUITabs.Trigger
                 className={clsx(tabClassName, item.tabClassName)}
@@ -43,7 +47,7 @@ export function Tabs({
                 value={item.value}
               >
                 <HeroUITabs.Indicator className={indicatorClassName} />
-                {item.label}
+                <Text>{item.label}</Text>
               </HeroUITabs.Trigger>
             ))}
           </HeroUITabs.List>
