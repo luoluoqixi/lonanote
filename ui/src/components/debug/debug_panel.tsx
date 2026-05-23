@@ -65,10 +65,10 @@ export function DebugPanelHost() {
   return (
     <Dialog
       contentStyle={{
-        height: "84%",
-        maxHeight: 780,
+        height: "98%",
+        maxHeight: "98%",
         maxWidth: 1400,
-        minHeight: 540,
+        minHeight: 0,
         width: "94%",
       }}
       isOpen={isOpen}
@@ -107,7 +107,23 @@ export function DebugPanelHost() {
         </View>
 
         <View className="flex-1 min-w-0 min-h-0 overflow-hidden rounded-2xl border border-foreground/10 bg-background p-4">
-          {selectedTab === "components" ? (
+          {selectedTab === "workspace" ? (
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 12 }}
+              showsVerticalScrollIndicator
+              style={{ flex: 1, minHeight: 0 }}
+            >
+              {renderDebugTab(selectedTab)}
+            </ScrollView>
+          ) : selectedTab === "path" ? (
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 12 }}
+              showsVerticalScrollIndicator
+              style={{ flex: 1, minHeight: 0 }}
+            >
+              {renderDebugTab(selectedTab)}
+            </ScrollView>
+          ) : selectedTab === "components" ? (
             <ScrollView
               contentContainerStyle={{ paddingBottom: 12 }}
               showsVerticalScrollIndicator
