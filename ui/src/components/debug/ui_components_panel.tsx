@@ -14,6 +14,7 @@ import { StyleSheet, View } from "react-native";
 import {
   Accordion,
   AlertDialog,
+  Anchor,
   Avatar,
   Button,
   Card,
@@ -21,6 +22,7 @@ import {
   Dialog,
   Input,
   Label,
+  ListItem,
   Menu,
   Popover,
   RadioGroup,
@@ -392,6 +394,15 @@ export function UiComponentsDebugPanel() {
             <Text color="$color10">这里展示标题、正文和说明文案的基础排版。</Text>
           </View>
         </DemoRow>
+        <Anchor href="https://tamagui.dev/llms.txt" target="_blank">
+          Tamagui llms.txt
+        </Anchor>
+        <Separator />
+        <ListItem
+          icon={Backpack}
+          subTitle="ListItem wrapper 当前直接透传 Tamagui ListItem。"
+          title="ListItem 组件示例"
+        />
         <Separator />
         <Card description="Card 默认 API 可直接传 title 和 description。" title="Card 组件示例">
           <Text>这里是 Card 承载的正文内容。</Text>

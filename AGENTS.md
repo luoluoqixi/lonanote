@@ -241,21 +241,22 @@ sh run.sh dev
 ## Frontend Notes
 
 - `ui/` 不是 Flutter 工程，当前是 React Native / Expo Router 架构。
-- 样式体系以 `uniwind` 为统一 Tailwind 层，唯一全局样式入口是 `ui/src/global.css`。
-- 全局主题与主要 UI 组件统一基于 `heroui-native`。
+- 当前基础 UI 包装层已经完成从 `heroui-native` 到 `Tamagui` 的迁移。
+- 样式默认优先使用 `Tamagui` tokens / variants / style props，以及 React Native `StyleSheet`；唯一全局 CSS 入口仍是 `ui/src/global.css`。
 - `ui/src/` 下的应用代码不要使用 CommonJS `require`；平台差异优先通过 `.web.tsx`、`.native.tsx`、`.ios.tsx`、`.android.tsx` 解决。
 - `require` 仅保留在 Node 风格脚本与配置文件中，例如 `ui/tools/prebuild/`、`ui/metro.config.js`。
-- 页面与业务组件不要直接依赖 `heroui-native`，统一通过 `ui/src/components/ui/` 包装层导入。
+- 页面与业务组件不要直接依赖 `tamagui` 的基础组件或其他第三方 UI 库，统一通过 `ui/src/components/ui/` 包装层导入。
 - 桌面端仍共享 React Native 代码，通过 Tauri 提供桌面壳与 Rust 能力。
 - `ui/android/` 与 `ui/ios/` 是 Expo prebuild 后的原生工程输出；修改原生配置时要注意 prebuild 的覆盖关系。
 - 如果只改移动端原生桥，不要误改 Tauri API；反之亦然。
+- `ui/src/components/debug/ui_components_panel.tsx` 是基础 UI wrapper 的总览与回归面板，当前覆盖除 `provider` 与 `split_view` 外的全部 `ui/src/components/ui/` 组件。
 
 ### Frontend naming and file layout
 
 - `ui/src/` 下的手写 TypeScript / TSX 文件默认统一使用 `snake_case` 文件名，例如 `workspace_session_store.ts`、`use_workspace_state.ts`。
 - TypeScript 代码中的变量、函数、参数、普通对象字段统一使用小驼峰；React 组件、类型、interface、type alias 可继续使用 PascalCase。
 - 常规例外仅包括框架约定文件与聚合文件，例如 `index.ts`、`index.tsx`、平台入口文件，以及框架/工具要求的生成文件。
-- 手写 `.d.ts` 文件默认放在 `ui/src/types/`；当前允许的固定路径例外主要是 `ui/src/uniwind-types.d.ts` 与 Expo 约定的 `ui/expo-env.d.ts` 这类无法自由迁移的文件。
+- 手写 `.d.ts` 文件默认放在 `ui/src/types/`；当前允许的固定路径例外主要是 Expo 约定的 `ui/expo-env.d.ts` 这类无法自由迁移的文件。
 
 ### Frontend state management
 
@@ -277,15 +278,15 @@ sh run.sh dev
 ### Frontend styling rules
 
 - 项目允许使用 CSS 文件，但 TypeScript / TSX 侧唯一允许直接 import 的 CSS 入口是 `ui/src/global.css`；其他 CSS 必须通过 `global.css` 的 `@import` 链路间接纳入构建。
-- 这是因为当前样式编译链以 `uniwind` 为中心，只会稳定处理 `global.css` 及其级联引入的 CSS；不要在业务 `.ts` / `.tsx` 文件里直接 import 其他 CSS。
-- 简单样式、一次性样式、局部布局样式优先使用 Tailwind / Uniwind 写法。
-- 当 Tailwind 片段变得复杂、重复、难维护，或者需要抽出更稳定的复用样式时，再考虑提取到 CSS 文件。
+- 这是为了保持 Web/Desktop 全局样式入口单一，避免 CSS 入口分散；不要在业务 `.ts` / `.tsx` 文件里直接 import 其他 CSS。
+- 简单样式、一次性样式、局部布局样式优先使用 `Tamagui` tokens / variants / style props，或 React Native `StyleSheet`。
+- 当样式片段变得复杂、重复、难维护，或者需要抽出更稳定的 Web/Desktop 全局样式时，再考虑提取到 CSS 文件。
 - 明显属于全局范畴的 CSS 优先放在 `ui/src/styles/`；局部 CSS 可以和对应 TS / TSX 文件放在一起，但仍需要通过某个已被 `global.css` 间接引入的 CSS 文件接入。
 
 ### Frontend component layering
 
 - 所有基础组件、跨平台组件包装层、第三方 UI 组件适配层，都优先放在 `ui/src/components/ui/` 下统一封装后再给业务层使用。
-- 业务组件不要直接依赖 `heroui-native`、`@rn-primitives/*` 等第三方 UI 库；这些依赖应当收敛在 `ui/src/components/ui/`。
+- 业务组件不要直接依赖 `tamagui`、`@rn-primitives/*` 等第三方 UI 库；这些依赖应当收敛在 `ui/src/components/ui/`。
 - 业务组件可以直接使用 `react-native` 的基础原语做布局与文本承载，例如 `View`、`Text`、`Pressable`；但按钮、对话框、菜单、输入框、浮层等可复用 UI 原语应优先走包装层。
 - 由于项目同时面向移动端与 Tauri 桌面端，新增基础组件时优先从一开始就考虑 `.web.tsx` / `.native.tsx` 或更细平台拆分，而不是先写死单端实现。
 
@@ -444,6 +445,6 @@ npm run lint
 - 桌面与移动端共用前端 invoke 抽象，新增 API 时优先保持命名与返回类型一致。
 - 新增或重构 workspace 相关 API 时，先判断它属于 registry、runtime、还是前端 session，再决定它应该落在哪一层；不要重新引入“大而全”的 workspace manager。
 - 前端新增 UI 组件时，优先放到 `ui/src/components/ui/<component>/` 包装层，并拆分 `*.web.tsx` / `*.native.tsx`，不要让业务层直接 import 第三方 UI 库。
-- 新增对话框、Popover、DropdownMenu、ContextMenu 这类高风险浮层组件时，优先保持项目内统一 API，再在 `.web.tsx` 中按需接 `@rn-primitives/*`，`.native.tsx` 中优先复用 `heroui-native`。
+- 新增对话框、Popover、DropdownMenu、ContextMenu 这类高风险浮层组件时，优先保持项目内统一 API，并在 `ui/src/components/ui/` 内以 `Tamagui` 为基础处理跨平台差异；只有出现明确能力缺口时才局部引入平台特化实现。
 - 对于 Expo Router 的 `ui/src/app/` 路由文件，如需平台拆分，必须保留非平台基础文件，再额外提供 `.web.tsx` 或其他平台文件。
 - 不要把旧 Flutter / flutter_rust_bridge 时代的约定继续写入新代码或新文档。
