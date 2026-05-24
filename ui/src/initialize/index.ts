@@ -1,1 +1,1 @@
-import "../global.css";
+// import "../tamagui.generated.css";

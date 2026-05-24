@@ -1,22 +1,25 @@
-import { HeroUINativeProvider } from "heroui-native";
+import { Toaster } from "@tamagui/toast/v2";
+import { TamaguiProvider } from "tamagui";
 
-import { DEFAULT_TOAST_CONFIG } from "./config";
+import config from "../../../../tamagui.config";
 import type { UIProviderProps } from "./types";
 
-export function UIProvider({ children, nativeConfig, toastConfig }: UIProviderProps) {
-  const resolvedToastConfig = toastConfig || DEFAULT_TOAST_CONFIG;
-
+export function UIProvider({ children, colorScheme }: UIProviderProps) {
   return (
-    <HeroUINativeProvider
-      config={{
-        forceEnableAnimation: true,
-        toast: {
-          ...resolvedToastConfig,
-        },
-        ...nativeConfig,
-      }}
-    >
+    <TamaguiProvider config={config} defaultTheme={colorScheme}>
       {children}
-    </HeroUINativeProvider>
+      <Toaster />
+      {/* <ToastProvider
+        swipeDirection="horizontal"
+        duration={6000}
+        native={
+          [
+            // uncomment the next line to do native toasts on mobile. NOTE: it'll require you making a dev build and won't work with Expo Go
+            // "mobile",
+          ]
+        }
+      >
+      </ToastProvider> */}
+    </TamaguiProvider>
   );
 }

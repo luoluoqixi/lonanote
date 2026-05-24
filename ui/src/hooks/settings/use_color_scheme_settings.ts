@@ -21,6 +21,14 @@ export function resolveColorSchemeSettings(
   return preferredColorScheme;
 }
 
+export function useResolvedeColorScheme() {
+  const systemColorScheme = useColorScheme();
+  const { preferences } = useUiPreferences();
+  const preferredColorScheme = preferences.appearance.themeMode;
+  const resolvedColorScheme = resolveColorSchemeSettings(preferredColorScheme, systemColorScheme);
+  return resolvedColorScheme;
+}
+
 export function useColorSchemeSettings() {
   const systemColorScheme = useColorScheme();
   const { preferences, isLoaded, isLoading, error, reload, save, patchPreferences, updateAndSave } =

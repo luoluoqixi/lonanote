@@ -1,34 +1,45 @@
-import type { ToastShowConfig as NativeToastShowConfig } from "heroui-native";
+import { ExternalToast, PromiseData, PromiseT } from "@tamagui/toast/v2";
 
-export type { NativeToastShowConfig };
+export type ToastShowOptions = ExternalToast;
+export type TitleToast = React.ReactNode | (() => React.ReactNode);
 
-export type ToastVariant = "default" | "accent" | "success" | "warning" | "danger";
+export type ToastFunc = (title: TitleToast, options?: ToastShowOptions) => string | number;
+export type ToastVariantFunc = (
+  title: TitleToast,
+  options?: Omit<ToastShowOptions, "variant">,
+) => string | number;
+export type ToastCustomFunc = (
+  jsx: (id: string | number) => React.ReactElement,
+  data?: ToastShowOptions,
+) => string | number;
+export type ToastPromiseFunc = <ToastData>(
+  promise: PromiseT<ToastData>,
+  data?: PromiseData<ToastData>,
+) =>
+  | (string & {
+      unwrap: () => Promise<ToastData>;
+    })
+  | (number & {
+      unwrap: () => Promise<ToastData>;
+    })
+  | {
+      unwrap: () => Promise<ToastData>;
+    }
+  | undefined;
 
-export interface ToastShowOptions {
-  options?: NativeToastShowConfig;
-
-  message?: string;
-  description?: string;
-  variant?: ToastVariant;
-  isLoading?: boolean;
-  timeout?: number;
-  onClose?: () => void;
+export interface ToastInterface {
+  message: ToastVariantFunc;
+  info: ToastVariantFunc;
+  success: ToastVariantFunc;
+  error: ToastVariantFunc;
+  warning: ToastVariantFunc;
+  loading: ToastVariantFunc;
+  custom: ToastCustomFunc;
+  promise: ToastPromiseFunc;
+  close: (id: string | number) => void;
+  closeAll: () => void;
 }
 
-export type ToastFunc = (message: string, options?: ToastShowOptions) => string;
-export type ToastVariantFunc = (
-  message: string,
-  options?: Omit<ToastShowOptions, "variant">,
-) => string;
-
 export interface ToastContext {
-  toast: ToastFunc;
-  toastAccent: ToastVariantFunc;
-  toastInfo: ToastVariantFunc;
-  toastSuccess: ToastVariantFunc;
-  toastError: ToastVariantFunc;
-  toastWarning: ToastVariantFunc;
-  closeToast: (id: string) => void;
-  closeAllToast: () => void;
-  isToastVisible: () => boolean;
+  toast: ToastFunc & ToastInterface;
 }

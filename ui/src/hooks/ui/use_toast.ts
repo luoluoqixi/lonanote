@@ -1,74 +1,60 @@
-import {
-  type ToastShowOptions as NativeToastShowOptions,
-  useToast as useToastNative,
-} from "heroui-native";
-import { useCallback } from "react";
+import { PromiseData, PromiseT, toast as tamaguiToast } from "@tamagui/toast/v2";
 
-import type { ToastContext, ToastShowOptions, ToastVariant } from "./types";
+import type { TitleToast, ToastContext, ToastShowOptions } from "./types";
 
-const getToastShowOptions = (
-  message: string,
+const messageFunction = (title: TitleToast, options?: ToastShowOptions) => {
+  return tamaguiToast.message(title, options);
+};
+const infoFunction = (title: TitleToast, options?: ToastShowOptions) => {
+  return tamaguiToast.info(title, options);
+};
+const successFunction = (title: TitleToast, options?: ToastShowOptions) => {
+  return tamaguiToast.success(title, options);
+};
+const errorFunction = (title: TitleToast, options?: ToastShowOptions) => {
+  return tamaguiToast.error(title, options);
+};
+const warningFunction = (title: TitleToast, options?: ToastShowOptions) => {
+  return tamaguiToast.warning(title, options);
+};
+const loadingFunction = (title: TitleToast, options?: ToastShowOptions) => {
+  return tamaguiToast.loading(title, options);
+};
+const toastFunction = (title: TitleToast, options?: ToastShowOptions) => {
+  return messageFunction(title, options);
+};
+const customFunction = <ToastData>(
+  jsx: (id: string | number) => React.ReactElement,
   options?: ToastShowOptions,
-  variant?: ToastVariant,
-): NativeToastShowOptions => {
-  const nativeOptions = options?.options || {};
-  const resolvedVariant = variant || options?.variant || "default";
+) => {
+  return tamaguiToast.custom(jsx, options);
+};
+const promiseFunction = <ToastData>(
+  promise: PromiseT<ToastData>,
+  data?: PromiseData<ToastData>,
+) => {
+  return tamaguiToast.promise(promise, data);
+};
 
-  return {
-    ...nativeOptions,
-    variant: resolvedVariant,
-    label: message,
-    description: options?.description,
-    duration: options?.timeout,
-    onHide: options?.onClose,
-  };
+const toast: ToastContext = {
+  toast: Object.assign(toastFunction, {
+    message: messageFunction,
+    info: infoFunction,
+    success: successFunction,
+    error: errorFunction,
+    warning: warningFunction,
+    loading: loadingFunction,
+    custom: customFunction,
+    promise: promiseFunction,
+    close: (id: string | number) => {
+      tamaguiToast.dismiss(id);
+    },
+    closeAll: () => {
+      tamaguiToast.dismiss();
+    },
+  }),
 };
 
 export function useToast(): ToastContext {
-  const { toast, isToastVisible } = useToastNative();
-
-  const showToast = useCallback(
-    (message: string, options?: ToastShowOptions) =>
-      toast.show(getToastShowOptions(message, options)),
-    [toast],
-  );
-  const showInfo = useCallback(
-    (message: string, options?: ToastShowOptions) =>
-      toast.show(getToastShowOptions(message, options, "default")),
-    [toast],
-  );
-  const showAccent = useCallback(
-    (message: string, options?: ToastShowOptions) =>
-      toast.show(getToastShowOptions(message, options, "accent")),
-    [toast],
-  );
-  const showSuccess = useCallback(
-    (message: string, options?: ToastShowOptions) =>
-      toast.show(getToastShowOptions(message, options, "success")),
-    [toast],
-  );
-  const showWarning = useCallback(
-    (message: string, options?: ToastShowOptions) =>
-      toast.show(getToastShowOptions(message, options, "warning")),
-    [toast],
-  );
-  const showError = useCallback(
-    (message: string, options?: ToastShowOptions) =>
-      toast.show(getToastShowOptions(message, options, "danger")),
-    [toast],
-  );
-  const closeToast = useCallback((id: string | string[]) => toast.hide(id), [toast]);
-  const closeAllToast = useCallback(() => toast.hide("all"), [toast]);
-
-  return {
-    toast: showToast,
-    toastAccent: showAccent,
-    toastInfo: showInfo,
-    toastSuccess: showSuccess,
-    toastError: showError,
-    toastWarning: showWarning,
-    closeToast,
-    closeAllToast,
-    isToastVisible: () => isToastVisible,
-  };
+  return toast;
 }
