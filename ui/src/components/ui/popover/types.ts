@@ -1,29 +1,16 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import type { Popover as TamaguiPopover } from "tamagui";
 
-export interface PopoverProps {
-  children?: ReactNode;
-  isDefaultOpen?: boolean;
-  isOpen?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
+export interface PopoverProps extends ComponentProps<typeof TamaguiPopover> {
+  arrow?: boolean;
+  arrowProps?: PopoverArrowProps;
+  content?: ReactNode;
+  contentProps?: PopoverContentProps;
+  trigger?: ReactNode;
+  triggerProps?: PopoverTriggerProps;
 }
-
-export interface PopoverTriggerProps {
-  children?: ReactNode;
-  className?: string;
-}
-
-export interface PopoverContentProps {
-  accessibilityLabel?: string;
-  children?: ReactNode;
-  className?: string;
-}
-
-export interface PopoverArrowProps {
-  children?: ReactNode;
-  className?: string;
-}
-
-export interface PopoverTitleProps {
-  children?: ReactNode;
-  className?: string;
-}
+export type PopoverAnchorProps = ComponentProps<typeof TamaguiPopover.Anchor>;
+export type PopoverArrowProps = ComponentProps<typeof TamaguiPopover.Arrow>;
+export type PopoverTriggerProps = ComponentProps<typeof TamaguiPopover.Trigger>;
+export type PopoverContentProps = ComponentProps<typeof TamaguiPopover.Content>;
+export type PopoverCloseProps = ComponentProps<typeof TamaguiPopover.Close>;

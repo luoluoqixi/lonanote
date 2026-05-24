@@ -1,6 +1,4 @@
-export type SeparatorOrientation = "horizontal" | "vertical";
+import type { ComponentProps } from "react";
+import type { Separator as TamaguiSeparator } from "tamagui";
 
-export interface SeparatorProps {
-  className?: string;
-  orientation?: SeparatorOrientation;
-}
+export type SeparatorProps = ComponentProps<typeof TamaguiSeparator>;

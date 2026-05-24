@@ -1,31 +1,19 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import type { Card as TamaguiCard } from "tamagui";
 
-export type CardVariant = "default" | "outlined" | "elevated";
+type CardRootProps = Omit<ComponentProps<typeof TamaguiCard>, "background" | "children">;
 
-export interface CardProps {
+export interface CardProps extends CardRootProps {
+  backgroundContent?: ReactNode;
+  backgroundProps?: CardBackgroundProps;
   children?: ReactNode;
-  className?: string;
+  description?: ReactNode;
+  footer?: ReactNode;
+  footerProps?: CardFooterProps;
+  header?: ReactNode;
+  headerProps?: CardHeaderProps;
+  title?: ReactNode;
 }
-
-export interface CardHeaderProps {
-  className?: string;
-}
-
-export interface CardBodyProps {
-  children?: ReactNode;
-  className?: string;
-}
-
-export interface CardTitleProps {
-  children?: ReactNode;
-  className?: string;
-}
-
-export interface CardDescriptionProps {
-  children?: ReactNode;
-  className?: string;
-}
-
-export interface CardFooterProps {
-  className?: string;
-}
+export type CardHeaderProps = ComponentProps<typeof TamaguiCard.Header>;
+export type CardFooterProps = ComponentProps<typeof TamaguiCard.Footer>;
+export type CardBackgroundProps = ComponentProps<typeof TamaguiCard.Background>;

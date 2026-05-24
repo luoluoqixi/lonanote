@@ -1,88 +1,56 @@
-import clsx from "clsx";
-import { Accordion as HeroUIAccordion } from "heroui-native";
+import { Accordion as TamaguiAccordion } from "tamagui";
 
 import type {
   AccordionContentProps,
-  AccordionIndicatorProps,
+  AccordionHeaderProps,
   AccordionItemProps,
   AccordionProps,
   AccordionTriggerProps,
 } from "./types";
 
-function AccordionRoot({
-  accessibilityLabel,
-  children,
-  className,
-  contentClassName,
-  hideSeparator,
-  indicatorClassName,
-  itemClassName,
-  items,
-  triggerClassName,
-  variant,
-}: AccordionProps) {
-  const content =
-    children ??
-    items?.map((item) => (
-      <HeroUIAccordion.Item
-        className={clsx(itemClassName, item.itemClassName)}
-        key={item.key}
-        value={item.key}
-      >
-        <HeroUIAccordion.Trigger
-          className={clsx(
-            "flex-row items-center justify-between gap-3",
-            triggerClassName,
-            item.triggerClassName,
-          )}
-        >
-          {item.title}
-          <HeroUIAccordion.Indicator
-            className={clsx(indicatorClassName, item.indicatorClassName)}
-          />
-        </HeroUIAccordion.Trigger>
-        <HeroUIAccordion.Content className={clsx(contentClassName, item.contentClassName)}>
-          {item.content}
-        </HeroUIAccordion.Content>
-      </HeroUIAccordion.Item>
-    ));
+function AccordionRoot(props: AccordionProps) {
+  const { children, contentProps, headerProps, itemProps, items, triggerProps, ...rootProps } =
+    props;
 
   return (
-    <HeroUIAccordion
-      accessibilityLabel={accessibilityLabel}
-      className={className}
-      hideSeparator={hideSeparator}
-      variant={variant}
-    >
-      {content}
-    </HeroUIAccordion>
+    <TamaguiAccordion {...rootProps}>
+      {children ??
+        items?.map((item) => (
+          <AccordionItem
+            {...itemProps}
+            disabled={item.disabled ?? itemProps?.disabled}
+            key={item.value}
+            value={item.value}
+          >
+            <AccordionHeader {...headerProps}>
+              <AccordionTrigger {...triggerProps}>{item.title}</AccordionTrigger>
+            </AccordionHeader>
+            <AccordionContent {...contentProps}>{item.content}</AccordionContent>
+          </AccordionItem>
+        ))}
+    </TamaguiAccordion>
   );
 }
 
-function AccordionItem({ children, className, value }: AccordionItemProps) {
-  return (
-    <HeroUIAccordion.Item className={className} value={value}>
-      {children}
-    </HeroUIAccordion.Item>
-  );
+function AccordionTrigger(props: AccordionTriggerProps) {
+  return <TamaguiAccordion.Trigger {...props} />;
 }
 
-function AccordionTrigger({ children, className }: AccordionTriggerProps) {
-  return <HeroUIAccordion.Trigger className={className}>{children}</HeroUIAccordion.Trigger>;
+function AccordionHeader(props: AccordionHeaderProps) {
+  return <TamaguiAccordion.Header {...props} />;
 }
 
-function AccordionIndicator({ children, className }: AccordionIndicatorProps) {
-  return <HeroUIAccordion.Indicator className={className}>{children}</HeroUIAccordion.Indicator>;
+function AccordionContent(props: AccordionContentProps) {
+  return <TamaguiAccordion.Content {...props} />;
 }
 
-function AccordionContent({ children, className }: AccordionContentProps) {
-  return <HeroUIAccordion.Content className={className}>{children}</HeroUIAccordion.Content>;
+function AccordionItem(props: AccordionItemProps) {
+  return <TamaguiAccordion.Item {...props} />;
 }
 
 export const Accordion = Object.assign(AccordionRoot, {
-  Root: AccordionRoot,
-  Item: AccordionItem,
   Trigger: AccordionTrigger,
-  Indicator: AccordionIndicator,
+  Header: AccordionHeader,
   Content: AccordionContent,
+  Item: AccordionItem,
 });

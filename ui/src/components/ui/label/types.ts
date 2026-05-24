@@ -1,9 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
+import type { Label as TamaguiLabel } from "tamagui";
 
-export interface LabelProps {
-  children: ReactNode;
-  className?: string;
-  isDisabled?: boolean;
-  isInvalid?: boolean;
-  isRequired?: boolean;
-}
+export type LabelProps = ComponentProps<typeof TamaguiLabel>;

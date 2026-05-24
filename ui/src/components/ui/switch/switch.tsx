@@ -1,22 +1,32 @@
-import clsx from "clsx";
-import { Switch as HeroUISwitch } from "heroui-native";
+import { Label as TamaguiLabel, Switch as TamaguiSwitch, XStack } from "tamagui";
 
-import type { SwitchProps } from "./types";
+import type { SwitchProps, SwitchThumbProps } from "./types";
 
-export function Switch({
-  accessibilityLabel,
-  className,
-  isDisabled,
-  onValueChange,
-  value,
-}: SwitchProps) {
+function SwitchRoot(props: SwitchProps) {
+  const { children, label, labelPosition = "end", labelProps, thumbProps, ...rootProps } = props;
+  const control = (
+    <TamaguiSwitch {...rootProps}>{children ?? <SwitchThumb {...thumbProps} />}</TamaguiSwitch>
+  );
+
+  if (label == null) {
+    return control;
+  }
+
+  const labelElement = <TamaguiLabel {...labelProps}>{label}</TamaguiLabel>;
+
   return (
-    <HeroUISwitch
-      accessibilityLabel={accessibilityLabel}
-      className={clsx("h-7 w-12", className)}
-      isDisabled={isDisabled}
-      isSelected={value}
-      onSelectedChange={onValueChange}
-    />
+    <XStack gap="$2" style={{ alignItems: "center" }}>
+      {labelPosition === "start" ? labelElement : null}
+      {control}
+      {labelPosition === "end" ? labelElement : null}
+    </XStack>
   );
 }
+
+function SwitchThumb(props: SwitchThumbProps) {
+  return <TamaguiSwitch.Thumb {...props} />;
+}
+
+export const Switch = Object.assign(SwitchRoot, {
+  Thumb: SwitchThumb,
+});

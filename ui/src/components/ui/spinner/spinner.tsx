@@ -1,7 +1,7 @@
-import { Spinner as HeroUISpinner } from "heroui-native";
+import { Spinner as TamaguiSpinner } from "tamagui";
 
 import type { SpinnerProps } from "./types";
 
-export function Spinner({ className, size = "md" }: SpinnerProps) {
-  return <HeroUISpinner className={className} size={size} />;
+export function Spinner(props: SpinnerProps) {
+  return <TamaguiSpinner {...props} />;
 }

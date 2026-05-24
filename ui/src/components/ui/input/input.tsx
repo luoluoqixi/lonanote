@@ -1,49 +1,7 @@
-import { Input as HeroUIInput } from "heroui-native";
+import { Input as TamaguiInput } from "tamagui";
 
 import type { InputProps } from "./types";
 
-export function Input({
-  accessibilityLabel,
-  autoCapitalize,
-  autoCorrect,
-  autoFocus,
-  className,
-  defaultValue,
-  id,
-  inputMode,
-  isDisabled,
-  isInvalid,
-  keyboardType,
-  name,
-  onValueChange,
-  placeholder,
-  placeholderColorClassName,
-  secureTextEntry,
-  selectionColorClassName,
-  value,
-}: InputProps) {
-  const namedProps = name == null ? undefined : ({ name } as Record<string, string>);
-
-  return (
-    <HeroUIInput
-      accessibilityLabel={accessibilityLabel}
-      autoCapitalize={autoCapitalize}
-      autoCorrect={autoCorrect}
-      autoFocus={autoFocus}
-      className={className}
-      defaultValue={defaultValue}
-      inputMode={inputMode}
-      isDisabled={isDisabled}
-      isInvalid={isInvalid}
-      keyboardType={keyboardType}
-      nativeID={id}
-      onChangeText={onValueChange}
-      placeholder={placeholder}
-      placeholderColorClassName={placeholderColorClassName}
-      secureTextEntry={secureTextEntry}
-      selectionColorClassName={selectionColorClassName}
-      value={value}
-      {...namedProps}
-    />
-  );
+export function Input(props: InputProps) {
+  return <TamaguiInput {...props} />;
 }

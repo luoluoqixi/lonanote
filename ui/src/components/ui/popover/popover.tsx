@@ -1,52 +1,66 @@
-import { Popover as HeroUIPopover } from "heroui-native";
+import { Popover as TamaguiPopover } from "tamagui";
 
 import type {
+  PopoverAnchorProps,
   PopoverArrowProps,
+  PopoverCloseProps,
   PopoverContentProps,
   PopoverProps,
-  PopoverTitleProps,
   PopoverTriggerProps,
 } from "./types";
 
-function PopoverRoot({ children, isDefaultOpen, isOpen, onOpenChange }: PopoverProps) {
+function PopoverRoot(props: PopoverProps) {
+  const {
+    arrow,
+    arrowProps,
+    children,
+    content,
+    contentProps,
+    trigger,
+    triggerProps,
+    ...rootProps
+  } = props;
+  const hasDefaultStructure = trigger != null || content != null || arrow != null;
+
+  if (!hasDefaultStructure) {
+    return <TamaguiPopover {...rootProps}>{children}</TamaguiPopover>;
+  }
+
   return (
-    <HeroUIPopover isDefaultOpen={isDefaultOpen} isOpen={isOpen} onOpenChange={onOpenChange}>
-      {children}
-    </HeroUIPopover>
+    <TamaguiPopover {...rootProps}>
+      {trigger != null ? <PopoverTrigger {...triggerProps}>{trigger}</PopoverTrigger> : null}
+      <PopoverContent {...contentProps}>
+        {arrow ? <PopoverArrow {...arrowProps} /> : null}
+        {content ?? children}
+      </PopoverContent>
+    </TamaguiPopover>
   );
 }
 
-function PopoverTrigger({ children, className }: PopoverTriggerProps) {
-  return <HeroUIPopover.Trigger className={className}>{children}</HeroUIPopover.Trigger>;
+function PopoverAnchor(props: PopoverAnchorProps) {
+  return <TamaguiPopover.Anchor {...props} />;
 }
 
-function PopoverContent({ accessibilityLabel, children, className }: PopoverContentProps) {
-  return (
-    <HeroUIPopover.Portal>
-      <HeroUIPopover.Overlay />
-      <HeroUIPopover.Content
-        accessibilityLabel={accessibilityLabel}
-        className={className}
-        presentation="popover"
-      >
-        {children}
-      </HeroUIPopover.Content>
-    </HeroUIPopover.Portal>
-  );
+function PopoverArrow(props: PopoverArrowProps) {
+  return <TamaguiPopover.Arrow {...props} />;
 }
 
-function PopoverArrow({ children, className }: PopoverArrowProps) {
-  return <HeroUIPopover.Arrow className={className}>{children}</HeroUIPopover.Arrow>;
+function PopoverTrigger(props: PopoverTriggerProps) {
+  return <TamaguiPopover.Trigger {...props} />;
 }
 
-function PopoverTitle({ children, className }: PopoverTitleProps) {
-  return <HeroUIPopover.Title className={className}>{children}</HeroUIPopover.Title>;
+function PopoverContent(props: PopoverContentProps) {
+  return <TamaguiPopover.Content {...props} />;
+}
+
+function PopoverClose(props: PopoverCloseProps) {
+  return <TamaguiPopover.Close {...props} />;
 }
 
 export const Popover = Object.assign(PopoverRoot, {
-  Root: PopoverRoot,
+  Anchor: PopoverAnchor,
+  Arrow: PopoverArrow,
   Trigger: PopoverTrigger,
   Content: PopoverContent,
-  Arrow: PopoverArrow,
-  Title: PopoverTitle,
+  Close: PopoverClose,
 });

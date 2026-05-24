@@ -1,18 +1,21 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import type { Label as TamaguiLabel, RadioGroup as TamaguiRadioGroup } from "tamagui";
 
-export interface RadioGroupProps {
-  accessibilityLabel?: string;
-  children?: ReactNode;
-  className?: string;
-  onValueChange?: (nextValue: string) => void;
-  value?: string;
-  variant?: "primary" | "secondary";
-}
-
-export interface RadioGroupItemProps {
-  accessibilityLabel?: string;
-  children?: ReactNode;
-  className?: string;
-  isDisabled?: boolean;
+export interface RadioGroupItemData {
+  disabled?: boolean;
+  id?: string;
+  label: ReactNode;
   value: string;
 }
+
+type RadioGroupRootProps = Omit<ComponentProps<typeof TamaguiRadioGroup>, "children" | "items">;
+
+export interface RadioGroupProps extends RadioGroupRootProps {
+  children?: ReactNode;
+  indicatorProps?: RadioGroupIndicatorProps;
+  itemProps?: Omit<RadioGroupItemProps, "value">;
+  items?: RadioGroupItemData[];
+  labelProps?: ComponentProps<typeof TamaguiLabel>;
+}
+export type RadioGroupItemProps = ComponentProps<typeof TamaguiRadioGroup.Item>;
+export type RadioGroupIndicatorProps = ComponentProps<typeof TamaguiRadioGroup.Indicator>;

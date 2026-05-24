@@ -1,34 +1,57 @@
-import { Card as HeroUICard } from "heroui-native";
+import { Paragraph, SizableText, Card as TamaguiCard, YStack } from "tamagui";
 
-import type {
-  CardBodyProps,
-  CardDescriptionProps,
-  CardFooterProps,
-  CardHeaderProps,
-  CardProps,
-  CardTitleProps,
-} from "./types";
+import type { CardBackgroundProps, CardFooterProps, CardHeaderProps, CardProps } from "./types";
 
-export function Card({ children, className }: CardProps) {
-  return <HeroUICard className={className}>{children}</HeroUICard>;
+function CardRoot(props: CardProps) {
+  const {
+    backgroundContent,
+    backgroundProps,
+    children,
+    description,
+    footer,
+    footerProps,
+    header,
+    headerProps,
+    title,
+    ...rootProps
+  } = props;
+  const hasHeader = header != null || title != null || description != null;
+
+  return (
+    <TamaguiCard {...rootProps}>
+      {backgroundContent != null ? (
+        <CardBackground {...backgroundProps}>{backgroundContent}</CardBackground>
+      ) : null}
+      {hasHeader ? (
+        <CardHeader {...headerProps}>
+          {header ?? (
+            <YStack gap="$1">
+              {title != null ? <SizableText fontWeight="600">{title}</SizableText> : null}
+              {description != null ? <Paragraph color="$color10">{description}</Paragraph> : null}
+            </YStack>
+          )}
+        </CardHeader>
+      ) : null}
+      {children}
+      {footer != null ? <CardFooter {...footerProps}>{footer}</CardFooter> : null}
+    </TamaguiCard>
+  );
 }
 
-export function CardHeader({ className }: CardHeaderProps) {
-  return <HeroUICard.Header className={className} />;
+function CardHeader(props: CardHeaderProps) {
+  return <TamaguiCard.Header {...props} />;
 }
 
-export function CardTitle({ children, className }: CardTitleProps) {
-  return <HeroUICard.Title className={className}>{children}</HeroUICard.Title>;
+function CardFooter(props: CardFooterProps) {
+  return <TamaguiCard.Footer {...props} />;
 }
 
-export function CardDescription({ children, className }: CardDescriptionProps) {
-  return <HeroUICard.Description className={className}>{children}</HeroUICard.Description>;
+function CardBackground(props: CardBackgroundProps) {
+  return <TamaguiCard.Background {...props} />;
 }
 
-export function CardBody({ children, className }: CardBodyProps) {
-  return <HeroUICard.Body className={className}>{children}</HeroUICard.Body>;
-}
-
-export function CardFooter({ className }: CardFooterProps) {
-  return <HeroUICard.Footer className={className} />;
-}
+export const Card = Object.assign(CardRoot, {
+  Header: CardHeader,
+  Footer: CardFooter,
+  Background: CardBackground,
+});

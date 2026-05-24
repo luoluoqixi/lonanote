@@ -1,117 +1,63 @@
-import clsx from "clsx";
-import { Tabs as HeroUITabs } from "heroui-native";
-import type { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { Tabs as TamaguiTabs } from "tamagui";
 
 import type {
-  TabsIndicatorProps,
-  TabsListContainerProps,
+  TabsContentProps,
   TabsListProps,
-  TabsPanelProps,
   TabsProps,
-  TabsSeparatorProps,
   TabsTabProps,
+  TabsTriggerProps,
 } from "./types";
 
-function renderTabLabel(label: ReactNode) {
-  if (typeof label === "string" || typeof label === "number") {
-    return <Text>{label}</Text>;
-  }
+function TabsRoot(props: TabsProps) {
+  const { children, contentProps, items, listProps, triggerProps, ...rootProps } = props;
 
-  return label;
-}
-
-export function Tabs({
-  accessibilityLabel,
-  children,
-  variant = "secondary",
-  orientation,
-  className,
-  indicatorClassName,
-  items,
-  listClassName,
-  listContainerClassName,
-  onValueChange,
-  panelClassName,
-  tabClassName,
-  value,
-}: TabsProps) {
-  const isVertical = orientation === "vertical";
-  const content =
-    children ??
-    (items ? (
-      <>
-        <View className={listContainerClassName}>
-          <HeroUITabs.List
-            className={clsx(isVertical ? "flex-col w-full" : undefined, listClassName)}
-          >
+  return (
+    <TamaguiTabs {...rootProps}>
+      {children ??
+        (items == null ? null : (
+          <>
+            <TabsList {...listProps}>
+              {items.map((item) => (
+                <TabsTrigger
+                  {...triggerProps}
+                  disabled={item.disabled ?? triggerProps?.disabled}
+                  key={item.value}
+                  value={item.value}
+                >
+                  {item.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
             {items.map((item) => (
-              <HeroUITabs.Trigger
-                className={clsx(tabClassName, item.tabClassName)}
-                key={item.value}
-                value={item.value}
-              >
-                <HeroUITabs.Indicator className={indicatorClassName} />
-                {renderTabLabel(item.label)}
-              </HeroUITabs.Trigger>
+              <TabsContent {...contentProps} key={item.value} value={item.value}>
+                {item.content}
+              </TabsContent>
             ))}
-          </HeroUITabs.List>
-        </View>
-        {items.map((item) =>
-          item.content === undefined ? null : (
-            <HeroUITabs.Content
-              className={clsx(panelClassName, item.panelClassName)}
-              key={item.value}
-              value={item.value}
-            >
-              {item.content}
-            </HeroUITabs.Content>
-          ),
-        )}
-      </>
-    ) : null);
-
-  return (
-    <HeroUITabs
-      accessibilityLabel={accessibilityLabel}
-      className={className}
-      onValueChange={onValueChange}
-      value={value}
-      variant={variant}
-    >
-      {content}
-    </HeroUITabs>
+          </>
+        ))}
+    </TamaguiTabs>
   );
 }
 
-export function TabsListContainer({ children, className }: TabsListContainerProps) {
-  return <View className={className}>{children}</View>;
+function TabsList(props: TabsListProps) {
+  return <TamaguiTabs.List {...props} />;
 }
 
-export function TabsList({ children, className }: TabsListProps) {
-  return <HeroUITabs.List className={className}>{children}</HeroUITabs.List>;
+function TabsTrigger(props: TabsTriggerProps) {
+  return <TamaguiTabs.Trigger {...props} />;
 }
 
-export function TabsTab({ children, className, value }: TabsTabProps) {
-  return (
-    <HeroUITabs.Trigger className={className} value={value}>
-      {children}
-    </HeroUITabs.Trigger>
-  );
+function TabsTab(props: TabsTabProps) {
+  return <TamaguiTabs.Tab {...props} />;
 }
 
-export function TabsIndicator({ className }: TabsIndicatorProps) {
-  return <HeroUITabs.Indicator className={className} />;
+function TabsContent(props: TabsContentProps) {
+  return <TamaguiTabs.Content {...props} />;
 }
 
-export function TabsSeparator({ betweenValues, className }: TabsSeparatorProps) {
-  return <HeroUITabs.Separator betweenValues={betweenValues} className={className} />;
-}
-
-export function TabsPanel({ children, className, value }: TabsPanelProps) {
-  return (
-    <HeroUITabs.Content className={className} value={value}>
-      {children}
-    </HeroUITabs.Content>
-  );
-}
+export const Tabs = Object.assign(TabsRoot, {
+  List: TabsList,
+  Trigger: TabsTrigger,
+  Tab: TabsTab,
+  Content: TabsContent,
+});

@@ -1,5 +1,4 @@
-import type { InputProps } from "../input";
+import type { ComponentProps } from "react";
+import type { TextArea as TamaguiTextArea } from "tamagui";
 
-export interface TextAreaProps extends Omit<InputProps, "secureTextEntry"> {
-  rows?: number;
-}
+export type TextAreaProps = ComponentProps<typeof TamaguiTextArea>;

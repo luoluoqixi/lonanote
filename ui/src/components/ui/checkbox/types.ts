@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import type { Checkbox as TamaguiCheckbox, Label as TamaguiLabel } from "tamagui";
+import type { CheckedState } from "tamagui";
 
-export interface CheckboxProps {
-  accessibilityLabel?: string;
-  children?: ReactNode;
-  className?: string;
-  isDisabled?: boolean;
-  isInvalid?: boolean;
-  onValueChange?: (nextValue: boolean) => void;
-  value: boolean;
+export interface CheckboxProps extends ComponentProps<typeof TamaguiCheckbox> {
+  indicatorProps?: CheckboxIndicatorProps;
+  label?: ReactNode;
+  labelProps?: ComponentProps<typeof TamaguiLabel>;
 }
+export type CheckboxIndicatorProps = ComponentProps<typeof TamaguiCheckbox.Indicator>;
+export type { CheckedState };

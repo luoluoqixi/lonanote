@@ -1,15 +1,12 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import type { Avatar as TamaguiAvatar } from "tamagui";
 
-export type AvatarColor = "accent" | "default" | "success" | "warning" | "danger";
-export type AvatarSize = "sm" | "md" | "lg";
-export type AvatarVariant = "default" | "soft";
-
-export interface AvatarProps {
+export interface AvatarProps extends ComponentProps<typeof TamaguiAvatar> {
   alt?: string;
-  className?: string;
-  color?: AvatarColor;
   fallback?: ReactNode;
-  size?: AvatarSize;
+  fallbackProps?: AvatarFallbackProps;
+  imageProps?: AvatarImageProps;
   src?: string;
-  variant?: AvatarVariant;
 }
+export type AvatarImageProps = ComponentProps<typeof TamaguiAvatar.Image>;
+export type AvatarFallbackProps = ComponentProps<typeof TamaguiAvatar.Fallback>;

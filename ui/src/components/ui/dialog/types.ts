@@ -1,19 +1,24 @@
-import type { ReactNode } from "react";
-import type { DimensionValue, StyleProp, ViewStyle } from "react-native";
+import type { ComponentProps, ReactNode } from "react";
+import type { Dialog as TamaguiDialog } from "tamagui";
 
-type DialogContentStyle = ViewStyle;
-
-export interface DialogProps {
+export interface DialogProps extends ComponentProps<typeof TamaguiDialog> {
   actions?: ReactNode;
-  accessibilityLabel?: string;
-  children?: ReactNode;
-  contentStyle?: StyleProp<DialogContentStyle>;
-  maxWidth?: DimensionValue | undefined;
-  maxHeight?: DimensionValue | undefined;
-  width?: DimensionValue | undefined;
-  height?: DimensionValue | undefined;
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  title: ReactNode;
-  isCloseOnPressOverlay?: boolean;
+  closeLabel?: ReactNode;
+  closeProps?: DialogCloseProps;
+  contentProps?: DialogContentProps;
+  description?: ReactNode;
+  descriptionProps?: DialogDescriptionProps;
+  overlayProps?: DialogOverlayProps;
+  portalProps?: DialogPortalProps;
+  title?: ReactNode;
+  titleProps?: DialogTitleProps;
+  trigger?: ReactNode;
+  triggerProps?: DialogTriggerProps;
 }
+export type DialogTriggerProps = ComponentProps<typeof TamaguiDialog.Trigger>;
+export type DialogPortalProps = ComponentProps<typeof TamaguiDialog.Portal>;
+export type DialogOverlayProps = ComponentProps<typeof TamaguiDialog.Overlay>;
+export type DialogContentProps = ComponentProps<typeof TamaguiDialog.Content>;
+export type DialogTitleProps = ComponentProps<typeof TamaguiDialog.Title>;
+export type DialogDescriptionProps = ComponentProps<typeof TamaguiDialog.Description>;
+export type DialogCloseProps = ComponentProps<typeof TamaguiDialog.Close>;

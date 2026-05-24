@@ -1,57 +1,45 @@
-import { Slider as HeroUISlider } from "heroui-native";
+import { Slider as TamaguiSlider } from "tamagui";
 
-import type { SliderProps } from "./types";
+import type {
+  SliderProps,
+  SliderThumbProps,
+  SliderTrackActiveProps,
+  SliderTrackProps,
+} from "./types";
 
-function getThumbCount(value?: SliderProps["value"], defaultValue?: SliderProps["defaultValue"]) {
-  if (Array.isArray(value)) {
-    return value.length;
-  }
-
-  if (Array.isArray(defaultValue)) {
-    return defaultValue.length;
-  }
-
-  return 1;
-}
-
-export function Slider({
-  accessibilityLabel,
-  children,
-  className,
-  defaultValue,
-  isDisabled,
-  maxValue,
-  minValue,
-  onValueChange,
-  onValueChangeEnd,
-  orientation,
-  step,
-  value,
-}: SliderProps) {
-  const thumbCount = getThumbCount(value, defaultValue);
+function SliderRoot(props: SliderProps) {
+  const { children, thumbCount, thumbProps, trackActiveProps, trackProps, ...rootProps } = props;
+  const resolvedThumbCount =
+    thumbCount ?? rootProps.value?.length ?? rootProps.defaultValue?.length ?? 1;
 
   return (
-    <HeroUISlider
-      accessibilityLabel={accessibilityLabel}
-      className={className}
-      defaultValue={defaultValue}
-      isDisabled={isDisabled}
-      maxValue={maxValue}
-      minValue={minValue}
-      onChange={onValueChange}
-      onChangeEnd={onValueChangeEnd}
-      orientation={orientation}
-      step={step}
-      value={value}
-    >
+    <TamaguiSlider {...rootProps}>
       {children ?? (
-        <HeroUISlider.Track>
-          <HeroUISlider.Fill />
-          {Array.from({ length: thumbCount }, (_, index) => (
-            <HeroUISlider.Thumb key={index} />
+        <SliderTrack {...trackProps}>
+          <SliderTrackActive {...trackActiveProps} />
+          {Array.from({ length: resolvedThumbCount }).map((_, index) => (
+            <SliderThumb {...thumbProps} index={index} key={index} />
           ))}
-        </HeroUISlider.Track>
+        </SliderTrack>
       )}
-    </HeroUISlider>
+    </TamaguiSlider>
   );
 }
+
+function SliderTrack(props: SliderTrackProps) {
+  return <TamaguiSlider.Track {...props} />;
+}
+
+function SliderTrackActive(props: SliderTrackActiveProps) {
+  return <TamaguiSlider.TrackActive {...props} />;
+}
+
+function SliderThumb(props: SliderThumbProps) {
+  return <TamaguiSlider.Thumb {...props} />;
+}
+
+export const Slider = Object.assign(SliderRoot, {
+  Track: SliderTrack,
+  TrackActive: SliderTrackActive,
+  Thumb: SliderThumb,
+});

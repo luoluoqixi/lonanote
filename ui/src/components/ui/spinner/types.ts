@@ -1,7 +1,4 @@
-export type SpinnerColor = "primary" | "secondary" | "success" | "warning" | "danger";
-export type SpinnerSize = "sm" | "md" | "lg";
+import type { ComponentProps } from "react";
+import type { Spinner as TamaguiSpinner } from "tamagui";
 
-export interface SpinnerProps {
-  className?: string;
-  size?: SpinnerSize;
-}
+export type SpinnerProps = ComponentProps<typeof TamaguiSpinner>;

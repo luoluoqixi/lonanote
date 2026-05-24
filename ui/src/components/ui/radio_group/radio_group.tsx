@@ -1,48 +1,43 @@
-import { RadioGroup as HeroUIRadioGroup } from "heroui-native";
+import { Label as TamaguiLabel, RadioGroup as TamaguiRadioGroup, XStack, YStack } from "tamagui";
 
-import type { RadioGroupItemProps, RadioGroupProps } from "./types";
+import type { RadioGroupIndicatorProps, RadioGroupItemProps, RadioGroupProps } from "./types";
 
-function RadioGroupRoot({
-  accessibilityLabel,
-  children,
-  className,
-  onValueChange,
-  value,
-  variant,
-}: RadioGroupProps) {
+function RadioGroupRoot(props: RadioGroupProps) {
+  const { children, indicatorProps, itemProps, items, labelProps, ...rootProps } = props;
+
   return (
-    <HeroUIRadioGroup
-      accessibilityLabel={accessibilityLabel}
-      className={className}
-      onValueChange={onValueChange ?? (() => {})}
-      value={value}
-      variant={variant}
-    >
-      {children}
-    </HeroUIRadioGroup>
+    <TamaguiRadioGroup {...rootProps}>
+      {children ??
+        (items == null ? null : (
+          <YStack gap="$2">
+            {items.map((item) => (
+              <XStack gap="$2" key={item.value} style={{ alignItems: "center" }}>
+                <RadioGroupItem
+                  {...itemProps}
+                  disabled={item.disabled ?? itemProps?.disabled}
+                  id={item.id ?? itemProps?.id}
+                  value={item.value}
+                >
+                  <RadioGroupIndicator {...indicatorProps} />
+                </RadioGroupItem>
+                <TamaguiLabel {...labelProps}>{item.label}</TamaguiLabel>
+              </XStack>
+            ))}
+          </YStack>
+        ))}
+    </TamaguiRadioGroup>
   );
 }
 
-function RadioGroupItem({
-  accessibilityLabel,
-  children,
-  className,
-  isDisabled,
-  value,
-}: RadioGroupItemProps) {
-  return (
-    <HeroUIRadioGroup.Item
-      accessibilityLabel={accessibilityLabel}
-      className={className}
-      isDisabled={isDisabled}
-      value={value}
-    >
-      {children}
-    </HeroUIRadioGroup.Item>
-  );
+function RadioGroupItem(props: RadioGroupItemProps) {
+  return <TamaguiRadioGroup.Item {...props} />;
+}
+
+function RadioGroupIndicator(props: RadioGroupIndicatorProps) {
+  return <TamaguiRadioGroup.Indicator {...props} />;
 }
 
 export const RadioGroup = Object.assign(RadioGroupRoot, {
-  Root: RadioGroupRoot,
   Item: RadioGroupItem,
+  Indicator: RadioGroupIndicator,
 });

@@ -1,26 +1,31 @@
-import { Checkbox as HeroUICheckbox } from "heroui-native";
+import { Checkbox as TamaguiCheckbox, Label as TamaguiLabel, XStack } from "tamagui";
 
-import type { CheckboxProps } from "./types";
+import type { CheckboxIndicatorProps, CheckboxProps } from "./types";
 
-export function Checkbox({
-  accessibilityLabel,
-  children,
-  className,
-  isDisabled,
-  isInvalid,
-  onValueChange,
-  value,
-}: CheckboxProps) {
+function CheckboxRoot(props: CheckboxProps) {
+  const { children, indicatorProps, label, labelProps, ...rootProps } = props;
+  const checkbox = (
+    <TamaguiCheckbox {...rootProps}>
+      {children ?? <CheckboxIndicator {...indicatorProps} />}
+    </TamaguiCheckbox>
+  );
+
+  if (label == null) {
+    return checkbox;
+  }
+
   return (
-    <HeroUICheckbox
-      accessibilityLabel={accessibilityLabel}
-      className={className}
-      isDisabled={isDisabled}
-      isInvalid={isInvalid}
-      isSelected={value}
-      onSelectedChange={onValueChange}
-    >
-      {children}
-    </HeroUICheckbox>
+    <XStack gap="$2" style={{ alignItems: "center" }}>
+      {checkbox}
+      <TamaguiLabel {...labelProps}>{label}</TamaguiLabel>
+    </XStack>
   );
 }
+
+function CheckboxIndicator(props: CheckboxIndicatorProps) {
+  return <TamaguiCheckbox.Indicator {...props} />;
+}
+
+export const Checkbox = Object.assign(CheckboxRoot, {
+  Indicator: CheckboxIndicator,
+});

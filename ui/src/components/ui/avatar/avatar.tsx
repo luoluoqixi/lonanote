@@ -1,20 +1,31 @@
-import { Avatar as HeroUIAvatar } from "heroui-native";
+import { Avatar as TamaguiAvatar } from "tamagui";
 
-import type { AvatarProps } from "./types";
+import type { AvatarFallbackProps, AvatarImageProps, AvatarProps } from "./types";
 
-export function Avatar({
-  alt,
-  className,
-  color,
-  fallback,
-  size = "md",
-  src,
-  variant,
-}: AvatarProps) {
+function AvatarRoot(props: AvatarProps) {
+  const { alt, children, fallback, fallbackProps, imageProps, src, ...rootProps } = props;
+
   return (
-    <HeroUIAvatar alt={alt ?? ""} className={className} color={color} size={size} variant={variant}>
-      {src ? <HeroUIAvatar.Image accessibilityLabel={alt} source={{ uri: src }} /> : null}
-      {fallback != null ? <HeroUIAvatar.Fallback>{fallback}</HeroUIAvatar.Fallback> : null}
-    </HeroUIAvatar>
+    <TamaguiAvatar {...rootProps}>
+      {children ?? (
+        <>
+          {src ? <AvatarImage {...imageProps} accessibilityLabel={alt} src={src} /> : null}
+          {fallback != null ? <AvatarFallback {...fallbackProps}>{fallback}</AvatarFallback> : null}
+        </>
+      )}
+    </TamaguiAvatar>
   );
 }
+
+function AvatarImage(props: AvatarImageProps) {
+  return <TamaguiAvatar.Image {...props} />;
+}
+
+function AvatarFallback(props: AvatarFallbackProps) {
+  return <TamaguiAvatar.Fallback {...props} />;
+}
+
+export const Avatar = Object.assign(AvatarRoot, {
+  Image: AvatarImage,
+  Fallback: AvatarFallback,
+});

@@ -1,7 +1,7 @@
-import { Separator as HeroUISeparator } from "heroui-native";
+import { Separator as TamaguiSeparator } from "tamagui";
 
 import type { SeparatorProps } from "./types";
 
-export function Separator({ className, orientation = "horizontal" }: SeparatorProps) {
-  return <HeroUISeparator className={className} orientation={orientation} />;
+export function Separator(props: SeparatorProps) {
+  return <TamaguiSeparator {...props} />;
 }

@@ -1,59 +1,23 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import type { Tabs as TamaguiTabs } from "tamagui";
 
-export type TabsOrientation = "horizontal" | "vertical";
-export type TabsVariant = "line" | "underline" | "solid";
-
-export interface TabsItem {
-  content?: ReactNode;
+export interface TabsItemData {
+  content: ReactNode;
+  disabled?: boolean;
   label: ReactNode;
-  panelClassName?: string;
-  tabClassName?: string;
   value: string;
 }
 
-export interface TabsProps {
-  accessibilityLabel?: string;
+type TabsRootProps = Omit<ComponentProps<typeof TamaguiTabs>, "children" | "items">;
+
+export interface TabsProps extends TabsRootProps {
   children?: ReactNode;
-  variant?: "secondary" | "primary";
-  orientation?: TabsOrientation;
-  className?: string;
-  indicatorClassName?: string;
-  items?: TabsItem[];
-  listClassName?: string;
-  listContainerClassName?: string;
-  onValueChange: (nextValue: string) => void;
-  panelClassName?: string;
-  tabClassName?: string;
-  value: string;
+  contentProps?: Omit<TabsContentProps, "value">;
+  items?: TabsItemData[];
+  listProps?: TabsListProps;
+  triggerProps?: Omit<TabsTriggerProps, "value">;
 }
-
-export interface TabsListContainerProps {
-  children?: ReactNode;
-  className?: string;
-}
-
-export interface TabsListProps {
-  children?: ReactNode;
-  className?: string;
-}
-
-export interface TabsTabProps {
-  children?: ReactNode;
-  className?: string;
-  value: string;
-}
-
-export interface TabsIndicatorProps {
-  className?: string;
-}
-
-export interface TabsSeparatorProps {
-  betweenValues: string[];
-  className?: string;
-}
-
-export interface TabsPanelProps {
-  children?: ReactNode;
-  className?: string;
-  value: string;
-}
+export type TabsListProps = ComponentProps<typeof TamaguiTabs.List>;
+export type TabsTriggerProps = ComponentProps<typeof TamaguiTabs.Trigger>;
+export type TabsTabProps = ComponentProps<typeof TamaguiTabs.Tab>;
+export type TabsContentProps = ComponentProps<typeof TamaguiTabs.Content>;
