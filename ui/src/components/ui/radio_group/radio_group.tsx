@@ -1,5 +1,7 @@
 import { Label as TamaguiLabel, RadioGroup as TamaguiRadioGroup, XStack, YStack } from "tamagui";
 
+import { resolveAriaLabel } from "@/components/ui/utils";
+
 import type { RadioGroupIndicatorProps, RadioGroupItemProps, RadioGroupProps } from "./types";
 
 function RadioGroupRoot(props: RadioGroupProps) {
@@ -14,6 +16,10 @@ function RadioGroupRoot(props: RadioGroupProps) {
               <XStack gap="$2" key={item.value} style={{ alignItems: "center" }}>
                 <RadioGroupItem
                   {...itemProps}
+                  aria-label={resolveAriaLabel(
+                    item["aria-label"] ?? itemProps?.["aria-label"],
+                    item.label,
+                  )}
                   disabled={item.disabled ?? itemProps?.disabled}
                   id={item.id ?? itemProps?.id}
                   value={item.value}

@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { Tabs } from "@/components/ui";
 
@@ -25,9 +25,8 @@ function renderSettingsTab(tab: SettingsTabKey) {
 
 function SettingsTabScrollPane({ children }: { children: ReactNode }) {
   return (
-    <View className="flex-1 min-h-0">
+    <View style={styles.scrollPane}>
       <ScrollView
-        className="flex-1 min-h-0"
         contentContainerStyle={{ paddingBottom: 12 }}
         showsVerticalScrollIndicator
         style={{ flex: 1, minHeight: 0 }}
@@ -50,24 +49,42 @@ export function SettingsTabsPanel({ initialTab = "global" }: SettingsTabsPanelPr
   }, [initialTab]);
 
   return (
-    <View className="flex-1 min-h-0">
+    <View style={styles.root}>
       <Tabs
-        accessibilityLabel="设置面板导航"
-        className="flex-1 min-h-0 flex-row gap-4"
-        indicatorClassName="!hidden"
+        aria-label="设置面板导航"
         onValueChange={(nextValue) => setSelectedTab(nextValue as SettingsTabKey)}
         items={settingsTabs.map((tab) => ({
           content: <SettingsTabScrollPane>{renderSettingsTab(tab.key)}</SettingsTabScrollPane>,
           label: tab.label,
           value: tab.key,
         }))}
-        listClassName="border-0 w-full flex-col gap-0 bg-transparent"
-        listContainerClassName="w-48 bg-overlay"
-        tabClassName="h-10 border-b-2 border-transparent hover:bg-[var(--default-hover)] hover:text-foreground data-[selected=true]:border-b-[var(--accent)] data-[selected=true]:text-foreground"
-        panelClassName="flex flex-1 min-h-0 overflow-hidden bg-overlay p-0"
+        listProps={{ style: styles.list }}
+        contentProps={{ style: styles.content }}
         value={selectedTab}
         orientation="vertical"
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    flex: 1,
+    minHeight: 0,
+    overflow: "hidden",
+  },
+  list: {
+    alignSelf: "stretch",
+    flexDirection: "column",
+    gap: 4,
+    width: 192,
+  },
+  root: {
+    flex: 1,
+    minHeight: 0,
+  },
+  scrollPane: {
+    flex: 1,
+    minHeight: 0,
+  },
+});

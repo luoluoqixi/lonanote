@@ -23,7 +23,7 @@ const loadingFunction = (title: TitleToast, options?: ToastShowOptions) => {
 const toastFunction = (title: TitleToast, options?: ToastShowOptions) => {
   return messageFunction(title, options);
 };
-const customFunction = <ToastData>(
+const customFunction = (
   jsx: (id: string | number) => React.ReactElement,
   options?: ToastShowOptions,
 ) => {

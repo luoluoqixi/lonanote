@@ -2,14 +2,17 @@ import type { ComponentProps, ReactNode } from "react";
 import type { AlertDialog as TamaguiAlertDialog } from "tamagui";
 
 export interface AlertDialogProps extends ComponentProps<typeof TamaguiAlertDialog> {
+  actionAriaLabel?: string;
   actionLabel?: ReactNode;
   actionProps?: AlertDialogActionProps;
   actions?: ReactNode;
+  cancelAriaLabel?: string;
   cancelLabel?: ReactNode;
   cancelProps?: AlertDialogCancelProps;
   contentProps?: AlertDialogContentProps;
   description?: ReactNode;
   descriptionProps?: AlertDialogDescriptionProps;
+  destructiveAriaLabel?: string;
   destructiveLabel?: ReactNode;
   destructiveProps?: AlertDialogDestructiveProps;
   overlayProps?: AlertDialogOverlayProps;

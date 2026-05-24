@@ -26,12 +26,11 @@ export function WideScreenHome() {
     <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
       <TitleBar />
       <View style={{ flex: 1 }}>
-        <SplitLayout vertical separator={false}>
+        <SplitLayout vertical>
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
             <SplitLayout
               ref={contentLayoutRef}
               proportionalLayout={false}
-              separator={false}
               storageFallbackState={DEFAULT_LAYOUT_STATE}
               storageKey={LAYOUT_STORAGE_KEY}
               mobileHandlePositions={{ 1: "right", 2: "left" }}

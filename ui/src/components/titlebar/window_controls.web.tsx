@@ -1,16 +1,192 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { os } from "@/api/common";
 import type { OSType } from "@/api/common";
 
 let cachedOs: OSType | null = null;
 
+type WindowButtonKind = "close" | "default";
+type ButtonInteractionState = "active" | "hover" | "idle";
+type TitlebarStyle = CSSProperties & {
+  WebkitAppRegion?: "drag" | "no-drag";
+  appRegion?: "drag" | "no-drag";
+};
+
 function getOsType(): OSType {
   if (cachedOs === null) {
     cachedOs = os();
   }
   return cachedOs;
+}
+
+const noDragStyle: TitlebarStyle = {
+  WebkitAppRegion: "no-drag",
+  appRegion: "no-drag",
+};
+
+const windowsControlsStyle: CSSProperties = {
+  backgroundColor: "transparent",
+  display: "flex",
+  height: "100%",
+  position: "absolute",
+  right: 0,
+  top: 0,
+};
+
+const windowsControlsHoverDisabledStyle: CSSProperties = {
+  pointerEvents: "none",
+};
+
+const windowsButtonBaseStyle: TitlebarStyle = {
+  ...noDragStyle,
+  alignItems: "center",
+  backgroundColor: "transparent",
+  border: "none",
+  color: "color-mix(in srgb, var(--foreground) 88%, transparent)",
+  cursor: "default",
+  display: "flex",
+  height: "100%",
+  justifyContent: "center",
+  outline: "none",
+  padding: 0,
+  transition: "background-color 0.1s ease, color 0.1s ease",
+  width: 46,
+};
+
+const macControlsStyle: TitlebarStyle = {
+  ...noDragStyle,
+  alignItems: "center",
+  display: "flex",
+  gap: 8,
+  height: "100%",
+  left: 0,
+  padding: "0 10px",
+  position: "absolute",
+  top: 0,
+};
+
+const macDotBaseStyle: TitlebarStyle = {
+  ...noDragStyle,
+  alignItems: "center",
+  border: "none",
+  borderRadius: "50%",
+  color: "rgba(0, 0, 0, 0.6)",
+  cursor: "default",
+  display: "flex",
+  height: 14,
+  justifyContent: "center",
+  outline: "none",
+  padding: 0,
+  transition: "filter 0.1s ease",
+  width: 14,
+};
+
+function getWindowsButtonStyle(
+  kind: WindowButtonKind,
+  interaction: ButtonInteractionState,
+  hoverDisabled: boolean,
+): TitlebarStyle {
+  if (hoverDisabled || interaction === "idle") {
+    return windowsButtonBaseStyle;
+  }
+
+  if (kind === "close") {
+    return {
+      ...windowsButtonBaseStyle,
+      backgroundColor: interaction === "active" ? "#f1717c" : "#e81123",
+      color: "#ffffff",
+    };
+  }
+
+  return {
+    ...windowsButtonBaseStyle,
+    backgroundColor: interaction === "active" ? "rgba(0, 0, 0, 0.18)" : "rgba(0, 0, 0, 0.1)",
+    color: "var(--foreground)",
+  };
+}
+
+function WindowsButton({
+  children,
+  hoverDisabled,
+  kind = "default",
+  onClick,
+  title,
+}: {
+  children: ReactNode;
+  hoverDisabled: boolean;
+  kind?: WindowButtonKind;
+  onClick: () => void;
+  title: string;
+}) {
+  const [interaction, setInteraction] = useState<ButtonInteractionState>("idle");
+
+  useEffect(() => {
+    if (hoverDisabled) {
+      setInteraction("idle");
+    }
+  }, [hoverDisabled]);
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseDown={() => {
+        if (!hoverDisabled) setInteraction("active");
+      }}
+      onMouseEnter={() => {
+        if (!hoverDisabled) setInteraction("hover");
+      }}
+      onMouseLeave={() => setInteraction("idle")}
+      onMouseUp={() => {
+        if (!hoverDisabled) setInteraction("hover");
+      }}
+      style={getWindowsButtonStyle(kind, interaction, hoverDisabled)}
+      title={title}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+function MacDotButton({
+  backgroundColor,
+  children,
+  onClick,
+  title,
+}: {
+  backgroundColor: string;
+  children: ReactNode;
+  onClick: () => void;
+  title: string;
+}) {
+  const [active, setActive] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseDown={() => setActive(true)}
+      onMouseLeave={() => setActive(false)}
+      onMouseUp={() => setActive(false)}
+      style={{
+        ...macDotBaseStyle,
+        backgroundColor,
+        filter: active ? "brightness(0.85)" : undefined,
+      }}
+      title={title}
+      type="button"
+    >
+      {children}
+    </button>
+  );
 }
 
 const MinimizeIcon = () => (
@@ -166,20 +342,31 @@ function WindowsControls() {
   }, [appWindow, markResizeTransition, updateMaximized]);
 
   return (
-    <div className={`wc-win${isResizeTransitioning ? " wc-win-hover-disabled" : ""}`}>
-      <button className="wc-btn wc-btn-min" onClick={delayedMinimize} title="最小化">
+    <div
+      style={
+        isResizeTransitioning
+          ? { ...windowsControlsStyle, ...windowsControlsHoverDisabledStyle }
+          : windowsControlsStyle
+      }
+    >
+      <WindowsButton hoverDisabled={isResizeTransitioning} onClick={delayedMinimize} title="最小化">
         <MinimizeIcon />
-      </button>
-      <button
-        className="wc-btn wc-btn-max"
+      </WindowsButton>
+      <WindowsButton
+        hoverDisabled={isResizeTransitioning}
         onClick={delayedMaximize}
         title={isMaximized ? "还原" : "最大化"}
       >
         {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
-      </button>
-      <button className="wc-btn wc-btn-close" onClick={delayedClose} title="关闭">
+      </WindowsButton>
+      <WindowsButton
+        hoverDisabled={isResizeTransitioning}
+        kind="close"
+        onClick={delayedClose}
+        title="关闭"
+      >
         <CloseIcon />
-      </button>
+      </WindowsButton>
     </div>
   );
 }
@@ -203,18 +390,18 @@ function MacOSControls() {
 
   return (
     <div
-      className="wc-mac"
+      style={macControlsStyle}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
-      <button className="wc-dot wc-dot-close" onClick={() => appWindow.close()} title="关闭">
+      <MacDotButton backgroundColor="#ff544d" onClick={() => appWindow.close()} title="关闭">
         {hovering && <MacCloseIcon />}
-      </button>
-      <button className="wc-dot wc-dot-min" onClick={() => appWindow.minimize()} title="最小化">
+      </MacDotButton>
+      <MacDotButton backgroundColor="#ffbd2e" onClick={() => appWindow.minimize()} title="最小化">
         {hovering && <MacMinIcon />}
-      </button>
-      <button
-        className="wc-dot wc-dot-full"
+      </MacDotButton>
+      <MacDotButton
+        backgroundColor="#28c93f"
         onClick={async () => {
           if (altKey) {
             appWindow.toggleMaximize();
@@ -226,7 +413,7 @@ function MacOSControls() {
         title={altKey ? "最大化" : "全屏"}
       >
         {hovering && (altKey ? <MacExpandIcon /> : <MacFullIcon />)}
-      </button>
+      </MacDotButton>
     </div>
   );
 }

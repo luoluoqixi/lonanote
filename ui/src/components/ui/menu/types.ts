@@ -2,6 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Menu as TamaguiMenu } from "tamagui";
 
 export interface MenuItemData {
+  "aria-label"?: string;
   disabled?: boolean;
   indicator?: ReactNode;
   label?: ReactNode;

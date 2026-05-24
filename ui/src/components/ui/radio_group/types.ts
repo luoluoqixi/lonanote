@@ -2,6 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Label as TamaguiLabel, RadioGroup as TamaguiRadioGroup } from "tamagui";
 
 export interface RadioGroupItemData {
+  "aria-label"?: string;
   disabled?: boolean;
   id?: string;
   label: ReactNode;

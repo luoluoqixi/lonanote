@@ -1,5 +1,7 @@
 import { Menu as TamaguiMenu } from "tamagui";
 
+import { resolveAriaLabel } from "@/components/ui/utils";
+
 import type {
   MenuArrowProps,
   MenuCheckboxItemProps,
@@ -47,6 +49,10 @@ function MenuRoot(props: MenuProps) {
             ) : (
               <MenuItem
                 {...itemProps}
+                aria-label={resolveAriaLabel(
+                  item["aria-label"] ?? itemProps?.["aria-label"],
+                  item.label ?? item.value,
+                )}
                 disabled={item.disabled ?? itemProps?.disabled}
                 key={item.value}
                 onPress={item.onPress}

@@ -2,6 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Tabs as TamaguiTabs } from "tamagui";
 
 export interface TabsItemData {
+  "aria-label"?: string;
   content: ReactNode;
   disabled?: boolean;
   label: ReactNode;
@@ -11,6 +12,7 @@ export interface TabsItemData {
 type TabsRootProps = Omit<ComponentProps<typeof TamaguiTabs>, "children" | "items">;
 
 export interface TabsProps extends TabsRootProps {
+  "aria-label"?: string;
   children?: ReactNode;
   contentProps?: Omit<TabsContentProps, "value">;
   items?: TabsItemData[];

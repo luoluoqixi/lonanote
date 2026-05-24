@@ -1,1 +1,1 @@
-// import "../tamagui.generated.css";
+import "../tamagui.generated.css";

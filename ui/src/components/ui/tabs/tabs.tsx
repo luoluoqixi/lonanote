@@ -1,4 +1,7 @@
-import { Tabs as TamaguiTabs } from "tamagui";
+import { Children, type ReactNode, isValidElement } from "react";
+import { SizableText, Tabs as TamaguiTabs } from "tamagui";
+
+import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type {
   TabsContentProps,
@@ -8,18 +11,51 @@ import type {
   TabsTriggerProps,
 } from "./types";
 
+function normalizeTriggerChildren(children: ReactNode) {
+  return Children.map(children, (child) => {
+    if (typeof child === "string" || typeof child === "number") {
+      return <SizableText>{child}</SizableText>;
+    }
+
+    if (isValidElement(child)) {
+      return child;
+    }
+
+    return child;
+  });
+}
+
 function TabsRoot(props: TabsProps) {
-  const { children, contentProps, items, listProps, triggerProps, ...rootProps } = props;
+  const {
+    "aria-label": ariaLabel,
+    children,
+    contentProps,
+    items,
+    listProps,
+    triggerProps,
+    ...rootProps
+  } = props;
+  const resolvedListProps =
+    ariaLabel != null
+      ? ({
+          ...listProps,
+          "aria-label": listProps?.["aria-label"] ?? ariaLabel,
+        } as TabsListProps)
+      : listProps;
 
   return (
     <TamaguiTabs {...rootProps}>
       {children ??
         (items == null ? null : (
           <>
-            <TabsList {...listProps}>
+            <TabsList {...resolvedListProps}>
               {items.map((item) => (
                 <TabsTrigger
                   {...triggerProps}
+                  aria-label={resolveAriaLabel(
+                    item["aria-label"] ?? triggerProps?.["aria-label"],
+                    item.label,
+                  )}
                   disabled={item.disabled ?? triggerProps?.disabled}
                   key={item.value}
                   value={item.value}
@@ -44,7 +80,13 @@ function TabsList(props: TabsListProps) {
 }
 
 function TabsTrigger(props: TabsTriggerProps) {
-  return <TamaguiTabs.Trigger {...props} />;
+  const { children, ...triggerProps } = props;
+
+  return (
+    <TamaguiTabs.Trigger {...triggerProps}>
+      {normalizeTriggerChildren(children)}
+    </TamaguiTabs.Trigger>
+  );
 }
 
 function TabsTab(props: TabsTabProps) {

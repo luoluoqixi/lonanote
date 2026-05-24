@@ -1,13 +1,21 @@
 import type { ComponentProps, ReactNode } from "react";
+import type { ViewStyle } from "react-native";
 import type { Dialog as TamaguiDialog } from "tamagui";
 
 export interface DialogProps extends ComponentProps<typeof TamaguiDialog> {
   actions?: ReactNode;
-  closeLabel?: ReactNode;
+  closeAriaLabel?: string;
+  closeBtn?: boolean;
   closeProps?: DialogCloseProps;
   contentProps?: DialogContentProps;
   description?: ReactNode;
   descriptionProps?: DialogDescriptionProps;
+  width?: ViewStyle["width"];
+  height?: ViewStyle["height"];
+  minWidth?: ViewStyle["minWidth"];
+  minHeight?: ViewStyle["minHeight"];
+  maxWidth?: ViewStyle["maxWidth"];
+  maxHeight?: ViewStyle["maxHeight"];
   overlayProps?: DialogOverlayProps;
   portalProps?: DialogPortalProps;
   title?: ReactNode;

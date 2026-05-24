@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import React, {
   forwardRef,
   useCallback,
@@ -11,6 +10,7 @@ import React, {
 import {
   type LayoutChangeEvent,
   PanResponder,
+  PixelRatio,
   type StyleProp,
   StyleSheet,
   View,
@@ -18,6 +18,7 @@ import {
 } from "react-native";
 
 import { isMobile, isWeb } from "@/api/common/platform";
+import { useSeparatorColor } from "@/hooks/ui/use_separator_color";
 
 import { LayoutService } from "./layout_service";
 import { PaneView } from "./pane_view";
@@ -177,9 +178,11 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
     const webDraggingRef = useRef(false);
     const [activeSashIndex, setActiveSashIndex] = useState<number | null>(null);
     const [dragging, setDragging] = useState(false);
+    const [hoveredSashIndex, setHoveredSashIndex] = useState<number | null>(null);
     const [layoutSize, setLayoutSize] = useState(0);
     const [sizes, setSizes] = useState<number[]>([]);
     const [visible, setVisible] = useState<boolean[]>([]);
+    const separatorColor = useSeparatorColor();
     const {
       ready: storageReady,
       state: storedState,
@@ -626,17 +629,11 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
 
     return (
       <View
-        className={clsx(
-          "split-layout",
-          vertical ? "split-layout--vertical" : "split-layout--horizontal",
-          separator && "split-layout--separator",
-          dragging && "split-layout--dragging",
-          className,
-        )}
+        className={className}
         onLayout={handleLayout}
-        style={[styles.root, style]}
+        style={[styles.root, styles.webRoot, style]}
       >
-        <View className="split-layout__container" style={styles.container}>
+        <View style={styles.container}>
           {panes.map((pane, index) => {
             const paneSize = sizes[index] ?? 0;
             const paneOffset = offsets[index] ?? 0;
@@ -647,11 +644,8 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
             return (
               <View
                 key={pane.key}
-                className={clsx(
-                  "split-layout__pane",
-                  !visible[index] && "split-layout__pane--hidden",
-                  pane.className,
-                )}
+                className={pane.className}
+                pointerEvents={visible[index] ? undefined : "none"}
                 style={[styles.pane, paneStyle, pane.style] as StyleProp<ViewStyle>}
               >
                 {pane.children}
@@ -659,18 +653,22 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
             );
           })}
           {panes.slice(0, -1).map((pane, index) => {
-            if (!canRenderSash(panes, index)) return null;
+            const canDragSash = canRenderSash(panes, index);
+            if (!canDragSash && !separator) return null;
 
             const sashSize = IS_MOBILE ? MOBILE_SASH_SIZE : DEFAULT_SASH_SIZE;
             const showMobileHandle =
-              IS_MOBILE && (visible[index] ?? true) && (visible[index + 1] ?? true);
+              canDragSash && IS_MOBILE && (visible[index] ?? true) && (visible[index + 1] ?? true);
             const mobileHandleStyle = getMobileHandleStyle(
               vertical,
               getMobileHandlePositionForSash(index, mobileHandlePosition, mobileHandlePositions),
               getMobileHandleOffsetForSash(index, mobileHandleOffset, mobileHandleOffsets),
             );
 
-            const sashOffset = (offsets[index] ?? 0) + (sizes[index] ?? 0) - sashSize / 2;
+            const sashBoundary = PixelRatio.roundToNearestPixel(
+              (offsets[index] ?? 0) + (sizes[index] ?? 0),
+            );
+            const sashOffset = sashBoundary - sashSize / 2;
             const sashStyle = vertical
               ? ({
                   top: sashOffset,
@@ -684,30 +682,57 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
                   top: 0,
                   bottom: 0,
                 } satisfies ViewStyle);
+            const sashActive = activeSashIndex === index;
+            const sashHovered = hoveredSashIndex === index;
+            const sashLineActive = canDragSash && (sashActive || sashHovered);
 
             return (
               <View
                 key={`${pane.key}-sash`}
-                className={clsx(
-                  "split-layout__sash",
-                  activeSashIndex === index && "split-layout__sash--active",
-                  vertical ? "split-layout__sash--horizontal" : "split-layout__sash--vertical",
-                )}
-                style={[styles.sash, sashStyle]}
-                {...(IS_WEB
+                pointerEvents={canDragSash ? undefined : "none"}
+                style={[
+                  styles.sash,
+                  canDragSash && (vertical ? styles.sashHorizontal : styles.sashVertical),
+                  sashStyle,
+                ]}
+                {...(canDragSash && IS_WEB
                   ? ({
                       onPointerDown: startWebSashDrag(index),
+                      onPointerEnter: () => setHoveredSashIndex(index),
+                      onPointerLeave: () => {
+                        setHoveredSashIndex((current) => (current === index ? null : current));
+                      },
                     } as any)
-                  : sashPanResponders[index]?.panHandlers)}
+                  : canDragSash
+                    ? sashPanResponders[index]?.panHandlers
+                    : undefined)}
               >
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.sashLine,
+                    vertical ? styles.sashLineHorizontal : styles.sashLineVertical,
+                    separator &&
+                      (vertical
+                        ? { backgroundColor: separatorColor }
+                        : {
+                            backgroundColor: "transparent",
+                            borderLeftColor: separatorColor,
+                            borderLeftWidth: 1,
+                          }),
+                    sashLineActive && styles.sashLineActive,
+                    vertical && sashLineActive && styles.sashLineHorizontalActive,
+                    !vertical && sashLineActive && styles.sashLineVerticalActive,
+                  ]}
+                />
                 {showMobileHandle ? (
                   <View
                     pointerEvents="none"
-                    className={clsx(
-                      "bg-foreground/12",
-                      activeSashIndex === index && "bg-accent/70",
-                    )}
-                    style={[styles.mobileSashHandle, mobileHandleStyle]}
+                    style={[
+                      styles.mobileSashHandle,
+                      sashActive ? styles.mobileSashHandleActive : styles.mobileSashHandleIdle,
+                      mobileHandleStyle,
+                    ]}
                   />
                 ) : null}
               </View>
@@ -861,16 +886,62 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   root: {
+    backgroundColor: "var(--background)",
     height: "100%",
     overflow: "hidden",
     position: "relative",
     width: "100%",
   },
+  webRoot: {
+    touchAction: "none",
+    userSelect: "none",
+  } as never,
   sash: {
+    backgroundColor: "transparent",
     position: "absolute",
     zIndex: 20,
   },
+  sashHorizontal: {
+    cursor: "ns-resize",
+  } as never,
+  sashLine: {
+    backgroundColor: "transparent",
+    position: "absolute",
+  },
+  sashLineActive: {
+    backgroundColor: "var(--color-accent-hover, var(--accent))",
+  },
+  sashLineHorizontal: {
+    height: 1,
+    left: 0,
+    right: 0,
+    top: 4,
+  },
+  sashLineHorizontalActive: {
+    height: 3,
+    top: 2,
+  },
+  sashLineVertical: {
+    bottom: 0,
+    borderLeftWidth: 0,
+    left: 4,
+    top: 0,
+    width: 0,
+  },
+  sashLineVerticalActive: {
+    left: 2,
+    width: 3,
+  },
+  sashVertical: {
+    cursor: "ew-resize",
+  } as never,
   mobileSashHandle: {
     position: "absolute",
+  },
+  mobileSashHandleActive: {
+    backgroundColor: "color-mix(in srgb, var(--accent) 70%, transparent)",
+  },
+  mobileSashHandleIdle: {
+    backgroundColor: "color-mix(in srgb, var(--foreground) 12%, transparent)",
   },
 });

@@ -24,6 +24,7 @@
     "clean:prebuild:ios": "cross-env APP_MODE=development expo prebuild --clean --platform ios",
     "clean:prebuild:android:prod": "cross-env APP_MODE=production expo prebuild --clean --platform android",
     "clean:prebuild:ios:prod": "cross-env APP_MODE=production expo prebuild --clean --platform ios",
+    "generate:tamagui": "bunx @tamagui/cli generate",
     "lint": "bun run lint:eslint && bun run typecheck",
     "lint:eslint": "expo lint",
     "typecheck": "tsc --noEmit --pretty false"

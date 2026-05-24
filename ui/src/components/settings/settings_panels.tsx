@@ -1,7 +1,7 @@
-import { Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import type { GlobalSettings } from "@/api/commands/settings";
-import { Button, IconButton, Select, type SelectOption, Switch } from "@/components/ui";
+import { Button, Select, type SelectOption, Switch, Text } from "@/components/ui";
 import {
   clampZoomFactor,
   getAccentColorPreset,
@@ -85,16 +85,11 @@ type StatusBadgeProps = {
 };
 
 export function SettingsStatusBadge({ children, tone }: StatusBadgeProps) {
-  const className =
-    tone === "error"
-      ? "border-red-500/20 bg-red-500/10 text-red-600"
-      : tone === "loading"
-        ? "border-accent/20 bg-accent/10 text-accent"
-        : "border-foreground/10 bg-background text-foreground/70";
-
   return (
-    <View className={`rounded-full border px-3 py-1 ${className}`}>
-      <Text className="text-xs font-medium">{children}</Text>
+    <View style={[styles.badge, tone === "error" ? styles.badgeError : styles.badgeNeutral]}>
+      <Text color={tone === "error" ? "$red10" : "$color10"} fontSize="$2" fontWeight="600">
+        {children}
+      </Text>
     </View>
   );
 }
@@ -106,11 +101,11 @@ type SectionProps = {
 
 function SettingsSection({ children, title }: SectionProps) {
   return (
-    <View className="rounded-3xl border border-foreground/10 bg-background px-4 py-4">
-      <View className="mb-3 px-1">
-        <Text className="text-lg font-semibold text-foreground">{title}</Text>
-      </View>
-      <View className="gap-3">{children}</View>
+    <View style={styles.section}>
+      <Text fontSize="$6" fontWeight="600">
+        {title}
+      </Text>
+      <View style={styles.sectionBody}>{children}</View>
     </View>
   );
 }
@@ -123,16 +118,16 @@ type ToggleRowProps = {
 
 function SettingsToggleRow({ label, onChange, value }: ToggleRowProps) {
   return (
-    <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
-      <View className="flex-row items-center gap-4">
-        <Text className="flex-1 text-base font-medium text-foreground">{label}</Text>
-        <View className="flex-row items-center gap-3">
-          <Text
-            className={value ? "text-sm font-medium text-accent" : "text-sm text-foreground/70"}
-          >
+    <View style={styles.rowCard}>
+      <View style={styles.rowContent}>
+        <Text fontSize="$5" fontWeight="600" style={styles.rowLabel}>
+          {label}
+        </Text>
+        <View style={styles.inlineControls}>
+          <Text color={value ? "$accentColor" : "$color10"} fontSize="$3">
             {value ? "已开启" : "已关闭"}
           </Text>
-          <Switch accessibilityLabel={label} onValueChange={onChange} value={value} />
+          <Switch checked={value} onCheckedChange={onChange} />
         </View>
       </View>
     </View>
@@ -157,29 +152,23 @@ function SettingsStepperRow({
   valueLabel,
 }: StepperRowProps) {
   return (
-    <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
-      <View className="flex-row items-center justify-between gap-3">
-        <View className="gap-1">
-          <Text className="text-base font-medium text-foreground">{label}</Text>
-          <Text className="text-sm text-foreground/65">{valueLabel}</Text>
+    <View style={styles.rowCard}>
+      <View style={styles.rowContent}>
+        <View style={styles.rowTextGroup}>
+          <Text fontSize="$5" fontWeight="600">
+            {label}
+          </Text>
+          <Text color="$color10" fontSize="$3">
+            {valueLabel}
+          </Text>
         </View>
-        <View className="flex-row gap-2">
-          <IconButton
-            accessibilityLabel={`${label}${decreaseLabel}`}
-            onPress={onDecrease}
-            size="sm"
-            variant="outline"
-          >
-            <Text className="text-base font-semibold text-foreground">-</Text>
-          </IconButton>
-          <IconButton
-            accessibilityLabel={`${label}${increaseLabel}`}
-            onPress={onIncrease}
-            size="sm"
-            variant="outline"
-          >
-            <Text className="text-base font-semibold text-foreground">+</Text>
-          </IconButton>
+        <View style={styles.inlineControls}>
+          <Button aria-label={`${label}${decreaseLabel}`} onPress={onDecrease} variant="outlined">
+            -
+          </Button>
+          <Button aria-label={`${label}${increaseLabel}`} onPress={onIncrease} variant="outlined">
+            +
+          </Button>
         </View>
       </View>
     </View>
@@ -209,12 +198,14 @@ function SettingsSelectRow({
   const selectedOption = options.find((option) => option.value === selectedValue);
 
   return (
-    <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
-      <View className="flex-row items-center justify-between gap-3">
-        <Text className="text-base font-medium text-foreground">{label}</Text>
-        <View className="w-44 max-w-[60%]">
+    <View style={styles.rowCard}>
+      <View style={styles.rowContent}>
+        <Text fontSize="$5" fontWeight="600" style={styles.rowLabel}>
+          {label}
+        </Text>
+        <View style={styles.selectBox}>
           <Select
-            accessibilityLabel={label}
+            aria-label={label}
             onValueChange={onSelect}
             options={options}
             placeholder={placeholder}
@@ -257,9 +248,7 @@ function AccentColorOptionGroup({ onSelect, selectedValue }: AccentColorOptionGr
 
     return {
       label: preset.label,
-      startContent: (
-        <View className="h-3 w-3 rounded-full" style={{ backgroundColor: preset.accent }} />
-      ),
+      startContent: <View style={[styles.colorSwatch, { backgroundColor: preset.accent }]} />,
       value: option,
     };
   });
@@ -286,7 +275,7 @@ export function SettingsSyncState({ error, isLoading }: PanelHeaderProps) {
   }
 
   return (
-    <View className="mb-4 flex-row flex-wrap gap-2">
+    <View style={styles.syncState}>
       {isLoading ? <SettingsStatusBadge tone="loading">正在同步设置</SettingsStatusBadge> : null}
       {error ? <SettingsStatusBadge tone="error">{error}</SettingsStatusBadge> : null}
     </View>
@@ -297,7 +286,7 @@ export function GlobalSettingsPanel() {
   const { settings, updateAndSave } = useGlobalSettings();
 
   return (
-    <View className="gap-4">
+    <View style={styles.panel}>
       <SettingsSection title="应用行为">
         <SettingsToggleRow
           label="自动检查更新"
@@ -452,7 +441,7 @@ export function AppearanceSettingsPanel() {
   const { preferences, updateAndSave } = useUiPreferences();
 
   return (
-    <View className="gap-4">
+    <View style={styles.panel}>
       <SettingsSection title="主题">
         <AccentColorOptionGroup
           onSelect={(nextValue) => {
@@ -480,8 +469,8 @@ export function AppearanceSettingsPanel() {
           }}
           selectedValue={preferredColorScheme}
         />
-        <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
-          <Text className="text-sm text-foreground/65">
+        <View style={styles.rowCard}>
+          <Text color="$color10" fontSize="$3">
             系统：{systemColorScheme} / 偏好：{preferredColorScheme} / 当前：{resolvedColorScheme} /
             主题色：{formatAccentColor(preferences.appearance.accentColor)}
           </Text>
@@ -519,11 +508,13 @@ export function AppearanceSettingsPanel() {
           }}
           valueLabel={formatZoomFactor(preferences.appearance.zoomFactor)}
         />
-        <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
-          <View className="flex-row items-center justify-between gap-3">
-            <View className="flex-1 gap-1">
-              <Text className="text-base font-medium text-foreground">当前桌面缩放</Text>
-              <Text className="text-sm text-foreground/65">
+        <View style={styles.rowCard}>
+          <View style={styles.rowContent}>
+            <View style={styles.rowTextGroup}>
+              <Text fontSize="$5" fontWeight="600">
+                当前桌面缩放
+              </Text>
+              <Text color="$color10" fontSize="$3">
                 {formatZoomFactor(preferences.appearance.zoomFactor)}，仅桌面 Tauri 生效
               </Text>
             </View>
@@ -540,8 +531,7 @@ export function AppearanceSettingsPanel() {
                   })),
                 );
               }}
-              size="sm"
-              variant="outline"
+              variant="outlined"
             >
               重置
             </Button>
@@ -556,7 +546,7 @@ export function WindowSettingsPanel() {
   const { preferences, updateAndSave } = useUiPreferences();
 
   return (
-    <View className="gap-4">
+    <View style={styles.panel}>
       <SettingsSection title="启动行为">
         <SettingsToggleRow
           label="恢复上次窗口状态"
@@ -574,11 +564,13 @@ export function WindowSettingsPanel() {
           }}
           value={preferences.window.restoreWindowState}
         />
-        <View className="rounded-2xl border border-foreground/10 bg-background px-4 py-4">
-          <View className="flex-row items-center justify-between gap-3">
-            <View className="flex-1 gap-1">
-              <Text className="text-base font-medium text-foreground">最近保存的窗口状态</Text>
-              <Text className="text-sm text-foreground/65">
+        <View style={styles.rowCard}>
+          <View style={styles.rowContent}>
+            <View style={styles.rowTextGroup}>
+              <Text fontSize="$5" fontWeight="600">
+                最近保存的窗口状态
+              </Text>
+              <Text color="$color10" fontSize="$3">
                 {formatWindowStateSummary(preferences.window.lastWindowState)}
               </Text>
             </View>
@@ -595,8 +587,7 @@ export function WindowSettingsPanel() {
                   })),
                 );
               }}
-              size="sm"
-              variant="outline"
+              variant="outlined"
             >
               清除
             </Button>
@@ -606,3 +597,78 @@ export function WindowSettingsPanel() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  badgeError: {
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
+    borderColor: "rgba(239, 68, 68, 0.25)",
+  },
+  badgeNeutral: {
+    backgroundColor: "rgba(128, 128, 128, 0.08)",
+    borderColor: "rgba(128, 128, 128, 0.24)",
+  },
+  colorSwatch: {
+    borderRadius: 999,
+    height: 12,
+    width: 12,
+  },
+  inlineControls: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  panel: {
+    gap: 16,
+  },
+  rowCard: {
+    borderColor: "rgba(128, 128, 128, 0.22)",
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+  },
+  rowContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  rowLabel: {
+    flex: 1,
+    minWidth: 180,
+  },
+  rowTextGroup: {
+    flex: 1,
+    gap: 4,
+    minWidth: 220,
+  },
+  section: {
+    borderColor: "rgba(128, 128, 128, 0.22)",
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 12,
+    padding: 16,
+  },
+  sectionBody: {
+    gap: 12,
+  },
+  selectBox: {
+    maxWidth: 260,
+    minWidth: 176,
+    width: "45%",
+  },
+  syncState: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 16,
+  },
+});

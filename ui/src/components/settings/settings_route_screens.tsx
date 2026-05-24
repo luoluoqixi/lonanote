@@ -1,13 +1,13 @@
 import { type Href, useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { isDesktop } from "@/api/common";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import { TitleBar } from "../titlebar";
-import { Button } from "../ui";
+import { Button, Text } from "../ui";
 import { SettingsSyncState } from "./settings_panels";
 import { SettingsTabsPanel } from "./settings_tabs_panel";
 
@@ -28,24 +28,24 @@ function SettingsScreenLayout({ backHref, children, error, isLoading, title }: S
   const desktop = isDesktop();
 
   return (
-    <SafeAreaView className="bg-background" edges={["top"]} style={{ flex: 1 }}>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
       {desktop ? <TitleBar /> : null}
-      <View className="flex-1 bg-background">
+      <View style={styles.page}>
         <View style={{ flex: 1, padding: 20 }}>
           <View style={{ alignSelf: "center", flex: 1, maxWidth: SCREEN_MAX_WIDTH, width: "100%" }}>
-            <View className="mb-5 rounded-3xl border border-foreground/10 bg-accent/5 px-5 py-5">
-              <Button onPress={() => router.replace(backHref)} size="sm" variant="ghost">
+            <View style={styles.header}>
+              <Button onPress={() => router.replace(backHref)} variant="outlined">
                 {backHref === HOME_HREF ? "返回首页" : "返回设置"}
               </Button>
-              <Text className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+              <Text fontSize="$8" fontWeight="700" style={styles.title}>
                 {title}
               </Text>
-              <View className="mt-4">
+              <View style={styles.syncState}>
                 <SettingsSyncState error={error} isLoading={isLoading} />
               </View>
             </View>
 
-            <View className="flex-1 min-h-0">{children}</View>
+            <View style={styles.content}>{children}</View>
           </View>
         </View>
       </View>
@@ -98,3 +98,30 @@ export function WindowSettingsScreen() {
     </SettingsScreenLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    flex: 1,
+    minHeight: 0,
+  },
+  header: {
+    borderColor: "rgba(128, 128, 128, 0.22)",
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 16,
+    marginBottom: 20,
+    padding: 20,
+  },
+  page: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  syncState: {
+    minHeight: 0,
+  },
+  title: {
+    marginTop: 4,
+  },
+});

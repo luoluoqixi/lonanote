@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { DeviceEventEmitter, Platform, ScrollView, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { DeviceEventEmitter, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
 
@@ -12,10 +12,10 @@ import { WorkspaceDebugPanel } from "./workspace_debug_panel";
 type DebugTabKey = "workspace" | "path" | "components";
 const DEBUG_PANEL_TOGGLE_EVENT = "lonanote.debug-panel.toggle";
 
-const DEBUG_TABS: Array<{ key: DebugTabKey; label: string }> = [
-  { key: "workspace", label: "工作区" },
-  { key: "path", label: "路径" },
-  { key: "components", label: "组件总览" },
+const DEBUG_TABS: Array<{ content: React.ReactNode; key: DebugTabKey; label: string }> = [
+  { content: <WorkspaceDebugPanel />, key: "workspace", label: "工作区" },
+  { content: <PathDebugPanel />, key: "path", label: "路径" },
+  { content: <UiComponentsDebugPanel />, key: "components", label: "组件总览" },
 ];
 
 function emitDebugPanelToggle() {
@@ -88,42 +88,13 @@ export function DebugPanelGestureLayer({ children }: { children: React.ReactNode
   );
 }
 
-function renderDebugTab(tab: DebugTabKey) {
-  switch (tab) {
-    case "workspace":
-      return <WorkspaceDebugPanel />;
-    case "path":
-      return <PathDebugPanel />;
-    case "components":
-    default:
-      return <UiComponentsDebugPanel />;
-  }
-}
-
-function DebugTabScrollPane({
-  children,
-  isActive,
-}: {
-  children: React.ReactNode;
-  isActive: boolean;
-}) {
-  const scrollViewRef = useRef<ScrollView | null>(null);
-
-  useEffect(() => {
-    if (!isActive) {
-      return;
-    }
-
-    scrollViewRef.current?.scrollTo({ animated: false, y: 0 });
-  }, [isActive]);
-
+function DebugTabScrollPane({ children }: { children: React.ReactNode }) {
   return (
-    <View className="flex-1 min-h-0" style={{ display: isActive ? "flex" : "none" }}>
+    <View style={styles.scrollPane}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 12 }}
-        ref={scrollViewRef}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator
-        style={{ flex: 1, minHeight: 0 }}
+        style={styles.scrollView}
       >
         {children}
       </ScrollView>
@@ -134,7 +105,6 @@ function DebugTabScrollPane({
 export function DebugPanelHost() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState<DebugTabKey>("workspace");
-  const [mountedTabs, setMountedTabs] = useState<DebugTabKey[]>(["workspace"]);
 
   useDebugPanelShortcut(() => {
     setIsOpen((current) => !current);
@@ -144,61 +114,65 @@ export function DebugPanelHost() {
     setIsOpen((current) => !current);
   });
 
-  useEffect(() => {
-    setMountedTabs((currentTabs) =>
-      currentTabs.includes(selectedTab) ? currentTabs : [...currentTabs, selectedTab],
-    );
-  }, [selectedTab]);
-
   if (!__DEV__) {
     return null;
   }
 
   return (
     <Dialog
-      contentStyle={{
-        height: "98%",
-        maxHeight: "98%",
-        maxWidth: 1400,
-        minHeight: 0,
-        width: "94%",
-      }}
-      isOpen={isOpen}
+      width="80%"
+      height="88%"
+      minWidth={0}
+      minHeight={0}
       onOpenChange={setIsOpen}
+      open={isOpen}
       title="调试面板"
     >
-      <View className="flex-1 min-h-0 flex-row gap-4 overflow-hidden">
-        <View
-          className="w-44 shrink-0 rounded-2xl border border-foreground/10 bg-background p-2"
-          style={{ minHeight: 0 }}
-        >
-          <View className="mb-3 gap-1 px-2 pt-1">
-            <Text className="text-sm text-foreground/65">
-              F6 打开或关闭，当前仅在开发模式启用。
-            </Text>
-          </View>
-
-          <Tabs
-            accessibilityLabel="调试面板导航"
-            orientation="vertical"
-            className="w-full"
-            onValueChange={(nextValue) => setSelectedTab(nextValue as DebugTabKey)}
-            value={selectedTab}
-            items={DEBUG_TABS.map((tab) => ({
-              label: tab.label,
-              value: tab.key,
-            }))}
-          />
-        </View>
-
-        <View className="flex-1 min-w-0 min-h-0 overflow-hidden rounded-2xl border border-foreground/10 bg-background p-4">
-          {mountedTabs.map((tab) => (
-            <DebugTabScrollPane key={tab} isActive={tab === selectedTab}>
-              {renderDebugTab(tab)}
-            </DebugTabScrollPane>
-          ))}
-        </View>
-      </View>
+      <Tabs
+        aria-label="调试面板导航"
+        contentProps={{ style: styles.tabContent }}
+        items={DEBUG_TABS.map((tab) => ({
+          content: <DebugTabScrollPane>{tab.content}</DebugTabScrollPane>,
+          label: tab.label,
+          value: tab.key,
+        }))}
+        listProps={{ style: styles.tabList }}
+        onValueChange={(nextValue) => setSelectedTab(nextValue as DebugTabKey)}
+        orientation="vertical"
+        style={styles.tabs}
+        value={selectedTab}
+      />
     </Dialog>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    paddingBottom: 12,
+  },
+  scrollPane: {
+    flex: 1,
+    minHeight: 0,
+  },
+  scrollView: {
+    flex: 1,
+    minHeight: 0,
+  },
+  tabContent: {
+    flex: 1,
+    minHeight: 0,
+    overflow: "hidden",
+  },
+  tabList: {
+    alignSelf: "stretch",
+    flexDirection: "column",
+    gap: 4,
+    width: 176,
+  },
+  tabs: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 16,
+    minHeight: 0,
+  },
+});

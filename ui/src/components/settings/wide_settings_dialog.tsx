@@ -17,7 +17,14 @@ export function WideSettingsDialog({ isOpen, onOpenChange }: WideSettingsDialogP
   const uiPreferencesState = useUiPreferences();
 
   return (
-    <Dialog isOpen={isOpen} onOpenChange={onOpenChange} title="设置" width="80%">
+    <Dialog
+      minHeight={0}
+      width="80%"
+      height="80%"
+      onOpenChange={onOpenChange}
+      open={isOpen}
+      title="设置"
+    >
       <View style={{ flexShrink: 1, minHeight: 0 }}>
         <SettingsSyncState
           error={globalSettingsState.error ?? uiPreferencesState.error}

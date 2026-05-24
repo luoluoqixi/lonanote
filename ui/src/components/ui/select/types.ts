@@ -2,6 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Select as TamaguiSelect } from "tamagui";
 
 export interface SelectItemData {
+  "aria-label"?: string;
   description?: string;
   disabled?: boolean;
   endContent?: ReactNode;
@@ -17,7 +18,7 @@ export interface SelectProps extends Omit<
   ComponentProps<typeof TamaguiSelect>,
   "children" | "onValueChange"
 > {
-  accessibilityLabel?: string;
+  "aria-label"?: string;
   children?: ReactNode;
   contentProps?: ComponentProps<typeof TamaguiSelect.Content>;
   disabled?: boolean;

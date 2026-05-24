@@ -9,7 +9,7 @@ function AvatarRoot(props: AvatarProps) {
     <TamaguiAvatar {...rootProps}>
       {children ?? (
         <>
-          {src ? <AvatarImage {...imageProps} accessibilityLabel={alt} src={src} /> : null}
+          {src ? <AvatarImage {...imageProps} aria-label={alt} src={src} /> : null}
           {fallback != null ? <AvatarFallback {...fallbackProps}>{fallback}</AvatarFallback> : null}
         </>
       )}

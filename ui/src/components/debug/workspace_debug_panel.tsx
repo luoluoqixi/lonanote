@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import {
   WorkspaceRecord,
@@ -7,7 +7,7 @@ import {
   WorkspaceSyncSummary,
   workspaceRegistry,
 } from "@/api/commands/workspace";
-import { Button } from "@/components/ui";
+import { Button, Text } from "@/components/ui";
 import { useCurrentWorkspaceState, useWorkspaceSession } from "@/hooks/workspace";
 
 type WorkspaceDebugSnapshot = {
@@ -54,10 +54,16 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <View className="gap-2 rounded-xl border border-foreground/10 bg-background px-3 py-3">
-      <View className="gap-1">
-        <Text className="text-sm font-semibold text-foreground">{title}</Text>
-        {description ? <Text className="text-xs text-foreground/60">{description}</Text> : null}
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text fontSize="$4" fontWeight="600">
+          {title}
+        </Text>
+        {description ? (
+          <Text color="$color10" fontSize="$2">
+            {description}
+          </Text>
+        ) : null}
       </View>
       {children}
     </View>
@@ -66,9 +72,11 @@ function Section({
 
 function KeyValueRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="gap-1 rounded-lg border border-foreground/10 bg-foreground/5 px-3 py-2">
-      <Text className="text-[11px] uppercase tracking-wide text-foreground/50">{label}</Text>
-      <Text className="text-sm text-foreground">{value}</Text>
+    <View style={styles.keyValueRow}>
+      <Text color="$color10" fontSize="$2">
+        {label}
+      </Text>
+      <Text fontSize="$3">{value}</Text>
     </View>
   );
 }
@@ -175,27 +183,29 @@ export function WorkspaceDebugPanel() {
   }, [currentWorkspaceId]);
 
   return (
-    <View className="w-full gap-3 rounded-2xl border border-foreground/10 bg-foreground/5 p-4">
-      <View className="gap-3 md:flex-row md:items-center md:justify-between">
-        <View className="gap-1">
-          <Text className="text-base font-semibold text-foreground">Workspace 调试面板</Text>
-          <Text className="text-sm text-foreground/70">
+    <View style={styles.root}>
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text fontSize="$5" fontWeight="600">
+            Workspace 调试面板
+          </Text>
+          <Text color="$color10" fontSize="$3">
             展示 roots、同步结果、registry records 和当前 runtime state。
           </Text>
         </View>
 
-        <View className="flex-row flex-wrap gap-2">
+        <View style={styles.actions}>
           <Button
-            variant="outline"
+            disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
             onPress={() => refreshPanel()}
-            isDisabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
+            variant="outlined"
           >
             {isRefreshingPanel ? "刷新中..." : "刷新数据"}
           </Button>
           <Button
-            variant="outline"
+            disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
             onPress={() => handleSyncRoots()}
-            isDisabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
+            variant="outlined"
           >
             {isSyncing ? "同步中..." : "同步 Roots"}
           </Button>
@@ -203,11 +213,15 @@ export function WorkspaceDebugPanel() {
       </View>
 
       {error ? (
-        <Text className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{error}</Text>
+        <View style={styles.errorBox}>
+          <Text color="$red10" fontSize="$3">
+            {error}
+          </Text>
+        </View>
       ) : null}
 
       <Section title="当前会话" description="当前 session 中记录的 workspace 与 runtime 返回状态。">
-        <View className="gap-2">
+        <View style={styles.stack}>
           <KeyValueRow label="currentWorkspaceId" value={currentWorkspaceId ?? "null"} />
           <KeyValueRow
             label="runtimeStatus"
@@ -231,7 +245,7 @@ export function WorkspaceDebugPanel() {
       </Section>
 
       <Section title="最近同步结果" description="只记录本次面板内手动执行 sync roots 的结果。">
-        <View className="gap-2">
+        <View style={styles.stack}>
           <KeyValueRow label="importedCount" value={String(lastSyncSummary?.importedCount ?? 0)} />
           <KeyValueRow
             label="relocatedCount"
@@ -244,20 +258,21 @@ export function WorkspaceDebugPanel() {
         title={`Workspace Roots (${roots.length})`}
         description="当前 registry 中持久化的 roots 配置。"
       >
-        <View className="gap-2">
+        <View style={styles.stack}>
           {roots.length === 0 ? (
-            <Text className="text-sm text-foreground/60">暂无 roots。</Text>
+            <Text color="$color10" fontSize="$3">
+              暂无 roots。
+            </Text>
           ) : (
             roots.map((root) => (
-              <View
-                key={root.key}
-                className="gap-1 rounded-lg border border-foreground/10 bg-foreground/5 px-3 py-2"
-              >
-                <Text className="text-sm font-medium text-foreground">{root.key}</Text>
-                <Text className="text-xs text-foreground/60">
+              <View key={root.key} style={styles.itemCard}>
+                <Text fontSize="$3" fontWeight="600">
+                  {root.key}
+                </Text>
+                <Text color="$color10" fontSize="$2">
                   {root.kind} · {formatRootSource(root)}
                 </Text>
-                <Text className="text-sm text-foreground">{root.path}</Text>
+                <Text fontSize="$3">{root.path}</Text>
               </View>
             ))
           )}
@@ -268,9 +283,11 @@ export function WorkspaceDebugPanel() {
         title={`Workspace Records (${records.length})`}
         description="可直接在面板内 open/close 当前工作区。"
       >
-        <View className="gap-2">
+        <View style={styles.stack}>
           {records.length === 0 ? (
-            <Text className="text-sm text-foreground/60">暂无已注册工作区。</Text>
+            <Text color="$color10" fontSize="$3">
+              暂无已注册工作区。
+            </Text>
           ) : (
             records.map((record) => {
               const workspaceId = record.metadata.id;
@@ -279,35 +296,34 @@ export function WorkspaceDebugPanel() {
                 pendingWorkspaceId === workspaceId && (isWorkspaceOpening || isWorkspaceClosing);
 
               return (
-                <View
-                  key={workspaceId}
-                  className="gap-2 rounded-lg border border-foreground/10 bg-foreground/5 px-3 py-3"
-                >
-                  <View className="gap-1">
-                    <Text className="text-sm font-medium text-foreground">
+                <View key={workspaceId} style={styles.itemCard}>
+                  <View style={styles.stack}>
+                    <Text fontSize="$3" fontWeight="600">
                       {record.metadata.name}
                     </Text>
-                    <Text className="text-xs text-foreground/60">id: {workspaceId}</Text>
-                    <Text className="text-sm text-foreground">{record.metadata.path}</Text>
+                    <Text color="$color10" fontSize="$2">
+                      id: {workspaceId}
+                    </Text>
+                    <Text fontSize="$3">{record.metadata.path}</Text>
                   </View>
 
-                  <View className="flex-row flex-wrap items-center gap-2">
-                    <Text className="text-xs text-foreground/60">
+                  <View style={styles.recordActions}>
+                    <Text color="$color10" fontSize="$2">
                       {isCurrent ? "current" : "not-current"}
                     </Text>
                     {isCurrent ? (
                       <Button
-                        variant="ghost"
+                        disabled={isPending}
                         onPress={() => handleCloseWorkspace(workspaceId)}
-                        isDisabled={isPending}
+                        variant="outlined"
                       >
                         {isPending ? "关闭中..." : "关闭"}
                       </Button>
                     ) : (
                       <Button
-                        variant="outline"
+                        disabled={isPending}
                         onPress={() => handleOpenWorkspace(workspaceId)}
-                        isDisabled={isPending}
+                        variant="outlined"
                       >
                         {isPending ? "打开中..." : "打开"}
                       </Button>
@@ -322,3 +338,72 @@ export function WorkspaceDebugPanel() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  actions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  errorBox: {
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  header: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  headerText: {
+    flex: 1,
+    gap: 4,
+    minWidth: 260,
+  },
+  itemCard: {
+    borderColor: "rgba(128, 128, 128, 0.22)",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  keyValueRow: {
+    borderColor: "rgba(128, 128, 128, 0.18)",
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  recordActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  root: {
+    borderColor: "rgba(128, 128, 128, 0.22)",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+    padding: 16,
+    width: "100%",
+  },
+  section: {
+    borderColor: "rgba(128, 128, 128, 0.22)",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  sectionHeader: {
+    gap: 4,
+  },
+  stack: {
+    gap: 8,
+  },
+});

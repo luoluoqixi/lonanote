@@ -1,4 +1,10 @@
-import { Button as TamaguiButton, Dialog as TamaguiDialog, XStack, YStack } from "tamagui";
+import { X } from "@tamagui/lucide-icons-2";
+import { StyleSheet, type ViewStyle } from "react-native";
+import { Dialog as TamaguiDialog, Unspaced, XStack, YStack } from "tamagui";
+
+import { isWeb } from "@/api/common/platform";
+import { Button } from "@/components/ui/button";
+import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type {
   DialogCloseProps,
@@ -15,51 +21,79 @@ function DialogRoot(props: DialogProps) {
   const {
     actions,
     children,
-    closeLabel,
+    closeAriaLabel,
+    closeBtn = true,
     closeProps,
     contentProps,
     description,
     descriptionProps,
+    width,
+    height,
+    minWidth,
+    minHeight,
+    maxWidth,
+    maxHeight,
     overlayProps,
     portalProps,
     title,
     titleProps,
     trigger,
     triggerProps,
+    disableRemoveScroll,
     ...rootProps
   } = props;
+  const { style: contentStyle, ...restContentProps } = contentProps ?? {};
+  const flattenedContentStyle = StyleSheet.flatten(contentStyle) as
+    | Partial<
+        Pick<ViewStyle, "height" | "minHeight" | "minWidth" | "maxHeight" | "maxWidth" | "width">
+      >
+    | undefined;
+  const resolvedSizeStyle: ViewStyle = {
+    width: flattenedContentStyle?.width ?? width ?? "50%",
+    height: flattenedContentStyle?.height ?? height ?? "50%",
+    minWidth: flattenedContentStyle?.minWidth ?? minWidth,
+    minHeight: flattenedContentStyle?.minHeight ?? minHeight,
+    maxWidth: flattenedContentStyle?.maxWidth ?? maxWidth,
+    maxHeight: flattenedContentStyle?.maxHeight ?? maxHeight,
+  };
+  const resolvedContentStyle = [contentStyle, resolvedSizeStyle] as DialogContentProps["style"];
   const hasDefaultStructure =
-    trigger != null ||
-    title != null ||
-    description != null ||
-    actions != null ||
-    closeLabel != null;
+    trigger != null || title != null || description != null || actions != null;
 
   if (!hasDefaultStructure) {
     return <TamaguiDialog {...rootProps}>{children}</TamaguiDialog>;
   }
 
   return (
-    <TamaguiDialog {...rootProps}>
+    <TamaguiDialog disableRemoveScroll={disableRemoveScroll ?? isWeb()} {...rootProps}>
       {trigger != null ? <DialogTrigger {...triggerProps}>{trigger}</DialogTrigger> : null}
       <DialogPortal {...portalProps}>
-        <DialogOverlay {...overlayProps} />
-        <DialogContent {...contentProps}>
-          <YStack gap="$3">
+        <DialogOverlay opacity={0.5} {...overlayProps} />
+        <DialogContent {...restContentProps} style={resolvedContentStyle}>
+          <YStack flex={1} gap="$3" style={{ minHeight: 0 }}>
             {title != null ? <DialogTitle {...titleProps}>{title}</DialogTitle> : null}
             {description != null ? (
               <DialogDescription {...descriptionProps}>{description}</DialogDescription>
             ) : null}
             {children}
-            {actions != null || closeLabel != null ? (
+            {actions != null ? (
               <XStack gap="$2" style={{ justifyContent: "flex-end" }}>
                 {actions}
-                {closeLabel != null ? (
-                  <DialogClose {...closeProps} asChild>
-                    <TamaguiButton>{closeLabel}</TamaguiButton>
-                  </DialogClose>
-                ) : null}
               </XStack>
+            ) : null}
+            {closeBtn === true ? (
+              <Unspaced>
+                <DialogClose {...closeProps} asChild>
+                  <Button
+                    aria-label={resolveAriaLabel(closeAriaLabel, "关闭对话框")}
+                    position="absolute"
+                    r="$3"
+                    size="$2"
+                    circular
+                    icon={X}
+                  />
+                </DialogClose>
+              </Unspaced>
             ) : null}
           </YStack>
         </DialogContent>

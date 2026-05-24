@@ -16,7 +16,7 @@ export function ActivityBar({
   onToggleSidebar,
 }: ActivityBarProps) {
   return (
-    <View className="h-full w-full items-center border-r border-separator/40 bg-background py-2">
+    <View className="h-full w-full items-center bg-background py-2">
       <ActivityButton active={showSidebar} label="⌘" onPress={onToggleSidebar} />
       <ActivityButton active={false} label="⌕" onPress={() => {}} />
       <View className="flex-1" />

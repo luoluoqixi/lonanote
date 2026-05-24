@@ -1,9 +1,8 @@
-import {
-  AlertDialog as TamaguiAlertDialog,
-  Button as TamaguiButton,
-  XStack,
-  YStack,
-} from "tamagui";
+import { AlertDialog as TamaguiAlertDialog, XStack, YStack } from "tamagui";
+
+import { isWeb } from "@/api/common/platform";
+import { Button } from "@/components/ui/button";
+import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type {
   AlertDialogActionProps,
@@ -20,15 +19,18 @@ import type {
 
 function AlertDialogRoot(props: AlertDialogProps) {
   const {
+    actionAriaLabel,
     actionLabel,
     actionProps,
     actions,
+    cancelAriaLabel,
     cancelLabel,
     cancelProps,
     children,
     contentProps,
     description,
     descriptionProps,
+    destructiveAriaLabel,
     destructiveLabel,
     destructiveProps,
     overlayProps,
@@ -37,6 +39,7 @@ function AlertDialogRoot(props: AlertDialogProps) {
     titleProps,
     trigger,
     triggerProps,
+    disableRemoveScroll,
     ...rootProps
   } = props;
   const hasDefaultStructure =
@@ -53,7 +56,7 @@ function AlertDialogRoot(props: AlertDialogProps) {
   }
 
   return (
-    <TamaguiAlertDialog {...rootProps}>
+    <TamaguiAlertDialog disableRemoveScroll={disableRemoveScroll ?? isWeb()} {...rootProps}>
       {trigger != null ? (
         <AlertDialogTrigger {...triggerProps}>{trigger}</AlertDialogTrigger>
       ) : null}
@@ -74,17 +77,26 @@ function AlertDialogRoot(props: AlertDialogProps) {
                 {actions}
                 {cancelLabel != null ? (
                   <AlertDialogCancel {...cancelProps} asChild>
-                    <TamaguiButton>{cancelLabel}</TamaguiButton>
+                    <Button aria-label={resolveAriaLabel(cancelAriaLabel, cancelLabel)}>
+                      {cancelLabel}
+                    </Button>
                   </AlertDialogCancel>
                 ) : null}
                 {actionLabel != null ? (
                   <AlertDialogAction {...actionProps} asChild>
-                    <TamaguiButton>{actionLabel}</TamaguiButton>
+                    <Button aria-label={resolveAriaLabel(actionAriaLabel, actionLabel)}>
+                      {actionLabel}
+                    </Button>
                   </AlertDialogAction>
                 ) : null}
                 {destructiveLabel != null ? (
                   <AlertDialogDestructive {...destructiveProps} asChild>
-                    <TamaguiButton theme="red">{destructiveLabel}</TamaguiButton>
+                    <Button
+                      aria-label={resolveAriaLabel(destructiveAriaLabel, destructiveLabel)}
+                      theme="red"
+                    >
+                      {destructiveLabel}
+                    </Button>
                   </AlertDialogDestructive>
                 ) : null}
               </XStack>

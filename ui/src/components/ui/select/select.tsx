@@ -2,6 +2,8 @@ import { ChevronDown } from "@tamagui/lucide-icons-2";
 import { forwardRef } from "react";
 import { Select as TamaguiSelect } from "tamagui";
 
+import { resolveAriaLabel } from "@/components/ui/utils";
+
 import type {
   SelectAdaptContentsProps,
   SelectAdaptProps,
@@ -93,7 +95,7 @@ function SelectFocusScope(props: SelectFocusScopeProps) {
 const SelectRoot = forwardRef<any, SelectProps>(
   (
     {
-      accessibilityLabel,
+      "aria-label": ariaLabel,
       children,
       contentProps,
       disabled,
@@ -127,9 +129,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
           (resolvedItems == null ? null : (
             <>
               <SelectTrigger
-                aria-label={accessibilityLabel}
                 disabled={disabled ?? isDisabled ?? triggerProps?.disabled}
                 {...triggerProps}
+                aria-label={resolveAriaLabel(
+                  triggerProps?.["aria-label"] ?? ariaLabel,
+                  selectedItem?.label ?? placeholder,
+                )}
               >
                 <SelectValue placeholder={placeholder} />
                 <SelectIcon>
@@ -142,6 +147,10 @@ const SelectRoot = forwardRef<any, SelectProps>(
                   {resolvedItems.map((item, index) => (
                     <SelectItem
                       {...itemProps}
+                      aria-label={resolveAriaLabel(
+                        item["aria-label"] ?? itemProps?.["aria-label"],
+                        item.label,
+                      )}
                       disabled={item.disabled ?? item.isDisabled ?? itemProps?.disabled}
                       index={index}
                       key={item.value}

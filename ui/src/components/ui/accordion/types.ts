@@ -2,13 +2,14 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Accordion as TamaguiAccordion } from "tamagui";
 
 export interface AccordionItemData {
+  "aria-label"?: string;
   content: ReactNode;
   disabled?: boolean;
   title: ReactNode;
   value: string;
 }
 
-type AccordionRootProps = ComponentProps<typeof TamaguiAccordion>;
+type AccordionRootProps = Omit<ComponentProps<typeof TamaguiAccordion>, "children" | "items">;
 
 export type AccordionProps = AccordionRootProps & {
   children?: ReactNode;
