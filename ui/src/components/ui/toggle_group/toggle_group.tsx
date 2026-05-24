@@ -1,43 +1,95 @@
-import type { ComponentType, ReactNode } from "react";
-import { ToggleGroup as TamaguiToggleGroup } from "tamagui";
+import { Children, type ReactNode, isValidElement } from "react";
+import { SizableText, ToggleGroup as TamaguiToggleGroup, XGroup, YGroup } from "tamagui";
 
 import { resolveAriaLabel } from "@/components/ui/utils";
 
-import type { ToggleGroupItemProps, ToggleGroupProps } from "./types";
+import type { ToggleGroupItemData, ToggleGroupItemProps, ToggleGroupProps } from "./types";
 
-type ToggleGroupPrimitiveProps = { children?: ReactNode; [key: string]: unknown };
-const ToggleGroupPrimitive =
-  TamaguiToggleGroup as unknown as ComponentType<ToggleGroupPrimitiveProps>;
+const ToggleGroupPrimitive = TamaguiToggleGroup;
+
+function normalizeToggleChildren(children: ReactNode) {
+  return Children.map(children, (child) => {
+    if (typeof child === "string" || typeof child === "number") {
+      return <SizableText>{child}</SizableText>;
+    }
+
+    if (isValidElement(child)) {
+      return child;
+    }
+
+    return child;
+  });
+}
 
 function ToggleGroupRoot(props: ToggleGroupProps) {
-  const { children, itemProps, items, ...rootProps } = props;
+  if (props.type === "multiple") {
+    return <ToggleGroupMultipleRoot {...props} />;
+  }
+
+  return <ToggleGroupSingleRoot {...props} />;
+}
+
+const getItemsContent = (
+  children: ReactNode,
+  items: ToggleGroupItemData[] | undefined,
+  itemProps: Omit<ToggleGroupItemProps, "value"> | undefined,
+  orientation: "horizontal" | "vertical",
+) => {
+  const Group = orientation === "vertical" ? YGroup : XGroup;
   const content =
     children ??
     items?.map((item) => (
-      <ToggleGroupItem
-        {...itemProps}
-        aria-label={resolveAriaLabel(item["aria-label"] ?? itemProps?.["aria-label"], item.label)}
-        disabled={item.disabled ?? itemProps?.disabled}
-        key={item.value}
-        value={item.value}
-      >
-        {item.label}
-      </ToggleGroupItem>
+      <Group.Item key={item.value}>
+        <ToggleGroupItem
+          {...itemProps}
+          activeStyle={{ background: "$color5" }}
+          aria-label={resolveAriaLabel(item["aria-label"] ?? itemProps?.["aria-label"], item.label)}
+          disabled={item.disabled ?? itemProps?.disabled}
+          borderRadius="$4"
+          value={item.value}
+        >
+          {item.label}
+        </ToggleGroupItem>
+      </Group.Item>
     ));
+  return <Group>{content}</Group>;
+};
 
-  if (rootProps.type === "multiple") {
-    return <ToggleGroupPrimitive {...rootProps}>{content}</ToggleGroupPrimitive>;
-  }
-
+function ToggleGroupSingleRoot(props: Extract<ToggleGroupProps, { type?: "single" }>) {
+  const { children, itemProps, items, orientation, ...rootProps } = props;
+  const resolvedOrientation = orientation || "horizontal";
+  const content = getItemsContent(children, items, itemProps, resolvedOrientation);
   return (
-    <ToggleGroupPrimitive {...rootProps} type={rootProps.type ?? "single"}>
+    <ToggleGroupPrimitive
+      disableDeactivation={true}
+      orientation={resolvedOrientation}
+      {...rootProps}
+      type="single"
+    >
+      {content}
+    </ToggleGroupPrimitive>
+  );
+}
+
+function ToggleGroupMultipleRoot(props: Extract<ToggleGroupProps, { type: "multiple" }>) {
+  const { children, itemProps, items, orientation, ...rootProps } = props;
+  const resolvedOrientation = orientation || "horizontal";
+  const content = getItemsContent(children, items, itemProps, resolvedOrientation);
+  return (
+    <ToggleGroupPrimitive orientation={resolvedOrientation} {...rootProps} type="multiple">
       {content}
     </ToggleGroupPrimitive>
   );
 }
 
 function ToggleGroupItem(props: ToggleGroupItemProps) {
-  return <TamaguiToggleGroup.Item {...props} />;
+  const { children, ...itemProps } = props;
+
+  return (
+    <TamaguiToggleGroup.Item {...itemProps}>
+      {normalizeToggleChildren(children)}
+    </TamaguiToggleGroup.Item>
+  );
 }
 
 export const ToggleGroup = Object.assign(ToggleGroupRoot, {

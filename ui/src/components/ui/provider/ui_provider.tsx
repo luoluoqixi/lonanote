@@ -1,5 +1,5 @@
 import { Toaster } from "@tamagui/toast/v2";
-import { TamaguiProvider } from "tamagui";
+import { TamaguiProvider, Theme } from "tamagui";
 
 import config from "../../../../tamagui.config";
 import type { UIProviderProps } from "./types";

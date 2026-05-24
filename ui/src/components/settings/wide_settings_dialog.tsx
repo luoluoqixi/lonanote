@@ -25,7 +25,7 @@ export function WideSettingsDialog({ isOpen, onOpenChange }: WideSettingsDialogP
       open={isOpen}
       title="设置"
     >
-      <View style={{ flexShrink: 1, minHeight: 0 }}>
+      <View style={{ flex: 1, flexShrink: 1, minHeight: 0 }}>
         <SettingsSyncState
           error={globalSettingsState.error ?? uiPreferencesState.error}
           isLoading={globalSettingsState.isLoading || uiPreferencesState.isLoading}

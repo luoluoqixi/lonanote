@@ -60,6 +60,7 @@ export function SettingsTabsPanel({ initialTab = "global" }: SettingsTabsPanelPr
         }))}
         listProps={{ style: styles.list }}
         contentProps={{ style: styles.content }}
+        style={styles.tabs}
         value={selectedTab}
         orientation="vertical"
       />
@@ -81,6 +82,12 @@ const styles = StyleSheet.create({
   },
   root: {
     flex: 1,
+    minHeight: 0,
+  },
+  tabs: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 16,
     minHeight: 0,
   },
   scrollPane: {

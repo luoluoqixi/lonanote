@@ -1,6 +1,21 @@
-import { Avatar as TamaguiAvatar } from "tamagui";
+import { Children, isValidElement } from "react";
+import { SizableText, Avatar as TamaguiAvatar } from "tamagui";
 
 import type { AvatarFallbackProps, AvatarImageProps, AvatarProps } from "./types";
+
+function normalizeAvatarChildren(children: React.ReactNode) {
+  return Children.map(children, (child) => {
+    if (typeof child === "string" || typeof child === "number") {
+      return <SizableText>{child}</SizableText>;
+    }
+
+    if (isValidElement(child)) {
+      return child;
+    }
+
+    return child;
+  });
+}
 
 function AvatarRoot(props: AvatarProps) {
   const { alt, children, fallback, fallbackProps, imageProps, src, ...rootProps } = props;
@@ -22,7 +37,13 @@ function AvatarImage(props: AvatarImageProps) {
 }
 
 function AvatarFallback(props: AvatarFallbackProps) {
-  return <TamaguiAvatar.Fallback {...props} />;
+  const { children, ...fallbackProps } = props;
+
+  return (
+    <TamaguiAvatar.Fallback {...fallbackProps}>
+      {normalizeAvatarChildren(children)}
+    </TamaguiAvatar.Fallback>
+  );
 }
 
 export const Avatar = Object.assign(AvatarRoot, {

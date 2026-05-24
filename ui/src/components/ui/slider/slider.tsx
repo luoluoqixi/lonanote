@@ -15,12 +15,20 @@ function SliderRoot(props: SliderProps) {
   return (
     <TamaguiSlider {...rootProps}>
       {children ?? (
-        <SliderTrack {...trackProps}>
-          <SliderTrackActive {...trackActiveProps} />
+        <>
+          <SliderTrack {...trackProps}>
+            <SliderTrackActive {...trackActiveProps} />
+          </SliderTrack>
           {Array.from({ length: resolvedThumbCount }).map((_, index) => (
-            <SliderThumb {...thumbProps} index={index} key={index} />
+            <SliderThumb
+              size={30}
+              {...thumbProps}
+              circular={thumbProps?.circular ?? true}
+              index={index}
+              key={index}
+            />
           ))}
-        </SliderTrack>
+        </>
       )}
     </TamaguiSlider>
   );

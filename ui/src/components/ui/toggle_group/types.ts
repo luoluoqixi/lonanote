@@ -8,11 +8,32 @@ export interface ToggleGroupItemData {
   value: string;
 }
 
-type ToggleGroupRootProps = Omit<ComponentProps<typeof TamaguiToggleGroup>, "children" | "items">;
+type ToggleGroupBaseProps = Omit<
+  ComponentProps<typeof TamaguiToggleGroup>,
+  "children" | "items" | "type" | "value" | "defaultValue" | "onValueChange" | "disableDeactivation"
+>;
 
-export type ToggleGroupProps = ToggleGroupRootProps & {
+export type ToggleGroupSingleProps = ToggleGroupBaseProps & {
   children?: ReactNode;
+  defaultValue?: string;
+  disableDeactivation?: boolean;
   itemProps?: Omit<ToggleGroupItemProps, "value">;
   items?: ToggleGroupItemData[];
+  onValueChange?(value: string): void;
+  type?: "single";
+  value?: string;
 };
+
+export type ToggleGroupMultipleProps = ToggleGroupBaseProps & {
+  children?: ReactNode;
+  defaultValue?: string[];
+  disableDeactivation?: never;
+  itemProps?: Omit<ToggleGroupItemProps, "value">;
+  items?: ToggleGroupItemData[];
+  onValueChange?(value: string[]): void;
+  type: "multiple";
+  value?: string[];
+};
+
+export type ToggleGroupProps = ToggleGroupSingleProps | ToggleGroupMultipleProps;
 export type ToggleGroupItemProps = ComponentProps<typeof TamaguiToggleGroup.Item>;

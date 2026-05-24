@@ -78,7 +78,12 @@ export function UiComponentsDebugPanel() {
         </DemoRow>
 
         <DemoRow>
-          <Switch checked={switchValue} label="Switch" onCheckedChange={setSwitchValue} />
+          <Switch
+            checked={switchValue}
+            label="Switch"
+            labelPosition="end"
+            onCheckedChange={setSwitchValue}
+          />
           <Checkbox
             checked={checkboxValue}
             label="Checkbox"

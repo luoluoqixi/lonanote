@@ -68,8 +68,27 @@ function DialogRoot(props: DialogProps) {
     <TamaguiDialog disableRemoveScroll={disableRemoveScroll ?? isWeb()} {...rootProps}>
       {trigger != null ? <DialogTrigger {...triggerProps}>{trigger}</DialogTrigger> : null}
       <DialogPortal {...portalProps}>
-        <DialogOverlay opacity={0.5} {...overlayProps} />
-        <DialogContent {...restContentProps} style={resolvedContentStyle}>
+        <DialogOverlay
+          opacity={0.5}
+          animateOnly={["transform", "opacity"]}
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          {...overlayProps}
+        />
+        <DialogContent
+          transition={[
+            "quicker",
+            {
+              opacity: {
+                overshootClamping: true,
+              },
+            },
+          ]}
+          enterStyle={{ x: 0, y: 20, opacity: 0 }}
+          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+          {...restContentProps}
+          style={resolvedContentStyle}
+        >
           <YStack flex={1} gap="$3" style={{ minHeight: 0 }}>
             {title != null ? <DialogTitle {...titleProps}>{title}</DialogTitle> : null}
             {description != null ? (
@@ -85,7 +104,7 @@ function DialogRoot(props: DialogProps) {
               <Unspaced>
                 <DialogClose {...closeProps} asChild>
                   <Button
-                    aria-label={resolveAriaLabel(closeAriaLabel, "关闭对话框")}
+                    aria-label={resolveAriaLabel(closeAriaLabel, "Close")}
                     position="absolute"
                     r="$3"
                     size="$2"
@@ -103,7 +122,7 @@ function DialogRoot(props: DialogProps) {
 }
 
 function DialogTrigger(props: DialogTriggerProps) {
-  return <TamaguiDialog.Trigger {...props} />;
+  return <TamaguiDialog.Trigger {...props} asChild />;
 }
 
 function DialogPortal(props: DialogPortalProps) {

@@ -61,8 +61,26 @@ function AlertDialogRoot(props: AlertDialogProps) {
         <AlertDialogTrigger {...triggerProps}>{trigger}</AlertDialogTrigger>
       ) : null}
       <AlertDialogPortal {...portalProps}>
-        <AlertDialogOverlay {...overlayProps} />
-        <AlertDialogContent {...contentProps}>
+        <AlertDialogOverlay
+          opacity={0.5}
+          animateOnly={["transform", "opacity"]}
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          {...overlayProps}
+        />
+        <AlertDialogContent
+          transition={[
+            "quicker",
+            {
+              opacity: {
+                overshootClamping: true,
+              },
+            },
+          ]}
+          enterStyle={{ x: 0, y: 20, opacity: 0 }}
+          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+          {...contentProps}
+        >
           <YStack gap="$3">
             {title != null ? <AlertDialogTitle {...titleProps}>{title}</AlertDialogTitle> : null}
             {description != null ? (
@@ -109,7 +127,7 @@ function AlertDialogRoot(props: AlertDialogProps) {
 }
 
 function AlertDialogTrigger(props: AlertDialogTriggerProps) {
-  return <TamaguiAlertDialog.Trigger {...props} />;
+  return <TamaguiAlertDialog.Trigger {...props} asChild />;
 }
 
 function AlertDialogPortal(props: AlertDialogPortalProps) {

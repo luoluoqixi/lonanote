@@ -13,6 +13,7 @@ type AccordionRootProps = Omit<ComponentProps<typeof TamaguiAccordion>, "childre
 
 export type AccordionProps = AccordionRootProps & {
   children?: ReactNode;
+  collapsible?: boolean;
   contentProps?: AccordionContentProps;
   headerProps?: AccordionHeaderProps;
   itemProps?: Omit<AccordionItemProps, "value">;
@@ -20,6 +21,7 @@ export type AccordionProps = AccordionRootProps & {
   triggerProps?: AccordionTriggerProps;
 };
 export type AccordionContentProps = ComponentProps<typeof TamaguiAccordion.Content>;
+export type AccordionHeightAnimatorProps = ComponentProps<typeof TamaguiAccordion.HeightAnimator>;
 export type AccordionHeaderProps = ComponentProps<typeof TamaguiAccordion.Header>;
 export type AccordionItemProps = ComponentProps<typeof TamaguiAccordion.Item>;
 export type AccordionTriggerProps = ComponentProps<typeof TamaguiAccordion.Trigger>;

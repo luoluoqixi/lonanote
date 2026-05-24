@@ -17,9 +17,8 @@ export interface TabsProps extends TabsRootProps {
   contentProps?: Omit<TabsContentProps, "value">;
   items?: TabsItemData[];
   listProps?: TabsListProps;
-  triggerProps?: Omit<TabsTriggerProps, "value">;
+  tabProps?: Omit<TabsTabProps, "value">;
 }
 export type TabsListProps = ComponentProps<typeof TamaguiTabs.List>;
-export type TabsTriggerProps = ComponentProps<typeof TamaguiTabs.Trigger>;
 export type TabsTabProps = ComponentProps<typeof TamaguiTabs.Tab>;
 export type TabsContentProps = ComponentProps<typeof TamaguiTabs.Content>;
