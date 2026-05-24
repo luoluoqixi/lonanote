@@ -18,14 +18,28 @@ function normalizeAvatarChildren(children: React.ReactNode) {
 }
 
 function AvatarRoot(props: AvatarProps) {
-  const { alt, children, fallback, fallbackProps, imageProps, src, ...rootProps } = props;
+  const { alt, children, circular, fallback, fallbackProps, imageProps, src, ...rootProps } = props;
+  const shouldRenderFallback = fallback != null || fallbackProps != null || src != null;
+  const resolvedFallbackProps = shouldRenderFallback
+    ? {
+        ...fallbackProps,
+        bg: fallbackProps?.bg ?? "$gray10",
+        delayMs: src ? (fallbackProps?.delayMs ?? 600) : fallbackProps?.delayMs,
+      }
+    : undefined;
 
   return (
-    <TamaguiAvatar {...rootProps}>
+    <TamaguiAvatar {...rootProps} circular={circular ?? true}>
       {children ?? (
         <>
-          {src ? <AvatarImage {...imageProps} aria-label={alt} src={src} /> : null}
-          {fallback != null ? <AvatarFallback {...fallbackProps}>{fallback}</AvatarFallback> : null}
+          {src ? (
+            <AvatarImage {...imageProps} aria-label={imageProps?.["aria-label"] ?? alt} src={src} />
+          ) : null}
+          {shouldRenderFallback ? (
+            <AvatarFallback items="center" justify="center" {...resolvedFallbackProps}>
+              {fallback}
+            </AvatarFallback>
+          ) : null}
         </>
       )}
     </TamaguiAvatar>

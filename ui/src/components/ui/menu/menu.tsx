@@ -1,4 +1,6 @@
-import { Menu as TamaguiMenu } from "tamagui";
+import { Children, type ReactNode, isValidElement } from "react";
+import { StyleSheet } from "react-native";
+import { SizableText, Menu as TamaguiMenu, YStack } from "tamagui";
 
 import { resolveAriaLabel } from "@/components/ui/utils";
 
@@ -7,16 +9,59 @@ import type {
   MenuCheckboxItemProps,
   MenuContentProps,
   MenuGroupProps,
+  MenuItemIconProps,
   MenuItemIndicatorProps,
   MenuItemProps,
+  MenuItemTitleProps,
   MenuLabelProps,
   MenuPortalProps,
   MenuProps,
   MenuRadioGroupProps,
   MenuRadioItemProps,
+  MenuScrollViewProps,
   MenuSeparatorProps,
+  MenuSubContentProps,
+  MenuSubProps,
+  MenuSubTriggerProps,
   MenuTriggerProps,
 } from "./types";
+
+const DEFAULT_MENU_ENTER_STYLE = { opacity: 0, scale: 0.96, y: -4 } as const;
+const DEFAULT_MENU_EXIT_STYLE = { opacity: 0, scale: 0.98, y: -2 } as const;
+
+function mergeMenuStyle<T extends object>(baseStyle: T, style: unknown): T {
+  return StyleSheet.flatten([baseStyle, style] as any) as T;
+}
+
+function normalizeMenuChildren(children: ReactNode) {
+  return Children.map(children, (child) => {
+    if (typeof child === "string" || typeof child === "number") {
+      return <SizableText>{child}</SizableText>;
+    }
+
+    if (isValidElement(child)) {
+      return child;
+    }
+
+    return child;
+  });
+}
+
+function getChildrenTextValue(children: ReactNode) {
+  if (typeof children === "string" || typeof children === "number") {
+    return String(children);
+  }
+
+  return undefined;
+}
+
+function getMenuItemTextValue(label: ReactNode, fallback: string) {
+  if (typeof label === "string" || typeof label === "number") {
+    return String(label);
+  }
+
+  return fallback;
+}
 
 function MenuRoot(props: MenuProps) {
   const {
@@ -26,6 +71,7 @@ function MenuRoot(props: MenuProps) {
     contentProps,
     itemProps,
     items,
+    offset,
     portalProps,
     trigger,
     triggerProps,
@@ -34,37 +80,49 @@ function MenuRoot(props: MenuProps) {
   const hasDefaultStructure = trigger != null || items != null || arrow != null;
 
   if (!hasDefaultStructure) {
-    return <TamaguiMenu {...rootProps}>{children}</TamaguiMenu>;
+    return (
+      <TamaguiMenu {...rootProps} offset={offset ?? 8}>
+        {children}
+      </TamaguiMenu>
+    );
   }
 
   return (
-    <TamaguiMenu {...rootProps}>
+    <TamaguiMenu {...rootProps} offset={offset ?? 8}>
       {trigger != null ? <MenuTrigger {...triggerProps}>{trigger}</MenuTrigger> : null}
       <MenuPortal {...portalProps}>
         <MenuContent {...contentProps}>
           {arrow ? <MenuArrow {...arrowProps} /> : null}
-          {items?.map((item) =>
-            item.separator ? (
-              <MenuSeparator key={item.value} />
-            ) : (
-              <MenuItem
-                {...itemProps}
-                aria-label={resolveAriaLabel(
-                  item["aria-label"] ?? itemProps?.["aria-label"],
-                  item.label ?? item.value,
-                )}
-                disabled={item.disabled ?? itemProps?.disabled}
-                key={item.value}
-                onPress={item.onPress}
-              >
-                {item.label ?? item.value}
-                {item.indicator != null ? (
-                  <MenuItemIndicator>{item.indicator}</MenuItemIndicator>
-                ) : null}
-              </MenuItem>
-            ),
-          )}
-          {children}
+          <MenuScrollView>
+            {items?.map((item) => {
+              if (item.separator) {
+                return <MenuSeparator key={item.value} />;
+              }
+
+              const label = item.label ?? item.value;
+
+              return (
+                <MenuItem
+                  {...itemProps}
+                  aria-label={resolveAriaLabel(
+                    item["aria-label"] ?? itemProps?.["aria-label"],
+                    label,
+                  )}
+                  destructive={item.destructive ?? itemProps?.destructive}
+                  disabled={item.disabled ?? itemProps?.disabled}
+                  key={item.value}
+                  onSelect={item.onSelect ?? item.onPress}
+                  textValue={item.textValue ?? getMenuItemTextValue(label, item.value)}
+                >
+                  <MenuItemTitle>{label}</MenuItemTitle>
+                  {item.indicator != null ? (
+                    <MenuItemIndicator>{item.indicator}</MenuItemIndicator>
+                  ) : null}
+                </MenuItem>
+              );
+            })}
+            {children}
+          </MenuScrollView>
         </MenuContent>
       </MenuPortal>
     </TamaguiMenu>
@@ -72,15 +130,36 @@ function MenuRoot(props: MenuProps) {
 }
 
 function MenuTrigger(props: MenuTriggerProps) {
-  return <TamaguiMenu.Trigger {...props} />;
+  return <TamaguiMenu.Trigger asChild={props.asChild ?? true} {...props} />;
 }
 
 function MenuPortal(props: MenuPortalProps) {
-  return <TamaguiMenu.Portal {...props} />;
+  return <TamaguiMenu.Portal {...props} zIndex={props.zIndex ?? 100} />;
 }
 
 function MenuContent(props: MenuContentProps) {
-  return <TamaguiMenu.Content {...props} />;
+  const { boxShadow, enterStyle, exitStyle, style, transition, ...contentProps } = props;
+
+  return (
+    <TamaguiMenu.Content
+      {...contentProps}
+      boxShadow={boxShadow ?? "0 4px 5px $shadowColor"}
+      enterStyle={enterStyle ?? DEFAULT_MENU_ENTER_STYLE}
+      exitStyle={exitStyle ?? DEFAULT_MENU_EXIT_STYLE}
+      style={mergeMenuStyle({ borderRadius: 16 }, style)}
+      transition={transition ?? "100ms"}
+    />
+  );
+}
+
+function MenuScrollView(props: MenuScrollViewProps) {
+  const { children, ...scrollViewProps } = props;
+
+  return (
+    <TamaguiMenu.ScrollView {...scrollViewProps}>
+      <YStack p={5}>{children}</YStack>
+    </TamaguiMenu.ScrollView>
+  );
 }
 
 function MenuGroup(props: MenuGroupProps) {
@@ -88,15 +167,48 @@ function MenuGroup(props: MenuGroupProps) {
 }
 
 function MenuLabel(props: MenuLabelProps) {
-  return <TamaguiMenu.Label {...props} />;
+  const { style, ...labelProps } = props;
+
+  return (
+    <TamaguiMenu.Label
+      {...labelProps}
+      color={props.color ?? "$color9"}
+      select={props.select ?? "none"}
+      size={props.size ?? "$3"}
+      style={mergeMenuStyle({ padding: 5 }, style)}
+    />
+  );
 }
 
 function MenuItem(props: MenuItemProps) {
-  return <TamaguiMenu.Item {...props} />;
+  const { children, textValue, ...itemProps } = props;
+
+  return (
+    <TamaguiMenu.Item {...itemProps} textValue={textValue ?? getChildrenTextValue(children)}>
+      {normalizeMenuChildren(children)}
+    </TamaguiMenu.Item>
+  );
+}
+
+function MenuItemTitle(props: MenuItemTitleProps) {
+  return <TamaguiMenu.ItemTitle {...props} />;
+}
+
+function MenuItemIcon(props: MenuItemIconProps) {
+  return <TamaguiMenu.ItemIcon {...props} />;
 }
 
 function MenuCheckboxItem(props: MenuCheckboxItemProps) {
-  return <TamaguiMenu.CheckboxItem {...props} />;
+  const { children, textValue, ...itemProps } = props;
+
+  return (
+    <TamaguiMenu.CheckboxItem
+      {...itemProps}
+      textValue={textValue ?? getChildrenTextValue(children)}
+    >
+      {normalizeMenuChildren(children)}
+    </TamaguiMenu.CheckboxItem>
+  );
 }
 
 function MenuRadioGroup(props: MenuRadioGroupProps) {
@@ -104,7 +216,13 @@ function MenuRadioGroup(props: MenuRadioGroupProps) {
 }
 
 function MenuRadioItem(props: MenuRadioItemProps) {
-  return <TamaguiMenu.RadioItem {...props} />;
+  const { children, textValue, ...itemProps } = props;
+
+  return (
+    <TamaguiMenu.RadioItem {...itemProps} textValue={textValue ?? getChildrenTextValue(children)}>
+      {normalizeMenuChildren(children)}
+    </TamaguiMenu.RadioItem>
+  );
 }
 
 function MenuItemIndicator(props: MenuItemIndicatorProps) {
@@ -116,20 +234,65 @@ function MenuSeparator(props: MenuSeparatorProps) {
 }
 
 function MenuArrow(props: MenuArrowProps) {
-  return <TamaguiMenu.Arrow {...props} />;
+  return (
+    <TamaguiMenu.Arrow
+      {...props}
+      borderColor={props.borderColor ?? "$borderColor"}
+      borderWidth={props.borderWidth ?? 1}
+      size={props.size ?? "$4"}
+    />
+  );
+}
+
+function MenuSub(props: MenuSubProps) {
+  return <TamaguiMenu.Sub {...props} />;
+}
+
+function MenuSubTrigger(props: MenuSubTriggerProps) {
+  const { children, textValue, ...subTriggerProps } = props;
+
+  return (
+    <TamaguiMenu.SubTrigger
+      {...subTriggerProps}
+      textValue={textValue ?? getChildrenTextValue(children)}
+    >
+      {normalizeMenuChildren(children)}
+    </TamaguiMenu.SubTrigger>
+  );
+}
+
+function MenuSubContent(props: MenuSubContentProps) {
+  const { boxShadow, enterStyle, exitStyle, style, transition, ...contentProps } = props;
+
+  return (
+    <TamaguiMenu.SubContent
+      {...contentProps}
+      boxShadow={boxShadow ?? "0 4px 5px $shadowColor"}
+      enterStyle={enterStyle ?? DEFAULT_MENU_ENTER_STYLE}
+      exitStyle={exitStyle ?? DEFAULT_MENU_EXIT_STYLE}
+      style={mergeMenuStyle({ borderRadius: 16, padding: 5 }, style)}
+      transition={transition ?? "100ms"}
+    />
+  );
 }
 
 export const Menu = Object.assign(MenuRoot, {
   Trigger: MenuTrigger,
   Portal: MenuPortal,
   Content: MenuContent,
+  ScrollView: MenuScrollView,
   Group: MenuGroup,
   Label: MenuLabel,
   Item: MenuItem,
+  ItemTitle: MenuItemTitle,
+  ItemIcon: MenuItemIcon,
   CheckboxItem: MenuCheckboxItem,
   RadioGroup: MenuRadioGroup,
   RadioItem: MenuRadioItem,
   ItemIndicator: MenuItemIndicator,
   Separator: MenuSeparator,
   Arrow: MenuArrow,
+  Sub: MenuSub,
+  SubTrigger: MenuSubTrigger,
+  SubContent: MenuSubContent,
 });

@@ -89,6 +89,7 @@ function getItemsContent(
               borderColor={contentProps?.borderColor ?? "$borderColor"}
               borderTopWidth={contentProps?.borderTopWidth ?? 0}
               borderWidth={contentProps?.borderWidth ?? 1}
+              enterStyle={contentProps?.enterStyle ?? { opacity: 0, y: -8 }}
               exitStyle={contentProps?.exitStyle ?? { opacity: 0 }}
               transition={contentProps?.transition ?? "300ms"}
               width={contentProps?.width ?? "100%"}

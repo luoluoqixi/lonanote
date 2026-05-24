@@ -1,3 +1,12 @@
+import {
+  Backpack,
+  Calendar,
+  Check,
+  ChevronRight,
+  FilePlus,
+  RefreshCw,
+  Trash2,
+} from "@tamagui/lucide-icons-2";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
@@ -50,6 +59,9 @@ export function UiComponentsDebugPanel() {
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [inputValue, setInputValue] = useState("lonanote");
   const [menuAction, setMenuAction] = useState("尚未选择");
+  const [menuMarkAsRead, setMenuMarkAsRead] = useState(true);
+  const [menuNativeEnabled, setMenuNativeEnabled] = useState(true);
+  const [menuSubOpen, setMenuSubOpen] = useState(false);
   const [radioValue, setRadioValue] = useState("recent");
   const [selectValue, setSelectValue] = useState<string | null>("blue");
   const [sliderValue, setSliderValue] = useState(56);
@@ -142,6 +154,17 @@ export function UiComponentsDebugPanel() {
             <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
+            <Label>Select Native</Label>
+            <Select
+              items={selectItems}
+              onValueChange={setSelectValue}
+              placeholder="选择主题色"
+              value={selectValue ?? undefined}
+              native
+            />
+            <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
+          </View>
+          <View style={styles.field}>
             <Label>Slider</Label>
             <Slider
               max={100}
@@ -198,7 +221,7 @@ export function UiComponentsDebugPanel() {
       </SectionCard>
 
       <SectionCard
-        description="弹层类组件使用 trigger/content/items 这类简单入口。"
+        description="弹层类组件支持简单入口；Menu 额外展示官方风格的复合 API 和多层子菜单。"
         title="浮层与菜单"
       >
         <DemoRow>
@@ -227,15 +250,134 @@ export function UiComponentsDebugPanel() {
             trigger={<Button variant="outlined">打开 Popover</Button>}
           />
 
-          <Menu
-            items={[
-              { label: "新建笔记", onPress: () => setMenuAction("新建笔记"), value: "new-note" },
-              { label: "重命名", onPress: () => setMenuAction("重命名"), value: "rename" },
-              { separator: true, value: "separator" },
-              { label: "删除", onPress: () => setMenuAction("删除"), value: "delete" },
-            ]}
-            trigger={<Button variant="outlined">打开 Menu</Button>}
-          />
+          <Menu>
+            <Menu.Trigger>
+              <Button icon={Backpack} size="$4" variant="outlined">
+                打开 Menu
+              </Button>
+            </Menu.Trigger>
+
+            <Menu.Portal zIndex={100}>
+              <Menu.Content>
+                <Menu.Arrow />
+
+                <Menu.ScrollView>
+                  <Menu.Item key="about-notes" onSelect={() => setMenuAction("关于笔记")}>
+                    <Menu.ItemTitle>关于笔记</Menu.ItemTitle>
+                  </Menu.Item>
+
+                  <Menu.Separator />
+
+                  <Menu.Item key="settings" onSelect={() => setMenuAction("设置")}>
+                    <Menu.ItemTitle>设置</Menu.ItemTitle>
+                  </Menu.Item>
+                  <Menu.Item
+                    justify="space-between"
+                    key="calendar"
+                    onSelect={() => setMenuAction("日历")}
+                    textValue="日历"
+                  >
+                    <Menu.ItemTitle>日历</Menu.ItemTitle>
+                    <Menu.ItemIcon>
+                      <Calendar color="$color10" size={14} />
+                    </Menu.ItemIcon>
+                  </Menu.Item>
+
+                  <Menu.Separator />
+
+                  <Menu.Item disabled key="locked-notes">
+                    <Menu.ItemTitle color="$color10">锁定笔记</Menu.ItemTitle>
+                  </Menu.Item>
+                  <Menu.Item
+                    destructive
+                    key="delete-all"
+                    onSelect={() => setMenuAction("删除全部")}
+                  >
+                    <Menu.ItemTitle color="$red10">删除全部</Menu.ItemTitle>
+                  </Menu.Item>
+
+                  <Menu.Separator />
+
+                  <Menu.Sub onOpenChange={setMenuSubOpen} open={menuSubOpen}>
+                    <Menu.SubTrigger justify="space-between" key="actions-trigger" textValue="操作">
+                      <Menu.ItemTitle>操作</Menu.ItemTitle>
+                      <ChevronRight color="$color10" size={16} />
+                    </Menu.SubTrigger>
+
+                    <Menu.Portal zIndex={200}>
+                      <Menu.SubContent>
+                        <Menu.Label>笔记设置</Menu.Label>
+                        <Menu.Item
+                          justify="space-between"
+                          key="create-note"
+                          onSelect={() => setMenuAction("新建笔记")}
+                          textValue="新建笔记"
+                        >
+                          <Menu.ItemTitle>新建笔记</Menu.ItemTitle>
+                          <Menu.ItemIcon>
+                            <FilePlus color="$color10" size={14} />
+                          </Menu.ItemIcon>
+                        </Menu.Item>
+                        <Menu.Item
+                          justify="space-between"
+                          key="delete-all-notes"
+                          onSelect={() => setMenuAction("删除所有笔记")}
+                          textValue="删除所有笔记"
+                        >
+                          <Menu.ItemTitle>删除所有笔记</Menu.ItemTitle>
+                          <Menu.ItemIcon>
+                            <Trash2 color="$color10" size={14} />
+                          </Menu.ItemIcon>
+                        </Menu.Item>
+                        <Menu.Item
+                          justify="space-between"
+                          key="sync-notes"
+                          onSelect={() => setMenuAction("同步笔记")}
+                          textValue="同步笔记"
+                        >
+                          <Menu.ItemTitle>同步笔记</Menu.ItemTitle>
+                          <Menu.ItemIcon>
+                            <RefreshCw color="$color10" size={14} />
+                          </Menu.ItemIcon>
+                        </Menu.Item>
+                      </Menu.SubContent>
+                    </Menu.Portal>
+                  </Menu.Sub>
+
+                  <Menu.Separator />
+
+                  <Menu.CheckboxItem
+                    checked={menuMarkAsRead}
+                    justify="space-between"
+                    key="mark-as-read"
+                    onCheckedChange={setMenuMarkAsRead}
+                    onSelect={() => setMenuAction(menuMarkAsRead ? "取消标记已读" : "标记为已读")}
+                    textValue="标记为已读"
+                  >
+                    <Menu.ItemTitle>标记为已读</Menu.ItemTitle>
+                    <Menu.ItemIndicator>
+                      <Check color="$color10" size={12} />
+                    </Menu.ItemIndicator>
+                  </Menu.CheckboxItem>
+                  <Menu.CheckboxItem
+                    checked={menuNativeEnabled}
+                    justify="space-between"
+                    key="enable-native"
+                    onCheckedChange={setMenuNativeEnabled}
+                    onSelect={() =>
+                      setMenuAction(menuNativeEnabled ? "关闭 Native 菜单" : "启用 Native 菜单")
+                    }
+                    textValue="启用 Native 菜单"
+                  >
+                    <Menu.ItemTitle>启用 Native 菜单</Menu.ItemTitle>
+                    <Menu.ItemIndicator>
+                      <Check color="$color10" size={12} />
+                    </Menu.ItemIndicator>
+                  </Menu.CheckboxItem>
+                </Menu.ScrollView>
+              </Menu.Content>
+            </Menu.Portal>
+          </Menu>
         </DemoRow>
         <Text color="$color10">最近菜单动作：{menuAction}</Text>
       </SectionCard>

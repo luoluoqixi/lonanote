@@ -1,7 +1,14 @@
 import { Check, ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
 import { forwardRef } from "react";
 import React from "react";
-import { Select as TamaguiSelect, YStack } from "tamagui";
+import {
+  Adapt,
+  FontSizeTokens,
+  Sheet,
+  Select as TamaguiSelect,
+  YStack,
+  getFontSize,
+} from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
 import { isWeb } from "@/api/common/platform";
@@ -229,6 +236,22 @@ const SelectRoot = forwardRef<any, SelectProps>(
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
 
+              <Adapt when="md" platform="touch">
+                <Sheet native={!!props.native} modal dismissOnSnapToBottom transition="medium">
+                  <Sheet.Frame>
+                    <Sheet.ScrollView>
+                      <Adapt.Contents />
+                    </Sheet.ScrollView>
+                  </Sheet.Frame>
+                  <Sheet.Overlay
+                    bg="$shadowColor"
+                    transition="lazy"
+                    enterStyle={{ opacity: 0 }}
+                    exitStyle={{ opacity: 0 }}
+                  />
+                </Sheet>
+              </Adapt>
+
               <SelectContent {...contentProps}>
                 <SelectScrollUpButton
                   items="center"
@@ -252,6 +275,20 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     )}
                     {renderedItems}
                   </SelectGroup>
+                  {/* Native gets an extra icon */}
+                  {props.native && (
+                    <YStack
+                      position="absolute"
+                      r={0}
+                      t={16}
+                      items="center"
+                      justify="center"
+                      width={"$4"}
+                      pointerEvents="none"
+                    >
+                      <ChevronDown size={getFontSize((props.size as FontSizeTokens) ?? "$true")} />
+                    </YStack>
+                  )}
                 </SelectViewport>
                 <SelectScrollDownButton
                   items="center"
