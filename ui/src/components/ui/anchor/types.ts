@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
 import type { Anchor as TamaguiAnchor } from "tamagui";
 
-export type AnchorProps = ComponentProps<typeof TamaguiAnchor>;
+export type LinkProps = ComponentProps<typeof TamaguiAnchor>;
+export type AnchorProps = LinkProps;

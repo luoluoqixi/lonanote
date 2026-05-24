@@ -14,20 +14,26 @@ import { StyleSheet, View } from "react-native";
 import {
   Accordion,
   AlertDialog,
-  Anchor,
   Avatar,
   Button,
   Card,
   Checkbox,
+  ContextMenu,
   Dialog,
+  Form,
+  Image,
   Input,
   Label,
-  ListItem,
+  Link,
+  ListGroup,
   Menu,
   Popover,
+  Progress,
   RadioGroup,
+  ScrollView,
   Select,
   Separator,
+  Sheet,
   Slider,
   Spinner,
   Switch,
@@ -35,6 +41,7 @@ import {
   Text,
   TextArea,
   ToggleGroup,
+  Tooltip,
 } from "@/components/ui";
 
 type SectionCardProps = {
@@ -56,9 +63,12 @@ function DemoRow({ children }: { children: ReactNode }) {
 }
 
 export function UiComponentsDebugPanel() {
-  const [checkboxValue, setCheckboxValue] = useState(true);
+  const [checkboxChecked, setCheckboxChecked] = useState(true);
+  const [checkboxNative, setCheckboxNative] = useState(false);
+  const [contextMenuAction, setContextMenuAction] = useState("尚未选择");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [formSubmitCount, setFormSubmitCount] = useState(0);
   const [inputValue, setInputValue] = useState("lonanote");
   const [menuAction, setMenuAction] = useState("尚未选择");
   const [menuMarkAsRead, setMenuMarkAsRead] = useState(true);
@@ -66,11 +76,15 @@ export function UiComponentsDebugPanel() {
   const [menuSubOpen, setMenuSubOpen] = useState(false);
   const [radioValue, setRadioValue] = useState("recent");
   const [selectValue, setSelectValue] = useState<string | null>("blue");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetPosition, setSheetPosition] = useState(0);
   const [sliderValue, setSliderValue] = useState(56);
   const [switchValue, setSwitchValue] = useState(true);
   const [tabsValue, setTabsValue] = useState("preview");
   const [textAreaValue, setTextAreaValue] = useState("这是一段文本区域示例。");
   const [toggleValue, setToggleValue] = useState("bold");
+  const [toggleValue2, setToggleValue2] = useState("bold");
+  const [popoverName, setPopoverName] = useState("LonaNote");
 
   const selectItems = useMemo(
     () => [
@@ -93,38 +107,113 @@ export function UiComponentsDebugPanel() {
     [],
   );
 
+  const sheetItems = useMemo(
+    () => ["最近工作区", "主题与外观", "同步状态", "导出设置", "快捷键说明"],
+    [],
+  );
+
+  const handleSheetOpenChange = (nextOpen: boolean) => {
+    setSheetOpen(nextOpen);
+  };
+
+  const handleSheetPositionChange = (nextPosition: number) => {
+    setSheetPosition(nextPosition);
+  };
+
   return (
     <View style={styles.root}>
       <SectionCard description="按钮、状态切换和加载反馈。" title="动作与反馈">
-        <DemoRow>
-          <Button>Primary</Button>
-          <Button variant="outlined">Outlined</Button>
-          <Button disabled>Disabled</Button>
-          <Spinner />
-        </DemoRow>
+        <View style={styles.demoGroup}>
+          <Text fontSize="$5" fontWeight="600">
+            Button
+          </Text>
+
+          <DemoRow>
+            <Button chromeless>Plain</Button>
+            <Button theme="accent">Active</Button>
+            <Button variant="outlined">Outlined</Button>
+            <Button disabled>Disabled</Button>
+          </DemoRow>
+
+          <DemoRow>
+            <Button icon={Calendar}>icon</Button>
+            <Button iconAfter={ChevronRight}>iconAfter</Button>
+            <Button icon={RefreshCw} theme="green">
+              Themed
+            </Button>
+            <Button circular icon={Check} aria-label="确认" />
+            <Button icon={Backpack} iconSize="$2" theme="blue">
+              Blue
+            </Button>
+            <Button iconAfter={Trash2} theme="red">
+              Red
+            </Button>
+          </DemoRow>
+        </View>
+
+        <View style={styles.demoGroup}>
+          <Text fontSize="$5" fontWeight="600">
+            Checkbox
+          </Text>
+
+          <View style={styles.checkboxGroup}>
+            <Checkbox
+              checked={checkboxChecked}
+              label="Accept terms and conditions"
+              onCheckedChange={(checked) => setCheckboxChecked(checked === true)}
+              size="$4"
+            />
+            <Checkbox checked={false} disabled label="Accept terms (disabled)" size="$4" />
+          </View>
+        </View>
 
         <DemoRow>
+          <Spinner />
+          <Spinner size="large" color="$yellow10" />
           <Switch
             checked={switchValue}
             label="Switch"
             labelPosition="end"
             onCheckedChange={setSwitchValue}
           />
-          <Checkbox
-            checked={checkboxValue}
-            label="Checkbox"
-            onCheckedChange={(checked) => setCheckboxValue(checked === true)}
-          />
-          <ToggleGroup
-            items={[
-              { label: "B", value: "bold" },
-              { label: "I", value: "italic" },
-            ]}
-            onValueChange={setToggleValue}
-            type="single"
-            value={toggleValue}
-          />
         </DemoRow>
+
+        <View style={styles.demoGroup}>
+          <Text fontSize="$5" fontWeight="600">
+            ToggleGroup
+          </Text>
+          <DemoRow>
+            <ToggleGroup
+              items={[
+                { label: "B", value: "bold" },
+                { label: "I", value: "italic" },
+                { label: "~", value: "test" },
+              ]}
+              onValueChange={setToggleValue}
+              type="single"
+              value={toggleValue}
+            />
+            <ToggleGroup
+              items={[
+                { label: "B", value: "bold" },
+                { label: "I", value: "italic" },
+                { label: "~", value: "test" },
+              ]}
+              onValueChange={setToggleValue2}
+              type="single"
+              orientation="vertical"
+              value={toggleValue2}
+            />
+          </DemoRow>
+        </View>
+
+        <View style={styles.field}>
+          <Label>Progress</Label>
+          <Progress max={100} size="$4" value={60} width="100%">
+            <Progress.Indicator />
+          </Progress>
+          <Text color="$color10">当前进度：60%</Text>
+        </View>
       </SectionCard>
 
       <SectionCard description="文本输入、多行输入、选择器和滑杆。" title="输入与选择">
@@ -176,6 +265,19 @@ export function UiComponentsDebugPanel() {
             />
             <Text color="$color10">当前值：{sliderValue}</Text>
           </View>
+        </View>
+
+        <View style={styles.field}>
+          <Label>Form</Label>
+          <Form
+            onSubmit={() => setFormSubmitCount((count) => count + 1)}
+            trigger={<Button>提交表单</Button>}
+          >
+            <View style={styles.formContent}>
+              <Input onChangeText={setInputValue} placeholder="workspace name" value={inputValue} />
+              <Text color="$color10">已通过 Form 提交：{formSubmitCount} 次</Text>
+            </View>
+          </Form>
         </View>
       </SectionCard>
 
@@ -248,7 +350,22 @@ export function UiComponentsDebugPanel() {
 
           <Popover
             arrow
-            content={<Text>这里可放任意说明或操作。</Text>}
+            content={
+              <View style={styles.popoverContent}>
+                <View style={styles.popoverFieldRow}>
+                  <Text style={styles.popoverFieldLabel}>Name</Text>
+                  <Input
+                    onChangeText={setPopoverName}
+                    placeholder="请输入名称"
+                    style={styles.popoverFieldInput}
+                    value={popoverName}
+                  />
+                </View>
+                <Button onPress={() => setMenuAction(`Popover submit: ${popoverName}`)}>
+                  Submit
+                </Button>
+              </View>
+            }
             trigger={<Button variant="outlined">打开 Popover</Button>}
           />
 
@@ -381,7 +498,89 @@ export function UiComponentsDebugPanel() {
             </Menu.Portal>
           </Menu>
         </DemoRow>
+
+        <DemoRow>
+          <Tooltip arrow content="Tooltip 在 web 下会显示，在 native 下主要输出可访问性语义。">
+            <Button variant="outlined">悬停 Tooltip</Button>
+          </Tooltip>
+
+          <ContextMenu
+            arrow
+            items={[
+              {
+                label: "重命名工作区",
+                onSelect: () => setContextMenuAction("重命名工作区"),
+                value: "rename-workspace",
+              },
+              {
+                label: "separator",
+                separator: true,
+                value: "separator-main",
+              },
+              {
+                destructive: true,
+                label: "移除工作区",
+                onSelect: () => setContextMenuAction("移除工作区"),
+                value: "remove-workspace",
+              },
+            ]}
+            trigger={<Button variant="outlined">右键 / 长按 ContextMenu</Button>}
+          />
+
+          <Button
+            onPress={() => {
+              setSheetPosition(0);
+              setSheetOpen(true);
+            }}
+            variant="outlined"
+          >
+            打开 Sheet
+          </Button>
+        </DemoRow>
+
+        <Text color="$color10">
+          Sheet 状态：{sheetOpen ? `打开，position=${sheetPosition}` : "关闭"}
+        </Text>
+        <View style={styles.sheetDemoHost}>
+          <Text color="$color10">
+            这个示例在调试面板 Dialog 内以 inline 模式渲染，并通过 wrapper 的默认组合 API 生成结构。
+          </Text>
+
+          <View style={styles.sheetDemoStage}>
+            <Sheet.Controller hidden={false} onOpenChange={handleSheetOpenChange} open={sheetOpen}>
+              <Sheet
+                content={sheetItems.map((item) => (
+                  <View key={item} style={styles.sheetItem}>
+                    <Text>{item}</Text>
+                  </View>
+                ))}
+                dismissOnSnapToBottom
+                frameProps={{ style: styles.sheetFrame }}
+                handle
+                modal={false}
+                onOpenChange={handleSheetOpenChange}
+                onPositionChange={handleSheetPositionChange}
+                open={sheetOpen}
+                overlay
+                overlayProps={{
+                  bg: "$shadow6",
+                  enterStyle: { opacity: 0 },
+                  exitStyle: { opacity: 0 },
+                  transition: "lazy",
+                }}
+                position={sheetPosition}
+                scrollView
+                scrollViewProps={{ contentContainerStyle: styles.sheetScrollContent }}
+                snapPoints={[76, 56]}
+                snapPointsMode="percent"
+                transition="medium"
+              />
+            </Sheet.Controller>
+          </View>
+        </View>
+
         <Text color="$color10">最近菜单动作：{menuAction}</Text>
+        <Text color="$color10">最近 ContextMenu 动作：{contextMenuAction}</Text>
       </SectionCard>
 
       <SectionCard description="头像、文本、分隔线和卡片默认结构。" title="展示组件">
@@ -394,15 +593,56 @@ export function UiComponentsDebugPanel() {
             <Text color="$color10">这里展示标题、正文和说明文案的基础排版。</Text>
           </View>
         </DemoRow>
-        <Anchor href="https://tamagui.dev/llms.txt" target="_blank">
+        <Link href="https://tamagui.dev/llms.txt" target="_blank">
           Tamagui llms.txt
-        </Anchor>
+        </Link>
         <Separator />
-        <ListItem
-          icon={Backpack}
-          subTitle="ListItem wrapper 当前直接透传 Tamagui ListItem。"
-          title="ListItem 组件示例"
+        <ListGroup
+          items={[
+            {
+              icon: Backpack,
+              iconAfter: ChevronRight,
+              subTitle: "ListItem wrapper 当前由 ListGroup 统一组织展示。",
+              title: "ListGroup / ListItem 组件示例",
+            },
+            {
+              icon: Calendar,
+              title: "第二项示例",
+            },
+          ]}
+          rounded="$4"
+          self="stretch"
+          separator
+          size="$4"
         />
+        <Separator />
+        <DemoRow>
+          <View style={styles.mediaDemo}>
+            <Text color="$color10">Image</Text>
+            <Image
+              alt="LonaNote 组件演示图片"
+              borderRadius={16}
+              height={160}
+              objectFit="cover"
+              src="https://github.com/luoluoqixi/lonanote/actions/workflows/release.yml/badge.svg"
+              width={240}
+            />
+          </View>
+
+          <View style={styles.mediaDemo}>
+            <Text color="$color10">ScrollView</Text>
+            <ScrollView
+              contentContainerStyle={styles.scrollViewContent}
+              style={styles.scrollViewDemo}
+            >
+              {selectItems.slice(0, 6).map((item) => (
+                <View key={item.value} style={styles.scrollViewItem}>
+                  <Text>{item.label}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </DemoRow>
         <Separator />
         <Card description="Card 默认 API 可直接传 title 和 description。" title="Card 组件示例">
           <Text>这里是 Card 承载的正文内容。</Text>
@@ -416,6 +656,12 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
   },
+  checkboxGroup: {
+    gap: 20,
+  },
+  demoGroup: {
+    gap: 12,
+  },
   field: {
     flex: 1,
     gap: 8,
@@ -426,9 +672,51 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 16,
   },
+  formContent: {
+    gap: 12,
+  },
+  mediaDemo: {
+    flex: 1,
+    gap: 8,
+    minWidth: 240,
+  },
+  popoverContent: {
+    alignItems: "center",
+    gap: 12,
+    minWidth: 280,
+  },
+  popoverFieldInput: {
+    flex: 1,
+  },
+  popoverFieldLabel: {
+    minWidth: 48,
+  },
+  popoverFieldRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
   root: {
     gap: 20,
     paddingBottom: 12,
+  },
+  scrollViewContent: {
+    gap: 8,
+    padding: 12,
+  },
+  scrollViewDemo: {
+    borderColor: "#d4d4d8",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 160,
+  },
+  scrollViewItem: {
+    borderColor: "#e4e4e7",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   row: {
     alignItems: "center",
@@ -440,6 +728,37 @@ const styles = StyleSheet.create({
     gap: 16,
     padding: 16,
     paddingTop: 0,
+  },
+  sheetFrame: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  sheetDemoHost: {
+    borderColor: "#e4e4e7",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+    overflow: "hidden",
+    padding: 16,
+    position: "relative",
+  },
+  sheetDemoStage: {
+    height: 240,
+    overflow: "hidden",
+    position: "relative",
+    width: "100%",
+  },
+  sheetItem: {
+    borderColor: "#e4e4e7",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+  },
+  sheetScrollContent: {
+    gap: 10,
+    paddingBottom: 24,
+    paddingTop: 12,
   },
   textDemo: {
     flex: 1,

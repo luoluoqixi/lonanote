@@ -102,6 +102,10 @@ function DebugTabScrollPane({ children }: { children: React.ReactNode }) {
   );
 }
 
+function DebugTabStaticPane({ children }: { children: React.ReactNode }) {
+  return <View style={styles.staticPane}>{children}</View>;
+}
+
 export function DebugPanelHost() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState<DebugTabKey>("workspace");
@@ -132,7 +136,12 @@ export function DebugPanelHost() {
         aria-label="调试面板导航"
         contentProps={{ style: styles.tabContent }}
         items={DEBUG_TABS.map((tab) => ({
-          content: <DebugTabScrollPane>{tab.content}</DebugTabScrollPane>,
+          content:
+            tab.key === "components" ? (
+              <DebugTabStaticPane>{tab.content}</DebugTabStaticPane>
+            ) : (
+              <DebugTabScrollPane>{tab.content}</DebugTabScrollPane>
+            ),
           label: tab.label,
           value: tab.key,
         }))}
@@ -157,6 +166,12 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     minHeight: 0,
+  },
+  staticPane: {
+    flex: 1,
+    minHeight: 0,
+    overflow: "scroll",
+    paddingBottom: 12,
   },
   tabContent: {
     flex: 1,

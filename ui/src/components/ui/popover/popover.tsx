@@ -9,6 +9,9 @@ import type {
   PopoverTriggerProps,
 } from "./types";
 
+const DEFAULT_POPOVER_ENTER_STYLE = { opacity: 0, scale: 0.96, y: -8 };
+const DEFAULT_POPOVER_EXIT_STYLE = { opacity: 0, scale: 0.96, y: -8 };
+
 function PopoverRoot(props: PopoverProps) {
   const {
     arrow,
@@ -42,7 +45,13 @@ function PopoverAnchor(props: PopoverAnchorProps) {
 }
 
 function PopoverArrow(props: PopoverArrowProps) {
-  return <TamaguiPopover.Arrow {...props} />;
+  return (
+    <TamaguiPopover.Arrow
+      {...props}
+      background={props.background ?? "$background"}
+      borderColor={props.borderColor ?? "$borderColor"}
+    />
+  );
 }
 
 function PopoverTrigger(props: PopoverTriggerProps) {
@@ -50,7 +59,33 @@ function PopoverTrigger(props: PopoverTriggerProps) {
 }
 
 function PopoverContent(props: PopoverContentProps) {
-  return <TamaguiPopover.Content {...props} />;
+  const {
+    background,
+    borderColor,
+    borderWidth,
+    boxShadow,
+    enterStyle,
+    exitStyle,
+    size,
+    style,
+    transition,
+    ...contentProps
+  } = props;
+
+  return (
+    <TamaguiPopover.Content
+      {...contentProps}
+      background={background ?? "$background"}
+      borderColor={borderColor ?? "$borderColor"}
+      borderWidth={borderWidth ?? 1}
+      boxShadow={boxShadow ?? "0 8px 24px $shadowColor"}
+      enterStyle={enterStyle ?? DEFAULT_POPOVER_ENTER_STYLE}
+      exitStyle={exitStyle ?? DEFAULT_POPOVER_EXIT_STYLE}
+      size={size ?? "$4"}
+      style={style}
+      transition={transition ?? "100ms"}
+    />
+  );
 }
 
 function PopoverClose(props: PopoverCloseProps) {

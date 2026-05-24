@@ -1,7 +1,10 @@
+import { type ElementRef, forwardRef } from "react";
 import { Button as TamaguiButton } from "tamagui";
 
 import type { ButtonProps } from "./types";
 
-export function Button(props: ButtonProps) {
-  return <TamaguiButton {...props} />;
-}
+export const Button = forwardRef<ElementRef<typeof TamaguiButton>, ButtonProps>(
+  function Button(props, ref) {
+    return <TamaguiButton {...props} ref={ref} />;
+  },
+);

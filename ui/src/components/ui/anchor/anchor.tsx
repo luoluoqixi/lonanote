@@ -1,7 +1,9 @@
 import { Anchor as TamaguiAnchor } from "tamagui";
 
-import type { AnchorProps } from "./types";
+import type { LinkProps } from "./types";
 
-export function Anchor(props: AnchorProps) {
+export function Link(props: LinkProps) {
   return <TamaguiAnchor {...props} />;
 }
+
+export const Anchor = Link;
