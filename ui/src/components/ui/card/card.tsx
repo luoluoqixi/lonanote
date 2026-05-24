@@ -1,4 +1,4 @@
-import { Paragraph, SizableText, Card as TamaguiCard, YStack } from "tamagui";
+import { H2, Paragraph, Card as TamaguiCard, View } from "tamagui";
 
 import type { CardBackgroundProps, CardFooterProps, CardHeaderProps, CardProps } from "./types";
 
@@ -12,28 +12,37 @@ function CardRoot(props: CardProps) {
     footerProps,
     header,
     headerProps,
+    contentProps,
     title,
     ...rootProps
   } = props;
   const hasHeader = header != null || title != null || description != null;
 
   return (
-    <TamaguiCard {...rootProps}>
-      {backgroundContent != null ? (
-        <CardBackground {...backgroundProps}>{backgroundContent}</CardBackground>
-      ) : null}
+    <TamaguiCard size="$4" borderWidth={1} borderColor="$borderColor" {...rootProps}>
       {hasHeader ? (
-        <CardHeader {...headerProps}>
+        <CardHeader p="$4" {...headerProps}>
           {header ?? (
-            <YStack gap="$1">
-              {title != null ? <SizableText fontWeight="600">{title}</SizableText> : null}
+            <>
+              {title != null ? <H2 fontWeight="600">{title}</H2> : null}
               {description != null ? <Paragraph color="$color10">{description}</Paragraph> : null}
-            </YStack>
+            </>
           )}
         </CardHeader>
       ) : null}
-      {children}
-      {footer != null ? <CardFooter {...footerProps}>{footer}</CardFooter> : null}
+      <View px="$4" pb="$4" {...contentProps}>
+        {children}
+      </View>
+      {footer != null ? (
+        <CardFooter p="$4" {...footerProps}>
+          {footer}
+        </CardFooter>
+      ) : null}
+      {backgroundContent != null ? (
+        <CardBackground items="center" {...backgroundProps}>
+          {backgroundContent}
+        </CardBackground>
+      ) : null}
     </TamaguiCard>
   );
 }

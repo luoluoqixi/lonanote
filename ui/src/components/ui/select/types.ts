@@ -27,6 +27,8 @@ export interface SelectProps extends Omit<
   itemProps?: Omit<ComponentProps<typeof TamaguiSelect.Item>, "index" | "value">;
   itemTextProps?: ComponentProps<typeof TamaguiSelect.ItemText>;
   items?: SelectItemData[];
+  itemLabel?: ReactNode;
+  itemLabelProps?: SelectLabelProps;
   onValueChange?: (nextValue: string | null) => void;
   options?: SelectItemData[];
   placeholder?: ReactNode;
