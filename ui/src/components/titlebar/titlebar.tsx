@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { isDesktop, isWeb, os } from "@/api/common";
+import { isWeb, os } from "@/api/common";
 import { TITLE_HEIGHT, getAppTitle } from "@/config";
 import { useSeparatorColor } from "@/hooks/ui/use_separator_color";
 
+import { tauriDragRegionProps } from "./tauri_drag_region";
+import { TitleBarDragOverlay } from "./titlebar_drag_overlay";
 import { WindowControls } from "./window_controls";
 
 const TitleLeft = () => {
@@ -27,8 +29,8 @@ const TitleCenter = () => {
     }
   }, []);
   return (
-    <View data-tauri-drag-region style={styles.titleCenter}>
-      <Text data-tauri-drag-region style={styles.titleText}>
+    <View {...tauriDragRegionProps} style={styles.titleCenter}>
+      <Text {...tauriDragRegionProps} style={styles.titleText}>
         {title}
       </Text>
     </View>
@@ -53,21 +55,15 @@ const TitleRight = () => {
 };
 
 const TitleBar = () => {
-  const desktop = isDesktop();
   const platform = os();
   const isMac = platform === "macos";
   const separatorColor = useSeparatorColor();
 
   return (
     <>
-      {desktop && (
-        <View
-          data-tauri-drag-region
-          style={[styles.dragOverlay, styles.dragRegion, { height: TITLE_HEIGHT }]}
-        />
-      )}
+      <TitleBarDragOverlay />
       <View
-        data-tauri-drag-region
+        {...tauriDragRegionProps}
         style={[styles.titlebar, { borderBottomColor: separatorColor, height: TITLE_HEIGHT }]}
       >
         <TitleLeft />
@@ -82,15 +78,6 @@ const TitleBar = () => {
 export { TitleBar };
 
 const styles = StyleSheet.create({
-  dragOverlay: {
-    backgroundColor: "transparent",
-    left: 0,
-    position: "fixed" as "absolute",
-    right: 0,
-    top: 0,
-    userSelect: "none" as never,
-    zIndex: 9998,
-  },
   dragRegion: {
     WebkitAppRegion: "drag",
     appRegion: "drag",
@@ -106,7 +93,7 @@ const styles = StyleSheet.create({
     position: "relative",
     userSelect: "none" as never,
     width: "100%",
-    zIndex: 9999,
+    zIndex: 999999,
   } as never,
   titleCenter: {
     alignItems: "center",

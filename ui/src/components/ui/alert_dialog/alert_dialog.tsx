@@ -1,7 +1,12 @@
+import type { ReactElement } from "react";
 import { AlertDialog as TamaguiAlertDialog, XStack, YStack } from "tamagui";
 
 import { isWeb } from "@/api/common/platform";
 import { Button } from "@/components/ui/button";
+import {
+  type OutsideInteractionEvent,
+  preventDialogDismissForDragRegion,
+} from "@/components/ui/dialog/dialog_outside_interaction";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type {
@@ -16,6 +21,15 @@ import type {
   AlertDialogTitleProps,
   AlertDialogTriggerProps,
 } from "./types";
+
+type AlertDialogContentBaseProps = AlertDialogContentProps & {
+  onInteractOutside?: (event: OutsideInteractionEvent) => void;
+  onPointerDownOutside?: (event: OutsideInteractionEvent) => void;
+};
+
+const AlertDialogContentBase = TamaguiAlertDialog.Content as unknown as (
+  props: AlertDialogContentBaseProps,
+) => ReactElement | null;
 
 function AlertDialogRoot(props: AlertDialogProps) {
   const {
@@ -139,7 +153,22 @@ function AlertDialogOverlay(props: AlertDialogOverlayProps) {
 }
 
 function AlertDialogContent(props: AlertDialogContentProps) {
-  return <TamaguiAlertDialog.Content {...props} />;
+  const contentProps = props as AlertDialogContentBaseProps;
+  const { onInteractOutside, onPointerDownOutside, ...restProps } = contentProps;
+
+  return (
+    <AlertDialogContentBase
+      {...restProps}
+      onPointerDownOutside={(event) => {
+        onPointerDownOutside?.(event);
+        preventDialogDismissForDragRegion(event);
+      }}
+      onInteractOutside={(event) => {
+        onInteractOutside?.(event);
+        preventDialogDismissForDragRegion(event);
+      }}
+    />
+  );
 }
 
 function AlertDialogAction(props: AlertDialogActionProps) {

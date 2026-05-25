@@ -6,6 +6,10 @@ import { isWeb } from "@/api/common/platform";
 import { Button } from "@/components/ui/button";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
+import {
+  type OutsideInteractionEvent,
+  preventDialogDismissForDragRegion,
+} from "./dialog_outside_interaction";
 import type {
   DialogCloseProps,
   DialogContentProps,
@@ -134,7 +138,21 @@ function DialogOverlay(props: DialogOverlayProps) {
 }
 
 function DialogContent(props: DialogContentProps) {
-  return <TamaguiDialog.Content {...props} />;
+  const { onInteractOutside, onPointerDownOutside, ...restProps } = props;
+
+  return (
+    <TamaguiDialog.Content
+      {...restProps}
+      onPointerDownOutside={(event) => {
+        onPointerDownOutside?.(event);
+        preventDialogDismissForDragRegion(event as OutsideInteractionEvent);
+      }}
+      onInteractOutside={(event) => {
+        onInteractOutside?.(event);
+        preventDialogDismissForDragRegion(event as OutsideInteractionEvent);
+      }}
+    />
+  );
 }
 
 function DialogTitle(props: DialogTitleProps) {
