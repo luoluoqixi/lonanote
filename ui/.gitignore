@@ -8,6 +8,9 @@
 /android_dev
 /android_release
 
+/ios_dev
+/ios_release
+
 /.copilot-patch-orig
 
 .tamagui
