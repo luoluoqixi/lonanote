@@ -1,0 +1,74 @@
+import type { Href } from "expo-router";
+import type { ComponentType } from "react";
+
+import { PathDebugPanel } from "./path_debug_panel";
+import { UiComponentsDebugPanel } from "./ui_components_panel";
+import { WorkspaceDebugPanel } from "./workspace_debug_panel";
+
+type DebugTabKey = "workspace" | "path" | "components";
+type DebugPanelPresentation = "scroll" | "static";
+
+type DebugPanelRouteDefinition = {
+  Component: ComponentType;
+  description: string;
+  href: Href;
+  key: DebugTabKey;
+  label: string;
+  presentation: DebugPanelPresentation;
+};
+
+const DEBUG_HOME_HREF = "/debug" as Href;
+const DEBUG_PANEL_TOGGLE_EVENT = "lonanote.debug-panel.toggle";
+const DEBUG_ROUTE_PREFIX = "/debug";
+
+const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
+  {
+    Component: WorkspaceDebugPanel,
+    description: "查看 roots、registry records 与当前 runtime state。",
+    href: "/debug/workspace" as Href,
+    key: "workspace",
+    label: "工作区",
+    presentation: "scroll",
+  },
+  {
+    Component: PathDebugPanel,
+    description: "查看当前平台的默认路径与目录解析结果。",
+    href: "/debug/path" as Href,
+    key: "path",
+    label: "路径",
+    presentation: "scroll",
+  },
+  {
+    Component: UiComponentsDebugPanel,
+    description: "整页查看 UI wrapper 组件示例与交互表现。",
+    href: "/debug/components" as Href,
+    key: "components",
+    label: "组件总览",
+    presentation: "static",
+  },
+];
+
+function getDebugPanelRouteDefinition(key: DebugTabKey): DebugPanelRouteDefinition {
+  const matchedDefinition = DEBUG_PANEL_ROUTE_DEFINITIONS.find(
+    (definition) => definition.key === key,
+  );
+
+  if (!matchedDefinition) {
+    throw new Error(`Unknown debug panel route: ${key}`);
+  }
+
+  return matchedDefinition;
+}
+
+function isDebugRoutePath(pathname: string): boolean {
+  return pathname === DEBUG_ROUTE_PREFIX || pathname.startsWith(`${DEBUG_ROUTE_PREFIX}/`);
+}
+
+export {
+  DEBUG_HOME_HREF,
+  DEBUG_PANEL_ROUTE_DEFINITIONS,
+  DEBUG_PANEL_TOGGLE_EVENT,
+  getDebugPanelRouteDefinition,
+  isDebugRoutePath,
+};
+export type { DebugPanelPresentation, DebugPanelRouteDefinition, DebugTabKey };

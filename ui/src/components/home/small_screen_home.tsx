@@ -21,6 +21,7 @@ export function SmallScreenHome() {
           <Text className="text-base font-medium text-foreground">全局设置</Text>
           <Text className="text-sm leading-6 text-foreground/65">主题、窗口和编辑器默认值。</Text>
           <Button onPress={() => router.push(SETTINGS_HREF)}>打开全局设置</Button>
+          <Button onPress={() => router.push("/debug")}>打开debug</Button>
         </View>
       </View>
     </SafeAreaView>

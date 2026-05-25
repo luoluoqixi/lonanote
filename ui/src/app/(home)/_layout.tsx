@@ -5,9 +5,7 @@ import { useWindowDimensions } from "react-native";
 import { isDesktop } from "@/api/common";
 import { WideScreenHome } from "@/components/home";
 import { TitleBar } from "@/components/titlebar";
-import { getAppName, getVersion, initConfig } from "@/config";
-
-const MINIMUM_WIDTH = 728;
+import { WIDE_LAYOUT_MINIMUM_WIDTH, getAppName, getVersion, initConfig } from "@/config";
 
 export default function UILayout() {
   const { width } = useWindowDimensions();
@@ -21,7 +19,7 @@ export default function UILayout() {
     initialize();
   }, []);
 
-  if (width >= MINIMUM_WIDTH) {
+  if (width >= WIDE_LAYOUT_MINIMUM_WIDTH) {
     return <WideScreenHome />;
   }
 

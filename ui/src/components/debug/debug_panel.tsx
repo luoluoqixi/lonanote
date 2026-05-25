@@ -1,22 +1,26 @@
+import { usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { DeviceEventEmitter, Platform, ScrollView, StyleSheet, View } from "react-native";
+import {
+  DeviceEventEmitter,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
 
 import { Dialog, Tabs } from "@/components/ui";
+import { WIDE_LAYOUT_MINIMUM_WIDTH } from "@/config";
 
-import { PathDebugPanel } from "./path_debug_panel";
-import { UiComponentsDebugPanel } from "./ui_components_panel";
-import { WorkspaceDebugPanel } from "./workspace_debug_panel";
-
-type DebugTabKey = "workspace" | "path" | "components";
-const DEBUG_PANEL_TOGGLE_EVENT = "lonanote.debug-panel.toggle";
-
-const DEBUG_TABS: Array<{ content: React.ReactNode; key: DebugTabKey; label: string }> = [
-  { content: <WorkspaceDebugPanel />, key: "workspace", label: "工作区" },
-  { content: <PathDebugPanel />, key: "path", label: "路径" },
-  { content: <UiComponentsDebugPanel />, key: "components", label: "组件总览" },
-];
+import {
+  DEBUG_HOME_HREF,
+  DEBUG_PANEL_ROUTE_DEFINITIONS,
+  DEBUG_PANEL_TOGGLE_EVENT,
+  type DebugTabKey,
+  isDebugRoutePath,
+} from "./debug_panel_routes";
 
 function emitDebugPanelToggle() {
   DeviceEventEmitter.emit(DEBUG_PANEL_TOGGLE_EVENT);
@@ -107,18 +111,42 @@ function DebugTabStaticPane({ children }: { children: React.ReactNode }) {
 }
 
 export function DebugPanelHost() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { width } = useWindowDimensions();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState<DebugTabKey>("workspace");
+  const usesRoutePresentation = width < WIDE_LAYOUT_MINIMUM_WIDTH;
 
-  useDebugPanelShortcut(() => {
-    setIsOpen((current) => !current);
-  });
+  const toggleDebugPanel = () => {
+    if (usesRoutePresentation) {
+      if (isDebugRoutePath(pathname)) {
+        router.back();
+        return;
+      }
 
-  useDebugPanelNativeToggle(() => {
+      router.push(DEBUG_HOME_HREF);
+      return;
+    }
+
     setIsOpen((current) => !current);
-  });
+  };
+
+  useDebugPanelShortcut(toggleDebugPanel);
+
+  useDebugPanelNativeToggle(toggleDebugPanel);
+
+  useEffect(() => {
+    if (usesRoutePresentation && isOpen) {
+      setIsOpen(false);
+    }
+  }, [isOpen, usesRoutePresentation]);
 
   if (!__DEV__) {
+    return null;
+  }
+
+  if (usesRoutePresentation) {
     return null;
   }
 
@@ -135,16 +163,24 @@ export function DebugPanelHost() {
       <Tabs
         aria-label="调试面板导航"
         contentProps={{ style: styles.tabContent }}
-        items={DEBUG_TABS.map((tab) => ({
-          content:
-            tab.key === "components" ? (
-              <DebugTabStaticPane>{tab.content}</DebugTabStaticPane>
-            ) : (
-              <DebugTabScrollPane>{tab.content}</DebugTabScrollPane>
-            ),
-          label: tab.label,
-          value: tab.key,
-        }))}
+        items={DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => {
+          const SectionComponent = definition.Component;
+
+          return {
+            content:
+              definition.presentation === "static" ? (
+                <DebugTabStaticPane>
+                  <SectionComponent />
+                </DebugTabStaticPane>
+              ) : (
+                <DebugTabScrollPane>
+                  <SectionComponent />
+                </DebugTabScrollPane>
+              ),
+            label: definition.label,
+            value: definition.key,
+          };
+        })}
         listProps={{ style: styles.tabList }}
         onValueChange={(nextValue) => setSelectedTab(nextValue as DebugTabKey)}
         orientation="vertical"
