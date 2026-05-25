@@ -64,7 +64,6 @@ function DemoRow({ children }: { children: ReactNode }) {
 
 export function UiComponentsDebugPanel() {
   const [checkboxChecked, setCheckboxChecked] = useState(true);
-  const [checkboxNative, setCheckboxNative] = useState(false);
   const [contextMenuAction, setContextMenuAction] = useState("尚未选择");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);

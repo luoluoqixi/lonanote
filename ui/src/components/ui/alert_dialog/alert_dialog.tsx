@@ -1,5 +1,10 @@
 import type { ReactElement } from "react";
-import { AlertDialog as TamaguiAlertDialog, XStack, YStack } from "tamagui";
+import {
+  AlertDialog as TamaguiAlertDialog,
+  Dialog as TamaguiDialog,
+  XStack,
+  YStack,
+} from "tamagui";
 
 import { isWeb } from "@/api/common/platform";
 import { Button } from "@/components/ui/button";
@@ -27,7 +32,7 @@ type AlertDialogContentBaseProps = AlertDialogContentProps & {
   onPointerDownOutside?: (event: OutsideInteractionEvent) => void;
 };
 
-const AlertDialogContentBase = TamaguiAlertDialog.Content as unknown as (
+const AlertDialogContentBase = TamaguiDialog.Content as unknown as (
   props: AlertDialogContentBaseProps,
 ) => ReactElement | null;
 
@@ -158,14 +163,18 @@ function AlertDialogContent(props: AlertDialogContentProps) {
 
   return (
     <AlertDialogContentBase
+      role="alertdialog"
+      aria-modal={true}
       {...restProps}
       onPointerDownOutside={(event) => {
         onPointerDownOutside?.(event);
         preventDialogDismissForDragRegion(event);
+        event.preventDefault();
       }}
       onInteractOutside={(event) => {
         onInteractOutside?.(event);
         preventDialogDismissForDragRegion(event);
+        event.preventDefault();
       }}
     />
   );
