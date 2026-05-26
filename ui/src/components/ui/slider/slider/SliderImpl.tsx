@@ -8,6 +8,8 @@ import { getSize } from "@tamagui/get-token";
 import { YStack } from "@tamagui/stacks";
 import * as React from "react";
 import { View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 
 import { ARROW_KEYS, PAGE_KEYS, SLIDER_NAME, useSliderContext } from "./constants";
 import type { ScopedProps, SliderImplProps } from "./types";
@@ -57,6 +59,7 @@ export const SliderImpl = React.forwardRef<View, SliderImplProps>(
       ...sliderProps
     } = props;
     const context = useSliderContext(__scopeSlider);
+    const isNative = !isWeb;
 
     const handleResponderGrant = React.useCallback(
       (event: any) => {
@@ -102,6 +105,81 @@ export const SliderImpl = React.forwardRef<View, SliderImplProps>(
       [onSlideEnd, props.onResponderRelease],
     );
 
+    const createNativeResponderEvent = React.useCallback((event: any) => {
+      return {
+        nativeEvent: {
+          locationX: event.x,
+          locationY: event.y,
+          pageX: event.absoluteX,
+          pageY: event.absoluteY,
+          target: event.target,
+        },
+        stopPropagation() {},
+      } as any;
+    }, []);
+
+    const handleNativeGestureStart = React.useCallback(
+      (event: any) => {
+        handleResponderGrant(createNativeResponderEvent(event));
+      },
+      [createNativeResponderEvent, handleResponderGrant],
+    );
+
+    const handleNativeGestureMove = React.useCallback(
+      (event: any) => {
+        handleResponderMove(createNativeResponderEvent(event));
+      },
+      [createNativeResponderEvent, handleResponderMove],
+    );
+
+    const handleNativeGestureEnd = React.useCallback(
+      (event: any) => {
+        handleResponderRelease(createNativeResponderEvent(event));
+      },
+      [createNativeResponderEvent, handleResponderRelease],
+    );
+
+    const nativeGesture = React.useMemo(() => {
+      if (!isNative) {
+        return null;
+      }
+
+      return Gesture.Pan()
+        .minDistance(0)
+        .shouldCancelWhenOutside(false)
+        .onBegin((event) => {
+          "worklet";
+          runOnJS(handleNativeGestureStart)(event);
+        })
+        .onUpdate((event) => {
+          "worklet";
+          runOnJS(handleNativeGestureMove)(event);
+        })
+        .onEnd((event) => {
+          "worklet";
+          runOnJS(handleNativeGestureEnd)(event);
+        })
+        .onFinalize((event) => {
+          "worklet";
+          runOnJS(handleNativeGestureEnd)(event);
+        });
+    }, [handleNativeGestureEnd, handleNativeGestureMove, handleNativeGestureStart, isNative]);
+
+    const content = (
+      <View
+        onMoveShouldSetResponderCapture={isWeb ? () => false : undefined}
+        onMoveShouldSetResponder={isWeb ? () => false : undefined}
+        onStartShouldSetResponder={isWeb ? () => true : undefined}
+        onResponderTerminationRequest={isWeb ? () => false : undefined}
+        onResponderGrant={isWeb ? handleResponderGrant : undefined}
+        onResponderMove={isWeb ? handleResponderMove : undefined}
+        onResponderRelease={isWeb ? handleResponderRelease : undefined}
+        style={{ inset: 0, position: "absolute" }}
+      >
+        {children}
+      </View>
+    );
+
     return (
       // wrap with plain RN View for responder events - tamagui views no longer handle responder events on web
 
@@ -128,18 +206,11 @@ export const SliderImpl = React.forwardRef<View, SliderImplProps>(
           },
         })}
       >
-        <View
-          onMoveShouldSetResponderCapture={() => !isWeb}
-          onMoveShouldSetResponder={() => !isWeb}
-          onStartShouldSetResponder={() => true}
-          onResponderTerminationRequest={() => false}
-          onResponderGrant={handleResponderGrant}
-          onResponderMove={handleResponderMove}
-          onResponderRelease={handleResponderRelease}
-          style={{ inset: 0, position: "absolute" }}
-        >
-          {children}
-        </View>
+        {nativeGesture ? (
+          <GestureDetector gesture={nativeGesture}>{content}</GestureDetector>
+        ) : (
+          content
+        )}
       </SliderFrame>
     );
   },
