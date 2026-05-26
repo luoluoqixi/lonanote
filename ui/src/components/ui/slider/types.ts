@@ -1,12 +1,18 @@
-import type { ComponentProps } from "react";
-import type { Slider as TamaguiSlider } from "tamagui";
+import type { ComponentProps, ReactNode } from "react";
 
-export interface SliderProps extends ComponentProps<typeof TamaguiSlider> {
+import type { Slider as ReplicaSlider } from "./slider/Slider";
+import type { SliderProps as ReplicaSliderProps } from "./slider/types";
+
+export type Direction = "ltr" | "rtl";
+
+export interface SliderProps extends ReplicaSliderProps {
+  children?: ReactNode;
   thumbCount?: number;
-  thumbProps?: SliderThumbProps;
-  trackActiveProps?: SliderTrackActiveProps;
-  trackProps?: SliderTrackProps;
+  thumbProps?: Partial<SliderThumbProps>;
+  trackProps?: Partial<SliderTrackProps>;
+  trackActiveProps?: Partial<SliderTrackActiveProps>;
 }
-export type SliderTrackProps = ComponentProps<typeof TamaguiSlider.Track>;
-export type SliderTrackActiveProps = ComponentProps<typeof TamaguiSlider.TrackActive>;
-export type SliderThumbProps = ComponentProps<typeof TamaguiSlider.Thumb>;
+
+export type SliderTrackProps = ComponentProps<(typeof ReplicaSlider)["Track"]>;
+export type SliderTrackActiveProps = ComponentProps<(typeof ReplicaSlider)["TrackActive"]>;
+export type SliderThumbProps = ComponentProps<(typeof ReplicaSlider)["Thumb"]>;

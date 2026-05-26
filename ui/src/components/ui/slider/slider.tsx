@@ -1,5 +1,6 @@
-import { Slider as TamaguiSlider } from "tamagui";
+import React from "react";
 
+import { Slider as ReplicaSlider } from "./slider/Slider";
 import type {
   SliderProps,
   SliderThumbProps,
@@ -8,19 +9,28 @@ import type {
 } from "./types";
 
 function SliderRoot(props: SliderProps) {
-  const { children, thumbCount, thumbProps, trackActiveProps, trackProps, ...rootProps } = props;
+  const {
+    children,
+    thumbCount,
+    thumbProps,
+    trackActiveProps,
+    trackProps,
+    orientation = "horizontal",
+    size = "$4",
+    ...rootProps
+  } = props;
   const resolvedThumbCount =
     thumbCount ?? rootProps.value?.length ?? rootProps.defaultValue?.length ?? 1;
 
   return (
-    <TamaguiSlider {...rootProps}>
+    <ReplicaSlider {...rootProps} orientation={orientation} size={size}>
       {children ?? (
         <>
-          <SliderTrack {...trackProps}>
-            <SliderTrackActive {...trackActiveProps} />
-          </SliderTrack>
+          <ReplicaSlider.Track {...trackProps}>
+            <ReplicaSlider.TrackActive {...trackActiveProps} />
+          </ReplicaSlider.Track>
           {Array.from({ length: resolvedThumbCount }).map((_, index) => (
-            <SliderThumb
+            <ReplicaSlider.Thumb
               size={30}
               {...thumbProps}
               circular={thumbProps?.circular ?? true}
@@ -30,24 +40,24 @@ function SliderRoot(props: SliderProps) {
           ))}
         </>
       )}
-    </TamaguiSlider>
+    </ReplicaSlider>
   );
 }
 
-function SliderTrack(props: SliderTrackProps) {
-  return <TamaguiSlider.Track {...props} />;
+function SliderTrackWrapper(props: SliderTrackProps) {
+  return <ReplicaSlider.Track {...props} />;
 }
 
-function SliderTrackActive(props: SliderTrackActiveProps) {
-  return <TamaguiSlider.TrackActive {...props} />;
+function SliderTrackActiveWrapper(props: SliderTrackActiveProps) {
+  return <ReplicaSlider.TrackActive {...props} />;
 }
 
-function SliderThumb(props: SliderThumbProps) {
-  return <TamaguiSlider.Thumb {...props} />;
+function SliderThumbWrapper(props: SliderThumbProps) {
+  return <ReplicaSlider.Thumb {...props} />;
 }
 
 export const Slider = Object.assign(SliderRoot, {
-  Track: SliderTrack,
-  TrackActive: SliderTrackActive,
-  Thumb: SliderThumb,
+  Track: SliderTrackWrapper,
+  TrackActive: SliderTrackActiveWrapper,
+  Thumb: SliderThumbWrapper,
 });

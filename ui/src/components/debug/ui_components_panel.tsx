@@ -38,6 +38,7 @@ import {
   Spinner,
   Switch,
   Tabs,
+  TamaguiSlider,
   Text,
   TextArea,
   ToggleGroup,
@@ -78,6 +79,7 @@ export function UiComponentsDebugPanel() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
   const [sliderValue, setSliderValue] = useState(56);
+  const [tamaguiSliderValue, setTamaguiSliderValue] = useState(56);
   const [switchValue, setSwitchValue] = useState(true);
   const [tabsValue, setTabsValue] = useState("preview");
   const [textAreaValue, setTextAreaValue] = useState("这是一段文本区域示例。");
@@ -243,7 +245,7 @@ export function UiComponentsDebugPanel() {
             <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
-            <Label>Slider</Label>
+            <Label>Slider Replica</Label>
             <Slider
               max={100}
               min={0}
@@ -251,6 +253,16 @@ export function UiComponentsDebugPanel() {
               value={[sliderValue]}
             />
             <Text color="$color10">当前值：{sliderValue}</Text>
+          </View>
+          <View style={styles.field}>
+            <Label>Slider Tamagui</Label>
+            <TamaguiSlider
+              max={100}
+              min={0}
+              onValueChange={(nextValue: number[]) => setTamaguiSliderValue(nextValue[0] ?? 0)}
+              value={[tamaguiSliderValue]}
+            />
+            <Text color="$color10">当前值：{tamaguiSliderValue}</Text>
           </View>
         </View>
 
