@@ -5,5 +5,3 @@ import type { LinkProps } from "./types";
 export function Link(props: LinkProps) {
   return <TamaguiAnchor {...props} />;
 }
-
-export const Anchor = Link;

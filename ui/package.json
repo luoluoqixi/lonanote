@@ -30,6 +30,7 @@
     "typecheck": "tsc --noEmit --pretty false"
   },
   "dependencies": {
+    "@react-native-menu/menu": "2.0.0",
     "@gorhom/bottom-sheet": "^5.2.10",
     "@react-navigation/bottom-tabs": "^7.15.10",
     "@react-navigation/elements": "^2.9.15",
@@ -76,6 +77,7 @@
     "react-native-worklets": "=0.8.1",
     "tamagui": "^2.0.0",
     "typescript-eslint": "^8.59.1",
+    "zeego": "^3.0.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
@@ -90,6 +92,7 @@
   },
   "private": true,
   "overrides": {
+    "@react-native-menu/menu": "2.0.0",
     "metro": "=0.83.6",
     "metro-babel-transformer": "=0.83.6",
     "metro-cache": "=0.83.6",

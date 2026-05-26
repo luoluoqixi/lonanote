@@ -1,6 +1,5 @@
 export * from "./accordion";
 export * from "./alert_dialog";
-export * from "./anchor";
 export * from "./avatar";
 export * from "./button";
 export * from "./card";
@@ -11,6 +10,7 @@ export * from "./form";
 export * from "./image";
 export * from "./input";
 export * from "./label";
+export * from "./link";
 export * from "./list_group";
 export * from "./list_item";
 export * from "./menu";
