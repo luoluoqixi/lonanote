@@ -30,8 +30,8 @@
     "typecheck": "tsc --noEmit --pretty false"
   },
   "dependencies": {
-    "@react-native-menu/menu": "2.0.0",
     "@gorhom/bottom-sheet": "^5.2.10",
+    "@react-native-menu/menu": "2.0.0",
     "@react-navigation/bottom-tabs": "^7.15.10",
     "@react-navigation/elements": "^2.9.15",
     "@react-navigation/native": "^7.2.2",
@@ -68,6 +68,8 @@
     "react-dom": "19.2.5",
     "react-native": "0.83.9",
     "react-native-gesture-handler": "=2.31.1",
+    "react-native-ios-context-menu": "^3.2.1",
+    "react-native-ios-utilities": "5.2.0",
     "react-native-reanimated": "=4.3.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.24.0",
