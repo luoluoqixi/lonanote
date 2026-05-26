@@ -596,8 +596,10 @@ const SliderComponent = React.forwardRef((props: ScopedProps<SliderProps>, forwa
         e.preventDefault();
       };
       node.addEventListener("touchstart", preventDefault);
+      node.addEventListener("mousedown", preventDefault);
       return () => {
         node.removeEventListener("touchstart", preventDefault);
+        node.removeEventListener("mousedown", preventDefault);
       };
     }, []);
   }

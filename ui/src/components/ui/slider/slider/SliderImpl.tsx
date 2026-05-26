@@ -129,8 +129,8 @@ export const SliderImpl = React.forwardRef<View, SliderImplProps>(
         })}
       >
         <View
-          onMoveShouldSetResponderCapture={() => true}
-          onMoveShouldSetResponder={() => true}
+          onMoveShouldSetResponderCapture={() => !isWeb}
+          onMoveShouldSetResponder={() => !isWeb}
           onStartShouldSetResponder={() => true}
           onResponderTerminationRequest={() => false}
           onResponderGrant={handleResponderGrant}
