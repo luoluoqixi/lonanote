@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   staticPane: {
     flex: 1,
     minHeight: 0,
-    overflow: "scroll",
+    overflowY: "scroll",
     paddingBottom: 12,
   },
   tabContent: {

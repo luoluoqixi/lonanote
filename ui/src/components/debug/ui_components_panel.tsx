@@ -162,7 +162,6 @@ export function UiComponentsDebugPanel() {
               onCheckedChange={(checked) => setCheckboxChecked(checked === true)}
               size="$4"
             />
-            <Checkbox checked={false} disabled label="Accept terms (disabled)" size="$4" />
           </View>
         </View>
 
@@ -191,17 +190,6 @@ export function UiComponentsDebugPanel() {
               onValueChange={setToggleValue}
               type="single"
               value={toggleValue}
-            />
-            <ToggleGroup
-              items={[
-                { label: "B", value: "bold" },
-                { label: "I", value: "italic" },
-                { label: "~", value: "test" },
-              ]}
-              onValueChange={setToggleValue2}
-              type="single"
-              orientation="vertical"
-              value={toggleValue2}
             />
           </DemoRow>
         </View>
@@ -656,7 +644,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   checkboxGroup: {
-    gap: 20,
+    gap: 0,
   },
   demoGroup: {
     gap: 12,
