@@ -14,6 +14,65 @@ import { runOnJS } from "react-native-reanimated";
 import { ARROW_KEYS, PAGE_KEYS, SLIDER_NAME, useSliderContext } from "./constants";
 import type { ScopedProps, SliderImplProps } from "./types";
 
+const NATIVE_GESTURE_OVERFLOW = {
+  horizontal: {
+    crossAxisEnd: 24,
+    crossAxisStart: 12,
+  },
+  vertical: {
+    crossAxisEnd: 24,
+    crossAxisStart: 12,
+  },
+} as const;
+
+const NATIVE_SLIDER_Z_INDEX = 1;
+
+function getExpandedGestureLayerStyle(
+  orientation: "horizontal" | "vertical",
+  overflow: { crossAxisEnd: number; crossAxisStart: number },
+) {
+  if (orientation === "vertical") {
+    return {
+      bottom: 0,
+      left: -overflow.crossAxisStart,
+      position: "absolute" as const,
+      right: -overflow.crossAxisEnd,
+      top: 0,
+    };
+  }
+
+  return {
+    bottom: -overflow.crossAxisEnd,
+    left: 0,
+    position: "absolute" as const,
+    right: 0,
+    top: -overflow.crossAxisStart,
+  };
+}
+
+function getGestureContentStyle(
+  orientation: "horizontal" | "vertical",
+  overflow: { crossAxisEnd: number; crossAxisStart: number },
+) {
+  if (orientation === "vertical") {
+    return {
+      bottom: 0,
+      left: overflow.crossAxisStart,
+      position: "absolute" as const,
+      right: overflow.crossAxisEnd,
+      top: 0,
+    };
+  }
+
+  return {
+    bottom: overflow.crossAxisEnd,
+    left: 0,
+    position: "absolute" as const,
+    right: 0,
+    top: overflow.crossAxisStart,
+  };
+}
+
 export const SliderFrame = styled(YStack, {
   position: "relative",
 
@@ -60,6 +119,8 @@ export const SliderImpl = React.forwardRef<View, SliderImplProps>(
     } = props;
     const context = useSliderContext(__scopeSlider);
     const isNative = !isWeb;
+    const orientation = sliderProps.orientation;
+    const nativeGestureOverflow = isNative ? NATIVE_GESTURE_OVERFLOW[orientation] : null;
 
     const handleResponderGrant = React.useCallback(
       (event: any) => {
@@ -174,7 +235,11 @@ export const SliderImpl = React.forwardRef<View, SliderImplProps>(
         onResponderGrant={isWeb ? handleResponderGrant : undefined}
         onResponderMove={isWeb ? handleResponderMove : undefined}
         onResponderRelease={isWeb ? handleResponderRelease : undefined}
-        style={{ inset: 0, position: "absolute" }}
+        style={
+          isNative && nativeGestureOverflow
+            ? getGestureContentStyle(orientation, nativeGestureOverflow)
+            : { inset: 0, position: "absolute" }
+        }
       >
         {children}
       </View>
@@ -187,7 +252,10 @@ export const SliderImpl = React.forwardRef<View, SliderImplProps>(
         size="$4"
         ref={forwardedRef as any}
         {...sliderProps}
-        data-orientation={sliderProps.orientation}
+        data-orientation={orientation}
+        style={
+          isNative ? [{ zIndex: NATIVE_SLIDER_Z_INDEX }, sliderProps.style] : sliderProps.style
+        }
         {...(isWeb && {
           onKeyDown: (event) => {
             if (event.key === "Home") {
@@ -206,8 +274,12 @@ export const SliderImpl = React.forwardRef<View, SliderImplProps>(
           },
         })}
       >
-        {nativeGesture ? (
-          <GestureDetector gesture={nativeGesture}>{content}</GestureDetector>
+        {nativeGesture && nativeGestureOverflow ? (
+          <GestureDetector gesture={nativeGesture}>
+            <View style={getExpandedGestureLayerStyle(orientation, nativeGestureOverflow)}>
+              {content}
+            </View>
+          </GestureDetector>
         ) : (
           content
         )}
