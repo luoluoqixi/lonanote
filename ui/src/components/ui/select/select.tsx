@@ -1,10 +1,11 @@
 import { Check, ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
 import { forwardRef } from "react";
 import React from "react";
-import { FontSizeTokens, Sheet, Select as TamaguiSelect, YStack, getFontSize } from "tamagui";
+import { FontSizeTokens, Select as TamaguiSelect, YStack, getFontSize } from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
 import { isWeb } from "@/api/common/platform";
+import { Sheet } from "@/components/ui/sheet";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type {
