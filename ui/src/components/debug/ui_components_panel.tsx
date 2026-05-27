@@ -82,13 +82,15 @@ export function UiComponentsDebugPanel() {
   const [sheetPosition, setSheetPosition] = useState(0);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
   const [globalSheetPosition, setGlobalSheetPosition] = useState(0);
+  const [globalSnapPointsMode, setGlobalSnapPointsMode] = useState<
+    "percent" | "fit" | "mixed" | "constant"
+  >("percent");
   const [sliderValue, setSliderValue] = useState(56);
   const [tamaguiSliderValue, setTamaguiSliderValue] = useState(56);
   const [switchValue, setSwitchValue] = useState(true);
   const [tabsValue, setTabsValue] = useState("preview");
   const [textAreaValue, setTextAreaValue] = useState("这是一段文本区域示例。");
   const [toggleValue, setToggleValue] = useState("bold");
-  const [toggleValue2, setToggleValue2] = useState("bold");
   const [popoverName, setPopoverName] = useState("LonaNote");
 
   const selectItems = useMemo(
@@ -619,11 +621,42 @@ export function UiComponentsDebugPanel() {
           <Button
             onPress={() => {
               setGlobalSheetPosition(0);
+              setGlobalSnapPointsMode("percent");
               setGlobalSheetOpen(true);
             }}
             variant="outlined"
           >
-            打开全局 Sheet
+            打开全局 Sheet percent
+          </Button>
+          <Button
+            onPress={() => {
+              setGlobalSheetPosition(0);
+              setGlobalSnapPointsMode("constant");
+              setGlobalSheetOpen(true);
+            }}
+            variant="outlined"
+          >
+            打开全局 Sheet constant
+          </Button>
+          <Button
+            onPress={() => {
+              setGlobalSheetPosition(0);
+              setGlobalSnapPointsMode("fit");
+              setGlobalSheetOpen(true);
+            }}
+            variant="outlined"
+          >
+            打开全局 Sheet fit
+          </Button>
+          <Button
+            onPress={() => {
+              setGlobalSheetPosition(0);
+              setGlobalSnapPointsMode("mixed");
+              setGlobalSheetOpen(true);
+            }}
+            variant="outlined"
+          >
+            打开全局 Sheet mixed
           </Button>
         </DemoRow>
 
@@ -706,7 +739,7 @@ export function UiComponentsDebugPanel() {
             overlay
             position={globalSheetPosition}
             snapPoints={[62, 86]}
-            snapPointsMode="percent"
+            snapPointsMode={globalSnapPointsMode}
             transition="medium"
           />
         </Sheet.Controller>

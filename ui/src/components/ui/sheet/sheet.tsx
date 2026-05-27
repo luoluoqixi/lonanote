@@ -1,11 +1,13 @@
-import { useSheet } from "@tamagui/sheet";
-import { SheetController as TamaguiSheetController } from "@tamagui/sheet/controller";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { BackHandler } from "react-native";
-import { Sheet as TamaguiSheet } from "tamagui";
 
 import { os } from "@/api/common/platform";
 
+import {
+  Sheet as ReplicaSheet,
+  SheetController as ReplicaSheetController,
+  useSheet,
+} from "./sheet/index";
 import type {
   SheetControlledProps,
   SheetControllerProps,
@@ -18,6 +20,13 @@ import type {
 
 const DEFAULT_OVERLAY_ENTER_STYLE = { opacity: 0 } as const;
 const DEFAULT_OVERLAY_EXIT_STYLE = { opacity: 0 } as const;
+const NOOP_HANDLE_PRESS = () => {};
+
+type SnapPointNormalization = {
+  snapPoints: number[];
+  toExternalIndex: (index: number) => number;
+  toInternalIndex: (index: number) => number;
+};
 
 type SheetBackPressBehaviorProps = {
   dismissOnBackPress?: boolean;
@@ -28,41 +37,117 @@ function SheetRoot(props: SheetProps) {
     children,
     containerComponent: ContainerComponent,
     content,
+    defaultPosition,
     dismissOnBackPress = true,
     frameProps,
     handle,
     handleProps,
     modal,
+    onPositionChange,
     overlay,
     overlayProps,
+    position,
     scrollView,
     scrollViewProps,
+    snapPoints,
+    snapPointsMode,
     ...rootProps
   } = props;
   const hasDefaultStructure =
     overlay != null || handle != null || content != null || scrollView != null;
+  const resolvedSnapPointsMode = snapPointsMode ?? "percent";
+  const snapPointNormalization = useMemo<SnapPointNormalization | null>(() => {
+    if (
+      snapPoints == null ||
+      snapPoints.length < 2 ||
+      (resolvedSnapPointsMode !== "percent" && resolvedSnapPointsMode !== "constant") ||
+      !snapPoints.every((point) => typeof point === "number")
+    ) {
+      return null;
+    }
+
+    const indexedSnapPoints = snapPoints.map((point, originalIndex) => ({
+      originalIndex,
+      point,
+    }));
+    const normalizedSnapPoints = [...indexedSnapPoints].sort(
+      (left, right) => right.point - left.point,
+    );
+
+    if (
+      normalizedSnapPoints.every(
+        (entry, normalizedIndex) => entry.originalIndex === normalizedIndex,
+      )
+    ) {
+      return null;
+    }
+
+    const originalToNormalized = new Map<number, number>();
+    const normalizedToOriginal = new Map<number, number>();
+
+    normalizedSnapPoints.forEach((entry, normalizedIndex) => {
+      originalToNormalized.set(entry.originalIndex, normalizedIndex);
+      normalizedToOriginal.set(normalizedIndex, entry.originalIndex);
+    });
+
+    return {
+      snapPoints: normalizedSnapPoints.map((entry) => entry.point),
+      toExternalIndex: (index: number) => normalizedToOriginal.get(index) ?? index,
+      toInternalIndex: (index: number) => originalToNormalized.get(index) ?? index,
+    };
+  }, [resolvedSnapPointsMode, snapPoints]);
+  const resolvedSnapPoints = snapPointNormalization?.snapPoints ?? snapPoints;
+  const resolvedHandleProps =
+    handleProps?.onPress == null && os() === "android"
+      ? { ...handleProps, onPress: NOOP_HANDLE_PRESS }
+      : handleProps;
+  const resolvedOnPositionChange = useMemo(() => {
+    if (onPositionChange == null) {
+      return undefined;
+    }
+
+    if (snapPointNormalization == null) {
+      return onPositionChange;
+    }
+
+    return (nextPosition: number) => {
+      onPositionChange(snapPointNormalization.toExternalIndex(nextPosition));
+    };
+  }, [onPositionChange, snapPointNormalization]);
 
   const resolvedRootProps = {
     ...rootProps,
+    ...(defaultPosition != null
+      ? {
+          defaultPosition:
+            snapPointNormalization?.toInternalIndex(defaultPosition) ?? defaultPosition,
+        }
+      : null),
     ...(modal != null ? { modal } : null),
+    ...(resolvedOnPositionChange != null ? { onPositionChange: resolvedOnPositionChange } : null),
+    ...(position != null
+      ? { position: snapPointNormalization?.toInternalIndex(position) ?? position }
+      : null),
+    ...(resolvedSnapPoints != null ? { snapPoints: resolvedSnapPoints } : null),
+    ...(snapPointsMode != null ? { snapPointsMode } : null),
     ...(modal || ContainerComponent == null ? { containerComponent: ContainerComponent } : null),
   };
 
   const sheet = !hasDefaultStructure ? (
-    <TamaguiSheet {...resolvedRootProps}>
+    <ReplicaSheet {...resolvedRootProps}>
       <SheetBackHandler dismissOnBackPress={dismissOnBackPress} />
       {children}
-    </TamaguiSheet>
+    </ReplicaSheet>
   ) : (
-    <TamaguiSheet {...resolvedRootProps}>
+    <ReplicaSheet {...resolvedRootProps}>
       <SheetBackHandler dismissOnBackPress={dismissOnBackPress} />
       {overlay ? <SheetOverlay {...overlayProps} /> : null}
-      {handle ? <SheetHandle {...handleProps} /> : null}
+      {handle ? <SheetHandle {...resolvedHandleProps} /> : null}
       <SheetFrame {...frameProps}>
         {scrollView ? <SheetScrollView {...scrollViewProps}>{content}</SheetScrollView> : content}
       </SheetFrame>
       {children}
-    </TamaguiSheet>
+    </ReplicaSheet>
   );
 
   if (ContainerComponent != null && modal !== true) {
@@ -73,20 +158,20 @@ function SheetRoot(props: SheetProps) {
 }
 
 function SheetControlled(props: SheetControlledProps) {
-  return <TamaguiSheet.Controlled {...props} />;
+  return <ReplicaSheet.Controlled {...props} />;
 }
 
 function SheetController(props: SheetControllerProps) {
-  return <TamaguiSheetController {...props} />;
+  return <ReplicaSheetController {...props} />;
 }
 
 function SheetFrame(props: SheetFrameProps) {
-  return <TamaguiSheet.Frame {...props} />;
+  return <ReplicaSheet.Frame {...props} />;
 }
 
 function SheetOverlay(props: SheetOverlayProps) {
   return (
-    <TamaguiSheet.Overlay
+    <ReplicaSheet.Overlay
       {...props}
       bg={props.bg ?? "$shadowColor"}
       enterStyle={props.enterStyle ?? DEFAULT_OVERLAY_ENTER_STYLE}
@@ -98,11 +183,11 @@ function SheetOverlay(props: SheetOverlayProps) {
 }
 
 function SheetHandle(props: SheetHandleProps) {
-  return <TamaguiSheet.Handle {...props} />;
+  return <ReplicaSheet.Handle {...props} />;
 }
 
 function SheetScrollView(props: SheetScrollViewProps) {
-  return <TamaguiSheet.ScrollView {...props} />;
+  return <ReplicaSheet.ScrollView {...props} />;
 }
 
 function SheetBackHandler(props: SheetBackPressBehaviorProps) {
