@@ -1,7 +1,8 @@
 import { ChevronDown } from "@tamagui/lucide-icons-2";
 import { Children, type ComponentType, type ReactNode, isValidElement } from "react";
-import { SizableText, Square, Accordion as TamaguiAccordion } from "tamagui";
+import { SizableText, Square, Accordion as TamaguiAccordion, YStack } from "tamagui";
 
+import { isWeb } from "@/api/common/platform";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type {
@@ -15,6 +16,7 @@ import type {
 
 type AccordionPrimitiveProps = { children?: ReactNode; [key: string]: unknown };
 const AccordionPrimitive = TamaguiAccordion as unknown as ComponentType<AccordionPrimitiveProps>;
+const SHOULD_PREMEASURE_NATIVE_CONTENT = !isWeb();
 
 function normalizeAccordionChildren(children: ReactNode) {
   return Children.map(children, (child) => {
@@ -50,6 +52,29 @@ function getItemsContent(
     children ??
     items?.map((item, index) => {
       const isLast = index === items.length - 1;
+      const triggerElement = (
+        <AccordionTrigger
+          {...triggerProps}
+          aria-label={resolveAriaLabel(
+            item["aria-label"] ?? triggerProps?.["aria-label"],
+            item.title,
+          )}
+          borderColor={triggerProps?.borderColor ?? "$borderColor"}
+          borderWidth={triggerProps?.borderWidth ?? 1}
+          flexDirection={triggerProps?.flexDirection ?? "row"}
+          justify="space-between"
+          width={triggerProps?.width ?? "100%"}
+        >
+          {({ open }: { open: boolean }) => (
+            <>
+              <SizableText>{item.title}</SizableText>
+              <Square rotate={open ? "180deg" : "0deg"} transparent transition="quick">
+                <ChevronDown color="$color" size="$1" />
+              </Square>
+            </>
+          )}
+        </AccordionTrigger>
+      );
 
       return (
         <AccordionItem
@@ -60,37 +85,22 @@ function getItemsContent(
           width={itemProps?.width ?? "100%"}
           value={item.value}
         >
-          <AccordionHeader {...headerProps} width={headerProps?.width ?? "100%"}>
-            <AccordionTrigger
-              {...triggerProps}
-              aria-label={resolveAriaLabel(
-                item["aria-label"] ?? triggerProps?.["aria-label"],
-                item.title,
-              )}
-              borderColor={triggerProps?.borderColor ?? "$borderColor"}
-              borderWidth={triggerProps?.borderWidth ?? 1}
-              flexDirection={triggerProps?.flexDirection ?? "row"}
-              justify="space-between"
-              width={triggerProps?.width ?? "100%"}
-            >
-              {({ open }: { open: boolean }) => (
-                <>
-                  <SizableText>{item.title}</SizableText>
-                  <Square rotate={open ? "180deg" : "0deg"} transparent transition="quick">
-                    <ChevronDown color="$color" size="$1" />
-                  </Square>
-                </>
-              )}
-            </AccordionTrigger>
-          </AccordionHeader>
-          <AccordionHeightAnimator transition="300ms">
+          {isWeb() ? (
+            <AccordionHeader {...headerProps} width={headerProps?.width ?? "100%"}>
+              {triggerElement}
+            </AccordionHeader>
+          ) : (
+            <YStack width={headerProps?.width ?? "100%"}>{triggerElement}</YStack>
+          )}
+          <AccordionHeightAnimator overflow="hidden" transition="300ms">
             <AccordionContent
               {...contentProps}
               borderColor={contentProps?.borderColor ?? "$borderColor"}
-              borderTopWidth={contentProps?.borderTopWidth ?? 0}
               borderWidth={contentProps?.borderWidth ?? 1}
+              borderTopWidth={contentProps?.borderTopWidth ?? 0}
               enterStyle={contentProps?.enterStyle ?? { opacity: 0, y: -8 }}
               exitStyle={contentProps?.exitStyle ?? { opacity: 0 }}
+              forceMount={contentProps?.forceMount ?? SHOULD_PREMEASURE_NATIVE_CONTENT}
               transition={contentProps?.transition ?? "300ms"}
               width={contentProps?.width ?? "100%"}
             >
@@ -139,6 +149,10 @@ function AccordionTrigger(props: AccordionTriggerProps) {
 }
 
 function AccordionHeader(props: AccordionHeaderProps) {
+  if (!isWeb()) {
+    return <YStack {...(props as Record<string, unknown>)} />;
+  }
+
   return <TamaguiAccordion.Header {...props} />;
 }
 

@@ -28,8 +28,8 @@ function DebugScreenLayout({
   const usesNativeHeader = !isWeb();
 
   return (
-    <SafeAreaView
-      edges={usesNativeHeader ? ["bottom", "left", "right"] : ["top"]}
+    <View
+      // edges={usesNativeHeader ? ["left", "right"] : ["top"]}
       style={styles.safeArea}
     >
       {desktop ? <TitleBar /> : null}
@@ -55,7 +55,7 @@ function DebugScreenLayout({
           </View>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -129,7 +129,10 @@ const styles = StyleSheet.create({
   },
   pagePadding: {
     flex: 1,
-    padding: 20,
+    paddingLeft: 20,
+    paddingRight: 20,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   panelHost: {
     flex: 1,

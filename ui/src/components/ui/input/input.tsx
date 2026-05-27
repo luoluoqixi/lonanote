@@ -6,10 +6,10 @@ import { os } from "@/api/common/platform";
 import type { InputProps } from "./types";
 
 export function Input(props: InputProps) {
-  const resolvedStyle = [
-    os() === "android" && props.multiline !== true ? styles.androidSingleLineInput : null,
-    props.style,
-  ];
+  const resolvedStyle =
+    os() === "android" && props.multiline !== true
+      ? [styles.androidSingleLineInput, props.style]
+      : props.style;
 
   return <TamaguiInput {...props} style={resolvedStyle} />;
 }

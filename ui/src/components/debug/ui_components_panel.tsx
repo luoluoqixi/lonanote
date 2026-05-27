@@ -327,8 +327,49 @@ export function UiComponentsDebugPanel() {
           items={[
             {
               content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
-              title: "展开面板",
-              value: "panel",
+              title: "展开面板 multiple1",
+              value: "panel1",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 multiple2",
+              value: "panel2",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 multiple3",
+              value: "panel3",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 multiple4",
+              value: "panel4",
+            },
+          ]}
+          type="multiple"
+        />
+
+        <Accordion
+          items={[
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 single1",
+              value: "panel1",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 single2",
+              value: "panel2",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 single3",
+              value: "panel3",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 single4",
+              value: "panel4",
             },
           ]}
           type="single"
