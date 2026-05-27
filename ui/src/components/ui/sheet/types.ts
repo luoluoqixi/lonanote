@@ -4,6 +4,7 @@ import type { Sheet as TamaguiSheet } from "tamagui";
 
 export interface SheetProps extends ComponentProps<typeof TamaguiSheet> {
   content?: ReactNode;
+  dismissOnBackPress?: boolean;
   frameProps?: SheetFrameProps;
   handle?: boolean;
   handleProps?: SheetHandleProps;

@@ -6,6 +6,7 @@ export interface PopoverProps extends ComponentProps<typeof TamaguiPopover> {
   arrowProps?: PopoverArrowProps;
   content?: ReactNode;
   contentProps?: PopoverContentProps;
+  dismissOnBackPress?: boolean;
   trigger?: ReactNode;
   triggerProps?: PopoverTriggerProps;
 }

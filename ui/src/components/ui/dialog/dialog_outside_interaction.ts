@@ -7,6 +7,7 @@ type ClosestCapableTarget = {
 };
 
 type OutsideInteractionEvent = {
+  defaultPrevented?: boolean;
   preventDefault: () => void;
   detail?: {
     originalEvent?: {

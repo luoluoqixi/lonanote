@@ -10,6 +10,8 @@ export interface AlertDialogProps extends ComponentProps<typeof TamaguiAlertDial
   cancelLabel?: ReactNode;
   cancelProps?: AlertDialogCancelProps;
   contentProps?: AlertDialogContentProps;
+  dismissOnBackPress?: boolean;
+  dismissOnOverlayPress?: boolean;
   description?: ReactNode;
   descriptionProps?: AlertDialogDescriptionProps;
   destructiveAriaLabel?: string;

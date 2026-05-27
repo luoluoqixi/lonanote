@@ -1,4 +1,6 @@
-import type { ReactElement } from "react";
+import { useDialogContext } from "@tamagui/dialog";
+import { type ReactElement, useEffect } from "react";
+import { BackHandler } from "react-native";
 import {
   AlertDialog as TamaguiAlertDialog,
   Dialog as TamaguiDialog,
@@ -6,7 +8,7 @@ import {
   YStack,
 } from "tamagui";
 
-import { isWeb } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 import { Button } from "@/components/ui/button";
 import {
   type OutsideInteractionEvent,
@@ -27,9 +29,22 @@ import type {
   AlertDialogTriggerProps,
 } from "./types";
 
+const DEFAULT_OVERLAY_TRANSITION = "100ms";
+
+type AlertDialogOverlayBehaviorProps = AlertDialogOverlayProps & {
+  dismissOnOverlayPress?: boolean;
+};
+
 type AlertDialogContentBaseProps = AlertDialogContentProps & {
+  dismissOnBackPress?: boolean;
+  dismissOnOverlayPress?: boolean;
   onInteractOutside?: (event: OutsideInteractionEvent) => void;
   onPointerDownOutside?: (event: OutsideInteractionEvent) => void;
+};
+
+type AlertDialogBackPressBehaviorProps = {
+  dismissOnBackPress?: boolean;
+  scope?: string;
 };
 
 const AlertDialogContentBase = TamaguiDialog.Content as unknown as (
@@ -37,6 +52,7 @@ const AlertDialogContentBase = TamaguiDialog.Content as unknown as (
 ) => ReactElement | null;
 
 function AlertDialogRoot(props: AlertDialogProps) {
+  const scope = (props as { scope?: string }).scope;
   const {
     actionAriaLabel,
     actionLabel,
@@ -47,6 +63,8 @@ function AlertDialogRoot(props: AlertDialogProps) {
     cancelProps,
     children,
     contentProps,
+    dismissOnBackPress = true,
+    dismissOnOverlayPress = false,
     description,
     descriptionProps,
     destructiveAriaLabel,
@@ -71,11 +89,17 @@ function AlertDialogRoot(props: AlertDialogProps) {
     destructiveLabel != null;
 
   if (!hasDefaultStructure) {
-    return <TamaguiAlertDialog {...rootProps}>{children}</TamaguiAlertDialog>;
+    return (
+      <TamaguiAlertDialog {...rootProps}>
+        <AlertDialogBackHandler dismissOnBackPress={dismissOnBackPress} scope={scope} />
+        {children}
+      </TamaguiAlertDialog>
+    );
   }
 
   return (
     <TamaguiAlertDialog disableRemoveScroll={disableRemoveScroll ?? isWeb()} {...rootProps}>
+      <AlertDialogBackHandler dismissOnBackPress={dismissOnBackPress} scope={scope} />
       {trigger != null ? (
         <AlertDialogTrigger {...triggerProps}>{trigger}</AlertDialogTrigger>
       ) : null}
@@ -85,7 +109,9 @@ function AlertDialogRoot(props: AlertDialogProps) {
           animateOnly={["transform", "opacity"]}
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
+          transition={DEFAULT_OVERLAY_TRANSITION}
           {...overlayProps}
+          dismissOnOverlayPress={dismissOnOverlayPress}
         />
         <AlertDialogContent
           transition={[
@@ -99,6 +125,7 @@ function AlertDialogRoot(props: AlertDialogProps) {
           enterStyle={{ x: 0, y: 20, opacity: 0 }}
           exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
           {...contentProps}
+          dismissOnOverlayPress={dismissOnOverlayPress}
         >
           <YStack gap="$3">
             {title != null ? <AlertDialogTitle {...titleProps}>{title}</AlertDialogTitle> : null}
@@ -153,13 +180,33 @@ function AlertDialogPortal(props: AlertDialogPortalProps) {
   return <TamaguiAlertDialog.Portal {...props} />;
 }
 
-function AlertDialogOverlay(props: AlertDialogOverlayProps) {
-  return <TamaguiAlertDialog.Overlay {...props} />;
+function AlertDialogOverlay(props: AlertDialogOverlayBehaviorProps) {
+  const { dismissOnOverlayPress = false, ...overlayProps } = props;
+  const context = useDialogContext((overlayProps as { scope?: string }).scope);
+
+  return (
+    <TamaguiAlertDialog.Overlay
+      {...overlayProps}
+      onPress={(event) => {
+        overlayProps.onPress?.(event);
+
+        if (!event.defaultPrevented && dismissOnOverlayPress && !isWeb()) {
+          context.onOpenChange(false);
+        }
+      }}
+      transition={overlayProps.transition ?? DEFAULT_OVERLAY_TRANSITION}
+    />
+  );
 }
 
-function AlertDialogContent(props: AlertDialogContentProps) {
-  const contentProps = props as AlertDialogContentBaseProps;
-  const { onInteractOutside, onPointerDownOutside, ...restProps } = contentProps;
+function AlertDialogContent(props: AlertDialogContentBaseProps) {
+  const contentProps = props;
+  const {
+    dismissOnOverlayPress = false,
+    onInteractOutside,
+    onPointerDownOutside,
+    ...restProps
+  } = contentProps;
 
   return (
     <AlertDialogContentBase
@@ -169,15 +216,44 @@ function AlertDialogContent(props: AlertDialogContentProps) {
       onPointerDownOutside={(event) => {
         onPointerDownOutside?.(event);
         preventDialogDismissForDragRegion(event);
-        event.preventDefault();
+
+        if (!event.defaultPrevented && !dismissOnOverlayPress) {
+          event.preventDefault();
+        }
       }}
       onInteractOutside={(event) => {
         onInteractOutside?.(event);
         preventDialogDismissForDragRegion(event);
-        event.preventDefault();
+
+        if (!event.defaultPrevented && !dismissOnOverlayPress) {
+          event.preventDefault();
+        }
       }}
     />
   );
+}
+
+function AlertDialogBackHandler(props: AlertDialogBackPressBehaviorProps) {
+  const { dismissOnBackPress = true, scope } = props;
+  const context = useDialogContext(scope);
+  const { open, onOpenChange } = context;
+
+  useEffect(() => {
+    if (os() !== "android" || !dismissOnBackPress || !open) {
+      return;
+    }
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      onOpenChange(false);
+      return true;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [dismissOnBackPress, onOpenChange, open]);
+
+  return null;
 }
 
 function AlertDialogAction(props: AlertDialogActionProps) {

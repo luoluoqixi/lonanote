@@ -1,5 +1,10 @@
+import { useSheet } from "@tamagui/sheet";
 import { SheetController as TamaguiSheetController } from "@tamagui/sheet/controller";
+import { useEffect } from "react";
+import { BackHandler } from "react-native";
 import { Sheet as TamaguiSheet } from "tamagui";
+
+import { os } from "@/api/common/platform";
 
 import type {
   SheetControlledProps,
@@ -14,11 +19,16 @@ import type {
 const DEFAULT_OVERLAY_ENTER_STYLE = { opacity: 0 } as const;
 const DEFAULT_OVERLAY_EXIT_STYLE = { opacity: 0 } as const;
 
+type SheetBackPressBehaviorProps = {
+  dismissOnBackPress?: boolean;
+};
+
 function SheetRoot(props: SheetProps) {
   const {
     children,
     containerComponent: ContainerComponent,
     content,
+    dismissOnBackPress = true,
     frameProps,
     handle,
     handleProps,
@@ -39,9 +49,13 @@ function SheetRoot(props: SheetProps) {
   };
 
   const sheet = !hasDefaultStructure ? (
-    <TamaguiSheet {...resolvedRootProps}>{children}</TamaguiSheet>
+    <TamaguiSheet {...resolvedRootProps}>
+      <SheetBackHandler dismissOnBackPress={dismissOnBackPress} />
+      {children}
+    </TamaguiSheet>
   ) : (
     <TamaguiSheet {...resolvedRootProps}>
+      <SheetBackHandler dismissOnBackPress={dismissOnBackPress} />
       {overlay ? <SheetOverlay {...overlayProps} /> : null}
       {handle ? <SheetHandle {...handleProps} /> : null}
       <SheetFrame {...frameProps}>
@@ -89,6 +103,28 @@ function SheetHandle(props: SheetHandleProps) {
 
 function SheetScrollView(props: SheetScrollViewProps) {
   return <TamaguiSheet.ScrollView {...props} />;
+}
+
+function SheetBackHandler(props: SheetBackPressBehaviorProps) {
+  const { dismissOnBackPress = true } = props;
+  const { open, setOpen } = useSheet();
+
+  useEffect(() => {
+    if (os() !== "android" || !dismissOnBackPress || !open) {
+      return;
+    }
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      setOpen(false);
+      return true;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [dismissOnBackPress, open, setOpen]);
+
+  return null;
 }
 
 export const Sheet = Object.assign(SheetRoot, {

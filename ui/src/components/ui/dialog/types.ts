@@ -3,11 +3,13 @@ import type { ViewStyle } from "react-native";
 import type { Dialog as TamaguiDialog } from "tamagui";
 
 export interface DialogProps extends ComponentProps<typeof TamaguiDialog> {
+  dismissOnBackPress?: boolean;
   actions?: ReactNode;
   closeAriaLabel?: string;
   closeBtn?: boolean;
   closeProps?: DialogCloseProps;
   contentProps?: DialogContentProps;
+  dismissOnOverlayPress?: boolean;
   description?: ReactNode;
   descriptionProps?: DialogDescriptionProps;
   width?: ViewStyle["width"];

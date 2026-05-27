@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     flexDirection: "column",
     gap: 4,
-    width: 192,
+    width: 140,
   },
   root: {
     flex: 1,

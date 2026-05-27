@@ -1,8 +1,10 @@
+import { useDialogContext } from "@tamagui/dialog";
 import { X } from "@tamagui/lucide-icons-2";
-import { StyleSheet, type ViewStyle } from "react-native";
+import { useEffect } from "react";
+import { BackHandler, StyleSheet, type ViewStyle } from "react-native";
 import { Dialog as TamaguiDialog, Unspaced, XStack, YStack } from "tamagui";
 
-import { isWeb } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 import { Button } from "@/components/ui/button";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
@@ -21,10 +23,25 @@ import type {
   DialogTriggerProps,
 } from "./types";
 
-const DEFAULT_WIDTH = isWeb() ? "60%" : "94%";
-const DEFAULT_Height = isWeb() ? "60%" : "50%";
+const DEFAULT_WIDTH = isWeb() ? "60%" : "80%";
+const DEFAULT_Height = isWeb() ? "60%" : "40%";
+const DEFAULT_OVERLAY_TRANSITION = "100ms";
+
+type DialogOverlayBehaviorProps = DialogOverlayProps & {
+  dismissOnOverlayPress?: boolean;
+};
+
+type DialogContentBehaviorProps = DialogContentProps & {
+  dismissOnOverlayPress?: boolean;
+};
+
+type DialogBackPressBehaviorProps = {
+  dismissOnBackPress?: boolean;
+  scope?: string;
+};
 
 function DialogRoot(props: DialogProps) {
+  const scope = (props as { scope?: string }).scope;
   const {
     actions,
     children,
@@ -32,6 +49,8 @@ function DialogRoot(props: DialogProps) {
     closeBtn = true,
     closeProps,
     contentProps,
+    dismissOnBackPress = true,
+    dismissOnOverlayPress = true,
     description,
     descriptionProps,
     width,
@@ -68,11 +87,17 @@ function DialogRoot(props: DialogProps) {
     trigger != null || title != null || description != null || actions != null;
 
   if (!hasDefaultStructure) {
-    return <TamaguiDialog {...rootProps}>{children}</TamaguiDialog>;
+    return (
+      <TamaguiDialog {...rootProps}>
+        <DialogBackHandler dismissOnBackPress={dismissOnBackPress} scope={scope} />
+        {children}
+      </TamaguiDialog>
+    );
   }
 
   return (
     <TamaguiDialog disableRemoveScroll={disableRemoveScroll ?? isWeb()} {...rootProps}>
+      <DialogBackHandler dismissOnBackPress={dismissOnBackPress} scope={scope} />
       {trigger != null ? <DialogTrigger {...triggerProps}>{trigger}</DialogTrigger> : null}
       <DialogPortal {...portalProps}>
         <DialogOverlay
@@ -80,7 +105,9 @@ function DialogRoot(props: DialogProps) {
           animateOnly={["transform", "opacity"]}
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
+          transition={DEFAULT_OVERLAY_TRANSITION}
           {...overlayProps}
+          dismissOnOverlayPress={dismissOnOverlayPress}
         />
         <DialogContent
           transition={[
@@ -94,6 +121,7 @@ function DialogRoot(props: DialogProps) {
           enterStyle={{ x: 0, y: 20, opacity: 0 }}
           exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
           {...restContentProps}
+          dismissOnOverlayPress={dismissOnOverlayPress}
           style={resolvedContentStyle}
         >
           <YStack flex={1} gap="$3" style={{ minHeight: 0 }}>
@@ -136,12 +164,32 @@ function DialogPortal(props: DialogPortalProps) {
   return <TamaguiDialog.Portal {...props} />;
 }
 
-function DialogOverlay(props: DialogOverlayProps) {
-  return <TamaguiDialog.Overlay {...props} />;
+function DialogOverlay(props: DialogOverlayBehaviorProps) {
+  const { dismissOnOverlayPress = true, ...overlayProps } = props;
+  const context = useDialogContext((overlayProps as { scope?: string }).scope);
+
+  return (
+    <TamaguiDialog.Overlay
+      {...overlayProps}
+      onPress={(event) => {
+        overlayProps.onPress?.(event);
+
+        if (!event.defaultPrevented && dismissOnOverlayPress && !isWeb()) {
+          context.onOpenChange(false);
+        }
+      }}
+      transition={overlayProps.transition ?? DEFAULT_OVERLAY_TRANSITION}
+    />
+  );
 }
 
-function DialogContent(props: DialogContentProps) {
-  const { onInteractOutside, onPointerDownOutside, ...restProps } = props;
+function DialogContent(props: DialogContentBehaviorProps) {
+  const {
+    dismissOnOverlayPress = true,
+    onInteractOutside,
+    onPointerDownOutside,
+    ...restProps
+  } = props;
 
   return (
     <TamaguiDialog.Content
@@ -149,13 +197,44 @@ function DialogContent(props: DialogContentProps) {
       onPointerDownOutside={(event) => {
         onPointerDownOutside?.(event);
         preventDialogDismissForDragRegion(event as OutsideInteractionEvent);
+
+        if (!event.defaultPrevented && !dismissOnOverlayPress) {
+          event.preventDefault();
+        }
       }}
       onInteractOutside={(event) => {
         onInteractOutside?.(event);
         preventDialogDismissForDragRegion(event as OutsideInteractionEvent);
+
+        if (!event.defaultPrevented && !dismissOnOverlayPress) {
+          event.preventDefault();
+        }
       }}
     />
   );
+}
+
+function DialogBackHandler(props: DialogBackPressBehaviorProps) {
+  const { dismissOnBackPress = true, scope } = props;
+  const context = useDialogContext(scope);
+  const { open, onOpenChange } = context;
+
+  useEffect(() => {
+    if (os() !== "android" || !dismissOnBackPress || !open) {
+      return;
+    }
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      onOpenChange(false);
+      return true;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [dismissOnBackPress, onOpenChange, open]);
+
+  return null;
 }
 
 function DialogTitle(props: DialogTitleProps) {

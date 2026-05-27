@@ -67,7 +67,9 @@ export function UiComponentsDebugPanel() {
   const [checkboxChecked, setCheckboxChecked] = useState(true);
   const [contextMenuAction, setContextMenuAction] = useState("尚未选择");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogOpen2, setDialogOpen2] = useState(false);
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [alertDialogOpen2, setAlertDialogOpen2] = useState(false);
   const [formSubmitCount, setFormSubmitCount] = useState(0);
   const [inputValue, setInputValue] = useState("lonanote");
   const [menuAction, setMenuAction] = useState("尚未选择");
@@ -347,6 +349,18 @@ export function UiComponentsDebugPanel() {
             <Text>这是 Dialog 内容区域。</Text>
           </Dialog>
 
+          <Dialog
+            onOpenChange={setDialogOpen2}
+            open={dialogOpen2}
+            title="Dialog 标题"
+            trigger={
+              <Button onPress={() => setDialogOpen2(true)}>打开 Dialog No OverlayPress</Button>
+            }
+            dismissOnOverlayPress={false}
+          >
+            <Text>这是 Dialog 内容区域。</Text>
+          </Dialog>
+
           <AlertDialog
             cancelLabel="取消"
             destructiveLabel="删除"
@@ -355,6 +369,21 @@ export function UiComponentsDebugPanel() {
             open={alertDialogOpen}
             title="删除确认"
             trigger={<Button onPress={() => setAlertDialogOpen(true)}>打开 AlertDialog</Button>}
+          />
+
+          <AlertDialog
+            cancelLabel="取消"
+            destructiveLabel="删除"
+            description="这个操作无法撤销，仅用于展示组件结构。"
+            onOpenChange={setAlertDialogOpen2}
+            open={alertDialogOpen2}
+            title="删除确认"
+            trigger={
+              <Button onPress={() => setAlertDialogOpen2(true)}>
+                打开 AlertDialog OverlayPress
+              </Button>
+            }
+            dismissOnOverlayPress
           />
 
           <Popover

@@ -1,4 +1,9 @@
+import { usePopoverContext } from "@tamagui/popover";
+import { useEffect } from "react";
+import { BackHandler } from "react-native";
 import { Popover as TamaguiPopover } from "tamagui";
+
+import { os } from "@/api/common/platform";
 
 import type {
   PopoverAnchorProps,
@@ -12,13 +17,20 @@ import type {
 const DEFAULT_POPOVER_ENTER_STYLE = { opacity: 0, scale: 0.96, y: -8 };
 const DEFAULT_POPOVER_EXIT_STYLE = { opacity: 0, scale: 0.96, y: -8 };
 
+type PopoverBackPressBehaviorProps = {
+  dismissOnBackPress?: boolean;
+  scope?: string;
+};
+
 function PopoverRoot(props: PopoverProps) {
+  const scope = (props as { scope?: string }).scope;
   const {
     arrow,
     arrowProps,
     children,
     content,
     contentProps,
+    dismissOnBackPress = true,
     trigger,
     triggerProps,
     ...rootProps
@@ -26,11 +38,17 @@ function PopoverRoot(props: PopoverProps) {
   const hasDefaultStructure = trigger != null || content != null || arrow != null;
 
   if (!hasDefaultStructure) {
-    return <TamaguiPopover {...rootProps}>{children}</TamaguiPopover>;
+    return (
+      <TamaguiPopover {...rootProps}>
+        <PopoverBackHandler dismissOnBackPress={dismissOnBackPress} scope={scope} />
+        {children}
+      </TamaguiPopover>
+    );
   }
 
   return (
     <TamaguiPopover {...rootProps}>
+      <PopoverBackHandler dismissOnBackPress={dismissOnBackPress} scope={scope} />
       {trigger != null ? <PopoverTrigger {...triggerProps}>{trigger}</PopoverTrigger> : null}
       <PopoverContent {...contentProps}>
         {arrow ? <PopoverArrow {...arrowProps} /> : null}
@@ -90,6 +108,29 @@ function PopoverContent(props: PopoverContentProps) {
 
 function PopoverClose(props: PopoverCloseProps) {
   return <TamaguiPopover.Close {...props} />;
+}
+
+function PopoverBackHandler(props: PopoverBackPressBehaviorProps) {
+  const { dismissOnBackPress = true, scope } = props;
+  const context = usePopoverContext(scope);
+  const { open, onOpenChange } = context;
+
+  useEffect(() => {
+    if (os() !== "android" || !dismissOnBackPress || !open) {
+      return;
+    }
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      onOpenChange(false, "press");
+      return true;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [dismissOnBackPress, onOpenChange, open]);
+
+  return null;
 }
 
 export const Popover = Object.assign(PopoverRoot, {
