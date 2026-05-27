@@ -78,6 +78,8 @@ export function UiComponentsDebugPanel() {
   const [selectValue, setSelectValue] = useState<string | null>("blue");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
+  const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
+  const [globalSheetPosition, setGlobalSheetPosition] = useState(0);
   const [sliderValue, setSliderValue] = useState(56);
   const [tamaguiSliderValue, setTamaguiSliderValue] = useState(56);
   const [switchValue, setSwitchValue] = useState(true);
@@ -119,6 +121,14 @@ export function UiComponentsDebugPanel() {
 
   const handleSheetPositionChange = (nextPosition: number) => {
     setSheetPosition(nextPosition);
+  };
+
+  const handleGlobalSheetOpenChange = (nextOpen: boolean) => {
+    setGlobalSheetOpen(nextOpen);
+  };
+
+  const handleGlobalSheetPositionChange = (nextPosition: number) => {
+    setGlobalSheetPosition(nextPosition);
   };
 
   return (
@@ -533,12 +543,26 @@ export function UiComponentsDebugPanel() {
             }}
             variant="outlined"
           >
-            打开 Sheet
+            打开 inline Sheet
+          </Button>
+
+          <Button
+            onPress={() => {
+              setGlobalSheetPosition(0);
+              setGlobalSheetOpen(true);
+            }}
+            variant="outlined"
+          >
+            打开全局 Sheet
           </Button>
         </DemoRow>
 
         <Text color="$color10">
-          Sheet 状态：{sheetOpen ? `打开，position=${sheetPosition}` : "关闭"}
+          inline Sheet 状态：{sheetOpen ? `打开，position=${sheetPosition}` : "关闭"}
+        </Text>
+        <Text color="$color10">
+          全局 Sheet 状态：
+          {globalSheetOpen ? `打开，position=${globalSheetPosition}` : "关闭"}
         </Text>
         <View style={styles.sheetDemoHost}>
           <Text color="$color10">
@@ -577,6 +601,45 @@ export function UiComponentsDebugPanel() {
             </Sheet.Controller>
           </View>
         </View>
+
+        <Sheet.Controller
+          hidden={false}
+          onOpenChange={handleGlobalSheetOpenChange}
+          open={globalSheetOpen}
+        >
+          <Sheet
+            content={
+              <View style={styles.globalSheetContent}>
+                <Text fontSize="$5" fontWeight="600">
+                  全局 Sheet
+                </Text>
+                <Text color="$color10">
+                  这个示例使用 modal 模式渲染到全局层，不受 inline 调试容器裁剪。
+                </Text>
+                {sheetItems.map((item) => (
+                  <View key={item} style={styles.sheetItem}>
+                    <Text>{item}</Text>
+                  </View>
+                ))}
+                <Button onPress={() => setGlobalSheetOpen(false)} theme="accent">
+                  关闭全局 Sheet
+                </Button>
+              </View>
+            }
+            dismissOnSnapToBottom
+            frameProps={{ style: styles.sheetFrame }}
+            handle
+            modal
+            onOpenChange={handleGlobalSheetOpenChange}
+            onPositionChange={handleGlobalSheetPositionChange}
+            open={globalSheetOpen}
+            overlay
+            position={globalSheetPosition}
+            snapPoints={[62, 86]}
+            snapPointsMode="percent"
+            transition="medium"
+          />
+        </Sheet.Controller>
 
         <Text color="$color10">最近菜单动作：{menuAction}</Text>
         <Text color="$color10">最近 ContextMenu 动作：{contextMenuAction}</Text>
@@ -673,6 +736,13 @@ const styles = StyleSheet.create({
   },
   formContent: {
     gap: 12,
+  },
+  globalSheetContent: {
+    gap: 12,
+    paddingLeft: 24,
+    paddingRight: 24,
+    paddingBottom: 24,
+    paddingTop: 12,
   },
   mediaDemo: {
     flex: 1,
