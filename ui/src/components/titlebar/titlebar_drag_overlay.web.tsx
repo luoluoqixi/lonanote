@@ -5,6 +5,7 @@ import { isDesktop, os } from "@/api/common";
 import { TITLE_HEIGHT } from "@/config";
 
 const TITLEBAR_DRAG_OVERLAY_Z_INDEX = 2147483647;
+const WINDOWS_CONTROL_AREA_WIDTH = 46 * 3;
 
 type DragOverlayStyle = CSSProperties & {
   WebkitAppRegion?: "drag" | "no-drag";
@@ -27,18 +28,24 @@ const dragOverlayStyle: DragOverlayStyle = {
 function TitleBarDragOverlay() {
   const [mounted, setMounted] = useState(false);
   const desktop = isDesktop();
-  const isMac = os() === "macos";
+  const platform = os();
+  const reservedRight =
+    platform === "windows" || platform === "linux" ? WINDOWS_CONTROL_AREA_WIDTH : 0;
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!desktop || !isMac || !mounted) {
+  if (!desktop || !mounted) {
     return null;
   }
 
   return createPortal(
-    <div data-tauri-drag-region="" style={{ ...dragOverlayStyle, height: TITLE_HEIGHT }} />,
+    <div
+      aria-hidden="true"
+      data-tauri-drag-region=""
+      style={{ ...dragOverlayStyle, height: TITLE_HEIGHT, right: reservedRight }}
+    />,
     document.body,
   );
 }

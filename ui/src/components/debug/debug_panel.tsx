@@ -152,7 +152,7 @@ export function DebugPanelHost() {
 
   return (
     <Dialog
-      width="80%"
+      width="98%"
       height="88%"
       minWidth={0}
       minHeight={0}
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     flexDirection: "column",
     gap: 4,
-    width: 176,
+    width: 140,
   },
   tabs: {
     flex: 1,

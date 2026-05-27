@@ -21,6 +21,9 @@ import type {
   DialogTriggerProps,
 } from "./types";
 
+const DEFAULT_WIDTH = isWeb() ? "60%" : "94%";
+const DEFAULT_Height = isWeb() ? "60%" : "50%";
+
 function DialogRoot(props: DialogProps) {
   const {
     actions,
@@ -53,8 +56,8 @@ function DialogRoot(props: DialogProps) {
       >
     | undefined;
   const resolvedSizeStyle: ViewStyle = {
-    width: flattenedContentStyle?.width ?? width ?? "50%",
-    height: flattenedContentStyle?.height ?? height ?? "50%",
+    width: flattenedContentStyle?.width ?? width ?? DEFAULT_WIDTH,
+    height: flattenedContentStyle?.height ?? height ?? DEFAULT_Height,
     minWidth: flattenedContentStyle?.minWidth ?? minWidth,
     minHeight: flattenedContentStyle?.minHeight ?? minHeight,
     maxWidth: flattenedContentStyle?.maxWidth ?? maxWidth,
