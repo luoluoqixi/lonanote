@@ -851,7 +851,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       const modalContents = (
         <Portal stackZIndex={zIndex} {...portalProps}>
           {mountedContents && RNGHRoot ? (
-            <RNGHRoot style={open ? rnghRootStyleOpen : rnghRootStyleClosed}>
+            <RNGHRoot style={opacity ? rnghRootStyleOpen : rnghRootStyleClosed}>
               {mountedContents}
             </RNGHRoot>
           ) : (
