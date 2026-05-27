@@ -1,49 +1,135 @@
 import { type Href, useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { isDesktop } from "@/api/common";
+import { isDesktop, isWeb } from "@/api/common";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import { TitleBar } from "../titlebar";
 import { Button, Text } from "../ui";
-import { SettingsSyncState } from "./settings_panels";
-import { SettingsTabsPanel } from "./settings_tabs_panel";
+import {
+  AppearanceSettingsPanel,
+  GlobalSettingsPanel,
+  SettingsSyncState,
+  WindowSettingsPanel,
+} from "./settings_panels";
 
 const SCREEN_MAX_WIDTH = 960;
-const HOME_HREF = "/" as Href;
 const SETTINGS_HREF = "/settings" as Href;
 
+type SettingsRouteKey = "global" | "appearance" | "window";
+
+type SettingsRouteDefinition = {
+  Component: () => ReactNode;
+  description: string;
+  href: Href;
+  key: SettingsRouteKey;
+  label: string;
+};
+
+const SETTINGS_ROUTE_DEFINITIONS: SettingsRouteDefinition[] = [
+  {
+    Component: GlobalSettingsPanel,
+    description: "应用行为与编辑器默认值。",
+    href: "/settings/global" as Href,
+    key: "global",
+    label: "全局设置",
+  },
+  {
+    Component: AppearanceSettingsPanel,
+    description: "主题模式、主题色与桌面缩放。",
+    href: "/settings/appearance" as Href,
+    key: "appearance",
+    label: "外观设置",
+  },
+  {
+    Component: WindowSettingsPanel,
+    description: "窗口恢复、最近窗口状态与桌面行为。",
+    href: "/settings/window" as Href,
+    key: "window",
+    label: "窗口设置",
+  },
+];
+
+function getSettingsRouteDefinition(key: SettingsRouteKey): SettingsRouteDefinition {
+  const matchedDefinition = SETTINGS_ROUTE_DEFINITIONS.find((definition) => definition.key === key);
+
+  if (!matchedDefinition) {
+    throw new Error(`Unknown settings route: ${key}`);
+  }
+
+  return matchedDefinition;
+}
+
+type SettingsSyncSnapshot = {
+  error: string | null;
+  isLoading: boolean;
+};
+
+function mergeSettingsSyncState(...states: SettingsSyncSnapshot[]): SettingsSyncSnapshot {
+  return {
+    error: states.find((state) => state.error != null)?.error ?? null,
+    isLoading: states.some((state) => state.isLoading),
+  };
+}
+
 type ScreenLayoutProps = {
-  backHref: Href;
   children: ReactNode;
+  description?: string;
   error: string | null;
   isLoading: boolean;
   title: string;
 };
 
-function SettingsScreenLayout({ backHref, children, error, isLoading, title }: ScreenLayoutProps) {
-  const router = useRouter();
+function SettingsScreenLayout({
+  children,
+  description,
+  error,
+  isLoading,
+  title,
+}: ScreenLayoutProps) {
   const desktop = isDesktop();
+  const usesNativeHeader = !isWeb();
+  const showMeta = description != null || error != null || isLoading;
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+    <SafeAreaView
+      edges={usesNativeHeader ? ["bottom", "left", "right"] : ["top"]}
+      style={styles.safeArea}
+    >
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
-        <View style={{ flex: 1, padding: 20 }}>
-          <View style={{ alignSelf: "center", flex: 1, maxWidth: SCREEN_MAX_WIDTH, width: "100%" }}>
-            <View style={styles.header}>
-              <Button onPress={() => router.replace(backHref)} variant="outlined">
-                {backHref === HOME_HREF ? "返回首页" : "返回设置"}
-              </Button>
-              <Text fontSize="$8" fontWeight="700" style={styles.title}>
-                {title}
-              </Text>
-              <View style={styles.syncState}>
-                <SettingsSyncState error={error} isLoading={isLoading} />
+        <View style={styles.pagePadding}>
+          <View style={styles.pageContainer}>
+            {!usesNativeHeader ? (
+              <View style={styles.header}>
+                <Text fontSize="$8" fontWeight="700">
+                  {title}
+                </Text>
+                {description ? (
+                  <Text color="$color10" fontSize="$3">
+                    {description}
+                  </Text>
+                ) : null}
+                <View style={styles.syncState}>
+                  <SettingsSyncState error={error} isLoading={isLoading} />
+                </View>
               </View>
-            </View>
+            ) : null}
+
+            {usesNativeHeader && showMeta ? (
+              <View style={styles.metaPanel}>
+                {description ? (
+                  <Text color="$color10" fontSize="$3">
+                    {description}
+                  </Text>
+                ) : null}
+                <View style={styles.syncState}>
+                  <SettingsSyncState error={error} isLoading={isLoading} />
+                </View>
+              </View>
+            ) : null}
 
             <View style={styles.content}>{children}</View>
           </View>
@@ -53,50 +139,108 @@ function SettingsScreenLayout({ backHref, children, error, isLoading, title }: S
   );
 }
 
-export function GlobalSettingsHomeScreen() {
+function useSettingsHomeSyncState(): SettingsSyncSnapshot {
   const globalSettingsState = useGlobalSettings();
   const uiPreferencesState = useUiPreferences();
+  const colorSchemeSettingsState = useColorSchemeSettings();
+
+  return mergeSettingsSyncState(
+    { error: globalSettingsState.error, isLoading: globalSettingsState.isLoading },
+    { error: uiPreferencesState.error, isLoading: uiPreferencesState.isLoading },
+    { error: colorSchemeSettingsState.error, isLoading: colorSchemeSettingsState.isLoading },
+  );
+}
+
+function useSettingsSectionSyncState(sectionKey: SettingsRouteKey): SettingsSyncSnapshot {
+  const globalSettingsState = useGlobalSettings();
+  const uiPreferencesState = useUiPreferences();
+  const colorSchemeSettingsState = useColorSchemeSettings();
+
+  switch (sectionKey) {
+    case "appearance":
+      return mergeSettingsSyncState(
+        { error: colorSchemeSettingsState.error, isLoading: colorSchemeSettingsState.isLoading },
+        { error: uiPreferencesState.error, isLoading: uiPreferencesState.isLoading },
+      );
+    case "window":
+      return {
+        error: uiPreferencesState.error,
+        isLoading: uiPreferencesState.isLoading,
+      };
+    case "global":
+    default:
+      return {
+        error: globalSettingsState.error,
+        isLoading: globalSettingsState.isLoading,
+      };
+  }
+}
+
+export function SettingsHomeScreen() {
+  const router = useRouter();
+  const syncState = useSettingsHomeSyncState();
 
   return (
     <SettingsScreenLayout
-      backHref={HOME_HREF}
-      error={globalSettingsState.error ?? uiPreferencesState.error}
-      isLoading={globalSettingsState.isLoading || uiPreferencesState.isLoading}
+      description="小屏设备下通过独立页面查看各设置分区。"
+      error={syncState.error}
+      isLoading={syncState.isLoading}
       title="设置"
     >
-      <SettingsTabsPanel initialTab="global" />
+      <View style={styles.sectionList}>
+        {SETTINGS_ROUTE_DEFINITIONS.map((definition) => (
+          <View key={definition.key} style={styles.sectionCard}>
+            <View style={styles.sectionCardText}>
+              <Text fontSize="$5" fontWeight="600">
+                {definition.label}
+              </Text>
+              <Text color="$color10" fontSize="$3">
+                {definition.description}
+              </Text>
+            </View>
+            <Button onPress={() => router.push(definition.href)}>打开{definition.label}</Button>
+          </View>
+        ))}
+      </View>
     </SettingsScreenLayout>
   );
+}
+
+function SettingsSectionScreen({ sectionKey }: { sectionKey: SettingsRouteKey }) {
+  const definition = getSettingsRouteDefinition(sectionKey);
+  const syncState = useSettingsSectionSyncState(sectionKey);
+  const SectionComponent = definition.Component;
+
+  return (
+    <SettingsScreenLayout
+      description={definition.description}
+      error={syncState.error}
+      isLoading={syncState.isLoading}
+      title={definition.label}
+    >
+      <View style={styles.panelHost}>
+        <ScrollView
+          contentContainerStyle={styles.panelScrollContent}
+          showsVerticalScrollIndicator
+          style={styles.panelScrollView}
+        >
+          <SectionComponent />
+        </ScrollView>
+      </View>
+    </SettingsScreenLayout>
+  );
+}
+
+export function GlobalSettingsScreen() {
+  return <SettingsSectionScreen sectionKey="global" />;
 }
 
 export function AppearanceSettingsScreen() {
-  const { error, isLoading } = useColorSchemeSettings();
-
-  return (
-    <SettingsScreenLayout
-      backHref={SETTINGS_HREF}
-      error={error}
-      isLoading={isLoading}
-      title="外观设置"
-    >
-      <SettingsTabsPanel initialTab="appearance" />
-    </SettingsScreenLayout>
-  );
+  return <SettingsSectionScreen sectionKey="appearance" />;
 }
 
 export function WindowSettingsScreen() {
-  const { error, isLoading } = useUiPreferences();
-
-  return (
-    <SettingsScreenLayout
-      backHref={SETTINGS_HREF}
-      error={error}
-      isLoading={isLoading}
-      title="窗口设置"
-    >
-      <SettingsTabsPanel initialTab="window" />
-    </SettingsScreenLayout>
-  );
+  return <SettingsSectionScreen sectionKey="window" />;
 }
 
 const styles = StyleSheet.create({
@@ -112,16 +256,51 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 20,
   },
+  metaPanel: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  pageContainer: {
+    alignSelf: "center",
+    flex: 1,
+    maxWidth: SCREEN_MAX_WIDTH,
+    width: "100%",
+  },
+  pagePadding: {
+    flex: 1,
+    padding: 20,
+  },
   page: {
     flex: 1,
+  },
+  panelHost: {
+    flex: 1,
+    minHeight: 0,
+  },
+  panelScrollContent: {
+    paddingBottom: 20,
+  },
+  panelScrollView: {
+    flex: 1,
+    minHeight: 0,
   },
   safeArea: {
     flex: 1,
   },
+  sectionCard: {
+    borderColor: "rgba(128, 128, 128, 0.22)",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 16,
+    padding: 16,
+  },
+  sectionCardText: {
+    gap: 6,
+  },
+  sectionList: {
+    gap: 16,
+  },
   syncState: {
     minHeight: 0,
-  },
-  title: {
-    marginTop: 4,
   },
 });

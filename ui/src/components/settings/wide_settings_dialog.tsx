@@ -1,5 +1,6 @@
 import { View } from "react-native";
 
+import { isWeb } from "@/api/common/platform";
 import { useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import { Dialog } from "../ui";
@@ -11,6 +12,9 @@ type WideSettingsDialogProps = {
   onOpenChange: (isOpen: boolean) => void;
 };
 
+const DIALOG_WIDTH = isWeb() ? "80%" : "90%";
+const DIALOG_HEIGHT = isWeb() ? "80%" : "82%";
+
 // Wide settings follows the legacy renderer and opens as a dialog; compact layout keeps route-based access.
 export function WideSettingsDialog({ isOpen, onOpenChange }: WideSettingsDialogProps) {
   const globalSettingsState = useGlobalSettings();
@@ -19,8 +23,8 @@ export function WideSettingsDialog({ isOpen, onOpenChange }: WideSettingsDialogP
   return (
     <Dialog
       minHeight={0}
-      width="80%"
-      height="80%"
+      width={DIALOG_WIDTH}
+      height={DIALOG_HEIGHT}
       onOpenChange={onOpenChange}
       open={isOpen}
       title="设置"

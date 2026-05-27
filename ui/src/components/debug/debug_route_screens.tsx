@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { isDesktop } from "@/api/common";
+import { isDesktop, isWeb } from "@/api/common";
 
 import { TitleBar } from "../titlebar";
 import { Button, Text } from "../ui";
@@ -24,30 +24,32 @@ function DebugScreenLayout({
   description?: string;
   title: string;
 }) {
-  const router = useRouter();
   const desktop = isDesktop();
+  const usesNativeHeader = !isWeb();
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+    <SafeAreaView
+      edges={usesNativeHeader ? ["bottom", "left", "right"] : ["top"]}
+      style={styles.safeArea}
+    >
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
         <View style={styles.pagePadding}>
           <View style={styles.pageContainer}>
-            <View style={styles.header}>
-              <Button onPress={() => router.back()} variant="outlined">
-                返回
-              </Button>
-              <View style={styles.headerText}>
-                <Text fontSize="$8" fontWeight="700">
-                  {title}
-                </Text>
-                {description ? (
-                  <Text color="$color10" fontSize="$3">
-                    {description}
+            {!usesNativeHeader ? (
+              <View style={styles.header}>
+                <View style={styles.headerText}>
+                  <Text fontSize="$8" fontWeight="700">
+                    {title}
                   </Text>
-                ) : null}
+                  {description ? (
+                    <Text color="$color10" fontSize="$3">
+                      {description}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
-            </View>
+            ) : null}
 
             <View style={styles.content}>{children}</View>
           </View>
