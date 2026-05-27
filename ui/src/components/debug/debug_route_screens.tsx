@@ -92,6 +92,7 @@ export function DebugSectionScreen({ sectionKey }: { sectionKey: DebugTabKey }) 
       <View style={styles.panelHost}>
         <ScrollView
           contentContainerStyle={styles.panelScrollContent}
+          nestedScrollEnabled
           showsVerticalScrollIndicator
           style={styles.panelScrollView}
         >

@@ -1,14 +1,7 @@
 import { Check, ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
 import { forwardRef } from "react";
 import React from "react";
-import {
-  Adapt,
-  FontSizeTokens,
-  Sheet,
-  Select as TamaguiSelect,
-  YStack,
-  getFontSize,
-} from "tamagui";
+import { FontSizeTokens, Sheet, Select as TamaguiSelect, YStack, getFontSize } from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
 import { isWeb } from "@/api/common/platform";
@@ -166,6 +159,8 @@ function SelectFocusScope(props: SelectFocusScopeProps) {
   return <TamaguiSelect.FocusScope {...props} />;
 }
 
+const selectAdaptWhen = isWeb() ? "md" : true;
+
 const SelectRoot = forwardRef<any, SelectProps>(
   (
     {
@@ -236,11 +231,11 @@ const SelectRoot = forwardRef<any, SelectProps>(
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
 
-              <Adapt when="md" platform="touch">
+              <SelectAdapt when={selectAdaptWhen} platform="touch">
                 <Sheet native={!!props.native} modal dismissOnSnapToBottom transition="medium">
                   <Sheet.Frame>
                     <Sheet.ScrollView>
-                      <Adapt.Contents />
+                      <SelectAdapt.Contents />
                     </Sheet.ScrollView>
                   </Sheet.Frame>
                   <Sheet.Overlay
@@ -250,7 +245,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     exitStyle={{ opacity: 0 }}
                   />
                 </Sheet>
-              </Adapt>
+              </SelectAdapt>
 
               <SelectContent {...contentProps}>
                 <SelectScrollUpButton

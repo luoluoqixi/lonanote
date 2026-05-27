@@ -44,6 +44,7 @@ import {
   ToggleGroup,
   Tooltip,
 } from "@/components/ui";
+import { useToast } from "@/hooks/ui";
 
 type SectionCardProps = {
   children: ReactNode;
@@ -64,6 +65,7 @@ function DemoRow({ children }: { children: ReactNode }) {
 }
 
 export function UiComponentsDebugPanel() {
+  const { toast } = useToast();
   const [checkboxChecked, setCheckboxChecked] = useState(true);
   const [contextMenuAction, setContextMenuAction] = useState("尚未选择");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -220,6 +222,48 @@ export function UiComponentsDebugPanel() {
             onCheckedChange={setSwitchValue}
           />
         </DemoRow>
+
+        <View style={styles.demoGroup}>
+          <Text fontSize="$5" fontWeight="600">
+            Toast
+          </Text>
+
+          <DemoRow>
+            <Button
+              onPress={() =>
+                toast.message("已保存草稿", {
+                  description: "状态栏与编辑区内容已同步。",
+                })
+              }
+              variant="outlined"
+            >
+              Message
+            </Button>
+            <Button
+              onPress={() =>
+                toast.success("同步完成", {
+                  description: "全部文件已经更新到本地索引。",
+                })
+              }
+              theme="green"
+            >
+              Success
+            </Button>
+            <Button
+              onPress={() =>
+                toast.error("导出失败", {
+                  description: "目标目录没有写入权限。",
+                })
+              }
+              theme="red"
+            >
+              Error
+            </Button>
+            <Button onPress={() => toast.closeAll()} chromeless>
+              Close all
+            </Button>
+          </DemoRow>
+        </View>
 
         <View style={styles.demoGroup}>
           <Text fontSize="$5" fontWeight="600">
@@ -857,33 +901,36 @@ export function UiComponentsDebugPanel() {
           size="$4"
         />
         <Separator />
-        <DemoRow>
-          <View style={styles.mediaDemo}>
-            <Text color="$color10">Image</Text>
-            <Image
-              alt="LonaNote 组件演示图片"
-              borderRadius={16}
-              height={160}
-              objectFit="cover"
-              src="https://github.com/luoluoqixi/lonanote/actions/workflows/release.yml/badge.svg"
-              width={240}
-            />
-          </View>
+        <View style={styles.mediaDemo}>
+          <Text color="$color10">Image</Text>
+          <Image
+            alt="LonaNote 组件演示图片"
+            borderRadius={16}
+            height={160}
+            objectFit="cover"
+            src="https://picsum.photos/200/300"
+            width={240}
+          />
+        </View>
 
-          <View style={styles.mediaDemo}>
-            <Text color="$color10">ScrollView</Text>
-            <ScrollView
-              contentContainerStyle={styles.scrollViewContent}
-              style={styles.scrollViewDemo}
-            >
-              {selectItems.slice(0, 6).map((item) => (
-                <View key={item.value} style={styles.scrollViewItem}>
-                  <Text>{item.label}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </DemoRow>
+        <View style={styles.scrollViewShowcase}>
+          <Text color="$color10">ScrollView</Text>
+          <Text color="$color10">这个区域应当独立于页面本身上下滚动。</Text>
+          <ScrollView
+            contentContainerStyle={styles.scrollViewContent}
+            directionalLockEnabled
+            nestedScrollEnabled
+            scrollEnabled
+            showsVerticalScrollIndicator
+            style={styles.scrollViewDemo}
+          >
+            {selectItems.map((item) => (
+              <View key={item.value} style={styles.scrollViewItem}>
+                <Text>{item.label}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
         <Separator />
         <Card description="Card 默认 API 可直接传 title 和 description。" title="Card 组件示例">
           <Text>这里是 Card 承载的正文内容。</Text>
@@ -961,10 +1008,11 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   scrollViewDemo: {
+    alignSelf: "stretch",
     borderColor: "#d4d4d8",
     borderRadius: 16,
     borderWidth: 1,
-    height: 160,
+    height: 240,
   },
   scrollViewItem: {
     borderColor: "#e4e4e7",
@@ -972,6 +1020,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  scrollViewShowcase: {
+    alignSelf: "stretch",
+    gap: 8,
+    width: "100%",
   },
   row: {
     alignItems: "center",
