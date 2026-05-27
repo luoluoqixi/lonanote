@@ -5,6 +5,11 @@ import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type { TabsContentProps, TabsListProps, TabsProps, TabsTabProps } from "./types";
 
+const DEFAULT_ACTIVE_STYLE = {
+  backgroundColor: "$color3",
+  borderColor: undefined,
+} as const;
+
 function normalizeTriggerChildren(children: ReactNode) {
   return Children.map(children, (child) => {
     if (typeof child === "string" || typeof child === "number") {
@@ -46,9 +51,6 @@ function TabsRoot(props: TabsProps) {
               {items.map((item) => (
                 <TabsTab
                   {...tabProps}
-                  activeStyle={{
-                    background: "$color3",
-                  }}
                   aria-label={resolveAriaLabel(
                     item["aria-label"] ?? tabProps?.["aria-label"],
                     item.label,
@@ -77,9 +79,13 @@ function TabsList(props: TabsListProps) {
 }
 
 function TabsTab(props: TabsTabProps) {
-  const { children, ...tabProps } = props;
+  const { children, activeStyle, ...tabProps } = props;
 
-  return <TamaguiTabs.Tab {...tabProps}>{normalizeTriggerChildren(children)}</TamaguiTabs.Tab>;
+  return (
+    <TamaguiTabs.Tab {...tabProps} activeStyle={activeStyle ?? DEFAULT_ACTIVE_STYLE}>
+      {normalizeTriggerChildren(children)}
+    </TamaguiTabs.Tab>
+  );
 }
 
 function TabsContent(props: TabsContentProps) {

@@ -6,6 +6,10 @@ import { resolveAriaLabel } from "@/components/ui/utils";
 import type { ToggleGroupItemData, ToggleGroupItemProps, ToggleGroupProps } from "./types";
 
 const ToggleGroupPrimitive = TamaguiToggleGroup;
+const DEFAULT_ACTIVE_STYLE = {
+  backgroundColor: "$color5",
+  borderColor: undefined,
+} as const;
 
 function normalizeToggleChildren(children: ReactNode) {
   return Children.map(children, (child) => {
@@ -42,7 +46,6 @@ const getItemsContent = (
       <Group.Item key={item.value}>
         <ToggleGroupItem
           {...itemProps}
-          activeStyle={{ background: "$color5" }}
           aria-label={resolveAriaLabel(item["aria-label"] ?? itemProps?.["aria-label"], item.label)}
           disabled={item.disabled ?? itemProps?.disabled}
           borderRadius="$4"
@@ -83,10 +86,10 @@ function ToggleGroupMultipleRoot(props: Extract<ToggleGroupProps, { type: "multi
 }
 
 function ToggleGroupItem(props: ToggleGroupItemProps) {
-  const { children, ...itemProps } = props;
+  const { activeStyle, children, ...itemProps } = props;
 
   return (
-    <TamaguiToggleGroup.Item {...itemProps}>
+    <TamaguiToggleGroup.Item {...itemProps} activeStyle={activeStyle ?? DEFAULT_ACTIVE_STYLE}>
       {normalizeToggleChildren(children)}
     </TamaguiToggleGroup.Item>
   );
