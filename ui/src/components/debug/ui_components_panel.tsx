@@ -82,6 +82,8 @@ export function UiComponentsDebugPanel() {
   const [sheetPosition, setSheetPosition] = useState(0);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
   const [globalSheetPosition, setGlobalSheetPosition] = useState(0);
+  const [nestedGlobalSheetOpen, setNestedGlobalSheetOpen] = useState(false);
+  const [nestedGlobalSheetPosition, setNestedGlobalSheetPosition] = useState(0);
   const [globalSnapPointsMode, setGlobalSnapPointsMode] = useState<
     "percent" | "fit" | "mixed" | "constant"
   >("percent");
@@ -119,6 +121,20 @@ export function UiComponentsDebugPanel() {
     [],
   );
 
+  const globalSheetSnapPoints = useMemo<(string | number)[] | undefined>(() => {
+    switch (globalSnapPointsMode) {
+      case "constant":
+        return [360, 560];
+      case "fit":
+        return undefined;
+      case "mixed":
+        return ["80%", "fit"];
+      case "percent":
+      default:
+        return [62, 86];
+    }
+  }, [globalSnapPointsMode]);
+
   const handleSheetOpenChange = (nextOpen: boolean) => {
     setSheetOpen(nextOpen);
   };
@@ -129,10 +145,23 @@ export function UiComponentsDebugPanel() {
 
   const handleGlobalSheetOpenChange = (nextOpen: boolean) => {
     setGlobalSheetOpen(nextOpen);
+
+    if (!nextOpen) {
+      setNestedGlobalSheetOpen(false);
+      setNestedGlobalSheetPosition(0);
+    }
   };
 
   const handleGlobalSheetPositionChange = (nextPosition: number) => {
     setGlobalSheetPosition(nextPosition);
+  };
+
+  const handleNestedGlobalSheetOpenChange = (nextOpen: boolean) => {
+    setNestedGlobalSheetOpen(nextOpen);
+  };
+
+  const handleNestedGlobalSheetPositionChange = (nextPosition: number) => {
+    setNestedGlobalSheetPosition(nextPosition);
   };
 
   return (
@@ -724,9 +753,56 @@ export function UiComponentsDebugPanel() {
                     <Text>{item}</Text>
                   </View>
                 ))}
+                <Button
+                  onPress={() => {
+                    setNestedGlobalSheetPosition(0);
+                    setNestedGlobalSheetOpen(true);
+                  }}
+                  variant="outlined"
+                >
+                  打开内层 Sheet
+                </Button>
                 <Button onPress={() => setGlobalSheetOpen(false)} theme="accent">
                   关闭全局 Sheet
                 </Button>
+
+                <Sheet.Controller
+                  hidden={false}
+                  onOpenChange={handleNestedGlobalSheetOpenChange}
+                  open={nestedGlobalSheetOpen}
+                >
+                  <Sheet
+                    content={
+                      <View style={styles.nestedSheetContent}>
+                        <Text fontSize="$6" fontWeight="700">
+                          内层 Sheet
+                        </Text>
+                        <Text color="$color10">
+                          这个示例复用当前 wrapper，在外层 Sheet 内再打开一个 modal Sheet。
+                        </Text>
+                        <Text>
+                          这里可以放更细一级的操作，例如二次确认、补充配置，或者像 Tamagui
+                          官方示例那样继续展示嵌套弹层行为。
+                        </Text>
+                        <Button onPress={() => setNestedGlobalSheetOpen(false)} theme="accent">
+                          关闭内层 Sheet
+                        </Button>
+                      </View>
+                    }
+                    dismissOnSnapToBottom
+                    frameProps={{ style: styles.sheetFrame }}
+                    handle
+                    modal
+                    onOpenChange={handleNestedGlobalSheetOpenChange}
+                    onPositionChange={handleNestedGlobalSheetPositionChange}
+                    open={nestedGlobalSheetOpen}
+                    overlay
+                    position={nestedGlobalSheetPosition}
+                    snapPoints={[72, 88]}
+                    snapPointsMode="percent"
+                    transition="medium"
+                  />
+                </Sheet.Controller>
               </View>
             }
             dismissOnSnapToBottom
@@ -738,7 +814,7 @@ export function UiComponentsDebugPanel() {
             open={globalSheetOpen}
             overlay
             position={globalSheetPosition}
-            snapPoints={[62, 86]}
+            snapPoints={globalSheetSnapPoints}
             snapPointsMode={globalSnapPointsMode}
             transition="medium"
           />
@@ -851,6 +927,13 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 8,
     minWidth: 240,
+  },
+  nestedSheetContent: {
+    gap: 16,
+    paddingLeft: 24,
+    paddingRight: 24,
+    paddingBottom: 24,
+    paddingTop: 12,
   },
   popoverContent: {
     alignItems: "center",
