@@ -32,17 +32,13 @@ export type ContextMenuGroupProps = ComponentProps<typeof TamaguiContextMenu.Gro
 export type ContextMenuLabelProps = ComponentProps<typeof TamaguiContextMenu.Label>;
 export type ContextMenuItemProps = ComponentProps<typeof TamaguiContextMenu.Item>;
 export type ContextMenuItemTitleProps = ComponentProps<typeof TamaguiContextMenu.ItemTitle>;
-export type ContextMenuItemSubtitleProps = ComponentProps<
-  typeof TamaguiContextMenu.ItemSubtitle
->;
+export type ContextMenuItemSubtitleProps = ComponentProps<typeof TamaguiContextMenu.ItemSubtitle>;
 export type ContextMenuItemIconProps = ComponentProps<typeof TamaguiContextMenu.ItemIcon>;
 export type ContextMenuItemImageProps = ComponentProps<typeof TamaguiContextMenu.ItemImage>;
 export type ContextMenuCheckboxItemProps = ComponentProps<typeof TamaguiContextMenu.CheckboxItem>;
 export type ContextMenuRadioGroupProps = ComponentProps<typeof TamaguiContextMenu.RadioGroup>;
 export type ContextMenuRadioItemProps = ComponentProps<typeof TamaguiContextMenu.RadioItem>;
-export type ContextMenuItemIndicatorProps = ComponentProps<
-  typeof TamaguiContextMenu.ItemIndicator
->;
+export type ContextMenuItemIndicatorProps = ComponentProps<typeof TamaguiContextMenu.ItemIndicator>;
 export type ContextMenuSeparatorProps = ComponentProps<typeof TamaguiContextMenu.Separator>;
 export type ContextMenuArrowProps = ComponentProps<typeof TamaguiContextMenu.Arrow>;
 export type ContextMenuSubProps = ComponentProps<typeof TamaguiContextMenu.Sub>;

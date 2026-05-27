@@ -2,6 +2,7 @@ import { Children, type ReactNode, isValidElement } from "react";
 import { StyleSheet } from "react-native";
 import { SizableText, Menu as TamaguiMenu, YStack } from "tamagui";
 
+import { isWeb } from "@/api/common/platform";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type {
@@ -130,7 +131,7 @@ function MenuRoot(props: MenuProps) {
 }
 
 function MenuTrigger(props: MenuTriggerProps) {
-  return <TamaguiMenu.Trigger asChild={props.asChild ?? true} {...props} />;
+  return <TamaguiMenu.Trigger asChild={props.asChild ?? isWeb()} {...props} />;
 }
 
 function MenuPortal(props: MenuPortalProps) {
@@ -275,6 +276,26 @@ function MenuSubContent(props: MenuSubContentProps) {
     />
   );
 }
+
+MenuRoot.displayName = "Menu";
+MenuTrigger.displayName = "Trigger";
+MenuPortal.displayName = "Portal";
+MenuContent.displayName = "Content";
+MenuScrollView.displayName = "ScrollView";
+MenuGroup.displayName = "Group";
+MenuLabel.displayName = "Label";
+MenuItem.displayName = "Item";
+MenuItemTitle.displayName = "ItemTitle";
+MenuItemIcon.displayName = "ItemIcon";
+MenuCheckboxItem.displayName = "CheckboxItem";
+MenuRadioGroup.displayName = "RadioGroup";
+MenuRadioItem.displayName = "RadioItem";
+MenuItemIndicator.displayName = "ItemIndicator";
+MenuSeparator.displayName = "Separator";
+MenuArrow.displayName = "Arrow";
+MenuSub.displayName = "Sub";
+MenuSubTrigger.displayName = "SubTrigger";
+MenuSubContent.displayName = "SubContent";
 
 export const Menu = Object.assign(MenuRoot, {
   Trigger: MenuTrigger,

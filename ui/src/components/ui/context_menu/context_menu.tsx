@@ -1,7 +1,8 @@
 import { Children, type ReactNode, isValidElement } from "react";
 import { StyleSheet } from "react-native";
-import { ContextMenu as TamaguiContextMenu, SizableText } from "tamagui";
+import { SizableText, ContextMenu as TamaguiContextMenu } from "tamagui";
 
+import { isWeb } from "@/api/common/platform";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type {
@@ -86,7 +87,9 @@ function ContextMenuRoot(props: ContextMenuProps) {
 
   return (
     <TamaguiContextMenu {...rootProps}>
-      {trigger != null ? <ContextMenuTrigger {...triggerProps}>{trigger}</ContextMenuTrigger> : null}
+      {trigger != null ? (
+        <ContextMenuTrigger {...triggerProps}>{trigger}</ContextMenuTrigger>
+      ) : null}
       <ContextMenuPortal {...portalProps}>
         <ContextMenuContent {...contentProps}>
           {arrow ? <ContextMenuArrow {...arrowProps} /> : null}
@@ -125,7 +128,7 @@ function ContextMenuRoot(props: ContextMenuProps) {
 }
 
 function ContextMenuTrigger(props: ContextMenuTriggerProps) {
-  return <TamaguiContextMenu.Trigger asChild={props.asChild ?? true} {...props} />;
+  return <TamaguiContextMenu.Trigger asChild={props.asChild ?? isWeb()} {...props} />;
 }
 
 function ContextMenuPortal(props: ContextMenuPortalProps) {
@@ -169,10 +172,7 @@ function ContextMenuItem(props: ContextMenuItemProps) {
   const { children, textValue, ...itemProps } = props;
 
   return (
-    <TamaguiContextMenu.Item
-      {...itemProps}
-      textValue={textValue ?? getChildrenTextValue(children)}
-    >
+    <TamaguiContextMenu.Item {...itemProps} textValue={textValue ?? getChildrenTextValue(children)}>
       {normalizeContextMenuChildren(children)}
     </TamaguiContextMenu.Item>
   );
@@ -278,6 +278,28 @@ function ContextMenuSubContent(props: ContextMenuSubContentProps) {
 function ContextMenuPreview(props: ContextMenuPreviewProps) {
   return <TamaguiContextMenu.Preview {...props} />;
 }
+
+ContextMenuRoot.displayName = "ContextMenu";
+ContextMenuTrigger.displayName = "Trigger";
+ContextMenuPortal.displayName = "Portal";
+ContextMenuContent.displayName = "Content";
+ContextMenuGroup.displayName = "Group";
+ContextMenuLabel.displayName = "Label";
+ContextMenuItem.displayName = "Item";
+ContextMenuItemTitle.displayName = "ItemTitle";
+ContextMenuItemSubtitle.displayName = "ItemSubtitle";
+ContextMenuItemIcon.displayName = "ItemIcon";
+ContextMenuItemImage.displayName = "ItemImage";
+ContextMenuCheckboxItem.displayName = "CheckboxItem";
+ContextMenuRadioGroup.displayName = "RadioGroup";
+ContextMenuRadioItem.displayName = "RadioItem";
+ContextMenuItemIndicator.displayName = "ItemIndicator";
+ContextMenuSeparator.displayName = "Separator";
+ContextMenuArrow.displayName = "Arrow";
+ContextMenuSub.displayName = "Sub";
+ContextMenuSubTrigger.displayName = "SubTrigger";
+ContextMenuSubContent.displayName = "SubContent";
+ContextMenuPreview.displayName = "Preview";
 
 export const ContextMenu = Object.assign(ContextMenuRoot, {
   Trigger: ContextMenuTrigger,
