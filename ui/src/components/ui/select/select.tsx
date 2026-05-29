@@ -52,12 +52,6 @@ const DEFAULT_TOUCH_SHEET_LABEL_HEIGHT = 32;
 
 const SelectAdaptHiddenContext = React.createContext(true);
 
-function useShowSelectSheet(context: { adaptScope: string; open: boolean }) {
-  const breakpointActive = useAdaptIsActive(context.adaptScope);
-
-  return context.open === false ? false : breakpointActive;
-}
-
 type TouchSheetConfig = {
   frameMaxHeight?: SelectProps["touchSheetMaxHeight"];
   snapPoints: [number];
@@ -140,9 +134,11 @@ function SelectSheetController(props: { children: React.ReactNode }) {
   const isAdapted = useAdaptIsActive(context.adaptScope);
   const [isAdaptFullyHidden, setIsAdaptFullyHidden] = React.useState(!context.open);
 
-  if (context.open && isAdaptFullyHidden) {
-    setIsAdaptFullyHidden(false);
-  }
+  React.useEffect(() => {
+    if (context.open) {
+      setIsAdaptFullyHidden(false);
+    }
+  }, [context.open]);
 
   const handleSheetAnimationComplete = React.useCallback(({ open }: { open: boolean }) => {
     if (!open) {
@@ -173,20 +169,19 @@ function SelectContent(props: SelectContentProps) {
   const context = useSelectContext(scope);
   const itemParentContext = useSelectItemParentContext(scope);
   const zIndex = React.useContext(SelectZIndexContext);
-  const showSheet = useShowSelectSheet(context);
+  const isAdapted = useAdaptIsActive(context.adaptScope);
   const isAdaptFullyHidden = React.useContext(SelectAdaptHiddenContext);
-  const contents = children;
 
   if (itemParentContext.shouldRenderWebNative) {
     return <>{children}</>;
   }
 
-  if (showSheet) {
+  if (isAdapted) {
     if (!context.open && isAdaptFullyHidden) {
       return null;
     }
 
-    return <>{contents}</>;
+    return <>{children}</>;
   }
 
   return (
@@ -215,7 +210,7 @@ function SelectContent(props: SelectContentProps) {
               }
             }}
           >
-            {isTamaguiWeb ? <div style={{ display: "contents" }}>{contents}</div> : contents}
+            {isTamaguiWeb ? <div style={{ display: "contents" }}>{children}</div> : children}
           </FocusScope>
         </Dismissable>
       </RemoveScroll>
@@ -471,54 +466,56 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     />
                   </Sheet>
                 </SelectAdapt>
-              </SelectSheetController>
 
-              <SelectContent {...contentProps}>
-                <SelectScrollUpButton
-                  items="center"
-                  justify="center"
-                  position="relative"
-                  width="100%"
-                  height="$3"
-                />
-                <SelectViewport
-                  bg="$background"
-                  rounded="$4"
-                  borderWidth={1}
-                  borderColor="$borderColor"
-                  {...viewportProps}
-                >
-                  <SelectGroup>
-                    {itemLabel && (
-                      <Select.Label fontWeight="700" {...itemLabelProps}>
-                        {itemLabel}
-                      </Select.Label>
+                <SelectContent {...contentProps}>
+                  <SelectScrollUpButton
+                    items="center"
+                    justify="center"
+                    position="relative"
+                    width="100%"
+                    height="$3"
+                  />
+                  <SelectViewport
+                    bg="$background"
+                    rounded="$4"
+                    borderWidth={1}
+                    borderColor="$borderColor"
+                    {...viewportProps}
+                  >
+                    <SelectGroup>
+                      {itemLabel && (
+                        <Select.Label fontWeight="700" {...itemLabelProps}>
+                          {itemLabel}
+                        </Select.Label>
+                      )}
+                      {renderedItems}
+                    </SelectGroup>
+                    {/* Native gets an extra icon */}
+                    {props.native && (
+                      <YStack
+                        position="absolute"
+                        r={0}
+                        t={16}
+                        items="center"
+                        justify="center"
+                        width={"$4"}
+                        pointerEvents="none"
+                      >
+                        <ChevronDown
+                          size={getFontSize((props.size as FontSizeTokens) ?? "$true")}
+                        />
+                      </YStack>
                     )}
-                    {renderedItems}
-                  </SelectGroup>
-                  {/* Native gets an extra icon */}
-                  {props.native && (
-                    <YStack
-                      position="absolute"
-                      r={0}
-                      t={16}
-                      items="center"
-                      justify="center"
-                      width={"$4"}
-                      pointerEvents="none"
-                    >
-                      <ChevronDown size={getFontSize((props.size as FontSizeTokens) ?? "$true")} />
-                    </YStack>
-                  )}
-                </SelectViewport>
-                <SelectScrollDownButton
-                  items="center"
-                  justify="center"
-                  position="relative"
-                  width="100%"
-                  height="$3"
-                />
-              </SelectContent>
+                  </SelectViewport>
+                  <SelectScrollDownButton
+                    items="center"
+                    justify="center"
+                    position="relative"
+                    width="100%"
+                    height="$3"
+                  />
+                </SelectContent>
+              </SelectSheetController>
             </>
           ))}
       </TamaguiSelect>
