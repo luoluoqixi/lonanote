@@ -28,6 +28,8 @@ import type {
   SelectViewportProps,
 } from "./types";
 
+const DEFAULT_TOUCH_SHEET_MAX_HEIGHT = "60%";
+
 function SelectAdaptContents(props: SelectAdaptContentsProps) {
   return <TamaguiSelect.Adapt.Contents {...props} />;
 }
@@ -179,6 +181,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       onValueChange,
       options,
       placeholder,
+      touchSheetMaxHeight,
       triggerProps,
       viewportProps,
       ...props
@@ -233,8 +236,17 @@ const SelectRoot = forwardRef<any, SelectProps>(
               </SelectTrigger>
 
               <SelectAdapt when={selectAdaptWhen} platform="touch">
-                <Sheet native={!!props.native} modal dismissOnSnapToBottom transition="medium">
-                  <Sheet.Frame>
+                <Sheet
+                  native={!!props.native}
+                  modal
+                  dismissOnSnapToBottom
+                  snapPoints={["fit"]}
+                  snapPointsMode="fit"
+                  transition="medium"
+                >
+                  <Sheet.Frame
+                    style={{ maxHeight: touchSheetMaxHeight ?? DEFAULT_TOUCH_SHEET_MAX_HEIGHT }}
+                  >
                     <Sheet.ScrollView>
                       <SelectAdapt.Contents />
                     </Sheet.ScrollView>

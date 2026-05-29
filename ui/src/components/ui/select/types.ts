@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
+import type { ViewStyle } from "react-native";
 import type { Select as TamaguiSelect } from "tamagui";
 
 export interface SelectItemData {
@@ -32,6 +33,7 @@ export interface SelectProps extends Omit<
   onValueChange?: (nextValue: string | null) => void;
   options?: SelectItemData[];
   placeholder?: ReactNode;
+  touchSheetMaxHeight?: ViewStyle["maxHeight"];
   triggerProps?: ComponentProps<typeof TamaguiSelect.Trigger>;
   viewportProps?: ComponentProps<typeof TamaguiSelect.Viewport>;
 }

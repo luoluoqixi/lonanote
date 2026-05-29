@@ -80,6 +80,7 @@ export function UiComponentsDebugPanel() {
   const [menuSubOpen, setMenuSubOpen] = useState(false);
   const [radioValue, setRadioValue] = useState("recent");
   const [selectValue, setSelectValue] = useState<string | null>("blue");
+  const [selectValue2, setSelectValue2] = useState<string | null>("blue");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
@@ -114,6 +115,14 @@ export function UiComponentsDebugPanel() {
       { label: "靛色", value: "indigo" },
       { label: "金色", value: "gold" },
       { label: "银色", value: "silver" },
+    ],
+    [],
+  );
+
+  const selectItems2 = useMemo(
+    () => [
+      { label: "Light", value: "light" },
+      { label: "Dark", value: "dark" },
     ],
     [],
   );
@@ -330,6 +339,25 @@ export function UiComponentsDebugPanel() {
               native
             />
             <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
+          </View>
+          <View style={styles.field}>
+            <Select
+              items={selectItems2}
+              onValueChange={setSelectValue2}
+              placeholder="选择主题"
+              value={selectValue2 ?? undefined}
+            />
+            <Text color="$color10">当前主题：{selectValue2 ?? "未选择"}</Text>
+          </View>
+          <View style={styles.field}>
+            <Select
+              items={selectItems2}
+              onValueChange={setSelectValue2}
+              placeholder="选择主题"
+              value={selectValue2 ?? undefined}
+              native
+            />
+            <Text color="$color10">当前主题：{selectValue2 ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
             <Label>Slider Replica</Label>
