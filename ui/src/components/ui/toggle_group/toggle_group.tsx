@@ -1,5 +1,5 @@
 import { Children, type ReactNode, isValidElement } from "react";
-import { SizableText, ToggleGroup as TamaguiToggleGroup, XGroup, YGroup } from "tamagui";
+import { SizableText, ToggleGroup as TamaguiToggleGroup, XGroup, XStack, YGroup } from "tamagui";
 
 import { os } from "@/api/common/platform";
 import { resolveAriaLabel } from "@/components/ui/utils";
@@ -12,22 +12,26 @@ const DEFAULT_ACTIVE_STYLE = {
   borderColor: undefined,
 } as const;
 
+function wrapToggleChildForIos(child: ReactNode) {
+  if (os() !== "ios") {
+    return child;
+  }
+
+  return (
+    <XStack accessible={false} pointerEvents="none">
+      {child}
+    </XStack>
+  );
+}
+
 function normalizeToggleChildren(children: ReactNode) {
   return Children.map(children, (child) => {
     if (typeof child === "string" || typeof child === "number") {
-      return (
-        <SizableText
-          accessible={os() === "ios" ? false : undefined}
-          pointerEvents={os() === "ios" ? "none" : undefined}
-          userSelect={os() === "ios" ? "none" : undefined}
-        >
-          {child}
-        </SizableText>
-      );
+      return wrapToggleChildForIos(<SizableText accessible={false}>{child}</SizableText>);
     }
 
     if (isValidElement(child)) {
-      return child;
+      return wrapToggleChildForIos(child);
     }
 
     return child;
