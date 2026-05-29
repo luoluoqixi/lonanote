@@ -37,10 +37,8 @@ import { useSheetProviderProps } from "./useSheetProviderProps";
 const hiddenSize = 10_000.1;
 
 // the re-established rngh root for a modal sheet (see modal branch below).
-// GestureHandlerRootView does its own native touch interception and ignores
-// pointerEvents, so it would block the whole app while the sheet sits closed
-// but mounted. instead it stays full-width for correct child layout/measurement
-// and collapses to 0 height when closed so it has no hit area.
+// GestureHandlerRootView 自身不适合直接切 pointerEvents；这里保留基于 opacity 的
+// 挂载/收起时机来避免关闭白闪，再额外包一层普通 View 控制 close 开始后的命中区域。
 const rnghRootStyleOpen = { width: "100%", height: "100%" } as const;
 const rnghRootStyleClosed = { width: "100%", height: 0 } as const;
 
@@ -844,9 +842,9 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       // around the teleported content so it works regardless of where the app
       // mounts GestureHandlerRootView.
       //
-      // the root must stop intercepting touches as soon as close starts,
-      // otherwise outer ScrollView 需要等到 close animation 结束后才能重新滚动。
-      // children 仍保持挂载以延续关闭动画；这里只把 RNGHRoot 的命中区域立即收起。
+      // 关闭动画期间仍保留 RNGHRoot 与内容挂载，避免白色闪动；
+      // 但最外层用普通 View 在 open=false 时立刻切成 pointerEvents="none"，
+      // 让外层 ScrollView 无需等待 close animation 结束即可恢复滚动。
       const RNGHRoot = getGestureHandlerState().RootView;
       const mountedContents = shouldMountChildren ? (
         <ContainerComponent>{contents}</ContainerComponent>
@@ -854,9 +852,12 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       const modalContents = (
         <Portal stackZIndex={zIndex} {...portalProps}>
           {mountedContents && RNGHRoot ? (
-            <RNGHRoot style={open ? rnghRootStyleOpen : rnghRootStyleClosed}>
-              {mountedContents}
-            </RNGHRoot>
+            <View
+              pointerEvents={open ? "auto" : "none"}
+              style={opacity ? rnghRootStyleOpen : rnghRootStyleClosed}
+            >
+              <RNGHRoot style={rnghRootStyleOpen}>{mountedContents}</RNGHRoot>
+            </View>
           ) : (
             mountedContents
           )}
