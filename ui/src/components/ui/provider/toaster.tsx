@@ -1,4 +1,5 @@
-import { Toast, ToastT, useToasts } from "@tamagui/toast/v2";
+import { Toast, ToastT } from "@tamagui/toast/v2";
+import { useEffect } from "react";
 import { XStack, YStack } from "tamagui";
 
 import { isWeb } from "@/api/common/platform";
@@ -13,6 +14,39 @@ const DEFAULT_CLOSE_BTN_STYLE = {
   transform: "translateY(-50%)",
   zIndex: 1,
 } as const;
+
+const WEB_TOAST_ANIMATION_STYLE_ID = "lonanote-web-toast-animation";
+const WEB_TOAST_ANIMATION_CSS = `
+[data-toast-container] [data-mounted="true"][data-removed="false"] {
+  transition-duration: 560ms !important;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+[data-toast-container] [data-removed="true"] {
+  transition-duration: 220ms !important;
+}
+`;
+
+function useWebToastAnimationOverride() {
+  useEffect(() => {
+    if (!isWeb()) {
+      return;
+    }
+
+    if (document.getElementById(WEB_TOAST_ANIMATION_STYLE_ID) != null) {
+      return;
+    }
+
+    const styleElement = document.createElement("style");
+    styleElement.id = WEB_TOAST_ANIMATION_STYLE_ID;
+    styleElement.textContent = WEB_TOAST_ANIMATION_CSS;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      styleElement.remove();
+    };
+  }, []);
+}
 
 function ToastContent({ toast: t }: { toast: ToastT }) {
   const title = typeof t.title === "function" ? t.title() : t.title;
@@ -72,6 +106,8 @@ function ToastList() {
 }
 
 export function Toaster() {
+  useWebToastAnimationOverride();
+
   const position = isWeb() ? "bottom-right" : "bottom-center";
   return (
     <Toast position={position} visibleToasts={4} duration={5000} gap={16}>
