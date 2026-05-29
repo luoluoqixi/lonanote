@@ -844,10 +844,9 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       // around the teleported content so it works regardless of where the app
       // mounts GestureHandlerRootView.
       //
-      // the root stays mounted and full-width whenever the sheet content is
-      // (so child layout/measurement/close-animation are unaffected) and only
-      // collapses to 0 height while closed so it occupies no hit area - see
-      // rnghRootStyleOpen/Closed above for why pointerEvents can't be used.
+      // the root must stop intercepting touches as soon as close starts,
+      // otherwise outer ScrollView 需要等到 close animation 结束后才能重新滚动。
+      // children 仍保持挂载以延续关闭动画；这里只把 RNGHRoot 的命中区域立即收起。
       const RNGHRoot = getGestureHandlerState().RootView;
       const mountedContents = shouldMountChildren ? (
         <ContainerComponent>{contents}</ContainerComponent>
@@ -855,7 +854,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       const modalContents = (
         <Portal stackZIndex={zIndex} {...portalProps}>
           {mountedContents && RNGHRoot ? (
-            <RNGHRoot style={opacity ? rnghRootStyleOpen : rnghRootStyleClosed}>
+            <RNGHRoot style={open ? rnghRootStyleOpen : rnghRootStyleClosed}>
               {mountedContents}
             </RNGHRoot>
           ) : (
