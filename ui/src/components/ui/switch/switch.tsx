@@ -1,22 +1,39 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Label as TamaguiLabel, Switch as TamaguiSwitch, XStack } from "tamagui";
+
+import { os } from "@/api/common/platform";
 
 import type { SwitchProps, SwitchThumbProps } from "./types";
 
 function SwitchRoot(props: SwitchProps) {
   const generatedId = useId();
   const {
+    checked: checkedProp,
     children,
+    defaultChecked,
     id,
     label,
     labelPosition = "start",
     labelProps,
+    onCheckedChange,
     overflow,
     size = "$4",
     thumbProps,
     ...rootProps
   } = props;
   const controlId = id ?? generatedId;
+  const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked ?? false);
+  const checked = checkedProp ?? uncontrolledChecked;
+  const shouldHandleLabelPress = os() === "ios";
+
+  const handleCheckedChange = (nextChecked: boolean) => {
+    if (checkedProp === undefined) {
+      setUncontrolledChecked(nextChecked);
+    }
+
+    onCheckedChange?.(nextChecked);
+  };
+
   const control = (
     <TamaguiSwitch
       activeStyle={{
@@ -24,8 +41,10 @@ function SwitchRoot(props: SwitchProps) {
       }}
       {...rootProps}
       borderWidth={rootProps.borderWidth ?? 0}
+      checked={checked}
       cursor={rootProps.cursor ?? "pointer"}
       id={controlId}
+      onCheckedChange={handleCheckedChange}
       overflow={overflow ?? "hidden"}
       padding={rootProps.padding ?? 0}
       size={size}
@@ -39,7 +58,19 @@ function SwitchRoot(props: SwitchProps) {
   }
 
   const labelElement = (
-    <TamaguiLabel {...labelProps} htmlFor={labelProps?.htmlFor ?? controlId}>
+    <TamaguiLabel
+      {...labelProps}
+      htmlFor={labelProps?.htmlFor ?? controlId}
+      onPress={(event) => {
+        labelProps?.onPress?.(event);
+
+        if (!shouldHandleLabelPress || rootProps.disabled || event.defaultPrevented) {
+          return;
+        }
+
+        handleCheckedChange(!checked);
+      }}
+    >
       {label}
     </TamaguiLabel>
   );

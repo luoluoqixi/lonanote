@@ -5,13 +5,13 @@ import { isWeb } from "@/api/common/platform";
 
 import type { LabelProps } from "./types";
 
+const DEFAULT_LABEL_WEB_STYLE = { userSelect: "text" } as CSSProperties;
+
 export function Label(props: LabelProps) {
   return (
     <TamaguiLabel
       {...props}
-      style={
-        isWeb() ? ([{ userSelect: "text" } as CSSProperties, props.style] as const) : props.style
-      }
+      style={isWeb() ? ([DEFAULT_LABEL_WEB_STYLE, props.style] as const) : props.style}
     />
   );
 }

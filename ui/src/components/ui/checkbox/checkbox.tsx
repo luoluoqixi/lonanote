@@ -1,15 +1,46 @@
 import { Check } from "@tamagui/lucide-icons-2";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Checkbox as TamaguiCheckbox, Label as TamaguiLabel, XStack } from "tamagui";
 
-import type { CheckboxIndicatorProps, CheckboxProps } from "./types";
+import { os } from "@/api/common/platform";
+
+import type { CheckboxIndicatorProps, CheckboxProps, CheckedState } from "./types";
 
 function CheckboxRoot(props: CheckboxProps) {
   const generatedId = useId();
-  const { children, id, indicatorProps, label, labelProps, ...rootProps } = props;
+  const {
+    checked: checkedProp,
+    children,
+    defaultChecked,
+    id,
+    indicatorProps,
+    label,
+    labelProps,
+    onCheckedChange,
+    ...rootProps
+  } = props;
   const controlId = id ?? generatedId;
+  const [uncontrolledChecked, setUncontrolledChecked] = useState<CheckedState>(
+    defaultChecked ?? false,
+  );
+  const checked = checkedProp ?? uncontrolledChecked;
+  const shouldHandleLabelPress = os() === "ios";
+
+  const handleCheckedChange = (nextChecked: CheckedState) => {
+    if (checkedProp === undefined) {
+      setUncontrolledChecked(nextChecked);
+    }
+
+    onCheckedChange?.(nextChecked);
+  };
+
   const checkbox = (
-    <TamaguiCheckbox {...rootProps} id={controlId}>
+    <TamaguiCheckbox
+      {...rootProps}
+      checked={checked}
+      id={controlId}
+      onCheckedChange={handleCheckedChange}
+    >
       {children ?? <CheckboxIndicator {...indicatorProps} />}
     </TamaguiCheckbox>
   );
@@ -21,7 +52,19 @@ function CheckboxRoot(props: CheckboxProps) {
   return (
     <XStack gap="$2" style={{ alignItems: "center" }}>
       {checkbox}
-      <TamaguiLabel {...labelProps} htmlFor={labelProps?.htmlFor ?? controlId}>
+      <TamaguiLabel
+        {...labelProps}
+        htmlFor={labelProps?.htmlFor ?? controlId}
+        onPress={(event) => {
+          labelProps?.onPress?.(event);
+
+          if (!shouldHandleLabelPress || rootProps.disabled || event.defaultPrevented) {
+            return;
+          }
+
+          handleCheckedChange(checked === "indeterminate" ? true : !checked);
+        }}
+      >
         {label}
       </TamaguiLabel>
     </XStack>

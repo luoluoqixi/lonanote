@@ -1,6 +1,7 @@
 import { Children, type ReactNode, isValidElement } from "react";
 import { SizableText, ToggleGroup as TamaguiToggleGroup, XGroup, YGroup } from "tamagui";
 
+import { os } from "@/api/common/platform";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type { ToggleGroupItemData, ToggleGroupItemProps, ToggleGroupProps } from "./types";
@@ -14,7 +15,7 @@ const DEFAULT_ACTIVE_STYLE = {
 function normalizeToggleChildren(children: ReactNode) {
   return Children.map(children, (child) => {
     if (typeof child === "string" || typeof child === "number") {
-      return <SizableText>{child}</SizableText>;
+      return <SizableText pointerEvents={os() === "ios" ? "none" : undefined}>{child}</SizableText>;
     }
 
     if (isValidElement(child)) {
