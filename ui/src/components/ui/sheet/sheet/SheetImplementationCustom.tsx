@@ -231,6 +231,10 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       return result;
     }, [positions, isKeyboardVisible, keyboardHeight, screenSize, isDragging]);
 
+    const topActivePosition = React.useMemo(() => {
+      return activePositions.length > 0 ? Math.min(...activePositions) : 0;
+    }, [activePositions]);
+
     const keyboardOccludedHeight = getKeyboardOccludedHeight({
       frameSize,
       isKeyboardVisible: !isWeb && isKeyboardVisible,
@@ -286,8 +290,8 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
           at.current = value;
           scrollBridge.paneY = value;
           // update isAtTop for scroll enable/disable
-          // activePositions[0] is the top snap point (keyboard-adjusted minY)
-          const minY = activePositions[0];
+          // the top snap point is whichever snap currently has the smallest Y.
+          const minY = topActivePosition;
           const wasAtTop = scrollBridge.isAtTop;
           const nowAtTop = value <= minY + 5;
           if (wasAtTop !== nowAtTop) {
@@ -309,7 +313,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
             }
           }
         },
-        [animationDriver, activePositions],
+        [animationDriver, topActivePosition],
       ),
     );
 
@@ -430,9 +434,10 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       }
 
       // set initial isAtTop state when sheet opens
-      // position 0 = top snap point, so isAtTop = true
+      // mixed mode can make the visual top snap point differ from index 0
       if (open && position >= 0) {
-        const isTopPosition = position === 0;
+        const currentSnapY = activePositions[position];
+        const isTopPosition = currentSnapY != null && currentSnapY <= topActivePosition + 5;
         scrollBridge.isAtTop = isTopPosition;
         if (isTopPosition) {
           scrollBridge.scrollLockY = undefined;
@@ -442,7 +447,17 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
           scrollBridge.setScrollEnabled?.(false);
         }
       }
-    }, [hasntMeasured, disableAnimation, isHidden, frameSize, screenSize, open, position]);
+    }, [
+      hasntMeasured,
+      disableAnimation,
+      isHidden,
+      frameSize,
+      screenSize,
+      open,
+      position,
+      activePositions,
+      topActivePosition,
+    ]);
 
     const disableDrag = props.disableDrag ?? controller?.disableDrag;
     const themeName = useThemeName();
@@ -453,7 +468,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       if (!frameSize) return;
       if (isShowingInnerSheet) return;
 
-      const minY = positions[0];
+      const minY = positions.length > 0 ? Math.min(...positions) : 0;
       scrollBridge.paneMinY = minY;
       let startY = at.current;
 
