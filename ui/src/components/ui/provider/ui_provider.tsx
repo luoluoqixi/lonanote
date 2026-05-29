@@ -1,8 +1,8 @@
-import { Toaster } from "@tamagui/toast/v2";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TamaguiProvider } from "tamagui";
 
 import config from "../../../../tamagui.config";
+import { Toaster } from "./toaster";
 import type { UIProviderProps } from "./types";
 
 export function UIProvider({ children, colorScheme }: UIProviderProps) {

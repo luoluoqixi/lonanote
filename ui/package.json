@@ -111,6 +111,7 @@
     "metro-transform-worker": "=0.83.6"
   },
   "patchedDependencies": {
+    "@tamagui/toast@2.0.0": "patches/@tamagui+toast@2.0.0.patch",
     "metro-file-map@0.83.6": "patches/metro-file-map@0.83.6.patch",
     "metro@0.83.6": "patches/metro@0.83.6.patch",
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch"

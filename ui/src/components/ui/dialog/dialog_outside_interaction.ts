@@ -1,6 +1,7 @@
 import { isWeb } from "@/api/common/platform";
 
 const TAURI_DRAG_REGION_SELECTOR = "[data-tauri-drag-region]";
+const TOAST_VIEWPORT_SELECTOR = "[role='region'][aria-label*='Toast']";
 
 type ClosestCapableTarget = {
   closest: (selector: string) => unknown;
@@ -29,13 +30,21 @@ function isTauriDragRegionTarget(target: unknown): boolean {
   return isClosestCapableTarget(target) && target.closest(TAURI_DRAG_REGION_SELECTOR) !== null;
 }
 
+function isToastTarget(target: unknown): boolean {
+  if (!isClosestCapableTarget(target)) {
+    return false;
+  }
+  // 检查是否在带有 data-toast-container 的元素内
+  return target.closest("[data-toast-container]") !== null;
+}
+
 function preventDialogDismissForDragRegion(event: OutsideInteractionEvent): void {
   if (!isWeb()) {
     return;
   }
 
   const target = event.detail?.originalEvent?.target;
-  if (isTauriDragRegionTarget(target)) {
+  if (isTauriDragRegionTarget(target) || isToastTarget(target)) {
     event.preventDefault();
   }
 }
