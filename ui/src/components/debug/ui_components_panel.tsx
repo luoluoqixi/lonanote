@@ -175,6 +175,70 @@ export function UiComponentsDebugPanel() {
     setNestedGlobalSheetPosition(nextPosition);
   };
 
+  const showInfoToast = () => {
+    toast.info("检测到新版本", {
+      description: "设置页里可以查看本次更新内容。",
+    });
+  };
+
+  const showWarningToast = () => {
+    toast.warning("存储空间不足", {
+      description: "建议清理附件缓存后继续导入大文件。",
+    });
+  };
+
+  const showLoadingToast = () => {
+    const toastId = toast.loading("正在生成离线索引", {
+      description: "请稍候，完成后会自动提示。",
+      duration: Number.POSITIVE_INFINITY,
+    });
+
+    setTimeout(() => {
+      toast.close(toastId);
+      toast.success("离线索引已生成", {
+        description: "最近修改的 128 个文件已经可以离线检索。",
+      });
+    }, 1600);
+  };
+
+  const showCustomToast = () => {
+    toast.custom(
+      () => (
+        <View style={styles.customToast}>
+          <Text fontSize="$4" fontWeight="700">
+            自定义 Toast
+          </Text>
+          <Text color="$color10">这里可以放任意 JSX，例如更丰富的排版、图标组合或状态摘要。</Text>
+        </View>
+      ),
+      {
+        duration: 6000,
+      },
+    );
+  };
+
+  const showPromiseToast = () => {
+    toast.promise(
+      new Promise<{ refreshedFiles: number }>((resolve) => {
+        setTimeout(() => {
+          resolve({ refreshedFiles: 42 });
+        }, 1500);
+      }),
+      {
+        loading: "正在同步工作区",
+        success: "同步完成",
+        error: "同步失败",
+        description: (result) => {
+          if (result instanceof Error) {
+            return "请检查当前工作区路径是否仍然可访问。";
+          }
+
+          return `已刷新 ${result.refreshedFiles} 个文件的索引状态。`;
+        },
+      },
+    );
+  };
+
   return (
     <View style={styles.root}>
       <SectionCard description="按钮、状态切换和加载反馈。" title="动作与反馈">
@@ -267,6 +331,23 @@ export function UiComponentsDebugPanel() {
               theme="red"
             >
               Error
+            </Button>
+            <Button onPress={showInfoToast} variant="outlined">
+              Info
+            </Button>
+            <Button onPress={showWarningToast} variant="outlined">
+              Warning
+            </Button>
+          </DemoRow>
+          <DemoRow>
+            <Button onPress={showLoadingToast} variant="outlined">
+              Loading
+            </Button>
+            <Button onPress={showCustomToast} variant="outlined">
+              Custom
+            </Button>
+            <Button onPress={showPromiseToast} variant="outlined">
+              Promise
             </Button>
             <Button onPress={() => toast.closeAll()} chromeless>
               Close all
@@ -974,6 +1055,15 @@ const styles = StyleSheet.create({
   },
   checkboxGroup: {
     gap: 0,
+  },
+  customToast: {
+    backgroundColor: "#ffffff",
+    borderColor: "#e4e4e7",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   demoGroup: {
     gap: 12,
