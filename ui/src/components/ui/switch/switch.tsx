@@ -57,20 +57,24 @@ function SwitchRoot(props: SwitchProps) {
     return control;
   }
 
-  const labelElement = (
-    <TamaguiLabel
-      {...labelProps}
-      htmlFor={labelProps?.htmlFor ?? controlId}
+  const labelElement = shouldHandleLabelPress ? (
+    <XStack
       onPress={(event) => {
         labelProps?.onPress?.(event);
 
-        if (!shouldHandleLabelPress || rootProps.disabled || event.defaultPrevented) {
+        if (rootProps.disabled || event.defaultPrevented) {
           return;
         }
 
         handleCheckedChange(!checked);
       }}
     >
+      <TamaguiLabel {...labelProps} pointerEvents="none">
+        {label}
+      </TamaguiLabel>
+    </XStack>
+  ) : (
+    <TamaguiLabel {...labelProps} htmlFor={labelProps?.htmlFor ?? controlId}>
       {label}
     </TamaguiLabel>
   );

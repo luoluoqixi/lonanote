@@ -15,7 +15,15 @@ const DEFAULT_ACTIVE_STYLE = {
 function normalizeToggleChildren(children: ReactNode) {
   return Children.map(children, (child) => {
     if (typeof child === "string" || typeof child === "number") {
-      return <SizableText pointerEvents={os() === "ios" ? "none" : undefined}>{child}</SizableText>;
+      return (
+        <SizableText
+          accessible={os() === "ios" ? false : undefined}
+          pointerEvents={os() === "ios" ? "none" : undefined}
+          userSelect={os() === "ios" ? "none" : undefined}
+        >
+          {child}
+        </SizableText>
+      );
     }
 
     if (isValidElement(child)) {

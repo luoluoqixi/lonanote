@@ -49,24 +49,32 @@ function CheckboxRoot(props: CheckboxProps) {
     return checkbox;
   }
 
+  const labelElement = shouldHandleLabelPress ? (
+    <XStack
+      onPress={(event) => {
+        labelProps?.onPress?.(event);
+
+        if (rootProps.disabled || event.defaultPrevented) {
+          return;
+        }
+
+        handleCheckedChange(checked === "indeterminate" ? true : !checked);
+      }}
+    >
+      <TamaguiLabel {...labelProps} pointerEvents="none">
+        {label}
+      </TamaguiLabel>
+    </XStack>
+  ) : (
+    <TamaguiLabel {...labelProps} htmlFor={labelProps?.htmlFor ?? controlId}>
+      {label}
+    </TamaguiLabel>
+  );
+
   return (
     <XStack gap="$2" style={{ alignItems: "center" }}>
       {checkbox}
-      <TamaguiLabel
-        {...labelProps}
-        htmlFor={labelProps?.htmlFor ?? controlId}
-        onPress={(event) => {
-          labelProps?.onPress?.(event);
-
-          if (!shouldHandleLabelPress || rootProps.disabled || event.defaultPrevented) {
-            return;
-          }
-
-          handleCheckedChange(checked === "indeterminate" ? true : !checked);
-        }}
-      >
-        {label}
-      </TamaguiLabel>
+      {labelElement}
     </XStack>
   );
 }
