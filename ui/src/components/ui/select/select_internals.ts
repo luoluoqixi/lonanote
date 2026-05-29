@@ -6,6 +6,7 @@ import {
   SelectZIndexContext as selectZIndexContextInternal,
   useSelectContext as useSelectContextInternal,
   useSelectItemParentContext as useSelectItemParentContextInternal,
+  // @ts-ignore
 } from "../../../../node_modules/@tamagui/select/dist/esm/context.mjs";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore Tamagui 内部 dist 模块当前没有对外声明文件。

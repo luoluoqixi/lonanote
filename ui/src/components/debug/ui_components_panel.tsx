@@ -139,7 +139,7 @@ export function UiComponentsDebugPanel() {
       case "fit":
         return undefined;
       case "mixed":
-        return ["80%", "fit"];
+        return ["fit", "80%"];
       case "percent":
       default:
         return [62, 86];
