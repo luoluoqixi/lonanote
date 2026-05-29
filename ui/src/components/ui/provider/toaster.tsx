@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { Spinner, XStack, YStack } from "tamagui";
 
-import { isWeb } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 
 const DEFAULT_CLOSE_BTN_STYLE = {
   top: "50%",
@@ -91,23 +91,39 @@ function getToastAppearance(toast: ToastT): ToastAppearance {
   return TOAST_APPEARANCES[toast.type ?? "default"];
 }
 
+function getIosToastIconStyle(centered: boolean) {
+  if (centered) {
+    return undefined;
+  }
+
+  return {
+    marginTop: 3,
+    transform: [{ translateY: 2 }],
+  } as const;
+}
+
 function ToastTypeIcon(props: {
   background: ComponentProps<typeof YStack>["background"];
   children: ReactNode;
   centered?: boolean;
 }) {
   const { background, centered = false, children } = props;
+  const isIos = os() === "ios";
+  const iosStyle = isIos ? getIosToastIconStyle(centered) : undefined;
 
   return (
     <YStack
       background={background}
-      items="center"
-      justify="center"
-      mt={centered ? 0 : "$0.5"}
+      mt={!isIos && !centered ? "$0.5" : 0}
       rounded="$10"
       shrink={0}
       width={28}
       height={28}
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+        ...iosStyle,
+      }}
     >
       {children}
     </YStack>
@@ -163,13 +179,12 @@ function ToastContent({ toast: t }: { toast: ToastT }) {
 
   return (
     <>
-      <XStack gap="$3" items={isTitleOnlyToast ? "center" : "flex-start"}>
+      <XStack
+        gap="$3"
+        style={{ alignItems: isTitleOnlyToast ? "center" : "flex-start" }}
+      >
         {leadingIcon}
-        <YStack
-          flex={1}
-          gap={isTitleOnlyToast ? 0 : "$0.5"}
-          justify={isTitleOnlyToast ? "center" : undefined}
-        >
+        <YStack flex={1} gap={isTitleOnlyToast ? 0 : "$0.5"}>
           {title && (
             <Toast.Title color={appearance.titleColor} fontWeight="600" size="$3">
               {title}
