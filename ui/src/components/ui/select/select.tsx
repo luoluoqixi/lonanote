@@ -28,7 +28,74 @@ import type {
   SelectViewportProps,
 } from "./types";
 
-const DEFAULT_TOUCH_SHEET_MAX_HEIGHT = "60%";
+const DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT = 6;
+const DEFAULT_TOUCH_SHEET_ITEM_HEIGHT = 48;
+const DEFAULT_TOUCH_SHEET_CHROME_HEIGHT = 72;
+const DEFAULT_TOUCH_SHEET_LABEL_HEIGHT = 32;
+
+type TouchSheetConfig = {
+  frameMaxHeight?: SelectProps["touchSheetMaxHeight"];
+  snapPoints: [number];
+  snapPointsMode: "constant" | "percent";
+};
+
+function parsePercentSnapPoint(value: SelectProps["touchSheetMaxHeight"]) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const matched = value.trim().match(/^(\d+(?:\.\d+)?)%$/);
+
+  if (matched == null) {
+    return null;
+  }
+
+  const parsedValue = Number.parseFloat(matched[1]);
+
+  if (!Number.isFinite(parsedValue)) {
+    return null;
+  }
+
+  return Math.max(0, Math.min(100, parsedValue));
+}
+
+function resolveTouchSheetConfig({
+  itemCount,
+  itemLabel,
+  touchSheetMaxHeight,
+}: {
+  itemCount: number;
+  itemLabel: React.ReactNode;
+  touchSheetMaxHeight: SelectProps["touchSheetMaxHeight"];
+}): TouchSheetConfig {
+  if (typeof touchSheetMaxHeight === "number" && Number.isFinite(touchSheetMaxHeight)) {
+    return {
+      snapPoints: [Math.max(1, Math.round(touchSheetMaxHeight))],
+      snapPointsMode: "constant",
+    };
+  }
+
+  const percentSnapPoint = parsePercentSnapPoint(touchSheetMaxHeight);
+
+  if (percentSnapPoint != null) {
+    return {
+      snapPoints: [percentSnapPoint],
+      snapPointsMode: "percent",
+    };
+  }
+
+  const visibleItemCount = Math.min(Math.max(itemCount, 1), DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT);
+  const estimatedHeight =
+    visibleItemCount * DEFAULT_TOUCH_SHEET_ITEM_HEIGHT +
+    DEFAULT_TOUCH_SHEET_CHROME_HEIGHT +
+    (itemLabel == null ? 0 : DEFAULT_TOUCH_SHEET_LABEL_HEIGHT);
+
+  return {
+    ...(touchSheetMaxHeight != null ? { frameMaxHeight: touchSheetMaxHeight } : null),
+    snapPoints: [estimatedHeight],
+    snapPointsMode: "constant",
+  };
+}
 
 function SelectAdaptContents(props: SelectAdaptContentsProps) {
   return <TamaguiSelect.Adapt.Contents {...props} />;
@@ -190,6 +257,11 @@ const SelectRoot = forwardRef<any, SelectProps>(
   ) => {
     void ref;
     const resolvedItems = items ?? options;
+    const touchSheetConfig = resolveTouchSheetConfig({
+      itemCount: resolvedItems?.length ?? 0,
+      itemLabel,
+      touchSheetMaxHeight,
+    });
     const getItemLabelByValue = (value: string | null | undefined) =>
       resolvedItems?.find((item) => item.value === value)?.label ?? null;
     const selectedItem = getItemLabelByValue(props.value ?? null);
@@ -240,12 +312,14 @@ const SelectRoot = forwardRef<any, SelectProps>(
                   native={!!props.native}
                   modal
                   dismissOnSnapToBottom
-                  snapPoints={["fit"]}
-                  snapPointsMode="fit"
+                  snapPoints={touchSheetConfig.snapPoints}
+                  snapPointsMode={touchSheetConfig.snapPointsMode}
                   transition="medium"
                 >
                   <Sheet.Frame
-                    style={{ maxHeight: touchSheetMaxHeight ?? DEFAULT_TOUCH_SHEET_MAX_HEIGHT }}
+                    {...(touchSheetConfig.frameMaxHeight != null
+                      ? { style: { maxHeight: touchSheetConfig.frameMaxHeight } }
+                      : null)}
                   >
                     <Sheet.ScrollView>
                       <SelectAdapt.Contents />

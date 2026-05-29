@@ -1,5 +1,5 @@
 import { composeRefs } from "@tamagui/compose-refs";
-import { type GetRef, View, isWeb } from "@tamagui/core";
+import { type GetRef, View } from "@tamagui/core";
 import type { ScrollViewProps } from "@tamagui/scroll-view";
 import { ScrollView } from "@tamagui/scroll-view";
 import { useControllableState } from "@tamagui/use-controllable-state";
@@ -27,7 +27,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
   ) => {
     const context = useSheetContext(SHEET_SCROLL_VIEW_NAME, __scopeSheet);
     const gestureContext = useGestureSheetContext();
-    const { scrollBridge, setHasScrollView, hasFit, screenSize } = context;
+    const { open, scrollBridge, setHasScrollView, hasFit, screenSize } = context;
     const keyboardOccludedHeight = Math.max(0, context.keyboardOccludedHeight || 0);
     const [scrollEnabled] = useControllableState({
       prop: scrollEnabledProp,
@@ -82,12 +82,32 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
     };
 
     useEffect(() => {
+      if (open) {
+        return;
+      }
+
+      scrollBridge.scrollLock = false;
+      scrollBridge.scrollLockY = undefined;
+      scrollBridge.scrollStartY = -1;
+      scrollBridge.setParentDragging(false);
+      setScrollEnabled(true);
+    }, [open, scrollBridge]);
+
+    useEffect(() => {
       setHasScrollView(true);
       if (isGestureHandlerEnabled()) {
         scrollBridge.setScrollEnabled = setScrollEnabled;
         scrollBridge.forceScrollTo = forceScrollTo;
       }
       return () => {
+        // Select 这类通过 Adapt 即开即卸载的 Sheet.ScrollView 若在关闭前留下锁定态，
+        // 外层页面滚动可能继续被视为“仍在 sheet 拖拽中”。卸载时主动归零桥状态。
+        scrollBridge.scrollLock = false;
+        scrollBridge.scrollLockY = undefined;
+        scrollBridge.scrollStartY = -1;
+        scrollBridge.isAtTop = undefined;
+        scrollBridge.setParentDragging(false);
+        setScrollEnabled(true);
         setHasScrollView(false);
         scrollBridge.setScrollEnabled = undefined;
         scrollBridge.forceScrollTo = undefined;
