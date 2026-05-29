@@ -1,4 +1,10 @@
+import { useAdaptIsActive } from "@tamagui/adapt";
+import { isWeb as isTamaguiWeb } from "@tamagui/core";
+import { Dismissable } from "@tamagui/dismissable";
+import { FocusScope } from "@tamagui/focus-scope";
 import { Check, ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
+import { Portal } from "@tamagui/portal";
+import { RemoveScroll } from "@tamagui/remove-scroll";
 import { forwardRef } from "react";
 import React from "react";
 import { FontSizeTokens, Select as TamaguiSelect, YStack, getFontSize } from "tamagui";
@@ -8,6 +14,12 @@ import { isWeb } from "@/api/common/platform";
 import { Sheet } from "@/components/ui/sheet";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
+import {
+  SelectZIndexContext,
+  useSelectContext,
+  useSelectItemParentContext,
+  useShowSelectSheet,
+} from "./select_internals";
 import type {
   SelectAdaptContentsProps,
   SelectAdaptProps,
@@ -32,6 +44,8 @@ const DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT = 6;
 const DEFAULT_TOUCH_SHEET_ITEM_HEIGHT = 48;
 const DEFAULT_TOUCH_SHEET_CHROME_HEIGHT = 72;
 const DEFAULT_TOUCH_SHEET_LABEL_HEIGHT = 32;
+
+const SelectAdaptHiddenContext = React.createContext(true);
 
 type TouchSheetConfig = {
   frameMaxHeight?: SelectProps["touchSheetMaxHeight"];
@@ -109,8 +123,93 @@ const SelectAdapt = Object.assign(SelectAdaptRoot, {
   Contents: SelectAdaptContents,
 });
 
+function SelectSheetController(props: { children: React.ReactNode }) {
+  const context = useSelectContext();
+  const itemParentContext = useSelectItemParentContext();
+  const isAdapted = useAdaptIsActive(context.adaptScope);
+  const [isAdaptFullyHidden, setIsAdaptFullyHidden] = React.useState(!context.open);
+
+  if (context.open && isAdaptFullyHidden) {
+    setIsAdaptFullyHidden(false);
+  }
+
+  const handleSheetAnimationComplete = React.useCallback(({ open }: { open: boolean }) => {
+    if (!open) {
+      setIsAdaptFullyHidden(true);
+    }
+  }, []);
+
+  return (
+    <Sheet.Controller
+      hidden={!isAdapted}
+      onAnimationComplete={handleSheetAnimationComplete}
+      onOpenChange={(nextOpen: boolean) => {
+        if (isAdapted) {
+          itemParentContext.setOpen(nextOpen);
+        }
+      }}
+      open={context.open}
+    >
+      <SelectAdaptHiddenContext.Provider value={isAdaptFullyHidden}>
+        {props.children}
+      </SelectAdaptHiddenContext.Provider>
+    </Sheet.Controller>
+  );
+}
+
 function SelectContent(props: SelectContentProps) {
-  return <TamaguiSelect.Content {...props} />;
+  const { children, scope, ...focusScopeProps } = props;
+  const context = useSelectContext(scope);
+  const itemParentContext = useSelectItemParentContext(scope);
+  const zIndex = React.useContext(SelectZIndexContext);
+  const showSheet = useShowSelectSheet(context);
+  const isAdaptFullyHidden = React.useContext(SelectAdaptHiddenContext);
+  const contents = children;
+
+  if (itemParentContext.shouldRenderWebNative) {
+    return <>{children}</>;
+  }
+
+  if (showSheet) {
+    if (!context.open && isAdaptFullyHidden) {
+      return null;
+    }
+
+    return <>{contents}</>;
+  }
+
+  return (
+    <Portal open={context.open} stackZIndex={100_000} zIndex={zIndex}>
+      <RemoveScroll enabled={context.open && !context.disablePreventBodyScroll}>
+        <Dismissable
+          asChild
+          forceUnmount={!context.open}
+          onDismiss={() => itemParentContext.setOpen(false)}
+          onFocusOutside={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
+          <FocusScope
+            {...focusScopeProps}
+            enabled={!!context.open}
+            trapped
+            onMountAutoFocus={(event) => {
+              event.preventDefault();
+            }}
+            onUnmountAutoFocus={(event) => {
+              event.preventDefault();
+              const trigger = context.floatingContext?.refs?.reference?.current;
+
+              if (trigger instanceof HTMLElement) {
+                trigger.focus();
+              }
+            }}
+          >
+            {isTamaguiWeb ? <div style={{ display: "contents" }}>{contents}</div> : contents}
+          </FocusScope>
+        </Dismissable>
+      </RemoveScroll>
+    </Portal>
+  );
 }
 
 function SelectGroup(props: SelectGroupProps) {
@@ -307,32 +406,34 @@ const SelectRoot = forwardRef<any, SelectProps>(
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
 
-              <SelectAdapt when={selectAdaptWhen} platform="touch">
-                <Sheet
-                  native={!!props.native}
-                  modal
-                  dismissOnSnapToBottom
-                  snapPoints={touchSheetConfig.snapPoints}
-                  snapPointsMode={touchSheetConfig.snapPointsMode}
-                  transition="medium"
-                >
-                  <Sheet.Frame
-                    {...(touchSheetConfig.frameMaxHeight != null
-                      ? { style: { maxHeight: touchSheetConfig.frameMaxHeight } }
-                      : null)}
+              <SelectSheetController>
+                <SelectAdapt when={selectAdaptWhen} platform="touch">
+                  <Sheet
+                    native={!!props.native}
+                    modal
+                    dismissOnSnapToBottom
+                    snapPoints={touchSheetConfig.snapPoints}
+                    snapPointsMode={touchSheetConfig.snapPointsMode}
+                    transition="medium"
                   >
-                    <Sheet.ScrollView>
-                      <SelectAdapt.Contents />
-                    </Sheet.ScrollView>
-                  </Sheet.Frame>
-                  <Sheet.Overlay
-                    bg="$shadowColor"
-                    transition="lazy"
-                    enterStyle={{ opacity: 0 }}
-                    exitStyle={{ opacity: 0 }}
-                  />
-                </Sheet>
-              </SelectAdapt>
+                    <Sheet.Frame
+                      {...(touchSheetConfig.frameMaxHeight != null
+                        ? { style: { maxHeight: touchSheetConfig.frameMaxHeight } }
+                        : null)}
+                    >
+                      <Sheet.ScrollView>
+                        <SelectAdapt.Contents />
+                      </Sheet.ScrollView>
+                    </Sheet.Frame>
+                    <Sheet.Overlay
+                      bg="$shadowColor"
+                      transition="lazy"
+                      enterStyle={{ opacity: 0 }}
+                      exitStyle={{ opacity: 0 }}
+                    />
+                  </Sheet>
+                </SelectAdapt>
+              </SelectSheetController>
 
               <SelectContent {...contentProps}>
                 <SelectScrollUpButton
