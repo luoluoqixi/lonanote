@@ -89,6 +89,8 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
     frozenMinY: 0,
     // whether pan gesture actually started (vs just a tap in onBegin)
     panStarted: false,
+    // whether this gesture already completed normal snap handling in onEnd
+    didHandleEnd: false,
   });
 
   const onStart = useCallback(() => {
@@ -137,6 +139,7 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         // We do NOT set isDragging here — that would block keyboard animation.
         // Instead, isDragging is set in onStart (actual pan gesture recognized).
         gs.panStarted = false;
+        gs.didHandleEnd = false;
 
         // lightweight: pause keyboard handler to suppress hide events during gesture.
         // This prevents keyboard flicker if input blurs before onStart.
@@ -268,6 +271,7 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         }
       })
       .onEnd((event: { velocityY: number }) => {
+        gs.didHandleEnd = true;
         const { velocityY } = event;
         const currentPos = gs.startY + gs.accumulatedOffset;
 
@@ -310,6 +314,16 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         // clear scroll lock on finalize too (safety)
         scrollBridge.scrollLockY = undefined;
         if (gs.panStarted) {
+          if (!gs.didHandleEnd) {
+            const currentPos = getCurrentPosition();
+            if (currentPos < minY - 1) {
+              const fallbackTopIndex = topPositionIndex >= 0 ? topPositionIndex : 0;
+              scrollBridge.setParentDragging(false);
+              scrollBridge.setScrollEnabled?.(true);
+              setPosition(fallbackTopIndex);
+              animateTo(fallbackTopIndex);
+            }
+          }
           // real pan gesture — reset isDragging (also un-pauses keyboard handler + flushes)
           setIsDragging(false);
         } else {
