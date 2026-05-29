@@ -64,10 +64,25 @@ function isDebugRoutePath(pathname: string): boolean {
   return pathname === DEBUG_ROUTE_PREFIX || pathname.startsWith(`${DEBUG_ROUTE_PREFIX}/`);
 }
 
+const DEBUG_MOBILE_HEADER_TITLES: Record<string, string> = {
+  "debug/index": "调试面板",
+  ...Object.fromEntries(
+    DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => [
+      String(definition.href).slice(1),
+      definition.label,
+    ]),
+  ),
+};
+
+function getDebugMobileHeaderTitle(routeName: string): string | null {
+  return DEBUG_MOBILE_HEADER_TITLES[routeName] ?? null;
+}
+
 export {
   DEBUG_HOME_HREF,
   DEBUG_PANEL_ROUTE_DEFINITIONS,
   DEBUG_PANEL_TOGGLE_EVENT,
+  getDebugMobileHeaderTitle,
   getDebugPanelRouteDefinition,
   isDebugRoutePath,
 };

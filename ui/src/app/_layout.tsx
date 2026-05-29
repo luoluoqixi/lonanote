@@ -4,8 +4,10 @@ import "../initialize";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
-import { DebugPanelGestureLayer, DebugPanelHost } from "@/components/debug";
+import { isWeb } from "@/api/common";
+import { DebugPanelGestureLayer, DebugPanelHost, getDebugMobileHeaderTitle } from "@/components/debug";
 import { RootProvider } from "@/components/ui";
+import { getAppName } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
 
@@ -17,7 +19,23 @@ export default function RootLayout() {
     <RootProvider>
       <StatusBar style={colorScheme} />
       <DebugPanelGestureLayer>
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack
+          screenOptions={({ route }) => {
+            const debugTitle = getDebugMobileHeaderTitle(route.name);
+            if (debugTitle != null && !isWeb()) {
+              return {
+                headerShown: true,
+                title: debugTitle,
+              };
+            }
+
+            return {
+              headerShown: false,
+            };
+          }}
+        >
+          <Stack.Screen name="(home)" options={{ title: getAppName() }} />
+        </Stack>
         <DebugPanelHost />
       </DebugPanelGestureLayer>
     </RootProvider>
