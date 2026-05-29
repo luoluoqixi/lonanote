@@ -1,10 +1,21 @@
-import { useAdaptIsActive } from "@tamagui/adapt";
-import { isWeb as isTamaguiWeb } from "@tamagui/core";
+import {
+  AdaptContext,
+  AdaptPortalContents,
+  useAdaptContext,
+  useAdaptIsActive,
+} from "@tamagui/adapt";
+import { Theme, isWeb as isTamaguiWeb, useThemeName } from "@tamagui/core";
 import { Dismissable } from "@tamagui/dismissable";
 import { FocusScope } from "@tamagui/focus-scope";
 import { Check, ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
 import { Portal } from "@tamagui/portal";
 import { RemoveScroll } from "@tamagui/remove-scroll";
+import {
+  ForwardSelectContext,
+  SelectZIndexContext,
+  useSelectContext,
+  useSelectItemParentContext,
+} from "@tamagui/select";
 import { forwardRef } from "react";
 import React from "react";
 import { FontSizeTokens, Select as TamaguiSelect, YStack, getFontSize } from "tamagui";
@@ -14,12 +25,6 @@ import { isWeb } from "@/api/common/platform";
 import { Sheet } from "@/components/ui/sheet";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
-import {
-  SelectZIndexContext,
-  useSelectContext,
-  useSelectItemParentContext,
-  useShowSelectSheet,
-} from "./select_internals";
 import type {
   SelectAdaptContentsProps,
   SelectAdaptProps,
@@ -46,6 +51,12 @@ const DEFAULT_TOUCH_SHEET_CHROME_HEIGHT = 72;
 const DEFAULT_TOUCH_SHEET_LABEL_HEIGHT = 32;
 
 const SelectAdaptHiddenContext = React.createContext(true);
+
+function useShowSelectSheet(context: { adaptScope: string; open: boolean }) {
+  const breakpointActive = useAdaptIsActive(context.adaptScope);
+
+  return context.open === false ? false : breakpointActive;
+}
 
 type TouchSheetConfig = {
   frameMaxHeight?: SelectProps["touchSheetMaxHeight"];
@@ -281,6 +292,7 @@ function SelectValue(props: SelectValueProps) {
 function SelectViewport(props: SelectViewportProps) {
   const {
     children,
+    scope,
     unstyled,
     borderColor,
     borderWidth,
@@ -290,6 +302,12 @@ function SelectViewport(props: SelectViewportProps) {
     ...viewportProps
   } = props;
   const shouldUseHeadlessWebViewport = isWeb() && unstyled == null;
+  const context = useSelectContext(scope);
+  const itemParentContext = useSelectItemParentContext(scope);
+  const adaptContext = useAdaptContext();
+  const isAdapted = useAdaptIsActive(context.adaptScope);
+  const isAdaptFullyHidden = React.useContext(SelectAdaptHiddenContext);
+  const themeName = useThemeName();
   const viewportStyle = isWeb()
     ? [
         {
@@ -300,6 +318,26 @@ function SelectViewport(props: SelectViewportProps) {
         style,
       ]
     : style;
+
+  if (!isWeb() && isAdapted) {
+    const contents = (
+      <Theme name={themeName}>
+        <ForwardSelectContext context={context} itemContext={itemParentContext}>
+          <AdaptContext.Provider {...adaptContext}>{children}</AdaptContext.Provider>
+        </ForwardSelectContext>
+      </Theme>
+    );
+
+    if (!context.open && isAdaptFullyHidden) {
+      if (context.lazyMount && context.renderValue) {
+        return null;
+      }
+
+      return <YStack display="none">{contents}</YStack>;
+    }
+
+    return <AdaptPortalContents scope={context.adaptScope}>{contents}</AdaptPortalContents>;
+  }
 
   return (
     <TamaguiSelect.Viewport
