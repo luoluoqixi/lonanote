@@ -740,6 +740,8 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     //   portal: true,
     // })
 
+    const overlayContents = shouldHideParentSheet || !open ? null : overlayComponent;
+
     let contents = (
       <LayoutMeasurementController disable={!open}>
         <ParentSheetContext.Provider value={nextParentContext}>
@@ -755,9 +757,11 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
               panGesture={panGesture}
               panGestureRef={panGestureRef}
             >
-              <AnimatePresence custom={{ open }}>
-                {shouldHideParentSheet || !open ? null : overlayComponent}
-              </AnimatePresence>
+              {isWeb ? (
+                overlayContents
+              ) : (
+                <AnimatePresence custom={{ open }}>{overlayContents}</AnimatePresence>
+              )}
 
               {snapPointsMode !== "percent" && (
                 <View

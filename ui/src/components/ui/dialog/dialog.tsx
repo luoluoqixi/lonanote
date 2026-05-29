@@ -26,6 +26,10 @@ import type {
 const DEFAULT_WIDTH = isWeb() ? "60%" : "80%";
 const DEFAULT_Height = isWeb() ? "60%" : "40%";
 const DEFAULT_OVERLAY_TRANSITION = "100ms";
+const DEFAULT_OVERLAY_OPACITY = 0.5;
+const DEFAULT_OVERLAY_ENTER_STYLE = { opacity: 0 };
+const DEFAULT_OVERLAY_EXIT_STYLE = isWeb() ? undefined : { opacity: 0 };
+const DEFAULT_ANIMATE_ONLY = ["transform", "opacity"];
 
 type DialogOverlayBehaviorProps = DialogOverlayProps & {
   dismissOnOverlayPress?: boolean;
@@ -100,15 +104,7 @@ function DialogRoot(props: DialogProps) {
       <DialogBackHandler dismissOnBackPress={dismissOnBackPress} scope={scope} />
       {trigger != null ? <DialogTrigger {...triggerProps}>{trigger}</DialogTrigger> : null}
       <DialogPortal {...portalProps}>
-        <DialogOverlay
-          opacity={0.5}
-          animateOnly={["transform", "opacity"]}
-          enterStyle={{ opacity: 0 }}
-          exitStyle={{ opacity: 0 }}
-          transition={DEFAULT_OVERLAY_TRANSITION}
-          {...overlayProps}
-          dismissOnOverlayPress={dismissOnOverlayPress}
-        />
+        <DialogOverlay {...overlayProps} dismissOnOverlayPress={dismissOnOverlayPress} />
         <DialogContent
           transition={[
             "quicker",
@@ -168,8 +164,18 @@ function DialogOverlay(props: DialogOverlayBehaviorProps) {
   const { dismissOnOverlayPress = true, ...overlayProps } = props;
   const context = useDialogContext((overlayProps as { scope?: string }).scope);
 
+  if (isWeb() && !context.open) {
+    return null;
+  }
+
   return (
     <TamaguiDialog.Overlay
+      bg="$background"
+      opacity={DEFAULT_OVERLAY_OPACITY}
+      animateOnly={DEFAULT_ANIMATE_ONLY}
+      enterStyle={DEFAULT_OVERLAY_ENTER_STYLE}
+      exitStyle={DEFAULT_OVERLAY_EXIT_STYLE}
+      transition={DEFAULT_OVERLAY_TRANSITION}
       {...overlayProps}
       onPress={(event) => {
         overlayProps.onPress?.(event);
@@ -178,7 +184,6 @@ function DialogOverlay(props: DialogOverlayBehaviorProps) {
           context.onOpenChange(false);
         }
       }}
-      transition={overlayProps.transition ?? DEFAULT_OVERLAY_TRANSITION}
     />
   );
 }

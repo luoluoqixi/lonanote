@@ -184,6 +184,10 @@ function AlertDialogOverlay(props: AlertDialogOverlayBehaviorProps) {
   const { dismissOnOverlayPress = false, ...overlayProps } = props;
   const context = useDialogContext((overlayProps as { scope?: string }).scope);
 
+  if (isWeb() && !context.open) {
+    return null;
+  }
+
   return (
     <TamaguiAlertDialog.Overlay
       {...overlayProps}
