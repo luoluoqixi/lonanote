@@ -214,8 +214,9 @@ export function createSheet<
               testID={undefined}
               id={undefined}
               position="absolute"
-              bottom="-100%"
-              zIndex={-1}
+              pointerEvents="none"
+              top={Math.max(0, context.frameSize - 1)}
+              zIndex={0}
               height={context.frameSize}
               left={0}
               right={0}
