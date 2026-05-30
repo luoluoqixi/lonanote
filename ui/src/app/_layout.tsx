@@ -5,7 +5,11 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
 import { isWeb } from "@/api/common";
-import { DebugPanelGestureLayer, DebugPanelHost, getDebugMobileHeaderTitle } from "@/components/debug";
+import {
+  DebugPanelGestureLayer,
+  DebugPanelHost,
+  getDebugMobileHeaderTitle,
+} from "@/components/debug";
 import { RootProvider } from "@/components/ui";
 import { getAppName } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
@@ -17,7 +21,7 @@ export default function RootLayout() {
   const colorScheme = useResolvedeColorScheme();
   return (
     <RootProvider>
-      <StatusBar style={colorScheme} />
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <DebugPanelGestureLayer>
         <Stack
           screenOptions={({ route }) => {
