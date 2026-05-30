@@ -4,7 +4,7 @@ import type { ScrollViewProps } from "@tamagui/scroll-view";
 import { ScrollView } from "@tamagui/scroll-view";
 import { useControllableState } from "@tamagui/use-controllable-state";
 import React, { useEffect, useRef, useState } from "react";
-import type { ScrollView as RNScrollView } from "react-native";
+import { Platform, type ScrollView as RNScrollView } from "react-native";
 
 import { useGestureSheetContext } from "./GestureSheetContext";
 import { useSheetContext } from "./SheetContext";
@@ -18,6 +18,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
   (
     {
       __scopeSheet,
+      bounces: bouncesProp,
       children,
       onScroll,
       scrollEnabled: scrollEnabledProp,
@@ -60,6 +61,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
     const panGestureRef = gestureContext?.panGestureRef;
     const { ScrollView: RNGHScrollView } = getGestureHandlerState();
     const useRNGHScrollView = isGestureHandlerEnabled() && RNGHScrollView && panGestureRef;
+    const scrollBounces = bouncesProp ?? Platform.OS === "ios";
 
     // RNGH scroll locking state
     const currentScrollOffset = useRef(0);
@@ -196,7 +198,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
             onScroll?.(e);
           }}
           contentContainerStyle={{ minHeight: "100%" } as any}
-          bounces={false}
+          bounces={scrollBounces}
           keyboardShouldPersistTaps="always"
           keyboardDismissMode="none"
           {...props}
