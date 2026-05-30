@@ -22,6 +22,54 @@ index 0000000..1111111 100644
      ...dataAttributes,
      transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
      animateOnly: import_constants.isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
+diff --git a/dist/esm/ToastComposable.native.js b/dist/esm/ToastComposable.native.js
+index 0000000..1111111 100644
+--- a/dist/esm/ToastComposable.native.js
++++ b/dist/esm/ToastComposable.native.js
+@@ -793,7 +793,6 @@
+   return /* @__PURE__ */_jsx(ToastPositionWrapper, {
+     ref,
+     testID: rest.testID,
+-    accessibilityLabel: rest.accessibilityLabel,
+     ...dataAttributes,
+     transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
+     animateOnly: isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
+diff --git a/dist/cjs/ToastComposable.native.js b/dist/cjs/ToastComposable.native.js
+index 0000000..1111111 100644
+--- a/dist/cjs/ToastComposable.native.js
++++ b/dist/cjs/ToastComposable.native.js
+@@ -835,7 +835,6 @@
+   return /* @__PURE__ */(0, import_jsx_runtime.jsx)(import_ToastItemFrame.ToastPositionWrapper, {
+     ref,
+     testID: rest.testID,
+-    accessibilityLabel: rest.accessibilityLabel,
+     ...dataAttributes,
+     transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
+     animateOnly: import_constants.isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
+diff --git a/dist/jsx/ToastComposable.mjs b/dist/jsx/ToastComposable.mjs
+index 0000000..1111111 100644
+--- a/dist/jsx/ToastComposable.mjs
++++ b/dist/jsx/ToastComposable.mjs
+@@ -710,7 +710,6 @@
+   return /* @__PURE__ */jsx(ToastPositionWrapper, {
+     ref,
+     testID: rest.testID,
+-    accessibilityLabel: rest.accessibilityLabel,
+     ...dataAttributes,
+     transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
+     animateOnly: isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
+diff --git a/dist/jsx/ToastComposable.native.js b/dist/jsx/ToastComposable.native.js
+index 0000000..1111111 100644
+--- a/dist/jsx/ToastComposable.native.js
++++ b/dist/jsx/ToastComposable.native.js
+@@ -835,7 +835,6 @@
+   return /* @__PURE__ */(0, import_jsx_runtime.jsx)(import_ToastItemFrame.ToastPositionWrapper, {
+     ref,
+     testID: rest.testID,
+-    accessibilityLabel: rest.accessibilityLabel,
+     ...dataAttributes,
+     transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
+     animateOnly: import_constants.isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
 diff --git a/dist/esm/useAnimatedDragGesture.native.js b/dist/esm/useAnimatedDragGesture.native.js
 index 0000000..1111111 100644
 --- a/dist/esm/useAnimatedDragGesture.native.js
