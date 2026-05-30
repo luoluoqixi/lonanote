@@ -91,7 +91,7 @@ function getToastAppearance(toast: ToastT): ToastAppearance {
   return TOAST_APPEARANCES[toast.type ?? "default"];
 }
 
-function getIosToastIconStyle(centered: boolean) {
+function getToastIconStyle(centered: boolean) {
   if (centered) {
     return undefined;
   }
@@ -108,13 +108,13 @@ function ToastTypeIcon(props: {
   centered?: boolean;
 }) {
   const { background, centered = false, children } = props;
-  const isIos = os() === "ios";
-  const iosStyle = isIos ? getIosToastIconStyle(centered) : undefined;
+  const isFixCenter = isWeb() || os() === "ios";
+  const iosStyle = isFixCenter ? getToastIconStyle(centered) : undefined;
 
   return (
     <YStack
       background={background}
-      mt={!isIos && !centered ? "$0.5" : 0}
+      mt={!isFixCenter && !centered ? "$0.5" : 0}
       rounded="$10"
       shrink={0}
       width={28}
@@ -179,10 +179,7 @@ function ToastContent({ toast: t }: { toast: ToastT }) {
 
   return (
     <>
-      <XStack
-        gap="$3"
-        style={{ alignItems: isTitleOnlyToast ? "center" : "flex-start" }}
-      >
+      <XStack gap="$3" style={{ alignItems: isTitleOnlyToast ? "center" : "flex-start" }}>
         {leadingIcon}
         <YStack flex={1} gap={isTitleOnlyToast ? 0 : "$0.5"}>
           {title && (
