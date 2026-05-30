@@ -452,6 +452,13 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
     );
 
     const offsets = useMemo(() => getOffsets(sizes), [sizes]);
+    const sashBoundaries = useMemo(
+      () =>
+        panes.slice(0, -1).map((_, index) => {
+          return PixelRatio.roundToNearestPixel((offsets[index] ?? 0) + (sizes[index] ?? 0));
+        }),
+      [offsets, panes, sizes],
+    );
 
     const resetSash = useCallback(
       (index: number) => {
@@ -654,7 +661,9 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
           })}
           {panes.slice(0, -1).map((pane, index) => {
             const canDragSash = canRenderSash(panes, index);
-            if (!canDragSash && !separator) return null;
+            const sashBoundary = sashBoundaries[index] ?? 0;
+            const showSeparatorLine = separator && sashBoundary !== sashBoundaries[index + 1];
+            if (!canDragSash && !showSeparatorLine) return null;
 
             const sashSize = IS_MOBILE ? MOBILE_SASH_SIZE : DEFAULT_SASH_SIZE;
             const showMobileHandle =
@@ -665,9 +674,6 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
               getMobileHandleOffsetForSash(index, mobileHandleOffset, mobileHandleOffsets),
             );
 
-            const sashBoundary = PixelRatio.roundToNearestPixel(
-              (offsets[index] ?? 0) + (sizes[index] ?? 0),
-            );
             const sashOffset = sashBoundary - sashSize / 2;
             const sashStyle = vertical
               ? ({
@@ -712,7 +718,7 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
                   style={[
                     styles.sashLine,
                     vertical ? styles.sashLineHorizontal : styles.sashLineVertical,
-                    separator &&
+                    showSeparatorLine &&
                       (vertical
                         ? { backgroundColor: separatorColor }
                         : {
