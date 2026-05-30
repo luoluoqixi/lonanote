@@ -3,7 +3,11 @@ import { StyleSheet } from "react-native";
 import { SizableText, ContextMenu as TamaguiContextMenu } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
-import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
+import {
+  resolveAriaLabel,
+  triggerNativeHaptics,
+  useResolvedNativeHaptics,
+} from "@/components/ui/utils";
 
 import type {
   ContextMenuArrowProps,
@@ -82,6 +86,7 @@ function ContextMenuRoot(props: ContextMenuProps) {
     ...rootProps
   } = props;
   const hasDefaultStructure = trigger != null || items != null || arrow != null;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const handleOpenChange: NonNullable<ContextMenuProps["onOpenChange"]> = (nextOpen) => {
     onOpenChange?.(nextOpen);
 
@@ -89,7 +94,7 @@ function ContextMenuRoot(props: ContextMenuProps) {
       return;
     }
 
-    triggerNativeHaptics(nativeHaptics);
+    triggerNativeHaptics(resolvedNativeHaptics);
   };
 
   if (!hasDefaultStructure) {

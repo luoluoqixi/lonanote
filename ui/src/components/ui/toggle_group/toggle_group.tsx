@@ -2,7 +2,11 @@ import { Children, type ReactNode, isValidElement } from "react";
 import { SizableText, ToggleGroup as TamaguiToggleGroup, XGroup, XStack, YGroup } from "tamagui";
 
 import { os } from "@/api/common/platform";
-import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
+import {
+  resolveAriaLabel,
+  triggerNativeHaptics,
+  useResolvedNativeHaptics,
+} from "@/components/ui/utils";
 
 import type { ToggleGroupItemData, ToggleGroupItemProps, ToggleGroupProps } from "./types";
 
@@ -74,6 +78,7 @@ const getItemsContent = (
 function ToggleGroupSingleRoot(props: Extract<ToggleGroupProps, { type?: "single" }>) {
   const { children, itemProps, items, nativeHaptics, onValueChange, orientation, ...rootProps } =
     props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const resolvedOrientation = orientation || "horizontal";
   const content = getItemsContent(children, items, itemProps, resolvedOrientation);
   return (
@@ -82,7 +87,7 @@ function ToggleGroupSingleRoot(props: Extract<ToggleGroupProps, { type?: "single
       {...rootProps}
       onValueChange={(nextValue) => {
         onValueChange?.(nextValue);
-        triggerNativeHaptics(nativeHaptics);
+        triggerNativeHaptics(resolvedNativeHaptics);
       }}
       orientation={resolvedOrientation}
       type="single"
@@ -95,6 +100,7 @@ function ToggleGroupSingleRoot(props: Extract<ToggleGroupProps, { type?: "single
 function ToggleGroupMultipleRoot(props: Extract<ToggleGroupProps, { type: "multiple" }>) {
   const { children, itemProps, items, nativeHaptics, onValueChange, orientation, ...rootProps } =
     props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const resolvedOrientation = orientation || "horizontal";
   const content = getItemsContent(children, items, itemProps, resolvedOrientation);
   return (
@@ -102,7 +108,7 @@ function ToggleGroupMultipleRoot(props: Extract<ToggleGroupProps, { type: "multi
       {...rootProps}
       onValueChange={(nextValue) => {
         onValueChange?.(nextValue);
-        triggerNativeHaptics(nativeHaptics);
+        triggerNativeHaptics(resolvedNativeHaptics);
       }}
       orientation={resolvedOrientation}
       type="multiple"

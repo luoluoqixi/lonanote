@@ -5,6 +5,7 @@ import { ResolvedColorScheme } from "@/hooks/settings";
 export interface UIProviderProps {
   children: ReactNode;
   colorScheme?: ResolvedColorScheme;
+  defaultNativeHapticsEnabled?: boolean;
 }
 
 export interface RootProviderProps {

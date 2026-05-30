@@ -3,7 +3,7 @@ import { useId, useState } from "react";
 import { Checkbox as TamaguiCheckbox, Label as TamaguiLabel, XStack } from "tamagui";
 
 import { os } from "@/api/common/platform";
-import { triggerNativeHaptics } from "@/components/ui/utils";
+import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 
 import type { CheckboxIndicatorProps, CheckboxProps, CheckedState } from "./types";
 
@@ -21,6 +21,7 @@ function CheckboxRoot(props: CheckboxProps) {
     onCheckedChange,
     ...rootProps
   } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const controlId = id ?? generatedId;
   const [uncontrolledChecked, setUncontrolledChecked] = useState<CheckedState>(
     defaultChecked ?? false,
@@ -34,7 +35,7 @@ function CheckboxRoot(props: CheckboxProps) {
     }
 
     onCheckedChange?.(nextChecked);
-    triggerNativeHaptics(nativeHaptics);
+    triggerNativeHaptics(resolvedNativeHaptics);
   };
 
   const checkbox = (

@@ -1,7 +1,11 @@
 import { Children, type ReactNode, isValidElement } from "react";
 import { SizableText, Tabs as TamaguiTabs } from "tamagui";
 
-import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
+import {
+  resolveAriaLabel,
+  triggerNativeHaptics,
+  useResolvedNativeHaptics,
+} from "@/components/ui/utils";
 
 import type { TabsContentProps, TabsListProps, TabsProps, TabsTabProps } from "./types";
 
@@ -35,6 +39,7 @@ function TabsRoot(props: TabsProps) {
     tabProps,
     ...rootProps
   } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const resolvedListProps =
     ariaLabel != null
       ? ({
@@ -48,7 +53,7 @@ function TabsRoot(props: TabsProps) {
       {...rootProps}
       onValueChange={(nextValue) => {
         rootProps.onValueChange?.(nextValue);
-        triggerNativeHaptics(nativeHaptics);
+        triggerNativeHaptics(resolvedNativeHaptics);
       }}
     >
       {children ??

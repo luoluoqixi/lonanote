@@ -1,16 +1,75 @@
-import { Children, type ReactNode, isValidElement } from "react";
+import * as Haptics from "expo-haptics";
+import {
+  Children,
+  type ReactNode,
+  createContext,
+  createElement,
+  isValidElement,
+  useContext,
+} from "react";
 import { type DimensionValue, Vibration } from "react-native";
 
-import { isWeb } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 
 export type NativeHapticsLevel = "light" | "medium" | "heavy";
 export type NativeHapticsSetting = boolean | NativeHapticsLevel;
+
+type NativeHapticsDefaultsContextValue = {
+  enabledByDefault: boolean;
+};
+
+type NativeHapticsProviderProps = {
+  children: ReactNode;
+  enabledByDefault?: boolean;
+};
+
+type ResolveNativeHapticsOptions = {
+  defaultEnabled?: boolean;
+};
+
+const NativeHapticsDefaultsContext = createContext<NativeHapticsDefaultsContextValue>({
+  enabledByDefault: false,
+});
 
 const NATIVE_HAPTICS_DURATION_MAP: Record<NativeHapticsLevel, number> = {
   light: 10,
   medium: 20,
   heavy: 35,
 };
+
+const IOS_HAPTICS_STYLE_MAP: Record<NativeHapticsLevel, Haptics.ImpactFeedbackStyle> = {
+  light: Haptics.ImpactFeedbackStyle.Light,
+  medium: Haptics.ImpactFeedbackStyle.Medium,
+  heavy: Haptics.ImpactFeedbackStyle.Heavy,
+};
+
+export function NativeHapticsProvider({
+  children,
+  enabledByDefault = false,
+}: NativeHapticsProviderProps) {
+  return createElement(
+    NativeHapticsDefaultsContext.Provider,
+    { value: { enabledByDefault } },
+    children,
+  );
+}
+
+export function useResolvedNativeHaptics(
+  setting: NativeHapticsSetting | undefined,
+  options?: ResolveNativeHapticsOptions,
+) {
+  const { enabledByDefault } = useContext(NativeHapticsDefaultsContext);
+
+  if (setting !== undefined) {
+    return setting;
+  }
+
+  if (options?.defaultEnabled) {
+    return true;
+  }
+
+  return enabledByDefault ? true : undefined;
+}
 
 export function resolveAriaLabel(
   explicitLabel?: string,
@@ -67,6 +126,11 @@ export function triggerNativeHaptics(setting: NativeHapticsSetting | undefined) 
   }
 
   const level = setting === true ? "light" : setting;
+
+  if (os() === "ios") {
+    void Haptics.impactAsync(IOS_HAPTICS_STYLE_MAP[level]);
+    return;
+  }
 
   Vibration.vibrate(NATIVE_HAPTICS_DURATION_MAP[level]);
 }

@@ -3,7 +3,7 @@ import { Linking } from "react-native";
 import { Anchor as TamaguiAnchor, View } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
-import { triggerNativeHaptics } from "@/components/ui/utils";
+import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 
 import type { LinkProps } from "./types";
 
@@ -37,6 +37,7 @@ export const Link = forwardRef<ComponentRef<typeof TamaguiAnchor>, LinkProps>((p
     onPress,
     ...linkProps
   } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
 
   const resolvedPressStyle = {
     ...DEFAULT_LINK_PRESS_STYLE,
@@ -77,7 +78,7 @@ export const Link = forwardRef<ComponentRef<typeof TamaguiAnchor>, LinkProps>((p
       return;
     }
 
-    triggerNativeHaptics(nativeHaptics);
+    triggerNativeHaptics(resolvedNativeHaptics);
 
     if (href == null) {
       return;

@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { Label as TamaguiLabel, Switch as TamaguiSwitch, XStack } from "tamagui";
 
 import { os } from "@/api/common/platform";
-import { triggerNativeHaptics } from "@/components/ui/utils";
+import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 
 import type { SwitchProps, SwitchThumbProps } from "./types";
 
@@ -23,6 +23,7 @@ function SwitchRoot(props: SwitchProps) {
     thumbProps,
     ...rootProps
   } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics, { defaultEnabled: true });
   const controlId = id ?? generatedId;
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked ?? false);
   const checked = checkedProp ?? uncontrolledChecked;
@@ -34,7 +35,7 @@ function SwitchRoot(props: SwitchProps) {
     }
 
     onCheckedChange?.(nextChecked);
-    triggerNativeHaptics(nativeHaptics);
+    triggerNativeHaptics(resolvedNativeHaptics);
   };
 
   const control = (

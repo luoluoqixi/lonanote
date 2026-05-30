@@ -3,7 +3,11 @@ import { Children, type ComponentType, type ReactNode, isValidElement } from "re
 import { SizableText, Square, Accordion as TamaguiAccordion, YStack } from "tamagui";
 
 import { isWeb } from "@/api/common/platform";
-import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
+import {
+  resolveAriaLabel,
+  triggerNativeHaptics,
+  useResolvedNativeHaptics,
+} from "@/components/ui/utils";
 
 import type {
   AccordionContentProps,
@@ -124,6 +128,7 @@ function AccordionSingleRoot(props: AccordionProps) {
     triggerProps,
     ...rootProps
   } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const handleValueChange = rootProps.onValueChange as
     | ((value: string | undefined) => void)
     | undefined;
@@ -132,7 +137,7 @@ function AccordionSingleRoot(props: AccordionProps) {
     <AccordionPrimitive
       onValueChange={(nextValue: string | undefined) => {
         handleValueChange?.(nextValue);
-        triggerNativeHaptics(nativeHaptics);
+        triggerNativeHaptics(resolvedNativeHaptics);
       }}
       {...rootProps}
       collapsible={rootProps.collapsible ?? true}
@@ -155,13 +160,14 @@ function AccordionMultipleRoot(props: AccordionProps) {
     triggerProps,
     ...rootProps
   } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const handleValueChange = rootProps.onValueChange as ((value: string[]) => void) | undefined;
 
   return (
     <AccordionPrimitive
       onValueChange={(nextValue: string[]) => {
         handleValueChange?.(nextValue);
-        triggerNativeHaptics(nativeHaptics);
+        triggerNativeHaptics(resolvedNativeHaptics);
       }}
       {...rootProps}
       type="multiple"

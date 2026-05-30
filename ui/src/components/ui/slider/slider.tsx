@@ -1,6 +1,10 @@
 import React from "react";
 
-import { getSliderHapticsBuckets, triggerNativeHaptics } from "@/components/ui/utils";
+import {
+  getSliderHapticsBuckets,
+  triggerNativeHaptics,
+  useResolvedNativeHaptics,
+} from "@/components/ui/utils";
 
 import { Slider as ReplicaSlider } from "./slider/Slider";
 import type {
@@ -24,6 +28,7 @@ function SliderRoot(props: SliderProps) {
     size = "$4",
     ...rootProps
   } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const lastHapticsBucketsRef = React.useRef(
     getSliderHapticsBuckets(rootProps.value ?? rootProps.defaultValue, {
       interval: nativeHapticsInterval,
@@ -68,7 +73,7 @@ function SliderRoot(props: SliderProps) {
       return;
     }
 
-    triggerNativeHaptics(nativeHaptics);
+    triggerNativeHaptics(resolvedNativeHaptics);
   };
 
   return (

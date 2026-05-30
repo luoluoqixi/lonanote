@@ -23,7 +23,11 @@ import { LinearGradient } from "tamagui/linear-gradient";
 
 import { isWeb } from "@/api/common/platform";
 import { Sheet } from "@/components/ui/sheet";
-import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
+import {
+  resolveAriaLabel,
+  triggerNativeHaptics,
+  useResolvedNativeHaptics,
+} from "@/components/ui/utils";
 
 import type {
   SelectAdaptContentsProps,
@@ -284,6 +288,7 @@ function SelectScrollUpButton(props: SelectScrollUpButtonProps) {
 
 function SelectTrigger(props: SelectTriggerProps) {
   const { nativeHaptics, onPress, ...triggerProps } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const handlePress: NonNullable<SelectTriggerProps["onPress"]> = (event) => {
     onPress?.(event);
 
@@ -291,7 +296,7 @@ function SelectTrigger(props: SelectTriggerProps) {
       return;
     }
 
-    triggerNativeHaptics(nativeHaptics);
+    triggerNativeHaptics(resolvedNativeHaptics);
   };
 
   return <TamaguiSelect.Trigger {...triggerProps} onPress={handlePress} />;
@@ -407,6 +412,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     ref,
   ) => {
     void ref;
+    const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
     const resolvedItems = items ?? options;
     const touchSheetConfig = resolveTouchSheetConfig({
       itemCount: resolvedItems?.length ?? 0,
@@ -452,11 +458,11 @@ const SelectRoot = forwardRef<any, SelectProps>(
             return;
           }
 
-          triggerNativeHaptics(nativeHaptics);
+          triggerNativeHaptics(resolvedNativeHaptics);
         }}
         onValueChange={(nextValue) => {
           onValueChange?.(nextValue ?? null);
-          triggerNativeHaptics(nativeHaptics);
+          triggerNativeHaptics(resolvedNativeHaptics);
         }}
         renderValue={props.renderValue ?? ((nextValue) => getItemLabelByValue(nextValue))}
       >
@@ -473,7 +479,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                   triggerProps?.["aria-label"] ?? ariaLabel,
                   selectedItem ?? placeholder,
                 )}
-                nativeHaptics={triggerProps?.nativeHaptics ?? nativeHaptics}
+                nativeHaptics={triggerProps?.nativeHaptics ?? resolvedNativeHaptics}
               >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>

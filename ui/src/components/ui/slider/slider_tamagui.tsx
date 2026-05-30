@@ -1,7 +1,11 @@
 import { Slider as TamaguiSliderPrimitive } from "@tamagui/slider";
 import React from "react";
 
-import { getSliderHapticsBuckets, triggerNativeHaptics } from "@/components/ui/utils";
+import {
+  getSliderHapticsBuckets,
+  triggerNativeHaptics,
+  useResolvedNativeHaptics,
+} from "@/components/ui/utils";
 
 import type {
   SliderProps,
@@ -24,6 +28,7 @@ function TamaguiSliderRoot(props: SliderProps) {
     size = "$4",
     ...rootProps
   } = props;
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const lastHapticsBucketsRef = React.useRef(
     getSliderHapticsBuckets(rootProps.value ?? rootProps.defaultValue, {
       interval: nativeHapticsInterval,
@@ -68,7 +73,7 @@ function TamaguiSliderRoot(props: SliderProps) {
       return;
     }
 
-    triggerNativeHaptics(nativeHaptics);
+    triggerNativeHaptics(resolvedNativeHaptics);
   };
 
   return (
