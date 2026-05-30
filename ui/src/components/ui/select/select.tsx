@@ -400,6 +400,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       itemLabel,
       touchSheetMaxHeight,
     });
+    const shouldRenderNativeOptionText = isWeb() && !!props.native;
     const getItemLabelByValue = (value: string | null | undefined) =>
       resolvedItems?.find((item) => item.value === value)?.label ?? null;
     const selectedItem = getItemLabelByValue(props.value ?? null);
@@ -413,13 +414,17 @@ const SelectRoot = forwardRef<any, SelectProps>(
         textValue={item.label}
         value={item.value}
       >
-        <YStack style={DEFAULT_TOUCH_ITEM_CONTENT_STYLE}>
-          {item.startContent}
-          <SelectItemText {...itemTextProps}>{item.label}</SelectItemText>
-          {item.description}
-          {item.endContent}
-          <SelectItemIndicator marginLeft="auto" {...itemIndicatorProps} />
-        </YStack>
+        {shouldRenderNativeOptionText ? (
+          item.label
+        ) : (
+          <YStack style={DEFAULT_TOUCH_ITEM_CONTENT_STYLE}>
+            {item.startContent}
+            <SelectItemText {...itemTextProps}>{item.label}</SelectItemText>
+            {item.description}
+            {item.endContent}
+            <SelectItemIndicator marginLeft="auto" {...itemIndicatorProps} />
+          </YStack>
+        )}
       </SelectItem>
     ));
 
