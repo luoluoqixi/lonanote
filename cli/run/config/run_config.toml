@@ -51,6 +51,11 @@ description = "Run the application in development mode on Android"
 
 [[commands.cmds]]
 cmd = "bun"
+args = ["build:check:android:dev"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
 args = ["run", "build:android"]
 run_dir = "ui/rust"
 
@@ -66,6 +71,11 @@ inherit_stdio = true
 [[commands]]
 name = "dev:ios"
 description = "Run the application in development mode on iOS"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:ios:dev"]
+run_dir = "ui"
 
 [[commands.cmds]]
 cmd = "bun"
@@ -142,7 +152,12 @@ description = "Build the application for Android"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["n:prebuild:android:prod"]
+args = ["build:check:android:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["noclean:prebuild:android:prod"]
 run_dir = "ui"
 
 [[commands.cmds]]
@@ -163,7 +178,12 @@ description = "Build the application for iOS"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["n:prebuild:ios:prod"]
+args = ["build:check:ios:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["noclean:prebuild:ios:prod"]
 run_dir = "ui"
 
 [[commands.cmds]]
@@ -177,6 +197,48 @@ args = ["build:ios"]
 run_dir = "ui"
 
 
+# build:android:ci command
+[[commands]]
+name = "build:android:ci"
+description = "Build the application for Android CI"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:android:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:android"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:android:ci"]
+run_dir = "ui"
+
+
+# build:ios:ci command
+[[commands]]
+name = "build:ios:ci"
+description = "Build the application for iOS CI"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["clean:prebuild:ios:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["run", "build:ios"]
+run_dir = "ui/rust"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:ios:ci"]
+run_dir = "ui"
+
+
 # prebuild:android command
 [[commands]]
 name = "prebuild:android"
@@ -184,7 +246,17 @@ description = "Prebuild the application for Android"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["n:prebuild:android"]
+args = ["build:check:prebuild:android:dev"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["noclean:prebuild:android"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:postbuild:android:dev"]
 run_dir = "ui"
 
 
@@ -195,7 +267,17 @@ description = "Prebuild the application for iOS"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["n:prebuild:ios"]
+args = ["build:check:prebuild:ios:dev"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["noclean:prebuild:ios"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:postbuild:ios:dev"]
 run_dir = "ui"
 
 
@@ -206,7 +288,17 @@ description = "Prebuild the application for Android"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["n:prebuild:android:prod"]
+args = ["build:check:prebuild:android:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["noclean:prebuild:android:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:postbuild:android:prod"]
 run_dir = "ui"
 
 
@@ -217,7 +309,17 @@ description = "Prebuild the application for iOS"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["n:prebuild:ios:prod"]
+args = ["build:check:prebuild:ios:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["noclean:prebuild:ios:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:postbuild:ios:prod"]
 run_dir = "ui"
 
 
@@ -228,7 +330,17 @@ description = "Clean the prebuild for Android"
 
 [[commands.cmds]]
 cmd = "bun"
+args = ["build:check:prebuild:android:dev"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
 args = ["clean:prebuild:android"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:postbuild:android:dev"]
 run_dir = "ui"
 
 
@@ -239,7 +351,17 @@ description = "Clean the prebuild for iOS"
 
 [[commands.cmds]]
 cmd = "bun"
+args = ["build:check:prebuild:ios:dev"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
 args = ["clean:prebuild:ios"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:postbuild:ios:dev"]
 run_dir = "ui"
 
 
@@ -250,7 +372,17 @@ description = "Clean the prebuild for Android"
 
 [[commands.cmds]]
 cmd = "bun"
+args = ["build:check:prebuild:android:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
 args = ["clean:prebuild:android:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:postbuild:android:prod"]
 run_dir = "ui"
 
 
@@ -261,7 +393,17 @@ description = "Clean the prebuild for iOS"
 
 [[commands.cmds]]
 cmd = "bun"
+args = ["build:check:prebuild:ios:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
 args = ["clean:prebuild:ios:prod"]
+run_dir = "ui"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["build:check:postbuild:ios:prod"]
 run_dir = "ui"
 
 

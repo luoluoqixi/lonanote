@@ -152,10 +152,13 @@ pub fn run_cmds(cmds: &[Cmd]) -> anyhow::Result<()> {
 
     if !sync_cmds.is_empty() {
         for cmd in sync_cmds.iter() {
-            run_cmd(cmd, should_inherit_stdio(cmd, true))
+            let exit_status = run_cmd(cmd, should_inherit_stdio(cmd, true))
                 .map_err(|err| anyhow::anyhow!("Failed to run command: {err}"))?
                 .wait()
                 .map_err(|err| anyhow::anyhow!("Failed to wait for command: {err}"))?;
+            if !exit_status.success() {
+                return Err(anyhow::anyhow!("Command exited with status: {exit_status}"));
+            }
         }
     }
     if !always_run_cmds.is_empty() {
