@@ -1,23 +1,68 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Label as TamaguiLabel, RadioGroup as TamaguiRadioGroup, XStack, YStack } from "tamagui";
 
+import { os } from "@/api/common/platform";
 import { resolveAriaLabel } from "@/components/ui/utils";
 
 import type { RadioGroupIndicatorProps, RadioGroupItemProps, RadioGroupProps } from "./types";
 
 function RadioGroupRoot(props: RadioGroupProps) {
   const generatedGroupId = useId();
-  const { children, indicatorProps, itemProps, items, labelProps, ...rootProps } = props;
+  const {
+    children,
+    defaultValue,
+    indicatorProps,
+    itemProps,
+    items,
+    labelProps,
+    onValueChange,
+    value: valueProp,
+    ...rootProps
+  } = props;
   const { htmlFor: _labelHtmlFor, ...resolvedLabelProps } = labelProps ?? {};
   const groupId = rootProps.id ?? generatedGroupId;
+  const shouldHandleLabelPress = os() === "ios";
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue ?? "");
+  const value = valueProp ?? uncontrolledValue;
+
+  const handleValueChange = (nextValue: string) => {
+    if (valueProp === undefined) {
+      setUncontrolledValue(nextValue);
+    }
+
+    onValueChange?.(nextValue);
+  };
 
   return (
-    <TamaguiRadioGroup {...rootProps}>
+    <TamaguiRadioGroup {...rootProps} onValueChange={handleValueChange} value={value}>
       {children ??
         (items == null ? null : (
           <YStack gap="$2">
             {items.map((item, index) => {
               const itemId = item.id ?? itemProps?.id ?? `${groupId}-item-${index}`;
+              const isDisabled = item.disabled ?? itemProps?.disabled ?? rootProps.disabled;
+
+              const labelElement = shouldHandleLabelPress ? (
+                <XStack
+                  onPress={(event) => {
+                    labelProps?.onPress?.(event);
+
+                    if (isDisabled || event.defaultPrevented) {
+                      return;
+                    }
+
+                    handleValueChange(item.value);
+                  }}
+                >
+                  <TamaguiLabel {...resolvedLabelProps} pointerEvents="none">
+                    {item.label}
+                  </TamaguiLabel>
+                </XStack>
+              ) : (
+                <TamaguiLabel {...resolvedLabelProps} htmlFor={itemId}>
+                  {item.label}
+                </TamaguiLabel>
+              );
 
               return (
                 <XStack gap="$2" key={item.value} style={{ alignItems: "center" }}>
@@ -27,15 +72,13 @@ function RadioGroupRoot(props: RadioGroupProps) {
                       item["aria-label"] ?? itemProps?.["aria-label"],
                       item.label,
                     )}
-                    disabled={item.disabled ?? itemProps?.disabled}
+                    disabled={isDisabled}
                     id={itemId}
                     value={item.value}
                   >
                     <RadioGroupIndicator {...indicatorProps} />
                   </RadioGroupItem>
-                  <TamaguiLabel {...resolvedLabelProps} htmlFor={itemId}>
-                    {item.label}
-                  </TamaguiLabel>
+                  {labelElement}
                 </XStack>
               );
             })}
