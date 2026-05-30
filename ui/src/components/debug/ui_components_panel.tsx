@@ -83,13 +83,16 @@ export function UiComponentsDebugPanel() {
   const [selectValue2, setSelectValue2] = useState<string | null>("light");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
-  const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
-  const [globalSheetPosition, setGlobalSheetPosition] = useState(0);
+  const [percentSheetOpen, setPercentSheetOpen] = useState(false);
+  const [percentSheetPosition, setPercentSheetPosition] = useState(0);
+  const [constantSheetOpen, setConstantSheetOpen] = useState(false);
+  const [constantSheetPosition, setConstantSheetPosition] = useState(0);
+  const [fitSheetOpen, setFitSheetOpen] = useState(false);
+  const [fitSheetPosition, setFitSheetPosition] = useState(0);
+  const [mixedSheetOpen, setMixedSheetOpen] = useState(false);
+  const [mixedSheetPosition, setMixedSheetPosition] = useState(0);
   const [nestedGlobalSheetOpen, setNestedGlobalSheetOpen] = useState(false);
   const [nestedGlobalSheetPosition, setNestedGlobalSheetPosition] = useState(0);
-  const [globalSnapPointsMode, setGlobalSnapPointsMode] = useState<
-    "percent" | "fit" | "mixed" | "constant"
-  >("percent");
   const [sliderValue, setSliderValue] = useState(56);
   const [tamaguiSliderValue, setTamaguiSliderValue] = useState(56);
   const [switchValue, setSwitchValue] = useState(true);
@@ -132,20 +135,6 @@ export function UiComponentsDebugPanel() {
     [],
   );
 
-  const globalSheetSnapPoints = useMemo<(string | number)[] | undefined>(() => {
-    switch (globalSnapPointsMode) {
-      case "constant":
-        return [360, 560];
-      case "fit":
-        return undefined;
-      case "mixed":
-        return ["fit", "80%"];
-      case "percent":
-      default:
-        return [62, 86];
-    }
-  }, [globalSnapPointsMode]);
-
   const handleSheetOpenChange = (nextOpen: boolean) => {
     setSheetOpen(nextOpen);
   };
@@ -154,17 +143,44 @@ export function UiComponentsDebugPanel() {
     setSheetPosition(nextPosition);
   };
 
-  const handleGlobalSheetOpenChange = (nextOpen: boolean) => {
-    setGlobalSheetOpen(nextOpen);
+  const resetNestedGlobalSheet = () => {
+    setNestedGlobalSheetOpen(false);
+    setNestedGlobalSheetPosition(0);
+  };
 
+  const handlePercentSheetOpenChange = (nextOpen: boolean) => {
+    setPercentSheetOpen(nextOpen);
     if (!nextOpen) {
-      setNestedGlobalSheetOpen(false);
-      setNestedGlobalSheetPosition(0);
+      resetNestedGlobalSheet();
     }
   };
 
-  const handleGlobalSheetPositionChange = (nextPosition: number) => {
-    setGlobalSheetPosition(nextPosition);
+  const handlePercentSheetPositionChange = (nextPosition: number) => {
+    setPercentSheetPosition(nextPosition);
+  };
+
+  const handleConstantSheetOpenChange = (nextOpen: boolean) => {
+    setConstantSheetOpen(nextOpen);
+  };
+
+  const handleConstantSheetPositionChange = (nextPosition: number) => {
+    setConstantSheetPosition(nextPosition);
+  };
+
+  const handleFitSheetOpenChange = (nextOpen: boolean) => {
+    setFitSheetOpen(nextOpen);
+  };
+
+  const handleFitSheetPositionChange = (nextPosition: number) => {
+    setFitSheetPosition(nextPosition);
+  };
+
+  const handleMixedSheetOpenChange = (nextOpen: boolean) => {
+    setMixedSheetOpen(nextOpen);
+  };
+
+  const handleMixedSheetPositionChange = (nextPosition: number) => {
+    setMixedSheetPosition(nextPosition);
   };
 
   const handleNestedGlobalSheetOpenChange = (nextOpen: boolean) => {
@@ -802,9 +818,8 @@ export function UiComponentsDebugPanel() {
 
           <Button
             onPress={() => {
-              setGlobalSheetPosition(0);
-              setGlobalSnapPointsMode("percent");
-              setGlobalSheetOpen(true);
+              setPercentSheetPosition(0);
+              setPercentSheetOpen(true);
             }}
             variant="outlined"
           >
@@ -812,9 +827,8 @@ export function UiComponentsDebugPanel() {
           </Button>
           <Button
             onPress={() => {
-              setGlobalSheetPosition(0);
-              setGlobalSnapPointsMode("constant");
-              setGlobalSheetOpen(true);
+              setConstantSheetPosition(0);
+              setConstantSheetOpen(true);
             }}
             variant="outlined"
           >
@@ -822,9 +836,8 @@ export function UiComponentsDebugPanel() {
           </Button>
           <Button
             onPress={() => {
-              setGlobalSheetPosition(0);
-              setGlobalSnapPointsMode("fit");
-              setGlobalSheetOpen(true);
+              setFitSheetPosition(0);
+              setFitSheetOpen(true);
             }}
             variant="outlined"
           >
@@ -832,9 +845,8 @@ export function UiComponentsDebugPanel() {
           </Button>
           <Button
             onPress={() => {
-              setGlobalSheetPosition(0);
-              setGlobalSnapPointsMode("mixed");
-              setGlobalSheetOpen(true);
+              setMixedSheetPosition(0);
+              setMixedSheetOpen(true);
             }}
             variant="outlined"
           >
@@ -846,8 +858,20 @@ export function UiComponentsDebugPanel() {
           inline Sheet 状态：{sheetOpen ? `打开，position=${sheetPosition}` : "关闭"}
         </Text>
         <Text color="$color10">
-          全局 Sheet 状态：
-          {globalSheetOpen ? `打开，position=${globalSheetPosition}` : "关闭"}
+          全局 Sheet percent：
+          {percentSheetOpen ? `打开，position=${percentSheetPosition}` : "关闭"}
+        </Text>
+        <Text color="$color10">
+          全局 Sheet constant：
+          {constantSheetOpen ? `打开，position=${constantSheetPosition}` : "关闭"}
+        </Text>
+        <Text color="$color10">
+          全局 Sheet fit：
+          {fitSheetOpen ? `打开，position=${fitSheetPosition}` : "关闭"}
+        </Text>
+        <Text color="$color10">
+          全局 Sheet mixed：
+          {mixedSheetOpen ? `打开，position=${mixedSheetPosition}` : "关闭"}
         </Text>
         <View style={styles.sheetDemoHost}>
           <Text color="$color10">
@@ -889,17 +913,17 @@ export function UiComponentsDebugPanel() {
 
         <Sheet.Controller
           hidden={false}
-          onOpenChange={handleGlobalSheetOpenChange}
-          open={globalSheetOpen}
+          onOpenChange={handlePercentSheetOpenChange}
+          open={percentSheetOpen}
         >
           <Sheet
             content={
               <View style={styles.globalSheetContent}>
                 <Text fontSize="$5" fontWeight="600">
-                  全局 Sheet
+                  全局 Sheet percent
                 </Text>
                 <Text color="$color10">
-                  这个示例使用 modal 模式渲染到全局层，不受 inline 调试容器裁剪。
+                  这个示例使用 modal 模式渲染到全局层，并固定为 percent snapPoints。
                 </Text>
                 {sheetItems.map((item) => (
                   <View key={item} style={styles.sheetItem}>
@@ -915,8 +939,8 @@ export function UiComponentsDebugPanel() {
                 >
                   打开内层 Sheet
                 </Button>
-                <Button onPress={() => setGlobalSheetOpen(false)} theme="accent">
-                  关闭全局 Sheet
+                <Button onPress={() => setPercentSheetOpen(false)} theme="accent">
+                  关闭全局 Sheet percent
                 </Button>
 
                 <Sheet.Controller
@@ -962,13 +986,129 @@ export function UiComponentsDebugPanel() {
             frameProps={{ style: styles.sheetFrame }}
             handle
             modal
-            onOpenChange={handleGlobalSheetOpenChange}
-            onPositionChange={handleGlobalSheetPositionChange}
-            open={globalSheetOpen}
+            onOpenChange={handlePercentSheetOpenChange}
+            onPositionChange={handlePercentSheetPositionChange}
+            open={percentSheetOpen}
             overlay
-            position={globalSheetPosition}
-            snapPoints={globalSheetSnapPoints}
-            snapPointsMode={globalSnapPointsMode}
+            position={percentSheetPosition}
+            snapPoints={[62, 86]}
+            snapPointsMode="percent"
+            transition="medium"
+          />
+        </Sheet.Controller>
+
+        <Sheet.Controller
+          hidden={false}
+          onOpenChange={handleConstantSheetOpenChange}
+          open={constantSheetOpen}
+        >
+          <Sheet
+            content={
+              <View style={styles.globalSheetContent}>
+                <Text fontSize="$5" fontWeight="600">
+                  全局 Sheet constant
+                </Text>
+                <Text color="$color10">
+                  这个示例使用 modal 模式渲染到全局层，并固定为 constant snapPoints。
+                </Text>
+                {sheetItems.map((item) => (
+                  <View key={item} style={styles.sheetItem}>
+                    <Text>{item}</Text>
+                  </View>
+                ))}
+                <Button onPress={() => setConstantSheetOpen(false)} theme="accent">
+                  关闭全局 Sheet constant
+                </Button>
+              </View>
+            }
+            dismissOnSnapToBottom
+            frameProps={{ style: styles.sheetFrame }}
+            handle
+            modal
+            onOpenChange={handleConstantSheetOpenChange}
+            onPositionChange={handleConstantSheetPositionChange}
+            open={constantSheetOpen}
+            overlay
+            position={constantSheetPosition}
+            snapPoints={[360, 560]}
+            snapPointsMode="constant"
+            transition="medium"
+          />
+        </Sheet.Controller>
+
+        <Sheet.Controller
+          hidden={false}
+          onOpenChange={handleFitSheetOpenChange}
+          open={fitSheetOpen}
+        >
+          <Sheet
+            content={
+              <View style={styles.globalSheetContent}>
+                <Text fontSize="$5" fontWeight="600">
+                  全局 Sheet fit
+                </Text>
+                <Text color="$color10">
+                  这个示例使用 modal 模式渲染到全局层，并固定为 fit 模式。
+                </Text>
+                {sheetItems.map((item) => (
+                  <View key={item} style={styles.sheetItem}>
+                    <Text>{item}</Text>
+                  </View>
+                ))}
+                <Button onPress={() => setFitSheetOpen(false)} theme="accent">
+                  关闭全局 Sheet fit
+                </Button>
+              </View>
+            }
+            dismissOnSnapToBottom
+            frameProps={{ style: styles.sheetFrame }}
+            handle
+            modal
+            onOpenChange={handleFitSheetOpenChange}
+            onPositionChange={handleFitSheetPositionChange}
+            open={fitSheetOpen}
+            overlay
+            position={fitSheetPosition}
+            snapPointsMode="fit"
+            transition="medium"
+          />
+        </Sheet.Controller>
+
+        <Sheet.Controller
+          hidden={false}
+          onOpenChange={handleMixedSheetOpenChange}
+          open={mixedSheetOpen}
+        >
+          <Sheet
+            content={
+              <View style={styles.globalSheetContent}>
+                <Text fontSize="$5" fontWeight="600">
+                  全局 Sheet mixed
+                </Text>
+                <Text color="$color10">
+                  这个示例使用 modal 模式渲染到全局层，并固定为 mixed snapPoints。
+                </Text>
+                {sheetItems.map((item) => (
+                  <View key={item} style={styles.sheetItem}>
+                    <Text>{item}</Text>
+                  </View>
+                ))}
+                <Button onPress={() => setMixedSheetOpen(false)} theme="accent">
+                  关闭全局 Sheet mixed
+                </Button>
+              </View>
+            }
+            dismissOnSnapToBottom
+            frameProps={{ style: styles.sheetFrame }}
+            handle
+            modal
+            onOpenChange={handleMixedSheetOpenChange}
+            onPositionChange={handleMixedSheetPositionChange}
+            open={mixedSheetOpen}
+            overlay
+            position={mixedSheetPosition}
+            snapPoints={["fit", "80%"]}
+            snapPointsMode="mixed"
             transition="medium"
           />
         </Sheet.Controller>
