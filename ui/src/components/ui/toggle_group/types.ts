@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { ToggleGroup as TamaguiToggleGroup } from "tamagui";
 
+import type { NativeHapticsSetting } from "../utils";
+
 export interface ToggleGroupItemData {
   "aria-label"?: string;
   disabled?: boolean;
@@ -19,6 +21,7 @@ export type ToggleGroupSingleProps = ToggleGroupBaseProps & {
   disableDeactivation?: boolean;
   itemProps?: Omit<ToggleGroupItemProps, "value">;
   items?: ToggleGroupItemData[];
+  nativeHaptics?: NativeHapticsSetting;
   onValueChange?(value: string): void;
   type?: "single";
   value?: string;
@@ -30,6 +33,7 @@ export type ToggleGroupMultipleProps = ToggleGroupBaseProps & {
   disableDeactivation?: never;
   itemProps?: Omit<ToggleGroupItemProps, "value">;
   items?: ToggleGroupItemData[];
+  nativeHaptics?: NativeHapticsSetting;
   onValueChange?(value: string[]): void;
   type: "multiple";
   value?: string[];

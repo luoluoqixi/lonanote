@@ -3,6 +3,7 @@ import type { YGroup } from "tamagui";
 
 import type { ListItemProps } from "../list_item";
 import type { SeparatorProps } from "../separator";
+import type { NativeHapticsSetting } from "../utils";
 
 export type ListGroupGroupItemProps = ComponentProps<typeof YGroup.Item>;
 
@@ -18,6 +19,7 @@ export interface ListGroupProps extends Omit<ComponentProps<typeof YGroup>, "chi
   groupItemProps?: ListGroupGroupItemProps;
   itemProps?: ListItemProps;
   items?: ListGroupItemData[];
+  nativeHaptics?: NativeHapticsSetting;
   separator?: boolean;
   separatorProps?: SeparatorProps;
 }

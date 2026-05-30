@@ -1,5 +1,7 @@
 import React from "react";
 
+import { getSliderHapticsBuckets, triggerNativeHaptics } from "@/components/ui/utils";
+
 import { Slider as ReplicaSlider } from "./slider/Slider";
 import type {
   SliderProps,
@@ -11,6 +13,9 @@ import type {
 function SliderRoot(props: SliderProps) {
   const {
     children,
+    nativeHaptics,
+    nativeHapticsInterval,
+    onValueChange,
     thumbCount,
     thumbProps,
     trackActiveProps,
@@ -19,11 +24,60 @@ function SliderRoot(props: SliderProps) {
     size = "$4",
     ...rootProps
   } = props;
+  const lastHapticsBucketsRef = React.useRef(
+    getSliderHapticsBuckets(rootProps.value ?? rootProps.defaultValue, {
+      interval: nativeHapticsInterval,
+      max: rootProps.max,
+      min: rootProps.min,
+      step: rootProps.step,
+    }),
+  );
+
+  React.useEffect(() => {
+    if (rootProps.value == null) {
+      return;
+    }
+
+    lastHapticsBucketsRef.current = getSliderHapticsBuckets(rootProps.value, {
+      interval: nativeHapticsInterval,
+      max: rootProps.max,
+      min: rootProps.min,
+      step: rootProps.step,
+    });
+  }, [nativeHapticsInterval, rootProps.max, rootProps.min, rootProps.step, rootProps.value]);
+
   const resolvedThumbCount =
     thumbCount ?? rootProps.value?.length ?? rootProps.defaultValue?.length ?? 1;
+  const handleValueChange: NonNullable<SliderProps["onValueChange"]> = (nextValue) => {
+    onValueChange?.(nextValue);
+
+    const nextBuckets = getSliderHapticsBuckets(nextValue, {
+      interval: nativeHapticsInterval,
+      max: rootProps.max,
+      min: rootProps.min,
+      step: rootProps.step,
+    });
+    const previousBuckets = lastHapticsBucketsRef.current;
+    const hasBucketChanged =
+      previousBuckets.length !== nextBuckets.length ||
+      nextBuckets.some((bucket, index) => bucket !== previousBuckets[index]);
+
+    lastHapticsBucketsRef.current = nextBuckets;
+
+    if (!hasBucketChanged) {
+      return;
+    }
+
+    triggerNativeHaptics(nativeHaptics);
+  };
 
   return (
-    <ReplicaSlider {...rootProps} orientation={orientation} size={size}>
+    <ReplicaSlider
+      {...rootProps}
+      onValueChange={handleValueChange}
+      orientation={orientation}
+      size={size}
+    >
       {children ?? (
         <>
           <ReplicaSlider.Track {...trackProps}>

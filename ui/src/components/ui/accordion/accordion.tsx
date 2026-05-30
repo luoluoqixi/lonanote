@@ -3,7 +3,7 @@ import { Children, type ComponentType, type ReactNode, isValidElement } from "re
 import { SizableText, Square, Accordion as TamaguiAccordion, YStack } from "tamagui";
 
 import { isWeb } from "@/api/common/platform";
-import { resolveAriaLabel } from "@/components/ui/utils";
+import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
 
 import type {
   AccordionContentProps,
@@ -114,11 +114,26 @@ function getItemsContent(
 }
 
 function AccordionSingleRoot(props: AccordionProps) {
-  const { children, contentProps, headerProps, itemProps, items, triggerProps, ...rootProps } =
-    props;
+  const {
+    children,
+    contentProps,
+    headerProps,
+    itemProps,
+    items,
+    nativeHaptics,
+    triggerProps,
+    ...rootProps
+  } = props;
+  const handleValueChange = rootProps.onValueChange as
+    | ((value: string | undefined) => void)
+    | undefined;
 
   return (
     <AccordionPrimitive
+      onValueChange={(nextValue: string | undefined) => {
+        handleValueChange?.(nextValue);
+        triggerNativeHaptics(nativeHaptics);
+      }}
       {...rootProps}
       collapsible={rootProps.collapsible ?? true}
       type="single"
@@ -130,11 +145,28 @@ function AccordionSingleRoot(props: AccordionProps) {
 }
 
 function AccordionMultipleRoot(props: AccordionProps) {
-  const { children, contentProps, headerProps, itemProps, items, triggerProps, ...rootProps } =
-    props;
+  const {
+    children,
+    contentProps,
+    headerProps,
+    itemProps,
+    items,
+    nativeHaptics,
+    triggerProps,
+    ...rootProps
+  } = props;
+  const handleValueChange = rootProps.onValueChange as ((value: string[]) => void) | undefined;
 
   return (
-    <AccordionPrimitive {...rootProps} type="multiple" width={rootProps.width ?? "100%"}>
+    <AccordionPrimitive
+      onValueChange={(nextValue: string[]) => {
+        handleValueChange?.(nextValue);
+        triggerNativeHaptics(nativeHaptics);
+      }}
+      {...rootProps}
+      type="multiple"
+      width={rootProps.width ?? "100%"}
+    >
       {getItemsContent(children, items, itemProps, headerProps, triggerProps, contentProps)}
     </AccordionPrimitive>
   );

@@ -73,7 +73,7 @@ function PopoverArrow(props: PopoverArrowProps) {
 }
 
 function PopoverTrigger(props: PopoverTriggerProps) {
-  return <TamaguiPopover.Trigger {...props} />;
+  return <TamaguiPopover.Trigger asChild={props.asChild ?? true} {...props} />;
 }
 
 function PopoverContent(props: PopoverContentProps) {

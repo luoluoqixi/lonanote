@@ -67,6 +67,7 @@ function DemoRow({ children }: { children: ReactNode }) {
 export function UiComponentsDebugPanel() {
   const { toast } = useToast();
   const [checkboxChecked, setCheckboxChecked] = useState(true);
+  const [forceNativeHaptics, setForceNativeHaptics] = useState(false);
   const [contextMenuAction, setContextMenuAction] = useState("尚未选择");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogOpen2, setDialogOpen2] = useState(false);
@@ -100,6 +101,7 @@ export function UiComponentsDebugPanel() {
   const [textAreaValue, setTextAreaValue] = useState("这是一段文本区域示例。");
   const [toggleValue, setToggleValue] = useState("bold");
   const [popoverName, setPopoverName] = useState("LonaNote");
+  const debugNativeHaptics = forceNativeHaptics ? true : undefined;
 
   const selectItems = useMemo(
     () => [
@@ -260,27 +262,53 @@ export function UiComponentsDebugPanel() {
       <SectionCard description="按钮、状态切换和加载反馈。" title="动作与反馈">
         <View style={styles.demoGroup}>
           <Text fontSize="$5" fontWeight="600">
+            Native Haptics
+          </Text>
+          <View style={styles.checkboxGroup}>
+            <Checkbox
+              checked={forceNativeHaptics}
+              label="震动"
+              onCheckedChange={(checked) => setForceNativeHaptics(checked === true)}
+              size="$4"
+            />
+          </View>
+        </View>
+
+        <View style={styles.demoGroup}>
+          <Text fontSize="$5" fontWeight="600">
             Button
           </Text>
 
           <DemoRow>
-            <Button chromeless>Plain</Button>
-            <Button theme="accent">Active</Button>
-            <Button variant="outlined">Outlined</Button>
-            <Button disabled>Disabled</Button>
+            <Button chromeless nativeHaptics={debugNativeHaptics}>
+              Plain
+            </Button>
+            <Button nativeHaptics={debugNativeHaptics} theme="accent">
+              Active
+            </Button>
+            <Button nativeHaptics={debugNativeHaptics} variant="outlined">
+              Outlined
+            </Button>
+            <Button disabled nativeHaptics={debugNativeHaptics}>
+              Disabled
+            </Button>
           </DemoRow>
 
           <DemoRow>
-            <Button icon={Calendar}>icon</Button>
-            <Button iconAfter={ChevronRight}>iconAfter</Button>
-            <Button icon={RefreshCw} theme="green">
+            <Button icon={Calendar} nativeHaptics={debugNativeHaptics}>
+              icon
+            </Button>
+            <Button iconAfter={ChevronRight} nativeHaptics={debugNativeHaptics}>
+              iconAfter
+            </Button>
+            <Button icon={RefreshCw} nativeHaptics={debugNativeHaptics} theme="green">
               Themed
             </Button>
-            <Button circular icon={Check} aria-label="确认" />
-            <Button icon={Backpack} iconSize="$2" theme="blue">
+            <Button circular icon={Check} aria-label="确认" nativeHaptics={debugNativeHaptics} />
+            <Button icon={Backpack} iconSize="$2" nativeHaptics={debugNativeHaptics} theme="blue">
               Blue
             </Button>
-            <Button iconAfter={Trash2} theme="red">
+            <Button iconAfter={Trash2} nativeHaptics={debugNativeHaptics} theme="red">
               Red
             </Button>
           </DemoRow>
@@ -295,6 +323,7 @@ export function UiComponentsDebugPanel() {
             <Checkbox
               checked={checkboxChecked}
               label="Accept terms and conditions"
+              nativeHaptics={debugNativeHaptics}
               onCheckedChange={(checked) => setCheckboxChecked(checked === true)}
               size="$4"
             />
@@ -308,6 +337,7 @@ export function UiComponentsDebugPanel() {
             checked={switchValue}
             label="Switch"
             labelPosition="end"
+            nativeHaptics={debugNativeHaptics}
             onCheckedChange={setSwitchValue}
           />
         </DemoRow>
@@ -319,6 +349,7 @@ export function UiComponentsDebugPanel() {
 
           <DemoRow>
             <Button
+              nativeHaptics={debugNativeHaptics}
               onPress={() =>
                 toast.message("已保存草稿", {
                   description: "状态栏与编辑区内容已同步。",
@@ -329,6 +360,7 @@ export function UiComponentsDebugPanel() {
               Message
             </Button>
             <Button
+              nativeHaptics={debugNativeHaptics}
               onPress={() =>
                 toast.success("同步完成", {
                   description: "全部文件已经更新到本地索引。",
@@ -339,6 +371,7 @@ export function UiComponentsDebugPanel() {
               Success
             </Button>
             <Button
+              nativeHaptics={debugNativeHaptics}
               onPress={() =>
                 toast.error("导出失败", {
                   description: "目标目录没有写入权限。",
@@ -348,24 +381,36 @@ export function UiComponentsDebugPanel() {
             >
               Error
             </Button>
-            <Button onPress={showInfoToast} variant="outlined">
+            <Button nativeHaptics={debugNativeHaptics} onPress={showInfoToast} variant="outlined">
               Info
             </Button>
-            <Button onPress={showWarningToast} variant="outlined">
+            <Button
+              nativeHaptics={debugNativeHaptics}
+              onPress={showWarningToast}
+              variant="outlined"
+            >
               Warning
             </Button>
           </DemoRow>
           <DemoRow>
-            <Button onPress={showLoadingToast} variant="outlined">
+            <Button
+              nativeHaptics={debugNativeHaptics}
+              onPress={showLoadingToast}
+              variant="outlined"
+            >
               Loading
             </Button>
-            <Button onPress={showCustomToast} variant="outlined">
+            <Button nativeHaptics={debugNativeHaptics} onPress={showCustomToast} variant="outlined">
               Custom
             </Button>
-            <Button onPress={showPromiseToast} variant="outlined">
+            <Button
+              nativeHaptics={debugNativeHaptics}
+              onPress={showPromiseToast}
+              variant="outlined"
+            >
               Promise
             </Button>
-            <Button onPress={() => toast.closeAll()} chromeless>
+            <Button nativeHaptics={debugNativeHaptics} onPress={() => toast.closeAll()} chromeless>
               Close all
             </Button>
           </DemoRow>
@@ -382,6 +427,7 @@ export function UiComponentsDebugPanel() {
                 { label: "I", value: "italic" },
                 { label: "~", value: "test" },
               ]}
+              nativeHaptics={debugNativeHaptics}
               onValueChange={setToggleValue}
               type="single"
               value={toggleValue}
@@ -420,6 +466,7 @@ export function UiComponentsDebugPanel() {
             <Label>Select</Label>
             <Select
               items={selectItems}
+              nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue}
               placeholder="选择主题色"
               value={selectValue ?? undefined}
@@ -430,6 +477,7 @@ export function UiComponentsDebugPanel() {
             <Label>Select Native</Label>
             <Select
               items={selectItems}
+              nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue}
               placeholder="选择主题色"
               value={selectValue ?? undefined}
@@ -440,6 +488,7 @@ export function UiComponentsDebugPanel() {
           <View style={styles.field}>
             <Select
               items={selectItems2}
+              nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue2}
               placeholder="选择主题"
               value={selectValue2 ?? undefined}
@@ -449,6 +498,7 @@ export function UiComponentsDebugPanel() {
           <View style={styles.field}>
             <Select
               items={selectItems2}
+              nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue2}
               placeholder="选择主题"
               value={selectValue2 ?? undefined}
@@ -461,6 +511,7 @@ export function UiComponentsDebugPanel() {
             <Slider
               max={100}
               min={0}
+              nativeHaptics={debugNativeHaptics}
               onValueChange={(nextValue: number[]) => setSliderValue(nextValue[0] ?? 0)}
               value={[sliderValue]}
             />
@@ -471,6 +522,7 @@ export function UiComponentsDebugPanel() {
             <TamaguiSlider
               max={100}
               min={0}
+              nativeHaptics={debugNativeHaptics}
               onValueChange={(nextValue: number[]) => setTamaguiSliderValue(nextValue[0] ?? 0)}
               value={[tamaguiSliderValue]}
             />
@@ -482,7 +534,7 @@ export function UiComponentsDebugPanel() {
           <Label>Form</Label>
           <Form
             onSubmit={() => setFormSubmitCount((count) => count + 1)}
-            trigger={<Button>提交表单</Button>}
+            trigger={<Button nativeHaptics={debugNativeHaptics}>提交表单</Button>}
           >
             <View style={styles.formContent}>
               <Input onChangeText={setInputValue} placeholder="workspace name" value={inputValue} />
@@ -502,6 +554,7 @@ export function UiComponentsDebugPanel() {
             { label: "按名称", value: "name" },
             { label: "按大小", value: "size" },
           ]}
+          nativeHaptics={debugNativeHaptics}
           onValueChange={setRadioValue}
           value={radioValue}
         />
@@ -519,6 +572,7 @@ export function UiComponentsDebugPanel() {
               value: "notes",
             },
           ]}
+          nativeHaptics={debugNativeHaptics}
           onValueChange={setTabsValue}
           value={tabsValue}
         />
@@ -546,6 +600,7 @@ export function UiComponentsDebugPanel() {
               value: "panel4",
             },
           ]}
+          nativeHaptics={debugNativeHaptics}
           type="single"
         />
 
@@ -572,6 +627,7 @@ export function UiComponentsDebugPanel() {
               value: "panel4",
             },
           ]}
+          nativeHaptics={debugNativeHaptics}
           type="multiple"
         />
       </SectionCard>
@@ -585,7 +641,11 @@ export function UiComponentsDebugPanel() {
             onOpenChange={setDialogOpen}
             open={dialogOpen}
             title="Dialog 标题"
-            trigger={<Button onPress={() => setDialogOpen(true)}>打开 Dialog</Button>}
+            trigger={
+              <Button nativeHaptics={debugNativeHaptics} onPress={() => setDialogOpen(true)}>
+                打开 Dialog
+              </Button>
+            }
           >
             <Text>这是 Dialog 内容区域。</Text>
           </Dialog>
@@ -595,7 +655,9 @@ export function UiComponentsDebugPanel() {
             open={dialogOpen2}
             title="Dialog 标题"
             trigger={
-              <Button onPress={() => setDialogOpen2(true)}>打开 Dialog No OverlayPress</Button>
+              <Button nativeHaptics={debugNativeHaptics} onPress={() => setDialogOpen2(true)}>
+                打开 Dialog No OverlayPress
+              </Button>
             }
             dismissOnOverlayPress={false}
           >
@@ -609,7 +671,11 @@ export function UiComponentsDebugPanel() {
             onOpenChange={setAlertDialogOpen}
             open={alertDialogOpen}
             title="删除确认"
-            trigger={<Button onPress={() => setAlertDialogOpen(true)}>打开 AlertDialog</Button>}
+            trigger={
+              <Button nativeHaptics={debugNativeHaptics} onPress={() => setAlertDialogOpen(true)}>
+                打开 AlertDialog
+              </Button>
+            }
           />
 
           <AlertDialog
@@ -620,7 +686,7 @@ export function UiComponentsDebugPanel() {
             open={alertDialogOpen2}
             title="删除确认"
             trigger={
-              <Button onPress={() => setAlertDialogOpen2(true)}>
+              <Button nativeHaptics={debugNativeHaptics} onPress={() => setAlertDialogOpen2(true)}>
                 打开 AlertDialog OverlayPress
               </Button>
             }
@@ -640,12 +706,19 @@ export function UiComponentsDebugPanel() {
                     value={popoverName}
                   />
                 </View>
-                <Button onPress={() => setMenuAction(`Popover submit: ${popoverName}`)}>
+                <Button
+                  nativeHaptics={debugNativeHaptics}
+                  onPress={() => setMenuAction(`Popover submit: ${popoverName}`)}
+                >
                   Submit
                 </Button>
               </View>
             }
-            trigger={<Button variant="outlined">打开 Popover</Button>}
+            trigger={
+              <Button nativeHaptics={debugNativeHaptics} variant="outlined">
+                打开 Popover
+              </Button>
+            }
           />
 
           <Menu
@@ -674,7 +747,12 @@ export function UiComponentsDebugPanel() {
               },
             ]}
             trigger={
-              <Button icon={Backpack} size="$4" variant="outlined">
+              <Button
+                icon={Backpack}
+                nativeHaptics={debugNativeHaptics}
+                size="$4"
+                variant="outlined"
+              >
                 打开快捷 Menu
               </Button>
             }
@@ -682,7 +760,12 @@ export function UiComponentsDebugPanel() {
 
           <Menu>
             <Menu.Trigger>
-              <Button icon={Backpack} size="$4" variant="outlined">
+              <Button
+                icon={Backpack}
+                nativeHaptics={debugNativeHaptics}
+                size="$4"
+                variant="outlined"
+              >
                 打开复杂 Menu
               </Button>
             </Menu.Trigger>
@@ -812,7 +895,9 @@ export function UiComponentsDebugPanel() {
 
         <DemoRow>
           <Tooltip arrow content="Tooltip 在 web 下会显示，在 native 下主要输出可访问性语义。">
-            <Button variant="outlined">悬停 Tooltip</Button>
+            <Button nativeHaptics={debugNativeHaptics} variant="outlined">
+              悬停 Tooltip
+            </Button>
           </Tooltip>
 
           <ContextMenu
@@ -835,10 +920,12 @@ export function UiComponentsDebugPanel() {
                 value: "remove-workspace",
               },
             ]}
+            nativeHaptics={debugNativeHaptics}
             trigger={<Button variant="outlined">右键 / 长按 ContextMenu</Button>}
           />
 
           <Button
+            nativeHaptics={debugNativeHaptics}
             onPress={() => {
               setSheetPosition(0);
               setSheetOpen(true);
@@ -849,6 +936,7 @@ export function UiComponentsDebugPanel() {
           </Button>
 
           <Button
+            nativeHaptics={debugNativeHaptics}
             onPress={() => {
               setPercentSheetPosition(0);
               setPercentSheetOpen(true);
@@ -858,6 +946,7 @@ export function UiComponentsDebugPanel() {
             打开全局 Sheet percent
           </Button>
           <Button
+            nativeHaptics={debugNativeHaptics}
             onPress={() => {
               setConstantSheetPosition(0);
               setConstantSheetOpen(true);
@@ -867,6 +956,7 @@ export function UiComponentsDebugPanel() {
             打开全局 Sheet constant
           </Button>
           <Button
+            nativeHaptics={debugNativeHaptics}
             onPress={() => {
               setFitSheetPosition(0);
               setFitSheetOpen(true);
@@ -876,6 +966,7 @@ export function UiComponentsDebugPanel() {
             打开全局 Sheet fit
           </Button>
           <Button
+            nativeHaptics={debugNativeHaptics}
             onPress={() => {
               setMixedSheetPosition(0);
               setMixedSheetOpen(true);
@@ -963,6 +1054,7 @@ export function UiComponentsDebugPanel() {
                   </View>
                 ))}
                 <Button
+                  nativeHaptics={debugNativeHaptics}
                   onPress={() => {
                     setNestedGlobalSheetPosition(0);
                     setNestedGlobalSheetOpen(true);
@@ -971,7 +1063,11 @@ export function UiComponentsDebugPanel() {
                 >
                   打开内层 Sheet
                 </Button>
-                <Button onPress={() => setPercentSheetOpen(false)} theme="accent">
+                <Button
+                  nativeHaptics={debugNativeHaptics}
+                  onPress={() => setPercentSheetOpen(false)}
+                  theme="accent"
+                >
                   关闭全局 Sheet percent
                 </Button>
 
@@ -993,7 +1089,11 @@ export function UiComponentsDebugPanel() {
                           这里可以放更细一级的操作，例如二次确认、补充配置，或者像 Tamagui
                           官方示例那样继续展示嵌套弹层行为。
                         </Text>
-                        <Button onPress={() => setNestedGlobalSheetOpen(false)} theme="accent">
+                        <Button
+                          nativeHaptics={debugNativeHaptics}
+                          onPress={() => setNestedGlobalSheetOpen(false)}
+                          theme="accent"
+                        >
                           关闭内层 Sheet
                         </Button>
                       </View>
@@ -1048,7 +1148,11 @@ export function UiComponentsDebugPanel() {
                     <Text>{item}</Text>
                   </View>
                 ))}
-                <Button onPress={() => setConstantSheetOpen(false)} theme="accent">
+                <Button
+                  nativeHaptics={debugNativeHaptics}
+                  onPress={() => setConstantSheetOpen(false)}
+                  theme="accent"
+                >
                   关闭全局 Sheet constant
                 </Button>
               </View>
@@ -1087,7 +1191,11 @@ export function UiComponentsDebugPanel() {
                     <Text>{item}</Text>
                   </View>
                 ))}
-                <Button onPress={() => setFitSheetOpen(false)} theme="accent">
+                <Button
+                  nativeHaptics={debugNativeHaptics}
+                  onPress={() => setFitSheetOpen(false)}
+                  theme="accent"
+                >
                   关闭全局 Sheet fit
                 </Button>
               </View>
@@ -1125,7 +1233,11 @@ export function UiComponentsDebugPanel() {
                     <Text>{item}</Text>
                   </View>
                 ))}
-                <Button onPress={() => setMixedSheetOpen(false)} theme="accent">
+                <Button
+                  nativeHaptics={debugNativeHaptics}
+                  onPress={() => setMixedSheetOpen(false)}
+                  theme="accent"
+                >
                   关闭全局 Sheet mixed
                 </Button>
               </View>
@@ -1159,7 +1271,11 @@ export function UiComponentsDebugPanel() {
             <Text color="$color10">这里展示标题、正文和说明文案的基础排版。</Text>
           </View>
         </DemoRow>
-        <Link href="https://tamagui.dev/llms.txt" target="_blank">
+        <Link
+          href="https://tamagui.dev/llms.txt"
+          nativeHaptics={debugNativeHaptics}
+          target="_blank"
+        >
           Tamagui llms.txt
         </Link>
         <Separator />
@@ -1176,6 +1292,7 @@ export function UiComponentsDebugPanel() {
               title: "第二项示例",
             },
           ]}
+          nativeHaptics={debugNativeHaptics}
           rounded="$4"
           self="stretch"
           separator

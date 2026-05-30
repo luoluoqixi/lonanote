@@ -3,6 +3,7 @@ import { Linking } from "react-native";
 import { Anchor as TamaguiAnchor, View } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
+import { triggerNativeHaptics } from "@/components/ui/utils";
 
 import type { LinkProps } from "./types";
 
@@ -32,6 +33,7 @@ export const Link = forwardRef<ComponentRef<typeof TamaguiAnchor>, LinkProps>((p
     href,
     target,
     rel,
+    nativeHaptics,
     onPress,
     ...linkProps
   } = props;
@@ -71,7 +73,13 @@ export const Link = forwardRef<ComponentRef<typeof TamaguiAnchor>, LinkProps>((p
   const handlePress: NonNullable<LinkProps["onPress"]> = (event) => {
     onPress?.(event);
 
-    if (event.defaultPrevented || href == null) {
+    if (event.defaultPrevented) {
+      return;
+    }
+
+    triggerNativeHaptics(nativeHaptics);
+
+    if (href == null) {
       return;
     }
 

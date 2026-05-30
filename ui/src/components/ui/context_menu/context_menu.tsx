@@ -2,8 +2,8 @@ import { Children, type ReactNode, isValidElement } from "react";
 import { StyleSheet } from "react-native";
 import { SizableText, ContextMenu as TamaguiContextMenu } from "tamagui";
 
-import { isWeb } from "@/api/common/platform";
-import { resolveAriaLabel } from "@/components/ui/utils";
+import { isWeb, os } from "@/api/common/platform";
+import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
 
 import type {
   ContextMenuArrowProps,
@@ -74,19 +74,34 @@ function ContextMenuRoot(props: ContextMenuProps) {
     contentProps,
     itemProps,
     items,
+    nativeHaptics,
+    onOpenChange,
     portalProps,
     trigger,
     triggerProps,
     ...rootProps
   } = props;
   const hasDefaultStructure = trigger != null || items != null || arrow != null;
+  const handleOpenChange: NonNullable<ContextMenuProps["onOpenChange"]> = (nextOpen) => {
+    onOpenChange?.(nextOpen);
+
+    if (!nextOpen || os() === "ios") {
+      return;
+    }
+
+    triggerNativeHaptics(nativeHaptics);
+  };
 
   if (!hasDefaultStructure) {
-    return <TamaguiContextMenu {...rootProps}>{children}</TamaguiContextMenu>;
+    return (
+      <TamaguiContextMenu {...rootProps} onOpenChange={handleOpenChange}>
+        {children}
+      </TamaguiContextMenu>
+    );
   }
 
   return (
-    <TamaguiContextMenu {...rootProps}>
+    <TamaguiContextMenu {...rootProps} onOpenChange={handleOpenChange}>
       {trigger != null ? (
         <ContextMenuTrigger {...triggerProps}>{trigger}</ContextMenuTrigger>
       ) : null}

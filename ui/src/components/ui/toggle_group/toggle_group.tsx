@@ -2,7 +2,7 @@ import { Children, type ReactNode, isValidElement } from "react";
 import { SizableText, ToggleGroup as TamaguiToggleGroup, XGroup, XStack, YGroup } from "tamagui";
 
 import { os } from "@/api/common/platform";
-import { resolveAriaLabel } from "@/components/ui/utils";
+import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
 
 import type { ToggleGroupItemData, ToggleGroupItemProps, ToggleGroupProps } from "./types";
 
@@ -72,14 +72,19 @@ const getItemsContent = (
 };
 
 function ToggleGroupSingleRoot(props: Extract<ToggleGroupProps, { type?: "single" }>) {
-  const { children, itemProps, items, orientation, ...rootProps } = props;
+  const { children, itemProps, items, nativeHaptics, onValueChange, orientation, ...rootProps } =
+    props;
   const resolvedOrientation = orientation || "horizontal";
   const content = getItemsContent(children, items, itemProps, resolvedOrientation);
   return (
     <ToggleGroupPrimitive
       disableDeactivation={true}
-      orientation={resolvedOrientation}
       {...rootProps}
+      onValueChange={(nextValue) => {
+        onValueChange?.(nextValue);
+        triggerNativeHaptics(nativeHaptics);
+      }}
+      orientation={resolvedOrientation}
       type="single"
     >
       {content}
@@ -88,11 +93,20 @@ function ToggleGroupSingleRoot(props: Extract<ToggleGroupProps, { type?: "single
 }
 
 function ToggleGroupMultipleRoot(props: Extract<ToggleGroupProps, { type: "multiple" }>) {
-  const { children, itemProps, items, orientation, ...rootProps } = props;
+  const { children, itemProps, items, nativeHaptics, onValueChange, orientation, ...rootProps } =
+    props;
   const resolvedOrientation = orientation || "horizontal";
   const content = getItemsContent(children, items, itemProps, resolvedOrientation);
   return (
-    <ToggleGroupPrimitive orientation={resolvedOrientation} {...rootProps} type="multiple">
+    <ToggleGroupPrimitive
+      {...rootProps}
+      onValueChange={(nextValue) => {
+        onValueChange?.(nextValue);
+        triggerNativeHaptics(nativeHaptics);
+      }}
+      orientation={resolvedOrientation}
+      type="multiple"
+    >
       {content}
     </ToggleGroupPrimitive>
   );

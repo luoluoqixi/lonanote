@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { Accordion as TamaguiAccordion } from "tamagui";
 
+import type { NativeHapticsSetting } from "../utils";
+
 export interface AccordionItemData {
   "aria-label"?: string;
   content: ReactNode;
@@ -18,6 +20,7 @@ export type AccordionProps = AccordionRootProps & {
   headerProps?: AccordionHeaderProps;
   itemProps?: Omit<AccordionItemProps, "value">;
   items?: AccordionItemData[];
+  nativeHaptics?: NativeHapticsSetting;
   triggerProps?: AccordionTriggerProps;
 };
 export type AccordionContentProps = ComponentProps<typeof TamaguiAccordion.Content>;

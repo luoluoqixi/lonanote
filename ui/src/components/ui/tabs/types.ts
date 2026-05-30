@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { Tabs as TamaguiTabs } from "tamagui";
 
+import type { NativeHapticsSetting } from "../utils";
+
 export interface TabsItemData {
   "aria-label"?: string;
   content: ReactNode;
@@ -17,6 +19,7 @@ export interface TabsProps extends TabsRootProps {
   contentProps?: Omit<TabsContentProps, "value">;
   items?: TabsItemData[];
   listProps?: TabsListProps;
+  nativeHaptics?: NativeHapticsSetting;
   tabProps?: Omit<TabsTabProps, "value">;
 }
 export type TabsListProps = ComponentProps<typeof TamaguiTabs.List>;

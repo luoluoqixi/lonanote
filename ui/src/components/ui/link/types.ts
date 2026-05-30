@@ -1,4 +1,8 @@
 import type { ComponentProps } from "react";
 import type { Anchor as TamaguiAnchor } from "tamagui";
 
-export type LinkProps = ComponentProps<typeof TamaguiAnchor>;
+import type { NativeHapticsSetting } from "../utils";
+
+export type LinkProps = ComponentProps<typeof TamaguiAnchor> & {
+  nativeHaptics?: NativeHapticsSetting;
+};

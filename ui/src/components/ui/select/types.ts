@@ -2,6 +2,8 @@ import type { ComponentProps, ReactNode } from "react";
 import type { ViewStyle } from "react-native";
 import type { Select as TamaguiSelect } from "tamagui";
 
+import type { NativeHapticsSetting } from "../utils";
+
 export interface SelectItemData {
   "aria-label"?: string;
   description?: string;
@@ -30,11 +32,12 @@ export interface SelectProps extends Omit<
   items?: SelectItemData[];
   itemLabel?: ReactNode;
   itemLabelProps?: SelectLabelProps;
+  nativeHaptics?: NativeHapticsSetting;
   onValueChange?: (nextValue: string | null) => void;
   options?: SelectItemData[];
   placeholder?: ReactNode;
   touchSheetMaxHeight?: ViewStyle["maxHeight"];
-  triggerProps?: ComponentProps<typeof TamaguiSelect.Trigger>;
+  triggerProps?: SelectTriggerProps;
   viewportProps?: ComponentProps<typeof TamaguiSelect.Viewport>;
 }
 
@@ -49,7 +52,9 @@ export type SelectItemTextProps = ComponentProps<typeof TamaguiSelect.ItemText>;
 export type SelectLabelProps = ComponentProps<typeof TamaguiSelect.Label>;
 export type SelectScrollDownButtonProps = ComponentProps<typeof TamaguiSelect.ScrollDownButton>;
 export type SelectScrollUpButtonProps = ComponentProps<typeof TamaguiSelect.ScrollUpButton>;
-export type SelectTriggerProps = ComponentProps<typeof TamaguiSelect.Trigger>;
+export type SelectTriggerProps = ComponentProps<typeof TamaguiSelect.Trigger> & {
+  nativeHaptics?: NativeHapticsSetting;
+};
 export type SelectValueProps = ComponentProps<typeof TamaguiSelect.Value>;
 export type SelectViewportProps = ComponentProps<typeof TamaguiSelect.Viewport>;
 export type SelectIndicatorProps = ComponentProps<typeof TamaguiSelect.Indicator>;

@@ -1,7 +1,7 @@
 import { Children, type ReactNode, isValidElement } from "react";
 import { SizableText, Tabs as TamaguiTabs } from "tamagui";
 
-import { resolveAriaLabel } from "@/components/ui/utils";
+import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
 
 import type { TabsContentProps, TabsListProps, TabsProps, TabsTabProps } from "./types";
 
@@ -31,6 +31,7 @@ function TabsRoot(props: TabsProps) {
     contentProps,
     items,
     listProps,
+    nativeHaptics,
     tabProps,
     ...rootProps
   } = props;
@@ -43,7 +44,13 @@ function TabsRoot(props: TabsProps) {
       : listProps;
 
   return (
-    <TamaguiTabs {...rootProps}>
+    <TamaguiTabs
+      {...rootProps}
+      onValueChange={(nextValue) => {
+        rootProps.onValueChange?.(nextValue);
+        triggerNativeHaptics(nativeHaptics);
+      }}
+    >
       {children ??
         (items == null ? null : (
           <>

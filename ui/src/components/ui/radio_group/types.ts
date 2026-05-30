@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { Label as TamaguiLabel, RadioGroup as TamaguiRadioGroup } from "tamagui";
 
+import type { NativeHapticsSetting } from "../utils";
+
 export interface RadioGroupItemData {
   "aria-label"?: string;
   disabled?: boolean;
@@ -17,6 +19,7 @@ export interface RadioGroupProps extends RadioGroupRootProps {
   itemProps?: Omit<RadioGroupItemProps, "value">;
   items?: RadioGroupItemData[];
   labelProps?: ComponentProps<typeof TamaguiLabel>;
+  nativeHaptics?: NativeHapticsSetting;
 }
 export type RadioGroupItemProps = ComponentProps<typeof TamaguiRadioGroup.Item>;
 export type RadioGroupIndicatorProps = ComponentProps<typeof TamaguiRadioGroup.Indicator>;

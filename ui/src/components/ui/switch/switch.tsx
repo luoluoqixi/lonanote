@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { Label as TamaguiLabel, Switch as TamaguiSwitch, XStack } from "tamagui";
 
 import { os } from "@/api/common/platform";
+import { triggerNativeHaptics } from "@/components/ui/utils";
 
 import type { SwitchProps, SwitchThumbProps } from "./types";
 
@@ -15,6 +16,7 @@ function SwitchRoot(props: SwitchProps) {
     label,
     labelPosition = "start",
     labelProps,
+    nativeHaptics = true,
     onCheckedChange,
     overflow,
     size = "$4",
@@ -32,6 +34,7 @@ function SwitchRoot(props: SwitchProps) {
     }
 
     onCheckedChange?.(nextChecked);
+    triggerNativeHaptics(nativeHaptics);
   };
 
   const control = (

@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { Label as TamaguiLabel, RadioGroup as TamaguiRadioGroup, XStack, YStack } from "tamagui";
 
 import { os } from "@/api/common/platform";
-import { resolveAriaLabel } from "@/components/ui/utils";
+import { resolveAriaLabel, triggerNativeHaptics } from "@/components/ui/utils";
 
 import type { RadioGroupIndicatorProps, RadioGroupItemProps, RadioGroupProps } from "./types";
 
@@ -15,6 +15,7 @@ function RadioGroupRoot(props: RadioGroupProps) {
     itemProps,
     items,
     labelProps,
+    nativeHaptics,
     onValueChange,
     value: valueProp,
     ...rootProps
@@ -31,6 +32,7 @@ function RadioGroupRoot(props: RadioGroupProps) {
     }
 
     onValueChange?.(nextValue);
+    triggerNativeHaptics(nativeHaptics);
   };
 
   return (

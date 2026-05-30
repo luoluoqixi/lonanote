@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { ContextMenu as TamaguiContextMenu } from "tamagui";
 
+import type { NativeHapticsSetting } from "../utils";
+
 export interface ContextMenuItemData {
   "aria-label"?: string;
   destructive?: boolean;
@@ -20,6 +22,7 @@ export interface ContextMenuProps extends ComponentProps<typeof TamaguiContextMe
   contentProps?: ContextMenuContentProps;
   itemProps?: Omit<ContextMenuItemProps, "children" | "onPress" | "onSelect">;
   items?: ContextMenuItemData[];
+  nativeHaptics?: NativeHapticsSetting;
   portalProps?: ContextMenuPortalProps;
   trigger?: ReactNode;
   triggerProps?: ContextMenuTriggerProps;

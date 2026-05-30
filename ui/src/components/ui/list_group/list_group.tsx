@@ -25,6 +25,7 @@ function getItemsContent(
   items: ListGroupItemData[] | undefined,
   itemProps: ListGroupProps["itemProps"],
   groupItemProps: ListGroupProps["groupItemProps"],
+  nativeHaptics: ListGroupProps["nativeHaptics"],
   separator: boolean | undefined,
   separatorProps: ListGroupProps["separatorProps"],
 ) {
@@ -35,7 +36,11 @@ function getItemsContent(
       <Fragment key={getItemKey(item, index)}>
         {shouldShowSeparator ? <Separator {...separatorProps} /> : null}
         <ListGroupItemSlot {...groupItemProps} {...item.groupItemProps}>
-          <ListItem {...itemProps} {...item} />
+          <ListItem
+            {...itemProps}
+            {...item}
+            nativeHaptics={item.nativeHaptics ?? itemProps?.nativeHaptics ?? nativeHaptics}
+          />
         </ListGroupItemSlot>
       </Fragment>
     );
@@ -43,8 +48,16 @@ function getItemsContent(
 }
 
 function ListGroupRoot(props: ListGroupProps) {
-  const { children, groupItemProps, itemProps, items, separator, separatorProps, ...groupProps } =
-    props;
+  const {
+    children,
+    groupItemProps,
+    itemProps,
+    items,
+    nativeHaptics,
+    separator,
+    separatorProps,
+    ...groupProps
+  } = props;
 
   return (
     <YGroup
@@ -53,7 +66,8 @@ function ListGroupRoot(props: ListGroupProps) {
       borderWidth={groupProps.borderWidth ?? 1}
       overflow={groupProps.overflow ?? "hidden"}
     >
-      {children ?? getItemsContent(items, itemProps, groupItemProps, separator, separatorProps)}
+      {children ??
+        getItemsContent(items, itemProps, groupItemProps, nativeHaptics, separator, separatorProps)}
     </YGroup>
   );
 }
