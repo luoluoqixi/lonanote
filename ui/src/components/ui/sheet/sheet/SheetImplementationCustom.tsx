@@ -247,14 +247,6 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       animationDriver;
     const AnimatedView = (animationDriver.View ?? TamaguiView) as typeof Animated.View;
 
-    useIsomorphicLayoutEffect(() => {
-      if (!(sheetInsideSheet && open)) return;
-      sheetInsideSheet(true);
-      return () => {
-        sheetInsideSheet(false);
-      };
-    }, [sheetInsideSheet, open]);
-
     const nextParentContext = React.useMemo(
       () => ({
         zIndex,
@@ -736,6 +728,16 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         opacityFallbackTimer.current = null;
       }
     }
+
+    const shouldKeepParentHidden = !!sheetInsideSheet && (open || opacity > 0);
+
+    useIsomorphicLayoutEffect(() => {
+      if (!sheetInsideSheet) return;
+      sheetInsideSheet(shouldKeepParentHidden);
+      return () => {
+        sheetInsideSheet(false);
+      };
+    }, [sheetInsideSheet, shouldKeepParentHidden]);
 
     const forcedContentHeight = hasFit
       ? undefined
