@@ -1,4 +1,7 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { useTheme } from "tamagui";
+
+import { Text } from "@/components/ui";
 
 export type ActivityBarProps = {
   showAssistSidebar: boolean;
@@ -16,10 +19,10 @@ export function ActivityBar({
   onToggleSidebar,
 }: ActivityBarProps) {
   return (
-    <View className="h-full w-full items-center bg-background py-2">
+    <View style={styles.root}>
       <ActivityButton active={showSidebar} label="⌘" onPress={onToggleSidebar} />
       <ActivityButton active={false} label="⌕" onPress={() => {}} />
-      <View className="flex-1" />
+      <View style={styles.spacer} />
       <ActivityButton active={showAssistSidebar} label="☷" onPress={onToggleAssistSidebar} />
       <ActivityButton active={false} label="⚙" onPress={onOpenSettings} />
     </View>
@@ -33,16 +36,38 @@ type ActivityButtonProps = {
 };
 
 function ActivityButton({ active, label, onPress }: ActivityButtonProps) {
+  const theme = useTheme();
+
   return (
     <Pressable
-      className={
-        active
-          ? "mb-1 h-10 w-10 items-center justify-center bg-accent/10"
-          : "mb-1 h-10 w-10 items-center justify-center bg-transparent"
-      }
       onPress={onPress}
+      style={[
+        styles.button,
+        active ? { backgroundColor: theme.color3.val } : null,
+      ]}
     >
-      <Text className={active ? "text-xl text-accent" : "text-xl text-foreground/50"}>{label}</Text>
+      <Text color={active ? "$color" : "$color10"} fontSize="$8">
+        {label}
+      </Text>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    alignItems: "center",
+    height: "100%",
+    paddingVertical: 8,
+    width: "100%",
+  },
+  spacer: {
+    flex: 1,
+  },
+  button: {
+    alignItems: "center",
+    height: 40,
+    justifyContent: "center",
+    marginBottom: 4,
+    width: 40,
+  },
+});

@@ -113,17 +113,16 @@ sh run.sh icon
 
 #### 🎨 跨平台 UI 约定
 
-前端以 `heroui-native` 作为唯一的全局主题和主要 UI 基础库，但页面层不要直接依赖第三方 UI 库。
+前端以 `Tamagui` 作为全局主题和主要 UI 基础，页面层通过 `ui/src/components/ui/` 包装层接入，不要直接依赖第三方 UI 库。
 
-- Android / iOS / Web：主要 UI 统一走 `heroui-native`
-- Tailwind 能力统一走 `uniwind`
+- Android / iOS / Web / 桌面：布局与主题优先使用 `Tamagui` tokens、`StyleSheet`，或 `ui/src/components/ui/` 中的包装组件
 - 桌面 / Web 端个别高风险浮层可在包装层内按需使用 `@rn-primitives/*` 补位
 
-当前样式入口只有一个：
+当前全局样式入口：
 
-- `src/global.css`：提供 `tailwindcss + uniwind + heroui-native/styles`
+- `src/tamagui.generated.css`：由 `@tamagui/cli generate` 生成，在 `src/initialize/index.native.ts` 中引入
 
-因此，不要再在 `src/app/*` 里直接导入某个 UI 库的样式文件，也不要重新引入第二套全局主题 CSS。
+因此，不要再在业务代码里使用 `className` + Tailwind / Uniwind，也不要重新引入第二套全局主题 CSS。
 
 关于模块系统：
 
@@ -142,7 +141,7 @@ sh run.sh icon
 
 - `src/components/ui/provider/`：统一应用级 Provider
 - `src/components/ui/button/`：统一 Button 入口
-- `src/components/ui/dialog/`：统一 Dialog 入口，web 走 `@rn-primitives/dialog`，native 走 `heroui-native`
+- `src/components/ui/dialog/`：统一 Dialog 入口，web 走 `@rn-primitives/dialog`，native 走项目内包装实现
 
 后续如果要新增 `Input`、`Modal`、`Dropdown` 等组件，沿用同样结构：
 

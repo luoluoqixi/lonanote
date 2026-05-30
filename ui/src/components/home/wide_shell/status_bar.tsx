@@ -1,9 +1,23 @@
-import { Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+
+import { Text } from "@/components/ui";
 
 export function StatusBar() {
   return (
-    <View className="h-full flex-row items-center justify-end bg-background px-3">
-      <Text className="text-sm text-foreground/60">状态栏</Text>
+    <View style={styles.root}>
+      <Text color="$color10" fontSize="$3">
+        状态栏
+      </Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    alignItems: "center",
+    flexDirection: "row",
+    height: "100%",
+    justifyContent: "flex-end",
+    paddingHorizontal: 12,
+  },
+});

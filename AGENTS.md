@@ -242,7 +242,7 @@ sh run.sh dev
 
 - `ui/` 不是 Flutter 工程，当前是 React Native / Expo Router 架构。
 - 当前基础 UI 包装层已经完成从 `heroui-native` 到 `Tamagui` 的迁移。
-- 样式默认优先使用 `Tamagui` tokens / variants / style props，以及 React Native `StyleSheet`；唯一全局 CSS 入口仍是 `ui/src/global.css`。
+- 样式默认优先使用 `Tamagui` tokens / variants / style props，以及 React Native `StyleSheet`；全局 CSS 入口是 `ui/src/tamagui.generated.css`（由 `bun generate:tamagui` 生成，在 `ui/src/initialize/index.native.ts` 引入）。
 - `ui/src/` 下的应用代码不要使用 CommonJS `require`；平台差异优先通过 `.web.tsx`、`.native.tsx`、`.ios.tsx`、`.android.tsx` 解决。
 - `require` 仅保留在 Node 风格脚本与配置文件中，例如 `ui/tools/prebuild/`、`ui/metro.config.js`。
 - 页面与业务组件不要直接依赖 `tamagui` 的基础组件或其他第三方 UI 库，统一通过 `ui/src/components/ui/` 包装层导入。
@@ -277,11 +277,10 @@ sh run.sh dev
 
 ### Frontend styling rules
 
-- 项目允许使用 CSS 文件，但 TypeScript / TSX 侧唯一允许直接 import 的 CSS 入口是 `ui/src/global.css`；其他 CSS 必须通过 `global.css` 的 `@import` 链路间接纳入构建。
-- 这是为了保持 Web/Desktop 全局样式入口单一，避免 CSS 入口分散；不要在业务 `.ts` / `.tsx` 文件里直接 import 其他 CSS。
-- 简单样式、一次性样式、局部布局样式优先使用 `Tamagui` tokens / variants / style props，或 React Native `StyleSheet`。
-- 当样式片段变得复杂、重复、难维护，或者需要抽出更稳定的 Web/Desktop 全局样式时，再考虑提取到 CSS 文件。
-- 明显属于全局范畴的 CSS 优先放在 `ui/src/styles/`；局部 CSS 可以和对应 TS / TSX 文件放在一起，但仍需要通过某个已被 `global.css` 间接引入的 CSS 文件接入。
+- 业务代码不要使用 `className` + Tailwind / Uniwind；遗留的 Uniwind 链路已移除。
+- TypeScript / TSX 侧不要直接 import 额外 CSS；Tamagui 生成样式通过 `ui/src/tamagui.generated.css` 统一引入。
+- 简单样式、一次性样式、局部布局样式优先使用 `Tamagui` tokens / variants / style props，或 React Native `StyleSheet`（含原生 `gap` 等布局属性）。
+- 当样式片段变得复杂、重复、难维护，或者需要抽出更稳定的 Web/Desktop 全局样式时，再考虑提取到 CSS，并纳入 Tamagui 生成链路，而不是恢复 Tailwind 工具类。
 
 ### Frontend component layering
 

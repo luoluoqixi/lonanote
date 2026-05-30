@@ -1,11 +1,25 @@
-import { Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+
+import { Text } from "@/components/ui";
 
 export function EditorPanel() {
   return (
-    <View className="h-full bg-background">
-      <View className="h-10 flex-row items-center justify-center">
-        <Text className="text-base text-foreground">编辑区</Text>
+    <View style={styles.root}>
+      <View style={styles.header}>
+        <Text fontSize="$4">编辑区</Text>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    height: "100%",
+  },
+  header: {
+    alignItems: "center",
+    flexDirection: "row",
+    height: 40,
+    justifyContent: "center",
+  },
+});
