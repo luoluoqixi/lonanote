@@ -648,10 +648,42 @@ export function UiComponentsDebugPanel() {
             trigger={<Button variant="outlined">打开 Popover</Button>}
           />
 
+          <Menu
+            arrow
+            items={[
+              {
+                label: "关于笔记",
+                onSelect: () => setMenuAction("快捷 Menu: 关于笔记"),
+                value: "quick-about-notes",
+              },
+              {
+                label: "separator",
+                separator: true,
+                value: "quick-separator-main",
+              },
+              {
+                label: "设置",
+                onSelect: () => setMenuAction("快捷 Menu: 设置"),
+                value: "quick-settings",
+              },
+              {
+                destructive: true,
+                label: "删除全部",
+                onSelect: () => setMenuAction("快捷 Menu: 删除全部"),
+                value: "quick-delete-all",
+              },
+            ]}
+            trigger={
+              <Button icon={Backpack} size="$4" variant="outlined">
+                打开快捷 Menu
+              </Button>
+            }
+          />
+
           <Menu>
             <Menu.Trigger>
               <Button icon={Backpack} size="$4" variant="outlined">
-                打开 Menu
+                打开复杂 Menu
               </Button>
             </Menu.Trigger>
 
