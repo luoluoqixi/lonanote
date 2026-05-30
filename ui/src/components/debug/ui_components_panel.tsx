@@ -80,7 +80,7 @@ export function UiComponentsDebugPanel() {
   const [menuSubOpen, setMenuSubOpen] = useState(false);
   const [radioValue, setRadioValue] = useState("recent");
   const [selectValue, setSelectValue] = useState<string | null>("blue");
-  const [selectValue2, setSelectValue2] = useState<string | null>("blue");
+  const [selectValue2, setSelectValue2] = useState<string | null>("light");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
@@ -511,32 +511,6 @@ export function UiComponentsDebugPanel() {
           items={[
             {
               content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
-              title: "展开面板 multiple1",
-              value: "panel1",
-            },
-            {
-              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
-              title: "展开面板 multiple2",
-              value: "panel2",
-            },
-            {
-              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
-              title: "展开面板 multiple3",
-              value: "panel3",
-            },
-            {
-              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
-              title: "展开面板 multiple4",
-              value: "panel4",
-            },
-          ]}
-          type="multiple"
-        />
-
-        <Accordion
-          items={[
-            {
-              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
               title: "展开面板 single1",
               value: "panel1",
             },
@@ -557,6 +531,32 @@ export function UiComponentsDebugPanel() {
             },
           ]}
           type="single"
+        />
+
+        <Accordion
+          items={[
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 multiple1",
+              value: "panel1",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 multiple2",
+              value: "panel2",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 multiple3",
+              value: "panel3",
+            },
+            {
+              content: <Text>Accordion 默认 API 负责生成 Item、Header、Trigger 和 Content。</Text>,
+              title: "展开面板 multiple4",
+              value: "panel4",
+            },
+          ]}
+          type="multiple"
         />
       </SectionCard>
 

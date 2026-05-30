@@ -7,7 +7,7 @@ import { isWeb } from "@/api/common/platform";
 import type { LinkProps } from "./types";
 
 export const DEFAULT_LINK_HOVER_STYLE = {
-  opacity: 0.8,
+  opacity: isWeb() ? 0.6 : 0.8,
   textDecorationColor: "$color10",
 } as const;
 
