@@ -49,6 +49,12 @@ const DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT = 6;
 const DEFAULT_TOUCH_SHEET_ITEM_HEIGHT = 48;
 const DEFAULT_TOUCH_SHEET_CHROME_HEIGHT = 72;
 const DEFAULT_TOUCH_SHEET_LABEL_HEIGHT = 32;
+const DEFAULT_TOUCH_ITEM_CONTENT_STYLE = {
+  width: "100%",
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 16,
+} as const;
 
 const SelectAdaptHiddenContext = React.createContext(true);
 
@@ -407,11 +413,13 @@ const SelectRoot = forwardRef<any, SelectProps>(
         textValue={item.label}
         value={item.value}
       >
-        {item.startContent}
-        <SelectItemText {...itemTextProps}>{item.label}</SelectItemText>
-        {item.description}
-        {item.endContent}
-        <SelectItemIndicator marginLeft="auto" {...itemIndicatorProps} />
+        <YStack style={DEFAULT_TOUCH_ITEM_CONTENT_STYLE}>
+          {item.startContent}
+          <SelectItemText {...itemTextProps}>{item.label}</SelectItemText>
+          {item.description}
+          {item.endContent}
+          <SelectItemIndicator marginLeft="auto" {...itemIndicatorProps} />
+        </YStack>
       </SelectItem>
     ));
 
@@ -447,7 +455,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     dismissOnSnapToBottom
                     snapPoints={touchSheetConfig.snapPoints}
                     snapPointsMode={touchSheetConfig.snapPointsMode}
-                    transition="medium"
+                    transitionConfig={{ type: "timing", duration: 150 }}
                   >
                     <Sheet.Frame
                       {...(touchSheetConfig.frameMaxHeight != null
