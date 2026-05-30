@@ -1,6 +1,6 @@
-import { type ComponentRef, forwardRef, useState } from "react";
+import { type ComponentRef, forwardRef } from "react";
 import { Linking } from "react-native";
-import { Anchor as TamaguiAnchor, View } from "tamagui";
+import { Anchor as TamaguiAnchor } from "tamagui";
 
 import { isWeb } from "@/api/common/platform";
 
@@ -23,7 +23,6 @@ export const DEFAULT_LINK_FOCUS_VISIBLE_STYLE = {
 } as const;
 
 export const Link = forwardRef<ComponentRef<typeof TamaguiAnchor>, LinkProps>((props, ref) => {
-  const [pressed, setPressed] = useState(false);
   const {
     focusVisibleStyle,
     hoverStyle,
@@ -70,32 +69,26 @@ export const Link = forwardRef<ComponentRef<typeof TamaguiAnchor>, LinkProps>((p
 
   const handlePress: NonNullable<LinkProps["onPress"]> = (event) => {
     onPress?.(event);
+
+    if (event.defaultPrevented || href == null) {
+      return;
+    }
+
     if (href != null) {
       void Linking.openURL(href);
     }
   };
 
   return (
-    <View
-      ref={ref as never}
+    <TamaguiAnchor
+      {...linkProps}
       accessibilityRole="link"
-      self="flex-start"
+      {...anchorStyleProps}
       onPress={handlePress}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      opacity={pressed ? resolvedPressStyle.opacity : 1}
-    >
-      <TamaguiAnchor
-        {...linkProps}
-        {...anchorStyleProps}
-        pointerEvents="none"
-        textDecorationColor={
-          pressed
-            ? (resolvedPressStyle.textDecorationColor ?? anchorStyleProps.textDecorationColor)
-            : anchorStyleProps.textDecorationColor
-        }
-      />
-    </View>
+      pressStyle={resolvedPressStyle}
+      ref={ref}
+      self="flex-start"
+    />
   );
 });
 
