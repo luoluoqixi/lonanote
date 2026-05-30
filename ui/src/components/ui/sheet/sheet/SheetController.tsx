@@ -1,9 +1,9 @@
-import React, { useId, useRef } from 'react'
-import { useEvent } from '@tamagui/core'
-import type { ReactNode } from 'react'
+import { useEvent } from "@tamagui/core";
+import React, { useId, useRef } from "react";
+import type { ReactNode } from "react";
 
-import type { SheetControllerContextValue } from './useSheetController'
-import { SheetControllerContext } from './useSheetController'
+import type { SheetControllerContextValue } from "./useSheetController";
+import { SheetControllerContext } from "./useSheetController";
 
 export const SheetController = ({
   children,
@@ -13,18 +13,18 @@ export const SheetController = ({
   hidden,
   disableDrag,
 }: Partial<SheetControllerContextValue> & { children?: ReactNode }) => {
-  const onOpenChange = useEvent(onOpenChangeProp)
-  const onAnimationComplete = useEvent(onAnimationCompleteProp)
-  const id = useId()
+  const onOpenChange = useEvent(onOpenChangeProp);
+  const onAnimationComplete = useEvent(onAnimationCompleteProp);
+  const id = useId();
 
   // track hidden transitions to signal adapt handoff
   // when hidden goes from true -> false while open, the sheet should skip animation
-  const wasHiddenRef = useRef(hidden)
-  let skipNextAnimation = false
+  const wasHiddenRef = useRef(hidden);
+  let skipNextAnimation = false;
   if (wasHiddenRef.current && !hidden && open) {
-    skipNextAnimation = true
+    skipNextAnimation = true;
   }
-  wasHiddenRef.current = hidden
+  wasHiddenRef.current = hidden;
 
   const memoValue = React.useMemo(
     () => ({
@@ -36,12 +36,10 @@ export const SheetController = ({
       onAnimationComplete,
       skipNextAnimation,
     }),
-    [id, onOpenChange, onAnimationComplete, open, hidden, disableDrag, skipNextAnimation]
-  )
+    [id, onOpenChange, onAnimationComplete, open, hidden, disableDrag, skipNextAnimation],
+  );
 
   return (
-    <SheetControllerContext.Provider value={memoValue}>
-      {children}
-    </SheetControllerContext.Provider>
-  )
-}
+    <SheetControllerContext.Provider value={memoValue}>{children}</SheetControllerContext.Provider>
+  );
+};

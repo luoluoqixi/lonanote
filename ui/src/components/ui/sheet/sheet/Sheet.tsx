@@ -1,11 +1,11 @@
-import { styled } from '@tamagui/core'
-import { XStack, YStack } from '@tamagui/stacks'
+import { styled } from "@tamagui/core";
+import { XStack, YStack } from "@tamagui/stacks";
 
-import { SHEET_HANDLE_NAME, SHEET_NAME, SHEET_OVERLAY_NAME } from './constants'
-import { createSheet } from './createSheet'
+import { SHEET_HANDLE_NAME, SHEET_NAME, SHEET_OVERLAY_NAME } from "./constants";
+import { createSheet } from "./createSheet";
 
-export { createSheetScope } from './SheetContext'
-export * from './types'
+export { createSheetScope } from "./SheetContext";
+export * from "./types";
 
 /* -------------------------------------------------------------------------------------------------
  * SheetHandle
@@ -18,11 +18,11 @@ export const Handle = styled(XStack, {
     open: {
       true: {
         opacity: 1,
-        pointerEvents: 'auto',
+        pointerEvents: "auto",
       },
       false: {
         opacity: 0,
-        pointerEvents: 'none',
+        pointerEvents: "none",
       },
     },
 
@@ -30,10 +30,10 @@ export const Handle = styled(XStack, {
       false: {
         height: 10,
         borderRadius: 100,
-        backgroundColor: '$background',
+        backgroundColor: "$background",
         zIndex: 10,
-        marginHorizontal: '35%',
-        marginBottom: '$2',
+        marginHorizontal: "35%",
+        marginBottom: "$2",
         opacity: 0.5,
 
         hoverStyle: {
@@ -44,9 +44,9 @@ export const Handle = styled(XStack, {
   } as const,
 
   defaultVariants: {
-    unstyled: process.env.TAMAGUI_HEADLESS === '1',
+    unstyled: process.env.TAMAGUI_HEADLESS === "1",
   },
-})
+});
 
 /* -------------------------------------------------------------------------------------------------
  * SheetOverlay
@@ -58,28 +58,28 @@ export const Overlay = styled(YStack, {
   variants: {
     open: {
       true: {
-        pointerEvents: 'auto',
+        pointerEvents: "auto",
       },
       false: {
-        pointerEvents: 'none',
+        pointerEvents: "none",
       },
     },
 
     unstyled: {
       false: {
         fullscreen: true,
-        position: 'absolute',
-        backgroundColor: '$background',
+        position: "absolute",
+        backgroundColor: "$background",
         zIndex: 100_000 - 1,
-        pointerEvents: 'auto',
+        pointerEvents: "auto",
       },
     },
   } as const,
 
   defaultVariants: {
-    unstyled: process.env.TAMAGUI_HEADLESS === '1',
+    unstyled: process.env.TAMAGUI_HEADLESS === "1",
   },
-})
+});
 
 /* -------------------------------------------------------------------------------------------------
  * Sheet
@@ -92,23 +92,23 @@ export const Frame = styled(YStack, {
     unstyled: {
       false: {
         flex: 1,
-        backgroundColor: '$background',
-        borderTopLeftRadius: '$true',
-        borderTopRightRadius: '$true',
-        width: '100%',
-        maxHeight: '100%',
-        overflow: 'hidden',
+        backgroundColor: "$background",
+        borderTopLeftRadius: "$true",
+        borderTopRightRadius: "$true",
+        width: "100%",
+        maxHeight: "100%",
+        overflow: "hidden",
       },
     },
   } as const,
 
   defaultVariants: {
-    unstyled: process.env.TAMAGUI_HEADLESS === '1',
+    unstyled: process.env.TAMAGUI_HEADLESS === "1",
   },
-})
+});
 
 export const Sheet = createSheet({
   Frame,
   Handle,
   Overlay,
-})
+});

@@ -1,27 +1,26 @@
 /**
  * Legacy setup - prefer `import '@tamagui/native/setup-gesture-handler'` instead.
  */
-
-import { getGestureHandler } from '@tamagui/native'
+import { getGestureHandler } from "@tamagui/native";
 
 export function isGestureHandlerEnabled(): boolean {
-  return getGestureHandler().isEnabled
+  return getGestureHandler().isEnabled;
 }
 
 export interface SetupGestureHandlerConfig {
-  Gesture: any
-  GestureDetector: any
-  ScrollView?: any
+  Gesture: any;
+  GestureDetector: any;
+  ScrollView?: any;
 }
 
 export function setupGestureHandler(config: SetupGestureHandlerConfig): void {
-  const g = globalThis as any
+  const g = globalThis as any;
   if (g.__tamagui_sheet_gesture_handler_setup) {
-    return
+    return;
   }
-  g.__tamagui_sheet_gesture_handler_setup = true
+  g.__tamagui_sheet_gesture_handler_setup = true;
 
-  const { Gesture, GestureDetector, ScrollView } = config
+  const { Gesture, GestureDetector, ScrollView } = config;
 
   if (Gesture && GestureDetector) {
     getGestureHandler().set({
@@ -29,6 +28,6 @@ export function setupGestureHandler(config: SetupGestureHandlerConfig): void {
       Gesture,
       GestureDetector,
       ScrollView: ScrollView || null,
-    })
+    });
   }
 }

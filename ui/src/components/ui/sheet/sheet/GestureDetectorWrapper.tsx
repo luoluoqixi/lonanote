@@ -1,24 +1,21 @@
-import type React from 'react'
-import { View, type ViewStyle } from 'react-native'
-import { getGestureHandlerState, isGestureHandlerEnabled } from './gestureState'
+import type React from "react";
+import { View, type ViewStyle } from "react-native";
+
+import { getGestureHandlerState, isGestureHandlerEnabled } from "./gestureState";
 
 interface GestureDetectorWrapperProps {
-  gesture: any
-  children: React.ReactNode
-  style?: ViewStyle
+  gesture: any;
+  children: React.ReactNode;
+  style?: ViewStyle;
 }
 
 /**
  * Conditionally wraps children with GestureDetector when RNGH is available.
  * Uses a plain View wrapper that GestureDetector can attach gesture handlers to.
  */
-export function GestureDetectorWrapper({
-  gesture,
-  children,
-  style,
-}: GestureDetectorWrapperProps) {
-  const { GestureDetector } = getGestureHandlerState()
-  const enabled = isGestureHandlerEnabled()
+export function GestureDetectorWrapper({ gesture, children, style }: GestureDetectorWrapperProps) {
+  const { GestureDetector } = getGestureHandlerState();
+  const enabled = isGestureHandlerEnabled();
 
   // only wrap if we have RNGH available AND a gesture to attach
   if (enabled && GestureDetector && gesture) {
@@ -30,9 +27,9 @@ export function GestureDetectorWrapper({
           {children}
         </View>
       </GestureDetector>
-    )
+    );
   }
 
   // pass through children in a consistent View wrapper
-  return <View style={style}>{children}</View>
+  return <View style={style}>{children}</View>;
 }

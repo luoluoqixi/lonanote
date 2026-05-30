@@ -1,43 +1,43 @@
-import type React from 'react'
-import { createContext, useContext, type RefObject } from 'react'
+import type React from "react";
+import { type RefObject, createContext, useContext } from "react";
 
 export interface GestureSheetContextValue {
   /**
    * The sheet's pan gesture object, used for simultaneousHandlers
    * in ScrollView to coordinate gestures
    */
-  panGesture: any | null
+  panGesture: any | null;
   /**
    * Ref to the pan gesture for simultaneousHandlers prop
    */
-  panGestureRef: RefObject<any> | null
+  panGestureRef: RefObject<any> | null;
   /**
    * Whether the sheet is currently being dragged by the user
    */
-  isDragging: boolean
+  isDragging: boolean;
   /**
    * Set whether panning should be blocked (e.g., when scrolling)
    */
-  setBlockPan: (blocked: boolean) => void
+  setBlockPan: (blocked: boolean) => void;
   /**
    * Whether pan gesture is currently blocked
    */
-  blockPan: boolean
+  blockPan: boolean;
 }
 
-const GestureSheetContext = createContext<GestureSheetContextValue | null>(null)
+const GestureSheetContext = createContext<GestureSheetContextValue | null>(null);
 
 export function useGestureSheetContext(): GestureSheetContextValue | null {
-  return useContext(GestureSheetContext)
+  return useContext(GestureSheetContext);
 }
 
 export interface GestureSheetProviderProps {
-  children: React.ReactNode
-  isDragging: boolean
-  blockPan: boolean
-  setBlockPan: (blocked: boolean) => void
-  panGesture: any | null
-  panGestureRef: RefObject<any> | null
+  children: React.ReactNode;
+  isDragging: boolean;
+  blockPan: boolean;
+  setBlockPan: (blocked: boolean) => void;
+  panGesture: any | null;
+  panGestureRef: RefObject<any> | null;
 }
 
 export function GestureSheetProvider({
@@ -54,9 +54,7 @@ export function GestureSheetProvider({
     isDragging,
     blockPan,
     setBlockPan,
-  }
+  };
 
-  return (
-    <GestureSheetContext.Provider value={value}>{children}</GestureSheetContext.Provider>
-  )
+  return <GestureSheetContext.Provider value={value}>{children}</GestureSheetContext.Provider>;
 }

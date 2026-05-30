@@ -1,54 +1,55 @@
-import { YStack } from '@tamagui/stacks'
-import type { FunctionComponent } from 'react'
-import { useEffect, useRef } from 'react'
-import { View } from 'react-native'
-import { SheetProvider } from './SheetContext'
-import type { SheetProps } from './types'
-import { useSheetOpenState } from './useSheetOpenState'
-import { useSheetProviderProps } from './useSheetProviderProps'
+import { YStack } from "@tamagui/stacks";
+import type { FunctionComponent } from "react";
+import { useEffect, useRef } from "react";
+import { View } from "react-native";
+
+import { SheetProvider } from "./SheetContext";
+import type { SheetProps } from "./types";
+import { useSheetOpenState } from "./useSheetOpenState";
+import { useSheetProviderProps } from "./useSheetProviderProps";
 
 // import { useSheetSnapPoints } from './useSheetSnapPoints'
 
-type SheetNativePlatforms = 'ios'
+type SheetNativePlatforms = "ios";
 
 const nativeSheets: Record<SheetNativePlatforms, FunctionComponent<SheetProps> | null> = {
   ios: null,
-}
+};
 
 export function getNativeSheet(platform: SheetNativePlatforms) {
-  return nativeSheets[platform]
+  return nativeSheets[platform];
 }
 
 export function setupNativeSheet(
   platform: SheetNativePlatforms,
-  RNIOSModal: { ModalSheetView: any; ModalSheetViewMainContent: any }
+  RNIOSModal: { ModalSheetView: any; ModalSheetViewMainContent: any },
 ) {
-  const { ModalSheetView, ModalSheetViewMainContent } = RNIOSModal
+  const { ModalSheetView, ModalSheetViewMainContent } = RNIOSModal;
 
-  if (platform === 'ios') {
+  if (platform === "ios") {
     nativeSheets[platform] = (props: SheetProps) => {
-      const state = useSheetOpenState(props)
-      const providerProps = useSheetProviderProps(props, state)
+      const state = useSheetOpenState(props);
+      const providerProps = useSheetProviderProps(props, state);
       // const { position } = providerProps
       // const { positions } = useSheetSnapPoints(providerProps)
 
-      const { open, setOpen } = state
+      const { open, setOpen } = state;
       const ref = useRef<{
-        presentModal: Function
-        dismissModal: Function
-      }>(undefined)
+        presentModal: Function;
+        dismissModal: Function;
+      }>(undefined);
 
       useEffect(() => {
         if (open) {
-          ref.current?.presentModal()
+          ref.current?.presentModal();
         } else {
-          ref.current?.dismissModal()
+          ref.current?.dismissModal();
         }
-      }, [open])
+      }, [open]);
 
       function setOpenInternal(next: boolean) {
-        props.onOpenChange?.(open)
-        setOpen(next)
+        props.onOpenChange?.(open);
+        setOpen(next);
       }
 
       // modalContentPreferredContentSize={{
@@ -73,22 +74,16 @@ export function setupNativeSheet(
 
             {/* for some reason select triggers wont show on native if this isn't inside the actual tree not inside implementation... */}
             {/* so just hiding it here for now... not great... */}
-            <YStack
-              position="absolute"
-              opacity={0}
-              pointerEvents="none"
-              width={0}
-              height={0}
-            >
+            <YStack position="absolute" opacity={0} pointerEvents="none" width={0} height={0}>
               {props.children}
             </YStack>
           </SheetProvider>
         </>
-      )
-    }
+      );
+    };
   }
 }
 
 const emptyFn = () => {
   // TODO
-}
+};

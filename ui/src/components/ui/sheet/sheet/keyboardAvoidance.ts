@@ -5,11 +5,11 @@ export function getKeyboardOccludedHeight({
   screenSize,
   sheetY,
 }: {
-  frameSize: number
-  isKeyboardVisible: boolean
-  keyboardHeight: number
-  screenSize: number
-  sheetY: number | undefined
+  frameSize: number;
+  isKeyboardVisible: boolean;
+  keyboardHeight: number;
+  screenSize: number;
+  sheetY: number | undefined;
 }) {
   if (
     !isKeyboardVisible ||
@@ -19,12 +19,12 @@ export function getKeyboardOccludedHeight({
     sheetY === undefined ||
     sheetY >= screenSize
   ) {
-    return 0
+    return 0;
   }
 
-  const keyboardTop = screenSize - keyboardHeight
-  const sheetBottom = sheetY + frameSize
-  const occludedHeight = Math.ceil(sheetBottom - keyboardTop)
+  const keyboardTop = screenSize - keyboardHeight;
+  const sheetBottom = sheetY + frameSize;
+  const occludedHeight = Math.ceil(sheetBottom - keyboardTop);
 
-  return Math.min(frameSize, Math.max(0, occludedHeight))
+  return Math.min(frameSize, Math.max(0, occludedHeight));
 }
