@@ -2,16 +2,11 @@
 import "../initialize";
 
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 
 import { isWeb } from "@/api/common";
-import {
-  DebugPanelGestureLayer,
-  DebugPanelHost,
-  getDebugMobileHeaderTitle,
-} from "@/components/debug";
+import { DebugPanelGestureLayer, DebugPanelHost } from "@/components/debug";
 import { getSettingsMobileHeaderTitle } from "@/components/settings";
-import { RootProvider } from "@/components/ui";
+import { AppStatusBar, RootProvider, nativeStackStatusBarOptions } from "@/components/ui";
 import { getAppName } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
@@ -22,33 +17,30 @@ export default function RootLayout() {
   const colorScheme = useResolvedeColorScheme();
   return (
     <RootProvider>
-      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+      <AppStatusBar colorScheme={colorScheme} />
       <DebugPanelGestureLayer>
         <Stack
           screenOptions={({ route }) => {
+            const statusBar = nativeStackStatusBarOptions(colorScheme);
+
             if (isWeb()) {
               return {
+                ...statusBar,
                 headerShown: false,
-              };
-            }
-
-            const debugTitle = getDebugMobileHeaderTitle(route.name);
-            if (debugTitle != null) {
-              return {
-                headerShown: true,
-                title: debugTitle,
               };
             }
 
             const settingsTitle = getSettingsMobileHeaderTitle(route.name);
             if (settingsTitle != null) {
               return {
+                ...statusBar,
                 headerShown: true,
                 title: settingsTitle,
               };
             }
 
             return {
+              ...statusBar,
               headerShown: false,
             };
           }}

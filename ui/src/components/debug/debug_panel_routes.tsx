@@ -64,15 +64,26 @@ function isDebugRoutePath(pathname: string): boolean {
   return pathname === DEBUG_ROUTE_PREFIX || pathname.startsWith(`${DEBUG_ROUTE_PREFIX}/`);
 }
 
-const DEBUG_MOBILE_HEADER_TITLES: Record<string, string> = {
-  "debug/index": "调试面板",
+const DEBUG_STACK_HEADER_TITLES: Record<string, string> = {
+  index: "调试面板",
   ...Object.fromEntries(
-    DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => [
-      String(definition.href).slice(1),
-      definition.label,
-    ]),
+    DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => [definition.key, definition.label]),
   ),
 };
+
+const DEBUG_MOBILE_HEADER_TITLES: Record<string, string> = {
+  ...Object.fromEntries(
+    Object.entries(DEBUG_STACK_HEADER_TITLES).map(([routeName, title]) => [
+      `debug/${routeName}`,
+      title,
+    ]),
+  ),
+  ...DEBUG_STACK_HEADER_TITLES,
+};
+
+function getDebugStackHeaderTitle(routeName: string): string | null {
+  return DEBUG_STACK_HEADER_TITLES[routeName] ?? null;
+}
 
 function getDebugMobileHeaderTitle(routeName: string): string | null {
   return DEBUG_MOBILE_HEADER_TITLES[routeName] ?? null;
@@ -84,6 +95,7 @@ export {
   DEBUG_PANEL_TOGGLE_EVENT,
   getDebugMobileHeaderTitle,
   getDebugPanelRouteDefinition,
+  getDebugStackHeaderTitle,
   isDebugRoutePath,
 };
 export type { DebugPanelPresentation, DebugPanelRouteDefinition, DebugTabKey };

@@ -1,4 +1,6 @@
 import { usePathname, useRouter } from "expo-router";
+
+import { dismissSheet } from "@/components/ui";
 import { useEffect, useMemo, useState } from "react";
 import {
   DeviceEventEmitter,
@@ -121,7 +123,7 @@ export function DebugPanelHost() {
   const toggleDebugPanel = () => {
     if (usesRoutePresentation) {
       if (isDebugRoutePath(pathname)) {
-        router.back();
+        dismissSheet();
         return;
       }
 

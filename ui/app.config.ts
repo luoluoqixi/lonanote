@@ -40,6 +40,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: getUniqueIdentifier(),
+    infoPlist: {
+      UIViewControllerBasedStatusBarAppearance: true,
+    },
     // icon: "./assets/expo.icon",
   },
   android: {
