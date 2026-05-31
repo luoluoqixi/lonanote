@@ -468,6 +468,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
       touchSheetMaxHeight,
     });
     const shouldRenderNativeOptionText = isWeb() && !!props.native;
+    const renderedItemGroups: ResolvedSelectItemGroupData[] = shouldRenderNativeOptionText
+      ? [{ key: "native", items: resolvedItems }]
+      : resolvedItemGroups;
     const getItemLabelByValue = (value: string | null | undefined) =>
       resolvedItems.find((item) => item.value === value)?.label ?? null;
     const selectedItem = getItemLabelByValue(props.value ?? null);
@@ -685,7 +688,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     borderColor="$borderColor"
                     {...viewportProps}
                   >
-                    {resolvedItemGroups.map(renderGroup)}
+                    {renderedItemGroups.map(renderGroup)}
                     {isWeb() && props.native && (
                       <YStack
                         position="absolute"
