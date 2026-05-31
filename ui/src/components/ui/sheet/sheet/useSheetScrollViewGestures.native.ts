@@ -119,7 +119,7 @@ export function useSheetScrollViewGestures({
 
     s.prevScrollY = currentScrollY;
 
-    let panHandles = false;
+    let panHandles;
     if (!isPaneAtTop) {
       panHandles = isDraggingDown ? currentScrollY <= 0 || !hasScrollableContent : true;
     } else if (isDraggingDown) {

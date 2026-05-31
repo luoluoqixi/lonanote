@@ -24,6 +24,7 @@ function RadioGroupRoot(props: RadioGroupProps) {
     value: valueProp,
     ...rootProps
   } = props;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { htmlFor: _labelHtmlFor, ...resolvedLabelProps } = labelProps ?? {};
   const groupId = rootProps.id ?? generatedGroupId;
   const shouldHandleLabelPress = os() === "ios";

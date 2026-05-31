@@ -8,7 +8,6 @@ import {
   useConfiguration,
   useDidFinishSSR,
   useEvent,
-  useThemeName,
 } from "@tamagui/core";
 import { getSafeArea } from "@tamagui/native";
 import { Portal, needsPortalRepropagation } from "@tamagui/portal";
@@ -57,7 +56,7 @@ let sheetHiddenStyleSheet: HTMLStyleElement | null = null;
 const relativeDimensionTo = isWeb ? "window" : "screen";
 
 export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
-  function SheetImplementationCustom(props, forwardedRef) {
+  (props, forwardedRef) => {
     const parentSheet = React.useContext(ParentSheetContext);
 
     const {
@@ -102,7 +101,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     const { animationDriver } = useConfiguration();
 
     if (!animationDriver) {
-      throw new Error(`Sheet requires an animation driver to be set`);
+      throw new Error("Sheet requires an animation driver to be set");
     }
 
     const transitionConfig = (() => {
@@ -320,7 +319,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     const animateTo = useEvent((position: number, animationOverride?: any) => {
       if (frameSize === 0) return;
 
-      let toValue = isHidden || position === -1 ? screenSize : activePositions[position];
+      const toValue = isHidden || position === -1 ? screenSize : activePositions[position];
 
       if (at.current === toValue) return;
 
@@ -452,7 +451,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     ]);
 
     const disableDrag = props.disableDrag ?? controller?.disableDrag;
-    const themeName = useThemeName();
+    // const themeName = useThemeName();
     const [blockPan, setBlockPan] = React.useState(false);
 
     const panResponder = React.useMemo(() => {
@@ -524,6 +523,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         });
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       let previouslyScrolling = false;
 
       const onMoveShouldSet = (
@@ -796,10 +796,9 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
               <AnimatedView
                 ref={ref}
                 onLayout={handleAnimationViewLayout}
-                // @ts-ignore for CSS driver this is necessary to attach the transition
+                // @ts-expect-error for CSS driver this is necessary to attach the transition
                 // also motion driver at least though i suspect all drivers?
                 transition={isDragging || disableAnimation ? null : transition}
-                // @ts-ignore
                 disableClassName
                 style={[
                   {
@@ -839,12 +838,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     if (process.env.TAMAGUI_TARGET === "native" && needsPortalRepropagation()) {
       // TODO alongside sheet scope="" need to pass scope here
       const adaptContext = useAdaptContext();
-      contents = (
-        <ProvideAdaptContext {...adaptContext}>
-          {/* @ts-ignore */}
-          {contents}
-        </ProvideAdaptContext>
-      );
+      contents = <ProvideAdaptContext {...adaptContext}>{contents}</ProvideAdaptContext>;
     }
 
     // start mounted so we get an accurate measurement the first time

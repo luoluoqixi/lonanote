@@ -407,6 +407,17 @@ args = ["build:check:postbuild:ios:prod"]
 run_dir = "ui"
 
 
+# lint command
+[[commands]]
+name = "lint"
+description = "Lint the codebase"
+
+[[commands.cmds]]
+cmd = "bun"
+args = ["lint"]
+run_dir = "ui"
+
+
 # build:module:android command
 [[commands]]
 name = "build:module:android"

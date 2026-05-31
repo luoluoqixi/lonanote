@@ -11,7 +11,7 @@ import { View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
 
-import { ARROW_KEYS, PAGE_KEYS, SLIDER_NAME, useSliderContext } from "./constants";
+import { ARROW_KEYS, PAGE_KEYS, useSliderContext } from "./constants";
 import type { ScopedProps, SliderImplProps } from "./types";
 
 const NATIVE_GESTURE_OVERFLOW = {

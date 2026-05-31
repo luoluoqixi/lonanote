@@ -4,7 +4,7 @@ export const useSheetOffscreenSize = ({
   snapPoints,
   position,
   screenSize,
-  frameSize,
+  // frameSize,
   snapPointsMode,
 }: SheetContextValue) => {
   if (snapPointsMode === "fit") {

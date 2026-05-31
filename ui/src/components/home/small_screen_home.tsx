@@ -12,7 +12,10 @@ export function SmallScreenHome() {
   const theme = useTheme();
 
   return (
-    <SafeAreaView edges={["top"]} style={[styles.screen, { backgroundColor: theme.background.val }]}>
+    <SafeAreaView
+      edges={["top"]}
+      style={[styles.screen, { backgroundColor: theme.background.val }]}
+    >
       <View style={styles.content}>
         <View style={styles.intro}>
           <Text fontSize="$10" fontWeight="600">

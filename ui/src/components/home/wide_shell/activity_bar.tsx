@@ -41,10 +41,7 @@ function ActivityButton({ active, label, onPress }: ActivityButtonProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={[
-        styles.button,
-        active ? { backgroundColor: theme.color3.val } : null,
-      ]}
+      style={[styles.button, active ? { backgroundColor: theme.color3.val } : null]}
     >
       <Text color={active ? "$color" : "$color10"} fontSize="$8">
         {label}

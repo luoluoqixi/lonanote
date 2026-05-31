@@ -6,7 +6,7 @@ import { isWeb } from "@/api/common/platform";
 
 import type { ScrollViewProps } from "./types";
 
-export const ScrollView = forwardRef<any, ScrollViewProps>(function ScrollView(props, ref) {
+export const ScrollView = forwardRef<any, ScrollViewProps>((props, ref) => {
   if (isWeb()) {
     return <TamaguiScrollView ref={ref} {...props} />;
   }

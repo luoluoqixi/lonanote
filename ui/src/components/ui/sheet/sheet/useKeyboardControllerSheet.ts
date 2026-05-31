@@ -9,6 +9,7 @@ import type { KeyboardControllerSheetOptions, KeyboardControllerSheetResult } fr
 const noop = () => {};
 
 export function useKeyboardControllerSheet(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _options: KeyboardControllerSheetOptions,
 ): KeyboardControllerSheetResult {
   const pauseKeyboardHandler = useRef(false);

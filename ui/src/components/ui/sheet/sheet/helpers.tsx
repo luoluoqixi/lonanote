@@ -1,4 +1,4 @@
-export function resisted(y: number, minY: number, maxOverflow = 25) {
+export function resisted(y: number, minY: number) {
   // If we're not past the boundary, return the original position
   if (y >= minY) {
     return y;

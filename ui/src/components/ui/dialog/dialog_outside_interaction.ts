@@ -1,7 +1,6 @@
 import { isWeb } from "@/api/common/platform";
 
 const TAURI_DRAG_REGION_SELECTOR = "[data-tauri-drag-region]";
-const TOAST_VIEWPORT_SELECTOR = "[role='region'][aria-label*='Toast']";
 
 type ClosestCapableTarget = {
   closest: (selector: string) => unknown;

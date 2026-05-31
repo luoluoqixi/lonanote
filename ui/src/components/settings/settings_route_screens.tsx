@@ -16,7 +16,6 @@ import {
 } from "./settings_panels";
 
 const SCREEN_MAX_WIDTH = 960;
-const SETTINGS_HREF = "/settings" as Href;
 
 type SettingsRouteKey = "global" | "appearance" | "window";
 

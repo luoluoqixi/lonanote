@@ -14,7 +14,7 @@ import { RemoveScroll } from "@tamagui/remove-scroll";
 import { useDidFinishSSR } from "@tamagui/use-did-finish-ssr";
 import { StackZIndexContext } from "@tamagui/z-index-stack";
 import type { ForwardRefExoticComponent, FunctionComponent, RefAttributes } from "react";
-import { forwardRef, memo, useEffect, useMemo, useRef } from "react";
+import { forwardRef, useEffect, useMemo, useRef } from "react";
 import type { View as RNView } from "react-native";
 import { Platform } from "react-native";
 
@@ -63,7 +63,7 @@ export function createSheet<
       }
 
       return (
-        // @ts-ignore
+        // @ts-expect-error for CSS driver this is necessary to attach the transition
         <Handle
           ref={composedRef}
           onPressIn={() => {
@@ -92,7 +92,7 @@ export function createSheet<
    * SheetOverlay
    * -----------------------------------------------------------------------------------------------*/
 
-  const SheetOverlay = Overlay.styleable<SheetScopedProps<{}>>((propsIn, ref) => {
+  const SheetOverlay = Overlay.styleable<SheetScopedProps<{}>>((propsIn) => {
     const { __scopeSheet, ...props } = propsIn;
     const context = useSheetContext(SHEET_OVERLAY_NAME, __scopeSheet);
 
@@ -101,7 +101,7 @@ export function createSheet<
 
     const element = useMemo(() => {
       return (
-        // @ts-ignore
+        // @ts-expect-error for CSS driver this is necessary to attach the transition
         <Overlay
           {...props}
           onPress={composeEventHandlers(
@@ -176,7 +176,7 @@ export function createSheet<
         const shouldUseFixedHeight = hasFit && !open && stableFrameSize.current;
 
         return (
-          // @ts-expect-error
+          // @ts-expect-error for CSS driver this is necessary to attach the transition
           <Frame
             ref={composedContentRef}
             flex={hasFit && open ? 0 : 1}
@@ -205,7 +205,7 @@ export function createSheet<
 
           {/* below frame hide when bouncing past 100% */}
           {!disableHideBottomOverflow && (
-            // @ts-ignore
+            // @ts-expect-error for CSS driver this is necessary to attach the transition
             <Frame
               {...props}
               componentName="SheetCover"
@@ -232,7 +232,7 @@ export function createSheet<
     SheetScopedProps<Omit<GetProps<typeof Frame>, keyof ExtraFrameProps> & ExtraFrameProps>
   >;
 
-  const Sheet = forwardRef<RNView, SheetProps>(function Sheet(props, ref) {
+  const Sheet = forwardRef<RNView, SheetProps>((props, ref) => {
     const hydrated = useDidFinishSSR();
     const { isShowingNonSheet } = useSheetController();
 

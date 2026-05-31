@@ -12,10 +12,11 @@
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "src/types/**/*.ts",
-    "src/uniwind-types.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "app.config.ts",
+    "tamagui.build.ts",
+    "tamagui.config.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],

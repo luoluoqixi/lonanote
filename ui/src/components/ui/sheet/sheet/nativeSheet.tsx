@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import { YStack } from "@tamagui/stacks";
 import type { FunctionComponent } from "react";
 import { useEffect, useRef } from "react";

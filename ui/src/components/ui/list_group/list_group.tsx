@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment } from "react";
 import { YGroup } from "tamagui";
 
 import { ListItem } from "../list_item";

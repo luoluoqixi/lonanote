@@ -77,11 +77,13 @@ export function useSheetProviderProps(
       })
     ) {
       console.warn(
+        // eslint-disable-next-line quotes
         '⚠️ Invalid snapPoint given, snapPoints must be positive numeric values, string percentages between 0-100%, or "fit" when snapPointsMode is mixed',
       );
     }
     if (snapPointsMode === "mixed" && snapPoints.indexOf("fit") > 0) {
       console.warn(
+        // eslint-disable-next-line quotes
         '⚠️ Invalid snapPoint given, "fit" must be the first/largest snap point when snapPointsMode is mixed',
       );
     }
@@ -124,11 +126,12 @@ export function useSheetProviderProps(
   const { animationDriver } = useConfiguration();
   if (!animationDriver) {
     throw new Error(
-      process.env.NODE_ENV === "production" ? `❌ 008` : "Must set animations in tamagui.config.ts",
+      process.env.NODE_ENV === "production" ? "❌ 008" : "Must set animations in tamagui.config.ts",
     );
   }
 
   const scrollBridge = useConstant<ScrollBridge>(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const parentDragListeners = new Set<Function>();
 
     const bridge: ScrollBridge = {

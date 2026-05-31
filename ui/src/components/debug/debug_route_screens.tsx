@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { isDesktop, isWeb } from "@/api/common";
 

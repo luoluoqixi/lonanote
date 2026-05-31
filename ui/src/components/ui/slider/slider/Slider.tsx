@@ -88,6 +88,7 @@ const SliderHorizontal = React.forwardRef<View, SliderHorizontalProps>(
     }
 
     const measure = () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       sliderRef.current?.measure((_x, _y, width, _height, pageX, _pageY) => {
         setState({
           size: width,
@@ -300,23 +301,22 @@ export const SliderTrackFrame = styled(SliderFrame, {
   },
 });
 
-const SliderTrack = React.forwardRef<SliderTrackElement, SliderTrackProps>(function SliderTrack(
-  props: ScopedProps<SliderTrackProps>,
-  forwardedRef,
-) {
-  const { __scopeSlider, ...trackProps } = props;
-  const context = useSliderContext(__scopeSlider);
-  return (
-    <SliderTrackFrame
-      data-disabled={context.disabled ? "" : undefined}
-      data-orientation={context.orientation}
-      orientation={context.orientation}
-      size={context.size}
-      {...trackProps}
-      ref={forwardedRef}
-    />
-  );
-});
+const SliderTrack = React.forwardRef<SliderTrackElement, SliderTrackProps>(
+  (props: ScopedProps<SliderTrackProps>, forwardedRef) => {
+    const { __scopeSlider, ...trackProps } = props;
+    const context = useSliderContext(__scopeSlider);
+    return (
+      <SliderTrackFrame
+        data-disabled={context.disabled ? "" : undefined}
+        data-orientation={context.orientation}
+        orientation={context.orientation}
+        size={context.size}
+        {...trackProps}
+        ref={forwardedRef}
+      />
+    );
+  },
+);
 
 /* -------------------------------------------------------------------------------------------------
  * SliderActive
@@ -343,46 +343,45 @@ export const SliderActiveFrame = styled(SliderFrame, {
 
 type SliderActiveProps = GetProps<typeof SliderActiveFrame>;
 
-const SliderActive = React.forwardRef<View, SliderActiveProps>(function SliderActive(
-  props: ScopedProps<SliderActiveProps>,
-  forwardedRef,
-) {
-  const { __scopeSlider, ...rangeProps } = props;
-  const context = useSliderContext(__scopeSlider);
-  const orientation = useSliderOrientationContext(__scopeSlider);
-  const ref = React.useRef<View>(null);
-  const composedRefs = useComposedRefs(forwardedRef, ref);
-  const valuesCount = context.values.length;
-  const percentages = context.values.map((value) =>
-    convertValueToPercentage(value, context.min, context.max),
-  );
-  const offsetStart = valuesCount > 1 ? Math.min(...percentages) : 0;
-  const offsetEnd = 100 - Math.max(...percentages);
+const SliderActive = React.forwardRef<View, SliderActiveProps>(
+  (props: ScopedProps<SliderActiveProps>, forwardedRef) => {
+    const { __scopeSlider, ...rangeProps } = props;
+    const context = useSliderContext(__scopeSlider);
+    const orientation = useSliderOrientationContext(__scopeSlider);
+    const ref = React.useRef<View>(null);
+    const composedRefs = useComposedRefs(forwardedRef, ref);
+    const valuesCount = context.values.length;
+    const percentages = context.values.map((value) =>
+      convertValueToPercentage(value, context.min, context.max),
+    );
+    const offsetStart = valuesCount > 1 ? Math.min(...percentages) : 0;
+    const offsetEnd = 100 - Math.max(...percentages);
 
-  return (
-    <SliderActiveFrame
-      orientation={context.orientation}
-      data-orientation={context.orientation}
-      data-disabled={context.disabled ? "" : undefined}
-      size={context.size}
-      animateOnly={["left", "top", "right", "bottom"]}
-      {...rangeProps}
-      ref={composedRefs}
-      {...{
-        [orientation.startEdge]: `${offsetStart}%`,
-        [orientation.endEdge]: `${offsetEnd}%`,
-      }}
-      {...(orientation.sizeProp === "width"
-        ? {
-            height: "100%",
-          }
-        : {
-            left: 0,
-            right: 0,
-          })}
-    />
-  );
-});
+    return (
+      <SliderActiveFrame
+        orientation={context.orientation}
+        data-orientation={context.orientation}
+        data-disabled={context.disabled ? "" : undefined}
+        size={context.size}
+        animateOnly={["left", "top", "right", "bottom"]}
+        {...rangeProps}
+        ref={composedRefs}
+        {...{
+          [orientation.startEdge]: `${offsetStart}%`,
+          [orientation.endEdge]: `${offsetEnd}%`,
+        }}
+        {...(orientation.sizeProp === "width"
+          ? {
+              height: "100%",
+            }
+          : {
+              left: 0,
+              right: 0,
+            })}
+      />
+    );
+  },
+);
 
 /* -------------------------------------------------------------------------------------------------
  * SliderThumb
@@ -450,7 +449,7 @@ export interface SliderThumbExtraProps {
 export interface SliderThumbProps extends SizableStackProps, SliderThumbExtraProps {}
 
 const SliderThumb = SliderThumbFrame.styleable<SliderThumbExtraProps>(
-  function SliderThumb(props: ScopedProps<SliderThumbProps>, forwardedRef) {
+  (props: ScopedProps<SliderThumbProps>, forwardedRef) => {
     const { __scopeSlider, index = 0, circular, size: sizeProp, ...thumbProps } = props;
     const context = useSliderContext(__scopeSlider);
     const orientation = useSliderOrientationContext(__scopeSlider);
@@ -552,6 +551,7 @@ const SliderThumb = SliderThumbFrame.styleable<SliderThumbExtraProps>(
 
 const SliderComponent = React.forwardRef((props: ScopedProps<SliderProps>, forwardedRef) => {
   const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     name,
     min = 0,
     max = 100,
