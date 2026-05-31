@@ -4,7 +4,11 @@ import type { ScrollViewProps } from "@tamagui/scroll-view";
 import { ScrollView } from "@tamagui/scroll-view";
 import { useControllableState } from "@tamagui/use-controllable-state";
 import React, { useEffect, useRef, useState } from "react";
-import { Platform, type ScrollView as RNScrollView } from "react-native";
+import {
+  type GestureResponderEvent,
+  Platform,
+  type ScrollView as RNScrollView,
+} from "react-native";
 
 import { useGestureSheetContext } from "./GestureSheetContext";
 import { useSheetContext } from "./SheetContext";
@@ -14,16 +18,29 @@ import { useSheetScrollViewGestures } from "./useSheetScrollViewGestures";
 
 const SHEET_SCROLL_VIEW_NAME = "SheetScrollView";
 
-export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, ScrollViewProps>(
+interface SheetScrollViewProps extends ScrollViewProps {
+  allowSheetDragOnScrollEdge?: boolean;
+  sheetDragDisabledScrollIndicatorWidth?: number;
+}
+
+export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, SheetScrollViewProps>(
   (
     {
       __scopeSheet,
+      allowSheetDragOnScrollEdge = true,
       bounces: bouncesProp,
       children,
       onScroll,
+      onMomentumScrollEnd,
+      onScrollBeginDrag,
+      onScrollEndDrag,
+      onTouchCancel,
+      onTouchEnd,
+      onTouchStart,
+      sheetDragDisabledScrollIndicatorWidth = 0,
       scrollEnabled: scrollEnabledProp,
       ...props
-    }: SheetScopedProps<ScrollViewProps>,
+    }: SheetScopedProps<SheetScrollViewProps>,
     ref,
   ) => {
     const context = useSheetContext(SHEET_SCROLL_VIEW_NAME, __scopeSheet);
@@ -38,6 +55,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
 
     const [hasScrollableContent, setHasScrollableContent] = useState(true);
     const parentHeight = useRef(0);
+    const parentWidth = useRef(0);
     const contentHeight = useRef(0);
 
     // with snapPointsMode="fit", Frame is content-sized (flex: 0, flex-basis: auto, height: undefined).
@@ -66,6 +84,61 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
     // RNGH scroll locking state
     const currentScrollOffset = useRef(0);
     const lockedScrollY = useRef(0);
+
+    const isTouchInScrollIndicatorDragArea = (event: GestureResponderEvent) => {
+      if (sheetDragDisabledScrollIndicatorWidth <= 0 || parentWidth.current <= 0) {
+        return false;
+      }
+
+      const { locationX } = event.nativeEvent;
+
+      return locationX >= parentWidth.current - sheetDragDisabledScrollIndicatorWidth;
+    };
+
+    const markScrollAreaGestureActive = (active: boolean, event?: GestureResponderEvent) => {
+      scrollBridge.isScrollAreaGestureActive = active;
+
+      if (!active) {
+        scrollBridge.isScrollIndicatorGestureActive = false;
+        return;
+      }
+
+      if (event) {
+        scrollBridge.isScrollIndicatorGestureActive = isTouchInScrollIndicatorDragArea(event);
+      }
+    };
+
+    const handleTouchStart = (event: Parameters<NonNullable<typeof onTouchStart>>[0]) => {
+      markScrollAreaGestureActive(true, event);
+      onTouchStart?.(event);
+    };
+
+    const handleTouchEnd = (event: Parameters<NonNullable<typeof onTouchEnd>>[0]) => {
+      markScrollAreaGestureActive(false);
+      onTouchEnd?.(event);
+    };
+
+    const handleTouchCancel = (event: Parameters<NonNullable<typeof onTouchCancel>>[0]) => {
+      markScrollAreaGestureActive(false);
+      onTouchCancel?.(event);
+    };
+
+    const handleScrollBeginDrag = (event: Parameters<NonNullable<typeof onScrollBeginDrag>>[0]) => {
+      markScrollAreaGestureActive(true);
+      onScrollBeginDrag?.(event);
+    };
+
+    const handleScrollEndDrag = (event: Parameters<NonNullable<typeof onScrollEndDrag>>[0]) => {
+      markScrollAreaGestureActive(false);
+      onScrollEndDrag?.(event);
+    };
+
+    const handleMomentumScrollEnd = (
+      event: Parameters<NonNullable<typeof onMomentumScrollEnd>>[0],
+    ) => {
+      markScrollAreaGestureActive(false);
+      onMomentumScrollEnd?.(event);
+    };
 
     const setScrollEnabled = (next: boolean, lockTo?: number) => {
       if (!next) {
@@ -97,6 +170,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
 
     useEffect(() => {
       setHasScrollView(true);
+      scrollBridge.allowSheetDragOnScrollEdge = allowSheetDragOnScrollEdge;
       if (isGestureHandlerEnabled()) {
         scrollBridge.setScrollEnabled = setScrollEnabled;
         scrollBridge.forceScrollTo = forceScrollTo;
@@ -108,13 +182,16 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
         scrollBridge.scrollLockY = undefined;
         scrollBridge.scrollStartY = -1;
         scrollBridge.isAtTop = undefined;
+        scrollBridge.isScrollAreaGestureActive = false;
+        scrollBridge.isScrollIndicatorGestureActive = false;
+        scrollBridge.allowSheetDragOnScrollEdge = true;
         scrollBridge.setParentDragging(false);
         setScrollEnabled(true);
         setHasScrollView(false);
         scrollBridge.setScrollEnabled = undefined;
         scrollBridge.forceScrollTo = undefined;
       };
-    }, []);
+    }, [allowSheetDragOnScrollEdge, scrollBridge]);
 
     const updateScrollable = () => {
       if (parentHeight.current && contentHeight.current) {
@@ -133,6 +210,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
       hasScrollableContent,
       scrollEnabled,
       setScrollEnabled,
+      allowSheetDragOnScrollEdge,
     });
 
     // content wrapper for measuring height
@@ -165,6 +243,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
           simultaneousHandlers={[panGestureRef]}
           onLayout={(e: any) => {
             parentHeight.current = Math.ceil(e.nativeEvent.layout.height);
+            parentWidth.current = Math.ceil(e.nativeEvent.layout.width);
             updateScrollable();
           }}
           onScroll={(e: any) => {
@@ -202,6 +281,12 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
           keyboardShouldPersistTaps="always"
           keyboardDismissMode="none"
           {...props}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          onScrollBeginDrag={handleScrollBeginDrag}
+          onScrollEndDrag={handleScrollEndDrag}
+          onTouchCancel={handleTouchCancel}
+          onTouchEnd={handleTouchEnd}
+          onTouchStart={handleTouchStart}
         >
           {contentWrapper}
         </RNGHComponent>
@@ -213,6 +298,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
       <ScrollView
         onLayout={(e) => {
           parentHeight.current = Math.ceil(e.nativeEvent.layout.height);
+          parentWidth.current = Math.ceil(e.nativeEvent.layout.width);
           updateScrollable();
         }}
         ref={composeRefs(scrollRef as any, ref)}
@@ -229,6 +315,12 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Scrol
         contentContainerStyle={{ minHeight: "100%" } as any}
         {...gestureProps}
         {...props}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        onScrollEndDrag={handleScrollEndDrag}
+        onTouchCancel={handleTouchCancel}
+        onTouchEnd={handleTouchEnd}
+        onTouchStart={handleTouchStart}
       >
         {contentWrapper}
       </ScrollView>

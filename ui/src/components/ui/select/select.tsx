@@ -641,7 +641,10 @@ const SelectRoot = forwardRef<any, SelectProps>(
                       )}
                       {shouldUseTouchSheetLayout ? (
                         touchSheetConfig.shouldEnableScroll ? (
-                          <Sheet.ScrollView showsVerticalScrollIndicator>
+                          <Sheet.ScrollView
+                            sheetDragDisabledScrollIndicatorWidth={44}
+                            showsVerticalScrollIndicator
+                          >
                             <YStack
                               background={TOUCH_SHEET_FRAME_BACKGROUND}
                               style={TOUCH_SHEET_SCROLL_CONTENT_STYLE}

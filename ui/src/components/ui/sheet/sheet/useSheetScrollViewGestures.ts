@@ -20,12 +20,14 @@ interface UseSheetScrollViewGesturesProps {
   hasScrollableContent: boolean;
   scrollEnabled: boolean;
   setScrollEnabled: (enabled: boolean, lockTo?: number) => void;
+  allowSheetDragOnScrollEdge: boolean;
 }
 
 export function useSheetScrollViewGestures({
   scrollRef,
   scrollBridge,
   hasScrollableContent,
+  allowSheetDragOnScrollEdge,
 }: UseSheetScrollViewGesturesProps) {
   const state = useRef<GestureState>({
     startY: 0,
@@ -94,6 +96,8 @@ export function useSheetScrollViewGestures({
       const isPaneAtTop = scrollBridge.paneY <= scrollBridge.paneMinY + 5;
 
       scrollBridge.y = currentScrollY;
+      const effectiveAllowSheetDragOnScrollEdge =
+        allowSheetDragOnScrollEdge && !scrollBridge.isScrollIndicatorGestureActive;
 
       // simple ownership rules:
       // - pan owns when: sheet not at top, OR (sheet at top AND scrollY=0 AND dragging down)
@@ -101,7 +105,9 @@ export function useSheetScrollViewGestures({
 
       let shouldPanOwn = false;
 
-      if (!isPaneAtTop) {
+      if (!effectiveAllowSheetDragOnScrollEdge) {
+        shouldPanOwn = false;
+      } else if (!isPaneAtTop) {
         // sheet not at top - pan always owns
         shouldPanOwn = true;
       } else if (currentScrollY <= 0 && isDraggingDown) {

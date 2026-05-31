@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { GestureResponderEvent, ScrollView as RNScrollView } from "react-native";
 
+import { shouldSheetPanHandleScrollGesture } from "./sheet_scroll_gesture_ownership";
 import type { ScrollBridge } from "./types";
 
 interface ResponderState {
@@ -13,6 +14,7 @@ interface ResponderState {
   prevScrollY: number;
   handoffOccurred: boolean;
   handoffDragOffset: number;
+  didDragSheet: boolean;
 }
 
 interface UseSheetScrollViewGesturesProps {
@@ -21,6 +23,7 @@ interface UseSheetScrollViewGesturesProps {
   hasScrollableContent: boolean;
   scrollEnabled: boolean;
   setScrollEnabled: (enabled: boolean, lockTo?: number) => void;
+  allowSheetDragOnScrollEdge: boolean;
 }
 
 /**
@@ -32,6 +35,7 @@ export function useSheetScrollViewGestures({
   hasScrollableContent,
   scrollEnabled,
   setScrollEnabled,
+  allowSheetDragOnScrollEdge,
 }: UseSheetScrollViewGesturesProps) {
   const state = useRef<ResponderState>({
     lastPageY: 0,
@@ -43,13 +47,17 @@ export function useSheetScrollViewGestures({
     prevScrollY: 0,
     handoffOccurred: false,
     handoffDragOffset: 0,
+    didDragSheet: false,
   });
 
   const release = () => {
     const s = state.current;
     if (!s.isDraggingScrollArea) return;
 
+    const didDragSheet = s.didDragSheet;
+
     s.isDraggingScrollArea = false;
+    scrollBridge.isScrollAreaGestureActive = false;
     scrollBridge.scrollStartY = -1;
     scrollBridge.scrollLock = false;
     s.isScrolling = false;
@@ -57,7 +65,13 @@ export function useSheetScrollViewGestures({
     s.prevScrollY = 0;
     s.handoffOccurred = false;
     s.handoffDragOffset = 0;
+    s.didDragSheet = false;
     setScrollEnabled(true);
+
+    if (!didDragSheet) {
+      s.dys = [];
+      return;
+    }
 
     let vy = 0;
     if (s.dys.length) {
@@ -72,12 +86,14 @@ export function useSheetScrollViewGestures({
 
   const onStartShouldSetResponder = () => {
     const s = state.current;
+    scrollBridge.isScrollAreaGestureActive = true;
     scrollBridge.scrollStartY = -1;
     s.isDraggingScrollArea = true;
     s.scrollEngaged = scrollBridge.y > 0;
     s.prevScrollY = scrollBridge.y;
     s.handoffOccurred = false;
     s.handoffDragOffset = 0;
+    s.didDragSheet = false;
     return false;
   };
 
@@ -119,23 +135,23 @@ export function useSheetScrollViewGestures({
 
     s.prevScrollY = currentScrollY;
 
-    let panHandles;
-    if (!isPaneAtTop) {
-      panHandles = isDraggingDown ? currentScrollY <= 0 || !hasScrollableContent : true;
-    } else if (isDraggingDown) {
-      if (currentScrollY > 0 && hasScrollableContent && !s.handoffOccurred) {
-        panHandles = false;
-      } else {
-        panHandles = s.handoffOccurred || wasScrolledNowAtZero || currentScrollY <= 0;
-      }
-    } else {
-      panHandles = !hasScrollableContent;
-      if (!panHandles) {
-        s.isScrolling = true;
-        scrollBridge.scrollLock = true;
-        setScrollEnabled(true);
-        return;
-      }
+    const effectiveAllowSheetDragOnScrollEdge =
+      allowSheetDragOnScrollEdge && !scrollBridge.isScrollIndicatorGestureActive;
+
+    const panHandles = shouldSheetPanHandleScrollGesture({
+      isPaneAtTop,
+      isDraggingDown,
+      currentScrollY,
+      hasScrollableContent,
+      scrollEngaged: s.scrollEngaged || s.handoffOccurred || wasScrolledNowAtZero,
+      allowSheetDragOnScrollEdge: effectiveAllowSheetDragOnScrollEdge,
+    });
+
+    if (!panHandles && (!isDraggingDown || !effectiveAllowSheetDragOnScrollEdge)) {
+      s.isScrolling = true;
+      scrollBridge.scrollLock = true;
+      setScrollEnabled(true);
+      return;
     }
 
     if (panHandles) {
@@ -147,6 +163,7 @@ export function useSheetScrollViewGestures({
       }
       scrollBridge.drag(effectiveDragAt);
       s.dragAt = effectiveDragAt;
+      s.didDragSheet = true;
       s.dys.push(dy);
       if (s.dys.length > 100) s.dys = s.dys.slice(-10);
     } else {

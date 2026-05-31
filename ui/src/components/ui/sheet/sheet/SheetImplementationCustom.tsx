@@ -531,6 +531,17 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         { dy }: PanResponderGestureState,
       ): boolean => {
         function getShouldSet() {
+          if (scrollBridge.isScrollIndicatorGestureActive) {
+            return false;
+          }
+
+          if (
+            scrollBridge.isScrollAreaGestureActive &&
+            scrollBridge.allowSheetDragOnScrollEdge === false
+          ) {
+            return false;
+          }
+
           // if dragging handle always allow:
           if (e.target === providerProps.handleRef.current) {
             return true;

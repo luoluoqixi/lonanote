@@ -145,6 +145,9 @@ export function useSheetProviderProps(
       release: () => {},
       scrollLock: false,
       isParentDragging: false,
+      allowSheetDragOnScrollEdge: true,
+      isScrollAreaGestureActive: false,
+      isScrollIndicatorGestureActive: false,
       onParentDragging: (cb) => {
         parentDragListeners.add(cb);
         return () => {

@@ -129,6 +129,9 @@ export type ScrollBridge = {
   isAtTop?: boolean;
   // snap sheet to a specific position (for handoff UP)
   snapToPosition?: (positionIndex: number) => void;
+  allowSheetDragOnScrollEdge?: boolean;
+  isScrollAreaGestureActive?: boolean;
+  isScrollIndicatorGestureActive?: boolean;
 };
 
 // keyboard controller sheet types

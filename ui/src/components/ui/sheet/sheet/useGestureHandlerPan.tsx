@@ -1,6 +1,7 @@
 import { type RefObject, useCallback, useMemo, useRef } from "react";
 
 import { getGestureHandlerState, isGestureHandlerEnabled } from "./gestureState";
+import { shouldSheetPanHandleScrollGesture } from "./sheet_scroll_gesture_ownership";
 import type { ScrollBridge } from "./types";
 
 // threshold in pixels for considering sheet "at top" position
@@ -195,58 +196,24 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         // calculate current sheet position based on accumulated offset
         const currentPos = gs.startY + gs.accumulatedOffset;
         const isCurrentlyAtTop = currentPos <= minY + AT_TOP_THRESHOLD;
-        const nodeIsScrolling = scrollY > 0;
-
         // decision matrix (from react-native-actions-sheet pattern)
         // each frame, decide who handles the movement based on current state
         //
         // Key insight: we track accumulated offset separately from translation
         // This allows seamless handoffs between pan and scroll
-        let panHandles: boolean;
-
-        // BUG #1 FIX: Check if scroll content is actually scrollable
-        // If content doesn't fill the ScrollView, gestures should pass through to sheet
         const hasScrollableContent = scrollBridge.hasScrollableContent !== false;
-
-        if (!isCurrentlyAtTop) {
-          // sheet not at top position
-          if (isSwipingDown) {
-            // swiping down while sheet not at top
-            // BUG #1 FIX: if content not scrollable, pan always handles
-            // only scroll if scrollY > 0 AND content is scrollable, otherwise pan handles
-            panHandles = !nodeIsScrolling || !hasScrollableContent;
-          } else {
-            // swiping up while sheet not at top -> pan drags sheet up
-            panHandles = true;
-          }
-        } else {
-          // sheet is at top position
-          if (isSwipingDown) {
-            // swiping down at top
-            if (nodeIsScrolling && hasScrollableContent) {
-              // scroll > 0 and content scrollable, let scroll handle (scroll back towards 0)
-              panHandles = false;
-            } else if (gs.scrollEngaged && hasScrollableContent) {
-              // scroll WAS > 0 but now is 0 -> handoff from scroll to pan
-              // pan takes over to drag sheet down
-              panHandles = true;
-            } else {
-              // scroll never engaged OR content not scrollable, just drag sheet down
-              panHandles = true;
-            }
-          } else {
-            // swiping up at top
-            // if there's scrollable content, let scroll handle so user can scroll into content
-            // resistance only applies when there's NO scrollable content
-            if (hasScrollableContent) {
-              // content is scrollable - let scroll handle (user wants to scroll down into content)
-              panHandles = false;
-            } else {
-              // no scrollable content -> pan handles for resistance effect
-              panHandles = true;
-            }
-          }
-        }
+        const allowSheetDragOnScrollEdge = scrollBridge.isScrollAreaGestureActive
+          ? scrollBridge.allowSheetDragOnScrollEdge !== false &&
+            !scrollBridge.isScrollIndicatorGestureActive
+          : true;
+        const panHandles = shouldSheetPanHandleScrollGesture({
+          isPaneAtTop: isCurrentlyAtTop,
+          isDraggingDown: isSwipingDown,
+          currentScrollY: scrollY,
+          hasScrollableContent,
+          scrollEngaged: gs.scrollEngaged,
+          allowSheetDragOnScrollEdge,
+        });
 
         if (panHandles) {
           // pan handles - disable scroll and move sheet
