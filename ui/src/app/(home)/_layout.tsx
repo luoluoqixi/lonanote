@@ -2,11 +2,10 @@ import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { useWindowDimensions } from "react-native";
 
-import { isDesktop } from "@/api/common";
+import { isDesktop, os } from "@/api/common";
 import {
   nativeStackStatusBarOptions,
   sheetScreenOptions,
-  sheetStackScreen,
   usePageSheetGestureLockActive,
 } from "@/components/ui";
 import { WideScreenHome } from "@/components/home";
@@ -43,7 +42,7 @@ export default function UILayout() {
         screenOptions={({ route }) => {
           if (route.name === "debug") {
             return sheetScreenOptions("card", {
-              gestureEnabled: !pageSheetGestureLockActive,
+              ...(os() === "ios" ? { gestureEnabled: !pageSheetGestureLockActive } : null),
               headerShown: false,
             });
           }
@@ -55,9 +54,8 @@ export default function UILayout() {
         }}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen
-          {...sheetStackScreen("card", { name: "debug", options: { headerShown: false } })}
-        />
+        <Stack.Screen name="debug" options={{ headerShown: false }} />
+        <Stack.Screen name="debug_page" options={{ headerShown: false }} />
       </Stack>
     </>
   );

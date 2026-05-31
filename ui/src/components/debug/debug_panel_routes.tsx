@@ -6,7 +6,7 @@ import { UiComponentsDebugPanel } from "./ui_components_panel";
 import { WorkspaceDebugPanel } from "./workspace_debug_panel";
 
 type DebugTabKey = "workspace" | "path" | "components";
-type DebugPanelPresentation = "scroll" | "static";
+type DebugRouteMode = "sheet" | "page";
 
 type DebugPanelRouteDefinition = {
   Component: ComponentType;
@@ -14,10 +14,10 @@ type DebugPanelRouteDefinition = {
   href: Href;
   key: DebugTabKey;
   label: string;
-  presentation: DebugPanelPresentation;
 };
 
 const DEBUG_HOME_HREF = "/debug" as Href;
+const DEBUG_PAGE_HOME_HREF = "/debug_page" as Href;
 const DEBUG_PANEL_TOGGLE_EVENT = "lonanote.debug-panel.toggle";
 const DEBUG_ROUTE_PREFIX = "/debug";
 
@@ -28,7 +28,6 @@ const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
     href: "/debug/workspace" as Href,
     key: "workspace",
     label: "工作区",
-    presentation: "scroll",
   },
   {
     Component: PathDebugPanel,
@@ -36,7 +35,6 @@ const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
     href: "/debug/path" as Href,
     key: "path",
     label: "路径",
-    presentation: "scroll",
   },
   {
     Component: UiComponentsDebugPanel,
@@ -44,7 +42,6 @@ const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
     href: "/debug/components" as Href,
     key: "components",
     label: "组件总览",
-    presentation: "static",
   },
 ];
 
@@ -62,6 +59,15 @@ function getDebugPanelRouteDefinition(key: DebugTabKey): DebugPanelRouteDefiniti
 
 function isDebugRoutePath(pathname: string): boolean {
   return pathname === DEBUG_ROUTE_PREFIX || pathname.startsWith(`${DEBUG_ROUTE_PREFIX}/`);
+}
+
+function getDebugHomeHref(mode: DebugRouteMode = "sheet"): Href {
+  return mode === "sheet" ? DEBUG_HOME_HREF : DEBUG_PAGE_HOME_HREF;
+}
+
+function getDebugPanelHref(key: DebugTabKey, mode: DebugRouteMode = "sheet"): Href {
+  const baseHref = getDebugHomeHref(mode);
+  return `${baseHref}/${key}` as Href;
 }
 
 const DEBUG_STACK_HEADER_TITLES: Record<string, string> = {
@@ -93,9 +99,12 @@ export {
   DEBUG_HOME_HREF,
   DEBUG_PANEL_ROUTE_DEFINITIONS,
   DEBUG_PANEL_TOGGLE_EVENT,
+  DEBUG_PAGE_HOME_HREF,
+  getDebugHomeHref,
   getDebugMobileHeaderTitle,
+  getDebugPanelHref,
   getDebugPanelRouteDefinition,
   getDebugStackHeaderTitle,
   isDebugRoutePath,
 };
-export type { DebugPanelPresentation, DebugPanelRouteDefinition, DebugTabKey };
+export type { DebugPanelRouteDefinition, DebugRouteMode, DebugTabKey };

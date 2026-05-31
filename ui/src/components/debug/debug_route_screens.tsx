@@ -8,7 +8,10 @@ import { TitleBar } from "../titlebar";
 import { Button, Text } from "../ui";
 import {
   DEBUG_PANEL_ROUTE_DEFINITIONS,
+  type DebugRouteMode,
   type DebugTabKey,
+  getDebugHomeHref,
+  getDebugPanelHref,
   getDebugPanelRouteDefinition,
 } from "./debug_panel_routes";
 
@@ -17,14 +20,37 @@ const DEBUG_SCREEN_MAX_WIDTH = 960;
 function DebugScreenLayout({
   children,
   description,
+  scrollable = false,
   title,
 }: {
   children: ReactNode;
   description?: string;
+  scrollable?: boolean;
   title: string;
 }) {
   const desktop = isDesktop();
   const usesNativeHeader = !isWeb();
+  const pageBody = (
+    <View style={styles.pagePadding}>
+      <View style={styles.pageContainer}>
+        {!usesNativeHeader ? (
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <Text fontSize="$8" fontWeight="700">
+                {title}
+              </Text>
+              {description ? (
+                <Text color="$color10" fontSize="$3">
+                  {description}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+        <View style={styles.content}>{children}</View>
+      </View>
+    </View>
+  );
 
   return (
     <View
@@ -33,70 +59,98 @@ function DebugScreenLayout({
     >
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
-        <View style={styles.pagePadding}>
-          <View style={styles.pageContainer}>
-            {!usesNativeHeader ? (
-              <View style={styles.header}>
-                <View style={styles.headerText}>
-                  <Text fontSize="$8" fontWeight="700">
-                    {title}
-                  </Text>
-                  {description ? (
-                    <Text color="$color10" fontSize="$3">
-                      {description}
-                    </Text>
-                  ) : null}
-                </View>
-              </View>
-            ) : null}
-
-            <View style={styles.content}>{children}</View>
+        {scrollable ? (
+          <View style={styles.pageScrollHost}>
+            <ScrollView
+              contentContainerStyle={styles.pageScrollContent}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
+              style={styles.pageScrollView}
+            >
+              {pageBody}
+            </ScrollView>
           </View>
-        </View>
+        ) : (
+          pageBody
+        )}
       </View>
     </View>
   );
 }
 
-export function DebugHomeScreen() {
+export function DebugHomeScreen({
+  presentationMode = "sheet",
+}: {
+  presentationMode?: DebugRouteMode;
+}) {
   const router = useRouter();
+  const targetPresentationMode = presentationMode === "sheet" ? "page" : "sheet";
+  const sectionCards: ReactNode[] = [];
+
+  for (const definition of DEBUG_PANEL_ROUTE_DEFINITIONS) {
+    sectionCards.push(
+      <View key={definition.key} style={styles.sectionCard}>
+        <View style={styles.sectionCardText}>
+          <Text fontSize="$5" fontWeight="600">
+            {definition.label}
+          </Text>
+          <Text color="$color10" fontSize="$3">
+            {definition.description}
+          </Text>
+        </View>
+        <Button onPress={() => router.push(getDebugPanelHref(definition.key, presentationMode))}>
+          打开{definition.label}
+        </Button>
+      </View>,
+    );
+
+    if (definition.key === "components") {
+      sectionCards.push(
+        <View key="presentation-mode-toggle" style={styles.sectionCard}>
+          <View style={styles.sectionCardText}>
+            <Text fontSize="$5" fontWeight="600">
+              {presentationMode === "sheet" ? "普通页面模式" : "Sheet 页面模式"}
+            </Text>
+            <Text color="$color10" fontSize="$3">
+              切换当前调试面板的展示方式，便于对比不同呈现形式下的交互表现。
+            </Text>
+          </View>
+          <Button onPress={() => router.replace(getDebugHomeHref(targetPresentationMode))}>
+            {presentationMode === "sheet" ? "切换为普通页面" : "切换为 Sheet 页面"}
+          </Button>
+        </View>,
+      );
+    }
+  }
 
   return (
-    <DebugScreenLayout description="小屏设备下通过独立页面查看各调试分区。" title="调试面板">
-      <View style={styles.sectionList}>
-        {DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => (
-          <View key={definition.key} style={styles.sectionCard}>
-            <View style={styles.sectionCardText}>
-              <Text fontSize="$5" fontWeight="600">
-                {definition.label}
-              </Text>
-              <Text color="$color10" fontSize="$3">
-                {definition.description}
-              </Text>
-            </View>
-            <Button onPress={() => router.push(definition.href)}>打开{definition.label}</Button>
-          </View>
-        ))}
-      </View>
+    <DebugScreenLayout
+      description="小屏设备下通过独立页面查看各调试分区。"
+      title="调试面板"
+    >
+      <View style={styles.sectionList}>{sectionCards}</View>
     </DebugScreenLayout>
   );
 }
 
-export function DebugSectionScreen({ sectionKey }: { sectionKey: DebugTabKey }) {
+export function DebugSectionScreen({
+  presentationMode = "sheet",
+  sectionKey,
+}: {
+  presentationMode?: DebugRouteMode;
+  sectionKey: DebugTabKey;
+}) {
   const definition = getDebugPanelRouteDefinition(sectionKey);
   const SectionComponent = definition.Component;
 
   return (
-    <DebugScreenLayout description={definition.description} title={definition.label}>
+    <DebugScreenLayout
+      description={definition.description}
+      scrollable
+      title={definition.label}
+    >
       <View style={styles.panelHost}>
-        <ScrollView
-          contentContainerStyle={styles.panelScrollContent}
-          nestedScrollEnabled
-          showsVerticalScrollIndicator
-          style={styles.panelScrollView}
-        >
-          <SectionComponent />
-        </ScrollView>
+        <SectionComponent />
       </View>
     </DebugScreenLayout>
   );
@@ -121,6 +175,17 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
+  pageScrollContent: {
+    flexGrow: 1,
+  },
+  pageScrollHost: {
+    flex: 1,
+    minHeight: 0,
+  },
+  pageScrollView: {
+    flex: 1,
+    minHeight: 0,
+  },
   pageContainer: {
     alignSelf: "center",
     flex: 1,
@@ -137,13 +202,7 @@ const styles = StyleSheet.create({
   panelHost: {
     flex: 1,
     minHeight: 0,
-  },
-  panelScrollContent: {
     paddingBottom: 20,
-  },
-  panelScrollView: {
-    flex: 1,
-    minHeight: 0,
   },
   safeArea: {
     flex: 1,

@@ -2,11 +2,13 @@ import { getPortal, NativePortal } from "@tamagui/native";
 import { PortalItem, resolveViewZIndex } from "@tamagui/portal";
 import type { PortalProps } from "@tamagui/portal";
 import { useStackedZIndex } from "@tamagui/z-index-stack";
-import { useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Modal, StyleSheet, View } from "react-native";
 import { Portal as TeleportPortal } from "react-native-teleport";
 
 import { os } from "@/api/common/platform";
+
+const IOS_MODAL_PORTAL_CLOSE_DELAY_MS = 320;
 
 export type SheetPortalProps = PortalProps & {
   active?: boolean;
@@ -37,9 +39,39 @@ export function SheetPortal(props: SheetPortalProps) {
   const portalState = getPortal().state;
   const useIosModalHost = hostName !== "root" && os() === "ios";
   const useDedicatedTeleportHost = hostName !== "root" && portalState.type === "teleport";
+  const [iosModalVisible, setIosModalVisible] = useState(active);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!useIosModalHost) {
+      return;
+    }
+
+    if (closeTimerRef.current != null) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    if (active) {
+      setIosModalVisible(true);
+      return;
+    }
+
+    closeTimerRef.current = setTimeout(() => {
+      closeTimerRef.current = null;
+      setIosModalVisible(false);
+    }, IOS_MODAL_PORTAL_CLOSE_DELAY_MS);
+
+    return () => {
+      if (closeTimerRef.current != null) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    };
+  }, [active, useIosModalHost]);
 
   if (useIosModalHost) {
-    if (!active) {
+    if (!iosModalVisible) {
       return null;
     }
 

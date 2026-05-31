@@ -879,10 +879,13 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       const portalHostName =
         (portalProps as (typeof portalProps & { hostName?: string }) | undefined)?.hostName ?? "root";
       const useIosOverlayPortal = os() === "ios" && portalHostName !== "root";
+      const keepPointerEventsDuringClose = os() === "ios";
       const teleportedChildren =
         mountedContents && RNGHRoot ? (
           <View
-            pointerEvents={opacity ? "auto" : "none"}
+            pointerEvents={
+              keepPointerEventsDuringClose ? (opacity ? "auto" : "none") : open ? "auto" : "none"
+            }
             style={opacity ? rnghRootStyleOpen : rnghRootStyleClosed}
           >
             <RNGHRoot style={rnghRootStyleOpen}>{mountedContents}</RNGHRoot>
@@ -893,7 +896,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
 
       const modalContents = useIosOverlayPortal ? (
         <SheetPortal
-          active={open || opacity > 0}
+          active={open}
           hostName={portalHostName}
           stackZIndex={zIndex}
           {...portalProps}

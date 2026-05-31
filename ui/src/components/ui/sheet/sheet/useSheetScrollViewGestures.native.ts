@@ -57,9 +57,12 @@ export function useSheetScrollViewGestures({
     const didDragSheet = s.didDragSheet;
 
     s.isDraggingScrollArea = false;
+    s.lastPageY = 0;
+    s.dragAt = 0;
     scrollBridge.isScrollAreaGestureActive = false;
     scrollBridge.scrollStartY = -1;
     scrollBridge.scrollLock = false;
+    scrollBridge.setParentDragging(false);
     s.isScrolling = false;
     s.scrollEngaged = false;
     s.prevScrollY = 0;
@@ -86,6 +89,8 @@ export function useSheetScrollViewGestures({
 
   const onStartShouldSetResponder = () => {
     const s = state.current;
+    s.lastPageY = 0;
+    s.dragAt = 0;
     scrollBridge.isScrollAreaGestureActive = true;
     scrollBridge.scrollStartY = -1;
     s.isDraggingScrollArea = true;
