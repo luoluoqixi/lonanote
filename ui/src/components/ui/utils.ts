@@ -7,7 +7,7 @@ import {
   isValidElement,
   useContext,
 } from "react";
-import { type DimensionValue, Vibration } from "react-native";
+import { type DimensionValue } from "react-native";
 
 import { isWeb, os } from "@/api/common/platform";
 
@@ -27,20 +27,24 @@ type ResolveNativeHapticsOptions = {
   defaultEnabled?: boolean;
 };
 
+type TriggerNativeHapticsOptions = {
+  androidType?: Haptics.AndroidHaptics;
+};
+
 const NativeHapticsDefaultsContext = createContext<NativeHapticsDefaultsContextValue>({
   enabledByDefault: false,
 });
 
-const NATIVE_HAPTICS_DURATION_MAP: Record<NativeHapticsLevel, number> = {
-  light: 10,
-  medium: 20,
-  heavy: 35,
-};
-
-const IOS_HAPTICS_STYLE_MAP: Record<NativeHapticsLevel, Haptics.ImpactFeedbackStyle> = {
+const HAPTICS_STYLE_MAP: Record<NativeHapticsLevel, Haptics.ImpactFeedbackStyle> = {
   light: Haptics.ImpactFeedbackStyle.Light,
   medium: Haptics.ImpactFeedbackStyle.Medium,
   heavy: Haptics.ImpactFeedbackStyle.Heavy,
+};
+
+const ANDROID_HAPTICS_TYPE_MAP: Record<NativeHapticsLevel, Haptics.AndroidHaptics> = {
+  light: Haptics.AndroidHaptics.Keyboard_Tap,
+  medium: Haptics.AndroidHaptics.Context_Click,
+  heavy: Haptics.AndroidHaptics.Long_Press,
 };
 
 export function NativeHapticsProvider({
@@ -120,19 +124,29 @@ export function resolvePercentageValue(
   return (availableSize * parsedPercentage) / 100;
 }
 
-export function triggerNativeHaptics(setting: NativeHapticsSetting | undefined) {
+export function triggerNativeHaptics(
+  setting: NativeHapticsSetting | undefined,
+  options?: TriggerNativeHapticsOptions,
+) {
   if (setting == null || setting === false || isWeb()) {
     return;
   }
-
   const level = setting === true ? "light" : setting;
 
-  if (os() === "ios") {
-    void Haptics.impactAsync(IOS_HAPTICS_STYLE_MAP[level]);
+  if (os() === "android") {
+    void Haptics.performAndroidHapticsAsync(
+      options?.androidType ?? ANDROID_HAPTICS_TYPE_MAP[level],
+    );
     return;
   }
 
-  Vibration.vibrate(NATIVE_HAPTICS_DURATION_MAP[level]);
+  void Haptics.impactAsync(HAPTICS_STYLE_MAP[level]);
+}
+
+export function triggerSliderNativeHaptics(setting: NativeHapticsSetting | undefined) {
+  triggerNativeHaptics(setting, {
+    androidType: Haptics.AndroidHaptics.Segment_Frequent_Tick,
+  });
 }
 
 export function resolveSliderHapticsInterval(options: {
@@ -154,10 +168,11 @@ export function resolveSliderHapticsInterval(options: {
     return resolvedStep;
   }
 
-  const targetSegments = 10;
-  const intervalSteps = Math.max(1, Math.round(range / resolvedStep / targetSegments));
+  if (range < 1) {
+    return resolvedStep;
+  }
 
-  return intervalSteps * resolvedStep;
+  return Math.max(1, resolvedStep);
 }
 
 export function getSliderHapticsBuckets(

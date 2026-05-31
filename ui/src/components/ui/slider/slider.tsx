@@ -2,7 +2,7 @@ import React from "react";
 
 import {
   getSliderHapticsBuckets,
-  triggerNativeHaptics,
+  triggerSliderNativeHaptics,
   useResolvedNativeHaptics,
 } from "@/components/ui/utils";
 
@@ -73,7 +73,7 @@ function SliderRoot(props: SliderProps) {
       return;
     }
 
-    triggerNativeHaptics(resolvedNativeHaptics);
+    triggerSliderNativeHaptics(resolvedNativeHaptics);
   };
 
   return (

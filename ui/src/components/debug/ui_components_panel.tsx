@@ -67,7 +67,7 @@ function DemoRow({ children }: { children: ReactNode }) {
 export function UiComponentsDebugPanel() {
   const { toast } = useToast();
   const [checkboxChecked, setCheckboxChecked] = useState(true);
-  const [forceNativeHaptics, setForceNativeHaptics] = useState(false);
+  const [forceNativeHaptics, setForceNativeHaptics] = useState(true);
   const [contextMenuAction, setContextMenuAction] = useState("尚未选择");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogOpen2, setDialogOpen2] = useState(false);
