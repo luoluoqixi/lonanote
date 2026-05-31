@@ -37,6 +37,8 @@ import { SheetPortal } from "./sheet_portal";
 import { useLockPageSheetDismiss } from "./use_lock_page_sheet_dismiss";
 import { useSheetProviderProps } from "./useSheetProviderProps";
 
+const INNER_SHEET_PARENT_DRAG_UNLOCK_DELAY_MS = 180;
+
 const hiddenSize = 10_000.1;
 
 // the re-established rngh root for a modal sheet (see modal branch below).
@@ -135,13 +137,54 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
      * This is a hacky workaround for native:
      */
     const [isShowingInnerSheet, setIsShowingInnerSheet] = React.useState(false);
+    const [isInnerSheetDragLocked, setIsInnerSheetDragLocked] = React.useState(false);
+    const innerSheetDragUnlockTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     // when using Gorhom portal (no teleport), inner sheets need to hide parent
     const shouldHideParentSheet =
       !isWeb && modal && isShowingInnerSheet && needsPortalRepropagation();
 
     const sheetInsideSheet = React.useContext(SheetInsideSheetContext);
-    const onInnerSheet = React.useCallback((hasChild: boolean) => {
-      setIsShowingInnerSheet(hasChild);
+    const onInnerSheet = React.useCallback(
+      (state: {
+        hasVisibleChild: boolean;
+        shouldLockParentDrag: boolean;
+      }) => {
+        // “是否继续隐藏父层”和“是否继续锁住父层拖拽”必须分开处理：
+        // 内层关闭动画期间，父层仍要隐藏；但拖拽可以稍后提前恢复。
+        setIsShowingInnerSheet(state.hasVisibleChild);
+
+        if (innerSheetDragUnlockTimerRef.current != null) {
+          clearTimeout(innerSheetDragUnlockTimerRef.current);
+          innerSheetDragUnlockTimerRef.current = null;
+        }
+
+        if (state.shouldLockParentDrag) {
+          setIsInnerSheetDragLocked(true);
+          return;
+        }
+
+        if (!state.hasVisibleChild) {
+          setIsInnerSheetDragLocked(false);
+          return;
+        }
+
+        // 不要在内层开始关闭的第一帧就把拖拽交还给父层，
+        // 否则父层会过早接管手势，视觉上像内层动画被截断。
+        innerSheetDragUnlockTimerRef.current = setTimeout(() => {
+          innerSheetDragUnlockTimerRef.current = null;
+          setIsInnerSheetDragLocked(false);
+        }, INNER_SHEET_PARENT_DRAG_UNLOCK_DELAY_MS);
+      },
+      [],
+    );
+
+    React.useEffect(() => {
+      return () => {
+        if (innerSheetDragUnlockTimerRef.current != null) {
+          clearTimeout(innerSheetDragUnlockTimerRef.current);
+          innerSheetDragUnlockTimerRef.current = null;
+        }
+      };
     }, []);
 
     // FIX: Store stable frameSize to prevent recalculation during exit animation
@@ -461,7 +504,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     const panResponder = React.useMemo(() => {
       if (disableDrag) return;
       if (!frameSize) return;
-      if (isShowingInnerSheet) return;
+      if (isInnerSheetDragLocked) return;
 
       const minY = positions.length > 0 ? Math.min(...positions) : 0;
       scrollBridge.paneMinY = minY;
@@ -637,7 +680,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         onPanResponderTerminate: finish,
         onPanResponderRelease: finish,
       });
-    }, [disableDrag, isShowingInnerSheet, animateTo, frameSize, positions, setPosition]);
+    }, [disableDrag, isInnerSheetDragLocked, animateTo, frameSize, positions, setPosition]);
 
     // animate to keyboard-adjusted position when keyboard state changes
     React.useEffect(() => {
@@ -683,7 +726,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       getCurrentPosition: () => at.current,
       resisted,
       disableDrag,
-      isShowingInnerSheet,
+      isShowingInnerSheet: isInnerSheetDragLocked,
       setAnimatedPosition: (val: number) => {
         // directly set the animated value for smooth dragging
         at.current = val;
@@ -749,11 +792,24 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
 
     useIsomorphicLayoutEffect(() => {
       if (!sheetInsideSheet) return;
-      sheetInsideSheet(shouldKeepParentHidden);
+      // 依赖变更时只推送“最新状态”，不要在 cleanup 里先发一遍 false。
+      // 否则内层关闭时父层会被短暂提前放出来一帧，表现成动画瞬间消失。
+      sheetInsideSheet({
+        hasVisibleChild: shouldKeepParentHidden,
+        shouldLockParentDrag: open,
+      });
+    }, [sheetInsideSheet, shouldKeepParentHidden, open]);
+
+    React.useEffect(() => {
       return () => {
-        sheetInsideSheet(false);
+        if (!sheetInsideSheet) return;
+        // 只有内层真正卸载时，才通知父层彻底清空子层状态。
+        sheetInsideSheet({
+          hasVisibleChild: false,
+          shouldLockParentDrag: false,
+        });
       };
-    }, [sheetInsideSheet, shouldKeepParentHidden]);
+    }, [sheetInsideSheet]);
 
     const forcedContentHeight = hasFit
       ? undefined
@@ -824,7 +880,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
                     height: forcedContentHeight,
                     minHeight: forcedContentHeight,
                     opacity: !shouldHideParentSheet ? opacity : 0,
-                    ...((shouldHideParentSheet || !open) && {
+                    ...((!open) && {
                       pointerEvents: "none",
                     }),
                   },
