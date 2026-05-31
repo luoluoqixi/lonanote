@@ -1,8 +1,10 @@
 import { type Href, useRouter } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "tamagui";
 
+import { os } from "@/api/common";
+import { getAppHomeTitle } from "@/config";
 import { Button, Text } from "@/components/ui";
 
 const SETTINGS_HREF = "/settings" as Href;
@@ -10,17 +12,25 @@ const SETTINGS_HREF = "/settings" as Href;
 export function SmallScreenHome() {
   const router = useRouter();
   const theme = useTheme();
+  const usesNativeHomeHeader = os() === "ios";
 
   return (
     <SafeAreaView
-      edges={["top"]}
+      edges={usesNativeHomeHeader ? ["left", "right", "bottom"] : ["top"]}
       style={[styles.screen, { backgroundColor: theme.background.val }]}
     >
-      <View style={styles.content}>
+      <ScrollView
+        alwaysBounceVertical={false}
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior={usesNativeHomeHeader ? "automatic" : "never"}
+        style={styles.scrollView}
+      >
         <View style={styles.intro}>
-          <Text fontSize="$10" fontWeight="600">
-            LonaNote
-          </Text>
+          {!usesNativeHomeHeader ? (
+            <Text fontSize="$10" fontWeight="600">
+              {getAppHomeTitle()}
+            </Text>
+          ) : null}
           <Text color="$color10" fontSize="$3" lineHeight="$4">
             从这里进入全局设置。
           </Text>
@@ -44,7 +54,7 @@ export function SmallScreenHome() {
           <Button onPress={() => router.push(SETTINGS_HREF)}>打开全局设置</Button>
           <Button onPress={() => router.push("/debug")}>打开debug</Button>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -53,9 +63,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
-    justifyContent: "space-between",
+  },
+  content: {
+    gap: 24,
     paddingHorizontal: 20,
     paddingVertical: 24,
   },

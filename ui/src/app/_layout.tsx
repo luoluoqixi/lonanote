@@ -5,9 +5,8 @@ import { Stack } from "expo-router";
 
 import { isWeb } from "@/api/common";
 import { DebugPanelGestureLayer, DebugPanelHost } from "@/components/debug";
-import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import { AppStatusBar, RootProvider, nativeStackStatusBarOptions } from "@/components/ui";
-import { getAppName } from "@/config";
+import { getAppHomeTitle } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
 
@@ -30,22 +29,13 @@ export default function RootLayout() {
               };
             }
 
-            const settingsTitle = getSettingsMobileHeaderTitle(route.name);
-            if (settingsTitle != null) {
-              return {
-                ...statusBar,
-                headerShown: true,
-                title: settingsTitle,
-              };
-            }
-
             return {
               ...statusBar,
               headerShown: false,
             };
           }}
         >
-          <Stack.Screen name="(home)" options={{ title: getAppName() }} />
+          <Stack.Screen name="(home)" options={{ title: getAppHomeTitle() }} />
         </Stack>
         <DebugPanelHost />
       </DebugPanelGestureLayer>

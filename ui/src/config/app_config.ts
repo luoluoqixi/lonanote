@@ -6,6 +6,8 @@ let initialized = false;
 
 const APP_NAME = "LonaNote";
 const APP_NAME_CN = "露娜笔记";
+const APP_HOME_TITLE = "LonaNote";
+const APP_HOME_TITLE_CN = "露娜笔记";
 const NPM_VERSION = version;
 let APP_VERSION = NPM_VERSION;
 
@@ -15,6 +17,15 @@ export const getAppName = () => {
     return APP_NAME_CN;
   }
   return APP_NAME;
+};
+
+export const getAppHomeTitle = () => {
+  // const lang = navigator.language || "en";
+  // if (lang.startsWith("zh")) {
+  //   return APP_HOME_TITLE_CN;
+  // }
+  // return APP_HOME_TITLE;
+  return APP_HOME_TITLE_CN;
 };
 
 export const initAppConfig = async () => {

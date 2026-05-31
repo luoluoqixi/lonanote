@@ -1,10 +1,11 @@
-import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { useWindowDimensions } from "react-native";
+import { useTheme } from "tamagui";
 
 import { isDesktop, os } from "@/api/common";
-import { getDebugStackHeaderTitle } from "@/components/debug";
+import { getDebugMobileHeaderTitle } from "@/components/debug";
+import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import {
   nativeStackStatusBarOptions,
   sheetScreenOptions,
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui";
 import { WideScreenHome } from "@/components/home";
 import { TitleBar } from "@/components/titlebar";
-import { WIDE_LAYOUT_MINIMUM_WIDTH, getAppName, getVersion, initConfig } from "@/config";
+import { WIDE_LAYOUT_MINIMUM_WIDTH, getAppHomeTitle, getAppName, getVersion, initConfig } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 export const unstable_settings = {
@@ -24,6 +25,7 @@ export default function UILayout() {
   const desktop = isDesktop();
   const colorScheme = useResolvedeColorScheme();
   const pageSheetGestureLockActive = usePageSheetGestureLockActive();
+  const theme = useTheme();
 
   useEffect(() => {
     const initialize = async () => {
@@ -42,6 +44,31 @@ export default function UILayout() {
       {desktop && <TitleBar />}
       <Stack
         screenOptions={({ route }) => {
+          const stackBackgroundColor = theme.background.val;
+          const baseScreenOptions = {
+            ...nativeStackStatusBarOptions(colorScheme),
+            contentStyle: {
+              backgroundColor: stackBackgroundColor,
+            },
+            headerShadowVisible: false,
+            headerStyle: {
+              backgroundColor: stackBackgroundColor,
+            },
+          } as const;
+
+          if (route.name === "index" && os() === "ios") {
+            return {
+              ...baseScreenOptions,
+              headerShown: true,
+              headerLargeTitle: true,
+              headerLargeStyle: {
+                backgroundColor: stackBackgroundColor,
+              },
+              headerLargeTitleShadowVisible: false,
+              title: getAppHomeTitle(),
+            };
+          }
+
           if (route.name === "debug") {
             return sheetScreenOptions("card", {
               ...(os() === "ios" ? { gestureEnabled: !pageSheetGestureLockActive } : null),
@@ -49,28 +76,34 @@ export default function UILayout() {
             });
           }
 
-          if (route.name === "debug_page") {
-            const focusedRouteName = getFocusedRouteNameFromRoute(route) ?? "index";
-            const isDebugPageRoot = focusedRouteName === "index";
+          if (route.name.startsWith("debug_page/")) {
+            const debugPageTitle = getDebugMobileHeaderTitle(route.name);
 
             return {
-              ...nativeStackStatusBarOptions(colorScheme),
-              // 让父级 Stack 自己给 `debug_page/index` 渲染原生返回按钮；
-              // 子级 `debug_page/_layout` 只负责它自己的子页面 header。
-              headerShown: isDebugPageRoot,
-              title: getDebugStackHeaderTitle(focusedRouteName) ?? "调试",
+              ...baseScreenOptions,
+              headerShown: debugPageTitle != null,
+              title: debugPageTitle ?? "调试",
+            };
+          }
+
+          if (route.name.startsWith("settings/")) {
+            const settingsTitle = getSettingsMobileHeaderTitle(route.name);
+
+            return {
+              ...baseScreenOptions,
+              headerShown: settingsTitle != null,
+              title: settingsTitle ?? "设置",
             };
           }
 
           return {
-            ...nativeStackStatusBarOptions(colorScheme),
+            ...baseScreenOptions,
             headerShown: false,
           };
         }}
       >
-        <Stack.Screen name="index" options={{ title: getAppName() }} />
+        <Stack.Screen name="index" options={{ title: getAppHomeTitle() }} />
         <Stack.Screen name="debug" options={{ headerShown: false }} />
-        <Stack.Screen name="debug_page" />
       </Stack>
     </>
   );

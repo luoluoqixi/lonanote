@@ -89,6 +89,12 @@ const DEBUG_MOBILE_HEADER_TITLES: Record<string, string> = {
       title,
     ]),
   ),
+  ...Object.fromEntries(
+    Object.entries(DEBUG_STACK_HEADER_TITLES).map(([routeName, title]) => [
+      `debug_page/${routeName}`,
+      title,
+    ]),
+  ),
   ...DEBUG_STACK_HEADER_TITLES,
 };
 
