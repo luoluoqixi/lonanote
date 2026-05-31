@@ -3,7 +3,12 @@ import { useEffect } from "react";
 import { useWindowDimensions } from "react-native";
 
 import { isDesktop } from "@/api/common";
-import { nativeStackStatusBarOptions, sheetScreenOptions, sheetStackScreen } from "@/components/ui";
+import {
+  nativeStackStatusBarOptions,
+  sheetScreenOptions,
+  sheetStackScreen,
+  usePageSheetGestureLockActive,
+} from "@/components/ui";
 import { WideScreenHome } from "@/components/home";
 import { TitleBar } from "@/components/titlebar";
 import { WIDE_LAYOUT_MINIMUM_WIDTH, getAppName, getVersion, initConfig } from "@/config";
@@ -17,6 +22,7 @@ export default function UILayout() {
   const { width } = useWindowDimensions();
   const desktop = isDesktop();
   const colorScheme = useResolvedeColorScheme();
+  const pageSheetGestureLockActive = usePageSheetGestureLockActive();
 
   useEffect(() => {
     const initialize = async () => {
@@ -36,7 +42,10 @@ export default function UILayout() {
       <Stack
         screenOptions={({ route }) => {
           if (route.name === "debug") {
-            return sheetScreenOptions("card", { headerShown: false });
+            return sheetScreenOptions("card", {
+              gestureEnabled: !pageSheetGestureLockActive,
+              headerShown: false,
+            });
           }
 
           return {

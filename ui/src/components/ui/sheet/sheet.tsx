@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { BackHandler } from "react-native";
 
 import { os } from "@/api/common/platform";
+import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
 
 import {
   Sheet as ReplicaSheet,
@@ -44,6 +45,7 @@ function SheetRoot(props: SheetProps) {
     handleProps,
     modal,
     onPositionChange,
+    portalProps,
     overlay,
     overlayProps,
     position,
@@ -53,6 +55,11 @@ function SheetRoot(props: SheetProps) {
     snapPointsMode,
     ...rootProps
   } = props;
+  const screenOverlayPortalHost = useScreenOverlayPortalHost();
+  const resolvedPortalProps =
+    modal === true && os() === "ios" && screenOverlayPortalHost != null
+      ? { ...portalProps, hostName: screenOverlayPortalHost }
+      : portalProps;
   const hasDefaultStructure =
     overlay != null || handle != null || content != null || scrollView != null;
   const resolvedSnapPointsMode = snapPointsMode ?? "percent";
@@ -117,6 +124,7 @@ function SheetRoot(props: SheetProps) {
 
   const resolvedRootProps = {
     ...rootProps,
+    ...(resolvedPortalProps != null ? { portalProps: resolvedPortalProps } : null),
     ...(defaultPosition != null
       ? {
           defaultPosition:

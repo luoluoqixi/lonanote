@@ -20,6 +20,8 @@ import type {
 } from "react-native";
 import { Dimensions, PanResponder, View } from "react-native";
 
+import { os } from "@/api/common/platform";
+
 import { GestureDetectorWrapper } from "./GestureDetectorWrapper";
 import { GestureSheetProvider } from "./GestureSheetContext";
 import { SheetProvider } from "./SheetContext";
@@ -31,6 +33,8 @@ import type { SheetProps, SnapPointsMode } from "./types";
 import { useGestureHandlerPan } from "./useGestureHandlerPan";
 import { useKeyboardControllerSheet } from "./useKeyboardControllerSheet";
 import { useSheetOpenState } from "./useSheetOpenState";
+import { SheetPortal } from "./sheet_portal";
+import { useLockPageSheetDismiss } from "./use_lock_page_sheet_dismiss";
 import { useSheetProviderProps } from "./useSheetProviderProps";
 
 const hiddenSize = 10_000.1;
@@ -741,6 +745,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     }
 
     const shouldKeepParentHidden = !!sheetInsideSheet && (open || opacity > 0);
+    useLockPageSheetDismiss(modal && (open || opacity > 0));
 
     useIsomorphicLayoutEffect(() => {
       if (!sheetInsideSheet) return;
@@ -865,24 +870,39 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       // mounts GestureHandlerRootView.
       //
       // 关闭动画期间仍保留 RNGHRoot 与内容挂载，避免白色闪动；
-      // 但最外层用普通 View 在 open=false 时立刻切成 pointerEvents="none"，
-      // 让外层 ScrollView 无需等待 close animation 结束即可恢复滚动。
+      // 但最外层用普通 View 在完全关闭后再切成 pointerEvents="none"。
+      // 关闭动画期间仍需命中 overlay，否则空白区域拖拽会穿透到 iOS pageSheet。
       const RNGHRoot = getGestureHandlerState().RootView;
       const mountedContents = shouldMountChildren ? (
         <ContainerComponent>{contents}</ContainerComponent>
       ) : null;
-      const modalContents = (
+      const portalHostName =
+        (portalProps as (typeof portalProps & { hostName?: string }) | undefined)?.hostName ?? "root";
+      const useIosOverlayPortal = os() === "ios" && portalHostName !== "root";
+      const teleportedChildren =
+        mountedContents && RNGHRoot ? (
+          <View
+            pointerEvents={opacity ? "auto" : "none"}
+            style={opacity ? rnghRootStyleOpen : rnghRootStyleClosed}
+          >
+            <RNGHRoot style={rnghRootStyleOpen}>{mountedContents}</RNGHRoot>
+          </View>
+        ) : (
+          mountedContents
+        );
+
+      const modalContents = useIosOverlayPortal ? (
+        <SheetPortal
+          active={open || opacity > 0}
+          hostName={portalHostName}
+          stackZIndex={zIndex}
+          {...portalProps}
+        >
+          {teleportedChildren}
+        </SheetPortal>
+      ) : (
         <Portal stackZIndex={zIndex} {...portalProps}>
-          {mountedContents && RNGHRoot ? (
-            <View
-              pointerEvents={open ? "auto" : "none"}
-              style={opacity ? rnghRootStyleOpen : rnghRootStyleClosed}
-            >
-              <RNGHRoot style={rnghRootStyleOpen}>{mountedContents}</RNGHRoot>
-            </View>
-          ) : (
-            mountedContents
-          )}
+          {teleportedChildren}
         </Portal>
       );
 

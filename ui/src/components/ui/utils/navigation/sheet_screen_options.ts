@@ -35,6 +35,8 @@ function presetBase(preset: SheetPreset): NativeStackNavigationOptions {
             presentation: "pageSheet",
             sheetAllowedDetents: [1],
             sheetGrabberVisible: true,
+            // 默认 vertical modal 会开启全屏下滑关闭，与内层 Sheet.ScrollView 手势冲突
+            fullScreenGestureEnabled: false,
           }
         : {
             presentation: "formSheet",

@@ -1,13 +1,16 @@
 import { Stack } from "expo-router";
 
+import { os } from "@/api/common";
 import { getDebugStackHeaderTitle } from "@/components/debug";
-import { nativeStackSheetStatusBarOptions } from "@/components/ui";
+import { nativeStackSheetStatusBarOptions, ScreenOverlayPortalProvider } from "@/components/ui";
+
+export const DEBUG_SCREEN_OVERLAY_PORTAL_HOST = "debug-screen-overlay";
 
 export const unstable_settings = {
   initialRouteName: "index",
 };
 
-export default function DebugLayout() {
+function DebugStackLayout() {
   return (
     <Stack
       screenOptions={({ route }) => {
@@ -21,4 +24,16 @@ export default function DebugLayout() {
       }}
     />
   );
+}
+
+export default function DebugLayout() {
+  if (os() === "ios") {
+    return (
+      <ScreenOverlayPortalProvider hostName={DEBUG_SCREEN_OVERLAY_PORTAL_HOST}>
+        <DebugStackLayout />
+      </ScreenOverlayPortalProvider>
+    );
+  }
+
+  return <DebugStackLayout />;
 }
