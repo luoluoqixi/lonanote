@@ -55,7 +55,7 @@ import type {
 } from "./types";
 
 const DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT = 6;
-const DEFAULT_TOUCH_SHEET_ITEM_HEIGHT = 56;
+const DEFAULT_TOUCH_SHEET_ITEM_HEIGHT = 48;
 const DEFAULT_TOUCH_SHEET_CHROME_HEIGHT = 88;
 const DEFAULT_TOUCH_SHEET_LABEL_HEIGHT = 32;
 const DEFAULT_TOUCH_SHEET_GROUP_GAP = 12;
@@ -509,8 +509,8 @@ const SelectRoot = forwardRef<any, SelectProps>(
           >
             {item.startContent}
             <SelectItemText
-              fontSize={shouldUseTouchSheetLayout ? "$5" : undefined}
-              lineHeight={shouldUseTouchSheetLayout ? 24 : undefined}
+              fontSize={shouldUseTouchSheetLayout ? "$4" : undefined}
+              lineHeight={shouldUseTouchSheetLayout ? 22 : undefined}
               {...itemTextProps}
             >
               {item.label}
