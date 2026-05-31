@@ -82,6 +82,10 @@ export function UiComponentsDebugPanel() {
   const [radioValue, setRadioValue] = useState("recent");
   const [selectValue, setSelectValue] = useState<string | null>("blue");
   const [selectValue2, setSelectValue2] = useState<string | null>("light");
+  const [selectGroupedValue, setSelectGroupedValue] = useState<string | null>("edit-desc");
+  const [selectNativeGroupedValue, setSelectNativeGroupedValue] = useState<string | null>(
+    "name-asc",
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
   const [percentSheetOpen, setPercentSheetOpen] = useState(false);
@@ -128,6 +132,30 @@ export function UiComponentsDebugPanel() {
     () => [
       { label: "Light", value: "light" },
       { label: "Dark", value: "dark" },
+    ],
+    [],
+  );
+
+  const selectSortGroups = useMemo(
+    () => [
+      {
+        items: [
+          { label: "文件名 (A-Z)", value: "name-asc" },
+          { label: "文件名 (Z-A)", value: "name-desc" },
+        ],
+      },
+      {
+        items: [
+          { label: "编辑时间 (从新到旧)", value: "edit-desc" },
+          { label: "编辑时间 (从旧到新)", value: "edit-asc" },
+        ],
+      },
+      {
+        items: [
+          { label: "创建时间 (从新到旧)", value: "create-desc" },
+          { label: "创建时间 (从旧到新)", value: "create-asc" },
+        ],
+      },
     ],
     [],
   );
@@ -505,6 +533,29 @@ export function UiComponentsDebugPanel() {
               native
             />
             <Text color="$color10">当前主题：{selectValue2 ?? "未选择"}</Text>
+          </View>
+          <View style={styles.field}>
+            <Label>Select Grouped</Label>
+            <Select
+              itemGroups={selectSortGroups}
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={setSelectGroupedValue}
+              placeholder="选择排序方式"
+              value={selectGroupedValue ?? undefined}
+            />
+            <Text color="$color10">当前排序：{selectGroupedValue ?? "未选择"}</Text>
+          </View>
+          <View style={styles.field}>
+            <Label>Select Native Grouped</Label>
+            <Select
+              itemGroups={selectSortGroups}
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={setSelectNativeGroupedValue}
+              placeholder="选择排序方式"
+              value={selectNativeGroupedValue ?? undefined}
+              native
+            />
+            <Text color="$color10">当前排序：{selectNativeGroupedValue ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
             <Label>Slider Replica</Label>

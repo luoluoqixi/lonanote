@@ -29,6 +29,11 @@ import {
   useResolvedNativeHaptics,
 } from "@/components/ui/utils";
 
+import {
+  type ResolvedSelectItemData,
+  type ResolvedSelectItemGroupData,
+  resolveSelectItemGroups,
+} from "./select_grouping";
 import type {
   SelectAdaptContentsProps,
   SelectAdaptProps,
@@ -50,20 +55,39 @@ import type {
 } from "./types";
 
 const DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT = 6;
-const DEFAULT_TOUCH_SHEET_ITEM_HEIGHT = 48;
-const DEFAULT_TOUCH_SHEET_CHROME_HEIGHT = 72;
+const DEFAULT_TOUCH_SHEET_ITEM_HEIGHT = 56;
+const DEFAULT_TOUCH_SHEET_CHROME_HEIGHT = 88;
 const DEFAULT_TOUCH_SHEET_LABEL_HEIGHT = 32;
+const DEFAULT_TOUCH_SHEET_GROUP_GAP = 12;
 const DEFAULT_TOUCH_ITEM_CONTENT_STYLE = {
   width: "100%",
   flexDirection: "row",
   alignItems: "center",
+} as const;
+const DEFAULT_SELECT_ITEM_CONTENT_STYLE = {
+  ...DEFAULT_TOUCH_ITEM_CONTENT_STYLE,
   paddingHorizontal: 16,
 } as const;
+const TOUCH_SELECT_ITEM_CONTENT_STYLE = {
+  ...DEFAULT_TOUCH_ITEM_CONTENT_STYLE,
+  minHeight: DEFAULT_TOUCH_SHEET_ITEM_HEIGHT,
+  paddingHorizontal: 24,
+} as const;
+const TOUCH_SHEET_SCROLL_CONTENT_STYLE = {
+  paddingBottom: 28,
+  paddingHorizontal: 16,
+  width: "100%",
+} as const;
+const TOUCH_SHEET_GROUP_RADIUS = 24;
+const TOUCH_SHEET_FRAME_BACKGROUND = "$backgroundPress" as const;
+const TOUCH_SHEET_GROUP_BACKGROUND = "$background" as const;
+const TOUCH_SHEET_SEPARATOR_COLOR = "$borderColor" as const;
 
 const SelectAdaptHiddenContext = React.createContext(true);
 
 type TouchSheetConfig = {
   frameMaxHeight?: SelectProps["touchSheetMaxHeight"];
+  shouldEnableScroll: boolean;
   snapPoints: [number];
   snapPointsMode: "constant" | "percent";
 };
@@ -89,17 +113,36 @@ function parsePercentSnapPoint(value: SelectProps["touchSheetMaxHeight"]) {
 }
 
 function resolveTouchSheetConfig({
+  groupCount,
+  groupLabelCount,
   itemCount,
-  itemLabel,
   touchSheetMaxHeight,
 }: {
+  groupCount: number;
+  groupLabelCount: number;
   itemCount: number;
-  itemLabel: React.ReactNode;
   touchSheetMaxHeight: SelectProps["touchSheetMaxHeight"];
 }): TouchSheetConfig {
+  const totalItemCount = Math.max(itemCount, 1);
+  const visibleItemCount = Math.min(totalItemCount, DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT);
+  const visibleGroupGapCount = Math.max(Math.min(groupCount, visibleItemCount) - 1, 0);
+  const estimatedVisibleHeight =
+    visibleItemCount * DEFAULT_TOUCH_SHEET_ITEM_HEIGHT +
+    DEFAULT_TOUCH_SHEET_CHROME_HEIGHT +
+    visibleGroupGapCount * DEFAULT_TOUCH_SHEET_GROUP_GAP +
+    groupLabelCount * DEFAULT_TOUCH_SHEET_LABEL_HEIGHT;
+  const estimatedContentHeight =
+    totalItemCount * DEFAULT_TOUCH_SHEET_ITEM_HEIGHT +
+    DEFAULT_TOUCH_SHEET_CHROME_HEIGHT +
+    Math.max(groupCount - 1, 0) * DEFAULT_TOUCH_SHEET_GROUP_GAP +
+    groupLabelCount * DEFAULT_TOUCH_SHEET_LABEL_HEIGHT;
+
   if (typeof touchSheetMaxHeight === "number" && Number.isFinite(touchSheetMaxHeight)) {
+    const snapPoint = Math.max(1, Math.round(touchSheetMaxHeight));
+
     return {
-      snapPoints: [Math.max(1, Math.round(touchSheetMaxHeight))],
+      shouldEnableScroll: estimatedContentHeight > snapPoint,
+      snapPoints: [snapPoint],
       snapPointsMode: "constant",
     };
   }
@@ -108,20 +151,16 @@ function resolveTouchSheetConfig({
 
   if (percentSnapPoint != null) {
     return {
+      shouldEnableScroll: estimatedContentHeight > estimatedVisibleHeight,
       snapPoints: [percentSnapPoint],
       snapPointsMode: "percent",
     };
   }
 
-  const visibleItemCount = Math.min(Math.max(itemCount, 1), DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT);
-  const estimatedHeight =
-    visibleItemCount * DEFAULT_TOUCH_SHEET_ITEM_HEIGHT +
-    DEFAULT_TOUCH_SHEET_CHROME_HEIGHT +
-    (itemLabel == null ? 0 : DEFAULT_TOUCH_SHEET_LABEL_HEIGHT);
-
   return {
     ...(touchSheetMaxHeight != null ? { frameMaxHeight: touchSheetMaxHeight } : null),
-    snapPoints: [estimatedHeight],
+    shouldEnableScroll: estimatedContentHeight > estimatedVisibleHeight,
+    snapPoints: [estimatedVisibleHeight],
     snapPointsMode: "constant",
   };
 }
@@ -394,6 +433,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       disabled,
       isDisabled,
       itemIndicatorProps,
+      itemGroups,
       itemProps,
       itemTextProps,
       items,
@@ -413,22 +453,39 @@ const SelectRoot = forwardRef<any, SelectProps>(
   ) => {
     void ref;
     const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
-    const resolvedItems = items ?? options;
+    const shouldUseTouchSheetLayout = !isWeb();
+    const resolvedItemGroups = resolveSelectItemGroups({ itemGroups, items, options });
+    const resolvedItems = resolvedItemGroups.flatMap((group) => group.items);
+    const getGroupLabel = (group: ResolvedSelectItemGroupData, groupIndex: number) =>
+      group.label ?? (groupIndex === 0 ? itemLabel : null);
+    const groupLabelCount = resolvedItemGroups.filter(
+      (group, groupIndex) => getGroupLabel(group, groupIndex) != null,
+    ).length;
     const touchSheetConfig = resolveTouchSheetConfig({
-      itemCount: resolvedItems?.length ?? 0,
-      itemLabel,
+      groupCount: resolvedItemGroups.length,
+      groupLabelCount,
+      itemCount: resolvedItems.length,
       touchSheetMaxHeight,
     });
     const shouldRenderNativeOptionText = isWeb() && !!props.native;
     const getItemLabelByValue = (value: string | null | undefined) =>
-      resolvedItems?.find((item) => item.value === value)?.label ?? null;
+      resolvedItems.find((item) => item.value === value)?.label ?? null;
     const selectedItem = getItemLabelByValue(props.value ?? null);
-    const renderedItems = resolvedItems?.map((item, index) => (
+    const renderItem = (item: ResolvedSelectItemData) => (
       <SelectItem
+        {...(shouldUseTouchSheetLayout
+          ? {
+              background: "transparent",
+              borderRadius: 0,
+              height: DEFAULT_TOUCH_SHEET_ITEM_HEIGHT,
+              paddingHorizontal: 0,
+              paddingVertical: 0,
+            }
+          : null)}
         {...itemProps}
         aria-label={resolveAriaLabel(item["aria-label"] ?? itemProps?.["aria-label"], item.label)}
         disabled={item.disabled ?? item.isDisabled ?? itemProps?.disabled}
-        index={index}
+        index={item.index}
         key={item.value}
         textValue={item.label}
         value={item.value}
@@ -436,16 +493,75 @@ const SelectRoot = forwardRef<any, SelectProps>(
         {shouldRenderNativeOptionText ? (
           item.label
         ) : (
-          <YStack style={DEFAULT_TOUCH_ITEM_CONTENT_STYLE}>
+          <YStack
+            background={shouldUseTouchSheetLayout ? TOUCH_SHEET_GROUP_BACKGROUND : undefined}
+            borderBottomColor={shouldUseTouchSheetLayout ? TOUCH_SHEET_SEPARATOR_COLOR : undefined}
+            borderBottomWidth={shouldUseTouchSheetLayout && !item.isLastInGroup ? 1 : 0}
+            style={
+              shouldUseTouchSheetLayout
+                ? TOUCH_SELECT_ITEM_CONTENT_STYLE
+                : DEFAULT_SELECT_ITEM_CONTENT_STYLE
+            }
+          >
             {item.startContent}
-            <SelectItemText {...itemTextProps}>{item.label}</SelectItemText>
+            <SelectItemText
+              fontSize={shouldUseTouchSheetLayout ? "$5" : undefined}
+              lineHeight={shouldUseTouchSheetLayout ? 24 : undefined}
+              {...itemTextProps}
+            >
+              {item.label}
+            </SelectItemText>
             {item.description}
             {item.endContent}
-            <SelectItemIndicator marginLeft="auto" {...itemIndicatorProps} />
+            <SelectItemIndicator marginLeft="auto" {...itemIndicatorProps}>
+              {itemIndicatorProps?.children ??
+                (shouldUseTouchSheetLayout ? <Check size={22} /> : undefined)}
+            </SelectItemIndicator>
           </YStack>
         )}
       </SelectItem>
-    ));
+    );
+    const renderGroup = (group: ResolvedSelectItemGroupData, groupIndex: number) => {
+      const label = getGroupLabel(group, groupIndex);
+      const content = (
+        <SelectGroup>
+          {label && (
+            <Select.Label
+              fontWeight="700"
+              style={
+                shouldUseTouchSheetLayout
+                  ? { paddingHorizontal: 24, paddingVertical: 10 }
+                  : undefined
+              }
+              {...itemLabelProps}
+            >
+              {label}
+            </Select.Label>
+          )}
+          {group.items.map(renderItem)}
+        </SelectGroup>
+      );
+
+      if (!shouldUseTouchSheetLayout) {
+        return <React.Fragment key={group.key}>{content}</React.Fragment>;
+      }
+
+      return (
+        <YStack
+          key={group.key}
+          background={TOUCH_SHEET_GROUP_BACKGROUND}
+          style={{
+            borderRadius: TOUCH_SHEET_GROUP_RADIUS,
+            marginBottom:
+              groupIndex === resolvedItemGroups.length - 1 ? 0 : DEFAULT_TOUCH_SHEET_GROUP_GAP,
+            overflow: "hidden",
+            width: "100%",
+          }}
+        >
+          {content}
+        </YStack>
+      );
+    };
 
     return (
       <TamaguiSelect
@@ -467,7 +583,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
         renderValue={props.renderValue ?? ((nextValue) => getItemLabelByValue(nextValue))}
       >
         {children ??
-          (resolvedItems == null ? null : (
+          (resolvedItems.length === 0 ? null : (
             <>
               <SelectTrigger
                 disabled={disabled ?? isDisabled ?? triggerProps?.disabled}
@@ -496,12 +612,52 @@ const SelectRoot = forwardRef<any, SelectProps>(
                   >
                     <Sheet.Frame
                       {...(touchSheetConfig.frameMaxHeight != null
-                        ? { style: { maxHeight: touchSheetConfig.frameMaxHeight } }
+                        ? { maxHeight: touchSheetConfig.frameMaxHeight }
+                        : null)}
+                      {...(shouldUseTouchSheetLayout
+                        ? {
+                            backgroundColor: TOUCH_SHEET_FRAME_BACKGROUND,
+                            borderTopLeftRadius: 36,
+                            borderTopRightRadius: 36,
+                            paddingTop: 12,
+                          }
                         : null)}
                     >
-                      <Sheet.ScrollView>
-                        <SelectAdapt.Contents />
-                      </Sheet.ScrollView>
+                      {shouldUseTouchSheetLayout && (
+                        <Sheet.Handle
+                          alignSelf="center"
+                          backgroundColor="$color8"
+                          borderRadius={999}
+                          height={5}
+                          marginBottom={14}
+                          opacity={0.65}
+                          onPress={() => {}}
+                          width={92}
+                        />
+                      )}
+                      {shouldUseTouchSheetLayout ? (
+                        touchSheetConfig.shouldEnableScroll ? (
+                          <Sheet.ScrollView bounces={false} showsVerticalScrollIndicator>
+                            <YStack
+                              background={TOUCH_SHEET_FRAME_BACKGROUND}
+                              style={TOUCH_SHEET_SCROLL_CONTENT_STYLE}
+                            >
+                              <SelectAdapt.Contents />
+                            </YStack>
+                          </Sheet.ScrollView>
+                        ) : (
+                          <YStack
+                            background={TOUCH_SHEET_FRAME_BACKGROUND}
+                            style={TOUCH_SHEET_SCROLL_CONTENT_STYLE}
+                          >
+                            <SelectAdapt.Contents />
+                          </YStack>
+                        )
+                      ) : (
+                        <Sheet.ScrollView>
+                          <SelectAdapt.Contents />
+                        </Sheet.ScrollView>
+                      )}
                     </Sheet.Frame>
                     <Sheet.Overlay
                       bg="$shadowColor"
@@ -513,13 +669,15 @@ const SelectRoot = forwardRef<any, SelectProps>(
                 </SelectAdapt>
 
                 <SelectContent {...contentProps}>
-                  <SelectScrollUpButton
-                    items="center"
-                    justify="center"
-                    position="relative"
-                    width="100%"
-                    height="$3"
-                  />
+                  {!shouldUseTouchSheetLayout && (
+                    <SelectScrollUpButton
+                      items="center"
+                      justify="center"
+                      position="relative"
+                      width="100%"
+                      height="$3"
+                    />
+                  )}
                   <SelectViewport
                     bg="$background"
                     rounded="$4"
@@ -527,16 +685,8 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     borderColor="$borderColor"
                     {...viewportProps}
                   >
-                    <SelectGroup>
-                      {itemLabel && (
-                        <Select.Label fontWeight="700" {...itemLabelProps}>
-                          {itemLabel}
-                        </Select.Label>
-                      )}
-                      {renderedItems}
-                    </SelectGroup>
-                    {/* Native gets an extra icon */}
-                    {props.native && (
+                    {resolvedItemGroups.map(renderGroup)}
+                    {isWeb() && props.native && (
                       <YStack
                         position="absolute"
                         r={0}
@@ -552,13 +702,15 @@ const SelectRoot = forwardRef<any, SelectProps>(
                       </YStack>
                     )}
                   </SelectViewport>
-                  <SelectScrollDownButton
-                    items="center"
-                    justify="center"
-                    position="relative"
-                    width="100%"
-                    height="$3"
-                  />
+                  {!shouldUseTouchSheetLayout && (
+                    <SelectScrollDownButton
+                      items="center"
+                      justify="center"
+                      position="relative"
+                      width="100%"
+                      height="$3"
+                    />
+                  )}
                 </SelectContent>
               </SelectSheetController>
             </>

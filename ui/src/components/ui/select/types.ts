@@ -15,7 +15,14 @@ export interface SelectItemData {
   value: string;
 }
 
+export interface SelectItemGroupData {
+  items: SelectItemData[];
+  key?: string;
+  label?: ReactNode;
+}
+
 export type SelectOption = SelectItemData;
+export type SelectOptionGroup = SelectItemGroupData;
 
 export interface SelectProps extends Omit<
   ComponentProps<typeof TamaguiSelect>,
@@ -27,6 +34,7 @@ export interface SelectProps extends Omit<
   disabled?: boolean;
   isDisabled?: boolean;
   itemIndicatorProps?: ComponentProps<typeof TamaguiSelect.ItemIndicator>;
+  itemGroups?: SelectItemGroupData[];
   itemProps?: Omit<ComponentProps<typeof TamaguiSelect.Item>, "index" | "value">;
   itemTextProps?: ComponentProps<typeof TamaguiSelect.ItemText>;
   items?: SelectItemData[];
