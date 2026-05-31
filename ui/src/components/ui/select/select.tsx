@@ -76,6 +76,7 @@ const TOUCH_SELECT_ITEM_CONTENT_STYLE = {
 const TOUCH_SHEET_SCROLL_CONTENT_STYLE = {
   paddingBottom: 28,
   paddingHorizontal: 16,
+  paddingTop: 10,
   width: "100%",
 } as const;
 const TOUCH_SHEET_GROUP_RADIUS = 24;
@@ -632,7 +633,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                           backgroundColor="$color8"
                           borderRadius={999}
                           height={5}
-                          marginBottom={14}
+                          marginBottom={6}
                           opacity={0.65}
                           onPress={() => {}}
                           width={92}
@@ -640,7 +641,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                       )}
                       {shouldUseTouchSheetLayout ? (
                         touchSheetConfig.shouldEnableScroll ? (
-                          <Sheet.ScrollView bounces={false} showsVerticalScrollIndicator>
+                          <Sheet.ScrollView showsVerticalScrollIndicator>
                             <YStack
                               background={TOUCH_SHEET_FRAME_BACKGROUND}
                               style={TOUCH_SHEET_SCROLL_CONTENT_STYLE}
