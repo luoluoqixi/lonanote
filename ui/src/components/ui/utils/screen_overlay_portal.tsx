@@ -1,8 +1,10 @@
+import { PortalRootHostProvider } from "@tamagui/portal";
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { PortalHost as TeleportPortalHost } from "react-native-teleport";
 
 import { os } from "@/api/common/platform";
+import { Toaster } from "../provider/toaster";
 
 const ScreenOverlayPortalContext = createContext<string | null>(null);
 const ScreenOverlayModalLockContext = createContext(0);
@@ -43,10 +45,12 @@ export function ScreenOverlayPortalProvider({
     <ScreenOverlayPortalContext.Provider value={hostName}>
       <ScreenOverlayModalLockApiContext.Provider value={lockApi}>
         <ScreenOverlayModalLockContext.Provider value={modalLockCount}>
-          <View style={styles.root}>
-            {children}
-            <ScreenOverlayPortalHost hostName={hostName} />
-          </View>
+          <PortalRootHostProvider hostName={hostName}>
+            <View style={styles.root}>
+              {children}
+              <ScreenOverlayPortalHost hostName={hostName} />
+            </View>
+          </PortalRootHostProvider>
         </ScreenOverlayModalLockContext.Provider>
       </ScreenOverlayModalLockApiContext.Provider>
     </ScreenOverlayPortalContext.Provider>
@@ -57,6 +61,7 @@ export function ScreenOverlayPortalHost({ hostName }: { hostName: string }) {
   return (
     <View pointerEvents="box-none" style={styles.host}>
       <TeleportPortalHost name={hostName} style={StyleSheet.absoluteFillObject} />
+      <Toaster viewportName={hostName} />
     </View>
   );
 }

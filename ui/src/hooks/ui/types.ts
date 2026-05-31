@@ -1,6 +1,8 @@
 import { ExternalToast, PromiseData, PromiseT } from "@tamagui/toast/v2";
 
-export type ToastShowOptions = ExternalToast;
+export type ToastShowOptions = ExternalToast & {
+  viewportName?: string | "default";
+};
 export type TitleToast = React.ReactNode | (() => React.ReactNode);
 
 export type ToastFunc = (title: TitleToast, options?: ToastShowOptions) => string | number;

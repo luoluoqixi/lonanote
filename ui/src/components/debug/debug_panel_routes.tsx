@@ -6,6 +6,7 @@ import { UiComponentsDebugPanel } from "./ui_components_panel";
 import { WorkspaceDebugPanel } from "./workspace_debug_panel";
 
 type DebugTabKey = "workspace" | "path" | "components";
+type DebugPanelPresentation = "scroll" | "static";
 type DebugRouteMode = "sheet" | "page";
 
 type DebugPanelRouteDefinition = {
@@ -14,6 +15,7 @@ type DebugPanelRouteDefinition = {
   href: Href;
   key: DebugTabKey;
   label: string;
+  presentation: DebugPanelPresentation;
 };
 
 const DEBUG_HOME_HREF = "/debug" as Href;
@@ -28,6 +30,7 @@ const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
     href: "/debug/workspace" as Href,
     key: "workspace",
     label: "工作区",
+    presentation: "scroll",
   },
   {
     Component: PathDebugPanel,
@@ -35,6 +38,7 @@ const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
     href: "/debug/path" as Href,
     key: "path",
     label: "路径",
+    presentation: "scroll",
   },
   {
     Component: UiComponentsDebugPanel,
@@ -42,6 +46,7 @@ const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
     href: "/debug/components" as Href,
     key: "components",
     label: "组件总览",
+    presentation: "static",
   },
 ];
 
@@ -107,4 +112,4 @@ export {
   getDebugStackHeaderTitle,
   isDebugRoutePath,
 };
-export type { DebugPanelRouteDefinition, DebugRouteMode, DebugTabKey };
+export type { DebugPanelPresentation, DebugPanelRouteDefinition, DebugRouteMode, DebugTabKey };

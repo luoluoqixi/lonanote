@@ -1,0 +1,26 @@
+diff --git a/dist/esm/components.native.js b/dist/esm/components.native.js
+index 0000000..1111111 100644
+--- a/dist/esm/components.native.js
++++ b/dist/esm/components.native.js
+@@ -1,4 +1,5 @@
+ import { jsx as _jsx, Fragment as _Fragment } from "react/jsx-runtime";
++import { useId } from "react";
+ import { getPortal } from "./portalState.native.js";
+ function NativePortal(param) {
+   var {
+@@ -6,12 +7,14 @@ function NativePortal(param) {
+     hostName = "root",
+     children
+   } = param;
++  var portalName = useId();
+   var state = getPortal().state;
+   if (state.type !== "teleport") return null;
+   var {
+     Portal
+   } = globalThis.__tamagui_teleport;
+   return /* @__PURE__ */_jsx(Portal, {
+     hostName,
++    name: portalName,
+     children
+   });
+ }

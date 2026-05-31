@@ -1,0 +1,33 @@
+diff --git a/dist/esm/Dialog.native.js b/dist/esm/Dialog.native.js
+index 0000000..1111111 100644
+--- a/dist/esm/Dialog.native.js
++++ b/dist/esm/Dialog.native.js
+@@ -8,7 +8,7 @@ import { createStyledContext, getExpandedShorthand, LayoutMeasurementController,
+ import { createContext } from "@tamagui/create-context";
+ import { Dismissable } from "@tamagui/dismissable";
+ import { FocusScope, FocusScopeController } from "@tamagui/focus-scope";
+-import { needsPortalRepropagation, Portal, PortalItem, resolveViewZIndex } from "@tamagui/portal";
++import { needsPortalRepropagation, Portal, PortalItem, resolveViewZIndex, usePortalRootHostName } from "@tamagui/portal";
+ import { RemoveScroll } from "@tamagui/remove-scroll";
+ import { SheetController } from "@tamagui/sheet/controller";
+ import { ButtonNestingContext, ThemeableStack, YStack } from "@tamagui/stacks";
+@@ -93,6 +93,7 @@ var DialogPortalItem = function (param) {
+   var {
+     context,
+     children
+   } = param;
++  var rootHostName = usePortalRootHostName();
+   var themeName = useThemeName();
+   var isAdapted = useAdaptIsActive(context.adaptScope);
+   var adaptContext = useAdaptContext(context.adaptScope);
+@@ -115,7 +116,7 @@ var DialogPortalItem = function (param) {
+   return isAdapted ? /* @__PURE__ */_jsx(AdaptPortalContents, {
+     scope: context.adaptScope,
+     children: content
+-  }) : context.modal ? /* @__PURE__ */_jsx(PortalItem, {
+-    hostName: context.modal ? "root" : context.adaptScope,
++  }) : context.modal ? /* @__PURE__ */_jsx(PortalItem, {
++    hostName: context.modal ? rootHostName : context.adaptScope,
+     children: content
+   }) : content;
+ };

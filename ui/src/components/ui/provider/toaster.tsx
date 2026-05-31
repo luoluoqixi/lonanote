@@ -208,10 +208,26 @@ function ToastContent({ toast: t }: { toast: ToastT }) {
   );
 }
 
-function ToastList() {
+function shouldRenderToastInViewport(
+  toast: ToastT & { viewportName?: string | "default" },
+  viewportName: string | undefined,
+): boolean {
+  if (viewportName == null) {
+    return toast.viewportName == null || toast.viewportName === "default";
+  }
+
+  return toast.viewportName === viewportName;
+}
+
+function ToastList({ viewportName }: { viewportName?: string }) {
   return (
     <Toast.List
       renderItem={({ toast: t, index }) => {
+        const scopedToast = t as ToastT & { viewportName?: string | "default" };
+        if (!shouldRenderToastInViewport(scopedToast, viewportName)) {
+          return null;
+        }
+
         const appearance = getToastAppearance(t);
 
         return (
@@ -238,14 +254,32 @@ function ToastList() {
   );
 }
 
-export function Toaster() {
+export function Toaster({
+  viewportName,
+}: {
+  viewportName?: string;
+}) {
   useWebToastAnimationOverride();
 
   const position = isWeb() ? "bottom-right" : "bottom-center";
+  const viewportStyle =
+    viewportName != null
+      ? {
+          bottom: 24,
+          left: 16,
+          right: 16,
+          top: "auto" as const,
+        }
+      : undefined;
+  const portalToRoot = viewportName == null;
   return (
     <Toast position={position} visibleToasts={4} duration={5000} gap={16}>
-      <Toast.Viewport data-toast-container>
-        <ToastList />
+      <Toast.Viewport
+        data-toast-container
+        {...(!portalToRoot ? ({ portalToRoot: false } as Record<string, unknown>) : null)}
+        {...(viewportStyle != null ? ({ style: viewportStyle } as Record<string, unknown>) : null)}
+      >
+        <ToastList viewportName={viewportName} />
       </Toast.Viewport>
     </Toast>
   );

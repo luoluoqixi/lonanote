@@ -1,0 +1,87 @@
+diff --git a/dist/esm/GorhomPortal.native.js b/dist/esm/GorhomPortal.native.js
+index 0000000..1111111 100644
+--- a/dist/esm/GorhomPortal.native.js
++++ b/dist/esm/GorhomPortal.native.js
+@@ -69,6 +69,20 @@ var reducer = function (state, action) {
+ var PortalStateContext = /* @__PURE__ */createContext(null);
+ var PortalDispatchContext = /* @__PURE__ */createContext(null);
+ var PortalProviderActiveContext = /* @__PURE__ */createContext(false);
++var PortalRootHostContext = /* @__PURE__ */createContext("root");
++var usePortalRootHostName = function () {
++  var hostName = useContext(PortalRootHostContext);
++  return hostName || "root";
++};
++var PortalRootHostProvider = function (param) {
++  var {
++    hostName = "root",
++    children
++  } = param;
++  return /* @__PURE__ */_jsx(PortalRootHostContext.Provider, {
++    value: hostName,
++    children
++  });
++};
+ var usePortalState = function (hostName) {
+   var state = useContext(PortalStateContext);
+   if (state === null) throw new Error("'PortalStateContext' cannot be null, please add 'PortalProvider' to the root component.");
+@@ -200,4 +214,5 @@ function PortalHostNonNative(props) {
+   return render(state.map(function (item) {
+     return item.node;
+   }));
+-}
++}
++export { ACTIONS, INITIAL_STATE, PortalHost, PortalProvider, PortalRootHostProvider, usePortal, usePortalRootHostName };
+diff --git a/dist/esm/Portal.native.js b/dist/esm/Portal.native.js
+index 0000000..1111111 100644
+--- a/dist/esm/Portal.native.js
++++ b/dist/esm/Portal.native.js
+@@ -2,15 +2,17 @@ import { jsx as _jsx } from "react/jsx-runtime";
+ import { View } from "@tamagui/core";
+ import { getPortal, NativePortal } from "@tamagui/native";
+ import { useStackedZIndex } from "@tamagui/z-index-stack";
++import { usePortalRootHostName } from "./GorhomPortal.native.js";
+ import { GorhomPortalItem } from "./GorhomPortalItem.native.js";
+ import { getStackedZIndexProps } from "./helpers.native.js";
+ var Portal = function (propsIn) {
+   var zIndex = useStackedZIndex(getStackedZIndexProps(propsIn));
+   var {
+     children,
+     passThrough
+   } = propsIn;
++  var rootHostName = usePortalRootHostName();
+   var contents = /* @__PURE__ */_jsx(View, {
+     pointerEvents: "box-none",
+     position: "absolute",
+@@ -23,14 +25,14 @@ var Portal = function (propsIn) {
+   var portalState = getPortal().state;
+   if (portalState.type === "teleport") {
+     return /* @__PURE__ */_jsx(NativePortal, {
+-      hostName: "root",
++      hostName: rootHostName,
+       children: contents
+     });
+   }
+   return /* @__PURE__ */_jsx(GorhomPortalItem, {
+     passThrough,
+-    hostName: "root",
++    hostName: rootHostName,
+     children: contents
+   });
+ };
+diff --git a/types/GorhomPortal.d.ts b/types/GorhomPortal.d.ts
+index 0000000..1111111 100644
+--- a/types/GorhomPortal.d.ts
++++ b/types/GorhomPortal.d.ts
+@@ -53,6 +53,12 @@ export interface PortalProviderProps {
+     children: ReactNode | ReactNode[];
+ }
+ export declare const PortalProvider: React.MemoExoticComponent<({ rootHostName, shouldAddRootHost, children, }: PortalProviderProps) => import("react/jsx-runtime").JSX.Element>;
++export interface PortalRootHostProviderProps {
++    hostName?: string;
++    children: ReactNode | ReactNode[];
++}
++export declare const PortalRootHostProvider: ({ hostName, children, }: PortalRootHostProviderProps) => import("react/jsx-runtime").JSX.Element;
++export declare const usePortalRootHostName: () => string;
+ export interface PortalHostProps {
+     /**
+      * Host's key or name to be used as an identifier.
