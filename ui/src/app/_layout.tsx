@@ -10,6 +10,7 @@ import {
   DebugPanelHost,
   getDebugMobileHeaderTitle,
 } from "@/components/debug";
+import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import { RootProvider } from "@/components/ui";
 import { getAppName } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
@@ -25,11 +26,25 @@ export default function RootLayout() {
       <DebugPanelGestureLayer>
         <Stack
           screenOptions={({ route }) => {
+            if (isWeb()) {
+              return {
+                headerShown: false,
+              };
+            }
+
             const debugTitle = getDebugMobileHeaderTitle(route.name);
-            if (debugTitle != null && !isWeb()) {
+            if (debugTitle != null) {
               return {
                 headerShown: true,
                 title: debugTitle,
+              };
+            }
+
+            const settingsTitle = getSettingsMobileHeaderTitle(route.name);
+            if (settingsTitle != null) {
+              return {
+                headerShown: true,
+                title: settingsTitle,
               };
             }
 

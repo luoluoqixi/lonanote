@@ -61,6 +61,20 @@ function getSettingsRouteDefinition(key: SettingsRouteKey): SettingsRouteDefinit
   return matchedDefinition;
 }
 
+const SETTINGS_MOBILE_HEADER_TITLES: Record<string, string> = {
+  "settings/index": "设置",
+  ...Object.fromEntries(
+    SETTINGS_ROUTE_DEFINITIONS.map((definition) => [
+      String(definition.href).slice(1),
+      definition.label,
+    ]),
+  ),
+};
+
+function getSettingsMobileHeaderTitle(routeName: string): string | null {
+  return SETTINGS_MOBILE_HEADER_TITLES[routeName] ?? null;
+}
+
 type SettingsSyncSnapshot = {
   error: string | null;
   isLoading: boolean;
@@ -233,6 +247,8 @@ function SettingsSectionScreen({ sectionKey }: { sectionKey: SettingsRouteKey })
 export function GlobalSettingsScreen() {
   return <SettingsSectionScreen sectionKey="global" />;
 }
+
+export { getSettingsMobileHeaderTitle };
 
 export function AppearanceSettingsScreen() {
   return <SettingsSectionScreen sectionKey="appearance" />;
