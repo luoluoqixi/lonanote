@@ -61,6 +61,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     "expo-router",
     "./tools/prebuild/with_android_sdk_versions.cjs",
+    "./tools/prebuild/with_android_gradle_memory.cjs",
     [
       "expo-splash-screen",
       {
@@ -72,6 +73,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     "./tools/prebuild/with_android_native_build_long_path_fix.cjs",
+    // "./tools/prebuild/with_android_nested_scroll_view.cjs",
     ["./tools/prebuild/with_android_adaptive_icon_inset.cjs", { inset: "16%" }],
   ],
   experiments: {

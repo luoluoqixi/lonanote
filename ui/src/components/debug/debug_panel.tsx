@@ -1,6 +1,4 @@
 import { usePathname, useRouter } from "expo-router";
-
-import { dismissSheet } from "@/components/ui";
 import { useEffect, useMemo, useState } from "react";
 import {
   DeviceEventEmitter,
@@ -13,6 +11,7 @@ import {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
 
+import { dismissSheet } from "@/components/ui";
 import { Dialog, Tabs } from "@/components/ui";
 import { WIDE_LAYOUT_MINIMUM_WIDTH } from "@/config";
 
