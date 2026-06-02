@@ -26,7 +26,8 @@
 ```shell
 run.cmd install
 # or
-sh run.sh install
+# chmod +x run
+run install
 
 ```
 
@@ -37,7 +38,7 @@ sh run.sh install
 ```shell
 run.cmd dev
 # or
-sh run.sh dev
+run dev
 ```
 
 移动端开发：
@@ -46,8 +47,8 @@ sh run.sh dev
 run.cmd dev:android
 run.cmd dev:ios
 # or
-sh run.sh dev:android
-sh run.sh dev:ios
+run dev:android
+run dev:ios
 ```
 
 `ui/android/` 与 `ui/ios/` 是 Expo prebuild 生成的原生工程；需要刷新原生工程时可运行：
@@ -56,8 +57,8 @@ sh run.sh dev:ios
 run.cmd prebuild:android
 run.cmd prebuild:ios
 # or
-sh run.sh prebuild:android
-sh run.sh prebuild:ios
+run prebuild:android
+run prebuild:ios
 ```
 
 > 首次运行应用程序时会被阻止
@@ -74,32 +75,32 @@ sh run.sh prebuild:ios
 # windows
 run.cmd build:win
 # or
-sh run.sh build:win
+run build:win
 
 # macos x64
 run.cmd build:mac:x64
 # or
-sh run.sh build:mac:x64
+run build:mac:x64
 
 # macos arm64
 run.cmd build:mac:arm64
 # or
-sh run.sh build:mac:arm64
+run build:mac:arm64
 
 # linux
 run.cmd build:linux
 # or
-sh run.sh build:linux
+run build:linux
 
 # android
 run.cmd build:android
 # or
-sh run.sh build:android
+run build:android
 
 # ios
 run.cmd build:ios
 # or
-sh run.sh build:ios
+run build:ios
 ```
 
 #### generate icon
@@ -108,7 +109,7 @@ sh run.sh build:ios
 # generate icon
 run.cmd icon
 # or
-sh run.sh icon
+run icon
 ```
 
 #### 🎨 跨平台 UI 约定
