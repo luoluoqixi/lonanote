@@ -15,19 +15,19 @@ index 19f863c..8794e40 100644
  }
  
 diff --git a/src/hook/useReducedMotion.ts b/src/hook/useReducedMotion.ts
-index eeb28cd..23318ca 100644
+index 7cc1fd6..ea55b25 100644
 --- a/src/hook/useReducedMotion.ts
 +++ b/src/hook/useReducedMotion.ts
-@@ -1,7 +1,5 @@
+@@ -1,7 +1,6 @@
  'use strict';
 -import { isReducedMotionEnabledInSystem } from '../ReducedMotion';
--
--const IS_REDUCED_MOTION_ENABLED_IN_SYSTEM = isReducedMotionEnabledInSystem();
 +import { ReducedMotionManager } from '../ReducedMotion';
  
+-const IS_REDUCED_MOTION_ENABLED_IN_SYSTEM = isReducedMotionEnabledInSystem();
+ 
+ // is-tree-shakable-suppress
  /**
-  * Lets you query the reduced motion system setting.
-@@ -14,5 +12,5 @@ const IS_REDUCED_MOTION_ENABLED_IN_SYSTEM = isReducedMotionEnabledInSystem();
+@@ -15,5 +14,5 @@ const IS_REDUCED_MOTION_ENABLED_IN_SYSTEM = isReducedMotionEnabledInSystem();
   * @see https://docs.swmansion.com/react-native-reanimated/docs/device/useReducedMotion
   */
  export function useReducedMotion() {
@@ -35,12 +35,12 @@ index eeb28cd..23318ca 100644
 +  return ReducedMotionManager.jsValue;
  }
 diff --git a/lib/module/ReducedMotion.js b/lib/module/ReducedMotion.js
-index a99fc2c..874bb0a 100644
+index 20ce3df..30a9bee 100644
 --- a/lib/module/ReducedMotion.js
 +++ b/lib/module/ReducedMotion.js
 @@ -3,9 +3,7 @@
- import { IS_WEB, IS_WINDOW_AVAILABLE } from './common';
- import { makeMutable } from './mutables';
+ import { IS_WEB, IS_WINDOW_AVAILABLE } from "./common/index.js";
+ import { makeMutable } from "./mutables.js";
  export function isReducedMotionEnabledInSystem() {
 -  return IS_WEB ? IS_WINDOW_AVAILABLE ?
 -  // @ts-ignore Fallback if `window` is undefined.
@@ -50,19 +50,19 @@ index a99fc2c..874bb0a 100644
  const IS_REDUCED_MOTION_ENABLED_IN_SYSTEM = isReducedMotionEnabledInSystem();
  export const ReducedMotionManager = {
 diff --git a/lib/module/hook/useReducedMotion.js b/lib/module/hook/useReducedMotion.js
-index 9c84406..46e96d3 100644
+index df938a5..dcf7a16 100644
 --- a/lib/module/hook/useReducedMotion.js
 +++ b/lib/module/hook/useReducedMotion.js
 @@ -1,7 +1,6 @@
  'use strict';
  
--import { isReducedMotionEnabledInSystem } from '../ReducedMotion';
+-import { isReducedMotionEnabledInSystem } from "../ReducedMotion.js";
 -const IS_REDUCED_MOTION_ENABLED_IN_SYSTEM = isReducedMotionEnabledInSystem();
-+import { ReducedMotionManager } from '../ReducedMotion';
++import { ReducedMotionManager } from "../ReducedMotion.js";
  
+ // is-tree-shakable-suppress
  /**
-  * Lets you query the reduced motion system setting.
-@@ -14,6 +13,6 @@ const IS_REDUCED_MOTION_ENABLED_IN_SYSTEM = isReducedMotionEnabledInSystem();
+@@ -15,6 +14,6 @@ const IS_REDUCED_MOTION_ENABLED_IN_SYSTEM = isReducedMotionEnabledInSystem();
   * @see https://docs.swmansion.com/react-native-reanimated/docs/device/useReducedMotion
   */
  export function useReducedMotion() {
@@ -70,4 +70,3 @@ index 9c84406..46e96d3 100644
 +  return ReducedMotionManager.jsValue;
  }
  //# sourceMappingURL=useReducedMotion.js.map
-\ No newline at end of file

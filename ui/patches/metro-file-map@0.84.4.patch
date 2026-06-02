@@ -1,11 +1,11 @@
 diff --git a/src/index.js b/src/index.js
-index 438108b..a4d57f0 100644
+index 438108b..5969e87 100644
 --- a/src/index.js
 +++ b/src/index.js
-@@ -102,6 +102,20 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
-   "suffix-set",
-   "wildmatch",
- ];
+@@ -96,6 +96,20 @@ const CACHE_BREAKER = "11";
+ const CHANGE_INTERVAL = 30;
+ const NODE_MODULES = path.sep + "node_modules" + path.sep;
+ const VCS_DIRECTORIES = /[/\\]\.(git|hg)[/\\]/.source;
 +function normalizeIgnorePattern(ignorePattern, optionName) {
 +  if (ignorePattern == null) {
 +    return null;
@@ -20,9 +20,9 @@ index 438108b..a4d57f0 100644
 +    ignorePattern.flags,
 +  );
 +}
- class FileMap extends _events.default {
-   #buildPromise;
-   #cacheManager;
+ const WATCHMAN_REQUIRED_CAPABILITIES = [
+   "field-content.sha1hex",
+   "relative_root",
 @@ -127,22 +141,14 @@ class FileMap extends _events.default {
          options.perfLoggerFactory?.("START_UP").subSpan("fileMap") ?? null;
        this.#startupPerfLogger?.point("constructor_start");
@@ -72,7 +72,7 @@ index 438108b..a4d57f0 100644
        previousState,
        rootDir,
 diff --git a/src/watchers/common.js b/src/watchers/common.js
-index 4807fd0..c213de0 100644
+index 6bf4710..ee7206b 100644
 --- a/src/watchers/common.js
 +++ b/src/watchers/common.js
 @@ -32,6 +32,7 @@ const posixPathMatchesPattern = (exports.posixPathMatchesPattern =
@@ -84,15 +84,15 @@ index 4807fd0..c213de0 100644
  function typeFromStat(stat) {
    if (stat.isSymbolicLink()) {
 diff --git a/src/watchers/AbstractWatcher.js b/src/watchers/AbstractWatcher.js
-index 90bbf0b..c1a5485 100644
+index 5c4f8bd..16c66ae 100644
 --- a/src/watchers/AbstractWatcher.js
 +++ b/src/watchers/AbstractWatcher.js
 @@ -44,10 +44,18 @@ class AbstractWatcher {
-  this.dot = dot || false;
-  this.ignored = ignored;
-  this.globs = globs;
+     this.dot = dot || false;
+     this.ignored = ignored;
+     this.globs = globs;
 +    this.root = path.resolve(dir);
-  this.doIgnore = ignored
+     this.doIgnore = ignored
 -      ? (filePath) => (0, _common.posixPathMatchesPattern)(ignored, filePath)
 +      ? (filePath) => {
 +          if ((0, _common.posixPathMatchesPattern)(ignored, filePath)) {
@@ -103,8 +103,8 @@ index 90bbf0b..c1a5485 100644
 +          }
 +          return ignored.test(path.resolve(this.root, filePath));
 +        }
-    : () => false;
+       : () => false;
 -    this.root = path.resolve(dir);
    }
    onFileEvent(listener) {
-  this.#emitter.on("fileevent", listener);
+     this.#emitter.on("fileevent", listener);

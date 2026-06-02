@@ -1,0 +1,77 @@
+diff --git a/build/index.js b/build/index.js
+index f51c2c7..5d6b161 100644
+--- a/build/index.js
++++ b/build/index.js
+@@ -192,6 +192,13 @@ class FileMap extends events_1.default {
+         if (ignorePattern && !(ignorePattern instanceof RegExp)) {
+             throw new Error('metro-file-map: the `ignorePattern` option must be a RegExp');
+         }
++        const watchIgnorePattern =
++            options.watchIgnorePattern ??
++            globalThis.__LONANOTE_METRO_WATCH_IGNORE__ ??
++            ignorePattern;
++        if (watchIgnorePattern && !(watchIgnorePattern instanceof RegExp)) {
++            throw new Error('metro-file-map: the `watchIgnorePattern` option must be a RegExp');
++        }
+         this.#console = options.console || globalThis.console;
+         let dataSlot = constants_1.default.PLUGINDATA;
+         const indexedPlugins = [];
+@@ -229,6 +236,7 @@ class FileMap extends events_1.default {
+             resetCache: options.resetCache,
+             useWatchman: options.useWatchman ?? false,
+             watch: !!options.watch,
++            watchIgnorePattern,
+             watchmanDeferStates: options.watchmanDeferStates ?? [],
+             enableFallback,
+             scopeFallback: enableFallback && scopeFallback,
+@@ -410,7 +418,7 @@ class FileMap extends events_1.default {
+                 ? this.#options.healthCheck.filePrefix
+                 : null,
+             ignoreForCrawl,
+-            ignorePatternForWatch: ignorePattern,
++            ignorePatternForWatch: this.#options.watchIgnorePattern ?? ignorePattern,
+             perfLogger: this.#startupPerfLogger,
+             previousState,
+             rootDir,
+diff --git a/build/watchers/AbstractWatcher.js b/build/watchers/AbstractWatcher.js
+index 8254221..4ae399b 100644
+--- a/build/watchers/AbstractWatcher.js
++++ b/build/watchers/AbstractWatcher.js
+@@ -59,10 +59,21 @@ class AbstractWatcher {
+         this.dot = dot || false;
+         this.ignored = ignored;
+         this.globs = globs;
++        this.root = path.resolve(dir);
+         this.doIgnore = ignored
+-            ? (filePath) => (0, isWatcherExcluded_1.default)(filePath) || (0, common_1.posixPathMatchesPattern)(ignored, filePath)
++            ? (filePath) => {
++                if ((0, isWatcherExcluded_1.default)(filePath)) {
++                    return true;
++                }
++                if ((0, common_1.posixPathMatchesPattern)(ignored, filePath)) {
++                    return true;
++                }
++                if (path.isAbsolute(filePath)) {
++                    return false;
++                }
++                return ignored.test(path.resolve(this.root, filePath));
++            }
+             : isWatcherExcluded_1.default;
+-        this.root = path.resolve(dir);
+     }
+     onFileEvent(listener) {
+         this.#emitter.on('fileevent', listener);
+diff --git a/build/watchers/common.js b/build/watchers/common.js
+index 13cc2a4..47ccc0e 100644
+--- a/build/watchers/common.js
++++ b/build/watchers/common.js
+@@ -44,7 +44,8 @@ function includedByGlob(type, globs, dot, relativePath) {
+  */
+ exports.posixPathMatchesPattern = path_1.default.sep === '/'
+     ? (pattern, filePath) => pattern.test(filePath)
+-    : (pattern, filePath) => pattern.test(filePath.replaceAll(path_1.default.sep, '/'));
++    : (pattern, filePath) => pattern.test(filePath) ||
++        pattern.test(filePath.replaceAll(path_1.default.sep, '/'));
+ function typeFromStat(stat) {
+     // Note: These tests are not mutually exclusive - a symlink passes isFile
+     if (stat.isSymbolicLink()) {

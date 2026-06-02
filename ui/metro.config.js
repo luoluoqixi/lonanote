@@ -17,6 +17,10 @@ const config = {
   },
 };
 
+// Expo createFileMap-fork 使用 @expo/metro-file-map，不读取 watcher.watchBlockList；
+// 通过全局变量让 @expo/metro-file-map patch 在 watch 阶段使用更宽的忽略规则。
+globalThis.__LONANOTE_METRO_WATCH_IGNORE__ = watchBlockList;
+
 module.exports = config;
 
 
