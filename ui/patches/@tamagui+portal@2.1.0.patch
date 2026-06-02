@@ -1,8 +1,8 @@
 diff --git a/dist/esm/GorhomPortal.native.js b/dist/esm/GorhomPortal.native.js
-index 0000000..1111111 100644
+index a72f257..c31102b 100644
 --- a/dist/esm/GorhomPortal.native.js
 +++ b/dist/esm/GorhomPortal.native.js
-@@ -69,6 +69,20 @@ var reducer = function (state, action) {
+@@ -70,6 +70,21 @@ var reducer = function (state, action) {
  var PortalStateContext = /* @__PURE__ */createContext(null);
  var PortalDispatchContext = /* @__PURE__ */createContext(null);
  var PortalProviderActiveContext = /* @__PURE__ */createContext(false);
@@ -24,18 +24,18 @@ index 0000000..1111111 100644
  var usePortalState = function (hostName) {
    var state = useContext(PortalStateContext);
    if (state === null) throw new Error("'PortalStateContext' cannot be null, please add 'PortalProvider' to the root component.");
-@@ -200,4 +214,5 @@ function PortalHostNonNative(props) {
-   return render(state.map(function (item) {
+@@ -200,5 +215,5 @@ function PortalHostNonNative(props) {
      return item.node;
    }));
--}
-+}
+ }
+-export { ACTIONS, INITIAL_STATE, PortalHost, PortalProvider, usePortal };
 +export { ACTIONS, INITIAL_STATE, PortalHost, PortalProvider, PortalRootHostProvider, usePortal, usePortalRootHostName };
+ //# sourceMappingURL=GorhomPortal.native.js.map
 diff --git a/dist/esm/Portal.native.js b/dist/esm/Portal.native.js
-index 0000000..1111111 100644
+index 619095a..4f6fcf3 100644
 --- a/dist/esm/Portal.native.js
 +++ b/dist/esm/Portal.native.js
-@@ -2,15 +2,17 @@ import { jsx as _jsx } from "react/jsx-runtime";
+@@ -2,6 +2,7 @@ import { jsx as _jsx } from "react/jsx-runtime";
  import { View } from "@tamagui/core";
  import { getPortal, NativePortal } from "@tamagui/native";
  import { useStackedZIndex } from "@tamagui/z-index-stack";
@@ -43,8 +43,7 @@ index 0000000..1111111 100644
  import { GorhomPortalItem } from "./GorhomPortalItem.native.js";
  import { getStackedZIndexProps } from "./helpers.native.js";
  var Portal = function (propsIn) {
-   var zIndex = useStackedZIndex(getStackedZIndexProps(propsIn));
-   var {
+@@ -10,6 +11,7 @@ var Portal = function (propsIn) {
      children,
      passThrough
    } = propsIn;
@@ -52,7 +51,7 @@ index 0000000..1111111 100644
    var contents = /* @__PURE__ */_jsx(View, {
      pointerEvents: "box-none",
      position: "absolute",
-@@ -23,14 +25,14 @@ var Portal = function (propsIn) {
+@@ -22,13 +24,13 @@ var Portal = function (propsIn) {
    var portalState = getPortal().state;
    if (portalState.type === "teleport") {
      return /* @__PURE__ */_jsx(NativePortal, {
@@ -69,7 +68,7 @@ index 0000000..1111111 100644
    });
  };
 diff --git a/types/GorhomPortal.d.ts b/types/GorhomPortal.d.ts
-index 0000000..1111111 100644
+index a7f3c96..3ec4305 100644
 --- a/types/GorhomPortal.d.ts
 +++ b/types/GorhomPortal.d.ts
 @@ -53,6 +53,12 @@ export interface PortalProviderProps {

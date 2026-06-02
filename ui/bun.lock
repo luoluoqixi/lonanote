@@ -91,6 +91,9 @@
     },
   },
   "patchedDependencies": {
+    "@tamagui/dialog@2.1.0": "patches/@tamagui+dialog@2.1.0.patch",
+    "@tamagui/portal@2.1.0": "patches/@tamagui+portal@2.1.0.patch",
+    "@tamagui/native@2.1.0": "patches/@tamagui+native@2.1.0.patch",
     "@tamagui/toast@2.1.0": "patches/@tamagui+toast@2.1.0.patch",
     "metro-file-map@0.83.6": "patches/metro-file-map@0.83.6.patch",
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch",
