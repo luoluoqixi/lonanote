@@ -80,8 +80,8 @@
     "globals": "^17.6.0",
     "lonanote_rust_module": "workspace:*",
     "prettier": "^3.8.3",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.85.3",
     "react-native-gesture-handler": "=2.31.2",
     "react-native-ios-context-menu": "^3.2.1",
@@ -110,6 +110,7 @@
   },
   "private": true,
   "overrides": {
+    "expo-modules-core": "56.0.13",
     "metro": "=0.84.4",
     "metro-babel-transformer": "=0.84.4",
     "metro-cache": "=0.84.4",
