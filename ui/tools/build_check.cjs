@@ -76,8 +76,8 @@ function main() {
     return;
   }
   const platform = isAndroid ? "android" : "ios";
-  const devFolder = platform + "_dev";
-  const releaseFolder = platform + "_release";
+  const devFolder = `${platform}_dev`;
+  const releaseFolder = `${platform}_release`;
 
   if (isPostbuild) {
     postbuildCheck({ platform, devFolder, releaseFolder });

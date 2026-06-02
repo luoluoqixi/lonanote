@@ -39,6 +39,7 @@
     "build:check:postbuild:ios:dev": "bun build:check:ios:dev -- --postbuild",
     "build:check:postbuild:ios:prod": "bun build:check:ios:prod -- --postbuild",
     "generate:tamagui": "bunx @tamagui/cli generate",
+    "sync:sdk-config": "node tools/sync_android_sdk_config.cjs",
     "lint": "bun run lint:eslint && bun run typecheck",
     "lint:eslint": "expo lint",
     "typecheck": "tsc --noEmit --pretty false"
