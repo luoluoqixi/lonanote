@@ -21,5 +21,17 @@ build_output
 .github/copilot-instructions.md
 .github/agents/
 .github/agents
+.github/skills
+.github/instructions
+
+.cursor/agents/
+.cursor/rules/
+.cursor/skills/
+.cursor/skills-cursor/
+.cursor/instructions/
+
+.agents/
+
+AGENTS.md
 
 /.copilot-patch-orig

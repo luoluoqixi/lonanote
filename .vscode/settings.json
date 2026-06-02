@@ -24,14 +24,5 @@
   "cmake.ignoreCMakeListsMissing": true,
   "css.lint.unknownAtRules": "ignore",
   "prettier.configPath": "ui/.prettierrc.yaml",
-  "css.customData": [".vscode/custom-data.json"],
-  "chat.instructionsFilesLocations": {
-    ".github/instructions": true,
-    ".github/agents/instructions": true
-  },
-  "chat.agentSkillsLocations": {
-    ".github/skills": true,
-    ".github/agents/skills": true,
-    ".github/agents/superpowers": true
-  }
+  "css.customData": [".vscode/custom-data.json"]
 }
