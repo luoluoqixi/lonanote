@@ -1,11 +1,7 @@
 use anyhow::Result;
 use cmdreg::{command, Json};
 use serde::{Deserialize, Serialize};
-use std::{
-    fs,
-    io::{Read, Write},
-    path::PathBuf,
-};
+use std::{fs, io::Read, path::PathBuf};
 use walkdir::WalkDir;
 
 use crate::utils::{self, fs_utils};
@@ -362,26 +358,6 @@ async fn show_select_dialog(Json(args): Json<SelectDialogArgs>) -> Result<Select
             path: None,
         })
     }
-}
-
-#[command("fs")]
-async fn save_image_url_to_file(image_url: String, file_path: String) -> Result<()> {
-    use futures::StreamExt;
-
-    let client = reqwest::Client::new();
-    let response = client.get(image_url).send().await?;
-    if !response.status().is_success() {
-        anyhow::bail!("request error: {}", response.status());
-    }
-
-    let mut file = fs::File::create(file_path)?;
-    let mut stream = response.bytes_stream();
-    while let Some(chunk) = stream.next().await {
-        let chunk = chunk?;
-        file.write_all(&chunk)?;
-    }
-
-    Ok(())
 }
 
 #[command("fs")]

@@ -70,10 +70,4 @@ export const fs = {
     // TODO 原始接口为 async, 底层实现到时自动调用
     return (await invoke("fs.show_select_dialog", options))!;
   },
-  saveImageUrlToFile: async (imageUrl: string, filePath: string): Promise<void> => {
-    return (await invoke("fs.save_image_url_to_file", {
-      imageUrl,
-      filePath,
-    }))!;
-  },
 };
