@@ -57,7 +57,7 @@ function SheetRoot(props: SheetProps) {
   } = props;
   const screenOverlayPortalHost = useScreenOverlayPortalHost();
   const resolvedPortalProps =
-    modal === true && os() === "ios" && screenOverlayPortalHost != null
+    modal === true && screenOverlayPortalHost != null
       ? { ...portalProps, hostName: screenOverlayPortalHost }
       : portalProps;
   const hasDefaultStructure =

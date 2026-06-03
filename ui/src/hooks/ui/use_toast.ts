@@ -1,7 +1,6 @@
 import { PromiseData, PromiseT, toast as tamaguiToast } from "@tamagui/toast/v2";
 
-import { os } from "@/api/common/platform";
-import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
+import { useScopedOverlayPortalHostName } from "@/components/ui/utils/screen_overlay_portal";
 
 import type { TitleToast, ToastContext, ToastShowOptions } from "./types";
 
@@ -21,9 +20,7 @@ function isHttpResponse(value: unknown): value is Response {
 }
 
 export function useToast(): ToastContext {
-  const screenOverlayPortalHost = useScreenOverlayPortalHost();
-  const viewportName =
-    os() === "ios" && screenOverlayPortalHost != null ? screenOverlayPortalHost : undefined;
+  const viewportName = useScopedOverlayPortalHostName();
 
   const messageFunction = (title: TitleToast, options?: ToastShowOptions) => {
     return tamaguiToast.message(title, resolveScopedToastOptions(options, viewportName));

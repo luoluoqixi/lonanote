@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.2.14",
+    "@lodev09/react-native-true-sheet": "^3.10.1",
     "@react-native-menu/menu": "2.0.0",
     "@react-navigation/bottom-tabs": "^7.16.2",
     "@react-navigation/elements": "^2.9.19",

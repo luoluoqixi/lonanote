@@ -4,7 +4,7 @@ import "../initialize";
 import { Stack } from "expo-router";
 
 import { isWeb } from "@/api/common";
-import { DebugPanelGestureLayer, DebugPanelHost } from "@/components/debug";
+import { DebugPanelGestureLayer, DebugPanelHost, TrueSheetDebugHost } from "@/components/debug";
 import { AppStatusBar, RootProvider, nativeStackStatusBarOptions } from "@/components/ui";
 import { getAppHomeTitle } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
@@ -38,6 +38,7 @@ export default function RootLayout() {
           <Stack.Screen name="(home)" options={{ title: getAppHomeTitle() }} />
         </Stack>
         <DebugPanelHost />
+        {__DEV__ ? <TrueSheetDebugHost /> : null}
       </DebugPanelGestureLayer>
     </RootProvider>
   );

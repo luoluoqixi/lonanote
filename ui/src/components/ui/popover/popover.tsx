@@ -114,7 +114,6 @@ function PopoverBackHandler(props: PopoverBackPressBehaviorProps) {
   const { dismissOnBackPress = true, scope } = props;
   const context = usePopoverContext(scope);
   const { open, onOpenChange } = context;
-
   useEffect(() => {
     if (os() !== "android" || !dismissOnBackPress || !open) {
       return;

@@ -1,8 +1,7 @@
 import { Stack } from "expo-router";
 
-import { os } from "@/api/common";
 import { getDebugStackHeaderTitle } from "@/components/debug";
-import { nativeStackSheetStatusBarOptions, ScreenOverlayPortalProvider } from "@/components/ui";
+import { ScreenOverlayPortalProvider, nativeStackSheetStatusBarOptions } from "@/components/ui";
 
 export const DEBUG_SCREEN_OVERLAY_PORTAL_HOST = "debug-screen-overlay";
 
@@ -27,13 +26,9 @@ function DebugStackLayout() {
 }
 
 export default function DebugLayout() {
-  if (os() === "ios") {
-    return (
-      <ScreenOverlayPortalProvider hostName={DEBUG_SCREEN_OVERLAY_PORTAL_HOST}>
-        <DebugStackLayout />
-      </ScreenOverlayPortalProvider>
-    );
-  }
-
-  return <DebugStackLayout />;
+  return (
+    <ScreenOverlayPortalProvider hostName={DEBUG_SCREEN_OVERLAY_PORTAL_HOST}>
+      <DebugStackLayout />
+    </ScreenOverlayPortalProvider>
+  );
 }

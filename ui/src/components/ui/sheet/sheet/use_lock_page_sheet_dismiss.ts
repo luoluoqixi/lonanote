@@ -19,15 +19,21 @@ export function useLockPageSheetDismiss(active: boolean) {
   const modalLockApi = useScreenOverlayModalLockApi();
 
   useLayoutEffect(() => {
-    if (!active || os() !== "ios" || screenOverlayPortalHost == null) {
+    if (!active || screenOverlayPortalHost == null) {
       return;
     }
 
+    // pageSheet 手势锁仅 iOS Native Stack 使用；Android True Sheet 只登记 modal 锁计数。
+    if (os() === "ios") {
+      acquirePageSheetGestureLock();
+    }
+
     modalLockApi?.acquire();
-    acquirePageSheetGestureLock();
 
     return () => {
-      releasePageSheetGestureLock();
+      if (os() === "ios") {
+        releasePageSheetGestureLock();
+      }
       modalLockApi?.release();
     };
   }, [active, modalLockApi, screenOverlayPortalHost]);

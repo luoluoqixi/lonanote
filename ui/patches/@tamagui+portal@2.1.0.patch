@@ -67,6 +67,43 @@ index 619095a..4f6fcf3 100644
      children: contents
    });
  };
+diff --git a/dist/esm/GorhomPortalItem.native.js b/dist/esm/GorhomPortalItem.native.js
+index 1111111..2222222 100644
+--- a/dist/esm/GorhomPortalItem.native.js
++++ b/dist/esm/GorhomPortalItem.native.js
+@@ -3,7 +3,7 @@ import { useIsomorphicLayoutEffect } from "@tamagui/constants";
+ import { useEvent } from "@tamagui/core";
+ import { getPortal, NativePortal } from "@tamagui/native";
+ import { useEffect, useId } from "react";
+-import { usePortal } from "./GorhomPortal.native.js";
++import { usePortal, usePortalRootHostName } from "./GorhomPortal.native.js";
+ var GorhomPortalItem = function (props) {
+   var {
+     name: _providedName,
+@@ -14,12 +14,14 @@ var GorhomPortalItem = function (props) {
+     children,
+     passThrough
+   } = props;
++  var scopedRootHostName = usePortalRootHostName();
++  var resolvedHostName = hostName === "root" ? scopedRootHostName : hostName;
+   var portalState = getPortal().state;
+   if (portalState.type === "teleport") {
+     if (passThrough) {
+       return children;
+     }
+     return /* @__PURE__ */_jsx(NativePortal, {
+-      hostName,
++      hostName: resolvedHostName,
+       children
+     });
+   }
+   return /* @__PURE__ */_jsx(GorhomPortalItemFallback, {
+     name: _providedName,
+-    hostName,
++    hostName: resolvedHostName,
+     handleOnMount: _providedHandleOnMount,
+     handleOnUnmount: _providedHandleOnUnmount,
+     handleOnUpdate: _providedHandleOnUpdate,
 diff --git a/types/GorhomPortal.d.ts b/types/GorhomPortal.d.ts
 index a7f3c96..3ec4305 100644
 --- a/types/GorhomPortal.d.ts
