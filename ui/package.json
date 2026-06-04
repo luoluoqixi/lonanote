@@ -86,7 +86,7 @@
     "react-native": "0.85.3",
     "react-native-gesture-handler": "=2.31.2",
     "react-native-ios-context-menu": "^3.2.1",
-    "react-native-ios-utilities": "5.2.0",
+    "react-native-ios-utilities": "github:dominicstop/react-native-ios-utilities#e520d1a64b2d",
     "react-native-reanimated": "=4.4.0",
     "react-native-safe-area-context": "~5.8.0",
     "react-native-screens": "=4.25.2",
