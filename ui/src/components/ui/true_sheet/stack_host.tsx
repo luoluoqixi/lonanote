@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
+import { TrueSheetOverlayLayoutProvider } from "./overlay_layout_context";
 import {
   getTrueSheetGestureRootStyle,
   getTrueSheetStackHostScrollableProps,
@@ -20,6 +21,7 @@ import {
 } from "./stack_navigation";
 import type { TrueSheetInnerStackScreenOptions } from "./stack_navigator";
 import { TrueSheetScrollLayoutProvider } from "./true_sheet_scroll_context";
+import { useTrueSheetOverlayLayoutSync } from "./use_true_sheet_overlay_layout_sync";
 
 export type TrueSheetStackHostProps<ParamList extends ParamListBase = ParamListBase> = {
   children: ReactNode;
@@ -52,7 +54,7 @@ const defaultSheetProps: Pick<
 /**
  * 具名 True Sheet + 内嵌原生 Stack（替代自绘 header + useState 切屏）。
  */
-export function TrueSheetStackHost<ParamList extends ParamListBase = ParamListBase>({
+function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase>({
   children,
   initialRouteName = "index",
   name,
@@ -64,21 +66,26 @@ export function TrueSheetStackHost<ParamList extends ParamListBase = ParamListBa
   sheetProps,
 }: TrueSheetStackHostProps<ParamList>) {
   const navigationRef = navigationRefProp ?? createTrueSheetStackNavigationRef<ParamList>();
+  const overlayLayoutSync = useTrueSheetOverlayLayoutSync(sheetProps);
 
   const handleRequestClose = useCallback(() => {
     onRequestClose?.();
   }, [onRequestClose]);
 
-  const handleDidDismiss = useCallback(() => {
-    if (navigationRef.isReady()) {
-      navigationRef.reset({
-        index: 0,
-        routes: [{ name: initialRouteName as string }],
-      });
-    }
+  const handleDidDismiss = useCallback<NonNullable<TrueSheetProps["onDidDismiss"]>>(
+    (event) => {
+      if (navigationRef.isReady()) {
+        navigationRef.reset({
+          index: 0,
+          routes: [{ name: initialRouteName as string }],
+        });
+      }
 
-    onDidDismiss?.();
-  }, [initialRouteName, navigationRef, onDidDismiss]);
+      onDidDismiss?.();
+      overlayLayoutSync.onDidDismiss(event);
+    },
+    [initialRouteName, navigationRef, onDidDismiss, overlayLayoutSync],
+  );
 
   const mergedScreenOptions: TrueSheetInnerStackScreenOptions = {
     headerBackTitle: "返回",
@@ -89,35 +96,64 @@ export function TrueSheetStackHost<ParamList extends ParamListBase = ParamListBa
 
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
 
+  const stackNavigation = (
+    <TrueSheetStackHostProvider onRequestClose={handleRequestClose}>
+      <TrueSheetStackNavigation
+        initialRouteName={initialRouteName as string}
+        navigationRef={navigationRef}
+        screenOptions={mergedScreenOptions}
+      >
+        {children}
+      </TrueSheetStackNavigation>
+    </TrueSheetStackHostProvider>
+  );
+
   const sheetBody = (
     <TrueSheetScrollLayoutProvider
       insetAdjustment={insetAdjustment}
       nativeScrollInsetsApplied={false}
     >
       <GestureHandlerRootView style={styles.gestureRoot}>
-        <TrueSheetStackHostProvider onRequestClose={handleRequestClose}>
-          <TrueSheetStackNavigation
-            initialRouteName={initialRouteName as string}
-            navigationRef={navigationRef}
-            screenOptions={mergedScreenOptions}
-          >
-            {children}
-          </TrueSheetStackNavigation>
-        </TrueSheetStackHostProvider>
+        {overlayPortalHostName != null ? (
+          <ScreenOverlayPortalProvider hostName={overlayPortalHostName}>
+            {stackNavigation}
+          </ScreenOverlayPortalProvider>
+        ) : (
+          stackNavigation
+        )}
       </GestureHandlerRootView>
     </TrueSheetScrollLayoutProvider>
   );
 
   return (
-    <TrueSheet name={name} onDidDismiss={handleDidDismiss} {...defaultSheetProps} {...sheetProps}>
-      {overlayPortalHostName != null ? (
-        <ScreenOverlayPortalProvider hostName={overlayPortalHostName}>
-          {sheetBody}
-        </ScreenOverlayPortalProvider>
-      ) : (
-        sheetBody
-      )}
+    <TrueSheet
+      name={name}
+      {...defaultSheetProps}
+      {...sheetProps}
+      onDetentChange={overlayLayoutSync.onDetentChange}
+      onDidDismiss={handleDidDismiss}
+      onDidPresent={overlayLayoutSync.onDidPresent}
+      onDragChange={overlayLayoutSync.onDragChange}
+      onDragEnd={overlayLayoutSync.onDragEnd}
+      onPositionChange={overlayLayoutSync.onPositionChange}
+      onWillPresent={overlayLayoutSync.onWillPresent}
+    >
+      {sheetBody}
     </TrueSheet>
+  );
+}
+
+export function TrueSheetStackHost<ParamList extends ParamListBase = ParamListBase>(
+  props: TrueSheetStackHostProps<ParamList>,
+) {
+  if (props.overlayPortalHostName == null) {
+    return <TrueSheetStackHostInner {...props} />;
+  }
+
+  return (
+    <TrueSheetOverlayLayoutProvider>
+      <TrueSheetStackHostInner {...props} />
+    </TrueSheetOverlayLayoutProvider>
   );
 }
 

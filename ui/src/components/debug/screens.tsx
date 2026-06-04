@@ -4,14 +4,27 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { isDesktop } from "@/api/common";
 
 import { TitleBar } from "../titlebar";
-import { Button, Switch, Text } from "../ui";
+import { Button, Slider, Switch, Text } from "../ui";
 import {
   DEBUG_PANEL_ROUTE_DEFINITIONS,
   type DebugTabKey,
   getDebugPanelRouteDefinition,
 } from "./routes";
-import { openDebugSection, setDebugSectionsAsNestedSheets } from "./true_sheet/api";
-import { useDebugSectionsAsNestedSheets } from "./true_sheet/nested_sections_preferences";
+import {
+  getDebugNestedSectionDetentLabel,
+  openDebugSection,
+  resizeDebugSectionSheets,
+  setDebugNestedSectionDetentLevel,
+  setDebugSectionsAsNestedSheets,
+} from "./true_sheet/api";
+import {
+  DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX,
+  DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN,
+} from "./true_sheet/nested_section_sheet_layout";
+import {
+  useDebugNestedSectionDetentLevel,
+  useDebugSectionsAsNestedSheets,
+} from "./true_sheet/nested_sections_preferences";
 
 const DEBUG_SCREEN_MAX_WIDTH = 960;
 
@@ -100,6 +113,7 @@ export function DebugHomeScreen({
   onSwitchToTrueSheet?: () => void;
 }) {
   const nestedSectionSheets = useDebugSectionsAsNestedSheets();
+  const nestedSectionDetentLevel = useDebugNestedSectionDetentLevel();
   const inTrueSheet = onOpenPanel != null;
   const inFullPageRoute = onOpenFullPage != null && onOpenPanel == null;
   const layoutHost: DebugScreenLayoutHost = inTrueSheet ? "trueSheet" : "screen";
@@ -162,6 +176,35 @@ export function DebugHomeScreen({
       />
     </View>,
   );
+
+  if (nestedSectionSheets) {
+    sectionCards.push(
+      <View key="nested-section-detent-slider" style={styles.sectionCard}>
+        <View style={styles.sectionCardText}>
+          <Text fontSize="$5" fontWeight="600">
+            嵌套 Sheet 高度
+          </Text>
+          <Text color="$color10" fontSize="$3">
+            三档 detent：偏低、中等、全屏。拖动滑条会实时 resize 已打开的分区 Sheet。
+          </Text>
+        </View>
+        <Slider
+          max={DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX}
+          min={DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN}
+          onValueChange={(nextValue: number[]) => {
+            const level = nextValue[0] ?? 0;
+            setDebugNestedSectionDetentLevel(level);
+            void resizeDebugSectionSheets(level);
+          }}
+          step={1}
+          value={[nestedSectionDetentLevel]}
+        />
+        <Text color="$color10" fontSize="$3">
+          当前：{getDebugNestedSectionDetentLabel(nestedSectionDetentLevel)}
+        </Text>
+      </View>,
+    );
+  }
 
   if (onSwitchToFullPage != null) {
     sectionCards.push(

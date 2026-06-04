@@ -31,5 +31,5 @@ export * from "./text";
 export * from "./text_area";
 export * from "./toggle_group";
 export * from "./tooltip";
-export { dismissTrueSheet, presentTrueSheet } from "./true_sheet/api";
+export { dismissTrueSheet, presentTrueSheet, resizeTrueSheet } from "./true_sheet/api";
 export * from "./utils";

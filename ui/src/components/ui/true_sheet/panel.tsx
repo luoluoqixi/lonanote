@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
+import { TrueSheetOverlayLayoutProvider } from "./overlay_layout_context";
 import {
   getTrueSheetGestureRootStyle,
   getTrueSheetPanelOverlayLayout,
@@ -18,6 +19,7 @@ import { type TrueSheetChromeMode, resolveTrueSheetGrabber } from "./sheet_chrom
 import { TrueSheetToolbarHeader } from "./toolbar_header";
 import { TrueSheetScrollLayoutProvider } from "./true_sheet_scroll_context";
 import { useAndroidSheetBackHandler } from "./use_android_sheet_back_handler";
+import { useTrueSheetOverlayLayoutSync } from "./use_true_sheet_overlay_layout_sync";
 
 export type TrueSheetPanelProps = {
   children: ReactNode;
@@ -48,12 +50,7 @@ const defaultSheetProps: Pick<
   ...getTrueSheetPanelScrollableProps(),
 };
 
-/**
- * 简单 True Sheet：无内嵌 Stack。
- * - `chrome="plain"`：适合仅需 grabber 的轻量弹层。
- * - `chrome="toolbar"`：Android 等无法挂 Native Stack 时的标题栏 + 硬件返回。
- */
-export function TrueSheetPanel({
+function TrueSheetPanelInner({
   children,
   chrome = "plain",
   grabber: grabberProp,
@@ -67,6 +64,7 @@ export function TrueSheetPanel({
   onDidDismiss,
   sheetProps,
 }: TrueSheetPanelProps) {
+  const overlayLayoutSync = useTrueSheetOverlayLayoutSync(sheetProps);
   const [presented, setPresented] = useState(false);
   const showToolbar = chrome === "toolbar" && title != null;
   const grabber = resolveTrueSheetGrabber(chrome, grabberProp);
@@ -85,18 +83,18 @@ export function TrueSheetPanel({
   const handleDidPresent = useCallback<NonNullable<TrueSheetProps["onDidPresent"]>>(
     (event) => {
       setPresented(true);
-      sheetProps?.onDidPresent?.(event);
+      overlayLayoutSync.onDidPresent(event);
     },
-    [sheetProps],
+    [overlayLayoutSync],
   );
 
   const handleDidDismiss = useCallback<NonNullable<TrueSheetProps["onDidDismiss"]>>(
     (event) => {
       setPresented(false);
       onDidDismiss?.();
-      sheetProps?.onDidDismiss?.(event);
+      overlayLayoutSync.onDidDismiss(event);
     },
-    [onDidDismiss, sheetProps],
+    [onDidDismiss, overlayLayoutSync],
   );
 
   const toolbarHeader =
@@ -112,6 +110,18 @@ export function TrueSheetPanel({
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
   const sheetScrollable = sheetProps?.scrollable ?? defaultSheetProps.scrollable;
 
+  const overlayBody =
+    overlayPortalHostName != null ? (
+      <ScreenOverlayPortalProvider
+        hostName={overlayPortalHostName}
+        overlayLayout={getTrueSheetPanelOverlayLayout()}
+      >
+        {children}
+      </ScreenOverlayPortalProvider>
+    ) : (
+      children
+    );
+
   const sheetBody = (
     <TrueSheetScrollLayoutProvider
       insetAdjustment={insetAdjustment}
@@ -123,16 +133,7 @@ export function TrueSheetPanel({
           overlayPortalHostName != null && Platform.OS === "ios" && styles.gestureRootScrollSibling,
         ]}
       >
-        {overlayPortalHostName != null ? (
-          <ScreenOverlayPortalProvider
-            hostName={overlayPortalHostName}
-            overlayLayout={getTrueSheetPanelOverlayLayout()}
-          >
-            {children}
-          </ScreenOverlayPortalProvider>
-        ) : (
-          children
-        )}
+        {overlayBody}
       </GestureHandlerRootView>
     </TrueSheetScrollLayoutProvider>
   );
@@ -144,14 +145,36 @@ export function TrueSheetPanel({
       grabber={grabber}
       header={toolbarHeader}
       name={name}
-      onDidDismiss={handleDidDismiss}
-      onDidPresent={handleDidPresent}
       {...defaultSheetProps}
       {...sheetProps}
+      onDetentChange={overlayLayoutSync.onDetentChange}
+      onDidDismiss={handleDidDismiss}
+      onDidPresent={handleDidPresent}
+      onDragChange={overlayLayoutSync.onDragChange}
+      onDragEnd={overlayLayoutSync.onDragEnd}
+      onPositionChange={overlayLayoutSync.onPositionChange}
+      onWillPresent={overlayLayoutSync.onWillPresent}
       style={mergeTrueSheetContentStyle(mergedScrollable, sheetProps?.style)}
     >
       {sheetBody}
     </TrueSheet>
+  );
+}
+
+/**
+ * 简单 True Sheet：无内嵌 Stack。
+ * - `chrome="plain"`：适合仅需 grabber 的轻量弹层。
+ * - `chrome="toolbar"`：Android 等无法挂 Native Stack 时的标题栏 + 硬件返回。
+ */
+export function TrueSheetPanel(props: TrueSheetPanelProps) {
+  if (props.overlayPortalHostName == null) {
+    return <TrueSheetPanelInner {...props} />;
+  }
+
+  return (
+    <TrueSheetOverlayLayoutProvider>
+      <TrueSheetPanelInner {...props} />
+    </TrueSheetOverlayLayoutProvider>
   );
 }
 

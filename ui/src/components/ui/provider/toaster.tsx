@@ -5,6 +5,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { Spinner, XStack, YStack } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
+import { useTrueSheetOverlayLayout } from "@/components/ui/true_sheet/overlay_layout_context";
 
 import { getScopedToastViewportBottomInset } from "../utils/overlay_toast_layout";
 
@@ -264,12 +265,13 @@ export {
 
 export function Toaster({ viewportName }: { viewportName?: string }) {
   useWebToastAnimationOverride();
+  const { detent } = useTrueSheetOverlayLayout();
 
   const position = isWeb() ? "bottom-right" : "bottom-center";
   const scopedViewport = viewportName != null;
   const viewportStyle = scopedViewport
     ? {
-        bottom: getScopedToastViewportBottomInset(viewportName),
+        bottom: getScopedToastViewportBottomInset(viewportName, detent),
         left: 16,
         right: 16,
         top: "auto" as const,

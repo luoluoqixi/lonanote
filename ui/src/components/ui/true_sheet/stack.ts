@@ -1,4 +1,6 @@
 /** True Sheet 内嵌原生 Stack（勿经 `@/components/ui` 主 barrel，避免无关路由拉入 navigation）。 */
+export * from "./overlay_layout_context";
+export * from "./overlay_layout_metrics";
 export * from "./panel";
 export * from "./platform_sheet_defaults";
 export * from "./scroll_content";

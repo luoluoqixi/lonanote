@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PortalHost as TeleportPortalHost } from "react-native-teleport";
 
 import { os } from "@/api/common/platform";
+import { useTrueSheetOverlayDetent } from "@/components/ui/true_sheet/overlay_layout_context";
 
 import { Toaster } from "../provider/toaster";
 import {
@@ -91,8 +92,9 @@ export function ScreenOverlayPortalProvider({
 
 function OverlayToastLayer({ hostName }: { hostName: string }) {
   const insets = useSafeAreaInsets();
+  const detent = useTrueSheetOverlayDetent();
   const bottomInset = shouldApplyIosTrueSheetToastLayerInset(hostName)
-    ? getTrueSheetOverlayLayoutBottomInset(hostName, insets.bottom)
+    ? getTrueSheetOverlayLayoutBottomInset(hostName, insets.bottom, detent)
     : 0;
   const layerStyle: ViewStyle[] | ViewStyle =
     bottomInset > 0 ? [styles.toastLayer, { bottom: bottomInset }] : styles.toastLayer;

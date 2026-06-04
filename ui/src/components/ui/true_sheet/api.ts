@@ -9,3 +9,8 @@ export function presentTrueSheet(name: string, detentIndex = 0) {
 export function dismissTrueSheet(name: string) {
   return TrueSheet.dismiss(name);
 }
+
+/** 将已展示的 True Sheet 切换到指定 detent 档位。 */
+export function resizeTrueSheet(name: string, detentIndex: number) {
+  return TrueSheet.resize(name, detentIndex);
+}

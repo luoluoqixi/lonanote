@@ -1,7 +1,7 @@
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { router } from "expo-router";
 
-import { dismissTrueSheet, presentTrueSheet } from "@/components/ui";
+import { dismissTrueSheet, presentTrueSheet, resizeTrueSheet } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
 import {
@@ -10,18 +10,29 @@ import {
   type DebugTabKey,
   getDebugFullPageHref,
 } from "../routes";
-import { getDebugSectionsAsNestedSheets } from "./nested_sections_preferences";
+import {
+  getDebugNestedSectionDetentLevel,
+  getDebugSectionsAsNestedSheets,
+} from "./nested_sections_preferences";
 
 /** 全局调试 True Sheet 名称，须与 `DebugTrueSheetHost` 的 `name` 一致。 */
 export const DEBUG_TRUE_SHEET_NAME = "lonanote-debug";
 
 export { DEBUG_OVERLAY_PORTAL_HOST };
 
+export { DEBUG_NESTED_SECTION_SHEET_DETENTS } from "./nested_section_sheet_layout";
 export {
+  getDebugNestedSectionDetentLabel,
+  type DebugNestedSectionDetentLevel,
+} from "./nested_section_sheet_layout";
+export {
+  getDebugNestedSectionDetentLevel,
   getDebugSectionsAsNestedSheets,
+  setDebugNestedSectionDetentLevel,
   setDebugSectionsAsNestedSheets,
+  useDebugNestedSectionDetentLevel,
+  useDebugSectionsAsNestedSheets,
 } from "./nested_sections_preferences";
-export { useDebugSectionsAsNestedSheets } from "./nested_sections_preferences";
 
 let debugSheetOpen = false;
 
@@ -43,6 +54,17 @@ export function closeDebugSectionSheet(key: DebugTabKey) {
   return dismissTrueSheet(getDebugSectionSheetName(key));
 }
 
+/** 已打开的嵌套分区 Sheet 切换到指定 detent（调试滑条实时改高度）。 */
+export async function resizeDebugSectionSheets(
+  detentIndex: number = getDebugNestedSectionDetentLevel(),
+) {
+  await Promise.all(
+    DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) =>
+      resizeTrueSheet(getDebugSectionSheetName(definition.key), detentIndex).catch(() => undefined),
+    ),
+  );
+}
+
 async function dismissAllDebugSectionSheets() {
   await Promise.all(
     DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) =>
@@ -57,7 +79,7 @@ export async function openDebugSection(key: DebugTabKey) {
     return false;
   }
 
-  await openDebugSectionSheet(key);
+  await openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
   return true;
 }
 
@@ -99,7 +121,7 @@ export async function switchDebugPanelToFullPage() {
 /** 关闭 True Sheet 并打开全屏 Stack 调试分区。 */
 export async function openDebugFullPageSection(key: DebugTabKey) {
   if (getDebugSectionsAsNestedSheets()) {
-    await openDebugSectionSheet(key);
+    await openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
     return;
   }
 

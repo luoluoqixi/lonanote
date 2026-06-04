@@ -1,4 +1,5 @@
 import { os } from "@/api/common/platform";
+import { getTrueSheetPartialDetentCompensationScale } from "@/components/ui/true_sheet/overlay_layout_metrics";
 
 /**
  * Scoped overlay host 的布局补偿（Toast viewport 间距 + True Sheet 浮层底边）。
@@ -36,8 +37,14 @@ export function isTrueSheetOverlayPortalHost(hostName: string): boolean {
 export function getTrueSheetOverlayLayoutBottomInset(
   hostName: string,
   safeAreaBottom: number,
+  detent = 1,
 ): number {
-  return isTrueSheetOverlayPortalHost(hostName) ? safeAreaBottom : 0;
+  if (!isTrueSheetOverlayPortalHost(hostName)) {
+    return 0;
+  }
+
+  const scale = getTrueSheetPartialDetentCompensationScale(detent);
+  return Math.round(safeAreaBottom * scale);
 }
 
 /**
@@ -55,6 +62,7 @@ export const TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM = 30;
 export function getTrueSheetCenteredModalLiftAmount(
   hostName: string,
   safeAreaBottom: number,
+  detent = 1,
 ): number {
   if (!isTrueSheetOverlayPortalHost(hostName)) {
     return 0;
@@ -67,7 +75,8 @@ export function getTrueSheetCenteredModalLiftAmount(
         ? ANDROID_TRUE_SHEET_TELEPORT_LAYER_BOTTOM_FALLBACK
         : 0;
 
-  return base * 2 + TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM;
+  const scale = getTrueSheetPartialDetentCompensationScale(detent);
+  return Math.round((base * 2 + TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM) * scale);
 }
 
 /** iOS True Sheet：toastLayer 底边补偿（与 teleport 共用 inset 计算） */
@@ -75,14 +84,18 @@ export function shouldApplyIosTrueSheetToastLayerInset(hostName: string): boolea
   return os() === "ios" && isTrueSheetOverlayPortalHost(hostName);
 }
 
-export function getScopedToastViewportBottomInset(viewportName: string | undefined): number {
+export function getScopedToastViewportBottomInset(
+  viewportName: string | undefined,
+  detent = 1,
+): number {
   if (viewportName == null) {
     return SCOPED_TOAST_VIEWPORT_INSET;
   }
 
   if (os() === "ios") {
     if (isTrueSheetOverlayPortalHost(viewportName)) {
-      return IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET;
+      const scale = getTrueSheetPartialDetentCompensationScale(detent);
+      return Math.round(IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET * scale);
     }
 
     return IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET;

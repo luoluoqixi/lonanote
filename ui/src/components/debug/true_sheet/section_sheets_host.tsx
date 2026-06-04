@@ -9,6 +9,7 @@ import {
 } from "../routes";
 import { DebugSectionScreen } from "../screens";
 import {
+  DEBUG_NESTED_SECTION_SHEET_DETENTS,
   closeDebugSectionSheet,
   getDebugSectionOverlayPortalHost,
   getDebugSectionSheetName,
@@ -28,6 +29,9 @@ function DebugSectionTrueSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       name={getDebugSectionSheetName(sectionKey)}
       onRequestClose={handleClose}
       overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
+      sheetProps={{
+        detents: [...DEBUG_NESTED_SECTION_SHEET_DETENTS],
+      }}
       title={definition.label}
     >
       <DebugTrueSheetScroll>
