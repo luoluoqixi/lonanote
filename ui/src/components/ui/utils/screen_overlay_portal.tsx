@@ -77,8 +77,7 @@ export function ScreenOverlayPortalHost({ hostName }: { hostName: string }) {
   return (
     <View pointerEvents="box-none" style={styles.hostStack}>
       <OverlayToastLayer hostName={hostName} />
-      {/* 无浮层时须完全不接手势，否则会挡住 True Sheet / ScrollView 滚动 */}
-      <View pointerEvents="none" style={styles.teleportLayer}>
+      <View style={styles.teleportLayer}>
         <TeleportPortalHost name={hostName} style={styles.teleportHost} />
       </View>
     </View>
@@ -132,7 +131,7 @@ const styles = StyleSheet.create({
   teleportLayer: {
     bottom: 0,
     left: 0,
-    pointerEvents: "none",
+    pointerEvents: "box-none",
     position: "absolute",
     right: 0,
     top: 0,
@@ -140,6 +139,5 @@ const styles = StyleSheet.create({
   },
   teleportHost: {
     flex: 1,
-    pointerEvents: "none",
   },
 });
