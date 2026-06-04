@@ -19,7 +19,7 @@ export default function RootLayout() {
       <AppStatusBar colorScheme={colorScheme} />
       <DebugRuntime>
         <Stack
-          screenOptions={({ route }) => {
+          screenOptions={() => {
             const statusBar = nativeStackStatusBarOptions(colorScheme);
 
             if (isWeb()) {

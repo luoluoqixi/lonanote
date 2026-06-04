@@ -1,9 +1,5 @@
-import {
-  FloatingOverrideContext,
-  useFloatingRaw,
-  type UseFloatingFn,
-} from "@tamagui/floating";
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { FloatingOverrideContext, type UseFloatingFn, useFloatingRaw } from "@tamagui/floating";
+import { type ReactNode, createContext, useContext, useMemo } from "react";
 import { Platform, StatusBar, type View } from "react-native";
 
 /** 与 @tamagui/floating 默认 useFloating 一致的取整 middleware */
@@ -28,11 +24,7 @@ type MeasureCallback = (
  * offsetParent 也必须同步，否则 reference.y 含 StatusBar 而 offset 不含 → 锚点浮层整体偏下。
  */
 export function adjustFloatingUiAndroidMeasureInWindowY(y: number): number {
-  if (
-    Platform.OS === "android" &&
-    StatusBar.currentHeight != null &&
-    StatusBar.currentHeight > 0
-  ) {
+  if (Platform.OS === "android" && StatusBar.currentHeight != null && StatusBar.currentHeight > 0) {
     return y + StatusBar.currentHeight;
   }
   return y;
@@ -76,8 +68,7 @@ export const useScreenOverlayFloating: UseFloatingFn = (options) => {
     elements: {
       ...options?.elements,
       offsetParent:
-        offsetParent ??
-        (options?.elements as { offsetParent?: unknown } | undefined)?.offsetParent,
+        offsetParent ?? (options?.elements as { offsetParent?: unknown } | undefined)?.offsetParent,
     } as NonNullable<Parameters<typeof useFloatingRaw>[0]>["elements"],
   });
 };

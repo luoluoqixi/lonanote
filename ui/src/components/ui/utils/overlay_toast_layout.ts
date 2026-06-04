@@ -72,9 +72,7 @@ export function shouldApplyIosTrueSheetToastLayerInset(hostName: string): boolea
   return os() === "ios" && isTrueSheetOverlayPortalHost(hostName);
 }
 
-export function getScopedToastViewportBottomInset(
-  viewportName: string | undefined,
-): number {
+export function getScopedToastViewportBottomInset(viewportName: string | undefined): number {
   if (viewportName == null) {
     return SCOPED_TOAST_VIEWPORT_INSET;
   }

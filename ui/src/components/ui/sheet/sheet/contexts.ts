@@ -15,6 +15,7 @@ export type InnerSheetState = {
   shouldLockParentDrag: boolean;
 };
 
+// eslint-disable-next-line no-spaced-func
 export const SheetInsideSheetContext = React.createContext<
   ((state: InnerSheetState) => void) | null
 >(null);

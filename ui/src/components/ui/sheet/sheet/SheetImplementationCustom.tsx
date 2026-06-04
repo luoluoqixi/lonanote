@@ -29,13 +29,13 @@ import { ParentSheetContext, SheetInsideSheetContext } from "./contexts";
 import { getGestureHandlerState } from "./gestureState";
 import { resisted } from "./helpers";
 import { getKeyboardOccludedHeight } from "./keyboardAvoidance";
+import { SheetPortal } from "./sheet_portal";
 import type { SheetProps, SnapPointsMode } from "./types";
 import { useGestureHandlerPan } from "./useGestureHandlerPan";
 import { useKeyboardControllerSheet } from "./useKeyboardControllerSheet";
 import { useSheetOpenState } from "./useSheetOpenState";
-import { SheetPortal } from "./sheet_portal";
-import { useLockPageSheetDismiss } from "./use_lock_page_sheet_dismiss";
 import { useSheetProviderProps } from "./useSheetProviderProps";
+import { useLockPageSheetDismiss } from "./use_lock_page_sheet_dismiss";
 
 const INNER_SHEET_PARENT_DRAG_UNLOCK_DELAY_MS = 180;
 
@@ -145,10 +145,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
 
     const sheetInsideSheet = React.useContext(SheetInsideSheetContext);
     const onInnerSheet = React.useCallback(
-      (state: {
-        hasVisibleChild: boolean;
-        shouldLockParentDrag: boolean;
-      }) => {
+      (state: { hasVisibleChild: boolean; shouldLockParentDrag: boolean }) => {
         // “是否继续隐藏父层”和“是否继续锁住父层拖拽”必须分开处理：
         // 内层关闭动画期间，父层仍要隐藏；但拖拽可以稍后提前恢复。
         setIsShowingInnerSheet(state.hasVisibleChild);
@@ -880,7 +877,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
                     height: forcedContentHeight,
                     minHeight: forcedContentHeight,
                     opacity: !shouldHideParentSheet ? opacity : 0,
-                    ...((!open) && {
+                    ...(!open && {
                       pointerEvents: "none",
                     }),
                   },
@@ -933,7 +930,8 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         <ContainerComponent>{contents}</ContainerComponent>
       ) : null;
       const portalHostName =
-        (portalProps as (typeof portalProps & { hostName?: string }) | undefined)?.hostName ?? "root";
+        (portalProps as (typeof portalProps & { hostName?: string }) | undefined)?.hostName ??
+        "root";
       const useScopedOverlayPortal = portalHostName !== "root";
       const keepPointerEventsDuringClose = os() === "ios";
       const teleportedChildren =
@@ -951,12 +949,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         );
 
       const modalContents = useScopedOverlayPortal ? (
-        <SheetPortal
-          active={open}
-          hostName={portalHostName}
-          stackZIndex={zIndex}
-          {...portalProps}
-        >
+        <SheetPortal active={open} hostName={portalHostName} stackZIndex={zIndex} {...portalProps}>
           {teleportedChildren}
         </SheetPortal>
       ) : (

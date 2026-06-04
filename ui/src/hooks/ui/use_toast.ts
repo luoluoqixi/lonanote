@@ -61,8 +61,7 @@ export function useToast(): ToastContext {
     let toastId: string | number | undefined;
 
     if (data?.loading !== undefined) {
-      const description =
-        typeof data.description === "function" ? undefined : data.description;
+      const description = typeof data.description === "function" ? undefined : data.description;
       toastId = loadingFunction(data.loading, {
         description,
         duration: Number.POSITIVE_INFINITY,
@@ -89,7 +88,9 @@ export function useToast(): ToastContext {
           const message =
             typeof data.success === "function" ? await data.success(result) : data.success;
           const description =
-            typeof data.description === "function" ? await data.description(result) : data.description;
+            typeof data.description === "function"
+              ? await data.description(result)
+              : data.description;
           successFunction(message, { description, id: toastId });
           toastId = undefined;
         } else if (toastId != null) {
@@ -103,7 +104,9 @@ export function useToast(): ToastContext {
         if (data?.error !== undefined) {
           const message = typeof data.error === "function" ? await data.error(error) : data.error;
           const description =
-            typeof data.description === "function" ? await data.description(error) : data.description;
+            typeof data.description === "function"
+              ? await data.description(error)
+              : data.description;
           errorFunction(message, { description, id: toastId });
           toastId = undefined;
         } else if (toastId != null) {

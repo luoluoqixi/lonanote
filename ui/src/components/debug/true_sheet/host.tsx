@@ -7,11 +7,11 @@ import { isDesktop, isWeb } from "@/api/common";
 import { Button, ScreenOverlayPortalProvider, Text } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
-import { getDebugPanelRouteDefinition, type DebugTabKey } from "../routes";
+import { type DebugTabKey, getDebugPanelRouteDefinition } from "../routes";
 import { DebugHomeScreen, DebugSectionScreen } from "../screens";
 import {
-  closeDebugPanel,
   DEBUG_TRUE_SHEET_NAME,
+  closeDebugPanel,
   markDebugPanelClosed,
   switchDebugPanelToFullPage,
 } from "./api";

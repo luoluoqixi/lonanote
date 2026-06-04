@@ -2,10 +2,10 @@ import { Redirect, router } from "expo-router";
 
 import {
   DebugHomeScreen,
+  type DebugTabKey,
   getDebugFullPageHref,
   isDebugFeatureEnabled,
   switchDebugPanelToTrueSheet,
-  type DebugTabKey,
 } from "@/components/debug";
 
 export default function DebugHomeRouteScreen() {

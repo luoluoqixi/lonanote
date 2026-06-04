@@ -14,7 +14,11 @@ import { Dialog, Tabs } from "@/components/ui";
 import { WIDE_LAYOUT_MINIMUM_WIDTH } from "@/config";
 
 import { isDebugFeatureEnabled } from "./release_gate";
-import { DEBUG_PANEL_ROUTE_DEFINITIONS, DEBUG_PANEL_TOGGLE_EVENT, type DebugTabKey } from "./routes";
+import {
+  DEBUG_PANEL_ROUTE_DEFINITIONS,
+  DEBUG_PANEL_TOGGLE_EVENT,
+  type DebugTabKey,
+} from "./routes";
 
 function emitDebugPanelToggle() {
   DeviceEventEmitter.emit(DEBUG_PANEL_TOGGLE_EVENT);

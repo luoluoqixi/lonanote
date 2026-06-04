@@ -1,8 +1,8 @@
-import { getPortal, NativePortal } from "@tamagui/native";
+import { NativePortal, getPortal } from "@tamagui/native";
 import { PortalItem, resolveViewZIndex } from "@tamagui/portal";
 import type { PortalProps } from "@tamagui/portal";
 import { useStackedZIndex } from "@tamagui/z-index-stack";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Modal, StyleSheet, View } from "react-native";
 
 const IOS_MODAL_PORTAL_CLOSE_DELAY_MS = 320;
@@ -98,9 +98,9 @@ export function SheetPortal(props: SheetPortalProps) {
 
 const styles = StyleSheet.create({
   modalRoot: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   portalLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });

@@ -41,9 +41,7 @@ function iosStatusBarOptions(style: NativeStackStatusBarStyle): StatusBarOptions
 }
 
 /** 普通全屏 / push 路由：跟随应用主题，切换深浅色时会更新。 */
-export function nativeStackStatusBarOptions(
-  colorScheme: ResolvedColorScheme,
-): StatusBarOptions {
+export function nativeStackStatusBarOptions(colorScheme: ResolvedColorScheme): StatusBarOptions {
   return iosStatusBarOptions(resolveNativeStackStatusBarStyle(colorScheme));
 }
 

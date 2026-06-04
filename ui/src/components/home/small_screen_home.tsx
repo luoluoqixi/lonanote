@@ -5,8 +5,8 @@ import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb, os } from "@/api/common";
 import { isDebugFeatureEnabled, openDebugPanel } from "@/components/debug";
-import { getAppHomeTitle } from "@/config";
 import { Button, Text } from "@/components/ui";
+import { getAppHomeTitle } from "@/config";
 
 const SETTINGS_HREF = "/settings" as Href;
 

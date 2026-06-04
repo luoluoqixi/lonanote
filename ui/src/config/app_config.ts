@@ -6,7 +6,7 @@ let initialized = false;
 
 const APP_NAME = "LonaNote";
 const APP_NAME_CN = "露娜笔记";
-const APP_HOME_TITLE = "LonaNote";
+// const APP_HOME_TITLE = "LonaNote";
 const APP_HOME_TITLE_CN = "露娜笔记";
 const NPM_VERSION = version;
 let APP_VERSION = NPM_VERSION;

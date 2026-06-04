@@ -6,6 +6,8 @@ import { Spinner, XStack, YStack } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
 
+import { getScopedToastViewportBottomInset } from "../utils/overlay_toast_layout";
+
 const DEFAULT_CLOSE_BTN_STYLE = {
   top: "50%",
   right: 14,
@@ -260,13 +262,7 @@ export {
   SCOPED_TOAST_VIEWPORT_INSET,
 } from "../utils/overlay_toast_layout";
 
-import { getScopedToastViewportBottomInset } from "../utils/overlay_toast_layout";
-
-export function Toaster({
-  viewportName,
-}: {
-  viewportName?: string;
-}) {
+export function Toaster({ viewportName }: { viewportName?: string }) {
   useWebToastAnimationOverride();
 
   const position = isWeb() ? "bottom-right" : "bottom-center";

@@ -4,11 +4,17 @@ import { useWindowDimensions } from "react-native";
 import { useTheme } from "tamagui";
 
 import { isDesktop, os } from "@/api/common";
-import { getSettingsMobileHeaderTitle } from "@/components/settings";
-import { nativeStackStatusBarOptions } from "@/components/ui";
 import { WideScreenHome } from "@/components/home";
+import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
-import { WIDE_LAYOUT_MINIMUM_WIDTH, getAppHomeTitle, getAppName, getVersion, initConfig } from "@/config";
+import { nativeStackStatusBarOptions } from "@/components/ui";
+import {
+  WIDE_LAYOUT_MINIMUM_WIDTH,
+  getAppHomeTitle,
+  getAppName,
+  getVersion,
+  initConfig,
+} from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 export const unstable_settings = {

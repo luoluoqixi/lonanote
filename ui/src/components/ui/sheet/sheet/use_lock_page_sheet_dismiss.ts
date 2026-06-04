@@ -2,13 +2,13 @@ import { useLayoutEffect } from "react";
 
 import { os } from "@/api/common/platform";
 import {
-  useScreenOverlayModalLockApi,
-  useScreenOverlayPortalHost,
-} from "@/components/ui/utils/screen_overlay_portal";
-import {
   acquirePageSheetGestureLock,
   releasePageSheetGestureLock,
 } from "@/components/ui/utils/page_sheet_gesture_lock";
+import {
+  useScreenOverlayModalLockApi,
+  useScreenOverlayPortalHost,
+} from "@/components/ui/utils/screen_overlay_portal";
 
 /**
  * 在 iOS pageSheet overlay 内打开 Tamagui modal Sheet 时登记锁计数。

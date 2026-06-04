@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { dismissTrueSheet, presentTrueSheet } from "@/components/ui/true_sheet";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
-import { DEBUG_HOME_HREF, getDebugFullPageHref, type DebugTabKey } from "../routes";
+import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "../routes";
 
 /** 全局调试 True Sheet 名称，须与 `DebugTrueSheetHost` 的 `name` 一致。 */
 export const DEBUG_TRUE_SHEET_NAME = "lonanote-debug";
