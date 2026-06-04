@@ -5,11 +5,8 @@ import { os } from "@/api/common/platform";
  * Toast：toastLayer 1× + Viewport `bottom`；居中 Dialog：`getTrueSheetCenteredModalLiftAmount` → content `y` 偏移（勿缩短 teleport 遮罩）。
  */
 
-/** 与 true_sheet_debug.ts 中 TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST 保持一致 */
-export const TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST = "true-sheet-debug-overlay";
-
-/** 与 debug/_layout.tsx 中 DEBUG_SCREEN_OVERLAY_PORTAL_HOST 保持一致 */
-export const DEBUG_SCREEN_OVERLAY_PORTAL_HOST = "debug-screen-overlay";
+/** 与 debug True Sheet 宿主 `ScreenOverlayPortalProvider` 的 hostName 保持一致 */
+export const DEBUG_OVERLAY_PORTAL_HOST = "debug-overlay";
 
 /** Sheet / overlay 内 Toast 默认底边距（Android 等） */
 export const SCOPED_TOAST_VIEWPORT_INSET = 24;
@@ -23,7 +20,7 @@ export const IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET = 36;
  */
 export const IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET = 56;
 
-const TRUE_SHEET_OVERLAY_HOSTS = new Set<string>([TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST]);
+const TRUE_SHEET_OVERLAY_HOSTS = new Set<string>([DEBUG_OVERLAY_PORTAL_HOST]);
 
 /** True Sheet overlay host（`insetAdjustment="automatic"` 会垫高布局底，与 pageSheet 不同） */
 export function isTrueSheetOverlayPortalHost(hostName: string): boolean {

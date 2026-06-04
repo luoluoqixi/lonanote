@@ -1,4 +1,3 @@
-import { usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   DeviceEventEmitter,
@@ -11,17 +10,11 @@ import {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
 
-import { dismissSheet } from "@/components/ui";
 import { Dialog, Tabs } from "@/components/ui";
 import { WIDE_LAYOUT_MINIMUM_WIDTH } from "@/config";
 
-import {
-  DEBUG_HOME_HREF,
-  DEBUG_PANEL_ROUTE_DEFINITIONS,
-  DEBUG_PANEL_TOGGLE_EVENT,
-  type DebugTabKey,
-  isDebugRoutePath,
-} from "./debug_panel_routes";
+import { isDebugFeatureEnabled } from "./release_gate";
+import { DEBUG_PANEL_ROUTE_DEFINITIONS, DEBUG_PANEL_TOGGLE_EVENT, type DebugTabKey } from "./routes";
 
 function emitDebugPanelToggle() {
   DeviceEventEmitter.emit(DEBUG_PANEL_TOGGLE_EVENT);
@@ -29,7 +22,7 @@ function emitDebugPanelToggle() {
 
 function useDebugPanelShortcut(onToggle: () => void) {
   useEffect(() => {
-    if (!__DEV__ || Platform.OS !== "web") {
+    if (!isDebugFeatureEnabled() || Platform.OS !== "web") {
       return;
     }
 
@@ -52,7 +45,7 @@ function useDebugPanelShortcut(onToggle: () => void) {
 
 function useDebugPanelNativeToggle(onToggle: () => void) {
   useEffect(() => {
-    if (!__DEV__ || Platform.OS === "web") {
+    if (!isDebugFeatureEnabled() || Platform.OS === "web") {
       return;
     }
 
@@ -65,7 +58,7 @@ function useDebugPanelNativeToggle(onToggle: () => void) {
 
 export function DebugPanelGestureLayer({ children }: { children: React.ReactNode }) {
   const gesture = useMemo(() => {
-    if (!__DEV__ || Platform.OS === "web") {
+    if (!isDebugFeatureEnabled() || Platform.OS === "web") {
       return null;
     }
 
@@ -111,55 +104,33 @@ function DebugTabStaticPane({ children }: { children: React.ReactNode }) {
   return <View style={styles.staticPane}>{children}</View>;
 }
 
-export function DebugPanelHost() {
-  const router = useRouter();
-  const pathname = usePathname();
+/** 宽屏 Dialog 调试面板（小屏由 True Sheet 承载）。 */
+export function DebugWidePanelHost() {
   const { width } = useWindowDimensions();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState<DebugTabKey>("workspace");
-  const usesRoutePresentation = width < WIDE_LAYOUT_MINIMUM_WIDTH;
+  const isWideLayout = width >= WIDE_LAYOUT_MINIMUM_WIDTH;
 
   const toggleDebugPanel = () => {
-    if (usesRoutePresentation) {
-      if (isDebugRoutePath(pathname)) {
-        dismissSheet();
-        return;
-      }
-
-      router.push(DEBUG_HOME_HREF);
-      return;
-    }
-
     setIsOpen((current) => !current);
   };
 
   useDebugPanelShortcut(toggleDebugPanel);
-
   useDebugPanelNativeToggle(toggleDebugPanel);
 
-  useEffect(() => {
-    if (usesRoutePresentation && isOpen) {
-      setIsOpen(false);
-    }
-  }, [isOpen, usesRoutePresentation]);
-
-  if (!__DEV__) {
-    return null;
-  }
-
-  if (usesRoutePresentation) {
+  if (!isDebugFeatureEnabled() || !isWideLayout) {
     return null;
   }
 
   return (
     <Dialog
-      width="98%"
       height="88%"
-      minWidth={0}
       minHeight={0}
+      minWidth={0}
       onOpenChange={setIsOpen}
       open={isOpen}
       title="调试面板"
+      width="98%"
     >
       <Tabs
         aria-label="调试面板导航"

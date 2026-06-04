@@ -2,20 +2,23 @@ import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+
 import { isDesktop, isWeb } from "@/api/common";
 import { Button, ScreenOverlayPortalProvider, Text } from "@/components/ui";
+import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
-import { getDebugPanelRouteDefinition, type DebugTabKey } from "./debug_panel_routes";
-import { DebugHomeScreen, DebugSectionScreen } from "./debug_route_screens";
+import { getDebugPanelRouteDefinition, type DebugTabKey } from "../routes";
+import { DebugHomeScreen, DebugSectionScreen } from "../screens";
 import {
-  dismissTrueSheetDebug,
-  TRUE_SHEET_DEBUG_NAME,
-  TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST,
-} from "./true_sheet_debug";
+  closeDebugPanel,
+  DEBUG_TRUE_SHEET_NAME,
+  markDebugPanelClosed,
+  switchDebugPanelToFullPage,
+} from "./api";
 
-type TrueSheetDebugScreen = "home" | DebugTabKey;
+type DebugTrueSheetScreen = "home" | DebugTabKey;
 
-function TrueSheetDebugHeader({
+function DebugTrueSheetHeader({
   onBack,
   onClose,
   subtitle,
@@ -55,32 +58,41 @@ function TrueSheetDebugHeader({
 }
 
 /**
- * True Sheet 调试宿主：用于对比 Native Stack formSheet/pageSheet 的滚动与关 sheet 行为。
+ * 小屏调试 True Sheet 宿主。
  * 需 dev client + prebuild 后原生重装；不支持 Expo Go。
  *
  * @see https://sheet.lodev09.com/guides/scrolling — Android 须 `scrollable` 才正确协调列表与 sheet 拖拽
  */
-export function TrueSheetDebugHost() {
-  const [screen, setScreen] = useState<TrueSheetDebugScreen>("home");
+export function DebugTrueSheetHost() {
+  const [screen, setScreen] = useState<DebugTrueSheetScreen>("home");
 
   const resetScreen = useCallback(() => {
     setScreen("home");
   }, []);
 
   const handleClose = useCallback(() => {
-    void dismissTrueSheetDebug();
+    void closeDebugPanel();
   }, []);
 
   const handleOpenPanel = useCallback((key: DebugTabKey) => {
     setScreen(key);
   }, []);
 
+  const handleSwitchToFullPage = useCallback(() => {
+    void switchDebugPanelToFullPage();
+  }, []);
+
+  const handleDidDismiss = useCallback(() => {
+    markDebugPanelClosed();
+    resetScreen();
+  }, [resetScreen]);
+
   if (isWeb() || isDesktop()) {
     return null;
   }
 
   const isHome = screen === "home";
-  const sectionDefinition = isHome ? null : getDebugPanelRouteDefinition(screen);
+  const sectionDefinition = isHome ? undefined : getDebugPanelRouteDefinition(screen);
 
   return (
     <TrueSheet
@@ -88,25 +100,24 @@ export function TrueSheetDebugHost() {
       dismissible
       grabber
       header={
-        <TrueSheetDebugHeader
+        <DebugTrueSheetHeader
           onBack={isHome ? undefined : resetScreen}
           onClose={handleClose}
-          subtitle={isHome ? "原生 True Sheet · 对比 Stack sheet" : sectionDefinition.description}
-          title={isHome ? "调试面板 (True Sheet)" : sectionDefinition.label}
+          subtitle={isHome ? "True Sheet 调试面板" : sectionDefinition?.description}
+          title={isHome ? "调试面板" : (sectionDefinition?.label ?? "调试")}
         />
       }
       insetAdjustment="automatic"
-      name={TRUE_SHEET_DEBUG_NAME}
-      onDidDismiss={resetScreen}
+      name={DEBUG_TRUE_SHEET_NAME}
+      onDidDismiss={handleDidDismiss}
       pageSizing
       scrollable
       scrollableOptions={{
-        // 单 detent 调试页：仅 grabber 参与扩 sheet，避免与内容滚动抢手势
         scrollingExpandsSheet: false,
       }}
     >
       <GestureHandlerRootView style={styles.sheetGestureRoot}>
-        <ScreenOverlayPortalProvider hostName={TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST}>
+        <ScreenOverlayPortalProvider hostName={DEBUG_OVERLAY_PORTAL_HOST}>
           <ScrollView
             contentContainerStyle={styles.sheetScrollContent}
             keyboardShouldPersistTaps="handled"
@@ -115,9 +126,12 @@ export function TrueSheetDebugHost() {
             style={styles.sheetScroll}
           >
             {isHome ? (
-              <DebugHomeScreen onOpenPanel={handleOpenPanel} presentationMode="page" />
+              <DebugHomeScreen
+                onOpenPanel={handleOpenPanel}
+                onSwitchToFullPage={handleSwitchToFullPage}
+              />
             ) : (
-              <DebugSectionScreen layoutHost="trueSheet" presentationMode="page" sectionKey={screen} />
+              <DebugSectionScreen layoutHost="trueSheet" sectionKey={screen} />
             )}
           </ScrollView>
         </ScreenOverlayPortalProvider>
@@ -127,18 +141,6 @@ export function TrueSheetDebugHost() {
 }
 
 const styles = StyleSheet.create({
-  headerRoot: {
-    flexGrow: 0,
-  },
-  sheetGestureRoot: {
-    flexGrow: 1,
-  },
-  sheetScroll: {
-    flexGrow: 1,
-  },
-  sheetScrollContent: {
-    flexGrow: 1,
-  },
   header: {
     alignItems: "center",
     borderBottomColor: "rgba(128, 128, 128, 0.22)",
@@ -154,9 +156,21 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     gap: 8,
   },
+  headerRoot: {
+    flexGrow: 0,
+  },
   headerText: {
     flex: 1,
     gap: 4,
     minWidth: 0,
+  },
+  sheetGestureRoot: {
+    flexGrow: 1,
+  },
+  sheetScroll: {
+    flexGrow: 1,
+  },
+  sheetScrollContent: {
+    flexGrow: 1,
   },
 });

@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb, os } from "@/api/common";
-import { presentTrueSheetDebug } from "@/components/debug";
+import { isDebugFeatureEnabled, openDebugPanel } from "@/components/debug";
 import { getAppHomeTitle } from "@/config";
 import { Button, Text } from "@/components/ui";
 
@@ -53,16 +53,9 @@ export function SmallScreenHome() {
             主题、窗口和编辑器默认值。
           </Text>
           <Button onPress={() => router.push(SETTINGS_HREF)}>打开全局设置</Button>
-          {__DEV__ && !isWeb() && !isDesktop() ? (
-            <>
-              <Button onPress={() => void presentTrueSheetDebug()}>打开 debug (True Sheet)</Button>
-              <Button onPress={() => router.push("/debug")} variant="outlined">
-                打开 debug (Stack)
-              </Button>
-            </>
-          ) : (
-            <Button onPress={() => router.push("/debug")}>打开 debug</Button>
-          )}
+          {isDebugFeatureEnabled() && !isWeb() && !isDesktop() ? (
+            <Button onPress={() => void openDebugPanel()}>打开调试面板</Button>
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

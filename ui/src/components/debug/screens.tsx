@@ -1,19 +1,15 @@
-import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { isDesktop, isWeb, os } from "@/api/common";
+import { isDesktop } from "@/api/common";
 
 import { TitleBar } from "../titlebar";
-import { Button, FormSheetScrollView, Text } from "../ui";
+import { Button, Text } from "../ui";
 import {
   DEBUG_PANEL_ROUTE_DEFINITIONS,
-  type DebugRouteMode,
   type DebugTabKey,
-  getDebugHomeHref,
-  getDebugPanelHref,
   getDebugPanelRouteDefinition,
-} from "./debug_panel_routes";
+} from "./routes";
 
 const DEBUG_SCREEN_MAX_WIDTH = 960;
 
@@ -22,33 +18,29 @@ type DebugScreenLayoutHost = "screen" | "trueSheet";
 function DebugScreenLayout({
   children,
   description,
+  hideInlineHeader = false,
   layoutHost = "screen",
-  presentationMode = "sheet",
   scrollable = false,
   title,
 }: {
   children: ReactNode;
   description?: string;
+  /** Stack 已展示原生标题栏时隐藏自绘页头，避免重复 */
+  hideInlineHeader?: boolean;
   /** True Sheet 内勿用 flex:1 全屏壳，否则 Card/按钮会错位且无法点击 */
   layoutHost?: DebugScreenLayoutHost;
-  presentationMode?: DebugRouteMode;
   scrollable?: boolean;
   title: string;
 }) {
-  /** 滚动由 TrueSheet `scrollable` 托管，此处仅渲染内容，避免双层 ScrollView 导致嵌套滚动失效 */
   if (layoutHost === "trueSheet") {
     return <View style={styles.trueSheetBody}>{children}</View>;
   }
 
   const desktop = isDesktop();
-  const usesNativeHeader = !isWeb();
-  /** 仅 Android formSheet 根页：整屏 ScrollView 承接 Card 间隙等透明区域手势。 */
-  const usesFormSheetScroll = os() === "android" && !desktop && presentationMode === "sheet";
-  const inSheetScroll = usesFormSheetScroll || scrollable;
   const pageBody = (
-    <View style={inSheetScroll ? styles.pagePaddingInScroll : styles.pagePadding}>
-      <View style={inSheetScroll ? styles.pageContainerInScroll : styles.pageContainer}>
-        {!usesNativeHeader ? (
+    <View style={scrollable ? styles.pagePaddingInScroll : styles.pagePadding}>
+      <View style={scrollable ? styles.pageContainerInScroll : styles.pageContainer}>
+        {!hideInlineHeader ? (
           <View style={styles.header}>
             <View style={styles.headerText}>
               <Text fontSize="$8" fontWeight="700">
@@ -62,28 +54,25 @@ function DebugScreenLayout({
             </View>
           </View>
         ) : null}
-        <View style={inSheetScroll ? styles.contentInScroll : styles.content}>{children}</View>
+        <View style={scrollable ? styles.contentInScroll : styles.content}>{children}</View>
       </View>
     </View>
   );
 
   return (
-    <View
-      // edges={usesNativeHeader ? ["left", "right"] : ["top"]}
-      style={styles.safeArea}
-    >
+    <View style={styles.safeArea}>
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
-        {usesFormSheetScroll || scrollable ? (
+        {scrollable ? (
           <View style={styles.pageScrollHost}>
-            <FormSheetScrollView
-              contentContainerStyle={usesFormSheetScroll ? undefined : styles.pageScrollContent}
-              nestedScrollEnabled={usesFormSheetScroll ? false : undefined}
+            <ScrollView
+              contentContainerStyle={styles.pageScrollContent}
+              nestedScrollEnabled
               showsVerticalScrollIndicator
               style={styles.pageScrollView}
             >
               {pageBody}
-            </FormSheetScrollView>
+            </ScrollView>
           </View>
         ) : (
           pageBody
@@ -94,17 +83,23 @@ function DebugScreenLayout({
 }
 
 export function DebugHomeScreen({
+  onOpenFullPage,
   onOpenPanel,
-  presentationMode = "sheet",
+  onSwitchToFullPage,
+  onSwitchToTrueSheet,
 }: {
-  /** True Sheet 等容器内导航：不走 Expo Router push */
+  /** True Sheet 内打开分区 */
   onOpenPanel?: (key: DebugTabKey) => void;
-  presentationMode?: DebugRouteMode;
+  /** 全屏 Stack 打开分区（已在路由栈时无需再关 Sheet） */
+  onOpenFullPage?: (key: DebugTabKey) => void;
+  /** 立即关闭 Sheet 并进入 `/debug` */
+  onSwitchToFullPage?: () => void;
+  /** 返回并打开 True Sheet 调试面板 */
+  onSwitchToTrueSheet?: () => void;
 }) {
-  const router = useRouter();
   const inTrueSheet = onOpenPanel != null;
+  const inFullPageRoute = onOpenFullPage != null && onOpenPanel == null;
   const layoutHost: DebugScreenLayoutHost = inTrueSheet ? "trueSheet" : "screen";
-  const targetPresentationMode = presentationMode === "sheet" ? "page" : "sheet";
   const sectionCards: ReactNode[] = [];
 
   for (const definition of DEBUG_PANEL_ROUTE_DEFINITIONS) {
@@ -119,44 +114,69 @@ export function DebugHomeScreen({
           </Text>
         </View>
         <Button
+          disabled={inTrueSheet ? onOpenPanel == null : onOpenFullPage == null}
           onPress={() => {
-            if (onOpenPanel) {
-              onOpenPanel(definition.key);
+            if (inTrueSheet) {
+              onOpenPanel?.(definition.key);
               return;
             }
 
-            router.push(getDebugPanelHref(definition.key, presentationMode));
+            onOpenFullPage?.(definition.key);
           }}
         >
           打开{definition.label}
         </Button>
       </View>,
     );
+  }
 
-    if (definition.key === "components" && !inTrueSheet) {
-      sectionCards.push(
-        <View key="presentation-mode-toggle" style={styles.sectionCard}>
-          <View style={styles.sectionCardText}>
-            <Text fontSize="$5" fontWeight="600">
-              {presentationMode === "sheet" ? "普通页面模式" : "Sheet 页面模式"}
-            </Text>
-            <Text color="$color10" fontSize="$3">
-              切换当前调试面板的展示方式，便于对比不同呈现形式下的交互表现。
-            </Text>
-          </View>
-          <Button onPress={() => router.replace(getDebugHomeHref(targetPresentationMode))}>
-            {presentationMode === "sheet" ? "切换为普通页面" : "切换为 Sheet 页面"}
-          </Button>
-        </View>,
-      );
-    }
+  if (onSwitchToFullPage != null) {
+    sectionCards.push(
+      <View key="presentation-mode-toggle" style={styles.sectionCard}>
+        <View style={styles.sectionCardText}>
+          <Text fontSize="$5" fontWeight="600">
+            普通页面模式
+          </Text>
+          <Text color="$color10" fontSize="$3">
+            关闭当前 Sheet，在全屏 Stack 中继续调试。
+          </Text>
+        </View>
+        <Button onPress={onSwitchToFullPage} variant="outlined">
+          切换为普通页面
+        </Button>
+      </View>,
+    );
+  }
+
+  if (onSwitchToTrueSheet != null) {
+    sectionCards.push(
+      <View key="presentation-mode-toggle" style={styles.sectionCard}>
+        <View style={styles.sectionCardText}>
+          <Text fontSize="$5" fontWeight="600">
+            True Sheet 模式
+          </Text>
+          <Text color="$color10" fontSize="$3">
+            返回并打开 True Sheet 调试面板。
+          </Text>
+        </View>
+        <Button onPress={onSwitchToTrueSheet} variant="outlined">
+          切换为 True Sheet
+        </Button>
+      </View>,
+    );
   }
 
   return (
     <DebugScreenLayout
-      description="小屏设备下通过独立页面查看各调试分区。"
+      description={
+        inTrueSheet
+          ? "在 True Sheet 中查看各调试分区，或切换为全屏 Stack。"
+          : inFullPageRoute
+            ? "在全屏 Stack 中查看各调试分区，或切换回 True Sheet。"
+            : "小屏设备下调试入口。"
+      }
+      hideInlineHeader={inFullPageRoute}
       layoutHost={layoutHost}
-      presentationMode={presentationMode}
       title="调试面板"
     >
       <View style={styles.sectionList}>{sectionCards}</View>
@@ -165,12 +185,12 @@ export function DebugHomeScreen({
 }
 
 export function DebugSectionScreen({
+  hideInlineHeader = false,
   layoutHost = "screen",
-  presentationMode = "sheet",
   sectionKey,
 }: {
+  hideInlineHeader?: boolean;
   layoutHost?: DebugScreenLayoutHost;
-  presentationMode?: DebugRouteMode;
   sectionKey: DebugTabKey;
 }) {
   const definition = getDebugPanelRouteDefinition(sectionKey);
@@ -179,8 +199,8 @@ export function DebugSectionScreen({
   return (
     <DebugScreenLayout
       description={definition.description}
+      hideInlineHeader={hideInlineHeader}
       layoutHost={layoutHost}
-      presentationMode={presentationMode}
       scrollable={layoutHost !== "trueSheet"}
       title={definition.label}
     >
@@ -194,6 +214,9 @@ export function DebugSectionScreen({
 const styles = StyleSheet.create({
   content: {
     flex: 1,
+    minHeight: 0,
+  },
+  contentInScroll: {
     minHeight: 0,
   },
   header: {
@@ -210,22 +233,30 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
-  pageScrollContent: {
-    flexGrow: 1,
-  },
-  pagePaddingInScroll: {
-    paddingBottom: 0,
-    paddingLeft: 20,
-    paddingRight: 20,
-    paddingTop: 0,
+  pageContainer: {
+    alignSelf: "center",
+    flex: 1,
+    maxWidth: DEBUG_SCREEN_MAX_WIDTH,
+    width: "100%",
   },
   pageContainerInScroll: {
     alignSelf: "center",
     maxWidth: DEBUG_SCREEN_MAX_WIDTH,
     width: "100%",
   },
-  contentInScroll: {
-    minHeight: 0,
+  pagePadding: {
+    flex: 1,
+    paddingBottom: 0,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+  },
+  pagePaddingInScroll: {
+    paddingBottom: 0,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+  },
+  pageScrollContent: {
+    flexGrow: 1,
   },
   pageScrollHost: {
     flex: 1,
@@ -234,19 +265,6 @@ const styles = StyleSheet.create({
   pageScrollView: {
     flex: 1,
     minHeight: 0,
-  },
-  pageContainer: {
-    alignSelf: "center",
-    flex: 1,
-    maxWidth: DEBUG_SCREEN_MAX_WIDTH,
-    width: "100%",
-  },
-  pagePadding: {
-    flex: 1,
-    paddingLeft: 20,
-    paddingRight: 20,
-    paddingTop: 0,
-    paddingBottom: 0,
   },
   panelHost: {
     minHeight: 0,
