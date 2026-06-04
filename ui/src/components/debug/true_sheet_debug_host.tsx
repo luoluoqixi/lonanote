@@ -2,7 +2,6 @@ import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-
 import { isDesktop, isWeb } from "@/api/common";
 import { Button, ScreenOverlayPortalProvider, Text } from "@/components/ui";
 

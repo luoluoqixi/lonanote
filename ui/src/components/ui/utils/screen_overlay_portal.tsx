@@ -1,7 +1,8 @@
 import { PortalRootHostProvider } from "@tamagui/portal";
 import { type ReactNode, createContext, useContext, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, type ViewStyle } from "react-native";
 import { PortalHost as TeleportPortalHost } from "react-native-teleport";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { os } from "@/api/common/platform";
 
@@ -58,13 +59,24 @@ export function ScreenOverlayPortalProvider({
   );
 }
 
+function OverlayToastLayer({ hostName }: { hostName: string }) {
+  const insets = useSafeAreaInsets();
+  // iOS True Sheet / pageSheet：`insetAdjustment="automatic"` 会把底部 safe area 叠进 sheet 总高度，
+  // toastLayer 贴布局底会偏到可视区外；仅上移 insets.bottom。与 Home 条的间距在 Toaster Viewport 上调整。
+  const layerStyle: ViewStyle[] | ViewStyle =
+    os() === "ios" ? [styles.toastLayer, { bottom: insets.bottom }] : styles.toastLayer;
+
+  return (
+    <View pointerEvents="box-none" style={layerStyle}>
+      <Toaster viewportName={hostName} />
+    </View>
+  );
+}
+
 export function ScreenOverlayPortalHost({ hostName }: { hostName: string }) {
   return (
     <View pointerEvents="box-none" style={styles.hostStack}>
-      {/* Toast 仅贴底，且 zIndex 低于 teleport，避免挡住 Dialog / AlertDialog 按钮 */}
-      <View pointerEvents="box-none" style={styles.toastLayer}>
-        <Toaster viewportName={hostName} />
-      </View>
+      <OverlayToastLayer hostName={hostName} />
       {/* 无浮层时须完全不接手势，否则会挡住 True Sheet / ScrollView 滚动 */}
       <View pointerEvents="none" style={styles.teleportLayer}>
         <TeleportPortalHost name={hostName} style={styles.teleportHost} />

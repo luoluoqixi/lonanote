@@ -4,7 +4,11 @@ import "../initialize";
 import { Stack } from "expo-router";
 
 import { isWeb } from "@/api/common";
-import { DebugPanelGestureLayer, DebugPanelHost, TrueSheetDebugHost } from "@/components/debug";
+import {
+  DebugPanelGestureLayer,
+  DebugPanelHost,
+  TrueSheetDebugHost,
+} from "@/components/debug";
 import { AppStatusBar, RootProvider, nativeStackStatusBarOptions } from "@/components/ui";
 import { getAppHomeTitle } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
