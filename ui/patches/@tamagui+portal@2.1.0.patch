@@ -68,7 +68,7 @@ index 619095a..4f6fcf3 100644
    });
  };
 diff --git a/dist/esm/GorhomPortalItem.native.js b/dist/esm/GorhomPortalItem.native.js
-index 1111111..2222222 100644
+index df53f2b..74ca7ae 100644
 --- a/dist/esm/GorhomPortalItem.native.js
 +++ b/dist/esm/GorhomPortalItem.native.js
 @@ -3,7 +3,7 @@ import { useIsomorphicLayoutEffect } from "@tamagui/constants";
@@ -80,7 +80,7 @@ index 1111111..2222222 100644
  var GorhomPortalItem = function (props) {
    var {
      name: _providedName,
-@@ -14,12 +14,14 @@ var GorhomPortalItem = function (props) {
+@@ -14,19 +14,21 @@ var GorhomPortalItem = function (props) {
      children,
      passThrough
    } = props;
@@ -105,7 +105,7 @@ index 1111111..2222222 100644
      handleOnUnmount: _providedHandleOnUnmount,
      handleOnUpdate: _providedHandleOnUpdate,
 diff --git a/types/GorhomPortal.d.ts b/types/GorhomPortal.d.ts
-index a7f3c96..3ec4305 100644
+index c68dfa6..5e4ab65 100644
 --- a/types/GorhomPortal.d.ts
 +++ b/types/GorhomPortal.d.ts
 @@ -53,6 +53,12 @@ export interface PortalProviderProps {
