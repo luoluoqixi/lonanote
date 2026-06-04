@@ -20,11 +20,14 @@ export const IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET = 36;
  */
 export const IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET = 56;
 
-const TRUE_SHEET_OVERLAY_HOSTS = new Set<string>([DEBUG_OVERLAY_PORTAL_HOST]);
+const DEBUG_SECTION_OVERLAY_PORTAL_PREFIX = `${DEBUG_OVERLAY_PORTAL_HOST}:section:`;
 
 /** True Sheet overlay host（`insetAdjustment="automatic"` 会垫高布局底，与 pageSheet 不同） */
 export function isTrueSheetOverlayPortalHost(hostName: string): boolean {
-  return TRUE_SHEET_OVERLAY_HOSTS.has(hostName);
+  return (
+    hostName === DEBUG_OVERLAY_PORTAL_HOST ||
+    hostName.startsWith(DEBUG_SECTION_OVERLAY_PORTAL_PREFIX)
+  );
 }
 
 /**

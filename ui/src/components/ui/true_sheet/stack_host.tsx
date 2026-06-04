@@ -7,6 +7,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
+import {
+  getTrueSheetGestureRootStyle,
+  getTrueSheetStackHostScrollableProps,
+} from "./platform_sheet_defaults";
 import { TrueSheetStackHostProvider } from "./stack_context";
 import { TrueSheetStackHeaderCloseButton } from "./stack_header";
 import {
@@ -15,6 +19,7 @@ import {
   createTrueSheetStackNavigationRef,
 } from "./stack_navigation";
 import type { TrueSheetInnerStackScreenOptions } from "./stack_navigator";
+import { TrueSheetScrollLayoutProvider } from "./true_sheet_scroll_context";
 
 export type TrueSheetStackHostProps<ParamList extends ParamListBase = ParamListBase> = {
   children: ReactNode;
@@ -33,23 +38,15 @@ export type TrueSheetStackHostProps<ParamList extends ParamListBase = ParamListB
 
 const defaultSheetProps: Pick<
   TrueSheetProps,
-  | "detents"
-  | "dismissible"
-  | "grabber"
-  | "insetAdjustment"
-  | "pageSizing"
-  | "scrollable"
-  | "scrollableOptions"
-> = {
+  "detents" | "dismissible" | "grabber" | "insetAdjustment" | "pageSizing"
+> &
+  Pick<TrueSheetProps, "scrollable" | "scrollableOptions"> = {
   detents: [1],
   dismissible: true,
   grabber: false,
   insetAdjustment: "automatic" as const,
   pageSizing: true,
-  scrollable: true,
-  scrollableOptions: {
-    scrollingExpandsSheet: false,
-  },
+  ...getTrueSheetStackHostScrollableProps(),
 };
 
 /**
@@ -90,18 +87,25 @@ export function TrueSheetStackHost<ParamList extends ParamListBase = ParamListBa
     ...screenOptions,
   };
 
+  const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
+
   const sheetBody = (
-    <GestureHandlerRootView style={styles.gestureRoot}>
-      <TrueSheetStackHostProvider onRequestClose={handleRequestClose}>
-        <TrueSheetStackNavigation
-          initialRouteName={initialRouteName as string}
-          navigationRef={navigationRef}
-          screenOptions={mergedScreenOptions}
-        >
-          {children}
-        </TrueSheetStackNavigation>
-      </TrueSheetStackHostProvider>
-    </GestureHandlerRootView>
+    <TrueSheetScrollLayoutProvider
+      insetAdjustment={insetAdjustment}
+      nativeScrollInsetsApplied={false}
+    >
+      <GestureHandlerRootView style={styles.gestureRoot}>
+        <TrueSheetStackHostProvider onRequestClose={handleRequestClose}>
+          <TrueSheetStackNavigation
+            initialRouteName={initialRouteName as string}
+            navigationRef={navigationRef}
+            screenOptions={mergedScreenOptions}
+          >
+            {children}
+          </TrueSheetStackNavigation>
+        </TrueSheetStackHostProvider>
+      </GestureHandlerRootView>
+    </TrueSheetScrollLayoutProvider>
   );
 
   return (
@@ -118,7 +122,5 @@ export function TrueSheetStackHost<ParamList extends ParamListBase = ParamListBa
 }
 
 const styles = StyleSheet.create({
-  gestureRoot: {
-    flexGrow: 1,
-  },
+  gestureRoot: getTrueSheetGestureRootStyle(),
 });

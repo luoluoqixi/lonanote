@@ -1,6 +1,10 @@
 /** True Sheet 内嵌原生 Stack（勿经 `@/components/ui` 主 barrel，避免无关路由拉入 navigation）。 */
 export * from "./panel";
+export * from "./platform_sheet_defaults";
+export * from "./scroll_content";
 export * from "./sheet_chrome";
+export * from "./sheet_scroll_layout";
+export * from "./true_sheet_scroll_context";
 export * from "./toolbar_header";
 export * from "./use_android_sheet_back_handler";
 export * from "./stack_context";

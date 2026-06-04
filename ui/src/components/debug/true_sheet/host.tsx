@@ -4,6 +4,7 @@ import { isDesktop, isWeb } from "@/api/common";
 
 import { DebugTrueSheetAndroidHost } from "./android_host";
 import { DebugTrueSheetIosStackHost } from "./ios_stack_host";
+import { DebugSectionTrueSheetsHost } from "./section_sheets_host";
 
 /**
  * 小屏调试 True Sheet 宿主。
@@ -15,9 +16,10 @@ export function DebugTrueSheetHost() {
     return null;
   }
 
-  if (Platform.OS === "android") {
-    return <DebugTrueSheetAndroidHost />;
-  }
-
-  return <DebugTrueSheetIosStackHost />;
+  return (
+    <>
+      <DebugSectionTrueSheetsHost />
+      {Platform.OS === "android" ? <DebugTrueSheetAndroidHost /> : <DebugTrueSheetIosStackHost />}
+    </>
+  );
 }

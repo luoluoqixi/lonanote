@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 import { os } from "@/api/common/platform";
 import { nativeStackStatusBarOptions } from "@/components/ui/utils/navigation/status_bar";
 import type { ResolvedColorScheme } from "@/components/ui/utils/navigation/status_bar";
@@ -16,6 +18,7 @@ export function trueSheetInnerStackScreenOptions(
       ...nativeStackStatusBarOptions(colorScheme),
       contentStyle: {
         backgroundColor,
+        ...(Platform.OS === "ios" ? { flex: 1 } : {}),
       },
       headerShadowVisible: false,
       headerStyle: {
@@ -31,6 +34,7 @@ export function trueSheetInnerStackScreenOptions(
   return {
     cardStyle: {
       backgroundColor,
+      ...(Platform.OS === "ios" ? { flex: 1 } : {}),
     },
     headerBackTitle: os() === "ios" ? "返回" : undefined,
     headerStyle: {

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { TrueSheetPanel } from "@/components/ui/true_sheet/panel";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
@@ -9,8 +9,10 @@ import {
   DEBUG_TRUE_SHEET_NAME,
   closeDebugPanel,
   markDebugPanelClosed,
+  openDebugSection,
   switchDebugPanelToFullPage,
 } from "./api";
+import { useDebugSectionsAsNestedSheets } from "./nested_sections_preferences";
 import { DebugTrueSheetScroll } from "./shared_scroll";
 
 type DebugTrueSheetScreen = "home" | DebugTabKey;
@@ -19,7 +21,14 @@ type DebugTrueSheetScreen = "home" | DebugTabKey;
  * Android True Sheet：不使用 NavigationContainer（Sheet 子树无法满足 react-native-screens）。
  */
 export function DebugTrueSheetAndroidHost() {
+  const nestedSectionSheets = useDebugSectionsAsNestedSheets();
   const [screen, setScreen] = useState<DebugTrueSheetScreen>("home");
+
+  useEffect(() => {
+    if (nestedSectionSheets && screen !== "home") {
+      setScreen("home");
+    }
+  }, [nestedSectionSheets, screen]);
 
   const resetScreen = useCallback(() => {
     setScreen("home");
@@ -51,7 +60,13 @@ export function DebugTrueSheetAndroidHost() {
       <DebugTrueSheetScroll>
         {isHome ? (
           <DebugHomeScreen
-            onOpenPanel={(key) => setScreen(key)}
+            onOpenPanel={(key) => {
+              void openDebugSection(key).then((handled) => {
+                if (!handled) {
+                  setScreen(key);
+                }
+              });
+            }}
             onSwitchToFullPage={() => {
               void switchDebugPanelToFullPage();
             }}

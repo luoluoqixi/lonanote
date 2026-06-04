@@ -4,12 +4,14 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { isDesktop } from "@/api/common";
 
 import { TitleBar } from "../titlebar";
-import { Button, Text } from "../ui";
+import { Button, Switch, Text } from "../ui";
 import {
   DEBUG_PANEL_ROUTE_DEFINITIONS,
   type DebugTabKey,
   getDebugPanelRouteDefinition,
 } from "./routes";
+import { openDebugSection, setDebugSectionsAsNestedSheets } from "./true_sheet/api";
+import { useDebugSectionsAsNestedSheets } from "./true_sheet/nested_sections_preferences";
 
 const DEBUG_SCREEN_MAX_WIDTH = 960;
 
@@ -97,10 +99,24 @@ export function DebugHomeScreen({
   /** 返回并打开 True Sheet 调试面板 */
   onSwitchToTrueSheet?: () => void;
 }) {
+  const nestedSectionSheets = useDebugSectionsAsNestedSheets();
   const inTrueSheet = onOpenPanel != null;
   const inFullPageRoute = onOpenFullPage != null && onOpenPanel == null;
   const layoutHost: DebugScreenLayoutHost = inTrueSheet ? "trueSheet" : "screen";
   const sectionCards: ReactNode[] = [];
+
+  const openSection = async (key: DebugTabKey) => {
+    if (await openDebugSection(key)) {
+      return;
+    }
+
+    if (inTrueSheet) {
+      onOpenPanel?.(key);
+      return;
+    }
+
+    onOpenFullPage?.(key);
+  };
 
   for (const definition of DEBUG_PANEL_ROUTE_DEFINITIONS) {
     sectionCards.push(
@@ -114,14 +130,11 @@ export function DebugHomeScreen({
           </Text>
         </View>
         <Button
-          disabled={inTrueSheet ? onOpenPanel == null : onOpenFullPage == null}
+          disabled={
+            nestedSectionSheets ? false : inTrueSheet ? onOpenPanel == null : onOpenFullPage == null
+          }
           onPress={() => {
-            if (inTrueSheet) {
-              onOpenPanel?.(definition.key);
-              return;
-            }
-
-            onOpenFullPage?.(definition.key);
+            void openSection(definition.key);
           }}
         >
           打开{definition.label}
@@ -129,6 +142,26 @@ export function DebugHomeScreen({
       </View>,
     );
   }
+
+  sectionCards.push(
+    <View key="nested-section-sheets-toggle" style={styles.sectionCard}>
+      <View style={styles.sectionCardText}>
+        <Text fontSize="$5" fontWeight="600">
+          分区嵌套 True Sheet
+        </Text>
+        <Text color="$color10" fontSize="$3">
+          开启后，工作区 / 路径 / 组件总览均以独立 True Sheet 打开；在主页 Sheet 上可再叠一层嵌套
+          Sheet，全屏页面模式下也会弹出 Sheet 而非路由跳转。
+        </Text>
+      </View>
+      <Switch
+        checked={nestedSectionSheets}
+        label="启用嵌套 Sheet"
+        labelPosition="end"
+        onCheckedChange={setDebugSectionsAsNestedSheets}
+      />
+    </View>,
+  );
 
   if (onSwitchToFullPage != null) {
     sectionCards.push(

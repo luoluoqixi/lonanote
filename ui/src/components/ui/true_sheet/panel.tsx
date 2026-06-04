@@ -7,8 +7,15 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
+import {
+  getTrueSheetGestureRootStyle,
+  getTrueSheetPanelScrollableProps,
+  mergeTrueSheetContentStyle,
+  shouldUseTrueSheetNativeScrollInsets,
+} from "./platform_sheet_defaults";
 import { type TrueSheetChromeMode, resolveTrueSheetGrabber } from "./sheet_chrome";
 import { TrueSheetToolbarHeader } from "./toolbar_header";
+import { TrueSheetScrollLayoutProvider } from "./true_sheet_scroll_context";
 import { useAndroidSheetBackHandler } from "./use_android_sheet_back_handler";
 
 export type TrueSheetPanelProps = {
@@ -30,16 +37,14 @@ export type TrueSheetPanelProps = {
 
 const defaultSheetProps: Pick<
   TrueSheetProps,
-  "detents" | "dismissible" | "insetAdjustment" | "pageSizing" | "scrollable" | "scrollableOptions"
-> = {
+  "detents" | "dismissible" | "insetAdjustment" | "pageSizing"
+> &
+  Pick<TrueSheetProps, "scrollable" | "scrollableOptions"> = {
   detents: [1],
   dismissible: true,
   insetAdjustment: "automatic",
   pageSizing: true,
-  scrollable: true,
-  scrollableOptions: {
-    scrollingExpandsSheet: false,
-  },
+  ...getTrueSheetPanelScrollableProps(),
 };
 
 /**
@@ -103,9 +108,27 @@ export function TrueSheetPanel({
       />
     ) : undefined;
 
+  const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
+  const sheetScrollable = sheetProps?.scrollable ?? defaultSheetProps.scrollable;
+
   const sheetBody = (
-    <GestureHandlerRootView style={styles.gestureRoot}>{children}</GestureHandlerRootView>
+    <TrueSheetScrollLayoutProvider
+      insetAdjustment={insetAdjustment}
+      nativeScrollInsetsApplied={shouldUseTrueSheetNativeScrollInsets(sheetScrollable)}
+    >
+      <GestureHandlerRootView style={styles.gestureRoot}>
+        {overlayPortalHostName != null ? (
+          <ScreenOverlayPortalProvider hostName={overlayPortalHostName}>
+            {children}
+          </ScreenOverlayPortalProvider>
+        ) : (
+          children
+        )}
+      </GestureHandlerRootView>
+    </TrueSheetScrollLayoutProvider>
   );
+
+  const mergedScrollable = sheetScrollable;
 
   return (
     <TrueSheet
@@ -116,20 +139,13 @@ export function TrueSheetPanel({
       onDidPresent={handleDidPresent}
       {...defaultSheetProps}
       {...sheetProps}
+      style={mergeTrueSheetContentStyle(mergedScrollable, sheetProps?.style)}
     >
-      {overlayPortalHostName != null ? (
-        <ScreenOverlayPortalProvider hostName={overlayPortalHostName}>
-          {sheetBody}
-        </ScreenOverlayPortalProvider>
-      ) : (
-        sheetBody
-      )}
+      {sheetBody}
     </TrueSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  gestureRoot: {
-    flexGrow: 1,
-  },
+  gestureRoot: getTrueSheetGestureRootStyle(),
 });

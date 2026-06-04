@@ -4,7 +4,7 @@ import { TrueSheetInnerStack } from "@/components/ui/true_sheet/stack";
 
 import { DEBUG_PANEL_ROUTE_DEFINITIONS, type DebugTabKey } from "../routes";
 import { DebugHomeScreen, DebugSectionScreen } from "../screens";
-import { switchDebugPanelToFullPage } from "./api";
+import { openDebugSection, switchDebugPanelToFullPage } from "./api";
 import { DebugTrueSheetScroll } from "./shared_scroll";
 
 export type DebugTrueSheetStackParamList = {
@@ -17,7 +17,13 @@ export function DebugTrueSheetHomeRoute() {
   return (
     <DebugTrueSheetScroll>
       <DebugHomeScreen
-        onOpenPanel={(key) => navigation.navigate(key)}
+        onOpenPanel={(key) => {
+          void openDebugSection(key).then((handled) => {
+            if (!handled) {
+              navigation.navigate(key);
+            }
+          });
+        }}
         onSwitchToFullPage={() => {
           void switchDebugPanelToFullPage();
         }}

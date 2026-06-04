@@ -5,6 +5,7 @@ import {
   type DebugTabKey,
   getDebugFullPageHref,
   isDebugFeatureEnabled,
+  openDebugSection,
   switchDebugPanelToTrueSheet,
 } from "@/components/debug";
 
@@ -16,7 +17,11 @@ export default function DebugHomeRouteScreen() {
   return (
     <DebugHomeScreen
       onOpenFullPage={(key: DebugTabKey) => {
-        router.push(getDebugFullPageHref(key));
+        void openDebugSection(key).then((handled) => {
+          if (!handled) {
+            router.push(getDebugFullPageHref(key));
+          }
+        });
       }}
       onSwitchToTrueSheet={() => {
         void switchDebugPanelToTrueSheet();

@@ -6,6 +6,7 @@ import {
   createNavigationContainerRef,
 } from "expo-router/react-navigation";
 import type { ReactNode, Ref } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { type StackNavigationOptions, createStackNavigator } from "./stack_js_stack";
 import {
@@ -48,12 +49,14 @@ function TrueSheetStackNavigationInner({
     return (
       <NavigationIndependentTree>
         <NavigationContainer ref={ref}>
-          <NativeStack.Navigator
-            initialRouteName={initialRouteName}
-            screenOptions={screenOptions as NativeStackNavigationOptions}
-          >
-            {children}
-          </NativeStack.Navigator>
+          <View style={styles.nativeStackRoot}>
+            <NativeStack.Navigator
+              initialRouteName={initialRouteName}
+              screenOptions={screenOptions as NativeStackNavigationOptions}
+            >
+              {children}
+            </NativeStack.Navigator>
+          </View>
         </NavigationContainer>
       </NavigationIndependentTree>
     );
@@ -82,3 +85,10 @@ export function TrueSheetStackNavigation(props: TrueSheetStackNavigationProps) {
 
 /** 与当前平台匹配的 Stack.Screen */
 export const TrueSheetInnerStack = trueSheetUsesNativeStackNavigator ? NativeStack : JsStack;
+
+const styles = StyleSheet.create({
+  nativeStackRoot: {
+    flex: Platform.OS === "ios" ? 1 : undefined,
+    minHeight: Platform.OS === "ios" ? 0 : undefined,
+  },
+});

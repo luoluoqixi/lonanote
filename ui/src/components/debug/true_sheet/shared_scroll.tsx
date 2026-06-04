@@ -1,24 +1,4 @@
-import { ScrollView, StyleSheet } from "react-native";
+import { TrueSheetScrollContent } from "@/components/ui/true_sheet/scroll_content";
 
-export function DebugTrueSheetScroll({ children }: { children: React.ReactNode }) {
-  return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      nestedScrollEnabled
-      showsVerticalScrollIndicator
-      style={styles.scroll}
-    >
-      {children}
-    </ScrollView>
-  );
-}
-
-const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-});
+/** 调试 True Sheet 内滚动；实现见 `TrueSheetScrollContent`。 */
+export const DebugTrueSheetScroll = TrueSheetScrollContent;
