@@ -254,14 +254,13 @@ function ToastList({ viewportName }: { viewportName?: string }) {
   );
 }
 
-/** Sheet / overlay 内 Toast 距宿主底边的默认间距（Android 等）。 */
-export const SCOPED_TOAST_VIEWPORT_INSET = 24;
+export {
+  IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET,
+  IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET,
+  SCOPED_TOAST_VIEWPORT_INSET,
+} from "../utils/overlay_toast_layout";
 
-/**
- * iOS overlay 内 Viewport 底边距。
- * toastLayer 只做 safe area 布局补偿；与 Home 条的视觉间距在此抬高（勿叠到 toastLayer.bottom，会反而更靠下）。
- */
-export const IOS_SCOPED_TOAST_VIEWPORT_INSET = 48;
+import { getScopedToastViewportBottomInset } from "../utils/overlay_toast_layout";
 
 export function Toaster({
   viewportName,
@@ -274,7 +273,7 @@ export function Toaster({
   const scopedViewport = viewportName != null;
   const viewportStyle = scopedViewport
     ? {
-        bottom: os() === "ios" ? IOS_SCOPED_TOAST_VIEWPORT_INSET : SCOPED_TOAST_VIEWPORT_INSET,
+        bottom: getScopedToastViewportBottomInset(viewportName),
         left: 16,
         right: 16,
         top: "auto" as const,

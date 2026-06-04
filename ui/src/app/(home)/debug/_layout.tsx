@@ -2,8 +2,9 @@ import { Stack } from "expo-router";
 
 import { getDebugStackHeaderTitle } from "@/components/debug";
 import { ScreenOverlayPortalProvider, nativeStackSheetStatusBarOptions } from "@/components/ui";
+import { DEBUG_SCREEN_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
-export const DEBUG_SCREEN_OVERLAY_PORTAL_HOST = "debug-screen-overlay";
+export { DEBUG_SCREEN_OVERLAY_PORTAL_HOST };
 
 export const unstable_settings = {
   initialRouteName: "index",

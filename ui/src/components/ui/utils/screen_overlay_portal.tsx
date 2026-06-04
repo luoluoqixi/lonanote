@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { os } from "@/api/common/platform";
 
+import { shouldApplyIosTrueSheetToastLayerInset } from "./overlay_toast_layout";
 import { Toaster } from "../provider/toaster";
 
 const ScreenOverlayPortalContext = createContext<string | null>(null);
@@ -61,10 +62,9 @@ export function ScreenOverlayPortalProvider({
 
 function OverlayToastLayer({ hostName }: { hostName: string }) {
   const insets = useSafeAreaInsets();
-  // iOS True Sheet / pageSheet：`insetAdjustment="automatic"` 会把底部 safe area 叠进 sheet 总高度，
-  // toastLayer 贴布局底会偏到可视区外；仅上移 insets.bottom。与 Home 条的间距在 Toaster Viewport 上调整。
+  const iosTrueSheetInset = shouldApplyIosTrueSheetToastLayerInset(hostName);
   const layerStyle: ViewStyle[] | ViewStyle =
-    os() === "ios" ? [styles.toastLayer, { bottom: insets.bottom }] : styles.toastLayer;
+    iosTrueSheetInset ? [styles.toastLayer, { bottom: insets.bottom }] : styles.toastLayer;
 
   return (
     <View pointerEvents="box-none" style={layerStyle}>
