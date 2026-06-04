@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 
-import { dismissTrueSheet, presentTrueSheet } from "@/components/ui/true_sheet";
+import { dismissTrueSheet, presentTrueSheet } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
 import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "../routes";

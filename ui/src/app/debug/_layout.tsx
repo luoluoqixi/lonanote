@@ -6,7 +6,7 @@ import {
   isDebugFeatureEnabled,
   isDebugTabKey,
 } from "@/components/debug";
-import { nativeStackStatusBarOptions } from "@/components/ui";
+import { nativeStackStatusBarOptions } from "@/components/ui/utils/navigation";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 export default function DebugStackLayout() {

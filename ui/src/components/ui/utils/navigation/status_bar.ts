@@ -1,4 +1,4 @@
-import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import type { NativeStackNavigationOptions } from "expo-router/build/react-navigation/native-stack";
 import type { StatusBarStyle } from "expo-status-bar";
 
 import { isMobile, os } from "@/api/common/platform";
