@@ -15,6 +15,7 @@ import {
   preventDialogDismissForDragRegion,
 } from "@/components/ui/dialog/dialog_outside_interaction";
 import { resolveAriaLabel } from "@/components/ui/utils";
+import { useTrueSheetCenteredModalContentOffsetY } from "@/components/ui/utils/use_true_sheet_centered_modal_layout";
 
 import type {
   AlertDialogActionProps,
@@ -209,14 +210,17 @@ function AlertDialogContent(props: AlertDialogContentBaseProps) {
     dismissOnOverlayPress = false,
     onInteractOutside,
     onPointerDownOutside,
+    y: yProp,
     ...restProps
   } = contentProps;
+  const trueSheetCenterY = useTrueSheetCenteredModalContentOffsetY();
 
   return (
     <AlertDialogContentBase
       role="alertdialog"
       aria-modal={true}
       {...restProps}
+      y={yProp ?? (trueSheetCenterY !== 0 ? trueSheetCenterY : undefined)}
       onPointerDownOutside={(event) => {
         onPointerDownOutside?.(event);
         preventDialogDismissForDragRegion(event);

@@ -7,6 +7,7 @@ import { Dialog as TamaguiDialog, Unspaced, XStack, YStack } from "tamagui";
 import { isWeb, os } from "@/api/common/platform";
 import { Button } from "@/components/ui/button";
 import { resolveAriaLabel } from "@/components/ui/utils";
+import { useTrueSheetCenteredModalContentOffsetY } from "@/components/ui/utils/use_true_sheet_centered_modal_layout";
 
 import {
   type OutsideInteractionEvent,
@@ -193,12 +194,15 @@ function DialogContent(props: DialogContentBehaviorProps) {
     dismissOnOverlayPress = true,
     onInteractOutside,
     onPointerDownOutside,
+    y: yProp,
     ...restProps
   } = props;
+  const trueSheetCenterY = useTrueSheetCenteredModalContentOffsetY();
 
   return (
     <TamaguiDialog.Content
       {...restProps}
+      y={yProp ?? (trueSheetCenterY !== 0 ? trueSheetCenterY : undefined)}
       onPointerDownOutside={(event) => {
         onPointerDownOutside?.(event);
         preventDialogDismissForDragRegion(event as OutsideInteractionEvent);

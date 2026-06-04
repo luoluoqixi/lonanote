@@ -1,12 +1,16 @@
 import { PortalRootHostProvider } from "@tamagui/portal";
-import { type ReactNode, createContext, useContext, useMemo, useState } from "react";
+import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
 import { PortalHost as TeleportPortalHost } from "react-native-teleport";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { os } from "@/api/common/platform";
 
-import { shouldApplyIosTrueSheetToastLayerInset } from "./overlay_toast_layout";
+import {
+  getTrueSheetOverlayLayoutBottomInset,
+  shouldApplyIosTrueSheetToastLayerInset,
+} from "./overlay_toast_layout";
+import { ScreenOverlayFloatingProvider } from "./screen_overlay_floating";
 import { Toaster } from "../provider/toaster";
 
 const ScreenOverlayPortalContext = createContext<string | null>(null);
@@ -31,6 +35,10 @@ export function ScreenOverlayPortalProvider({
   hostName: string;
 }) {
   const [modalLockCount, setModalLockCount] = useState(0);
+  const [teleportHostNode, setTeleportHostNode] = useState<View | null>(null);
+  const handleTeleportHostNode = useCallback((node: View | null) => {
+    setTeleportHostNode(node);
+  }, []);
 
   const lockApi = useMemo<ScreenOverlayModalLockApi>(
     () => ({
@@ -48,12 +56,17 @@ export function ScreenOverlayPortalProvider({
     <ScreenOverlayPortalContext.Provider value={hostName}>
       <ScreenOverlayModalLockApiContext.Provider value={lockApi}>
         <ScreenOverlayModalLockContext.Provider value={modalLockCount}>
-          <PortalRootHostProvider hostName={hostName}>
-            <View style={styles.root}>
-              {children}
-              <ScreenOverlayPortalHost hostName={hostName} />
-            </View>
-          </PortalRootHostProvider>
+          <ScreenOverlayFloatingProvider teleportHostNode={teleportHostNode}>
+            <PortalRootHostProvider hostName={hostName}>
+              <View style={styles.root}>
+                {children}
+                <ScreenOverlayPortalHost
+                  hostName={hostName}
+                  onTeleportHostNode={handleTeleportHostNode}
+                />
+              </View>
+            </PortalRootHostProvider>
+          </ScreenOverlayFloatingProvider>
         </ScreenOverlayModalLockContext.Provider>
       </ScreenOverlayModalLockApiContext.Provider>
     </ScreenOverlayPortalContext.Provider>
@@ -62,9 +75,11 @@ export function ScreenOverlayPortalProvider({
 
 function OverlayToastLayer({ hostName }: { hostName: string }) {
   const insets = useSafeAreaInsets();
-  const iosTrueSheetInset = shouldApplyIosTrueSheetToastLayerInset(hostName);
+  const bottomInset = shouldApplyIosTrueSheetToastLayerInset(hostName)
+    ? getTrueSheetOverlayLayoutBottomInset(hostName, insets.bottom)
+    : 0;
   const layerStyle: ViewStyle[] | ViewStyle =
-    iosTrueSheetInset ? [styles.toastLayer, { bottom: insets.bottom }] : styles.toastLayer;
+    bottomInset > 0 ? [styles.toastLayer, { bottom: bottomInset }] : styles.toastLayer;
 
   return (
     <View pointerEvents="box-none" style={layerStyle}>
@@ -73,13 +88,45 @@ function OverlayToastLayer({ hostName }: { hostName: string }) {
   );
 }
 
-export function ScreenOverlayPortalHost({ hostName }: { hostName: string }) {
+function OverlayTeleportLayer({
+  hostName,
+  onTeleportHostNode,
+}: {
+  hostName: string;
+  onTeleportHostNode: (node: View | null) => void;
+}) {
+  const handleHostRef = useCallback(
+    (node: View | null) => {
+      onTeleportHostNode(node);
+    },
+    [onTeleportHostNode],
+  );
+
+  return (
+    <View collapsable={false} style={styles.teleportLayer}>
+      <View
+        ref={handleHostRef}
+        collapsable={false}
+        pointerEvents="box-none"
+        style={styles.teleportHost}
+      >
+        <TeleportPortalHost name={hostName} style={styles.teleportHostFill} />
+      </View>
+    </View>
+  );
+}
+
+export function ScreenOverlayPortalHost({
+  hostName,
+  onTeleportHostNode,
+}: {
+  hostName: string;
+  onTeleportHostNode: (node: View | null) => void;
+}) {
   return (
     <View pointerEvents="box-none" style={styles.hostStack}>
       <OverlayToastLayer hostName={hostName} />
-      <View style={styles.teleportLayer}>
-        <TeleportPortalHost name={hostName} style={styles.teleportHost} />
-      </View>
+      <OverlayTeleportLayer hostName={hostName} onTeleportHostNode={onTeleportHostNode} />
     </View>
   );
 }
@@ -138,6 +185,13 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   teleportHost: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  teleportHostFill: {
     flex: 1,
   },
 });

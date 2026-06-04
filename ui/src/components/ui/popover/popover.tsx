@@ -73,7 +73,9 @@ function PopoverArrow(props: PopoverArrowProps) {
 }
 
 function PopoverTrigger(props: PopoverTriggerProps) {
-  return <TamaguiPopover.Trigger asChild={props.asChild ?? true} {...props} />;
+  // Android measureInWindow 依赖非 collapsable 节点，否则锚点会偏
+  const measureProps = os() === "android" ? { collapsable: false as const } : {};
+  return <TamaguiPopover.Trigger asChild={props.asChild ?? true} {...measureProps} {...props} />;
 }
 
 function PopoverContent(props: PopoverContentProps) {

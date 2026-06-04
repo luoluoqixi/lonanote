@@ -1,5 +1,10 @@
 import { os } from "@/api/common/platform";
 
+/**
+ * Scoped overlay host 的布局补偿（Toast viewport 间距 + True Sheet 浮层底边）。
+ * Toast：toastLayer 1× + Viewport `bottom`；居中 Dialog：`getTrueSheetCenteredModalLiftAmount` → content `y` 偏移（勿缩短 teleport 遮罩）。
+ */
+
 /** 与 true_sheet_debug.ts 中 TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST 保持一致 */
 export const TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST = "true-sheet-debug-overlay";
 
@@ -18,11 +23,56 @@ export const IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET = 36;
  */
 export const IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET = 56;
 
-const IOS_TRUE_SHEET_TOAST_HOSTS = new Set<string>([TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST]);
+const TRUE_SHEET_OVERLAY_HOSTS = new Set<string>([TRUE_SHEET_DEBUG_OVERLAY_PORTAL_HOST]);
 
-/** iOS True Sheet：`insetAdjustment="automatic"` 会把 safe area 叠进布局高度，toastLayer 需上移 */
+/** True Sheet overlay host（`insetAdjustment="automatic"` 会垫高布局底，与 pageSheet 不同） */
+export function isTrueSheetOverlayPortalHost(hostName: string): boolean {
+  return TRUE_SHEET_OVERLAY_HOSTS.has(hostName);
+}
+
+/**
+ * True Sheet：toastLayer 底边补偿（仅 iOS，与 Viewport bottom 分工，勿叠双份）。
+ */
+export function getTrueSheetOverlayLayoutBottomInset(
+  hostName: string,
+  safeAreaBottom: number,
+): number {
+  return isTrueSheetOverlayPortalHost(hostName) ? safeAreaBottom : 0;
+}
+
+/**
+ * Android True Sheet 内 SafeAreaProvider 的 bottom 常为 0，但 insetAdjustment 仍会垫高 RN 布局底。
+ */
+export const ANDROID_TRUE_SHEET_TELEPORT_LAYER_BOTTOM_FALLBACK = 48;
+
+/** 在 2× bottom 上额外抬高 teleport 底边，使 flex 居中 Dialog 对齐可视区域（约 +EXTRA/2 视觉） */
+export const TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM = 30;
+
+/**
+ * True Sheet 居中 Dialog 校正量（`insetAdjustment` 垫高导致 flex 居中偏下约 lift/2）。
+ * 用于 `useTrueSheetCenteredModalContentOffsetY`，勿再作为 teleportLayer 的 `bottom`（会漏遮罩）。
+ */
+export function getTrueSheetCenteredModalLiftAmount(
+  hostName: string,
+  safeAreaBottom: number,
+): number {
+  if (!isTrueSheetOverlayPortalHost(hostName)) {
+    return 0;
+  }
+
+  const base =
+    safeAreaBottom > 0
+      ? safeAreaBottom
+      : os() === "android"
+        ? ANDROID_TRUE_SHEET_TELEPORT_LAYER_BOTTOM_FALLBACK
+        : 0;
+
+  return base * 2 + TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM;
+}
+
+/** iOS True Sheet：toastLayer 底边补偿（与 teleport 共用 inset 计算） */
 export function shouldApplyIosTrueSheetToastLayerInset(hostName: string): boolean {
-  return os() === "ios" && IOS_TRUE_SHEET_TOAST_HOSTS.has(hostName);
+  return os() === "ios" && isTrueSheetOverlayPortalHost(hostName);
 }
 
 export function getScopedToastViewportBottomInset(
@@ -33,7 +83,7 @@ export function getScopedToastViewportBottomInset(
   }
 
   if (os() === "ios") {
-    if (IOS_TRUE_SHEET_TOAST_HOSTS.has(viewportName)) {
+    if (isTrueSheetOverlayPortalHost(viewportName)) {
       return IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET;
     }
 
