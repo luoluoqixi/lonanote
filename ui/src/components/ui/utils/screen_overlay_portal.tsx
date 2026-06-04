@@ -23,16 +23,23 @@ type ScreenOverlayModalLockApi = {
 
 const ScreenOverlayModalLockApiContext = createContext<ScreenOverlayModalLockApi | null>(null);
 
+export type ScreenOverlayPortalLayout = "wrap" | "scroll-sibling";
+
 /**
  * 在独立原生层（iOS pageSheet VC、Android True Sheet 等）内挂载 overlay Portal。
  * Tamagui modal 默认 teleport 到 app root 会落在 sheet 下面；此处用 react-native-teleport 抬到当前层之上。
+ *
+ * - `wrap`：子内容与 teleport 层包在同一 flex 容器（默认）。
+ * - `scroll-sibling`：子内容（通常为 ScrollView）与 teleport 层并列，避免 TrueSheet 无法钉住滚动视图（iOS 嵌套 Sheet）。
  */
 export function ScreenOverlayPortalProvider({
   children,
   hostName,
+  overlayLayout = "wrap",
 }: {
   children: ReactNode;
   hostName: string;
+  overlayLayout?: ScreenOverlayPortalLayout;
 }) {
   const [modalLockCount, setModalLockCount] = useState(0);
   const [teleportHostNode, setTeleportHostNode] = useState<View | null>(null);
@@ -52,20 +59,29 @@ export function ScreenOverlayPortalProvider({
     [],
   );
 
+  const portalHost = (
+    <ScreenOverlayPortalHost hostName={hostName} onTeleportHostNode={handleTeleportHostNode} />
+  );
+
+  const portalBody =
+    overlayLayout === "scroll-sibling" ? (
+      <>
+        {children}
+        {portalHost}
+      </>
+    ) : (
+      <View style={styles.root}>
+        {children}
+        {portalHost}
+      </View>
+    );
+
   return (
     <ScreenOverlayPortalContext.Provider value={hostName}>
       <ScreenOverlayModalLockApiContext.Provider value={lockApi}>
         <ScreenOverlayModalLockContext.Provider value={modalLockCount}>
           <ScreenOverlayFloatingProvider teleportHostNode={teleportHostNode}>
-            <PortalRootHostProvider hostName={hostName}>
-              <View style={styles.root}>
-                {children}
-                <ScreenOverlayPortalHost
-                  hostName={hostName}
-                  onTeleportHostNode={handleTeleportHostNode}
-                />
-              </View>
-            </PortalRootHostProvider>
+            <PortalRootHostProvider hostName={hostName}>{portalBody}</PortalRootHostProvider>
           </ScreenOverlayFloatingProvider>
         </ScreenOverlayModalLockContext.Provider>
       </ScreenOverlayModalLockApiContext.Provider>

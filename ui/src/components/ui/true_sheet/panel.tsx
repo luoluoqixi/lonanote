@@ -2,13 +2,14 @@ import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
 import {
   getTrueSheetGestureRootStyle,
+  getTrueSheetPanelOverlayLayout,
   getTrueSheetPanelScrollableProps,
   mergeTrueSheetContentStyle,
   shouldUseTrueSheetNativeScrollInsets,
@@ -116,9 +117,17 @@ export function TrueSheetPanel({
       insetAdjustment={insetAdjustment}
       nativeScrollInsetsApplied={shouldUseTrueSheetNativeScrollInsets(sheetScrollable)}
     >
-      <GestureHandlerRootView style={styles.gestureRoot}>
+      <GestureHandlerRootView
+        style={[
+          styles.gestureRoot,
+          overlayPortalHostName != null && Platform.OS === "ios" && styles.gestureRootScrollSibling,
+        ]}
+      >
         {overlayPortalHostName != null ? (
-          <ScreenOverlayPortalProvider hostName={overlayPortalHostName}>
+          <ScreenOverlayPortalProvider
+            hostName={overlayPortalHostName}
+            overlayLayout={getTrueSheetPanelOverlayLayout()}
+          >
             {children}
           </ScreenOverlayPortalProvider>
         ) : (
@@ -148,4 +157,7 @@ export function TrueSheetPanel({
 
 const styles = StyleSheet.create({
   gestureRoot: getTrueSheetGestureRootStyle(),
+  gestureRootScrollSibling: {
+    position: "relative",
+  },
 });

@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { Platform } from "react-native";
 
 import { TrueSheetPanel } from "@/components/ui/true_sheet/panel";
 
@@ -28,9 +27,7 @@ function DebugSectionTrueSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       chrome="toolbar"
       name={getDebugSectionSheetName(sectionKey)}
       onRequestClose={handleClose}
-      overlayPortalHostName={
-        Platform.OS === "ios" ? undefined : getDebugSectionOverlayPortalHost(sectionKey)
-      }
+      overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
       title={definition.label}
     >
       <DebugTrueSheetScroll>

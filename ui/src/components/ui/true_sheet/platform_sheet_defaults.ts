@@ -44,6 +44,11 @@ export function shouldUseTrueSheetNativeScrollInsets(scrollable: boolean | undef
   return Platform.OS === "android" && scrollable === true;
 }
 
+/** iOS True Sheet Panel：Portal 用 `scroll-sibling`，避免多包一层导致 ScrollView 无法钉住。 */
+export function getTrueSheetPanelOverlayLayout(): "wrap" | "scroll-sibling" {
+  return Platform.OS === "ios" ? "scroll-sibling" : "wrap";
+}
+
 /** Sheet 内容区根节点样式：Android 与库 `scrollable` 配合用 `flexGrow`。 */
 export function getTrueSheetGestureRootStyle() {
   if (Platform.OS === "android") {
