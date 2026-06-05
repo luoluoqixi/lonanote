@@ -1,14 +1,18 @@
 import { PortalRootHostProvider } from "@tamagui/portal";
 import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react";
-import { StyleSheet, View, type ViewStyle } from "react-native";
+import { Dimensions, type LayoutChangeEvent, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PortalHost as TeleportPortalHost } from "react-native-teleport";
 
 import { os } from "@/api/common/platform";
-import { useTrueSheetOverlayDetent } from "@/components/ui/true_sheet/overlay_layout_context";
+import {
+  useTrueSheetOverlayDetent,
+  useTrueSheetOverlaySheetTopPosition,
+} from "@/components/ui/true_sheet/overlay_layout_context";
 
 import { Toaster } from "../provider/toaster";
 import {
+  TRUE_SHEET_TOAST_DETENT_LIFT,
   getTrueSheetOverlayLayoutBottomInset,
   shouldApplyIosTrueSheetToastLayerInset,
 } from "./overlay_toast_layout";
@@ -90,14 +94,40 @@ export function ScreenOverlayPortalProvider({
   );
 }
 
-function OverlayToastLayer({ hostName }: { hostName: string }) {
+function OverlayToastLayer({
+  hostName,
+  hostStackHeight,
+}: {
+  hostName: string;
+  hostStackHeight: number;
+}) {
   const insets = useSafeAreaInsets();
   const detent = useTrueSheetOverlayDetent();
+  const sheetTopPosition = useTrueSheetOverlaySheetTopPosition();
+
+  // iOS 安全区底部补偿
   const bottomInset = shouldApplyIosTrueSheetToastLayerInset(hostName)
     ? getTrueSheetOverlayLayoutBottomInset(hostName, insets.bottom, detent)
     : 0;
+
+  // 局部 detent：hostStack 被 ScrollView 撑到完整内容高度，
+  // 而 Sheet 只显示顶部一部分。
+  // 用 sheetTopPosition 获取 Sheet 当前实际可视高度，
+  // 直接相减得到被隐藏的底部偏移量，再加固定 lift 补偿参考点偏差。
+  const screenHeight = Dimensions.get("window").height;
+  const detentVisibleOffset =
+    hostName != null && detent < 1 && sheetTopPosition != null && hostStackHeight > 0
+      ? Math.max(
+          0,
+          Math.round(
+            hostStackHeight - (screenHeight - sheetTopPosition) + TRUE_SHEET_TOAST_DETENT_LIFT,
+          ),
+        )
+      : 0;
+
+  const bottom = Math.max(bottomInset, detentVisibleOffset);
   const layerStyle: ViewStyle[] | ViewStyle =
-    bottomInset > 0 ? [styles.toastLayer, { bottom: bottomInset }] : styles.toastLayer;
+    bottom > 0 ? [styles.toastLayer, { bottom }] : styles.toastLayer;
 
   return (
     <View pointerEvents="box-none" style={layerStyle}>
@@ -141,9 +171,14 @@ export function ScreenOverlayPortalHost({
   hostName: string;
   onTeleportHostNode: (node: View | null) => void;
 }) {
+  const [hostStackHeight, setHostStackHeight] = useState(0);
+  const handleHostStackLayout = useCallback((event: LayoutChangeEvent) => {
+    setHostStackHeight(event.nativeEvent.layout.height);
+  }, []);
+
   return (
-    <View pointerEvents="box-none" style={styles.hostStack}>
-      <OverlayToastLayer hostName={hostName} />
+    <View pointerEvents="box-none" style={styles.hostStack} onLayout={handleHostStackLayout}>
+      <OverlayToastLayer hostName={hostName} hostStackHeight={hostStackHeight} />
       <OverlayTeleportLayer hostName={hostName} onTeleportHostNode={onTeleportHostNode} />
     </View>
   );

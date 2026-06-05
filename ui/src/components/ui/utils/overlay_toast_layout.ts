@@ -12,6 +12,12 @@ export const DEBUG_OVERLAY_PORTAL_HOST = "debug-overlay";
 /** Sheet / overlay 内 Toast 默认底边距（Android 等） */
 export const SCOPED_TOAST_VIEWPORT_INSET = 24;
 
+/**
+ * 嵌套 TrueSheet 局部 detent 时，`detentVisibleOffset` 的额外上移量（px）。
+ * 补偿 `sheetTopPosition` 参考点与内容区域之间的固定偏差。
+ */
+export const TRUE_SHEET_TOAST_DETENT_LIFT = 56;
+
 /** iOS Native Stack pageSheet 等 overlay：略抬高，避免贴 Home 条 */
 export const IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET = 36;
 
