@@ -144,7 +144,13 @@ function SettingsScreenLayout({
               </View>
             ) : null}
 
-            <View style={styles.content}>{children}</View>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator
+              style={styles.content}
+            >
+              {children}
+            </ScrollView>
           </View>
         </View>
       </View>
@@ -262,6 +268,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     minHeight: 0,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   header: {
     borderColor: "rgba(128, 128, 128, 0.22)",
