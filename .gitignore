@@ -35,5 +35,6 @@ AGENTS.md
 
 /.copilot-patch-orig
 .reasonix/
+.codegraph/
 
 .temp/
