@@ -66,6 +66,11 @@ export async function resizeDebugSectionSheets(
 }
 
 async function dismissAllDebugSectionSheets() {
+  if (!getDebugSectionsAsNestedSheets()) {
+    // 未启用嵌套模式时分区 Sheet 从未展示过，跳过 dismiss 避免库的 "already dismissed" 警告
+    return;
+  }
+
   await Promise.all(
     DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) =>
       dismissTrueSheet(getDebugSectionSheetName(definition.key)).catch(() => undefined),

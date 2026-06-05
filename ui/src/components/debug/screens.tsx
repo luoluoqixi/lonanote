@@ -253,6 +253,7 @@ export function DebugHomeScreen({
       }
       hideInlineHeader={inFullPageRoute}
       layoutHost={layoutHost}
+      scrollable={layoutHost !== "trueSheet"}
       title="调试面板"
     >
       <View style={styles.sectionList}>{sectionCards}</View>
@@ -333,6 +334,7 @@ const styles = StyleSheet.create({
   },
   pageScrollContent: {
     flexGrow: 1,
+    paddingBottom: 24,
   },
   pageScrollHost: {
     flex: 1,
