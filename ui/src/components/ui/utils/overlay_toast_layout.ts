@@ -1,6 +1,8 @@
 import { os } from "@/api/common/platform";
 import { getTrueSheetPartialDetentCompensationScale } from "@/components/ui/true_sheet/overlay_layout_metrics";
 
+const platform = os();
+
 /**
  * Scoped overlay host 的布局补偿（Toast viewport 间距 + True Sheet 浮层底边）。
  * Toast：toastLayer 1× + Viewport `bottom`；居中 Dialog：`getTrueSheetCenteredModalLiftAmount` → content `y` 偏移（勿缩短 teleport 遮罩）。
@@ -16,7 +18,7 @@ export const SCOPED_TOAST_VIEWPORT_INSET = 24;
  * 嵌套 TrueSheet 局部 detent 时，`detentVisibleOffset` 的额外上移量（px）。
  * 补偿 `sheetTopPosition` 参考点与内容区域之间的固定偏差。
  */
-export const TRUE_SHEET_TOAST_DETENT_LIFT = 56;
+export const TRUE_SHEET_TOAST_DETENT_LIFT = platform === "ios" ? 14 : 56;
 
 /** iOS Native Stack pageSheet 等 overlay：略抬高，避免贴 Home 条 */
 export const IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET = 36;
@@ -77,7 +79,7 @@ export function getTrueSheetCenteredModalLiftAmount(
   const base =
     safeAreaBottom > 0
       ? safeAreaBottom
-      : os() === "android"
+      : platform === "android"
         ? ANDROID_TRUE_SHEET_TELEPORT_LAYER_BOTTOM_FALLBACK
         : 0;
 
@@ -87,7 +89,7 @@ export function getTrueSheetCenteredModalLiftAmount(
 
 /** iOS True Sheet：toastLayer 底边补偿（与 teleport 共用 inset 计算） */
 export function shouldApplyIosTrueSheetToastLayerInset(hostName: string): boolean {
-  return os() === "ios" && isTrueSheetOverlayPortalHost(hostName);
+  return platform === "ios" && isTrueSheetOverlayPortalHost(hostName);
 }
 
 export function getScopedToastViewportBottomInset(
@@ -98,7 +100,7 @@ export function getScopedToastViewportBottomInset(
     return SCOPED_TOAST_VIEWPORT_INSET;
   }
 
-  if (os() === "ios") {
+  if (platform === "ios") {
     if (isTrueSheetOverlayPortalHost(viewportName)) {
       const scale = getTrueSheetPartialDetentCompensationScale(detent);
       return Math.round(IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET * scale);

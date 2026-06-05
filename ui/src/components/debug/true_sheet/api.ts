@@ -36,6 +36,34 @@ export {
 
 let debugSheetOpen = false;
 
+/** 当前正在展示的分区嵌套 Sheet 集合，用于 resize 时跳过未打开的 Sheet。 */
+const presentedDebugSectionSheets = new Set<DebugTabKey>();
+
+/**
+ * 分区 Sheet 关闭版本号——每次有 Sheet 关闭时递增。
+ * DebugHomeScreen 用此版本号驱动 Switch key，强制 remount 原生 widget，
+ * 解决 Android 上原生 modal 关闭后 Switch 视觉状态不一致的问题。
+ */
+let debugSectionSheetDismissVersion = 0;
+const dismissVersionListeners = new Set<() => void>();
+
+function emitDismissVersionChange() {
+  for (const listener of dismissVersionListeners) {
+    listener();
+  }
+}
+
+export function getDebugSectionSheetDismissVersion() {
+  return debugSectionSheetDismissVersion;
+}
+
+export function subscribeDebugSectionSheetDismiss(listener: () => void) {
+  dismissVersionListeners.add(listener);
+  return () => {
+    dismissVersionListeners.delete(listener);
+  };
+}
+
 /** 调试分区嵌套 Sheet 名称，须与 `DebugSectionTrueSheetsHost` 一致。 */
 export function getDebugSectionSheetName(key: DebugTabKey) {
   return `lonanote-debug-section-${key}`;
@@ -46,36 +74,50 @@ export function getDebugSectionOverlayPortalHost(key: DebugTabKey) {
   return `${DEBUG_OVERLAY_PORTAL_HOST}:section:${key}`;
 }
 
-export function openDebugSectionSheet(key: DebugTabKey, detentIndex = 0) {
-  return presentTrueSheet(getDebugSectionSheetName(key), detentIndex);
+export async function openDebugSectionSheet(key: DebugTabKey, detentIndex = 0) {
+  await presentTrueSheet(getDebugSectionSheetName(key), detentIndex);
+  presentedDebugSectionSheets.add(key);
 }
 
-export function closeDebugSectionSheet(key: DebugTabKey) {
-  return dismissTrueSheet(getDebugSectionSheetName(key));
+export async function closeDebugSectionSheet(key: DebugTabKey) {
+  presentedDebugSectionSheets.delete(key);
+  await dismissTrueSheet(getDebugSectionSheetName(key));
+}
+
+/** Sheet 已被原生关闭后（拖拽/手势），仅清理追踪集合，不再重复 dismiss。 */
+export function cleanupDebugSectionSheet(key: DebugTabKey) {
+  presentedDebugSectionSheets.delete(key);
+  debugSectionSheetDismissVersion += 1;
+  emitDismissVersionChange();
 }
 
 /** 已打开的嵌套分区 Sheet 切换到指定 detent（调试滑条实时改高度）。 */
 export async function resizeDebugSectionSheets(
   detentIndex: number = getDebugNestedSectionDetentLevel(),
 ) {
+  const presentedKeys = [...presentedDebugSectionSheets];
+  if (presentedKeys.length === 0) {
+    return;
+  }
+
   await Promise.all(
-    DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) =>
-      resizeTrueSheet(getDebugSectionSheetName(definition.key), detentIndex).catch(() => undefined),
+    presentedKeys.map((key) =>
+      resizeTrueSheet(getDebugSectionSheetName(key), detentIndex).catch(() => undefined),
     ),
   );
 }
 
 async function dismissAllDebugSectionSheets() {
-  if (!getDebugSectionsAsNestedSheets()) {
-    // 未启用嵌套模式时分区 Sheet 从未展示过，跳过 dismiss 避免库的 "already dismissed" 警告
+  if (presentedDebugSectionSheets.size === 0) {
     return;
   }
 
   await Promise.all(
-    DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) =>
-      dismissTrueSheet(getDebugSectionSheetName(definition.key)).catch(() => undefined),
+    [...presentedDebugSectionSheets].map((key) =>
+      dismissTrueSheet(getDebugSectionSheetName(key)).catch(() => undefined),
     ),
   );
+  presentedDebugSectionSheets.clear();
 }
 
 /** 开关开启时：以独立/嵌套 True Sheet 打开分区。 */

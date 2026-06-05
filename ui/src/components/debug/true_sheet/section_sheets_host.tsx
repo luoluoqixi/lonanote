@@ -10,6 +10,7 @@ import {
 import { DebugSectionScreen } from "../screens";
 import {
   DEBUG_NESTED_SECTION_SHEET_DETENTS,
+  cleanupDebugSectionSheet,
   closeDebugSectionSheet,
   getDebugSectionOverlayPortalHost,
   getDebugSectionSheetName,
@@ -23,10 +24,16 @@ function DebugSectionTrueSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
     void closeDebugSectionSheet(sectionKey);
   }, [sectionKey]);
 
+  const handleDidDismiss = useCallback(() => {
+    // 拖拽关闭时 onRequestClose 不会触发，需在此同步清理追踪集合
+    cleanupDebugSectionSheet(sectionKey);
+  }, [sectionKey]);
+
   return (
     <TrueSheetPanel
       chrome="toolbar"
       name={getDebugSectionSheetName(sectionKey)}
+      onDidDismiss={handleDidDismiss}
       onRequestClose={handleClose}
       overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
       sheetProps={{

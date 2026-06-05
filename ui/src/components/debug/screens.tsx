@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { isDesktop } from "@/api/common";
@@ -12,10 +12,12 @@ import {
 } from "./routes";
 import {
   getDebugNestedSectionDetentLabel,
+  getDebugSectionSheetDismissVersion,
   openDebugSection,
   resizeDebugSectionSheets,
   setDebugNestedSectionDetentLevel,
   setDebugSectionsAsNestedSheets,
+  subscribeDebugSectionSheetDismiss,
 } from "./true_sheet/api";
 import {
   DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX,
@@ -112,11 +114,32 @@ export function DebugHomeScreen({
   /** 返回并打开 True Sheet 调试面板 */
   onSwitchToTrueSheet?: () => void;
 }) {
-  const nestedSectionSheets = useDebugSectionsAsNestedSheets();
+  const nestedSectionSheetsFromStore = useDebugSectionsAsNestedSheets();
+  const [nestedSectionSheets, setNestedSectionSheets] = useState(nestedSectionSheetsFromStore);
+  const [dismissVersion, setDismissVersion] = useState(getDebugSectionSheetDismissVersion);
   const nestedSectionDetentLevel = useDebugNestedSectionDetentLevel();
   const inTrueSheet = onOpenPanel != null;
   const inFullPageRoute = onOpenFullPage != null && onOpenPanel == null;
   const layoutHost: DebugScreenLayoutHost = inTrueSheet ? "trueSheet" : "screen";
+
+  // 同步局部状态与全局偏好，避免 Android 上原生 modal present 时 useSyncExternalStore 时序竞态
+  useEffect(() => {
+    setNestedSectionSheets(nestedSectionSheetsFromStore);
+  }, [nestedSectionSheetsFromStore]);
+
+  // 监听分区 Sheet 关闭版本号，驱动 Switch key 强制 remount（解决 Android 原生 widget 视觉残留）
+  useEffect(() => {
+    const unsubscribe = subscribeDebugSectionSheetDismiss(() => {
+      setDismissVersion(getDebugSectionSheetDismissVersion());
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleNestedSheetsChange = (enabled: boolean) => {
+    setNestedSectionSheets(enabled);
+    setDebugSectionsAsNestedSheets(enabled);
+  };
+
   const sectionCards: ReactNode[] = [];
 
   const openSection = async (key: DebugTabKey) => {
@@ -170,9 +193,10 @@ export function DebugHomeScreen({
       </View>
       <Switch
         checked={nestedSectionSheets}
+        key={`nested-sheets-switch-${dismissVersion}`}
         label="启用嵌套 Sheet"
         labelPosition="end"
-        onCheckedChange={setDebugSectionsAsNestedSheets}
+        onCheckedChange={handleNestedSheetsChange}
       />
     </View>,
   );
