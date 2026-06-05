@@ -34,5 +34,6 @@ build_output
 AGENTS.md
 
 /.copilot-patch-orig
+.reasonix/
 
 .temp/
