@@ -87,21 +87,27 @@ module.exports = function withAndroidReleaseSigning(config) {
     const keystoreRel = path.relative(appDir, keystoreAbs).replace(/\\/g, "/");
 
     const releaseSigningConfig = `
-        release {
-            storeFile file('${keystoreRel.replace(/'/g, "\\'")}')
-            storePassword '${keystoreConfig.KEYSTORE_PASSWORD.replace(/'/g, "\\'")}'
-            keyAlias '${keystoreConfig.KEY_ALIAS.replace(/'/g, "\\'")}'
-            keyPassword '${keystoreConfig.KEY_PASSWORD.replace(/'/g, "\\'")}'
-        }
+    release {
+        storeFile file('${keystoreRel.replace(/'/g, "\\'")}')
+        storePassword '${keystoreConfig.KEYSTORE_PASSWORD.replace(/'/g, "\\'")}'
+        keyAlias '${keystoreConfig.KEY_ALIAS.replace(/'/g, "\\'")}'
+        keyPassword '${keystoreConfig.KEY_PASSWORD.replace(/'/g, "\\'")}'
+    }
 `;
 
-    // 在 signingConfigs.debug 后插入 signingConfigs.release
-    const debugEnd = contents.indexOf("keyPassword 'android'\n        }\n    }");
+    // 在 signingConfigs.debug 块内、signingConfigs 闭合前插入 release
+    const debugEnd = contents.indexOf("keyPassword 'android'");
     if (debugEnd === -1) {
       console.warn("[withAndroidReleaseSigning] 未找到 debug signingConfig，跳过");
       return modConfig;
     }
-    const insertPos = debugEnd + "keyPassword 'android'\n        }\n    }".length;
+    // 找到 debug 块闭合 } 的位置（第一个 } 在 keyPassword 行之后）
+    const debugClose = contents.indexOf("}", debugEnd);
+    if (debugClose === -1) {
+      console.warn("[withAndroidReleaseSigning] 无法定位 debug 块结尾，跳过");
+      return modConfig;
+    }
+    const insertPos = debugClose + 1;
     contents = contents.slice(0, insertPos) + releaseSigningConfig + contents.slice(insertPos);
 
     // 将 release buildType 的 signingConfig 从 debug 改为 release
