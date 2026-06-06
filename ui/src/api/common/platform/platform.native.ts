@@ -31,3 +31,7 @@ export function isWebOnly(): boolean {
 export function isDesktop(): boolean {
   return false;
 }
+
+export function isTV(): boolean {
+  return Platform.isTV;
+}

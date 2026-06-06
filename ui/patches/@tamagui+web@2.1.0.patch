@@ -1,0 +1,158 @@
+diff --git a/dist/esm/eventHandling.native.js b/dist/esm/eventHandling.native.js
+index c2d7fe5..7677e15 100644
+--- a/dist/esm/eventHandling.native.js
++++ b/dist/esm/eventHandling.native.js
+@@ -28,6 +28,28 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+     if (events.onBlur) {
+       viewProps["onBlur"] = events.onBlur;
+     }
++    // Android: set onClick/onLongClick as backup for hardware key events.
++    // RNGH/responder handles touch events; onClick would double-fire for touch.
++    // Use pointerType check: touch events have pointerType="touch",
++    // keyboard/DPad events have no pointerType so we fire them here.
++    if (Platform.OS === "android") {
++      if (events.onPress) {
++        var _press = events.onPress;
++        viewProps["onClick"] = function(e) {
++          if (!e.nativeEvent || e.nativeEvent.pointerType == null) {
++            _press(e);
++          }
++        };
++      }
++      if (events.onLongPress) {
++        var _longPress = events.onLongPress;
++        viewProps["onLongClick"] = function(e) {
++          if (!e.nativeEvent || e.nativeEvent.pointerType == null) {
++            _longPress(e);
++          }
++        };
++      }
++    }
+   }
+   var hasPressEvents = events === null || events === void 0 ? void 0 : events.onPress;
+   var gh = getGestureHandler();
+@@ -78,7 +100,7 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+     return null;
+   }
+   if (isUsingRNGH) {
+-    var callbacksRef = useRef(isUsingRNGH ? {} : null);
++    var callbacksRef = useRef({});
+     var gestureRef = useRef(null);
+     var useResponderFallback = getIsAndroid() && !(hasRealPressEvents || stateRef.current.hasRealPressEvents) && Boolean(hasPressEvents);
+     useMainThreadPressEvents(events, viewProps, useResponderFallback, debugName);
+@@ -146,7 +168,8 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+     }
+     return null;
+   }
+-  useMainThreadPressEvents(events, viewProps, hasPressEvents, debugName);
++  var isPressEnabled = events != null ? hasPressEvents : false;
++  useMainThreadPressEvents(events, viewProps, isPressEnabled, debugName);
+   return null;
+ }
+ function wrapWithGestureDetector(content, gesture, stateRef, isHOC, isCompositeComponent) {
+diff --git a/dist/cjs/eventHandling.native.js b/dist/cjs/eventHandling.native.js
+index 4337d83..1f09aee 100644
+--- a/dist/cjs/eventHandling.native.js
++++ b/dist/cjs/eventHandling.native.js
+@@ -70,6 +70,28 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+     if (events.onBlur) {
+       viewProps["onBlur"] = events.onBlur;
+     }
++    // Android: set onClick/onLongClick as backup for hardware key events.
++    // RNGH/responder handles touch events; onClick would double-fire for touch.
++    // Use pointerType check: touch events have pointerType="touch",
++    // keyboard/DPad events have no pointerType so we fire them here.
++    if (import_react_native.Platform.OS === "android") {
++      if (events.onPress) {
++        var _press = events.onPress;
++        viewProps["onClick"] = function(e) {
++          if (!e.nativeEvent || e.nativeEvent.pointerType == null) {
++            _press(e);
++          }
++        };
++      }
++      if (events.onLongPress) {
++        var _longPress = events.onLongPress;
++        viewProps["onLongClick"] = function(e) {
++          if (!e.nativeEvent || e.nativeEvent.pointerType == null) {
++            _longPress(e);
++          }
++        };
++      }
++    }
+   }
+   var hasPressEvents = events === null || events === void 0 ? void 0 : events.onPress;
+   var gh = (0, import_native.getGestureHandler)();
+@@ -120,7 +142,7 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+     return null;
+   }
+   if (isUsingRNGH) {
+-    var callbacksRef = (0, import_react.useRef)(isUsingRNGH ? {} : null);
++    var callbacksRef = (0, import_react.useRef)({});
+     var gestureRef = (0, import_react.useRef)(null);
+     var useResponderFallback = getIsAndroid() && !(hasRealPressEvents || stateRef.current.hasRealPressEvents) && Boolean(hasPressEvents);
+     (0, import_mainThreadPressEvents.useMainThreadPressEvents)(events, viewProps, useResponderFallback, debugName);
+@@ -188,7 +210,8 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+     }
+     return null;
+   }
+-  (0, import_mainThreadPressEvents.useMainThreadPressEvents)(events, viewProps, hasPressEvents, debugName);
++  var isPressEnabled = events != null ? hasPressEvents : false;
++  (0, import_mainThreadPressEvents.useMainThreadPressEvents)(events, viewProps, isPressEnabled, debugName);
+   return null;
+ }
+ function wrapWithGestureDetector(content, gesture, stateRef, isHOC, isCompositeComponent) {
+diff --git a/dist/esm/helpers/matchMedia.native.js b/dist/esm/helpers/matchMedia.native.js
+index e4c4d9f..b004632 100644
+--- a/dist/esm/helpers/matchMedia.native.js
++++ b/dist/esm/helpers/matchMedia.native.js
+@@ -19,14 +19,17 @@ function matchMediaFallback(query) {
+   };
+ }
+ function setupMatchMedia(_) {
+-  if (process.env.NODE_ENV === "development") {
+-    if (typeof _ !== "function") {
+-      if (!process.env.IS_STATIC) {
+-        console.trace(`setupMatchMedia was called without a function, this can cause issues on native`, _);
+-      }
++  if (typeof _ !== "function") {
++    if (process.env.NODE_ENV === "development" && !process.env.IS_STATIC) {
++      console.trace(`setupMatchMedia was called without a function, this can cause issues on native`, _);
+     }
++    return;
+   }
+   matchMediaImpl = _;
++  // On native, globalThis === window. Assigning here makes window.matchMedia available
++  // to any code that calls it directly (e.g. third-party packages, RN internals) rather
++  // than going through Tamagui's re-exported `matchMedia` helper. Without this, those
++  // callers get "window.matchMedia is not a function (it is undefined)".
+   globalThis["matchMedia"] = _;
+ }
+ export { matchMedia, setupMatchMedia };
+diff --git a/dist/cjs/helpers/matchMedia.native.js b/dist/cjs/helpers/matchMedia.native.js
+index 7dcc6de..5e5982d 100644
+--- a/dist/cjs/helpers/matchMedia.native.js
++++ b/dist/cjs/helpers/matchMedia.native.js
+@@ -49,14 +49,17 @@ function matchMediaFallback(query) {
+   };
+ }
+ function setupMatchMedia(_) {
+-  if (process.env.NODE_ENV === "development") {
+-    if (typeof _ !== "function") {
+-      if (!process.env.IS_STATIC) {
+-        console.trace(`setupMatchMedia was called without a function, this can cause issues on native`, _);
+-      }
++  if (typeof _ !== "function") {
++    if (process.env.NODE_ENV === "development" && !process.env.IS_STATIC) {
++      console.trace(`setupMatchMedia was called without a function, this can cause issues on native`, _);
+     }
++    return;
+   }
+   matchMediaImpl = _;
++  // On native, globalThis === window. Assigning here makes window.matchMedia available
++  // to any code that calls it directly (e.g. third-party packages, RN internals) rather
++  // than going through Tamagui's re-exported `matchMedia` helper. Without this, those
++  // callers get "window.matchMedia is not a function (it is undefined)".
+   globalThis["matchMedia"] = _;
+ }
+ //# sourceMappingURL=matchMedia.native.js.map

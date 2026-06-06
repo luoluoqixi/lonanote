@@ -1,4 +1,5 @@
 import { type } from "@tauri-apps/plugin-os";
+import { Platform } from "react-native";
 
 import type { OSType } from "./types";
 
@@ -28,4 +29,8 @@ export function isWebOnly(): boolean {
 export function isDesktop(): boolean {
   const platfrom = os();
   return platfrom === "windows" || platfrom === "macos" || platfrom === "linux";
+}
+
+export function isTV(): boolean {
+  return Platform.isTV;
 }

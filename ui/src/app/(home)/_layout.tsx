@@ -30,7 +30,7 @@ export default function UILayout() {
   useEffect(() => {
     const initialize = async () => {
       await initConfig();
-      console.log(`inited, ${getAppName()} - ${getVersion()}.`);
+      console.log(`inited, ${getAppName()} - ${getVersion()}, ${os()}.`);
     };
     initialize();
   }, []);

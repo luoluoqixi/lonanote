@@ -93,6 +93,7 @@
   },
   "patchedDependencies": {
     "@tamagui/dialog@2.1.0": "patches/@tamagui+dialog@2.1.0.patch",
+    "@tamagui/web@2.1.0": "patches/@tamagui+web@2.1.0.patch",
     "metro-file-map@0.84.4": "patches/metro-file-map@0.84.4.patch",
     "react-native-reanimated@4.4.0": "patches/react-native-reanimated@4.4.0.patch",
     "@tamagui/portal@2.1.0": "patches/@tamagui+portal@2.1.0.patch",
