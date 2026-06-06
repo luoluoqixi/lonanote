@@ -269,15 +269,19 @@ function copyArtifacts() {
     }
   }
 
-  // iOS：列出 .ipa 产物
+  // iOS：仅 CI 模式才复制（.ipa 由 buildIosIpa 生成）
   if (platform === "ios") {
-    const iosBuildDir = path.join(buildOutputRoot, "ios");
-    if (fs.existsSync(iosBuildDir)) {
-      const ipaFiles = fs.readdirSync(iosBuildDir).filter((f) => f.endsWith(".ipa"));
-      for (const file of ipaFiles) {
-        const sizeMB = (fs.statSync(path.join(iosBuildDir, file)).size / 1024 / 1024).toFixed(1);
-        console.log(`  ✓ ${file}  (${sizeMB} MB)`);
+    if (isCI) {
+      const iosBuildDir = path.join(buildOutputRoot, "ios");
+      if (fs.existsSync(iosBuildDir)) {
+        const ipaFiles = fs.readdirSync(iosBuildDir).filter((f) => f.endsWith(".ipa"));
+        for (const file of ipaFiles) {
+          const sizeMB = (fs.statSync(path.join(iosBuildDir, file)).size / 1024 / 1024).toFixed(1);
+          console.log(`  ✓ ${file}  (${sizeMB} MB)`);
+        }
       }
+    } else {
+      console.log("  → 跳过复制 iOS ipa（非 CI 模式）");
     }
   }
 }
