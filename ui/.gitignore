@@ -15,6 +15,9 @@
 
 /build/
 
+/keystore.local.txt
+/*.keystore
+
 .temp/
 
 .tamagui

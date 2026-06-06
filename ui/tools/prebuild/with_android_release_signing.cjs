@@ -1,85 +1,108 @@
 /**
  * Expo Config Plugin: Android Release Signing
  *
- * 在 app/build.gradle 中添加 release 签名配置。
- * 密钥信息通过环境变量传入，避免明文存储：
- *   ANDROID_KEYSTORE_FILE    - 密钥库文件路径（相对 android/app/ 或绝对路径）
- *   ANDROID_KEYSTORE_PASSWORD - 密钥库密码
- *   ANDROID_KEY_ALIAS        - 密钥别名
- *   ANDROID_KEY_PASSWORD     - 密钥密码
+ * 只在 production 构建时生效。从 keystore.local.txt 读取签名配置，
+ * 文件不存在或配置无效时自动回退到 debug 签名。
  *
- * 如果环境变量未设置，回退到 debug 签名（保持开发流畅）。
- *
- * 用法：在 app.config.ts 的 plugins 中添加：
- *   ["./tools/prebuild/with_android_release_signing.cjs", {
- *     keystoreRelativePath: "release.keystore"  // 可选，默认值
- *   }]
+ * keystore.local.txt 格式（参照 sdk_config.txt）：
+ *   KEYSTORE_FILE=release.keystore        # 相对 ui/ 的路径
+ *   KEYSTORE_PASSWORD=xxx
+ *   KEY_ALIAS=release
+ *   KEY_PASSWORD=xxx
  *
  * 首次生成密钥库：
  *   keytool -genkey -v -keystore ui/release.keystore -alias release \
- *     -keyalg RSA -keysize 2048 -validity 10000 \
- *     -storepass <密码> -keypass <密码>
- *   然后将 release.keystore 放到 ui/ 目录下（路径相对于 android/app/ 为 ../..）
+ *     -keyalg RSA -keysize 2048 -validity 10000
  */
 
+const fs = require("node:fs");
+const path = require("node:path");
 const { withAppBuildGradle } = require("@expo/config-plugins");
 
-module.exports = function withAndroidReleaseSigning(config, props = {}) {
-  const keystoreRelativePath = props.keystoreRelativePath ?? "../../release.keystore";
+const KEYSTORE_CONFIG_PATH = "keystore.local.txt";
+const CONFIG_KEYS = ["KEYSTORE_FILE", "KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD"];
+
+function readKeystoreConfig(projectRoot) {
+  const configPath = path.join(projectRoot, KEYSTORE_CONFIG_PATH);
+  if (!fs.existsSync(configPath)) return null;
+
+  const content = fs.readFileSync(configPath, "utf8");
+  const config = {};
+
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+
+    const eqIndex = line.indexOf("=");
+    if (eqIndex === -1) continue;
+
+    const key = line.slice(0, eqIndex).trim();
+    const value = line.slice(eqIndex + 1).trim();
+    if (CONFIG_KEYS.includes(key) && value) {
+      config[key] = value;
+    }
+  }
+
+  // 检查所有必需字段是否都有值
+  const hasAllKeys = CONFIG_KEYS.every((k) => config[k]);
+  if (!hasAllKeys) return null;
+
+  // 检查密钥库文件是否存在
+  const keystorePath = path.resolve(projectRoot, config.KEYSTORE_FILE);
+  if (!fs.existsSync(keystorePath)) {
+    console.warn(
+      `[withAndroidReleaseSigning] 密钥库文件不存在: ${keystorePath}，回退到 debug 签名`,
+    );
+    return null;
+  }
+
+  return config;
+}
+
+module.exports = function withAndroidReleaseSigning(config) {
+  // 仅在 production 时生效
+  const isDev = process.env.APP_MODE === "development";
+  if (isDev) return config;
 
   return withAppBuildGradle(config, (modConfig) => {
     let contents = modConfig.modResults.contents;
 
     // 避免重复注入
-    if (contents.includes("signingConfigs.release")) {
+    if (contents.includes("signingConfig signingConfigs.release")) {
       return modConfig;
     }
 
-    const hasEnvVars =
-      process.env.ANDROID_KEYSTORE_FILE ||
-      (process.env.ANDROID_KEYSTORE_PASSWORD &&
-        process.env.ANDROID_KEY_ALIAS &&
-        process.env.ANDROID_KEY_PASSWORD);
-
-    if (!hasEnvVars) {
-      console.warn(
-        "[withAndroidReleaseSigning] 未设置 ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD 环境变量，release 构建将继续使用 debug 签名。",
+    const keystoreConfig = readKeystoreConfig(modConfig.modRequest.projectRoot);
+    if (!keystoreConfig) {
+      console.log(
+        "[withAndroidReleaseSigning] keystore.local.txt 不存在或配置不完整，使用 debug 签名",
       );
       return modConfig;
     }
 
-    const keystorePath = process.env.ANDROID_KEYSTORE_FILE || keystoreRelativePath;
-
     const releaseSigningConfig = `
         release {
-            storeFile file('${keystorePath.replace(/'/g, "\\'")}')
-            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: ''
-            keyAlias System.getenv('ANDROID_KEY_ALIAS') ?: ''
-            keyPassword System.getenv('ANDROID_KEY_PASSWORD') ?: ''
+            storeFile file('${keystoreConfig.KEYSTORE_FILE.replace(/'/g, "\\'")}')
+            storePassword '${keystoreConfig.KEYSTORE_PASSWORD.replace(/'/g, "\\'")}'
+            keyAlias '${keystoreConfig.KEY_ALIAS.replace(/'/g, "\\'")}'
+            keyPassword '${keystoreConfig.KEY_PASSWORD.replace(/'/g, "\\'")}'
         }
 `;
 
-    // 1. 在 signingConfigs.debug 后插入 signingConfigs.release
-    const debugSigningEnd = contents.indexOf("keyPassword 'android'\n        }\n    }");
-    if (debugSigningEnd === -1) {
+    // 在 signingConfigs.debug 后插入 signingConfigs.release
+    const debugEnd = contents.indexOf("keyPassword 'android'\n        }\n    }");
+    if (debugEnd === -1) {
       console.warn("[withAndroidReleaseSigning] 未找到 debug signingConfig，跳过");
       return modConfig;
     }
-
-    const insertPos = debugSigningEnd + "keyPassword 'android'\n        }\n    }".length;
+    const insertPos = debugEnd + "keyPassword 'android'\n        }\n    }".length;
     contents = contents.slice(0, insertPos) + releaseSigningConfig + contents.slice(insertPos);
 
-    // 2. 将 release buildType 的 signingConfig 从 debug 改为 release
-    const releaseSigningLine = "signingConfig signingConfigs.debug";
-    const releaseSigningIndex = contents.indexOf(releaseSigningLine);
-    if (releaseSigningIndex !== -1) {
-      contents = `${contents.slice(
-        0,
-        releaseSigningIndex,
-      )}signingConfig signingConfigs.release${contents.slice(
-        releaseSigningIndex + releaseSigningLine.length,
-      )}`;
-    }
+    // 将 release buildType 的 signingConfig 从 debug 改为 release
+    contents = contents.replace(
+      "signingConfig signingConfigs.debug",
+      "signingConfig signingConfigs.release",
+    );
 
     modConfig.modResults.contents = contents;
     return modConfig;

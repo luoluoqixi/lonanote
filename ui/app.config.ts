@@ -63,9 +63,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ["./tools/prebuild/with_android_adaptive_icon_inset.cjs", { inset: "16%" }],
     // ABI splits: 一次构建输出 5 个 APK（4 架构 + 通用）
     "./tools/prebuild/with_android_abi_splits.cjs",
-    // Release 签名：通过环境变量 ANDROID_KEYSTORE_PASSWORD 等配置
-    // 如未设置则回退到 debug 签名
-    // "./tools/prebuild/with_android_release_signing.cjs",
+    // Release 签名：从 keystore.local.txt 读取配置，
+    // 文件不存在或配置不全时回退到 debug 签名，仅在 production 生效
+    "./tools/prebuild/with_android_release_signing.cjs",
   ],
   experiments: {
     typedRoutes: true,
