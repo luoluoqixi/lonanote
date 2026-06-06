@@ -96,11 +96,17 @@ async function main() {
   const isPostbuild = args.includes("--postbuild");
   const isAndroid = args.includes("--android");
   const isIOS = args.includes("--ios");
+  const isDev = args.includes("--dev");
+  const isProd = args.includes("--prod");
 
   if (!isAndroid && !isIOS) {
     console.log("No platform specified. Skipping build check.");
     return;
   }
+
+  // 通过 --dev / --prod 设置 APP_MODE，优先级高于环境变量
+  if (isDev) process.env.APP_MODE = "development";
+  if (isProd) process.env.APP_MODE = "production";
 
   const platform = isAndroid ? "android" : "ios";
   const devFolder = `${platform}_dev`;

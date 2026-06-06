@@ -6,6 +6,8 @@ const { withGradleProperties } = require("@expo/config-plugins");
 const CONFIG_RELATIVE_PATH = "sdk_config.txt";
 const REACT_NATIVE_ARCHITECTURES_KEY = "reactNativeArchitectures";
 const NDK_PROPERTY_KEY = "android.ndkVersion";
+const ENABLE_MINIFY_KEY = "android.enableMinifyInReleaseBuilds";
+const ENABLE_SHRINK_KEY = "android.enableShrinkResourcesInReleaseBuilds";
 const MANAGED_ANDROID_PROPERTIES = [
   REACT_NATIVE_ARCHITECTURES_KEY,
   "android.buildToolsVersion",
@@ -14,6 +16,8 @@ const MANAGED_ANDROID_PROPERTIES = [
   "android.minSdkVersion",
   "android.kotlinVersion",
   NDK_PROPERTY_KEY,
+  ENABLE_MINIFY_KEY,
+  ENABLE_SHRINK_KEY,
 ];
 
 function normalizeManagedGradleProperties(gradleProperties, properties) {
@@ -74,7 +78,13 @@ function validateSdkConfig(config) {
     ndkVersion: getRequiredString(config, "ANDROID_NDK_VERSION"),
     reactNativeArchitectures: getRequiredString(config, "ANDROID_REACT_NATIVE_ARCHITECTURES"),
     targetSdkVersion: getRequiredNumber(config, "ANDROID_TARGET_SDK_VERSION"),
+    enableMinify: getOptionalString(config, "ANDROID_ENABLE_MINIFY"),
+    enableShrinkResources: getOptionalString(config, "ANDROID_ENABLE_SHRINK_RESOURCES"),
   };
+}
+
+function getOptionalString(config, key) {
+  return config[key] || "";
 }
 
 function getRequiredString(config, key) {
@@ -105,7 +115,8 @@ module.exports = function withAndroidSdkVersions(config) {
 
   return withGradleProperties(config, async (modConfig) => {
     const latestSdkConfig = await readSdkConfig(projectRoot);
-    modConfig.modResults = normalizeManagedGradleProperties(modConfig.modResults, [
+
+    const properties = [
       [REACT_NATIVE_ARCHITECTURES_KEY, latestSdkConfig.reactNativeArchitectures],
       ["android.buildToolsVersion", latestSdkConfig.buildToolsVersion],
       ["android.compileSdkVersion", String(latestSdkConfig.compileSdkVersion)],
@@ -113,7 +124,18 @@ module.exports = function withAndroidSdkVersions(config) {
       ["android.minSdkVersion", String(latestSdkConfig.minSdkVersion)],
       ["android.kotlinVersion", latestSdkConfig.kotlinVersion],
       [NDK_PROPERTY_KEY, latestSdkConfig.ndkVersion],
-    ]);
+    ];
+
+    // minify 和 shrinkResources 仅在 release 构建时启用
+    const isRelease = process.env.APP_MODE === "production";
+    if (isRelease && latestSdkConfig.enableMinify) {
+      properties.push([ENABLE_MINIFY_KEY, latestSdkConfig.enableMinify]);
+    }
+    if (isRelease && latestSdkConfig.enableShrinkResources) {
+      properties.push([ENABLE_SHRINK_KEY, latestSdkConfig.enableShrinkResources]);
+    }
+
+    modConfig.modResults = normalizeManagedGradleProperties(modConfig.modResults, properties);
 
     return modConfig;
   });

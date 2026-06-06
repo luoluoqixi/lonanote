@@ -13,6 +13,8 @@
 
 /.copilot-patch-orig
 
+/build/
+
 .temp/
 
 .tamagui

@@ -51,11 +51,6 @@ description = "Run the application in development mode on Android"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["android:check:dev"]
-run_dir = "ui"
-
-[[commands.cmds]]
-cmd = "bun"
 args = ["run", "build:android"]
 run_dir = "ui/rust"
 
@@ -71,11 +66,6 @@ inherit_stdio = true
 [[commands]]
 name = "dev:ios"
 description = "Run the application in development mode on iOS"
-
-[[commands.cmds]]
-cmd = "bun"
-args = ["ios:check:dev"]
-run_dir = "ui"
 
 [[commands.cmds]]
 cmd = "bun"
@@ -152,11 +142,6 @@ description = "Build the application for Android"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["android:check:prod"]
-run_dir = "ui"
-
-[[commands.cmds]]
-cmd = "bun"
 args = ["android:prebuild:prod", "--no-restore"]
 run_dir = "ui"
 
@@ -175,11 +160,6 @@ run_dir = "ui"
 [[commands]]
 name = "build:ios"
 description = "Build the application for iOS"
-
-[[commands.cmds]]
-cmd = "bun"
-args = ["ios:check:prod"]
-run_dir = "ui"
 
 [[commands.cmds]]
 cmd = "bun"
@@ -204,12 +184,7 @@ description = "Build the application for Android CI"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["android:check:prod"]
-run_dir = "ui"
-
-[[commands.cmds]]
-cmd = "bun"
-args = ["android:prebuild:prod", "--no-restore", "--clean"]
+args = ["android:prebuild:prod", "--no-restore"]
 run_dir = "ui"
 
 [[commands.cmds]]
@@ -230,12 +205,7 @@ description = "Build the application for iOS CI"
 
 [[commands.cmds]]
 cmd = "bun"
-args = ["ios:check:prod"]
-run_dir = "ui"
-
-[[commands.cmds]]
-cmd = "bun"
-args = ["ios:prebuild:prod", "--no-restore", "--clean"]
+args = ["ios:prebuild:prod", "--no-restore"]
 run_dir = "ui"
 
 [[commands.cmds]]
