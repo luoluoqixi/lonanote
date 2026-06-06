@@ -57,10 +57,9 @@ const DEV_COMMANDS = {
 const gradlewCmd =
   process.platform === "win32" ? "gradlew.bat assembleRelease" : "./gradlew assembleRelease";
 
-// iOS CI 构建命令：xcodebuild 编译（不启动模拟器）
+// iOS CI：archive + export 在 copyArtifacts 中完成
 const iosWorkspace = "ios/lonanote.xcworkspace";
 const iosScheme = "lonanote";
-const iosXcodebuildCmd = `xcodebuild -workspace ${iosWorkspace} -scheme ${iosScheme} -configuration Release -sdk iphonesimulator build`;
 
 const BUILD_COMMANDS = {
   /** 构建 Android APK 并安装到已连接的设备 */
@@ -75,9 +74,9 @@ const BUILD_COMMANDS = {
   /** 构建 iOS .app 并安装到已连接的设备 */
   ios: "cross-env APP_MODE=production expo run:ios --configuration Release --device --no-bundler",
 
-  /** 构建 iOS .app（CI 模式，直接用 xcodebuild，不启动模拟器） */
+  /** 构建 iOS .app（CI 模式，由 copyArtifacts 完成 archive + .ipa 导出） */
   "ios:ci": {
-    cmd: `cross-env APP_MODE=production ${iosXcodebuildCmd}`,
+    cmd: "echo 'iOS CI: see copyArtifacts for archive + ipa export'",
     cwd: ".",
   },
 
@@ -184,20 +183,65 @@ function buildEntry() {
     });
   }
 
-  // 复制产物（传入 key 判断 CI 模式）
+  // iOS CI：archive + .ipa 导出
+  if (key === "ios:ci") {
+    buildIosIpa();
+  }
+
+  // 复制产物
   if (SKIP_COPY.has(key)) {
     console.log("  → web 产物在 dist/ 中，跳过复制");
   } else {
-    copyArtifacts(key);
+    copyArtifacts();
   }
 
   console.log("\n✅ 构建完成！");
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  iOS CI：构建 .xcarchive + 导出 .ipa（仅 macOS）
+// ═══════════════════════════════════════════════════════════════
+function buildIosIpa() {
+  if (process.platform !== "darwin") {
+    console.error("  ✗ iOS 构建仅支持 macOS");
+    process.exit(1);
+  }
+
+  const iosBuildDir = path.join(projectRoot, "build", "ios");
+  fs.mkdirSync(iosBuildDir, { recursive: true });
+  const archivePath = path.join(iosBuildDir, "lonanote.xcarchive");
+
+  // Step 1: 构建 .xcarchive
+  console.log("  → [1/2] 构建 .xcarchive ...");
+  execSync(
+    `xcodebuild -workspace ${iosWorkspace} -scheme ${iosScheme} -configuration Release -archivePath ${archivePath} archive`,
+    { cwd: projectRoot, stdio: "inherit" },
+  );
+
+  // Step 2: 导出 .ipa
+  console.log("  → [2/2] 导出 .ipa ...");
+  const exportPlist = path.join(iosBuildDir, "export.plist");
+  fs.writeFileSync(
+    exportPlist,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>app-store</string>
+</dict>
+</plist>`,
+  );
+  execSync(
+    `xcodebuild -exportArchive -archivePath ${archivePath} -exportPath ${iosBuildDir} -exportOptionsPlist ${exportPlist}`,
+    { cwd: projectRoot, stdio: "inherit" },
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  复制产物
 // ═══════════════════════════════════════════════════════════════
-function copyArtifacts(buildKey) {
+function copyArtifacts() {
   const platform = mode.includes("ios") ? "ios" : "android";
   const outputDir = path.join(buildOutputRoot, platform);
   fs.mkdirSync(outputDir, { recursive: true });
@@ -220,60 +264,18 @@ function copyArtifacts(buildKey) {
       const sizeMB = (fs.statSync(dst).size / 1024 / 1024).toFixed(1);
       console.log(`  ✓ ${file}  (${sizeMB} MB)`);
     }
-  } else if (buildKey === "ios:ci") {
-    // CI 模式：尝试从 DerivedData 导出 .ipa
-    const derivedData = path.join(
-      process.env.HOME || process.env.USERPROFILE || "",
-      "Library",
-      "Developer",
-      "Xcode",
-      "DerivedData",
-    );
-    if (!fs.existsSync(derivedData)) {
-      console.log("  → 未找到 DerivedData 目录，跳过 iOS 产物复制");
-      return;
-    }
+  }
 
-    // 查找最新的 lonanote-* 目录
-    const dirs = fs
-      .readdirSync(derivedData)
-      .filter((d) => d.startsWith("lonanote-"))
-      .map((d) => ({
-        name: d,
-        mtime: fs.statSync(path.join(derivedData, d)).mtimeMs,
-      }))
-      .sort((a, b) => b.mtime - a.mtime);
-
-    if (dirs.length === 0) {
-      console.log("  → 未找到 DerivedData 中的 lonanote 构建目录，跳过 iOS 产物复制");
-      return;
+  // iOS：列出 .ipa 产物
+  if (platform === "ios") {
+    const iosBuildDir = path.join(buildOutputRoot, "ios");
+    if (fs.existsSync(iosBuildDir)) {
+      const ipaFiles = fs.readdirSync(iosBuildDir).filter((f) => f.endsWith(".ipa"));
+      for (const file of ipaFiles) {
+        const sizeMB = (fs.statSync(path.join(iosBuildDir, file)).size / 1024 / 1024).toFixed(1);
+        console.log(`  ✓ ${file}  (${sizeMB} MB)`);
+      }
     }
-
-    const appDir = path.join(
-      derivedData,
-      dirs[0].name,
-      "Build",
-      "Products",
-      "Release-iphonesimulator",
-    );
-    if (!fs.existsSync(appDir)) {
-      console.log(`  → 未找到构建产物目录: ${appDir}`);
-      return;
-    }
-
-    // 复制 .app
-    const appFiles = fs.readdirSync(appDir).filter((f) => f.endsWith(".app"));
-    for (const file of appFiles) {
-      const src = path.join(appDir, file);
-      const dst = path.join(outputDir, file);
-      fs.cpSync(src, dst, { recursive: true });
-      const sizeMB = (fs.statSync(dst).size / 1024 / 1024).toFixed(1);
-      console.log(`  ✓ ${file}  (${sizeMB} MB)`);
-    }
-    console.log("  → 如需 .ipa，可在 macOS 上使用 xcodebuild -exportArchive 导出");
-  } else {
-    // 非 CI 的 iOS 构建（设备模式），产物在 DerivedData 中，暂不复制
-    console.log("  → iOS 产物在 DerivedData 中，暂不自动复制到 build/");
   }
 }
 
