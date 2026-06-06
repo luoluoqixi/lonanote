@@ -26,6 +26,9 @@ const path = require("node:path");
 const projectRoot = path.resolve(__dirname, "../..");
 const buildOutputRoot = path.join(projectRoot, "build");
 
+// 从共用配置读取应用信息
+const appConfig = require("./app_config.cjs");
+
 // ─── 执行命令的辅助函数 ──────────────────────────────────────
 function run(cmd, opts = {}) {
   execSync(cmd, { cwd: projectRoot, stdio: "inherit", ...opts });
@@ -57,9 +60,9 @@ const DEV_COMMANDS = {
 const gradlewCmd =
   process.platform === "win32" ? "gradlew.bat assembleRelease" : "./gradlew assembleRelease";
 
-// iOS CI：archive + export 在 copyArtifacts 中完成
-const iosWorkspace = "ios/lonanote.xcworkspace";
-const iosScheme = "lonanote";
+// iOS workspace / scheme 从共用配置读取
+const iosWorkspace = appConfig.iosWorkspace;
+const iosScheme = appConfig.iosScheme;
 
 const BUILD_COMMANDS = {
   /** 构建 Android APK 并安装到已连接的设备 */

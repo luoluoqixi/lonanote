@@ -1,45 +1,31 @@
 import { type ConfigContext, type ExpoConfig } from "expo/config";
 
 import pkg from "./package.json";
+import { getAppName, getScheme, getUniqueIdentifier } from "./tools/build/app_config.cjs";
 
 const IS_DEV = process.env.APP_MODE === "development";
-const ENABLE_REACT_COMPILER = true; // !IS_DEV;
+const ENABLE_REACT_COMPILER = true;
 
-console.log(`Running in ${IS_DEV ? "development" : "production"} mode`);
+console.log(
+  `Running in ${process.env.APP_MODE === "development" ? "development" : "production"} mode`,
+);
 
-const getUniqueIdentifier = () => {
-  if (IS_DEV) {
-    return "com.luoluoqixi.lonanote.dev";
-  }
-  return "com.luoluoqixi.lonanote";
-};
-
-const getAppName = () => {
-  if (IS_DEV) {
-    return "lonanote-dev";
-  }
-  return "lonanote";
-};
-
-const getScheme = () => {
-  if (IS_DEV) {
-    return "lonanote-dev";
-  }
-  return "lonanote";
-};
+const appName = getAppName(IS_DEV);
+const scheme = getScheme(IS_DEV);
+const bundleIdentifier = getUniqueIdentifier(IS_DEV);
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: getAppName(),
+  name: appName,
   slug: "lonanote",
   version: pkg.version,
   orientation: "default",
   icon: "./assets/images/icon.png",
-  scheme: getScheme(),
+  scheme,
   userInterfaceStyle: "automatic",
   ios: {
     supportsTablet: true,
-    bundleIdentifier: getUniqueIdentifier(),
+    bundleIdentifier,
     infoPlist: {
       UIViewControllerBasedStatusBarAppearance: true,
     },
@@ -47,7 +33,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     predictiveBackGestureEnabled: false,
-    package: getUniqueIdentifier(),
+    package: bundleIdentifier,
     adaptiveIcon: {
       foregroundImage: "./assets/images/icon.png",
       backgroundImage: "./assets/images/icon.png",

@@ -66,11 +66,10 @@ async function runPrebuild(targetMode, isClean) {
   console.log(`  [prebuild] ${title}`);
   console.log("═══════════════════════════════════════════\n");
 
-  // Step 1: build_check --prebuild（切换目录）
+  // Step 1: build_check --prebuild（切换目录，传 --dev / --prod 而非环境变量）
+  const devFlag = isDev ? "--dev" : "--prod";
   console.log(`  → [1/${noRestore ? "2" : "3"}] build_check --prebuild`);
-  await run(`node tools/build/build_check.cjs --${platform} --prebuild`, {
-    env: { ...process.env, APP_MODE: appMode },
-  });
+  await run(`node tools/build/build_check.cjs --${platform} --prebuild ${devFlag}`);
   await delay(STEP_DELAY_MS);
 
   // Step 2: expo prebuild
@@ -83,9 +82,7 @@ async function runPrebuild(targetMode, isClean) {
   // Step 3: build_check --postbuild（恢复目录，--no-restore 时跳过）
   if (!noRestore) {
     console.log("  → [3/3] build_check --postbuild");
-    await run(`node tools/build/build_check.cjs --${platform} --postbuild`, {
-      env: { ...process.env, APP_MODE: appMode },
-    });
+    await run(`node tools/build/build_check.cjs --${platform} --postbuild ${devFlag}`);
   }
 
   console.log(`  ✓ ${title} 完成\n`);
@@ -96,8 +93,7 @@ async function runPrebuild(targetMode, isClean) {
   try {
     if (mode === "both") {
       await runPrebuild("dev", hasCleanFlag);
-      // clean+both 时 prod 不重复 clean
-      await runPrebuild("prod", false);
+      await runPrebuild("prod", hasCleanFlag);
     } else {
       await runPrebuild(mode, hasCleanFlag);
     }
