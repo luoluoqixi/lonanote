@@ -80,9 +80,15 @@ module.exports = function withAndroidReleaseSigning(config) {
       return modConfig;
     }
 
+    // 计算 keystore 相对于 android/app/ 的路径（build.gradle 在此目录）
+    const projectRoot = modConfig.modRequest.projectRoot;
+    const keystoreAbs = path.resolve(projectRoot, keystoreConfig.KEYSTORE_FILE);
+    const appDir = path.join(projectRoot, "android", "app");
+    const keystoreRel = path.relative(appDir, keystoreAbs).replace(/\\/g, "/");
+
     const releaseSigningConfig = `
         release {
-            storeFile file('${keystoreConfig.KEYSTORE_FILE.replace(/'/g, "\\'")}')
+            storeFile file('${keystoreRel.replace(/'/g, "\\'")}')
             storePassword '${keystoreConfig.KEYSTORE_PASSWORD.replace(/'/g, "\\'")}'
             keyAlias '${keystoreConfig.KEY_ALIAS.replace(/'/g, "\\'")}'
             keyPassword '${keystoreConfig.KEY_PASSWORD.replace(/'/g, "\\'")}'
