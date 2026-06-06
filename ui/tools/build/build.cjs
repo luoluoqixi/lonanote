@@ -54,13 +54,18 @@ const DEV_COMMANDS = {
 };
 
 /** Build 命令（生产模式，退出时复制产物到 build/） */
+const gradlewCmd =
+  process.platform === "win32" ? "gradlew.bat assembleRelease" : "./gradlew assembleRelease";
+
 const BUILD_COMMANDS = {
   /** 构建 Android APK 并安装到已连接的设备 */
   android: "cross-env APP_MODE=production expo run:android --variant release --device --no-bundler",
 
-  /** 构建 Android APK（CI 模式，不安装不启动 Metro） */
-  "android:ci":
-    "cross-env APP_MODE=production CI=1 expo run:android --variant release --no-bundler --no-install",
+  /** 构建 Android APK（CI 模式，直接用 Gradle，不找设备不启模拟器） */
+  "android:ci": {
+    cmd: `cross-env APP_MODE=production ${gradlewCmd}`,
+    cwd: "android",
+  },
 
   /** 构建 iOS .app 并安装到已连接的设备 */
   ios: "cross-env APP_MODE=production expo run:ios --configuration Release --device --no-bundler",
@@ -161,7 +166,16 @@ function buildEntry() {
     run(checkCmd);
   }
 
-  run(BUILD_COMMANDS[key]);
+  // 执行命令：支持字符串直接执行，或 { cmd, cwd } 指定工作目录
+  const entry = BUILD_COMMANDS[key];
+  if (typeof entry === "string") {
+    run(entry);
+  } else {
+    execSync(entry.cmd, {
+      cwd: path.join(projectRoot, entry.cwd),
+      stdio: "inherit",
+    });
+  }
 
   // 复制产物
   if (SKIP_COPY.has(key)) {
