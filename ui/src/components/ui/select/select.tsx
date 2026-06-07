@@ -19,7 +19,7 @@ import {
 } from "@tamagui/select";
 import { forwardRef, useCallback, useEffect, useRef } from "react";
 import React from "react";
-import { View } from "react-native";
+import { Animated, Modal, Pressable, StyleSheet, View, useColorScheme } from "react-native";
 import { FontSizeTokens, Select as TamaguiSelect, Text, YStack, getFontSize } from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
@@ -560,6 +560,171 @@ function NativeMenuSelect({
   );
 }
 
+/**
+ * iOS 原生 Picker：RN Modal + RNPPicker + 分离动画。
+ * Modal animationType="none" 避免整体从底部滑入（遮罩不应滑动），
+ * 面板用 Animated.Value 单独控制 translateY 滑入/滑出动画。
+ */
+function NativePickerIos({
+  items,
+  value,
+  placeholder,
+  disabled,
+  isDisabled,
+  onValueChange,
+  resolvedNativeHaptics,
+}: {
+  items: ResolvedSelectItemData[];
+  value: string | null | undefined;
+  placeholder?: React.ReactNode;
+  disabled?: boolean;
+  isDisabled?: boolean;
+  onValueChange?: (value: string | null) => void;
+  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [pendingValue, setPendingValue] = React.useState<string>(
+    (value as string) ?? items[0]?.value ?? "",
+  );
+  const colorScheme = useColorScheme();
+  const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
+
+  // 面板滑动动画：0 = 隐藏(屏幕底部之下)，1 = 显示
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const animateIn = useCallback(() => {
+    setOpen(true);
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [slideAnim]);
+
+  const animateOut = useCallback(() => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => setOpen(false));
+  }, [slideAnim]);
+
+  const handleOpen = useCallback(() => {
+    if (disabled ?? isDisabled) return;
+    triggerNativeHaptics(resolvedNativeHaptics);
+    setPendingValue((value as string) ?? items[0]?.value ?? "");
+    animateIn();
+  }, [disabled, isDisabled, resolvedNativeHaptics, value, items, animateIn]);
+
+  const handleDone = useCallback(() => {
+    onValueChange?.(pendingValue || null);
+    triggerNativeHaptics(resolvedNativeHaptics);
+    animateOut();
+  }, [onValueChange, resolvedNativeHaptics, pendingValue, animateOut]);
+
+  const handleCancel = useCallback(() => {
+    animateOut();
+  }, [animateOut]);
+
+  const isDark = colorScheme === "dark";
+
+  // 用屏幕高度作为 translateY 偏移量确保面板完全在屏幕下方
+  const panelTranslateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [400, 0], // 从下方 400pt 滑入
+  });
+
+  return (
+    <>
+      <YStack
+        disabled={disabled ?? isDisabled}
+        onPress={handleOpen}
+        background="$background"
+        borderColor="$borderColor"
+        borderWidth={1}
+        opacity={(disabled ?? isDisabled) ? 0.5 : 1}
+        style={{
+          borderRadius: 8,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          minWidth: 180,
+        }}
+      >
+        <Text fontSize="$4" color="$color">
+          {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
+        </Text>
+        <ChevronDown size={16} color="$color10" />
+      </YStack>
+
+      {open && (
+        <Modal
+          visible
+          transparent
+          animationType="none"
+          supportedOrientations={["portrait", "landscape"]}
+          onRequestClose={handleCancel}
+        >
+          {/* 遮罩层 — 直接渲染，不参与滑动动画 */}
+          <Pressable
+            onPress={handleCancel}
+            style={{
+              ...StyleSheet.absoluteFill,
+              backgroundColor: "rgba(0,0,0,0.3)",
+            }}
+          />
+          {/* 底部面板 — 独立 translateY 动画从底部滑入 */}
+          <Animated.View
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              transform: [{ translateY: panelTranslateY }],
+              backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
+              paddingBottom: 34,
+            }}
+          >
+            {/* 工具栏 */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderBottomWidth: 0.5,
+                borderBottomColor: isDark ? "#38383A" : "#C6C6C8",
+                backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+              }}
+            >
+              <Pressable onPress={handleCancel} hitSlop={8}>
+                <Text style={{ fontSize: 17, color: isDark ? "#8E8E93" : "#8E8E93" }}>取消</Text>
+              </Pressable>
+              <Pressable onPress={handleDone} hitSlop={8}>
+                <Text style={{ fontSize: 17, fontWeight: "600", color: "#007AFF" }}>完成</Text>
+              </Pressable>
+            </View>
+            {/* RNPPicker — 标准原生模块，Modal 中正常渲染 */}
+            <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
+              {items.map((item) => (
+                <RNPPicker.Item
+                  key={item.value}
+                  label={item.label}
+                  value={item.value}
+                  enabled={!(item.disabled ?? item.isDisabled)}
+                />
+              ))}
+            </RNPPicker>
+          </Animated.View>
+        </Modal>
+      )}
+    </>
+  );
+}
+
 const SelectRoot = forwardRef<any, SelectProps>(
   (
     {
@@ -712,13 +877,21 @@ const SelectRoot = forwardRef<any, SelectProps>(
       );
     };
 
+    /**
+     * NativePickerDialog（隐藏渲染 + focus() 触发系统弹窗）仅在 Android 上可用。
+     */
     const shouldRenderNativePicker =
-      !isWeb() &&
-      !!native &&
-      resolvedPickerMode !== "menu" &&
-      (resolvedPickerMode !== "dialog" || platform === "android");
+      !isWeb() && !!native && resolvedPickerMode !== "menu" && platform === "android";
+    /**
+     * iOS native + menu → NativeMenuSelect（系统 UIMenu）。
+     */
     const shouldRenderNativeMenu =
       !isWeb() && !!native && resolvedPickerMode === "menu" && platform === "ios";
+    /**
+     * iOS native + dropdown/dialog → NativePickerIos（Modal + RNPPicker + 分离动画）。
+     */
+    const shouldRenderNativeIosPicker =
+      !isWeb() && !!native && resolvedPickerMode !== "menu" && platform === "ios";
 
     const handleTamaguiOpenChange = (nextOpen: boolean) => {
       if (shouldRenderNativePicker && nextOpen) {
@@ -745,6 +918,16 @@ const SelectRoot = forwardRef<any, SelectProps>(
       <>
         {shouldRenderNativeMenu ? (
           <NativeMenuSelect
+            items={resolvedItems}
+            value={props.value}
+            placeholder={placeholder}
+            disabled={disabled}
+            isDisabled={isDisabled}
+            onValueChange={onValueChange}
+            resolvedNativeHaptics={resolvedNativeHaptics}
+          />
+        ) : shouldRenderNativeIosPicker ? (
+          <NativePickerIos
             items={resolvedItems}
             value={props.value}
             placeholder={placeholder}
