@@ -53,9 +53,14 @@ export interface SelectProps extends Omit<
    * */
   nativePickerMode?: NativePickerMode;
   /** iOS native 模式下是否使用原生 Trigger（SwiftUI Picker 自带按钮）。
-   * true = SwiftUI Picker 原生按钮，false = Tamagui 自定义 Trigger。
-   * wheel 模式下忽略此选项，始终使用自定义 Trigger + Modal 弹出。 */
+   * true = SwiftUI Picker 原生按钮作为 trigger
+   *   dropdown → 原生 menu 弹出
+   *   wheel → 原生按钮 + 弹出面板
+   * false = Tamagui 自定义 Trigger + 弹出面板 */
   nativeTrigger?: boolean;
+  /** wheel 模式下设为 true 时使用 Modal 弹出（取代默认 Sheet）。
+   * 默认 false，wheel 弹出使用 Sheet 组件。 */
+  nativeSheet?: boolean;
   onValueChange?: (nextValue: string | null) => void;
   options?: SelectItemData[];
   placeholder?: ReactNode;
