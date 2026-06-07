@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
+import { os } from "@/api/common/platform";
 import {
   Accordion,
   AlertDialog,
@@ -86,6 +87,7 @@ export function UiComponentsDebugPanel() {
   const [selectNativeGroupedValue, setSelectNativeGroupedValue] = useState<string | null>(
     "name-asc",
   );
+  const [selectNativePickerValue, setSelectNativePickerValue] = useState<string | null>("blue");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
   const [percentSheetOpen, setPercentSheetOpen] = useState(false);
@@ -494,6 +496,7 @@ export function UiComponentsDebugPanel() {
             <Label>Select</Label>
             <Select
               items={selectItems}
+              native={false}
               nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue}
               placeholder="选择主题色"
@@ -502,20 +505,53 @@ export function UiComponentsDebugPanel() {
             <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
-            <Label>Select Native</Label>
+            <Label>Select Native (Dropdown)</Label>
             <Select
               items={selectItems}
+              native
+              nativePickerMode="dropdown"
               nativeHaptics={debugNativeHaptics}
-              onValueChange={setSelectValue}
+              onValueChange={setSelectNativePickerValue}
               placeholder="选择主题色"
-              value={selectValue ?? undefined}
-              native
+              value={selectNativePickerValue ?? undefined}
             />
-            <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
+            <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
           </View>
+          {os() === "ios" && (
+            <View style={styles.field}>
+              <Label>Select Native (Menu)</Label>
+              <Select
+                items={selectItems}
+                native
+                nativePickerMode="menu"
+                nativeHaptics={debugNativeHaptics}
+                onValueChange={setSelectNativePickerValue}
+                placeholder="选择主题色"
+                value={selectNativePickerValue ?? undefined}
+              />
+              <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
+            </View>
+          )}
+          {os() === "android" && (
+            <View style={styles.field}>
+              <Label>Select Native (Dialog)</Label>
+              <Select
+                items={selectItems}
+                native
+                nativePickerMode="dialog"
+                nativeHaptics={debugNativeHaptics}
+                onValueChange={setSelectNativePickerValue}
+                placeholder="选择主题色"
+                value={selectNativePickerValue ?? undefined}
+              />
+              <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
+            </View>
+          )}
+
           <View style={styles.field}>
             <Select
               items={selectItems2}
+              native={false}
               nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue2}
               placeholder="选择主题"
@@ -532,11 +568,12 @@ export function UiComponentsDebugPanel() {
               value={selectValue2 ?? undefined}
               native
             />
-            <Text color="$color10">当前主题：{selectValue2 ?? "未选择"}</Text>
+            <Text color="$color10">当前主题(原生)：{selectValue2 ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
             <Label>Select Grouped</Label>
             <Select
+              native={false}
               itemGroups={selectSortGroups}
               nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectGroupedValue}
@@ -555,7 +592,7 @@ export function UiComponentsDebugPanel() {
               value={selectNativeGroupedValue ?? undefined}
               native
             />
-            <Text color="$color10">当前排序：{selectNativeGroupedValue ?? "未选择"}</Text>
+            <Text color="$color10">当前排序(原生)：{selectNativeGroupedValue ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
             <Label>Slider Replica</Label>

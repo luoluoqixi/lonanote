@@ -1,10 +1,11 @@
+import { Picker as RNPPicker } from "@react-native-picker/picker";
 import {
   AdaptContext,
   AdaptPortalContents,
   useAdaptContext,
   useAdaptIsActive,
 } from "@tamagui/adapt";
-import { Theme, isWeb as isTamaguiWeb, useThemeName } from "@tamagui/core";
+import { Theme, isWeb as isTamaguiWeb, useTheme, useThemeName } from "@tamagui/core";
 import { Dismissable } from "@tamagui/dismissable";
 import { FocusScope } from "@tamagui/focus-scope";
 import { Check, ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
@@ -16,12 +17,14 @@ import {
   useSelectContext,
   useSelectItemParentContext,
 } from "@tamagui/select";
-import { forwardRef } from "react";
+import { forwardRef, useCallback, useEffect, useRef } from "react";
 import React from "react";
-import { FontSizeTokens, Select as TamaguiSelect, YStack, getFontSize } from "tamagui";
+import { View } from "react-native";
+import { FontSizeTokens, Select as TamaguiSelect, Text, YStack, getFontSize } from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
-import { isWeb } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
+import { Menu } from "@/components/ui/menu";
 import { Sheet } from "@/components/ui/sheet";
 import {
   resolveAriaLabel,
@@ -35,6 +38,7 @@ import {
   resolveSelectItemGroups,
 } from "./select_grouping";
 import type {
+  NativePickerMode,
   SelectAdaptContentsProps,
   SelectAdaptProps,
   SelectContentProps,
@@ -83,6 +87,9 @@ const TOUCH_SHEET_GROUP_RADIUS = 24;
 const TOUCH_SHEET_FRAME_BACKGROUND = "$backgroundPress" as const;
 const TOUCH_SHEET_GROUP_BACKGROUND = "$background" as const;
 const TOUCH_SHEET_SEPARATOR_COLOR = "$borderColor" as const;
+
+const DEFAULT_ANDROID_NATIVE_PICKER_MODE: NativePickerMode = "dialog";
+const DEFAULT_IOS_NATIVE_PICKER_MODE: NativePickerMode = "menu";
 
 const SelectAdaptHiddenContext = React.createContext(true);
 
@@ -425,6 +432,134 @@ function SelectFocusScope(props: SelectFocusScopeProps) {
 
 const selectAdaptWhen = isWeb() ? "md" : true;
 
+/** Android 原生 Picker Dialog：隐藏渲染 Picker 并通过 focus() 触发系统 dialog */
+function NativePickerDialog({
+  visible,
+  value,
+  items,
+  mode,
+  onValueChange,
+  onBlur,
+}: {
+  visible: boolean;
+  value: string | undefined;
+  items: ResolvedSelectItemData[];
+  mode: "dialog" | "dropdown";
+  onValueChange: (itemValue: string) => void;
+  onBlur: () => void;
+}) {
+  const pickerRef = useRef<any>(null);
+  const theme = useTheme();
+
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(() => pickerRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  const selectedBg = theme.backgroundPress?.val ?? "rgba(0,0,0,0.06)";
+  const selectedColor = theme.color?.val ?? "#1A73E8";
+
+  return (
+    <View style={{ position: "absolute", opacity: 0, pointerEvents: "none", minWidth: 320 }}>
+      <RNPPicker
+        ref={pickerRef}
+        selectedValue={value ?? ""}
+        onValueChange={onValueChange}
+        onBlur={onBlur}
+        mode={mode}
+      >
+        {items.map((item) => {
+          const isSelected = item.value === value;
+
+          return (
+            <RNPPicker.Item
+              key={item.value}
+              label={item.label}
+              value={item.value}
+              enabled={!(item.disabled ?? item.isDisabled)}
+              style={{
+                backgroundColor: isSelected ? selectedBg : "transparent",
+                color: isSelected ? selectedColor : undefined,
+              }}
+            />
+          );
+        })}
+      </RNPPicker>
+    </View>
+  );
+}
+
+/** 基于 Menu 组件的原生选择器（Android / iOS 均可） */
+function NativeMenuSelect({
+  items,
+  value,
+  placeholder,
+  disabled,
+  isDisabled,
+  onValueChange,
+  resolvedNativeHaptics,
+}: {
+  items: ResolvedSelectItemData[];
+  value: string | null | undefined;
+  placeholder?: React.ReactNode;
+  disabled?: boolean;
+  isDisabled?: boolean;
+  onValueChange?: (value: string | null) => void;
+  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+}) {
+  const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
+  const handleSelect = useCallback(
+    (itemValue: string) => {
+      onValueChange?.(itemValue || null);
+      triggerNativeHaptics(resolvedNativeHaptics);
+    },
+    [onValueChange, resolvedNativeHaptics],
+  );
+
+  return (
+    <Menu
+      trigger={
+        <YStack
+          disabled={disabled ?? isDisabled}
+          background="$background"
+          borderColor="$borderColor"
+          borderWidth={1}
+          opacity={(disabled ?? isDisabled) ? 0.5 : 1}
+          style={{
+            borderRadius: 8,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            minWidth: 180,
+          }}
+        >
+          <Text fontSize="$4" color="$color">
+            {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
+          </Text>
+          <ChevronDown size={16} color="$color10" />
+        </YStack>
+      }
+    >
+      {items.map((item) => (
+        <Menu.Item
+          key={item.value}
+          onSelect={() => handleSelect(item.value)}
+          disabled={item.disabled ?? item.isDisabled}
+        >
+          <Menu.ItemTitle style={{ flex: 1 }}>{item.label}</Menu.ItemTitle>
+          {item.value === value && <Check size={16} color="$color10" />}
+        </Menu.Item>
+      ))}
+    </Menu>
+  );
+}
+
 const SelectRoot = forwardRef<any, SelectProps>(
   (
     {
@@ -441,6 +576,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       itemLabel,
       itemLabelProps,
       nativeHaptics,
+      nativePickerMode,
       onOpenChange,
       onValueChange,
       options,
@@ -448,13 +584,22 @@ const SelectRoot = forwardRef<any, SelectProps>(
       touchSheetMaxHeight,
       triggerProps,
       viewportProps,
+      native,
       ...props
     },
     ref,
   ) => {
     void ref;
+
+    const platform = os();
+    const [nativePickerVisible, setNativePickerVisible] = React.useState(false);
     const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
     const shouldUseTouchSheetLayout = !isWeb();
+    const resolvedPickerMode =
+      nativePickerMode ??
+      (platform === "android"
+        ? DEFAULT_ANDROID_NATIVE_PICKER_MODE
+        : DEFAULT_IOS_NATIVE_PICKER_MODE);
     const resolvedItemGroups = resolveSelectItemGroups({ itemGroups, items, options });
     const resolvedItems = resolvedItemGroups.flatMap((group) => group.items);
     const getGroupLabel = (group: ResolvedSelectItemGroupData, groupIndex: number) =>
@@ -468,7 +613,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       itemCount: resolvedItems.length,
       touchSheetMaxHeight,
     });
-    const shouldRenderNativeOptionText = isWeb() && !!props.native;
+    const shouldRenderNativeOptionText = isWeb() && !!native;
     const renderedItemGroups: ResolvedSelectItemGroupData[] = shouldRenderNativeOptionText
       ? [{ key: "native", items: resolvedItems }]
       : resolvedItemGroups;
@@ -567,162 +712,211 @@ const SelectRoot = forwardRef<any, SelectProps>(
       );
     };
 
-    return (
-      <TamaguiSelect
-        disablePreventBodyScroll
-        {...props}
-        onOpenChange={(nextOpen) => {
-          onOpenChange?.(nextOpen);
+    const shouldRenderNativePicker =
+      !isWeb() &&
+      !!native &&
+      resolvedPickerMode !== "menu" &&
+      (resolvedPickerMode !== "dialog" || platform === "android");
+    const shouldRenderNativeMenu =
+      !isWeb() && !!native && resolvedPickerMode === "menu" && platform === "ios";
 
-          if (!nextOpen) {
-            return;
+    const handleTamaguiOpenChange = (nextOpen: boolean) => {
+      if (shouldRenderNativePicker && nextOpen) {
+        setNativePickerVisible((prev) => {
+          if (prev) {
+            requestAnimationFrame(() => setNativePickerVisible(true));
+            return false;
           }
+          return true;
+        });
+        return;
+      }
 
-          triggerNativeHaptics(resolvedNativeHaptics);
-        }}
-        onValueChange={(nextValue) => {
-          onValueChange?.(nextValue ?? null);
-          triggerNativeHaptics(resolvedNativeHaptics);
-        }}
-        renderValue={props.renderValue ?? ((nextValue) => getItemLabelByValue(nextValue))}
-      >
-        {children ??
-          (resolvedItems.length === 0 ? null : (
-            <>
-              <SelectTrigger
-                disabled={disabled ?? isDisabled ?? triggerProps?.disabled}
-                borderRadius="$4"
-                backgroundColor="$background"
-                iconAfter={ChevronDown}
-                {...triggerProps}
-                aria-label={resolveAriaLabel(
-                  triggerProps?.["aria-label"] ?? ariaLabel,
-                  selectedItem ?? placeholder,
-                )}
-                nativeHaptics={triggerProps?.nativeHaptics ?? resolvedNativeHaptics}
-              >
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
+      onOpenChange?.(nextOpen);
+      if (nextOpen) triggerNativeHaptics(resolvedNativeHaptics);
+    };
 
-              <SelectSheetController>
-                <SelectAdapt when={selectAdaptWhen} platform="touch">
-                  <Sheet
-                    native={!!props.native}
-                    modal
-                    dismissOnSnapToBottom
-                    snapPoints={touchSheetConfig.snapPoints}
-                    snapPointsMode={touchSheetConfig.snapPointsMode}
-                    transitionConfig={{ type: "timing", duration: 150 }}
-                  >
-                    <Sheet.Frame
-                      {...(touchSheetConfig.frameMaxHeight != null
-                        ? { maxHeight: touchSheetConfig.frameMaxHeight }
-                        : null)}
-                      {...(shouldUseTouchSheetLayout
-                        ? {
-                            backgroundColor: TOUCH_SHEET_FRAME_BACKGROUND,
-                            borderTopLeftRadius: 36,
-                            borderTopRightRadius: 36,
-                            paddingTop: 12,
-                          }
-                        : null)}
-                    >
-                      {shouldUseTouchSheetLayout && (
-                        <Sheet.Handle
-                          alignSelf="center"
-                          backgroundColor="$color8"
-                          borderRadius={999}
-                          height={5}
-                          marginBottom={6}
-                          opacity={0.65}
-                          onPress={() => {}}
-                          width={92}
-                        />
-                      )}
-                      {shouldUseTouchSheetLayout ? (
-                        touchSheetConfig.shouldEnableScroll ? (
-                          <Sheet.ScrollView
-                            sheetDragDisabledScrollIndicatorWidth={44}
-                            showsVerticalScrollIndicator
-                          >
-                            <YStack
-                              background={TOUCH_SHEET_FRAME_BACKGROUND}
-                              style={TOUCH_SHEET_SCROLL_CONTENT_STYLE}
-                            >
-                              <SelectAdapt.Contents />
-                            </YStack>
-                          </Sheet.ScrollView>
-                        ) : (
-                          <YStack
-                            background={TOUCH_SHEET_FRAME_BACKGROUND}
-                            style={TOUCH_SHEET_SCROLL_CONTENT_STYLE}
-                          >
-                            <SelectAdapt.Contents />
-                          </YStack>
-                        )
-                      ) : (
-                        <Sheet.ScrollView>
-                          <SelectAdapt.Contents />
-                        </Sheet.ScrollView>
-                      )}
-                    </Sheet.Frame>
-                    <Sheet.Overlay
-                      bg="$shadowColor"
-                      transition="lazy"
-                      enterStyle={{ opacity: 0 }}
-                      exitStyle={{ opacity: 0 }}
-                    />
-                  </Sheet>
-                </SelectAdapt>
+    const handleTamaguiValueChange = (nextValue: string) => {
+      onValueChange?.(nextValue ?? null);
+      triggerNativeHaptics(resolvedNativeHaptics);
+    };
 
-                <SelectContent {...contentProps}>
-                  {!shouldUseTouchSheetLayout && (
-                    <SelectScrollUpButton
-                      items="center"
-                      justify="center"
-                      position="relative"
-                      width="100%"
-                      height="$3"
-                    />
-                  )}
-                  <SelectViewport
-                    bg="$background"
-                    rounded="$4"
-                    borderWidth={1}
-                    borderColor="$borderColor"
-                    {...viewportProps}
-                  >
-                    {renderedItemGroups.map(renderGroup)}
-                    {isWeb() && props.native && (
-                      <YStack
-                        position="absolute"
-                        r={0}
-                        t={16}
-                        items="center"
-                        justify="center"
-                        width={"$4"}
-                        pointerEvents="none"
-                      >
-                        <ChevronDown
-                          size={getFontSize((props.size as FontSizeTokens) ?? "$true")}
-                        />
-                      </YStack>
+    return (
+      <>
+        {shouldRenderNativeMenu ? (
+          <NativeMenuSelect
+            items={resolvedItems}
+            value={props.value}
+            placeholder={placeholder}
+            disabled={disabled}
+            isDisabled={isDisabled}
+            onValueChange={onValueChange}
+            resolvedNativeHaptics={resolvedNativeHaptics}
+          />
+        ) : (
+          <TamaguiSelect
+            disablePreventBodyScroll
+            {...props}
+            open={shouldRenderNativePicker ? false : undefined}
+            native={native}
+            onOpenChange={handleTamaguiOpenChange}
+            onValueChange={handleTamaguiValueChange}
+            renderValue={props.renderValue ?? ((nextValue) => getItemLabelByValue(nextValue))}
+          >
+            {children ??
+              (resolvedItems.length === 0 ? null : (
+                <>
+                  <SelectTrigger
+                    disabled={disabled ?? isDisabled ?? triggerProps?.disabled}
+                    borderRadius="$4"
+                    backgroundColor="$background"
+                    iconAfter={ChevronDown}
+                    {...triggerProps}
+                    aria-label={resolveAriaLabel(
+                      triggerProps?.["aria-label"] ?? ariaLabel,
+                      selectedItem ?? placeholder,
                     )}
-                  </SelectViewport>
-                  {!shouldUseTouchSheetLayout && (
-                    <SelectScrollDownButton
-                      items="center"
-                      justify="center"
-                      position="relative"
-                      width="100%"
-                      height="$3"
-                    />
-                  )}
-                </SelectContent>
-              </SelectSheetController>
-            </>
-          ))}
-      </TamaguiSelect>
+                    nativeHaptics={triggerProps?.nativeHaptics ?? resolvedNativeHaptics}
+                  >
+                    <SelectValue placeholder={placeholder} />
+                  </SelectTrigger>
+
+                  <SelectSheetController>
+                    <SelectAdapt when={selectAdaptWhen} platform="touch">
+                      <Sheet
+                        native={!!native}
+                        modal
+                        dismissOnSnapToBottom
+                        snapPoints={touchSheetConfig.snapPoints}
+                        snapPointsMode={touchSheetConfig.snapPointsMode}
+                        transitionConfig={{ type: "timing", duration: 150 }}
+                      >
+                        <Sheet.Frame
+                          {...(touchSheetConfig.frameMaxHeight != null
+                            ? { maxHeight: touchSheetConfig.frameMaxHeight }
+                            : null)}
+                          {...(shouldUseTouchSheetLayout
+                            ? {
+                                backgroundColor: TOUCH_SHEET_FRAME_BACKGROUND,
+                                borderTopLeftRadius: 36,
+                                borderTopRightRadius: 36,
+                                paddingTop: 12,
+                              }
+                            : null)}
+                        >
+                          {shouldUseTouchSheetLayout && (
+                            <Sheet.Handle
+                              alignSelf="center"
+                              backgroundColor="$color8"
+                              borderRadius={999}
+                              height={5}
+                              marginBottom={6}
+                              opacity={0.65}
+                              onPress={() => {}}
+                              width={92}
+                            />
+                          )}
+                          {shouldUseTouchSheetLayout ? (
+                            touchSheetConfig.shouldEnableScroll ? (
+                              <Sheet.ScrollView
+                                sheetDragDisabledScrollIndicatorWidth={44}
+                                showsVerticalScrollIndicator
+                              >
+                                <YStack
+                                  background={TOUCH_SHEET_FRAME_BACKGROUND}
+                                  style={TOUCH_SHEET_SCROLL_CONTENT_STYLE}
+                                >
+                                  <SelectAdapt.Contents />
+                                </YStack>
+                              </Sheet.ScrollView>
+                            ) : (
+                              <YStack
+                                background={TOUCH_SHEET_FRAME_BACKGROUND}
+                                style={TOUCH_SHEET_SCROLL_CONTENT_STYLE}
+                              >
+                                <SelectAdapt.Contents />
+                              </YStack>
+                            )
+                          ) : (
+                            <Sheet.ScrollView>
+                              <SelectAdapt.Contents />
+                            </Sheet.ScrollView>
+                          )}
+                        </Sheet.Frame>
+                        <Sheet.Overlay
+                          bg="$shadowColor"
+                          transition="lazy"
+                          enterStyle={{ opacity: 0 }}
+                          exitStyle={{ opacity: 0 }}
+                        />
+                      </Sheet>
+                    </SelectAdapt>
+
+                    <SelectContent {...contentProps}>
+                      {!shouldUseTouchSheetLayout && (
+                        <SelectScrollUpButton
+                          items="center"
+                          justify="center"
+                          position="relative"
+                          width="100%"
+                          height="$3"
+                        />
+                      )}
+                      <SelectViewport
+                        bg="$background"
+                        rounded="$4"
+                        borderWidth={1}
+                        borderColor="$borderColor"
+                        {...viewportProps}
+                      >
+                        {renderedItemGroups.map(renderGroup)}
+                        {isWeb() && native && (
+                          <YStack
+                            position="absolute"
+                            r={0}
+                            t={16}
+                            items="center"
+                            justify="center"
+                            width={"$4"}
+                            pointerEvents="none"
+                          >
+                            <ChevronDown
+                              size={getFontSize((props.size as FontSizeTokens) ?? "$true")}
+                            />
+                          </YStack>
+                        )}
+                      </SelectViewport>
+                      {!shouldUseTouchSheetLayout && (
+                        <SelectScrollDownButton
+                          items="center"
+                          justify="center"
+                          position="relative"
+                          width="100%"
+                          height="$3"
+                        />
+                      )}
+                    </SelectContent>
+                  </SelectSheetController>
+                </>
+              ))}
+          </TamaguiSelect>
+        )}
+
+        {shouldRenderNativePicker && (
+          <NativePickerDialog
+            visible={nativePickerVisible}
+            value={(props.value as string | undefined) ?? ""}
+            items={resolvedItems}
+            mode={resolvedPickerMode as "dialog" | "dropdown"}
+            onValueChange={(itemValue: string) => {
+              onValueChange?.(itemValue || null);
+              triggerNativeHaptics(resolvedNativeHaptics);
+              setNativePickerVisible(false);
+            }}
+            onBlur={() => setNativePickerVisible(false)}
+          />
+        )}
+      </>
     );
   },
 );

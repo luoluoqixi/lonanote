@@ -4,6 +4,9 @@ import type { Select as TamaguiSelect } from "tamagui";
 
 import type { NativeHapticsSetting } from "../utils";
 
+/** 原生 Picker 弹出模式。仅在 props.native 为 true 时生效。 */
+export type NativePickerMode = "dialog" | "dropdown" | "menu";
+
 export interface SelectItemData {
   "aria-label"?: string;
   description?: string;
@@ -41,6 +44,14 @@ export interface SelectProps extends Omit<
   itemLabel?: ReactNode;
   itemLabelProps?: SelectLabelProps;
   nativeHaptics?: NativeHapticsSetting;
+  /** 原生 Picker 弹出模式。仅在 props.native 为 true 时生效。
+   * 默认 Android 端 "dialog"
+   * 默认 iOS 端 "menu"
+   * dialog 仅 Android 可用
+   * menu 仅 iOS 可用
+   * dropdown Android 和 iOS 都可用, iOS 上表现为原生 Picker
+   * */
+  nativePickerMode?: NativePickerMode;
   onValueChange?: (nextValue: string | null) => void;
   options?: SelectItemData[];
   placeholder?: ReactNode;
