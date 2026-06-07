@@ -80,10 +80,14 @@ function MenuRoot(props: MenuProps) {
   } = props;
   const hasDefaultStructure = trigger != null || items != null || arrow != null;
 
+  // Menu 在 native 上浮动定位后视觉顺序反转，统一反转 children / items
+  const resolvedChildren = Children.toArray(children).reverse();
+  const resolvedItems = items ? [...items].reverse() : items;
+
   if (!hasDefaultStructure) {
     return (
       <TamaguiMenu {...rootProps} offset={offset ?? 8}>
-        {children}
+        {resolvedChildren}
       </TamaguiMenu>
     );
   }
@@ -95,7 +99,7 @@ function MenuRoot(props: MenuProps) {
         <MenuContent {...contentProps}>
           {arrow ? <MenuArrow {...arrowProps} /> : null}
           <MenuScrollView>
-            {items?.map((item) => {
+            {resolvedItems?.map((item) => {
               if (item.separator) {
                 return <MenuSeparator key={item.value} />;
               }
@@ -122,7 +126,7 @@ function MenuRoot(props: MenuProps) {
                 </MenuItem>
               );
             })}
-            {children}
+            {resolvedChildren}
           </MenuScrollView>
         </MenuContent>
       </MenuPortal>

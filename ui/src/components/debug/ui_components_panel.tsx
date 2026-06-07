@@ -515,15 +515,37 @@ export function UiComponentsDebugPanel() {
               placeholder="选择主题色"
               value={selectNativePickerValue ?? undefined}
             />
+            {os() === "ios" && (
+              <Select
+                items={selectItems}
+                native
+                nativeTrigger
+                nativePickerMode="dropdown"
+                nativeHaptics={debugNativeHaptics}
+                onValueChange={setSelectNativePickerValue}
+                placeholder="选择主题色"
+                value={selectNativePickerValue ?? undefined}
+              />
+            )}
             <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
           </View>
           {os() === "ios" && (
             <View style={styles.field}>
-              <Label>Select Native (Menu)</Label>
+              <Label>Select Native (Wheel)</Label>
               <Select
                 items={selectItems}
                 native
-                nativePickerMode="menu"
+                nativePickerMode="wheel"
+                nativeHaptics={debugNativeHaptics}
+                onValueChange={setSelectNativePickerValue}
+                placeholder="选择主题色"
+                value={selectNativePickerValue ?? undefined}
+              />
+              <Select
+                items={selectItems}
+                native
+                nativeTrigger
+                nativePickerMode="wheel"
                 nativeHaptics={debugNativeHaptics}
                 onValueChange={setSelectNativePickerValue}
                 placeholder="选择主题色"

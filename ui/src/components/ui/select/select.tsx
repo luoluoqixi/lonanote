@@ -1,3 +1,10 @@
+// Expo UI SwiftUI Picker（iOS 专用，实验性）
+import {
+  Host as SwiftUIHost,
+  Picker as SwiftUIPicker,
+  Text as SwiftUIText,
+} from "@expo/ui/swift-ui";
+import { frame, pickerStyle, tag } from "@expo/ui/swift-ui/modifiers";
 import { Picker as RNPPicker } from "@react-native-picker/picker";
 import {
   AdaptContext,
@@ -19,7 +26,15 @@ import {
 } from "@tamagui/select";
 import { forwardRef, useCallback, useEffect, useRef } from "react";
 import React from "react";
-import { Animated, Modal, Pressable, StyleSheet, View, useColorScheme } from "react-native";
+import {
+  Animated,
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+  useColorScheme,
+  useWindowDimensions,
+} from "react-native";
 import { FontSizeTokens, Select as TamaguiSelect, Text, YStack, getFontSize } from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
@@ -88,8 +103,8 @@ const TOUCH_SHEET_FRAME_BACKGROUND = "$backgroundPress" as const;
 const TOUCH_SHEET_GROUP_BACKGROUND = "$background" as const;
 const TOUCH_SHEET_SEPARATOR_COLOR = "$borderColor" as const;
 
-const DEFAULT_ANDROID_NATIVE_PICKER_MODE: NativePickerMode = "dialog";
-const DEFAULT_IOS_NATIVE_PICKER_MODE: NativePickerMode = "menu";
+const DEFAULT_ANDROID_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
+const DEFAULT_IOS_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
 
 const SelectAdaptHiddenContext = React.createContext(true);
 
@@ -493,7 +508,7 @@ function NativePickerDialog({
   );
 }
 
-/** 基于 Menu 组件的原生选择器（Android / iOS 均可） */
+/** 基于 Menu 组件的原生选择器（当前未使用，menu 模式已移除） */
 function NativeMenuSelect({
   items,
   value,
@@ -564,6 +579,9 @@ function NativeMenuSelect({
  * iOS 原生 Picker：RN Modal + RNPPicker + 分离动画。
  * Modal animationType="none" 避免整体从底部滑入（遮罩不应滑动），
  * 面板用 Animated.Value 单独控制 translateY 滑入/滑出动画。
+ *
+ * 当前未使用（dropdown 路径已切换为 NativePickerSwiftUI）。
+ * 保留此实现，后续可切换回 RNP 版本。
  */
 function NativePickerIos({
   items,
@@ -725,6 +743,314 @@ function NativePickerIos({
   );
 }
 
+/**
+ * iOS SwiftUI Picker：dropdown → menu 按钮，wheel / 自定义 trigger → Modal。
+ */
+function NativePickerSwiftUI({
+  items,
+  value,
+  placeholder,
+  mode,
+  nativeTrigger,
+  onValueChange,
+  resolvedNativeHaptics,
+}: {
+  items: ResolvedSelectItemData[];
+  value: string | null | undefined;
+  placeholder?: React.ReactNode;
+  mode: "dropdown" | "wheel";
+  nativeTrigger?: boolean;
+  onValueChange?: (value: string | null) => void;
+  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+}) {
+  // dropdown + 原生 trigger：SwiftUI Picker menu 按钮
+  if (mode === "dropdown" && nativeTrigger) {
+    return (
+      <NativePickerMenuButton
+        items={items}
+        value={value}
+        onValueChange={onValueChange}
+        resolvedNativeHaptics={resolvedNativeHaptics}
+      />
+    );
+  }
+
+  // dropdown + 自定义 trigger：Menu 组件
+  if (mode === "dropdown" && !nativeTrigger) {
+    return (
+      <NativePickerDropdownCustom
+        items={items}
+        value={value}
+        placeholder={placeholder}
+        onValueChange={onValueChange}
+        resolvedNativeHaptics={resolvedNativeHaptics}
+      />
+    );
+  }
+
+  // wheel：YStack trigger + Modal
+  return (
+    <NativePickerModal
+      items={items}
+      value={value}
+      placeholder={placeholder}
+      onValueChange={onValueChange}
+      resolvedNativeHaptics={resolvedNativeHaptics}
+    />
+  );
+}
+
+/** dropdown + 原生 trigger：SwiftUI Picker menu 按钮 */
+function NativePickerMenuButton({
+  items,
+  value,
+  onValueChange,
+  resolvedNativeHaptics,
+}: {
+  items: ResolvedSelectItemData[];
+  value: string | null | undefined;
+  onValueChange?: (value: string | null) => void;
+  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+}) {
+  const handleSelectionChange = useCallback(
+    (selection: string) => {
+      onValueChange?.(selection || null);
+      triggerNativeHaptics(resolvedNativeHaptics);
+    },
+    [onValueChange, resolvedNativeHaptics],
+  );
+
+  return (
+    <Pressable onPress={() => triggerNativeHaptics(resolvedNativeHaptics)}>
+      <View style={{ minWidth: 180 }}>
+        <SwiftUIHost matchContents>
+          <SwiftUIPicker
+            modifiers={[pickerStyle("menu")]}
+            selection={(value as string) ?? items[0]?.value ?? ""}
+            onSelectionChange={handleSelectionChange}
+          >
+            {items.map((item) => (
+              <SwiftUIText key={item.value} modifiers={[tag(item.value)]}>
+                {item.label}
+              </SwiftUIText>
+            ))}
+          </SwiftUIPicker>
+        </SwiftUIHost>
+      </View>
+    </Pressable>
+  );
+}
+
+/**
+ * dropdown + 自定义 trigger：复用 Menu 组件实现。
+ * Menu 的 MenuTrigger 包装自定义 YStack，点击时显示选项列表。
+ */
+function NativePickerDropdownCustom({
+  items,
+  value,
+  placeholder,
+  onValueChange,
+  resolvedNativeHaptics,
+}: {
+  items: ResolvedSelectItemData[];
+  value: string | null | undefined;
+  placeholder?: React.ReactNode;
+  onValueChange?: (value: string | null) => void;
+  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+}) {
+  const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
+  const handleSelect = useCallback(
+    (itemValue: string) => {
+      onValueChange?.(itemValue || null);
+      triggerNativeHaptics(resolvedNativeHaptics);
+    },
+    [onValueChange, resolvedNativeHaptics],
+  );
+
+  return (
+    <Menu
+      trigger={
+        <YStack
+          onPress={() => triggerNativeHaptics(resolvedNativeHaptics)}
+          background="$background"
+          borderColor="$borderColor"
+          borderWidth={1}
+          pressStyle={{
+            // @ts-expect-error backgroundColor 是存在的
+            backgroundColor: "$backgroundPress",
+          }}
+          style={{
+            borderRadius: 8,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            minWidth: 180,
+          }}
+        >
+          <Text fontSize="$4" color="$color">
+            {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
+          </Text>
+          <ChevronDown size={16} color="$color10" />
+        </YStack>
+      }
+    >
+      {items.map((item) => (
+        <Menu.CheckboxItem
+          key={item.value}
+          checked={item.value === value}
+          onSelect={() => handleSelect(item.value)}
+          disabled={item.disabled ?? item.isDisabled}
+        >
+          <Menu.ItemTitle>{item.label}</Menu.ItemTitle>
+          <Menu.ItemIndicator>
+            <Check size={16} color="$color10" />
+          </Menu.ItemIndicator>
+        </Menu.CheckboxItem>
+      ))}
+    </Menu>
+  );
+}
+
+/** wheel / 自定义 trigger：Tamagui YStack trigger + RN Modal */
+function NativePickerModal({
+  items,
+  value,
+  placeholder,
+  onValueChange,
+  resolvedNativeHaptics,
+}: {
+  items: ResolvedSelectItemData[];
+  value: string | null | undefined;
+  placeholder?: React.ReactNode;
+  onValueChange?: (value: string | null) => void;
+  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [pendingValue, setPendingValue] = React.useState<string>(
+    (value as string) ?? items[0]?.value ?? "",
+  );
+  const colorScheme = useColorScheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
+
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const animateIn = useCallback(() => {
+    setOpen(true);
+    Animated.timing(slideAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+  }, [slideAnim]);
+
+  const animateOut = useCallback(() => {
+    Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() =>
+      setOpen(false),
+    );
+  }, [slideAnim]);
+
+  const handleOpen = useCallback(() => {
+    triggerNativeHaptics(resolvedNativeHaptics);
+    setPendingValue((value as string) ?? items[0]?.value ?? "");
+    animateIn();
+  }, [resolvedNativeHaptics, value, items, animateIn]);
+
+  const handleDone = useCallback(() => {
+    onValueChange?.(pendingValue || null);
+    triggerNativeHaptics(resolvedNativeHaptics);
+    animateOut();
+  }, [onValueChange, resolvedNativeHaptics, pendingValue, animateOut]);
+
+  const handleCancel = useCallback(() => animateOut(), [animateOut]);
+
+  const isDark = colorScheme === "dark";
+  const panelTranslateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [400, 0],
+  });
+
+  return (
+    <>
+      <YStack
+        onPress={handleOpen}
+        background="$background"
+        borderColor="$borderColor"
+        borderWidth={1}
+        pressStyle={{
+          // @ts-expect-error backgroundColor 是存在的
+          backgroundColor: "$backgroundPress",
+        }}
+        style={{
+          borderRadius: 8,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          minWidth: 180,
+        }}
+      >
+        <Text fontSize="$4" color="$color">
+          {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
+        </Text>
+        <ChevronDown size={16} color="$color10" />
+      </YStack>
+
+      {open && (
+        <Modal visible transparent animationType="none" onRequestClose={handleCancel}>
+          <Pressable
+            onPress={handleCancel}
+            style={{ ...StyleSheet.absoluteFill, backgroundColor: "rgba(0,0,0,0.3)" }}
+          />
+          <Animated.View
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              transform: [{ translateY: panelTranslateY }],
+              backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
+              paddingBottom: 34,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderBottomWidth: 0.5,
+                borderBottomColor: isDark ? "#38383A" : "#C6C6C8",
+                backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+              }}
+            >
+              <Pressable onPress={handleCancel} hitSlop={8}>
+                <Text style={{ fontSize: 17, color: isDark ? "#8E8E93" : "#8E8E93" }}>取消</Text>
+              </Pressable>
+              <Pressable onPress={handleDone} hitSlop={8}>
+                <Text style={{ fontSize: 17, fontWeight: "600", color: "#007AFF" }}>完成</Text>
+              </Pressable>
+            </View>
+            <SwiftUIHost matchContents>
+              <SwiftUIPicker
+                modifiers={[pickerStyle("wheel"), frame({ width: screenWidth })]}
+                selection={pendingValue}
+                onSelectionChange={setPendingValue}
+              >
+                {items.map((item) => (
+                  <SwiftUIText key={item.value} modifiers={[tag(item.value)]}>
+                    {item.label}
+                  </SwiftUIText>
+                ))}
+              </SwiftUIPicker>
+            </SwiftUIHost>
+          </Animated.View>
+        </Modal>
+      )}
+    </>
+  );
+}
+
 const SelectRoot = forwardRef<any, SelectProps>(
   (
     {
@@ -750,6 +1076,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       triggerProps,
       viewportProps,
       native,
+      nativeTrigger,
       ...props
     },
     ref,
@@ -879,19 +1206,15 @@ const SelectRoot = forwardRef<any, SelectProps>(
 
     /**
      * NativePickerDialog（隐藏渲染 + focus() 触发系统弹窗）仅在 Android 上可用。
+     * wheel 为 iOS 专用模式，Android 上不走此路径。
      */
     const shouldRenderNativePicker =
-      !isWeb() && !!native && resolvedPickerMode !== "menu" && platform === "android";
+      !isWeb() && !!native && resolvedPickerMode !== "wheel" && platform === "android";
     /**
-     * iOS native + menu → NativeMenuSelect（系统 UIMenu）。
+     * iOS native（dropdown/dialog/wheel）→ NativePickerSwiftUI（Expo UI SwiftUI Picker）。
+     * RNP 版本代码保留在 NativePickerIos 中，后续可切换。
      */
-    const shouldRenderNativeMenu =
-      !isWeb() && !!native && resolvedPickerMode === "menu" && platform === "ios";
-    /**
-     * iOS native + dropdown/dialog → NativePickerIos（Modal + RNPPicker + 分离动画）。
-     */
-    const shouldRenderNativeIosPicker =
-      !isWeb() && !!native && resolvedPickerMode !== "menu" && platform === "ios";
+    const shouldRenderNativeIosPicker = !isWeb() && !!native && platform === "ios";
 
     const handleTamaguiOpenChange = (nextOpen: boolean) => {
       if (shouldRenderNativePicker && nextOpen) {
@@ -916,23 +1239,13 @@ const SelectRoot = forwardRef<any, SelectProps>(
 
     return (
       <>
-        {shouldRenderNativeMenu ? (
-          <NativeMenuSelect
+        {shouldRenderNativeIosPicker ? (
+          <NativePickerSwiftUI
             items={resolvedItems}
             value={props.value}
             placeholder={placeholder}
-            disabled={disabled}
-            isDisabled={isDisabled}
-            onValueChange={onValueChange}
-            resolvedNativeHaptics={resolvedNativeHaptics}
-          />
-        ) : shouldRenderNativeIosPicker ? (
-          <NativePickerIos
-            items={resolvedItems}
-            value={props.value}
-            placeholder={placeholder}
-            disabled={disabled}
-            isDisabled={isDisabled}
+            mode={resolvedPickerMode as "dropdown" | "wheel"}
+            nativeTrigger={nativeTrigger ?? false}
             onValueChange={onValueChange}
             resolvedNativeHaptics={resolvedNativeHaptics}
           />
@@ -1123,3 +1436,8 @@ export const Select = Object.assign(SelectRoot, {
   Indicator: SelectIndicator,
   FocusScope: SelectFocusScope,
 });
+
+// 保留 NativePickerIos 的引用，避免未使用警告（dropdown 当前走 NativePickerSwiftUI）
+void NativePickerIos;
+// 保留 NativeMenuSelect 的引用，避免未使用警告（menu 模式已移除）
+void NativeMenuSelect;

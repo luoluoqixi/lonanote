@@ -5,7 +5,7 @@ import type { Select as TamaguiSelect } from "tamagui";
 import type { NativeHapticsSetting } from "../utils";
 
 /** 原生 Picker 弹出模式。仅在 props.native 为 true 时生效。 */
-export type NativePickerMode = "dialog" | "dropdown" | "menu";
+export type NativePickerMode = "dialog" | "dropdown" | "wheel";
 
 export interface SelectItemData {
   "aria-label"?: string;
@@ -46,12 +46,16 @@ export interface SelectProps extends Omit<
   nativeHaptics?: NativeHapticsSetting;
   /** 原生 Picker 弹出模式。仅在 props.native 为 true 时生效。
    * 默认 Android 端 "dialog"
-   * 默认 iOS 端 "menu"
+   * 默认 iOS 端 "dropdown"
    * dialog 仅 Android 可用
-   * menu 仅 iOS 可用
-   * dropdown Android 和 iOS 都可用, iOS 上表现为原生 Picker
+   * dropdown Android 和 iOS 都可用
+   * wheel iOS 专用，使用 Expo UI SwiftUI Picker wheel 样式
    * */
   nativePickerMode?: NativePickerMode;
+  /** iOS native 模式下是否使用原生 Trigger（SwiftUI Picker 自带按钮）。
+   * true = SwiftUI Picker 原生按钮，false = Tamagui 自定义 Trigger。
+   * wheel 模式下忽略此选项，始终使用自定义 Trigger + Modal 弹出。 */
+  nativeTrigger?: boolean;
   onValueChange?: (nextValue: string | null) => void;
   options?: SelectItemData[];
   placeholder?: ReactNode;
