@@ -949,7 +949,13 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         );
 
       const modalContents = useScopedOverlayPortal ? (
-        <SheetPortal active={open} hostName={portalHostName} stackZIndex={zIndex} {...portalProps}>
+        <SheetPortal
+          active={open}
+          hostName={portalHostName}
+          onRequestClose={() => state.setOpen(false)}
+          stackZIndex={zIndex}
+          {...portalProps}
+        >
           {teleportedChildren}
         </SheetPortal>
       ) : (

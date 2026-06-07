@@ -12,6 +12,8 @@ export type SheetPortalProps = PortalProps & {
   children?: ReactNode;
   /** 默认 `root`；pageSheet 内应传入 `ScreenOverlayPortalProvider` 的 hostName。 */
   hostName?: string;
+  /** Android Modal onRequestClose 回调，用于处理硬件返回键 */
+  onRequestClose?: () => void;
 };
 
 /**
@@ -20,7 +22,15 @@ export type SheetPortalProps = PortalProps & {
  * 避免 teleport 落点高度为 0 或手势被外层 sheet 吞掉。
  */
 export function SheetPortal(props: SheetPortalProps) {
-  const { active = true, children, hostName = "root", passThrough, stackZIndex, zIndex } = props;
+  const {
+    active = true,
+    children,
+    hostName = "root",
+    onRequestClose,
+    passThrough,
+    stackZIndex,
+    zIndex,
+  } = props;
   const stackedZIndex = useStackedZIndex({
     stackZIndex,
     zIndex: resolveViewZIndex(zIndex),
@@ -73,7 +83,7 @@ export function SheetPortal(props: SheetPortalProps) {
     return (
       <Modal
         animationType="none"
-        onRequestClose={() => {}}
+        onRequestClose={onRequestClose}
         presentationStyle="overFullScreen"
         statusBarTranslucent
         transparent
