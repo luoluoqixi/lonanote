@@ -25,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: "automatic",
   ios: {
     supportsTablet: true,
+    deploymentTarget: "15.1",
     bundleIdentifier,
     infoPlist: {
       UIViewControllerBasedStatusBarAppearance: true,
