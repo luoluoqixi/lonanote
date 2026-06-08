@@ -556,35 +556,6 @@ export function UiComponentsDebugPanel() {
               </Text>
             </View>
           )}
-          {os() === "ios" && (
-            <View style={styles.field}>
-              <Label>Select Native (Wheel Modal)</Label>
-              <Select
-                items={selectItems}
-                native
-                nativeSheet
-                nativePickerMode="wheel"
-                nativeHaptics={debugNativeHaptics}
-                onValueChange={setSelectNativePickerValue}
-                placeholder="选择主题色"
-                value={selectNativePickerValue ?? undefined}
-              />
-              <Select
-                items={selectItems}
-                native
-                nativeTrigger
-                nativeSheet
-                nativePickerMode="wheel"
-                nativeHaptics={debugNativeHaptics}
-                onValueChange={setSelectNativePickerValue}
-                placeholder="选择主题色"
-                value={selectNativePickerValue ?? undefined}
-              />
-              <Text color="$color10">
-                当前主题色(原生 Modal)：{selectNativePickerValue ?? "未选择"}
-              </Text>
-            </View>
-          )}
           {os() === "android" && (
             <View style={styles.field}>
               <Label>Select Native (Dialog)</Label>

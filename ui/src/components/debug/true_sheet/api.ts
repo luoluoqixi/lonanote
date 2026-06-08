@@ -4,12 +4,7 @@ import { router } from "expo-router";
 import { dismissTrueSheet, presentTrueSheet, resizeTrueSheet } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
-import {
-  DEBUG_HOME_HREF,
-  DEBUG_PANEL_ROUTE_DEFINITIONS,
-  type DebugTabKey,
-  getDebugFullPageHref,
-} from "../routes";
+import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "../routes";
 import {
   getDebugNestedSectionDetentLevel,
   getDebugSectionsAsNestedSheets,

@@ -1,10 +1,11 @@
 // Expo UI SwiftUI Picker（iOS 专用，实验性）
 import {
+  Button as SwiftUIButton,
   Host as SwiftUIHost,
   Picker as SwiftUIPicker,
   Text as SwiftUIText,
 } from "@expo/ui/swift-ui";
-import { frame, pickerStyle, tag } from "@expo/ui/swift-ui/modifiers";
+import { pickerStyle, tag } from "@expo/ui/swift-ui/modifiers";
 import { Picker as RNPPicker } from "@react-native-picker/picker";
 import {
   AdaptContext,
@@ -29,11 +30,11 @@ import React from "react";
 import {
   Animated,
   Modal,
+  PlatformColor,
   Pressable,
   StyleSheet,
   View,
   useColorScheme,
-  useWindowDimensions,
 } from "react-native";
 import { FontSizeTokens, Select as TamaguiSelect, Text, YStack, getFontSize } from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
@@ -41,6 +42,8 @@ import { LinearGradient } from "tamagui/linear-gradient";
 import { isWeb, os } from "@/api/common/platform";
 import { Menu } from "@/components/ui/menu";
 import { Sheet } from "@/components/ui/sheet";
+import { dismissTrueSheet, presentTrueSheet } from "@/components/ui/true_sheet";
+import { TrueSheetPanel } from "@/components/ui/true_sheet/panel";
 import {
   resolveAriaLabel,
   triggerNativeHaptics,
@@ -103,8 +106,14 @@ const TOUCH_SHEET_FRAME_BACKGROUND = "$backgroundPress" as const;
 const TOUCH_SHEET_GROUP_BACKGROUND = "$background" as const;
 const TOUCH_SHEET_SEPARATOR_COLOR = "$borderColor" as const;
 
+/** iOS 滚轮选择器工具栏的垂直内边距（控制标题栏高度） */
+const WHEEL_PICKER_TOOLBAR_VERTICAL_PADDING = 18;
+
 const DEFAULT_ANDROID_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
 const DEFAULT_IOS_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
+
+/** 用于为每个 wheel sheet 实例生成唯一名称的计数器 */
+let wheelSheetCounter = 0;
 
 const SelectAdaptHiddenContext = React.createContext(true);
 
@@ -705,27 +714,25 @@ function NativePickerIos({
               paddingBottom: 34,
             }}
           >
-            {/* 工具栏 */}
+            {/* 工具栏 — 原生 SwiftUI 按钮 */}
             <View
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "center",
                 paddingHorizontal: 16,
-                paddingVertical: 8,
+                paddingVertical: WHEEL_PICKER_TOOLBAR_VERTICAL_PADDING,
                 borderBottomWidth: 0.5,
                 borderBottomColor: isDark ? "#38383A" : "#C6C6C8",
                 backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
               }}
             >
-              <Pressable onPress={handleCancel} hitSlop={8}>
-                <Text style={{ fontSize: 17, color: isDark ? "#8E8E93" : "#8E8E93" }}>取消</Text>
-              </Pressable>
-              <Pressable onPress={handleDone} hitSlop={8}>
-                <Text style={{ fontSize: 17, fontWeight: "600", color: "#007AFF" }}>完成</Text>
-              </Pressable>
+              <SwiftUIHost matchContents style={{ marginTop: 4 }}>
+                <SwiftUIButton label="取消" onPress={handleCancel} />
+              </SwiftUIHost>
+              <SwiftUIHost matchContents style={{ marginTop: 4 }}>
+                <SwiftUIButton label="完成" onPress={handleDone} />
+              </SwiftUIHost>
             </View>
-            {/* RNPPicker — 标准原生模块，Modal 中正常渲染 */}
             <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
               {items.map((item) => (
                 <RNPPicker.Item
@@ -743,40 +750,7 @@ function NativePickerIos({
   );
 }
 
-/** wheel 滚轮面板共享工具栏 */
-function WheelPickerToolbar({
-  onCancel,
-  onDone,
-  isDark,
-}: {
-  onCancel: () => void;
-  onDone: () => void;
-  isDark: boolean;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderBottomWidth: 0.5,
-        borderBottomColor: isDark ? "#38383A" : "#C6C6C8",
-        backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
-      }}
-    >
-      <Pressable onPress={onCancel} hitSlop={8}>
-        <Text style={{ fontSize: 17, color: isDark ? "#8E8E93" : "#8E8E93" }}>取消</Text>
-      </Pressable>
-      <Pressable onPress={onDone} hitSlop={8}>
-        <Text style={{ fontSize: 17, fontWeight: "600", color: "#007AFF" }}>完成</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-/** wheel + Sheet + 自定义 trigger */
+/** wheel + TrueSheet + 自定义 trigger */
 function NativePickerWheelSheet({
   items,
   value,
@@ -790,27 +764,30 @@ function NativePickerWheelSheet({
   onValueChange?: (value: string | null) => void;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
 }) {
-  const [open, setOpen] = React.useState(false);
   const [pendingValue, setPendingValue] = React.useState<string>(
     (value as string) ?? items[0]?.value ?? "",
   );
-  const colorScheme = useColorScheme();
   const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
-  const isDark = colorScheme === "dark";
+  const [sheetName] = React.useState(() => `select-wheel-${++wheelSheetCounter}`);
 
   const handleOpen = useCallback(() => {
     triggerNativeHaptics(resolvedNativeHaptics);
     setPendingValue((value as string) ?? items[0]?.value ?? "");
-    setOpen(true);
-  }, [resolvedNativeHaptics, value, items]);
+    presentTrueSheet(sheetName);
+  }, [resolvedNativeHaptics, value, items, sheetName]);
 
   const handleDone = useCallback(() => {
     onValueChange?.(pendingValue || null);
     triggerNativeHaptics(resolvedNativeHaptics);
-    setOpen(false);
-  }, [onValueChange, resolvedNativeHaptics, pendingValue]);
+    dismissTrueSheet(sheetName);
+  }, [onValueChange, resolvedNativeHaptics, pendingValue, sheetName]);
 
-  const handleCancel = useCallback(() => setOpen(false), []);
+  const handleCancel = useCallback(() => {
+    triggerNativeHaptics(resolvedNativeHaptics);
+    dismissTrueSheet(sheetName);
+  }, [resolvedNativeHaptics, sheetName]);
+
+  const title = typeof placeholder === "string" ? placeholder : "选择";
 
   return (
     <>
@@ -839,34 +816,52 @@ function NativePickerWheelSheet({
         <ChevronDown size={16} color="$color10" />
       </YStack>
 
-      <Sheet.Controller open={open} onOpenChange={setOpen}>
-        <Sheet modal dismissOnSnapToBottom snapPoints={[280]} snapPointsMode="constant">
-          <Sheet.Frame
-            background="$background"
-            borderTopLeftRadius={16}
-            borderTopRightRadius={16}
-            pb={34}
-          >
-            <WheelPickerToolbar onCancel={handleCancel} onDone={handleDone} isDark={isDark} />
-            <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
-              {items.map((item) => (
-                <RNPPicker.Item
-                  key={item.value}
-                  label={item.label}
-                  value={item.value}
-                  enabled={!(item.disabled ?? item.isDisabled)}
-                />
-              ))}
-            </RNPPicker>
-          </Sheet.Frame>
-          <Sheet.Overlay bg="$shadowColor" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
-        </Sheet>
-      </Sheet.Controller>
+      <TrueSheetPanel
+        chrome="plain"
+        grabber={false}
+        name={sheetName}
+        onRequestClose={handleCancel}
+        sheetProps={{ detents: [0.3], dismissible: true }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+          }}
+        >
+          <Pressable onPress={handleCancel} hitSlop={8}>
+            <Text fontSize="$4" style={{ color: PlatformColor("systemBlue") }}>
+              关闭
+            </Text>
+          </Pressable>
+          <Text fontSize="$4" fontWeight="500" color="$color">
+            {title}
+          </Text>
+          <Pressable onPress={handleDone} hitSlop={8}>
+            <Text fontSize="$4" fontWeight="500" style={{ color: PlatformColor("systemBlue") }}>
+              完成
+            </Text>
+          </Pressable>
+        </View>
+        <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
+          {items.map((item) => (
+            <RNPPicker.Item
+              key={item.value}
+              label={item.label}
+              value={item.value}
+              enabled={!(item.disabled ?? item.isDisabled)}
+            />
+          ))}
+        </RNPPicker>
+      </TrueSheetPanel>
     </>
   );
 }
 
-/** wheel + Sheet + 原生 trigger（SwiftUI menu 按钮） */
+/** wheel + TrueSheet + 原生 trigger（SwiftUI menu 按钮） */
 function NativePickerWheelNativeTriggerSheet({
   items,
   value,
@@ -879,26 +874,27 @@ function NativePickerWheelNativeTriggerSheet({
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
 }) {
   const [isPressed, setIsPressed] = React.useState(false);
-  const [open, setOpen] = React.useState(false);
   const [pendingValue, setPendingValue] = React.useState<string>(
     (value as string) ?? items[0]?.value ?? "",
   );
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const [sheetName] = React.useState(() => `select-wheel-${++wheelSheetCounter}`);
 
   const handleOpen = useCallback(() => {
     triggerNativeHaptics(resolvedNativeHaptics);
     setPendingValue((value as string) ?? items[0]?.value ?? "");
-    setOpen(true);
-  }, [resolvedNativeHaptics, value, items]);
+    presentTrueSheet(sheetName);
+  }, [resolvedNativeHaptics, value, items, sheetName]);
 
   const handleDone = useCallback(() => {
     onValueChange?.(pendingValue || null);
     triggerNativeHaptics(resolvedNativeHaptics);
-    setOpen(false);
-  }, [onValueChange, resolvedNativeHaptics, pendingValue]);
+    dismissTrueSheet(sheetName);
+  }, [onValueChange, resolvedNativeHaptics, pendingValue, sheetName]);
 
-  const handleCancel = useCallback(() => setOpen(false), []);
+  const handleCancel = useCallback(() => {
+    triggerNativeHaptics(resolvedNativeHaptics);
+    dismissTrueSheet(sheetName);
+  }, [resolvedNativeHaptics, sheetName]);
 
   return (
     <>
@@ -927,29 +923,47 @@ function NativePickerWheelNativeTriggerSheet({
         />
       </View>
 
-      <Sheet.Controller open={open} onOpenChange={setOpen}>
-        <Sheet modal dismissOnSnapToBottom snapPoints={[280]} snapPointsMode="constant">
-          <Sheet.Frame
-            background="$background"
-            borderTopLeftRadius={16}
-            borderTopRightRadius={16}
-            pb={34}
-          >
-            <WheelPickerToolbar onCancel={handleCancel} onDone={handleDone} isDark={isDark} />
-            <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
-              {items.map((item) => (
-                <RNPPicker.Item
-                  key={item.value}
-                  label={item.label}
-                  value={item.value}
-                  enabled={!(item.disabled ?? item.isDisabled)}
-                />
-              ))}
-            </RNPPicker>
-          </Sheet.Frame>
-          <Sheet.Overlay bg="$shadowColor" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
-        </Sheet>
-      </Sheet.Controller>
+      <TrueSheetPanel
+        chrome="plain"
+        grabber={false}
+        name={sheetName}
+        onRequestClose={handleCancel}
+        sheetProps={{ detents: [260], dismissible: true }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+          }}
+        >
+          <Pressable onPress={handleCancel} hitSlop={8}>
+            <Text fontSize="$4" style={{ color: PlatformColor("systemBlue") }}>
+              关闭
+            </Text>
+          </Pressable>
+          <Text fontSize="$4" fontWeight="500" color="$color">
+            选择
+          </Text>
+          <Pressable onPress={handleDone} hitSlop={8}>
+            <Text fontSize="$4" fontWeight="500" style={{ color: PlatformColor("systemBlue") }}>
+              完成
+            </Text>
+          </Pressable>
+        </View>
+        <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
+          {items.map((item) => (
+            <RNPPicker.Item
+              key={item.value}
+              label={item.label}
+              value={item.value}
+              enabled={!(item.disabled ?? item.isDisabled)}
+            />
+          ))}
+        </RNPPicker>
+      </TrueSheetPanel>
     </>
   );
 }
@@ -963,7 +977,6 @@ function NativePickerSwiftUI({
   placeholder,
   mode,
   nativeTrigger,
-  nativeSheet,
   onValueChange,
   resolvedNativeHaptics,
 }: {
@@ -972,7 +985,6 @@ function NativePickerSwiftUI({
   placeholder?: React.ReactNode;
   mode: "dropdown" | "wheel";
   nativeTrigger?: boolean;
-  nativeSheet?: boolean;
   onValueChange?: (value: string | null) => void;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
 }) {
@@ -1001,25 +1013,11 @@ function NativePickerSwiftUI({
     );
   }
 
-  // wheel + Modal + 原生 trigger（nativeSheet=true）
-  if (mode === "wheel" && nativeTrigger && nativeSheet) {
+  if (mode === "wheel" && nativeTrigger) {
     return (
       <NativePickerWheelNativeTrigger
         items={items}
         value={value}
-        onValueChange={onValueChange}
-        resolvedNativeHaptics={resolvedNativeHaptics}
-      />
-    );
-  }
-
-  // wheel + Modal + 自定义 trigger（nativeSheet=true）
-  if (mode === "wheel" && !nativeTrigger && nativeSheet) {
-    return (
-      <NativePickerModal
-        items={items}
-        value={value}
-        placeholder={placeholder}
         onValueChange={onValueChange}
         resolvedNativeHaptics={resolvedNativeHaptics}
       />
@@ -1193,20 +1191,19 @@ function NativePickerWheelNativeTrigger({
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "center",
                 paddingHorizontal: 16,
-                paddingVertical: 8,
+                paddingVertical: WHEEL_PICKER_TOOLBAR_VERTICAL_PADDING,
                 borderBottomWidth: 0.5,
                 borderBottomColor: isDark ? "#38383A" : "#C6C6C8",
                 backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
               }}
             >
-              <Pressable onPress={handleCancel} hitSlop={8}>
-                <Text style={{ fontSize: 17, color: isDark ? "#8E8E93" : "#8E8E93" }}>取消</Text>
-              </Pressable>
-              <Pressable onPress={handleDone} hitSlop={8}>
-                <Text style={{ fontSize: 17, fontWeight: "600", color: "#007AFF" }}>完成</Text>
-              </Pressable>
+              <SwiftUIHost matchContents style={{ marginTop: 16 }}>
+                <SwiftUIButton label="取消" onPress={handleCancel} />
+              </SwiftUIHost>
+              <SwiftUIHost matchContents style={{ marginTop: 16 }}>
+                <SwiftUIButton label="完成" onPress={handleDone} />
+              </SwiftUIHost>
             </View>
             <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
               {items.map((item) => (
@@ -1297,144 +1294,6 @@ function NativePickerDropdownCustom({
   );
 }
 
-/** wheel / 自定义 trigger：Tamagui YStack trigger + RN Modal */
-function NativePickerModal({
-  items,
-  value,
-  placeholder,
-  onValueChange,
-  resolvedNativeHaptics,
-}: {
-  items: ResolvedSelectItemData[];
-  value: string | null | undefined;
-  placeholder?: React.ReactNode;
-  onValueChange?: (value: string | null) => void;
-  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
-}) {
-  const [open, setOpen] = React.useState(false);
-  const [pendingValue, setPendingValue] = React.useState<string>(
-    (value as string) ?? items[0]?.value ?? "",
-  );
-  const colorScheme = useColorScheme();
-  const { width: screenWidth } = useWindowDimensions();
-  const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
-
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  const animateIn = useCallback(() => {
-    setOpen(true);
-    Animated.timing(slideAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
-  }, [slideAnim]);
-
-  const animateOut = useCallback(() => {
-    Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() =>
-      setOpen(false),
-    );
-  }, [slideAnim]);
-
-  const handleOpen = useCallback(() => {
-    triggerNativeHaptics(resolvedNativeHaptics);
-    setPendingValue((value as string) ?? items[0]?.value ?? "");
-    animateIn();
-  }, [resolvedNativeHaptics, value, items, animateIn]);
-
-  const handleDone = useCallback(() => {
-    onValueChange?.(pendingValue || null);
-    triggerNativeHaptics(resolvedNativeHaptics);
-    animateOut();
-  }, [onValueChange, resolvedNativeHaptics, pendingValue, animateOut]);
-
-  const handleCancel = useCallback(() => animateOut(), [animateOut]);
-
-  const isDark = colorScheme === "dark";
-  const panelTranslateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [400, 0],
-  });
-
-  return (
-    <>
-      <YStack
-        onPress={handleOpen}
-        background="$background"
-        borderColor="$borderColor"
-        borderWidth={1}
-        pressStyle={{
-          // @ts-expect-error backgroundColor 是存在的
-          backgroundColor: "$backgroundPress",
-        }}
-        style={{
-          borderRadius: 8,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          minWidth: 180,
-        }}
-      >
-        <Text fontSize="$4" color="$color">
-          {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
-        </Text>
-        <ChevronDown size={16} color="$color10" />
-      </YStack>
-
-      {open && (
-        <Modal visible transparent animationType="none" onRequestClose={handleCancel}>
-          <Pressable
-            onPress={handleCancel}
-            style={{ ...StyleSheet.absoluteFill, backgroundColor: "rgba(0,0,0,0.3)" }}
-          />
-          <Animated.View
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              transform: [{ translateY: panelTranslateY }],
-              backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
-              paddingBottom: 34,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderBottomWidth: 0.5,
-                borderBottomColor: isDark ? "#38383A" : "#C6C6C8",
-                backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
-              }}
-            >
-              <Pressable onPress={handleCancel} hitSlop={8}>
-                <Text style={{ fontSize: 17, color: isDark ? "#8E8E93" : "#8E8E93" }}>取消</Text>
-              </Pressable>
-              <Pressable onPress={handleDone} hitSlop={8}>
-                <Text style={{ fontSize: 17, fontWeight: "600", color: "#007AFF" }}>完成</Text>
-              </Pressable>
-            </View>
-            <SwiftUIHost matchContents>
-              <SwiftUIPicker
-                modifiers={[pickerStyle("wheel"), frame({ width: screenWidth })]}
-                selection={pendingValue}
-                onSelectionChange={setPendingValue}
-              >
-                {items.map((item) => (
-                  <SwiftUIText key={item.value} modifiers={[tag(item.value)]}>
-                    {item.label}
-                  </SwiftUIText>
-                ))}
-              </SwiftUIPicker>
-            </SwiftUIHost>
-          </Animated.View>
-        </Modal>
-      )}
-    </>
-  );
-}
-
 const SelectRoot = forwardRef<any, SelectProps>(
   (
     {
@@ -1461,7 +1320,6 @@ const SelectRoot = forwardRef<any, SelectProps>(
       viewportProps,
       native,
       nativeTrigger,
-      nativeSheet,
       ...props
     },
     ref,
@@ -1631,7 +1489,6 @@ const SelectRoot = forwardRef<any, SelectProps>(
             placeholder={placeholder}
             mode={resolvedPickerMode as "dropdown" | "wheel"}
             nativeTrigger={nativeTrigger ?? false}
-            nativeSheet={nativeSheet ?? false}
             onValueChange={onValueChange}
             resolvedNativeHaptics={resolvedNativeHaptics}
           />
