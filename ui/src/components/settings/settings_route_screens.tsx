@@ -1,6 +1,6 @@
 import { type Href, useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { isDesktop, isWeb } from "@/api/common";
@@ -105,27 +105,19 @@ function SettingsScreenLayout({
   const insets = useSafeAreaInsets();
   const desktop = isDesktop();
   const usesNativeHeader = !isWeb();
-  const showMeta = description != null || error != null || isLoading;
+  const showMeta = error != null || isLoading;
 
   return (
-    <SafeAreaView
-      edges={usesNativeHeader ? ["bottom", "left", "right"] : ["top"]}
-      style={styles.safeArea}
-    >
+    <SafeAreaView edges={usesNativeHeader ? ["left", "right"] : ["top"]} style={styles.safeArea}>
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
-        <View style={[styles.pagePadding, usesNativeHeader && { paddingTop: insets.top + 44 }]}>
+        <View style={styles.pagePadding}>
           <View style={styles.pageContainer}>
             {!usesNativeHeader ? (
               <View style={styles.header}>
                 <Text fontSize="$8" fontWeight="700">
                   {title}
                 </Text>
-                {description ? (
-                  <Text color="$color10" fontSize="$3">
-                    {description}
-                  </Text>
-                ) : null}
                 <View style={styles.syncState}>
                   <SettingsSyncState error={error} isLoading={isLoading} />
                 </View>
@@ -134,11 +126,6 @@ function SettingsScreenLayout({
 
             {usesNativeHeader && showMeta ? (
               <View style={styles.metaPanel}>
-                {description ? (
-                  <Text color="$color10" fontSize="$3">
-                    {description}
-                  </Text>
-                ) : null}
                 <View style={styles.syncState}>
                   <SettingsSyncState error={error} isLoading={isLoading} />
                 </View>
@@ -146,8 +133,10 @@ function SettingsScreenLayout({
             ) : null}
 
             <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              contentInsetAdjustmentBehavior={usesNativeHeader ? "always" : "never"}
+              contentContainerStyle={[
+                styles.scrollContent,
+                usesNativeHeader && Platform.OS === "ios" && { paddingTop: insets.top + 44 },
+              ]}
               showsVerticalScrollIndicator
               style={styles.content}
             >
@@ -271,9 +260,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
   },
-  scrollContent: {
-    paddingBottom: 20,
-  },
+  scrollContent: {},
   header: {
     borderColor: "rgba(128, 128, 128, 0.22)",
     borderRadius: 20,
@@ -294,7 +281,8 @@ const styles = StyleSheet.create({
   },
   pagePadding: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   page: {
     flex: 1,
@@ -303,9 +291,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
   },
-  panelScrollContent: {
-    paddingBottom: 20,
-  },
+  panelScrollContent: {},
   panelScrollView: {
     flex: 1,
     minHeight: 0,
