@@ -18,7 +18,7 @@ export function SmallScreenHome() {
   return (
     <SafeAreaView
       edges={usesNativeHomeHeader ? ["left", "right", "bottom"] : ["top"]}
-      style={[styles.screen, { backgroundColor: theme.background.val }]}
+      style={styles.screen}
     >
       <ScrollView
         alwaysBounceVertical={false}

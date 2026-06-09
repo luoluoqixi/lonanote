@@ -21,8 +21,9 @@ export function trueSheetInnerStackScreenOptions(
         ...(Platform.OS === "ios" ? { flex: 1 } : {}),
       },
       headerShadowVisible: false,
+      headerTransparent: true,
       headerStyle: {
-        backgroundColor,
+        backgroundColor: "transparent",
       },
       headerTitleStyle: {
         color: titleColor,

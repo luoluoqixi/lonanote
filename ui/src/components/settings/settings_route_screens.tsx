@@ -1,7 +1,7 @@
 import { type Href, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { isDesktop, isWeb } from "@/api/common";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
@@ -102,6 +102,7 @@ function SettingsScreenLayout({
   isLoading,
   title,
 }: ScreenLayoutProps) {
+  const insets = useSafeAreaInsets();
   const desktop = isDesktop();
   const usesNativeHeader = !isWeb();
   const showMeta = description != null || error != null || isLoading;
@@ -113,7 +114,7 @@ function SettingsScreenLayout({
     >
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
-        <View style={styles.pagePadding}>
+        <View style={[styles.pagePadding, usesNativeHeader && { paddingTop: insets.top + 44 }]}>
           <View style={styles.pageContainer}>
             {!usesNativeHeader ? (
               <View style={styles.header}>
@@ -146,6 +147,7 @@ function SettingsScreenLayout({
 
             <ScrollView
               contentContainerStyle={styles.scrollContent}
+              contentInsetAdjustmentBehavior={usesNativeHeader ? "always" : "never"}
               showsVerticalScrollIndicator
               style={styles.content}
             >

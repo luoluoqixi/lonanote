@@ -58,13 +58,12 @@ export default function UILayout() {
 
           if (route.name === "index" && os() === "ios") {
             return {
-              ...baseScreenOptions,
+              contentStyle: baseScreenOptions.contentStyle,
+              headerShadowVisible: false,
               headerShown: true,
               headerLargeTitle: true,
-              headerLargeStyle: {
-                backgroundColor: stackBackgroundColor,
-              },
               headerLargeTitleShadowVisible: false,
+              headerTransparent: true,
               title: getAppHomeTitle(),
             };
           }
@@ -74,6 +73,10 @@ export default function UILayout() {
 
             return {
               ...baseScreenOptions,
+              headerStyle: {
+                backgroundColor: "transparent",
+              },
+              headerTransparent: true,
               headerShown: settingsTitle != null,
               title: settingsTitle ?? "设置",
             };

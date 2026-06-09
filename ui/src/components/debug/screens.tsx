@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { isDesktop } from "@/api/common";
 
@@ -49,13 +50,26 @@ function DebugScreenLayout({
   scrollable?: boolean;
   title: string;
 }) {
+  const insets = useSafeAreaInsets();
+
   if (layoutHost === "trueSheet") {
-    return <View style={styles.trueSheetBody}>{children}</View>;
+    return (
+      <View
+        style={[styles.trueSheetBody, Platform.OS === "ios" && { paddingTop: insets.top + 44 }]}
+      >
+        {children}
+      </View>
+    );
   }
 
   const desktop = isDesktop();
   const pageBody = (
-    <View style={scrollable ? styles.pagePaddingInScroll : styles.pagePadding}>
+    <View
+      style={[
+        scrollable ? styles.pagePaddingInScroll : styles.pagePadding,
+        scrollable && Platform.OS === "ios" && { paddingTop: insets.top + 44 },
+      ]}
+    >
       <View style={scrollable ? styles.pageContainerInScroll : styles.pageContainer}>
         {!hideInlineHeader ? (
           <View style={styles.header}>
