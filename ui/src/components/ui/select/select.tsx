@@ -27,6 +27,7 @@ import {
 import { forwardRef, useCallback, useEffect, useRef } from "react";
 import React from "react";
 import { Pressable, Button as RNButton, StyleSheet, View, useColorScheme } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FontSizeTokens, Select as TamaguiSelect, Text, YStack, getFontSize } from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
@@ -528,6 +529,7 @@ function WheelTrueSheet({
   onCancel: () => void;
   onDone: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const colorScheme = useColorScheme();
 
@@ -550,16 +552,22 @@ function WheelTrueSheet({
     >
       <TrueSheetInnerStack.Screen name="picker">
         {() => (
-          <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
-            {items.map((item) => (
-              <RNPPicker.Item
-                key={item.value}
-                label={item.label}
-                value={item.value}
-                enabled={!(item.disabled ?? item.isDisabled)}
-              />
-            ))}
-          </RNPPicker>
+          <View style={{ paddingTop: insets.top, flex: 1 }}>
+            <RNPPicker
+              selectedValue={pendingValue}
+              onValueChange={setPendingValue}
+              style={{ flex: 1 }}
+            >
+              {items.map((item) => (
+                <RNPPicker.Item
+                  key={item.value}
+                  label={item.label}
+                  value={item.value}
+                  enabled={!(item.disabled ?? item.isDisabled)}
+                />
+              ))}
+            </RNPPicker>
+          </View>
         )}
       </TrueSheetInnerStack.Screen>
     </TrueSheetStackHost>
