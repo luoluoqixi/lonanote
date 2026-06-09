@@ -89,7 +89,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
 
   const mergedScreenOptions: TrueSheetInnerStackScreenOptions = {
     headerBackTitle: "返回",
-    headerRight: () => <TrueSheetStackHeaderCloseButton />,
+    headerRight: () => <TrueSheetStackHeaderCloseButton title="关闭" />,
     headerShown: true,
     ...screenOptions,
   };
