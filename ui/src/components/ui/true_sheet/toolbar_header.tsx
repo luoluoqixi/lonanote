@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useTheme } from "tamagui";
 
-import { Text } from "@/components/ui";
+import { Text } from "@/components/ui/text";
 
 export type TrueSheetToolbarHeaderProps = {
   /** 是否显示返回箭头（子页为 true，根页为 false）。 */
