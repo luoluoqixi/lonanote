@@ -26,7 +26,7 @@ import {
 } from "@tamagui/select";
 import { forwardRef, useCallback, useEffect, useRef } from "react";
 import React from "react";
-import { Pressable, Button as RNButton, StyleSheet, View } from "react-native";
+import { Pressable, Button as RNButton, StyleSheet, View, useColorScheme } from "react-native";
 import { FontSizeTokens, Select as TamaguiSelect, Text, YStack, getFontSize } from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
@@ -34,12 +34,17 @@ import { isWeb, os } from "@/api/common/platform";
 import { Menu } from "@/components/ui/menu";
 import { Sheet } from "@/components/ui/sheet";
 import { dismissTrueSheet, presentTrueSheet } from "@/components/ui/true_sheet";
-import { TrueSheetPanel } from "@/components/ui/true_sheet/panel";
+import {
+  TrueSheetInnerStack,
+  TrueSheetStackHost,
+  trueSheetInnerStackScreenOptions,
+} from "@/components/ui/true_sheet/stack";
 import {
   resolveAriaLabel,
   triggerNativeHaptics,
   useResolvedNativeHaptics,
 } from "@/components/ui/utils";
+import type { ResolvedColorScheme } from "@/components/ui/utils/navigation/status_bar";
 
 import {
   type ResolvedSelectItemData,
@@ -523,40 +528,41 @@ function WheelTrueSheet({
   onCancel: () => void;
   onDone: () => void;
 }) {
+  const theme = useTheme();
+  const colorScheme = useColorScheme();
+
   return (
-    <TrueSheetPanel
-      chrome="plain"
-      grabber={false}
+    <TrueSheetStackHost
       name={sheetName}
+      initialRouteName="picker"
       onRequestClose={onCancel}
-      sheetProps={{ detents: [0.3], dismissible: true }}
+      sheetProps={{ detents: [0.35], dismissible: true }}
+      screenOptions={{
+        ...trueSheetInnerStackScreenOptions(
+          (colorScheme ?? "light") as ResolvedColorScheme,
+          theme.background.val,
+          theme.color.val,
+        ),
+        title,
+        headerLeft: () => <RNButton title="关闭" onPress={onCancel} />,
+        headerRight: () => <RNButton title="完成" onPress={onDone} />,
+      }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-        }}
-      >
-        <RNButton title="关闭" onPress={onCancel} />
-        <Text fontSize="$4" fontWeight="500" color="$color">
-          {title}
-        </Text>
-        <RNButton title="完成" onPress={onDone} />
-      </View>
-      <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
-        {items.map((item) => (
-          <RNPPicker.Item
-            key={item.value}
-            label={item.label}
-            value={item.value}
-            enabled={!(item.disabled ?? item.isDisabled)}
-          />
-        ))}
-      </RNPPicker>
-    </TrueSheetPanel>
+      <TrueSheetInnerStack.Screen name="picker">
+        {() => (
+          <RNPPicker selectedValue={pendingValue} onValueChange={setPendingValue}>
+            {items.map((item) => (
+              <RNPPicker.Item
+                key={item.value}
+                label={item.label}
+                value={item.value}
+                enabled={!(item.disabled ?? item.isDisabled)}
+              />
+            ))}
+          </RNPPicker>
+        )}
+      </TrueSheetInnerStack.Screen>
+    </TrueSheetStackHost>
   );
 }
 
@@ -642,7 +648,7 @@ function NativePickerWheelSheet({
 /**
  * SwiftUI Picker menu trigger。两种模式：
  * - `interactive=true`：原生 menu 直接交互，外层 Pressable 仅处理震动
- * - `interactive=false`：SwiftUI 按钮仅做视觉展示（pointerEvents=none），
+ * - `interactive=false`：仅做视觉展示（pointerEvents=none），
  *   透明 Pressable overlay 拦截触摸，配合自定义弹层使用
  */
 function NativePickerSwiftUIMenuTrigger({
@@ -672,7 +678,7 @@ function NativePickerSwiftUIMenuTrigger({
   );
 
   const picker = (
-    <View style={{ minWidth: 180 }}>
+    <View style={{ minWidth: 180, height: 30 }}>
       <SwiftUIHost matchContents>
         <SwiftUIPicker
           modifiers={[pickerStyle("menu")]}

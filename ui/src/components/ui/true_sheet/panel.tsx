@@ -1,6 +1,6 @@
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { useCallback, useState } from "react";
 import { Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -27,6 +27,8 @@ export type TrueSheetPanelProps = {
   chrome?: TrueSheetChromeMode;
   /** 覆盖 `chrome` 默认的 grabber 行为。 */
   grabber?: boolean;
+  /** 自定义 header 内容，会渲染在 TrueSheet 原生 header 槽中。设置此项后 `chrome`/`title`/`canGoBack`/`headerRight` 等仍独立生效，此 header 将优先渲染。 */
+  header?: ReactElement;
   name: string;
   title?: string;
   canGoBack?: boolean;
@@ -54,6 +56,7 @@ function TrueSheetPanelInner({
   children,
   chrome = "plain",
   grabber: grabberProp,
+  header: headerProp,
   name,
   title,
   canGoBack = false,
@@ -106,6 +109,7 @@ function TrueSheetPanelInner({
         title={title}
       />
     ) : undefined;
+  const resolvedHeader = headerProp ?? toolbarHeader;
 
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
   const sheetScrollable = sheetProps?.scrollable ?? defaultSheetProps.scrollable;
@@ -143,7 +147,7 @@ function TrueSheetPanelInner({
   return (
     <TrueSheet
       grabber={grabber}
-      header={toolbarHeader}
+      header={resolvedHeader}
       name={name}
       {...defaultSheetProps}
       {...sheetProps}
