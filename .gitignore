@@ -23,15 +23,12 @@ build_output
 .github/skills
 .github/instructions
 
-.cursor/agents
-.cursor/rules
-.cursor/skills
-.cursor/skills-cursor
-.cursor/instructions
-
+.cursor
+.claude
 .agents
 
 AGENTS.md
+CLAUDE.md
 
 /.copilot-patch-orig
 .reasonix/
