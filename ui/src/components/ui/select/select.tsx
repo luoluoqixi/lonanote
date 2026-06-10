@@ -654,65 +654,34 @@ function NativePickerWheelSheet({
 }
 
 /**
- * SwiftUI Picker menu trigger。两种模式：
- * - `interactive=true`：原生 menu 直接交互，外层 Pressable 仅处理震动
- * - `interactive=false`：仅做视觉展示（pointerEvents=none），
- *   透明 Pressable overlay 拦截触摸，配合自定义弹层使用
+ * SwiftUI Picker menu trigger。
  */
 function NativePickerSwiftUIMenuTrigger({
   items,
   value,
-  interactive,
-  resolvedNativeHaptics,
-  onSelect,
   onPress,
 }: {
   items: ResolvedSelectItemData[];
   value: string | null | undefined;
-  interactive: boolean;
-  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
-  onSelect?: (value: string) => void;
   onPress?: () => void;
 }) {
   const [isPressed, setIsPressed] = React.useState(false);
   const selectedValue = (value as string) ?? items[0]?.value ?? "";
 
-  const handleSelectionChange = useCallback(
-    (selection: string) => {
-      onSelect?.(selection);
-      triggerNativeHaptics(resolvedNativeHaptics);
-    },
-    [onSelect, resolvedNativeHaptics],
-  );
-
-  const picker = (
-    <View style={{ minWidth: 180, height: 30 }}>
-      <SwiftUIHost matchContents>
-        <SwiftUIPicker
-          modifiers={[pickerStyle("menu")]}
-          selection={selectedValue}
-          {...(interactive ? { onSelectionChange: handleSelectionChange } : undefined)}
-        >
-          {items.map((item) => (
-            <SwiftUIText key={item.value} modifiers={[tag(item.value)]}>
-              {item.label}
-            </SwiftUIText>
-          ))}
-        </SwiftUIPicker>
-      </SwiftUIHost>
-    </View>
-  );
-
-  if (interactive) {
-    return (
-      <Pressable onPress={() => triggerNativeHaptics(resolvedNativeHaptics)}>{picker}</Pressable>
-    );
-  }
-
   return (
     <View>
       <View pointerEvents="none" style={{ opacity: isPressed ? 0.6 : 1 }}>
-        {picker}
+        <View style={{ minWidth: 180, minHeight: 44, justifyContent: "center" }}>
+          <SwiftUIHost>
+            <SwiftUIPicker modifiers={[pickerStyle("menu")]} selection={selectedValue}>
+              {items.map((item) => (
+                <SwiftUIText key={item.value} modifiers={[tag(item.value)]}>
+                  {item.label}
+                </SwiftUIText>
+              ))}
+            </SwiftUIPicker>
+          </SwiftUIHost>
+        </View>
       </View>
       <Pressable
         onPress={onPress}
@@ -764,13 +733,7 @@ function NativePickerWheelNativeTriggerSheet({
 
   return (
     <>
-      <NativePickerSwiftUIMenuTrigger
-        items={items}
-        value={value}
-        interactive={false}
-        resolvedNativeHaptics={resolvedNativeHaptics}
-        onPress={handleOpen}
-      />
+      <NativePickerSwiftUIMenuTrigger items={items} value={value} onPress={handleOpen} />
 
       <WheelTrueSheet
         items={items}
@@ -805,23 +768,8 @@ function NativePickerSwiftUI({
   onValueChange?: (value: string | null) => void;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
 }) {
-  // dropdown + 原生 trigger：SwiftUI Picker menu 按钮
-  if (mode === "dropdown" && nativeTrigger) {
-    return (
-      <NativePickerSwiftUIMenuTrigger
-        items={items}
-        value={value}
-        interactive
-        resolvedNativeHaptics={resolvedNativeHaptics}
-        onSelect={(selection: string) => {
-          onValueChange?.(selection || null);
-        }}
-      />
-    );
-  }
-
-  // dropdown + 自定义 trigger：Menu 组件
-  if (mode === "dropdown" && !nativeTrigger) {
+  // dropdown 组件
+  if (mode === "dropdown") {
     return (
       <NativePickerDropdownCustom
         items={items}
@@ -829,6 +777,7 @@ function NativePickerSwiftUI({
         placeholder={placeholder}
         onValueChange={onValueChange}
         resolvedNativeHaptics={resolvedNativeHaptics}
+        nativeTrigger={nativeTrigger}
       />
     );
   }
@@ -868,12 +817,14 @@ function NativePickerDropdownCustom({
   placeholder,
   onValueChange,
   resolvedNativeHaptics,
+  nativeTrigger,
 }: {
   items: ResolvedSelectItemData[];
   value: string | null | undefined;
   placeholder?: React.ReactNode;
   onValueChange?: (value: string | null) => void;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+  nativeTrigger: boolean | undefined;
 }) {
   const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
   const handleSelect = useCallback(
@@ -884,35 +835,41 @@ function NativePickerDropdownCustom({
     [onValueChange, resolvedNativeHaptics],
   );
 
-  return (
-    <Menu
-      trigger={
-        <YStack
-          onPress={() => triggerNativeHaptics(resolvedNativeHaptics)}
-          background="$background"
-          borderColor="$borderColor"
-          borderWidth={1}
-          pressStyle={{
-            // @ts-expect-error backgroundColor 是存在的
-            backgroundColor: "$backgroundPress",
-          }}
-          style={{
-            borderRadius: 8,
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            minWidth: 180,
-          }}
-        >
-          <Text fontSize="$4" color="$color">
-            {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
-          </Text>
-          <ChevronDown size={16} color="$color10" />
-        </YStack>
-      }
+  const trigger = nativeTrigger ? (
+    <NativePickerSwiftUIMenuTrigger
+      items={items}
+      value={value}
+      onPress={() => triggerNativeHaptics(resolvedNativeHaptics)}
+    />
+  ) : (
+    <YStack
+      onPress={() => triggerNativeHaptics(resolvedNativeHaptics)}
+      background="$background"
+      borderColor="$borderColor"
+      borderWidth={1}
+      pressStyle={{
+        // @ts-expect-error backgroundColor 是存在的
+        backgroundColor: "$backgroundPress",
+      }}
+      style={{
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        minWidth: 180,
+      }}
     >
+      <Text fontSize="$4" color="$color">
+        {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
+      </Text>
+      <ChevronDown size={16} color="$color10" />
+    </YStack>
+  );
+
+  return (
+    <Menu trigger={trigger}>
       {items.map((item) => (
         <Menu.CheckboxItem
           key={item.value}
