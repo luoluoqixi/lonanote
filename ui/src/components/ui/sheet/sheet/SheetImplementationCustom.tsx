@@ -334,9 +334,9 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
             // when reaching top, enable scroll; when leaving top, disable scroll
             // this preemptively sets scroll state before any gestures start
             if (nowAtTop) {
-              // if scroll drifted during drag (e.g. fast swipe from position 1),
-              // reset it to 0 before enabling free scroll
-              if (scrollBridge.y > 0) {
+              // 用户主动滚了 ScrollView（gestureDidScroll=true）才重置到 0；
+              // Handle 触摸时不重置，保持滚动位置不变。
+              if (scrollBridge.y > 0 && scrollBridge.gestureDidScroll) {
                 scrollBridge.forceScrollTo?.(0);
                 scrollBridge.y = 0;
               }
