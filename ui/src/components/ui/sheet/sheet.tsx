@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from "react";
+import type { GetRef } from "@tamagui/core";
+import { forwardRef, useEffect, useMemo } from "react";
 import { BackHandler } from "react-native";
 
 import { os } from "@/api/common/platform";
@@ -194,9 +195,12 @@ function SheetHandle(props: SheetHandleProps) {
   return <ReplicaSheet.Handle {...props} />;
 }
 
-function SheetScrollView(props: SheetScrollViewProps) {
-  return <ReplicaSheet.ScrollView {...props} />;
-}
+const SheetScrollView = forwardRef<GetRef<typeof ReplicaSheet.ScrollView>, SheetScrollViewProps>(
+  (props, ref) => {
+    return <ReplicaSheet.ScrollView ref={ref} {...props} />;
+  },
+);
+SheetScrollView.displayName = "SheetScrollView";
 
 function SheetBackHandler(props: SheetBackPressBehaviorProps) {
   const { dismissOnBackPress = true } = props;

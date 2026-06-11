@@ -203,23 +203,38 @@ const SelectAdapt = Object.assign(SelectAdaptRoot, {
   Contents: SelectAdaptContents,
 });
 
-function SelectSheetController(props: { children: React.ReactNode }) {
+function SelectSheetController(props: {
+  children: React.ReactNode;
+  onOpenAnimationComplete?: () => void;
+}) {
   const context = useSelectContext();
   const itemParentContext = useSelectItemParentContext();
   const isAdapted = useAdaptIsActive(context.adaptScope);
   const [isAdaptFullyHidden, setIsAdaptFullyHidden] = React.useState(!context.open);
+  const hasScrolledRef = useRef(false);
 
   React.useEffect(() => {
     if (context.open) {
       setIsAdaptFullyHidden(false);
+    } else {
+      // Sheet 关闭时重置，下次打开可再次滚动
+      hasScrolledRef.current = false;
     }
   }, [context.open]);
 
-  const handleSheetAnimationComplete = React.useCallback(({ open }: { open: boolean }) => {
-    if (!open) {
-      setIsAdaptFullyHidden(true);
-    }
-  }, []);
+  const handleSheetAnimationComplete = React.useCallback(
+    ({ open: sheetOpen }: { open: boolean }) => {
+      if (!sheetOpen) {
+        setIsAdaptFullyHidden(true);
+        hasScrolledRef.current = false;
+      } else if (!hasScrolledRef.current) {
+        // 仅首次打开动画完成时滚动到选中项，松手回弹等重新显示不再触发
+        hasScrolledRef.current = true;
+        props.onOpenAnimationComplete?.();
+      }
+    },
+    [props.onOpenAnimationComplete],
+  );
 
   return (
     <Sheet.Controller
@@ -921,6 +936,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
 
     const platform = os();
     const [nativePickerVisible, setNativePickerVisible] = React.useState(false);
+    const sheetScrollRef = useRef<any>(null);
     const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
     const shouldUseTouchSheetLayout = !isWeb();
     const resolvedPickerMode =
@@ -1074,6 +1090,36 @@ const SelectRoot = forwardRef<any, SelectProps>(
       triggerNativeHaptics(resolvedNativeHaptics);
     };
 
+    /** 打开 Sheet 时滚动到选中项位置 */
+    const scrollToSelectedItem = useCallback(() => {
+      if (!shouldUseTouchSheetLayout || !sheetScrollRef.current || resolvedItems.length === 0) {
+        return;
+      }
+
+      const selectedValue = props.value ?? null;
+      // 计算选中项在扁平列表中的位置（含 group label 高度）
+      let accumY: number | null = null;
+      let currentY = TOUCH_SHEET_SCROLL_CONTENT_STYLE.paddingTop ?? 0;
+
+      for (const group of resolvedItemGroups) {
+        const label = getGroupLabel(group, resolvedItemGroups.indexOf(group));
+        if (label != null) currentY += DEFAULT_TOUCH_SHEET_LABEL_HEIGHT;
+
+        for (const item of group.items) {
+          if (item.value === selectedValue) {
+            accumY = currentY;
+            break;
+          }
+          currentY += DEFAULT_TOUCH_SHEET_ITEM_HEIGHT;
+        }
+        if (accumY != null) break;
+      }
+
+      if (accumY != null) {
+        sheetScrollRef.current.scrollTo({ y: accumY, animated: false });
+      }
+    }, [shouldUseTouchSheetLayout, resolvedItems, resolvedItemGroups, props.value, getGroupLabel]);
+
     return (
       <>
         {shouldRenderNativeIosPicker ? (
@@ -1114,7 +1160,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     <SelectValue placeholder={placeholder} />
                   </SelectTrigger>
 
-                  <SelectSheetController>
+                  <SelectSheetController onOpenAnimationComplete={scrollToSelectedItem}>
                     <SelectAdapt when={selectAdaptWhen} platform="touch">
                       <Sheet
                         native={!!native}
@@ -1152,6 +1198,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                           {shouldUseTouchSheetLayout ? (
                             touchSheetConfig.shouldEnableScroll ? (
                               <Sheet.ScrollView
+                                ref={sheetScrollRef}
                                 sheetDragDisabledScrollIndicatorWidth={44}
                                 showsVerticalScrollIndicator
                               >
