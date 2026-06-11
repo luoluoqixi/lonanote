@@ -231,32 +231,21 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         //   `scrollBridge.gestureDidScroll: ${scrollBridge.gestureDidScroll}, gs.paneStartedAtTop: ${gs.paneStartedAtTop}, isSwipingDown: ${isSwipingDown}, gs.scrollEngaged: ${gs.scrollEngaged}`,
         // );
 
-        if (panHandles) {
-          // pan handles - disable scroll and move sheet
-          // when swiping down at top after scroll was engaged: lock at current scroll position
-          //   (handoff from scroll to pan — preserve scroll offset)
-          // otherwise: always lock scroll to 0 (prevents scroll from firing during sheet drag)
-          const lockTo = isCurrentlyAtTop && isSwipingDown && gs.scrollEngaged ? undefined : 0;
-          scrollBridge.setScrollEnabled?.(false, lockTo);
+        const isHandleGesture =
+          !scrollBridge.gestureDidScroll && gs.paneStartedAtTop && gs.scrollEngaged;
 
-          // accumulate the delta for position calculation
+        if (isHandleGesture) {
+          // Handle 触摸：优先于 panHandles 执行。双向跟随手指（deltaY 向下为正、向上为负）
+          scrollBridge.setScrollEnabled?.(false, undefined);
           gs.accumulatedOffset += deltaY;
           const newPosition = resisted(gs.startY + gs.accumulatedOffset, minY);
-
-          // update position
           scrollBridge.paneY = newPosition;
           setAnimatedPositionRef.current(newPosition);
           scrollBridge.setParentDragging(newPosition > minY);
-        } else if (
-          !scrollBridge.gestureDidScroll &&
-          gs.paneStartedAtTop &&
-          isSwipingDown &&
-          gs.scrollEngaged
-        ) {
-          // gestureDidScroll 由 SheetScrollView 的 onScroll 设置为 true。
-          // Handle 触摸不会触发 onScroll → gestureDidScroll 保持 false → 进入此分支移动 Sheet。
-          // ScrollView 触摸会触发 onScroll → gestureDidScroll 为 true → 走正常决策路径。
-          scrollBridge.setScrollEnabled?.(true);
+        } else if (panHandles) {
+          // pan handles - disable scroll and move sheet
+          const lockTo = isCurrentlyAtTop && isSwipingDown && gs.scrollEngaged ? undefined : 0;
+          scrollBridge.setScrollEnabled?.(false, lockTo);
           gs.accumulatedOffset += deltaY;
           const newPosition = resisted(gs.startY + gs.accumulatedOffset, minY);
           scrollBridge.paneY = newPosition;
@@ -272,9 +261,6 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         gs.didHandleEnd = true;
         const { velocityY } = event;
         const currentPos = gs.startY + gs.accumulatedOffset;
-
-        // clear scroll lock
-        scrollBridge.scrollLockY = undefined;
 
         // use frozen positions from gesture start — keyboard may have dismissed
         // during drag (input blur), reverting activePositions. Frozen positions
