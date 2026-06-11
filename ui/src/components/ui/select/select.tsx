@@ -1054,6 +1054,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
 
     const handleTamaguiOpenChange = (nextOpen: boolean) => {
       if (shouldRenderNativePicker && nextOpen) {
+        triggerNativeHaptics(resolvedNativeHaptics);
         setNativePickerVisible((prev) => {
           if (prev) {
             requestAnimationFrame(() => setNativePickerVisible(true));
