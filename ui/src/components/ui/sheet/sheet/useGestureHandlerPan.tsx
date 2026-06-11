@@ -72,6 +72,13 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
   const gestureHandlerEnabled = isGestureHandlerEnabled();
   const panGestureRef = useRef<any>(null);
 
+  // 用 ref 保存内联函数配置，防止每次渲染重建手势（getCurrentPosition / setAnimatedPosition
+  // 在 SheetImplementationCustom 中是每次渲染新建的内联函数，直接作为 deps 导致 useMemo 不断重建）
+  const getCurrentPositionRef = useRef(getCurrentPosition);
+  getCurrentPositionRef.current = getCurrentPosition;
+  const setAnimatedPositionRef = useRef(setAnimatedPosition);
+  setAnimatedPositionRef.current = setAnimatedPosition;
+
   // use refs for values that need to persist across gesture lifecycle
   // (useMemo closure variables get reset when gesture is recreated)
   const gestureStateRef = useRef({
@@ -92,6 +99,8 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
     panStarted: false,
     // whether this gesture already completed normal snap handling in onEnd
     didHandleEnd: false,
+    // 手势开始时 Sheet 是否在顶部（整个手势周期不变）
+    paneStartedAtTop: false,
   });
 
   const onStart = useCallback(() => {
@@ -150,7 +159,7 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         }
 
         // check position at gesture begin - before direction is known
-        const pos = getCurrentPosition();
+        const pos = getCurrentPositionRef.current();
         const atTop = pos <= minY + AT_TOP_THRESHOLD;
         const currentScrollY = scrollBridge.y;
         gs.startY = pos;
@@ -158,6 +167,9 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         gs.accumulatedOffset = 0;
         gs.prevTranslationY = 0;
         gs.scrollEngaged = currentScrollY > 0; // track if scroll is already engaged
+        gs.paneStartedAtTop = pos <= minY + AT_TOP_THRESHOLD; // 整个手势周期不变
+        // 注意：不在此处重置 gestureDidScroll——scrollBridge 跨手势重建持久存在，
+        // 重置会误伤 ScrollView 触摸已触发的 onScroll。改为 Handle 的 onPressIn 重置。
         // freeze positions at gesture start so keyboard dismiss during drag
         // doesn't change snap targets mid-gesture
         gs.frozenPositions = [...positions];
@@ -215,6 +227,10 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
           allowSheetDragOnScrollEdge,
         });
 
+        // console.log(
+        //   `scrollBridge.gestureDidScroll: ${scrollBridge.gestureDidScroll}, gs.paneStartedAtTop: ${gs.paneStartedAtTop}, isSwipingDown: ${isSwipingDown}, gs.scrollEngaged: ${gs.scrollEngaged}`,
+        // );
+
         if (panHandles) {
           // pan handles - disable scroll and move sheet
           // when swiping down at top after scroll was engaged: lock at current scroll position
@@ -229,7 +245,22 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
 
           // update position
           scrollBridge.paneY = newPosition;
-          setAnimatedPosition(newPosition);
+          setAnimatedPositionRef.current(newPosition);
+          scrollBridge.setParentDragging(newPosition > minY);
+        } else if (
+          !scrollBridge.gestureDidScroll &&
+          gs.paneStartedAtTop &&
+          isSwipingDown &&
+          gs.scrollEngaged
+        ) {
+          // gestureDidScroll 由 SheetScrollView 的 onScroll 设置为 true。
+          // Handle 触摸不会触发 onScroll → gestureDidScroll 保持 false → 进入此分支移动 Sheet。
+          // ScrollView 触摸会触发 onScroll → gestureDidScroll 为 true → 走正常决策路径。
+          scrollBridge.setScrollEnabled?.(true);
+          gs.accumulatedOffset += deltaY;
+          const newPosition = resisted(gs.startY + gs.accumulatedOffset, minY);
+          scrollBridge.paneY = newPosition;
+          setAnimatedPositionRef.current(newPosition);
           scrollBridge.setParentDragging(newPosition > minY);
         } else {
           // scroll handles - enable scroll so it can move freely
@@ -282,7 +313,7 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
         scrollBridge.scrollLockY = undefined;
         if (gs.panStarted) {
           if (!gs.didHandleEnd) {
-            const currentPos = getCurrentPosition();
+            const currentPos = getCurrentPositionRef.current();
             if (currentPos < minY - 1) {
               const fallbackTopIndex = topPositionIndex >= 0 ? topPositionIndex : 0;
               scrollBridge.setParentDragging(false);
@@ -317,12 +348,10 @@ export function useGestureHandlerPan(config: GesturePanConfig): GesturePanResult
     frameSize,
     positions,
     scrollBridge,
-    getCurrentPosition,
     resisted,
     onStart,
     onEnd,
     setIsDragging,
-    setAnimatedPosition,
   ]);
 
   return {

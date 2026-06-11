@@ -66,9 +66,17 @@ export function createSheet<
         // @ts-expect-error for CSS driver this is necessary to attach the transition
         <Handle
           ref={composedRef}
+          // 扩大触摸区域覆盖顶部整行（padding+Handle+间隙），视觉不变
+          hitSlop={{ top: 12, bottom: 6, left: 200, right: 200 }}
           onPressIn={() => {
             // reset at start of new press
             wasDraggingRef.current = false;
+
+            // Handle 触摸时清除滚动标记，允许进入 else-if 移动 Sheet。
+            // 不依赖 onBegin（可能被手势重建误重置），而是利用 ScrollBridge 的持久性。
+            if (context.scrollBridge) {
+              context.scrollBridge.gestureDidScroll = false;
+            }
           }}
           onPress={() => {
             // skip toggle if this was a drag gesture

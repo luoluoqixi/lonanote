@@ -124,6 +124,8 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Sheet
     };
 
     const handleScrollBeginDrag = (event: Parameters<NonNullable<typeof onScrollBeginDrag>>[0]) => {
+      // 用户主动拖拽开始→标记已发生滚动（排除 momentum 惯性滑动的 onScroll）
+      scrollBridge.gestureDidScroll = true;
       markScrollAreaGestureActive(true);
       onScrollBeginDrag?.(event);
     };

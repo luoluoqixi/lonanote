@@ -132,6 +132,8 @@ export type ScrollBridge = {
   allowSheetDragOnScrollEdge?: boolean;
   isScrollAreaGestureActive?: boolean;
   isScrollIndicatorGestureActive?: boolean;
+  /** 当前手势中 ScrollView 的 onScroll 是否已触发（用于区分 Handle 与 ScrollView 触摸） */
+  gestureDidScroll?: boolean;
 };
 
 // keyboard controller sheet types

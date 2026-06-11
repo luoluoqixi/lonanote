@@ -148,6 +148,7 @@ export function useSheetProviderProps(
       allowSheetDragOnScrollEdge: true,
       isScrollAreaGestureActive: false,
       isScrollIndicatorGestureActive: false,
+      gestureDidScroll: false,
       onParentDragging: (cb) => {
         parentDragListeners.add(cb);
         return () => {
