@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "lonanote",
@@ -100,11 +99,13 @@
     "react-native-reanimated@4.4.0": "patches/react-native-reanimated@4.4.0.patch",
     "@tamagui/portal@2.1.0": "patches/@tamagui+portal@2.1.0.patch",
     "@tamagui/native@2.1.0": "patches/@tamagui+native@2.1.0.patch",
+    "expo-modules-autolinking@56.0.15": "patches/expo-modules-autolinking@56.0.15.patch",
     "@expo/metro-file-map@56.0.3": "patches/@expo+metro-file-map@56.0.3.patch",
     "@tamagui/toast@2.1.0": "patches/@tamagui+toast@2.1.0.patch",
     "metro@0.84.4": "patches/metro@0.84.4.patch",
   },
   "overrides": {
+    "expo-modules-autolinking": "=56.0.15",
     "expo-modules-core": "56.0.13",
     "metro": "=0.84.4",
     "metro-babel-transformer": "=0.84.4",
@@ -1710,7 +1711,7 @@
 
     "react-native-ios-context-menu": ["react-native-ios-context-menu@3.2.1", "", { "dependencies": { "@dominicstop/ts-event-emitter": "^1.1.0" }, "peerDependencies": { "react": "*", "react-native": "*", "react-native-ios-utilities": "*" } }, "sha512-OBQbb3I/VUx2wQgz4cqN614kt3nJ+qx5wxEdtGN1Aj4nYYL1orp7VLFkV6axof6DgOyv0YD6af2RUTok6a2xDQ=="],
 
-    "react-native-ios-utilities": ["react-native-ios-utilities@github:dominicstop/react-native-ios-utilities#e520d1a", { "peerDependencies": { "react": "*", "react-native": "*" } }, "dominicstop-react-native-ios-utilities-e520d1a", "sha512-bQn9aIpvk+VRSim6vNNliYWcIqp8kubeiCgzN4rj32dbpbtyw44YtYx/Q0XBRIZUfBdUBA34pMn3LkLgI7cT5w=="],
+    "react-native-ios-utilities": ["react-native-ios-utilities@github:dominicstop/react-native-ios-utilities#e520d1a", { "peerDependencies": { "react": "*", "react-native": "*" } }, "dominicstop-react-native-ios-utilities-e520d1a"],
 
     "react-native-is-edge-to-edge": ["react-native-is-edge-to-edge@1.3.1", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-NIXU/iT5+ORyCc7p0z2nnlkouYKX425vuU1OEm6bMMtWWR9yvb+Xg5AZmImTKoF9abxCPqrKC3rOZsKzUYgYZA=="],
 
