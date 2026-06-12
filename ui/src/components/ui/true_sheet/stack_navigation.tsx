@@ -4,7 +4,7 @@ import {
   NavigationIndependentTree,
   type ParamListBase,
   createNavigationContainerRef,
-} from "expo-router/react-navigation";
+} from "@react-navigation/native";
 import type { ReactNode, Ref } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 

@@ -1,4 +1,4 @@
-import { type NavigationProp, useNavigation } from "expo-router/react-navigation";
+import { type NavigationProp, useNavigation } from "@react-navigation/native";
 
 import { TrueSheetInnerStack } from "@/components/ui/true_sheet/stack";
 

@@ -1,5 +1,5 @@
 diff --git a/src/node-haste/DependencyGraph/createFileMap.js b/src/node-haste/DependencyGraph/createFileMap.js
-index b22fd75..dcc1b4f 100644
+index fedef2b..baa38c4 100644
 --- a/src/node-haste/DependencyGraph/createFileMap.js
 +++ b/src/node-haste/DependencyGraph/createFileMap.js
 @@ -36,11 +36,9 @@ function _interopRequireWildcard(e, t) {
@@ -30,7 +30,7 @@ index b22fd75..dcc1b4f 100644
  function createFileMap(config, options) {
    const watch = options?.watch == null ? !_ciInfo.default.isCI : options.watch;
    const { enabled: autoSaveEnabled, ...autoSaveOpts } =
-@@ -125,6 +130,7 @@ function createFileMap(config, options) {
+@@ -126,6 +131,7 @@ function createFileMap(config, options) {
      roots: config.watchFolders,
      useWatchman: config.resolver.useWatchman,
      watch,

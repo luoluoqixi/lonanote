@@ -1,9 +1,8 @@
 /**
- * True Sheet 内 Android 等场景：Native Stack 依赖 ScreenContainer，无法挂在 Sheet 子树。
- * 使用 JS Stack（expo-router vendored）。
+ * Expo 55: 使用 @react-navigation/stack 替代 expo-router vendored 副本。
  */
 export {
   createStackNavigator,
   type StackNavigationOptions,
   type StackNavigationProp,
-} from "expo-router/build/react-navigation/stack";
+} from "@react-navigation/stack";

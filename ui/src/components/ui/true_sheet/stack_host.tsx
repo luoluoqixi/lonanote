@@ -1,6 +1,6 @@
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
-import type { ParamListBase } from "expo-router/react-navigation";
+import type { ParamListBase } from "@react-navigation/native";
 import { type ReactNode, useCallback } from "react";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
