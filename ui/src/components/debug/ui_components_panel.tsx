@@ -1472,7 +1472,7 @@ const styles = StyleSheet.create({
   field: {
     flex: 1,
     gap: 8,
-    minWidth: 280,
+    minWidth: 200,
   },
   fieldGroup: {
     flexDirection: "row",
