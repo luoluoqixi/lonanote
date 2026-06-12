@@ -649,7 +649,7 @@ function NativePickerWheelSheet({
           minWidth: 180,
         }}
       >
-        <Text fontSize="$4" color="$color">
+        <Text fontSize={getFontSize("$4")} color="$color">
           {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
         </Text>
         <ChevronDown size={16} color="$color10" />
@@ -876,7 +876,7 @@ function NativePickerDropdownCustom({
         minWidth: 180,
       }}
     >
-      <Text fontSize="$4" color="$color">
+      <Text fontSize={getFontSize("$4")} color="$color">
         {selectedLabel ?? (typeof placeholder === "string" ? placeholder : "选择")}
       </Text>
       <ChevronDown size={16} color="$color10" />
