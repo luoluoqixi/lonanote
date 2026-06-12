@@ -134,13 +134,17 @@ export function triggerNativeHaptics(
   const level = setting === true ? "light" : setting;
 
   if (os() === "android") {
-    void Haptics.performAndroidHapticsAsync(
+    Haptics.performAndroidHapticsAsync(
       options?.androidType ?? ANDROID_HAPTICS_TYPE_MAP[level],
-    );
+    ).catch((err: unknown) => {
+      console.error("[Haptics] performAndroidHapticsAsync 失败:", err);
+    });
     return;
   }
 
-  void Haptics.impactAsync(HAPTICS_STYLE_MAP[level]);
+  Haptics.impactAsync(HAPTICS_STYLE_MAP[level]).catch((err: unknown) => {
+    console.error("[Haptics] impactAsync 失败:", err);
+  });
 }
 
 export function triggerSliderNativeHaptics(setting: NativeHapticsSetting | undefined) {

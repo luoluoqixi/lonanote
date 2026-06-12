@@ -35,3 +35,23 @@ export function isDesktop(): boolean {
 export function isTV(): boolean {
   return Platform.isTV;
 }
+
+let cachedIosMajor: number | null = null;
+
+/**
+ * iOS 大版本号，仅在 iOS 平台有值，非 iOS 返回 null（如 android/web/桌面端）。
+ * 示例：iOS 15.6 → 15，iOS 18.0 → 18。
+ */
+export function iosMajorVersion(): number | null {
+  if (cachedIosMajor !== null) return cachedIosMajor;
+
+  if (Platform.OS !== "ios") {
+    cachedIosMajor = null;
+    return null;
+  }
+
+  const rawVersion = Platform.Version as string;
+  const major = Number.parseInt(String(rawVersion).split(".")[0], 10);
+  cachedIosMajor = Number.isFinite(major) ? major : null;
+  return cachedIosMajor;
+}

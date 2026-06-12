@@ -1,0 +1,68 @@
+diff --git a/ios/HapticsModule.swift b/ios/HapticsModule.swift
+index 41659a0..380aa4e 100644
+--- a/ios/HapticsModule.swift
++++ b/ios/HapticsModule.swift
+@@ -1,27 +1,54 @@
+ import ExpoModulesCore
++import CoreHaptics
++import AudioToolbox
+
+ public class HapticsModule: Module {
+   public func definition() -> ModuleDefinition {
+     Name("ExpoHaptics")
+
+     AsyncFunction("notificationAsync") { (notificationType: NotificationType) in
+-      let generator = UINotificationFeedbackGenerator()
+-      generator.prepare()
+-      generator.notificationOccurred(notificationType.toFeedbackType())
++      if CHHapticEngine.capabilitiesForHardware().supportsHaptics {
++        let generator = UINotificationFeedbackGenerator()
++        generator.prepare()
++        generator.notificationOccurred(notificationType.toFeedbackType())
++      } else {
++        AudioServicesPlaySystemSound(1520)
++      }
+     }
+     .runOnQueue(.main)
+
+     AsyncFunction("impactAsync") { (style: ImpactStyle) in
+-      let generator = UIImpactFeedbackGenerator(style: style.toFeedbackStyle())
+-      generator.prepare()
+-      generator.impactOccurred()
++      if CHHapticEngine.capabilitiesForHardware().supportsHaptics {
++        let generator = UIImpactFeedbackGenerator(style: style.toFeedbackStyle())
++        generator.prepare()
++        generator.impactOccurred()
++      } else {
++        let soundId: SystemSoundID
++        switch style {
++        case .light:
++          soundId = 1519  // Peek
++        case .medium:
++          soundId = 1520  // Pop
++        case .heavy:
++          soundId = 1520  // Pop
++        case .soft:
++          soundId = 1519
++        case .rigid:
++          soundId = 1520
++        }
++        AudioServicesPlaySystemSound(soundId)
++      }
+     }
+     .runOnQueue(.main)
+
+     AsyncFunction("selectionAsync") {
+-      let generator = UISelectionFeedbackGenerator()
+-      generator.prepare()
+-      generator.selectionChanged()
++      if CHHapticEngine.capabilitiesForHardware().supportsHaptics {
++        let generator = UISelectionFeedbackGenerator()
++        generator.prepare()
++        generator.selectionChanged()
++      } else {
++        AudioServicesPlaySystemSound(1519)
++      }
+     }
+     .runOnQueue(.main)
+   }

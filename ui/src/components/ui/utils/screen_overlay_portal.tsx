@@ -4,7 +4,7 @@ import { Dimensions, type LayoutChangeEvent, StyleSheet, View, type ViewStyle } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PortalHost as TeleportPortalHost } from "react-native-teleport";
 
-import { os } from "@/api/common/platform";
+import { iosMajorVersion, os } from "@/api/common/platform";
 import {
   useTrueSheetOverlayDetent,
   useTrueSheetOverlaySheetTopPosition,
@@ -114,9 +114,16 @@ function OverlayToastLayer({
   // 而 Sheet 只显示顶部一部分。
   // 用 sheetTopPosition 获取 Sheet 当前实际可视高度，
   // 直接相减得到被隐藏的底部偏移量，再加固定 lift 补偿参考点偏差。
+  // iOS 15 不支持自定义 detent（只有 medium/large），跳过此计算避免位置偏上。
+  const isIOS15 = os() === "ios" && iosMajorVersion() === 15;
+  const canPartialDetent = !isIOS15;
   const screenHeight = Dimensions.get("window").height;
   const detentVisibleOffset =
-    hostName != null && detent < 1 && sheetTopPosition != null && hostStackHeight > 0
+    hostName != null &&
+    canPartialDetent &&
+    detent < 1 &&
+    sheetTopPosition != null &&
+    hostStackHeight > 0
       ? Math.max(
           0,
           Math.round(
