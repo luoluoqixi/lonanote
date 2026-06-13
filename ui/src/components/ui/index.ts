@@ -20,6 +20,7 @@ export * from "./progress";
 export * from "./radio_group";
 export * from "./scroll_view";
 export * from "./select";
+export * from "./native_sheet";
 export * from "./separator";
 export * from "./sheet";
 export * from "./slider";

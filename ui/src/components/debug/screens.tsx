@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isDesktop } from "@/api/common";
 
 import { TitleBar } from "../titlebar";
-import { Button, Slider, Switch, Text } from "../ui";
+import { Button, Select, Slider, Switch, Text } from "../ui";
 import {
   DEBUG_PANEL_ROUTE_DEFINITIONS,
   type DebugTabKey,
@@ -116,8 +116,8 @@ function DebugScreenLayout({
 export function DebugHomeScreen({
   onOpenFullPage,
   onOpenPanel,
-  onSwitchToFullPage,
-  onSwitchToTrueSheet,
+  currentSheetMode,
+  onSheetModeChange,
 }: {
   /** True Sheet 内打开分区 */
   onOpenPanel?: (key: DebugTabKey) => void;
@@ -125,8 +125,14 @@ export function DebugHomeScreen({
   onOpenFullPage?: (key: DebugTabKey) => void;
   /** 立即关闭 Sheet 并进入 `/debug` */
   onSwitchToFullPage?: () => void;
+  /** 切换为 NativeSheet 模式 */
+  onSwitchToNativeSheet?: () => void;
   /** 返回并打开 True Sheet 调试面板 */
   onSwitchToTrueSheet?: () => void;
+  /** 当前调试面板模式 */
+  currentSheetMode?: "fullPage" | "native" | "trueSheet";
+  /** 切换模式 */
+  onSheetModeChange?: (mode: "fullPage" | "native" | "trueSheet") => void;
 }) {
   const nestedSectionSheetsFromStore = useDebugSectionsAsNestedSheets();
   const [nestedSectionSheets, setNestedSectionSheets] = useState(nestedSectionSheetsFromStore);
@@ -244,38 +250,33 @@ export function DebugHomeScreen({
     );
   }
 
-  if (onSwitchToFullPage != null) {
+  if (onSheetModeChange != null) {
     sectionCards.push(
-      <View key="presentation-mode-toggle" style={styles.sectionCard}>
+      <View key="presentation-mode-select" style={styles.sectionCard}>
         <View style={styles.sectionCardText}>
           <Text fontSize="$5" fontWeight="600">
-            普通页面模式
+            调试面板模式
           </Text>
           <Text color="$color10" fontSize="$3">
-            关闭当前 Sheet，在全屏 Stack 中继续调试。
+            切换调试面板的弹出方式。
           </Text>
         </View>
-        <Button onPress={onSwitchToFullPage} variant="outlined">
-          切换为普通页面
-        </Button>
-      </View>,
-    );
-  }
-
-  if (onSwitchToTrueSheet != null) {
-    sectionCards.push(
-      <View key="presentation-mode-toggle" style={styles.sectionCard}>
-        <View style={styles.sectionCardText}>
-          <Text fontSize="$5" fontWeight="600">
-            True Sheet 模式
-          </Text>
-          <Text color="$color10" fontSize="$3">
-            返回并打开 True Sheet 调试面板。
-          </Text>
-        </View>
-        <Button onPress={onSwitchToTrueSheet} variant="outlined">
-          切换为 True Sheet
-        </Button>
+        <Select
+          items={[
+            { label: "普通页面", value: "fullPage" },
+            { label: "TrueSheet", value: "trueSheet" },
+            { label: "NativeSheet", value: "native" },
+          ]}
+          onValueChange={(value) => {
+            if (value === "fullPage" && currentSheetMode !== "fullPage") {
+              onSheetModeChange("fullPage");
+            } else if (value !== currentSheetMode) {
+              onSheetModeChange(value as "native" | "trueSheet" | "fullPage");
+            }
+          }}
+          placeholder="选择模式"
+          value={currentSheetMode ?? "trueSheet"}
+        />
       </View>,
     );
   }
