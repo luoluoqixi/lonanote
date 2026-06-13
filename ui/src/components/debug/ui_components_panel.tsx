@@ -11,7 +11,7 @@ import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { os } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 import {
   Accordion,
   AlertDialog,
@@ -505,7 +505,7 @@ export function UiComponentsDebugPanel() {
             <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
-            <Label>Select Native (Dropdown)</Label>
+            <Label>Select Native{isWeb() ? "" : " (Dropdown)"}</Label>
             <Select
               items={selectItems}
               native
@@ -573,6 +573,7 @@ export function UiComponentsDebugPanel() {
           )}
 
           <View style={styles.field}>
+            {isWeb() && <Label>Select</Label>}
             <Select
               items={selectItems2}
               native={false}
@@ -584,6 +585,7 @@ export function UiComponentsDebugPanel() {
             <Text color="$color10">当前主题：{selectValue2 ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
+            {isWeb() && <Label>Select Native</Label>}
             <Select
               items={selectItems2}
               nativeHaptics={debugNativeHaptics}
