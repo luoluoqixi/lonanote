@@ -34,3 +34,7 @@ export function isDesktop(): boolean {
 export function isTV(): boolean {
   return Platform.isTV;
 }
+
+export function supportsImpactHaptics(): boolean {
+  return false;
+}

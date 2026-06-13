@@ -1,3 +1,4 @@
+import * as Device from "expo-device";
 import { Platform } from "react-native";
 
 import type { OSType } from "./types";
@@ -54,4 +55,36 @@ export function iosMajorVersion(): number | null {
   const major = Number.parseInt(String(rawVersion).split(".")[0], 10);
   cachedIosMajor = Number.isFinite(major) ? major : null;
   return cachedIosMajor;
+}
+
+let cachedHapticSupport: boolean | null = null;
+
+/**
+ * 当前设备是否支持 UIImpactFeedbackGenerator（impact 震动）。
+ *
+ * - Android：始终支持（使用 AudioManager haptics）。
+ * - iOS：iPhone 6s / 6s Plus / SE 1st gen（iPhone8,{1,2,4}）使用初代 Taptic Engine，
+ *   无法正确驱动 UIImpactFeedbackGenerator，视为不支持。iPhone 7 及以上型号正常支持。
+ * - 未知型号或模拟器：保守视为支持。
+ */
+export function supportsImpactHaptics(): boolean {
+  if (cachedHapticSupport !== null) return cachedHapticSupport;
+
+  if (Platform.OS !== "ios") {
+    // Android 或 web：不限制
+    cachedHapticSupport = true;
+    return true;
+  }
+
+  const modelId = Device.modelId;
+
+  // 无法获取型号、模拟器（i386 / x86_64 / arm64）、iPad、iPod touch → 默认支持
+  if (modelId == null || !modelId.startsWith("iPhone8,")) {
+    cachedHapticSupport = true;
+    return true;
+  }
+
+  // iPhone8,1 = iPhone 6s, iPhone8,2 = 6s Plus, iPhone8,4 = SE 1st gen
+  cachedHapticSupport = false;
+  return false;
 }

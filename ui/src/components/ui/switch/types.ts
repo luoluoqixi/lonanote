@@ -9,5 +9,6 @@ export interface SwitchProps extends ComponentProps<typeof TamaguiSwitch> {
   labelProps?: ComponentProps<typeof TamaguiLabel>;
   nativeHaptics?: NativeHapticsSetting;
   thumbProps?: SwitchThumbProps;
+  native?: boolean;
 }
 export type SwitchThumbProps = ComponentProps<typeof TamaguiSwitch.Thumb>;

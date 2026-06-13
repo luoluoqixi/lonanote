@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { Label as TamaguiLabel, Switch as TamaguiSwitch, XStack, YStack } from "tamagui";
 
-import { isWeb, os } from "@/api/common/platform";
+import { isWeb, os, supportsImpactHaptics } from "@/api/common/platform";
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 
 import type { SwitchProps, SwitchThumbProps } from "./types";
@@ -28,7 +28,8 @@ function SwitchRoot(props: SwitchProps) {
     thumbProps,
     ...rootProps
   } = props;
-  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics, { defaultEnabled: true });
+
+  const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const controlId = id ?? generatedId;
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked ?? false);
   const checked = checkedProp ?? uncontrolledChecked;
@@ -37,13 +38,19 @@ function SwitchRoot(props: SwitchProps) {
   // iOS 原生 UISwitch 作为 flex container 直接子节点时无法正确垂直居中，
   // 套一层 YStack 容器让 flexbox 对齐机制正常工作
 
-  const handleCheckedChange = (nextChecked: boolean) => {
+  const handleCheckedChange = (nextChecked: boolean, isLabel?: boolean) => {
     if (checkedProp === undefined) {
       setUncontrolledChecked(nextChecked);
     }
 
     onCheckedChange?.(nextChecked);
-    triggerNativeHaptics(resolvedNativeHaptics);
+
+    const iosDefaultHaptics = native && ios && supportsImpactHaptics();
+    if (!iosDefaultHaptics || isLabel) {
+      // ios 中, 原生 Switch 交互默认是有震动的 (除了iPhone6s或以下, 可能是封装原生Switch 的库用的不支持 iPhone6s 的震动api)
+      // 所以 ios 原生 Switch 不需要自己调用震动 api.
+      triggerNativeHaptics(resolvedNativeHaptics);
+    }
   };
 
   const control = (
@@ -83,7 +90,7 @@ function SwitchRoot(props: SwitchProps) {
           return;
         }
 
-        handleCheckedChange(!checked);
+        handleCheckedChange(!checked, true);
       }}
     >
       <TamaguiLabel {...labelProps} pointerEvents="none">
