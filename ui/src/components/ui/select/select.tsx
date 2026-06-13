@@ -105,6 +105,7 @@ const TOUCH_SHEET_SEPARATOR_COLOR = "$borderColor" as const;
 
 const DEFAULT_ANDROID_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
 const DEFAULT_IOS_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
+const DEFAULT_NATIVE = !isWeb();
 
 /** 用于为每个 wheel sheet 实例生成唯一名称的计数器 */
 let wheelSheetCounter = 0;
@@ -933,7 +934,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
     ref,
   ) => {
     void ref;
-
+    if (native === undefined) {
+      native = DEFAULT_NATIVE;
+    }
     const platform = os();
     const [nativePickerVisible, setNativePickerVisible] = React.useState(false);
     const sheetScrollRef = useRef<any>(null);
