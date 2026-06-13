@@ -1,11 +1,13 @@
 import React from "react";
 
+import { isWeb } from "@/api/common/platform";
 import {
   getSliderHapticsBuckets,
   triggerSliderNativeHaptics,
   useResolvedNativeHaptics,
 } from "@/components/ui/utils";
 
+import { NativeSlider } from "./native_slider";
 import { Slider as ReplicaSlider } from "./slider/Slider";
 import type {
   SliderProps,
@@ -14,9 +16,12 @@ import type {
   SliderTrackProps,
 } from "./types";
 
+const web = isWeb();
+
 function SliderRoot(props: SliderProps) {
   const {
     children,
+    native = true,
     nativeHaptics,
     nativeHapticsInterval,
     onValueChange,
@@ -28,6 +33,10 @@ function SliderRoot(props: SliderProps) {
     size = "$4",
     ...rootProps
   } = props;
+  if (!web && native) {
+    return <NativeSlider {...props} />;
+  }
+
   const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const lastHapticsBucketsRef = React.useRef(
     getSliderHapticsBuckets(rootProps.value ?? rootProps.defaultValue, {

@@ -102,6 +102,7 @@ export function UiComponentsDebugPanel() {
   const [nestedGlobalSheetPosition, setNestedGlobalSheetPosition] = useState(0);
   const [sliderValue, setSliderValue] = useState(56);
   const [tamaguiSliderValue, setTamaguiSliderValue] = useState(56);
+  const [nativeSliderValue, setNativeSliderValue] = useState(50);
   const [switchValue, setSwitchValue] = useState(true);
   const [tabsValue, setTabsValue] = useState("preview");
   const [textAreaValue, setTextAreaValue] = useState("这是一段文本区域示例。");
@@ -481,6 +482,42 @@ export function UiComponentsDebugPanel() {
           </Progress>
           <Text color="$color10">当前进度：60%</Text>
         </View>
+
+        <View style={styles.field}>
+          <Label>Slider Replica</Label>
+          <Slider
+            max={100}
+            min={0}
+            native={false}
+            nativeHaptics={debugNativeHaptics}
+            onValueChange={(nextValue: number[]) => setSliderValue(nextValue[0] ?? 0)}
+            value={[sliderValue]}
+          />
+          <Text color="$color10">当前值：{sliderValue}</Text>
+        </View>
+        <View style={styles.field}>
+          <Label>Slider Tamagui</Label>
+          <TamaguiSlider
+            max={100}
+            min={0}
+            nativeHaptics={debugNativeHaptics}
+            onValueChange={(nextValue: number[]) => setTamaguiSliderValue(nextValue[0] ?? 0)}
+            value={[tamaguiSliderValue]}
+          />
+          <Text color="$color10">当前值：{tamaguiSliderValue}</Text>
+        </View>
+        <View style={styles.field}>
+          <Label>Slider Native（@expo/ui SwiftUI / Material3）</Label>
+          <Slider
+            max={100}
+            min={0}
+            native
+            nativeHaptics={debugNativeHaptics}
+            onValueChange={(nextValue: number[]) => setNativeSliderValue(nextValue[0] ?? 0)}
+            value={[nativeSliderValue]}
+          />
+          <Text color="$color10">当前值：{nativeSliderValue}</Text>
+        </View>
       </SectionCard>
 
       <SectionCard description="文本输入、多行输入、选择器和滑杆。" title="输入与选择">
@@ -628,28 +665,6 @@ export function UiComponentsDebugPanel() {
               native
             />
             <Text color="$color10">当前排序(原生)：{selectNativeGroupedValue ?? "未选择"}</Text>
-          </View>
-          <View style={styles.field}>
-            <Label>Slider Replica</Label>
-            <Slider
-              max={100}
-              min={0}
-              nativeHaptics={debugNativeHaptics}
-              onValueChange={(nextValue: number[]) => setSliderValue(nextValue[0] ?? 0)}
-              value={[sliderValue]}
-            />
-            <Text color="$color10">当前值：{sliderValue}</Text>
-          </View>
-          <View style={styles.field}>
-            <Label>Slider Tamagui</Label>
-            <TamaguiSlider
-              max={100}
-              min={0}
-              nativeHaptics={debugNativeHaptics}
-              onValueChange={(nextValue: number[]) => setTamaguiSliderValue(nextValue[0] ?? 0)}
-              value={[tamaguiSliderValue]}
-            />
-            <Text color="$color10">当前值：{tamaguiSliderValue}</Text>
           </View>
         </View>
 
