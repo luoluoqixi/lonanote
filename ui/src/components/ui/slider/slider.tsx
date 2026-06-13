@@ -21,7 +21,7 @@ const web = isWeb();
 function SliderRoot(props: SliderProps) {
   const {
     children,
-    native = true,
+    native,
     nativeHaptics,
     nativeHapticsInterval,
     onValueChange,

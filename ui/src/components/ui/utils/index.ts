@@ -257,7 +257,11 @@ export function toARGB(val: unknown): number | undefined {
       b = hueToRGB(p, q, h - 1 / 3);
     }
     const alpha = Math.round(a * 255);
-    const int = (alpha << 24) | (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
+    const int =
+      (alpha << 24) |
+      (Math.round(r * 255) << 16) |
+      (Math.round(g * 255) << 8) |
+      Math.round(b * 255);
     return int | 0;
   }
 
@@ -267,9 +271,15 @@ export function toARGB(val: unknown): number | undefined {
   );
   if (rgbMatch) {
     const pct = s.includes("%");
-    const r = pct ? Math.round((Number.parseFloat(rgbMatch[1]) / 100) * 255) : Number.parseFloat(rgbMatch[1]);
-    const g = pct ? Math.round((Number.parseFloat(rgbMatch[2]) / 100) * 255) : Number.parseFloat(rgbMatch[2]);
-    const b = pct ? Math.round((Number.parseFloat(rgbMatch[3]) / 100) * 255) : Number.parseFloat(rgbMatch[3]);
+    const r = pct
+      ? Math.round((Number.parseFloat(rgbMatch[1]) / 100) * 255)
+      : Number.parseFloat(rgbMatch[1]);
+    const g = pct
+      ? Math.round((Number.parseFloat(rgbMatch[2]) / 100) * 255)
+      : Number.parseFloat(rgbMatch[2]);
+    const b = pct
+      ? Math.round((Number.parseFloat(rgbMatch[3]) / 100) * 255)
+      : Number.parseFloat(rgbMatch[3]);
     const a = rgbMatch[4] !== undefined ? Math.round(Number.parseFloat(rgbMatch[4]) * 255) : 0xff;
     const int = (a << 24) | (Math.min(r, 255) << 16) | (Math.min(g, 255) << 8) | Math.min(b, 255);
     return int | 0;
