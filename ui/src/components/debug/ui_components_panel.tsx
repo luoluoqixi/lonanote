@@ -367,6 +367,15 @@ export function UiComponentsDebugPanel() {
             checked={switchValue}
             label="Switch"
             labelPosition="end"
+            native={false}
+            nativeHaptics={debugNativeHaptics}
+            onCheckedChange={setSwitchValue}
+          />
+          <Switch
+            checked={switchValue}
+            label="Switch native"
+            labelPosition="end"
+            native
             nativeHaptics={debugNativeHaptics}
             onCheckedChange={setSwitchValue}
           />

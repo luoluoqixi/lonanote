@@ -1,10 +1,14 @@
 import { useId, useState } from "react";
-import { Label as TamaguiLabel, Switch as TamaguiSwitch, XStack } from "tamagui";
+import { Label as TamaguiLabel, Switch as TamaguiSwitch, XStack, YStack } from "tamagui";
 
-import { os } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 
 import type { SwitchProps, SwitchThumbProps } from "./types";
+
+const platform = os();
+const web = isWeb();
+const ios = platform === "ios";
 
 function SwitchRoot(props: SwitchProps) {
   const generatedId = useId();
@@ -16,6 +20,7 @@ function SwitchRoot(props: SwitchProps) {
     label,
     labelPosition = "start",
     labelProps,
+    native = !web,
     nativeHaptics = true,
     onCheckedChange,
     overflow,
@@ -27,7 +32,10 @@ function SwitchRoot(props: SwitchProps) {
   const controlId = id ?? generatedId;
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked ?? false);
   const checked = checkedProp ?? uncontrolledChecked;
-  const shouldHandleLabelPress = os() === "ios";
+  const shouldHandleLabelPress = ios;
+
+  // iOS 原生 UISwitch 作为 flex container 直接子节点时无法正确垂直居中，
+  // 套一层 YStack 容器让 flexbox 对齐机制正常工作
 
   const handleCheckedChange = (nextChecked: boolean) => {
     if (checkedProp === undefined) {
@@ -40,6 +48,7 @@ function SwitchRoot(props: SwitchProps) {
 
   const control = (
     <TamaguiSwitch
+      native={native}
       activeStyle={{
         backgroundColor: "$color6",
       }}
@@ -57,8 +66,12 @@ function SwitchRoot(props: SwitchProps) {
     </TamaguiSwitch>
   );
 
+  // iOS 原生 UISwitch 作为 flex container 直接子节点时无法正确垂直居中，
+  // 套一层 YStack 容器让 flexbox 对齐机制正常工作
+  const wrappedControl = ios && native ? <YStack>{control}</YStack> : control;
+
   if (label == null) {
-    return control;
+    return wrappedControl;
   }
 
   const labelElement = shouldHandleLabelPress ? (
@@ -86,7 +99,7 @@ function SwitchRoot(props: SwitchProps) {
   return (
     <XStack gap="$2" items="center">
       {labelPosition === "start" ? labelElement : null}
-      {control}
+      {wrappedControl}
       {labelPosition === "end" ? labelElement : null}
     </XStack>
   );
