@@ -125,14 +125,10 @@ export function DebugHomeScreen({
   onOpenFullPage?: (key: DebugTabKey) => void;
   /** 立即关闭 Sheet 并进入 `/debug` */
   onSwitchToFullPage?: () => void;
-  /** 切换为 NativeSheet 模式 */
-  onSwitchToNativeSheet?: () => void;
-  /** 返回并打开 True Sheet 调试面板 */
-  onSwitchToTrueSheet?: () => void;
   /** 当前调试面板模式 */
-  currentSheetMode?: "fullPage" | "native" | "trueSheet";
+  currentSheetMode?: "fullPage" | "trueSheet";
   /** 切换模式 */
-  onSheetModeChange?: (mode: "fullPage" | "native" | "trueSheet") => void;
+  onSheetModeChange?: (mode: "fullPage" | "trueSheet") => void;
 }) {
   const nestedSectionSheetsFromStore = useDebugSectionsAsNestedSheets();
   const [nestedSectionSheets, setNestedSectionSheets] = useState(nestedSectionSheetsFromStore);
@@ -265,13 +261,12 @@ export function DebugHomeScreen({
           items={[
             { label: "普通页面", value: "fullPage" },
             { label: "TrueSheet", value: "trueSheet" },
-            { label: "NativeSheet", value: "native" },
           ]}
           onValueChange={(value) => {
             if (value === "fullPage" && currentSheetMode !== "fullPage") {
               onSheetModeChange("fullPage");
             } else if (value !== currentSheetMode) {
-              onSheetModeChange(value as "native" | "trueSheet" | "fullPage");
+              onSheetModeChange(value as "trueSheet" | "fullPage");
             }
           }}
           placeholder="选择模式"

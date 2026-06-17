@@ -17,7 +17,6 @@ import { useResolvedeColorScheme } from "@/hooks/settings";
 
 import { DEBUG_PANEL_ROUTE_DEFINITIONS, type DebugTabKey } from "../routes";
 import { DebugHomeScreen, DebugSectionScreen } from "../screens";
-import { switchDebugSheetToNative } from "../sheet_mode";
 import {
   DEBUG_NESTED_SECTION_SHEET_DETENTS,
   DEBUG_TRUE_SHEET_NAME,
@@ -38,13 +37,9 @@ type ParamList = { index: undefined } & Record<DebugTabKey, undefined>;
 function IosHomeRoute() {
   const navigation = useNavigation<NavigationProp<ParamList>>();
 
-  const handleModeChange = useCallback((mode: "fullPage" | "native" | "trueSheet") => {
+  const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
     if (mode === "fullPage") {
       void switchDebugPanelToFullPage();
-    } else if (mode === "native") {
-      void closeDebugPanel().then(() => {
-        switchDebugSheetToNative();
-      });
     }
   }, []);
 
@@ -59,11 +54,6 @@ function IosHomeRoute() {
         }}
         onSheetModeChange={handleModeChange}
         onSwitchToFullPage={() => void switchDebugPanelToFullPage()}
-        onSwitchToNativeSheet={() => {
-          void closeDebugPanel().then(() => {
-            switchDebugSheetToNative();
-          });
-        }}
       />
     </TrueSheetScrollContent>
   );
@@ -116,13 +106,9 @@ function IosTrueSheetHost() {
 // ─── Android ──────────────────────────────────────
 
 function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => void }) {
-  const handleModeChange = useCallback((mode: "fullPage" | "native" | "trueSheet") => {
+  const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
     if (mode === "fullPage") {
       void switchDebugPanelToFullPage();
-    } else if (mode === "native") {
-      void closeDebugPanel().then(() => {
-        switchDebugSheetToNative();
-      });
     }
   }, []);
 
@@ -137,11 +123,6 @@ function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => vo
         }}
         onSheetModeChange={handleModeChange}
         onSwitchToFullPage={() => void switchDebugPanelToFullPage()}
-        onSwitchToNativeSheet={() => {
-          void closeDebugPanel().then(() => {
-            switchDebugSheetToNative();
-          });
-        }}
       />
     </TrueSheetScrollContent>
   );

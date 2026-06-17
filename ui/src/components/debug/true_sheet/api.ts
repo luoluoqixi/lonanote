@@ -5,7 +5,6 @@ import { dismissTrueSheet, presentTrueSheet, resizeTrueSheet } from "@/component
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
 import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "../routes";
-import { emitDebugSheetToggle, getSheetMode } from "../sheet_mode";
 import {
   getDebugNestedSectionDetentLevel,
   getDebugSectionsAsNestedSheets,
@@ -127,25 +126,11 @@ export async function openDebugSection(key: DebugTabKey) {
 }
 
 export function openDebugPanel(detentIndex = 0) {
-  if (getSheetMode() !== "trueSheet") {
-    // NativeSheet 模式：发 toggle 事件让 DebugSheetHost 响应
-    debugSheetOpen = true;
-    emitDebugSheetToggle();
-    return Promise.resolve();
-  }
-
   debugSheetOpen = true;
   return presentTrueSheet(DEBUG_TRUE_SHEET_NAME, detentIndex);
 }
 
 export async function closeDebugPanel() {
-  if (getSheetMode() !== "trueSheet") {
-    // NativeSheet 模式：发 toggle 事件让 DebugSheetHost 响应
-    debugSheetOpen = false;
-    emitDebugSheetToggle();
-    return;
-  }
-
   debugSheetOpen = false;
   await dismissAllDebugSectionSheets().catch(() => {});
   await TrueSheet.dismissStack(DEBUG_TRUE_SHEET_NAME).catch(() => {});

@@ -6,7 +6,6 @@ import {
   getDebugFullPageHref,
   isDebugFeatureEnabled,
   openDebugSection,
-  switchDebugPanelToTrueSheet,
 } from "@/components/debug";
 
 export default function DebugHomeRouteScreen() {
@@ -22,9 +21,6 @@ export default function DebugHomeRouteScreen() {
             router.push(getDebugFullPageHref(key));
           }
         });
-      }}
-      onSwitchToTrueSheet={() => {
-        void switchDebugPanelToTrueSheet();
       }}
     />
   );
