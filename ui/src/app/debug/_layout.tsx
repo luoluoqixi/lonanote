@@ -1,4 +1,5 @@
 import { Redirect, Stack } from "expo-router";
+import { Platform } from "react-native";
 import { useTheme } from "tamagui";
 
 import {
@@ -31,8 +32,9 @@ export default function DebugStackLayout() {
             headerShadowVisible: false,
             headerShown: true,
             headerStyle: {
-              backgroundColor: stackBackgroundColor,
+              backgroundColor: Platform.OS === "ios" ? "transparent" : stackBackgroundColor,
             },
+            headerTransparent: Platform.OS === "ios",
             title: "调试面板",
           };
         }
@@ -52,8 +54,9 @@ export default function DebugStackLayout() {
           headerShadowVisible: false,
           headerShown: true,
           headerStyle: {
-            backgroundColor: stackBackgroundColor,
+            backgroundColor: Platform.OS === "ios" ? "transparent" : stackBackgroundColor,
           },
+          headerTransparent: Platform.OS === "ios",
           title,
         };
       }}

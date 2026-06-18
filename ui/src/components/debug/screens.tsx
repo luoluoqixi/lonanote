@@ -1,8 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, View } from "react-native";
 
-import { isDesktop } from "@/api/common";
+import { isDesktop, os } from "@/api/common";
 
 import { TitleBar } from "../titlebar";
 import { Button, Select, Slider, Switch, Text } from "../ui";
@@ -50,20 +49,13 @@ function DebugScreenLayout({
   scrollable?: boolean;
   title: string;
 }) {
-  const insets = useSafeAreaInsets();
-
   if (layoutHost === "trueSheet") {
     return <View style={styles.trueSheetBody}>{children}</View>;
   }
 
   const desktop = isDesktop();
   const pageBody = (
-    <View
-      style={[
-        scrollable ? styles.pagePaddingInScroll : styles.pagePadding,
-        scrollable && Platform.OS === "ios" && { paddingTop: insets.top + 44 },
-      ]}
-    >
+    <View style={scrollable ? styles.pagePaddingInScroll : styles.pagePadding}>
       <View style={scrollable ? styles.pageContainerInScroll : styles.pageContainer}>
         {!hideInlineHeader ? (
           <View style={styles.header}>
@@ -91,6 +83,7 @@ function DebugScreenLayout({
         {scrollable ? (
           <View style={styles.pageScrollHost}>
             <ScrollView
+              contentInsetAdjustmentBehavior={os() === "ios" ? "automatic" : "never"}
               contentContainerStyle={styles.pageScrollContent}
               nestedScrollEnabled
               showsVerticalScrollIndicator
