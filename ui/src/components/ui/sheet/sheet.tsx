@@ -241,7 +241,10 @@ const SheetScrollView = forwardRef<GetRef<typeof ReplicaSheet.ScrollView>, Sheet
 
     if (isNativeSheet) {
       return (
-        <TrueSheetScrollContent {...(props as React.ComponentProps<typeof TrueSheetScrollContent>)}>
+        <TrueSheetScrollContent
+          ref={ref as React.Ref<any>}
+          {...(props as React.ComponentProps<typeof TrueSheetScrollContent>)}
+        >
           {props.children}
         </TrueSheetScrollContent>
       );

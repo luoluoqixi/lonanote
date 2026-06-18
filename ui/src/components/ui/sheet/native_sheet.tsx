@@ -11,6 +11,7 @@ import {
 import { TrueSheetPanel } from "@/components/ui/true_sheet/panel";
 import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
 
+import { useSheetOpenState } from "./sheet/useSheetOpenState";
 import type { SheetProps } from "./types";
 
 let nativeSheetCounter = 0;
@@ -184,16 +185,13 @@ export function shouldUseNativeSheet(props: SheetProps) {
 export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
   const {
     children,
-    defaultOpen,
     defaultPosition,
     dismissOnBackPress = true,
     dismissOnOverlayPress = true,
     disableDrag,
     handle,
     onAnimationComplete,
-    onOpenChange,
     onPositionChange,
-    open,
     overlay,
     position,
     snapPoints,
@@ -202,8 +200,8 @@ export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
   const { height: windowHeight } = useWindowDimensions();
   const screenOverlayPortalHost = useScreenOverlayPortalHost();
   const [sheetName] = useState(() => `ui-sheet-native-${++nativeSheetCounter}`);
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false);
   const [uncontrolledPosition, setUncontrolledPosition] = useState(defaultPosition ?? 0);
+  const openState = useSheetOpenState(props);
   const presentedRef = useRef(false);
   const lastRequestedPositionRef = useRef<number | null>(null);
   const detentNormalization = useMemo(
@@ -212,7 +210,7 @@ export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
   );
   const detents = detentNormalization?.detents ?? [1];
 
-  const resolvedOpen = open ?? uncontrolledOpen;
+  const resolvedOpen = openState.open;
   const resolvedPosition = position ?? uncontrolledPosition;
   const clampedSourceIndex = clampDetentIndex(resolvedPosition, detents);
   const resolvedDetentIndex = detentNormalization?.toNativeIndex(clampedSourceIndex) ?? 0;
@@ -246,10 +244,7 @@ export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
   }, [detentNormalization, resolvedDetentIndex, resolvedOpen, sheetName]);
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (open == null) {
-      setUncontrolledOpen(nextOpen);
-    }
-    onOpenChange?.(nextOpen);
+    openState.setOpen(nextOpen);
   };
 
   const handlePositionChange = (nextPosition: number) => {
@@ -280,12 +275,14 @@ export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
       presentedRef.current = false;
       lastRequestedPositionRef.current = null;
       handleOpenChange(false);
+      openState.controller?.onAnimationComplete?.({ open: false });
       onAnimationComplete?.({ open: false });
     },
     onDidPresent: (event) => {
       presentedRef.current = true;
       lastRequestedPositionRef.current = event.nativeEvent.index;
       handlePositionChange(event.nativeEvent.index);
+      openState.controller?.onAnimationComplete?.({ open: true });
       onAnimationComplete?.({ open: true });
     },
     onPositionChange: (event) => {

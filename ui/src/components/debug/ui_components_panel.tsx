@@ -540,15 +540,29 @@ export function UiComponentsDebugPanel() {
 
         <View style={styles.fieldGroup}>
           <View style={styles.field}>
-            <Label>Select</Label>
+            <Label>Select {isWeb() ? "" : "(native-sheet)"}</Label>
             <Select
               items={selectItems}
-              native={false}
+              native="native-sheet"
               nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue}
               placeholder="选择主题色"
               value={selectValue ?? undefined}
             />
+
+            {!isWeb() && (
+              <>
+                <Label>Select (custom-sheet)</Label>
+                <Select
+                  items={selectItems}
+                  native="custom-sheet"
+                  nativeHaptics={debugNativeHaptics}
+                  onValueChange={setSelectValue}
+                  placeholder="选择主题色"
+                  value={selectValue ?? undefined}
+                />
+              </>
+            )}
             <Select
               items={selectItems}
               native={false}

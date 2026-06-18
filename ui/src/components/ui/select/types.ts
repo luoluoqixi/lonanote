@@ -6,6 +6,7 @@ import type { NativeHapticsSetting } from "../utils";
 
 /** 原生 Picker 弹出模式。仅在 props.native 为 true 时生效。 */
 export type NativePickerMode = "dialog" | "dropdown" | "wheel";
+export type SelectNativeMode = boolean | "native-sheet" | "custom-sheet";
 
 export interface SelectItemData {
   "aria-label"?: string;
@@ -29,7 +30,7 @@ export type SelectOptionGroup = SelectItemGroupData;
 
 export interface SelectProps extends Omit<
   ComponentProps<typeof TamaguiSelect>,
-  "children" | "onValueChange"
+  "children" | "native" | "onValueChange"
 > {
   "aria-label"?: string;
   children?: ReactNode;
@@ -44,7 +45,7 @@ export interface SelectProps extends Omit<
   itemLabel?: ReactNode;
   itemLabelProps?: SelectLabelProps;
   nativeHaptics?: NativeHapticsSetting;
-  /** 原生 Picker 弹出模式。仅在 props.native 为 true 时生效。
+  /** 原生 Picker 弹出模式。仅在 props.native === true 时生效。
    * 默认 Android 端 "dialog"
    * 默认 iOS 端 "dropdown"
    * dialog 仅 Android 可用
@@ -52,6 +53,13 @@ export interface SelectProps extends Omit<
    * wheel iOS 专用，使用 Expo UI SwiftUI Picker wheel 样式
    * */
   nativePickerMode?: NativePickerMode;
+  /** Select 平台弹出模式。
+   * true：移动端走原生 picker；web 走 Tamagui `native=true`
+   * false：移动端走 native-sheet；web 保持原有非 native Select
+   * "native-sheet"：移动端走 native-sheet；web 回退到 Tamagui `native=true`
+   * "custom-sheet"：移动端走项目自定义 Sheet；web 回退到 Tamagui `native=true`
+   * */
+  native?: SelectNativeMode;
   /** 是否使用项目自绘 trigger。
    * true = 在 Web / iOS / Android 上都使用统一的文本 + 双箭头 trigger 外观
    *   原生 picker 路径：打开平台原生 picker
