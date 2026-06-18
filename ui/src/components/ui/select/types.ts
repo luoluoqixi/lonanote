@@ -52,11 +52,11 @@ export interface SelectProps extends Omit<
    * wheel iOS 专用，使用 Expo UI SwiftUI Picker wheel 样式
    * */
   nativePickerMode?: NativePickerMode;
-  /** iOS native 模式下是否使用原生 Trigger（SwiftUI Picker 自带按钮）。
-   * true = SwiftUI Picker 原生按钮作为 trigger
-   *   dropdown → 原生 menu 弹出
-   *   wheel → 原生按钮 + 弹出面板
-   * false = Tamagui 自定义 Trigger + 弹出面板 */
+  /** 是否使用项目自绘 trigger。
+   * true = 在 Web / iOS / Android 上都使用统一的文本 + 双箭头 trigger 外观
+   *   原生 picker 路径：打开平台原生 picker
+   *   Tamagui Select 路径：打开现有 Select/Sheet/Menu 内容
+   * false = 使用各路径默认 trigger 外观 */
   nativeTrigger?: boolean;
   onValueChange?: (nextValue: string | null) => void;
   options?: SelectItemData[];

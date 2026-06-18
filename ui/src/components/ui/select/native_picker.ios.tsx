@@ -1,24 +1,10 @@
 // Select iOS 原生 Picker 组件
-// @expo/ui/swift-ui 仅在此文件导入，iOS bundle 才包含
-import {
-  Host as SwiftUIHost,
-  Picker as SwiftUIPicker,
-  Text as SwiftUIText,
-} from "@expo/ui/swift-ui";
-import { pickerStyle, tag } from "@expo/ui/swift-ui/modifiers";
 import { Picker as RNPPicker } from "@react-native-picker/picker";
 import { useTheme } from "@tamagui/core";
 import { Check, ChevronDown } from "@tamagui/lucide-icons-2";
 import { useCallback } from "react";
 import React from "react";
-import {
-  Platform,
-  Pressable,
-  Button as RNButton,
-  StyleSheet,
-  View,
-  useColorScheme,
-} from "react-native";
+import { Platform, Button as RNButton, View, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text, YStack, getFontSize } from "tamagui";
 
@@ -32,6 +18,7 @@ import {
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 import type { ResolvedColorScheme } from "@/components/ui/utils/navigation/status_bar";
 
+import { NativeTriggerPressable } from "./native_trigger";
 import type { ResolvedSelectItemData } from "./select_grouping";
 
 /** 用于为每个 wheel sheet 实例生成唯一名称的计数器 */
@@ -188,7 +175,8 @@ function NativePickerWheelSheet({
 }
 
 /**
- * SwiftUI Picker menu trigger。
+ * iOS/Android 共用的自绘原生 trigger。
+ * 不再依赖 SwiftUI Picker 自带按钮，避免嵌套 sheet 等系统着色差异。
  */
 function NativePickerSwiftUIMenuTrigger({
   items,
@@ -199,37 +187,10 @@ function NativePickerSwiftUIMenuTrigger({
   value: string | null | undefined;
   onPress?: () => void;
 }) {
-  const [isPressed, setIsPressed] = React.useState(false);
   const selectedValue = (value as string) ?? items[0]?.value ?? "";
+  const selectedLabel = items.find((item) => item.value === selectedValue)?.label ?? "";
 
-  return (
-    <View>
-      <View pointerEvents="none" style={{ opacity: isPressed ? 0.6 : 1 }}>
-        <View style={{ minWidth: 180, minHeight: 44, justifyContent: "center" }}>
-          <SwiftUIHost
-            // 原生 menu trigger 同样由 SwiftUI Host 承载。
-            // 在嵌套 TrueSheet 中若参与当前可见 safe area 约束，也可能出现
-            // 与 Slider 类似的视口相关漂移，因此这里一并关闭。
-            ignoreSafeArea="all"
-          >
-            <SwiftUIPicker modifiers={[pickerStyle("menu")]} selection={selectedValue}>
-              {items.map((item) => (
-                <SwiftUIText key={item.value} modifiers={[tag(item.value)]}>
-                  {item.label}
-                </SwiftUIText>
-              ))}
-            </SwiftUIPicker>
-          </SwiftUIHost>
-        </View>
-      </View>
-      <Pressable
-        onPress={onPress}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        style={StyleSheet.absoluteFill}
-      />
-    </View>
-  );
+  return <NativeTriggerPressable label={selectedLabel} onPress={onPress} />;
 }
 
 /** wheel + 原生 trigger（SwiftUI menu 按钮） */

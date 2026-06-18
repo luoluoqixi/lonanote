@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/utils";
 
 import { NativePickerDialog, NativePickerSwiftUI } from "./native_picker";
+import { NativeTriggerFace } from "./native_trigger";
 import {
   type ResolvedSelectItemData,
   type ResolvedSelectItemGroupData,
@@ -510,6 +511,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const getItemLabelByValue = (value: string | null | undefined) =>
       resolvedItems.find((item) => item.value === value)?.label ?? null;
     const selectedItem = getItemLabelByValue(props.value ?? null);
+    const triggerLabel = selectedItem ?? placeholder ?? "";
     const renderItem = (item: ResolvedSelectItemData) => (
       <SelectItem
         {...(shouldUseTouchSheetLayout
@@ -607,12 +609,17 @@ const SelectRoot = forwardRef<any, SelectProps>(
      * wheel 为 iOS 专用模式，Android 上不走此路径。
      */
     const shouldRenderNativePicker =
-      !isWeb() && !!native && resolvedPickerMode !== "wheel" && platform === "android";
+      !isWeb() &&
+      !!native &&
+      resolvedPickerMode !== "wheel" &&
+      platform === "android" &&
+      !nativeTrigger;
     /**
-     * iOS native（dropdown/dialog/wheel）→ NativePickerSwiftUI（Expo UI SwiftUI Picker）。
-     * RNP 版本代码保留在 NativePickerIos 中，后续可切换。
+     * iOS native 始终走平台 wrapper。
+     * Android 在 nativeTrigger=true 时也走同一层 wrapper，自绘 trigger + 原生 picker 弹层。
      */
-    const shouldRenderNativeIosPicker = !isWeb() && !!native && platform === "ios";
+    const shouldRenderNativePlatformPicker =
+      !isWeb() && !!native && (platform === "ios" || (platform === "android" && !!nativeTrigger));
 
     const handleTamaguiOpenChange = (nextOpen: boolean) => {
       if (shouldRenderNativePicker && nextOpen) {
@@ -668,12 +675,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
 
     return (
       <>
-        {shouldRenderNativeIosPicker ? (
+        {shouldRenderNativePlatformPicker ? (
           <NativePickerSwiftUI
             items={resolvedItems}
             value={props.value}
             placeholder={placeholder}
-            mode={resolvedPickerMode as "dropdown" | "wheel"}
+            mode={resolvedPickerMode as "dropdown" | "wheel" | "dialog"}
             nativeTrigger={nativeTrigger ?? false}
             onValueChange={onValueChange}
             resolvedNativeHaptics={resolvedNativeHaptics}
@@ -693,9 +700,21 @@ const SelectRoot = forwardRef<any, SelectProps>(
                 <>
                   <SelectTrigger
                     disabled={disabled ?? isDisabled ?? triggerProps?.disabled}
-                    borderRadius="$4"
-                    backgroundColor="$background"
-                    iconAfter={ChevronDown}
+                    {...(!nativeTrigger
+                      ? {
+                          backgroundColor: "$background",
+                          borderRadius: "$4",
+                          iconAfter: ChevronDown,
+                        }
+                      : {
+                          backgroundColor: "transparent",
+                          borderColor: "transparent",
+                          borderRadius: 0,
+                          borderWidth: 0,
+                          minHeight: 44,
+                          paddingHorizontal: 0,
+                          paddingVertical: 0,
+                        })}
                     {...triggerProps}
                     aria-label={resolveAriaLabel(
                       triggerProps?.["aria-label"] ?? ariaLabel,
@@ -703,7 +722,11 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     )}
                     nativeHaptics={triggerProps?.nativeHaptics ?? resolvedNativeHaptics}
                   >
-                    <SelectValue placeholder={placeholder} />
+                    {nativeTrigger ? (
+                      <NativeTriggerFace label={triggerLabel} />
+                    ) : (
+                      <SelectValue placeholder={placeholder} />
+                    )}
                   </SelectTrigger>
 
                   <SelectSheetController onOpenAnimationComplete={scrollToSelectedItem}>
@@ -796,7 +819,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                         {...viewportProps}
                       >
                         {renderedItemGroups.map(renderGroup)}
-                        {isWeb() && native && (
+                        {isWeb() && native && !nativeTrigger && (
                           <YStack
                             position="absolute"
                             r={0}

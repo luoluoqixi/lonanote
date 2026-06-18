@@ -4,6 +4,9 @@ import { useTheme } from "@tamagui/core";
 import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
 
+import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
+
+import { NativeTriggerPressable } from "./native_trigger";
 import type { ResolvedSelectItemData } from "./select_grouping";
 
 /** Android 原生 Picker Dialog：隐藏渲染 Picker 并通过 focus() 触发系统 dialog */
@@ -67,5 +70,52 @@ export function NativePickerDialog({
   );
 }
 
-/** Android 端永不渲染（shouldRenderNativeIosPicker 恒为 false） */
-export const NativePickerSwiftUI: React.FC<any> = () => null;
+export function NativePickerSwiftUI({
+  items,
+  value,
+  mode,
+  onValueChange,
+  resolvedNativeHaptics,
+}: {
+  items: ResolvedSelectItemData[];
+  value: string | null | undefined;
+  placeholder?: React.ReactNode;
+  mode: "dropdown" | "wheel" | "dialog";
+  nativeTrigger?: boolean;
+  onValueChange?: (value: string | null) => void;
+  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+}) {
+  const [visible, setVisible] = React.useState(false);
+  const selectedLabel =
+    items.find((item) => item.value === ((value as string) ?? items[0]?.value ?? ""))?.label ?? "";
+
+  return (
+    <>
+      <NativeTriggerPressable
+        label={selectedLabel}
+        onPress={() => {
+          triggerNativeHaptics(resolvedNativeHaptics);
+          setVisible((prev) => {
+            if (prev) {
+              requestAnimationFrame(() => setVisible(true));
+              return false;
+            }
+            return true;
+          });
+        }}
+      />
+      <NativePickerDialog
+        visible={visible}
+        value={(value as string | undefined) ?? ""}
+        items={items}
+        mode={mode === "wheel" ? "dialog" : mode}
+        onValueChange={(itemValue: string) => {
+          onValueChange?.(itemValue || null);
+          triggerNativeHaptics(resolvedNativeHaptics);
+          setVisible(false);
+        }}
+        onBlur={() => setVisible(false)}
+      />
+    </>
+  );
+}

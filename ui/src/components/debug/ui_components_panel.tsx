@@ -548,6 +548,15 @@ export function UiComponentsDebugPanel() {
               placeholder="选择主题色"
               value={selectValue ?? undefined}
             />
+            <Select
+              items={selectItems}
+              native={false}
+              nativeTrigger
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={setSelectValue}
+              placeholder="选择主题色"
+              value={selectValue ?? undefined}
+            />
             <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
@@ -561,18 +570,16 @@ export function UiComponentsDebugPanel() {
               placeholder="选择主题色"
               value={selectNativePickerValue ?? undefined}
             />
-            {os() === "ios" && (
-              <Select
-                items={selectItems}
-                native
-                nativeTrigger
-                nativePickerMode="dropdown"
-                nativeHaptics={debugNativeHaptics}
-                onValueChange={setSelectNativePickerValue}
-                placeholder="选择主题色"
-                value={selectNativePickerValue ?? undefined}
-              />
-            )}
+            <Select
+              items={selectItems}
+              native
+              nativeTrigger
+              nativePickerMode="dropdown"
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={setSelectNativePickerValue}
+              placeholder="选择主题色"
+              value={selectNativePickerValue ?? undefined}
+            />
             <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
           </View>
           {os() === "ios" && (
@@ -614,6 +621,16 @@ export function UiComponentsDebugPanel() {
                 placeholder="选择主题色"
                 value={selectNativePickerValue ?? undefined}
               />
+              <Select
+                items={selectItems}
+                native
+                nativeTrigger
+                nativePickerMode="dialog"
+                nativeHaptics={debugNativeHaptics}
+                onValueChange={setSelectNativePickerValue}
+                placeholder="选择主题色"
+                value={selectNativePickerValue ?? undefined}
+              />
               <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
             </View>
           )}
@@ -628,12 +645,30 @@ export function UiComponentsDebugPanel() {
               placeholder="选择主题"
               value={selectValue2 ?? undefined}
             />
+            <Select
+              items={selectItems2}
+              native={false}
+              nativeTrigger
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={setSelectValue2}
+              placeholder="选择主题"
+              value={selectValue2 ?? undefined}
+            />
             <Text color="$color10">当前主题：{selectValue2 ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
             {isWeb() && <Label>Select Native</Label>}
             <Select
               items={selectItems2}
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={setSelectValue2}
+              placeholder="选择主题"
+              value={selectValue2 ?? undefined}
+              native
+            />
+            <Select
+              items={selectItems2}
+              nativeTrigger
               nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue2}
               placeholder="选择主题"
@@ -652,12 +687,30 @@ export function UiComponentsDebugPanel() {
               placeholder="选择排序方式"
               value={selectGroupedValue ?? undefined}
             />
+            <Select
+              native={false}
+              nativeTrigger
+              itemGroups={selectSortGroups}
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={setSelectGroupedValue}
+              placeholder="选择排序方式"
+              value={selectGroupedValue ?? undefined}
+            />
             <Text color="$color10">当前排序：{selectGroupedValue ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
             <Label>Select Native Grouped</Label>
             <Select
               itemGroups={selectSortGroups}
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={setSelectNativeGroupedValue}
+              placeholder="选择排序方式"
+              value={selectNativeGroupedValue ?? undefined}
+              native
+            />
+            <Select
+              itemGroups={selectSortGroups}
+              nativeTrigger
               nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectNativeGroupedValue}
               placeholder="选择排序方式"
