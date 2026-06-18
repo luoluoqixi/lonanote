@@ -9,6 +9,8 @@ export type TrueSheetToolbarHeaderProps = {
   /** 是否显示返回箭头（子页为 true，根页为 false）。 */
   canGoBack?: boolean;
   headerRight?: ReactNode;
+  /** 透明顶栏：保留标题和按钮，仅移除背景与分隔线。 */
+  transparent?: boolean;
   onBack?: () => void;
   title: string;
 };
@@ -19,6 +21,7 @@ export type TrueSheetToolbarHeaderProps = {
 export function TrueSheetToolbarHeader({
   canGoBack = false,
   headerRight,
+  transparent = false,
   onBack,
   title,
 }: TrueSheetToolbarHeaderProps) {
@@ -32,8 +35,8 @@ export function TrueSheetToolbarHeader({
       style={[
         styles.root,
         {
-          backgroundColor: background,
-          borderBottomColor: borderColor,
+          backgroundColor: transparent ? "transparent" : background,
+          borderBottomColor: transparent ? "transparent" : borderColor,
         },
       ]}
     >

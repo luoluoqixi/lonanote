@@ -7,7 +7,10 @@ import {
   isDebugFeatureEnabled,
   isDebugTabKey,
 } from "@/components/debug";
-import { nativeStackStatusBarOptions } from "@/components/ui/utils/navigation";
+import {
+  nativeStackStatusBarOptions,
+  withNativeBackButton,
+} from "@/components/ui/utils/navigation";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 export default function DebugStackLayout() {
@@ -22,7 +25,7 @@ export default function DebugStackLayout() {
 
   return (
     <Stack
-      screenOptions={({ route }) => {
+      screenOptions={({ navigation, route }) => {
         if (route.name === "index") {
           return {
             ...nativeStackStatusBarOptions(colorScheme),
@@ -50,23 +53,29 @@ export default function DebugStackLayout() {
             ? getDebugPanelRouteDefinition(section).label
             : "调试";
 
-        return {
-          ...nativeStackStatusBarOptions(colorScheme),
-          contentStyle: {
-            backgroundColor: stackBackgroundColor,
+        return withNativeBackButton(
+          {
+            ...nativeStackStatusBarOptions(colorScheme),
+            contentStyle: {
+              backgroundColor: stackBackgroundColor,
+            },
+            headerTintColor: theme.accentColor.val,
+            headerShadowVisible: false,
+            headerShown: true,
+            headerStyle: {
+              backgroundColor: Platform.OS === "ios" ? "transparent" : stackBackgroundColor,
+            },
+            headerTitleStyle: {
+              color: theme.color.val,
+            },
+            headerTransparent: Platform.OS === "ios",
+            title,
           },
-          headerTintColor: theme.accentColor.val,
-          headerShadowVisible: false,
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: Platform.OS === "ios" ? "transparent" : stackBackgroundColor,
+          {
+            label: "调试面板",
+            onPress: () => navigation.goBack(),
           },
-          headerTitleStyle: {
-            color: theme.color.val,
-          },
-          headerTransparent: Platform.OS === "ios",
-          title,
-        };
+        );
       }}
     />
   );

@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 
 import { isDesktop, os } from "@/api/common";
 
@@ -38,6 +38,7 @@ function DebugScreenLayout({
   hideInlineHeader = false,
   layoutHost = "screen",
   scrollable = false,
+  trueSheetBodyStyle,
   title,
 }: {
   children: ReactNode;
@@ -47,10 +48,11 @@ function DebugScreenLayout({
   /** True Sheet 内勿用 flex:1 全屏壳，否则 Card/按钮会错位且无法点击 */
   layoutHost?: DebugScreenLayoutHost;
   scrollable?: boolean;
+  trueSheetBodyStyle?: ViewStyle;
   title: string;
 }) {
   if (layoutHost === "trueSheet") {
-    return <View style={styles.trueSheetBody}>{children}</View>;
+    return <View style={[styles.trueSheetBody, trueSheetBodyStyle]}>{children}</View>;
   }
 
   const desktop = isDesktop();
@@ -286,10 +288,12 @@ export function DebugSectionScreen({
   hideInlineHeader = false,
   layoutHost = "screen",
   sectionKey,
+  trueSheetCompact = false,
 }: {
   hideInlineHeader?: boolean;
   layoutHost?: DebugScreenLayoutHost;
   sectionKey: DebugTabKey;
+  trueSheetCompact?: boolean;
 }) {
   const definition = getDebugPanelRouteDefinition(sectionKey);
   const SectionComponent = definition.Component;
@@ -301,8 +305,9 @@ export function DebugSectionScreen({
       layoutHost={layoutHost}
       scrollable={layoutHost !== "trueSheet"}
       title={definition.label}
+      trueSheetBodyStyle={trueSheetCompact ? styles.trueSheetBodyCompact : undefined}
     >
-      <View style={styles.panelHost}>
+      <View style={[styles.panelHost, trueSheetCompact && styles.panelHostCompact]}>
         <SectionComponent />
       </View>
     </DebugScreenLayout>
@@ -393,5 +398,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     width: "100%",
+  },
+  trueSheetBodyCompact: {
+    paddingBottom: 0,
+    paddingTop: 0,
+  },
+  panelHostCompact: {
+    paddingBottom: 0,
   },
 });

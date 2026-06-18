@@ -27,6 +27,8 @@ export type TrueSheetPanelProps = {
   chrome?: TrueSheetChromeMode;
   /** 覆盖 `chrome` 默认的 grabber 行为。 */
   grabber?: boolean;
+  /** 自绘 toolbar 是否透明。 */
+  headerTransparent?: boolean;
   /** 自定义 header 内容，会渲染在 TrueSheet 原生 header 槽中。设置此项后 `chrome`/`title`/`canGoBack`/`headerRight` 等仍独立生效，此 header 将优先渲染。 */
   header?: ReactElement;
   name: string;
@@ -53,6 +55,7 @@ function TrueSheetPanelInner({
   children,
   chrome = "plain",
   grabber: grabberProp,
+  headerTransparent = false,
   header: headerProp,
   name,
   title,
@@ -104,6 +107,7 @@ function TrueSheetPanelInner({
         headerRight={headerRight}
         onBack={onBack}
         title={title}
+        transparent={headerTransparent}
       />
     ) : undefined;
   const resolvedHeader = headerProp ?? toolbarHeader;

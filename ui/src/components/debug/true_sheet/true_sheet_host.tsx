@@ -1,7 +1,7 @@
 // True Sheet 调试宿主（简化版）：iOS+Android 合并在一个文件
 import { type NavigationProp, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useState } from "react";
-import { Platform } from "react-native";
+import { Dimensions, Platform, View } from "react-native";
 import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb } from "@/api/common";
@@ -12,6 +12,7 @@ import {
   TrueSheetStackHost,
   trueSheetInnerStackScreenOptions,
 } from "@/components/ui/true_sheet/stack";
+import { TrueSheetToolbarHeader } from "@/components/ui/true_sheet/toolbar_header";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
@@ -164,18 +165,51 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
   const definition = DEBUG_PANEL_ROUTE_DEFINITIONS.find((d) => d.key === sectionKey);
   if (!definition) return null;
 
+  const screenWidth = Dimensions.get("window").width;
+  const grabberHitboxWidth = screenWidth - (Platform.OS === "ios" ? 40 : 32);
+  const isIos = Platform.OS === "ios";
+
   return (
     <TrueSheetPanel
-      chrome="toolbar"
+      chrome="plain"
+      header={
+        <View style={{ alignItems: "center", height: 44, justifyContent: "center" }}>
+          <View
+            style={{
+              backgroundColor: "rgba(128, 128, 128, 0.35)",
+              borderRadius: isIos ? 2.5 : 2,
+              height: isIos ? 5 : 4,
+              width: isIos ? 36 : 32,
+            }}
+          />
+        </View>
+      }
       name={getDebugSectionSheetName(sectionKey)}
       onDidDismiss={() => cleanupDebugSectionSheet(sectionKey)}
       onRequestClose={() => void closeDebugSectionSheet(sectionKey)}
       overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
-      sheetProps={{ detents: [...DEBUG_NESTED_SECTION_SHEET_DETENTS] }}
-      title={definition.label}
+      sheetProps={{
+        detents: [...DEBUG_NESTED_SECTION_SHEET_DETENTS],
+        grabberOptions: {
+          width: grabberHitboxWidth,
+          height: isIos ? 24 : 12,
+          topMargin: isIos ? 10 : 16,
+          color: "transparent",
+          adaptive: false,
+        },
+        headerStyle: {
+          height: 44,
+          left: 0,
+          position: "absolute",
+          right: 0,
+          top: 0,
+          zIndex: 1,
+        },
+      }}
     >
-      <TrueSheetScrollContent>
-        <DebugSectionScreen layoutHost="trueSheet" sectionKey={sectionKey} />
+      <TrueSheetScrollContent extraBottomPadding={0}>
+        <TrueSheetToolbarHeader title={definition.label} transparent />
+        <DebugSectionScreen layoutHost="trueSheet" sectionKey={sectionKey} trueSheetCompact />
       </TrueSheetScrollContent>
     </TrueSheetPanel>
   );
