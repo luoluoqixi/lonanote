@@ -1,26 +1,13 @@
 // iOS 原生 Slider：使用 @expo/ui/swift-ui 的 SwiftUI Slider
 import { Slider as ExpoSlider, Host } from "@expo/ui/swift-ui";
-import React from "react";
 import { View } from "react-native";
 
-import {
-  getSliderHapticsBuckets,
-  triggerSliderNativeHaptics,
-  useResolvedNativeHaptics,
-} from "@/components/ui/utils";
+import { triggerSliderNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 
 import type { SliderProps } from "./types";
 
 export function NativeSlider(props: SliderProps) {
-  const {
-    value,
-    onValueChange,
-    min,
-    max,
-    step: stepProp,
-    nativeHaptics,
-    nativeHapticsInterval,
-  } = props;
+  const { value, onValueChange, min, max, step: stepProp, nativeHaptics } = props;
 
   const safeMin = min ?? 0;
   const safeMax = max ?? 100;
@@ -30,47 +17,12 @@ export function NativeSlider(props: SliderProps) {
 
   // 触感反馈
   const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
-  const lastHapticsBucketsRef = React.useRef(
-    getSliderHapticsBuckets([currentValue], {
-      interval: nativeHapticsInterval,
-      max: safeMax,
-      min: safeMin,
-      step: safeStep,
-    }),
-  );
-
-  React.useEffect(() => {
-    if (value == null) return;
-    const v = value[0] ?? safeMin;
-    lastHapticsBucketsRef.current = getSliderHapticsBuckets([v], {
-      interval: nativeHapticsInterval,
-      max: safeMax,
-      min: safeMin,
-      step: safeStep,
-    });
-  }, [nativeHapticsInterval, safeMax, safeMin, safeStep, value]);
 
   const handleValueChange = (nextValue: number) => {
     // 四舍五入到最近的 step，避免浮点数
     const stepped = Math.round((nextValue - safeMin) / safeStep) * safeStep + safeMin;
     onValueChange?.([stepped]);
-
-    // 触感反馈：Bucket 变化时才触发
-    const nextBuckets = getSliderHapticsBuckets([stepped], {
-      interval: nativeHapticsInterval,
-      max: safeMax,
-      min: safeMin,
-      step: safeStep,
-    });
-    const previousBuckets = lastHapticsBucketsRef.current;
-    const hasBucketChanged =
-      previousBuckets.length !== nextBuckets.length ||
-      nextBuckets.some((bucket, index) => bucket !== previousBuckets[index]);
-    lastHapticsBucketsRef.current = nextBuckets;
-
-    if (hasBucketChanged) {
-      triggerSliderNativeHaptics(resolvedNativeHaptics);
-    }
+    triggerSliderNativeHaptics(resolvedNativeHaptics);
   };
 
   return (

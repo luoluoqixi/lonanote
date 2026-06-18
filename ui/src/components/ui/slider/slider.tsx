@@ -1,6 +1,6 @@
 import React from "react";
 
-import { isWeb } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 import {
   getSliderHapticsBuckets,
   triggerSliderNativeHaptics,
@@ -17,6 +17,7 @@ import type {
 } from "./types";
 
 const web = isWeb();
+const ios = os() === "ios";
 
 function SliderRoot(props: SliderProps) {
   const {
@@ -64,6 +65,11 @@ function SliderRoot(props: SliderProps) {
     thumbCount ?? rootProps.value?.length ?? rootProps.defaultValue?.length ?? 1;
   const handleValueChange: NonNullable<SliderProps["onValueChange"]> = (nextValue) => {
     onValueChange?.(nextValue);
+
+    if (ios) {
+      triggerSliderNativeHaptics(resolvedNativeHaptics);
+      return;
+    }
 
     const nextBuckets = getSliderHapticsBuckets(nextValue, {
       interval: nativeHapticsInterval,
