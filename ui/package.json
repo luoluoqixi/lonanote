@@ -129,6 +129,7 @@
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch",
     "@tamagui/web@2.1.0": "patches/@tamagui+web@2.1.0.patch",
     "@expo/cli@55.0.32": "patches/@expo+cli@55.0.32.patch",
-    "expo-haptics@55.0.14": "patches/expo-haptics@55.0.14.patch"
+    "expo-haptics@55.0.14": "patches/expo-haptics@55.0.14.patch",
+    "@expo/ui@55.0.17": "patches/@expo+ui@55.0.17.patch"
   }
 }
