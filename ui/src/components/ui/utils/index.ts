@@ -148,6 +148,17 @@ export function triggerNativeHaptics(
 }
 
 export function triggerSliderNativeHaptics(setting: NativeHapticsSetting | undefined) {
+  if (setting == null || setting === false || isWeb()) {
+    return;
+  }
+
+  if (os() === "ios") {
+    Haptics.selectionAsync().catch((err: unknown) => {
+      console.error("[Haptics] selectionAsync 失败:", err);
+    });
+    return;
+  }
+
   triggerNativeHaptics(setting, {
     androidType: Haptics.AndroidHaptics.Segment_Frequent_Tick,
   });
