@@ -49,7 +49,13 @@ export function NativeSlider(props: SliderProps) {
 
   return (
     <View style={{ height: 48, width: "100%" }}>
-      <Host style={{ flex: 1, width: "100%" }}>
+      <Host
+        // 嵌套 TrueSheet 中，SwiftUI Host 会把当前可见 safe area 当作宿主约束，
+        // 导致原生 Slider 在滚到视口上/下边缘时出现反向“自动避让”偏移。
+        // 对这类固定高度控件直接忽略 safe area，可避免其跟随 sheet 可见区域漂移。
+        ignoreSafeArea="all"
+        style={{ flex: 1, width: "100%" }}
+      >
         <ExpoSlider
           value={currentValue}
           onValueChange={handleValueChange}
