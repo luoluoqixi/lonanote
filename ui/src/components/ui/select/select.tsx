@@ -714,6 +714,11 @@ const SelectRoot = forwardRef<any, SelectProps>(
                           minHeight: 44,
                           paddingHorizontal: 0,
                           paddingVertical: 0,
+                          pressStyle: {
+                            backgroundColor: "transparent",
+                            borderColor: "transparent",
+                            opacity: 0.6,
+                          },
                         })}
                     {...triggerProps}
                     aria-label={resolveAriaLabel(
