@@ -1,4 +1,4 @@
-import { Button } from "react-native";
+import { Button } from "@/components/ui/button";
 
 import { useTrueSheetStackHost } from "./stack_context";
 
@@ -6,5 +6,5 @@ import { useTrueSheetStackHost } from "./stack_context";
 export function TrueSheetStackHeaderCloseButton({ title }: { title?: string }) {
   const { onRequestClose } = useTrueSheetStackHost();
   const titleText = title ?? "Close";
-  return <Button aria-label={titleText} onPress={onRequestClose} title={titleText} />;
+  return <Button aria-label={titleText} native onPress={onRequestClose} title={titleText} />;
 }

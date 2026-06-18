@@ -4,10 +4,11 @@ import { useTheme } from "@tamagui/core";
 import { Check, ChevronDown } from "@tamagui/lucide-icons-2";
 import { useCallback } from "react";
 import React from "react";
-import { Platform, Button as RNButton, View, useColorScheme } from "react-native";
+import { Platform, View, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text, YStack, getFontSize } from "tamagui";
 
+import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { dismissTrueSheet, presentTrueSheet } from "@/components/ui/true_sheet";
 import {
@@ -67,8 +68,8 @@ function WheelTrueSheet({
           theme.color.val,
         ),
         title,
-        headerLeft: () => <RNButton title="关闭" onPress={onCancel} />,
-        headerRight: () => <RNButton title="完成" onPress={onDone} />,
+        headerLeft: () => <Button native onPress={onCancel} title="关闭" />,
+        headerRight: () => <Button native onPress={onDone} title="完成" />,
       }}
     >
       <TrueSheetInnerStack.Screen name="picker">

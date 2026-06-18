@@ -90,7 +90,7 @@ export function UiComponentsDebugPanel() {
   const [selectNativePickerValue, setSelectNativePickerValue] = useState<string | null>("blue");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
-  const [sheetNativeEnabled, setSheetNativeEnabled] = useState(false);
+  const [sheetNativeEnabled, setSheetNativeEnabled] = useState(true);
   const [percentSheetOpen, setPercentSheetOpen] = useState(false);
   const [percentSheetPosition, setPercentSheetPosition] = useState(0);
   const [constantSheetOpen, setConstantSheetOpen] = useState(false);
@@ -342,6 +342,9 @@ export function UiComponentsDebugPanel() {
             </Button>
             <Button iconAfter={Trash2} nativeHaptics={debugNativeHaptics} theme="red">
               Red
+            </Button>
+            <Button native nativeHaptics={debugNativeHaptics}>
+              Native Button
             </Button>
           </DemoRow>
         </View>
