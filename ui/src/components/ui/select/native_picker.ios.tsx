@@ -206,7 +206,12 @@ function NativePickerSwiftUIMenuTrigger({
     <View>
       <View pointerEvents="none" style={{ opacity: isPressed ? 0.6 : 1 }}>
         <View style={{ minWidth: 180, minHeight: 44, justifyContent: "center" }}>
-          <SwiftUIHost>
+          <SwiftUIHost
+            // 原生 menu trigger 同样由 SwiftUI Host 承载。
+            // 在嵌套 TrueSheet 中若参与当前可见 safe area 约束，也可能出现
+            // 与 Slider 类似的视口相关漂移，因此这里一并关闭。
+            ignoreSafeArea="all"
+          >
             <SwiftUIPicker modifiers={[pickerStyle("menu")]} selection={selectedValue}>
               {items.map((item) => (
                 <SwiftUIText key={item.value} modifiers={[tag(item.value)]}>
