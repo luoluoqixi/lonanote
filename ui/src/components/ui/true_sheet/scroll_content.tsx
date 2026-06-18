@@ -8,12 +8,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { isLegacyCompactIphone, os } from "@/api/common/platform";
+import { isIos26Plus, isLegacyCompactIphone, os } from "@/api/common/platform";
 
 import { getTrueSheetScrollBottomPadding } from "./sheet_scroll_layout";
 import { useTrueSheetScrollLayout } from "./true_sheet_scroll_context";
 
 const SCROLLBAR_LEGACY_COMPACT_IPHONE_BOTTOM = 40;
+const SCROLLBAR_IOS26_PLUS_VISUAL_OFFSET = 12;
 
 export type TrueSheetScrollContentProps = Omit<ScrollViewProps, "children"> & {
   children: ReactNode;
@@ -70,10 +71,11 @@ export function TrueSheetScrollContent({
    *   不足以把滚动条抬到和普通页面接近的位置，需要额外定值补偿
    * - 其它没有 Home indicator 的老设备先保留一个较小兜底值
    */
+  const ios26PlusVisualOffset = isIos26Plus() ? SCROLLBAR_IOS26_PLUS_VISUAL_OFFSET : 0;
   const indicatorVisualAvoidanceInset =
     automaticContentInsetAdjustment && !nativeScrollInsetsApplied
       ? insets.bottom > 0
-        ? insets.bottom
+        ? insets.bottom + ios26PlusVisualOffset
         : isLegacyCompactIphone()
           ? SCROLLBAR_LEGACY_COMPACT_IPHONE_BOTTOM
           : 8
