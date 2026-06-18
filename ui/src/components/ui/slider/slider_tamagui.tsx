@@ -1,7 +1,6 @@
 import { Slider as TamaguiSliderPrimitive } from "@tamagui/slider";
 import React from "react";
 
-import { os } from "@/api/common/platform";
 import {
   getSliderHapticsBuckets,
   triggerSliderNativeHaptics,
@@ -14,8 +13,6 @@ import type {
   SliderTrackActiveProps,
   SliderTrackProps,
 } from "./types";
-
-const ios = os() === "ios";
 
 function TamaguiSliderRoot(props: SliderProps) {
   const {
@@ -58,12 +55,6 @@ function TamaguiSliderRoot(props: SliderProps) {
     thumbCount ?? rootProps.value?.length ?? rootProps.defaultValue?.length ?? 1;
   const handleValueChange: NonNullable<SliderProps["onValueChange"]> = (nextValue) => {
     onValueChange?.(nextValue);
-
-    if (ios) {
-      triggerSliderNativeHaptics(resolvedNativeHaptics);
-      return;
-    }
-
     const nextBuckets = getSliderHapticsBuckets(nextValue, {
       interval: nativeHapticsInterval,
       max: rootProps.max,

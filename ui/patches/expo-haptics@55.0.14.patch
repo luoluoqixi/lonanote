@@ -1,16 +1,18 @@
 diff --git a/ios/HapticsModule.swift b/ios/HapticsModule.swift
-index 41659a0..380aa4e 100644
+index 41659a0..b003e35 100644
 --- a/ios/HapticsModule.swift
 +++ b/ios/HapticsModule.swift
-@@ -1,27 +1,54 @@
+@@ -1,27 +1,55 @@
  import ExpoModulesCore
 +import CoreHaptics
 +import AudioToolbox
-
+ 
  public class HapticsModule: Module {
++  private let selectionGenerator = UISelectionFeedbackGenerator()
++
    public func definition() -> ModuleDefinition {
      Name("ExpoHaptics")
-
+ 
      AsyncFunction("notificationAsync") { (notificationType: NotificationType) in
 -      let generator = UINotificationFeedbackGenerator()
 -      generator.prepare()
@@ -24,7 +26,7 @@ index 41659a0..380aa4e 100644
 +      }
      }
      .runOnQueue(.main)
-
+ 
      AsyncFunction("impactAsync") { (style: ImpactStyle) in
 -      let generator = UIImpactFeedbackGenerator(style: style.toFeedbackStyle())
 -      generator.prepare()
@@ -51,15 +53,14 @@ index 41659a0..380aa4e 100644
 +      }
      }
      .runOnQueue(.main)
-
+ 
      AsyncFunction("selectionAsync") {
 -      let generator = UISelectionFeedbackGenerator()
 -      generator.prepare()
 -      generator.selectionChanged()
 +      if CHHapticEngine.capabilitiesForHardware().supportsHaptics {
-+        let generator = UISelectionFeedbackGenerator()
-+        generator.prepare()
-+        generator.selectionChanged()
++        self.selectionGenerator.selectionChanged()
++        self.selectionGenerator.prepare()
 +      } else {
 +        AudioServicesPlaySystemSound(1519)
 +      }
