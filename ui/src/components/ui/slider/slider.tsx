@@ -17,11 +17,12 @@ import type {
 } from "./types";
 
 const web = isWeb();
+const DEFAULT_NATIVE = !web;
 
 function SliderRoot(props: SliderProps) {
   const {
     children,
-    native,
+    native = DEFAULT_NATIVE,
     nativeHaptics,
     nativeHapticsInterval,
     onValueChange,
