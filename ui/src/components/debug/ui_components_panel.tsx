@@ -90,6 +90,7 @@ export function UiComponentsDebugPanel() {
   const [selectNativePickerValue, setSelectNativePickerValue] = useState<string | null>("blue");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetPosition, setSheetPosition] = useState(0);
+  const [sheetNativeEnabled, setSheetNativeEnabled] = useState(false);
   const [percentSheetOpen, setPercentSheetOpen] = useState(false);
   const [percentSheetPosition, setPercentSheetPosition] = useState(0);
   const [constantSheetOpen, setConstantSheetOpen] = useState(false);
@@ -1115,6 +1116,15 @@ export function UiComponentsDebugPanel() {
             trigger={<Button variant="outlined">右键 / 长按 ContextMenu</Button>}
           />
 
+          <DemoRow>
+            <Switch
+              checked={sheetNativeEnabled}
+              label={"Sheet native"}
+              labelPosition="end"
+              onCheckedChange={setSheetNativeEnabled}
+            />
+          </DemoRow>
+
           <Button
             nativeHaptics={debugNativeHaptics}
             onPress={() => {
@@ -1187,6 +1197,7 @@ export function UiComponentsDebugPanel() {
           全局 Sheet mixed：
           {mixedSheetOpen ? `打开，position=${mixedSheetPosition}` : "关闭"}
         </Text>
+
         <View style={styles.sheetDemoHost}>
           <Text color="$color10">
             这个示例在调试面板 Dialog 内以 inline 模式渲染，并通过 wrapper 的默认组合 API 生成结构。
@@ -1293,6 +1304,7 @@ export function UiComponentsDebugPanel() {
                     frameProps={{ style: styles.sheetFrame }}
                     handle
                     modal
+                    native={sheetNativeEnabled}
                     onOpenChange={handleNestedGlobalSheetOpenChange}
                     onPositionChange={handleNestedGlobalSheetPositionChange}
                     open={nestedGlobalSheetOpen}
@@ -1309,12 +1321,13 @@ export function UiComponentsDebugPanel() {
             frameProps={{ style: styles.sheetFrame }}
             handle
             modal
+            native={sheetNativeEnabled}
             onOpenChange={handlePercentSheetOpenChange}
             onPositionChange={handlePercentSheetPositionChange}
             open={percentSheetOpen}
             overlay
             position={percentSheetPosition}
-            snapPoints={[62, 86]}
+            snapPoints={[62, 90]}
             snapPointsMode="percent"
             transition="medium"
           />
@@ -1352,6 +1365,7 @@ export function UiComponentsDebugPanel() {
             frameProps={{ style: styles.sheetFrame }}
             handle
             modal
+            native={sheetNativeEnabled}
             onOpenChange={handleConstantSheetOpenChange}
             onPositionChange={handleConstantSheetPositionChange}
             open={constantSheetOpen}
@@ -1395,6 +1409,7 @@ export function UiComponentsDebugPanel() {
             frameProps={{ style: styles.sheetFrame }}
             handle
             modal
+            native={sheetNativeEnabled}
             onOpenChange={handleFitSheetOpenChange}
             onPositionChange={handleFitSheetPositionChange}
             open={fitSheetOpen}
@@ -1437,6 +1452,7 @@ export function UiComponentsDebugPanel() {
             frameProps={{ style: styles.sheetFrame }}
             handle
             modal
+            native={sheetNativeEnabled}
             onOpenChange={handleMixedSheetOpenChange}
             onPositionChange={handleMixedSheetPositionChange}
             open={mixedSheetOpen}
