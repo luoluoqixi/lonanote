@@ -83,6 +83,7 @@ function IosTrueSheetHost() {
       screenOptions={trueSheetInnerStackScreenOptions(
         colorScheme,
         theme.background.val,
+        theme.accentColor.val,
         theme.color.val,
       )}
     >

@@ -11,6 +11,7 @@ import { trueSheetUsesNativeStackNavigator } from "./stack_navigator";
 export function trueSheetInnerStackScreenOptions(
   colorScheme: ResolvedColorScheme,
   backgroundColor: string,
+  tintColor: string,
   titleColor: string,
 ): TrueSheetInnerStackScreenOptions {
   if (trueSheetUsesNativeStackNavigator) {
@@ -25,10 +26,10 @@ export function trueSheetInnerStackScreenOptions(
       headerStyle: {
         backgroundColor: "transparent",
       },
+      headerTintColor: tintColor,
       headerTitleStyle: {
         color: titleColor,
       },
-      // 不设 headerTintColor，返回/关闭按钮沿用 iOS 系统蓝色
     };
   }
 
@@ -41,6 +42,7 @@ export function trueSheetInnerStackScreenOptions(
     headerStyle: {
       backgroundColor,
     },
+    headerTintColor: tintColor,
     headerTitleStyle: {
       color: titleColor,
     },
