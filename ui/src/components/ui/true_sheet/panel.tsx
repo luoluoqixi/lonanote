@@ -35,6 +35,7 @@ export type TrueSheetPanelProps = {
   onBack?: () => void;
   onRequestClose?: () => void;
   headerRight?: ReactNode;
+  /** 当前 True Sheet 专属 overlay host 名；若 sheet 内可能打开 Dialog / Popover / Toast，务必传唯一值，勿复用外层 host。 */
   overlayPortalHostName?: string;
   onDidDismiss?: () => void;
   sheetProps?: Omit<TrueSheetProps, "children" | "header" | "name">;
@@ -165,6 +166,8 @@ function TrueSheetPanelInner({
  * 简单 True Sheet：无内嵌 Stack。
  * - `chrome="plain"`：适合仅需 grabber 的轻量弹层。
  * - `chrome="toolbar"`：Android 等无法挂 Native Stack 时的标题栏 + 硬件返回。
+ * - 若当前 sheet 内会再打开 Dialog / AlertDialog / Popover / Toast，必须为该宿主传入独立 `overlayPortalHostName`，
+ *   让 portal / floating 落在当前 sheet 坐标系；不要复用外层 host。
  */
 export function TrueSheetPanel(props: TrueSheetPanelProps) {
   if (props.overlayPortalHostName == null) {

@@ -9,7 +9,6 @@ import {
   resizeTrueSheet,
 } from "@/components/ui/true_sheet/api";
 import { TrueSheetPanel } from "@/components/ui/true_sheet/panel";
-import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
 
 import { useSheetOpenState } from "./sheet/useSheetOpenState";
 import type { SheetProps } from "./types";
@@ -198,8 +197,10 @@ export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
     snapPointsMode,
   } = props;
   const { height: windowHeight } = useWindowDimensions();
-  const screenOverlayPortalHost = useScreenOverlayPortalHost();
   const [sheetName] = useState(() => `ui-sheet-native-${++nativeSheetCounter}`);
+  // native sheet 自己就是一层新的 True Sheet 宿主，必须生成独立 overlay host；
+  // 若复用外层 host，内部 Dialog / AlertDialog / Popover 会 teleport 到外层坐标系。
+  const [overlayPortalHostName] = useState(() => `${sheetName}-overlay`);
   const [uncontrolledPosition, setUncontrolledPosition] = useState(defaultPosition ?? 0);
   const openState = useSheetOpenState(props);
   const presentedRef = useRef(false);
@@ -295,7 +296,7 @@ export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
   return (
     <TrueSheetPanel
       name={sheetName}
-      overlayPortalHostName={screenOverlayPortalHost ?? undefined}
+      overlayPortalHostName={overlayPortalHostName}
       onRequestClose={() => {
         handleOpenChange(false);
       }}

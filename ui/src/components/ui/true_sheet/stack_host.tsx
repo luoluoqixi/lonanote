@@ -25,7 +25,7 @@ import { useTrueSheetOverlayLayoutSync } from "./use_true_sheet_overlay_layout_s
 
 export type TrueSheetStackHostProps<ParamList extends ParamListBase = ParamListBase> = {
   children: ReactNode;
-  /** 全屏 overlay portal host；不传则不包裹 Provider */
+  /** 当前 True Sheet Stack 宿主专属 overlay host；若内部会开 Dialog / Popover / Toast，务必传唯一值，勿复用外层 host。 */
   overlayPortalHostName?: string;
   /** 关闭 Sheet 时重置栈到该路由名 */
   initialRouteName?: keyof ParamList & string;
@@ -52,6 +52,8 @@ const defaultSheetProps: Pick<
 
 /**
  * 具名 True Sheet + 内嵌原生 Stack（替代自绘 header + useState 切屏）。
+ * 若 stack 内页面会再打开 Dialog / AlertDialog / Popover / Toast，需为当前宿主注册独立 `overlayPortalHostName`，
+ * 避免 portal / floating 继续落到外层 sheet 或 app root 坐标系。
  */
 function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase>({
   children,
