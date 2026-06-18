@@ -2,7 +2,7 @@ import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import type { ParamListBase } from "@react-navigation/native";
 import { type ReactNode, useCallback } from "react";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
@@ -111,7 +111,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
   const sheetBody = (
     <TrueSheetScrollLayoutProvider
       insetAdjustment={insetAdjustment}
-      nativeScrollInsetsApplied={false}
+      nativeScrollInsetsApplied={Platform.OS === "ios"}
     >
       <GestureHandlerRootView style={styles.gestureRoot}>
         {overlayPortalHostName != null ? (

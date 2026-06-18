@@ -53,13 +53,7 @@ function DebugScreenLayout({
   const insets = useSafeAreaInsets();
 
   if (layoutHost === "trueSheet") {
-    return (
-      <View
-        style={[styles.trueSheetBody, Platform.OS === "ios" && { paddingTop: insets.top + 44 }]}
-      >
-        {children}
-      </View>
-    );
+    return <View style={styles.trueSheetBody}>{children}</View>;
   }
 
   const desktop = isDesktop();
