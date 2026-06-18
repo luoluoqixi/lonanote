@@ -1,0 +1,154 @@
+diff --git a/ios/RNCPickerComponentView.mm b/ios/RNCPickerComponentView.mm
+index 75edfa9..2634eae 100644
+--- a/ios/RNCPickerComponentView.mm
++++ b/ios/RNCPickerComponentView.mm
+@@ -50,46 +50,96 @@ - (instancetype)initWithFrame:(CGRect)frame
+ 
+ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps
+ {
+-    const auto &newProps = *std::static_pointer_cast<const RNCPickerProps>(props);
+-    NSMutableArray *items = [NSMutableArray new];
+-    for (RNCPickerItemsStruct item : newProps.items)
+-    {
+-        NSMutableDictionary *dictItem = [NSMutableDictionary new];
+-        dictItem[@"value"] = RNCPickerConvertFollyDynamicToId(item.value);
+-        dictItem[@"label"] = RNCPickerConvertFollyDynamicToId(item.label);
+-        dictItem[@"textColor"] = RCTUIColorFromSharedColor(item.textColor);
+-        dictItem[@"testID"] = RCTNSStringFromStringNilIfEmpty(item.testID);
+-        [items addObject:dictItem];
+-    }
+-    picker.items = items;
+-    picker.selectedIndex = newProps.selectedIndex;
+-    picker.color = RCTUIColorFromSharedColor(newProps.color);
+-    NSString *textAlign = RCTNSStringFromStringNilIfEmpty(newProps.themeVariant);
+-    if ([textAlign isEqualToString:@"auto"]){
+-        picker.textAlign = NSTextAlignmentNatural;
+-    } else if ([textAlign isEqualToString:@"left"]){
+-        picker.textAlign = NSTextAlignmentLeft;
+-    } else if ([textAlign isEqualToString:@"center"]){
+-        picker.textAlign = NSTextAlignmentCenter;
+-    } else if ([textAlign isEqualToString:@"right"]){
+-        picker.textAlign = NSTextAlignmentRight;
+-    } else if ([textAlign isEqualToString:@"justify"]){
+-        picker.textAlign = NSTextAlignmentJustified;
+-    }
+-    picker.numberOfLines = newProps.numberOfLines;
+-    picker.font = [RCTFont updateFont:picker.font withFamily:RCTNSStringFromStringNilIfEmpty(newProps.fontFamily) size:@(newProps.fontSize) weight:RCTNSStringFromStringNilIfEmpty(newProps.fontWeight) style:RCTNSStringFromStringNilIfEmpty(newProps.fontStyle) variant:nil scaleMultiplier:1];
+-    if (@available(iOS 13.4, *)) {
+-        NSString *themeVariant = RCTNSStringFromStringNilIfEmpty(newProps.themeVariant);
+-            if (themeVariant) {
+-                if ([themeVariant isEqual:@"dark"])
+-                    picker.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
+-                else if ([themeVariant isEqual:@"light"])
+-                    picker.overrideUserInterfaceStyle = UIUserInterfaceStyleLight;
+-                else
+-                    picker.overrideUserInterfaceStyle = UIUserInterfaceStyleUnspecified;
+-            }
+-        }
+-    [super updateProps:props oldProps:oldProps];
++	const auto &newProps = *std::static_pointer_cast<const RNCPickerProps>(props);
++	const RNCPickerProps *oldP = oldProps
++		? static_cast<const RNCPickerProps *>(oldProps.get())
++		: nullptr;
++
++	auto didItemsChange = [&]() -> bool {
++		if (!oldP) return true;
++		if (oldP->items.size() != newProps.items.size()) return true;
++		for (size_t i = 0; i < newProps.items.size(); ++i) {
++			const auto &a = oldP->items[i];
++			const auto &b = newProps.items[i];
++			if (a.value != b.value || a.label != b.label ||
++				a.textColor != b.textColor || a.testID != b.testID) {
++				return true;
++			}
++		}
++		return false;
++	}();
++
++	if (didItemsChange) {
++		NSMutableArray *items = [NSMutableArray arrayWithCapacity:newProps.items.size()];
++		for (const RNCPickerItemsStruct &it : newProps.items) {
++			NSMutableDictionary *d = [NSMutableDictionary new];
++			d[@"value"] = RNCPickerConvertFollyDynamicToId(it.value);
++			d[@"label"] = RNCPickerConvertFollyDynamicToId(it.label);
++			d[@"textColor"] = RCTUIColorFromSharedColor(it.textColor);
++			d[@"testID"] = RCTNSStringFromStringNilIfEmpty(it.testID);
++			[items addObject:d];
++		}
++		picker.items = items;
++	}
++
++	NSInteger maxIndex = MAX(0, (NSInteger)picker.items.count - 1);
++	NSInteger nextIndex = newProps.selectedIndex;
++	if (picker.items.count > 0 && nextIndex < 0) nextIndex = 0;
++	if (nextIndex > maxIndex) nextIndex = maxIndex;
++	if (picker.selectedIndex != nextIndex) {
++		picker.selectedIndex = nextIndex;
++	}
++
++	UIColor *nextColor = RCTUIColorFromSharedColor(newProps.color);
++	if (!oldP || ![picker.color isEqual:nextColor]) {
++		picker.color = nextColor;
++	}
++
++	NSString *align = RCTNSStringFromStringNilIfEmpty(newProps.textAlign);
++	if (align) {
++		if ([align isEqualToString:@"auto"])        picker.textAlign = NSTextAlignmentNatural;
++		else if ([align isEqualToString:@"left"])   picker.textAlign = NSTextAlignmentLeft;
++		else if ([align isEqualToString:@"center"]) picker.textAlign = NSTextAlignmentCenter;
++		else if ([align isEqualToString:@"right"])  picker.textAlign = NSTextAlignmentRight;
++		else if ([align isEqualToString:@"justify"])picker.textAlign = NSTextAlignmentJustified;
++	}
++
++	if (!oldP || oldP->numberOfLines != newProps.numberOfLines) {
++		picker.numberOfLines = newProps.numberOfLines;
++	}
++
++	BOOL fontChanged =
++		!oldP ||
++		oldP->fontFamily != newProps.fontFamily ||
++		oldP->fontSize   != newProps.fontSize   ||
++		oldP->fontWeight != newProps.fontWeight ||
++		oldP->fontStyle  != newProps.fontStyle;
++
++	if (fontChanged) {
++		UIFont *nextFont =
++			[RCTFont updateFont:picker.font
++					 withFamily:RCTNSStringFromStringNilIfEmpty(newProps.fontFamily)
++						   size:@(newProps.fontSize)
++						 weight:RCTNSStringFromStringNilIfEmpty(newProps.fontWeight)
++						  style:RCTNSStringFromStringNilIfEmpty(newProps.fontStyle)
++						variant:nil
++				scaleMultiplier:1];
++		if (nextFont && ![picker.font isEqual:nextFont]) {
++			picker.font = nextFont;
++		}
++	}
++
++	if (@available(iOS 13.4, *)) {
++		NSString *newTheme = RCTNSStringFromStringNilIfEmpty(newProps.themeVariant);
++		NSString *oldTheme = oldP ? RCTNSStringFromStringNilIfEmpty(oldP->themeVariant) : nil;
++		if ((newTheme ?: @"") != (oldTheme ?: @"")) {
++			if ([newTheme isEqual:@"dark"])       picker.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
++			else if ([newTheme isEqual:@"light"]) picker.overrideUserInterfaceStyle = UIUserInterfaceStyleLight;
++			else                                  picker.overrideUserInterfaceStyle = UIUserInterfaceStyleUnspecified;
++		}
++	}
++
++	[super updateProps:props oldProps:oldProps];
+ }
+ 
+ // already added in case https://github.com/facebook/react-native/pull/35378 has been merged
+diff --git a/typings/Picker.d.ts b/typings/Picker.d.ts
+index 0e21756..3742ccf 100644
+--- a/typings/Picker.d.ts
++++ b/typings/Picker.d.ts
+@@ -132,7 +132,7 @@ declare class Picker<T> extends React.Component<PickerProps<T>, {}> {
+    */
+   static readonly MODE_DROPDOWN: 'dropdown';
+ 
+-  static Item: React.ComponentType<PickerItemProps<T>>;
++  static Item: React.ComponentType<PickerItemProps>;
+ 
+   /**
+    * @platform android

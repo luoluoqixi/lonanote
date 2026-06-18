@@ -104,6 +104,7 @@
     "@tamagui/toast@2.1.0": "patches/@tamagui+toast@2.1.0.patch",
     "@expo/ui@55.0.17": "patches/@expo+ui@55.0.17.patch",
     "expo-haptics@55.0.14": "patches/expo-haptics@55.0.14.patch",
+    "@react-native-picker/picker@2.11.4": "patches/@react-native-picker+picker@2.11.4.patch",
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch",
     "metro@0.83.6": "patches/metro@0.83.6.patch",
     "metro-file-map@0.83.6": "patches/metro-file-map@0.83.6.patch",
