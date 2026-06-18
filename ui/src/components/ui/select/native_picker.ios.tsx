@@ -11,7 +11,14 @@ import { useTheme } from "@tamagui/core";
 import { Check, ChevronDown } from "@tamagui/lucide-icons-2";
 import { useCallback } from "react";
 import React from "react";
-import { Pressable, Button as RNButton, StyleSheet, View, useColorScheme } from "react-native";
+import {
+  Platform,
+  Pressable,
+  Button as RNButton,
+  StyleSheet,
+  View,
+  useColorScheme,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text, YStack, getFontSize } from "tamagui";
 
@@ -29,6 +36,9 @@ import type { ResolvedSelectItemData } from "./select_grouping";
 
 /** 用于为每个 wheel sheet 实例生成唯一名称的计数器 */
 let wheelSheetCounter = 0;
+
+/** wheel sheet 默认 detent 配置（iOS 16+ 有效，iOS < 16 降级为 mediumDetent） */
+const WHEEL_SHEET_DETENT_DEFAULT = 0.3;
 
 /** wheel 模式共享的 TrueSheet 弹出层 */
 function WheelTrueSheet({
@@ -51,13 +61,18 @@ function WheelTrueSheet({
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const colorScheme = useColorScheme();
+  const iOSVersion = parseInt(Platform.Version as string, 10);
+
+  /** iOS < 16 不支持自定义 fraction detent，sheet 实际为 mediumDetent（~50%），
+   *  内容区域偏大，需更多顶部偏移让 Picker 垂直居中 */
+  const topPadding = iOSVersion < 16 ? Math.max(insets.top, 90) : Math.max(insets.top, 28);
 
   return (
     <TrueSheetStackHost
       name={sheetName}
       initialRouteName="picker"
       onRequestClose={onCancel}
-      sheetProps={{ detents: [0.35], dismissible: true }}
+      sheetProps={{ detents: [WHEEL_SHEET_DETENT_DEFAULT], dismissible: true }}
       screenOptions={{
         ...trueSheetInnerStackScreenOptions(
           (colorScheme ?? "light") as ResolvedColorScheme,
@@ -71,7 +86,7 @@ function WheelTrueSheet({
     >
       <TrueSheetInnerStack.Screen name="picker">
         {() => (
-          <View style={{ paddingTop: insets.top, flex: 1 }}>
+          <View style={{ paddingTop: topPadding, flex: 1 }}>
             <RNPPicker
               selectedValue={pendingValue}
               onValueChange={setPendingValue}
