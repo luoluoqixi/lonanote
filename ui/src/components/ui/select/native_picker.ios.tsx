@@ -76,6 +76,10 @@ function WheelTrueSheet({
       <TrueSheetInnerStack.Screen name="picker">
         {() => (
           <View style={{ paddingTop: topPadding, flex: 1 }}>
+            {/**
+             * 连续点击 Wheel 10 次左右会导致闪退, 未解决的问题
+             * https://github.com/react-native-picker/picker/issues/519
+             */}
             <RNPPicker
               selectedValue={pendingValue}
               onValueChange={setPendingValue}
