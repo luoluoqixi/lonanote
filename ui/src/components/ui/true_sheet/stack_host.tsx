@@ -40,14 +40,13 @@ export type TrueSheetStackHostProps<ParamList extends ParamListBase = ParamListB
 
 const defaultSheetProps: Pick<
   TrueSheetProps,
-  "detents" | "dismissible" | "grabber" | "insetAdjustment" | "pageSizing"
+  "detents" | "dismissible" | "grabber" | "insetAdjustment"
 > &
   Pick<TrueSheetProps, "scrollable" | "scrollableOptions"> = {
   detents: [1],
   dismissible: true,
   grabber: false,
   insetAdjustment: "automatic" as const,
-  pageSizing: true,
   ...getTrueSheetStackHostScrollableProps(),
 };
 
@@ -110,8 +109,9 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
 
   const sheetBody = (
     <TrueSheetScrollLayoutProvider
+      automaticContentInsetAdjustment={Platform.OS === "ios"}
       insetAdjustment={insetAdjustment}
-      nativeScrollInsetsApplied={Platform.OS === "ios"}
+      nativeScrollInsetsApplied={false}
     >
       <GestureHandlerRootView style={styles.gestureRoot}>
         {overlayPortalHostName != null ? (

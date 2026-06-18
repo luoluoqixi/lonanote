@@ -1,0 +1,49 @@
+diff --git a/ios/TrueSheetContentView.mm b/ios/TrueSheetContentView.mm
+index 9d5ead1..b58df37 100644
+--- a/ios/TrueSheetContentView.mm
++++ b/ios/TrueSheetContentView.mm
+@@ -30,6 +30,10 @@ @implementation TrueSheetContentView {
+   CGFloat _originalIndicatorBottomInset;
+ }
+ 
++- (CGFloat)resolvedIndicatorBottomInset {
++  return MAX(_originalIndicatorBottomInset, _bottomInset);
++}
++
+ + (ComponentDescriptorProvider)componentDescriptorProvider {
+   return concreteComponentDescriptorProvider<TrueSheetContentViewComponentDescriptor>();
+ }
+@@ -134,12 +138,13 @@ - (void)setupScrollable:(BOOL)enabled bottomInset:(CGFloat)bottomInset {
+ 
+   [self updateScrollViewHeight];
+ 
+-  [self setScrollViewContentInset:_bottomInset indicatorInset:_originalIndicatorBottomInset];
++  [self setScrollViewContentInset:_bottomInset indicatorInset:[self resolvedIndicatorBottomInset]];
+ 
+   // If keyboard is currently showing, re-apply the keyboard inset to the new ScrollView
+   CGFloat keyboardHeight = _keyboardObserver ? _keyboardObserver.currentHeight : 0;
+   if (keyboardHeight > 0) {
+-    [self setScrollViewContentInset:keyboardHeight indicatorInset:_originalIndicatorBottomInset + keyboardHeight];
++    [self setScrollViewContentInset:keyboardHeight
++                     indicatorInset:[self resolvedIndicatorBottomInset] + keyboardHeight];
+   }
+ }
+ 
+@@ -258,7 +263,7 @@ - (void)keyboardWillShow:(CGFloat)height duration:(NSTimeInterval)duration curve
+                       options:curve | UIViewAnimationOptionBeginFromCurrentState
+                    animations:^{
+                      [self setScrollViewContentInset:height
+-                                      indicatorInset:self->_originalIndicatorBottomInset + height];
++                                      indicatorInset:[self resolvedIndicatorBottomInset] + height];
+                    }
+                    completion:nil];
+ 
+@@ -283,7 +288,7 @@ - (void)keyboardWillHide:(NSTimeInterval)duration curve:(UIViewAnimationOptions)
+                       options:curve | UIViewAnimationOptionBeginFromCurrentState
+                    animations:^{
+                      [self setScrollViewContentInset:self->_bottomInset
+-                                      indicatorInset:self->_originalIndicatorBottomInset];
++                                      indicatorInset:[self resolvedIndicatorBottomInset]];
+                    }
+                    completion:nil];
+ }

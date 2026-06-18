@@ -40,15 +40,11 @@ export type TrueSheetPanelProps = {
   sheetProps?: Omit<TrueSheetProps, "children" | "header" | "name">;
 };
 
-const defaultSheetProps: Pick<
-  TrueSheetProps,
-  "detents" | "dismissible" | "insetAdjustment" | "pageSizing"
-> &
+const defaultSheetProps: Pick<TrueSheetProps, "detents" | "dismissible" | "insetAdjustment"> &
   Pick<TrueSheetProps, "scrollable" | "scrollableOptions"> = {
   detents: [1],
   dismissible: true,
   insetAdjustment: "automatic",
-  pageSizing: true,
   ...getTrueSheetPanelScrollableProps(),
 };
 

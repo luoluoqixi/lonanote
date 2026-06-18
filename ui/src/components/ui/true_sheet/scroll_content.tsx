@@ -32,7 +32,8 @@ export function TrueSheetScrollContent({
   ...rest
 }: TrueSheetScrollContentProps) {
   const insets = useSafeAreaInsets();
-  const { insetAdjustment, nativeScrollInsetsApplied } = useTrueSheetScrollLayout();
+  const { automaticContentInsetAdjustment, insetAdjustment, nativeScrollInsetsApplied } =
+    useTrueSheetScrollLayout();
 
   // Android：保持库钉住 ScrollView 时的原有 flexGrow 布局，不在此组件改滚动行为。
   if (os() === "android") {
@@ -56,6 +57,7 @@ export function TrueSheetScrollContent({
     nativeScrollInsetsApplied,
     safeAreaBottom: insets.bottom,
   });
+  const indicatorBottomInset = nativeScrollInsetsApplied ? 0 : insets.bottom;
 
   return (
     <ScrollView
@@ -68,14 +70,10 @@ export function TrueSheetScrollContent({
         { paddingBottom: bottomPadding },
         contentContainerStyle,
       ]}
-      scrollIndicatorInsets={
-        nativeScrollInsetsApplied
-          ? undefined
-          : {
-              bottom: insets.bottom,
-            }
-      }
-      contentInsetAdjustmentBehavior={nativeScrollInsetsApplied ? "automatic" : "never"}
+      scrollIndicatorInsets={{
+        bottom: indicatorBottomInset,
+      }}
+      contentInsetAdjustmentBehavior={automaticContentInsetAdjustment ? "automatic" : "never"}
       {...rest}
     >
       {children}

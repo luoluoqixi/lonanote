@@ -33,7 +33,7 @@
   "dependencies": {
     "@expo/ui": "~55.0.17",
     "@gorhom/bottom-sheet": "^5.2.14",
-    "@lodev09/react-native-true-sheet": "^3.10.1",
+    "@lodev09/react-native-true-sheet": "=3.11.0",
     "@react-native-menu/menu": "2.0.0",
     "@react-native-picker/picker": "^2.11.4",
     "@react-navigation/bottom-tabs": "^7.16.2",
@@ -119,6 +119,7 @@
     "metro-transform-worker": "=0.83.6"
   },
   "patchedDependencies": {
+    "@lodev09/react-native-true-sheet@3.11.0": "patches/@lodev09+react-native-true-sheet@3.11.0.patch",
     "@tamagui/dialog@2.1.0": "patches/@tamagui+dialog@2.1.0.patch",
     "@tamagui/native@2.1.0": "patches/@tamagui+native@2.1.0.patch",
     "@tamagui/portal@2.1.0": "patches/@tamagui+portal@2.1.0.patch",
