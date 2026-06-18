@@ -7,7 +7,7 @@ import { isDesktop, os } from "@/api/common";
 import { WideScreenHome } from "@/components/home";
 import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
-import { nativeStackStatusBarOptions } from "@/components/ui";
+import { nativeStackStatusBarOptions, withNativeBackButton } from "@/components/ui";
 import {
   WIDE_LAYOUT_MINIMUM_WIDTH,
   getAppHomeTitle,
@@ -43,7 +43,7 @@ export default function UILayout() {
     <>
       {desktop && <TitleBar />}
       <Stack
-        screenOptions={({ route }) => {
+        screenOptions={({ navigation, route }) => {
           const stackBackgroundColor = theme.background.val;
           const baseScreenOptions = {
             ...nativeStackStatusBarOptions(colorScheme),
@@ -55,6 +55,9 @@ export default function UILayout() {
             headerStyle: {
               backgroundColor: stackBackgroundColor,
             },
+            headerTitleStyle: {
+              color: theme.color.val,
+            },
           } as const;
 
           if (route.name === "index" && os() === "ios") {
@@ -64,7 +67,13 @@ export default function UILayout() {
               headerShadowVisible: false,
               headerShown: true,
               headerLargeTitle: true,
+              headerLargeTitleStyle: {
+                color: theme.color.val,
+              },
               headerLargeTitleShadowVisible: false,
+              headerTitleStyle: {
+                color: theme.color.val,
+              },
               headerTransparent: true,
               title: getAppHomeTitle(),
             };
@@ -73,15 +82,21 @@ export default function UILayout() {
           if (route.name.startsWith("settings/")) {
             const settingsTitle = getSettingsMobileHeaderTitle(route.name);
 
-            return {
-              ...baseScreenOptions,
-              headerStyle: {
-                backgroundColor: "transparent",
+            return withNativeBackButton(
+              {
+                ...baseScreenOptions,
+                headerStyle: {
+                  backgroundColor: "transparent",
+                },
+                headerTransparent: true,
+                headerShown: settingsTitle != null,
+                title: settingsTitle ?? "设置",
               },
-              headerTransparent: true,
-              headerShown: settingsTitle != null,
-              title: settingsTitle ?? "设置",
-            };
+              {
+                label: getAppHomeTitle(),
+                onPress: () => navigation.goBack(),
+              },
+            );
           }
 
           return {

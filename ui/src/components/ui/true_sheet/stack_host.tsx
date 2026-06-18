@@ -1,10 +1,12 @@
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import type { ParamListBase } from "@react-navigation/native";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { type ReactNode, useCallback } from "react";
 import { Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import { withNativeBackButton } from "@/components/ui/utils/navigation";
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
 import { TrueSheetOverlayLayoutProvider } from "./overlay_layout_context";
@@ -19,7 +21,10 @@ import {
   type TrueSheetStackNavigationRef,
   createTrueSheetStackNavigationRef,
 } from "./stack_navigation";
-import type { TrueSheetInnerStackScreenOptions } from "./stack_navigator";
+import {
+  type TrueSheetInnerStackScreenOptions,
+  trueSheetUsesNativeStackNavigator,
+} from "./stack_navigator";
 import { TrueSheetScrollLayoutProvider } from "./true_sheet_scroll_context";
 import { useTrueSheetOverlayLayoutSync } from "./use_true_sheet_overlay_layout_sync";
 
@@ -95,6 +100,17 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
     ...screenOptions,
   };
 
+  const resolvedScreenOptions: TrueSheetInnerStackScreenOptions = trueSheetUsesNativeStackNavigator
+    ? withNativeBackButton(mergedScreenOptions as NativeStackNavigationOptions, {
+        label: "返回",
+        onPress: () => {
+          if (navigationRef.isReady() && navigationRef.canGoBack()) {
+            navigationRef.goBack();
+          }
+        },
+      })
+    : mergedScreenOptions;
+
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
 
   const stackNavigation = (
@@ -102,7 +118,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
       <TrueSheetStackNavigation
         initialRouteName={initialRouteName as string}
         navigationRef={navigationRef}
-        screenOptions={mergedScreenOptions}
+        screenOptions={resolvedScreenOptions}
       >
         {children}
       </TrueSheetStackNavigation>

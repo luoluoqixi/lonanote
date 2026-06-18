@@ -35,6 +35,9 @@ export default function DebugStackLayout() {
             headerStyle: {
               backgroundColor: Platform.OS === "ios" ? "transparent" : stackBackgroundColor,
             },
+            headerTitleStyle: {
+              color: theme.color.val,
+            },
             headerTransparent: Platform.OS === "ios",
             title: "调试面板",
           };
@@ -57,6 +60,9 @@ export default function DebugStackLayout() {
           headerShown: true,
           headerStyle: {
             backgroundColor: Platform.OS === "ios" ? "transparent" : stackBackgroundColor,
+          },
+          headerTitleStyle: {
+            color: theme.color.val,
           },
           headerTransparent: Platform.OS === "ios",
           title,
