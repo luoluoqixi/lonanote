@@ -38,3 +38,11 @@ export function isTV(): boolean {
 export function supportsImpactHaptics(): boolean {
   return false;
 }
+
+export function isLegacyCompactIphone(): boolean {
+  return false;
+}
+
+export function isIos26Plus(): boolean {
+  return false;
+}

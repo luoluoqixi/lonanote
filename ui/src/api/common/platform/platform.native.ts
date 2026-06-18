@@ -58,6 +58,7 @@ export function iosMajorVersion(): number | null {
 }
 
 let cachedHapticSupport: boolean | null = null;
+let cachedLegacyCompactIphone: boolean | null = null;
 
 /**
  * 当前设备是否支持 UIImpactFeedbackGenerator（impact 震动）。
@@ -87,4 +88,34 @@ export function supportsImpactHaptics(): boolean {
   // iPhone8,1 = iPhone 6s, iPhone8,2 = 6s Plus, iPhone8,4 = SE 1st gen
   cachedHapticSupport = false;
   return false;
+}
+
+/**
+ * 是否为 iPhone 6s / 6s Plus / SE 1st gen 这一代旧款 iPhone。
+ *
+ * 这些机型：
+ * - 没有 Home indicator
+ * - iOS 15 下部分系统控件 / 滚动条视觉避让和全面屏设备明显不同
+ * - 需要单独保守处理底部滚动条额外避让值
+ */
+export function isLegacyCompactIphone(): boolean {
+  if (cachedLegacyCompactIphone !== null) return cachedLegacyCompactIphone;
+
+  if (Platform.OS !== "ios") {
+    cachedLegacyCompactIphone = false;
+    return false;
+  }
+
+  const modelId = Device.modelId;
+  cachedLegacyCompactIphone =
+    modelId === "iPhone8,1" || modelId === "iPhone8,2" || modelId === "iPhone8,4";
+  return cachedLegacyCompactIphone;
+}
+
+/**
+ * iOS 26+
+ */
+export function isIos26Plus(): boolean {
+  const major = iosMajorVersion();
+  return major != null && major >= 26;
 }
