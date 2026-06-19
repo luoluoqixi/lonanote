@@ -8,6 +8,7 @@ import {
   isDebugTabKey,
 } from "@/components/debug";
 import {
+  getIosTransparentHeaderFallbackOptions,
   nativeStackStatusBarOptions,
   withNativeBackButton,
   withNativeStackGestureOptions,
@@ -23,6 +24,7 @@ export default function DebugStackLayout() {
   }
 
   const stackBackgroundColor = theme.background.val;
+  const transparentHeaderFallback = getIosTransparentHeaderFallbackOptions();
 
   return (
     <Stack
@@ -43,6 +45,7 @@ export default function DebugStackLayout() {
               color: theme.color.val,
             },
             headerTransparent: Platform.OS === "ios",
+            ...transparentHeaderFallback,
             title: "调试面板",
           });
         }
@@ -70,6 +73,7 @@ export default function DebugStackLayout() {
               color: theme.color.val,
             },
             headerTransparent: Platform.OS === "ios",
+            ...transparentHeaderFallback,
             title,
           }),
           {

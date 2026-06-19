@@ -8,6 +8,7 @@ import { WideScreenHome } from "@/components/home";
 import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
 import {
+  getIosTransparentHeaderFallbackOptions,
   nativeStackStatusBarOptions,
   withNativeBackButton,
   withNativeStackGestureOptions,
@@ -63,6 +64,7 @@ export default function UILayout() {
               color: theme.color.val,
             },
           } as const;
+          const transparentHeaderFallback = getIosTransparentHeaderFallbackOptions();
 
           if (route.name === "index" && os() === "ios") {
             return withNativeStackGestureOptions({
@@ -79,6 +81,7 @@ export default function UILayout() {
                 color: theme.color.val,
               },
               headerTransparent: true,
+              ...transparentHeaderFallback,
               title: getAppHomeTitle(),
             });
           }
@@ -93,6 +96,7 @@ export default function UILayout() {
                   backgroundColor: "transparent",
                 },
                 headerTransparent: true,
+                ...transparentHeaderFallback,
                 headerShown: settingsTitle != null,
                 title: settingsTitle ?? "设置",
               }),

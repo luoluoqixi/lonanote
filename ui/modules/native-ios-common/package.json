@@ -1,0 +1,16 @@
+{
+  "name": "native-ios-common",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LonaNote iOS native Expo module container",
+  "license": "UNLICENSED",
+  "author": "LonaNote",
+  "homepage": "https://github.com/luoluoqixi/lonanote",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}

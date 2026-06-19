@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 
 import { os } from "@/api/common/platform";
+import { getIosTransparentHeaderFallbackOptions } from "@/components/ui/utils/navigation";
 import { nativeStackStatusBarOptions } from "@/components/ui/utils/navigation/status_bar";
 import type { ResolvedColorScheme } from "@/components/ui/utils/navigation/status_bar";
 
@@ -11,6 +12,7 @@ import { trueSheetUsesNativeStackNavigator } from "./stack_navigator";
 export function trueSheetInnerStackScreenOptions(
   colorScheme: ResolvedColorScheme,
   backgroundColor: string,
+  borderColor: string,
   tintColor: string,
   titleColor: string,
 ): TrueSheetInnerStackScreenOptions {
@@ -30,6 +32,7 @@ export function trueSheetInnerStackScreenOptions(
       headerTitleStyle: {
         color: titleColor,
       },
+      ...getIosTransparentHeaderFallbackOptions(),
     };
   }
 
