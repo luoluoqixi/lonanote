@@ -3,8 +3,11 @@ import { StyleSheet, View } from "react-native";
 import type { GlobalSettings } from "@/api/commands/settings";
 import {
   Button,
-  InsetGroupedList,
-  type InsetGroupedListSectionData,
+  NativeList,
+  NativeListItem,
+  NativeListSection,
+  NativeListSelectItem,
+  NativeListSwitchItem,
   type SelectOption,
   Text,
 } from "@/components/ui";
@@ -190,154 +193,136 @@ export function SettingsSyncState({ error, isLoading }: PanelHeaderProps) {
 export function GlobalSettingsPanel() {
   const { settings, updateAndSave } = useGlobalSettings();
 
-  const sections: InsetGroupedListSectionData[] = [
-    {
-      items: [
-        {
-          kind: "switch",
-          key: "auto-check-update",
-          switchProps: {
-            checked: settings.app.autoCheckUpdate,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle auto check update",
-                updateAndSave((currentSettings) =>
-                  updateSettingsSection(currentSettings, "app", {
-                    ...currentSettings.app,
-                    autoCheckUpdate: nextValue,
-                  }),
-                ),
-              );
-            },
-          },
-          title: "自动检查更新",
-        },
-        {
-          kind: "switch",
-          key: "auto-open-last-workspace",
-          switchProps: {
-            checked: settings.app.autoOpenLastWorkspace,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle auto open last workspace",
-                updateAndSave((currentSettings) =>
-                  updateSettingsSection(currentSettings, "app", {
-                    ...currentSettings.app,
-                    autoOpenLastWorkspace: nextValue,
-                  }),
-                ),
-              );
-            },
-          },
-          title: "自动打开上次工作区",
-        },
-      ],
-      title: "应用行为",
-    },
-    {
-      items: [
-        {
-          kind: "switch",
-          key: "auto-save",
-          switchProps: {
-            checked: settings.editorDefaults.autoSave,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle auto save",
-                updateAndSave((currentSettings) =>
-                  updateSettingsSection(currentSettings, "editorDefaults", {
-                    ...currentSettings.editorDefaults,
-                    autoSave: nextValue,
-                  }),
-                ),
-              );
-            },
-          },
-          title: "自动保存",
-        },
-        {
-          kind: "switch",
-          key: "auto-save-on-focus-change",
-          switchProps: {
-            checked: settings.editorDefaults.autoSaveOnFocusChange,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle focus auto save",
-                updateAndSave((currentSettings) =>
-                  updateSettingsSection(currentSettings, "editorDefaults", {
-                    ...currentSettings.editorDefaults,
-                    autoSaveOnFocusChange: nextValue,
-                  }),
-                ),
-              );
-            },
-          },
-          title: "失焦时自动保存",
-        },
-        {
-          kind: "switch",
-          key: "show-line-number",
-          switchProps: {
-            checked: settings.editorDefaults.showLineNumber,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle show line number",
-                updateAndSave((currentSettings) =>
-                  updateSettingsSection(currentSettings, "editorDefaults", {
-                    ...currentSettings.editorDefaults,
-                    showLineNumber: nextValue,
-                  }),
-                ),
-              );
-            },
-          },
-          title: "显示行号",
-        },
-        {
-          kind: "switch",
-          key: "disable-line-wrap",
-          switchProps: {
-            checked: settings.editorDefaults.disableLineWrap,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle line wrap",
-                updateAndSave((currentSettings) =>
-                  updateSettingsSection(currentSettings, "editorDefaults", {
-                    ...currentSettings.editorDefaults,
-                    disableLineWrap: nextValue,
-                  }),
-                ),
-              );
-            },
-          },
-          title: "禁用自动换行",
-        },
-        {
-          kind: "switch",
-          key: "source-mode",
-          switchProps: {
-            checked: settings.editorDefaults.sourceMode,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle source mode",
-                updateAndSave((currentSettings) =>
-                  updateSettingsSection(currentSettings, "editorDefaults", {
-                    ...currentSettings.editorDefaults,
-                    sourceMode: nextValue,
-                  }),
-                ),
-              );
-            },
-          },
-          title: "源码模式",
-        },
-      ],
-      title: "编辑器默认值",
-    },
-    {
-      items: [
-        {
-          children: (
+  return (
+    <View style={styles.inlineSectionList}>
+      <NativeList>
+        <NativeListSection title="应用行为">
+          <NativeListSwitchItem
+            switchProps={{
+              checked: settings.app.autoCheckUpdate,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle auto check update",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "app", {
+                      ...currentSettings.app,
+                      autoCheckUpdate: nextValue,
+                    }),
+                  ),
+                );
+              },
+            }}
+            title="自动检查更新"
+          />
+          <NativeListSwitchItem
+            switchProps={{
+              checked: settings.app.autoOpenLastWorkspace,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle auto open last workspace",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "app", {
+                      ...currentSettings.app,
+                      autoOpenLastWorkspace: nextValue,
+                    }),
+                  ),
+                );
+              },
+            }}
+            title="自动打开上次工作区"
+          />
+        </NativeListSection>
+
+        <NativeListSection title="编辑器默认值">
+          <NativeListSwitchItem
+            switchProps={{
+              checked: settings.editorDefaults.autoSave,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle auto save",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "editorDefaults", {
+                      ...currentSettings.editorDefaults,
+                      autoSave: nextValue,
+                    }),
+                  ),
+                );
+              },
+            }}
+            title="自动保存"
+          />
+          <NativeListSwitchItem
+            switchProps={{
+              checked: settings.editorDefaults.autoSaveOnFocusChange,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle focus auto save",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "editorDefaults", {
+                      ...currentSettings.editorDefaults,
+                      autoSaveOnFocusChange: nextValue,
+                    }),
+                  ),
+                );
+              },
+            }}
+            title="失焦时自动保存"
+          />
+          <NativeListSwitchItem
+            switchProps={{
+              checked: settings.editorDefaults.showLineNumber,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle show line number",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "editorDefaults", {
+                      ...currentSettings.editorDefaults,
+                      showLineNumber: nextValue,
+                    }),
+                  ),
+                );
+              },
+            }}
+            title="显示行号"
+          />
+          <NativeListSwitchItem
+            switchProps={{
+              checked: settings.editorDefaults.disableLineWrap,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle line wrap",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "editorDefaults", {
+                      ...currentSettings.editorDefaults,
+                      disableLineWrap: nextValue,
+                    }),
+                  ),
+                );
+              },
+            }}
+            title="禁用自动换行"
+          />
+          <NativeListSwitchItem
+            switchProps={{
+              checked: settings.editorDefaults.sourceMode,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle source mode",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "editorDefaults", {
+                      ...currentSettings.editorDefaults,
+                      sourceMode: nextValue,
+                    }),
+                  ),
+                );
+              },
+            }}
+            title="源码模式"
+          />
+        </NativeListSection>
+
+        <NativeListSection>
+          <NativeListItem>
             <SettingsStepperRowContent
               label="自动保存间隔"
               onDecrease={() => {
@@ -368,15 +353,11 @@ export function GlobalSettingsPanel() {
               }}
               valueLabel={`${settings.editorDefaults.autoSaveIntervalSeconds.toFixed(1)} 秒`}
             />
-          ),
-          key: "auto-save-interval",
-          kind: "custom",
-        },
-      ],
-    },
-  ];
-
-  return <InsetGroupedList sections={sections} />;
+          </NativeListItem>
+        </NativeListSection>
+      </NativeList>
+    </View>
+  );
 }
 
 export function AppearanceSettingsPanel() {
@@ -400,82 +381,63 @@ export function AppearanceSettingsPanel() {
     { label: "深色", value: "dark" },
     { label: "跟随系统", value: "system" },
   ];
-  const accentColorSelectProps = {
-    onValueChange: (nextValue: string | null) => {
-      if (nextValue == null) return;
 
-      runSettingsAction(
-        "set accent color",
-        updateAndSave((currentPreferences) => ({
-          ...currentPreferences,
-          appearance: {
-            ...currentPreferences.appearance,
-            accentColor: nextValue as AccentColorSetting,
-          },
-        })),
-      );
-    },
-    options: accentColorOptions,
-    placeholder: "选择主题色",
-    value: preferences.appearance.accentColor,
-  };
-  const colorSchemeSelectProps = {
-    onValueChange: (nextValue: string | null) => {
-      if (nextValue == null) return;
+  return (
+    <View style={styles.inlineSectionList}>
+      <NativeList>
+        <NativeListSection title="主题">
+          <NativeListSelectItem
+            selectProps={{
+              "aria-label": "主题色",
+              onValueChange: (nextValue: string | null) => {
+                if (nextValue == null) return;
+                runSettingsAction(
+                  "set accent color",
+                  updateAndSave((currentPreferences) => ({
+                    ...currentPreferences,
+                    appearance: {
+                      ...currentPreferences.appearance,
+                      accentColor: nextValue as AccentColorSetting,
+                    },
+                  })),
+                );
+              },
+              options: accentColorOptions,
+              placeholder: "选择主题色",
+              value: preferences.appearance.accentColor,
+            }}
+            title="主题色"
+          />
+          <NativeListSelectItem
+            selectProps={{
+              "aria-label": "主题模式",
+              onValueChange: (nextValue: string | null) => {
+                if (nextValue == null) return;
+                runSettingsAction(
+                  "set preferred color scheme",
+                  setPreferredColorSchemeAndSave(nextValue as ColorSchemeSetting),
+                );
+              },
+              options: colorSchemeOptions,
+              placeholder: "选择主题模式",
+              value: preferredColorScheme,
+            }}
+            title="主题模式"
+          />
+        </NativeListSection>
 
-      runSettingsAction(
-        "set preferred color scheme",
-        setPreferredColorSchemeAndSave(nextValue as ColorSchemeSetting),
-      );
-    },
-    options: colorSchemeOptions,
-    placeholder: "选择主题模式",
-    value: preferredColorScheme,
-  };
-
-  const sections: InsetGroupedListSectionData[] = [
-    {
-      items: [
-        {
-          key: "accent-color",
-          kind: "select",
-          selectProps: {
-            "aria-label": "主题色",
-            ...accentColorSelectProps,
-          },
-          title: "主题色",
-        },
-        {
-          key: "preferred-color-scheme",
-          kind: "select",
-          selectProps: {
-            "aria-label": "主题模式",
-            ...colorSchemeSelectProps,
-          },
-          title: "主题模式",
-        },
-      ],
-      title: "主题",
-    },
-    {
-      items: [
-        {
-          children: (
+        <NativeListSection>
+          <NativeListItem>
             <Text color="$color10" fontSize="$3">
               系统：{systemColorScheme} / 偏好：{preferredColorScheme} / 当前：
               {resolvedColorScheme} / 主题色：
               {formatAccentColor(preferences.appearance.accentColor)}
             </Text>
-          ),
-          key: "theme-summary",
-          kind: "custom",
-        },
-      ],
-    },
-    {
-      items: [
-        {
-          children: (
+          </NativeListItem>
+        </NativeListSection>
+
+        <NativeListSection title="桌面缩放">
+          <NativeListItem>
             <SettingsStepperRowContent
               decreaseLabel="-10%"
               increaseLabel="+10%"
@@ -506,17 +468,11 @@ export function AppearanceSettingsPanel() {
               }}
               valueLabel={formatZoomFactor(preferences.appearance.zoomFactor)}
             />
-          ),
-          key: "zoom-factor-stepper",
-          kind: "custom",
-        },
-      ],
-      title: "桌面缩放",
-    },
-    {
-      items: [
-        {
-          children: (
+          </NativeListItem>
+        </NativeListSection>
+
+        <NativeListSection>
+          <NativeListItem>
             <SettingsSummaryActionRow
               actionLabel="重置"
               description={`${formatZoomFactor(preferences.appearance.zoomFactor)}，仅桌面 Tauri 生效`}
@@ -534,50 +490,42 @@ export function AppearanceSettingsPanel() {
               }}
               title="当前桌面缩放"
             />
-          ),
-          key: "zoom-factor-reset",
-          kind: "custom",
-        },
-      ],
-    },
-  ];
-
-  return <InsetGroupedList sections={sections} />;
+          </NativeListItem>
+        </NativeListSection>
+      </NativeList>
+    </View>
+  );
 }
 
 export function WindowSettingsPanel() {
   const { preferences, updateAndSave } = useUiPreferences();
 
-  const sections: InsetGroupedListSectionData[] = [
-    {
-      items: [
-        {
-          kind: "switch",
-          key: "restore-window-state",
-          switchProps: {
-            checked: preferences.window.restoreWindowState,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle restore window state",
-                updateAndSave((currentPreferences) => ({
-                  ...currentPreferences,
-                  window: {
-                    ...currentPreferences.window,
-                    restoreWindowState: nextValue,
-                  },
-                })),
-              );
-            },
-          },
-          title: "恢复上次窗口状态",
-        },
-      ],
-      title: "启动行为",
-    },
-    {
-      items: [
-        {
-          children: (
+  return (
+    <View style={styles.inlineSectionList}>
+      <NativeList>
+        <NativeListSection title="启动行为">
+          <NativeListSwitchItem
+            switchProps={{
+              checked: preferences.window.restoreWindowState,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle restore window state",
+                  updateAndSave((currentPreferences) => ({
+                    ...currentPreferences,
+                    window: {
+                      ...currentPreferences.window,
+                      restoreWindowState: nextValue,
+                    },
+                  })),
+                );
+              },
+            }}
+            title="恢复上次窗口状态"
+          />
+        </NativeListSection>
+
+        <NativeListSection>
+          <NativeListItem>
             <SettingsSummaryActionRow
               actionLabel="清除"
               description={formatWindowStateSummary(preferences.window.lastWindowState)}
@@ -595,15 +543,11 @@ export function WindowSettingsPanel() {
               }}
               title="最近保存的窗口状态"
             />
-          ),
-          key: "saved-window-state",
-          kind: "custom",
-        },
-      ],
-    },
-  ];
-
-  return <InsetGroupedList sections={sections} />;
+          </NativeListItem>
+        </NativeListSection>
+      </NativeList>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -643,5 +587,8 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
     marginBottom: 16,
+  },
+  inlineSectionList: {
+    gap: 16,
   },
 });

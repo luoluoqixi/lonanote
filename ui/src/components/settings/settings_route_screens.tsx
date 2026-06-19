@@ -7,7 +7,7 @@ import { isDesktop, isWeb } from "@/api/common";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import { TitleBar } from "../titlebar";
-import { InsetGroupedList, type InsetGroupedListSectionData, Text } from "../ui";
+import { NativeList, NativeListSection, NativeListNavigationItem, Text } from "../ui";
 import {
   AppearanceSettingsPanel,
   GlobalSettingsPanel,
@@ -53,21 +53,14 @@ const SETTINGS_ROUTE_DEFINITIONS: SettingsRouteDefinition[] = [
 
 function getSettingsRouteDefinition(key: SettingsRouteKey): SettingsRouteDefinition {
   const matchedDefinition = SETTINGS_ROUTE_DEFINITIONS.find((definition) => definition.key === key);
-
-  if (!matchedDefinition) {
-    throw new Error(`Unknown settings route: ${key}`);
-  }
-
+  if (!matchedDefinition) throw new Error(`Unknown settings route: ${key}`);
   return matchedDefinition;
 }
 
 const SETTINGS_MOBILE_HEADER_TITLES: Record<string, string> = {
   "settings/index": "设置",
   ...Object.fromEntries(
-    SETTINGS_ROUTE_DEFINITIONS.map((definition) => [
-      String(definition.href).slice(1),
-      definition.label,
-    ]),
+    SETTINGS_ROUTE_DEFINITIONS.map((d) => [String(d.href).slice(1), d.label]),
   ),
 };
 
@@ -75,15 +68,12 @@ function getSettingsMobileHeaderTitle(routeName: string): string | null {
   return SETTINGS_MOBILE_HEADER_TITLES[routeName] ?? null;
 }
 
-type SettingsSyncSnapshot = {
-  error: string | null;
-  isLoading: boolean;
-};
+type SettingsSyncSnapshot = { error: string | null; isLoading: boolean };
 
 function mergeSettingsSyncState(...states: SettingsSyncSnapshot[]): SettingsSyncSnapshot {
   return {
-    error: states.find((state) => state.error != null)?.error ?? null,
-    isLoading: states.some((state) => state.isLoading),
+    error: states.find((s) => s.error != null)?.error ?? null,
+    isLoading: states.some((s) => s.isLoading),
   };
 }
 
@@ -101,7 +91,10 @@ function SettingsScreenLayout({ children, error, isLoading, title }: ScreenLayou
   const showMeta = error != null || isLoading;
 
   return (
-    <SafeAreaView edges={usesNativeHeader ? ["left", "right"] : ["top"]} style={styles.safeArea}>
+    <SafeAreaView
+      edges={usesNativeSettingsList ? ["top", "left", "right"] : usesNativeHeader ? ["left", "right"] : ["top"]}
+      style={styles.safeArea}
+    >
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
         <View style={usesNativeSettingsList ? styles.nativePagePadding : styles.pagePadding}>
@@ -147,7 +140,6 @@ function useSettingsHomeSyncState(): SettingsSyncSnapshot {
   const globalSettingsState = useGlobalSettings();
   const uiPreferencesState = useUiPreferences();
   const colorSchemeSettingsState = useColorSchemeSettings();
-
   return mergeSettingsSyncState(
     { error: globalSettingsState.error, isLoading: globalSettingsState.isLoading },
     { error: uiPreferencesState.error, isLoading: uiPreferencesState.isLoading },
@@ -159,7 +151,6 @@ function useSettingsSectionSyncState(sectionKey: SettingsRouteKey): SettingsSync
   const globalSettingsState = useGlobalSettings();
   const uiPreferencesState = useUiPreferences();
   const colorSchemeSettingsState = useColorSchemeSettings();
-
   switch (sectionKey) {
     case "appearance":
       return mergeSettingsSyncState(
@@ -167,37 +158,30 @@ function useSettingsSectionSyncState(sectionKey: SettingsRouteKey): SettingsSync
         { error: uiPreferencesState.error, isLoading: uiPreferencesState.isLoading },
       );
     case "window":
-      return {
-        error: uiPreferencesState.error,
-        isLoading: uiPreferencesState.isLoading,
-      };
-    case "global":
+      return { error: uiPreferencesState.error, isLoading: uiPreferencesState.isLoading };
     default:
-      return {
-        error: globalSettingsState.error,
-        isLoading: globalSettingsState.isLoading,
-      };
+      return { error: globalSettingsState.error, isLoading: globalSettingsState.isLoading };
   }
 }
 
 export function SettingsHomeScreen() {
   const router = useRouter();
   const syncState = useSettingsHomeSyncState();
-  const sections: InsetGroupedListSectionData[] = [
-    {
-      items: SETTINGS_ROUTE_DEFINITIONS.map((definition) => ({
-        kind: "navigation" as const,
-        key: definition.key,
-        onPress: () => router.push(definition.href),
-        subtitle: definition.description,
-        title: definition.label,
-      })),
-    },
-  ];
 
   return (
     <SettingsScreenLayout error={syncState.error} isLoading={syncState.isLoading} title="设置">
-      <InsetGroupedList sections={sections} />
+      <NativeList>
+        <NativeListSection>
+          {SETTINGS_ROUTE_DEFINITIONS.map((d) => (
+            <NativeListNavigationItem
+              key={d.key}
+              onPress={() => router.push(d.href)}
+              subtitle={d.description}
+              title={d.label}
+            />
+          ))}
+        </NativeListSection>
+      </NativeList>
     </SettingsScreenLayout>
   );
 }
@@ -209,11 +193,7 @@ function SettingsSectionScreen({ sectionKey }: { sectionKey: SettingsRouteKey })
   const usesNativeSettingsList = Platform.OS === "ios";
 
   return (
-    <SettingsScreenLayout
-      error={syncState.error}
-      isLoading={syncState.isLoading}
-      title={definition.label}
-    >
+    <SettingsScreenLayout error={syncState.error} isLoading={syncState.isLoading} title={definition.label}>
       <View style={styles.panelHost}>
         {usesNativeSettingsList ? (
           <View style={styles.panelScrollView}>
@@ -236,71 +216,30 @@ function SettingsSectionScreen({ sectionKey }: { sectionKey: SettingsRouteKey })
 export function GlobalSettingsScreen() {
   return <SettingsSectionScreen sectionKey="global" />;
 }
-
 export { getSettingsMobileHeaderTitle };
-
 export function AppearanceSettingsScreen() {
   return <SettingsSectionScreen sectionKey="appearance" />;
 }
-
 export function WindowSettingsScreen() {
   return <SettingsSectionScreen sectionKey="window" />;
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    minHeight: 0,
-  },
+  content: { flex: 1, minHeight: 0 },
   scrollContent: {},
   header: {
     borderColor: "rgba(128, 128, 128, 0.22)",
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: 16,
-    marginBottom: 20,
-    padding: 20,
+    borderRadius: 20, borderWidth: 1, gap: 16, marginBottom: 20, padding: 20,
   },
-  metaPanel: {
-    gap: 12,
-    marginBottom: 16,
-  },
-  nativeContent: {
-    flex: 1,
-    width: "100%",
-  },
-  nativePagePadding: {
-    flex: 1,
-    paddingHorizontal: 0,
-    paddingTop: 0,
-  },
-  pageContainer: {
-    alignSelf: "center",
-    flex: 1,
-    maxWidth: SCREEN_MAX_WIDTH,
-    width: "100%",
-  },
-  pagePadding: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  page: {
-    flex: 1,
-  },
-  panelHost: {
-    flex: 1,
-    minHeight: 0,
-  },
+  metaPanel: { gap: 12, marginBottom: 16 },
+  nativeContent: { flex: 1, width: "100%" },
+  nativePagePadding: { flex: 1, paddingHorizontal: 0, paddingTop: 0 },
+  pageContainer: { alignSelf: "center", flex: 1, maxWidth: SCREEN_MAX_WIDTH, width: "100%" },
+  pagePadding: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
+  page: { flex: 1 },
+  panelHost: { flex: 1, minHeight: 0 },
   panelScrollContent: {},
-  panelScrollView: {
-    flex: 1,
-    minHeight: 0,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  syncState: {
-    minHeight: 0,
-  },
+  panelScrollView: { flex: 1, minHeight: 0 },
+  safeArea: { flex: 1 },
+  syncState: { minHeight: 0 },
 });

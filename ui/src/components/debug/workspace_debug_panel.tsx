@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import {
@@ -7,7 +7,7 @@ import {
   WorkspaceSyncSummary,
   workspaceRegistry,
 } from "@/api/commands/workspace";
-import { Button, InsetGroupedList, type InsetGroupedListSectionData, Text } from "@/components/ui";
+import { Button, NativeList, NativeListItem, NativeListSection, Text } from "@/components/ui";
 import { useCurrentWorkspaceState, useWorkspaceSession } from "@/hooks/workspace";
 
 type WorkspaceDebugSnapshot = {
@@ -42,32 +42,6 @@ async function loadWorkspaceDebugSnapshot(): Promise<WorkspaceDebugSnapshot> {
     roots,
     records,
   };
-}
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text fontSize="$4" fontWeight="600">
-          {title}
-        </Text>
-        {description ? (
-          <Text color="$color10" fontSize="$2">
-            {description}
-          </Text>
-        ) : null}
-      </View>
-      {children}
-    </View>
-  );
 }
 
 function KeyValueRow({ label, value }: { label: string; value: string }) {
@@ -181,13 +155,12 @@ export function WorkspaceDebugPanel() {
   useEffect(() => {
     void refreshPanel({ includeWorkspaceState: false });
   }, [currentWorkspaceId]);
-  const sections: InsetGroupedListSectionData[] = [
-    {
-      items: [
-        {
-          kind: "custom",
-          key: "workspace-header",
-          render: () => (
+
+  return (
+    <View style={styles.inlineSectionList}>
+      <NativeList>
+        <NativeListSection title="操作">
+          <NativeListItem>
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <Text fontSize="$5" fontWeight="600">
@@ -215,24 +188,24 @@ export function WorkspaceDebugPanel() {
                 </Button>
               </View>
             </View>
-          ),
-        },
-      ],
-      title: "操作",
-    },
-    {
-      items: [
-        {
-          kind: "custom",
-          key: "currentWorkspaceId",
-          render: () => (
+          </NativeListItem>
+        </NativeListSection>
+
+        {error ? (
+          <NativeListSection title="错误">
+            <NativeListItem>
+              <View style={styles.errorBox}>
+                <Text color="$red10" fontSize="$3">{error}</Text>
+              </View>
+            </NativeListItem>
+          </NativeListSection>
+        ) : null}
+
+        <NativeListSection title="当前会话">
+          <NativeListItem>
             <KeyValueRow label="currentWorkspaceId" value={currentWorkspaceId ?? "null"} />
-          ),
-        },
-        {
-          kind: "custom",
-          key: "runtimeStatus",
-          render: () => (
+          </NativeListItem>
+          <NativeListItem>
             <KeyValueRow
               label="runtimeStatus"
               value={
@@ -241,132 +214,82 @@ export function WorkspaceDebugPanel() {
                   : (currentState?.runtimeStatus ?? "no-open-workspace")
               }
             />
-          ),
-        },
-        {
-          kind: "custom",
-          key: "workspacePath",
-          render: () => (
+          </NativeListItem>
+          <NativeListItem>
             <KeyValueRow
               label="workspacePath"
               value={currentState?.record.metadata.path ?? "no-open-workspace"}
             />
-          ),
-        },
-        {
-          kind: "custom",
-          key: "fileTreeSortType",
-          render: () => (
+          </NativeListItem>
+          <NativeListItem>
             <KeyValueRow
               label="fileTreeSortType"
               value={String(currentState?.runtimeConfig.fileTreeSortType ?? "null")}
             />
-          ),
-        },
-        {
-          kind: "custom",
-          key: "followGitignore",
-          render: () => (
+          </NativeListItem>
+          <NativeListItem>
             <KeyValueRow
               label="followGitignore"
               value={String(currentState?.runtimeConfig.followGitignore ?? false)}
             />
-          ),
-        },
-      ],
-      title: "当前会话",
-    },
-    {
-      items: [
-        {
-          kind: "custom",
-          key: "importedCount",
-          render: () => (
+          </NativeListItem>
+        </NativeListSection>
+
+        <NativeListSection title="最近同步结果">
+          <NativeListItem>
             <KeyValueRow
               label="importedCount"
               value={String(lastSyncSummary?.importedCount ?? 0)}
             />
-          ),
-        },
-        {
-          kind: "custom",
-          key: "relocatedCount",
-          render: () => (
+          </NativeListItem>
+          <NativeListItem>
             <KeyValueRow
               label="relocatedCount"
               value={String(lastSyncSummary?.relocatedCount ?? 0)}
             />
-          ),
-        },
-      ],
-      title: "最近同步结果",
-    },
-    {
-      items:
-        roots.length === 0
-          ? [
-              {
-                kind: "custom",
-                key: "no-roots",
-                render: () => (
-                  <Text color="$color10" fontSize="$3">
-                    暂无 roots。
-                  </Text>
-                ),
-              },
-            ]
-          : roots.map((root) => ({
-              kind: "custom" as const,
-              key: root.key,
-              render: () => (
+          </NativeListItem>
+        </NativeListSection>
+
+        <NativeListSection title={`Workspace Roots (${roots.length})`}>
+          {roots.length === 0 ? (
+            <NativeListItem>
+              <Text color="$color10" fontSize="$3">暂无 roots。</Text>
+            </NativeListItem>
+          ) : (
+            roots.map((root) => (
+              <NativeListItem key={root.key}>
                 <View style={styles.itemCard}>
-                  <Text fontSize="$3" fontWeight="600">
-                    {root.key}
-                  </Text>
+                  <Text fontSize="$3" fontWeight="600">{root.key}</Text>
                   <Text color="$color10" fontSize="$2">
                     {root.kind} · {formatRootSource(root)}
                   </Text>
                   <Text fontSize="$3">{root.path}</Text>
                 </View>
-              ),
-            })),
-      title: `Workspace Roots (${roots.length})`,
-    },
-    {
-      items:
-        records.length === 0
-          ? [
-              {
-                kind: "custom",
-                key: "no-records",
-                render: () => (
-                  <Text color="$color10" fontSize="$3">
-                    暂无已注册工作区。
-                  </Text>
-                ),
-              },
-            ]
-          : records.map((record) => {
+              </NativeListItem>
+            ))
+          )}
+        </NativeListSection>
+
+        <NativeListSection title={`Workspace Records (${records.length})`}>
+          {records.length === 0 ? (
+            <NativeListItem>
+              <Text color="$color10" fontSize="$3">暂无已注册工作区。</Text>
+            </NativeListItem>
+          ) : (
+            records.map((record) => {
               const workspaceId = record.metadata.id;
               const isCurrent = currentWorkspaceId === workspaceId;
               const isPending =
                 pendingWorkspaceId === workspaceId && (isWorkspaceOpening || isWorkspaceClosing);
 
-              return {
-                kind: "custom" as const,
-                key: workspaceId,
-                render: () => (
+              return (
+                <NativeListItem key={workspaceId}>
                   <View style={styles.itemCard}>
                     <View style={styles.stack}>
-                      <Text fontSize="$3" fontWeight="600">
-                        {record.metadata.name}
-                      </Text>
-                      <Text color="$color10" fontSize="$2">
-                        id: {workspaceId}
-                      </Text>
+                      <Text fontSize="$3" fontWeight="600">{record.metadata.name}</Text>
+                      <Text color="$color10" fontSize="$2">id: {workspaceId}</Text>
                       <Text fontSize="$3">{record.metadata.path}</Text>
                     </View>
-
                     <View style={styles.recordActions}>
                       <Text color="$color10" fontSize="$2">
                         {isCurrent ? "current" : "not-current"}
@@ -390,33 +313,14 @@ export function WorkspaceDebugPanel() {
                       )}
                     </View>
                   </View>
-                ),
-              };
-            }),
-      title: `Workspace Records (${records.length})`,
-    },
-  ];
-
-  if (error) {
-    sections.splice(1, 0, {
-      items: [
-        {
-          kind: "custom",
-          key: "workspace-error",
-          render: () => (
-            <View style={styles.errorBox}>
-              <Text color="$red10" fontSize="$3">
-                {error}
-              </Text>
-            </View>
-          ),
-        },
-      ],
-      title: "错误",
-    });
-  }
-
-  return <InsetGroupedList sections={sections} />;
+                </NativeListItem>
+              );
+            })
+          )}
+        </NativeListSection>
+      </NativeList>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -467,5 +371,8 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 8,
+  },
+  inlineSectionList: {
+    gap: 16,
   },
 });

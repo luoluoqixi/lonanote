@@ -1,18 +1,7 @@
-import { type ReactNode, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
+import { useEffect, useState } from "react";
+import { StyleSheet, View, type ViewStyle } from "react-native";
 
-import { isDesktop, os } from "@/api/common";
-
-import { TitleBar } from "../titlebar";
-import {
-  Button,
-  InsetGroupedList,
-  type InsetGroupedListSectionData,
-  Select,
-  Slider,
-  Switch,
-  Text,
-} from "../ui";
+import { NativeList, NativeListSection, NativeListItem, NativeListNavigationItem, NativeListSwitchItem, Select, Slider, Switch, Text } from "../ui";
 import {
   DEBUG_PANEL_ROUTE_DEFINITIONS,
   type DebugTabKey,
@@ -36,116 +25,47 @@ import {
   useDebugSectionsAsNestedSheets,
 } from "./true_sheet/nested_sections_preferences";
 
-const DEBUG_SCREEN_MAX_WIDTH = 960;
-
 type DebugScreenLayoutHost = "screen" | "trueSheet";
 
 function DebugScreenLayout({
   children,
-  description,
-  hideInlineHeader = false,
   layoutHost = "screen",
-  scrollable = false,
   trueSheetBodyStyle,
-  title,
 }: {
-  children: ReactNode;
-  description?: string;
-  /** Stack 已展示原生标题栏时隐藏自绘页头，避免重复 */
-  hideInlineHeader?: boolean;
-  /** True Sheet 内勿用 flex:1 全屏壳，否则 Card/按钮会错位且无法点击 */
+  children: React.ReactNode;
   layoutHost?: DebugScreenLayoutHost;
-  scrollable?: boolean;
   trueSheetBodyStyle?: ViewStyle;
-  title: string;
 }) {
   if (layoutHost === "trueSheet") {
     return <View style={[styles.trueSheetBody, trueSheetBodyStyle]}>{children}</View>;
   }
-
-  const desktop = isDesktop();
-  const pageBody = (
-    <View style={scrollable ? styles.pagePaddingInScroll : styles.pagePadding}>
-      <View style={scrollable ? styles.pageContainerInScroll : styles.pageContainer}>
-        {!hideInlineHeader ? (
-          <View style={styles.header}>
-            <View style={styles.headerText}>
-              <Text fontSize="$8" fontWeight="700">
-                {title}
-              </Text>
-              {description ? (
-                <Text color="$color10" fontSize="$3">
-                  {description}
-                </Text>
-              ) : null}
-            </View>
-          </View>
-        ) : null}
-        <View style={scrollable ? styles.contentInScroll : styles.content}>{children}</View>
-      </View>
-    </View>
-  );
-
-  return (
-    <View style={styles.safeArea}>
-      {desktop ? <TitleBar /> : null}
-      <View style={styles.page}>
-        {scrollable ? (
-          <View style={styles.pageScrollHost}>
-            <ScrollView
-              contentInsetAdjustmentBehavior={os() === "ios" ? "automatic" : "never"}
-              contentContainerStyle={styles.pageScrollContent}
-              nestedScrollEnabled
-              showsVerticalScrollIndicator
-              style={styles.pageScrollView}
-            >
-              {pageBody}
-            </ScrollView>
-          </View>
-        ) : (
-          pageBody
-        )}
-      </View>
-    </View>
-  );
+  return <>{children}</>;
 }
 
 export function DebugHomeScreen({
-  onOpenFullPage,
   onOpenPanel,
+  onOpenFullPage,
   currentSheetMode,
   onSheetModeChange,
 }: {
-  /** True Sheet 内打开分区 */
   onOpenPanel?: (key: DebugTabKey) => void;
-  /** 全屏 Stack 打开分区（已在路由栈时无需再关 Sheet） */
   onOpenFullPage?: (key: DebugTabKey) => void;
-  /** 立即关闭 Sheet 并进入 `/debug` */
-  onSwitchToFullPage?: () => void;
-  /** 当前调试面板模式 */
   currentSheetMode?: "fullPage" | "trueSheet";
-  /** 切换模式 */
   onSheetModeChange?: (mode: "fullPage" | "trueSheet") => void;
 }) {
   const nestedSectionSheetsFromStore = useDebugSectionsAsNestedSheets();
   const [nestedSectionSheets, setNestedSectionSheets] = useState(nestedSectionSheetsFromStore);
   const [dismissVersion, setDismissVersion] = useState(getDebugSectionSheetDismissVersion);
   const nestedSectionDetentLevel = useDebugNestedSectionDetentLevel();
+  const [useNativeList, setUseNativeList] = useState(true);
   const inTrueSheet = onOpenPanel != null;
   const inFullPageRoute = onOpenFullPage != null && onOpenPanel == null;
   const layoutHost: DebugScreenLayoutHost = inTrueSheet ? "trueSheet" : "screen";
 
-  // 同步局部状态与全局偏好，避免 Android 上原生 modal present 时 useSyncExternalStore 时序竞态
+  useEffect(() => { setNestedSectionSheets(nestedSectionSheetsFromStore); }, [nestedSectionSheetsFromStore]);
   useEffect(() => {
-    setNestedSectionSheets(nestedSectionSheetsFromStore);
-  }, [nestedSectionSheetsFromStore]);
-
-  // 监听分区 Sheet 关闭版本号，驱动 Switch key 强制 remount（解决 Android 原生 widget 视觉残留）
-  useEffect(() => {
-    const unsubscribe = subscribeDebugSectionSheetDismiss(() => {
-      setDismissVersion(getDebugSectionSheetDismissVersion());
-    });
-    return unsubscribe;
+    const unsub = subscribeDebugSectionSheetDismiss(() => setDismissVersion(getDebugSectionSheetDismissVersion()));
+    return unsub;
   }, []);
 
   const handleNestedSheetsChange = (enabled: boolean) => {
@@ -154,86 +74,45 @@ export function DebugHomeScreen({
   };
 
   const openSection = async (key: DebugTabKey) => {
-    if (await openDebugSection(key)) {
-      return;
-    }
-
-    if (inTrueSheet) {
-      onOpenPanel?.(key);
-      return;
-    }
-
+    if (await openDebugSection(key)) return;
+    if (inTrueSheet) { onOpenPanel?.(key); return; }
     onOpenFullPage?.(key);
   };
 
-  const routeSections: InsetGroupedListSectionData[] = [
-    {
-      items: DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => ({
-        kind: "navigation" as const,
-        disabled: nestedSectionSheets
-          ? false
-          : inTrueSheet
-            ? onOpenPanel == null
-            : onOpenFullPage == null,
-        key: definition.key,
-        onPress: () => {
-          void openSection(definition.key);
-        },
-        subtitle: definition.description,
-        title: definition.label,
-      })),
-      title: "调试分区",
-    },
-  ];
+  return (
+    <DebugScreenLayout layoutHost={layoutHost}>
+      <NativeList native={useNativeList}>
+        <NativeListSection title="调试分区">
+          {DEBUG_PANEL_ROUTE_DEFINITIONS.map((def) => (
+            <NativeListNavigationItem
+              key={def.key}
+              disabled={nestedSectionSheets ? false : inTrueSheet ? onOpenPanel == null : onOpenFullPage == null}
+              onPress={() => void openSection(def.key)}
+              subtitle={def.description}
+              title={def.label}
+            />
+          ))}
+        </NativeListSection>
 
-  const preferenceSections: InsetGroupedListSectionData[] = [
-    {
-      items: [
-        {
-          kind: "custom",
-          key: "nested-section-sheets-toggle",
-          render: () => (
-            <View style={styles.prefRow}>
-              <View style={styles.prefRowText}>
-                <Text fontSize="$5" fontWeight="600">
-                  分区嵌套 True Sheet
-                </Text>
-                <Text color="$color10" fontSize="$3">
-                  开启后，工作区 / 路径 / 组件总览均以独立 True Sheet 打开；在主页 Sheet
-                  上可再叠一层嵌套 Sheet，全屏页面模式下也会弹出 Sheet 而非路由跳转。
-                </Text>
-              </View>
-              <Switch
-                checked={nestedSectionSheets}
-                key={`nested-sheets-switch-${dismissVersion}`}
-                label="启用嵌套 Sheet"
-                labelPosition="end"
-                onCheckedChange={handleNestedSheetsChange}
-              />
-            </View>
-          ),
-        },
-      ],
-      title: "分区行为",
-    },
-  ];
+        <NativeListSection title="分区行为">
+          <NativeListSwitchItem
+            key={`nested-sheets-switch-${dismissVersion}`}
+            switchProps={{
+              checked: nestedSectionSheets,
+              onCheckedChange: handleNestedSheetsChange,
+            }}
+            subtitle="开启后，工作区 / 路径 / 组件总览均以独立 True Sheet 打开"
+            title="分区嵌套 True Sheet"
+          />
+        </NativeListSection>
 
-  if (nestedSectionSheets) {
-    preferenceSections.push({
-      items: [
-        {
-          kind: "custom",
-          key: "nested-section-detent-slider",
-          render: () => (
-            <View style={styles.prefColumn}>
-              <View style={styles.prefRowText}>
-                <Text fontSize="$5" fontWeight="600">
-                  嵌套 Sheet 高度
-                </Text>
-                <Text color="$color10" fontSize="$3">
-                  三档 detent：偏低、中等、全屏。拖动滑条会实时 resize 已打开的分区 Sheet。
-                </Text>
-              </View>
+        {nestedSectionSheets ? (
+          <NativeListSection title="Sheet 高度">
+            <NativeListItem>
+              <Text fontSize="$5" fontWeight="600">嵌套 Sheet 高度</Text>
+              <Text color="$color10" fontSize="$3">
+                三档 detent：偏低、中等、全屏。拖动滑条会实时 resize 已打开的分区 Sheet。
+              </Text>
               <Slider
                 max={DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX}
                 min={DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN}
@@ -248,30 +127,15 @@ export function DebugHomeScreen({
               <Text color="$color10" fontSize="$3">
                 当前：{getDebugNestedSectionDetentLabel(nestedSectionDetentLevel)}
               </Text>
-            </View>
-          ),
-        },
-      ],
-      title: "Sheet 高度",
-    });
-  }
+            </NativeListItem>
+          </NativeListSection>
+        ) : null}
 
-  if (onSheetModeChange != null) {
-    preferenceSections.push({
-      items: [
-        {
-          kind: "custom",
-          key: "presentation-mode-select",
-          render: () => (
-            <View style={styles.prefColumn}>
-              <View style={styles.prefRowText}>
-                <Text fontSize="$5" fontWeight="600">
-                  调试面板模式
-                </Text>
-                <Text color="$color10" fontSize="$3">
-                  切换调试面板的弹出方式。
-                </Text>
-              </View>
+        {onSheetModeChange != null ? (
+          <NativeListSection title="展示模式">
+            <NativeListItem>
+              <Text fontSize="$5" fontWeight="600">调试面板模式</Text>
+              <Text color="$color10" fontSize="$3">切换调试面板的弹出方式。</Text>
               <Select
                 items={[
                   { label: "普通页面", value: "fullPage" },
@@ -287,43 +151,30 @@ export function DebugHomeScreen({
                 placeholder="选择模式"
                 value={currentSheetMode ?? "trueSheet"}
               />
-            </View>
-          ),
-        },
-      ],
-      title: "展示模式",
-    });
-  }
+            </NativeListItem>
+          </NativeListSection>
+        ) : null}
 
-  return (
-    <DebugScreenLayout
-      description={
-        inTrueSheet
-          ? "在 True Sheet 中查看各调试分区，或切换为全屏 Stack。"
-          : inFullPageRoute
-            ? "在全屏 Stack 中查看各调试分区，或切换回 True Sheet。"
-            : "小屏设备下调试入口。"
-      }
-      hideInlineHeader={inFullPageRoute}
-      layoutHost={layoutHost}
-      scrollable={layoutHost !== "trueSheet"}
-      title="调试面板"
-    >
-      <View style={styles.sectionList}>
-        <InsetGroupedList sections={routeSections} />
-        <InsetGroupedList sections={preferenceSections} />
-      </View>
+        <NativeListSection title="展示模式">
+          <NativeListSwitchItem
+            switchProps={{
+              checked: useNativeList,
+              onCheckedChange: setUseNativeList,
+            }}
+            subtitle="关闭后 iOS 使用 list_group 回退模式"
+            title="使用原生列表"
+          />
+        </NativeListSection>
+      </NativeList>
     </DebugScreenLayout>
   );
 }
 
 export function DebugSectionScreen({
-  hideInlineHeader = false,
   layoutHost = "screen",
   sectionKey,
   trueSheetCompact = false,
 }: {
-  hideInlineHeader?: boolean;
   layoutHost?: DebugScreenLayoutHost;
   sectionKey: DebugTabKey;
   trueSheetCompact?: boolean;
@@ -332,117 +183,21 @@ export function DebugSectionScreen({
   const SectionComponent = definition.Component;
 
   return (
-    <DebugScreenLayout
-      description={definition.description}
-      hideInlineHeader={hideInlineHeader}
-      layoutHost={layoutHost}
-      scrollable={layoutHost !== "trueSheet"}
-      title={definition.label}
-      trueSheetBodyStyle={trueSheetCompact ? styles.trueSheetBodyCompact : undefined}
-    >
-      <View style={[styles.panelHost, trueSheetCompact && styles.panelHostCompact]}>
-        <SectionComponent />
-      </View>
+    <DebugScreenLayout layoutHost={layoutHost} trueSheetBodyStyle={trueSheetCompact ? styles.trueSheetBodyCompact : undefined}>
+      <SectionComponent />
     </DebugScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    minHeight: 0,
-  },
-  contentInScroll: {
-    minHeight: 0,
-  },
-  header: {
-    borderColor: "rgba(128, 128, 128, 0.22)",
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: 16,
-    marginBottom: 20,
-    padding: 20,
-  },
-  headerText: {
-    gap: 6,
-  },
-  page: {
-    flex: 1,
-  },
-  pageContainer: {
-    alignSelf: "center",
-    flex: 1,
-    maxWidth: DEBUG_SCREEN_MAX_WIDTH,
-    width: "100%",
-  },
-  pageContainerInScroll: {
-    alignSelf: "center",
-    maxWidth: DEBUG_SCREEN_MAX_WIDTH,
-    width: "100%",
-  },
-  pagePadding: {
-    flex: 1,
-    paddingBottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 0,
-  },
-  pagePaddingInScroll: {
-    paddingBottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 0,
-  },
-  pageScrollContent: {
-    flexGrow: 1,
-    paddingBottom: 24,
-  },
-  pageScrollHost: {
-    flex: 1,
-    minHeight: 0,
-  },
-  pageScrollView: {
-    flex: 1,
-    minHeight: 0,
-  },
-  panelHost: {
-    minHeight: 0,
-    paddingBottom: 20,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  sectionList: {
-    gap: 16,
-  },
-  prefColumn: {
-    gap: 12,
-    width: "100%",
-  },
-  prefRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 16,
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  prefRowText: {
-    flex: 1,
-    gap: 6,
-    minWidth: 0,
-  },
   trueSheetBody: {
+    flex: 1,
     alignSelf: "center",
-    gap: 16,
-    maxWidth: DEBUG_SCREEN_MAX_WIDTH,
+    maxWidth: 960,
     paddingBottom: 24,
     paddingHorizontal: 20,
     paddingTop: 8,
     width: "100%",
   },
-  trueSheetBodyCompact: {
-    paddingBottom: 0,
-    paddingTop: 0,
-  },
-  panelHostCompact: {
-    paddingBottom: 0,
-  },
+  trueSheetBodyCompact: {},
 });

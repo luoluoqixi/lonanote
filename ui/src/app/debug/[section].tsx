@@ -10,5 +10,5 @@ export default function DebugFullPageScreen() {
     return <Redirect href="/" />;
   }
 
-  return <DebugSectionScreen hideInlineHeader layoutHost="screen" sectionKey={sectionKey} />;
+  return <DebugSectionScreen layoutHost="screen" sectionKey={sectionKey} />;
 }

@@ -28,7 +28,6 @@ import {
   getDebugSectionSheetName,
   markDebugPanelClosed,
   openDebugSection,
-  switchDebugPanelToFullPage,
 } from "./api";
 
 type ParamList = { index: undefined } & Record<DebugTabKey, undefined>;
@@ -40,7 +39,6 @@ function IosHomeRoute() {
 
   const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
     if (mode === "fullPage") {
-      void switchDebugPanelToFullPage();
     }
   }, []);
 
@@ -54,7 +52,6 @@ function IosHomeRoute() {
           });
         }}
         onSheetModeChange={handleModeChange}
-        onSwitchToFullPage={() => void switchDebugPanelToFullPage()}
       />
     </TrueSheetScrollContent>
   );
@@ -110,7 +107,6 @@ function IosTrueSheetHost() {
 function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => void }) {
   const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
     if (mode === "fullPage") {
-      void switchDebugPanelToFullPage();
     }
   }, []);
 
@@ -124,7 +120,6 @@ function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => vo
           });
         }}
         onSheetModeChange={handleModeChange}
-        onSwitchToFullPage={() => void switchDebugPanelToFullPage()}
       />
     </TrueSheetScrollContent>
   );
