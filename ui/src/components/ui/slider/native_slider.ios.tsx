@@ -53,6 +53,10 @@ export function NativeSlider(props: SliderProps) {
         // 嵌套 TrueSheet 中，SwiftUI Host 会把当前可见 safe area 当作宿主约束，
         // 导致原生 Slider 在滚到视口上/下边缘时出现反向“自动避让”偏移。
         // 对这类固定高度控件直接忽略 safe area，可避免其跟随 sheet 可见区域漂移。
+        //
+        // 已知问题：
+        // iOS 26 的系统原生 Slider 在启用 step 后，拖拽到起点/终点时会持续触发控件自带 haptics。
+        // https://www.reddit.com/r/SwiftUI/comments/1tru5h4/swiftui_slider_spams_sensory_feedback/
         ignoreSafeArea="all"
         style={{ flex: 1, width: "100%" }}
       >
