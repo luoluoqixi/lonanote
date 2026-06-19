@@ -1,13 +1,13 @@
 import { type Href, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { type Edge, SafeAreaView } from "react-native-safe-area-context";
 
 import { isDesktop, isWeb } from "@/api/common";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import { TitleBar } from "../titlebar";
-import { NativeList, NativeListSection, NativeListNavigationItem, Text } from "../ui";
+import { NativeList, NativeListNavigationItem, NativeListSection, Text } from "../ui";
 import {
   AppearanceSettingsPanel,
   GlobalSettingsPanel,
@@ -59,9 +59,7 @@ function getSettingsRouteDefinition(key: SettingsRouteKey): SettingsRouteDefinit
 
 const SETTINGS_MOBILE_HEADER_TITLES: Record<string, string> = {
   "settings/index": "设置",
-  ...Object.fromEntries(
-    SETTINGS_ROUTE_DEFINITIONS.map((d) => [String(d.href).slice(1), d.label]),
-  ),
+  ...Object.fromEntries(SETTINGS_ROUTE_DEFINITIONS.map((d) => [String(d.href).slice(1), d.label])),
 };
 
 function getSettingsMobileHeaderTitle(routeName: string): string | null {
@@ -89,12 +87,14 @@ function SettingsScreenLayout({ children, error, isLoading, title }: ScreenLayou
   const usesNativeHeader = !isWeb();
   const usesNativeSettingsList = Platform.OS === "ios";
   const showMeta = error != null || isLoading;
+  const safeAreaEdges: Edge[] = usesNativeSettingsList
+    ? ["left", "right", "bottom"]
+    : usesNativeHeader
+      ? ["left", "right"]
+      : ["top"];
 
   return (
-    <SafeAreaView
-      edges={usesNativeSettingsList ? ["top", "left", "right"] : usesNativeHeader ? ["left", "right"] : ["top"]}
-      style={styles.safeArea}
-    >
+    <SafeAreaView edges={safeAreaEdges} style={styles.safeArea}>
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
         <View style={usesNativeSettingsList ? styles.nativePagePadding : styles.pagePadding}>
@@ -193,7 +193,11 @@ function SettingsSectionScreen({ sectionKey }: { sectionKey: SettingsRouteKey })
   const usesNativeSettingsList = Platform.OS === "ios";
 
   return (
-    <SettingsScreenLayout error={syncState.error} isLoading={syncState.isLoading} title={definition.label}>
+    <SettingsScreenLayout
+      error={syncState.error}
+      isLoading={syncState.isLoading}
+      title={definition.label}
+    >
       <View style={styles.panelHost}>
         {usesNativeSettingsList ? (
           <View style={styles.panelScrollView}>
@@ -229,7 +233,11 @@ const styles = StyleSheet.create({
   scrollContent: {},
   header: {
     borderColor: "rgba(128, 128, 128, 0.22)",
-    borderRadius: 20, borderWidth: 1, gap: 16, marginBottom: 20, padding: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 16,
+    marginBottom: 20,
+    padding: 20,
   },
   metaPanel: { gap: 12, marginBottom: 16 },
   nativeContent: { flex: 1, width: "100%" },

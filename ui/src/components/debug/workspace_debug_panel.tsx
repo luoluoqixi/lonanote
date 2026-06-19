@@ -373,6 +373,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   inlineSectionList: {
+    flex: 1,
     gap: 16,
+    minHeight: 0,
   },
 });

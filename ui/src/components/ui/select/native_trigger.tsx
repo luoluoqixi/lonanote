@@ -16,12 +16,22 @@ function renderTriggerLabel(label: React.ReactNode) {
 }
 
 export function NativeTriggerFace({
+  content,
   label,
   opacity = 1,
 }: {
+  content?: React.ReactNode;
   label: React.ReactNode;
   opacity?: number;
 }) {
+  if (content != null) {
+    return (
+      <View pointerEvents="none" style={[styles.customContent, { opacity }]}>
+        {content}
+      </View>
+    );
+  }
+
   return (
     <View pointerEvents="none" style={{ opacity }}>
       <View style={styles.container}>
@@ -38,17 +48,19 @@ export function NativeTriggerFace({
 }
 
 export function NativeTriggerPressable({
+  content,
   label,
   onPress,
 }: {
+  content?: React.ReactNode;
   label: React.ReactNode;
   onPress?: () => void;
 }) {
   const [isPressed, setIsPressed] = React.useState(false);
 
   return (
-    <View>
-      <NativeTriggerFace label={label} opacity={isPressed ? 0.6 : 1} />
+    <View style={content != null ? styles.customTrigger : undefined}>
+      <NativeTriggerFace content={content} label={label} opacity={isPressed ? 0.6 : 1} />
       <Pressable
         onPress={onPress}
         onPressIn={() => setIsPressed(true)}
@@ -69,6 +81,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 44,
     minWidth: 180,
+  },
+  customContent: {
+    alignSelf: "stretch",
+    width: "100%",
+  },
+  customTrigger: {
+    alignSelf: "stretch",
+    width: "100%",
   },
   row: {
     alignItems: "center",

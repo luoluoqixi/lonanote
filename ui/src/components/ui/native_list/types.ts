@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ScrollViewProps } from "react-native";
 
 import type { SelectProps } from "../select";
 import type { SwitchProps } from "../switch";
@@ -34,7 +35,7 @@ export type NativeListSectionProps = {
 };
 
 /** NativeList Root props */
-export type NativeListRootProps = {
+export type NativeListRootProps = Omit<ScrollViewProps, "children"> & {
   children?: ReactNode;
   /** 设为 false 时使用 list_group 回退模式（所有平台一致） */
   native?: boolean;

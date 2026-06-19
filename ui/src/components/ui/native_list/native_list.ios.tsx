@@ -1,22 +1,53 @@
-import { Host, List, Section as SwiftUISection } from "@expo/ui/swift-ui";
 import {
+  HStack,
+  Host,
+  Image,
+  List,
+  RNHostView,
+  Spacer,
+  Button as SwiftButton,
+  Text as SwiftText,
+  Section as SwiftUISection,
+  VStack,
+} from "@expo/ui/swift-ui";
+import {
+  disabled as disabledModifier,
+  font,
+  foregroundStyle,
+  layoutPriority,
+  lineLimit,
+  listRowInsets,
   listSectionSpacing,
   listStyle,
+  padding,
   scrollContentBackground,
 } from "@expo/ui/swift-ui/modifiers";
-import { createContext, useContext } from "react";
+import { ChevronsUpDown } from "@tamagui/lucide-icons-2";
+import { type ReactNode, createContext, useContext } from "react";
+import { StyleSheet, View } from "react-native";
+import { Text as TamaguiText, useTheme } from "tamagui";
 
-// ─── Row components (re-export from fallback) ───
+import { Select } from "../select";
+import { Switch } from "../switch";
+import { triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import {
-  NativeListActionItem,
-  NativeListItem,
-  NativeListNavigationItem,
-  NativeListSelectItem,
-  NativeListSwitchItem,
+  NativeListActionItem as FallbackActionItem,
+  NativeListItem as FallbackItem,
+  NativeListNavigationItem as FallbackNavigationItem,
+  NativeListRoot as FallbackRoot,
+  NativeListSection as FallbackSection,
+  NativeListSelectItem as FallbackSelectItem,
+  NativeListSwitchItem as FallbackSwitchItem,
 } from "./native_list_fallback";
-import type { NativeListRootProps, NativeListSectionProps } from "./types";
-
-// ─── NativeList 上下文 ──────────────────────────
+import type {
+  NativeListActionItemProps,
+  NativeListItemBaseProps,
+  NativeListNavigationItemProps,
+  NativeListRootProps,
+  NativeListSectionProps,
+  NativeListSelectItemProps,
+  NativeListSwitchItemProps,
+} from "./types";
 
 type NativeListContextValue = {
   native: boolean;
@@ -24,26 +55,165 @@ type NativeListContextValue = {
 
 const NativeListContext = createContext<NativeListContextValue>({ native: true });
 
-// ─── NativeList Root (iOS) ───────────────────────
+const ROW_INSETS = listRowInsets({ top: 0, leading: 0, bottom: 0, trailing: 0 });
+const TITLE_MODIFIERS = [font({ size: 17, weight: "regular" })];
+const SUBTITLE_MODIFIERS = [font({ size: 13, weight: "regular" }), lineLimit(4)];
+const VALUE_MODIFIERS = [font({ size: 17, weight: "regular" }), lineLimit(1)];
 
-/**
- * iOS 原生 `List(insetGrouped)` 容器，作为列表的滚动根容器。
- * 当 `native=false` 时回退到 list_group 模式。
- */
-function NativeListRoot({ children, native = true }: NativeListRootProps) {
+function toPlainText(value: ReactNode): string | null {
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+
+  return null;
+}
+
+function useNativeListEnabled() {
+  return useContext(NativeListContext).native;
+}
+
+function supportsNativeTextRow(...values: Array<ReactNode | undefined>) {
+  return values.every((value) => value == null || toPlainText(value) != null);
+}
+
+function NativeRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: ReactNode }) {
+  const theme = useTheme();
+  const titleText = toPlainText(title);
+  const subtitleText = toPlainText(subtitle);
+
+  if ((title != null && titleText == null) || (subtitle != null && subtitleText == null)) {
+    return null;
+  }
+
+  return (
+    <VStack
+      alignment="leading"
+      modifiers={[layoutPriority(1)]}
+      spacing={subtitleText != null ? 4 : 0}
+    >
+      {titleText != null ? (
+        <SwiftText
+          modifiers={[
+            ...TITLE_MODIFIERS,
+            foregroundStyle(theme.color.val),
+            lineLimit(subtitleText != null ? 2 : 1),
+          ]}
+        >
+          {titleText}
+        </SwiftText>
+      ) : null}
+      {subtitleText != null ? (
+        <SwiftText modifiers={[...SUBTITLE_MODIFIERS, foregroundStyle(theme.color10.val)]}>
+          {subtitleText}
+        </SwiftText>
+      ) : null}
+    </VStack>
+  );
+}
+
+function NativeRowContainer({ children, disabled }: { children: ReactNode; disabled?: boolean }) {
+  return (
+    <HStack
+      alignment="center"
+      modifiers={[
+        ROW_INSETS,
+        disabledModifier(disabled ?? false),
+        padding({ top: 12, bottom: 12, leading: 16, trailing: 16 }),
+      ]}
+      spacing={12}
+    >
+      {children}
+    </HStack>
+  );
+}
+
+function NativeHostedContent({ children }: { children: ReactNode }) {
+  return (
+    <RNHostView matchContents>
+      <View style={styles.hostedContent}>{children}</View>
+    </RNHostView>
+  );
+}
+
+function NativeHostedTrailingControl({ children }: { children: ReactNode }) {
+  return (
+    <RNHostView matchContents>
+      <View style={styles.trailingHostedContent}>{children}</View>
+    </RNHostView>
+  );
+}
+
+function NativeHostedCustomRow({ children }: { children: ReactNode }) {
+  return (
+    <RNHostView matchContents>
+      <View style={styles.customRowShell}>{children}</View>
+    </RNHostView>
+  );
+}
+
+function NativePressRow({
+  chevron = false,
+  disabled,
+  nativeHaptics,
+  onPress,
+  subtitle,
+  title,
+  trailingControl,
+  value,
+}: NativeListItemBaseProps & {
+  trailingControl?: ReactNode;
+}) {
+  const theme = useTheme();
+  const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
+  const titleText = toPlainText(title);
+  const subtitleText = toPlainText(subtitle);
+  const valueText = toPlainText(value);
+
+  const content = (
+    <NativeRowContainer disabled={disabled}>
+      <NativeRowLabel subtitle={subtitleText ?? undefined} title={titleText ?? undefined} />
+      <Spacer minLength={12} />
+      {valueText != null ? (
+        <SwiftText modifiers={[...VALUE_MODIFIERS, foregroundStyle(theme.color10.val)]}>
+          {valueText}
+        </SwiftText>
+      ) : null}
+      {trailingControl}
+      {chevron ? <Image color={theme.color10.val} size={13} systemName="chevron.right" /> : null}
+    </NativeRowContainer>
+  );
+
+  if (onPress == null) {
+    return content;
+  }
+
+  return (
+    <SwiftButton
+      modifiers={[disabledModifier(disabled ?? false)]}
+      onPress={() => {
+        onPress();
+        triggerNativeHaptics(resolvedHaptics);
+      }}
+    >
+      {content}
+    </SwiftButton>
+  );
+}
+
+function NativeListRoot({ children, native = true, style, ...fallbackProps }: NativeListRootProps) {
   if (!native) {
-    // 使用 list_group 回退模式
-    const { NativeListRoot: FallbackRoot } = require("./native_list_fallback");
     return (
       <NativeListContext.Provider value={{ native: false }}>
-        <FallbackRoot>{children}</FallbackRoot>
+        <FallbackRoot {...fallbackProps} style={style}>
+          {children}
+        </FallbackRoot>
       </NativeListContext.Provider>
     );
   }
 
   return (
     <NativeListContext.Provider value={{ native: true }}>
-      <Host style={{ flex: 1 }}>
+      <Host style={[styles.nativeRoot, style]}>
         <List
           modifiers={[
             listStyle("insetGrouped"),
@@ -58,18 +228,8 @@ function NativeListRoot({ children, native = true }: NativeListRootProps) {
   );
 }
 
-// ─── NativeList Section (iOS) ────────────────────
-
-/**
- * iOS 原生 `Section`，内部的 children 通过 SwiftUI 自动渲染为原生行。
- * 当 context native=false 时回退到 list_group Section。
- */
 function NativeListSection({ children, footer, title }: NativeListSectionProps) {
-  const { native } = useContext(NativeListContext);
-
-  if (!native) {
-    // 使用 list_group 回退 Section
-    const { NativeListSection: FallbackSection } = require("./native_list_fallback");
+  if (!useNativeListEnabled()) {
     return (
       <FallbackSection footer={footer} title={title}>
         {children}
@@ -77,23 +237,230 @@ function NativeListSection({ children, footer, title }: NativeListSectionProps) 
     );
   }
 
+  const stringTitle = toPlainText(title);
+  const stringFooter = toPlainText(footer);
+  const header =
+    title != null && stringTitle == null ? (
+      <NativeHostedContent>{title}</NativeHostedContent>
+    ) : undefined;
+  const footerView =
+    footer != null && stringFooter == null ? (
+      <NativeHostedContent>{footer}</NativeHostedContent>
+    ) : undefined;
+
   return (
     <SwiftUISection
-      footer={typeof footer === "string" ? footer : undefined}
-      title={typeof title === "string" ? title : undefined}
+      footer={footerView ?? stringFooter ?? undefined}
+      header={header}
+      title={stringTitle ?? undefined}
     >
       {children}
     </SwiftUISection>
   );
 }
 
-// ─── Unified exports matching index.ts expectations ───
-export {
-  NativeListActionItem,
-  NativeListItem,
-  NativeListNavigationItem,
-  NativeListRoot as NativeList,
-  NativeListSection,
-  NativeListSelectItem,
-  NativeListSwitchItem,
-};
+export function NativeListActionItem(props: NativeListActionItemProps) {
+  if (!useNativeListEnabled()) {
+    return <FallbackActionItem {...props} />;
+  }
+
+  if (!supportsNativeTextRow(props.title, props.subtitle, props.value)) {
+    return <FallbackActionItem {...props} />;
+  }
+
+  return <NativePressRow {...props} chevron={props.chevron} />;
+}
+
+export function NativeListNavigationItem(props: NativeListNavigationItemProps) {
+  if (!useNativeListEnabled()) {
+    return <FallbackNavigationItem {...props} />;
+  }
+
+  if (!supportsNativeTextRow(props.title, props.subtitle, props.value)) {
+    return <FallbackNavigationItem {...props} />;
+  }
+
+  return <NativePressRow {...props} chevron={props.chevron ?? true} />;
+}
+
+export function NativeListSwitchItem({ switchProps, ...itemProps }: NativeListSwitchItemProps) {
+  if (!useNativeListEnabled()) {
+    return <FallbackSwitchItem switchProps={switchProps} {...itemProps} />;
+  }
+
+  if (!supportsNativeTextRow(itemProps.title, itemProps.subtitle)) {
+    return <FallbackSwitchItem switchProps={switchProps} {...itemProps} />;
+  }
+
+  const checked = switchProps.checked ?? switchProps.defaultChecked ?? false;
+
+  return (
+    <NativePressRow
+      {...itemProps}
+      nativeHaptics={itemProps.nativeHaptics ?? true}
+      disabled={itemProps.disabled || switchProps.disabled}
+      onPress={() => {
+        switchProps.onCheckedChange?.(!checked);
+      }}
+      trailingControl={
+        <NativeHostedTrailingControl>
+          <Switch {...switchProps} native />
+        </NativeHostedTrailingControl>
+      }
+      value={undefined}
+    />
+  );
+}
+
+export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSelectItemProps) {
+  if (!useNativeListEnabled()) {
+    return <FallbackSelectItem selectProps={selectProps} {...itemProps} />;
+  }
+
+  if (!supportsNativeTextRow(itemProps.title, itemProps.subtitle)) {
+    return <FallbackSelectItem selectProps={selectProps} {...itemProps} />;
+  }
+
+  const selectedValue = selectProps.value ?? selectProps.defaultValue;
+  const selectItems = [
+    ...(selectProps.items ?? selectProps.options ?? []),
+    ...(selectProps.itemGroups?.flatMap((group) => group.items) ?? []),
+  ];
+  const selectedLabel =
+    selectItems.find((item) => item.value === selectedValue)?.label ??
+    (typeof selectProps.placeholder === "string" ? selectProps.placeholder : "");
+  const disabled = itemProps.disabled || selectProps.disabled || selectProps.isDisabled;
+
+  return (
+    <NativeListItem disabled={disabled}>
+      <Select
+        {...selectProps}
+        disabled={disabled}
+        native
+        nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
+        nativeTrigger
+        nativeTriggerContent={
+          <View style={[styles.selectRow, disabled ? styles.disabledContent : null]}>
+            <View style={styles.selectTextColumn}>
+              {itemProps.title != null ? (
+                <TamaguiText
+                  color="$color"
+                  fontSize="$5"
+                  numberOfLines={itemProps.subtitle ? 2 : 1}
+                >
+                  {itemProps.title}
+                </TamaguiText>
+              ) : null}
+              {itemProps.subtitle != null ? (
+                <TamaguiText color="$color10" fontSize="$3" numberOfLines={2}>
+                  {itemProps.subtitle}
+                </TamaguiText>
+              ) : null}
+            </View>
+            <View style={styles.selectValue}>
+              <TamaguiText color="$color10" fontSize="$4" numberOfLines={1}>
+                {selectedLabel}
+              </TamaguiText>
+              <ChevronsUpDown color="$color10" size={14} />
+            </View>
+          </View>
+        }
+      />
+    </NativeListItem>
+  );
+}
+
+export function NativeListItem({
+  children,
+  disabled,
+  nativeHaptics,
+  onPress,
+}: {
+  children?: ReactNode;
+  disabled?: boolean;
+  nativeHaptics?: NativeListItemBaseProps["nativeHaptics"];
+  onPress?: () => void;
+}) {
+  if (!useNativeListEnabled()) {
+    return (
+      <FallbackItem disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
+        {children}
+      </FallbackItem>
+    );
+  }
+
+  if (onPress == null) {
+    return (
+      <VStack
+        modifiers={[
+          ROW_INSETS,
+          disabledModifier(disabled ?? false),
+          padding({ top: 12, bottom: 12, leading: 16, trailing: 16 }),
+        ]}
+      >
+        <NativeHostedCustomRow>{children}</NativeHostedCustomRow>
+      </VStack>
+    );
+  }
+
+  const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
+
+  return (
+    <SwiftButton
+      modifiers={[
+        ROW_INSETS,
+        disabledModifier(disabled ?? false),
+        padding({ top: 12, bottom: 12, leading: 16, trailing: 16 }),
+      ]}
+      onPress={() => {
+        onPress();
+        triggerNativeHaptics(resolvedHaptics);
+      }}
+    >
+      <NativeHostedCustomRow>{children}</NativeHostedCustomRow>
+    </SwiftButton>
+  );
+}
+
+const styles = StyleSheet.create({
+  customRowShell: {
+    width: "100%",
+  },
+  disabledContent: {
+    opacity: 0.5,
+  },
+  hostedContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  nativeRoot: {
+    flex: 1,
+  },
+  selectRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    minHeight: 32,
+    width: "100%",
+  },
+  selectTextColumn: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  selectValue: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 1,
+    gap: 4,
+    maxWidth: "45%",
+  },
+  trailingHostedContent: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    justifyContent: "flex-start",
+  },
+});
+
+export { NativeListRoot as NativeList, NativeListSection };

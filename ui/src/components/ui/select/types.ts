@@ -60,6 +60,8 @@ export interface SelectProps extends Omit<
    * "custom-sheet"：移动端走项目自定义 Sheet；web 回退到 Tamagui `native=true`
    * */
   native?: SelectNativeMode;
+  /** 自定义 nativeTrigger 的完整内容。用于列表行等需要扩大 trigger 点击区域的场景。 */
+  nativeTriggerContent?: ReactNode;
   /** 是否使用项目自绘 trigger。
    * true = 在 Web / iOS / Android 上都使用统一的文本 + 双箭头 trigger 外观
    *   原生 picker 路径：打开平台原生 picker

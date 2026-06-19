@@ -589,6 +589,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inlineSectionList: {
+    flex: 1,
     gap: 16,
+    minHeight: 0,
   },
 });

@@ -74,6 +74,7 @@ export function NativePickerSwiftUI({
   items,
   value,
   mode,
+  nativeTriggerContent,
   onValueChange,
   resolvedNativeHaptics,
 }: {
@@ -82,6 +83,7 @@ export function NativePickerSwiftUI({
   placeholder?: React.ReactNode;
   mode: "dropdown" | "wheel" | "dialog";
   nativeTrigger?: boolean;
+  nativeTriggerContent?: React.ReactNode;
   onValueChange?: (value: string | null) => void;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
 }) {
@@ -92,6 +94,7 @@ export function NativePickerSwiftUI({
   return (
     <>
       <NativeTriggerPressable
+        content={nativeTriggerContent}
         label={selectedLabel}
         onPress={() => {
           triggerNativeHaptics(resolvedNativeHaptics);

@@ -187,10 +187,12 @@ function NativePickerWheelSheet({
  * 不再依赖 SwiftUI Picker 自带按钮，避免嵌套 sheet 等系统着色差异。
  */
 function NativePickerSwiftUIMenuTrigger({
+  content,
   items,
   value,
   onPress,
 }: {
+  content?: React.ReactNode;
   items: ResolvedSelectItemData[];
   value: string | null | undefined;
   onPress?: () => void;
@@ -198,17 +200,19 @@ function NativePickerSwiftUIMenuTrigger({
   const selectedValue = (value as string) ?? items[0]?.value ?? "";
   const selectedLabel = items.find((item) => item.value === selectedValue)?.label ?? "";
 
-  return <NativeTriggerPressable label={selectedLabel} onPress={onPress} />;
+  return <NativeTriggerPressable content={content} label={selectedLabel} onPress={onPress} />;
 }
 
 /** wheel + 原生 trigger（SwiftUI menu 按钮） */
 function NativePickerWheelNativeTriggerSheet({
+  nativeTriggerContent,
   items,
   placeholder,
   value,
   onValueChange,
   resolvedNativeHaptics,
 }: {
+  nativeTriggerContent?: React.ReactNode;
   items: ResolvedSelectItemData[];
   placeholder?: React.ReactNode;
   value: string | null | undefined;
@@ -241,7 +245,12 @@ function NativePickerWheelNativeTriggerSheet({
 
   return (
     <>
-      <NativePickerSwiftUIMenuTrigger items={items} value={value} onPress={handleOpen} />
+      <NativePickerSwiftUIMenuTrigger
+        content={nativeTriggerContent}
+        items={items}
+        value={value}
+        onPress={handleOpen}
+      />
 
       <WheelTrueSheet
         items={items}
@@ -267,6 +276,7 @@ function NativePickerDropdownCustom({
   onValueChange,
   resolvedNativeHaptics,
   nativeTrigger,
+  nativeTriggerContent,
 }: {
   items: ResolvedSelectItemData[];
   value: string | null | undefined;
@@ -274,6 +284,7 @@ function NativePickerDropdownCustom({
   onValueChange?: (value: string | null) => void;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
   nativeTrigger: boolean | undefined;
+  nativeTriggerContent?: React.ReactNode;
 }) {
   const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
   const handleSelect = useCallback(
@@ -286,6 +297,7 @@ function NativePickerDropdownCustom({
 
   const trigger = nativeTrigger ? (
     <NativePickerSwiftUIMenuTrigger
+      content={nativeTriggerContent}
       items={items}
       value={value}
       onPress={() => triggerNativeHaptics(resolvedNativeHaptics)}
@@ -348,6 +360,7 @@ export function NativePickerSwiftUI({
   placeholder,
   mode,
   nativeTrigger,
+  nativeTriggerContent,
   onValueChange,
   resolvedNativeHaptics,
 }: {
@@ -356,6 +369,7 @@ export function NativePickerSwiftUI({
   placeholder?: React.ReactNode;
   mode: "dropdown" | "wheel";
   nativeTrigger?: boolean;
+  nativeTriggerContent?: React.ReactNode;
   onValueChange?: (value: string | null) => void;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
 }) {
@@ -369,6 +383,7 @@ export function NativePickerSwiftUI({
         onValueChange={onValueChange}
         resolvedNativeHaptics={resolvedNativeHaptics}
         nativeTrigger={nativeTrigger}
+        nativeTriggerContent={nativeTriggerContent}
       />
     );
   }
@@ -378,6 +393,7 @@ export function NativePickerSwiftUI({
     return (
       <NativePickerWheelNativeTriggerSheet
         items={items}
+        nativeTriggerContent={nativeTriggerContent}
         value={value}
         placeholder={placeholder}
         onValueChange={onValueChange}

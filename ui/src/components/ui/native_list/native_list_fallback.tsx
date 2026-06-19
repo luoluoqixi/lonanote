@@ -1,5 +1,5 @@
-import { ChevronRight } from "@tamagui/lucide-icons-2";
-import { Fragment, type ReactNode } from "react";
+import { ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
+import { Children, Fragment, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { ListGroup } from "../list_group";
@@ -58,6 +58,19 @@ type StandardRowProps = NativeListItemBaseProps & {
   trailingControl?: ReactNode;
 };
 
+function getSelectedLabel(selectProps: NativeListSelectItemProps["selectProps"]) {
+  const selectedValue = selectProps.value ?? selectProps.defaultValue;
+  const items = [
+    ...(selectProps.items ?? selectProps.options ?? []),
+    ...(selectProps.itemGroups?.flatMap((group) => group.items) ?? []),
+  ];
+
+  return (
+    items.find((item) => item.value === selectedValue)?.label ??
+    (typeof selectProps.placeholder === "string" ? selectProps.placeholder : "")
+  );
+}
+
 function StandardRow({
   chevron,
   disabled,
@@ -106,21 +119,64 @@ export function NativeListNavigationItem(props: NativeListNavigationItemProps) {
 }
 
 export function NativeListSwitchItem({ switchProps, ...itemProps }: NativeListSwitchItemProps) {
+  const checked = switchProps.checked ?? switchProps.defaultChecked ?? false;
+
   return (
     <StandardRow
       {...itemProps}
-      trailingControl={<Switch {...switchProps} native={true} />}
+      disabled={itemProps.disabled || switchProps.disabled}
+      nativeHaptics={itemProps.nativeHaptics ?? true}
+      onPress={() => switchProps.onCheckedChange?.(!checked)}
+      trailingControl={
+        <Switch
+          {...switchProps}
+          native
+          onPress={(event) => {
+            switchProps.onPress?.(event);
+            event.stopPropagation();
+          }}
+        />
+      }
       value={undefined}
     />
   );
 }
 
 export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSelectItemProps) {
+  const disabled = itemProps.disabled || selectProps.disabled || selectProps.isDisabled;
+  const selectedLabel = getSelectedLabel(selectProps);
+
   return (
-    <StandardRow
-      {...itemProps}
-      trailingControl={<Select {...selectProps} native={true} nativeTrigger={true} />}
-      value={undefined}
+    <Select
+      {...selectProps}
+      disabled={disabled}
+      native
+      nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
+      nativeTrigger
+      nativeTriggerContent={
+        <View style={[styles.rowShell, disabled ? styles.pressableDisabled : null]}>
+          <View style={styles.rowContent}>
+            <View style={styles.textColumn}>
+              {itemProps.title != null ? (
+                <Text fontSize="$5" fontWeight="500" numberOfLines={itemProps.subtitle ? 2 : 1}>
+                  {itemProps.title}
+                </Text>
+              ) : null}
+              {itemProps.subtitle != null ? (
+                <Text color="$color10" fontSize="$3" numberOfLines={2}>
+                  {itemProps.subtitle}
+                </Text>
+              ) : null}
+            </View>
+            <View style={styles.selectValue}>
+              <Text color="$color10" fontSize="$4" numberOfLines={1}>
+                {selectedLabel}
+              </Text>
+              <ChevronsUpDown color="$color10" size={14} />
+            </View>
+          </View>
+        </View>
+      }
     />
   );
 }
@@ -145,8 +201,8 @@ export function NativeListItem({
 
 // ─── Section ─────────────────────────────────────
 
-export function NativeListSection({ children, title }: NativeListSectionProps) {
-  const childrenArray = children ? (Array.isArray(children) ? children : [children]) : [];
+export function NativeListSection({ children, footer, title }: NativeListSectionProps) {
+  const childrenArray = Children.toArray(children);
 
   return (
     <View style={styles.section}>
@@ -157,7 +213,7 @@ export function NativeListSection({ children, title }: NativeListSectionProps) {
           </Text>
         </View>
       ) : null}
-      <ListGroup rounded="$4" self="stretch">
+      <ListGroup background="$background" rounded="$4" self="stretch">
         {childrenArray.map((child, index) => (
           <Fragment key={index}>
             {index > 0 ? <Separator /> : null}
@@ -165,16 +221,34 @@ export function NativeListSection({ children, title }: NativeListSectionProps) {
           </Fragment>
         ))}
       </ListGroup>
+      {footer != null ? (
+        <View style={styles.sectionFooter}>
+          <Text color="$color10" fontSize="$3">
+            {footer}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 // ─── NativeList Root ─────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function NativeListRoot({ children, native: _native, ...rest }: NativeListRootProps) {
+export function NativeListRoot({
+  children,
+  contentContainerStyle,
+  native: _native,
+  style,
+  ...rest
+}: NativeListRootProps) {
+  void _native;
+
   return (
-    <ScrollView style={styles.root} {...rest}>
+    <ScrollView
+      contentContainerStyle={[styles.rootContent, contentContainerStyle]}
+      style={[styles.root, style]}
+      {...rest}
+    >
       {children}
     </ScrollView>
   );
@@ -183,10 +257,14 @@ export function NativeListRoot({ children, native: _native, ...rest }: NativeLis
 // ─── Styles ──────────────────────────────────────
 
 const styles = StyleSheet.create({
-  pressable: { flex: 1 },
+  pressable: { width: "100%" },
   pressableDisabled: { opacity: 0.5 },
   pressablePressed: { backgroundColor: "rgba(128, 128, 128, 0.08)" },
   root: { flex: 1 },
+  rootContent: {
+    gap: 16,
+    paddingVertical: 8,
+  },
   rowContent: {
     alignItems: "center",
     flex: 1,
@@ -199,6 +277,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   section: { gap: 8 },
+  sectionFooter: { paddingHorizontal: 16 },
   sectionLabel: { paddingHorizontal: 16 },
+  selectValue: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 1,
+    gap: 4,
+    maxWidth: "45%",
+  },
   textColumn: { flex: 1, gap: 4, minWidth: 0 },
 });

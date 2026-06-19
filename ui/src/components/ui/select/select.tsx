@@ -654,6 +654,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       viewportProps,
       native,
       nativeTrigger,
+      nativeTriggerContent,
       ...props
     },
     ref,
@@ -888,6 +889,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
             placeholder={placeholder}
             mode={resolvedPickerMode as "dropdown" | "wheel" | "dialog"}
             nativeTrigger={nativeTrigger ?? false}
+            nativeTriggerContent={nativeTriggerContent}
             onValueChange={onValueChange}
             resolvedNativeHaptics={resolvedNativeHaptics}
           />
@@ -934,7 +936,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     nativeHaptics={triggerProps?.nativeHaptics ?? resolvedNativeHaptics}
                   >
                     {nativeTrigger ? (
-                      <NativeTriggerFace label={triggerLabel} />
+                      <NativeTriggerFace content={nativeTriggerContent} label={triggerLabel} />
                     ) : (
                       <SelectValue placeholder={placeholder} />
                     )}
