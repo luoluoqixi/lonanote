@@ -1,7 +1,13 @@
 import { StyleSheet, View } from "react-native";
 
 import type { GlobalSettings } from "@/api/commands/settings";
-import { Button, Select, type SelectOption, Switch, Text } from "@/components/ui";
+import {
+  Button,
+  InsetGroupedList,
+  type InsetGroupedListSectionData,
+  type SelectOption,
+  Text,
+} from "@/components/ui";
 import {
   clampZoomFactor,
   getAccentColorPreset,
@@ -94,46 +100,6 @@ export function SettingsStatusBadge({ children, tone }: StatusBadgeProps) {
   );
 }
 
-type SectionProps = {
-  children: React.ReactNode;
-  title: string;
-};
-
-function SettingsSection({ children, title }: SectionProps) {
-  return (
-    <View style={styles.section}>
-      <Text fontSize="$6" fontWeight="600">
-        {title}
-      </Text>
-      <View style={styles.sectionBody}>{children}</View>
-    </View>
-  );
-}
-
-type ToggleRowProps = {
-  label: string;
-  onChange: (nextValue: boolean) => void;
-  value: boolean;
-};
-
-function SettingsToggleRow({ label, onChange, value }: ToggleRowProps) {
-  return (
-    <View style={styles.rowCard}>
-      <View style={styles.rowContent}>
-        <Text fontSize="$5" fontWeight="600" style={styles.rowLabel}>
-          {label}
-        </Text>
-        <View style={styles.inlineControls}>
-          <Text color={value ? "$accentColor" : "$color10"} fontSize="$3">
-            {value ? "已开启" : "已关闭"}
-          </Text>
-          <Switch checked={value} onCheckedChange={onChange} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
 type StepperRowProps = {
   decreaseLabel?: string;
   increaseLabel?: string;
@@ -143,7 +109,7 @@ type StepperRowProps = {
   valueLabel: string;
 };
 
-function SettingsStepperRow({
+function SettingsStepperRowContent({
   decreaseLabel = "-0.5s",
   increaseLabel = "+0.5s",
   label,
@@ -152,115 +118,54 @@ function SettingsStepperRow({
   valueLabel,
 }: StepperRowProps) {
   return (
-    <View style={styles.rowCard}>
-      <View style={styles.rowContent}>
-        <View style={styles.rowTextGroup}>
-          <Text fontSize="$5" fontWeight="600">
-            {label}
-          </Text>
-          <Text color="$color10" fontSize="$3">
-            {valueLabel}
-          </Text>
-        </View>
-        <View style={styles.inlineControls}>
-          <Button aria-label={`${label}${decreaseLabel}`} onPress={onDecrease} variant="outlined">
-            -
-          </Button>
-          <Button aria-label={`${label}${increaseLabel}`} onPress={onIncrease} variant="outlined">
-            +
-          </Button>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-type OptionGroupProps = {
-  onSelect: (value: string | null) => void;
-  selectedValue: ColorSchemeSetting;
-};
-
-type SettingsSelectRowProps = {
-  label: string;
-  onSelect: (value: string | null) => void;
-  options: SelectOption[];
-  placeholder: string;
-  selectedValue: string;
-};
-
-function SettingsSelectRow({
-  label,
-  onSelect,
-  options,
-  placeholder,
-  selectedValue,
-}: SettingsSelectRowProps) {
-  const selectedOption = options.find((option) => option.value === selectedValue);
-
-  return (
-    <View style={styles.rowCard}>
-      <View style={styles.rowContent}>
-        <Text fontSize="$5" fontWeight="600" style={styles.rowLabel}>
+    <View style={styles.customRow}>
+      <View style={styles.customRowText}>
+        <Text fontSize="$5" fontWeight="500">
           {label}
         </Text>
-        <View style={styles.selectBox}>
-          <Select
-            aria-label={label}
-            onValueChange={onSelect}
-            options={options}
-            placeholder={placeholder}
-            value={selectedOption?.value}
-          />
-        </View>
+        <Text color="$color10" fontSize="$3">
+          {valueLabel}
+        </Text>
+      </View>
+      <View style={styles.buttonRow}>
+        <Button aria-label={`${label}${decreaseLabel}`} onPress={onDecrease} variant="outlined">
+          -
+        </Button>
+        <Button aria-label={`${label}${increaseLabel}`} onPress={onIncrease} variant="outlined">
+          +
+        </Button>
       </View>
     </View>
   );
 }
 
-function ColorSchemeOptionGroup({ onSelect, selectedValue }: OptionGroupProps) {
-  const options: SelectOption[] = [
-    { label: "浅色", value: "light" },
-    { label: "深色", value: "dark" },
-    { label: "跟随系统", value: "system" },
-  ];
-
-  return (
-    <SettingsSelectRow
-      label="主题模式"
-      onSelect={onSelect}
-      options={options}
-      placeholder="选择主题模式"
-      selectedValue={selectedValue}
-    />
-  );
-}
-
-type AccentColorOptionGroupProps = {
-  onSelect: (value: string | null) => void;
-  selectedValue: string;
+type SummaryActionRowProps = {
+  actionLabel: string;
+  description: string;
+  onPress: () => void;
+  title: string;
 };
 
-function AccentColorOptionGroup({ onSelect, selectedValue }: AccentColorOptionGroupProps) {
-  const options: SelectOption[] = (
-    ["blue", "emerald", "orange", "rose"] as AccentColorSetting[]
-  ).map((option) => {
-    const preset = getAccentColorPreset(option);
-
-    return {
-      label: preset.label,
-      startContent: <View style={[styles.colorSwatch, { backgroundColor: preset.accent }]} />,
-      value: option,
-    };
-  });
-
+function SettingsSummaryActionRow({
+  actionLabel,
+  description,
+  onPress,
+  title,
+}: SummaryActionRowProps) {
   return (
-    <SettingsSelectRow
-      label="主题色"
-      onSelect={onSelect}
-      options={options}
-      placeholder="选择主题色"
-      selectedValue={selectedValue}
-    />
+    <View style={styles.customRow}>
+      <View style={styles.customRowText}>
+        <Text fontSize="$5" fontWeight="500">
+          {title}
+        </Text>
+        <Text color="$color10" fontSize="$3">
+          {description}
+        </Text>
+      </View>
+      <Button onPress={onPress} variant="outlined">
+        {actionLabel}
+      </Button>
+    </View>
   );
 }
 
@@ -285,150 +190,193 @@ export function SettingsSyncState({ error, isLoading }: PanelHeaderProps) {
 export function GlobalSettingsPanel() {
   const { settings, updateAndSave } = useGlobalSettings();
 
-  return (
-    <View style={styles.panel}>
-      <SettingsSection title="应用行为">
-        <SettingsToggleRow
-          label="自动检查更新"
-          onChange={(nextValue) => {
-            runSettingsAction(
-              "toggle auto check update",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "app", {
-                  ...currentSettings.app,
-                  autoCheckUpdate: nextValue,
-                }),
-              ),
-            );
-          }}
-          value={settings.app.autoCheckUpdate}
-        />
-        <SettingsToggleRow
-          label="自动打开上次工作区"
-          onChange={(nextValue) => {
-            runSettingsAction(
-              "toggle auto open last workspace",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "app", {
-                  ...currentSettings.app,
-                  autoOpenLastWorkspace: nextValue,
-                }),
-              ),
-            );
-          }}
-          value={settings.app.autoOpenLastWorkspace}
-        />
-      </SettingsSection>
+  const sections: InsetGroupedListSectionData[] = [
+    {
+      items: [
+        {
+          kind: "switch",
+          key: "auto-check-update",
+          switchProps: {
+            checked: settings.app.autoCheckUpdate,
+            onCheckedChange: (nextValue) => {
+              runSettingsAction(
+                "toggle auto check update",
+                updateAndSave((currentSettings) =>
+                  updateSettingsSection(currentSettings, "app", {
+                    ...currentSettings.app,
+                    autoCheckUpdate: nextValue,
+                  }),
+                ),
+              );
+            },
+          },
+          title: "自动检查更新",
+        },
+        {
+          kind: "switch",
+          key: "auto-open-last-workspace",
+          switchProps: {
+            checked: settings.app.autoOpenLastWorkspace,
+            onCheckedChange: (nextValue) => {
+              runSettingsAction(
+                "toggle auto open last workspace",
+                updateAndSave((currentSettings) =>
+                  updateSettingsSection(currentSettings, "app", {
+                    ...currentSettings.app,
+                    autoOpenLastWorkspace: nextValue,
+                  }),
+                ),
+              );
+            },
+          },
+          title: "自动打开上次工作区",
+        },
+      ],
+      title: "应用行为",
+    },
+    {
+      items: [
+        {
+          kind: "switch",
+          key: "auto-save",
+          switchProps: {
+            checked: settings.editorDefaults.autoSave,
+            onCheckedChange: (nextValue) => {
+              runSettingsAction(
+                "toggle auto save",
+                updateAndSave((currentSettings) =>
+                  updateSettingsSection(currentSettings, "editorDefaults", {
+                    ...currentSettings.editorDefaults,
+                    autoSave: nextValue,
+                  }),
+                ),
+              );
+            },
+          },
+          title: "自动保存",
+        },
+        {
+          kind: "switch",
+          key: "auto-save-on-focus-change",
+          switchProps: {
+            checked: settings.editorDefaults.autoSaveOnFocusChange,
+            onCheckedChange: (nextValue) => {
+              runSettingsAction(
+                "toggle focus auto save",
+                updateAndSave((currentSettings) =>
+                  updateSettingsSection(currentSettings, "editorDefaults", {
+                    ...currentSettings.editorDefaults,
+                    autoSaveOnFocusChange: nextValue,
+                  }),
+                ),
+              );
+            },
+          },
+          title: "失焦时自动保存",
+        },
+        {
+          kind: "switch",
+          key: "show-line-number",
+          switchProps: {
+            checked: settings.editorDefaults.showLineNumber,
+            onCheckedChange: (nextValue) => {
+              runSettingsAction(
+                "toggle show line number",
+                updateAndSave((currentSettings) =>
+                  updateSettingsSection(currentSettings, "editorDefaults", {
+                    ...currentSettings.editorDefaults,
+                    showLineNumber: nextValue,
+                  }),
+                ),
+              );
+            },
+          },
+          title: "显示行号",
+        },
+        {
+          kind: "switch",
+          key: "disable-line-wrap",
+          switchProps: {
+            checked: settings.editorDefaults.disableLineWrap,
+            onCheckedChange: (nextValue) => {
+              runSettingsAction(
+                "toggle line wrap",
+                updateAndSave((currentSettings) =>
+                  updateSettingsSection(currentSettings, "editorDefaults", {
+                    ...currentSettings.editorDefaults,
+                    disableLineWrap: nextValue,
+                  }),
+                ),
+              );
+            },
+          },
+          title: "禁用自动换行",
+        },
+        {
+          kind: "switch",
+          key: "source-mode",
+          switchProps: {
+            checked: settings.editorDefaults.sourceMode,
+            onCheckedChange: (nextValue) => {
+              runSettingsAction(
+                "toggle source mode",
+                updateAndSave((currentSettings) =>
+                  updateSettingsSection(currentSettings, "editorDefaults", {
+                    ...currentSettings.editorDefaults,
+                    sourceMode: nextValue,
+                  }),
+                ),
+              );
+            },
+          },
+          title: "源码模式",
+        },
+      ],
+      title: "编辑器默认值",
+    },
+    {
+      items: [
+        {
+          children: (
+            <SettingsStepperRowContent
+              label="自动保存间隔"
+              onDecrease={() => {
+                runSettingsAction(
+                  "decrease auto save interval",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "editorDefaults", {
+                      ...currentSettings.editorDefaults,
+                      autoSaveIntervalSeconds: clampAutoSaveInterval(
+                        currentSettings.editorDefaults.autoSaveIntervalSeconds - 0.5,
+                      ),
+                    }),
+                  ),
+                );
+              }}
+              onIncrease={() => {
+                runSettingsAction(
+                  "increase auto save interval",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "editorDefaults", {
+                      ...currentSettings.editorDefaults,
+                      autoSaveIntervalSeconds: clampAutoSaveInterval(
+                        currentSettings.editorDefaults.autoSaveIntervalSeconds + 0.5,
+                      ),
+                    }),
+                  ),
+                );
+              }}
+              valueLabel={`${settings.editorDefaults.autoSaveIntervalSeconds.toFixed(1)} 秒`}
+            />
+          ),
+          key: "auto-save-interval",
+          kind: "custom",
+        },
+      ],
+    },
+  ];
 
-      <SettingsSection title="编辑器默认值">
-        <SettingsToggleRow
-          label="自动保存"
-          onChange={(nextValue) => {
-            runSettingsAction(
-              "toggle auto save",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "editorDefaults", {
-                  ...currentSettings.editorDefaults,
-                  autoSave: nextValue,
-                }),
-              ),
-            );
-          }}
-          value={settings.editorDefaults.autoSave}
-        />
-        <SettingsStepperRow
-          label="自动保存间隔"
-          onDecrease={() => {
-            runSettingsAction(
-              "decrease auto save interval",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "editorDefaults", {
-                  ...currentSettings.editorDefaults,
-                  autoSaveIntervalSeconds: clampAutoSaveInterval(
-                    currentSettings.editorDefaults.autoSaveIntervalSeconds - 0.5,
-                  ),
-                }),
-              ),
-            );
-          }}
-          onIncrease={() => {
-            runSettingsAction(
-              "increase auto save interval",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "editorDefaults", {
-                  ...currentSettings.editorDefaults,
-                  autoSaveIntervalSeconds: clampAutoSaveInterval(
-                    currentSettings.editorDefaults.autoSaveIntervalSeconds + 0.5,
-                  ),
-                }),
-              ),
-            );
-          }}
-          valueLabel={`${settings.editorDefaults.autoSaveIntervalSeconds.toFixed(1)} 秒`}
-        />
-        <SettingsToggleRow
-          label="失焦时自动保存"
-          onChange={(nextValue) => {
-            runSettingsAction(
-              "toggle focus auto save",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "editorDefaults", {
-                  ...currentSettings.editorDefaults,
-                  autoSaveOnFocusChange: nextValue,
-                }),
-              ),
-            );
-          }}
-          value={settings.editorDefaults.autoSaveOnFocusChange}
-        />
-        <SettingsToggleRow
-          label="显示行号"
-          onChange={(nextValue) => {
-            runSettingsAction(
-              "toggle show line number",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "editorDefaults", {
-                  ...currentSettings.editorDefaults,
-                  showLineNumber: nextValue,
-                }),
-              ),
-            );
-          }}
-          value={settings.editorDefaults.showLineNumber}
-        />
-        <SettingsToggleRow
-          label="禁用自动换行"
-          onChange={(nextValue) => {
-            runSettingsAction(
-              "toggle line wrap",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "editorDefaults", {
-                  ...currentSettings.editorDefaults,
-                  disableLineWrap: nextValue,
-                }),
-              ),
-            );
-          }}
-          value={settings.editorDefaults.disableLineWrap}
-        />
-        <SettingsToggleRow
-          label="源码模式"
-          onChange={(nextValue) => {
-            runSettingsAction(
-              "toggle source mode",
-              updateAndSave((currentSettings) =>
-                updateSettingsSection(currentSettings, "editorDefaults", {
-                  ...currentSettings.editorDefaults,
-                  sourceMode: nextValue,
-                }),
-              ),
-            );
-          }}
-          value={settings.editorDefaults.sourceMode}
-        />
-      </SettingsSection>
-    </View>
-  );
+  return <InsetGroupedList sections={sections} />;
 }
 
 export function AppearanceSettingsPanel() {
@@ -440,85 +388,138 @@ export function AppearanceSettingsPanel() {
   } = useColorSchemeSettings();
   const { preferences, updateAndSave } = useUiPreferences();
 
-  return (
-    <View style={styles.panel}>
-      <SettingsSection title="主题">
-        <AccentColorOptionGroup
-          onSelect={(nextValue) => {
-            if (nextValue == null) return;
-            runSettingsAction(
-              "set accent color",
-              updateAndSave((currentPreferences) => ({
-                ...currentPreferences,
-                appearance: {
-                  ...currentPreferences.appearance,
-                  accentColor: nextValue as AccentColorSetting,
-                },
-              })),
-            );
-          }}
-          selectedValue={preferences.appearance.accentColor}
-        />
-        <ColorSchemeOptionGroup
-          onSelect={(nextValue) => {
-            if (nextValue == null) return;
-            runSettingsAction(
-              "set preferred color scheme",
-              setPreferredColorSchemeAndSave(nextValue as ColorSchemeSetting),
-            );
-          }}
-          selectedValue={preferredColorScheme}
-        />
-        <View style={styles.rowCard}>
-          <Text color="$color10" fontSize="$3">
-            系统：{systemColorScheme} / 偏好：{preferredColorScheme} / 当前：{resolvedColorScheme} /
-            主题色：{formatAccentColor(preferences.appearance.accentColor)}
-          </Text>
-        </View>
-      </SettingsSection>
+  const accentColorOptions: SelectOption[] = (
+    ["blue", "emerald", "orange", "rose"] as AccentColorSetting[]
+  ).map((option) => ({
+    label: getAccentColorPreset(option).label,
+    value: option,
+  }));
 
-      <SettingsSection title="桌面缩放">
-        <SettingsStepperRow
-          decreaseLabel="-10%"
-          increaseLabel="+10%"
-          label="界面缩放"
-          onDecrease={() => {
-            runSettingsAction(
-              "decrease desktop zoom factor",
-              updateAndSave((currentPreferences) => ({
-                ...currentPreferences,
-                appearance: {
-                  ...currentPreferences.appearance,
-                  zoomFactor: clampZoomFactor(currentPreferences.appearance.zoomFactor - 0.1),
-                },
-              })),
-            );
-          }}
-          onIncrease={() => {
-            runSettingsAction(
-              "increase desktop zoom factor",
-              updateAndSave((currentPreferences) => ({
-                ...currentPreferences,
-                appearance: {
-                  ...currentPreferences.appearance,
-                  zoomFactor: clampZoomFactor(currentPreferences.appearance.zoomFactor + 0.1),
-                },
-              })),
-            );
-          }}
-          valueLabel={formatZoomFactor(preferences.appearance.zoomFactor)}
-        />
-        <View style={styles.rowCard}>
-          <View style={styles.rowContent}>
-            <View style={styles.rowTextGroup}>
-              <Text fontSize="$5" fontWeight="600">
-                当前桌面缩放
-              </Text>
-              <Text color="$color10" fontSize="$3">
-                {formatZoomFactor(preferences.appearance.zoomFactor)}，仅桌面 Tauri 生效
-              </Text>
-            </View>
-            <Button
+  const colorSchemeOptions: SelectOption[] = [
+    { label: "浅色", value: "light" },
+    { label: "深色", value: "dark" },
+    { label: "跟随系统", value: "system" },
+  ];
+  const accentColorSelectProps = {
+    onValueChange: (nextValue: string | null) => {
+      if (nextValue == null) return;
+
+      runSettingsAction(
+        "set accent color",
+        updateAndSave((currentPreferences) => ({
+          ...currentPreferences,
+          appearance: {
+            ...currentPreferences.appearance,
+            accentColor: nextValue as AccentColorSetting,
+          },
+        })),
+      );
+    },
+    options: accentColorOptions,
+    placeholder: "选择主题色",
+    value: preferences.appearance.accentColor,
+  };
+  const colorSchemeSelectProps = {
+    onValueChange: (nextValue: string | null) => {
+      if (nextValue == null) return;
+
+      runSettingsAction(
+        "set preferred color scheme",
+        setPreferredColorSchemeAndSave(nextValue as ColorSchemeSetting),
+      );
+    },
+    options: colorSchemeOptions,
+    placeholder: "选择主题模式",
+    value: preferredColorScheme,
+  };
+
+  const sections: InsetGroupedListSectionData[] = [
+    {
+      items: [
+        {
+          key: "accent-color",
+          kind: "select",
+          selectProps: {
+            "aria-label": "主题色",
+            ...accentColorSelectProps,
+          },
+          title: "主题色",
+        },
+        {
+          key: "preferred-color-scheme",
+          kind: "select",
+          selectProps: {
+            "aria-label": "主题模式",
+            ...colorSchemeSelectProps,
+          },
+          title: "主题模式",
+        },
+      ],
+      title: "主题",
+    },
+    {
+      items: [
+        {
+          children: (
+            <Text color="$color10" fontSize="$3">
+              系统：{systemColorScheme} / 偏好：{preferredColorScheme} / 当前：
+              {resolvedColorScheme} / 主题色：
+              {formatAccentColor(preferences.appearance.accentColor)}
+            </Text>
+          ),
+          key: "theme-summary",
+          kind: "custom",
+        },
+      ],
+    },
+    {
+      items: [
+        {
+          children: (
+            <SettingsStepperRowContent
+              decreaseLabel="-10%"
+              increaseLabel="+10%"
+              label="界面缩放"
+              onDecrease={() => {
+                runSettingsAction(
+                  "decrease desktop zoom factor",
+                  updateAndSave((currentPreferences) => ({
+                    ...currentPreferences,
+                    appearance: {
+                      ...currentPreferences.appearance,
+                      zoomFactor: clampZoomFactor(currentPreferences.appearance.zoomFactor - 0.1),
+                    },
+                  })),
+                );
+              }}
+              onIncrease={() => {
+                runSettingsAction(
+                  "increase desktop zoom factor",
+                  updateAndSave((currentPreferences) => ({
+                    ...currentPreferences,
+                    appearance: {
+                      ...currentPreferences.appearance,
+                      zoomFactor: clampZoomFactor(currentPreferences.appearance.zoomFactor + 0.1),
+                    },
+                  })),
+                );
+              }}
+              valueLabel={formatZoomFactor(preferences.appearance.zoomFactor)}
+            />
+          ),
+          key: "zoom-factor-stepper",
+          kind: "custom",
+        },
+      ],
+      title: "桌面缩放",
+    },
+    {
+      items: [
+        {
+          children: (
+            <SettingsSummaryActionRow
+              actionLabel="重置"
+              description={`${formatZoomFactor(preferences.appearance.zoomFactor)}，仅桌面 Tauri 生效`}
               onPress={() => {
                 runSettingsAction(
                   "reset desktop zoom factor",
@@ -531,50 +532,55 @@ export function AppearanceSettingsPanel() {
                   })),
                 );
               }}
-              variant="outlined"
-            >
-              重置
-            </Button>
-          </View>
-        </View>
-      </SettingsSection>
-    </View>
-  );
+              title="当前桌面缩放"
+            />
+          ),
+          key: "zoom-factor-reset",
+          kind: "custom",
+        },
+      ],
+    },
+  ];
+
+  return <InsetGroupedList sections={sections} />;
 }
 
 export function WindowSettingsPanel() {
   const { preferences, updateAndSave } = useUiPreferences();
 
-  return (
-    <View style={styles.panel}>
-      <SettingsSection title="启动行为">
-        <SettingsToggleRow
-          label="恢复上次窗口状态"
-          onChange={(nextValue) => {
-            runSettingsAction(
-              "toggle restore window state",
-              updateAndSave((currentPreferences) => ({
-                ...currentPreferences,
-                window: {
-                  ...currentPreferences.window,
-                  restoreWindowState: nextValue,
-                },
-              })),
-            );
-          }}
-          value={preferences.window.restoreWindowState}
-        />
-        <View style={styles.rowCard}>
-          <View style={styles.rowContent}>
-            <View style={styles.rowTextGroup}>
-              <Text fontSize="$5" fontWeight="600">
-                最近保存的窗口状态
-              </Text>
-              <Text color="$color10" fontSize="$3">
-                {formatWindowStateSummary(preferences.window.lastWindowState)}
-              </Text>
-            </View>
-            <Button
+  const sections: InsetGroupedListSectionData[] = [
+    {
+      items: [
+        {
+          kind: "switch",
+          key: "restore-window-state",
+          switchProps: {
+            checked: preferences.window.restoreWindowState,
+            onCheckedChange: (nextValue) => {
+              runSettingsAction(
+                "toggle restore window state",
+                updateAndSave((currentPreferences) => ({
+                  ...currentPreferences,
+                  window: {
+                    ...currentPreferences.window,
+                    restoreWindowState: nextValue,
+                  },
+                })),
+              );
+            },
+          },
+          title: "恢复上次窗口状态",
+        },
+      ],
+      title: "启动行为",
+    },
+    {
+      items: [
+        {
+          children: (
+            <SettingsSummaryActionRow
+              actionLabel="清除"
+              description={formatWindowStateSummary(preferences.window.lastWindowState)}
               onPress={() => {
                 runSettingsAction(
                   "clear saved window state",
@@ -587,15 +593,17 @@ export function WindowSettingsPanel() {
                   })),
                 );
               }}
-              variant="outlined"
-            >
-              清除
-            </Button>
-          </View>
-        </View>
-      </SettingsSection>
-    </View>
-  );
+              title="最近保存的窗口状态"
+            />
+          ),
+          key: "saved-window-state",
+          kind: "custom",
+        },
+      ],
+    },
+  ];
+
+  return <InsetGroupedList sections={sections} />;
 }
 
 const styles = StyleSheet.create({
@@ -614,56 +622,21 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(128, 128, 128, 0.08)",
     borderColor: "rgba(128, 128, 128, 0.24)",
   },
-  colorSwatch: {
-    borderRadius: 999,
-    height: 12,
-    width: 12,
+  buttonRow: {
+    flexDirection: "row",
+    gap: 8,
   },
-  inlineControls: {
+  customRow: {
     alignItems: "center",
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  panel: {
-    gap: 16,
-  },
-  rowCard: {
-    borderColor: "rgba(128, 128, 128, 0.22)",
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-  },
-  rowContent: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 12,
     justifyContent: "space-between",
+    width: "100%",
   },
-  rowLabel: {
-    flex: 1,
-    minWidth: 180,
-  },
-  rowTextGroup: {
+  customRowText: {
     flex: 1,
     gap: 4,
-    minWidth: 220,
-  },
-  section: {
-    borderColor: "rgba(128, 128, 128, 0.22)",
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: 12,
-    padding: 16,
-  },
-  sectionBody: {
-    gap: 12,
-  },
-  selectBox: {
-    maxWidth: 260,
-    minWidth: 176,
-    width: "45%",
+    minWidth: 0,
   },
   syncState: {
     flexDirection: "row",

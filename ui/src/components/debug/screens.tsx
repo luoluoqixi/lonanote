@@ -4,7 +4,15 @@ import { ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import { isDesktop, os } from "@/api/common";
 
 import { TitleBar } from "../titlebar";
-import { Button, Select, Slider, Switch, Text } from "../ui";
+import {
+  Button,
+  InsetGroupedList,
+  type InsetGroupedListSectionData,
+  Select,
+  Slider,
+  Switch,
+  Text,
+} from "../ui";
 import {
   DEBUG_PANEL_ROUTE_DEFINITIONS,
   type DebugTabKey,
@@ -145,8 +153,6 @@ export function DebugHomeScreen({
     setDebugSectionsAsNestedSheets(enabled);
   };
 
-  const sectionCards: ReactNode[] = [];
-
   const openSection = async (key: DebugTabKey) => {
     if (await openDebugSection(key)) {
       return;
@@ -160,109 +166,133 @@ export function DebugHomeScreen({
     onOpenFullPage?.(key);
   };
 
-  for (const definition of DEBUG_PANEL_ROUTE_DEFINITIONS) {
-    sectionCards.push(
-      <View key={definition.key} style={styles.sectionCard}>
-        <View style={styles.sectionCardText}>
-          <Text fontSize="$5" fontWeight="600">
-            {definition.label}
-          </Text>
-          <Text color="$color10" fontSize="$3">
-            {definition.description}
-          </Text>
-        </View>
-        <Button
-          disabled={
-            nestedSectionSheets ? false : inTrueSheet ? onOpenPanel == null : onOpenFullPage == null
-          }
-          onPress={() => {
-            void openSection(definition.key);
-          }}
-        >
-          打开{definition.label}
-        </Button>
-      </View>,
-    );
-  }
+  const routeSections: InsetGroupedListSectionData[] = [
+    {
+      items: DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => ({
+        kind: "navigation" as const,
+        disabled: nestedSectionSheets
+          ? false
+          : inTrueSheet
+            ? onOpenPanel == null
+            : onOpenFullPage == null,
+        key: definition.key,
+        onPress: () => {
+          void openSection(definition.key);
+        },
+        subtitle: definition.description,
+        title: definition.label,
+      })),
+      title: "调试分区",
+    },
+  ];
 
-  sectionCards.push(
-    <View key="nested-section-sheets-toggle" style={styles.sectionCard}>
-      <View style={styles.sectionCardText}>
-        <Text fontSize="$5" fontWeight="600">
-          分区嵌套 True Sheet
-        </Text>
-        <Text color="$color10" fontSize="$3">
-          开启后，工作区 / 路径 / 组件总览均以独立 True Sheet 打开；在主页 Sheet 上可再叠一层嵌套
-          Sheet，全屏页面模式下也会弹出 Sheet 而非路由跳转。
-        </Text>
-      </View>
-      <Switch
-        checked={nestedSectionSheets}
-        key={`nested-sheets-switch-${dismissVersion}`}
-        label="启用嵌套 Sheet"
-        labelPosition="end"
-        onCheckedChange={handleNestedSheetsChange}
-      />
-    </View>,
-  );
+  const preferenceSections: InsetGroupedListSectionData[] = [
+    {
+      items: [
+        {
+          kind: "custom",
+          key: "nested-section-sheets-toggle",
+          render: () => (
+            <View style={styles.prefRow}>
+              <View style={styles.prefRowText}>
+                <Text fontSize="$5" fontWeight="600">
+                  分区嵌套 True Sheet
+                </Text>
+                <Text color="$color10" fontSize="$3">
+                  开启后，工作区 / 路径 / 组件总览均以独立 True Sheet 打开；在主页 Sheet
+                  上可再叠一层嵌套 Sheet，全屏页面模式下也会弹出 Sheet 而非路由跳转。
+                </Text>
+              </View>
+              <Switch
+                checked={nestedSectionSheets}
+                key={`nested-sheets-switch-${dismissVersion}`}
+                label="启用嵌套 Sheet"
+                labelPosition="end"
+                onCheckedChange={handleNestedSheetsChange}
+              />
+            </View>
+          ),
+        },
+      ],
+      title: "分区行为",
+    },
+  ];
 
   if (nestedSectionSheets) {
-    sectionCards.push(
-      <View key="nested-section-detent-slider" style={styles.sectionCard}>
-        <View style={styles.sectionCardText}>
-          <Text fontSize="$5" fontWeight="600">
-            嵌套 Sheet 高度
-          </Text>
-          <Text color="$color10" fontSize="$3">
-            三档 detent：偏低、中等、全屏。拖动滑条会实时 resize 已打开的分区 Sheet。
-          </Text>
-        </View>
-        <Slider
-          max={DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX}
-          min={DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN}
-          onValueChange={(nextValue: number[]) => {
-            const level = nextValue[0] ?? 0;
-            setDebugNestedSectionDetentLevel(level);
-            void resizeDebugSectionSheets(level);
-          }}
-          step={1}
-          value={[nestedSectionDetentLevel]}
-        />
-        <Text color="$color10" fontSize="$3">
-          当前：{getDebugNestedSectionDetentLabel(nestedSectionDetentLevel)}
-        </Text>
-      </View>,
-    );
+    preferenceSections.push({
+      items: [
+        {
+          kind: "custom",
+          key: "nested-section-detent-slider",
+          render: () => (
+            <View style={styles.prefColumn}>
+              <View style={styles.prefRowText}>
+                <Text fontSize="$5" fontWeight="600">
+                  嵌套 Sheet 高度
+                </Text>
+                <Text color="$color10" fontSize="$3">
+                  三档 detent：偏低、中等、全屏。拖动滑条会实时 resize 已打开的分区 Sheet。
+                </Text>
+              </View>
+              <Slider
+                max={DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX}
+                min={DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN}
+                onValueChange={(nextValue: number[]) => {
+                  const level = nextValue[0] ?? 0;
+                  setDebugNestedSectionDetentLevel(level);
+                  void resizeDebugSectionSheets(level);
+                }}
+                step={1}
+                value={[nestedSectionDetentLevel]}
+              />
+              <Text color="$color10" fontSize="$3">
+                当前：{getDebugNestedSectionDetentLabel(nestedSectionDetentLevel)}
+              </Text>
+            </View>
+          ),
+        },
+      ],
+      title: "Sheet 高度",
+    });
   }
 
   if (onSheetModeChange != null) {
-    sectionCards.push(
-      <View key="presentation-mode-select" style={styles.sectionCard}>
-        <View style={styles.sectionCardText}>
-          <Text fontSize="$5" fontWeight="600">
-            调试面板模式
-          </Text>
-          <Text color="$color10" fontSize="$3">
-            切换调试面板的弹出方式。
-          </Text>
-        </View>
-        <Select
-          items={[
-            { label: "普通页面", value: "fullPage" },
-            { label: "TrueSheet", value: "trueSheet" },
-          ]}
-          onValueChange={(value) => {
-            if (value === "fullPage" && currentSheetMode !== "fullPage") {
-              onSheetModeChange("fullPage");
-            } else if (value !== currentSheetMode) {
-              onSheetModeChange(value as "trueSheet" | "fullPage");
-            }
-          }}
-          placeholder="选择模式"
-          value={currentSheetMode ?? "trueSheet"}
-        />
-      </View>,
-    );
+    preferenceSections.push({
+      items: [
+        {
+          kind: "custom",
+          key: "presentation-mode-select",
+          render: () => (
+            <View style={styles.prefColumn}>
+              <View style={styles.prefRowText}>
+                <Text fontSize="$5" fontWeight="600">
+                  调试面板模式
+                </Text>
+                <Text color="$color10" fontSize="$3">
+                  切换调试面板的弹出方式。
+                </Text>
+              </View>
+              <Select
+                items={[
+                  { label: "普通页面", value: "fullPage" },
+                  { label: "TrueSheet", value: "trueSheet" },
+                ]}
+                onValueChange={(value) => {
+                  if (value === "fullPage" && currentSheetMode !== "fullPage") {
+                    onSheetModeChange("fullPage");
+                  } else if (value !== currentSheetMode) {
+                    onSheetModeChange(value as "trueSheet" | "fullPage");
+                  }
+                }}
+                placeholder="选择模式"
+                value={currentSheetMode ?? "trueSheet"}
+              />
+            </View>
+          ),
+        },
+      ],
+      title: "展示模式",
+    });
   }
 
   return (
@@ -279,7 +309,10 @@ export function DebugHomeScreen({
       scrollable={layoutHost !== "trueSheet"}
       title="调试面板"
     >
-      <View style={styles.sectionList}>{sectionCards}</View>
+      <View style={styles.sectionList}>
+        <InsetGroupedList sections={routeSections} />
+        <InsetGroupedList sections={preferenceSections} />
+      </View>
     </DebugScreenLayout>
   );
 }
@@ -377,18 +410,24 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  sectionCard: {
-    borderColor: "rgba(128, 128, 128, 0.22)",
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 16,
-    padding: 16,
-  },
-  sectionCardText: {
-    gap: 6,
-  },
   sectionList: {
     gap: 16,
+  },
+  prefColumn: {
+    gap: 12,
+    width: "100%",
+  },
+  prefRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 16,
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  prefRowText: {
+    flex: 1,
+    gap: 6,
+    minWidth: 0,
   },
   trueSheetBody: {
     alignSelf: "center",

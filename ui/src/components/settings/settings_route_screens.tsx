@@ -1,13 +1,13 @@
 import { type Href, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { isDesktop, isWeb } from "@/api/common";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import { TitleBar } from "../titlebar";
-import { Button, Text } from "../ui";
+import { InsetGroupedList, type InsetGroupedListSectionData, Text } from "../ui";
 import {
   AppearanceSettingsPanel,
   GlobalSettingsPanel,
@@ -89,29 +89,22 @@ function mergeSettingsSyncState(...states: SettingsSyncSnapshot[]): SettingsSync
 
 type ScreenLayoutProps = {
   children: ReactNode;
-  description?: string;
   error: string | null;
   isLoading: boolean;
   title: string;
 };
 
-function SettingsScreenLayout({
-  children,
-  description,
-  error,
-  isLoading,
-  title,
-}: ScreenLayoutProps) {
-  const insets = useSafeAreaInsets();
+function SettingsScreenLayout({ children, error, isLoading, title }: ScreenLayoutProps) {
   const desktop = isDesktop();
   const usesNativeHeader = !isWeb();
+  const usesNativeSettingsList = Platform.OS === "ios";
   const showMeta = error != null || isLoading;
 
   return (
     <SafeAreaView edges={usesNativeHeader ? ["left", "right"] : ["top"]} style={styles.safeArea}>
       {desktop ? <TitleBar /> : null}
       <View style={styles.page}>
-        <View style={styles.pagePadding}>
+        <View style={usesNativeSettingsList ? styles.nativePagePadding : styles.pagePadding}>
           <View style={styles.pageContainer}>
             {!usesNativeHeader ? (
               <View style={styles.header}>
@@ -132,16 +125,17 @@ function SettingsScreenLayout({
               </View>
             ) : null}
 
-            <ScrollView
-              contentContainerStyle={[
-                styles.scrollContent,
-                usesNativeHeader && Platform.OS === "ios" && { paddingTop: insets.top + 44 },
-              ]}
-              showsVerticalScrollIndicator
-              style={styles.content}
-            >
-              {children}
-            </ScrollView>
+            {usesNativeSettingsList ? (
+              <View style={[styles.content, styles.nativeContent]}>{children}</View>
+            ) : (
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator
+                style={styles.content}
+              >
+                {children}
+              </ScrollView>
+            )}
           </View>
         </View>
       </View>
@@ -189,29 +183,21 @@ function useSettingsSectionSyncState(sectionKey: SettingsRouteKey): SettingsSync
 export function SettingsHomeScreen() {
   const router = useRouter();
   const syncState = useSettingsHomeSyncState();
+  const sections: InsetGroupedListSectionData[] = [
+    {
+      items: SETTINGS_ROUTE_DEFINITIONS.map((definition) => ({
+        kind: "navigation" as const,
+        key: definition.key,
+        onPress: () => router.push(definition.href),
+        subtitle: definition.description,
+        title: definition.label,
+      })),
+    },
+  ];
 
   return (
-    <SettingsScreenLayout
-      description="小屏设备下通过独立页面查看各设置分区。"
-      error={syncState.error}
-      isLoading={syncState.isLoading}
-      title="设置"
-    >
-      <View style={styles.sectionList}>
-        {SETTINGS_ROUTE_DEFINITIONS.map((definition) => (
-          <View key={definition.key} style={styles.sectionCard}>
-            <View style={styles.sectionCardText}>
-              <Text fontSize="$5" fontWeight="600">
-                {definition.label}
-              </Text>
-              <Text color="$color10" fontSize="$3">
-                {definition.description}
-              </Text>
-            </View>
-            <Button onPress={() => router.push(definition.href)}>打开{definition.label}</Button>
-          </View>
-        ))}
-      </View>
+    <SettingsScreenLayout error={syncState.error} isLoading={syncState.isLoading} title="设置">
+      <InsetGroupedList sections={sections} />
     </SettingsScreenLayout>
   );
 }
@@ -220,22 +206,28 @@ function SettingsSectionScreen({ sectionKey }: { sectionKey: SettingsRouteKey })
   const definition = getSettingsRouteDefinition(sectionKey);
   const syncState = useSettingsSectionSyncState(sectionKey);
   const SectionComponent = definition.Component;
+  const usesNativeSettingsList = Platform.OS === "ios";
 
   return (
     <SettingsScreenLayout
-      description={definition.description}
       error={syncState.error}
       isLoading={syncState.isLoading}
       title={definition.label}
     >
       <View style={styles.panelHost}>
-        <ScrollView
-          contentContainerStyle={styles.panelScrollContent}
-          showsVerticalScrollIndicator
-          style={styles.panelScrollView}
-        >
-          <SectionComponent />
-        </ScrollView>
+        {usesNativeSettingsList ? (
+          <View style={styles.panelScrollView}>
+            <SectionComponent />
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.panelScrollContent}
+            showsVerticalScrollIndicator
+            style={styles.panelScrollView}
+          >
+            <SectionComponent />
+          </ScrollView>
+        )}
       </View>
     </SettingsScreenLayout>
   );
@@ -273,6 +265,15 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
+  nativeContent: {
+    flex: 1,
+    width: "100%",
+  },
+  nativePagePadding: {
+    flex: 1,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+  },
   pageContainer: {
     alignSelf: "center",
     flex: 1,
@@ -298,19 +299,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-  },
-  sectionCard: {
-    borderColor: "rgba(128, 128, 128, 0.22)",
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 16,
-    padding: 16,
-  },
-  sectionCardText: {
-    gap: 6,
-  },
-  sectionList: {
-    gap: 16,
   },
   syncState: {
     minHeight: 0,

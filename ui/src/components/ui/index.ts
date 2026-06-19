@@ -8,6 +8,7 @@ export * from "./context_menu";
 export * from "./dialog";
 export * from "./form";
 export * from "./image";
+export * from "./inset_grouped_list";
 export * from "./input";
 export * from "./label";
 export * from "./link";
