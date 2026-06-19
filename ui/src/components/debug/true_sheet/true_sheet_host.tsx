@@ -176,7 +176,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
         isIos ? (
           <View
             pointerEvents="none"
-            style={{ alignItems: "center", height: 44, justifyContent: "center" }}
+            style={{ alignItems: "center", height: 20, justifyContent: "center" }}
           >
             <View
               pointerEvents="none"
