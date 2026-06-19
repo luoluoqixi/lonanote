@@ -31,6 +31,7 @@ const appConfig = require("./app_config.cjs");
 
 // ─── 执行命令的辅助函数 ──────────────────────────────────────
 function run(cmd, opts = {}) {
+  console.log(`\nrun: ${cmd}`);
   execSync(cmd, { cwd: projectRoot, stdio: "inherit", ...opts });
 }
 
