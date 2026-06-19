@@ -10,6 +10,7 @@ import {
 import {
   nativeStackStatusBarOptions,
   withNativeBackButton,
+  withNativeStackGestureOptions,
 } from "@/components/ui/utils/navigation";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
@@ -27,7 +28,7 @@ export default function DebugStackLayout() {
     <Stack
       screenOptions={({ navigation, route }) => {
         if (route.name === "index") {
-          return {
+          return withNativeStackGestureOptions({
             ...nativeStackStatusBarOptions(colorScheme),
             contentStyle: {
               backgroundColor: stackBackgroundColor,
@@ -43,7 +44,7 @@ export default function DebugStackLayout() {
             },
             headerTransparent: Platform.OS === "ios",
             title: "调试面板",
-          };
+          });
         }
 
         const sectionParam = (route.params as { section?: string } | undefined)?.section;
@@ -54,7 +55,7 @@ export default function DebugStackLayout() {
             : "调试";
 
         return withNativeBackButton(
-          {
+          withNativeStackGestureOptions({
             ...nativeStackStatusBarOptions(colorScheme),
             contentStyle: {
               backgroundColor: stackBackgroundColor,
@@ -70,7 +71,7 @@ export default function DebugStackLayout() {
             },
             headerTransparent: Platform.OS === "ios",
             title,
-          },
+          }),
           {
             label: "调试面板",
             onPress: () => navigation.goBack(),

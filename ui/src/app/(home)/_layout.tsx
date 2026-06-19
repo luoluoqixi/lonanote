@@ -7,7 +7,11 @@ import { isDesktop, os } from "@/api/common";
 import { WideScreenHome } from "@/components/home";
 import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
-import { nativeStackStatusBarOptions, withNativeBackButton } from "@/components/ui";
+import {
+  nativeStackStatusBarOptions,
+  withNativeBackButton,
+  withNativeStackGestureOptions,
+} from "@/components/ui";
 import {
   WIDE_LAYOUT_MINIMUM_WIDTH,
   getAppHomeTitle,
@@ -61,7 +65,7 @@ export default function UILayout() {
           } as const;
 
           if (route.name === "index" && os() === "ios") {
-            return {
+            return withNativeStackGestureOptions({
               contentStyle: baseScreenOptions.contentStyle,
               headerTintColor: theme.accentColor.val,
               headerShadowVisible: false,
@@ -76,14 +80,14 @@ export default function UILayout() {
               },
               headerTransparent: true,
               title: getAppHomeTitle(),
-            };
+            });
           }
 
           if (route.name.startsWith("settings/")) {
             const settingsTitle = getSettingsMobileHeaderTitle(route.name);
 
             return withNativeBackButton(
-              {
+              withNativeStackGestureOptions({
                 ...baseScreenOptions,
                 headerStyle: {
                   backgroundColor: "transparent",
@@ -91,7 +95,7 @@ export default function UILayout() {
                 headerTransparent: true,
                 headerShown: settingsTitle != null,
                 title: settingsTitle ?? "设置",
-              },
+              }),
               {
                 label: getAppHomeTitle(),
                 onPress: () => navigation.goBack(),
@@ -99,10 +103,10 @@ export default function UILayout() {
             );
           }
 
-          return {
+          return withNativeStackGestureOptions({
             ...baseScreenOptions,
             headerShown: false,
-          };
+          });
         }}
       >
         <Stack.Screen name="index" options={{ title: getAppHomeTitle() }} />

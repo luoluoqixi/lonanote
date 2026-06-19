@@ -5,7 +5,12 @@ import { Stack } from "expo-router";
 
 import { isWeb } from "@/api/common";
 import { DebugRuntime } from "@/components/debug";
-import { AppStatusBar, RootProvider, nativeStackStatusBarOptions } from "@/components/ui";
+import {
+  AppStatusBar,
+  RootProvider,
+  nativeStackStatusBarOptions,
+  withNativeStackGestureOptions,
+} from "@/components/ui";
 import { getAppHomeTitle } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
@@ -29,10 +34,10 @@ export default function RootLayout() {
               };
             }
 
-            return {
+            return withNativeStackGestureOptions({
               ...statusBar,
               headerShown: false,
-            };
+            });
           }}
         >
           <Stack.Screen name="(home)" options={{ title: getAppHomeTitle() }} />
