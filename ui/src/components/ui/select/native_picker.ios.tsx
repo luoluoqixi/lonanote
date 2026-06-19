@@ -64,8 +64,7 @@ function WheelTrueSheet({
       screenOptions={{
         ...trueSheetInnerStackScreenOptions(
           (colorScheme ?? "light") as ResolvedColorScheme,
-          theme.background.val,
-          theme.borderColor.val,
+          undefined,
           theme.accentColor.val,
           theme.color.val,
         ),
