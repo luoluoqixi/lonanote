@@ -64,7 +64,8 @@ export function getTrueSheetOverlayLayoutBottomInset(
 export const ANDROID_TRUE_SHEET_TELEPORT_LAYER_BOTTOM_FALLBACK = 48;
 
 /** 在 2× bottom 上额外抬高 teleport 底边，使 flex 居中 Dialog 对齐可视区域（约 +EXTRA/2 视觉） */
-export const TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM = 30;
+export const ANDROID_TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM = 60;
+export const IOS_TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM = 12;
 
 /**
  * True Sheet 居中 Dialog 校正量（`insetAdjustment` 垫高导致 flex 居中偏下约 lift/2）。
@@ -86,8 +87,12 @@ export function getTrueSheetCenteredModalLiftAmount(
         ? ANDROID_TRUE_SHEET_TELEPORT_LAYER_BOTTOM_FALLBACK
         : 0;
 
+  const bottom =
+    platform === "android"
+      ? ANDROID_TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM
+      : IOS_TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM;
   const scale = getTrueSheetPartialDetentCompensationScale(detent);
-  return Math.round((base * 2 + TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM) * scale);
+  return Math.round((base * 2 + bottom) * scale);
 }
 
 /** iOS True Sheet：toastLayer 底边补偿（与 teleport 共用 inset 计算） */

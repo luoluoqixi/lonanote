@@ -171,18 +171,24 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
 
   return (
     <TrueSheetPanel
-      chrome="plain"
+      chrome={isIos ? "plain" : "toolbar"}
       header={
-        <View style={{ alignItems: "center", height: 44, justifyContent: "center" }}>
+        isIos ? (
           <View
-            style={{
-              backgroundColor: "rgba(128, 128, 128, 0.35)",
-              borderRadius: isIos ? 2.5 : 2,
-              height: isIos ? 5 : 4,
-              width: isIos ? 36 : 32,
-            }}
-          />
-        </View>
+            pointerEvents="none"
+            style={{ alignItems: "center", height: 44, justifyContent: "center" }}
+          >
+            <View
+              pointerEvents="none"
+              style={{
+                backgroundColor: "rgba(128, 128, 128, 0.35)",
+                borderRadius: isIos ? 2.5 : 2,
+                height: isIos ? 5 : 4,
+                width: isIos ? 36 : 32,
+              }}
+            />
+          </View>
+        ) : undefined
       }
       name={getDebugSectionSheetName(sectionKey)}
       onDidDismiss={() => cleanupDebugSectionSheet(sectionKey)}
@@ -190,25 +196,30 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
       sheetProps={{
         detents: [...DEBUG_NESTED_SECTION_SHEET_DETENTS],
-        grabberOptions: {
-          width: grabberHitboxWidth,
-          height: isIos ? 24 : 12,
-          topMargin: isIos ? 10 : 16,
-          color: "transparent",
-          adaptive: false,
-        },
-        headerStyle: {
-          height: 44,
-          left: 0,
-          position: "absolute",
-          right: 0,
-          top: 0,
-          zIndex: 1,
-        },
+        ...(isIos
+          ? {
+              grabberOptions: {
+                width: grabberHitboxWidth,
+                height: 24,
+                topMargin: 10,
+                color: "transparent",
+                adaptive: false,
+              },
+              headerStyle: {
+                height: 44,
+                left: 0,
+                position: "absolute" as const,
+                right: 0,
+                top: 0,
+                zIndex: 1,
+              },
+            }
+          : undefined),
       }}
+      title={!isIos ? definition.label : undefined}
     >
       <TrueSheetScrollContent extraBottomPadding={0}>
-        <TrueSheetToolbarHeader title={definition.label} transparent />
+        {isIos ? <TrueSheetToolbarHeader title={definition.label} transparent /> : null}
         <DebugSectionScreen layoutHost="trueSheet" sectionKey={sectionKey} trueSheetCompact />
       </TrueSheetScrollContent>
     </TrueSheetPanel>
