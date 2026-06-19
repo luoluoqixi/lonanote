@@ -25,6 +25,7 @@ build_output
 
 .cursor
 .claude
+.codex
 .agents
 
 AGENTS.md
