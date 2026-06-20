@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   defaultTrigger: {
     alignItems: "center",
-    alignSelf: "flex-start",
+    alignSelf: "center",
     flexDirection: "row",
     gap: 4,
     justifyContent: "center",

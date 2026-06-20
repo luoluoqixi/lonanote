@@ -925,6 +925,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                           borderColor: "transparent",
                           borderRadius: 0,
                           borderWidth: 0,
+                          justifyContent: "center",
                           minHeight: 44,
                           paddingHorizontal: 0,
                           paddingVertical: 0,
