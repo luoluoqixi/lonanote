@@ -183,7 +183,7 @@ function NativeHostedTrailingControl({ children }: { children: ReactNode }) {
 
 function NativeHostedCustomRow({ children }: { children: ReactNode }) {
   return (
-    <RNHostView>
+    <RNHostView matchContents={{ vertical: true }}>
       <View style={styles.customRowShell}>{children}</View>
     </RNHostView>
   );

@@ -135,3 +135,375 @@ index 1ffa70e..5092712 100644
        }
      }
    }
+diff --git a/src/swift-ui/RNHostView.tsx b/src/swift-ui/RNHostView.tsx
+index 4e634d0c..6a60b0e2 100644
+--- a/src/swift-ui/RNHostView.tsx
++++ b/src/swift-ui/RNHostView.tsx
+@@ -9,7 +9,7 @@ export type RNHostViewProps = {
+    * Can be only set once on mount.
+    * @default false
+    */
+-  matchContents?: boolean;
++  matchContents?: boolean | { vertical?: boolean; horizontal?: boolean };
+   /**
+    * The RN View to be hosted.
+    */
+@@ -17,12 +17,20 @@ export type RNHostViewProps = {
+ };
+ 
+ export function RNHostView(props: RNHostViewProps) {
++  const { matchContents, ...restProps } = props;
++  const matchContentsVertical =
++    typeof matchContents === 'object' ? matchContents.vertical : matchContents;
++  const matchContentsHorizontal =
++    typeof matchContents === 'object' ? matchContents.horizontal : matchContents;
++
+   return (
+     <RNHostNativeView
+-      {...props}
++      {...restProps}
++      matchContentsHorizontal={matchContentsHorizontal}
++      matchContentsVertical={matchContentsVertical}
+       // `matchContents` can only be used once on mount
+       // So we force unmount when it changes to prevent unexpected layout
+-      key={props.matchContents ? 'matchContents' : 'noMatchContents'}
++      key={`matchContents:${matchContentsHorizontal ? '1' : '0'}:${matchContentsVertical ? '1' : '0'}`}
+     />
+   );
+ }
+diff --git a/build/swift-ui/RNHostView.d.ts b/build/swift-ui/RNHostView.d.ts
+index 7a50cb3f..7de30274 100644
+--- a/build/swift-ui/RNHostView.d.ts
++++ b/build/swift-ui/RNHostView.d.ts
+@@ -5,7 +5,10 @@ export type RNHostViewProps = {
+      * Can be only set once on mount.
+      * @default false
+      */
+-    matchContents?: boolean;
++    matchContents?: boolean | {
++        vertical?: boolean;
++        horizontal?: boolean;
++    };
+     /**
+      * The RN View to be hosted.
+      */
+diff --git a/src/jetpack-compose/RNHostView/index.tsx b/src/jetpack-compose/RNHostView/index.tsx
+index 290f9d4e..1340fb16 100644
+--- a/src/jetpack-compose/RNHostView/index.tsx
++++ b/src/jetpack-compose/RNHostView/index.tsx
+@@ -12,7 +12,7 @@ export interface RNHostProps extends PrimitiveBaseProps {
+    * Can be only set once on mount.
+    * @default false
+    */
+-  matchContents?: boolean;
++  matchContents?: boolean | { vertical?: boolean; horizontal?: boolean };
+   /**
+    * The RN View to be hosted.
+    */
+@@ -23,28 +23,45 @@ export interface RNHostProps extends PrimitiveBaseProps {
+   modifiers?: ModifierConfig[];
+ }
+ 
+-type NativeRNHostProps = RNHostProps;
++type NativeRNHostProps = Omit<RNHostProps, 'matchContents'> & {
++  matchContentsHorizontal?: boolean;
++  matchContentsVertical?: boolean;
++};
+ const NativeRNHostView: React.ComponentType<NativeRNHostProps> = requireNativeView(
+   'ExpoUI',
+   'RNHostView'
+ );
+ 
+ function transformProps(props: RNHostProps): NativeRNHostProps {
+-  const { modifiers, ...restProps } = props;
++  const { matchContents, modifiers, ...restProps } = props;
++  const matchContentsVertical =
++    typeof matchContents === 'object' ? matchContents.vertical : matchContents;
++  const matchContentsHorizontal =
++    typeof matchContents === 'object' ? matchContents.horizontal : matchContents;
++
+   return {
+     modifiers,
+     ...(modifiers ? createViewModifierEventListener(modifiers) : undefined),
++    matchContentsHorizontal,
++    matchContentsVertical,
+     ...restProps,
+   };
+ }
+ 
+ export function RNHostView(props: RNHostProps) {
++  const matchContentsVertical =
++    typeof props.matchContents === 'object' ? props.matchContents.vertical : props.matchContents;
++  const matchContentsHorizontal =
++    typeof props.matchContents === 'object'
++      ? props.matchContents.horizontal
++      : props.matchContents;
++
+   return (
+     <NativeRNHostView
+       {...transformProps(props)}
+       // `matchContents` can only be used once on mount
+       // So we force unmount when it changes to prevent unexpected layout
+-      key={props.matchContents ? 'matchContents' : 'noMatchContents'}
++      key={`matchContents:${matchContentsHorizontal ? '1' : '0'}:${matchContentsVertical ? '1' : '0'}`}
+     />
+   );
+ }
+diff --git a/build/jetpack-compose/RNHostView/index.d.ts b/build/jetpack-compose/RNHostView/index.d.ts
+index 1fbac570..4c51bfb5 100644
+--- a/build/jetpack-compose/RNHostView/index.d.ts
++++ b/build/jetpack-compose/RNHostView/index.d.ts
+@@ -8,7 +8,10 @@ export interface RNHostProps extends PrimitiveBaseProps {
+      * Can be only set once on mount.
+      * @default false
+      */
+-    matchContents?: boolean;
++    matchContents?: boolean | {
++        vertical?: boolean;
++        horizontal?: boolean;
++    };
+     /**
+      * The RN View to be hosted.
+      */
+diff --git a/ios/RNHostView.swift b/ios/RNHostView.swift
+index f8cba36a..d3de33f8 100644
+--- a/ios/RNHostView.swift
++++ b/ios/RNHostView.swift
+@@ -4,7 +4,9 @@ import SwiftUI
+ import ExpoModulesCore
+ 
+ internal final class RNHostViewProps: ExpoSwiftUI.ViewProps {
+-  @Field var matchContents: Bool = false
++  @Field var matchContents: Bool?
++  @Field var matchContentsHorizontal: Bool?
++  @Field var matchContentsVertical: Bool?
+ }
+ 
+ struct RNHostView: ExpoSwiftUI.View {
+@@ -12,8 +14,16 @@ struct RNHostView: ExpoSwiftUI.View {
+   @ObservedObject var props: RNHostViewProps
+ 
+   var body: some View {
+-    if props.matchContents, let childUIView = firstChildUIView {
+-      ApplySizeFromYogaNode(childUIView: childUIView) {
++    let matchContentsHorizontal = props.matchContentsHorizontal ?? props.matchContents ?? false
++    let matchContentsVertical = props.matchContentsVertical ?? props.matchContents ?? false
++
++    if (matchContentsHorizontal || matchContentsVertical), let childUIView = firstChildUIView {
++      ApplySizeFromYogaNode(
++        childUIView: childUIView,
++        shadowNodeProxy: props.shadowNodeProxy,
++        matchContentsHorizontal: matchContentsHorizontal,
++        matchContentsVertical: matchContentsVertical
++      ) {
+         Children()
+       }
+       .onAppear {
+@@ -22,7 +32,11 @@ struct RNHostView: ExpoSwiftUI.View {
+     } else {
+       Children()
+         .frame(maxWidth: .infinity, maxHeight: .infinity)
+-        .modifier(ReportSizeToYogaNodeModifier(shadowNodeProxy: props.shadowNodeProxy))
++        .modifier(
++          ReportSizeToYogaNodeModifier(
++            shadowNodeProxy: props.shadowNodeProxy
++          )
++        )
+         .onAppear {
+           if let view = firstChildUIView {
+             ExpoUITouchHandlerHelper.createAndAttachTouchHandler(for: view)
+@@ -40,16 +54,44 @@ struct RNHostView: ExpoSwiftUI.View {
+ // Listens to Yoga node size changes and updates the SwiftUI view size
+ private struct ApplySizeFromYogaNode<Content: SwiftUI.View>: SwiftUI.View {
+   @StateObject private var observer: Observer
++  let shadowNodeProxy: ExpoSwiftUI.ShadowNodeProxy
++  let matchContentsHorizontal: Bool
++  let matchContentsVertical: Bool
+   let content: Content
+ 
+-  init(childUIView: UIView, @ViewBuilder content: () -> Content) {
++  init(
++    childUIView: UIView,
++    shadowNodeProxy: ExpoSwiftUI.ShadowNodeProxy,
++    matchContentsHorizontal: Bool,
++    matchContentsVertical: Bool,
++    @ViewBuilder content: () -> Content
++  ) {
+     _observer = StateObject(wrappedValue: Observer(view: childUIView))
++    self.shadowNodeProxy = shadowNodeProxy
++    self.matchContentsHorizontal = matchContentsHorizontal
++    self.matchContentsVertical = matchContentsVertical
+     self.content = content()
+   }
+ 
+   var body: some SwiftUI.View {
+     content
+-      .frame(width: observer.size.width, height: observer.size.height)
++      .frame(
++        maxWidth: matchContentsHorizontal ? nil : .infinity,
++        maxHeight: matchContentsVertical ? nil : .infinity,
++        alignment: .topLeading
++      )
++      .frame(
++        width: matchContentsHorizontal ? observer.size.width : nil,
++        height: matchContentsVertical ? observer.size.height : nil,
++        alignment: .topLeading
++      )
++      .modifier(
++        ReportSizeToYogaNodeModifier(
++          shadowNodeProxy: shadowNodeProxy,
++          reportHorizontal: !matchContentsHorizontal,
++          reportVertical: !matchContentsVertical
++        )
++      )
+   }
+ 
+   @MainActor
+@@ -76,9 +118,26 @@ private struct ApplySizeFromYogaNode<Content: SwiftUI.View>: SwiftUI.View {
+ // Listens to SwiftUI view size changes and updates the Yoga node size
+ private struct ReportSizeToYogaNodeModifier: ViewModifier {
+   let shadowNodeProxy: ExpoSwiftUI.ShadowNodeProxy
++  let reportHorizontal: Bool
++  let reportVertical: Bool
++
++  init(
++    shadowNodeProxy: ExpoSwiftUI.ShadowNodeProxy,
++    reportHorizontal: Bool = true,
++    reportVertical: Bool = true
++  ) {
++    self.shadowNodeProxy = shadowNodeProxy
++    self.reportHorizontal = reportHorizontal
++    self.reportVertical = reportVertical
++  }
+ 
+   private func handleSizeChange(_ size: CGSize) {
+-    shadowNodeProxy.setViewSize?(size)
++    shadowNodeProxy.setViewSize?(
++      CGSize(
++        width: reportHorizontal ? size.width : CGFloat.nan,
++        height: reportVertical ? size.height : CGFloat.nan
++      )
++    )
+   }
+ 
+   func body(content: Content) -> some View {
+diff --git a/android/src/main/java/expo/modules/ui/RNHostView.kt b/android/src/main/java/expo/modules/ui/RNHostView.kt
+index 79076729..b7d071e8 100644
+--- a/android/src/main/java/expo/modules/ui/RNHostView.kt
++++ b/android/src/main/java/expo/modules/ui/RNHostView.kt
+@@ -7,8 +7,11 @@ import android.view.MotionEvent
+ import android.view.View
+ import android.view.ViewGroup
+ import android.widget.FrameLayout
++import androidx.compose.foundation.layout.fillMaxHeight
++import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.fillMaxSize
+-import androidx.compose.foundation.layout.requiredSize
++import androidx.compose.foundation.layout.requiredHeight
++import androidx.compose.foundation.layout.requiredWidth
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.DisposableEffect
+ import androidx.compose.runtime.MutableState
+@@ -35,7 +38,9 @@ import expo.modules.kotlin.views.ExpoComposeView
+ import expo.modules.kotlin.views.RNHostViewInterface
+ 
+ internal data class RNHostViewProps(
+-  val matchContents: MutableState<Boolean?> = mutableStateOf(null)
++  val matchContents: MutableState<Boolean?> = mutableStateOf(null),
++  val matchContentsHorizontal: MutableState<Boolean?> = mutableStateOf(null),
++  val matchContentsVertical: MutableState<Boolean?> = mutableStateOf(null)
+ ) : ComposeProps
+ 
+ @SuppressLint("ViewConstructor")
+@@ -84,14 +89,25 @@ internal class RNHostView(context: Context, appContext: AppContext) :
+ 
+   @Composable
+   override fun ComposableScope.Content() {
+-    val matchContents = props.matchContents.value ?: false
++    val legacyMatchContents = props.matchContents.value
++    val matchContentsHorizontal = props.matchContentsHorizontal.value ?: legacyMatchContents ?: false
++    val matchContentsVertical = props.matchContentsVertical.value ?: legacyMatchContents ?: false
+ 
+     wrapperState.value?.let { wrapper ->
+       val childView = childViewState.value ?: return@let
+-      if (matchContents) {
++      if (matchContentsHorizontal || matchContentsVertical) {
+         AndroidView(
+           factory = { wrapper },
+-          modifier = applySizeFromYogaNodeModifier(childView)
++          modifier = applySizeFromYogaNodeModifier(
++            childView = childView,
++            matchContentsHorizontal = matchContentsHorizontal,
++            matchContentsVertical = matchContentsVertical
++          ).then(
++            reportSizeToYogaNodeModifier(
++              reportHorizontal = !matchContentsHorizontal,
++              reportVertical = !matchContentsVertical
++            )
++          )
+         )
+       } else {
+         AndroidView(
+@@ -107,7 +123,11 @@ internal class RNHostView(context: Context, appContext: AppContext) :
+   // Sets Compose view size from Yoga node size
+   // Listens yoga node size changes and updates the Compose view size
+   @Composable
+-  private fun applySizeFromYogaNodeModifier(childView: View): Modifier {
++  private fun applySizeFromYogaNodeModifier(
++    childView: View,
++    matchContentsHorizontal: Boolean,
++    matchContentsVertical: Boolean
++  ): Modifier {
+     val density = LocalDensity.current
+ 
+     val childSize = remember {
+@@ -126,27 +146,39 @@ internal class RNHostView(context: Context, appContext: AppContext) :
+     }
+ 
+     return with(density) {
+-      if (childSize.value.width > 0 && childSize.value.height > 0) {
+-        Modifier.requiredSize(
+-          childSize.value.width.toDp(),
+-          childSize.value.height.toDp()
++      Modifier
++        .then(if (!matchContentsHorizontal) Modifier.fillMaxWidth() else Modifier)
++        .then(if (!matchContentsVertical) Modifier.fillMaxHeight() else Modifier)
++        .then(
++          if (matchContentsHorizontal && childSize.value.width > 0) {
++            Modifier.requiredWidth(childSize.value.width.toDp())
++          } else {
++            Modifier
++          }
++        )
++        .then(
++          if (matchContentsVertical && childSize.value.height > 0) {
++            Modifier.requiredHeight(childSize.value.height.toDp())
++          } else {
++            Modifier
++          }
+         )
+-      } else {
+-        Modifier
+-      }
+     }
+   }
+ 
+   // Sets Yoga node size from Compose view size
+   // Listens Compose view size changes and updates the Yoga node size
+   @Composable
+-  private fun reportSizeToYogaNodeModifier(): Modifier {
++  private fun reportSizeToYogaNodeModifier(
++    reportHorizontal: Boolean = true,
++    reportVertical: Boolean = true
++  ): Modifier {
+     val density = LocalDensity.current
+     return Modifier.onSizeChanged { size ->
+       with(density) {
+         shadowNodeProxy.setViewSize(
+-          size.width.toDp().value.toDouble(),
+-          size.height.toDp().value.toDouble()
++          if (reportHorizontal) size.width.toDp().value.toDouble() else Double.NaN,
++          if (reportVertical) size.height.toDp().value.toDouble() else Double.NaN
+         )
+       }
+     }
