@@ -349,6 +349,7 @@ function NativePickerDropdownCustom({
   nativeTriggerContent,
   nativeTriggerIcon,
   nativeTriggerLabelProps,
+  __menuRef,
 }: {
   items: ResolvedSelectItemData[];
   value: string | null | undefined;
@@ -362,6 +363,7 @@ function NativePickerDropdownCustom({
   nativeTriggerContent?: React.ReactNode;
   nativeTriggerIcon?: SelectNativeTriggerIcon;
   nativeTriggerLabelProps?: TextProps;
+  __menuRef?: React.MutableRefObject<{ presentMenu: () => void } | null>;
 }) {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
@@ -428,6 +430,8 @@ function NativePickerDropdownCustom({
       open={resolvedOpen}
       trigger={trigger}
       triggerProps={nativeTrigger ? { asChild: true } : undefined}
+      // @ts-expect-error patch
+      __menuRef={__menuRef}
     >
       {items.map((item) => (
         <Menu.CheckboxItem
@@ -474,19 +478,17 @@ export const NativePickerSwiftUI = React.forwardRef<
     nativeTriggerLabelProps?: TextProps;
     onValueChange?: (value: string | null) => void;
     onOpenChange?: (open: boolean) => void;
-    open?: boolean;
     resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
   }
 >((props, ref) => {
-  const [openOverride, setOpenOverride] = React.useState(false);
-
+  const menuControlRef = React.useRef<{ presentMenu: () => void } | null>(null);
   const wheelNativeRef = React.useRef<NativePickerSwiftUIHandle>(null);
   const wheelCustomRef = React.useRef<NativePickerSwiftUIHandle>(null);
 
   React.useImperativeHandle(ref, () => ({
     open() {
       if (props.mode === "dropdown") {
-        setOpenOverride(true);
+        menuControlRef.current?.presentMenu();
       } else if (props.mode === "wheel" && props.nativeTrigger) {
         wheelNativeRef.current?.open();
       } else {
@@ -507,7 +509,6 @@ export const NativePickerSwiftUI = React.forwardRef<
     nativeTriggerLabelProps,
     onValueChange,
     onOpenChange,
-    open,
     resolvedNativeHaptics,
   } = props;
 
@@ -520,16 +521,15 @@ export const NativePickerSwiftUI = React.forwardRef<
         placeholder={placeholder}
         onValueChange={onValueChange}
         onOpenChange={(next) => {
-          if (!next) setOpenOverride(false);
           onOpenChange?.(next);
         }}
-        open={openOverride || open}
         resolvedNativeHaptics={resolvedNativeHaptics}
         nativeTrigger={nativeTrigger}
         nativeTriggerContainerStyle={nativeTriggerContainerStyle}
         nativeTriggerContent={nativeTriggerContent}
         nativeTriggerIcon={nativeTriggerIcon}
         nativeTriggerLabelProps={nativeTriggerLabelProps}
+        __menuRef={menuControlRef}
       />
     );
   }

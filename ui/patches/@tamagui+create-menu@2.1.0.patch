@@ -1,0 +1,69 @@
+diff --git a/dist/cjs/createNativeMenu/createNativeMenu.native.js b/dist/cjs/createNativeMenu/createNativeMenu.native.js
+--- a/dist/cjs/createNativeMenu/createNativeMenu.native.js
++++ b/dist/cjs/createNativeMenu/createNativeMenu.native.js
+@@ -375,7 +375,8 @@
+     var {
+       children,
+       onOpenChange,
+-      onOpenWillChange
++      onOpenWillChange,
++      __menuRef
+     } = param;
+     var triggerOwnerRef = import_react.default.useRef(null);
+     var claimTriggerBoundary = import_react.default.useCallback(function (debugName) {
+@@ -409,6 +410,9 @@
+     var rootProps = {
+       onOpenChange: handleOpenChange
+     };
++    if (__menuRef !== void 0) {
++      rootProps.__menuRef = __menuRef;
++    }
+     if (isContextMenu && onOpenWillChange) {
+       rootProps.onOpenWillChange = handleOpenWillChange;
+     }
+diff --git a/dist/esm/createNativeMenu/createNativeMenu.native.js b/dist/esm/createNativeMenu/createNativeMenu.native.js
+--- a/dist/esm/createNativeMenu/createNativeMenu.native.js
++++ b/dist/esm/createNativeMenu/createNativeMenu.native.js
+@@ -335,7 +335,8 @@
+     var {
+       children,
+       onOpenChange,
+-      onOpenWillChange
++      onOpenWillChange,
++      __menuRef
+     } = param;
+     var triggerOwnerRef = React.useRef(null);
+     var claimTriggerBoundary = React.useCallback(function (debugName) {
+@@ -369,6 +370,9 @@
+     var rootProps = {
+       onOpenChange: handleOpenChange
+     };
++    if (__menuRef !== void 0) {
++      rootProps.__menuRef = __menuRef;
++    }
+     if (isContextMenu && onOpenWillChange) {
+       rootProps.onOpenWillChange = handleOpenWillChange;
+     }
+diff --git a/dist/jsx/createNativeMenu/createNativeMenu.native.js b/dist/jsx/createNativeMenu/createNativeMenu.native.js
+--- a/dist/jsx/createNativeMenu/createNativeMenu.native.js
++++ b/dist/jsx/createNativeMenu/createNativeMenu.native.js
+@@ -375,7 +375,8 @@
+     var {
+       children,
+       onOpenChange,
+-      onOpenWillChange
++      onOpenWillChange,
++      __menuRef
+     } = param;
+     var triggerOwnerRef = import_react.default.useRef(null);
+     var claimTriggerBoundary = import_react.default.useCallback(function (debugName) {
+@@ -409,6 +410,9 @@
+     var rootProps = {
+       onOpenChange: handleOpenChange
+     };
++    if (__menuRef !== void 0) {
++      rootProps.__menuRef = __menuRef;
++    }
+     if (isContextMenu && onOpenWillChange) {
+       rootProps.onOpenWillChange = handleOpenWillChange;
+     }

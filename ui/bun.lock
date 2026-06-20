@@ -59,7 +59,7 @@
         "react-native-worklets": "=0.8.1",
         "tamagui": "=2.1.0",
         "typescript-eslint": "^8.59.1",
-        "zeego": "^3.0.0",
+        "zeego": "=3.0.6",
         "zustand": "^5.0.13",
       },
       "devDependencies": {
@@ -97,6 +97,8 @@
   "patchedDependencies": {
     "@tamagui/dialog@2.1.0": "patches/@tamagui+dialog@2.1.0.patch",
     "@tamagui/native@2.1.0": "patches/@tamagui+native@2.1.0.patch",
+    "zeego@3.0.6": "patches/zeego@3.0.6.patch",
+    "@tamagui/create-menu@2.1.0": "patches/@tamagui+create-menu@2.1.0.patch",
     "@react-native-picker/picker@2.11.4": "patches/@react-native-picker+picker@2.11.4.patch",
     "expo-haptics@55.0.14": "patches/expo-haptics@55.0.14.patch",
     "metro@0.83.6": "patches/metro@0.83.6.patch",

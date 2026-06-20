@@ -1,0 +1,45 @@
+diff --git a/src/menu/create-ios-menu/index.ios.tsx b/src/menu/create-ios-menu/index.ios.tsx
+--- a/src/menu/create-ios-menu/index.ios.tsx
++++ b/src/menu/create-ios-menu/index.ios.tsx
+@@ -536,6 +536,11 @@
+     const auxiliaryProps = auxiliary?.[0]?.props
+ 
+     const menuRef = useRef<ContextMenuButton>()
++    // @ts-expect-error
++    const __menuRef = props.__menuRef
++    if (__menuRef) {
++      __menuRef.current = { presentMenu: () => menuRef.current?.presentMenu() }
++    }
+ 
+     return (
+       <Component
+diff --git a/lib/commonjs/menu/create-ios-menu/index.ios.js b/lib/commonjs/menu/create-ios-menu/index.ios.js
+--- a/lib/commonjs/menu/create-ios-menu/index.ios.js
++++ b/lib/commonjs/menu/create-ios-menu/index.ios.js
+@@ -500,6 +500,11 @@
+     const auxiliary = Menu === 'ContextMenu' ? (_pickChildren = (0, _children.pickChildren)(content === null || content === void 0 ? void 0 : content.props.children, Auxiliary)) === null || _pickChildren === void 0 ? void 0 : _pickChildren.targetChildren : undefined;
+     const auxiliaryProps = auxiliary === null || auxiliary === void 0 ? void 0 : (_auxiliary$ = auxiliary[0]) === null || _auxiliary$ === void 0 ? void 0 : _auxiliary$.props;
+     const menuRef = (0, _react.useRef)();
++    var _menuCtrl = props.__menuRef;
++    if (_menuCtrl) {
++      _menuCtrl.current = { presentMenu: function() { return menuRef.current && menuRef.current.presentMenu(); } };
++    }
++
+     return /*#__PURE__*/_react.default.createElement(Component, _extends({
+       ref: menuRef,
+       onPressMenuItem: _ref11 => {
+diff --git a/lib/module/menu/create-ios-menu/index.ios.js b/lib/module/menu/create-ios-menu/index.ios.js
+--- a/lib/module/menu/create-ios-menu/index.ios.js
++++ b/lib/module/menu/create-ios-menu/index.ios.js
+@@ -483,6 +483,11 @@
+     const auxiliary = Menu === 'ContextMenu' ? (_pickChildren = pickChildren(content === null || content === void 0 ? void 0 : content.props.children, Auxiliary)) === null || _pickChildren === void 0 ? void 0 : _pickChildren.targetChildren : undefined;
+     const auxiliaryProps = auxiliary === null || auxiliary === void 0 ? void 0 : (_auxiliary$ = auxiliary[0]) === null || _auxiliary$ === void 0 ? void 0 : _auxiliary$.props;
+     const menuRef = useRef();
++    var _mc = props.__menuRef;
++    if (_mc) {
++      _mc.current = { presentMenu: function() { return menuRef.current && menuRef.current.presentMenu(); } };
++    }
++
+     return /*#__PURE__*/React.createElement(Component, _extends({
+       ref: menuRef,
+       onPressMenuItem: _ref11 => {
