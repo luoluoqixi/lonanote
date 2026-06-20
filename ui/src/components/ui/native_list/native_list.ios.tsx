@@ -11,6 +11,7 @@ import {
   VStack,
 } from "@expo/ui/swift-ui";
 import {
+  buttonStyle,
   disabled as disabledModifier,
   font,
   foregroundStyle,
@@ -54,6 +55,15 @@ import type {
 type NativeListContextValue = {
   native: boolean;
 };
+
+type SwiftUIButtonStyle =
+  | "automatic"
+  | "bordered"
+  | "borderedProminent"
+  | "borderless"
+  | "glass"
+  | "glassProminent"
+  | "plain";
 
 const NativeListContext = createContext<NativeListContextValue>({ native: true });
 
@@ -120,10 +130,12 @@ function NativeRowContainer({
   children,
   disabled,
   onPress,
+  btnStyle,
 }: {
   children: ReactNode;
   disabled?: boolean;
   onPress?: () => void;
+  btnStyle?: SwiftUIButtonStyle;
 }) {
   const theme = useTheme();
   const primaryColor = toSwiftUIHexColor(theme.color.val) ?? theme.color.val;
@@ -131,7 +143,10 @@ function NativeRowContainer({
 
   if (onPress != null) {
     return (
-      <SwiftButton modifiers={[disabledModifier(disabled ?? false)]} onPress={onPress}>
+      <SwiftButton
+        modifiers={[disabledModifier(disabled ?? false), buttonStyle(btnStyle ?? "automatic")]}
+        onPress={onPress}
+      >
         <HStack alignment="center" modifiers={[...baseModifiers, tint(primaryColor)]} spacing={12}>
           {children}
         </HStack>
@@ -183,8 +198,10 @@ function NativePressRow({
   title,
   trailingControl,
   value,
+  btnStyle,
 }: NativeListItemBaseProps & {
   trailingControl?: ReactNode;
+  btnStyle?: SwiftUIButtonStyle;
 }) {
   const theme = useTheme();
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
@@ -201,7 +218,7 @@ function NativePressRow({
     : undefined;
 
   return (
-    <NativeRowContainer disabled={disabled} onPress={handlePress}>
+    <NativeRowContainer disabled={disabled} onPress={handlePress} btnStyle={btnStyle}>
       <NativeRowLabel subtitle={subtitleText ?? undefined} title={titleText ?? undefined} />
       <Spacer minLength={12} />
       {valueText != null ? (
