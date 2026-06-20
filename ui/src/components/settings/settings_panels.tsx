@@ -13,7 +13,6 @@ import {
   Text,
 } from "@/components/ui";
 import {
-  clampZoomFactor,
   getAccentColorPreset,
   useColorSchemeSettings,
   useGlobalSettings,
@@ -52,10 +51,6 @@ function updateSettingsSection<K extends keyof GlobalSettings>(
 
 function clampAutoSaveInterval(nextValue: number) {
   return Math.min(30, Math.max(0.5, Number(nextValue.toFixed(1))));
-}
-
-function formatZoomFactor(zoomFactor: number) {
-  return `${Math.round(zoomFactor * 100)}%`;
 }
 
 function formatWindowStateSummary(
@@ -416,63 +411,6 @@ export function AppearanceSettingsPanel() {
             }}
             title="主题模式"
           />
-        </NativeListSection>
-
-        <NativeListSection title="桌面缩放">
-          <NativeListItem>
-            <SettingsStepperRowContent
-              decreaseLabel="-10%"
-              increaseLabel="+10%"
-              label="界面缩放"
-              onDecrease={() => {
-                runSettingsAction(
-                  "decrease desktop zoom factor",
-                  updateAndSave((currentPreferences) => ({
-                    ...currentPreferences,
-                    appearance: {
-                      ...currentPreferences.appearance,
-                      zoomFactor: clampZoomFactor(currentPreferences.appearance.zoomFactor - 0.1),
-                    },
-                  })),
-                );
-              }}
-              onIncrease={() => {
-                runSettingsAction(
-                  "increase desktop zoom factor",
-                  updateAndSave((currentPreferences) => ({
-                    ...currentPreferences,
-                    appearance: {
-                      ...currentPreferences.appearance,
-                      zoomFactor: clampZoomFactor(currentPreferences.appearance.zoomFactor + 0.1),
-                    },
-                  })),
-                );
-              }}
-              valueLabel={formatZoomFactor(preferences.appearance.zoomFactor)}
-            />
-          </NativeListItem>
-        </NativeListSection>
-
-        <NativeListSection>
-          <NativeListItem>
-            <SettingsSummaryActionRow
-              actionLabel="重置"
-              description={`${formatZoomFactor(preferences.appearance.zoomFactor)}，仅桌面 Tauri 生效`}
-              onPress={() => {
-                runSettingsAction(
-                  "reset desktop zoom factor",
-                  updateAndSave((currentPreferences) => ({
-                    ...currentPreferences,
-                    appearance: {
-                      ...currentPreferences.appearance,
-                      zoomFactor: 1,
-                    },
-                  })),
-                );
-              }}
-              title="当前桌面缩放"
-            />
-          </NativeListItem>
         </NativeListSection>
       </NativeList>
     </View>
