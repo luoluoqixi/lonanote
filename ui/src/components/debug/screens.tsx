@@ -129,6 +129,15 @@ export function DebugHomeScreen({
         </NativeListSection>
 
         <NativeListSection title="分区行为">
+          <NativeListSwitchItem
+            key={`nested-sheets-switch-${dismissVersion}`}
+            switchProps={{
+              checked: nestedSectionSheets,
+              onCheckedChange: handleNestedSheetsChange,
+            }}
+            subtitle="开启后，工作区 / 路径 / 组件总览均以独立 True Sheet 打开"
+            title="分区嵌套 True Sheet"
+          />
           {nestedSectionSheets ? (
             <NativeListItem>
               <View style={styles.detentSliderRow}>
@@ -150,15 +159,6 @@ export function DebugHomeScreen({
               </View>
             </NativeListItem>
           ) : null}
-          <NativeListSwitchItem
-            key={`nested-sheets-switch-${dismissVersion}`}
-            switchProps={{
-              checked: nestedSectionSheets,
-              onCheckedChange: handleNestedSheetsChange,
-            }}
-            subtitle="开启后，工作区 / 路径 / 组件总览均以独立 True Sheet 打开"
-            title="分区嵌套 True Sheet"
-          />
         </NativeListSection>
 
         {onSheetModeChange != null ? (

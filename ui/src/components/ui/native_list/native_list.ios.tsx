@@ -21,13 +21,15 @@ import {
   listStyle,
   padding,
   scrollContentBackground,
+  tint,
 } from "@expo/ui/swift-ui/modifiers";
 import { ChevronsUpDown } from "@tamagui/lucide-icons-2";
 import { type ReactNode, createContext, useContext } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text as TamaguiText, useTheme } from "tamagui";
 
-import { Select } from "../select";
+import { NativePickerSwiftUI } from "../select/native_picker";
+import { resolveSelectItemGroups } from "../select/select_grouping";
 import { Switch } from "../switch";
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import {
@@ -56,6 +58,7 @@ type NativeListContextValue = {
 const NativeListContext = createContext<NativeListContextValue>({ native: true });
 
 const ROW_INSETS = listRowInsets({ top: 0, leading: 0, bottom: 0, trailing: 0 });
+const ROW_PADDING = { top: 0, bottom: 0, leading: 0, trailing: 0 } as const;
 const TITLE_MODIFIERS = [font({ size: 17, weight: "regular" })];
 const SUBTITLE_MODIFIERS = [font({ size: 13, weight: "regular" }), lineLimit(4)];
 const VALUE_MODIFIERS = [font({ size: 17, weight: "regular" }), lineLimit(1)];
@@ -111,15 +114,36 @@ function NativeRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: Rea
   );
 }
 
-function NativeRowContainer({ children, disabled }: { children: ReactNode; disabled?: boolean }) {
+function NativeRowContainer({
+  children,
+  disabled,
+  onPress,
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  onPress?: () => void;
+}) {
+  const theme = useTheme();
+  const baseModifiers = [ROW_INSETS, padding(ROW_PADDING)];
+
+  if (onPress != null) {
+    return (
+      <SwiftButton modifiers={[disabledModifier(disabled ?? false)]} onPress={onPress}>
+        <HStack
+          alignment="center"
+          modifiers={[...baseModifiers, tint(theme.color.val)]}
+          spacing={12}
+        >
+          {children}
+        </HStack>
+      </SwiftButton>
+    );
+  }
+
   return (
     <HStack
       alignment="center"
-      modifiers={[
-        ROW_INSETS,
-        disabledModifier(disabled ?? false),
-        padding({ top: 12, bottom: 12, leading: 16, trailing: 16 }),
-      ]}
+      modifiers={[...baseModifiers, disabledModifier(disabled ?? false)]}
       spacing={12}
     >
       {children}
@@ -145,7 +169,7 @@ function NativeHostedTrailingControl({ children }: { children: ReactNode }) {
 
 function NativeHostedCustomRow({ children }: { children: ReactNode }) {
   return (
-    <RNHostView matchContents>
+    <RNHostView>
       <View style={styles.customRowShell}>{children}</View>
     </RNHostView>
   );
@@ -169,8 +193,15 @@ function NativePressRow({
   const subtitleText = toPlainText(subtitle);
   const valueText = toPlainText(value);
 
-  const content = (
-    <NativeRowContainer disabled={disabled}>
+  const handlePress = onPress
+    ? () => {
+        onPress();
+        triggerNativeHaptics(resolvedHaptics);
+      }
+    : undefined;
+
+  return (
+    <NativeRowContainer disabled={disabled} onPress={handlePress}>
       <NativeRowLabel subtitle={subtitleText ?? undefined} title={titleText ?? undefined} />
       <Spacer minLength={12} />
       {valueText != null ? (
@@ -181,22 +212,6 @@ function NativePressRow({
       {trailingControl}
       {chevron ? <Image color={theme.color10.val} size={13} systemName="chevron.right" /> : null}
     </NativeRowContainer>
-  );
-
-  if (onPress == null) {
-    return content;
-  }
-
-  return (
-    <SwiftButton
-      modifiers={[disabledModifier(disabled ?? false)]}
-      onPress={() => {
-        onPress();
-        triggerNativeHaptics(resolvedHaptics);
-      }}
-    >
-      {content}
-    </SwiftButton>
   );
 }
 
@@ -321,52 +336,50 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
     return <FallbackSelectItem selectProps={selectProps} {...itemProps} />;
   }
 
+  const resolvedHaptics = useResolvedNativeHaptics(
+    selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false,
+  );
+  const resolvedPickerMode = (selectProps.nativePickerMode ?? "dropdown") as "dropdown" | "wheel";
+  const resolvedItemGroups = resolveSelectItemGroups({
+    itemGroups: selectProps.itemGroups,
+    items: selectProps.items,
+    options: selectProps.options,
+  });
+  const selectItems = resolvedItemGroups.flatMap((group) => group.items);
   const selectedValue = selectProps.value ?? selectProps.defaultValue;
-  const selectItems = [
-    ...(selectProps.items ?? selectProps.options ?? []),
-    ...(selectProps.itemGroups?.flatMap((group) => group.items) ?? []),
-  ];
   const selectedLabel =
     selectItems.find((item) => item.value === selectedValue)?.label ??
     (typeof selectProps.placeholder === "string" ? selectProps.placeholder : "");
   const disabled = itemProps.disabled || selectProps.disabled || selectProps.isDisabled;
 
   return (
-    <NativeListItem disabled={disabled}>
-      <Select
-        {...selectProps}
-        disabled={disabled}
-        native
-        nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
-        nativeTrigger
-        nativeTriggerContent={
-          <View style={[styles.selectRow, disabled ? styles.disabledContent : null]}>
-            <View style={styles.selectTextColumn}>
-              {itemProps.title != null ? (
-                <TamaguiText
-                  color="$color"
-                  fontSize="$5"
-                  numberOfLines={itemProps.subtitle ? 2 : 1}
-                >
-                  {itemProps.title}
+    <NativePressRow
+      {...itemProps}
+      disabled={disabled}
+      onPress={() => {}}
+      trailingControl={
+        <NativeHostedTrailingControl>
+          <NativePickerSwiftUI
+            items={selectItems}
+            mode={resolvedPickerMode}
+            nativeTrigger
+            nativeTriggerContent={
+              <View style={[styles.selectInlineTrigger, disabled ? styles.disabledContent : null]}>
+                <TamaguiText color="$color10" fontSize="$4" numberOfLines={1}>
+                  {selectedLabel}
                 </TamaguiText>
-              ) : null}
-              {itemProps.subtitle != null ? (
-                <TamaguiText color="$color10" fontSize="$3" numberOfLines={2}>
-                  {itemProps.subtitle}
-                </TamaguiText>
-              ) : null}
-            </View>
-            <View style={styles.selectValue}>
-              <TamaguiText color="$color10" fontSize="$4" numberOfLines={1}>
-                {selectedLabel}
-              </TamaguiText>
-              <ChevronsUpDown color="$color10" size={14} />
-            </View>
-          </View>
-        }
-      />
-    </NativeListItem>
+                <ChevronsUpDown color="$color10" size={14} />
+              </View>
+            }
+            onValueChange={selectProps.onValueChange}
+            placeholder={selectProps.placeholder}
+            resolvedNativeHaptics={resolvedHaptics}
+            value={selectedValue ?? null}
+          />
+        </NativeHostedTrailingControl>
+      }
+      value={undefined}
+    />
   );
 }
 
@@ -391,13 +404,7 @@ export function NativeListItem({
 
   if (onPress == null) {
     return (
-      <VStack
-        modifiers={[
-          ROW_INSETS,
-          disabledModifier(disabled ?? false),
-          padding({ top: 12, bottom: 12, leading: 16, trailing: 16 }),
-        ]}
-      >
+      <VStack modifiers={[ROW_INSETS, disabledModifier(disabled ?? false), padding(ROW_PADDING)]}>
         <NativeHostedCustomRow>{children}</NativeHostedCustomRow>
       </VStack>
     );
@@ -407,11 +414,7 @@ export function NativeListItem({
 
   return (
     <SwiftButton
-      modifiers={[
-        ROW_INSETS,
-        disabledModifier(disabled ?? false),
-        padding({ top: 12, bottom: 12, leading: 16, trailing: 16 }),
-      ]}
+      modifiers={[disabledModifier(disabled ?? false), ROW_INSETS, padding(ROW_PADDING)]}
       onPress={() => {
         onPress();
         triggerNativeHaptics(resolvedHaptics);
@@ -424,6 +427,9 @@ export function NativeListItem({
 
 const styles = StyleSheet.create({
   customRowShell: {
+    alignSelf: "stretch",
+    maxWidth: "100%",
+    minWidth: 0,
     width: "100%",
   },
   disabledContent: {
@@ -442,6 +448,14 @@ const styles = StyleSheet.create({
     gap: 12,
     minHeight: 32,
     width: "100%",
+  },
+  selectInlineTrigger: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 1,
+    gap: 4,
+    maxWidth: 180,
+    minWidth: 0,
   },
   selectTextColumn: {
     flex: 1,

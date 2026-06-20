@@ -274,6 +274,8 @@ function NativePickerDropdownCustom({
   value,
   placeholder,
   onValueChange,
+  onOpenChange,
+  open,
   resolvedNativeHaptics,
   nativeTrigger,
   nativeTriggerContent,
@@ -282,6 +284,8 @@ function NativePickerDropdownCustom({
   value: string | null | undefined;
   placeholder?: React.ReactNode;
   onValueChange?: (value: string | null) => void;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
   nativeTrigger: boolean | undefined;
   nativeTriggerContent?: React.ReactNode;
@@ -330,7 +334,7 @@ function NativePickerDropdownCustom({
   );
 
   return (
-    <Menu trigger={trigger}>
+    <Menu onOpenChange={onOpenChange} open={open} trigger={trigger}>
       {items.map((item) => (
         <Menu.CheckboxItem
           key={item.value}
@@ -362,6 +366,8 @@ export function NativePickerSwiftUI({
   nativeTrigger,
   nativeTriggerContent,
   onValueChange,
+  onOpenChange,
+  open,
   resolvedNativeHaptics,
 }: {
   items: ResolvedSelectItemData[];
@@ -371,6 +377,8 @@ export function NativePickerSwiftUI({
   nativeTrigger?: boolean;
   nativeTriggerContent?: React.ReactNode;
   onValueChange?: (value: string | null) => void;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
 }) {
   // dropdown 组件
@@ -381,6 +389,8 @@ export function NativePickerSwiftUI({
         value={value}
         placeholder={placeholder}
         onValueChange={onValueChange}
+        onOpenChange={onOpenChange}
+        open={open}
         resolvedNativeHaptics={resolvedNativeHaptics}
         nativeTrigger={nativeTrigger}
         nativeTriggerContent={nativeTriggerContent}
