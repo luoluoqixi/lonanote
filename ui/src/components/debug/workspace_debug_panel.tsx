@@ -195,7 +195,9 @@ export function WorkspaceDebugPanel() {
           <NativeListSection title="错误">
             <NativeListItem>
               <View style={styles.errorBox}>
-                <Text color="$red10" fontSize="$3">{error}</Text>
+                <Text color="$red10" fontSize="$3">
+                  {error}
+                </Text>
               </View>
             </NativeListItem>
           </NativeListSection>
@@ -253,13 +255,17 @@ export function WorkspaceDebugPanel() {
         <NativeListSection title={`Workspace Roots (${roots.length})`}>
           {roots.length === 0 ? (
             <NativeListItem>
-              <Text color="$color10" fontSize="$3">暂无 roots。</Text>
+              <Text color="$color10" fontSize="$3">
+                暂无 roots。
+              </Text>
             </NativeListItem>
           ) : (
             roots.map((root) => (
               <NativeListItem key={root.key}>
                 <View style={styles.itemCard}>
-                  <Text fontSize="$3" fontWeight="600">{root.key}</Text>
+                  <Text fontSize="$3" fontWeight="600">
+                    {root.key}
+                  </Text>
                   <Text color="$color10" fontSize="$2">
                     {root.kind} · {formatRootSource(root)}
                   </Text>
@@ -273,7 +279,9 @@ export function WorkspaceDebugPanel() {
         <NativeListSection title={`Workspace Records (${records.length})`}>
           {records.length === 0 ? (
             <NativeListItem>
-              <Text color="$color10" fontSize="$3">暂无已注册工作区。</Text>
+              <Text color="$color10" fontSize="$3">
+                暂无已注册工作区。
+              </Text>
             </NativeListItem>
           ) : (
             records.map((record) => {
@@ -286,8 +294,12 @@ export function WorkspaceDebugPanel() {
                 <NativeListItem key={workspaceId}>
                   <View style={styles.itemCard}>
                     <View style={styles.stack}>
-                      <Text fontSize="$3" fontWeight="600">{record.metadata.name}</Text>
-                      <Text color="$color10" fontSize="$2">id: {workspaceId}</Text>
+                      <Text fontSize="$3" fontWeight="600">
+                        {record.metadata.name}
+                      </Text>
+                      <Text color="$color10" fontSize="$2">
+                        id: {workspaceId}
+                      </Text>
                       <Text fontSize="$3">{record.metadata.path}</Text>
                     </View>
                     <View style={styles.recordActions}>

@@ -10,7 +10,7 @@ export type DebugPanelPresentation = "scroll" | "static";
 
 export type DebugPanelRouteDefinition = {
   Component: ComponentType;
-  description: string;
+  description?: string;
   key: DebugTabKey;
   label: string;
   presentation: DebugPanelPresentation;
@@ -21,21 +21,21 @@ export const DEBUG_PANEL_TOGGLE_EVENT = "lonanote.debug-panel.toggle";
 export const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
   {
     Component: WorkspaceDebugPanel,
-    description: "查看 roots、registry records 与当前 runtime state。",
+    description: "查看 roots、registry、runtime state。",
     key: "workspace",
     label: "工作区",
     presentation: "scroll",
   },
   {
     Component: PathDebugPanel,
-    description: "查看当前平台的默认路径与目录解析结果。",
+    description: "查看当前平台的路径解析结果。",
     key: "path",
     label: "路径",
     presentation: "scroll",
   },
   {
     Component: UiComponentsDebugPanel,
-    description: "整页查看 UI wrapper 组件示例与交互表现。",
+    description: "整页查看组件示例与交互。",
     key: "components",
     label: "组件总览",
     presentation: "static",

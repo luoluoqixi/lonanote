@@ -135,7 +135,6 @@ export function DebugHomeScreen({
               checked: nestedSectionSheets,
               onCheckedChange: handleNestedSheetsChange,
             }}
-            subtitle="开启后，工作区 / 路径 / 组件总览均以独立 True Sheet 打开"
             title="分区嵌套 True Sheet"
           />
           {nestedSectionSheets ? (
@@ -179,7 +178,6 @@ export function DebugHomeScreen({
                 placeholder: "选择模式",
                 value: currentSheetMode ?? "trueSheet",
               }}
-              subtitle="切换调试面板的弹出方式。"
               title="调试面板模式"
             />
           </NativeListSection>

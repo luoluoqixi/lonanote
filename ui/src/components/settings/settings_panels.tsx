@@ -1,3 +1,4 @@
+/* eslint-disable quote-props */
 import { StyleSheet, View } from "react-native";
 
 import type { GlobalSettings } from "@/api/commands/settings";

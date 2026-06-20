@@ -21,7 +21,7 @@ type SettingsRouteKey = "global" | "appearance" | "window";
 
 type SettingsRouteDefinition = {
   Component: () => ReactNode;
-  description: string;
+  description?: string;
   href: Href;
   key: SettingsRouteKey;
   label: string;
@@ -30,21 +30,18 @@ type SettingsRouteDefinition = {
 const SETTINGS_ROUTE_DEFINITIONS: SettingsRouteDefinition[] = [
   {
     Component: GlobalSettingsPanel,
-    description: "应用行为与编辑器默认值。",
     href: "/settings/global" as Href,
     key: "global",
     label: "全局设置",
   },
   {
     Component: AppearanceSettingsPanel,
-    description: "主题模式、主题色与桌面缩放。",
     href: "/settings/appearance" as Href,
     key: "appearance",
     label: "外观设置",
   },
   {
     Component: WindowSettingsPanel,
-    description: "窗口恢复、最近窗口状态与桌面行为。",
     href: "/settings/window" as Href,
     key: "window",
     label: "窗口设置",
@@ -171,7 +168,7 @@ export function SettingsHomeScreen() {
   return (
     <SettingsScreenLayout error={syncState.error} isLoading={syncState.isLoading} title="设置">
       <NativeList>
-        <NativeListSection>
+        <NativeListSection title="通用">
           {SETTINGS_ROUTE_DEFINITIONS.map((d) => (
             <NativeListNavigationItem
               key={d.key}

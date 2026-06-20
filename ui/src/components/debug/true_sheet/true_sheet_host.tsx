@@ -28,6 +28,7 @@ import {
   getDebugSectionSheetName,
   markDebugPanelClosed,
   openDebugSection,
+  switchDebugPanelToFullPage,
 } from "./api";
 
 type ParamList = { index: undefined } & Record<DebugTabKey, undefined>;
@@ -45,7 +46,11 @@ function createDebugTrueSheetContentWrapper(presentation: "scroll" | "static") {
 function IosHomeRoute() {
   const navigation = useNavigation<NavigationProp<ParamList>>();
 
-  const handleModeChange = useCallback(() => {}, []);
+  const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
+    if (mode === "fullPage") {
+      void switchDebugPanelToFullPage();
+    }
+  }, []);
 
   return (
     <DebugOwnedScrollContent>
@@ -113,7 +118,11 @@ function IosTrueSheetHost() {
 // ─── Android ──────────────────────────────────────
 
 function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => void }) {
-  const handleModeChange = useCallback(() => {}, []);
+  const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
+    if (mode === "fullPage") {
+      void switchDebugPanelToFullPage();
+    }
+  }, []);
 
   return (
     <DebugOwnedScrollContent>
