@@ -39,4 +39,6 @@ export type NativeListRootProps = Omit<ScrollViewProps, "children"> & {
   children?: ReactNode;
   /** 设为 false 时使用 list_group 回退模式（所有平台一致） */
   native?: boolean;
+  /** 设为 false 时不创建内部 ScrollView，由外层宿主负责滚动。 */
+  scrollable?: boolean;
 };

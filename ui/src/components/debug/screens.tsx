@@ -12,6 +12,7 @@ import {
   NativeListSwitchItem,
   Slider,
 } from "../ui";
+import { TrueSheetScrollContent } from "../ui/true_sheet/scroll_content";
 import {
   DEBUG_PANEL_ROUTE_DEFINITIONS,
   type DebugTabKey,
@@ -35,7 +36,7 @@ import {
 } from "./true_sheet/nested_sections_preferences";
 
 type DebugScreenLayoutHost = "screen" | "trueSheet";
-type DebugScreenScrollOwner = "nativeList" | "static";
+type DebugScreenScrollOwner = "nativeList" | "static" | "trueSheetScroll";
 
 function DebugScreenLayout({
   children,
@@ -51,6 +52,20 @@ function DebugScreenLayout({
   const insets = useSafeAreaInsets();
 
   if (layoutHost === "trueSheet") {
+    if (scrollOwner === "trueSheetScroll") {
+      return (
+        <TrueSheetScrollContent
+          contentContainerStyle={[
+            styles.trueSheetScrollableContent,
+            { paddingBottom: insets.bottom + 36 },
+          ]}
+          style={styles.trueSheetScrollableHost}
+        >
+          <View style={trueSheetBodyStyle}>{children}</View>
+        </TrueSheetScrollContent>
+      );
+    }
+
     const layoutStyle =
       scrollOwner === "nativeList"
         ? [styles.trueSheetNativeListBody, { paddingBottom: insets.bottom + 36 }]
@@ -107,9 +122,11 @@ export function DebugHomeScreen({
   return (
     <DebugScreenLayout
       layoutHost={layoutHost}
-      scrollOwner={useNativeList ? "nativeList" : "static"}
+      scrollOwner={
+        inTrueSheet && !useNativeList ? "trueSheetScroll" : useNativeList ? "nativeList" : "static"
+      }
     >
-      <NativeList native={useNativeList}>
+      <NativeList native={useNativeList} scrollable={!inTrueSheet || useNativeList}>
         <NativeListSection title="调试分区">
           {DEBUG_PANEL_ROUTE_DEFINITIONS.map((def) => (
             <NativeListNavigationItem
@@ -250,4 +267,12 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   trueSheetBodyCompact: {},
+  trueSheetScrollableContent: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  trueSheetScrollableHost: {
+    flex: 1,
+    minHeight: 0,
+  },
 });

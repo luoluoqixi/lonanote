@@ -3,6 +3,7 @@ import { Children, Fragment, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { ListGroup } from "../list_group";
+import { ListItem } from "../list_item";
 import { Select } from "../select";
 import { Separator } from "../separator";
 import { Switch } from "../switch";
@@ -18,20 +19,22 @@ import type {
   NativeListSwitchItemProps,
 } from "./types";
 
-// ─── RowShell ────────────────────────────────────
-
-type RowShellProps = {
+type RowContainerProps = {
   children: ReactNode;
   disabled?: boolean;
   nativeHaptics?: NativeListItemBaseProps["nativeHaptics"];
   onPress?: () => void;
 };
 
-function RowShell({ children, disabled, nativeHaptics, onPress }: RowShellProps) {
+function FallbackRowContainer({ children, disabled, nativeHaptics, onPress }: RowContainerProps) {
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
 
-  if (!onPress) {
-    return <View style={styles.rowShell}>{children}</View>;
+  if (onPress == null) {
+    return (
+      <View style={[styles.rowContainer, disabled ? styles.disabledContent : null]}>
+        {children}
+      </View>
+    );
   }
 
   return (
@@ -43,20 +46,82 @@ function RowShell({ children, disabled, nativeHaptics, onPress }: RowShellProps)
       }}
       style={({ pressed }) => [
         styles.pressable,
+        disabled ? styles.disabledContent : null,
         pressed && !disabled ? styles.pressablePressed : null,
-        disabled ? styles.pressableDisabled : null,
       ]}
     >
-      <View style={styles.rowShell}>{children}</View>
+      <View style={styles.rowContainer}>{children}</View>
     </Pressable>
   );
 }
 
-// ─── StandardRow ─────────────────────────────────
+function FallbackSectionItem({ children }: { children: ReactNode }) {
+  return <ListGroup.GroupItem>{children}</ListGroup.GroupItem>;
+}
 
-type StandardRowProps = NativeListItemBaseProps & {
+function FallbackRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: ReactNode }) {
+  return (
+    <View style={styles.textColumn}>
+      {title != null ? (
+        <Text fontSize="$5" fontWeight="500" numberOfLines={subtitle ? 2 : 1}>
+          {title}
+        </Text>
+      ) : null}
+      {subtitle != null ? (
+        <Text color="$color10" fontSize="$3" numberOfLines={2}>
+          {subtitle}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+type PressRowProps = NativeListItemBaseProps & {
   trailingControl?: ReactNode;
 };
+
+function FallbackPressRow({
+  chevron = false,
+  disabled,
+  nativeHaptics,
+  onPress,
+  subtitle,
+  title,
+  trailingControl,
+  value,
+}: PressRowProps) {
+  if (value == null && trailingControl == null) {
+    return (
+      <FallbackSectionItem>
+        <ListItem
+          disabled={disabled}
+          iconAfter={chevron ? ChevronRight : undefined}
+          nativeHaptics={nativeHaptics}
+          onPress={onPress}
+          subTitle={subtitle}
+          title={title}
+        />
+      </FallbackSectionItem>
+    );
+  }
+
+  return (
+    <FallbackSectionItem>
+      <FallbackRowContainer disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
+        <View style={styles.rowContent}>
+          <FallbackRowLabel subtitle={subtitle} title={title} />
+          {value != null ? (
+            <Text color="$color10" fontSize="$4" numberOfLines={1}>
+              {value}
+            </Text>
+          ) : null}
+          {trailingControl}
+          {chevron ? <ChevronRight color="$color10" size={18} /> : null}
+        </View>
+      </FallbackRowContainer>
+    </FallbackSectionItem>
+  );
+}
 
 function getSelectedLabel(selectProps: NativeListSelectItemProps["selectProps"]) {
   const selectedValue = selectProps.value ?? selectProps.defaultValue;
@@ -71,71 +136,35 @@ function getSelectedLabel(selectProps: NativeListSelectItemProps["selectProps"])
   );
 }
 
-function StandardRow({
-  chevron,
-  disabled,
-  nativeHaptics,
-  onPress,
-  subtitle,
-  title,
-  trailingControl,
-  value,
-}: StandardRowProps) {
-  return (
-    <RowShell disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
-      <View style={styles.rowContent}>
-        <View style={styles.textColumn}>
-          {title != null ? (
-            <Text fontSize="$5" fontWeight="500" numberOfLines={subtitle ? 2 : 1}>
-              {title}
-            </Text>
-          ) : null}
-          {subtitle != null ? (
-            <Text color="$color10" fontSize="$3" numberOfLines={2}>
-              {subtitle}
-            </Text>
-          ) : null}
-        </View>
-        {value != null ? (
-          <Text color="$color10" fontSize="$4" numberOfLines={1}>
-            {value}
-          </Text>
-        ) : null}
-        {trailingControl}
-        {chevron ? <ChevronRight color="$color10" size={18} /> : null}
-      </View>
-    </RowShell>
-  );
-}
-
-// ─── Item Components ─────────────────────────────
-
 export function NativeListActionItem(props: NativeListActionItemProps) {
-  return <StandardRow {...props} chevron={props.chevron} />;
+  return <FallbackPressRow {...props} chevron={props.chevron} />;
 }
 
 export function NativeListNavigationItem(props: NativeListNavigationItemProps) {
-  return <StandardRow {...props} chevron={props.chevron ?? true} />;
+  return <FallbackPressRow {...props} chevron={props.chevron ?? true} />;
 }
 
 export function NativeListSwitchItem({ switchProps, ...itemProps }: NativeListSwitchItemProps) {
   const checked = switchProps.checked ?? switchProps.defaultChecked ?? false;
+  const disabled = itemProps.disabled || switchProps.disabled;
 
   return (
-    <StandardRow
+    <FallbackPressRow
       {...itemProps}
-      disabled={itemProps.disabled || switchProps.disabled}
+      disabled={disabled}
       nativeHaptics={itemProps.nativeHaptics ?? true}
       onPress={() => switchProps.onCheckedChange?.(!checked)}
       trailingControl={
-        <Switch
-          {...switchProps}
-          native
-          onPress={(event) => {
-            switchProps.onPress?.(event);
-            event.stopPropagation();
-          }}
-        />
+        <View style={styles.trailingControl}>
+          <Switch
+            {...switchProps}
+            native
+            onPress={(event) => {
+              switchProps.onPress?.(event);
+              event.stopPropagation();
+            }}
+          />
+        </View>
       }
       value={undefined}
     />
@@ -147,37 +176,28 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
   const selectedLabel = getSelectedLabel(selectProps);
 
   return (
-    <Select
-      {...selectProps}
-      disabled={disabled}
-      native
-      nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
-      nativeTrigger
-      nativeTriggerContent={
-        <View style={[styles.rowShell, disabled ? styles.pressableDisabled : null]}>
-          <View style={styles.rowContent}>
-            <View style={styles.textColumn}>
-              {itemProps.title != null ? (
-                <Text fontSize="$5" fontWeight="500" numberOfLines={itemProps.subtitle ? 2 : 1}>
-                  {itemProps.title}
+    <FallbackSectionItem>
+      <Select
+        {...selectProps}
+        disabled={disabled}
+        native
+        nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
+        nativeTrigger
+        nativeTriggerContent={
+          <View style={[styles.rowContainer, disabled ? styles.disabledContent : null]}>
+            <View style={styles.rowContent}>
+              <FallbackRowLabel subtitle={itemProps.subtitle} title={itemProps.title} />
+              <View style={styles.selectValue}>
+                <Text color="$color10" fontSize="$4" numberOfLines={1}>
+                  {selectedLabel}
                 </Text>
-              ) : null}
-              {itemProps.subtitle != null ? (
-                <Text color="$color10" fontSize="$3" numberOfLines={2}>
-                  {itemProps.subtitle}
-                </Text>
-              ) : null}
-            </View>
-            <View style={styles.selectValue}>
-              <Text color="$color10" fontSize="$4" numberOfLines={1}>
-                {selectedLabel}
-              </Text>
-              <ChevronsUpDown color="$color10" size={14} />
+                <ChevronsUpDown color="$color10" size={14} />
+              </View>
             </View>
           </View>
-        </View>
-      }
-    />
+        }
+      />
+    </FallbackSectionItem>
   );
 }
 
@@ -193,13 +213,13 @@ export function NativeListItem({
   onPress?: () => void;
 }) {
   return (
-    <RowShell disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
-      {children}
-    </RowShell>
+    <FallbackSectionItem>
+      <FallbackRowContainer disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
+        <View style={styles.customRowContent}>{children}</View>
+      </FallbackRowContainer>
+    </FallbackSectionItem>
   );
 }
-
-// ─── Section ─────────────────────────────────────
 
 export function NativeListSection({ children, footer, title }: NativeListSectionProps) {
   const childrenArray = Children.toArray(children);
@@ -213,11 +233,11 @@ export function NativeListSection({ children, footer, title }: NativeListSection
           </Text>
         </View>
       ) : null}
-      <ListGroup background="$background" rounded="$4" self="stretch">
+      <ListGroup background="$background" rounded="$4" width="100%" self="stretch">
         {childrenArray.map((child, index) => (
           <Fragment key={index}>
             {index > 0 ? <Separator /> : null}
-            <ListGroup.GroupItem>{child}</ListGroup.GroupItem>
+            {child}
           </Fragment>
         ))}
       </ListGroup>
@@ -232,20 +252,30 @@ export function NativeListSection({ children, footer, title }: NativeListSection
   );
 }
 
-// ─── NativeList Root ─────────────────────────────
-
 export function NativeListRoot({
   children,
   contentContainerStyle,
   native: _native,
+  scrollable = true,
   style,
   ...rest
 }: NativeListRootProps) {
   void _native;
 
+  if (!scrollable) {
+    return (
+      <View style={[styles.staticRoot, styles.rootContent, contentContainerStyle, style]}>
+        {children}
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       contentContainerStyle={[styles.rootContent, contentContainerStyle]}
+      keyboardShouldPersistTaps={rest.keyboardShouldPersistTaps ?? "handled"}
+      nestedScrollEnabled={rest.nestedScrollEnabled ?? true}
+      showsVerticalScrollIndicator={rest.showsVerticalScrollIndicator ?? true}
       style={[styles.root, style]}
       {...rest}
     >
@@ -254,31 +284,52 @@ export function NativeListRoot({
   );
 }
 
-// ─── Styles ──────────────────────────────────────
-
 const styles = StyleSheet.create({
-  pressable: { width: "100%" },
-  pressableDisabled: { opacity: 0.5 },
-  pressablePressed: { backgroundColor: "rgba(128, 128, 128, 0.08)" },
-  root: { flex: 1 },
+  customRowContent: {
+    width: "100%",
+  },
+  disabledContent: {
+    opacity: 0.5,
+  },
+  pressable: {
+    width: "100%",
+  },
+  pressablePressed: {
+    backgroundColor: "rgba(128, 128, 128, 0.08)",
+  },
+  root: {
+    flex: 1,
+    minHeight: 0,
+  },
   rootContent: {
     gap: 16,
+    overflow: "hidden",
     paddingVertical: 8,
+    width: "100%",
   },
-  rowContent: {
-    alignItems: "center",
-    flex: 1,
-    flexDirection: "row",
-    gap: 12,
-  },
-  rowShell: {
+  rowContainer: {
     minHeight: 56,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    width: "100%",
   },
-  section: { gap: 8 },
-  sectionFooter: { paddingHorizontal: 16 },
-  sectionLabel: { paddingHorizontal: 16 },
+  rowContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  section: {
+    gap: 8,
+    overflow: "hidden",
+    width: "100%",
+  },
+  sectionFooter: {
+    paddingHorizontal: 16,
+  },
+  sectionLabel: {
+    paddingHorizontal: 16,
+  },
   selectValue: {
     alignItems: "center",
     flexDirection: "row",
@@ -286,5 +337,16 @@ const styles = StyleSheet.create({
     gap: 4,
     maxWidth: "45%",
   },
-  textColumn: { flex: 1, gap: 4, minWidth: 0 },
+  staticRoot: {
+    width: "100%",
+  },
+  textColumn: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  trailingControl: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
 });
