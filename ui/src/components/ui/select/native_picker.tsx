@@ -6,4 +6,8 @@ import React from "react";
 export const NativePickerDialog: React.FC<any> = () => null;
 
 /** Web 端永不渲染（shouldRenderNativeIosPicker 恒为 false） */
-export const NativePickerSwiftUI: React.FC<any> = () => null;
+export type NativePickerSwiftUIHandle = {
+  open: () => void;
+};
+
+export const NativePickerSwiftUI = React.forwardRef<NativePickerSwiftUIHandle, any>(() => null);

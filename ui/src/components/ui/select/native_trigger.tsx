@@ -1,12 +1,25 @@
-import { ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
+import { ChevronDown, ChevronUp, ChevronsUpDown } from "@tamagui/lucide-icons-2";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import {
+  Pressable,
+  type PressableProps,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewProps,
+  type ViewStyle,
+} from "react-native";
 import { Text, getFontSize } from "tamagui";
 
-function renderTriggerLabel(label: React.ReactNode) {
+import type { TextProps } from "../text";
+import type { SelectNativeTriggerIcon } from "./types";
+
+type TriggerIconColor = React.ComponentProps<typeof ChevronDown>["color"];
+
+function renderTriggerLabel(label: React.ReactNode, labelProps?: TextProps) {
   if (typeof label === "string" || typeof label === "number") {
     return (
-      <Text color="$color10" fontSize={getFontSize("$4")}>
+      <Text color="$color10" fontSize={getFontSize("$4")} {...labelProps}>
         {label}
       </Text>
     );
@@ -15,12 +28,35 @@ function renderTriggerLabel(label: React.ReactNode) {
   return label;
 }
 
+function renderTriggerIcon(icon: SelectNativeTriggerIcon, color: TriggerIconColor) {
+  if (icon === "none") {
+    return null;
+  }
+
+  if (icon === "chevrons-up-down") {
+    return <ChevronsUpDown color={color} size={14} />;
+  }
+
+  return (
+    <View style={styles.chevronColumn}>
+      <ChevronUp color={color} size={10} />
+      <ChevronDown color={color} size={10} />
+    </View>
+  );
+}
+
 export function NativeTriggerFace({
   content,
+  containerStyle,
+  icon = "stacked",
+  labelProps,
   label,
   opacity = 1,
 }: {
   content?: React.ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
+  icon?: SelectNativeTriggerIcon;
+  labelProps?: TextProps;
   label: React.ReactNode;
   opacity?: number;
 }) {
@@ -32,55 +68,65 @@ export function NativeTriggerFace({
     );
   }
 
+  const iconColor: TriggerIconColor =
+    typeof labelProps?.color === "string" ? (labelProps.color as TriggerIconColor) : "$color10";
+
   return (
     <View pointerEvents="none" style={{ opacity }}>
-      <View style={styles.container}>
-        <View style={styles.row}>
-          {renderTriggerLabel(label)}
-          <View style={styles.chevronColumn}>
-            <ChevronUp color="$color10" size={10} />
-            <ChevronDown color="$color10" size={10} />
-          </View>
-        </View>
+      <View style={[styles.defaultTrigger, containerStyle]}>
+        {renderTriggerLabel(label, labelProps)}
+        {renderTriggerIcon(icon, iconColor)}
       </View>
     </View>
   );
 }
 
-export function NativeTriggerPressable({
-  content,
-  label,
-  onPress,
-}: {
-  content?: React.ReactNode;
-  label: React.ReactNode;
-  onPress?: () => void;
-}) {
-  const [isPressed, setIsPressed] = React.useState(false);
+export const NativeTriggerPressable = React.forwardRef<
+  View,
+  {
+    content?: React.ReactNode;
+    containerStyle?: StyleProp<ViewStyle>;
+    icon?: SelectNativeTriggerIcon;
+    labelProps?: TextProps;
+    label: React.ReactNode;
+    onPress?: PressableProps["onPress"];
+  } & Omit<ViewProps, "children" | "onPress">
+>(
+  (
+    { content, containerStyle, icon = "stacked", labelProps, label, onPress, ...viewProps },
+    forwardedRef,
+  ) => {
+    const [isPressed, setIsPressed] = React.useState(false);
 
-  return (
-    <View style={content != null ? styles.customTrigger : undefined}>
-      <NativeTriggerFace content={content} label={label} opacity={isPressed ? 0.6 : 1} />
-      <Pressable
-        onPress={onPress}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        style={StyleSheet.absoluteFill}
-      />
-    </View>
-  );
-}
+    return (
+      <View
+        ref={forwardedRef}
+        style={content != null ? styles.customTrigger : undefined}
+        {...viewProps}
+      >
+        <NativeTriggerFace
+          content={content}
+          containerStyle={containerStyle}
+          icon={icon}
+          label={label}
+          labelProps={labelProps}
+          opacity={isPressed ? 0.6 : 1}
+        />
+        <Pressable
+          onPress={onPress}
+          onPressIn={() => setIsPressed(true)}
+          onPressOut={() => setIsPressed(false)}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   chevronColumn: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  container: {
-    alignSelf: "flex-start",
-    justifyContent: "center",
-    minHeight: 44,
-    minWidth: 180,
   },
   customContent: {
     alignSelf: "stretch",
@@ -90,10 +136,13 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     width: "100%",
   },
-  row: {
+  defaultTrigger: {
     alignItems: "center",
     alignSelf: "flex-start",
     flexDirection: "row",
     gap: 4,
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 180,
   },
 });

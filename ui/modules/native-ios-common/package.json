@@ -4,7 +4,7 @@
   "private": true,
   "description": "LonaNote iOS native Expo module container",
   "license": "UNLICENSED",
-  "author": "LonaNote",
+  "author": "luoluoqixi",
   "homepage": "https://github.com/luoluoqixi/lonanote",
   "main": "src/index.ts",
   "types": "src/index.ts",

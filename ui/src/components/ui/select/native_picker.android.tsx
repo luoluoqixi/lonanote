@@ -1,13 +1,16 @@
+/* eslint-disable no-spaced-func */
 // Select Android 原生 Picker 组件
 import { Picker as RNPPicker } from "@react-native-picker/picker";
 import { useTheme } from "@tamagui/core";
-import React, { useEffect, useRef } from "react";
-import { View } from "react-native";
+import React, { useEffect, useImperativeHandle, useRef } from "react";
+import { type StyleProp, View, type ViewStyle } from "react-native";
 
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 
+import type { TextProps } from "../text";
 import { NativeTriggerPressable } from "./native_trigger";
 import type { ResolvedSelectItemData } from "./select_grouping";
+import type { SelectNativeTriggerIcon } from "./types";
 
 /** Android 原生 Picker Dialog：隐藏渲染 Picker 并通过 focus() 触发系统 dialog */
 export function NativePickerDialog({
@@ -70,41 +73,84 @@ export function NativePickerDialog({
   );
 }
 
-export function NativePickerSwiftUI({
-  items,
-  value,
-  mode,
-  nativeTriggerContent,
-  onValueChange,
-  resolvedNativeHaptics,
-}: {
-  items: ResolvedSelectItemData[];
-  value: string | null | undefined;
-  placeholder?: React.ReactNode;
-  mode: "dropdown" | "wheel" | "dialog";
-  nativeTrigger?: boolean;
-  nativeTriggerContent?: React.ReactNode;
-  onValueChange?: (value: string | null) => void;
-  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
-}) {
+export type NativePickerSwiftUIHandle = {
+  open: () => void;
+};
+
+export const NativePickerSwiftUI = React.forwardRef<
+  NativePickerSwiftUIHandle,
+  {
+    items: ResolvedSelectItemData[];
+    value: string | null | undefined;
+    placeholder?: React.ReactNode;
+    mode: "dropdown" | "wheel" | "dialog";
+    nativeTrigger?: boolean;
+    nativeTriggerContainerStyle?: StyleProp<ViewStyle>;
+    nativeTriggerContent?: React.ReactNode;
+    nativeTriggerIcon?: SelectNativeTriggerIcon;
+    nativeTriggerLabelProps?: TextProps;
+    onValueChange?: (value: string | null) => void;
+    resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+  }
+>((props, ref) => {
+  const {
+    items,
+    value,
+    mode,
+    nativeTriggerContainerStyle,
+    nativeTriggerContent,
+    nativeTriggerIcon,
+    nativeTriggerLabelProps,
+    onValueChange,
+    resolvedNativeHaptics,
+  } = props;
+  const [openSignal, setOpenSignal] = React.useState(0);
+
+  useImperativeHandle(ref, () => ({
+    open() {
+      setOpenSignal((c) => c + 1);
+    },
+  }));
+
   const [visible, setVisible] = React.useState(false);
   const selectedLabel =
     items.find((item) => item.value === ((value as string) ?? items[0]?.value ?? ""))?.label ?? "";
+  const openPicker = React.useCallback(
+    (shouldTriggerHaptics: boolean) => {
+      if (shouldTriggerHaptics) {
+        triggerNativeHaptics(resolvedNativeHaptics);
+      }
+
+      setVisible((prev) => {
+        if (prev) {
+          requestAnimationFrame(() => setVisible(true));
+          return false;
+        }
+
+        return true;
+      });
+    },
+    [resolvedNativeHaptics],
+  );
+
+  useEffect(() => {
+    if (openSignal == null || openSignal <= 0) {
+      return;
+    }
+
+    openPicker(false);
+  }, [openPicker, openSignal]);
 
   return (
     <>
       <NativeTriggerPressable
         content={nativeTriggerContent}
+        containerStyle={nativeTriggerContainerStyle}
+        icon={nativeTriggerIcon}
         label={selectedLabel}
+        labelProps={nativeTriggerLabelProps}
         onPress={() => {
-          triggerNativeHaptics(resolvedNativeHaptics);
-          setVisible((prev) => {
-            if (prev) {
-              requestAnimationFrame(() => setVisible(true));
-              return false;
-            }
-            return true;
-          });
+          openPicker(true);
         }}
       />
       <NativePickerDialog
@@ -121,4 +167,4 @@ export function NativePickerSwiftUI({
       />
     </>
   );
-}
+});

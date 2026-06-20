@@ -1,12 +1,14 @@
 import type { ComponentProps, ReactNode } from "react";
-import type { ViewStyle } from "react-native";
+import type { StyleProp, ViewStyle } from "react-native";
 import type { Select as TamaguiSelect } from "tamagui";
 
+import type { TextProps } from "../text";
 import type { NativeHapticsSetting } from "../utils";
 
 /** 原生 Picker 弹出模式。仅在 props.native 为 true 时生效。 */
 export type NativePickerMode = "dialog" | "dropdown" | "wheel";
 export type SelectNativeMode = boolean | "native-sheet" | "custom-sheet";
+export type SelectNativeTriggerIcon = "stacked" | "chevrons-up-down" | "none";
 
 export interface SelectItemData {
   "aria-label"?: string;
@@ -60,8 +62,14 @@ export interface SelectProps extends Omit<
    * "custom-sheet"：移动端走项目自定义 Sheet；web 回退到 Tamagui `native=true`
    * */
   native?: SelectNativeMode;
-  /** 自定义 nativeTrigger 的完整内容。用于列表行等需要扩大 trigger 点击区域的场景。 */
+  /** 自定义 nativeTrigger 的完整内容。用于列表行等需要替换整套 trigger 结构的场景。 */
   nativeTriggerContent?: ReactNode;
+  /** nativeTrigger 默认内容容器样式。用于不替换结构、只调整样式的场景。 */
+  nativeTriggerContainerStyle?: StyleProp<ViewStyle>;
+  /** nativeTrigger 默认文本样式。 */
+  nativeTriggerLabelProps?: TextProps;
+  /** nativeTrigger 默认图标样式。 */
+  nativeTriggerIcon?: SelectNativeTriggerIcon;
   /** 是否使用项目自绘 trigger。
    * true = 在 Web / iOS / Android 上都使用统一的文本 + 双箭头 trigger 外观
    *   原生 picker 路径：打开平台原生 picker

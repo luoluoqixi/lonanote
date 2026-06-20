@@ -23,15 +23,15 @@ import {
   scrollContentBackground,
   tint,
 } from "@expo/ui/swift-ui/modifiers";
-import { ChevronsUpDown } from "@tamagui/lucide-icons-2";
-import { type ReactNode, createContext, useContext } from "react";
+import { type ReactNode, createContext, useContext, useRef } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text as TamaguiText, useTheme } from "tamagui";
+import { useTheme } from "tamagui";
 
 import { NativePickerSwiftUI } from "../select/native_picker";
+import type { NativePickerSwiftUIHandle } from "../select/native_picker";
 import { resolveSelectItemGroups } from "../select/select_grouping";
 import { Switch } from "../switch";
-import { triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
+import { toSwiftUIHexColor, triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import {
   NativeListActionItem as FallbackActionItem,
   NativeListItem as FallbackItem,
@@ -83,6 +83,8 @@ function NativeRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: Rea
   const theme = useTheme();
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
+  const primaryColor = toSwiftUIHexColor(theme.color.val) ?? theme.color.val;
+  const secondaryColor = toSwiftUIHexColor(theme.color10.val) ?? theme.color10.val;
 
   if ((title != null && titleText == null) || (subtitle != null && subtitleText == null)) {
     return null;
@@ -98,7 +100,7 @@ function NativeRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: Rea
         <SwiftText
           modifiers={[
             ...TITLE_MODIFIERS,
-            foregroundStyle(theme.color.val),
+            foregroundStyle(primaryColor),
             lineLimit(subtitleText != null ? 2 : 1),
           ]}
         >
@@ -106,7 +108,7 @@ function NativeRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: Rea
         </SwiftText>
       ) : null}
       {subtitleText != null ? (
-        <SwiftText modifiers={[...SUBTITLE_MODIFIERS, foregroundStyle(theme.color10.val)]}>
+        <SwiftText modifiers={[...SUBTITLE_MODIFIERS, foregroundStyle(secondaryColor)]}>
           {subtitleText}
         </SwiftText>
       ) : null}
@@ -124,16 +126,13 @@ function NativeRowContainer({
   onPress?: () => void;
 }) {
   const theme = useTheme();
+  const primaryColor = toSwiftUIHexColor(theme.color.val) ?? theme.color.val;
   const baseModifiers = [ROW_INSETS, padding(ROW_PADDING)];
 
   if (onPress != null) {
     return (
       <SwiftButton modifiers={[disabledModifier(disabled ?? false)]} onPress={onPress}>
-        <HStack
-          alignment="center"
-          modifiers={[...baseModifiers, tint(theme.color.val)]}
-          spacing={12}
-        >
+        <HStack alignment="center" modifiers={[...baseModifiers, tint(primaryColor)]} spacing={12}>
           {children}
         </HStack>
       </SwiftButton>
@@ -189,6 +188,7 @@ function NativePressRow({
 }) {
   const theme = useTheme();
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
+  const secondaryColor = toSwiftUIHexColor(theme.color10.val) ?? theme.color10.val;
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
   const valueText = toPlainText(value);
@@ -205,12 +205,12 @@ function NativePressRow({
       <NativeRowLabel subtitle={subtitleText ?? undefined} title={titleText ?? undefined} />
       <Spacer minLength={12} />
       {valueText != null ? (
-        <SwiftText modifiers={[...VALUE_MODIFIERS, foregroundStyle(theme.color10.val)]}>
+        <SwiftText modifiers={[...VALUE_MODIFIERS, foregroundStyle(secondaryColor)]}>
           {valueText}
         </SwiftText>
       ) : null}
       {trailingControl}
-      {chevron ? <Image color={theme.color10.val} size={13} systemName="chevron.right" /> : null}
+      {chevron ? <Image color={secondaryColor} size={13} systemName="chevron.right" /> : null}
     </NativeRowContainer>
   );
 }
@@ -347,30 +347,34 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
   });
   const selectItems = resolvedItemGroups.flatMap((group) => group.items);
   const selectedValue = selectProps.value ?? selectProps.defaultValue;
-  const selectedLabel =
-    selectItems.find((item) => item.value === selectedValue)?.label ??
-    (typeof selectProps.placeholder === "string" ? selectProps.placeholder : "");
   const disabled = itemProps.disabled || selectProps.disabled || selectProps.isDisabled;
+  const pickerRef = useRef<NativePickerSwiftUIHandle>(null);
 
   return (
     <NativePressRow
       {...itemProps}
       disabled={disabled}
-      onPress={() => {}}
+      nativeHaptics={resolvedHaptics}
+      onPress={() => {
+        pickerRef.current?.open();
+      }}
       trailingControl={
         <NativeHostedTrailingControl>
           <NativePickerSwiftUI
+            ref={pickerRef}
             items={selectItems}
             mode={resolvedPickerMode}
             nativeTrigger
-            nativeTriggerContent={
-              <View style={[styles.selectInlineTrigger, disabled ? styles.disabledContent : null]}>
-                <TamaguiText color="$color10" fontSize="$4" numberOfLines={1}>
-                  {selectedLabel}
-                </TamaguiText>
-                <ChevronsUpDown color="$color10" size={14} />
-              </View>
-            }
+            nativeTriggerContainerStyle={[
+              styles.selectInlineTrigger,
+              disabled ? styles.disabledContent : null,
+            ]}
+            nativeTriggerIcon="chevrons-up-down"
+            nativeTriggerLabelProps={{
+              color: "$color10",
+              fontSize: "$4",
+              numberOfLines: 1,
+            }}
             onValueChange={selectProps.onValueChange}
             placeholder={selectProps.placeholder}
             resolvedNativeHaptics={resolvedHaptics}
@@ -442,32 +446,14 @@ const styles = StyleSheet.create({
   nativeRoot: {
     flex: 1,
   },
-  selectRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    minHeight: 32,
-    width: "100%",
-  },
   selectInlineTrigger: {
     alignItems: "center",
     flexDirection: "row",
     flexShrink: 1,
     gap: 4,
     maxWidth: 180,
+    minHeight: 32,
     minWidth: 0,
-  },
-  selectTextColumn: {
-    flex: 1,
-    gap: 4,
-    minWidth: 0,
-  },
-  selectValue: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexShrink: 1,
-    gap: 4,
-    maxWidth: "45%",
   },
   trailingHostedContent: {
     alignItems: "center",

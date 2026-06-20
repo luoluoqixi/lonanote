@@ -1,10 +1,18 @@
+/* eslint-disable no-spaced-func */
 // Select iOS 原生 Picker 组件
 import { Picker as RNPPicker } from "@react-native-picker/picker";
 import { useTheme } from "@tamagui/core";
 import { Check, ChevronDown } from "@tamagui/lucide-icons-2";
 import { useCallback } from "react";
 import React from "react";
-import { Platform, View, useColorScheme } from "react-native";
+import {
+  Platform,
+  type PressableProps,
+  type StyleProp,
+  View,
+  type ViewStyle,
+  useColorScheme,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text, YStack, getFontSize } from "tamagui";
 
@@ -19,8 +27,10 @@ import {
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 import type { ResolvedColorScheme } from "@/components/ui/utils/navigation/status_bar";
 
+import type { TextProps } from "../text";
 import { NativeTriggerPressable } from "./native_trigger";
 import type { ResolvedSelectItemData } from "./select_grouping";
+import type { SelectNativeTriggerIcon } from "./types";
 
 /** 用于为每个 wheel sheet 实例生成唯一名称的计数器 */
 let wheelSheetCounter = 0;
@@ -104,30 +114,39 @@ function WheelTrueSheet({
 }
 
 /** wheel + 自定义 trigger */
-function NativePickerWheelSheet({
-  items,
-  value,
-  placeholder,
-  onValueChange,
-  resolvedNativeHaptics,
-}: {
-  items: ResolvedSelectItemData[];
-  value: string | null | undefined;
-  placeholder?: React.ReactNode;
-  onValueChange?: (value: string | null) => void;
-  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
-}) {
+const NativePickerWheelSheet = React.forwardRef<
+  NativePickerSwiftUIHandle,
+  {
+    items: ResolvedSelectItemData[];
+    value: string | null | undefined;
+    placeholder?: React.ReactNode;
+    onValueChange?: (value: string | null) => void;
+    resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+  }
+>(({ items, value, placeholder, onValueChange, resolvedNativeHaptics }, ref) => {
   const [pendingValue, setPendingValue] = React.useState<string>(
     (value as string) ?? items[0]?.value ?? "",
   );
   const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
   const [sheetName] = React.useState(() => `select-wheel-${++wheelSheetCounter}`);
 
-  const handleOpen = useCallback(() => {
-    triggerNativeHaptics(resolvedNativeHaptics);
-    setPendingValue((value as string) ?? items[0]?.value ?? "");
-    presentTrueSheet(sheetName);
-  }, [resolvedNativeHaptics, value, items, sheetName]);
+  const openSheet = useCallback(
+    (shouldTriggerHaptics: boolean) => {
+      if (shouldTriggerHaptics) {
+        triggerNativeHaptics(resolvedNativeHaptics);
+      }
+
+      setPendingValue((value as string) ?? items[0]?.value ?? "");
+      presentTrueSheet(sheetName);
+    },
+    [resolvedNativeHaptics, value, items, sheetName],
+  );
+
+  React.useImperativeHandle(ref, () => ({
+    open() {
+      openSheet(true);
+    },
+  }));
 
   const handleDone = useCallback(() => {
     onValueChange?.(pendingValue || null);
@@ -145,7 +164,7 @@ function NativePickerWheelSheet({
   return (
     <>
       <YStack
-        onPress={handleOpen}
+        onPress={() => openSheet(true)}
         background="$background"
         borderColor="$borderColor"
         borderWidth={1}
@@ -180,90 +199,138 @@ function NativePickerWheelSheet({
       />
     </>
   );
-}
+});
 
 /**
  * iOS/Android 共用的自绘原生 trigger。
  * 不再依赖 SwiftUI Picker 自带按钮，避免嵌套 sheet 等系统着色差异。
  */
-function NativePickerSwiftUIMenuTrigger({
-  content,
-  items,
-  value,
-  onPress,
-}: {
+type NativePickerSwiftUIMenuTriggerProps = {
+  containerStyle?: StyleProp<ViewStyle>;
   content?: React.ReactNode;
+  icon?: SelectNativeTriggerIcon;
   items: ResolvedSelectItemData[];
+  labelProps?: TextProps;
+  onBeforePress?: () => void;
   value: string | null | undefined;
-  onPress?: () => void;
-}) {
-  const selectedValue = (value as string) ?? items[0]?.value ?? "";
-  const selectedLabel = items.find((item) => item.value === selectedValue)?.label ?? "";
+  onPress?: PressableProps["onPress"];
+};
 
-  return <NativeTriggerPressable content={content} label={selectedLabel} onPress={onPress} />;
-}
+const NativePickerSwiftUIMenuTrigger = React.forwardRef<View, NativePickerSwiftUIMenuTriggerProps>(
+  (
+    { containerStyle, content, icon, items, labelProps, onBeforePress, value, onPress },
+    forwardedRef,
+  ) => {
+    const selectedValue = (value as string) ?? items[0]?.value ?? "";
+    const selectedLabel = items.find((item) => item.value === selectedValue)?.label ?? "";
+
+    return (
+      <NativeTriggerPressable
+        ref={forwardedRef}
+        content={content}
+        containerStyle={containerStyle}
+        icon={icon}
+        label={selectedLabel}
+        labelProps={labelProps}
+        onPress={(event) => {
+          onBeforePress?.();
+          onPress?.(event);
+        }}
+      />
+    );
+  },
+);
 
 /** wheel + 原生 trigger（SwiftUI menu 按钮） */
-function NativePickerWheelNativeTriggerSheet({
-  nativeTriggerContent,
-  items,
-  placeholder,
-  value,
-  onValueChange,
-  resolvedNativeHaptics,
-}: {
-  nativeTriggerContent?: React.ReactNode;
-  items: ResolvedSelectItemData[];
-  placeholder?: React.ReactNode;
-  value: string | null | undefined;
-  onValueChange?: (value: string | null) => void;
-  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
-}) {
-  const [pendingValue, setPendingValue] = React.useState<string>(
-    (value as string) ?? items[0]?.value ?? "",
-  );
-  const [sheetName] = React.useState(() => `select-wheel-${++wheelSheetCounter}`);
+const NativePickerWheelNativeTriggerSheet = React.forwardRef<
+  NativePickerSwiftUIHandle,
+  {
+    nativeTriggerContainerStyle?: StyleProp<ViewStyle>;
+    nativeTriggerContent?: React.ReactNode;
+    nativeTriggerIcon?: SelectNativeTriggerIcon;
+    nativeTriggerLabelProps?: TextProps;
+    items: ResolvedSelectItemData[];
+    placeholder?: React.ReactNode;
+    value: string | null | undefined;
+    onValueChange?: (value: string | null) => void;
+    resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+  }
+>(
+  (
+    {
+      nativeTriggerContainerStyle,
+      nativeTriggerContent,
+      nativeTriggerIcon,
+      nativeTriggerLabelProps,
+      items,
+      placeholder,
+      value,
+      onValueChange,
+      resolvedNativeHaptics,
+    },
+    ref,
+  ) => {
+    const [pendingValue, setPendingValue] = React.useState<string>(
+      (value as string) ?? items[0]?.value ?? "",
+    );
+    const [sheetName] = React.useState(() => `select-wheel-${++wheelSheetCounter}`);
 
-  const handleOpen = useCallback(() => {
-    triggerNativeHaptics(resolvedNativeHaptics);
-    setPendingValue((value as string) ?? items[0]?.value ?? "");
-    presentTrueSheet(sheetName);
-  }, [resolvedNativeHaptics, value, items, sheetName]);
+    const openSheet = useCallback(
+      (shouldTriggerHaptics: boolean) => {
+        if (shouldTriggerHaptics) {
+          triggerNativeHaptics(resolvedNativeHaptics);
+        }
 
-  const handleDone = useCallback(() => {
-    onValueChange?.(pendingValue || null);
-    triggerNativeHaptics(resolvedNativeHaptics);
-    dismissTrueSheet(sheetName);
-  }, [onValueChange, resolvedNativeHaptics, pendingValue, sheetName]);
+        setPendingValue((value as string) ?? items[0]?.value ?? "");
+        presentTrueSheet(sheetName);
+      },
+      [resolvedNativeHaptics, value, items, sheetName],
+    );
 
-  const handleCancel = useCallback(() => {
-    triggerNativeHaptics(resolvedNativeHaptics);
-    dismissTrueSheet(sheetName);
-  }, [resolvedNativeHaptics, sheetName]);
+    React.useImperativeHandle(ref, () => ({
+      open() {
+        openSheet(true);
+      },
+    }));
 
-  const title = typeof placeholder === "string" ? placeholder : "选择";
+    const handleDone = useCallback(() => {
+      onValueChange?.(pendingValue || null);
+      triggerNativeHaptics(resolvedNativeHaptics);
+      dismissTrueSheet(sheetName);
+    }, [onValueChange, resolvedNativeHaptics, pendingValue, sheetName]);
 
-  return (
-    <>
-      <NativePickerSwiftUIMenuTrigger
-        content={nativeTriggerContent}
-        items={items}
-        value={value}
-        onPress={handleOpen}
-      />
+    const handleCancel = useCallback(() => {
+      triggerNativeHaptics(resolvedNativeHaptics);
+      dismissTrueSheet(sheetName);
+    }, [resolvedNativeHaptics, sheetName]);
 
-      <WheelTrueSheet
-        items={items}
-        title={title}
-        sheetName={sheetName}
-        pendingValue={pendingValue}
-        setPendingValue={setPendingValue}
-        onCancel={handleCancel}
-        onDone={handleDone}
-      />
-    </>
-  );
-}
+    const title = typeof placeholder === "string" ? placeholder : "选择";
+
+    return (
+      <>
+        <NativePickerSwiftUIMenuTrigger
+          containerStyle={nativeTriggerContainerStyle}
+          content={nativeTriggerContent}
+          icon={nativeTriggerIcon}
+          items={items}
+          labelProps={nativeTriggerLabelProps}
+          value={value}
+          onPress={() => openSheet(true)}
+        />
+
+        <WheelTrueSheet
+          items={items}
+          title={title}
+          sheetName={sheetName}
+          pendingValue={pendingValue}
+          setPendingValue={setPendingValue}
+          onCancel={handleCancel}
+          onDone={handleDone}
+        />
+      </>
+    );
+  },
+);
 
 /**
  * dropdown + 自定义 trigger：复用 Menu 组件实现。
@@ -278,7 +345,10 @@ function NativePickerDropdownCustom({
   open,
   resolvedNativeHaptics,
   nativeTrigger,
+  nativeTriggerContainerStyle,
   nativeTriggerContent,
+  nativeTriggerIcon,
+  nativeTriggerLabelProps,
 }: {
   items: ResolvedSelectItemData[];
   value: string | null | undefined;
@@ -288,9 +358,15 @@ function NativePickerDropdownCustom({
   open?: boolean;
   resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
   nativeTrigger: boolean | undefined;
+  nativeTriggerContainerStyle?: StyleProp<ViewStyle>;
   nativeTriggerContent?: React.ReactNode;
+  nativeTriggerIcon?: SelectNativeTriggerIcon;
+  nativeTriggerLabelProps?: TextProps;
 }) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const selectedLabel = items.find((item) => item.value === value)?.label ?? null;
+
+  const resolvedOpen = open ?? internalOpen;
   const handleSelect = useCallback(
     (itemValue: string) => {
       onValueChange?.(itemValue || null);
@@ -298,13 +374,26 @@ function NativePickerDropdownCustom({
     },
     [onValueChange, resolvedNativeHaptics],
   );
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (open == null) {
+        setInternalOpen(nextOpen);
+      }
+
+      onOpenChange?.(nextOpen);
+    },
+    [onOpenChange, open],
+  );
 
   const trigger = nativeTrigger ? (
     <NativePickerSwiftUIMenuTrigger
+      containerStyle={nativeTriggerContainerStyle}
       content={nativeTriggerContent}
+      icon={nativeTriggerIcon}
       items={items}
+      labelProps={nativeTriggerLabelProps}
+      onBeforePress={() => triggerNativeHaptics(resolvedNativeHaptics)}
       value={value}
-      onPress={() => triggerNativeHaptics(resolvedNativeHaptics)}
     />
   ) : (
     <YStack
@@ -334,7 +423,12 @@ function NativePickerDropdownCustom({
   );
 
   return (
-    <Menu onOpenChange={onOpenChange} open={open} trigger={trigger}>
+    <Menu
+      onOpenChange={handleOpenChange}
+      open={resolvedOpen}
+      trigger={trigger}
+      triggerProps={nativeTrigger ? { asChild: true } : undefined}
+    >
       {items.map((item) => (
         <Menu.CheckboxItem
           key={item.value}
@@ -353,34 +447,70 @@ function NativePickerDropdownCustom({
 }
 
 /**
+ * iOS NativePicker 的 ref handle。
+ * 通过 open() 方法在外部控制选项列表的打开。
+ */
+export type NativePickerSwiftUIHandle = {
+  open: () => void;
+};
+
+/**
  * iOS NativePicker：switch 入口。
  * dropdown → NativePickerDropdownCustom（含可选的 nativeTrigger SwiftUI menu）
  * wheel + nativeTrigger → NativePickerWheelNativeTriggerSheet
  * wheel + 自定义 trigger → NativePickerWheelSheet
  */
-export function NativePickerSwiftUI({
-  items,
-  value,
-  placeholder,
-  mode,
-  nativeTrigger,
-  nativeTriggerContent,
-  onValueChange,
-  onOpenChange,
-  open,
-  resolvedNativeHaptics,
-}: {
-  items: ResolvedSelectItemData[];
-  value: string | null | undefined;
-  placeholder?: React.ReactNode;
-  mode: "dropdown" | "wheel";
-  nativeTrigger?: boolean;
-  nativeTriggerContent?: React.ReactNode;
-  onValueChange?: (value: string | null) => void;
-  onOpenChange?: (open: boolean) => void;
-  open?: boolean;
-  resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
-}) {
+export const NativePickerSwiftUI = React.forwardRef<
+  NativePickerSwiftUIHandle,
+  {
+    items: ResolvedSelectItemData[];
+    value: string | null | undefined;
+    placeholder?: React.ReactNode;
+    mode: "dropdown" | "wheel";
+    nativeTrigger?: boolean;
+    nativeTriggerContainerStyle?: StyleProp<ViewStyle>;
+    nativeTriggerContent?: React.ReactNode;
+    nativeTriggerIcon?: SelectNativeTriggerIcon;
+    nativeTriggerLabelProps?: TextProps;
+    onValueChange?: (value: string | null) => void;
+    onOpenChange?: (open: boolean) => void;
+    open?: boolean;
+    resolvedNativeHaptics: ReturnType<typeof useResolvedNativeHaptics>;
+  }
+>((props, ref) => {
+  const [openOverride, setOpenOverride] = React.useState(false);
+
+  const wheelNativeRef = React.useRef<NativePickerSwiftUIHandle>(null);
+  const wheelCustomRef = React.useRef<NativePickerSwiftUIHandle>(null);
+
+  React.useImperativeHandle(ref, () => ({
+    open() {
+      if (props.mode === "dropdown") {
+        setOpenOverride(true);
+      } else if (props.mode === "wheel" && props.nativeTrigger) {
+        wheelNativeRef.current?.open();
+      } else {
+        wheelCustomRef.current?.open();
+      }
+    },
+  }));
+
+  const {
+    items,
+    value,
+    placeholder,
+    mode,
+    nativeTrigger,
+    nativeTriggerContainerStyle,
+    nativeTriggerContent,
+    nativeTriggerIcon,
+    nativeTriggerLabelProps,
+    onValueChange,
+    onOpenChange,
+    open,
+    resolvedNativeHaptics,
+  } = props;
+
   // dropdown 组件
   if (mode === "dropdown") {
     return (
@@ -389,11 +519,17 @@ export function NativePickerSwiftUI({
         value={value}
         placeholder={placeholder}
         onValueChange={onValueChange}
-        onOpenChange={onOpenChange}
-        open={open}
+        onOpenChange={(next) => {
+          if (!next) setOpenOverride(false);
+          onOpenChange?.(next);
+        }}
+        open={openOverride || open}
         resolvedNativeHaptics={resolvedNativeHaptics}
         nativeTrigger={nativeTrigger}
+        nativeTriggerContainerStyle={nativeTriggerContainerStyle}
         nativeTriggerContent={nativeTriggerContent}
+        nativeTriggerIcon={nativeTriggerIcon}
+        nativeTriggerLabelProps={nativeTriggerLabelProps}
       />
     );
   }
@@ -402,8 +538,12 @@ export function NativePickerSwiftUI({
   if (mode === "wheel" && nativeTrigger) {
     return (
       <NativePickerWheelNativeTriggerSheet
+        ref={wheelNativeRef}
         items={items}
+        nativeTriggerContainerStyle={nativeTriggerContainerStyle}
         nativeTriggerContent={nativeTriggerContent}
+        nativeTriggerIcon={nativeTriggerIcon}
+        nativeTriggerLabelProps={nativeTriggerLabelProps}
         value={value}
         placeholder={placeholder}
         onValueChange={onValueChange}
@@ -415,6 +555,7 @@ export function NativePickerSwiftUI({
   // wheel + Sheet + 自定义 trigger
   return (
     <NativePickerWheelSheet
+      ref={wheelCustomRef}
       items={items}
       value={value}
       placeholder={placeholder}
@@ -422,7 +563,7 @@ export function NativePickerSwiftUI({
       resolvedNativeHaptics={resolvedNativeHaptics}
     />
   );
-}
+});
 
 /** iOS 端永不渲染（shouldRenderNativePicker 恒为 false） */
 export const NativePickerDialog: React.FC<any> = () => null;

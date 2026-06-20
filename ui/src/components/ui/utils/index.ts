@@ -302,3 +302,4 @@ export function toARGB(val: unknown): number | undefined {
 export * from "./navigation";
 export * from "./page_sheet_gesture_lock";
 export * from "./screen_overlay_portal";
+export * from "./swift_ui_color";
