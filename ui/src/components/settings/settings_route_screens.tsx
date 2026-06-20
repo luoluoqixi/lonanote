@@ -8,16 +8,11 @@ import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/h
 
 import { TitleBar } from "../titlebar";
 import { NativeList, NativeListNavigationItem, NativeListSection, Text } from "../ui";
-import {
-  AppearanceSettingsPanel,
-  GlobalSettingsPanel,
-  SettingsSyncState,
-  WindowSettingsPanel,
-} from "./settings_panels";
+import { AppearanceSettingsPanel, GlobalSettingsPanel, SettingsSyncState } from "./settings_panels";
 
 const SCREEN_MAX_WIDTH = 960;
 
-type SettingsRouteKey = "global" | "appearance" | "window";
+type SettingsRouteKey = "global" | "appearance";
 
 type SettingsRouteDefinition = {
   Component: () => ReactNode;
@@ -39,12 +34,6 @@ const SETTINGS_ROUTE_DEFINITIONS: SettingsRouteDefinition[] = [
     href: "/settings/appearance" as Href,
     key: "appearance",
     label: "外观设置",
-  },
-  {
-    Component: WindowSettingsPanel,
-    href: "/settings/window" as Href,
-    key: "window",
-    label: "窗口设置",
   },
 ];
 
@@ -154,8 +143,6 @@ function useSettingsSectionSyncState(sectionKey: SettingsRouteKey): SettingsSync
         { error: colorSchemeSettingsState.error, isLoading: colorSchemeSettingsState.isLoading },
         { error: uiPreferencesState.error, isLoading: uiPreferencesState.isLoading },
       );
-    case "window":
-      return { error: uiPreferencesState.error, isLoading: uiPreferencesState.isLoading };
     default:
       return { error: globalSettingsState.error, isLoading: globalSettingsState.isLoading };
   }
@@ -220,9 +207,6 @@ export function GlobalSettingsScreen() {
 export { getSettingsMobileHeaderTitle };
 export function AppearanceSettingsScreen() {
   return <SettingsSectionScreen sectionKey="appearance" />;
-}
-export function WindowSettingsScreen() {
-  return <SettingsSectionScreen sectionKey="window" />;
 }
 
 const styles = StyleSheet.create({

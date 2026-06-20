@@ -58,10 +58,6 @@ function formatZoomFactor(zoomFactor: number) {
   return `${Math.round(zoomFactor * 100)}%`;
 }
 
-function formatAccentColor(accentColor: AccentColorSetting) {
-  return getAccentColorPreset(accentColor).label;
-}
-
 function formatWindowStateSummary(
   windowState: {
     height: number;
@@ -362,12 +358,7 @@ export function GlobalSettingsPanel() {
 }
 
 export function AppearanceSettingsPanel() {
-  const {
-    preferredColorScheme,
-    resolvedColorScheme,
-    setPreferredColorSchemeAndSave,
-    systemColorScheme,
-  } = useColorSchemeSettings();
+  const { preferredColorScheme, setPreferredColorSchemeAndSave } = useColorSchemeSettings();
   const { preferences, updateAndSave } = useUiPreferences();
 
   const accentColorOptions: SelectOption[] = (
@@ -425,16 +416,6 @@ export function AppearanceSettingsPanel() {
             }}
             title="主题模式"
           />
-        </NativeListSection>
-
-        <NativeListSection>
-          <NativeListItem>
-            <Text color="$color10" fontSize="$3">
-              系统：{systemColorScheme} / 偏好：{preferredColorScheme} / 当前：
-              {resolvedColorScheme} / 主题色：
-              {formatAccentColor(preferences.appearance.accentColor)}
-            </Text>
-          </NativeListItem>
         </NativeListSection>
 
         <NativeListSection title="桌面缩放">
