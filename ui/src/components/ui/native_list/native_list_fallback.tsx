@@ -1,5 +1,6 @@
+import { HeaderHeightContext } from "@react-navigation/elements";
 import { ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
-import { Children, Fragment, type ReactNode } from "react";
+import { Children, Fragment, type ReactNode, useContext } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -270,13 +271,17 @@ export function NativeListRoot({
 }: NativeListRootProps) {
   void _native;
   const {
+    alwaysBounceVertical,
+    contentInset,
     contentInsetAdjustmentBehavior,
+    contentOffset,
     keyboardShouldPersistTaps,
     nestedScrollEnabled,
     scrollIndicatorInsets,
     showsVerticalScrollIndicator,
     ...scrollViewProps
   } = rest;
+  const headerHeight = useContext(HeaderHeightContext) ?? 0;
   const insets = useSafeAreaInsets();
   const {
     active: insideTrueSheet,
@@ -309,11 +314,22 @@ export function NativeListRoot({
           safeAreaBottom: insets.bottom,
         })
       : undefined;
+  const shouldUseManualHeaderSpacing =
+    os() === "ios" &&
+    !insideTrueSheet &&
+    headerHeight > 0 &&
+    contentInset == null &&
+    contentInsetAdjustmentBehavior == null &&
+    contentOffset == null;
 
   return (
     <ScrollView
+      alwaysBounceVertical={alwaysBounceVertical ?? os() === "ios"}
+      contentInset={contentInset}
       contentContainerStyle={[
-        styles.rootContent,
+        styles.scrollRootContent,
+        !insideTrueSheet ? styles.scrollViewportFill : styles.scrollViewportWrap,
+        shouldUseManualHeaderSpacing ? { paddingTop: headerHeight + 8 } : null,
         bottomPadding != null ? { paddingBottom: bottomPadding } : null,
         contentContainerStyle,
       ]}
@@ -322,8 +338,11 @@ export function NativeListRoot({
           ? automaticContentInsetAdjustment
             ? "automatic"
             : "never"
-          : contentInsetAdjustmentBehavior
+          : shouldUseManualHeaderSpacing
+            ? "never"
+            : contentInsetAdjustmentBehavior
       }
+      contentOffset={contentOffset}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps ?? "handled"}
       nestedScrollEnabled={nestedScrollEnabled ?? true}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator ?? true}
@@ -366,6 +385,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     width: "100%",
+  },
+  scrollRootContent: {
+    gap: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    width: "100%",
+  },
+  scrollViewportFill: {
+    flexGrow: 1,
+  },
+  scrollViewportWrap: {
+    flexGrow: 0,
   },
   rowContainer: {
     minHeight: 56,
