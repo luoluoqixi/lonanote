@@ -47,7 +47,7 @@ import { useTrueSheetScrollLayout } from "../true_sheet/true_sheet_scroll_contex
 import { toSwiftUIHexColor, triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import {
   NativeListActionItem as FallbackActionItem,
-  NativeListButtonItem as FallbackButtonItem,
+  NativeListCustomItem as FallbackCustomItem,
   NativeListItem as FallbackItem,
   NativeListNavigationItem as FallbackNavigationItem,
   NativeListRoot as FallbackRoot,
@@ -58,7 +58,9 @@ import {
 import type {
   NativeListActionItemProps,
   NativeListButtonItemProps,
+  NativeListCustomItemProps,
   NativeListItemBaseProps,
+  NativeListItemProps,
   NativeListNavigationItemProps,
   NativeListRootProps,
   NativeListSectionProps,
@@ -482,9 +484,38 @@ export function NativeListButtonItem({
   btnTint,
   ...itemProps
 }: NativeListButtonItemProps) {
+  // const theme = useTheme();
+  // const defaultColor = theme.accent10.val;
+  const defaultColor = false;
+  let resolveColor = btnTint ?? defaultColor;
+  if (typeof resolveColor === "string") {
+    resolveColor = toSwiftUIHexColor(resolveColor) ?? false;
+  }
+
+  return (
+    <NativeListItem
+      {...itemProps}
+      title={title}
+      disabled={disabled}
+      onPress={onPress}
+      titleAlign={titleAlign}
+      value={undefined}
+      btnTint={resolveColor}
+    />
+  );
+}
+
+export function NativeListItem({
+  title,
+  onPress,
+  disabled,
+  titleAlign,
+  btnTint,
+  ...itemProps
+}: NativeListItemProps) {
   if (!useNativeListEnabled() || !supportsNativeTextRow(itemProps.subtitle)) {
     return (
-      <FallbackButtonItem
+      <FallbackItem
         title={title}
         onPress={onPress}
         disabled={disabled}
@@ -495,14 +526,6 @@ export function NativeListButtonItem({
     );
   }
 
-  // const theme = useTheme();
-  // const defaultColor = theme.accent10.val;
-  const defaultColor = false;
-  let resolveColor = btnTint ?? defaultColor;
-  if (typeof resolveColor === "string") {
-    resolveColor = toSwiftUIHexColor(resolveColor) ?? false;
-  }
-
   return (
     <NativePressRow
       {...itemProps}
@@ -511,7 +534,7 @@ export function NativeListButtonItem({
       onPress={onPress}
       titleAlign={titleAlign}
       value={undefined}
-      btnTint={resolveColor}
+      btnTint={btnTint}
       preserveLeadingAnchor={titleAlign === "center"}
     />
   );
@@ -606,22 +629,17 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
   );
 }
 
-export function NativeListItem({
+export function NativeListCustomItem({
   children,
   disabled,
   nativeHaptics,
   onPress,
-}: {
-  children?: ReactNode;
-  disabled?: boolean;
-  nativeHaptics?: NativeListItemBaseProps["nativeHaptics"];
-  onPress?: () => void;
-}) {
+}: NativeListCustomItemProps) {
   if (!useNativeListEnabled()) {
     return (
-      <FallbackItem disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
+      <FallbackCustomItem disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
         {children}
-      </FallbackItem>
+      </FallbackCustomItem>
     );
   }
 

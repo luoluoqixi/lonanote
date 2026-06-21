@@ -30,11 +30,20 @@ export type NativeListSelectItemProps = NativeListItemBaseProps & {
   selectProps: Omit<SelectProps, "native" | "nativeTrigger">;
 };
 
-export type NativeListButtonItemProps = NativeListItemBaseProps & {
+export type NativeListItemProps = NativeListItemBaseProps & {
   title: string;
   onPress?: () => void;
   disabled?: boolean;
   titleAlign?: "center" | "right" | "left";
+};
+
+export type NativeListButtonItemProps = NativeListItemProps;
+
+export type NativeListCustomItemProps = {
+  children?: ReactNode;
+  disabled?: boolean;
+  nativeHaptics?: NativeHapticsSetting;
+  onPress?: () => void;
 };
 
 /** Section props */

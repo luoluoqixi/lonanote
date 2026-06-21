@@ -22,7 +22,9 @@ import { triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import type {
   NativeListActionItemProps,
   NativeListButtonItemProps,
+  NativeListCustomItemProps,
   NativeListItemBaseProps,
+  NativeListItemProps,
   NativeListNavigationItemProps,
   NativeListRootProps,
   NativeListSectionProps,
@@ -74,7 +76,7 @@ function FallbackSectionItem({ children }: { children: ReactNode }) {
 
 type NativeListRowProps = NativeListItemBaseProps & {
   iconAfter?: ReactNode;
-  titleColor?: string;
+  titleColor?: string | false;
 };
 
 /**
@@ -239,14 +241,35 @@ export function NativeListButtonItem({
 }: NativeListButtonItemProps) {
   const theme = useTheme();
   const defaultColor = theme.accent10.val;
+  const resolveColor = btnTint ?? defaultColor;
 
+  return (
+    <NativeListItem
+      {...itemProps}
+      btnTint={resolveColor}
+      titleAlign={titleAlign}
+      title={title}
+      disabled={disabled}
+      onPress={onPress}
+    />
+  );
+}
+
+export function NativeListItem({
+  title,
+  onPress,
+  disabled,
+  titleAlign = "center",
+  btnTint,
+  ...itemProps
+}: NativeListItemProps) {
   return (
     <FallbackSectionItem>
       <NativeListRow
         {...itemProps}
         btnTint={btnTint}
         titleAlign={titleAlign}
-        titleColor={typeof btnTint === "string" ? btnTint : defaultColor}
+        titleColor={typeof btnTint !== "boolean" ? btnTint : undefined}
         title={title}
         disabled={disabled}
         onPress={onPress}
@@ -291,17 +314,12 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
   );
 }
 
-export function NativeListItem({
+export function NativeListCustomItem({
   children,
   disabled,
   nativeHaptics,
   onPress,
-}: {
-  children?: ReactNode;
-  disabled?: boolean;
-  nativeHaptics?: NativeListItemBaseProps["nativeHaptics"];
-  onPress?: () => void;
-}) {
+}: NativeListCustomItemProps) {
   return (
     <FallbackSectionItem>
       <FallbackRowContainer disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
