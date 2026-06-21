@@ -256,7 +256,7 @@ export function NativeListRoot({
   children,
   contentContainerStyle,
   native: _native,
-  scrollable = true,
+  scrollable = false,
   style,
   ...rest
 }: NativeListRootProps) {
