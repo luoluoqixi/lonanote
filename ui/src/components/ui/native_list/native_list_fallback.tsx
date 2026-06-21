@@ -1,6 +1,9 @@
 import { ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
 import { Children, Fragment, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { os } from "@/api/common/platform";
 
 import { ListGroup } from "../list_group";
 import { ListItem } from "../list_item";
@@ -8,6 +11,11 @@ import { Select } from "../select";
 import { Separator } from "../separator";
 import { Switch } from "../switch";
 import { Text } from "../text";
+import {
+  getTrueSheetScrollBottomPadding,
+  getTrueSheetScrollIndicatorBottomInset,
+} from "../true_sheet/sheet_scroll_layout";
+import { useTrueSheetScrollLayout } from "../true_sheet/true_sheet_scroll_context";
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import type {
   NativeListActionItemProps,
@@ -256,11 +264,26 @@ export function NativeListRoot({
   children,
   contentContainerStyle,
   native: _native,
-  scrollable = false,
+  scrollable = true,
   style,
   ...rest
 }: NativeListRootProps) {
   void _native;
+  const {
+    contentInsetAdjustmentBehavior,
+    keyboardShouldPersistTaps,
+    nestedScrollEnabled,
+    scrollIndicatorInsets,
+    showsVerticalScrollIndicator,
+    ...scrollViewProps
+  } = rest;
+  const insets = useSafeAreaInsets();
+  const {
+    active: insideTrueSheet,
+    automaticContentInsetAdjustment,
+    insetAdjustment,
+    nativeScrollInsetsApplied,
+  } = useTrueSheetScrollLayout();
 
   if (!scrollable) {
     return (
@@ -270,14 +293,50 @@ export function NativeListRoot({
     );
   }
 
+  const bottomPadding =
+    insideTrueSheet && os() === "ios"
+      ? getTrueSheetScrollBottomPadding({
+          insetAdjustment,
+          nativeScrollInsetsApplied,
+          safeAreaBottom: insets.bottom,
+        })
+      : undefined;
+  const indicatorBottomInset =
+    insideTrueSheet && os() === "ios"
+      ? getTrueSheetScrollIndicatorBottomInset({
+          automaticContentInsetAdjustment,
+          nativeScrollInsetsApplied,
+          safeAreaBottom: insets.bottom,
+        })
+      : undefined;
+
   return (
     <ScrollView
-      contentContainerStyle={[styles.rootContent, contentContainerStyle]}
-      keyboardShouldPersistTaps={rest.keyboardShouldPersistTaps ?? "handled"}
-      nestedScrollEnabled={rest.nestedScrollEnabled ?? true}
-      showsVerticalScrollIndicator={rest.showsVerticalScrollIndicator ?? true}
+      contentContainerStyle={[
+        styles.rootContent,
+        bottomPadding != null ? { paddingBottom: bottomPadding } : null,
+        contentContainerStyle,
+      ]}
+      contentInsetAdjustmentBehavior={
+        insideTrueSheet && os() === "ios"
+          ? automaticContentInsetAdjustment
+            ? "automatic"
+            : "never"
+          : contentInsetAdjustmentBehavior
+      }
+      keyboardShouldPersistTaps={keyboardShouldPersistTaps ?? "handled"}
+      nestedScrollEnabled={nestedScrollEnabled ?? true}
+      showsVerticalScrollIndicator={showsVerticalScrollIndicator ?? true}
+      scrollIndicatorInsets={
+        indicatorBottomInset != null
+          ? {
+              ...scrollIndicatorInsets,
+              bottom: indicatorBottomInset,
+            }
+          : scrollIndicatorInsets
+      }
       style={[styles.root, style]}
-      {...rest}
+      {...scrollViewProps}
     >
       {children}
     </ScrollView>
@@ -304,6 +363,7 @@ const styles = StyleSheet.create({
   rootContent: {
     gap: 16,
     overflow: "hidden",
+    paddingHorizontal: 14,
     paddingVertical: 8,
     width: "100%",
   },

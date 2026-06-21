@@ -75,7 +75,7 @@ export function DebugHomePage({
   };
 
   return (
-    <NativeList native={useNativeList} scrollable={false}>
+    <NativeList native={useNativeList}>
       <NativeListSection title="调试分区">
         {DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => (
           <NativeListNavigationItem

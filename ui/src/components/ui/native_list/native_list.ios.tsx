@@ -12,6 +12,7 @@ import {
 } from "@expo/ui/swift-ui";
 import {
   buttonStyle,
+  contentMargins,
   disabled as disabledModifier,
   font,
   foregroundStyle,
@@ -22,16 +23,23 @@ import {
   listStyle,
   padding,
   scrollContentBackground,
+  scrollDisabled,
   tint,
 } from "@expo/ui/swift-ui/modifiers";
 import { type ReactNode, createContext, useContext, useRef } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "tamagui";
 
 import { NativePickerSwiftUI } from "../select/native_picker";
 import type { NativePickerSwiftUIHandle } from "../select/native_picker";
 import { resolveSelectItemGroups } from "../select/select_grouping";
 import { Switch } from "../switch";
+import {
+  getTrueSheetScrollBottomPadding,
+  getTrueSheetScrollIndicatorBottomInset,
+} from "../true_sheet/sheet_scroll_layout";
+import { useTrueSheetScrollLayout } from "../true_sheet/true_sheet_scroll_context";
 import { toSwiftUIHexColor, triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import {
   NativeListActionItem as FallbackActionItem,
@@ -232,16 +240,45 @@ function NativePressRow({
   );
 }
 
-function NativeListRoot({ children, native = true, style, ...fallbackProps }: NativeListRootProps) {
+function NativeListRoot({
+  children,
+  native = true,
+  style,
+  scrollable = true,
+  ...fallbackProps
+}: NativeListRootProps) {
+  const insets = useSafeAreaInsets();
+  const {
+    active: insideTrueSheet,
+    automaticContentInsetAdjustment,
+    insetAdjustment,
+    nativeScrollInsetsApplied,
+  } = useTrueSheetScrollLayout();
+
   if (!native) {
     return (
       <NativeListContext.Provider value={{ native: false }}>
-        <FallbackRoot {...fallbackProps} style={style}>
+        <FallbackRoot {...fallbackProps} style={style} scrollable={scrollable}>
           {children}
         </FallbackRoot>
       </NativeListContext.Provider>
     );
   }
+
+  const bottomPadding = insideTrueSheet
+    ? getTrueSheetScrollBottomPadding({
+        insetAdjustment,
+        nativeScrollInsetsApplied,
+        safeAreaBottom: insets.bottom,
+      })
+    : 0;
+  const indicatorBottomInset = insideTrueSheet
+    ? getTrueSheetScrollIndicatorBottomInset({
+        automaticContentInsetAdjustment,
+        nativeScrollInsetsApplied,
+        safeAreaBottom: insets.bottom,
+      })
+    : 0;
 
   return (
     <NativeListContext.Provider value={{ native: true }}>
@@ -251,6 +288,25 @@ function NativeListRoot({ children, native = true, style, ...fallbackProps }: Na
             listStyle("insetGrouped"),
             listSectionSpacing("compact"),
             scrollContentBackground("hidden"),
+            ...(insideTrueSheet && bottomPadding > 0
+              ? [
+                  contentMargins({
+                    edges: "bottom",
+                    length: bottomPadding,
+                    placement: "scrollContent",
+                  }),
+                ]
+              : []),
+            ...(insideTrueSheet && indicatorBottomInset > 0
+              ? [
+                  contentMargins({
+                    edges: "bottom",
+                    length: indicatorBottomInset,
+                    placement: "scrollIndicators",
+                  }),
+                ]
+              : []),
+            scrollDisabled(!scrollable),
           ]}
         >
           {children}

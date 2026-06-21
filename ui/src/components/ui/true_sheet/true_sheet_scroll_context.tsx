@@ -2,6 +2,7 @@ import type { InsetAdjustment } from "@lodev09/react-native-true-sheet";
 import { type ReactNode, createContext, useContext, useMemo } from "react";
 
 export type TrueSheetScrollLayoutConfig = {
+  active: boolean;
   insetAdjustment: InsetAdjustment;
   /**
    * 是否让 ScrollView 使用 iOS 原生 `contentInsetAdjustmentBehavior="automatic"`。
@@ -30,6 +31,7 @@ export function TrueSheetScrollLayoutProvider({
 }) {
   const value = useMemo(
     () => ({
+      active: true,
       automaticContentInsetAdjustment,
       insetAdjustment,
       nativeScrollInsetsApplied,
@@ -47,6 +49,7 @@ export function TrueSheetScrollLayoutProvider({
 export function useTrueSheetScrollLayout(): TrueSheetScrollLayoutConfig {
   return (
     useContext(TrueSheetScrollLayoutContext) ?? {
+      active: false,
       automaticContentInsetAdjustment: false,
       insetAdjustment: "automatic",
       nativeScrollInsetsApplied: false,

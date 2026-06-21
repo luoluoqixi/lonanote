@@ -5,7 +5,6 @@ import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb } from "@/api/common";
 import { TrueSheetPanel } from "@/components/ui/true_sheet/panel";
-import { TrueSheetScrollContent } from "@/components/ui/true_sheet/scroll_content";
 import {
   TrueSheetInnerStack,
   TrueSheetStackHost,
@@ -43,29 +42,23 @@ function IosDebugHomeRoute() {
   }, []);
 
   return (
-    <TrueSheetScrollContent>
-      <DebugHomePage
-        currentSheetMode="trueSheet"
-        onOpenPanel={(key) => {
-          void openDebugSection(key).then((handled) => {
-            if (!handled) {
-              navigation.navigate(key);
-            }
-          });
-        }}
-        onSheetModeChange={handleModeChange}
-      />
-    </TrueSheetScrollContent>
+    <DebugHomePage
+      currentSheetMode="trueSheet"
+      onOpenPanel={(key) => {
+        void openDebugSection(key).then((handled) => {
+          if (!handled) {
+            navigation.navigate(key);
+          }
+        });
+      }}
+      onSheetModeChange={handleModeChange}
+    />
   );
 }
 
 function createIosDebugSectionRoute(key: DebugTabKey) {
   return function IosDebugSectionRoute() {
-    return (
-      <TrueSheetScrollContent>
-        <DebugSectionPage sectionKey={key} />
-      </TrueSheetScrollContent>
-    );
+    return <DebugSectionPage sectionKey={key} />;
   };
 }
 
@@ -112,19 +105,17 @@ function AndroidDebugHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) 
   }, []);
 
   return (
-    <TrueSheetScrollContent>
-      <DebugHomePage
-        currentSheetMode="trueSheet"
-        onOpenPanel={(key) => {
-          void openDebugSection(key).then((handled) => {
-            if (!handled) {
-              onNavigate(key);
-            }
-          });
-        }}
-        onSheetModeChange={handleModeChange}
-      />
-    </TrueSheetScrollContent>
+    <DebugHomePage
+      currentSheetMode="trueSheet"
+      onOpenPanel={(key) => {
+        void openDebugSection(key).then((handled) => {
+          if (!handled) {
+            onNavigate(key);
+          }
+        });
+      }}
+      onSheetModeChange={handleModeChange}
+    />
   );
 }
 
@@ -146,13 +137,11 @@ function AndroidDebugTrueSheetHost() {
       overlayPortalHostName={DEBUG_OVERLAY_PORTAL_HOST}
       title={isHome ? "调试面板" : (sectionDefinition?.label ?? "调试")}
     >
-      <TrueSheetScrollContent>
-        {isHome ? (
-          <AndroidDebugHomeRoute onNavigate={(key) => setScreen(key)} />
-        ) : (
-          <DebugSectionPage sectionKey={screen} />
-        )}
-      </TrueSheetScrollContent>
+      {isHome ? (
+        <AndroidDebugHomeRoute onNavigate={(key) => setScreen(key)} />
+      ) : (
+        <DebugSectionPage sectionKey={screen} />
+      )}
     </TrueSheetPanel>
   );
 }
@@ -219,10 +208,8 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       }}
       title={!isIos ? definition.label : undefined}
     >
-      <TrueSheetScrollContent>
-        {isIos ? <TrueSheetToolbarHeader title={definition.label} transparent /> : null}
-        <DebugSectionPage sectionKey={sectionKey} />
-      </TrueSheetScrollContent>
+      {isIos ? <TrueSheetToolbarHeader title={definition.label} transparent /> : null}
+      <DebugSectionPage sectionKey={sectionKey} />
     </TrueSheetPanel>
   );
 }
