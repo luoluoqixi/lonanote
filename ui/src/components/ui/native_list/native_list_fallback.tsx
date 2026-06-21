@@ -328,7 +328,9 @@ export function NativeListRoot({
       contentInset={contentInset}
       contentContainerStyle={[
         styles.scrollRootContent,
-        !insideTrueSheet ? styles.scrollViewportFill : styles.scrollViewportWrap,
+        insideTrueSheet
+          ? [styles.scrollViewportWrap, styles.scrollContentClip]
+          : styles.scrollViewportFill,
         shouldUseManualHeaderSpacing ? { paddingTop: headerHeight + 8 } : null,
         bottomPadding != null ? { paddingBottom: bottomPadding } : null,
         contentContainerStyle,
@@ -391,6 +393,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     width: "100%",
+  },
+  scrollContentClip: {
+    overflow: "hidden",
   },
   scrollViewportFill: {
     flexGrow: 1,
