@@ -41,7 +41,6 @@ export function DebugHomePage({
   const [nestedSectionSheets, setNestedSectionSheets] = useState(nestedSectionSheetsFromStore);
   const [dismissVersion, setDismissVersion] = useState(getDebugSectionSheetDismissVersion);
   const nestedSectionDetentLevel = useDebugNestedSectionDetentLevel();
-  const [useNativeList, setUseNativeList] = useState(true);
   const inTrueSheet = onOpenPanel != null;
 
   useEffect(() => {
@@ -75,7 +74,7 @@ export function DebugHomePage({
   };
 
   return (
-    <NativeList native={useNativeList}>
+    <NativeList>
       <NativeListSection title="调试分区">
         {DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => (
           <NativeListNavigationItem
@@ -148,17 +147,6 @@ export function DebugHomePage({
           />
         </NativeListSection>
       ) : null}
-
-      <NativeListSection title="展示模式">
-        <NativeListSwitchItem
-          switchProps={{
-            checked: useNativeList,
-            onCheckedChange: setUseNativeList,
-          }}
-          subtitle="关闭后 iOS 使用 list_group 回退模式"
-          title="使用原生列表"
-        />
-      </NativeListSection>
     </NativeList>
   );
 }
