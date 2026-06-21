@@ -13,7 +13,7 @@ import { Select } from "../select";
 import { Separator } from "../separator";
 import { Switch } from "../switch";
 import { SizableText, Text } from "../text";
-import { AndroidClippedScrollView } from "../true_sheet/android_clipped_scroll_view";
+// import { AndroidClippedScrollView } from "../true_sheet/android_clipped_scroll_view";
 import {
   getTrueSheetScrollBottomPadding,
   getTrueSheetScrollIndicatorBottomInset,
@@ -410,7 +410,8 @@ export function NativeListRoot({
       safeAreaBottom: insets.bottom,
     });
 
-    const SheetScrollView = os() === "android" ? AndroidClippedScrollView : ScrollView;
+    // const SheetScrollView = os() === "android" ? AndroidClippedScrollView : ScrollView;
+    const SheetScrollView = ScrollView;
 
     return (
       <SheetScrollView
