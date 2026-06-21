@@ -6,6 +6,7 @@ import {
   Button,
   NativeList,
   NativeListCustomItem,
+  NativeListNavigationItem,
   NativeListSection,
   NativeListSelectItem,
   NativeListSwitchItem,
@@ -49,9 +50,9 @@ function updateSettingsSection<K extends keyof GlobalSettings>(
   };
 }
 
-function clampAutoSaveInterval(nextValue: number) {
-  return Math.min(30, Math.max(0.5, Number(nextValue.toFixed(1))));
-}
+// function clampAutoSaveInterval(nextValue: number) {
+//   return Math.min(30, Math.max(0.5, Number(nextValue.toFixed(1))));
+// }
 
 function formatWindowStateSummary(
   windowState: {
@@ -95,44 +96,44 @@ export function SettingsStatusBadge({ children, tone }: StatusBadgeProps) {
   );
 }
 
-type StepperRowProps = {
-  decreaseLabel?: string;
-  increaseLabel?: string;
-  label: string;
-  onDecrease: () => void;
-  onIncrease: () => void;
-  valueLabel: string;
-};
+// type StepperRowProps = {
+//   decreaseLabel?: string;
+//   increaseLabel?: string;
+//   label: string;
+//   onDecrease: () => void;
+//   onIncrease: () => void;
+//   valueLabel: string;
+// };
 
-function SettingsStepperRowContent({
-  decreaseLabel = "-0.5s",
-  increaseLabel = "+0.5s",
-  label,
-  onDecrease,
-  onIncrease,
-  valueLabel,
-}: StepperRowProps) {
-  return (
-    <View style={styles.customRow}>
-      <View style={styles.customRowText}>
-        <Text fontSize="$5" fontWeight="500">
-          {label}
-        </Text>
-        <Text color="$color10" fontSize="$3">
-          {valueLabel}
-        </Text>
-      </View>
-      <View style={styles.buttonRow}>
-        <Button aria-label={`${label}${decreaseLabel}`} onPress={onDecrease} variant="outlined">
-          -
-        </Button>
-        <Button aria-label={`${label}${increaseLabel}`} onPress={onIncrease} variant="outlined">
-          +
-        </Button>
-      </View>
-    </View>
-  );
-}
+// function SettingsStepperRowContent({
+//   decreaseLabel = "-0.5s",
+//   increaseLabel = "+0.5s",
+//   label,
+//   onDecrease,
+//   onIncrease,
+//   valueLabel,
+// }: StepperRowProps) {
+//   return (
+//     <View style={styles.customRow}>
+//       <View style={styles.customRowText}>
+//         <Text fontSize="$5" fontWeight="500">
+//           {label}
+//         </Text>
+//         <Text color="$color10" fontSize="$3">
+//           {valueLabel}
+//         </Text>
+//       </View>
+//       <View style={styles.buttonRow}>
+//         <Button aria-label={`${label}${decreaseLabel}`} onPress={onDecrease} variant="outlined">
+//           -
+//         </Button>
+//         <Button aria-label={`${label}${increaseLabel}`} onPress={onIncrease} variant="outlined">
+//           +
+//         </Button>
+//       </View>
+//     </View>
+//   );
+// }
 
 type SummaryActionRowProps = {
   actionLabel: string;
@@ -314,7 +315,14 @@ export function GlobalSettingsPanel() {
         </NativeListSection>
 
         <NativeListSection>
-          <NativeListCustomItem>
+          <NativeListNavigationItem
+            title="自动保存间隔"
+            value={`${settings.editorDefaults.autoSaveIntervalSeconds.toFixed(1)} 秒`}
+            onPress={() => {
+              console.log("TODO");
+            }}
+          />
+          {/* <NativeListCustomItem>
             <SettingsStepperRowContent
               label="自动保存间隔"
               onDecrease={() => {
@@ -345,7 +353,7 @@ export function GlobalSettingsPanel() {
               }}
               valueLabel={`${settings.editorDefaults.autoSaveIntervalSeconds.toFixed(1)} 秒`}
             />
-          </NativeListCustomItem>
+          </NativeListCustomItem> */}
         </NativeListSection>
       </NativeList>
     </View>

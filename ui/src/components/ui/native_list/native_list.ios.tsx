@@ -513,7 +513,6 @@ export function NativeListItem({
       disabled={disabled}
       onPress={onPress}
       titleAlign={titleAlign}
-      value={undefined}
       btnTint={btnTint}
       preserveLeadingAnchor={titleAlign === "center"}
     />

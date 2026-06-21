@@ -1,5 +1,7 @@
 import { StyleSheet } from "react-native";
 
+import { os } from "@/api/common/platform";
+import { ScrollView } from "@/components/ui";
 import { TrueSheetScrollContent } from "@/components/ui/true_sheet/scroll_content";
 
 import { type DebugTabKey, getDebugPanelRouteDefinition } from "../routes";
@@ -25,6 +27,18 @@ export function DebugSectionPage({
     );
   }
 
+  if (definition.presentation === "static") {
+    return (
+      <ScrollView
+        contentInsetAdjustmentBehavior={os() === "ios" ? "automatic" : "never"}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator
+        style={styles.pageScrollView}
+      >
+        <SectionPage />
+      </ScrollView>
+    );
+  }
   return <SectionPage />;
 }
 
@@ -33,6 +47,10 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   staticScrollView: {
+    flex: 1,
+    minHeight: 0,
+  },
+  pageScrollView: {
     flex: 1,
     minHeight: 0,
   },
