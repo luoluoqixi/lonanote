@@ -58,7 +58,7 @@ function IosDebugHomeRoute() {
 
 function createIosDebugSectionRoute(key: DebugTabKey) {
   return function IosDebugSectionRoute() {
-    return <DebugSectionPage sectionKey={key} />;
+    return <DebugSectionPage layoutHost="trueSheet" sectionKey={key} />;
   };
 }
 
@@ -140,7 +140,7 @@ function AndroidDebugTrueSheetHost() {
       {isHome ? (
         <AndroidDebugHomeRoute onNavigate={(key) => setScreen(key)} />
       ) : (
-        <DebugSectionPage sectionKey={screen} />
+        <DebugSectionPage layoutHost="trueSheet" sectionKey={screen} />
       )}
     </TrueSheetPanel>
   );
@@ -209,7 +209,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       title={!isIos ? definition.label : undefined}
     >
       {isIos ? <TrueSheetToolbarHeader title={definition.label} transparent /> : null}
-      <DebugSectionPage sectionKey={sectionKey} />
+      <DebugSectionPage layoutHost="trueSheet" sectionKey={sectionKey} />
     </TrueSheetPanel>
   );
 }
