@@ -140,17 +140,17 @@ export function DebugWidePanelHost() {
         aria-label="调试面板导航"
         contentProps={{ style: styles.tabContent }}
         items={DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => {
-          const SectionComponent = definition.Component;
+          const SectionPage = definition.Page;
 
           return {
             content:
               definition.presentation === "static" ? (
                 <DebugTabStaticPane>
-                  <SectionComponent />
+                  <SectionPage />
                 </DebugTabStaticPane>
               ) : (
                 <DebugTabScrollPane>
-                  <SectionComponent />
+                  <SectionPage />
                 </DebugTabScrollPane>
               ),
             label: definition.label,

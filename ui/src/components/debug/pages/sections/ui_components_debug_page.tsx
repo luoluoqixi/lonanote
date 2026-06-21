@@ -71,7 +71,7 @@ function DemoRow({ children }: { children: ReactNode }) {
   return <View style={styles.row}>{children}</View>;
 }
 
-export function UiComponentsDebugPanel() {
+export function UiComponentsDebugPage() {
   const { toast } = useToast();
   const [checkboxChecked, setCheckboxChecked] = useState(true);
   const [forceNativeHaptics, setForceNativeHaptics] = useState(true);

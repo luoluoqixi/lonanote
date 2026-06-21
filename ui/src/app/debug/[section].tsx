@@ -1,6 +1,6 @@
 import { Redirect, useLocalSearchParams } from "expo-router";
 
-import { DebugSectionScreen, isDebugFeatureEnabled, isDebugTabKey } from "@/components/debug";
+import { DebugSectionPage, isDebugFeatureEnabled, isDebugTabKey } from "@/components/debug";
 
 export default function DebugFullPageScreen() {
   const { section } = useLocalSearchParams<{ section: string | string[] }>();
@@ -10,5 +10,5 @@ export default function DebugFullPageScreen() {
     return <Redirect href="/" />;
   }
 
-  return <DebugSectionScreen layoutHost="screen" sectionKey={sectionKey} />;
+  return <DebugSectionPage sectionKey={sectionKey} />;
 }

@@ -1,8 +1,7 @@
 export { DEBUG_ALLOW_IN_RELEASE, isDebugFeatureEnabled } from "./release_gate";
-export * from "./path_debug_panel";
+export * from "./debug_panel_sheet_state";
 export * from "./routes";
 export * from "./runtime";
-export * from "./screens";
-export * from "./true_sheet/api";
-export * from "./ui_components_panel";
-export * from "./workspace_debug_panel";
+export * from "./pages/debug_home_page";
+export * from "./pages/debug_section_page";
+export * from "./true_sheet";

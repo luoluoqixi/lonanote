@@ -1,33 +1,104 @@
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { router } from "expo-router";
+import { useSyncExternalStore } from "react";
 
 import { dismissTrueSheet, presentTrueSheet, resizeTrueSheet } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
-import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "../routes";
-import {
-  getDebugNestedSectionDetentLevel,
-  getDebugSectionsAsNestedSheets,
-} from "./nested_sections_preferences";
+import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "./routes";
+
+/** 嵌套分区 True Sheet 三档高度（与 `presentTrueSheet` 的 detentIndex 一一对应）。 */
+export const DEBUG_NESTED_SECTION_SHEET_DETENTS = [0.5, 0.75, 1] as const;
+
+export type DebugNestedSectionDetentLevel = 0 | 1 | 2;
+
+export const DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN = 0 satisfies DebugNestedSectionDetentLevel;
+export const DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX = 2 satisfies DebugNestedSectionDetentLevel;
+
+const DEBUG_NESTED_SECTION_DETENT_LABELS = ["偏低 (50%)", "中等 (75%)", "全屏 (100%)"] as const;
+
+function clampDebugNestedSectionDetentLevel(level: number): DebugNestedSectionDetentLevel {
+  const rounded = Math.round(level);
+
+  if (rounded <= DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN) {
+    return DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN;
+  }
+
+  if (rounded >= DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX) {
+    return DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX;
+  }
+
+  return rounded as DebugNestedSectionDetentLevel;
+}
+
+export function getDebugNestedSectionDetentLabel(level: DebugNestedSectionDetentLevel): string {
+  return DEBUG_NESTED_SECTION_DETENT_LABELS[level];
+}
+
+let debugSectionsAsNestedSheets = false;
+let debugNestedSectionDetentLevel: DebugNestedSectionDetentLevel = 0;
+const preferenceListeners = new Set<() => void>();
+
+function emitNestedSectionsPreferenceChange() {
+  for (const listener of preferenceListeners) {
+    listener();
+  }
+}
+
+export function getDebugSectionsAsNestedSheets() {
+  return debugSectionsAsNestedSheets;
+}
+
+export function setDebugSectionsAsNestedSheets(enabled: boolean) {
+  if (debugSectionsAsNestedSheets === enabled) {
+    return;
+  }
+
+  debugSectionsAsNestedSheets = enabled;
+  emitNestedSectionsPreferenceChange();
+}
+
+export function getDebugNestedSectionDetentLevel(): DebugNestedSectionDetentLevel {
+  return debugNestedSectionDetentLevel;
+}
+
+export function setDebugNestedSectionDetentLevel(level: number) {
+  const clamped = clampDebugNestedSectionDetentLevel(level);
+
+  if (debugNestedSectionDetentLevel === clamped) {
+    return;
+  }
+
+  debugNestedSectionDetentLevel = clamped;
+  emitNestedSectionsPreferenceChange();
+}
+
+function subscribeDebugSectionsPreference(listener: () => void) {
+  preferenceListeners.add(listener);
+
+  return () => {
+    preferenceListeners.delete(listener);
+  };
+}
+
+export function useDebugSectionsAsNestedSheets() {
+  return useSyncExternalStore(
+    subscribeDebugSectionsPreference,
+    getDebugSectionsAsNestedSheets,
+    getDebugSectionsAsNestedSheets,
+  );
+}
+
+export function useDebugNestedSectionDetentLevel() {
+  return useSyncExternalStore(
+    subscribeDebugSectionsPreference,
+    getDebugNestedSectionDetentLevel,
+    getDebugNestedSectionDetentLevel,
+  );
+}
 
 /** 全局调试 True Sheet 名称，须与 `DebugTrueSheetHost` 的 `name` 一致。 */
 export const DEBUG_TRUE_SHEET_NAME = "lonanote-debug";
-
-export { DEBUG_OVERLAY_PORTAL_HOST };
-
-export { DEBUG_NESTED_SECTION_SHEET_DETENTS } from "./nested_section_sheet_layout";
-export {
-  getDebugNestedSectionDetentLabel,
-  type DebugNestedSectionDetentLevel,
-} from "./nested_section_sheet_layout";
-export {
-  getDebugNestedSectionDetentLevel,
-  getDebugSectionsAsNestedSheets,
-  setDebugNestedSectionDetentLevel,
-  setDebugSectionsAsNestedSheets,
-  useDebugNestedSectionDetentLevel,
-  useDebugSectionsAsNestedSheets,
-} from "./nested_sections_preferences";
 
 let debugSheetOpen = false;
 
@@ -36,7 +107,7 @@ const presentedDebugSectionSheets = new Set<DebugTabKey>();
 
 /**
  * 分区 Sheet 关闭版本号——每次有 Sheet 关闭时递增。
- * DebugHomeScreen 用此版本号驱动 Switch key，强制 remount 原生 widget，
+ * DebugHomePage 用此版本号驱动 Switch key，强制 remount 原生 widget，
  * 解决 Android 上原生 modal 关闭后 Switch 视觉状态不一致的问题。
  */
 let debugSectionSheetDismissVersion = 0;
@@ -54,12 +125,13 @@ export function getDebugSectionSheetDismissVersion() {
 
 export function subscribeDebugSectionSheetDismiss(listener: () => void) {
   dismissVersionListeners.add(listener);
+
   return () => {
     dismissVersionListeners.delete(listener);
   };
 }
 
-/** 调试分区嵌套 Sheet 名称，须与 `DebugSectionTrueSheetsHost` 一致。 */
+/** 调试分区嵌套 Sheet 名称，须与 `DebugSectionSheets` 一致。 */
 export function getDebugSectionSheetName(key: DebugTabKey) {
   return `lonanote-debug-section-${key}`;
 }
@@ -91,6 +163,7 @@ export async function resizeDebugSectionSheets(
   detentIndex: number = getDebugNestedSectionDetentLevel(),
 ) {
   const presentedKeys = [...presentedDebugSectionSheets];
+
   if (presentedKeys.length === 0) {
     return;
   }
@@ -132,8 +205,8 @@ export function openDebugPanel(detentIndex = 0) {
 
 export async function closeDebugPanel() {
   debugSheetOpen = false;
-  await dismissAllDebugSectionSheets().catch(() => {});
-  await TrueSheet.dismissStack(DEBUG_TRUE_SHEET_NAME).catch(() => {});
+  await dismissAllDebugSectionSheets().catch(() => undefined);
+  await TrueSheet.dismissStack(DEBUG_TRUE_SHEET_NAME).catch(() => undefined);
   await dismissTrueSheet(DEBUG_TRUE_SHEET_NAME);
 }
 

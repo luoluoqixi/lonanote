@@ -11,8 +11,8 @@ import { Button, NativeList, NativeListItem, NativeListSection, Text } from "@/c
 import { useCurrentWorkspaceState, useWorkspaceSession } from "@/hooks/workspace";
 
 type WorkspaceDebugSnapshot = {
-  roots: WorkspaceRoot[];
   records: WorkspaceRecord[];
+  roots: WorkspaceRoot[];
 };
 
 type RefreshPanelOptions = {
@@ -39,8 +39,8 @@ async function loadWorkspaceDebugSnapshot(): Promise<WorkspaceDebugSnapshot> {
   ]);
 
   return {
-    roots,
     records,
+    roots,
   };
 }
 
@@ -55,19 +55,19 @@ function KeyValueRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function WorkspaceDebugPanel() {
+export function WorkspaceDebugPage() {
   const { currentWorkspaceId } = useWorkspaceSession();
   const {
-    state: currentState,
-    error: workspaceError,
-    isLoading: isWorkspaceLoading,
-    isRefreshing: isWorkspaceRefreshing,
-    isOpening: isWorkspaceOpening,
-    isClosing: isWorkspaceClosing,
-    refresh: refreshWorkspaceState,
-    open: openWorkspace,
+    clearError,
     close: closeWorkspace,
-    clearError: clearWorkspaceError,
+    error: workspaceError,
+    isClosing: isWorkspaceClosing,
+    isLoading: isWorkspaceLoading,
+    isOpening: isWorkspaceOpening,
+    isRefreshing: isWorkspaceRefreshing,
+    open: openWorkspace,
+    refresh: refreshWorkspaceState,
+    state: currentState,
   } = useCurrentWorkspaceState();
   const [roots, setRoots] = useState<WorkspaceRoot[]>([]);
   const [records, setRecords] = useState<WorkspaceRecord[]>([]);
@@ -85,7 +85,7 @@ export function WorkspaceDebugPanel() {
 
     setIsRefreshing(true);
     setPanelError(null);
-    clearWorkspaceError();
+    clearError();
 
     try {
       const snapshot = await loadWorkspaceDebugSnapshot();
@@ -123,7 +123,7 @@ export function WorkspaceDebugPanel() {
   async function handleOpenWorkspace(workspaceId: string) {
     setPendingWorkspaceId(workspaceId);
     setPanelError(null);
-    clearWorkspaceError();
+    clearError();
 
     try {
       await openWorkspace(workspaceId);
@@ -139,7 +139,7 @@ export function WorkspaceDebugPanel() {
   async function handleCloseWorkspace(workspaceId: string) {
     setPendingWorkspaceId(workspaceId);
     setPanelError(null);
-    clearWorkspaceError();
+    clearError();
 
     try {
       await closeWorkspace(workspaceId);
@@ -359,6 +359,11 @@ const styles = StyleSheet.create({
     gap: 4,
     minWidth: 260,
   },
+  inlineSectionList: {
+    flex: 1,
+    gap: 16,
+    minHeight: 0,
+  },
   itemCard: {
     borderColor: "rgba(128, 128, 128, 0.22)",
     borderRadius: 12,
@@ -383,10 +388,5 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 8,
-  },
-  inlineSectionList: {
-    flex: 1,
-    gap: 16,
-    minHeight: 0,
   },
 });

@@ -1,6 +1,5 @@
-// True Sheet 调试宿主（简化版）：iOS+Android 合并在一个文件
 import { type NavigationProp, useNavigation } from "@react-navigation/native";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { Dimensions, Platform, View } from "react-native";
 import { useTheme } from "tamagui";
 
@@ -16,8 +15,6 @@ import { TrueSheetToolbarHeader } from "@/components/ui/true_sheet/toolbar_heade
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
-import { DEBUG_PANEL_ROUTE_DEFINITIONS, type DebugTabKey } from "../routes";
-import { DebugHomeScreen, DebugSectionScreen } from "../screens";
 import {
   DEBUG_NESTED_SECTION_SHEET_DETENTS,
   DEBUG_TRUE_SHEET_NAME,
@@ -29,14 +26,15 @@ import {
   markDebugPanelClosed,
   openDebugSection,
   switchDebugPanelToFullPage,
-} from "./api";
+} from "./debug_panel_sheet_state";
+import { DebugHomePage } from "./pages/debug_home_page";
+import { DebugSectionPage } from "./pages/debug_section_page";
+import { DEBUG_PANEL_ROUTE_DEFINITIONS, type DebugTabKey } from "./routes";
 
-type ParamList = { index: undefined } & Record<DebugTabKey, undefined>;
+type DebugSheetParamList = { index: undefined } & Record<DebugTabKey, undefined>;
 
-// ─── iOS ────────────────────────────────────────────
-
-function IosHomeRoute() {
-  const navigation = useNavigation<NavigationProp<ParamList>>();
+function IosDebugHomeRoute() {
+  const navigation = useNavigation<NavigationProp<DebugSheetParamList>>();
 
   const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
     if (mode === "fullPage") {
@@ -46,11 +44,13 @@ function IosHomeRoute() {
 
   return (
     <TrueSheetScrollContent>
-      <DebugHomeScreen
+      <DebugHomePage
         currentSheetMode="trueSheet"
         onOpenPanel={(key) => {
           void openDebugSection(key).then((handled) => {
-            if (!handled) navigation.navigate(key);
+            if (!handled) {
+              navigation.navigate(key);
+            }
           });
         }}
         onSheetModeChange={handleModeChange}
@@ -59,17 +59,17 @@ function IosHomeRoute() {
   );
 }
 
-function createIosSectionRoute(key: DebugTabKey) {
-  return function SectionRoute() {
+function createIosDebugSectionRoute(key: DebugTabKey) {
+  return function IosDebugSectionRoute() {
     return (
       <TrueSheetScrollContent>
-        <DebugSectionScreen layoutHost="trueSheet" sectionKey={key} />
+        <DebugSectionPage sectionKey={key} />
       </TrueSheetScrollContent>
     );
   };
 }
 
-function IosTrueSheetHost() {
+function IosDebugTrueSheetHost() {
   const colorScheme = useResolvedeColorScheme();
   const theme = useTheme();
 
@@ -88,25 +88,23 @@ function IosTrueSheetHost() {
       )}
     >
       <TrueSheetInnerStack.Screen
-        component={IosHomeRoute}
+        component={IosDebugHomeRoute}
         name="index"
         options={{ title: "调试面板" }}
       />
-      {DEBUG_PANEL_ROUTE_DEFINITIONS.map((def) => (
+      {DEBUG_PANEL_ROUTE_DEFINITIONS.map((definition) => (
         <TrueSheetInnerStack.Screen
-          key={def.key}
-          component={createIosSectionRoute(def.key)}
-          name={def.key}
-          options={{ title: def.label }}
+          key={definition.key}
+          component={createIosDebugSectionRoute(definition.key)}
+          name={definition.key}
+          options={{ title: definition.label }}
         />
       ))}
     </TrueSheetStackHost>
   );
 }
 
-// ─── Android ──────────────────────────────────────
-
-function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => void }) {
+function AndroidDebugHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => void }) {
   const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
     if (mode === "fullPage") {
       void switchDebugPanelToFullPage();
@@ -115,11 +113,13 @@ function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => vo
 
   return (
     <TrueSheetScrollContent>
-      <DebugHomeScreen
+      <DebugHomePage
         currentSheetMode="trueSheet"
         onOpenPanel={(key) => {
           void openDebugSection(key).then((handled) => {
-            if (!handled) onNavigate(key);
+            if (!handled) {
+              onNavigate(key);
+            }
           });
         }}
         onSheetModeChange={handleModeChange}
@@ -128,12 +128,12 @@ function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => vo
   );
 }
 
-function AndroidTrueSheetHost() {
+function AndroidDebugTrueSheetHost() {
   const [screen, setScreen] = useState<"home" | DebugTabKey>("home");
   const isHome = screen === "home";
-  const sectionDef = isHome
+  const sectionDefinition = isHome
     ? undefined
-    : DEBUG_PANEL_ROUTE_DEFINITIONS.find((d) => d.key === screen);
+    : DEBUG_PANEL_ROUTE_DEFINITIONS.find((definition) => definition.key === screen);
 
   return (
     <TrueSheetPanel
@@ -144,24 +144,27 @@ function AndroidTrueSheetHost() {
       onDidDismiss={markDebugPanelClosed}
       onRequestClose={() => void closeDebugPanel()}
       overlayPortalHostName={DEBUG_OVERLAY_PORTAL_HOST}
-      title={isHome ? "调试面板" : (sectionDef?.label ?? "调试")}
+      title={isHome ? "调试面板" : (sectionDefinition?.label ?? "调试")}
     >
       <TrueSheetScrollContent>
         {isHome ? (
-          <AndroidHomeRoute onNavigate={(key) => setScreen(key)} />
+          <AndroidDebugHomeRoute onNavigate={(key) => setScreen(key)} />
         ) : (
-          <DebugSectionScreen layoutHost="trueSheet" sectionKey={screen} />
+          <DebugSectionPage sectionKey={screen} />
         )}
       </TrueSheetScrollContent>
     </TrueSheetPanel>
   );
 }
 
-// ─── 嵌套分区 Sheet ──────────────────────────────
-
 function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
-  const definition = DEBUG_PANEL_ROUTE_DEFINITIONS.find((d) => d.key === sectionKey);
-  if (!definition) return null;
+  const definition = DEBUG_PANEL_ROUTE_DEFINITIONS.find(
+    (routeDefinition) => routeDefinition.key === sectionKey,
+  );
+
+  if (!definition) {
+    return null;
+  }
 
   const screenWidth = Dimensions.get("window").width;
   const grabberHitboxWidth = screenWidth - (Platform.OS === "ios" ? 40 : 32);
@@ -197,11 +200,11 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
         ...(isIos
           ? {
               grabberOptions: {
-                width: grabberHitboxWidth,
+                adaptive: false,
+                color: "transparent",
                 height: 24,
                 topMargin: 10,
-                color: "transparent",
-                adaptive: false,
+                width: grabberHitboxWidth,
               },
               headerStyle: {
                 height: 44,
@@ -218,7 +221,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
     >
       <TrueSheetScrollContent>
         {isIos ? <TrueSheetToolbarHeader title={definition.label} transparent /> : null}
-        <DebugSectionScreen layoutHost="trueSheet" sectionKey={sectionKey} trueSheetCompact />
+        <DebugSectionPage sectionKey={sectionKey} />
       </TrueSheetScrollContent>
     </TrueSheetPanel>
   );
@@ -234,14 +237,15 @@ function DebugSectionSheets() {
   );
 }
 
-// ─── 统一宿主 ──────────────────────────────────────
-
 export function DebugTrueSheetHost() {
-  if (isWeb() || isDesktop()) return null;
+  if (isWeb() || isDesktop()) {
+    return null;
+  }
+
   return (
     <>
       <DebugSectionSheets />
-      {Platform.OS === "android" ? <AndroidTrueSheetHost /> : <IosTrueSheetHost />}
+      {Platform.OS === "android" ? <AndroidDebugTrueSheetHost /> : <IosDebugTrueSheetHost />}
     </>
   );
 }

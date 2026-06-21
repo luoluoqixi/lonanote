@@ -1,18 +1,18 @@
 import type { Href } from "expo-router";
 import type { ComponentType } from "react";
 
-import { PathDebugPanel } from "./path_debug_panel";
-import { UiComponentsDebugPanel } from "./ui_components_panel";
-import { WorkspaceDebugPanel } from "./workspace_debug_panel";
+import { PathDebugPage } from "./pages/sections/path_debug_page";
+import { UiComponentsDebugPage } from "./pages/sections/ui_components_debug_page";
+import { WorkspaceDebugPage } from "./pages/sections/workspace_debug_page";
 
 export type DebugTabKey = "workspace" | "path" | "components";
 export type DebugPanelPresentation = "scroll" | "static";
 
 export type DebugPanelRouteDefinition = {
-  Component: ComponentType;
   description?: string;
   key: DebugTabKey;
   label: string;
+  Page: ComponentType;
   presentation: DebugPanelPresentation;
 };
 
@@ -20,21 +20,21 @@ export const DEBUG_PANEL_TOGGLE_EVENT = "lonanote.debug-panel.toggle";
 
 export const DEBUG_PANEL_ROUTE_DEFINITIONS: DebugPanelRouteDefinition[] = [
   {
-    Component: WorkspaceDebugPanel,
+    Page: WorkspaceDebugPage,
     description: "查看 roots、registry、runtime state。",
     key: "workspace",
     label: "工作区",
     presentation: "scroll",
   },
   {
-    Component: PathDebugPanel,
+    Page: PathDebugPage,
     description: "查看当前平台的路径解析结果。",
     key: "path",
     label: "路径",
     presentation: "scroll",
   },
   {
-    Component: UiComponentsDebugPanel,
+    Page: UiComponentsDebugPage,
     description: "整页查看组件示例与交互。",
     key: "components",
     label: "组件总览",

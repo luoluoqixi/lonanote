@@ -13,6 +13,7 @@ async function loadPathDebugItems(): Promise<PathDebugItem[]> {
     path.getDownloadDir(),
     path.getHomeDir(),
   ]);
+
   return [
     { key: "platform", label: "Platform", value: Platform.OS },
     { key: "dataDir", label: "dataDir", value: dataDir },
@@ -22,7 +23,7 @@ async function loadPathDebugItems(): Promise<PathDebugItem[]> {
   ];
 }
 
-export function PathDebugPanel() {
+export function PathDebugPage() {
   const [items, setItems] = useState<PathDebugItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,6 +31,7 @@ export function PathDebugPanel() {
   async function refreshPaths() {
     setIsLoading(true);
     setError(null);
+
     try {
       const nextItems = await loadPathDebugItems();
       setItems(nextItems);
@@ -106,7 +108,10 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: "space-between",
   },
-  headerText: { flexShrink: 1, gap: 4 },
+  headerText: {
+    flexShrink: 1,
+    gap: 4,
+  },
   item: {
     borderColor: "rgba(128, 128, 128, 0.22)",
     borderRadius: 12,

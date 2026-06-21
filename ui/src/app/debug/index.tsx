@@ -1,7 +1,7 @@
 import { Redirect, router } from "expo-router";
 
 import {
-  DebugHomeScreen,
+  DebugHomePage,
   type DebugTabKey,
   getDebugFullPageHref,
   isDebugFeatureEnabled,
@@ -14,7 +14,7 @@ export default function DebugHomeRouteScreen() {
   }
 
   return (
-    <DebugHomeScreen
+    <DebugHomePage
       onOpenFullPage={(key: DebugTabKey) => {
         void openDebugSection(key).then((handled) => {
           if (!handled) {
