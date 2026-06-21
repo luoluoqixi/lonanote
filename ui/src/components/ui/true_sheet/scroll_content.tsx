@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { os } from "@/api/common/platform";
 
+import { AndroidClippedScrollView } from "./android_clipped_scroll_view";
 import {
   getTrueSheetScrollBottomPadding,
   getTrueSheetScrollIndicatorBottomInset,
@@ -36,7 +37,7 @@ export const TrueSheetScrollContent = forwardRef<ScrollView, TrueSheetScrollCont
     // Android：保持库钉住 ScrollView 时的原有 flexGrow 布局，不在此组件改滚动行为。
     if (os() === "android") {
       return (
-        <ScrollView
+        <AndroidClippedScrollView
           ref={ref}
           keyboardShouldPersistTaps="handled"
           nestedScrollEnabled
@@ -46,7 +47,7 @@ export const TrueSheetScrollContent = forwardRef<ScrollView, TrueSheetScrollCont
           {...rest}
         >
           {children}
-        </ScrollView>
+        </AndroidClippedScrollView>
       );
     }
 
