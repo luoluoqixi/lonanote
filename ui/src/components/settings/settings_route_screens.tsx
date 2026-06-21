@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   nativeContent: { flex: 1, width: "100%" },
   nativePagePadding: { flex: 1, paddingHorizontal: 0, paddingTop: 0 },
   pageContainer: { alignSelf: "center", flex: 1, maxWidth: SCREEN_MAX_WIDTH, width: "100%" },
-  pagePadding: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
+  pagePadding: { flex: 1, paddingHorizontal: 0, paddingTop: 0 },
   page: { flex: 1 },
   panelHost: { flex: 1, minHeight: 0 },
   panelScrollContent: {},

@@ -92,11 +92,15 @@ export default function UILayout() {
             return withNativeBackButton(
               withNativeStackGestureOptions({
                 ...baseScreenOptions,
-                headerStyle: {
-                  backgroundColor: "transparent",
-                },
-                headerTransparent: true,
-                ...transparentHeaderFallback,
+                ...(os() === "ios"
+                  ? {
+                      headerStyle: {
+                        backgroundColor: "transparent",
+                      },
+                      headerTransparent: true,
+                      ...transparentHeaderFallback,
+                    }
+                  : {}),
                 headerShown: settingsTitle != null,
                 title: settingsTitle ?? "设置",
               }),
