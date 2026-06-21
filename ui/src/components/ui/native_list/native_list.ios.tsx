@@ -580,6 +580,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
       onPress={() => {
         pickerRef.current?.open();
       }}
+      btnStyle={resolvedPickerMode === "wheel" ? "plain" : undefined}
       trailingControl={
         <NativeHostedTrailingControl>
           <NativePickerSwiftUI

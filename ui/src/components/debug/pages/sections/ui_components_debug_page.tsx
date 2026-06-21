@@ -29,7 +29,6 @@ import {
   ListGroup,
   Menu,
   NativeList,
-  NativeListCustomItem,
   NativeListNavigationItem,
   NativeListSection,
   NativeListSelectItem,
@@ -1511,11 +1510,10 @@ export function UiComponentsDebugPage() {
         <Separator />
         <View style={styles.demoSectionList}>
           <NativeList>
-            <NativeListSection title="Section 数据驱动示例">
+            <NativeListSection title="NativeList 示例">
               <NativeListNavigationItem
-                onPress={() => setMenuAction("InsetGroupedList: 导航项")}
-                subtitle="支持 leading、value、chevron 和点击行为。"
-                title="InsetGroupedList 导航项"
+                onPress={() => setMenuAction("NativeListItem")}
+                title="NativeListItem"
                 value="详情"
               />
               <NativeListSwitchItem
@@ -1523,8 +1521,7 @@ export function UiComponentsDebugPage() {
                   checked: switchValue,
                   onCheckedChange: setSwitchValue,
                 }}
-                subtitle="右侧直接复用项目内原生 Switch wrapper。"
-                title="InsetGroupedList SwitchItem"
+                title="SwitchItem"
               />
               <NativeListSelectItem
                 selectProps={{
@@ -1533,32 +1530,32 @@ export function UiComponentsDebugPage() {
                   placeholder: "选择主题模式",
                   value: selectValue2 ?? undefined,
                 }}
-                subtitle="右侧原生 Select trigger，适合设置页数据驱动接入。"
-                title="InsetGroupedList SelectItem"
+                title="SelectItem"
               />
-            </NativeListSection>
-          </NativeList>
-          <NativeList>
-            <NativeListSection>
-              <NativeListCustomItem>
-                <View style={styles.insetCustomRow}>
-                  <View style={styles.textDemo}>
-                    <Text fontSize="$5" fontWeight="600">
-                      自定义内容 Item
-                    </Text>
-                    <Text color="$color10">
-                      可放任意高度内容，首批设置页里的 stepper 与摘要操作会优先走这个入口。
-                    </Text>
-                  </View>
-                  <Button
-                    nativeHaptics={debugNativeHaptics}
-                    onPress={() => setMenuAction("InsetGroupedList: 自定义项")}
-                    variant="outlined"
-                  >
-                    触发
-                  </Button>
-                </View>
-              </NativeListCustomItem>
+              {os() === "ios" && (
+                <NativeListSelectItem
+                  selectProps={{
+                    onValueChange: setSelectValue2,
+                    options: selectItems2,
+                    placeholder: "选择主题模式",
+                    value: selectValue2 ?? undefined,
+                    nativePickerMode: "wheel",
+                  }}
+                  title="SelectItem Wheel"
+                />
+              )}
+              {os() === "android" && (
+                <NativeListSelectItem
+                  selectProps={{
+                    onValueChange: setSelectValue2,
+                    options: selectItems2,
+                    placeholder: "选择主题模式",
+                    value: selectValue2 ?? undefined,
+                    nativePickerMode: "dialog",
+                  }}
+                  title="SelectItem Dialog"
+                />
+              )}
             </NativeListSection>
           </NativeList>
         </View>
@@ -1661,13 +1658,6 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingTop: 12,
   },
-  insetCustomRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-    width: "100%",
-  },
   mediaDemo: {
     flex: 1,
     gap: 8,
@@ -1699,8 +1689,8 @@ const styles = StyleSheet.create({
   },
   root: {
     gap: 20,
-    paddingBottom: 12,
-    paddingHorizontal: 12,
+    paddingBottom: 50,
+    paddingHorizontal: 20,
   },
   scrollViewContent: {
     gap: 8,
@@ -1774,5 +1764,6 @@ const styles = StyleSheet.create({
   },
   demoSectionList: {
     gap: 16,
+    height: 300,
   },
 });
