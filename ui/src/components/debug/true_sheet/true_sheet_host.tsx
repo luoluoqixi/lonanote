@@ -33,14 +33,6 @@ import {
 
 type ParamList = { index: undefined } & Record<DebugTabKey, undefined>;
 
-function DebugOwnedScrollContent({ children }: { children: React.ReactNode }) {
-  return children;
-}
-
-function createDebugTrueSheetContentWrapper(presentation: "scroll" | "static") {
-  return presentation === "scroll" ? DebugOwnedScrollContent : TrueSheetScrollContent;
-}
-
 // ─── iOS ────────────────────────────────────────────
 
 function IosHomeRoute() {
@@ -53,7 +45,7 @@ function IosHomeRoute() {
   }, []);
 
   return (
-    <DebugOwnedScrollContent>
+    <TrueSheetScrollContent>
       <DebugHomeScreen
         currentSheetMode="trueSheet"
         onOpenPanel={(key) => {
@@ -63,19 +55,16 @@ function IosHomeRoute() {
         }}
         onSheetModeChange={handleModeChange}
       />
-    </DebugOwnedScrollContent>
+    </TrueSheetScrollContent>
   );
 }
 
 function createIosSectionRoute(key: DebugTabKey) {
-  const definition = DEBUG_PANEL_ROUTE_DEFINITIONS.find((item) => item.key === key);
-  const RouteContent = createDebugTrueSheetContentWrapper(definition?.presentation ?? "scroll");
-
   return function SectionRoute() {
     return (
-      <RouteContent>
+      <TrueSheetScrollContent>
         <DebugSectionScreen layoutHost="trueSheet" sectionKey={key} />
-      </RouteContent>
+      </TrueSheetScrollContent>
     );
   };
 }
@@ -125,7 +114,7 @@ function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => vo
   }, []);
 
   return (
-    <DebugOwnedScrollContent>
+    <TrueSheetScrollContent>
       <DebugHomeScreen
         currentSheetMode="trueSheet"
         onOpenPanel={(key) => {
@@ -135,7 +124,7 @@ function AndroidHomeRoute({ onNavigate }: { onNavigate: (key: DebugTabKey) => vo
         }}
         onSheetModeChange={handleModeChange}
       />
-    </DebugOwnedScrollContent>
+    </TrueSheetScrollContent>
   );
 }
 
@@ -145,9 +134,6 @@ function AndroidTrueSheetHost() {
   const sectionDef = isHome
     ? undefined
     : DEBUG_PANEL_ROUTE_DEFINITIONS.find((d) => d.key === screen);
-  const RouteContent = isHome
-    ? DebugOwnedScrollContent
-    : createDebugTrueSheetContentWrapper(sectionDef?.presentation ?? "scroll");
 
   return (
     <TrueSheetPanel
@@ -160,13 +146,13 @@ function AndroidTrueSheetHost() {
       overlayPortalHostName={DEBUG_OVERLAY_PORTAL_HOST}
       title={isHome ? "调试面板" : (sectionDef?.label ?? "调试")}
     >
-      <RouteContent>
+      <TrueSheetScrollContent>
         {isHome ? (
           <AndroidHomeRoute onNavigate={(key) => setScreen(key)} />
         ) : (
           <DebugSectionScreen layoutHost="trueSheet" sectionKey={screen} />
         )}
-      </RouteContent>
+      </TrueSheetScrollContent>
     </TrueSheetPanel>
   );
 }
@@ -180,7 +166,6 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
   const screenWidth = Dimensions.get("window").width;
   const grabberHitboxWidth = screenWidth - (Platform.OS === "ios" ? 40 : 32);
   const isIos = Platform.OS === "ios";
-  const RouteContent = createDebugTrueSheetContentWrapper(definition.presentation);
 
   return (
     <TrueSheetPanel
@@ -231,10 +216,10 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       }}
       title={!isIos ? definition.label : undefined}
     >
-      <RouteContent>
+      <TrueSheetScrollContent>
         {isIos ? <TrueSheetToolbarHeader title={definition.label} transparent /> : null}
         <DebugSectionScreen layoutHost="trueSheet" sectionKey={sectionKey} trueSheetCompact />
-      </RouteContent>
+      </TrueSheetScrollContent>
     </TrueSheetPanel>
   );
 }

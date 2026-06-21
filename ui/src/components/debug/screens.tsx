@@ -36,42 +36,18 @@ import {
 } from "./true_sheet/nested_sections_preferences";
 
 type DebugScreenLayoutHost = "screen" | "trueSheet";
-type DebugScreenScrollOwner = "nativeList" | "static" | "trueSheetScroll";
 
 function DebugScreenLayout({
   children,
   layoutHost = "screen",
-  scrollOwner = "static",
   trueSheetBodyStyle,
 }: {
   children: React.ReactNode;
   layoutHost?: DebugScreenLayoutHost;
-  scrollOwner?: DebugScreenScrollOwner;
   trueSheetBodyStyle?: ViewStyle;
 }) {
-  const insets = useSafeAreaInsets();
-
   if (layoutHost === "trueSheet") {
-    if (scrollOwner === "trueSheetScroll") {
-      return (
-        <TrueSheetScrollContent
-          contentContainerStyle={[
-            styles.trueSheetScrollableContent,
-            { paddingBottom: insets.bottom + 36 },
-          ]}
-          style={styles.trueSheetScrollableHost}
-        >
-          <View style={trueSheetBodyStyle}>{children}</View>
-        </TrueSheetScrollContent>
-      );
-    }
-
-    const layoutStyle =
-      scrollOwner === "nativeList"
-        ? [styles.trueSheetNativeListBody, { paddingBottom: insets.bottom + 36 }]
-        : styles.trueSheetBody;
-
-    return <View style={[layoutStyle, trueSheetBodyStyle]}>{children}</View>;
+    return <View style={[trueSheetBodyStyle, trueSheetBodyStyle]}>{children}</View>;
   }
   return <>{children}</>;
 }
@@ -120,12 +96,7 @@ export function DebugHomeScreen({
   };
 
   return (
-    <DebugScreenLayout
-      layoutHost={layoutHost}
-      scrollOwner={
-        inTrueSheet && !useNativeList ? "trueSheetScroll" : useNativeList ? "nativeList" : "static"
-      }
-    >
+    <DebugScreenLayout layoutHost={layoutHost}>
       <NativeList native={useNativeList} scrollable={!inTrueSheet || useNativeList}>
         <NativeListSection title="调试分区">
           {DEBUG_PANEL_ROUTE_DEFINITIONS.map((def) => (
@@ -230,7 +201,6 @@ export function DebugSectionScreen({
   return (
     <DebugScreenLayout
       layoutHost={layoutHost}
-      scrollOwner={definition.presentation === "scroll" ? "nativeList" : "static"}
       trueSheetBodyStyle={trueSheetCompact ? styles.trueSheetBodyCompact : undefined}
     >
       <SectionComponent />
