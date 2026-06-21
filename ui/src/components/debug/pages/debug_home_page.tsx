@@ -4,7 +4,7 @@ import { StyleSheet, View } from "react-native";
 
 import {
   NativeList,
-  NativeListItem,
+  NativeListCustomItem,
   NativeListNavigationItem,
   NativeListSection,
   NativeListSelectItem,
@@ -103,7 +103,7 @@ export function DebugHomePage({
           title="分区嵌套 True Sheet"
         />
         {nestedSectionSheets ? (
-          <NativeListItem>
+          <NativeListCustomItem>
             <View style={styles.detentSliderRow}>
               <Minimize2 color="$color10" size={18} />
               <View style={styles.detentSliderControl}>
@@ -121,7 +121,7 @@ export function DebugHomePage({
               </View>
               <Maximize2 color="$color10" size={18} />
             </View>
-          </NativeListItem>
+          </NativeListCustomItem>
         ) : null}
       </NativeListSection>
 

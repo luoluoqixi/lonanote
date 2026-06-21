@@ -11,6 +11,7 @@ import {
   Button,
   NativeList,
   NativeListButtonItem,
+  NativeListCustomItem,
   NativeListItem,
   NativeListSection,
   Text,
@@ -52,14 +53,7 @@ async function loadWorkspaceDebugSnapshot(): Promise<WorkspaceDebugSnapshot> {
 }
 
 function KeyValueRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.keyValueRow}>
-      <Text color="$color10" fontSize="$2">
-        {label}
-      </Text>
-      <Text fontSize="$3">{value}</Text>
-    </View>
-  );
+  return <NativeListItem title={label} subtitle={value} />;
 }
 
 export function WorkspaceDebugPage() {
@@ -164,174 +158,122 @@ export function WorkspaceDebugPage() {
   }, [currentWorkspaceId]);
 
   return (
-    <View style={styles.inlineSectionList}>
-      <NativeList>
-        <NativeListSection title="操作">
-          <NativeListItem>
-            <View style={styles.header}>
-              <View style={styles.headerText}>
-                <Text fontSize="$5" fontWeight="600">
-                  Workspace 调试面板
-                </Text>
-                <Text color="$color10" fontSize="$3">
-                  展示 roots、同步结果、registry records 和当前 runtime state。
-                </Text>
-              </View>
-            </View>
-          </NativeListItem>
-          <NativeListButtonItem
-            title={isRefreshingPanel ? "刷新中..." : "刷新数据"}
-            disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
-            onPress={() => refreshPanel()}
-          />
-          <NativeListButtonItem
-            title={isSyncing ? "同步中..." : "同步 Roots"}
-            disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
-            onPress={() => handleSyncRoots()}
-          />
+    <NativeList>
+      <NativeListSection title="操作">
+        <NativeListItem
+          title="Workspace 调试面板"
+          subtitle="展示 roots、同步结果、registry records 和当前 runtime state。"
+        />
+        <NativeListButtonItem
+          title={isRefreshingPanel ? "刷新中..." : "刷新数据"}
+          disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
+          onPress={() => refreshPanel()}
+        />
+        <NativeListButtonItem
+          title={isSyncing ? "同步中..." : "同步 Roots"}
+          disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
+          onPress={() => handleSyncRoots()}
+        />
+      </NativeListSection>
+
+      {error ? (
+        <NativeListSection title="错误">
+          <NativeListItem title={error} />
         </NativeListSection>
+      ) : null}
 
-        {error ? (
-          <NativeListSection title="错误">
-            <NativeListItem>
-              <View style={styles.errorBox}>
-                <Text color="$red10" fontSize="$3">
-                  {error}
-                </Text>
-              </View>
-            </NativeListItem>
-          </NativeListSection>
-        ) : null}
+      <NativeListSection title="当前会话">
+        <NativeListItem title="currentWorkspaceId" subtitle={currentWorkspaceId ?? "null"} />
+        <KeyValueRow
+          label="runtimeStatus"
+          value={
+            isWorkspaceLoading ? "loading" : (currentState?.runtimeStatus ?? "no-open-workspace")
+          }
+        />
+        <KeyValueRow
+          label="workspacePath"
+          value={currentState?.record.metadata.path ?? "no-open-workspace"}
+        />
+        <KeyValueRow
+          label="fileTreeSortType"
+          value={String(currentState?.runtimeConfig.fileTreeSortType ?? "null")}
+        />
+        <KeyValueRow
+          label="followGitignore"
+          value={String(currentState?.runtimeConfig.followGitignore ?? false)}
+        />
+      </NativeListSection>
 
-        <NativeListSection title="当前会话">
-          <NativeListItem>
-            <KeyValueRow label="currentWorkspaceId" value={currentWorkspaceId ?? "null"} />
-          </NativeListItem>
-          <NativeListItem>
-            <KeyValueRow
-              label="runtimeStatus"
-              value={
-                isWorkspaceLoading
-                  ? "loading"
-                  : (currentState?.runtimeStatus ?? "no-open-workspace")
-              }
-            />
-          </NativeListItem>
-          <NativeListItem>
-            <KeyValueRow
-              label="workspacePath"
-              value={currentState?.record.metadata.path ?? "no-open-workspace"}
-            />
-          </NativeListItem>
-          <NativeListItem>
-            <KeyValueRow
-              label="fileTreeSortType"
-              value={String(currentState?.runtimeConfig.fileTreeSortType ?? "null")}
-            />
-          </NativeListItem>
-          <NativeListItem>
-            <KeyValueRow
-              label="followGitignore"
-              value={String(currentState?.runtimeConfig.followGitignore ?? false)}
-            />
-          </NativeListItem>
-        </NativeListSection>
+      <NativeListSection title="最近同步结果">
+        <KeyValueRow label="importedCount" value={String(lastSyncSummary?.importedCount ?? 0)} />
+        <KeyValueRow label="relocatedCount" value={String(lastSyncSummary?.relocatedCount ?? 0)} />
+      </NativeListSection>
 
-        <NativeListSection title="最近同步结果">
-          <NativeListItem>
-            <KeyValueRow
-              label="importedCount"
-              value={String(lastSyncSummary?.importedCount ?? 0)}
+      <NativeListSection title={`Workspace Roots (${roots.length})`}>
+        {roots.length === 0 ? (
+          <NativeListItem title="暂无 roots。" />
+        ) : (
+          roots.map((root) => (
+            <NativeListItem
+              key={root.key}
+              title={root.key}
+              subtitle={`${root.kind} · ${formatRootSource(root)}\n${root.path}`}
             />
-          </NativeListItem>
-          <NativeListItem>
-            <KeyValueRow
-              label="relocatedCount"
-              value={String(lastSyncSummary?.relocatedCount ?? 0)}
-            />
-          </NativeListItem>
-        </NativeListSection>
+          ))
+        )}
+      </NativeListSection>
 
-        <NativeListSection title={`Workspace Roots (${roots.length})`}>
-          {roots.length === 0 ? (
-            <NativeListItem>
-              <Text color="$color10" fontSize="$3">
-                暂无 roots。
-              </Text>
-            </NativeListItem>
-          ) : (
-            roots.map((root) => (
-              <NativeListItem key={root.key}>
+      <NativeListSection title={`Workspace Records (${records.length})`}>
+        {records.length === 0 ? (
+          <NativeListItem title="暂无已注册工作区。" />
+        ) : (
+          records.map((record) => {
+            const workspaceId = record.metadata.id;
+            const isCurrent = currentWorkspaceId === workspaceId;
+            const isPending =
+              pendingWorkspaceId === workspaceId && (isWorkspaceOpening || isWorkspaceClosing);
+
+            return (
+              <NativeListCustomItem key={workspaceId}>
                 <View style={styles.itemCard}>
-                  <Text fontSize="$3" fontWeight="600">
-                    {root.key}
-                  </Text>
-                  <Text color="$color10" fontSize="$2">
-                    {root.kind} · {formatRootSource(root)}
-                  </Text>
-                  <Text fontSize="$3">{root.path}</Text>
-                </View>
-              </NativeListItem>
-            ))
-          )}
-        </NativeListSection>
-
-        <NativeListSection title={`Workspace Records (${records.length})`}>
-          {records.length === 0 ? (
-            <NativeListItem>
-              <Text color="$color10" fontSize="$3">
-                暂无已注册工作区。
-              </Text>
-            </NativeListItem>
-          ) : (
-            records.map((record) => {
-              const workspaceId = record.metadata.id;
-              const isCurrent = currentWorkspaceId === workspaceId;
-              const isPending =
-                pendingWorkspaceId === workspaceId && (isWorkspaceOpening || isWorkspaceClosing);
-
-              return (
-                <NativeListItem key={workspaceId}>
-                  <View style={styles.itemCard}>
-                    <View style={styles.stack}>
-                      <Text fontSize="$3" fontWeight="600">
-                        {record.metadata.name}
-                      </Text>
-                      <Text color="$color10" fontSize="$2">
-                        id: {workspaceId}
-                      </Text>
-                      <Text fontSize="$3">{record.metadata.path}</Text>
-                    </View>
-                    <View style={styles.recordActions}>
-                      <Text color="$color10" fontSize="$2">
-                        {isCurrent ? "current" : "not-current"}
-                      </Text>
-                      {isCurrent ? (
-                        <Button
-                          disabled={isPending}
-                          onPress={() => handleCloseWorkspace(workspaceId)}
-                          variant="outlined"
-                        >
-                          {isPending ? "关闭中..." : "关闭"}
-                        </Button>
-                      ) : (
-                        <Button
-                          disabled={isPending}
-                          onPress={() => handleOpenWorkspace(workspaceId)}
-                          variant="outlined"
-                        >
-                          {isPending ? "打开中..." : "打开"}
-                        </Button>
-                      )}
-                    </View>
+                  <View style={styles.stack}>
+                    <Text fontSize="$3" fontWeight="600">
+                      {record.metadata.name}
+                    </Text>
+                    <Text color="$color10" fontSize="$2">
+                      id: {workspaceId}
+                    </Text>
+                    <Text fontSize="$3">{record.metadata.path}</Text>
                   </View>
-                </NativeListItem>
-              );
-            })
-          )}
-        </NativeListSection>
-      </NativeList>
-    </View>
+                  <View style={styles.recordActions}>
+                    <Text color="$color10" fontSize="$2">
+                      {isCurrent ? "current" : "not-current"}
+                    </Text>
+                    {isCurrent ? (
+                      <Button
+                        disabled={isPending}
+                        onPress={() => handleCloseWorkspace(workspaceId)}
+                        variant="outlined"
+                      >
+                        {isPending ? "关闭中..." : "关闭"}
+                      </Button>
+                    ) : (
+                      <Button
+                        disabled={isPending}
+                        onPress={() => handleOpenWorkspace(workspaceId)}
+                        variant="outlined"
+                      >
+                        {isPending ? "打开中..." : "打开"}
+                      </Button>
+                    )}
+                  </View>
+                </View>
+              </NativeListCustomItem>
+            );
+          })
+        )}
+      </NativeListSection>
+    </NativeList>
   );
 }
 
@@ -341,29 +283,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
-  errorBox: {
-    backgroundColor: "rgba(239, 68, 68, 0.08)",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  headerText: {
-    flex: 1,
-    gap: 4,
-    minWidth: 260,
-  },
-  inlineSectionList: {
-    flex: 1,
-    gap: 16,
-    minHeight: 0,
-  },
   itemCard: {
     borderColor: "rgba(128, 128, 128, 0.22)",
     borderRadius: 12,
@@ -371,14 +290,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-  },
-  keyValueRow: {
-    borderColor: "rgba(128, 128, 128, 0.18)",
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
   },
   recordActions: {
     alignItems: "center",

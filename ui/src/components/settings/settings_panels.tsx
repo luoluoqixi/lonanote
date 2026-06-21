@@ -5,7 +5,7 @@ import type { GlobalSettings } from "@/api/commands/settings";
 import {
   Button,
   NativeList,
-  NativeListItem,
+  NativeListCustomItem,
   NativeListSection,
   NativeListSelectItem,
   NativeListSwitchItem,
@@ -314,7 +314,7 @@ export function GlobalSettingsPanel() {
         </NativeListSection>
 
         <NativeListSection>
-          <NativeListItem>
+          <NativeListCustomItem>
             <SettingsStepperRowContent
               label="自动保存间隔"
               onDecrease={() => {
@@ -345,7 +345,7 @@ export function GlobalSettingsPanel() {
               }}
               valueLabel={`${settings.editorDefaults.autoSaveIntervalSeconds.toFixed(1)} 秒`}
             />
-          </NativeListItem>
+          </NativeListCustomItem>
         </NativeListSection>
       </NativeList>
     </View>
@@ -445,7 +445,7 @@ export function WindowSettingsPanel() {
         </NativeListSection>
 
         <NativeListSection>
-          <NativeListItem>
+          <NativeListCustomItem>
             <SettingsSummaryActionRow
               actionLabel="清除"
               description={formatWindowStateSummary(preferences.window.lastWindowState)}
@@ -463,7 +463,7 @@ export function WindowSettingsPanel() {
               }}
               title="最近保存的窗口状态"
             />
-          </NativeListItem>
+          </NativeListCustomItem>
         </NativeListSection>
       </NativeList>
     </View>

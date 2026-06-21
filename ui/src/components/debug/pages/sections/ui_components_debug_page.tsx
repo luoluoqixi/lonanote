@@ -29,7 +29,7 @@ import {
   ListGroup,
   Menu,
   NativeList,
-  NativeListItem,
+  NativeListCustomItem,
   NativeListNavigationItem,
   NativeListSection,
   NativeListSelectItem,
@@ -1540,7 +1540,7 @@ export function UiComponentsDebugPage() {
           </NativeList>
           <NativeList>
             <NativeListSection>
-              <NativeListItem>
+              <NativeListCustomItem>
                 <View style={styles.insetCustomRow}>
                   <View style={styles.textDemo}>
                     <Text fontSize="$5" fontWeight="600">
@@ -1558,7 +1558,7 @@ export function UiComponentsDebugPage() {
                     触发
                   </Button>
                 </View>
-              </NativeListItem>
+              </NativeListCustomItem>
             </NativeListSection>
           </NativeList>
         </View>
