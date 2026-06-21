@@ -7,7 +7,14 @@ import {
   WorkspaceSyncSummary,
   workspaceRegistry,
 } from "@/api/commands/workspace";
-import { Button, NativeList, NativeListItem, NativeListSection, Text } from "@/components/ui";
+import {
+  Button,
+  NativeList,
+  NativeListButtonItem,
+  NativeListItem,
+  NativeListSection,
+  Text,
+} from "@/components/ui";
 import { useCurrentWorkspaceState, useWorkspaceSession } from "@/hooks/workspace";
 
 type WorkspaceDebugSnapshot = {
@@ -189,6 +196,11 @@ export function WorkspaceDebugPage() {
               </View>
             </View>
           </NativeListItem>
+          <NativeListButtonItem
+            title={isRefreshingPanel ? "刷新中..." : "刷新数据"}
+            disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
+            onPress={() => refreshPanel()}
+          />
         </NativeListSection>
 
         {error ? (

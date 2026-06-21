@@ -34,15 +34,17 @@ export const Button = forwardRef<ComponentRef<typeof TamaguiButton>, ButtonProps
 
   const resolvedOpacity = buttonProps.disabled ? DISABLED_BUTTON_OPACITY : ENABLED_BUTTON_OPACITY;
   const useNativeButton = native === true && (os() === "ios" || os() === "android");
-
-  if (useNativeButton) {
-    const resolvedTitle =
-      title ??
-      (typeof children === "string" || typeof children === "number"
+  const resolvedTitle =
+    title ??
+    (typeof children === "string"
+      ? children
+      : typeof children === "number"
         ? String(children)
         : undefined) ??
-      props["aria-label"] ??
-      "";
+    props["aria-label"] ??
+    "";
+
+  if (useNativeButton) {
     return (
       <RNButton
         accessibilityLabel={props["aria-label"]}
@@ -70,7 +72,7 @@ export const Button = forwardRef<ComponentRef<typeof TamaguiButton>, ButtonProps
       onPress={handlePress}
       ref={ref}
     >
-      {children}
+      {children ?? resolvedTitle}
     </TamaguiButtonWithLongPressDelay>
   );
 });

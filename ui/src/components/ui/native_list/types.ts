@@ -7,12 +7,15 @@ import type { NativeHapticsSetting } from "../utils";
 
 /** 通用 item base props */
 export type NativeListItemBaseProps = {
+  /** `true` 或不传时沿用默认主色，传字符串时使用自定义 tint，传 `false` 时不传 tint。 */
+  btnTint?: boolean | string;
   chevron?: boolean;
   disabled?: boolean;
   nativeHaptics?: NativeHapticsSetting;
   onPress?: () => void;
   subtitle?: ReactNode;
   title?: ReactNode;
+  titleAlign?: "center" | "right" | "left";
   value?: ReactNode;
 };
 
@@ -25,6 +28,13 @@ export type NativeListSwitchItemProps = NativeListItemBaseProps & {
 
 export type NativeListSelectItemProps = NativeListItemBaseProps & {
   selectProps: Omit<SelectProps, "native" | "nativeTrigger">;
+};
+
+export type NativeListButtonItemProps = NativeListItemBaseProps & {
+  title: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  titleAlign?: "center" | "right" | "left";
 };
 
 /** Section props */

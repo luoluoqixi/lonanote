@@ -21,6 +21,7 @@ import { useTrueSheetScrollLayout } from "../true_sheet/true_sheet_scroll_contex
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import type {
   NativeListActionItemProps,
+  NativeListButtonItemProps,
   NativeListItemBaseProps,
   NativeListNavigationItemProps,
   NativeListRootProps,
@@ -73,6 +74,7 @@ function FallbackSectionItem({ children }: { children: ReactNode }) {
 
 type NativeListRowProps = NativeListItemBaseProps & {
   iconAfter?: ReactNode;
+  titleColor?: string;
 };
 
 /**
@@ -87,6 +89,8 @@ function NativeListRow({
   onPress,
   subtitle,
   title,
+  titleAlign,
+  titleColor,
   value,
 }: NativeListRowProps) {
   const hasSubtitle = subtitle != null;
@@ -110,7 +114,27 @@ function NativeListRow({
         nativeHaptics={nativeHaptics}
         onPress={onPress}
         subTitle={subtitle}
-        title={title}
+        title={
+          titleAlign != null && typeof title === "string" ? (
+            <View
+              style={{
+                width: "100%",
+                alignItems:
+                  titleAlign == "center"
+                    ? "center"
+                    : titleAlign === "right"
+                      ? "flex-end"
+                      : "flex-start",
+              }}
+            >
+              <SizableText size="$true" style={titleColor ? { color: titleColor } : undefined}>
+                {title}
+              </SizableText>
+            </View>
+          ) : (
+            title
+          )
+        }
         iconAfter={combinedIconAfter}
       />
     );
@@ -123,8 +147,20 @@ function NativeListRow({
       onPress={onPress}
       iconAfter={combinedIconAfter}
     >
-      <View style={{ flex: 1, justifyContent: "center", minWidth: 0 }}>
-        <SizableText size="$true" numberOfLines={1}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems:
+            titleAlign == "center" ? "center" : titleAlign === "right" ? "flex-end" : "flex-start",
+          minWidth: 0,
+        }}
+      >
+        <SizableText
+          size="$true"
+          numberOfLines={1}
+          style={titleColor ? { color: titleColor } : undefined}
+        >
           {title}
         </SizableText>
       </View>
@@ -188,6 +224,32 @@ export function NativeListSwitchItem({ switchProps, ...itemProps }: NativeListSw
             />
           </View>
         }
+      />
+    </FallbackSectionItem>
+  );
+}
+
+export function NativeListButtonItem({
+  title,
+  onPress,
+  disabled,
+  titleAlign = "center",
+  btnTint,
+  ...itemProps
+}: NativeListButtonItemProps) {
+  const theme = useTheme();
+  const defaultColor = theme.accent10.val;
+
+  return (
+    <FallbackSectionItem>
+      <NativeListRow
+        {...itemProps}
+        btnTint={btnTint}
+        titleAlign={titleAlign}
+        titleColor={typeof btnTint === "string" ? btnTint : defaultColor}
+        title={title}
+        disabled={disabled}
+        onPress={onPress}
       />
     </FallbackSectionItem>
   );

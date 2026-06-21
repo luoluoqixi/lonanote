@@ -16,11 +16,13 @@ import {
   disabled as disabledModifier,
   font,
   foregroundStyle,
+  frame,
   layoutPriority,
   lineLimit,
   listRowInsets,
   listSectionSpacing,
   listStyle,
+  multilineTextAlignment,
   padding,
   scrollContentBackground,
   scrollDisabled,
@@ -43,6 +45,7 @@ import { useTrueSheetScrollLayout } from "../true_sheet/true_sheet_scroll_contex
 import { toSwiftUIHexColor, triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import {
   NativeListActionItem as FallbackActionItem,
+  NativeListButtonItem as FallbackButtonItem,
   NativeListItem as FallbackItem,
   NativeListNavigationItem as FallbackNavigationItem,
   NativeListRoot as FallbackRoot,
@@ -52,6 +55,7 @@ import {
 } from "./native_list_fallback";
 import type {
   NativeListActionItemProps,
+  NativeListButtonItemProps,
   NativeListItemBaseProps,
   NativeListNavigationItemProps,
   NativeListRootProps,
@@ -97,12 +101,49 @@ function supportsNativeTextRow(...values: Array<ReactNode | undefined>) {
   return values.every((value) => value == null || toPlainText(value) != null);
 }
 
-function NativeRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: ReactNode }) {
+function resolveNativeListBtnTintColor(
+  btnTint: boolean | string | undefined,
+  primaryColor: string,
+) {
+  if (btnTint === false) {
+    return null;
+  }
+
+  return typeof btnTint === "string" ? btnTint : primaryColor;
+}
+
+function resolveNativeListTitleColor(
+  titleColor: boolean | string | undefined,
+  primaryColor: string,
+) {
+  if (titleColor === false) {
+    return null;
+  }
+
+  return typeof titleColor === "string" ? titleColor : primaryColor;
+}
+
+function NativeRowLabel({
+  subtitle,
+  title,
+  titleAlign,
+  expand = false,
+  titleColor,
+}: {
+  subtitle?: ReactNode;
+  title?: ReactNode;
+  titleAlign?: "center" | "right" | "left";
+  expand?: boolean;
+  titleColor?: boolean | string | null;
+}) {
   const theme = useTheme();
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
   const primaryColor = toSwiftUIHexColor(theme.color.val) ?? theme.color.val;
   const secondaryColor = toSwiftUIHexColor(theme.color10.val) ?? theme.color10.val;
+  const resolvedTextAlignment =
+    titleAlign === "center" ? "center" : titleAlign === "right" ? "trailing" : "leading";
+  const resolvedTitleColor = resolveNativeListTitleColor(titleColor ?? undefined, primaryColor);
 
   if ((title != null && titleText == null) || (subtitle != null && subtitleText == null)) {
     return null;
@@ -110,16 +151,20 @@ function NativeRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: Rea
 
   return (
     <VStack
-      alignment="leading"
-      modifiers={[layoutPriority(1)]}
+      alignment={resolvedTextAlignment}
+      modifiers={[
+        layoutPriority(1),
+        ...(expand ? [frame({ maxWidth: 99999, alignment: resolvedTextAlignment })] : []),
+      ]}
       spacing={subtitleText != null ? 4 : 0}
     >
       {titleText != null ? (
         <SwiftText
           modifiers={[
             ...TITLE_MODIFIERS,
-            foregroundStyle(primaryColor),
+            ...(resolvedTitleColor != null ? [foregroundStyle(resolvedTitleColor)] : []),
             lineLimit(subtitleText != null ? 2 : 1),
+            multilineTextAlignment(resolvedTextAlignment),
           ]}
         >
           {titleText}
@@ -139,14 +184,17 @@ function NativeRowContainer({
   disabled,
   onPress,
   btnStyle,
+  btnTint,
 }: {
   children: ReactNode;
   disabled?: boolean;
   onPress?: () => void;
   btnStyle?: SwiftUIButtonStyle;
+  btnTint?: boolean | string;
 }) {
   const theme = useTheme();
   const primaryColor = toSwiftUIHexColor(theme.color.val) ?? theme.color.val;
+  const resolvedTint = resolveNativeListBtnTintColor(btnTint, primaryColor);
   const baseModifiers = [ROW_INSETS, padding(ROW_PADDING)];
 
   if (onPress != null) {
@@ -155,7 +203,11 @@ function NativeRowContainer({
         modifiers={[disabledModifier(disabled ?? false), buttonStyle(btnStyle ?? "automatic")]}
         onPress={onPress}
       >
-        <HStack alignment="center" modifiers={[...baseModifiers, tint(primaryColor)]} spacing={12}>
+        <HStack
+          alignment="center"
+          modifiers={[...baseModifiers, ...(resolvedTint != null ? [tint(resolvedTint)] : [])]}
+          spacing={12}
+        >
           {children}
         </HStack>
       </SwiftButton>
@@ -204,9 +256,11 @@ function NativePressRow({
   onPress,
   subtitle,
   title,
+  titleAlign,
   trailingControl,
   value,
   btnStyle,
+  btnTint,
 }: NativeListItemBaseProps & {
   trailingControl?: ReactNode;
   btnStyle?: SwiftUIButtonStyle;
@@ -217,6 +271,7 @@ function NativePressRow({
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
   const valueText = toPlainText(value);
+  const hasTrailingContent = valueText != null || trailingControl != null || chevron;
 
   const handlePress = onPress
     ? () => {
@@ -226,8 +281,21 @@ function NativePressRow({
     : undefined;
 
   return (
-    <NativeRowContainer disabled={disabled} onPress={handlePress} btnStyle={btnStyle}>
-      <NativeRowLabel subtitle={subtitleText ?? undefined} title={titleText ?? undefined} />
+    <NativeRowContainer
+      disabled={disabled}
+      onPress={handlePress}
+      btnStyle={btnStyle}
+      btnTint={btnTint}
+    >
+      {titleAlign === "center" && !hasTrailingContent ? <Spacer minLength={12} /> : null}
+      {titleAlign === "right" ? <Spacer minLength={12} /> : null}
+      <NativeRowLabel
+        subtitle={subtitleText ?? undefined}
+        title={titleText ?? undefined}
+        titleAlign={titleAlign}
+        expand={titleAlign != null}
+        titleColor={btnTint}
+      />
       <Spacer minLength={12} />
       {valueText != null ? (
         <SwiftText modifiers={[...VALUE_MODIFIERS, foregroundStyle(secondaryColor)]}>
@@ -236,6 +304,7 @@ function NativePressRow({
       ) : null}
       {trailingControl}
       {chevron ? <Image color={secondaryColor} size={13} systemName="chevron.right" /> : null}
+      {titleAlign === "center" && !hasTrailingContent ? <Spacer minLength={12} /> : null}
     </NativeRowContainer>
   );
 }
@@ -369,6 +438,47 @@ export function NativeListNavigationItem(props: NativeListNavigationItemProps) {
   }
 
   return <NativePressRow {...props} chevron={props.chevron ?? true} />;
+}
+
+export function NativeListButtonItem({
+  title,
+  onPress,
+  disabled,
+  titleAlign = "center",
+  btnTint,
+  ...itemProps
+}: NativeListButtonItemProps) {
+  if (!useNativeListEnabled() || !supportsNativeTextRow(itemProps.subtitle)) {
+    return (
+      <FallbackButtonItem
+        title={title}
+        onPress={onPress}
+        disabled={disabled}
+        titleAlign={titleAlign}
+        btnTint={btnTint}
+        {...itemProps}
+      />
+    );
+  }
+
+  const theme = useTheme();
+  const defaultColor = theme.accent10.val;
+  let resolveColor = btnTint ?? defaultColor;
+  if (typeof resolveColor === "string") {
+    resolveColor = toSwiftUIHexColor(resolveColor) ?? false;
+  }
+
+  return (
+    <NativePressRow
+      {...itemProps}
+      title={title}
+      disabled={disabled}
+      onPress={onPress}
+      titleAlign={titleAlign}
+      value={undefined}
+      btnTint={resolveColor}
+    />
+  );
 }
 
 export function NativeListSwitchItem({ switchProps, ...itemProps }: NativeListSwitchItemProps) {
