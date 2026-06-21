@@ -129,6 +129,7 @@ function TrueSheetPanelInner({
 
   const sheetBody = (
     <TrueSheetScrollLayoutProvider
+      automaticContentInsetAdjustment={Platform.OS === "ios"}
       insetAdjustment={insetAdjustment}
       nativeScrollInsetsApplied={shouldUseTrueSheetNativeScrollInsets(sheetScrollable)}
     >

@@ -39,10 +39,7 @@ import { NativePickerSwiftUI } from "../select/native_picker";
 import type { NativePickerSwiftUIHandle } from "../select/native_picker";
 import { resolveSelectItemGroups } from "../select/select_grouping";
 import { Switch } from "../switch";
-import {
-  getTrueSheetScrollBottomPadding,
-  getTrueSheetScrollIndicatorBottomInset,
-} from "../true_sheet/sheet_scroll_layout";
+import { getTrueSheetScrollBottomPadding } from "../true_sheet/sheet_scroll_layout";
 import { useTrueSheetScrollLayout } from "../true_sheet/true_sheet_scroll_context";
 import { toSwiftUIHexColor, triggerNativeHaptics, useResolvedNativeHaptics } from "../utils";
 import {
@@ -355,7 +352,6 @@ function NativeListRoot({
   const insets = useSafeAreaInsets();
   const {
     active: insideTrueSheet,
-    automaticContentInsetAdjustment,
     insetAdjustment,
     nativeScrollInsetsApplied,
   } = useTrueSheetScrollLayout();
@@ -377,18 +373,11 @@ function NativeListRoot({
         safeAreaBottom: insets.bottom,
       })
     : 0;
-  const indicatorBottomInset = insideTrueSheet
-    ? getTrueSheetScrollIndicatorBottomInset({
-        automaticContentInsetAdjustment,
-        nativeScrollInsetsApplied,
-        safeAreaBottom: insets.bottom,
-      })
-    : 0;
-
   return (
     <NativeListContext.Provider value={{ native: true }}>
       <Host style={[styles.nativeRoot, style]}>
         <List
+          compensatesForViewportClipping={insideTrueSheet}
           modifiers={[
             listStyle("insetGrouped"),
             listSectionSpacing("compact"),
@@ -399,15 +388,6 @@ function NativeListRoot({
                     edges: "bottom",
                     length: bottomPadding,
                     placement: "scrollContent",
-                  }),
-                ]
-              : []),
-            ...(insideTrueSheet && indicatorBottomInset > 0
-              ? [
-                  contentMargins({
-                    edges: "bottom",
-                    length: indicatorBottomInset,
-                    placement: "scrollIndicators",
                   }),
                 ]
               : []),

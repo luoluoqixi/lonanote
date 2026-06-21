@@ -631,3 +631,67 @@ index ee649568..d32a1516 100644
 +    }
 +  }
 +}
+diff --git a/ios/ListView.swift b/ios/ListView.swift
+index a7ca51df..199806d9 100644
+--- a/ios/ListView.swift
++++ b/ios/ListView.swift
+@@ -6,0 +7 @@ final class ListProps: UIBaseViewProps {
++  @Field var compensatesForViewportClipping = false
+@@ -14,0 +16 @@ struct ListView: ExpoSwiftUI.View {
++  @ViewBuilder
+@@ -15,0 +18,28 @@ struct ListView: ExpoSwiftUI.View {
++    if props.compensatesForViewportClipping {
++      GeometryReader { geometry in
++        let globalFrame = geometry.frame(in: .global)
++        let keyWindow = UIApplication.shared.connectedScenes
++          .compactMap { $0 as? UIWindowScene }
++          .flatMap { $0.windows }
++          .first { $0.isKeyWindow }
++        let viewportBottom = keyWindow?.bounds.maxY ?? UIScreen.main.bounds.maxY
++        let visibleHeight = max(0, min(globalFrame.height, viewportBottom - globalFrame.minY))
++        let indicatorBottomInset = globalFrame.maxY > viewportBottom
++          ? (keyWindow?.safeAreaInsets.bottom ?? 0)
++          : 0
++
++        if #available(iOS 17.0, tvOS 17.0, *) {
++          list
++            .contentMargins(.bottom, indicatorBottomInset, for: .scrollIndicators)
++            .frame(width: geometry.size.width, height: visibleHeight, alignment: .top)
++        } else {
++          list
++            .frame(width: geometry.size.width, height: visibleHeight, alignment: .top)
++        }
++      }
++    } else {
++      list
++    }
++  }
++
++  private var list: some View {
+diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
+index 73c2193b..d98238bf 100644
+--- a/src/swift-ui/List/index.tsx
++++ b/src/swift-ui/List/index.tsx
+@@ -23,0 +24,7 @@ export interface ListProps extends CommonViewModifierProps {
++  /**
++   * Shrinks the list viewport when its host extends below the physical screen boundary.
++   * Useful for native sheet containers that clip hosted SwiftUI content at smaller detents.
++   * @default false
++   */
++  compensatesForViewportClipping?: boolean;
++
+diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
+index 02e9345c..d6c23840 100644
+--- a/build/swift-ui/List/index.d.ts
++++ b/build/swift-ui/List/index.d.ts
+@@ -3,0 +4,6 @@ export interface ListProps extends CommonViewModifierProps {
++    /**
++     * Shrinks the list viewport when its host extends below the physical screen boundary.
++     * Useful for native sheet containers that clip hosted SwiftUI content at smaller detents.
++     * @default false
++     */
++    compensatesForViewportClipping?: boolean;
+@@ -26 +32 @@ export { ListForEach, ListForEachProps };
+-//# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
++//# sourceMappingURL=index.d.ts.map

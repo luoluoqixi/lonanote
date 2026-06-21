@@ -259,7 +259,7 @@ export function NativeListItem({
   title,
   onPress,
   disabled,
-  titleAlign = "center",
+  titleAlign,
   btnTint,
   ...itemProps
 }: NativeListItemProps) {
@@ -398,22 +398,16 @@ export function NativeListRoot({
   }
 
   if (insideTrueSheet) {
-    const bottomPadding =
-      os() === "ios"
-        ? getTrueSheetScrollBottomPadding({
-            insetAdjustment,
-            nativeScrollInsetsApplied,
-            safeAreaBottom: insets.bottom,
-          })
-        : undefined;
-    const indicatorBottomInset =
-      os() === "ios"
-        ? getTrueSheetScrollIndicatorBottomInset({
-            automaticContentInsetAdjustment,
-            nativeScrollInsetsApplied,
-            safeAreaBottom: insets.bottom,
-          })
-        : undefined;
+    const bottomPadding = getTrueSheetScrollBottomPadding({
+      insetAdjustment,
+      nativeScrollInsetsApplied,
+      safeAreaBottom: insets.bottom,
+    });
+    const indicatorBottomInset = getTrueSheetScrollIndicatorBottomInset({
+      automaticContentInsetAdjustment,
+      nativeScrollInsetsApplied,
+      safeAreaBottom: insets.bottom,
+    });
 
     return (
       <ScrollView
