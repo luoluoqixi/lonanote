@@ -177,29 +177,17 @@ export function WorkspaceDebugPage() {
                   展示 roots、同步结果、registry records 和当前 runtime state。
                 </Text>
               </View>
-
-              <View style={styles.actions}>
-                <Button
-                  disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
-                  onPress={() => refreshPanel()}
-                  variant="outlined"
-                >
-                  {isRefreshingPanel ? "刷新中..." : "刷新数据"}
-                </Button>
-                <Button
-                  disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
-                  onPress={() => handleSyncRoots()}
-                  variant="outlined"
-                >
-                  {isSyncing ? "同步中..." : "同步 Roots"}
-                </Button>
-              </View>
             </View>
           </NativeListItem>
           <NativeListButtonItem
             title={isRefreshingPanel ? "刷新中..." : "刷新数据"}
             disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
             onPress={() => refreshPanel()}
+          />
+          <NativeListButtonItem
+            title={isSyncing ? "同步中..." : "同步 Roots"}
+            disabled={isRefreshingPanel || isSyncing || isWorkspaceLoading}
+            onPress={() => handleSyncRoots()}
           />
         </NativeListSection>
 

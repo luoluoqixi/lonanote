@@ -9,6 +9,7 @@ import {
   Text as SwiftText,
   Section as SwiftUISection,
   VStack,
+  ZStack,
 } from "@expo/ui/swift-ui";
 import {
   buttonStyle,
@@ -23,6 +24,7 @@ import {
   listSectionSpacing,
   listStyle,
   multilineTextAlignment,
+  opacity,
   padding,
   scrollContentBackground,
   scrollDisabled,
@@ -129,12 +131,14 @@ function NativeRowLabel({
   titleAlign,
   expand = false,
   titleColor,
+  preserveLeadingAnchor = false,
 }: {
   subtitle?: ReactNode;
   title?: ReactNode;
   titleAlign?: "center" | "right" | "left";
   expand?: boolean;
   titleColor?: boolean | string | null;
+  preserveLeadingAnchor?: boolean;
 }) {
   const theme = useTheme();
   const titleText = toPlainText(title);
@@ -149,11 +153,10 @@ function NativeRowLabel({
     return null;
   }
 
-  return (
+  const labelContent = (
     <VStack
       alignment={resolvedTextAlignment}
       modifiers={[
-        layoutPriority(1),
         ...(expand ? [frame({ maxWidth: 99999, alignment: resolvedTextAlignment })] : []),
       ]}
       spacing={subtitleText != null ? 4 : 0}
@@ -177,6 +180,36 @@ function NativeRowLabel({
       ) : null}
     </VStack>
   );
+
+  if (preserveLeadingAnchor && resolvedTextAlignment === "center") {
+    return (
+      <ZStack
+        alignment="center"
+        modifiers={[layoutPriority(1), ...(expand ? [frame({ maxWidth: 99999 })] : [])]}
+      >
+        <VStack
+          alignment="leading"
+          modifiers={[
+            opacity(0),
+            ...(expand ? [frame({ maxWidth: 99999, alignment: "leading" })] : []),
+          ]}
+          spacing={subtitleText != null ? 4 : 0}
+        >
+          {titleText != null ? (
+            <SwiftText modifiers={[...TITLE_MODIFIERS, lineLimit(subtitleText != null ? 2 : 1)]}>
+              {titleText}
+            </SwiftText>
+          ) : null}
+          {subtitleText != null ? (
+            <SwiftText modifiers={[...SUBTITLE_MODIFIERS]}>{subtitleText}</SwiftText>
+          ) : null}
+        </VStack>
+        {labelContent}
+      </ZStack>
+    );
+  }
+
+  return <VStack modifiers={[layoutPriority(1)]}>{labelContent}</VStack>;
 }
 
 function NativeRowContainer({
@@ -261,9 +294,11 @@ function NativePressRow({
   value,
   btnStyle,
   btnTint,
+  preserveLeadingAnchor = false,
 }: NativeListItemBaseProps & {
   trailingControl?: ReactNode;
   btnStyle?: SwiftUIButtonStyle;
+  preserveLeadingAnchor?: boolean;
 }) {
   const theme = useTheme();
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
@@ -272,6 +307,7 @@ function NativePressRow({
   const subtitleText = toPlainText(subtitle);
   const valueText = toPlainText(value);
   const hasTrailingContent = valueText != null || trailingControl != null || chevron;
+  const showTrailingSpacer = hasTrailingContent && (titleText != null || subtitleText != null);
 
   const handlePress = onPress
     ? () => {
@@ -287,16 +323,15 @@ function NativePressRow({
       btnStyle={btnStyle}
       btnTint={btnTint}
     >
-      {titleAlign === "center" && !hasTrailingContent ? <Spacer minLength={12} /> : null}
-      {titleAlign === "right" ? <Spacer minLength={12} /> : null}
       <NativeRowLabel
         subtitle={subtitleText ?? undefined}
         title={titleText ?? undefined}
         titleAlign={titleAlign}
         expand={titleAlign != null}
         titleColor={btnTint}
+        preserveLeadingAnchor={preserveLeadingAnchor}
       />
-      <Spacer minLength={12} />
+      {showTrailingSpacer ? <Spacer minLength={12} /> : null}
       {valueText != null ? (
         <SwiftText modifiers={[...VALUE_MODIFIERS, foregroundStyle(secondaryColor)]}>
           {valueText}
@@ -304,7 +339,6 @@ function NativePressRow({
       ) : null}
       {trailingControl}
       {chevron ? <Image color={secondaryColor} size={13} systemName="chevron.right" /> : null}
-      {titleAlign === "center" && !hasTrailingContent ? <Spacer minLength={12} /> : null}
     </NativeRowContainer>
   );
 }
@@ -461,8 +495,9 @@ export function NativeListButtonItem({
     );
   }
 
-  const theme = useTheme();
-  const defaultColor = theme.accent10.val;
+  // const theme = useTheme();
+  // const defaultColor = theme.accent10.val;
+  const defaultColor = false;
   let resolveColor = btnTint ?? defaultColor;
   if (typeof resolveColor === "string") {
     resolveColor = toSwiftUIHexColor(resolveColor) ?? false;
@@ -477,6 +512,7 @@ export function NativeListButtonItem({
       titleAlign={titleAlign}
       value={undefined}
       btnTint={resolveColor}
+      preserveLeadingAnchor={titleAlign === "center"}
     />
   );
 }
