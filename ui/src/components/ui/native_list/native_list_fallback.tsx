@@ -298,25 +298,62 @@ export function NativeListRoot({
     );
   }
 
-  const bottomPadding =
-    insideTrueSheet && os() === "ios"
-      ? getTrueSheetScrollBottomPadding({
-          insetAdjustment,
-          nativeScrollInsetsApplied,
-          safeAreaBottom: insets.bottom,
-        })
-      : undefined;
-  const indicatorBottomInset =
-    insideTrueSheet && os() === "ios"
-      ? getTrueSheetScrollIndicatorBottomInset({
-          automaticContentInsetAdjustment,
-          nativeScrollInsetsApplied,
-          safeAreaBottom: insets.bottom,
-        })
-      : undefined;
+  if (insideTrueSheet) {
+    const bottomPadding =
+      os() === "ios"
+        ? getTrueSheetScrollBottomPadding({
+            insetAdjustment,
+            nativeScrollInsetsApplied,
+            safeAreaBottom: insets.bottom,
+          })
+        : undefined;
+    const indicatorBottomInset =
+      os() === "ios"
+        ? getTrueSheetScrollIndicatorBottomInset({
+            automaticContentInsetAdjustment,
+            nativeScrollInsetsApplied,
+            safeAreaBottom: insets.bottom,
+          })
+        : undefined;
+
+    return (
+      <ScrollView
+        alwaysBounceVertical={alwaysBounceVertical}
+        contentInset={contentInset}
+        contentContainerStyle={[
+          styles.rootContent,
+          bottomPadding != null ? { paddingBottom: bottomPadding } : null,
+          contentContainerStyle,
+        ]}
+        contentInsetAdjustmentBehavior={
+          os() === "ios"
+            ? automaticContentInsetAdjustment
+              ? "automatic"
+              : "never"
+            : contentInsetAdjustmentBehavior
+        }
+        contentOffset={contentOffset}
+        keyboardShouldPersistTaps={keyboardShouldPersistTaps ?? "handled"}
+        nestedScrollEnabled={nestedScrollEnabled ?? true}
+        showsVerticalScrollIndicator={showsVerticalScrollIndicator ?? true}
+        scrollIndicatorInsets={
+          indicatorBottomInset != null
+            ? {
+                ...scrollIndicatorInsets,
+                bottom: indicatorBottomInset,
+              }
+            : scrollIndicatorInsets
+        }
+        style={[styles.root, style]}
+        {...scrollViewProps}
+      >
+        {children}
+      </ScrollView>
+    );
+  }
+
   const shouldUseManualHeaderSpacing =
     os() === "ios" &&
-    !insideTrueSheet &&
     headerHeight > 0 &&
     contentInset == null &&
     contentInsetAdjustmentBehavior == null &&
@@ -328,34 +365,18 @@ export function NativeListRoot({
       contentInset={contentInset}
       contentContainerStyle={[
         styles.scrollRootContent,
-        insideTrueSheet
-          ? [styles.scrollViewportWrap, styles.scrollContentClip]
-          : styles.scrollViewportFill,
+        styles.scrollViewportFill,
         shouldUseManualHeaderSpacing ? { paddingTop: headerHeight + 8 } : null,
-        bottomPadding != null ? { paddingBottom: bottomPadding } : null,
         contentContainerStyle,
       ]}
       contentInsetAdjustmentBehavior={
-        insideTrueSheet && os() === "ios"
-          ? automaticContentInsetAdjustment
-            ? "automatic"
-            : "never"
-          : shouldUseManualHeaderSpacing
-            ? "never"
-            : contentInsetAdjustmentBehavior
+        shouldUseManualHeaderSpacing ? "never" : contentInsetAdjustmentBehavior
       }
       contentOffset={contentOffset}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps ?? "handled"}
       nestedScrollEnabled={nestedScrollEnabled ?? true}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator ?? true}
-      scrollIndicatorInsets={
-        indicatorBottomInset != null
-          ? {
-              ...scrollIndicatorInsets,
-              bottom: indicatorBottomInset,
-            }
-          : scrollIndicatorInsets
-      }
+      scrollIndicatorInsets={scrollIndicatorInsets}
       style={[styles.root, style]}
       {...scrollViewProps}
     >
@@ -394,14 +415,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     width: "100%",
   },
-  scrollContentClip: {
-    overflow: "hidden",
-  },
   scrollViewportFill: {
     flexGrow: 1,
-  },
-  scrollViewportWrap: {
-    flexGrow: 0,
   },
   rowContainer: {
     minHeight: 56,
