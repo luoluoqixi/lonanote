@@ -3,6 +3,7 @@ import { ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
 import { Children, Fragment, type ReactNode, useContext } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "tamagui";
 
 import { os } from "@/api/common/platform";
 
@@ -11,7 +12,7 @@ import { ListItem } from "../list_item";
 import { Select } from "../select";
 import { Separator } from "../separator";
 import { Switch } from "../switch";
-import { Text } from "../text";
+import { SizableText, Text } from "../text";
 import {
   getTrueSheetScrollBottomPadding,
   getTrueSheetScrollIndicatorBottomInset,
@@ -37,10 +38,12 @@ type RowContainerProps = {
 
 function FallbackRowContainer({ children, disabled, nativeHaptics, onPress }: RowContainerProps) {
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
+  const theme = useTheme();
+  const rowBackground = { backgroundColor: theme.background?.val };
 
   if (onPress == null) {
     return (
-      <View style={[styles.rowContainer, disabled ? styles.disabledContent : null]}>
+      <View style={[styles.rowContainer, rowBackground, disabled ? styles.disabledContent : null]}>
         {children}
       </View>
     );
@@ -59,7 +62,7 @@ function FallbackRowContainer({ children, disabled, nativeHaptics, onPress }: Ro
         pressed && !disabled ? styles.pressablePressed : null,
       ]}
     >
-      <View style={styles.rowContainer}>{children}</View>
+      <View style={[styles.rowContainer, rowBackground]}>{children}</View>
     </Pressable>
   );
 }
@@ -68,20 +71,64 @@ function FallbackSectionItem({ children }: { children: ReactNode }) {
   return <ListGroup.GroupItem>{children}</ListGroup.GroupItem>;
 }
 
-function FallbackRowLabel({ subtitle, title }: { subtitle?: ReactNode; title?: ReactNode }) {
-  return (
-    <View style={styles.textColumn}>
-      {title != null ? (
-        <Text fontSize="$5" fontWeight="500" numberOfLines={subtitle ? 2 : 1}>
-          {title}
+type NativeListRowProps = NativeListItemBaseProps & {
+  iconAfter?: ReactNode;
+};
+
+/**
+ * 统一行组件：有 subtitle 时用 ListItem 的 title/subTitle props；
+ * 只有 title 时用 children 居中。
+ */
+function NativeListRow({
+  chevron = false,
+  disabled,
+  iconAfter,
+  nativeHaptics,
+  onPress,
+  subtitle,
+  title,
+  value,
+}: NativeListRowProps) {
+  const hasSubtitle = subtitle != null;
+
+  const combinedIconAfter = (
+    <View style={styles.iconAfterRow}>
+      {value != null ? (
+        <Text color="$color10" fontSize="$5" numberOfLines={1}>
+          {value}
         </Text>
       ) : null}
-      {subtitle != null ? (
-        <Text color="$color10" fontSize="$3" numberOfLines={2}>
-          {subtitle}
-        </Text>
-      ) : null}
+      {iconAfter}
+      {chevron ? <ChevronRight color="$color10" size={18} /> : null}
     </View>
+  );
+
+  if (hasSubtitle) {
+    return (
+      <ListItem
+        disabled={disabled}
+        nativeHaptics={nativeHaptics}
+        onPress={onPress}
+        subTitle={subtitle}
+        title={title}
+        iconAfter={combinedIconAfter}
+      />
+    );
+  }
+
+  return (
+    <ListItem
+      disabled={disabled}
+      nativeHaptics={nativeHaptics}
+      onPress={onPress}
+      iconAfter={combinedIconAfter}
+    >
+      <View style={{ flex: 1, justifyContent: "center", minWidth: 0 }}>
+        <SizableText size="$true" numberOfLines={1}>
+          {title}
+        </SizableText>
+      </View>
+    </ListItem>
   );
 }
 
@@ -89,45 +136,10 @@ type PressRowProps = NativeListItemBaseProps & {
   trailingControl?: ReactNode;
 };
 
-function FallbackPressRow({
-  chevron = false,
-  disabled,
-  nativeHaptics,
-  onPress,
-  subtitle,
-  title,
-  trailingControl,
-  value,
-}: PressRowProps) {
-  if (value == null && trailingControl == null) {
-    return (
-      <FallbackSectionItem>
-        <ListItem
-          disabled={disabled}
-          iconAfter={chevron ? ChevronRight : undefined}
-          nativeHaptics={nativeHaptics}
-          onPress={onPress}
-          subTitle={subtitle}
-          title={title}
-        />
-      </FallbackSectionItem>
-    );
-  }
-
+function FallbackPressRow({ trailingControl, ...props }: PressRowProps) {
   return (
     <FallbackSectionItem>
-      <FallbackRowContainer disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
-        <View style={styles.rowContent}>
-          <FallbackRowLabel subtitle={subtitle} title={title} />
-          {value != null ? (
-            <Text color="$color10" fontSize="$4" numberOfLines={1}>
-              {value}
-            </Text>
-          ) : null}
-          {trailingControl}
-          {chevron ? <ChevronRight color="$color10" size={18} /> : null}
-        </View>
-      </FallbackRowContainer>
+      <NativeListRow {...props} iconAfter={trailingControl} />
     </FallbackSectionItem>
   );
 }
@@ -158,25 +170,26 @@ export function NativeListSwitchItem({ switchProps, ...itemProps }: NativeListSw
   const disabled = itemProps.disabled || switchProps.disabled;
 
   return (
-    <FallbackPressRow
-      {...itemProps}
-      disabled={disabled}
-      nativeHaptics={itemProps.nativeHaptics ?? true}
-      onPress={() => switchProps.onCheckedChange?.(!checked)}
-      trailingControl={
-        <View style={styles.trailingControl}>
-          <Switch
-            {...switchProps}
-            native
-            onPress={(event) => {
-              switchProps.onPress?.(event);
-              event.stopPropagation();
-            }}
-          />
-        </View>
-      }
-      value={undefined}
-    />
+    <FallbackSectionItem>
+      <NativeListRow
+        {...itemProps}
+        disabled={disabled}
+        nativeHaptics={itemProps.nativeHaptics ?? true}
+        onPress={() => switchProps.onCheckedChange?.(!checked)}
+        iconAfter={
+          <View style={styles.trailingControl}>
+            <Switch
+              {...switchProps}
+              native
+              onPress={(event) => {
+                switchProps.onPress?.(event);
+                event.stopPropagation();
+              }}
+            />
+          </View>
+        }
+      />
+    </FallbackSectionItem>
   );
 }
 
@@ -193,18 +206,24 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
         nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
         nativeTrigger
         nativeTriggerContent={
-          <View style={[styles.rowContainer, disabled ? styles.disabledContent : null]}>
-            <View style={styles.rowContent}>
-              <FallbackRowLabel subtitle={itemProps.subtitle} title={itemProps.title} />
+          <NativeListRow
+            {...itemProps}
+            disabled={disabled}
+            iconAfter={
               <View style={styles.selectValue}>
-                <Text color="$color10" fontSize="$4" numberOfLines={1}>
+                <Text color="$color10" fontSize="$5" numberOfLines={1}>
                   {selectedLabel}
                 </Text>
                 <ChevronsUpDown color="$color10" size={14} />
               </View>
-            </View>
-          </View>
+            }
+          />
         }
+        triggerProps={{
+          pressStyle: {
+            backgroundColor: "$backgroundPress",
+          },
+        }}
       />
     </FallbackSectionItem>
   );
@@ -455,6 +474,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
     minWidth: 0,
+  },
+  iconAfterRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
   },
   trailingControl: {
     alignItems: "center",
