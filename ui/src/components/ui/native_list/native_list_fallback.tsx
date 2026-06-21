@@ -211,7 +211,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
             disabled={disabled}
             iconAfter={
               <View style={styles.selectValue}>
-                <Text color="$color10" fontSize="$5" numberOfLines={1}>
+                <Text color="$color10" fontSize="$4" numberOfLines={1}>
                   {selectedLabel}
                 </Text>
                 <ChevronsUpDown color="$color10" size={14} />
@@ -465,7 +465,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexShrink: 1,
     gap: 4,
-    maxWidth: "45%",
   },
   staticRoot: {
     width: "100%",
