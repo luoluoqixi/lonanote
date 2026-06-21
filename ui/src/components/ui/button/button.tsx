@@ -41,7 +41,6 @@ export const Button = forwardRef<ComponentRef<typeof TamaguiButton>, ButtonProps
       : typeof children === "number"
         ? String(children)
         : undefined) ??
-    props["aria-label"] ??
     "";
 
   if (useNativeButton) {

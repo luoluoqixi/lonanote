@@ -1700,6 +1700,7 @@ const styles = StyleSheet.create({
   root: {
     gap: 20,
     paddingBottom: 12,
+    paddingHorizontal: 12,
   },
   scrollViewContent: {
     gap: 8,
