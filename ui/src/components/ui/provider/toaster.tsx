@@ -7,7 +7,7 @@ import { Spinner, XStack, YStack } from "tamagui";
 import { isWeb, os } from "@/api/common/platform";
 import { useTrueSheetOverlayLayout } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_context";
 
-import { getScopedToastViewportBottomInset } from "../utils/overlay_toast_layout";
+import { getScopedToastViewportBottomInset } from "../sheet/native_sheet/true_sheet/overlay_toast_layout";
 
 const DEFAULT_CLOSE_BTN_STYLE = {
   top: "50%",
@@ -261,7 +261,7 @@ export {
   IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET,
   IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET,
   SCOPED_TOAST_VIEWPORT_INSET,
-} from "../utils/overlay_toast_layout";
+} from "../sheet/native_sheet/true_sheet/overlay_toast_layout";
 
 export function Toaster({ viewportName }: { viewportName?: string }) {
   useWebToastAnimationOverride();

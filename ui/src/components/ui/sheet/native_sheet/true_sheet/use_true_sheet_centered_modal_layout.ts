@@ -6,12 +6,12 @@ import {
   useTrueSheetOverlaySheetTopPosition,
 } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_context";
 import { getTrueSheetCenteredModalDetentOffsetY } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_metrics";
+import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
 
 import {
   getTrueSheetCenteredModalLiftAmount,
   isTrueSheetOverlayPortalHost,
 } from "./overlay_toast_layout";
-import { useScreenOverlayPortalHost } from "./screen_overlay_portal";
 
 /**
  * True Sheet 内居中 Dialog / AlertDialog：上移内容，不缩短 teleport 层（避免遮罩底部漏光）。

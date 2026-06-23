@@ -32,16 +32,16 @@ export function DebugHomePage({
   onOpenPanel,
   onSheetModeChange,
 }: {
-  currentSheetMode?: "fullPage" | "trueSheet";
+  currentSheetMode?: "fullPage" | "nativeSheet";
   onOpenFullPage?: (key: DebugTabKey) => void;
   onOpenPanel?: (key: DebugTabKey) => void;
-  onSheetModeChange?: (mode: "fullPage" | "trueSheet") => void;
+  onSheetModeChange?: (mode: "fullPage" | "nativeSheet") => void;
 }) {
   const nestedSectionSheetsFromStore = useDebugSectionsAsNestedSheets();
   const [nestedSectionSheets, setNestedSectionSheets] = useState(nestedSectionSheetsFromStore);
   const [dismissVersion, setDismissVersion] = useState(getDebugSectionSheetDismissVersion);
   const nestedSectionDetentLevel = useDebugNestedSectionDetentLevel();
-  const inTrueSheet = onOpenPanel != null;
+  const inNativeSheet = onOpenPanel != null;
 
   useEffect(() => {
     setNestedSectionSheets(nestedSectionSheetsFromStore);
@@ -65,7 +65,7 @@ export function DebugHomePage({
       return;
     }
 
-    if (inTrueSheet) {
+    if (inNativeSheet) {
       onOpenPanel?.(key);
       return;
     }
@@ -82,7 +82,7 @@ export function DebugHomePage({
             disabled={
               nestedSectionSheets
                 ? false
-                : inTrueSheet
+                : inNativeSheet
                   ? onOpenPanel == null
                   : onOpenFullPage == null
             }
@@ -100,7 +100,7 @@ export function DebugHomePage({
             checked: nestedSectionSheets,
             onCheckedChange: handleNestedSheetsChange,
           }}
-          title="分区嵌套 True Sheet"
+          title="分区嵌套 NativeSheet"
         />
         {nestedSectionSheets ? (
           <NativeListCustomItem>
@@ -131,17 +131,17 @@ export function DebugHomePage({
             selectProps={{
               items: [
                 { label: "普通页面", value: "fullPage" },
-                { label: "TrueSheet", value: "trueSheet" },
+                { label: "NativeSheet", value: "nativeSheet" },
               ],
               onValueChange: (value) => {
                 if (value === "fullPage" && currentSheetMode !== "fullPage") {
                   onSheetModeChange("fullPage");
                 } else if (value !== currentSheetMode) {
-                  onSheetModeChange(value as "trueSheet" | "fullPage");
+                  onSheetModeChange(value as "nativeSheet" | "fullPage");
                 }
               },
               placeholder: "选择模式",
-              value: currentSheetMode ?? "trueSheet",
+              value: currentSheetMode ?? "nativeSheet",
             }}
             title="调试面板模式"
           />

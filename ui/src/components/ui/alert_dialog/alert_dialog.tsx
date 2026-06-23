@@ -14,8 +14,8 @@ import {
   type OutsideInteractionEvent,
   preventDialogDismissForDragRegion,
 } from "@/components/ui/dialog/dialog_outside_interaction";
+import { useTrueSheetCenteredModalContentOffsetY } from "@/components/ui/sheet/native_sheet/true_sheet/use_true_sheet_centered_modal_layout";
 import { resolveAriaLabel } from "@/components/ui/utils";
-import { useTrueSheetCenteredModalContentOffsetY } from "@/components/ui/utils/use_true_sheet_centered_modal_layout";
 
 import type {
   AlertDialogActionProps,

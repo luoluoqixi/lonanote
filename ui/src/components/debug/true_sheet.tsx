@@ -5,14 +5,14 @@ import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb } from "@/api/common";
 import { NativeSheet, NativeSheetStack } from "@/components/ui";
+import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
 import { trueSheetInnerStackScreenOptions } from "@/components/ui/sheet/native_sheet/true_sheet/stack";
 import { TrueSheetToolbarHeader } from "@/components/ui/sheet/native_sheet/true_sheet/toolbar_header";
-import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 import {
+  DEBUG_NATIVE_SHEET_NAME,
   DEBUG_NESTED_SECTION_SHEET_DETENTS,
-  DEBUG_TRUE_SHEET_NAME,
   cleanupDebugSectionSheet,
   closeDebugPanel,
   closeDebugSectionSheet,
@@ -35,7 +35,7 @@ type DebugSheetParamList = { index: undefined } & Record<DebugTabKey, undefined>
 function DebugHomeRoute() {
   const navigation = useNavigation<NavigationProp<DebugSheetParamList>>();
 
-  const handleModeChange = useCallback((mode: "fullPage" | "trueSheet") => {
+  const handleModeChange = useCallback((mode: "fullPage" | "nativeSheet") => {
     if (mode === "fullPage") {
       switchDebugPanelToFullPage();
     }
@@ -43,7 +43,7 @@ function DebugHomeRoute() {
 
   return (
     <DebugHomePage
-      currentSheetMode="trueSheet"
+      currentSheetMode="nativeSheet"
       onOpenPanel={(key) => {
         void openDebugSection(key).then((handled) => {
           if (!handled) {
@@ -58,7 +58,7 @@ function DebugHomeRoute() {
 
 function createDebugSectionRoute(key: DebugTabKey) {
   return function DebugSectionRoute() {
-    return <DebugSectionPage layoutHost="trueSheet" sectionKey={key} />;
+    return <DebugSectionPage layoutHost="nativeSheet" sectionKey={key} />;
   };
 }
 
@@ -70,7 +70,7 @@ function DebugNativeSheetStackHost() {
   return (
     <NativeSheetStack
       initialRouteName="index"
-      name={DEBUG_TRUE_SHEET_NAME}
+      name={DEBUG_NATIVE_SHEET_NAME}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) {
           closeDebugPanel();
@@ -145,7 +145,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
         title={definition.label}
         transparent={Platform.OS === "ios"}
       />
-      <DebugSectionPage layoutHost="trueSheet" sectionKey={sectionKey} />
+      <DebugSectionPage layoutHost="nativeSheet" sectionKey={sectionKey} />
     </NativeSheet>
   );
 }

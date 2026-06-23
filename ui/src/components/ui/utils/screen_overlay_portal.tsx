@@ -15,7 +15,7 @@ import {
   TRUE_SHEET_TOAST_DETENT_LIFT,
   getTrueSheetOverlayLayoutBottomInset,
   shouldApplyIosTrueSheetToastLayerInset,
-} from "./overlay_toast_layout";
+} from "../sheet/native_sheet/true_sheet/overlay_toast_layout";
 import { ScreenOverlayFloatingProvider } from "./screen_overlay_floating";
 
 const ScreenOverlayPortalContext = createContext<string | null>(null);

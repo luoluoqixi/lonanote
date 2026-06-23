@@ -6,8 +6,8 @@ import { Dialog as TamaguiDialog, Unspaced, XStack, YStack } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
 import { Button } from "@/components/ui/button";
+import { useTrueSheetCenteredModalContentOffsetY } from "@/components/ui/sheet/native_sheet/true_sheet/use_true_sheet_centered_modal_layout";
 import { resolveAriaLabel } from "@/components/ui/utils";
-import { useTrueSheetCenteredModalContentOffsetY } from "@/components/ui/utils/use_true_sheet_centered_modal_layout";
 
 import {
   type OutsideInteractionEvent,

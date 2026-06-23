@@ -110,8 +110,15 @@ export function getScopedToastViewportBottomInset(
 
   if (platform === "ios") {
     if (isTrueSheetOverlayPortalHost(viewportName)) {
-      const scale = getTrueSheetPartialDetentCompensationScale(detent);
-      return Math.round(IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET * scale);
+      const scale = getTrueSheetPartialDetentCompensationScale(detent, 1);
+      const scaleProgress = Math.min(1, Math.max(0, scale - 1));
+      const inverseCurve =
+        scaleProgress * (1 - scaleProgress) * (1 - scaleProgress) * (1 - scaleProgress);
+      const curveStrength = 1.8;
+      const scaleStrength = 1.4;
+      const scale2 = 1 + curveStrength * inverseCurve;
+      const s = scale2 > 1 ? scale2 * scaleStrength : 1;
+      return Math.round(IOS_TRUE_SHEET_TOAST_VIEWPORT_INSET * s);
     }
 
     return IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET;

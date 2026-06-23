@@ -8,13 +8,16 @@ export const TRUE_SHEET_DIALOG_DETENT_OFFSET_BLEND = 0.8;
 /**
  * 部分 detent 时 RN 布局仍含 `insetAdjustment` 垫高，Toast / Dialog 补偿缩放。
  */
-export function getTrueSheetPartialDetentCompensationScale(detent: number): number {
+export function getTrueSheetPartialDetentCompensationScale(
+  detent: number,
+  customScale?: number,
+): number {
   if (detent >= 1) {
     return 1;
   }
-
+  const s = customScale ?? 0.75;
   const clamped = Math.min(1, Math.max(0, detent));
-  return 1 + (1 - clamped) * 0.75;
+  return 1 + (1 - clamped) * s;
 }
 
 function getWindowHeight(): number {

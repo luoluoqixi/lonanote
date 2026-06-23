@@ -11,12 +11,12 @@ export function DebugSectionPage({
   layoutHost = "default",
 }: {
   sectionKey: DebugTabKey;
-  layoutHost?: "default" | "trueSheet";
+  layoutHost?: "default" | "nativeSheet";
 }) {
   const definition = getDebugPanelRouteDefinition(sectionKey);
   const SectionPage = definition.Page;
 
-  if (layoutHost === "trueSheet" && definition.presentation === "static") {
+  if (layoutHost === "nativeSheet" && definition.presentation === "static") {
     return (
       <TrueSheetScrollContent
         contentContainerStyle={styles.staticScrollContent}

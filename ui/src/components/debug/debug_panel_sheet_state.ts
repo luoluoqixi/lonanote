@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useSyncExternalStore } from "react";
 
-import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
+import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
 
 import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "./routes";
 
@@ -101,7 +101,7 @@ export function useDebugNestedSectionDetentLevel() {
   );
 }
 
-export const DEBUG_TRUE_SHEET_NAME = "lonanote-debug";
+export const DEBUG_NATIVE_SHEET_NAME = "lonanote-debug";
 
 let debugSheetOpen = false;
 let debugSheetPosition = 0;
@@ -306,7 +306,7 @@ export function openDebugFullPageSection(key: DebugTabKey) {
   router.push(getDebugFullPageHref(key));
 }
 
-export function switchDebugPanelToTrueSheet() {
+export function switchDebugPanelToNativeSheet() {
   if (router.canGoBack()) {
     router.back();
   }
