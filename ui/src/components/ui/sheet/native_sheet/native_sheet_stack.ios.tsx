@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { dismissTrueSheet, presentTrueSheet } from "./true_sheet";
 import { TrueSheetStackHost } from "./true_sheet/stack_host";
@@ -20,13 +20,25 @@ function NativeSheetStackRoot({
 }: NativeSheetStackProps) {
   const [sheetName] = useState(() => name ?? "native-sheet-stack");
   const [navigationRef] = useState(() => createTrueSheetStackNavigationRef());
+  const presentedRef = useRef(false);
+  const dismissingRef = useRef(false);
 
   useEffect(() => {
     if (open) {
+      if (presentedRef.current || dismissingRef.current) {
+        return;
+      }
+
+      dismissingRef.current = false;
       presentTrueSheet(sheetName).catch(() => undefined);
       return;
     }
 
+    if (!presentedRef.current || dismissingRef.current) {
+      return;
+    }
+
+    dismissingRef.current = true;
     dismissTrueSheet(sheetName).catch(() => undefined);
   }, [open, sheetName]);
 
@@ -35,8 +47,19 @@ function NativeSheetStackRoot({
       initialRouteName={initialRouteName}
       name={sheetName}
       navigationRef={navigationRef}
-      onDidDismiss={() => onOpenChange?.(false)}
-      onRequestClose={() => onOpenChange?.(false)}
+      onDidDismiss={() => {
+        presentedRef.current = false;
+        dismissingRef.current = false;
+        onOpenChange?.(false);
+      }}
+      onDidPresent={() => {
+        presentedRef.current = true;
+        dismissingRef.current = false;
+      }}
+      onRequestClose={() => {
+        dismissingRef.current = true;
+        onOpenChange?.(false);
+      }}
       overlayPortalHostName={overlayPortalHostName}
       screenOptions={screenOptions}
       sheetProps={sheetProps as any}

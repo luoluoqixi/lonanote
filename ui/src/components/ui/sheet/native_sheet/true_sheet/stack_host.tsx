@@ -37,6 +37,7 @@ export type TrueSheetStackHostProps<ParamList extends ParamListBase = ParamListB
   name: string;
   navigationRef?: TrueSheetStackNavigationRef<ParamList>;
   onDidDismiss?: () => void;
+  onDidPresent?: () => void;
   onRequestClose?: () => void;
   screenOptions?: TrueSheetInnerStackScreenOptions;
   /** 透传 TrueSheet 属性（不含 name / children / header） */
@@ -66,6 +67,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
   name,
   navigationRef: navigationRefProp,
   onDidDismiss,
+  onDidPresent,
   onRequestClose,
   overlayPortalHostName,
   screenOptions,
@@ -91,6 +93,14 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
       overlayLayoutSync.onDidDismiss(event);
     },
     [initialRouteName, navigationRef, onDidDismiss, overlayLayoutSync],
+  );
+
+  const handleDidPresent = useCallback<NonNullable<TrueSheetProps["onDidPresent"]>>(
+    (event) => {
+      onDidPresent?.();
+      overlayLayoutSync.onDidPresent(event);
+    },
+    [onDidPresent, overlayLayoutSync],
   );
 
   const mergedScreenOptions: TrueSheetInnerStackScreenOptions = {
@@ -150,7 +160,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
       {...sheetProps}
       onDetentChange={overlayLayoutSync.onDetentChange}
       onDidDismiss={handleDidDismiss}
-      onDidPresent={overlayLayoutSync.onDidPresent}
+      onDidPresent={handleDidPresent}
       onDragChange={overlayLayoutSync.onDragChange}
       onDragEnd={overlayLayoutSync.onDragEnd}
       onPositionChange={overlayLayoutSync.onPositionChange}

@@ -215,6 +215,7 @@ export function NativeSheet(
   const [uncontrolledPosition, setUncontrolledPosition] = useState(defaultPosition ?? 0);
   const openState = useSheetOpenState(props);
   const presentedRef = useRef(false);
+  const dismissingRef = useRef(false);
   const lastRequestedPositionRef = useRef<number | null>(null);
   const detentNormalization = useMemo(
     () => resolveNativeDetents(snapPoints, snapPointsMode, windowHeight),
@@ -233,15 +234,17 @@ export function NativeSheet(
     }
 
     if (!resolvedOpen) {
-      if (!presentedRef.current) {
+      if (!presentedRef.current || dismissingRef.current) {
         return;
       }
 
+      dismissingRef.current = true;
       dismissTrueSheet(sheetName).catch(() => undefined);
       return;
     }
 
     if (!presentedRef.current) {
+      dismissingRef.current = false;
       lastRequestedPositionRef.current = resolvedDetentIndex;
       presentTrueSheet(sheetName, resolvedDetentIndex).catch(() => undefined);
       return;
@@ -276,6 +279,7 @@ export function NativeSheet(
     grabber: handle ?? false,
     onBackPress: dismissOnBackPress
       ? () => {
+          dismissingRef.current = true;
           handleOpenChange(false);
           return true;
         }
@@ -285,6 +289,7 @@ export function NativeSheet(
     },
     onDidDismiss: () => {
       presentedRef.current = false;
+      dismissingRef.current = false;
       lastRequestedPositionRef.current = null;
       handleOpenChange(false);
       openState.controller?.onAnimationComplete?.({ open: false });
@@ -292,6 +297,7 @@ export function NativeSheet(
     },
     onDidPresent: (event) => {
       presentedRef.current = true;
+      dismissingRef.current = false;
       lastRequestedPositionRef.current = event.nativeEvent.index;
       handlePositionChange(event.nativeEvent.index);
       openState.controller?.onAnimationComplete?.({ open: true });
@@ -330,6 +336,7 @@ export function NativeSheet(
       name={sheetName}
       overlayPortalHostName={overlayPortalHostName}
       onRequestClose={() => {
+        dismissingRef.current = true;
         handleOpenChange(false);
       }}
       sheetProps={sheetProps}
