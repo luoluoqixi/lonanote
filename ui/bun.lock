@@ -43,6 +43,7 @@
         "expo-web-browser": "~55.0.16",
         "globals": "^17.6.0",
         "lonanote_rust_module": "workspace:*",
+        "native-ios-common": "workspace:*",
         "prettier": "^3.8.4",
         "react": "19.2.5",
         "react-dom": "19.2.5",
@@ -71,6 +72,15 @@
         "babel-preset-expo": "^55.0.22",
         "cross-env": "^10.1.0",
         "typescript": "~5.9.2",
+      },
+    },
+    "modules/native-ios-common": {
+      "name": "native-ios-common",
+      "version": "1.0.0",
+      "peerDependencies": {
+        "expo": "*",
+        "react": "*",
+        "react-native": "*",
       },
     },
     "rust": {
@@ -1675,6 +1685,8 @@
     "multitars": ["multitars@1.0.0", "", {}, "sha512-H/J4fMLedtudftaYMOg7ajzLYgT3/rwbWVJbqr/iUgB8DQztn38ys5HOqI1CzSxx8QhXXwOOnnBvd4v3jG5+Mg=="],
 
     "nanoid": ["nanoid@3.3.12", "", { "bin": { "nanoid": "bin/nanoid.cjs" } }, "sha512-ZB9RH/39qpq5Vu6Y+NmUaFhQR6pp+M2Xt76XBnEwDaGcVAqhlvxrl3B2bKS5D3NH3QR76v3aSrKaF/Kiy7lEtQ=="],
+
+    "native-ios-common": ["native-ios-common@workspace:modules/native-ios-common"],
 
     "natural-compare": ["natural-compare@1.4.0", "", {}, "sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw=="],
 

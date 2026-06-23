@@ -3,7 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.1.0",
   "workspaces": [
-    "rust"
+    "rust",
+    "modules/*"
   ],
   "scripts": {
     "start": "node tools/build/build.cjs start",
@@ -70,6 +71,7 @@
     "expo-web-browser": "~55.0.16",
     "globals": "^17.6.0",
     "lonanote_rust_module": "workspace:*",
+    "native-ios-common": "workspace:*",
     "prettier": "^3.8.4",
     "react": "19.2.5",
     "react-dom": "19.2.5",

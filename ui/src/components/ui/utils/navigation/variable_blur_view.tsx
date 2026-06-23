@@ -1,4 +1,4 @@
-import { requireNativeViewManager, requireOptionalNativeModule } from "expo-modules-core";
+import { requireNativeViewManager } from "expo-modules-core";
 import type { ComponentType } from "react";
 import { StyleSheet, View } from "react-native";
 import type { ViewProps } from "react-native";
@@ -23,12 +23,11 @@ export type VariableBlurViewProps = ViewProps & {
   transitionHeight?: number;
 };
 
-const nativeModule = requireOptionalNativeModule("NativeIosCommon");
 const nativeViewConfig = (globalThis as ExpoGlobalWithViewConfig).expo?.getViewConfig?.(
   "NativeIosCommon",
   "VariableBlurView",
 );
-const hasNativeVariableBlurView = Boolean(nativeModule && nativeViewConfig);
+const hasNativeVariableBlurView = Boolean(nativeViewConfig);
 
 const VariableBlurViewFallback: ComponentType<VariableBlurViewProps> =
   function VariableBlurViewFallback({ style, ...props }) {
