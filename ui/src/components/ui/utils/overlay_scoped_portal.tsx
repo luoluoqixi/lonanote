@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { isWeb } from "@/api/common/platform";
 
-import { SheetPortal } from "../sheet/sheet/sheet_portal";
+import { SheetPortal } from "../sheet/simple_sheet/sheet/sheet_portal";
 import { useScopedOverlayPortalHostName } from "./screen_overlay_portal";
 
 export type OverlayScopedPortalProps = PortalProps & {

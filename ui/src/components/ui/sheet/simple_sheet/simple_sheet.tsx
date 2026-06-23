@@ -4,7 +4,7 @@ import { createContext, forwardRef, useContext, useEffect, useMemo } from "react
 import { BackHandler } from "react-native";
 
 import { os } from "@/api/common/platform";
-import { TrueSheetScrollContent } from "@/components/ui/true_sheet/scroll_content";
+import { TrueSheetScrollContent } from "@/components/ui/sheet/native_sheet/true_sheet/scroll_content";
 import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
 
 import { NativeSheet, shouldUseNativeSheet } from "./native_sheet";
@@ -277,7 +277,7 @@ function SheetBackHandler(props: SheetBackPressBehaviorProps) {
   return null;
 }
 
-export const Sheet = Object.assign(SheetRoot, {
+export const SimpleSheet = Object.assign(SheetRoot, {
   Controlled: SheetControlled,
   Controller: SheetController,
   Frame: SheetFrame,

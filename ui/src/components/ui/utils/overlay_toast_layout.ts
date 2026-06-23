@@ -1,5 +1,5 @@
 import { os } from "@/api/common/platform";
-import { getTrueSheetPartialDetentCompensationScale } from "@/components/ui/true_sheet/overlay_layout_metrics";
+import { getTrueSheetPartialDetentCompensationScale } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_metrics";
 
 const platform = os();
 

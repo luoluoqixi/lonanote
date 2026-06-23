@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { Spinner, XStack, YStack } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
-import { useTrueSheetOverlayLayout } from "@/components/ui/true_sheet/overlay_layout_context";
+import { useTrueSheetOverlayLayout } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_context";
 
 import { getScopedToastViewportBottomInset } from "../utils/overlay_toast_layout";
 

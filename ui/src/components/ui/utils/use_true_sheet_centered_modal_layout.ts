@@ -4,8 +4,8 @@ import { isWeb } from "@/api/common/platform";
 import {
   useTrueSheetOverlayDetent,
   useTrueSheetOverlaySheetTopPosition,
-} from "@/components/ui/true_sheet/overlay_layout_context";
-import { getTrueSheetCenteredModalDetentOffsetY } from "@/components/ui/true_sheet/overlay_layout_metrics";
+} from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_context";
+import { getTrueSheetCenteredModalDetentOffsetY } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_metrics";
 
 import {
   getTrueSheetCenteredModalLiftAmount,

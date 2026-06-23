@@ -1,14 +1,12 @@
-import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { router } from "expo-router";
 import { useSyncExternalStore } from "react";
 
-import { dismissTrueSheet, presentTrueSheet, resizeTrueSheet } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/utils/overlay_toast_layout";
 
 import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "./routes";
 
-/** 嵌套分区 True Sheet 三档高度（与 `presentTrueSheet` 的 detentIndex 一一对应）。 */
-export const DEBUG_NESTED_SECTION_SHEET_DETENTS = [0.5, 0.75, 1] as const;
+/** 嵌套分区 NativeSheet 三档高度。 */
+export const DEBUG_NESTED_SECTION_SHEET_DETENTS = [50, 75, 100] as const;
 
 export type DebugNestedSectionDetentLevel = 0 | 1 | 2;
 
@@ -62,6 +60,12 @@ export function getDebugNestedSectionDetentLevel(): DebugNestedSectionDetentLeve
   return debugNestedSectionDetentLevel;
 }
 
+export function getDebugNestedSectionSnapPoint(
+  level: DebugNestedSectionDetentLevel = debugNestedSectionDetentLevel,
+) {
+  return DEBUG_NESTED_SECTION_SHEET_DETENTS[level];
+}
+
 export function setDebugNestedSectionDetentLevel(level: number) {
   const clamped = clampDebugNestedSectionDetentLevel(level);
 
@@ -97,19 +101,78 @@ export function useDebugNestedSectionDetentLevel() {
   );
 }
 
-/** 全局调试 True Sheet 名称，须与 `DebugTrueSheetHost` 的 `name` 一致。 */
 export const DEBUG_TRUE_SHEET_NAME = "lonanote-debug";
 
 let debugSheetOpen = false;
+let debugSheetPosition = 0;
+const debugPanelListeners = new Set<() => void>();
 
-/** 当前正在展示的分区嵌套 Sheet 集合，用于 resize 时跳过未打开的 Sheet。 */
+function emitDebugPanelChange() {
+  for (const listener of debugPanelListeners) {
+    listener();
+  }
+}
+
+export function subscribeDebugPanelState(listener: () => void) {
+  debugPanelListeners.add(listener);
+
+  return () => {
+    debugPanelListeners.delete(listener);
+  };
+}
+
+export function getDebugPanelOpen() {
+  return debugSheetOpen;
+}
+
+export function getDebugPanelPosition() {
+  return debugSheetPosition;
+}
+
+export function setDebugPanelOpen(open: boolean) {
+  if (debugSheetOpen === open) {
+    return;
+  }
+
+  debugSheetOpen = open;
+  emitDebugPanelChange();
+}
+
+export function setDebugPanelPosition(position: number) {
+  if (debugSheetPosition === position) {
+    return;
+  }
+
+  debugSheetPosition = position;
+  emitDebugPanelChange();
+}
+
 const presentedDebugSectionSheets = new Set<DebugTabKey>();
+let presentedDebugSectionSheetsSnapshot = new Set<DebugTabKey>();
+const sectionSheetListeners = new Set<() => void>();
 
-/**
- * 分区 Sheet 关闭版本号——每次有 Sheet 关闭时递增。
- * DebugHomePage 用此版本号驱动 Switch key，强制 remount 原生 widget，
- * 解决 Android 上原生 modal 关闭后 Switch 视觉状态不一致的问题。
- */
+function emitSectionSheetChange() {
+  for (const listener of sectionSheetListeners) {
+    listener();
+  }
+}
+
+function updatePresentedDebugSectionSheetsSnapshot() {
+  presentedDebugSectionSheetsSnapshot = new Set(presentedDebugSectionSheets);
+}
+
+export function subscribeDebugSectionSheetState(listener: () => void) {
+  sectionSheetListeners.add(listener);
+
+  return () => {
+    sectionSheetListeners.delete(listener);
+  };
+}
+
+export function getPresentedDebugSectionSheets() {
+  return presentedDebugSectionSheetsSnapshot;
+}
+
 let debugSectionSheetDismissVersion = 0;
 const dismissVersionListeners = new Set<() => void>();
 
@@ -131,120 +194,122 @@ export function subscribeDebugSectionSheetDismiss(listener: () => void) {
   };
 }
 
-/** 调试分区嵌套 Sheet 名称，须与 `DebugSectionSheets` 一致。 */
 export function getDebugSectionSheetName(key: DebugTabKey) {
   return `lonanote-debug-section-${key}`;
 }
 
-/** 嵌套分区 Sheet 各自独立的 overlay portal，避免与主调试 Sheet 共用 host 导致 iOS 内容区异常。 */
 export function getDebugSectionOverlayPortalHost(key: DebugTabKey) {
   return `${DEBUG_OVERLAY_PORTAL_HOST}:section:${key}`;
 }
 
-export async function openDebugSectionSheet(key: DebugTabKey, detentIndex = 0) {
-  await presentTrueSheet(getDebugSectionSheetName(key), detentIndex);
-  presentedDebugSectionSheets.add(key);
-}
-
-export async function closeDebugSectionSheet(key: DebugTabKey) {
-  presentedDebugSectionSheets.delete(key);
-  await dismissTrueSheet(getDebugSectionSheetName(key));
-}
-
-/** Sheet 已被原生关闭后（拖拽/手势），仅清理追踪集合，不再重复 dismiss。 */
-export function cleanupDebugSectionSheet(key: DebugTabKey) {
-  presentedDebugSectionSheets.delete(key);
-  debugSectionSheetDismissVersion += 1;
-  emitDismissVersionChange();
-}
-
-/** 已打开的嵌套分区 Sheet 切换到指定 detent（调试滑条实时改高度）。 */
-export async function resizeDebugSectionSheets(
-  detentIndex: number = getDebugNestedSectionDetentLevel(),
+export function openDebugSectionSheet(
+  key: DebugTabKey,
+  detentIndex = getDebugNestedSectionDetentLevel(),
 ) {
-  const presentedKeys = [...presentedDebugSectionSheets];
-
-  if (presentedKeys.length === 0) {
+  setDebugNestedSectionDetentLevel(detentIndex);
+  if (presentedDebugSectionSheets.has(key)) {
     return;
   }
 
-  await Promise.all(
-    presentedKeys.map((key) =>
-      resizeTrueSheet(getDebugSectionSheetName(key), detentIndex).catch(() => undefined),
-    ),
-  );
+  presentedDebugSectionSheets.add(key);
+  updatePresentedDebugSectionSheetsSnapshot();
+  emitSectionSheetChange();
 }
 
-async function dismissAllDebugSectionSheets() {
+export function cleanupDebugSectionSheet(key: DebugTabKey) {
+  const deleted = presentedDebugSectionSheets.delete(key);
+  if (!deleted) {
+    return;
+  }
+
+  debugSectionSheetDismissVersion += 1;
+  updatePresentedDebugSectionSheetsSnapshot();
+  emitSectionSheetChange();
+  emitDismissVersionChange();
+}
+
+export function closeDebugSectionSheet(key: DebugTabKey) {
+  cleanupDebugSectionSheet(key);
+}
+
+export function resizeDebugSectionSheets(detentIndex: number = getDebugNestedSectionDetentLevel()) {
+  setDebugNestedSectionDetentLevel(detentIndex);
+  emitSectionSheetChange();
+}
+
+function dismissAllDebugSectionSheets() {
   if (presentedDebugSectionSheets.size === 0) {
     return;
   }
 
-  await Promise.all(
-    [...presentedDebugSectionSheets].map((key) =>
-      dismissTrueSheet(getDebugSectionSheetName(key)).catch(() => undefined),
-    ),
-  );
-  presentedDebugSectionSheets.clear();
+  let changed = false;
+  for (const key of [...presentedDebugSectionSheets]) {
+    presentedDebugSectionSheets.delete(key);
+    debugSectionSheetDismissVersion += 1;
+    changed = true;
+  }
+
+  if (changed) {
+    updatePresentedDebugSectionSheetsSnapshot();
+    emitSectionSheetChange();
+    emitDismissVersionChange();
+  }
 }
 
-/** 开关开启时：以独立/嵌套 True Sheet 打开分区。 */
 export async function openDebugSection(key: DebugTabKey) {
   if (!getDebugSectionsAsNestedSheets()) {
     return false;
   }
 
-  await openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
+  openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
   return true;
 }
 
 export function openDebugPanel(detentIndex = 0) {
+  debugSheetPosition = detentIndex;
   debugSheetOpen = true;
-  return presentTrueSheet(DEBUG_TRUE_SHEET_NAME, detentIndex);
+  emitDebugPanelChange();
 }
 
-export async function closeDebugPanel() {
+export function closeDebugPanel() {
   debugSheetOpen = false;
-  await dismissAllDebugSectionSheets().catch(() => undefined);
-  await TrueSheet.dismissStack(DEBUG_TRUE_SHEET_NAME).catch(() => undefined);
-  await dismissTrueSheet(DEBUG_TRUE_SHEET_NAME);
+  dismissAllDebugSectionSheets();
+  emitDebugPanelChange();
 }
 
 export function markDebugPanelClosed() {
   debugSheetOpen = false;
+  emitDebugPanelChange();
 }
 
-export async function toggleDebugPanel() {
+export function toggleDebugPanel() {
   if (debugSheetOpen) {
-    await closeDebugPanel();
+    closeDebugPanel();
     return;
   }
 
-  await openDebugPanel();
+  openDebugPanel();
 }
 
-/** 关闭 True Sheet 并进入全屏 Stack 调试首页。 */
-export async function switchDebugPanelToFullPage() {
-  await closeDebugPanel();
+export function switchDebugPanelToFullPage() {
+  closeDebugPanel();
   router.push(DEBUG_HOME_HREF);
 }
 
-/** 关闭 True Sheet 并打开全屏 Stack 调试分区。 */
-export async function openDebugFullPageSection(key: DebugTabKey) {
+export function openDebugFullPageSection(key: DebugTabKey) {
   if (getDebugSectionsAsNestedSheets()) {
-    await openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
+    openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
     return;
   }
 
-  await closeDebugPanel();
+  closeDebugPanel();
   router.push(getDebugFullPageHref(key));
 }
 
-/** 从全屏 Stack 调试页回到 True Sheet 调试面板。 */
-export async function switchDebugPanelToTrueSheet() {
+export function switchDebugPanelToTrueSheet() {
   if (router.canGoBack()) {
     router.back();
   }
 
-  await openDebugPanel();
+  openDebugPanel();
 }

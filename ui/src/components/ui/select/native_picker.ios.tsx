@@ -18,12 +18,12 @@ import { Text, YStack, getFontSize } from "tamagui";
 
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
-import { dismissTrueSheet, presentTrueSheet } from "@/components/ui/true_sheet";
+import { dismissTrueSheet, presentTrueSheet } from "@/components/ui/sheet/native_sheet/true_sheet";
 import {
   TrueSheetInnerStack,
   TrueSheetStackHost,
   trueSheetInnerStackScreenOptions,
-} from "@/components/ui/true_sheet/stack";
+} from "@/components/ui/sheet/native_sheet/true_sheet/stack";
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 import type { ResolvedColorScheme } from "@/components/ui/utils/navigation/status_bar";
 

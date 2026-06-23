@@ -1,14 +1,15 @@
 import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useWindowDimensions } from "react-native";
+import { Platform, useWindowDimensions } from "react-native";
 
-import { os } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
+import { BottomSheetPanel } from "@/components/ui/sheet/native_sheet/bottom_sheet";
 import {
   dismissTrueSheet,
   presentTrueSheet,
   resizeTrueSheet,
-} from "@/components/ui/true_sheet/api";
-import { TrueSheetPanel } from "@/components/ui/true_sheet/panel";
+} from "@/components/ui/sheet/native_sheet/true_sheet/api";
+import { TrueSheetPanel } from "@/components/ui/sheet/native_sheet/true_sheet/panel";
 
 import { useSheetOpenState } from "./sheet/useSheetOpenState";
 import type { SheetProps } from "./types";
@@ -24,7 +25,7 @@ type NativeDetentNormalization = {
 
 function isSupportedNativeSheetPlatform() {
   const platform = os();
-  return platform === "ios" || platform === "android";
+  return platform === "ios" || platform === "android" || isWeb();
 }
 
 function resolveDefaultNativeEnabled() {
@@ -181,7 +182,13 @@ export function shouldUseNativeSheet(props: SheetProps) {
   return true;
 }
 
-export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
+export function NativeSheet(
+  props: SheetProps & {
+    children: React.ReactNode;
+    name?: string;
+    overlayPortalHostName?: string;
+  },
+) {
   const {
     children,
     defaultPosition,
@@ -189,18 +196,22 @@ export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
     dismissOnOverlayPress = true,
     disableDrag,
     handle,
+    name,
     onAnimationComplete,
     onPositionChange,
     overlay,
+    overlayPortalHostName: overlayPortalHostNameProp,
     position,
     snapPoints,
     snapPointsMode,
   } = props;
   const { height: windowHeight } = useWindowDimensions();
-  const [sheetName] = useState(() => `ui-sheet-native-${++nativeSheetCounter}`);
+  const [generatedSheetName] = useState(() => `ui-sheet-native-${++nativeSheetCounter}`);
+  const sheetName = name ?? generatedSheetName;
   // native sheet 自己就是一层新的 True Sheet 宿主，必须生成独立 overlay host；
   // 若复用外层 host，内部 Dialog / AlertDialog / Popover 会 teleport 到外层坐标系。
-  const [overlayPortalHostName] = useState(() => `${sheetName}-overlay`);
+  const [generatedOverlayPortalHostName] = useState(() => `${sheetName}-overlay`);
+  const overlayPortalHostName = overlayPortalHostNameProp ?? generatedOverlayPortalHostName;
   const [uncontrolledPosition, setUncontrolledPosition] = useState(defaultPosition ?? 0);
   const openState = useSheetOpenState(props);
   const presentedRef = useRef(false);
@@ -292,6 +303,27 @@ export function NativeSheet(props: SheetProps & { children: React.ReactNode }) {
       }
     },
   };
+
+  if (Platform.OS !== "ios") {
+    return (
+      <BottomSheetPanel
+        dismissOnBackPress={dismissOnBackPress}
+        dismissOnOverlayPress={dismissOnOverlayPress}
+        enableHandle={handle ?? false}
+        onAnimationComplete={onAnimationComplete}
+        onOpenChange={handleOpenChange}
+        onPositionChange={handlePositionChange}
+        open={resolvedOpen}
+        overlay={overlay ?? true}
+        overlayPortalHostName={overlayPortalHostName}
+        position={resolvedPosition}
+        snapPoints={snapPoints}
+        snapPointsMode={snapPointsMode}
+      >
+        {children}
+      </BottomSheetPanel>
+    );
+  }
 
   return (
     <TrueSheetPanel

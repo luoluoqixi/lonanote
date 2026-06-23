@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 import { os } from "@/api/common/platform";
 import { ScrollView } from "@/components/ui";
-import { TrueSheetScrollContent } from "@/components/ui/true_sheet/scroll_content";
+import { TrueSheetScrollContent } from "@/components/ui/sheet/native_sheet/true_sheet/scroll_content";
 
 import { type DebugTabKey, getDebugPanelRouteDefinition } from "../routes";
 

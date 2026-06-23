@@ -8,7 +8,7 @@ import { iosMajorVersion, os } from "@/api/common/platform";
 import {
   useTrueSheetOverlayDetent,
   useTrueSheetOverlaySheetTopPosition,
-} from "@/components/ui/true_sheet/overlay_layout_context";
+} from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_context";
 
 import { Toaster } from "../provider/toaster";
 import {

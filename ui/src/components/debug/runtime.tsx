@@ -7,7 +7,7 @@ import { isDesktop, isWeb } from "@/api/common";
 import { toggleDebugPanel } from "./debug_panel_sheet_state";
 import { isDebugFeatureEnabled } from "./release_gate";
 import { DEBUG_PANEL_TOGGLE_EVENT } from "./routes";
-import { DebugTrueSheetHost } from "./true_sheet";
+import { DebugNativeSheetHost } from "./true_sheet";
 import { DebugPanelGestureLayer, DebugWidePanelHost } from "./wide_panel";
 
 function DebugMobilePanelToggleListener() {
@@ -36,7 +36,7 @@ function DebugMobileRuntime() {
   return (
     <>
       <DebugMobilePanelToggleListener />
-      <DebugTrueSheetHost />
+      <DebugNativeSheetHost />
     </>
   );
 }

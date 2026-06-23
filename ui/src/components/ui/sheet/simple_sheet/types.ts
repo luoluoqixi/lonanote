@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 
-import type { TrueSheetScrollContentProps } from "@/components/ui/true_sheet/scroll_content";
+import type { TrueSheetScrollContentProps } from "@/components/ui/sheet/native_sheet/true_sheet/scroll_content";
 
 import type * as ReplicaSheetModule from "./sheet/Sheet";
 import type * as ReplicaSheetControllerModule from "./sheet/SheetController";
