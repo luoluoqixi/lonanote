@@ -1,12 +1,17 @@
 import { router } from "expo-router";
 import { useSyncExternalStore } from "react";
 
+import {
+  dismissTrueSheet,
+  presentTrueSheet,
+  resizeTrueSheet,
+} from "@/components/ui/sheet/native_sheet/true_sheet/api";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
 
 import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "./routes";
 
-/** 嵌套分区 NativeSheet 三档高度。 */
-export const DEBUG_NESTED_SECTION_SHEET_DETENTS = [50, 75, 100] as const;
+/** 嵌套分区 TrueSheet 三档高度（与 `presentTrueSheet` 的 detentIndex 一一对应）。 */
+export const DEBUG_NESTED_SECTION_SHEET_DETENTS = [0.5, 0.75, 1] as const;
 
 export type DebugNestedSectionDetentLevel = 0 | 1 | 2;
 
@@ -211,9 +216,11 @@ export function openDebugSectionSheet(
     return;
   }
 
-  presentedDebugSectionSheets.add(key);
-  updatePresentedDebugSectionSheetsSnapshot();
-  emitSectionSheetChange();
+  return presentTrueSheet(getDebugSectionSheetName(key), detentIndex).then(() => {
+    presentedDebugSectionSheets.add(key);
+    updatePresentedDebugSectionSheetsSnapshot();
+    emitSectionSheetChange();
+  });
 }
 
 export function cleanupDebugSectionSheet(key: DebugTabKey) {
@@ -229,12 +236,25 @@ export function cleanupDebugSectionSheet(key: DebugTabKey) {
 }
 
 export function closeDebugSectionSheet(key: DebugTabKey) {
-  cleanupDebugSectionSheet(key);
+  presentedDebugSectionSheets.delete(key);
+  updatePresentedDebugSectionSheetsSnapshot();
+  emitSectionSheetChange();
+  return dismissTrueSheet(getDebugSectionSheetName(key));
 }
 
 export function resizeDebugSectionSheets(detentIndex: number = getDebugNestedSectionDetentLevel()) {
   setDebugNestedSectionDetentLevel(detentIndex);
-  emitSectionSheetChange();
+  const presentedKeys = [...presentedDebugSectionSheets];
+
+  if (presentedKeys.length === 0) {
+    return;
+  }
+
+  return Promise.all(
+    presentedKeys.map((key) =>
+      resizeTrueSheet(getDebugSectionSheetName(key), detentIndex).catch(() => undefined),
+    ),
+  );
 }
 
 function dismissAllDebugSectionSheets() {
@@ -242,8 +262,9 @@ function dismissAllDebugSectionSheets() {
     return;
   }
 
+  const presentedKeys = [...presentedDebugSectionSheets];
   let changed = false;
-  for (const key of [...presentedDebugSectionSheets]) {
+  for (const key of presentedKeys) {
     presentedDebugSectionSheets.delete(key);
     debugSectionSheetDismissVersion += 1;
     changed = true;
@@ -254,6 +275,12 @@ function dismissAllDebugSectionSheets() {
     emitSectionSheetChange();
     emitDismissVersionChange();
   }
+
+  return Promise.all(
+    presentedKeys.map((key) =>
+      dismissTrueSheet(getDebugSectionSheetName(key)).catch(() => undefined),
+    ),
+  );
 }
 
 export async function openDebugSection(key: DebugTabKey) {
@@ -261,7 +288,7 @@ export async function openDebugSection(key: DebugTabKey) {
     return false;
   }
 
-  openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
+  await openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
   return true;
 }
 
@@ -273,7 +300,7 @@ export function openDebugPanel(detentIndex = 0) {
 
 export function closeDebugPanel() {
   debugSheetOpen = false;
-  dismissAllDebugSectionSheets();
+  void dismissAllDebugSectionSheets();
   emitDebugPanelChange();
 }
 
@@ -298,7 +325,7 @@ export function switchDebugPanelToFullPage() {
 
 export function openDebugFullPageSection(key: DebugTabKey) {
   if (getDebugSectionsAsNestedSheets()) {
-    openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
+    void openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
     return;
   }
 
