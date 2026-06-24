@@ -13,6 +13,7 @@ import {
   SheetController as ReplicaSheetController,
   useSheet,
 } from "./sheet/index";
+import { parsePercentSnapPoint } from "./sheet/snap_points";
 import type {
   SheetControlledProps,
   SheetControllerProps,
@@ -29,9 +30,15 @@ const NOOP_HANDLE_PRESS = () => {};
 const NativeSheetRenderContext = createContext(false);
 
 type SnapPointNormalization = {
-  snapPoints: number[];
+  snapPoints: (string | number)[];
   toExternalIndex: (index: number) => number;
   toInternalIndex: (index: number) => number;
+};
+
+type SortableSnapPoint = {
+  originalIndex: number;
+  point: string | number;
+  normalizedValue: number;
 };
 
 type SheetBackPressBehaviorProps = {
@@ -70,21 +77,30 @@ function SheetRoot(props: SheetProps) {
     overlay != null || handle != null || content != null || scrollView != null;
   const resolvedSnapPointsMode = snapPointsMode ?? "percent";
   const snapPointNormalization = useMemo<SnapPointNormalization | null>(() => {
+    const sortableSnapPoints = snapPoints?.map((point, originalIndex) => {
+      const normalizedValue = getSortableSnapPointValue(point, resolvedSnapPointsMode);
+
+      return normalizedValue == null
+        ? null
+        : {
+            originalIndex,
+            point,
+            normalizedValue,
+          };
+    });
+
     if (
       snapPoints == null ||
       snapPoints.length < 2 ||
       (resolvedSnapPointsMode !== "percent" && resolvedSnapPointsMode !== "constant") ||
-      !snapPoints.every((point) => typeof point === "number")
+      sortableSnapPoints == null ||
+      !sortableSnapPoints.every(isSortableSnapPoint)
     ) {
       return null;
     }
 
-    const indexedSnapPoints = snapPoints.map((point, originalIndex) => ({
-      originalIndex,
-      point,
-    }));
-    const normalizedSnapPoints = [...indexedSnapPoints].sort(
-      (left, right) => right.point - left.point,
+    const normalizedSnapPoints = [...sortableSnapPoints].sort(
+      (left, right) => right.normalizedValue - left.normalizedValue,
     );
 
     if (
@@ -186,6 +202,25 @@ function SheetRoot(props: SheetProps) {
   }
 
   return sheet;
+}
+
+function isSortableSnapPoint(point: SortableSnapPoint | null): point is SortableSnapPoint {
+  return point != null;
+}
+
+function getSortableSnapPointValue(
+  point: string | number,
+  snapPointsMode: SheetProps["snapPointsMode"],
+) {
+  if (typeof point === "number") {
+    return point;
+  }
+
+  if (snapPointsMode === "percent") {
+    return parsePercentSnapPoint(point);
+  }
+
+  return null;
 }
 
 function SheetControlled(props: SheetControlledProps) {

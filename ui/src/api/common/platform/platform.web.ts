@@ -43,6 +43,10 @@ export function isLegacyCompactIphone(): boolean {
   return false;
 }
 
+export function iosMajorVersion(): number | null {
+  return null;
+}
+
 export function isIos26Plus(): boolean {
   return false;
 }

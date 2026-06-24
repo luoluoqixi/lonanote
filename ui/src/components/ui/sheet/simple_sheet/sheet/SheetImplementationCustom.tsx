@@ -1018,7 +1018,11 @@ function getYPositions(
     return screenSize - Math.min(screenSize, Math.max(0, point));
   }
 
-  const pct = Math.min(100, Math.max(0, Number(point))) / 100;
+  const rawPercent =
+    typeof point === "string" && point.trim().endsWith("%")
+      ? Number(point.trim().slice(0, -1))
+      : Number(point);
+  const pct = Math.min(100, Math.max(0, rawPercent)) / 100;
   if (Number.isNaN(pct)) {
     console.warn("Invalid snapPoint percentage");
     return 0;

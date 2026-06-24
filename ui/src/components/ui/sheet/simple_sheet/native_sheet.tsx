@@ -2,7 +2,7 @@ import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Platform, useWindowDimensions } from "react-native";
 
-import { isWeb, os } from "@/api/common/platform";
+import { iosMajorVersion, isWeb, os } from "@/api/common/platform";
 import { BottomSheetPanel } from "@/components/ui/sheet/native_sheet/bottom_sheet";
 import {
   dismissTrueSheet,
@@ -19,6 +19,7 @@ let nativeSheetCounter = 0;
 type NativeSheetDetent = NonNullable<TrueSheetProps["detents"]>[number];
 type NativeDetentNormalization = {
   detents: NativeSheetDetent[];
+  sourceDetentCount: number;
   toNativeIndex: (index: number) => number;
   fromNativeIndex: (index: number) => number;
 };
@@ -78,6 +79,59 @@ function resolveNativeDetent(
   return null;
 }
 
+function supportsCustomIosDetents() {
+  const iosMajor = iosMajorVersion();
+  return os() !== "ios" || (iosMajor != null && iosMajor >= 16);
+}
+
+function isLargeIos15CompatibleDetent(detent: NativeSheetDetent) {
+  return typeof detent === "number" && detent >= 0.75;
+}
+
+function normalizeIos15Detents(
+  indexedDetents: Array<{ detent: NativeSheetDetent; originalIndex: number }>,
+): NativeDetentNormalization {
+  const sourceDetentCount = indexedDetents.length;
+
+  if (indexedDetents.length === 1) {
+    const nativeDetent = isLargeIos15CompatibleDetent(indexedDetents[0].detent) ? 1 : 0.49;
+    return {
+      detents: [nativeDetent],
+      sourceDetentCount,
+      toNativeIndex: () => 0,
+      fromNativeIndex: () => indexedDetents[0].originalIndex,
+    };
+  }
+
+  const sortedDetents = [...indexedDetents].sort((left, right) => {
+    if (left.detent === "auto") {
+      return right.detent === "auto" ? 0 : -1;
+    }
+
+    if (right.detent === "auto") {
+      return 1;
+    }
+
+    return left.detent - right.detent;
+  });
+  const lowerDetent = sortedDetents[0];
+  const upperDetent = sortedDetents[sortedDetents.length - 1];
+  const originalToNative = new Map<number, number>();
+
+  sortedDetents.forEach((entry, sortedIndex) => {
+    originalToNative.set(entry.originalIndex, sortedIndex === 0 ? 0 : 1);
+  });
+
+  return {
+    // iOS 15 TrueSheet 内部以 <0.5 触发 system medium，>=0.5 触发 system large。
+    detents: [0.49, 1] satisfies NativeSheetDetent[],
+    sourceDetentCount,
+    toNativeIndex: (index: number) => originalToNative.get(index) ?? 0,
+    fromNativeIndex: (index: number) =>
+      index <= 0 ? lowerDetent.originalIndex : upperDetent.originalIndex,
+  };
+}
+
 function resolveNativeDetents(
   snapPoints: SheetProps["snapPoints"],
   snapPointsMode: SheetProps["snapPointsMode"],
@@ -86,6 +140,7 @@ function resolveNativeDetents(
   if (snapPointsMode === "fit") {
     return {
       detents: ["auto"] satisfies NativeSheetDetent[],
+      sourceDetentCount: 1,
       toNativeIndex: (index: number) => index,
       fromNativeIndex: (index: number) => index,
     };
@@ -94,6 +149,7 @@ function resolveNativeDetents(
   if (snapPoints == null || snapPoints.length === 0) {
     return {
       detents: [1] satisfies NativeSheetDetent[],
+      sourceDetentCount: 1,
       toNativeIndex: (index: number) => index,
       fromNativeIndex: (index: number) => index,
     };
@@ -115,6 +171,11 @@ function resolveNativeDetents(
     detent,
     originalIndex,
   }));
+
+  if (!supportsCustomIosDetents()) {
+    return normalizeIos15Detents(indexedDetents);
+  }
+
   const normalizedDetents = [...indexedDetents].sort((left, right) => {
     if (left.detent === "auto") {
       return right.detent === "auto" ? 0 : -1;
@@ -137,13 +198,14 @@ function resolveNativeDetents(
 
   return {
     detents: normalizedDetents.map((entry) => entry.detent),
+    sourceDetentCount: snapPoints.length,
     toNativeIndex: (index: number) => originalToNative.get(index) ?? index,
     fromNativeIndex: (index: number) => nativeToOriginal.get(index) ?? index,
   };
 }
 
-function clampDetentIndex(index: number | undefined, detents: NativeSheetDetent[]) {
-  if (detents.length === 0) {
+function clampDetentIndex(index: number | undefined, detentCount: number) {
+  if (detentCount <= 0) {
     return 0;
   }
 
@@ -151,7 +213,7 @@ function clampDetentIndex(index: number | undefined, detents: NativeSheetDetent[
     return 0;
   }
 
-  return Math.max(0, Math.min(detents.length - 1, Math.round(index)));
+  return Math.max(0, Math.min(detentCount - 1, Math.round(index)));
 }
 
 export function shouldUseNativeSheet(props: SheetProps) {
@@ -222,10 +284,11 @@ export function NativeSheet(
     [snapPoints, snapPointsMode, windowHeight],
   );
   const detents = detentNormalization?.detents ?? [1];
+  const sourceDetentCount = detentNormalization?.sourceDetentCount ?? detents.length;
 
   const resolvedOpen = openState.open;
   const resolvedPosition = position ?? uncontrolledPosition;
-  const clampedSourceIndex = clampDetentIndex(resolvedPosition, detents);
+  const clampedSourceIndex = clampDetentIndex(resolvedPosition, sourceDetentCount);
   const resolvedDetentIndex = detentNormalization?.toNativeIndex(clampedSourceIndex) ?? 0;
 
   useEffect(() => {
@@ -264,7 +327,7 @@ export function NativeSheet(
 
   const handlePositionChange = (nextPosition: number) => {
     const sourceIndex = detentNormalization?.fromNativeIndex(nextPosition) ?? nextPosition;
-    lastRequestedPositionRef.current = sourceIndex;
+    lastRequestedPositionRef.current = nextPosition;
     if (position == null) {
       setUncontrolledPosition(sourceIndex);
     }

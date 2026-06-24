@@ -1256,7 +1256,7 @@ export function UiComponentsDebugPage() {
                 position={sheetPosition}
                 scrollView
                 scrollViewProps={{ contentContainerStyle: styles.sheetScrollContent }}
-                snapPoints={[76, 56]}
+                snapPoints={["76%", "56%"]}
                 snapPointsMode="percent"
                 transition="medium"
               />
@@ -1338,7 +1338,7 @@ export function UiComponentsDebugPage() {
                     open={nestedGlobalSheetOpen}
                     overlay
                     position={nestedGlobalSheetPosition}
-                    snapPoints={[72, 88]}
+                    snapPoints={["72%", "88%"]}
                     snapPointsMode="percent"
                     transition="medium"
                   />
@@ -1355,7 +1355,7 @@ export function UiComponentsDebugPage() {
             open={percentSheetOpen}
             overlay
             position={percentSheetPosition}
-            snapPoints={[62, 90]}
+            snapPoints={["62%", "90%"]}
             snapPointsMode="percent"
             transition="medium"
           />
@@ -1530,7 +1530,7 @@ export function UiComponentsDebugPage() {
           onOpenChange={setExplicitNativeSheetOpen}
           open={explicitNativeSheetOpen}
           overlay
-          snapPoints={[72, 92]}
+          snapPoints={["72%", "92%"]}
           snapPointsMode="percent"
         />
 
@@ -1557,7 +1557,7 @@ export function UiComponentsDebugPage() {
           onOpenChange={setSimpleSheetOpen}
           open={simpleSheetOpen}
           overlay
-          snapPoints={[68]}
+          snapPoints={["68%"]}
           snapPointsMode="percent"
         />
 

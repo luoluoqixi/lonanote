@@ -13,10 +13,10 @@ import { useResolvedeColorScheme } from "@/hooks/settings";
 
 import {
   DEBUG_NATIVE_SHEET_NAME,
-  DEBUG_NESTED_SECTION_SHEET_DETENTS,
   cleanupDebugSectionSheet,
   closeDebugPanel,
   closeDebugSectionSheet,
+  getDebugNestedSectionSheetDetents,
   getDebugPanelOpen,
   getDebugSectionOverlayPortalHost,
   getDebugSectionSheetName,
@@ -143,7 +143,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       onRequestClose={() => void closeDebugSectionSheet(sectionKey)}
       overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
       sheetProps={{
-        detents: [...DEBUG_NESTED_SECTION_SHEET_DETENTS],
+        detents: getDebugNestedSectionSheetDetents(),
         ...(isIos
           ? {
               grabberOptions: {

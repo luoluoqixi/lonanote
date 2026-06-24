@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useSyncExternalStore } from "react";
 
+import { iosMajorVersion, os } from "@/api/common/platform";
 import {
   dismissTrueSheet,
   presentTrueSheet,
@@ -12,6 +13,7 @@ import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "./route
 
 /** 嵌套分区 TrueSheet 三档高度（与 `presentTrueSheet` 的 detentIndex 一一对应）。 */
 export const DEBUG_NESTED_SECTION_SHEET_DETENTS = [0.5, 0.75, 1] as const;
+const DEBUG_NESTED_SECTION_IOS15_SHEET_DETENTS = [0.49, 1] as const;
 
 export type DebugNestedSectionDetentLevel = 0 | 1 | 2;
 
@@ -69,6 +71,27 @@ export function getDebugNestedSectionSnapPoint(
   level: DebugNestedSectionDetentLevel = debugNestedSectionDetentLevel,
 ) {
   return DEBUG_NESTED_SECTION_SHEET_DETENTS[level];
+}
+
+function supportsDebugNestedSectionCustomDetents() {
+  const iosMajor = iosMajorVersion();
+  return os() !== "ios" || (iosMajor != null && iosMajor >= 16);
+}
+
+export function getDebugNestedSectionSheetDetents() {
+  return supportsDebugNestedSectionCustomDetents()
+    ? [...DEBUG_NESTED_SECTION_SHEET_DETENTS]
+    : [...DEBUG_NESTED_SECTION_IOS15_SHEET_DETENTS];
+}
+
+function getDebugNestedSectionNativeDetentIndex(level: number) {
+  const clamped = clampDebugNestedSectionDetentLevel(level);
+
+  if (supportsDebugNestedSectionCustomDetents()) {
+    return clamped;
+  }
+
+  return clamped === DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN ? 0 : 1;
 }
 
 export function setDebugNestedSectionDetentLevel(level: number) {
@@ -216,7 +239,10 @@ export function openDebugSectionSheet(
     return;
   }
 
-  return presentTrueSheet(getDebugSectionSheetName(key), detentIndex).then(() => {
+  return presentTrueSheet(
+    getDebugSectionSheetName(key),
+    getDebugNestedSectionNativeDetentIndex(detentIndex),
+  ).then(() => {
     presentedDebugSectionSheets.add(key);
     updatePresentedDebugSectionSheetsSnapshot();
     emitSectionSheetChange();
@@ -252,7 +278,10 @@ export function resizeDebugSectionSheets(detentIndex: number = getDebugNestedSec
 
   return Promise.all(
     presentedKeys.map((key) =>
-      resizeTrueSheet(getDebugSectionSheetName(key), detentIndex).catch(() => undefined),
+      resizeTrueSheet(
+        getDebugSectionSheetName(key),
+        getDebugNestedSectionNativeDetentIndex(detentIndex),
+      ).catch(() => undefined),
     ),
   );
 }

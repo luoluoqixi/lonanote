@@ -4,6 +4,7 @@ import { useConstant } from "@tamagui/use-constant";
 import { useControllableState } from "@tamagui/use-controllable-state";
 import React from "react";
 
+import { isValidPercentSnapPoint, parsePercentSnapPoint } from "./snap_points";
 import type { ScrollBridge, SheetProps } from "./types";
 import type { SheetOpenState } from "./useSheetOpenState";
 
@@ -67,9 +68,8 @@ export function useSheetProviderProps(
           if (p === "fit") {
             return false;
           }
-          if (p.endsWith("%")) {
-            const n = Number(p.slice(0, -1));
-            return n < 0 || n > 100;
+          if (isValidPercentSnapPoint(p)) {
+            return false;
           }
           return true;
         }
@@ -100,12 +100,9 @@ export function useSheetProviderProps(
         "⚠️ Invalid snapPoint given, snapPoints must be positive numeric values when snapPointsMode is constant",
       );
     }
-    if (
-      snapPointsMode === "percent" &&
-      snapPoints.some((p) => typeof p !== "number" || p < 0 || p > 100)
-    ) {
+    if (snapPointsMode === "percent" && snapPoints.some((p) => !isValidPercentSnapPoint(p))) {
       console.warn(
-        "⚠️ Invalid snapPoint given, snapPoints must be numeric values between 0 and 100 when snapPointsMode is percent",
+        "⚠️ Invalid snapPoint given, snapPoints must be numeric values between 0 and 100, or string percentages between 0% and 100% when snapPointsMode is percent",
       );
     }
   }
@@ -185,9 +182,11 @@ export function useSheetProviderProps(
   }
 
   const maxSnapPoint = snapPoints[0];
+  const maxPercentSnapPoint =
+    maxSnapPoint == null ? 100 : (parsePercentSnapPoint(maxSnapPoint) ?? 100);
   const screenSize =
     snapPointsMode === "percent"
-      ? frameSize / ((typeof maxSnapPoint === "number" ? maxSnapPoint : 100) / 100)
+      ? frameSize / (Math.max(maxPercentSnapPoint, 0.01) / 100)
       : maxContentSize;
 
   const providerProps = {

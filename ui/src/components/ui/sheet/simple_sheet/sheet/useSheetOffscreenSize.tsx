@@ -1,3 +1,4 @@
+import { parsePercentSnapPoint, percentSnapPointToSize } from "./snap_points";
 import type { SheetContextValue } from "./useSheetProviderProps";
 
 export const useSheetOffscreenSize = ({
@@ -19,8 +20,8 @@ export const useSheetOffscreenSize = ({
   }
 
   if (snapPointsMode === "percent") {
-    const maxPercentOpened = Number(snapPoints[0]) / 100;
-    const percentOpened = Number(snapPoints[position] ?? 0) / 100;
+    const maxPercentOpened = (parsePercentSnapPoint(snapPoints[0] ?? 0) ?? 0) / 100;
+    const percentOpened = (parsePercentSnapPoint(snapPoints[position] ?? 0) ?? 0) / 100;
     const percentHidden = maxPercentOpened - percentOpened;
     const offscreenSize = percentHidden * screenSize;
     return offscreenSize;
@@ -34,12 +35,12 @@ export const useSheetOffscreenSize = ({
 
   const maxSize =
     typeof maxSnapPoint === "string"
-      ? (Number(maxSnapPoint.slice(0, -1)) / 100) * screenSize
+      ? percentSnapPointToSize(maxSnapPoint, screenSize)
       : maxSnapPoint;
   const currentSnapPoint = snapPoints[position] ?? 0;
   const currentSize =
     typeof currentSnapPoint === "string"
-      ? (Number(currentSnapPoint.slice(0, -1)) / 100) * screenSize
+      ? percentSnapPointToSize(currentSnapPoint, screenSize)
       : currentSnapPoint;
   const offscreenSize = maxSize - currentSize;
   if (Number.isNaN(offscreenSize)) {
