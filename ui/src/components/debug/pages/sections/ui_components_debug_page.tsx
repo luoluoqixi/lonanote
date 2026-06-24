@@ -1550,6 +1550,7 @@ export function UiComponentsDebugPage() {
               </Button>
             </View>
           }
+          dismissOnSnapToBottom
           handle
           modal
           native={false}
