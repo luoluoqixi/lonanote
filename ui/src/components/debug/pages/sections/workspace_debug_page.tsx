@@ -18,6 +18,8 @@ import {
 } from "@/components/ui";
 import { useCurrentWorkspaceState, useWorkspaceSession } from "@/hooks/workspace";
 
+import type { DebugSectionContentProps } from "../../routes";
+
 type WorkspaceDebugSnapshot = {
   records: WorkspaceRecord[];
   roots: WorkspaceRoot[];
@@ -56,7 +58,7 @@ function KeyValueRow({ label, value }: { label: string; value: string }) {
   return <NativeListItem title={label} subtitle={value} />;
 }
 
-export function WorkspaceDebugPage() {
+export function WorkspaceDebugPage({ header }: DebugSectionContentProps) {
   const { currentWorkspaceId } = useWorkspaceSession();
   const {
     clearError,
@@ -159,6 +161,12 @@ export function WorkspaceDebugPage() {
 
   return (
     <NativeList>
+      {header != null ? (
+        <NativeListSection>
+          <NativeListCustomItem>{header}</NativeListCustomItem>
+        </NativeListSection>
+      ) : null}
+
       <NativeListSection title="操作">
         <NativeListItem
           title="Workspace 调试面板"

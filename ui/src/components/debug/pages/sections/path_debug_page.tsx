@@ -5,9 +5,12 @@ import { path } from "@/api";
 import {
   NativeList,
   NativeListButtonItem,
+  NativeListCustomItem,
   NativeListItem,
   NativeListSection,
 } from "@/components/ui";
+
+import type { DebugSectionContentProps } from "../../routes";
 
 type PathDebugItem = { key: string; label: string; value: string | null };
 
@@ -28,7 +31,7 @@ async function loadPathDebugItems(): Promise<PathDebugItem[]> {
   ];
 }
 
-export function PathDebugPage() {
+export function PathDebugPage({ header }: DebugSectionContentProps) {
   const [items, setItems] = useState<PathDebugItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +56,12 @@ export function PathDebugPage() {
 
   return (
     <NativeList>
+      {header != null ? (
+        <NativeListSection>
+          <NativeListCustomItem>{header}</NativeListCustomItem>
+        </NativeListSection>
+      ) : null}
+
       <NativeListSection title="操作">
         <NativeListItem title="路径测试" subtitle="用于观察各平台默认路径。" />
         <NativeListButtonItem

@@ -1,5 +1,5 @@
 import type { Href } from "expo-router";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 import { PathDebugPage } from "./pages/sections/path_debug_page";
 import { UiComponentsDebugPage } from "./pages/sections/ui_components_debug_page";
@@ -8,11 +8,15 @@ import { WorkspaceDebugPage } from "./pages/sections/workspace_debug_page";
 export type DebugTabKey = "workspace" | "path" | "components";
 export type DebugPanelPresentation = "scroll" | "static";
 
+export type DebugSectionContentProps = {
+  header?: ReactNode;
+};
+
 export type DebugPanelRouteDefinition = {
   description?: string;
   key: DebugTabKey;
   label: string;
-  Page: ComponentType;
+  Page: ComponentType<DebugSectionContentProps>;
   presentation: DebugPanelPresentation;
 };
 

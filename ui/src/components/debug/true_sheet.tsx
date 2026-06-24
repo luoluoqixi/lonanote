@@ -8,7 +8,6 @@ import { NativeSheetStack } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
 import { TrueSheetPanel } from "@/components/ui/sheet/native_sheet/true_sheet/panel";
 import { trueSheetInnerStackScreenOptions } from "@/components/ui/sheet/native_sheet/true_sheet/stack";
-import { TrueSheetToolbarHeader } from "@/components/ui/sheet/native_sheet/true_sheet/toolbar_header";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 import {
@@ -119,7 +118,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
 
   return (
     <TrueSheetPanel
-      chrome={isIos ? "plain" : "toolbar"}
+      chrome="plain"
       header={
         isIos ? (
           <View
@@ -164,10 +163,12 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
             }
           : undefined),
       }}
-      title={!isIos ? definition.label : undefined}
     >
-      {isIos ? <TrueSheetToolbarHeader title={definition.label} transparent /> : null}
-      <DebugSectionPage layoutHost="nativeSheet" sectionKey={sectionKey} />
+      <DebugSectionPage
+        contentTitle={definition.label}
+        layoutHost="nativeSheet"
+        sectionKey={sectionKey}
+      />
     </TrueSheetPanel>
   );
 }
