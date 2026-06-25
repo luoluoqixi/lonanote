@@ -4,7 +4,6 @@ import { useConstant } from "@tamagui/use-constant";
 import { useControllableState } from "@tamagui/use-controllable-state";
 import React from "react";
 
-import { isValidPercentSnapPoint, parsePercentSnapPoint } from "./snap_points";
 import type { ScrollBridge, SheetProps } from "./types";
 import type { SheetOpenState } from "./useSheetOpenState";
 
@@ -28,12 +27,12 @@ export function useSheetProviderProps(
   const snapPointsProp: (string | number)[] =
     props.snapPoints ??
     (snapPointsMode === "percent" ? [80] : snapPointsMode === "constant" ? [256] : ["fit"]);
+  const stableSnapPointsProp = useStableSnapPoints(snapPointsProp);
   const hasFit = snapPointsProp[0] === "fit";
 
   const snapPoints = React.useMemo(
-    () => (props.dismissOnSnapToBottom ? [...snapPointsProp, 0] : snapPointsProp),
-
-    [JSON.stringify(snapPointsProp), props.dismissOnSnapToBottom],
+    () => (props.dismissOnSnapToBottom ? [...stableSnapPointsProp, 0] : stableSnapPointsProp),
+    [stableSnapPointsProp, props.dismissOnSnapToBottom],
   );
 
   // lets set -1 to be always the "open = false" position
@@ -68,8 +67,9 @@ export function useSheetProviderProps(
           if (p === "fit") {
             return false;
           }
-          if (isValidPercentSnapPoint(p)) {
-            return false;
+          if (p.endsWith("%")) {
+            const n = Number(p.slice(0, -1));
+            return n < 0 || n > 100;
           }
           return true;
         }
@@ -100,9 +100,12 @@ export function useSheetProviderProps(
         "⚠️ Invalid snapPoint given, snapPoints must be positive numeric values when snapPointsMode is constant",
       );
     }
-    if (snapPointsMode === "percent" && snapPoints.some((p) => !isValidPercentSnapPoint(p))) {
+    if (
+      snapPointsMode === "percent" &&
+      snapPoints.some((p) => typeof p !== "number" || p < 0 || p > 100)
+    ) {
       console.warn(
-        "⚠️ Invalid snapPoint given, snapPoints must be numeric values between 0 and 100, or string percentages between 0% and 100% when snapPointsMode is percent",
+        "⚠️ Invalid snapPoint given, snapPoints must be numeric values between 0 and 100 when snapPointsMode is percent",
       );
     }
   }
@@ -182,11 +185,9 @@ export function useSheetProviderProps(
   }
 
   const maxSnapPoint = snapPoints[0];
-  const maxPercentSnapPoint =
-    maxSnapPoint == null ? 100 : (parsePercentSnapPoint(maxSnapPoint) ?? 100);
   const screenSize =
     snapPointsMode === "percent"
-      ? frameSize / (Math.max(maxPercentSnapPoint, 0.01) / 100)
+      ? frameSize / ((typeof maxSnapPoint === "number" ? maxSnapPoint : 100) / 100)
       : maxContentSize;
 
   const providerProps = {
@@ -217,4 +218,26 @@ export function useSheetProviderProps(
   };
 
   return providerProps;
+}
+
+function useStableSnapPoints(points: (string | number)[]) {
+  const stableRef = React.useRef(points);
+
+  if (!areSnapPointsEqual(stableRef.current, points)) {
+    stableRef.current = points;
+  }
+
+  return stableRef.current;
+}
+
+function areSnapPointsEqual(left: (string | number)[], right: (string | number)[]) {
+  if (left === right) {
+    return true;
+  }
+
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((point, index) => point === right[index]);
 }
