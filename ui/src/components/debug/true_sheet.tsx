@@ -107,6 +107,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
   const definition = DEBUG_PANEL_ROUTE_DEFINITIONS.find(
     (routeDefinition) => routeDefinition.key === sectionKey,
   );
+  const theme = useTheme();
 
   if (!definition) {
     return null;
@@ -143,6 +144,9 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
       sheetProps={{
         detents: getDebugNestedSectionSheetDetents(),
+        style: {
+          backgroundColor: theme.background.val,
+        },
         ...(isIos
           ? {
               grabberOptions: {
@@ -164,11 +168,13 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
           : undefined),
       }}
     >
-      <DebugSectionPage
-        contentTitle={definition.label}
-        layoutHost="nativeSheet"
-        sectionKey={sectionKey}
-      />
+      <View style={{ backgroundColor: theme.background.val, flex: 1 }}>
+        <DebugSectionPage
+          contentTitle={definition.label}
+          layoutHost="nativeSheet"
+          sectionKey={sectionKey}
+        />
+      </View>
     </TrueSheetPanel>
   );
 }
