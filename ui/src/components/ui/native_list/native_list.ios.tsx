@@ -366,6 +366,8 @@ function NativePressRow({
 
 function NativeListRoot({
   children,
+  contentMarginBottom,
+  contentMarginTop,
   native = true,
   style,
   scrollable = true,
@@ -388,13 +390,14 @@ function NativeListRoot({
     );
   }
 
-  const bottomPadding = insideTrueSheet
-    ? getTrueSheetScrollBottomPadding({
-        insetAdjustment,
-        nativeScrollInsetsApplied,
-        safeAreaBottom: insets.bottom,
-      })
-    : 0;
+  const bottomPadding =
+    insideTrueSheet && scrollable
+      ? getTrueSheetScrollBottomPadding({
+          insetAdjustment,
+          nativeScrollInsetsApplied,
+          safeAreaBottom: insets.bottom,
+        })
+      : 0;
   return (
     <NativeListContext.Provider value={{ native: true }}>
       <Host style={[styles.nativeRoot, style]}>
@@ -404,15 +407,41 @@ function NativeListRoot({
             listStyle("insetGrouped"),
             listSectionSpacing("compact"),
             scrollContentBackground("hidden"),
-            ...(insideTrueSheet && bottomPadding > 0
+            ...(contentMarginTop != null
               ? [
                   contentMargins({
-                    edges: "bottom",
-                    length: bottomPadding,
+                    edges: "top",
+                    length: contentMarginTop,
                     placement: "scrollContent",
                   }),
                 ]
               : []),
+            ...(!insideTrueSheet && contentMarginBottom != null
+              ? [
+                  contentMargins({
+                    edges: "bottom",
+                    length: contentMarginBottom,
+                    placement: "scrollContent",
+                  }),
+                ]
+              : []),
+            ...(insideTrueSheet && bottomPadding > 0
+              ? [
+                  contentMargins({
+                    edges: "bottom",
+                    length: bottomPadding + (contentMarginBottom ?? 0),
+                    placement: "scrollContent",
+                  }),
+                ]
+              : insideTrueSheet && contentMarginBottom != null
+                ? [
+                    contentMargins({
+                      edges: "bottom",
+                      length: contentMarginBottom,
+                      placement: "scrollContent",
+                    }),
+                  ]
+                : []),
             scrollDisabled(!scrollable),
           ]}
         >

@@ -63,6 +63,9 @@ const DEFAULT_TOUCH_SHEET_ITEM_HEIGHT = 48;
 const DEFAULT_TOUCH_SHEET_CHROME_HEIGHT = 88;
 const DEFAULT_TOUCH_SHEET_LABEL_HEIGHT = 32;
 const DEFAULT_TOUCH_SHEET_GROUP_GAP = 12;
+const DEFAULT_IOS_NATIVE_LIST_CONTENT_MARGIN_TOP = 4;
+const DEFAULT_IOS_NATIVE_LIST_CONTENT_MARGIN_BOTTOM = 0;
+const DEFAULT_IOS_NATIVE_SHEET_SECTION_CHROME_HEIGHT = 8;
 const DEFAULT_TOUCH_ITEM_CONTENT_STYLE = {
   width: "100%",
   flexDirection: "row",
@@ -81,6 +84,12 @@ const TOUCH_SHEET_SCROLL_CONTENT_STYLE = {
   paddingBottom: 28,
   paddingHorizontal: 16,
   paddingTop: 10,
+  width: "100%",
+} as const;
+const IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE = {
+  paddingBottom: 0,
+  paddingHorizontal: 4,
+  paddingTop: 0,
   width: "100%",
 } as const;
 const TOUCH_SHEET_GROUP_RADIUS = 24;
@@ -130,7 +139,8 @@ function resolveSelectBehavior(native: SelectNativeMode | undefined): ResolvedSe
     };
   }
 
-  const tameguiNative = resolvedNative === true || resolvedNative === "native-sheet";
+  const tameguiNative =
+    resolvedNative === true || resolvedNative === false || resolvedNative === "native-sheet";
 
   return {
     shouldRenderNativeOptionText: false,
@@ -164,33 +174,47 @@ function parsePercentSnapPoint(value: SelectProps["touchSheetMaxHeight"]) {
 function resolveTouchSheetConfig({
   groupCount,
   groupLabelCount,
+  isNativeSheet,
   itemCount,
   touchSheetMaxHeight,
 }: {
   groupCount: number;
   groupLabelCount: number;
+  isNativeSheet: boolean;
   itemCount: number;
   touchSheetMaxHeight: SelectProps["touchSheetMaxHeight"];
 }): TouchSheetConfig {
   const totalItemCount = Math.max(itemCount, 1);
   const visibleItemCount = Math.min(totalItemCount, DEFAULT_TOUCH_SHEET_VISIBLE_ITEM_COUNT);
   const visibleGroupGapCount = Math.max(Math.min(groupCount, visibleItemCount) - 1, 0);
-  const estimatedVisibleHeight =
+  const sectionChromeHeight = isNativeSheet
+    ? groupCount * DEFAULT_IOS_NATIVE_SHEET_SECTION_CHROME_HEIGHT
+    : 0;
+  const visibleSectionChromeHeight = isNativeSheet
+    ? Math.min(groupCount, visibleItemCount) * DEFAULT_IOS_NATIVE_SHEET_SECTION_CHROME_HEIGHT
+    : 0;
+  const nativeListMargins = isNativeSheet
+    ? DEFAULT_IOS_NATIVE_LIST_CONTENT_MARGIN_TOP + DEFAULT_IOS_NATIVE_LIST_CONTENT_MARGIN_BOTTOM
+    : 0;
+  const estimatedVisibleContentHeight =
     visibleItemCount * DEFAULT_TOUCH_SHEET_ITEM_HEIGHT +
-    DEFAULT_TOUCH_SHEET_CHROME_HEIGHT +
     visibleGroupGapCount * DEFAULT_TOUCH_SHEET_GROUP_GAP +
-    groupLabelCount * DEFAULT_TOUCH_SHEET_LABEL_HEIGHT;
+    groupLabelCount * DEFAULT_TOUCH_SHEET_LABEL_HEIGHT +
+    visibleSectionChromeHeight +
+    nativeListMargins;
   const estimatedContentHeight =
     totalItemCount * DEFAULT_TOUCH_SHEET_ITEM_HEIGHT +
-    DEFAULT_TOUCH_SHEET_CHROME_HEIGHT +
     Math.max(groupCount - 1, 0) * DEFAULT_TOUCH_SHEET_GROUP_GAP +
-    groupLabelCount * DEFAULT_TOUCH_SHEET_LABEL_HEIGHT;
-
+    groupLabelCount * DEFAULT_TOUCH_SHEET_LABEL_HEIGHT +
+    sectionChromeHeight +
+    nativeListMargins;
+  const estimatedVisibleHeight = estimatedVisibleContentHeight + DEFAULT_TOUCH_SHEET_CHROME_HEIGHT;
+  const estimatedSheetContentHeight = estimatedContentHeight + DEFAULT_TOUCH_SHEET_CHROME_HEIGHT;
   if (typeof touchSheetMaxHeight === "number" && Number.isFinite(touchSheetMaxHeight)) {
     const snapPoint = Math.max(1, Math.round(touchSheetMaxHeight));
 
     return {
-      shouldEnableScroll: estimatedContentHeight > snapPoint,
+      shouldEnableScroll: estimatedSheetContentHeight > snapPoint,
       snapPoints: [snapPoint],
       snapPointsMode: "constant",
     };
@@ -200,7 +224,7 @@ function resolveTouchSheetConfig({
 
   if (percentSnapPoint != null) {
     return {
-      shouldEnableScroll: estimatedContentHeight > estimatedVisibleHeight,
+      shouldEnableScroll: estimatedSheetContentHeight > estimatedVisibleHeight,
       snapPoints: [percentSnapPoint],
       snapPointsMode: "percent",
     };
@@ -208,7 +232,7 @@ function resolveTouchSheetConfig({
 
   return {
     ...(touchSheetMaxHeight != null ? { frameMaxHeight: touchSheetMaxHeight } : null),
-    shouldEnableScroll: estimatedContentHeight > estimatedVisibleHeight,
+    shouldEnableScroll: estimatedSheetContentHeight > estimatedVisibleHeight,
     snapPoints: [estimatedVisibleHeight],
     snapPointsMode: "constant",
   };
@@ -298,6 +322,33 @@ function SelectSheetFrame({
   shouldUseTouchSheetLayout,
   touchSheetConfig,
 }: SelectSheetBaseProps) {
+  if (shouldUseTouchSheetLayout && isNativeSheet) {
+    return (
+      <Sheet.Frame
+        {...(touchSheetConfig.frameMaxHeight != null
+          ? { maxHeight: touchSheetConfig.frameMaxHeight }
+          : null)}
+        borderTopLeftRadius={36}
+        borderTopRightRadius={36}
+        style={{ flex: 1, minHeight: 0, paddingTop: 12 }}
+      >
+        <Sheet.Handle
+          alignSelf="center"
+          backgroundColor="$color8"
+          borderRadius={999}
+          height={5}
+          marginBottom={6}
+          opacity={0.65}
+          onPress={() => {}}
+          width={92}
+        />
+        <YStack style={{ ...IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE, flex: 1, minHeight: 0 }}>
+          <SelectAdapt.Contents />
+        </YStack>
+      </Sheet.Frame>
+    );
+  }
+
   return (
     <Sheet.Frame
       {...(touchSheetConfig.frameMaxHeight != null
@@ -336,7 +387,9 @@ function SelectSheetFrame({
             <YStack
               {...(!isNativeSheet ? { background: TOUCH_SHEET_FRAME_BACKGROUND } : null)}
               style={{
-                ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
+                ...(isNativeSheet
+                  ? IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE
+                  : TOUCH_SHEET_SCROLL_CONTENT_STYLE),
                 ...(isNativeSheet ? { paddingBottom: 0 } : null),
               }}
             >
@@ -347,7 +400,9 @@ function SelectSheetFrame({
           <YStack
             {...(!isNativeSheet ? { background: TOUCH_SHEET_FRAME_BACKGROUND } : null)}
             style={{
-              ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
+              ...(isNativeSheet
+                ? IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE
+                : TOUCH_SHEET_SCROLL_CONTENT_STYLE),
               ...(isNativeSheet ? { paddingBottom: 0 } : null),
             }}
           >
@@ -580,10 +635,13 @@ function SelectViewport(props: SelectViewportProps) {
     : style;
 
   if (!isWeb() && isAdapted) {
+    const shouldWrapPortalContents = style != null;
     const contents = (
       <Theme name={themeName}>
         <ForwardSelectContext context={context} itemContext={itemParentContext}>
-          <AdaptContext.Provider {...adaptContext}>{children}</AdaptContext.Provider>
+          <AdaptContext.Provider {...adaptContext}>
+            {shouldWrapPortalContents ? <YStack style={style}>{children}</YStack> : children}
+          </AdaptContext.Provider>
         </ForwardSelectContext>
       </Theme>
     );
@@ -624,6 +682,67 @@ function SelectIndicator(props: SelectIndicatorProps) {
 
 function SelectFocusScope(props: SelectFocusScopeProps) {
   return <TamaguiSelect.FocusScope {...props} />;
+}
+
+function getNativeListModule() {
+  return require("../native_list") as typeof import("../native_list");
+}
+
+function IosNativeSheetSelectList({
+  itemGroups,
+  itemLabel,
+  nativeHaptics,
+  value,
+}: {
+  itemGroups: ResolvedSelectItemGroupData[];
+  itemLabel?: React.ReactNode;
+  nativeHaptics?: SelectProps["nativeHaptics"];
+  value?: string | null;
+}) {
+  const { NativeList, NativeListItem, NativeListSection } = getNativeListModule();
+  const itemParentContext = useSelectItemParentContext();
+
+  return (
+    <NativeList
+      native
+      scrollable
+      contentMarginBottom={DEFAULT_IOS_NATIVE_LIST_CONTENT_MARGIN_BOTTOM}
+      contentMarginTop={DEFAULT_IOS_NATIVE_LIST_CONTENT_MARGIN_TOP}
+      style={{ flex: 1, minHeight: 0, width: "100%" }}
+    >
+      {itemGroups.map((group, groupIndex) => {
+        const groupLabel = group.label ?? (groupIndex === 0 ? itemLabel : null);
+
+        return (
+          <NativeListSection key={group.key} title={groupLabel}>
+            {group.items.map((item) => {
+              const disabled = item.disabled ?? item.isDisabled;
+
+              return (
+                <NativeListItem
+                  chevron={false}
+                  disabled={disabled}
+                  key={item.value}
+                  nativeHaptics={nativeHaptics}
+                  onPress={
+                    disabled
+                      ? undefined
+                      : () => {
+                          itemParentContext.onChange(item.value);
+                          itemParentContext.setSelectedItem(item.label);
+                          itemParentContext.setOpen(false);
+                        }
+                  }
+                  selected={item.value === value}
+                  title={item.label}
+                />
+              );
+            })}
+          </NativeListSection>
+        );
+      })}
+    </NativeList>
+  );
 }
 
 const selectAdaptWhen = isWeb() ? "md" : true;
@@ -681,9 +800,11 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const groupLabelCount = resolvedItemGroups.filter(
       (group, groupIndex) => getGroupLabel(group, groupIndex) != null,
     ).length;
+    const shouldUseIosNativeSheetList = platform === "ios" && selectBehavior.shouldUseNativeSheet;
     const touchSheetConfig = resolveTouchSheetConfig({
       groupCount: resolvedItemGroups.length,
       groupLabelCount,
+      isNativeSheet: shouldUseIosNativeSheetList,
       itemCount: resolvedItems.length,
       touchSheetMaxHeight,
     });
@@ -840,7 +961,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
       }
 
       let accumY: number | null = null;
-      let currentY = TOUCH_SHEET_SCROLL_CONTENT_STYLE.paddingTop ?? 0;
+      let currentY = shouldUseIosNativeSheetList
+        ? (IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE.paddingTop ?? 0)
+        : (TOUCH_SHEET_SCROLL_CONTENT_STYLE.paddingTop ?? 0);
 
       for (const [groupIndex, group] of resolvedItemGroups.entries()) {
         const label = getGroupLabel(group, groupIndex);
@@ -862,6 +985,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
 
       return accumY;
     }, [
+      shouldUseIosNativeSheetList,
       shouldUseTouchSheetLayout,
       resolvedItems.length,
       resolvedItemGroups,
@@ -1016,8 +1140,22 @@ const SelectRoot = forwardRef<any, SelectProps>(
                         borderWidth={1}
                         borderColor="$borderColor"
                         {...viewportProps}
+                        style={
+                          shouldUseIosNativeSheetList
+                            ? [{ flex: 1, minHeight: 0, width: "100%" }, viewportProps?.style]
+                            : viewportProps?.style
+                        }
                       >
-                        {renderedItemGroups.map(renderGroup)}
+                        {shouldUseIosNativeSheetList ? (
+                          <IosNativeSheetSelectList
+                            itemGroups={resolvedItemGroups}
+                            itemLabel={itemLabel}
+                            nativeHaptics={resolvedNativeHaptics}
+                            value={props.value ?? null}
+                          />
+                        ) : (
+                          renderedItemGroups.map(renderGroup)
+                        )}
                         {isWeb() && selectBehavior.tamaguiNative && !nativeTrigger && (
                           <YStack
                             position="absolute"

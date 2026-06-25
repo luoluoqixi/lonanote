@@ -57,6 +57,10 @@ export type NativeListSectionProps = {
 /** NativeList Root props */
 export type NativeListRootProps = Omit<ScrollViewProps, "children"> & {
   children?: ReactNode;
+  /** 原生 List 内容顶部内边距。 */
+  contentMarginTop?: number;
+  /** 原生 List 内容底部内边距。 */
+  contentMarginBottom?: number;
   /** 设为 false 时使用 list_group 回退模式（所有平台一致） */
   native?: boolean;
   /** 设为 false 时不创建内部 ScrollView，由外层宿主负责滚动。 */
