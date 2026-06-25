@@ -14,6 +14,7 @@ import {
 import {
   buttonStyle,
   contentMargins,
+  contentShape,
   disabled as disabledModifier,
   font,
   foregroundStyle,
@@ -28,6 +29,7 @@ import {
   padding,
   scrollContentBackground,
   scrollDisabled,
+  shapes,
   tint,
 } from "@expo/ui/swift-ui/modifiers";
 import { type ReactNode, createContext, useContext, useRef } from "react";
@@ -106,7 +108,7 @@ function resolveNativeListBtnTintColor(
   btnTint: boolean | string | undefined,
   primaryColor: string,
 ) {
-  if (btnTint === false) {
+  if (btnTint === false || btnTint == null) {
     return null;
   }
 
@@ -122,6 +124,17 @@ function resolveNativeListTitleColor(
   }
 
   return typeof titleColor === "string" ? titleColor : primaryColor;
+}
+
+function resolveNativeListAssistColor(theme: ReturnType<typeof useTheme>) {
+  return (
+    toSwiftUIHexColor(theme.gray11?.val) ??
+    toSwiftUIHexColor(theme.color10?.val) ??
+    toSwiftUIHexColor(theme.color.val) ??
+    theme.gray11?.val ??
+    theme.color10?.val ??
+    theme.color.val
+  );
 }
 
 function NativeRowLabel({
@@ -143,7 +156,7 @@ function NativeRowLabel({
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
   const primaryColor = toSwiftUIHexColor(theme.color.val) ?? theme.color.val;
-  const secondaryColor = toSwiftUIHexColor(theme.color10.val) ?? theme.color10.val;
+  const assistColor = resolveNativeListAssistColor(theme);
   const resolvedTextAlignment =
     titleAlign === "center" ? "center" : titleAlign === "right" ? "trailing" : "leading";
   const resolvedTitleColor = resolveNativeListTitleColor(titleColor ?? undefined, primaryColor);
@@ -173,7 +186,7 @@ function NativeRowLabel({
         </SwiftText>
       ) : null}
       {subtitleText != null ? (
-        <SwiftText modifiers={[...SUBTITLE_MODIFIERS, foregroundStyle(secondaryColor)]}>
+        <SwiftText modifiers={[...SUBTITLE_MODIFIERS, foregroundStyle(assistColor)]}>
           {subtitleText}
         </SwiftText>
       ) : null}
@@ -237,7 +250,13 @@ function NativeRowContainer({
       >
         <HStack
           alignment="center"
-          modifiers={[...baseModifiers, ...(resolvedTint != null ? [tint(resolvedTint)] : [])]}
+          modifiers={[
+            ...baseModifiers,
+            ...(btnStyle === "plain"
+              ? [frame({ maxWidth: 99999, alignment: "leading" }), contentShape(shapes.rectangle())]
+              : []),
+            ...(resolvedTint != null ? [tint(resolvedTint)] : []),
+          ]}
           spacing={12}
         >
           {children}
@@ -286,6 +305,7 @@ function NativePressRow({
   disabled,
   nativeHaptics,
   onPress,
+  selected = false,
   subtitle,
   title,
   titleAlign,
@@ -301,11 +321,12 @@ function NativePressRow({
 }) {
   const theme = useTheme();
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
-  const secondaryColor = toSwiftUIHexColor(theme.color10.val) ?? theme.color10.val;
+  const accentColor = toSwiftUIHexColor(theme.accent10.val) ?? theme.accent10.val;
+  const assistColor = resolveNativeListAssistColor(theme);
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
   const valueText = toPlainText(value);
-  const hasTrailingContent = valueText != null || trailingControl != null || chevron;
+  const hasTrailingContent = valueText != null || selected || trailingControl != null || chevron;
   const showTrailingSpacer = hasTrailingContent && (titleText != null || subtitleText != null);
 
   const handlePress = onPress
@@ -332,12 +353,13 @@ function NativePressRow({
       />
       {showTrailingSpacer ? <Spacer minLength={12} /> : null}
       {valueText != null ? (
-        <SwiftText modifiers={[...VALUE_MODIFIERS, foregroundStyle(secondaryColor)]}>
+        <SwiftText modifiers={[...VALUE_MODIFIERS, foregroundStyle(assistColor)]}>
           {valueText}
         </SwiftText>
       ) : null}
+      {selected ? <Image color={accentColor} size={18} systemName="checkmark" /> : null}
       {trailingControl}
-      {chevron ? <Image color={secondaryColor} size={13} systemName="chevron.right" /> : null}
+      {chevron ? <Image color={assistColor} size={13} systemName="chevron.right" /> : null}
     </NativeRowContainer>
   );
 }
@@ -593,9 +615,10 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
             ]}
             nativeTriggerIcon="chevrons-up-down"
             nativeTriggerLabelProps={{
-              color: "$color10",
+              color: "$gray11",
               fontSize: "$4",
               numberOfLines: 1,
+              opacity: 0.72,
             }}
             onValueChange={selectProps.onValueChange}
             placeholder={selectProps.placeholder}

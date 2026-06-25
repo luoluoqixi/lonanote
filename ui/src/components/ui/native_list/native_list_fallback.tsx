@@ -1,5 +1,5 @@
 import { HeaderHeightContext } from "@react-navigation/elements";
-import { ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
+import { Check, ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
 import { Children, Fragment, type ReactNode, useContext } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -90,6 +90,7 @@ function NativeListRow({
   iconAfter,
   nativeHaptics,
   onPress,
+  selected = false,
   subtitle,
   title,
   titleAlign,
@@ -101,12 +102,13 @@ function NativeListRow({
   const combinedIconAfter = (
     <View style={styles.iconAfterRow}>
       {value != null ? (
-        <Text color="$color10" fontSize="$5" numberOfLines={1}>
+        <Text color="$color" fontSize="$5" numberOfLines={1} opacity={0.58}>
           {value}
         </Text>
       ) : null}
+      {selected ? <Check color="$accent10" size={18} /> : null}
       {iconAfter}
-      {chevron ? <ChevronRight color="$color10" size={18} /> : null}
+      {chevron ? <ChevronRight color="$color" opacity={0.58} size={18} /> : null}
     </View>
   );
 
@@ -297,10 +299,10 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
             disabled={disabled}
             iconAfter={
               <View style={styles.selectValue}>
-                <Text color="$color10" fontSize="$4" numberOfLines={1}>
+                <Text color="$color" fontSize="$4" numberOfLines={1} opacity={0.58}>
                   {selectedLabel}
                 </Text>
-                <ChevronsUpDown color="$color10" size={14} />
+                <ChevronsUpDown color="$color" opacity={0.58} size={14} />
               </View>
             }
           />

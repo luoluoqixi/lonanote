@@ -13,6 +13,7 @@ export type NativeListItemBaseProps = {
   disabled?: boolean;
   nativeHaptics?: NativeHapticsSetting;
   onPress?: () => void;
+  selected?: boolean;
   subtitle?: ReactNode;
   title?: ReactNode;
   titleAlign?: "center" | "right" | "left";

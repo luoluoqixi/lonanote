@@ -17,9 +17,11 @@ import type { SelectNativeTriggerIcon } from "./types";
 type TriggerIconColor = React.ComponentProps<typeof ChevronDown>["color"];
 
 function renderTriggerLabel(label: React.ReactNode, labelProps?: TextProps) {
+  const resolvedOpacity = typeof labelProps?.opacity === "number" ? labelProps.opacity : 0.58;
+
   if (typeof label === "string" || typeof label === "number") {
     return (
-      <Text color="$color10" fontSize={getFontSize("$4")} {...labelProps}>
+      <Text color="$color" fontSize={getFontSize("$4")} opacity={resolvedOpacity} {...labelProps}>
         {label}
       </Text>
     );
@@ -69,13 +71,14 @@ export function NativeTriggerFace({
   }
 
   const iconColor: TriggerIconColor =
-    typeof labelProps?.color === "string" ? (labelProps.color as TriggerIconColor) : "$color10";
+    typeof labelProps?.color === "string" ? (labelProps.color as TriggerIconColor) : "$color";
+  const iconOpacity = typeof labelProps?.opacity === "number" ? labelProps.opacity : 0.58;
 
   return (
     <View pointerEvents="none" style={{ opacity }}>
       <View style={[styles.defaultTrigger, containerStyle]}>
         {renderTriggerLabel(label, labelProps)}
-        {renderTriggerIcon(icon, iconColor)}
+        <View style={{ opacity: iconOpacity }}>{renderTriggerIcon(icon, iconColor)}</View>
       </View>
     </View>
   );

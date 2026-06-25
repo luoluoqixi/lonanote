@@ -29,6 +29,7 @@ import {
   ListGroup,
   Menu,
   NativeList,
+  NativeListItem,
   NativeListNavigationItem,
   NativeListSection,
   NativeListSelectItem,
@@ -90,6 +91,7 @@ export function UiComponentsDebugPage() {
   const [radioValue, setRadioValue] = useState("recent");
   const [selectValue, setSelectValue] = useState<string | null>("blue");
   const [selectValue2, setSelectValue2] = useState<string | null>("light");
+  const [nativeListSingleChoice, setNativeListSingleChoice] = useState("four-minutes");
   const [selectGroupedValue, setSelectGroupedValue] = useState<string | null>("edit-desc");
   const [selectNativeGroupedValue, setSelectNativeGroupedValue] = useState<string | null>(
     "name-asc",
@@ -1587,18 +1589,60 @@ export function UiComponentsDebugPage() {
           <NativeList>
             <NativeListSection title="NativeList 示例">
               <NativeListNavigationItem
+                nativeHaptics={debugNativeHaptics}
                 onPress={() => setMenuAction("NativeListItem")}
                 title="NativeListItem"
                 value="详情"
               />
               <NativeListSwitchItem
+                nativeHaptics={debugNativeHaptics}
                 switchProps={{
                   checked: switchValue,
                   onCheckedChange: setSwitchValue,
                 }}
                 title="SwitchItem"
               />
+            </NativeListSection>
+            <NativeListSection title="单选示例">
+              <NativeListItem
+                chevron={false}
+                nativeHaptics={debugNativeHaptics}
+                onPress={() => setNativeListSingleChoice("thirty-seconds")}
+                selected={nativeListSingleChoice === "thirty-seconds"}
+                title="30秒钟"
+              />
+              <NativeListItem
+                chevron={false}
+                nativeHaptics={debugNativeHaptics}
+                onPress={() => setNativeListSingleChoice("one-minute")}
+                selected={nativeListSingleChoice === "one-minute"}
+                title="1分钟"
+              />
+              <NativeListItem
+                chevron={false}
+                nativeHaptics={debugNativeHaptics}
+                onPress={() => setNativeListSingleChoice("two-minutes")}
+                selected={nativeListSingleChoice === "two-minutes"}
+                title="2分钟"
+              />
+              <NativeListItem
+                chevron={false}
+                nativeHaptics={debugNativeHaptics}
+                onPress={() => setNativeListSingleChoice("four-minutes")}
+                selected={nativeListSingleChoice === "four-minutes"}
+                title="4分钟"
+              />
+              <NativeListItem
+                chevron={false}
+                nativeHaptics={debugNativeHaptics}
+                onPress={() => setNativeListSingleChoice("never")}
+                selected={nativeListSingleChoice === "never"}
+                title="永不"
+              />
+            </NativeListSection>
+            <NativeListSection title="Select 示例">
               <NativeListSelectItem
+                nativeHaptics={debugNativeHaptics}
                 selectProps={{
                   onValueChange: setSelectValue2,
                   options: selectItems2,
@@ -1609,6 +1653,7 @@ export function UiComponentsDebugPage() {
               />
               {os() === "ios" && (
                 <NativeListSelectItem
+                  nativeHaptics={debugNativeHaptics}
                   selectProps={{
                     onValueChange: setSelectValue2,
                     options: selectItems2,
@@ -1621,6 +1666,7 @@ export function UiComponentsDebugPage() {
               )}
               {os() === "android" && (
                 <NativeListSelectItem
+                  nativeHaptics={debugNativeHaptics}
                   selectProps={{
                     onValueChange: setSelectValue2,
                     options: selectItems2,
@@ -1798,7 +1844,7 @@ const styles = StyleSheet.create({
   },
   sectionBody: {
     gap: 16,
-    padding: 16,
+    padding: 12,
     paddingTop: 0,
   },
   sheetFrame: {
@@ -1838,7 +1884,8 @@ const styles = StyleSheet.create({
     minWidth: 220,
   },
   demoSectionList: {
-    gap: 16,
-    height: 300,
+    gap: 12,
+    minHeight: 420,
+    marginHorizontal: -4,
   },
 });
