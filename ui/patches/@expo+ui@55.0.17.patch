@@ -1,9 +1,9 @@
-# iOS 26: SwiftUI labeled Slider initializer 在无 label 时仍保留 track 下方的基线，
-# 导致出现一条灰色的点状线。详见 Expo PR #46218:
-# https://github.com/expo/expo/pull/46218
-# 修复：无 label slot 时使用无标签 Slider 构造器。
+# Expo UI local patches:
+# - iOS 26: use unlabeled Slider initializer when no label slot is present.
+# - RNHostView: allow matching horizontal/vertical contents independently.
+# - SwiftUI List: viewport clipping compensation, content margins, and initial scroll target support.
 diff --git a/ios/SliderView.swift b/ios/SliderView.swift
-index 1ffa70e..5092712 100644
+index 1ffa70e3..50927129 100644
 --- a/ios/SliderView.swift
 +++ b/ios/SliderView.swift
 @@ -40,51 +40,91 @@ struct SliderView: ExpoSwiftUI.View {
@@ -172,7 +172,7 @@ index 4e634d0c..6a60b0e2 100644
    );
  }
 diff --git a/build/swift-ui/RNHostView.d.ts b/build/swift-ui/RNHostView.d.ts
-index 7a50cb3f..7de30274 100644
+index e1c5cded..c488bbca 100644
 --- a/build/swift-ui/RNHostView.d.ts
 +++ b/build/swift-ui/RNHostView.d.ts
 @@ -5,7 +5,10 @@ export type RNHostViewProps = {
@@ -250,7 +250,7 @@ index 290f9d4e..1340fb16 100644
    );
  }
 diff --git a/build/jetpack-compose/RNHostView/index.d.ts b/build/jetpack-compose/RNHostView/index.d.ts
-index 1fbac570..4c51bfb5 100644
+index f8ad9a4e..3a147273 100644
 --- a/build/jetpack-compose/RNHostView/index.d.ts
 +++ b/build/jetpack-compose/RNHostView/index.d.ts
 @@ -8,7 +8,10 @@ export interface RNHostProps extends PrimitiveBaseProps {
@@ -266,7 +266,7 @@ index 1fbac570..4c51bfb5 100644
       * The RN View to be hosted.
       */
 diff --git a/ios/RNHostView.swift b/ios/RNHostView.swift
-index f8cba36a..d3de33f8 100644
+index f8cba36a..ced9b626 100644
 --- a/ios/RNHostView.swift
 +++ b/ios/RNHostView.swift
 @@ -4,7 +4,9 @@ import SwiftUI
@@ -508,10 +508,10 @@ index 79076729..b7d071e8 100644
        }
      }
 diff --git a/src/swift-ui/modifiers/index.ts b/src/swift-ui/modifiers/index.ts
-index d64100ee..44f96f5d 100644
+index d64100ee..6a3440ae 100644
 --- a/src/swift-ui/modifiers/index.ts
 +++ b/src/swift-ui/modifiers/index.ts
-@@ -569,6 +569,21 @@ export const scrollDismissesKeyboard = (
+@@ -569,6 +569,28 @@ export const scrollDismissesKeyboard = (
  export const scrollDisabled = (disabled: boolean = true) =>
    createModifier('scrollDisabled', { disabled });
  
@@ -530,22 +530,30 @@ index d64100ee..44f96f5d 100644
 +  placement?: 'automatic' | 'scrollContent' | 'scrollIndicators';
 +}) => createModifier('contentMargins', params);
 +
++/**
++ * Sets a stable SwiftUI identity for scroll targeting.
++ * @param value - The identity to set on the view.
++ * @see Official [SwiftUI documentation](https://developer.apple.com/documentation/swiftui/view/id(_:)).
++ */
++export const viewID = (value: string | number) => createModifier('viewID', { value });
++
  type UnitPointValue =
    | 'zero'
    | 'topLeading'
-@@ -1267,6 +1282,7 @@ export type BuiltInModifier =
+@@ -1267,6 +1289,8 @@ export type BuiltInModifier =
    | ReturnType<typeof containerShape>
    | ReturnType<typeof contentShape>
    | ReturnType<typeof containerRelativeFrame>
 +  | ReturnType<typeof contentMargins>
++  | ReturnType<typeof viewID>
    | ReturnType<typeof scrollContentBackground>
    | ReturnType<typeof scrollDisabled>
    | ReturnType<typeof defaultScrollAnchor>
 diff --git a/build/swift-ui/modifiers/index.d.ts b/build/swift-ui/modifiers/index.d.ts
-index 9d460b2b..fbe0ac8c 100644
+index 1e0d2ba0..d0d1a5de 100644
 --- a/build/swift-ui/modifiers/index.d.ts
 +++ b/build/swift-ui/modifiers/index.d.ts
-@@ -455,6 +455,20 @@ export declare const scrollDismissesKeyboard: (mode: "automatic" | "never" | "in
+@@ -455,6 +455,26 @@ export declare const scrollDismissesKeyboard: (mode: "automatic" | "never" | "in
   * @see Official [SwiftUI documentation](https://developer.apple.com/documentation/swiftui/view/scrolldisabled(_:)).
   */
  export declare const scrollDisabled: (disabled?: boolean) => ModifierConfig;
@@ -563,23 +571,62 @@ index 9d460b2b..fbe0ac8c 100644
 +    length?: number | null;
 +    placement?: 'automatic' | 'scrollContent' | 'scrollIndicators';
 +}) => ModifierConfig;
++/**
++ * Sets a stable SwiftUI identity for scroll targeting.
++ * @param value - The identity to set on the view.
++ * @see Official [SwiftUI documentation](https://developer.apple.com/documentation/swiftui/view/id(_:)).
++ */
++export declare const viewID: (value: string | number) => ModifierConfig;
  type UnitPointValue = 'zero' | 'topLeading' | 'top' | 'topTrailing' | 'leading' | 'center' | 'trailing' | 'bottomLeading' | 'bottom' | 'bottomTrailing';
  /**
   * Sets the default anchor point for a scroll view's content.
-@@ -925,7 +939,7 @@ export declare const resizable: (capInsets?: {
+@@ -925,7 +945,7 @@ export declare const resizable: (capInsets?: {
   * This provides type safety for the modifiers array.
   * @hidden
   */
 -export type BuiltInModifier = ReturnType<typeof listSectionSpacing> | ReturnType<typeof background> | ReturnType<typeof cornerRadius> | ReturnType<typeof shadow> | ReturnType<typeof frame> | ReturnType<typeof padding> | ReturnType<typeof fixedSize> | ReturnType<typeof ignoreSafeArea> | ReturnType<typeof onTapGesture> | ReturnType<typeof onLongPressGesture> | ReturnType<typeof onAppear> | ReturnType<typeof luminanceToAlpha> | ReturnType<typeof onDisappear> | ReturnType<typeof opacity> | ReturnType<typeof clipShape> | ReturnType<typeof border> | ReturnType<typeof scaleEffect> | ReturnType<typeof rotationEffect> | ReturnType<typeof rotation3DEffect> | ReturnType<typeof offset> | ReturnType<typeof foregroundColor> | ReturnType<typeof foregroundStyle> | ReturnType<typeof bold> | ReturnType<typeof italic> | ReturnType<typeof monospacedDigit> | ReturnType<typeof tint> | ReturnType<typeof hidden> | ReturnType<typeof disabled> | ReturnType<typeof zIndex> | ReturnType<typeof blur> | ReturnType<typeof brightness> | ReturnType<typeof contrast> | ReturnType<typeof saturation> | ReturnType<typeof hueRotation> | ReturnType<typeof colorInvert> | ReturnType<typeof grayscale> | ReturnType<typeof buttonStyle> | ReturnType<typeof toggleStyle> | ReturnType<typeof controlSize> | ReturnType<typeof labelStyle> | ReturnType<typeof labelsHidden> | ReturnType<typeof textFieldStyle> | ReturnType<typeof menuActionDismissBehavior> | ReturnType<typeof accessibilityLabel> | ReturnType<typeof accessibilityHint> | ReturnType<typeof accessibilityValue> | ReturnType<typeof layoutPriority> | ReturnType<typeof mask> | ReturnType<typeof overlay> | ReturnType<typeof backgroundOverlay> | ReturnType<typeof aspectRatio> | ReturnType<typeof clipped> | ReturnType<typeof glassEffect> | ReturnType<typeof glassEffectId> | ReturnType<typeof animation> | ReturnType<typeof containerShape> | ReturnType<typeof contentShape> | ReturnType<typeof containerRelativeFrame> | ReturnType<typeof scrollContentBackground> | ReturnType<typeof scrollDisabled> | ReturnType<typeof defaultScrollAnchor> | ReturnType<typeof defaultScrollAnchorForRole> | ReturnType<typeof scrollTargetBehavior> | ReturnType<typeof scrollTargetLayout> | ReturnType<typeof moveDisabled> | ReturnType<typeof deleteDisabled> | ReturnType<typeof environment> | ReturnType<typeof listRowBackground> | ReturnType<typeof listRowSeparator> | ReturnType<typeof truncationMode> | ReturnType<typeof allowsTightening> | ReturnType<typeof kerning> | ReturnType<typeof textCase> | ReturnType<typeof underline> | ReturnType<typeof strikethrough> | ReturnType<typeof multilineTextAlignment> | ReturnType<typeof textSelection> | ReturnType<typeof lineSpacing> | ReturnType<typeof lineLimit> | ReturnType<typeof headerProminence> | ReturnType<typeof listRowInsets> | ReturnType<typeof badgeProminence> | ReturnType<typeof badge> | ReturnType<typeof listSectionMargins> | ReturnType<typeof font> | ReturnType<typeof gridCellUnsizedAxes> | ReturnType<typeof gridCellColumns> | ReturnType<typeof gridColumnAlignment> | ReturnType<typeof gridCellAnchor> | ReturnType<typeof submitLabel> | ReturnType<typeof keyboardType> | ReturnType<typeof autocorrectionDisabled> | ReturnType<typeof onSubmit> | ReturnType<typeof textInputAutocapitalization> | ReturnType<typeof textContentType> | ReturnType<typeof datePickerStyle> | ReturnType<typeof progressViewStyle> | ReturnType<typeof gaugeStyle> | ReturnType<typeof listStyle> | ReturnType<typeof contentTransition> | ReturnType<typeof resizable> | ReturnType<typeof widgetAccentedRenderingMode> | ReturnType<typeof widgetURL>;
-+export type BuiltInModifier = ReturnType<typeof listSectionSpacing> | ReturnType<typeof background> | ReturnType<typeof cornerRadius> | ReturnType<typeof shadow> | ReturnType<typeof frame> | ReturnType<typeof padding> | ReturnType<typeof fixedSize> | ReturnType<typeof ignoreSafeArea> | ReturnType<typeof onTapGesture> | ReturnType<typeof onLongPressGesture> | ReturnType<typeof onAppear> | ReturnType<typeof luminanceToAlpha> | ReturnType<typeof onDisappear> | ReturnType<typeof opacity> | ReturnType<typeof clipShape> | ReturnType<typeof border> | ReturnType<typeof scaleEffect> | ReturnType<typeof rotationEffect> | ReturnType<typeof rotation3DEffect> | ReturnType<typeof offset> | ReturnType<typeof foregroundColor> | ReturnType<typeof foregroundStyle> | ReturnType<typeof bold> | ReturnType<typeof italic> | ReturnType<typeof monospacedDigit> | ReturnType<typeof tint> | ReturnType<typeof hidden> | ReturnType<typeof disabled> | ReturnType<typeof zIndex> | ReturnType<typeof blur> | ReturnType<typeof brightness> | ReturnType<typeof contrast> | ReturnType<typeof saturation> | ReturnType<typeof hueRotation> | ReturnType<typeof colorInvert> | ReturnType<typeof grayscale> | ReturnType<typeof buttonStyle> | ReturnType<typeof toggleStyle> | ReturnType<typeof controlSize> | ReturnType<typeof labelStyle> | ReturnType<typeof labelsHidden> | ReturnType<typeof textFieldStyle> | ReturnType<typeof menuActionDismissBehavior> | ReturnType<typeof accessibilityLabel> | ReturnType<typeof accessibilityHint> | ReturnType<typeof accessibilityValue> | ReturnType<typeof layoutPriority> | ReturnType<typeof mask> | ReturnType<typeof overlay> | ReturnType<typeof backgroundOverlay> | ReturnType<typeof aspectRatio> | ReturnType<typeof clipped> | ReturnType<typeof glassEffect> | ReturnType<typeof glassEffectId> | ReturnType<typeof animation> | ReturnType<typeof containerShape> | ReturnType<typeof contentShape> | ReturnType<typeof containerRelativeFrame> | ReturnType<typeof contentMargins> | ReturnType<typeof scrollContentBackground> | ReturnType<typeof scrollDisabled> | ReturnType<typeof defaultScrollAnchor> | ReturnType<typeof defaultScrollAnchorForRole> | ReturnType<typeof scrollTargetBehavior> | ReturnType<typeof scrollTargetLayout> | ReturnType<typeof moveDisabled> | ReturnType<typeof deleteDisabled> | ReturnType<typeof environment> | ReturnType<typeof listRowBackground> | ReturnType<typeof listRowSeparator> | ReturnType<typeof truncationMode> | ReturnType<typeof allowsTightening> | ReturnType<typeof kerning> | ReturnType<typeof textCase> | ReturnType<typeof underline> | ReturnType<typeof strikethrough> | ReturnType<typeof multilineTextAlignment> | ReturnType<typeof textSelection> | ReturnType<typeof lineSpacing> | ReturnType<typeof lineLimit> | ReturnType<typeof headerProminence> | ReturnType<typeof listRowInsets> | ReturnType<typeof badgeProminence> | ReturnType<typeof badge> | ReturnType<typeof listSectionMargins> | ReturnType<typeof font> | ReturnType<typeof gridCellUnsizedAxes> | ReturnType<typeof gridCellColumns> | ReturnType<typeof gridColumnAlignment> | ReturnType<typeof gridCellAnchor> | ReturnType<typeof submitLabel> | ReturnType<typeof keyboardType> | ReturnType<typeof autocorrectionDisabled> | ReturnType<typeof onSubmit> | ReturnType<typeof textInputAutocapitalization> | ReturnType<typeof textContentType> | ReturnType<typeof datePickerStyle> | ReturnType<typeof progressViewStyle> | ReturnType<typeof gaugeStyle> | ReturnType<typeof listStyle> | ReturnType<typeof contentTransition> | ReturnType<typeof resizable> | ReturnType<typeof widgetAccentedRenderingMode> | ReturnType<typeof widgetURL>;
++export type BuiltInModifier = ReturnType<typeof listSectionSpacing> | ReturnType<typeof background> | ReturnType<typeof cornerRadius> | ReturnType<typeof shadow> | ReturnType<typeof frame> | ReturnType<typeof padding> | ReturnType<typeof fixedSize> | ReturnType<typeof ignoreSafeArea> | ReturnType<typeof onTapGesture> | ReturnType<typeof onLongPressGesture> | ReturnType<typeof onAppear> | ReturnType<typeof luminanceToAlpha> | ReturnType<typeof onDisappear> | ReturnType<typeof opacity> | ReturnType<typeof clipShape> | ReturnType<typeof border> | ReturnType<typeof scaleEffect> | ReturnType<typeof rotationEffect> | ReturnType<typeof rotation3DEffect> | ReturnType<typeof offset> | ReturnType<typeof foregroundColor> | ReturnType<typeof foregroundStyle> | ReturnType<typeof bold> | ReturnType<typeof italic> | ReturnType<typeof monospacedDigit> | ReturnType<typeof tint> | ReturnType<typeof hidden> | ReturnType<typeof disabled> | ReturnType<typeof zIndex> | ReturnType<typeof blur> | ReturnType<typeof brightness> | ReturnType<typeof contrast> | ReturnType<typeof saturation> | ReturnType<typeof hueRotation> | ReturnType<typeof colorInvert> | ReturnType<typeof grayscale> | ReturnType<typeof buttonStyle> | ReturnType<typeof toggleStyle> | ReturnType<typeof controlSize> | ReturnType<typeof labelStyle> | ReturnType<typeof labelsHidden> | ReturnType<typeof textFieldStyle> | ReturnType<typeof menuActionDismissBehavior> | ReturnType<typeof accessibilityLabel> | ReturnType<typeof accessibilityHint> | ReturnType<typeof accessibilityValue> | ReturnType<typeof layoutPriority> | ReturnType<typeof mask> | ReturnType<typeof overlay> | ReturnType<typeof backgroundOverlay> | ReturnType<typeof aspectRatio> | ReturnType<typeof clipped> | ReturnType<typeof glassEffect> | ReturnType<typeof glassEffectId> | ReturnType<typeof animation> | ReturnType<typeof containerShape> | ReturnType<typeof contentShape> | ReturnType<typeof containerRelativeFrame> | ReturnType<typeof contentMargins> | ReturnType<typeof viewID> | ReturnType<typeof scrollContentBackground> | ReturnType<typeof scrollDisabled> | ReturnType<typeof defaultScrollAnchor> | ReturnType<typeof defaultScrollAnchorForRole> | ReturnType<typeof scrollTargetBehavior> | ReturnType<typeof scrollTargetLayout> | ReturnType<typeof moveDisabled> | ReturnType<typeof deleteDisabled> | ReturnType<typeof environment> | ReturnType<typeof listRowBackground> | ReturnType<typeof listRowSeparator> | ReturnType<typeof truncationMode> | ReturnType<typeof allowsTightening> | ReturnType<typeof kerning> | ReturnType<typeof textCase> | ReturnType<typeof underline> | ReturnType<typeof strikethrough> | ReturnType<typeof multilineTextAlignment> | ReturnType<typeof textSelection> | ReturnType<typeof lineSpacing> | ReturnType<typeof lineLimit> | ReturnType<typeof headerProminence> | ReturnType<typeof listRowInsets> | ReturnType<typeof badgeProminence> | ReturnType<typeof badge> | ReturnType<typeof listSectionMargins> | ReturnType<typeof font> | ReturnType<typeof gridCellUnsizedAxes> | ReturnType<typeof gridCellColumns> | ReturnType<typeof gridColumnAlignment> | ReturnType<typeof gridCellAnchor> | ReturnType<typeof submitLabel> | ReturnType<typeof keyboardType> | ReturnType<typeof autocorrectionDisabled> | ReturnType<typeof onSubmit> | ReturnType<typeof textInputAutocapitalization> | ReturnType<typeof textContentType> | ReturnType<typeof datePickerStyle> | ReturnType<typeof progressViewStyle> | ReturnType<typeof gaugeStyle> | ReturnType<typeof listStyle> | ReturnType<typeof contentTransition> | ReturnType<typeof resizable> | ReturnType<typeof widgetAccentedRenderingMode> | ReturnType<typeof widgetURL>;
  /**
   * Main ViewModifier type that supports both built-in and 3rd party modifiers.
   * 3rd party modifiers should return ModifierConfig objects with their own type strings.
+@@ -959,4 +979,4 @@ export * from './presentationModifiers';
+ export * from './environment';
+ export * from './widgets';
+ export type { TimingAnimationParams, SpringAnimationParams, InterpolatingSpringAnimationParams, ChainableAnimationType, } from './animation/types';
+-//# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
++//# sourceMappingURL=index.d.ts.map
 diff --git a/ios/Modifiers/ViewModifierRegistry.swift b/ios/Modifiers/ViewModifierRegistry.swift
-index 552adc52..1e84e194 100644
+index 552adc52..3a44a626 100644
 --- a/ios/Modifiers/ViewModifierRegistry.swift
 +++ b/ios/Modifiers/ViewModifierRegistry.swift
-@@ -1699,6 +1699,10 @@ extension ViewModifierRegistry {
+@@ -120,6 +120,25 @@ internal struct OpacityModifier: ViewModifier, Record {
+   }
+ }
+ 
++internal struct ViewIDModifier: ViewModifier, Record {
++  @Field var value: Either<String, Double>?
++
++  @ViewBuilder
++  func body(content: Content) -> some View {
++    if let value {
++      if let stringValue: String = value.get() {
++        content.id(AnyHashable(stringValue))
++      } else if let doubleValue: Double = value.get() {
++        content.id(AnyHashable(doubleValue))
++      } else {
++        content
++      }
++    } else {
++      content
++    }
++  }
++}
++
+ internal struct ScaleEffectModifier: ViewModifier, Record {
+   @Field var x: CGFloat = 1.0
+   @Field var y: CGFloat = 1.0
+@@ -1699,6 +1718,10 @@ extension ViewModifierRegistry {
        return try ContainerRelativeFrameModifier(from: params, appContext: appContext)
      }
  
@@ -590,8 +637,19 @@ index 552adc52..1e84e194 100644
      register("buttonStyle") { params, appContext, _ in
        return try ButtonStyleModifier(from: params, appContext: appContext)
      }
+@@ -1823,6 +1846,10 @@ extension ViewModifierRegistry {
+       return try TagModifier(from: params, appContext: appContext)
+     }
+ 
++    register("viewID") { params, appContext, _ in
++      return try ViewIDModifier(from: params, appContext: appContext)
++    }
++
+     register("scrollTargetBehavior") { params, appContext, _ in
+       return try ScrollTargetBehaviorModifier(from: params, appContext: appContext)
+     }
 diff --git a/ios/Modifiers/ContainerRelativeFrameModifier.swift b/ios/Modifiers/ContainerRelativeFrameModifier.swift
-index ee649568..d32a1516 100644
+index ee649568..be7d2ab2 100644
 --- a/ios/Modifiers/ContainerRelativeFrameModifier.swift
 +++ b/ios/Modifiers/ContainerRelativeFrameModifier.swift
 @@ -40,3 +40,36 @@ internal struct ContainerRelativeFrameModifier: ViewModifier, Record {
@@ -632,47 +690,109 @@ index ee649568..d32a1516 100644
 +  }
 +}
 diff --git a/ios/ListView.swift b/ios/ListView.swift
-index a7ca51df..199806d9 100644
+index a7ca51df..2c265d4e 100644
 --- a/ios/ListView.swift
 +++ b/ios/ListView.swift
-@@ -6,0 +7 @@ final class ListProps: UIBaseViewProps {
+@@ -4,6 +4,9 @@ import ExpoModulesCore
+ import SwiftUI
+ 
+ final class ListProps: UIBaseViewProps {
 +  @Field var compensatesForViewportClipping = false
-@@ -14,0 +16 @@ struct ListView: ExpoSwiftUI.View {
++  @Field var initialScrollAnchor: UnitPointOptions = .center
++  @Field var initialScrollTarget: Either<String, Double>?
+   @Field var selection: [Either<String, Double>]?
+   var onSelectionChange = EventDispatcher()
+ }
+@@ -11,19 +14,56 @@ final class ListProps: UIBaseViewProps {
+ struct ListView: ExpoSwiftUI.View {
+   @ObservedObject var props: ListProps
+   @State private var selection = Set<AnyHashable>()
++  @State private var hasScrolledToInitialTarget = false
+ 
 +  @ViewBuilder
-@@ -15,0 +18,28 @@ struct ListView: ExpoSwiftUI.View {
+   var body: some View {
+-    List(selection: $selection) {
+-      Children()
 +    if props.compensatesForViewportClipping {
 +      GeometryReader { geometry in
 +        let globalFrame = geometry.frame(in: .global)
-+        let keyWindow = UIApplication.shared.connectedScenes
-+          .compactMap { $0 as? UIWindowScene }
-+          .flatMap { $0.windows }
-+          .first { $0.isKeyWindow }
-+        let viewportBottom = keyWindow?.bounds.maxY ?? UIScreen.main.bounds.maxY
-+        let visibleHeight = max(0, min(globalFrame.height, viewportBottom - globalFrame.minY))
-+        let indicatorBottomInset = globalFrame.maxY > viewportBottom
-+          ? (keyWindow?.safeAreaInsets.bottom ?? 0)
-+          : 0
++        let screenHeight = UIScreen.main.bounds.height
++        let visibleHeight = max(0, min(globalFrame.height, screenHeight - globalFrame.minY))
 +
-+        if #available(iOS 17.0, tvOS 17.0, *) {
-+          list
-+            .contentMargins(.bottom, indicatorBottomInset, for: .scrollIndicators)
-+            .frame(width: geometry.size.width, height: visibleHeight, alignment: .top)
-+        } else {
-+          list
-+            .frame(width: geometry.size.width, height: visibleHeight, alignment: .top)
-+        }
++        list
++          .frame(width: geometry.size.width, height: visibleHeight, alignment: .top)
 +      }
 +    } else {
 +      list
-+    }
+     }
+-    .onAppear {
+-      selection = Self.getHashableSetFromEither(props.selection)
 +  }
 +
 +  private var list: some View {
++    ScrollViewReader { proxy in
++      List(selection: $selection) {
++        Children()
++      }
++      .onAppear {
++        selection = Self.getHashableSetFromEither(props.selection)
++        scrollToInitialTarget(proxy)
++      }
++      .onChange(of: props.selection) { newValue in
++        selection = Self.getHashableSetFromEither(newValue)
++      }
++      .onChange(of: props.initialScrollTarget) { _ in
++        hasScrolledToInitialTarget = false
++        scrollToInitialTarget(proxy)
++      }
++      .onChange(of: selection) { newSelection in
++        handleSelectionChange(selection: newSelection)
++      }
+     }
+-    .onChange(of: props.selection) { newValue in
+-      selection = Self.getHashableSetFromEither(newValue)
++  }
++
++  private func scrollToInitialTarget(_ proxy: ScrollViewProxy) {
++    guard !hasScrolledToInitialTarget,
++      let target = Self.getHashableFromEither(props.initialScrollTarget) else {
++      return
+     }
+-    .onChange(of: selection) { newSelection in
+-      handleSelectionChange(selection: newSelection)
++
++    hasScrolledToInitialTarget = true
++
++    DispatchQueue.main.async {
++      proxy.scrollTo(target, anchor: props.initialScrollAnchor.toUnitPoint)
+     }
+   }
+ 
+@@ -42,6 +82,16 @@ struct ListView: ExpoSwiftUI.View {
+     props.onSelectionChange(["selection": selectionArray])
+   }
+ 
++  private static func getHashableFromEither(_ value: Either<String, Double>?) -> AnyHashable? {
++    guard let value else { return nil }
++    if let stringValue: String = value.get() {
++      return AnyHashable(stringValue)
++    } else if let doubleValue: Double = value.get() {
++      return AnyHashable(doubleValue)
++    }
++    return nil
++  }
++
+   private static func getHashableSetFromEither(_ array: [Either<String, Double>]?) -> Set<AnyHashable> {
+     guard let array else { return Set() }
+     var result = Set<AnyHashable>()
 diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
-index 73c2193b..d98238bf 100644
+index 73c2193b..2639cb1d 100644
 --- a/src/swift-ui/List/index.tsx
 +++ b/src/swift-ui/List/index.tsx
-@@ -23,0 +24,7 @@ export interface ListProps extends CommonViewModifierProps {
+@@ -21,6 +21,35 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
+ }
+ 
+ export interface ListProps extends CommonViewModifierProps {
 +  /**
 +   * Shrinks the list viewport when its host extends below the physical screen boundary.
 +   * Useful for native sheet containers that clip hosted SwiftUI content at smaller detents.
@@ -680,18 +800,62 @@ index 73c2193b..d98238bf 100644
 +   */
 +  compensatesForViewportClipping?: boolean;
 +
++  /**
++   * The anchor used when scrolling to `initialScrollTarget`.
++   * @default 'center'
++   */
++  initialScrollAnchor?:
++    | 'zero'
++    | 'topLeading'
++    | 'top'
++    | 'topTrailing'
++    | 'leading'
++    | 'center'
++    | 'trailing'
++    | 'bottomLeading'
++    | 'bottom'
++    | 'bottomTrailing';
++
++  /**
++   * The child identity to scroll into view after the list mounts.
++   * Children should use the `viewID` modifier with the same value.
++   */
++  initialScrollTarget?: string | number;
++
+   /**
+    * The children elements to be rendered inside the list.
+    */
 diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
-index 02e9345c..d6c23840 100644
+index 02e9345c..20eb4274 100644
 --- a/build/swift-ui/List/index.d.ts
 +++ b/build/swift-ui/List/index.d.ts
-@@ -3,0 +4,6 @@ export interface ListProps extends CommonViewModifierProps {
+@@ -1,6 +1,22 @@
+ import { ListForEach, type ListForEachProps } from './ListForEach';
+ import { type CommonViewModifierProps } from '../types';
+ export interface ListProps extends CommonViewModifierProps {
 +    /**
 +     * Shrinks the list viewport when its host extends below the physical screen boundary.
 +     * Useful for native sheet containers that clip hosted SwiftUI content at smaller detents.
 +     * @default false
 +     */
 +    compensatesForViewportClipping?: boolean;
-@@ -26 +32 @@ export { ListForEach, ListForEachProps };
++    /**
++     * The anchor used when scrolling to `initialScrollTarget`.
++     * @default 'center'
++     */
++    initialScrollAnchor?: 'zero' | 'topLeading' | 'top' | 'topTrailing' | 'leading' | 'center' | 'trailing' | 'bottomLeading' | 'bottom' | 'bottomTrailing';
++    /**
++     * The child identity to scroll into view after the list mounts.
++     * Children should use the `viewID` modifier with the same value.
++     */
++    initialScrollTarget?: string | number;
+     /**
+      * The children elements to be rendered inside the list.
+      */
+@@ -23,4 +39,4 @@ export declare namespace List {
+     var ForEach: typeof ListForEach;
+ }
+ export { ListForEach, ListForEachProps };
 -//# sourceMappingURL=index.d.ts.map
 \ No newline at end of file
 +//# sourceMappingURL=index.d.ts.map

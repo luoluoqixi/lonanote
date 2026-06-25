@@ -31,6 +31,7 @@ import {
   scrollDisabled,
   shapes,
   tint,
+  viewID,
 } from "@expo/ui/swift-ui/modifiers";
 import { type ReactNode, createContext, useContext, useRef } from "react";
 import { StyleSheet, View } from "react-native";
@@ -227,12 +228,14 @@ function NativeRowLabel({
 function NativeRowContainer({
   children,
   disabled,
+  nativeScrollId,
   onPress,
   btnStyle,
   btnTint,
 }: {
   children: ReactNode;
   disabled?: boolean;
+  nativeScrollId?: string | number;
   onPress?: () => void;
   btnStyle?: SwiftUIButtonStyle;
   btnTint?: boolean | string;
@@ -245,7 +248,11 @@ function NativeRowContainer({
   if (onPress != null) {
     return (
       <SwiftButton
-        modifiers={[disabledModifier(disabled ?? false), buttonStyle(btnStyle ?? "automatic")]}
+        modifiers={[
+          disabledModifier(disabled ?? false),
+          buttonStyle(btnStyle ?? "automatic"),
+          ...(nativeScrollId != null ? [viewID(nativeScrollId)] : []),
+        ]}
         onPress={onPress}
       >
         <HStack
@@ -268,7 +275,11 @@ function NativeRowContainer({
   return (
     <HStack
       alignment="center"
-      modifiers={[...baseModifiers, disabledModifier(disabled ?? false)]}
+      modifiers={[
+        ...baseModifiers,
+        disabledModifier(disabled ?? false),
+        ...(nativeScrollId != null ? [viewID(nativeScrollId)] : []),
+      ]}
       spacing={12}
     >
       {children}
@@ -304,6 +315,7 @@ function NativePressRow({
   chevron = false,
   disabled,
   nativeHaptics,
+  nativeScrollId,
   onPress,
   selected = false,
   subtitle,
@@ -342,6 +354,7 @@ function NativePressRow({
       onPress={handlePress}
       btnStyle={btnStyle}
       btnTint={btnTint}
+      nativeScrollId={nativeScrollId}
     >
       <NativeRowLabel
         subtitle={subtitleText ?? undefined}
@@ -368,6 +381,7 @@ function NativeListRoot({
   children,
   contentMarginBottom,
   contentMarginTop,
+  initialScrollTarget,
   native = true,
   style,
   scrollable = true,
@@ -403,6 +417,8 @@ function NativeListRoot({
       <Host style={[styles.nativeRoot, style]}>
         <List
           compensatesForViewportClipping={insideTrueSheet}
+          initialScrollAnchor="center"
+          initialScrollTarget={initialScrollTarget}
           modifiers={[
             listStyle("insetGrouped"),
             listSectionSpacing("compact"),

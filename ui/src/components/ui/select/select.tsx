@@ -689,11 +689,13 @@ function getNativeListModule() {
 }
 
 function IosNativeSheetSelectList({
+  initialScrollTarget,
   itemGroups,
   itemLabel,
   nativeHaptics,
   value,
 }: {
+  initialScrollTarget?: string | number;
   itemGroups: ResolvedSelectItemGroupData[];
   itemLabel?: React.ReactNode;
   nativeHaptics?: SelectProps["nativeHaptics"];
@@ -708,6 +710,7 @@ function IosNativeSheetSelectList({
       scrollable
       contentMarginBottom={DEFAULT_IOS_NATIVE_LIST_CONTENT_MARGIN_BOTTOM}
       contentMarginTop={DEFAULT_IOS_NATIVE_LIST_CONTENT_MARGIN_TOP}
+      initialScrollTarget={initialScrollTarget}
       style={{ flex: 1, minHeight: 0, width: "100%" }}
     >
       {itemGroups.map((group, groupIndex) => {
@@ -724,6 +727,7 @@ function IosNativeSheetSelectList({
                   disabled={disabled}
                   key={item.value}
                   nativeHaptics={nativeHaptics}
+                  nativeScrollId={item.value}
                   onPress={
                     disabled
                       ? undefined
@@ -994,6 +998,10 @@ const SelectRoot = forwardRef<any, SelectProps>(
     ]);
 
     const scrollToSelectedItem = useCallback(() => {
+      if (shouldUseIosNativeSheetList) {
+        return;
+      }
+
       if (!sheetScrollRef.current) {
         return;
       }
@@ -1004,8 +1012,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
       }
 
       sheetScrollRef.current.scrollTo({ y: selectedScrollY, animated: false });
-    }, [getSelectedItemScrollY]);
+    }, [getSelectedItemScrollY, shouldUseIosNativeSheetList]);
     const initialScrollY = getSelectedItemScrollY();
+    const selectedNativeListInitialScrollTarget =
+      shouldUseIosNativeSheetList && props.value != null && resolvedItems[0]?.value !== props.value
+        ? props.value
+        : undefined;
 
     return (
       <>
@@ -1148,6 +1160,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                       >
                         {shouldUseIosNativeSheetList ? (
                           <IosNativeSheetSelectList
+                            initialScrollTarget={selectedNativeListInitialScrollTarget}
                             itemGroups={resolvedItemGroups}
                             itemLabel={itemLabel}
                             nativeHaptics={resolvedNativeHaptics}

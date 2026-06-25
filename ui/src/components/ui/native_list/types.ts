@@ -12,6 +12,8 @@ export type NativeListItemBaseProps = {
   chevron?: boolean;
   disabled?: boolean;
   nativeHaptics?: NativeHapticsSetting;
+  /** iOS 原生 List 用于滚动定位的稳定 id。 */
+  nativeScrollId?: string | number;
   onPress?: () => void;
   selected?: boolean;
   subtitle?: ReactNode;
@@ -61,6 +63,8 @@ export type NativeListRootProps = Omit<ScrollViewProps, "children"> & {
   contentMarginTop?: number;
   /** 原生 List 内容底部内边距。 */
   contentMarginBottom?: number;
+  /** iOS 原生 List 初次挂载后滚动到的目标 id。 */
+  initialScrollTarget?: string | number;
   /** 设为 false 时使用 list_group 回退模式（所有平台一致） */
   native?: boolean;
   /** 设为 false 时不创建内部 ScrollView，由外层宿主负责滚动。 */
