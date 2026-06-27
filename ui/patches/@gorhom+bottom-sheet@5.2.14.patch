@@ -47,3 +47,16 @@ index 91b6a6a6..b4b098bf 100644
    );
    const containerStyle = useMemo(
      () => [style, styles.container, containerAnimatedStyle],
+diff --git a/src/components/bottomSheetBackdrop/BottomSheetBackdrop.tsx b/src/components/bottomSheetBackdrop/BottomSheetBackdrop.tsx
+index a0345b01..3bd181cb 100644
+--- a/src/components/bottomSheetBackdrop/BottomSheetBackdrop.tsx
++++ b/src/components/bottomSheetBackdrop/BottomSheetBackdrop.tsx
+@@ -120,7 +120,7 @@ const BottomSheetBackdropComponent = ({
+ 
+   //#region effects
+   useAnimatedReaction(
+-    () => animatedIndex.value <= disappearsOnIndex,
++    () => Math.floor(animatedIndex.value) <= disappearsOnIndex,
+     (shouldDisableTouchability, previous) => {
+       if (shouldDisableTouchability === previous) {
+         return;
