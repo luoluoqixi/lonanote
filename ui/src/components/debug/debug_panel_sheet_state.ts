@@ -2,18 +2,13 @@ import { router } from "expo-router";
 import { useSyncExternalStore } from "react";
 
 import { iosMajorVersion, os } from "@/api/common/platform";
-import {
-  dismissTrueSheet,
-  presentTrueSheet,
-  resizeTrueSheet,
-} from "@/components/ui/sheet/native_sheet/true_sheet/api";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
 
 import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "./routes";
 
-/** 嵌套分区 TrueSheet 三档高度（与 `presentTrueSheet` 的 detentIndex 一一对应）。 */
-export const DEBUG_NESTED_SECTION_SHEET_DETENTS = [0.5, 0.75, 1] as const;
-const DEBUG_NESTED_SECTION_IOS15_SHEET_DETENTS = [0.49, 1] as const;
+/** 嵌套分区 NativeSheet 三档高度（百分比）。 */
+export const DEBUG_NESTED_SECTION_SHEET_SNAP_POINTS = [50, 75, 100] as const;
+const DEBUG_NESTED_SECTION_IOS15_SHEET_SNAP_POINTS = [49, 100] as const;
 
 export type DebugNestedSectionDetentLevel = 0 | 1 | 2;
 
@@ -55,7 +50,8 @@ export function getDebugSectionsAsNestedSheets() {
 }
 
 export function canUseDebugNestedSectionSheets() {
-  return os() === "ios";
+  const platform = os();
+  return platform === "ios" || platform === "android";
 }
 
 export function setDebugSectionsAsNestedSheets(enabled: boolean) {
@@ -75,7 +71,7 @@ export function getDebugNestedSectionDetentLevel(): DebugNestedSectionDetentLeve
 export function getDebugNestedSectionSnapPoint(
   level: DebugNestedSectionDetentLevel = debugNestedSectionDetentLevel,
 ) {
-  return DEBUG_NESTED_SECTION_SHEET_DETENTS[level];
+  return DEBUG_NESTED_SECTION_SHEET_SNAP_POINTS[level];
 }
 
 function supportsDebugNestedSectionCustomDetents() {
@@ -83,20 +79,10 @@ function supportsDebugNestedSectionCustomDetents() {
   return os() !== "ios" || (iosMajor != null && iosMajor >= 16);
 }
 
-export function getDebugNestedSectionSheetDetents() {
+export function getDebugNestedSectionSheetSnapPoints() {
   return supportsDebugNestedSectionCustomDetents()
-    ? [...DEBUG_NESTED_SECTION_SHEET_DETENTS]
-    : [...DEBUG_NESTED_SECTION_IOS15_SHEET_DETENTS];
-}
-
-function getDebugNestedSectionNativeDetentIndex(level: number) {
-  const clamped = clampDebugNestedSectionDetentLevel(level);
-
-  if (supportsDebugNestedSectionCustomDetents()) {
-    return clamped;
-  }
-
-  return clamped === DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN ? 0 : 1;
+    ? [...DEBUG_NESTED_SECTION_SHEET_SNAP_POINTS]
+    : [...DEBUG_NESTED_SECTION_IOS15_SHEET_SNAP_POINTS];
 }
 
 export function setDebugNestedSectionDetentLevel(level: number) {
@@ -248,59 +234,24 @@ export function openDebugSectionSheet(
     return Promise.resolve();
   }
 
-  return presentTrueSheet(
-    getDebugSectionSheetName(key),
-    getDebugNestedSectionNativeDetentIndex(detentIndex),
-  ).then(() => {
-    presentedDebugSectionSheets.add(key);
-    updatePresentedDebugSectionSheetsSnapshot();
-    emitSectionSheetChange();
-  });
-}
-
-export function cleanupDebugSectionSheet(key: DebugTabKey) {
-  const deleted = presentedDebugSectionSheets.delete(key);
-  if (!deleted) {
-    return;
-  }
-
-  debugSectionSheetDismissVersion += 1;
+  presentedDebugSectionSheets.add(key);
   updatePresentedDebugSectionSheetsSnapshot();
   emitSectionSheetChange();
-  emitDismissVersionChange();
+  return Promise.resolve();
 }
 
 export function closeDebugSectionSheet(key: DebugTabKey) {
   presentedDebugSectionSheets.delete(key);
   updatePresentedDebugSectionSheetsSnapshot();
   emitSectionSheetChange();
-  if (!canUseDebugNestedSectionSheets()) {
-    return Promise.resolve();
-  }
-
-  return dismissTrueSheet(getDebugSectionSheetName(key));
+  debugSectionSheetDismissVersion += 1;
+  emitDismissVersionChange();
+  return Promise.resolve();
 }
 
 export function resizeDebugSectionSheets(detentIndex: number = getDebugNestedSectionDetentLevel()) {
   setDebugNestedSectionDetentLevel(detentIndex);
-  if (!canUseDebugNestedSectionSheets()) {
-    return Promise.resolve();
-  }
-
-  const presentedKeys = [...presentedDebugSectionSheets];
-
-  if (presentedKeys.length === 0) {
-    return;
-  }
-
-  return Promise.all(
-    presentedKeys.map((key) =>
-      resizeTrueSheet(
-        getDebugSectionSheetName(key),
-        getDebugNestedSectionNativeDetentIndex(detentIndex),
-      ).catch(() => undefined),
-    ),
-  );
+  return Promise.resolve();
 }
 
 function dismissAllDebugSectionSheets() {
@@ -322,15 +273,7 @@ function dismissAllDebugSectionSheets() {
     emitDismissVersionChange();
   }
 
-  if (!canUseDebugNestedSectionSheets()) {
-    return Promise.resolve();
-  }
-
-  return Promise.all(
-    presentedKeys.map((key) =>
-      dismissTrueSheet(getDebugSectionSheetName(key)).catch(() => undefined),
-    ),
-  );
+  return Promise.resolve();
 }
 
 export async function openDebugSection(key: DebugTabKey) {

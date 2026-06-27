@@ -1,28 +1,29 @@
 import { type NavigationProp, useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { Dimensions, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb, os } from "@/api/common";
 import { Button, NativeSheet, NativeSheetStack, Text } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
-import { TrueSheetPanel } from "@/components/ui/sheet/native_sheet/true_sheet/panel";
 import { trueSheetInnerStackScreenOptions } from "@/components/ui/sheet/native_sheet/true_sheet/stack";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 import {
   DEBUG_NATIVE_SHEET_NAME,
-  cleanupDebugSectionSheet,
   closeDebugPanel,
   closeDebugSectionSheet,
-  getDebugNestedSectionSheetDetents,
+  getDebugNestedSectionSheetSnapPoints,
   getDebugPanelOpen,
   getDebugSectionOverlayPortalHost,
   getDebugSectionSheetName,
+  getPresentedDebugSectionSheets,
   openDebugSection,
   setDebugPanelOpen,
   subscribeDebugPanelState,
+  subscribeDebugSectionSheetState,
   switchDebugPanelToFullPage,
+  useDebugNestedSectionDetentLevel,
 } from "./debug_panel_sheet_state";
 import { DebugHomePage } from "./pages/debug_home_page";
 import { DebugSectionPage } from "./pages/debug_section_page";
@@ -184,74 +185,42 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
     (routeDefinition) => routeDefinition.key === sectionKey,
   );
   const theme = useTheme();
+  const presentedSheets = useSyncExternalStore(
+    subscribeDebugSectionSheetState,
+    getPresentedDebugSectionSheets,
+    getPresentedDebugSectionSheets,
+  );
+  const detentLevel = useDebugNestedSectionDetentLevel();
 
   if (!definition) {
     return null;
   }
 
-  const screenWidth = Dimensions.get("window").width;
-  const grabberHitboxWidth = screenWidth - (Platform.OS === "ios" ? 40 : 32);
-  const isIos = Platform.OS === "ios";
+  const open = presentedSheets.has(sectionKey);
 
   return (
-    <TrueSheetPanel
-      chrome="plain"
-      header={
-        isIos ? (
-          <View
-            pointerEvents="none"
-            style={{ alignItems: "center", height: 20, justifyContent: "center" }}
-          >
-            <View
-              pointerEvents="none"
-              style={{
-                backgroundColor: "rgba(128, 128, 128, 0.35)",
-                borderRadius: isIos ? 2.5 : 2,
-                height: isIos ? 5 : 4,
-                width: isIos ? 36 : 32,
-              }}
-            />
-          </View>
-        ) : undefined
-      }
+    <NativeSheet
+      handle
       name={getDebugSectionSheetName(sectionKey)}
-      onDidDismiss={() => cleanupDebugSectionSheet(sectionKey)}
-      onRequestClose={() => void closeDebugSectionSheet(sectionKey)}
-      overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
-      sheetProps={{
-        detents: getDebugNestedSectionSheetDetents(),
-        style: {
-          backgroundColor: theme.background.val,
-        },
-        ...(isIos
-          ? {
-              grabberOptions: {
-                adaptive: false,
-                color: "transparent",
-                height: 24,
-                topMargin: 10,
-                width: grabberHitboxWidth,
-              },
-              headerStyle: {
-                height: 44,
-                left: 0,
-                position: "absolute" as const,
-                right: 0,
-                top: 0,
-                zIndex: 1,
-              },
-            }
-          : undefined),
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          void closeDebugSectionSheet(sectionKey);
+        }
       }}
+      overlayPortalHostName={getDebugSectionOverlayPortalHost(sectionKey)}
+      open={open}
+      position={detentLevel}
+      snapPoints={getDebugNestedSectionSheetSnapPoints()}
+      snapPointsMode="percent"
     >
       <View style={{ backgroundColor: theme.background.val, flex: 1 }}>
         <DebugSectionPage
           contentTitle={definition.label}
-          layoutHost="nativeSheet"
+          layoutHost={Platform.OS === "ios" ? "nativeSheet" : "default"}
           sectionKey={sectionKey}
         />
       </View>
-    </TrueSheetPanel>
+    </NativeSheet>
   );
 }
 
@@ -270,14 +239,10 @@ export function DebugNativeSheetHost() {
     return null;
   }
 
-  if (os() !== "ios") {
-    return <DebugBottomSheetHost />;
-  }
-
   return (
     <>
       <DebugSectionSheets />
-      <DebugNativeSheetStackHost />
+      {os() === "ios" ? <DebugNativeSheetStackHost /> : <DebugBottomSheetHost />}
     </>
   );
 }

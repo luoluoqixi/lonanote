@@ -114,6 +114,7 @@ export function BottomSheetPanel({
         enablePanDownToClose
         handleComponent={enableHandle ? undefined : null}
         index={resolvedPosition}
+        stackBehavior="push"
         onChange={(nextIndex) => {
           if (nextIndex >= 0) {
             hasPresentedRef.current = true;
