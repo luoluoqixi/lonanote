@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { type Href, router } from "expo-router";
 import { useSyncExternalStore } from "react";
 
 import { iosMajorVersion, os } from "@/api/common/platform";
@@ -124,6 +124,7 @@ export const DEBUG_NATIVE_SHEET_NAME = "lonanote-debug";
 
 let debugSheetOpen = false;
 let debugSheetPosition = 0;
+let pendingDebugPanelHref: Href | null = null;
 const debugPanelListeners = new Set<() => void>();
 
 function emitDebugPanelChange() {
@@ -299,7 +300,14 @@ export function closeDebugPanel() {
 
 export function markDebugPanelClosed() {
   debugSheetOpen = false;
+  void dismissAllDebugSectionSheets();
   emitDebugPanelChange();
+
+  if (pendingDebugPanelHref != null) {
+    const nextHref = pendingDebugPanelHref;
+    pendingDebugPanelHref = null;
+    router.push(nextHref);
+  }
 }
 
 export function toggleDebugPanel() {
@@ -312,6 +320,12 @@ export function toggleDebugPanel() {
 }
 
 export function switchDebugPanelToFullPage() {
+  if (os() === "ios" && debugSheetOpen) {
+    pendingDebugPanelHref = DEBUG_HOME_HREF;
+    closeDebugPanel();
+    return;
+  }
+
   closeDebugPanel();
   router.push(DEBUG_HOME_HREF);
 }
@@ -319,6 +333,12 @@ export function switchDebugPanelToFullPage() {
 export function openDebugFullPageSection(key: DebugTabKey) {
   if (getDebugSectionsAsNestedSheets()) {
     void openDebugSectionSheet(key, getDebugNestedSectionDetentLevel());
+    return;
+  }
+
+  if (os() === "ios" && debugSheetOpen) {
+    pendingDebugPanelHref = getDebugFullPageHref(key);
+    closeDebugPanel();
     return;
   }
 

@@ -18,6 +18,7 @@ import {
   getDebugSectionOverlayPortalHost,
   getDebugSectionSheetName,
   getPresentedDebugSectionSheets,
+  markDebugPanelClosed,
   openDebugSection,
   setDebugPanelOpen,
   subscribeDebugPanelState,
@@ -72,7 +73,7 @@ function DebugNativeSheetStackHost() {
       name={DEBUG_NATIVE_SHEET_NAME}
       onOpenChange={(nextOpen: boolean) => {
         if (!nextOpen) {
-          closeDebugPanel();
+          markDebugPanelClosed();
           return;
         }
 
