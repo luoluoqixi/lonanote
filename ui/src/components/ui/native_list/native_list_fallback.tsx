@@ -2,6 +2,7 @@ import { HeaderHeightContext } from "@react-navigation/elements";
 import { Check, ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
 import {
   Children,
+  type ComponentType,
   type ReactElement,
   type ReactNode,
   isValidElement,
@@ -52,9 +53,18 @@ type FallbackListEntry =
       type: "sectionHeader";
     }
   | {
-      child: ReactNode;
       key: string;
       nativeScrollId?: string | number;
+      renderRow: () => ReactElement | null;
+      rowType:
+        | "actionRow"
+        | "buttonRow"
+        | "customRow"
+        | "itemRow"
+        | "navigationRow"
+        | "selectRow"
+        | "switchRow"
+        | "unknownRow";
       sectionKey: string;
       type: "row";
     }
@@ -259,6 +269,113 @@ function isNativeListSectionElement(node: ReactNode): node is ReactElement<Nativ
   return isValidElement<NativeListSectionProps>(node) && isNativeListSectionType(node.type);
 }
 
+function isNativeListElementType<Props>(
+  node: ReactNode,
+  type: ComponentType<Props>,
+): node is ReactElement<Props> {
+  return isValidElement<Props>(node) && node.type === type;
+}
+
+function createFallbackRowEntry(
+  child: ReactNode,
+  key: string,
+  sectionKey: string,
+): FallbackListEntry {
+  if (isNativeListElementType(child, NativeListActionItem)) {
+    return {
+      key,
+      nativeScrollId: child.props.nativeScrollId,
+      renderRow: () => <NativeListActionItem {...child.props} />,
+      rowType: "actionRow",
+      sectionKey,
+      type: "row",
+    };
+  }
+
+  if (isNativeListElementType(child, NativeListNavigationItem)) {
+    return {
+      key,
+      nativeScrollId: child.props.nativeScrollId,
+      renderRow: () => <NativeListNavigationItem {...child.props} />,
+      rowType: "navigationRow",
+      sectionKey,
+      type: "row",
+    };
+  }
+
+  if (isNativeListElementType(child, NativeListSwitchItem)) {
+    return {
+      key,
+      nativeScrollId: child.props.nativeScrollId,
+      renderRow: () => <NativeListSwitchItem {...child.props} />,
+      rowType: "switchRow",
+      sectionKey,
+      type: "row",
+    };
+  }
+
+  if (isNativeListElementType(child, NativeListSelectItem)) {
+    return {
+      key,
+      nativeScrollId: child.props.nativeScrollId,
+      renderRow: () => <NativeListSelectItem {...child.props} />,
+      rowType: "selectRow",
+      sectionKey,
+      type: "row",
+    };
+  }
+
+  if (isNativeListElementType(child, NativeListButtonItem)) {
+    return {
+      key,
+      nativeScrollId: child.props.nativeScrollId,
+      renderRow: () => <NativeListButtonItem {...child.props} />,
+      rowType: "buttonRow",
+      sectionKey,
+      type: "row",
+    };
+  }
+
+  if (isNativeListElementType(child, NativeListItem)) {
+    return {
+      key,
+      nativeScrollId: child.props.nativeScrollId,
+      renderRow: () => <NativeListItem {...child.props} />,
+      rowType: "itemRow",
+      sectionKey,
+      type: "row",
+    };
+  }
+
+  if (isNativeListElementType(child, NativeListCustomItem)) {
+    return {
+      key,
+      nativeScrollId: getNativeScrollId(child),
+      renderRow: () => <NativeListCustomItem {...child.props} />,
+      rowType: "customRow",
+      sectionKey,
+      type: "row",
+    };
+  }
+
+  return {
+    key,
+    nativeScrollId: getNativeScrollId(child),
+    renderRow: () => (isValidElement(child) ? child : null),
+    rowType: "unknownRow",
+    sectionKey,
+    type: "row",
+  };
+}
+
+function FallbackListRowFrame({ children }: { children: ReactNode }) {
+  return (
+    <View collapsable={false} style={styles.rowFrame}>
+      {children}
+    </View>
+  );
+}
+
 function appendSectionEntries(
   entries: FallbackListEntry[],
   sectionProps: NativeListSectionProps,
@@ -282,13 +399,13 @@ function appendSectionEntries(
   }
 
   sectionChildren.forEach((child, index) => {
-    entries.push({
-      child,
-      key: `${sectionKey}-row-${getNodeKey(child, String(index))}`,
-      nativeScrollId: getNativeScrollId(child),
-      sectionKey,
-      type: "row",
-    });
+    entries.push(
+      createFallbackRowEntry(
+        child,
+        `${sectionKey}-row-${getNodeKey(child, String(index))}`,
+        sectionKey,
+      ),
+    );
   });
 
   if (sectionProps.footer != null) {
@@ -310,13 +427,13 @@ function createFallbackListEntries(children: ReactNode) {
       return;
     }
 
-    entries.push({
-      child,
-      key: `direct-row-${getNodeKey(child, String(index))}`,
-      nativeScrollId: getNativeScrollId(child),
-      sectionKey: `direct-${index}`,
-      type: "row",
-    });
+    entries.push(
+      createFallbackRowEntry(
+        child,
+        `direct-row-${getNodeKey(child, String(index))}`,
+        `direct-${index}`,
+      ),
+    );
   });
 
   return entries;
@@ -339,7 +456,7 @@ function renderFallbackListEntry({
         </View>
       );
     case "row":
-      return <>{item.child}</>;
+      return <FallbackListRowFrame>{item.renderRow()}</FallbackListRowFrame>;
     case "sectionFooter":
       return (
         <View style={styles.sectionFooter}>
@@ -380,7 +497,7 @@ function renderStaticEntries(entries: FallbackListEntry[]) {
 }
 
 function getEntryType(item: FallbackListEntry) {
-  return item.type;
+  return item.type === "row" ? item.rowType : item.type;
 }
 
 function getEntryKey(item: FallbackListEntry) {
@@ -566,7 +683,6 @@ export function NativeListRoot({
   const headerHeight = useContext(HeaderHeightContext) ?? 0;
   const insets = useSafeAreaInsets();
   const entries = useMemo(() => createFallbackListEntries(children), [children]);
-  const listLayoutKey = useMemo(() => entries.map(getEntryKey).join("|"), [entries]);
   const initialScrollIndex = useMemo(
     () => getInitialScrollIndex(entries, initialScrollTarget),
     [entries, initialScrollTarget],
@@ -638,8 +754,6 @@ export function NativeListRoot({
       ItemSeparatorComponent={FallbackListItemSeparator}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps ?? "handled"}
       keyExtractor={getEntryKey}
-      key={listLayoutKey}
-      maxItemsInRecyclePool={0}
       nestedScrollEnabled={nestedScrollEnabled ?? true}
       renderItem={renderFallbackListEntry}
       scrollEnabled={scrollable}
@@ -697,6 +811,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 12,
+    width: "100%",
+  },
+  rowFrame: {
     width: "100%",
   },
   scrollRootContent: {

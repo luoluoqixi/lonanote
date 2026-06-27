@@ -65,7 +65,7 @@ export function DebugPanelGestureLayer({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const insideDebugRoute = pathname === "/debug" || pathname.startsWith("/debug/");
   const gesture = useMemo(() => {
-    if (!isDebugFeatureEnabled() || Platform.OS !== "ios" || insideDebugRoute) {
+    if (!isDebugFeatureEnabled() || Platform.OS === "web") {
       return null;
     }
 
