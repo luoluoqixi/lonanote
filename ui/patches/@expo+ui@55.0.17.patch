@@ -716,11 +716,24 @@ index a7ca51df..2c265d4e 100644
 +    if props.compensatesForViewportClipping {
 +      GeometryReader { geometry in
 +        let globalFrame = geometry.frame(in: .global)
-+        let screenHeight = UIScreen.main.bounds.height
-+        let visibleHeight = max(0, min(globalFrame.height, screenHeight - globalFrame.minY))
++        let keyWindow = UIApplication.shared.connectedScenes
++          .compactMap { $0 as? UIWindowScene }
++          .flatMap { $0.windows }
++          .first { $0.isKeyWindow }
++        let viewportBottom = keyWindow?.bounds.maxY ?? UIScreen.main.bounds.maxY
++        let visibleHeight = max(0, min(globalFrame.height, viewportBottom - globalFrame.minY))
++        let indicatorBottomInset = globalFrame.maxY > viewportBottom
++          ? (keyWindow?.safeAreaInsets.bottom ?? 0)
++          : 0
 +
-+        list
-+          .frame(width: geometry.size.width, height: visibleHeight, alignment: .top)
++        if #available(iOS 17.0, tvOS 17.0, *) {
++          list
++            .contentMargins(.bottom, indicatorBottomInset, for: .scrollIndicators)
++            .frame(width: geometry.size.width, height: visibleHeight, alignment: .top)
++        } else {
++          list
++            .frame(width: geometry.size.width, height: visibleHeight, alignment: .top)
++        }
 +      }
 +    } else {
 +      list
