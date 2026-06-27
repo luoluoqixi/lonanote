@@ -1,3 +1,5 @@
+import { ArrowLeft } from "@tamagui/lucide-icons-2";
+import { createElement } from "react";
 import { Platform } from "react-native";
 
 import { os } from "@/api/common/platform";
@@ -40,7 +42,10 @@ export function trueSheetInnerStackScreenOptions(
       backgroundColor,
       ...(Platform.OS === "ios" ? { flex: 1 } : {}),
     },
+    headerBackImage: ({ tintColor }) =>
+      createElement(ArrowLeft as any, { color: tintColor, size: 24 }),
     headerBackTitle: os() === "ios" ? "返回" : undefined,
+    headerStatusBarHeight: 0,
     headerStyle: {
       backgroundColor,
     },

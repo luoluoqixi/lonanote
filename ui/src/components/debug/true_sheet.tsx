@@ -1,17 +1,16 @@
 import { type NavigationProp, useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { useCallback, useSyncExternalStore } from "react";
+import { Platform, View } from "react-native";
 import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb, os } from "@/api/common";
-import { Button, NativeSheet, NativeSheetStack, Text } from "@/components/ui";
+import { NativeSheet, NativeSheetStack } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
 import { trueSheetInnerStackScreenOptions } from "@/components/ui/sheet/native_sheet/true_sheet/stack";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 import {
   DEBUG_NATIVE_SHEET_NAME,
-  closeDebugPanel,
   closeDebugSectionSheet,
   getDebugNestedSectionSheetSnapPoints,
   getDebugPanelOpen,
@@ -66,6 +65,14 @@ function DebugNativeSheetStackHost() {
   const colorScheme = useResolvedeColorScheme();
   const theme = useTheme();
   const open = useSyncExternalStore(subscribeDebugPanelState, getDebugPanelOpen, getDebugPanelOpen);
+  const bottomSheetProps =
+    os() === "ios"
+      ? undefined
+      : {
+          grabber: true,
+          snapPoints: [92],
+          snapPointsMode: "percent" as const,
+        };
 
   return (
     <NativeSheetStack
@@ -87,6 +94,7 @@ function DebugNativeSheetStackHost() {
         theme.accentColor.val,
         theme.color.val,
       )}
+      sheetProps={bottomSheetProps}
     >
       <NativeSheetStack.Screen
         component={DebugHomeRoute}
@@ -102,82 +110,6 @@ function DebugNativeSheetStackHost() {
         />
       ))}
     </NativeSheetStack>
-  );
-}
-
-function DebugBottomSheetHost() {
-  const theme = useTheme();
-  const open = useSyncExternalStore(subscribeDebugPanelState, getDebugPanelOpen, getDebugPanelOpen);
-  const [sectionKey, setSectionKey] = useState<DebugTabKey | null>(null);
-  const sectionDefinition =
-    sectionKey == null
-      ? null
-      : DEBUG_PANEL_ROUTE_DEFINITIONS.find((definition) => definition.key === sectionKey);
-  const title = sectionDefinition?.label ?? "调试面板";
-
-  useEffect(() => {
-    if (!open) {
-      setSectionKey(null);
-    }
-  }, [open]);
-
-  return (
-    <NativeSheet
-      handle
-      name={DEBUG_NATIVE_SHEET_NAME}
-      onOpenChange={(nextOpen: boolean) => {
-        if (!nextOpen) {
-          setSectionKey(null);
-          closeDebugPanel();
-          return;
-        }
-
-        setDebugPanelOpen(true);
-      }}
-      open={open}
-      overlayPortalHostName={DEBUG_OVERLAY_PORTAL_HOST}
-      snapPoints={[92]}
-      snapPointsMode="percent"
-    >
-      <View style={[styles.androidSheetRoot, { backgroundColor: theme.background.val }]}>
-        <View style={[styles.androidSheetHeader, { borderBottomColor: theme.borderColor.val }]}>
-          <View style={styles.androidSheetHeaderAction}>
-            {sectionKey != null ? (
-              <Button chromeless onPress={() => setSectionKey(null)}>
-                返回
-              </Button>
-            ) : null}
-          </View>
-          <Text fontSize="$5" fontWeight="600" numberOfLines={1} style={styles.androidSheetTitle}>
-            {title}
-          </Text>
-          <View style={styles.androidSheetHeaderAction}>
-            <Button chromeless onPress={() => closeDebugPanel()}>
-              关闭
-            </Button>
-          </View>
-        </View>
-        <View style={styles.androidSheetContent}>
-          {sectionDefinition != null && sectionKey != null ? (
-            <DebugSectionPage
-              contentTitle={sectionDefinition.label}
-              layoutHost="default"
-              sectionKey={sectionKey}
-            />
-          ) : (
-            <DebugHomePage
-              currentSheetMode="nativeSheet"
-              onOpenPanel={(key) => setSectionKey(key)}
-              onSheetModeChange={(mode) => {
-                if (mode === "fullPage") {
-                  switchDebugPanelToFullPage();
-                }
-              }}
-            />
-          )}
-        </View>
-      </View>
-    </NativeSheet>
   );
 }
 
@@ -243,35 +175,7 @@ export function DebugNativeSheetHost() {
   return (
     <>
       <DebugSectionSheets />
-      {os() === "ios" ? <DebugNativeSheetStackHost /> : <DebugBottomSheetHost />}
+      <DebugNativeSheetStackHost />
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  androidSheetContent: {
-    flex: 1,
-    minHeight: 0,
-  },
-  androidSheetHeader: {
-    alignItems: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    gap: 8,
-    minHeight: 52,
-    paddingHorizontal: 12,
-  },
-  androidSheetHeaderAction: {
-    alignItems: "center",
-    minWidth: 64,
-  },
-  androidSheetRoot: {
-    flex: 1,
-    minHeight: 0,
-  },
-  androidSheetTitle: {
-    flex: 1,
-    minWidth: 0,
-    textAlign: "center",
-  },
-});
