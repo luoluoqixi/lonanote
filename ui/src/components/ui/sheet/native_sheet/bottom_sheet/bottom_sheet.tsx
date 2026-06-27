@@ -1,6 +1,6 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { useEffect, useMemo, useRef } from "react";
-import { BackHandler, StyleSheet } from "react-native";
+import { BackHandler, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
@@ -98,64 +98,66 @@ export function BottomSheetPanel({
     );
 
   return (
-    <GestureHandlerRootView pointerEvents="box-none" style={styles.gestureRoot}>
-      <BottomSheetModal
-        ref={modalRef}
-        backdropComponent={
-          overlay
-            ? (props) => (
-                <BottomSheetBackdrop
-                  {...props}
-                  appearsOnIndex={0}
-                  disappearsOnIndex={-1}
-                  pressBehavior={dismissOnOverlayPress ? "close" : "none"}
-                />
-              )
-            : undefined
-        }
-        enableDynamicSizing={enableDynamicSizing}
-        enablePanDownToClose
-        activeOffsetY={SHEET_ACTIVE_OFFSET_Y}
-        failOffsetX={SHEET_FAIL_OFFSET_X}
-        handleComponent={enableHandle ? undefined : null}
-        index={resolvedPosition}
-        stackBehavior="push"
-        onChange={(nextIndex) => {
-          if (nextIndex >= 0) {
-            hasPresentedRef.current = true;
-            onPositionChange?.(nextIndex);
-            return;
+    <View pointerEvents={open ? "auto" : "none"} style={styles.hostLayer}>
+      <GestureHandlerRootView pointerEvents="box-none" style={styles.gestureRoot}>
+        <BottomSheetModal
+          ref={modalRef}
+          backdropComponent={
+            overlay
+              ? (props) => (
+                  <BottomSheetBackdrop
+                    {...props}
+                    appearsOnIndex={0}
+                    disappearsOnIndex={-1}
+                    pressBehavior={dismissOnOverlayPress ? "close" : "none"}
+                  />
+                )
+              : undefined
           }
+          enableDynamicSizing={enableDynamicSizing}
+          enablePanDownToClose
+          activeOffsetY={SHEET_ACTIVE_OFFSET_Y}
+          failOffsetX={SHEET_FAIL_OFFSET_X}
+          handleComponent={enableHandle ? undefined : null}
+          index={resolvedPosition}
+          stackBehavior="push"
+          onChange={(nextIndex) => {
+            if (nextIndex >= 0) {
+              hasPresentedRef.current = true;
+              onPositionChange?.(nextIndex);
+              return;
+            }
 
-          if (!hasPresentedRef.current) {
-            return;
-          }
+            if (!hasPresentedRef.current) {
+              return;
+            }
 
-          onOpenChange(false);
-          onAnimationComplete?.({ open: false });
-        }}
-        onDismiss={() => {
-          if (requestedOpenRef.current) {
-            requestAnimationFrame(() => {
-              if (!requestedOpenRef.current) {
-                return;
-              }
+            onOpenChange(false);
+            onAnimationComplete?.({ open: false });
+          }}
+          onDismiss={() => {
+            if (requestedOpenRef.current) {
+              requestAnimationFrame(() => {
+                if (!requestedOpenRef.current) {
+                  return;
+                }
 
-              modalRef.current?.present();
-              modalRef.current?.snapToIndex(resolvedPosition);
-            });
-            return;
-          }
+                modalRef.current?.present();
+                modalRef.current?.snapToIndex(resolvedPosition);
+              });
+              return;
+            }
 
-          hasPresentedRef.current = false;
-          onOpenChange(false);
-          onAnimationComplete?.({ open: false });
-        }}
-        snapPoints={resolvedSnapPoints as any}
-      >
-        <BottomSheetView style={styles.content}>{body}</BottomSheetView>
-      </BottomSheetModal>
-    </GestureHandlerRootView>
+            hasPresentedRef.current = false;
+            onOpenChange(false);
+            onAnimationComplete?.({ open: false });
+          }}
+          snapPoints={resolvedSnapPoints as any}
+        >
+          <BottomSheetView style={styles.content}>{body}</BottomSheetView>
+        </BottomSheetModal>
+      </GestureHandlerRootView>
+    </View>
   );
 }
 
@@ -164,8 +166,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 1,
   },
-  gestureRoot: {
+  hostLayer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1000,
+  },
+  gestureRoot: {
+    flex: 1,
   },
 });
