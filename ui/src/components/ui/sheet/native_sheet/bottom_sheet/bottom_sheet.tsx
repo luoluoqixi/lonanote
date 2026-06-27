@@ -1,11 +1,12 @@
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
-import { useEffect, useMemo, useRef } from "react";
+import { BottomSheetBackdrop, BottomSheetModal } from "@gorhom/bottom-sheet";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BackHandler, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
 import type { NativeSheetProps } from "../types";
+import { BottomSheetScrollableProvider } from "./scrollable_context";
 import { resolveBottomSheetSnapPoints } from "./snap_points";
 
 const SHEET_ACTIVE_OFFSET_Y: [number, number] = [-10, 10];
@@ -16,6 +17,7 @@ type BottomSheetPanelProps = {
   dismissOnBackPress?: boolean;
   dismissOnOverlayPress?: boolean;
   enableHandle?: boolean;
+  name?: string;
   onAnimationComplete?: NativeSheetProps["onAnimationComplete"];
   onOpenChange: (open: boolean) => void;
   onPositionChange?: (position: number) => void;
@@ -32,6 +34,7 @@ export function BottomSheetPanel({
   dismissOnBackPress = true,
   dismissOnOverlayPress = true,
   enableHandle = true,
+  name,
   onAnimationComplete,
   onOpenChange,
   onPositionChange,
@@ -44,7 +47,9 @@ export function BottomSheetPanel({
 }: BottomSheetPanelProps) {
   const modalRef = useRef<BottomSheetModal>(null);
   const requestedOpenRef = useRef(open);
-  const hasPresentedRef = useRef(false);
+  const phaseRef = useRef<"closed" | "presenting" | "presented" | "dismissing">("closed");
+  const reopenAfterDismissRef = useRef(false);
+  const [hostInteractive, setHostInteractive] = useState(open);
   const { enableDynamicSizing, snapPoints: resolvedSnapPoints } = useMemo(
     () => resolveBottomSheetSnapPoints(snapPoints, snapPointsMode),
     [snapPoints, snapPointsMode],
@@ -54,24 +59,38 @@ export function BottomSheetPanel({
 
   useEffect(() => {
     if (open) {
-      requestAnimationFrame(() => {
-        if (!requestedOpenRef.current) {
-          return;
-        }
+      setHostInteractive(true);
+      if (phaseRef.current === "dismissing") {
+        reopenAfterDismissRef.current = true;
+        return;
+      }
 
+      reopenAfterDismissRef.current = false;
+      if (phaseRef.current === "closed") {
+        phaseRef.current = "presenting";
         modalRef.current?.present();
+        return;
+      }
+
+      if (phaseRef.current === "presented") {
         modalRef.current?.snapToIndex(resolvedPosition);
-        onAnimationComplete?.({ open: true });
-      });
+      }
       return;
     }
 
-    if (!hasPresentedRef.current) {
+    reopenAfterDismissRef.current = false;
+    if (phaseRef.current === "closed") {
+      setHostInteractive(false);
       return;
     }
 
+    if (phaseRef.current === "dismissing") {
+      return;
+    }
+
+    phaseRef.current = "dismissing";
     modalRef.current?.dismiss();
-  }, [onAnimationComplete, open, resolvedPosition]);
+  }, [open, resolvedPosition]);
 
   useEffect(() => {
     if (!open || !dismissOnBackPress) {
@@ -91,14 +110,14 @@ export function BottomSheetPanel({
   const body =
     overlayPortalHostName != null ? (
       <ScreenOverlayPortalProvider hostName={overlayPortalHostName}>
-        {children}
+        <BottomSheetScrollableProvider>{children}</BottomSheetScrollableProvider>
       </ScreenOverlayPortalProvider>
     ) : (
-      children
+      <BottomSheetScrollableProvider>{children}</BottomSheetScrollableProvider>
     );
 
   return (
-    <View pointerEvents={open ? "auto" : "none"} style={styles.hostLayer}>
+    <View pointerEvents={hostInteractive ? "auto" : "none"} style={styles.hostLayer}>
       <GestureHandlerRootView pointerEvents="box-none" style={styles.gestureRoot}>
         <BottomSheetModal
           ref={modalRef}
@@ -120,41 +139,41 @@ export function BottomSheetPanel({
           failOffsetX={SHEET_FAIL_OFFSET_X}
           handleComponent={enableHandle ? undefined : null}
           index={resolvedPosition}
+          name={name}
           stackBehavior="push"
           onChange={(nextIndex) => {
             if (nextIndex >= 0) {
-              hasPresentedRef.current = true;
+              const previousPhase = phaseRef.current;
+              phaseRef.current = "presented";
               onPositionChange?.(nextIndex);
+              if (previousPhase !== "presented") {
+                onAnimationComplete?.({ open: true });
+              }
               return;
             }
 
-            if (!hasPresentedRef.current) {
-              return;
-            }
-
+            phaseRef.current = "dismissing";
             onOpenChange(false);
-            onAnimationComplete?.({ open: false });
           }}
           onDismiss={() => {
-            if (requestedOpenRef.current) {
-              requestAnimationFrame(() => {
-                if (!requestedOpenRef.current) {
-                  return;
-                }
+            phaseRef.current = "closed";
 
-                modalRef.current?.present();
-                modalRef.current?.snapToIndex(resolvedPosition);
-              });
+            if (reopenAfterDismissRef.current && requestedOpenRef.current) {
+              reopenAfterDismissRef.current = false;
+              setHostInteractive(true);
+              phaseRef.current = "presenting";
+              modalRef.current?.present();
               return;
             }
 
-            hasPresentedRef.current = false;
+            reopenAfterDismissRef.current = false;
+            setHostInteractive(false);
             onOpenChange(false);
             onAnimationComplete?.({ open: false });
           }}
           snapPoints={resolvedSnapPoints as any}
         >
-          <BottomSheetView style={styles.content}>{body}</BottomSheetView>
+          <View style={styles.content}>{body}</View>
         </BottomSheetModal>
       </GestureHandlerRootView>
     </View>

@@ -379,6 +379,7 @@ export function NativeSheet(
         dismissOnBackPress={dismissOnBackPress}
         dismissOnOverlayPress={dismissOnOverlayPress}
         enableHandle={handle ?? false}
+        name={sheetName}
         onAnimationComplete={onAnimationComplete}
         onOpenChange={handleOpenChange}
         onPositionChange={handlePositionChange}

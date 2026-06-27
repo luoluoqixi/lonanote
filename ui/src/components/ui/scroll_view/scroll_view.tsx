@@ -1,19 +1,33 @@
+import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { forwardRef } from "react";
 import { ScrollView as ReactNativeScrollView } from "react-native";
 import { ScrollView as TamaguiScrollView } from "tamagui";
 
 import { isWeb } from "@/api/common/platform";
+import { useBottomSheetScrollableContext } from "@/components/ui/sheet/native_sheet/bottom_sheet/scrollable_context";
 
 import type { ScrollViewProps } from "./types";
 
 export const ScrollView = forwardRef<any, ScrollViewProps>((props, ref) => {
+  const insideBottomSheetScrollable = useBottomSheetScrollableContext();
+
   if (isWeb()) {
-    return <TamaguiScrollView ref={ref} {...props} />;
+    const { bottomSheetScrollable: _bottomSheetScrollable, ...webProps } = props;
+    void _bottomSheetScrollable;
+    return <TamaguiScrollView ref={ref} {...webProps} />;
   }
 
-  const { nestedScrollEnabled, ...restProps } = props as ScrollViewProps & {
+  const {
+    bottomSheetScrollable = true,
+    nestedScrollEnabled,
+    ...restProps
+  } = props as ScrollViewProps & {
     nestedScrollEnabled?: boolean;
   };
+
+  if (insideBottomSheetScrollable && bottomSheetScrollable) {
+    return <BottomSheetScrollView ref={ref} {...(restProps as any)} />;
+  }
 
   return (
     <ReactNativeScrollView

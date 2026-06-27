@@ -1717,6 +1717,7 @@ export function UiComponentsDebugPage() {
           <Text color="$color10">ScrollView</Text>
           <Text color="$color10">这个区域应当独立于页面本身上下滚动。</Text>
           <ScrollView
+            bottomSheetScrollable={false}
             contentContainerStyle={styles.scrollViewContent}
             directionalLockEnabled
             nestedScrollEnabled
