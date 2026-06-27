@@ -8,6 +8,9 @@ import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overla
 import type { NativeSheetProps } from "../types";
 import { resolveBottomSheetSnapPoints } from "./snap_points";
 
+const SHEET_ACTIVE_OFFSET_Y: [number, number] = [-10, 10];
+const SHEET_FAIL_OFFSET_X: [number, number] = [-20, 20];
+
 type BottomSheetPanelProps = {
   children: React.ReactNode;
   dismissOnBackPress?: boolean;
@@ -112,6 +115,8 @@ export function BottomSheetPanel({
         }
         enableDynamicSizing={enableDynamicSizing}
         enablePanDownToClose
+        activeOffsetY={SHEET_ACTIVE_OFFSET_Y}
+        failOffsetX={SHEET_FAIL_OFFSET_X}
         handleComponent={enableHandle ? undefined : null}
         index={resolvedPosition}
         stackBehavior="push"
