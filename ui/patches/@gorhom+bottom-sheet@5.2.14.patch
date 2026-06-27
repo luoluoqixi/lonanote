@@ -1,0 +1,49 @@
+diff --git a/src/components/bottomSheet/BottomSheetBody.tsx b/src/components/bottomSheet/BottomSheetBody.tsx
+index 91b6a6a6..b4b098bf 100644
+--- a/src/components/bottomSheet/BottomSheetBody.tsx
++++ b/src/components/bottomSheet/BottomSheetBody.tsx
+@@ -12,20 +12,34 @@ type BottomSheetBodyProps = {
+ 
+ function BottomSheetBodyComponent({ style, children }: BottomSheetBodyProps) {
+   //#region hooks
+-  const { animatedIndex, animatedPosition } = useBottomSheetInternal();
++  const { animatedDetentsState, animatedIndex, animatedPosition } =
++    useBottomSheetInternal();
+   //#endregion
+ 
+   //#region styles
+   const containerAnimatedStyle = useAnimatedStyle(
+-    () => ({
+-      opacity: Platform.OS === 'android' && animatedIndex.get() === -1 ? 0 : 1,
+-      transform: [
+-        {
+-          translateY: animatedPosition.get(),
+-        },
+-      ],
+-    }),
+-    [animatedPosition, animatedIndex]
++    () => {
++      const closedDetentPosition =
++        animatedDetentsState.get().closedDetentPosition;
++      const isActuallyClosed =
++        closedDetentPosition !== undefined &&
++        Math.abs(animatedPosition.get() - closedDetentPosition) <= 1;
++
++      return {
++        opacity:
++          Platform.OS === 'android' &&
++          animatedIndex.get() === -1 &&
++          isActuallyClosed
++            ? 0
++            : 1,
++        transform: [
++          {
++            translateY: animatedPosition.get(),
++          },
++        ],
++      };
++    },
++    [animatedPosition, animatedIndex, animatedDetentsState]
+   );
+   const containerStyle = useMemo(
+     () => [style, styles.container, containerAnimatedStyle],

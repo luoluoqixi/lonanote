@@ -130,6 +130,7 @@
     "metro-file-map@0.83.6": "patches/metro-file-map@0.83.6.patch",
     "metro@0.83.6": "patches/metro@0.83.6.patch",
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch",
+    "@gorhom/bottom-sheet@5.2.14": "patches/@gorhom+bottom-sheet@5.2.14.patch",
     "@react-native-picker/picker@2.11.4": "patches/@react-native-picker+picker@2.11.4.patch",
     "@tamagui/web@2.1.0": "patches/@tamagui+web@2.1.0.patch",
     "@expo/cli@55.0.32": "patches/@expo+cli@55.0.32.patch",
