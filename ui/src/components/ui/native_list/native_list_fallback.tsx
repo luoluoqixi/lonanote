@@ -1,17 +1,21 @@
 import { HeaderHeightContext } from "@react-navigation/elements";
 import { Check, ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
-import { Children, Fragment, type ReactNode, useContext } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Children,
+  type ReactElement,
+  type ReactNode,
+  isValidElement,
+  useContext,
+  useMemo,
+} from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "tamagui";
 
 import { os } from "@/api/common/platform";
 
-import { ListGroup } from "../list_group";
-import { ListItem } from "../list_item";
+import { FlashList, type ListRenderItemInfo } from "../flash_list";
 import { Select } from "../select";
-import { Separator } from "../separator";
-// import { AndroidClippedScrollView } from "../sheet/native_sheet/true_sheet/android_clipped_scroll_view";
 import {
   getTrueSheetScrollBottomPadding,
   getTrueSheetScrollIndicatorBottomInset,
@@ -40,14 +44,43 @@ type RowContainerProps = {
   onPress?: () => void;
 };
 
+type FallbackListEntry =
+  | {
+      key: string;
+      sectionKey: string;
+      title: ReactNode;
+      type: "sectionHeader";
+    }
+  | {
+      child: ReactNode;
+      key: string;
+      nativeScrollId?: string | number;
+      sectionKey: string;
+      type: "row";
+    }
+  | {
+      footer: ReactNode;
+      key: string;
+      sectionKey: string;
+      type: "sectionFooter";
+    };
+
 function FallbackRowContainer({ children, disabled, nativeHaptics, onPress }: RowContainerProps) {
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
   const theme = useTheme();
-  const rowBackground = { backgroundColor: theme.background?.val };
+
+  const getRowBackground = (pressed = false) => ({
+    backgroundColor:
+      pressed && !disabled
+        ? (theme.backgroundPress?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
+        : theme.background?.val,
+  });
 
   if (onPress == null) {
     return (
-      <View style={[styles.rowContainer, rowBackground, disabled ? styles.disabledContent : null]}>
+      <View
+        style={[styles.rowContainer, getRowBackground(), disabled ? styles.disabledContent : null]}
+      >
         {children}
       </View>
     );
@@ -60,19 +93,21 @@ function FallbackRowContainer({ children, disabled, nativeHaptics, onPress }: Ro
         onPress();
         triggerNativeHaptics(resolvedHaptics);
       }}
-      style={({ pressed }) => [
-        styles.pressable,
-        disabled ? styles.disabledContent : null,
-        pressed && !disabled ? styles.pressablePressed : null,
-      ]}
+      style={styles.pressable}
     >
-      <View style={[styles.rowContainer, rowBackground]}>{children}</View>
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.rowContainer,
+            getRowBackground(pressed),
+            disabled ? styles.disabledContent : null,
+          ]}
+        >
+          {children}
+        </View>
+      )}
     </Pressable>
   );
-}
-
-function FallbackSectionItem({ children }: { children: ReactNode }) {
-  return <ListGroup.GroupItem>{children}</ListGroup.GroupItem>;
 }
 
 type NativeListRowProps = NativeListItemBaseProps & {
@@ -80,10 +115,63 @@ type NativeListRowProps = NativeListItemBaseProps & {
   titleColor?: string | false;
 };
 
-/**
- * 统一行组件：有 subtitle 时用 ListItem 的 title/subTitle props；
- * 只有 title 时用 children 居中。
- */
+function renderTitleNode(
+  title: ReactNode,
+  titleColor: string | false | undefined,
+  textAlign: "center" | "left" | "right",
+) {
+  if (title == null || typeof title === "boolean") {
+    return null;
+  }
+
+  if (typeof title === "string" || typeof title === "number") {
+    const titleStyle = {
+      ...(titleColor ? { color: titleColor } : null),
+      textAlign,
+    };
+
+    return (
+      <SizableText numberOfLines={1} size="$true" style={titleStyle}>
+        {title}
+      </SizableText>
+    );
+  }
+
+  return title;
+}
+
+function renderSubtitleNode(subtitle: ReactNode) {
+  if (subtitle == null || typeof subtitle === "boolean") {
+    return null;
+  }
+
+  if (typeof subtitle === "string" || typeof subtitle === "number") {
+    return (
+      <Text color="$color10" fontSize="$3" numberOfLines={4}>
+        {subtitle}
+      </Text>
+    );
+  }
+
+  return subtitle;
+}
+
+function renderValueNode(value: ReactNode) {
+  if (value == null || typeof value === "boolean") {
+    return null;
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    return (
+      <Text color="$color" fontSize="$5" numberOfLines={1} opacity={0.58}>
+        {value}
+      </Text>
+    );
+  }
+
+  return value;
+}
+
 function NativeListRow({
   chevron = false,
   disabled,
@@ -97,79 +185,28 @@ function NativeListRow({
   titleColor,
   value,
 }: NativeListRowProps) {
-  const hasSubtitle = subtitle != null;
-
-  const combinedIconAfter = (
-    <View style={styles.iconAfterRow}>
-      {value != null ? (
-        <Text color="$color" fontSize="$5" numberOfLines={1} opacity={0.58}>
-          {value}
-        </Text>
-      ) : null}
-      {selected ? <Check color="$accent10" size={18} /> : null}
-      {iconAfter}
-      {chevron ? <ChevronRight color="$color" opacity={0.58} size={18} /> : null}
-    </View>
-  );
-
-  if (hasSubtitle) {
-    return (
-      <ListItem
-        disabled={disabled}
-        nativeHaptics={nativeHaptics}
-        onPress={onPress}
-        subTitle={subtitle}
-        title={
-          titleAlign != null && typeof title === "string" ? (
-            <View
-              style={{
-                width: "100%",
-                alignItems:
-                  titleAlign == "center"
-                    ? "center"
-                    : titleAlign === "right"
-                      ? "flex-end"
-                      : "flex-start",
-              }}
-            >
-              <SizableText size="$true" style={titleColor ? { color: titleColor } : undefined}>
-                {title}
-              </SizableText>
-            </View>
-          ) : (
-            title
-          )
-        }
-        iconAfter={combinedIconAfter}
-      />
-    );
-  }
+  const titleAlignment =
+    titleAlign === "center" ? "center" : titleAlign === "right" ? "flex-end" : "flex-start";
+  const textAlign = titleAlign === "center" ? "center" : titleAlign === "right" ? "right" : "left";
+  const titleNode = renderTitleNode(title, titleColor, textAlign);
+  const subtitleNode = renderSubtitleNode(subtitle);
+  const valueNode = renderValueNode(value);
 
   return (
-    <ListItem
-      disabled={disabled}
-      nativeHaptics={nativeHaptics}
-      onPress={onPress}
-      iconAfter={combinedIconAfter}
-    >
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems:
-            titleAlign == "center" ? "center" : titleAlign === "right" ? "flex-end" : "flex-start",
-          minWidth: 0,
-        }}
-      >
-        <SizableText
-          size="$true"
-          numberOfLines={1}
-          style={titleColor ? { color: titleColor } : undefined}
-        >
-          {title}
-        </SizableText>
+    <FallbackRowContainer disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
+      <View style={styles.rowContent}>
+        <View style={[styles.textColumn, { alignItems: titleAlignment }]}>
+          {titleNode}
+          {subtitleNode}
+        </View>
+        <View style={styles.iconAfterRow}>
+          {valueNode}
+          {selected ? <Check color="$accent10" size={18} /> : null}
+          {iconAfter}
+          {chevron ? <ChevronRight color="$color" opacity={0.58} size={18} /> : null}
+        </View>
       </View>
-    </ListItem>
+    </FallbackRowContainer>
   );
 }
 
@@ -178,11 +215,7 @@ type PressRowProps = NativeListItemBaseProps & {
 };
 
 function FallbackPressRow({ trailingControl, ...props }: PressRowProps) {
-  return (
-    <FallbackSectionItem>
-      <NativeListRow {...props} iconAfter={trailingControl} />
-    </FallbackSectionItem>
-  );
+  return <NativeListRow {...props} iconAfter={trailingControl} />;
 }
 
 function getSelectedLabel(selectProps: NativeListSelectItemProps["selectProps"]) {
@@ -198,6 +231,177 @@ function getSelectedLabel(selectProps: NativeListSelectItemProps["selectProps"])
   );
 }
 
+function getNodeKey(node: ReactNode, fallback: string) {
+  if (isValidElement(node) && node.key != null) {
+    return String(node.key);
+  }
+
+  return fallback;
+}
+
+function getNativeScrollId(node: ReactNode) {
+  if (!isValidElement<NativeListItemBaseProps>(node)) {
+    return undefined;
+  }
+
+  return node.props.nativeScrollId;
+}
+
+function isNativeListSectionType(type: ReactElement["type"]) {
+  if (type === NativeListSection) {
+    return true;
+  }
+
+  return typeof type === "function" && type.name === "NativeListSection";
+}
+
+function isNativeListSectionElement(node: ReactNode): node is ReactElement<NativeListSectionProps> {
+  return isValidElement<NativeListSectionProps>(node) && isNativeListSectionType(node.type);
+}
+
+function appendSectionEntries(
+  entries: FallbackListEntry[],
+  sectionProps: NativeListSectionProps,
+  sectionKey: string,
+) {
+  const sectionChildren = Children.toArray(sectionProps.children);
+  const hasSectionContent =
+    sectionProps.title != null || sectionChildren.length > 0 || sectionProps.footer != null;
+
+  if (!hasSectionContent) {
+    return;
+  }
+
+  if (sectionProps.title != null) {
+    entries.push({
+      key: `${sectionKey}-header`,
+      sectionKey,
+      title: sectionProps.title,
+      type: "sectionHeader",
+    });
+  }
+
+  sectionChildren.forEach((child, index) => {
+    entries.push({
+      child,
+      key: `${sectionKey}-row-${getNodeKey(child, String(index))}`,
+      nativeScrollId: getNativeScrollId(child),
+      sectionKey,
+      type: "row",
+    });
+  });
+
+  if (sectionProps.footer != null) {
+    entries.push({
+      footer: sectionProps.footer,
+      key: `${sectionKey}-footer`,
+      sectionKey,
+      type: "sectionFooter",
+    });
+  }
+}
+
+function createFallbackListEntries(children: ReactNode) {
+  const entries: FallbackListEntry[] = [];
+
+  Children.toArray(children).forEach((child, index) => {
+    if (isNativeListSectionElement(child)) {
+      appendSectionEntries(entries, child.props, getNodeKey(child, `section-${index}`));
+      return;
+    }
+
+    entries.push({
+      child,
+      key: `direct-row-${getNodeKey(child, String(index))}`,
+      nativeScrollId: getNativeScrollId(child),
+      sectionKey: `direct-${index}`,
+      type: "row",
+    });
+  });
+
+  return entries;
+}
+
+function renderFallbackListEntry({
+  item,
+}: ListRenderItemInfo<FallbackListEntry>): ReactElement | null {
+  switch (item.type) {
+    case "sectionHeader":
+      return (
+        <View style={styles.sectionLabel}>
+          {typeof item.title === "string" || typeof item.title === "number" ? (
+            <Text color="$color10" fontSize="$3">
+              {item.title}
+            </Text>
+          ) : (
+            item.title
+          )}
+        </View>
+      );
+    case "row":
+      return <>{item.child}</>;
+    case "sectionFooter":
+      return (
+        <View style={styles.sectionFooter}>
+          {typeof item.footer === "string" || typeof item.footer === "number" ? (
+            <Text color="$color10" fontSize="$3">
+              {item.footer}
+            </Text>
+          ) : (
+            item.footer
+          )}
+        </View>
+      );
+  }
+}
+
+function FallbackListItemSeparator({
+  leadingItem,
+  trailingItem,
+}: {
+  leadingItem?: FallbackListEntry;
+  trailingItem?: FallbackListEntry;
+}) {
+  if (leadingItem == null || trailingItem == null) {
+    return null;
+  }
+
+  if (leadingItem.sectionKey !== trailingItem.sectionKey) {
+    return <View style={styles.sectionSpacer} />;
+  }
+
+  return null;
+}
+
+function renderStaticEntries(entries: FallbackListEntry[]) {
+  return entries.map((entry, index) => (
+    <View key={entry.key}>{renderFallbackListEntry({ item: entry, index, target: "Cell" })}</View>
+  ));
+}
+
+function getEntryType(item: FallbackListEntry) {
+  return item.type;
+}
+
+function getEntryKey(item: FallbackListEntry) {
+  return item.key;
+}
+
+function getInitialScrollIndex(
+  entries: FallbackListEntry[],
+  initialScrollTarget?: string | number,
+) {
+  if (initialScrollTarget == null) {
+    return undefined;
+  }
+
+  const index = entries.findIndex((entry) => {
+    return entry.type === "row" && entry.nativeScrollId === initialScrollTarget;
+  });
+
+  return index >= 0 ? index : undefined;
+}
+
 export function NativeListActionItem(props: NativeListActionItemProps) {
   return <FallbackPressRow {...props} chevron={props.chevron} />;
 }
@@ -211,26 +415,24 @@ export function NativeListSwitchItem({ switchProps, ...itemProps }: NativeListSw
   const disabled = itemProps.disabled || switchProps.disabled;
 
   return (
-    <FallbackSectionItem>
-      <NativeListRow
-        {...itemProps}
-        disabled={disabled}
-        nativeHaptics={itemProps.nativeHaptics ?? true}
-        onPress={() => switchProps.onCheckedChange?.(!checked)}
-        iconAfter={
-          <View style={styles.trailingControl}>
-            <Switch
-              {...switchProps}
-              native
-              onPress={(event) => {
-                switchProps.onPress?.(event);
-                event.stopPropagation();
-              }}
-            />
-          </View>
-        }
-      />
-    </FallbackSectionItem>
+    <NativeListRow
+      {...itemProps}
+      disabled={disabled}
+      nativeHaptics={itemProps.nativeHaptics ?? true}
+      onPress={() => switchProps.onCheckedChange?.(!checked)}
+      iconAfter={
+        <View style={styles.trailingControl}>
+          <Switch
+            {...switchProps}
+            native
+            onPress={(event) => {
+              switchProps.onPress?.(event);
+              event.stopPropagation();
+            }}
+          />
+        </View>
+      }
+    />
   );
 }
 
@@ -267,17 +469,15 @@ export function NativeListItem({
   ...itemProps
 }: NativeListItemProps) {
   return (
-    <FallbackSectionItem>
-      <NativeListRow
-        {...itemProps}
-        btnTint={btnTint}
-        titleAlign={titleAlign}
-        titleColor={typeof btnTint !== "boolean" ? btnTint : undefined}
-        title={title}
-        disabled={disabled}
-        onPress={onPress}
-      />
-    </FallbackSectionItem>
+    <NativeListRow
+      {...itemProps}
+      btnTint={btnTint}
+      titleAlign={titleAlign}
+      titleColor={typeof btnTint !== "boolean" ? btnTint : undefined}
+      title={title}
+      disabled={disabled}
+      onPress={onPress}
+    />
   );
 }
 
@@ -286,34 +486,32 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
   const selectedLabel = getSelectedLabel(selectProps);
 
   return (
-    <FallbackSectionItem>
-      <Select
-        {...selectProps}
-        disabled={disabled}
-        native
-        nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
-        nativeTrigger
-        nativeTriggerContent={
-          <NativeListRow
-            {...itemProps}
-            disabled={disabled}
-            iconAfter={
-              <View style={styles.selectValue}>
-                <Text color="$color" fontSize="$4" numberOfLines={1} opacity={0.58}>
-                  {selectedLabel}
-                </Text>
-                <ChevronsUpDown color="$color" opacity={0.58} size={14} />
-              </View>
-            }
-          />
-        }
-        triggerProps={{
-          pressStyle: {
-            backgroundColor: "$backgroundPress",
-          },
-        }}
-      />
-    </FallbackSectionItem>
+    <Select
+      {...selectProps}
+      disabled={disabled}
+      native
+      nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
+      nativeTrigger
+      nativeTriggerContent={
+        <NativeListRow
+          {...itemProps}
+          disabled={disabled}
+          iconAfter={
+            <View style={styles.selectValue}>
+              <Text color="$color" fontSize="$4" numberOfLines={1} opacity={0.58}>
+                {selectedLabel}
+              </Text>
+              <ChevronsUpDown color="$color" opacity={0.58} size={14} />
+            </View>
+          }
+        />
+      }
+      triggerProps={{
+        pressStyle: {
+          backgroundColor: "$backgroundPress",
+        },
+      }}
+    />
   );
 }
 
@@ -324,48 +522,28 @@ export function NativeListCustomItem({
   onPress,
 }: NativeListCustomItemProps) {
   return (
-    <FallbackSectionItem>
-      <FallbackRowContainer disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
-        <View style={styles.customRowContent}>{children}</View>
-      </FallbackRowContainer>
-    </FallbackSectionItem>
+    <FallbackRowContainer disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
+      <View style={styles.customRowContent}>{children}</View>
+    </FallbackRowContainer>
   );
 }
 
 export function NativeListSection({ children, footer, title }: NativeListSectionProps) {
-  const childrenArray = Children.toArray(children);
-
-  return (
-    <View style={styles.section}>
-      {title != null ? (
-        <View style={styles.sectionLabel}>
-          <Text color="$color10" fontSize="$3">
-            {title}
-          </Text>
-        </View>
-      ) : null}
-      <ListGroup background="$background" rounded="$4" width="100%" self="stretch">
-        {childrenArray.map((child, index) => (
-          <Fragment key={index}>
-            {index > 0 ? <Separator /> : null}
-            {child}
-          </Fragment>
-        ))}
-      </ListGroup>
-      {footer != null ? (
-        <View style={styles.sectionFooter}>
-          <Text color="$color10" fontSize="$3">
-            {footer}
-          </Text>
-        </View>
-      ) : null}
-    </View>
+  const entries = createFallbackListEntries(
+    <NativeListSection footer={footer} title={title}>
+      {children}
+    </NativeListSection>,
   );
+
+  return <View style={styles.staticSection}>{renderStaticEntries(entries)}</View>;
 }
 
 export function NativeListRoot({
   children,
   contentContainerStyle,
+  contentMarginBottom,
+  contentMarginTop,
+  initialScrollTarget,
   native: _native,
   scrollable = true,
   style,
@@ -378,109 +556,105 @@ export function NativeListRoot({
     contentInsetAdjustmentBehavior,
     contentOffset,
     keyboardShouldPersistTaps,
+    maintainVisibleContentPosition: _maintainVisibleContentPosition,
     nestedScrollEnabled,
     scrollIndicatorInsets,
     showsVerticalScrollIndicator,
     ...scrollViewProps
   } = rest;
+  void _maintainVisibleContentPosition;
   const headerHeight = useContext(HeaderHeightContext) ?? 0;
   const insets = useSafeAreaInsets();
+  const entries = useMemo(() => createFallbackListEntries(children), [children]);
+  const listLayoutKey = useMemo(() => entries.map(getEntryKey).join("|"), [entries]);
+  const initialScrollIndex = useMemo(
+    () => getInitialScrollIndex(entries, initialScrollTarget),
+    [entries, initialScrollTarget],
+  );
   const {
     active: insideTrueSheet,
     automaticContentInsetAdjustment,
     insetAdjustment,
     nativeScrollInsetsApplied,
   } = useTrueSheetScrollLayout();
+  const theme = useTheme();
+  const rootBackground = { backgroundColor: theme.background.val };
 
-  if (!scrollable) {
-    return (
-      <View style={[styles.staticRoot, styles.rootContent, contentContainerStyle, style]}>
-        {children}
-      </View>
-    );
-  }
-
-  if (insideTrueSheet) {
-    const bottomPadding = getTrueSheetScrollBottomPadding({
-      insetAdjustment,
-      nativeScrollInsetsApplied,
-      safeAreaBottom: insets.bottom,
-    });
-    const indicatorBottomInset = getTrueSheetScrollIndicatorBottomInset({
-      automaticContentInsetAdjustment,
-      nativeScrollInsetsApplied,
-      safeAreaBottom: insets.bottom,
-    });
-
-    // const SheetScrollView = os() === "android" ? AndroidClippedScrollView : ScrollView;
-    const SheetScrollView = ScrollView;
-
-    return (
-      <SheetScrollView
-        alwaysBounceVertical={alwaysBounceVertical}
-        contentInset={contentInset}
-        contentContainerStyle={[
-          styles.rootContent,
-          bottomPadding != null ? { paddingBottom: bottomPadding } : null,
-          contentContainerStyle,
-        ]}
-        contentInsetAdjustmentBehavior={
-          os() === "ios"
-            ? automaticContentInsetAdjustment
-              ? "automatic"
-              : "never"
-            : contentInsetAdjustmentBehavior
-        }
-        contentOffset={contentOffset}
-        keyboardShouldPersistTaps={keyboardShouldPersistTaps ?? "handled"}
-        nestedScrollEnabled={nestedScrollEnabled ?? true}
-        showsVerticalScrollIndicator={showsVerticalScrollIndicator ?? true}
-        scrollIndicatorInsets={
-          indicatorBottomInset != null
-            ? {
-                ...scrollIndicatorInsets,
-                bottom: indicatorBottomInset,
-              }
-            : scrollIndicatorInsets
-        }
-        style={[styles.root, style]}
-        {...scrollViewProps}
-      >
-        {children}
-      </SheetScrollView>
-    );
-  }
-
+  const bottomPadding = insideTrueSheet
+    ? getTrueSheetScrollBottomPadding({
+        insetAdjustment,
+        nativeScrollInsetsApplied,
+        safeAreaBottom: insets.bottom,
+      })
+    : undefined;
+  const indicatorBottomInset = insideTrueSheet
+    ? getTrueSheetScrollIndicatorBottomInset({
+        automaticContentInsetAdjustment,
+        nativeScrollInsetsApplied,
+        safeAreaBottom: insets.bottom,
+      })
+    : undefined;
   const shouldUseManualHeaderSpacing =
+    !insideTrueSheet &&
     os() === "ios" &&
     headerHeight > 0 &&
     contentInset == null &&
     contentInsetAdjustmentBehavior == null &&
     contentOffset == null;
+  const contentTopPadding =
+    contentMarginTop ?? (shouldUseManualHeaderSpacing ? headerHeight + 8 : undefined);
+  const contentBottomPadding =
+    bottomPadding != null ? bottomPadding + (contentMarginBottom ?? 0) : contentMarginBottom;
+  const contentSpacingStyle = {
+    ...(contentTopPadding != null ? { paddingTop: contentTopPadding } : null),
+    ...(contentBottomPadding != null ? { paddingBottom: contentBottomPadding } : null),
+  };
 
   return (
-    <ScrollView
-      alwaysBounceVertical={alwaysBounceVertical ?? os() === "ios"}
+    <FlashList
+      alwaysBounceVertical={alwaysBounceVertical ?? (!insideTrueSheet && os() === "ios")}
       contentInset={contentInset}
       contentContainerStyle={[
-        styles.scrollRootContent,
+        insideTrueSheet ? styles.rootContent : styles.scrollRootContent,
         styles.scrollViewportFill,
-        shouldUseManualHeaderSpacing ? { paddingTop: headerHeight + 8 } : null,
+        rootBackground,
+        contentSpacingStyle,
         contentContainerStyle,
       ]}
       contentInsetAdjustmentBehavior={
-        shouldUseManualHeaderSpacing ? "never" : contentInsetAdjustmentBehavior
+        insideTrueSheet && os() === "ios"
+          ? automaticContentInsetAdjustment
+            ? "automatic"
+            : "never"
+          : shouldUseManualHeaderSpacing
+            ? "never"
+            : contentInsetAdjustmentBehavior
       }
       contentOffset={contentOffset}
+      data={entries}
+      extraData={entries}
+      getItemType={getEntryType}
+      initialScrollIndex={initialScrollIndex}
+      ItemSeparatorComponent={FallbackListItemSeparator}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps ?? "handled"}
+      keyExtractor={getEntryKey}
+      key={listLayoutKey}
+      maxItemsInRecyclePool={0}
       nestedScrollEnabled={nestedScrollEnabled ?? true}
+      renderItem={renderFallbackListEntry}
+      scrollEnabled={scrollable}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator ?? true}
-      scrollIndicatorInsets={scrollIndicatorInsets}
-      style={[styles.root, style]}
+      scrollIndicatorInsets={
+        indicatorBottomInset != null
+          ? {
+              ...scrollIndicatorInsets,
+              bottom: indicatorBottomInset,
+            }
+          : scrollIndicatorInsets
+      }
+      style={[styles.root, rootBackground, style]}
       {...scrollViewProps}
-    >
-      {children}
-    </ScrollView>
+    />
   );
 }
 
@@ -491,35 +665,31 @@ const styles = StyleSheet.create({
   disabledContent: {
     opacity: 0.5,
   },
+  iconAfterRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 1,
+    gap: 4,
+    justifyContent: "flex-end",
+    maxWidth: "50%",
+    minWidth: 0,
+  },
   pressable: {
     width: "100%",
-  },
-  pressablePressed: {
-    backgroundColor: "rgba(128, 128, 128, 0.08)",
   },
   root: {
     flex: 1,
     minHeight: 0,
   },
   rootContent: {
-    gap: 16,
     overflow: "hidden",
-    paddingHorizontal: 14,
     paddingVertical: 8,
     width: "100%",
-  },
-  scrollRootContent: {
-    gap: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    width: "100%",
-  },
-  scrollViewportFill: {
-    flexGrow: 1,
   },
   rowContainer: {
+    justifyContent: "center",
     minHeight: 56,
-    paddingHorizontal: 16,
+    paddingHorizontal: 30,
     paddingVertical: 12,
     width: "100%",
   },
@@ -529,35 +699,41 @@ const styles = StyleSheet.create({
     gap: 12,
     width: "100%",
   },
-  section: {
-    gap: 8,
-    overflow: "hidden",
+  scrollRootContent: {
+    paddingVertical: 8,
     width: "100%",
   },
+  scrollViewportFill: {
+    flexGrow: 1,
+  },
   sectionFooter: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 30,
+    paddingTop: 8,
   },
   sectionLabel: {
-    paddingHorizontal: 16,
+    paddingBottom: 8,
+    paddingHorizontal: 30,
+  },
+  sectionSpacer: {
+    height: 16,
   },
   selectValue: {
     alignItems: "center",
     flexDirection: "row",
     flexShrink: 1,
     gap: 4,
+    minWidth: 0,
   },
   staticRoot: {
+    width: "100%",
+  },
+  staticSection: {
     width: "100%",
   },
   textColumn: {
     flex: 1,
     gap: 4,
     minWidth: 0,
-  },
-  iconAfterRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 4,
   },
   trailingControl: {
     alignItems: "center",

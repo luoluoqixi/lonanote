@@ -5,7 +5,6 @@ import {
   type DebugTabKey,
   getDebugFullPageHref,
   isDebugFeatureEnabled,
-  openDebugSection,
 } from "@/components/debug";
 
 export default function DebugHomeRouteScreen() {
@@ -16,11 +15,7 @@ export default function DebugHomeRouteScreen() {
   return (
     <DebugHomePage
       onOpenFullPage={(key: DebugTabKey) => {
-        void openDebugSection(key).then((handled) => {
-          if (!handled) {
-            router.push(getDebugFullPageHref(key));
-          }
-        });
+        router.push(getDebugFullPageHref(key));
       }}
     />
   );

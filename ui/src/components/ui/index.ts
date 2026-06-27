@@ -6,6 +6,7 @@ export * from "./card";
 export * from "./checkbox";
 export * from "./context_menu";
 export * from "./dialog";
+export * from "./flash_list";
 export * from "./form";
 export * from "./image";
 export * from "./native_list";

@@ -68,11 +68,11 @@ export function DebugHomePage({
   };
 
   const handleOpenSection = async (key: DebugTabKey) => {
-    if (await openDebugSection(key)) {
-      return;
-    }
-
     if (inNativeSheet) {
+      if (await openDebugSection(key)) {
+        return;
+      }
+
       onOpenPanel?.(key);
       return;
     }

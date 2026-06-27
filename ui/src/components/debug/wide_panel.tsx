@@ -1,3 +1,4 @@
+import { usePathname } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   DeviceEventEmitter,
@@ -61,8 +62,10 @@ function useDebugPanelNativeToggle(onToggle: () => void) {
 }
 
 export function DebugPanelGestureLayer({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const insideDebugRoute = pathname === "/debug" || pathname.startsWith("/debug/");
   const gesture = useMemo(() => {
-    if (!isDebugFeatureEnabled() || Platform.OS === "web") {
+    if (!isDebugFeatureEnabled() || Platform.OS !== "ios" || insideDebugRoute) {
       return null;
     }
 
@@ -77,7 +80,7 @@ export function DebugPanelGestureLayer({ children }: { children: React.ReactNode
 
         runOnJS(emitDebugPanelToggle)();
       });
-  }, []);
+  }, [insideDebugRoute]);
 
   if (!gesture) {
     return children;
