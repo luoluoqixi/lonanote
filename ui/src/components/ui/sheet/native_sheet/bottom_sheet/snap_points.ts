@@ -1,10 +1,10 @@
-import type { SheetProps } from "../../simple_sheet/types";
+import type { NativeSheetProps } from "../types";
 
 type BottomSheetSnapPoint = number | string;
 
 export function resolveBottomSheetSnapPoints(
-  snapPoints: SheetProps["snapPoints"],
-  snapPointsMode: SheetProps["snapPointsMode"],
+  snapPoints: NativeSheetProps["snapPoints"],
+  snapPointsMode: NativeSheetProps["snapPointsMode"],
 ): {
   enableDynamicSizing: boolean;
   snapPoints: BottomSheetSnapPoint[];

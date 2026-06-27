@@ -1,16 +1,11 @@
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetModalProvider,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { useEffect, useMemo, useRef } from "react";
 import { BackHandler, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
-import type { SheetProps } from "../../simple_sheet/types";
+import type { NativeSheetProps } from "../types";
 import { resolveBottomSheetSnapPoints } from "./snap_points";
 
 type BottomSheetPanelProps = {
@@ -18,15 +13,15 @@ type BottomSheetPanelProps = {
   dismissOnBackPress?: boolean;
   dismissOnOverlayPress?: boolean;
   enableHandle?: boolean;
-  onAnimationComplete?: SheetProps["onAnimationComplete"];
+  onAnimationComplete?: NativeSheetProps["onAnimationComplete"];
   onOpenChange: (open: boolean) => void;
   onPositionChange?: (position: number) => void;
   open: boolean;
   overlay?: boolean;
   overlayPortalHostName?: string;
   position: number;
-  snapPoints: SheetProps["snapPoints"];
-  snapPointsMode: SheetProps["snapPointsMode"];
+  snapPoints: NativeSheetProps["snapPoints"];
+  snapPointsMode: NativeSheetProps["snapPointsMode"];
 };
 
 export function BottomSheetPanel({
@@ -45,19 +40,30 @@ export function BottomSheetPanel({
   snapPointsMode,
 }: BottomSheetPanelProps) {
   const modalRef = useRef<BottomSheetModal>(null);
+  const requestedOpenRef = useRef(open);
+  const hasPresentedRef = useRef(false);
   const { enableDynamicSizing, snapPoints: resolvedSnapPoints } = useMemo(
     () => resolveBottomSheetSnapPoints(snapPoints, snapPointsMode),
     [snapPoints, snapPointsMode],
   );
   const resolvedPosition = Number.isFinite(position) ? Math.max(0, Math.round(position)) : 0;
+  requestedOpenRef.current = open;
 
   useEffect(() => {
     if (open) {
-      modalRef.current?.present();
       requestAnimationFrame(() => {
+        if (!requestedOpenRef.current) {
+          return;
+        }
+
+        modalRef.current?.present();
         modalRef.current?.snapToIndex(resolvedPosition);
         onAnimationComplete?.({ open: true });
       });
+      return;
+    }
+
+    if (!hasPresentedRef.current) {
       return;
     }
 
@@ -89,40 +95,60 @@ export function BottomSheetPanel({
     );
 
   return (
-    <GestureHandlerRootView style={styles.gestureRoot}>
-      <BottomSheetModalProvider>
-        <BottomSheetModal
-          ref={modalRef}
-          backdropComponent={
-            overlay
-              ? (props) => (
-                  <BottomSheetBackdrop
-                    {...props}
-                    appearsOnIndex={0}
-                    disappearsOnIndex={-1}
-                    pressBehavior={dismissOnOverlayPress ? "close" : "none"}
-                  />
-                )
-              : undefined
+    <GestureHandlerRootView pointerEvents="box-none" style={styles.gestureRoot}>
+      <BottomSheetModal
+        ref={modalRef}
+        backdropComponent={
+          overlay
+            ? (props) => (
+                <BottomSheetBackdrop
+                  {...props}
+                  appearsOnIndex={0}
+                  disappearsOnIndex={-1}
+                  pressBehavior={dismissOnOverlayPress ? "close" : "none"}
+                />
+              )
+            : undefined
+        }
+        enableDynamicSizing={enableDynamicSizing}
+        enablePanDownToClose
+        handleComponent={enableHandle ? undefined : null}
+        index={resolvedPosition}
+        onChange={(nextIndex) => {
+          if (nextIndex >= 0) {
+            hasPresentedRef.current = true;
+            onPositionChange?.(nextIndex);
+            return;
           }
-          enableDynamicSizing={enableDynamicSizing}
-          enablePanDownToClose
-          handleComponent={enableHandle ? undefined : null}
-          index={resolvedPosition}
-          onChange={(nextIndex) => {
-            if (nextIndex >= 0) {
-              onPositionChange?.(nextIndex);
-            }
-          }}
-          onDismiss={() => {
-            onOpenChange(false);
-            onAnimationComplete?.({ open: false });
-          }}
-          snapPoints={resolvedSnapPoints as any}
-        >
-          <BottomSheetView style={styles.content}>{body}</BottomSheetView>
-        </BottomSheetModal>
-      </BottomSheetModalProvider>
+
+          if (!hasPresentedRef.current) {
+            return;
+          }
+
+          onOpenChange(false);
+          onAnimationComplete?.({ open: false });
+        }}
+        onDismiss={() => {
+          if (requestedOpenRef.current) {
+            requestAnimationFrame(() => {
+              if (!requestedOpenRef.current) {
+                return;
+              }
+
+              modalRef.current?.present();
+              modalRef.current?.snapToIndex(resolvedPosition);
+            });
+            return;
+          }
+
+          hasPresentedRef.current = false;
+          onOpenChange(false);
+          onAnimationComplete?.({ open: false });
+        }}
+        snapPoints={resolvedSnapPoints as any}
+      >
+        <BottomSheetView style={styles.content}>{body}</BottomSheetView>
+      </BottomSheetModal>
     </GestureHandlerRootView>
   );
 }
@@ -133,6 +159,7 @@ const styles = StyleSheet.create({
     minHeight: 1,
   },
   gestureRoot: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1000,
   },
 });

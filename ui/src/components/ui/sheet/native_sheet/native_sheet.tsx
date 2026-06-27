@@ -1,15 +1,103 @@
-import { SimpleSheet } from "../simple_sheet";
+import { useState } from "react";
+
+import { BottomSheetPanel } from "./bottom_sheet";
 import type { NativeSheetProps } from "./types";
 
-function NativeSheetRoot(props: NativeSheetProps) {
-  return <SimpleSheet {...(props as any)} native={props.native ?? true} />;
+let nativeSheetCounter = 0;
+
+function useControllableNativeSheetState({
+  defaultOpen = false,
+  defaultPosition = 0,
+  onOpenChange,
+  onPositionChange,
+  open: openProp,
+  position: positionProp,
+}: Pick<
+  NativeSheetProps,
+  "defaultOpen" | "defaultPosition" | "onOpenChange" | "onPositionChange" | "open" | "position"
+>) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
+  const [uncontrolledPosition, setUncontrolledPosition] = useState(defaultPosition);
+  const open = openProp ?? uncontrolledOpen;
+  const position = positionProp ?? uncontrolledPosition;
+
+  const setOpen = (nextOpen: boolean) => {
+    if (openProp == null) {
+      setUncontrolledOpen(nextOpen);
+    }
+
+    onOpenChange?.(nextOpen);
+  };
+
+  const setPosition = (nextPosition: number) => {
+    if (positionProp == null) {
+      setUncontrolledPosition(nextPosition);
+    }
+
+    onPositionChange?.(nextPosition);
+  };
+
+  return {
+    open,
+    position,
+    setOpen,
+    setPosition,
+  };
 }
 
-export const NativeSheet = Object.assign(NativeSheetRoot, {
-  Controlled: SimpleSheet.Controlled,
-  Controller: SimpleSheet.Controller,
-  Frame: SimpleSheet.Frame,
-  Handle: SimpleSheet.Handle,
-  Overlay: SimpleSheet.Overlay,
-  ScrollView: SimpleSheet.ScrollView,
-});
+export function NativeSheet({
+  children,
+  content,
+  defaultOpen,
+  defaultPosition,
+  dismissOnBackPress = true,
+  dismissOnOverlayPress = true,
+  handle,
+  modal,
+  name,
+  onAnimationComplete,
+  onOpenChange,
+  onPositionChange,
+  open: openProp,
+  overlay,
+  overlayPortalHostName,
+  position: positionProp,
+  snapPoints,
+  snapPointsMode,
+}: NativeSheetProps) {
+  const [generatedSheetName] = useState(() => `ui-sheet-native-${++nativeSheetCounter}`);
+  const sheetName = name ?? generatedSheetName;
+  const [generatedOverlayPortalHostName] = useState(() => `${sheetName}-overlay`);
+  const resolvedOverlayPortalHostName = overlayPortalHostName ?? generatedOverlayPortalHostName;
+  const sheetState = useControllableNativeSheetState({
+    defaultOpen,
+    defaultPosition,
+    onOpenChange,
+    onPositionChange,
+    open: openProp,
+    position: positionProp,
+  });
+
+  if (modal === false) {
+    return null;
+  }
+
+  return (
+    <BottomSheetPanel
+      dismissOnBackPress={dismissOnBackPress}
+      dismissOnOverlayPress={dismissOnOverlayPress}
+      enableHandle={handle ?? false}
+      onAnimationComplete={onAnimationComplete}
+      onOpenChange={sheetState.setOpen}
+      onPositionChange={sheetState.setPosition}
+      open={sheetState.open}
+      overlay={overlay ?? true}
+      overlayPortalHostName={resolvedOverlayPortalHostName}
+      position={sheetState.position}
+      snapPoints={snapPoints}
+      snapPointsMode={snapPointsMode}
+    >
+      {content ?? children}
+    </BottomSheetPanel>
+  );
+}

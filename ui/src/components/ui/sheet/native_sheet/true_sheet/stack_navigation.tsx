@@ -65,12 +65,14 @@ function TrueSheetStackNavigationInner({
   return (
     <NavigationIndependentTree>
       <NavigationContainer ref={ref}>
-        <JsStack.Navigator
-          initialRouteName={initialRouteName}
-          screenOptions={screenOptions as StackNavigationOptions}
-        >
-          {children}
-        </JsStack.Navigator>
+        <View style={styles.stackRoot}>
+          <JsStack.Navigator
+            initialRouteName={initialRouteName}
+            screenOptions={screenOptions as StackNavigationOptions}
+          >
+            {children}
+          </JsStack.Navigator>
+        </View>
       </NavigationContainer>
     </NavigationIndependentTree>
   );
@@ -90,5 +92,9 @@ const styles = StyleSheet.create({
   nativeStackRoot: {
     flex: Platform.OS === "ios" ? 1 : undefined,
     minHeight: Platform.OS === "ios" ? 0 : undefined,
+  },
+  stackRoot: {
+    flex: 1,
+    minHeight: 0,
   },
 });

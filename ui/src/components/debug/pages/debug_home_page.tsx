@@ -15,6 +15,7 @@ import {
 import {
   DEBUG_NESTED_SECTION_DETENT_LEVEL_MAX,
   DEBUG_NESTED_SECTION_DETENT_LEVEL_MIN,
+  canUseDebugNestedSectionSheets,
   getDebugSectionSheetDismissVersion,
   openDebugSection,
   resizeDebugSectionSheets,
@@ -42,6 +43,8 @@ export function DebugHomePage({
   const [dismissVersion, setDismissVersion] = useState(getDebugSectionSheetDismissVersion);
   const nestedSectionDetentLevel = useDebugNestedSectionDetentLevel();
   const inNativeSheet = onOpenPanel != null;
+  const canUseNestedSectionSheets = canUseDebugNestedSectionSheets();
+  const effectiveNestedSectionSheets = canUseNestedSectionSheets && nestedSectionSheets;
 
   useEffect(() => {
     setNestedSectionSheets(nestedSectionSheetsFromStore);
@@ -56,6 +59,10 @@ export function DebugHomePage({
   }, []);
 
   const handleNestedSheetsChange = (enabled: boolean) => {
+    if (!canUseNestedSectionSheets) {
+      return;
+    }
+
     setNestedSectionSheets(enabled);
     setDebugSectionsAsNestedSheets(enabled);
   };
@@ -80,7 +87,7 @@ export function DebugHomePage({
           <NativeListNavigationItem
             key={definition.key}
             disabled={
-              nestedSectionSheets
+              effectiveNestedSectionSheets
                 ? false
                 : inNativeSheet
                   ? onOpenPanel == null
@@ -96,13 +103,15 @@ export function DebugHomePage({
       <NativeListSection title="分区行为">
         <NativeListSwitchItem
           key={`nested-sheets-switch-${dismissVersion}`}
+          disabled={!canUseNestedSectionSheets}
           switchProps={{
-            checked: nestedSectionSheets,
+            checked: effectiveNestedSectionSheets,
+            disabled: !canUseNestedSectionSheets,
             onCheckedChange: handleNestedSheetsChange,
           }}
           title="分区嵌套 NativeSheet"
         />
-        {nestedSectionSheets ? (
+        {effectiveNestedSectionSheets ? (
           <NativeListCustomItem>
             <View style={styles.detentSliderRow}>
               <Minimize2 color="$color10" size={18} />

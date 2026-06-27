@@ -11,6 +11,7 @@ import {
 import { useDesktopWindowState } from "@/hooks/settings/use_desktop_window_state";
 import { applyDocumentTheme } from "@/stores/ui";
 
+import { SheetProvider } from "../sheet/provider";
 import type { RootProviderProps } from "./types";
 import { UIProvider } from "./ui_provider";
 
@@ -29,7 +30,9 @@ export function RootProvider({ children }: RootProviderProps) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <UIProvider colorScheme={resolvedColorScheme}>{children}</UIProvider>
+        <UIProvider colorScheme={resolvedColorScheme}>
+          <SheetProvider>{children}</SheetProvider>
+        </UIProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

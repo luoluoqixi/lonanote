@@ -51,15 +51,20 @@ function emitNestedSectionsPreferenceChange() {
 }
 
 export function getDebugSectionsAsNestedSheets() {
-  return debugSectionsAsNestedSheets;
+  return canUseDebugNestedSectionSheets() && debugSectionsAsNestedSheets;
+}
+
+export function canUseDebugNestedSectionSheets() {
+  return os() === "ios";
 }
 
 export function setDebugSectionsAsNestedSheets(enabled: boolean) {
-  if (debugSectionsAsNestedSheets === enabled) {
+  const nextEnabled = canUseDebugNestedSectionSheets() && enabled;
+  if (debugSectionsAsNestedSheets === nextEnabled) {
     return;
   }
 
-  debugSectionsAsNestedSheets = enabled;
+  debugSectionsAsNestedSheets = nextEnabled;
   emitNestedSectionsPreferenceChange();
 }
 
@@ -234,9 +239,13 @@ export function openDebugSectionSheet(
   key: DebugTabKey,
   detentIndex = getDebugNestedSectionDetentLevel(),
 ) {
+  if (!canUseDebugNestedSectionSheets()) {
+    return Promise.resolve();
+  }
+
   setDebugNestedSectionDetentLevel(detentIndex);
   if (presentedDebugSectionSheets.has(key)) {
-    return;
+    return Promise.resolve();
   }
 
   return presentTrueSheet(
@@ -265,11 +274,19 @@ export function closeDebugSectionSheet(key: DebugTabKey) {
   presentedDebugSectionSheets.delete(key);
   updatePresentedDebugSectionSheetsSnapshot();
   emitSectionSheetChange();
+  if (!canUseDebugNestedSectionSheets()) {
+    return Promise.resolve();
+  }
+
   return dismissTrueSheet(getDebugSectionSheetName(key));
 }
 
 export function resizeDebugSectionSheets(detentIndex: number = getDebugNestedSectionDetentLevel()) {
   setDebugNestedSectionDetentLevel(detentIndex);
+  if (!canUseDebugNestedSectionSheets()) {
+    return Promise.resolve();
+  }
+
   const presentedKeys = [...presentedDebugSectionSheets];
 
   if (presentedKeys.length === 0) {
@@ -303,6 +320,10 @@ function dismissAllDebugSectionSheets() {
     updatePresentedDebugSectionSheetsSnapshot();
     emitSectionSheetChange();
     emitDismissVersionChange();
+  }
+
+  if (!canUseDebugNestedSectionSheets()) {
+    return Promise.resolve();
   }
 
   return Promise.all(

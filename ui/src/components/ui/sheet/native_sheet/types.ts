@@ -2,12 +2,33 @@ import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import type { ParamListBase } from "@react-navigation/native";
 import type { ComponentType, ReactNode } from "react";
 
-import type { SheetProps as SimpleSheetProps } from "../simple_sheet/types";
 import type { TrueSheetInnerStackScreenOptions } from "./true_sheet/stack_navigator";
 
-export interface NativeSheetProps extends SimpleSheetProps {
+export type NativeSheetSnapPoint = string | number;
+
+export type NativeSheetSnapPointsMode = "percent" | "constant" | "fit" | "mixed";
+
+export interface NativeSheetProps {
+  children?: ReactNode;
+  content?: ReactNode;
+  defaultOpen?: boolean;
+  defaultPosition?: number;
+  dismissOnBackPress?: boolean;
+  dismissOnOverlayPress?: boolean;
+  disableDrag?: boolean;
+  handle?: boolean;
+  modal?: boolean;
   name?: string;
+  native?: boolean;
+  onAnimationComplete?: (event: { open: boolean }) => void;
+  onOpenChange?: (open: boolean) => void;
+  onPositionChange?: (position: number) => void;
+  open?: boolean;
+  overlay?: boolean;
   overlayPortalHostName?: string;
+  position?: number;
+  snapPoints?: NativeSheetSnapPoint[];
+  snapPointsMode?: NativeSheetSnapPointsMode;
 }
 
 export type NativeSheetStackScreenProps = {
@@ -25,7 +46,7 @@ export interface NativeSheetStackProps<ParamList extends ParamListBase = ParamLi
   overlayPortalHostName?: string;
   screenOptions?: TrueSheetInnerStackScreenOptions;
   sheetProps?: Omit<TrueSheetProps, "children" | "header" | "name"> & {
-    snapPoints?: SimpleSheetProps["snapPoints"];
-    snapPointsMode?: SimpleSheetProps["snapPointsMode"];
+    snapPoints?: NativeSheetProps["snapPoints"];
+    snapPointsMode?: NativeSheetProps["snapPointsMode"];
   };
 }
