@@ -660,6 +660,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
 
       return PanResponder.create({
         onMoveShouldSetPanResponder: onMoveShouldSet,
+        onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: grant,
         onPanResponderMove: (_e, { dy }) => {
           const toFull = dy + startY;

@@ -75,6 +75,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Sheet
           maxHeight: screenSize || undefined,
         }
       : { flex: 1 };
+    const contentContainerStyle = hasFit ? undefined : ({ minHeight: "100%" } as any);
 
     const panGestureRef = gestureContext?.panGestureRef;
     const { ScrollView: RNGHScrollView } = getGestureHandlerState();
@@ -278,7 +279,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Sheet
             if (y > 0) scrollBridge.scrollStartY = -1;
             onScroll?.(e);
           }}
-          contentContainerStyle={{ minHeight: "100%" } as any}
+          contentContainerStyle={contentContainerStyle}
           bounces={scrollBounces}
           keyboardShouldPersistTaps="always"
           keyboardDismissMode="none"
@@ -314,7 +315,7 @@ export const SheetScrollView = React.forwardRef<GetRef<typeof ScrollView>, Sheet
           if (y > 0) scrollBridge.scrollStartY = -1;
           onScroll?.(e);
         }}
-        contentContainerStyle={{ minHeight: "100%" } as any}
+        contentContainerStyle={contentContainerStyle}
         {...gestureProps}
         {...props}
         onMomentumScrollEnd={handleMomentumScrollEnd}
