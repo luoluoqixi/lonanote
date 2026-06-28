@@ -1,18 +1,15 @@
 import type { GetRef } from "@tamagui/core";
-import { YStack } from "@tamagui/stacks";
-import { createContext, forwardRef, useContext, useEffect, useMemo, useRef } from "react";
+import { forwardRef, useEffect, useMemo, useRef } from "react";
 import { BackHandler } from "react-native";
 
 import { os } from "@/api/common/platform";
-import { TrueSheetScrollContent } from "@/components/ui/sheet/native_sheet/true_sheet/scroll_content";
 import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
 
-import { NativeSheet, shouldUseNativeSheet } from "./native_sheet";
 import {
   Sheet as ReplicaSheet,
   SheetController as ReplicaSheetController,
   useSheet,
-} from "./sheet/index";
+} from "./replica_sheet/index";
 import type {
   SheetControlledProps,
   SheetControllerProps,
@@ -26,7 +23,6 @@ import type {
 const DEFAULT_OVERLAY_ENTER_STYLE = { opacity: 0 } as const;
 const DEFAULT_OVERLAY_EXIT_STYLE = { opacity: 0 } as const;
 const NOOP_HANDLE_PRESS = () => {};
-const NativeSheetRenderContext = createContext(false);
 
 type SnapPointNormalization = {
   snapPoints: number[];
@@ -60,7 +56,6 @@ function SheetRoot(props: SheetProps) {
     snapPointsMode,
     ...rootProps
   } = props;
-  const useNativeSheet = shouldUseNativeSheet(props);
   const screenOverlayPortalHost = useScreenOverlayPortalHost();
   const resolvedPortalProps =
     modal === true && screenOverlayPortalHost != null
@@ -162,7 +157,7 @@ function SheetRoot(props: SheetProps) {
     ...(modal || ContainerComponent == null ? { containerComponent: ContainerComponent } : null),
   };
 
-  const nativeChildren = !hasDefaultStructure ? (
+  const structuredChildren = !hasDefaultStructure ? (
     <>{children}</>
   ) : (
     <>
@@ -175,11 +170,7 @@ function SheetRoot(props: SheetProps) {
     </>
   );
 
-  const sheet = useNativeSheet ? (
-    <NativeSheetRenderContext.Provider value>
-      <NativeSheet {...resolvedRootProps}>{nativeChildren}</NativeSheet>
-    </NativeSheetRenderContext.Provider>
-  ) : !hasDefaultStructure ? (
+  const sheet = !hasDefaultStructure ? (
     <ReplicaSheet {...resolvedRootProps}>
       <SheetBackHandler dismissOnBackPress={dismissOnBackPress} />
       {children}
@@ -187,12 +178,7 @@ function SheetRoot(props: SheetProps) {
   ) : (
     <ReplicaSheet {...resolvedRootProps}>
       <SheetBackHandler dismissOnBackPress={dismissOnBackPress} />
-      {overlay ? <SheetOverlay {...overlayProps} /> : null}
-      {handle ? <SheetHandle {...resolvedHandleProps} /> : null}
-      <SheetFrame {...frameProps}>
-        {scrollView ? <SheetScrollView {...scrollViewProps}>{content}</SheetScrollView> : content}
-      </SheetFrame>
-      {children}
+      {structuredChildren}
     </ReplicaSheet>
   );
 
@@ -247,22 +233,10 @@ function SheetController(props: SheetControllerProps) {
 }
 
 function SheetFrame(props: SheetFrameProps) {
-  const isNativeSheet = useContext(NativeSheetRenderContext);
-
-  if (isNativeSheet) {
-    return <YStack {...props} />;
-  }
-
   return <ReplicaSheet.Frame {...props} />;
 }
 
 function SheetOverlay(props: SheetOverlayProps) {
-  const isNativeSheet = useContext(NativeSheetRenderContext);
-
-  if (isNativeSheet) {
-    return null;
-  }
-
   return (
     <ReplicaSheet.Overlay
       {...props}
@@ -276,32 +250,11 @@ function SheetOverlay(props: SheetOverlayProps) {
 }
 
 function SheetHandle(props: SheetHandleProps) {
-  const isNativeSheet = useContext(NativeSheetRenderContext);
-
-  if (isNativeSheet) {
-    return <YStack {...props} />;
-  }
-
   return <ReplicaSheet.Handle {...props} />;
 }
 
 const SheetScrollView = forwardRef<GetRef<typeof ReplicaSheet.ScrollView>, SheetScrollViewProps>(
-  (props, ref) => {
-    const isNativeSheet = useContext(NativeSheetRenderContext);
-
-    if (isNativeSheet) {
-      return (
-        <TrueSheetScrollContent
-          ref={ref as React.Ref<any>}
-          {...(props as React.ComponentProps<typeof TrueSheetScrollContent>)}
-        >
-          {props.children}
-        </TrueSheetScrollContent>
-      );
-    }
-
-    return <ReplicaSheet.ScrollView ref={ref} {...props} />;
-  },
+  (props, ref) => <ReplicaSheet.ScrollView ref={ref} {...props} />,
 );
 SheetScrollView.displayName = "SheetScrollView";
 
@@ -327,7 +280,7 @@ function SheetBackHandler(props: SheetBackPressBehaviorProps) {
   return null;
 }
 
-export const SimpleSheet = Object.assign(SheetRoot, {
+export const Sheet = Object.assign(SheetRoot, {
   Controlled: SheetControlled,
   Controller: SheetController,
   Frame: SheetFrame,

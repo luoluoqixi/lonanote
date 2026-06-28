@@ -23,6 +23,7 @@ import { LinearGradient } from "tamagui/linear-gradient";
 
 import { isWeb, os } from "@/api/common/platform";
 import { Sheet } from "@/components/ui/sheet";
+import { NativeSheet } from "@/components/ui/sheet/native_sheet";
 import {
   resolveAriaLabel,
   triggerNativeHaptics,
@@ -102,6 +103,13 @@ const DEFAULT_IOS_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
 const DEFAULT_NATIVE = !isWeb();
 
 const SelectAdaptHiddenContext = React.createContext(true);
+type SelectSheetControlContextValue = {
+  onAnimationComplete?: (event: { open: boolean }) => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+};
+
+const SelectSheetControlContext = React.createContext<SelectSheetControlContextValue | null>(null);
 
 type TouchSheetConfig = {
   frameMaxHeight?: SelectProps["touchSheetMaxHeight"];
@@ -120,7 +128,6 @@ type ResolvedSelectBehavior = {
 
 type SelectSheetBaseProps = {
   initialScrollY?: number | null;
-  isNativeSheet?: boolean;
   sheetScrollRef: React.RefObject<any>;
   shouldUseTouchSheetLayout: boolean;
   touchSheetConfig: TouchSheetConfig;
@@ -252,14 +259,12 @@ const SelectAdapt = Object.assign(SelectAdaptRoot, {
 
 function SelectCustomSheet({
   initialScrollY,
-  isNativeSheet,
   sheetScrollRef,
   shouldUseTouchSheetLayout,
   touchSheetConfig,
 }: SelectSheetBaseProps) {
   return (
     <Sheet
-      native={false}
       modal
       dismissOnSnapToBottom
       snapPoints={touchSheetConfig.snapPoints}
@@ -268,7 +273,6 @@ function SelectCustomSheet({
     >
       <SelectSheetFrame
         initialScrollY={initialScrollY}
-        isNativeSheet={isNativeSheet}
         sheetScrollRef={sheetScrollRef}
         shouldUseTouchSheetLayout={shouldUseTouchSheetLayout}
         touchSheetConfig={touchSheetConfig}
@@ -289,66 +293,38 @@ function SelectNativeSheet({
   shouldUseTouchSheetLayout,
   touchSheetConfig,
 }: SelectSheetBaseProps) {
+  const sheetControl = React.useContext(SelectSheetControlContext);
+
+  if (sheetControl == null) {
+    return null;
+  }
+
   return (
-    <Sheet
-      native
+    <NativeSheet
+      content={
+        <SelectNativeSheetFrame
+          initialScrollY={initialScrollY}
+          sheetScrollRef={sheetScrollRef}
+          shouldUseTouchSheetLayout={shouldUseTouchSheetLayout}
+          touchSheetConfig={touchSheetConfig}
+        />
+      }
       modal
-      dismissOnSnapToBottom
+      onAnimationComplete={sheetControl.onAnimationComplete}
+      onOpenChange={sheetControl.onOpenChange}
+      open={sheetControl.open}
       snapPoints={touchSheetConfig.snapPoints}
       snapPointsMode={touchSheetConfig.snapPointsMode}
-      transitionConfig={{ type: "timing", duration: 150 }}
-    >
-      <SelectSheetFrame
-        initialScrollY={initialScrollY}
-        isNativeSheet
-        sheetScrollRef={sheetScrollRef}
-        shouldUseTouchSheetLayout={shouldUseTouchSheetLayout}
-        touchSheetConfig={touchSheetConfig}
-      />
-      <Sheet.Overlay
-        bg="$shadowColor"
-        transition="lazy"
-        enterStyle={{ opacity: 0 }}
-        exitStyle={{ opacity: 0 }}
-      />
-    </Sheet>
+    />
   );
 }
 
 function SelectSheetFrame({
   initialScrollY,
-  isNativeSheet,
   sheetScrollRef,
   shouldUseTouchSheetLayout,
   touchSheetConfig,
 }: SelectSheetBaseProps) {
-  if (shouldUseTouchSheetLayout && isNativeSheet) {
-    return (
-      <Sheet.Frame
-        {...(touchSheetConfig.frameMaxHeight != null
-          ? { maxHeight: touchSheetConfig.frameMaxHeight }
-          : null)}
-        borderTopLeftRadius={36}
-        borderTopRightRadius={36}
-        style={{ flex: 1, minHeight: 0, paddingTop: 12 }}
-      >
-        <Sheet.Handle
-          alignSelf="center"
-          backgroundColor="$color8"
-          borderRadius={999}
-          height={5}
-          marginBottom={6}
-          opacity={0.65}
-          onPress={() => {}}
-          width={92}
-        />
-        <YStack style={{ ...IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE, flex: 1, minHeight: 0 }}>
-          <SelectAdapt.Contents />
-        </YStack>
-      </Sheet.Frame>
-    );
-  }
-
   return (
     <Sheet.Frame
       {...(touchSheetConfig.frameMaxHeight != null
@@ -356,7 +332,7 @@ function SelectSheetFrame({
         : null)}
       {...(shouldUseTouchSheetLayout
         ? {
-            ...(isNativeSheet ? null : { backgroundColor: TOUCH_SHEET_FRAME_BACKGROUND }),
+            backgroundColor: TOUCH_SHEET_FRAME_BACKGROUND,
             borderTopLeftRadius: 36,
             borderTopRightRadius: 36,
             paddingTop: 12,
@@ -380,17 +356,13 @@ function SelectSheetFrame({
           <Sheet.ScrollView
             contentOffset={initialScrollY != null ? { x: 0, y: initialScrollY } : undefined}
             ref={sheetScrollRef}
-            extraBottomPadding={isNativeSheet ? 0 : undefined}
             sheetDragDisabledScrollIndicatorWidth={44}
             showsVerticalScrollIndicator
           >
             <YStack
-              {...(!isNativeSheet ? { background: TOUCH_SHEET_FRAME_BACKGROUND } : null)}
+              background={TOUCH_SHEET_FRAME_BACKGROUND}
               style={{
-                ...(isNativeSheet
-                  ? IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE
-                  : TOUCH_SHEET_SCROLL_CONTENT_STYLE),
-                ...(isNativeSheet ? { paddingBottom: 0 } : null),
+                ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
               }}
             >
               <SelectAdapt.Contents />
@@ -398,12 +370,9 @@ function SelectSheetFrame({
           </Sheet.ScrollView>
         ) : (
           <YStack
-            {...(!isNativeSheet ? { background: TOUCH_SHEET_FRAME_BACKGROUND } : null)}
+            background={TOUCH_SHEET_FRAME_BACKGROUND}
             style={{
-              ...(isNativeSheet
-                ? IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE
-                : TOUCH_SHEET_SCROLL_CONTENT_STYLE),
-              ...(isNativeSheet ? { paddingBottom: 0 } : null),
+              ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
             }}
           >
             <SelectAdapt.Contents />
@@ -415,6 +384,45 @@ function SelectSheetFrame({
         </Sheet.ScrollView>
       )}
     </Sheet.Frame>
+  );
+}
+
+function SelectNativeSheetFrame({
+  shouldUseTouchSheetLayout,
+  touchSheetConfig,
+}: SelectSheetBaseProps) {
+  if (!shouldUseTouchSheetLayout) {
+    return (
+      <YStack style={IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE}>
+        <SelectAdapt.Contents />
+      </YStack>
+    );
+  }
+
+  return (
+    <YStack
+      {...(touchSheetConfig.frameMaxHeight != null
+        ? { maxHeight: touchSheetConfig.frameMaxHeight }
+        : null)}
+      borderTopLeftRadius={36}
+      borderTopRightRadius={36}
+      style={{ flex: 1, minHeight: 0, paddingTop: 12 }}
+    >
+      <YStack
+        style={{
+          alignSelf: "center",
+          backgroundColor: "#8e8e93",
+          borderRadius: 999,
+          height: 5,
+          marginBottom: 6,
+          opacity: 0.65,
+          width: 92,
+        }}
+      />
+      <YStack style={{ ...IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE, flex: 1, minHeight: 0 }}>
+        <SelectAdapt.Contents />
+      </YStack>
+    </YStack>
   );
 }
 
@@ -454,21 +462,34 @@ function SelectSheetController(props: {
     [props.onOpenAnimationComplete, props.shouldRunOpenAnimationComplete],
   );
 
+  const handleSheetOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      if (isAdapted) {
+        itemParentContext.setOpen(nextOpen);
+      }
+    },
+    [isAdapted, itemParentContext],
+  );
+
   return (
-    <Sheet.Controller
-      hidden={!isAdapted}
-      onAnimationComplete={handleSheetAnimationComplete}
-      onOpenChange={(nextOpen: boolean) => {
-        if (isAdapted) {
-          itemParentContext.setOpen(nextOpen);
-        }
+    <SelectSheetControlContext.Provider
+      value={{
+        onAnimationComplete: handleSheetAnimationComplete,
+        onOpenChange: handleSheetOpenChange,
+        open: context.open,
       }}
-      open={context.open}
     >
-      <SelectAdaptHiddenContext.Provider value={isAdaptFullyHidden}>
-        {props.children}
-      </SelectAdaptHiddenContext.Provider>
-    </Sheet.Controller>
+      <Sheet.Controller
+        hidden={!isAdapted}
+        onAnimationComplete={handleSheetAnimationComplete}
+        onOpenChange={handleSheetOpenChange}
+        open={context.open}
+      >
+        <SelectAdaptHiddenContext.Provider value={isAdaptFullyHidden}>
+          {props.children}
+        </SelectAdaptHiddenContext.Provider>
+      </Sheet.Controller>
+    </SelectSheetControlContext.Provider>
   );
 }
 
@@ -1099,7 +1120,6 @@ const SelectRoot = forwardRef<any, SelectProps>(
                       {selectBehavior.shouldUseCustomSheet ? (
                         <SelectCustomSheet
                           initialScrollY={initialScrollY}
-                          isNativeSheet={false}
                           sheetScrollRef={sheetScrollRef}
                           shouldUseTouchSheetLayout={shouldUseTouchSheetLayout}
                           touchSheetConfig={touchSheetConfig}
@@ -1121,7 +1141,6 @@ const SelectRoot = forwardRef<any, SelectProps>(
                         >
                           <SelectSheetFrame
                             initialScrollY={initialScrollY}
-                            isNativeSheet={false}
                             sheetScrollRef={sheetScrollRef}
                             shouldUseTouchSheetLayout={shouldUseTouchSheetLayout}
                             touchSheetConfig={touchSheetConfig}

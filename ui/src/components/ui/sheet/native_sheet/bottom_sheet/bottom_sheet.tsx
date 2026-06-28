@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from "react";
 import { BackHandler, StyleSheet } from "react-native";
 
-import { Sheet as ReplicaSheet } from "@/components/ui/sheet/simple_sheet/sheet/Sheet";
-import type { SnapPointsMode } from "@/components/ui/sheet/simple_sheet/sheet/types";
+import { Sheet as ReplicaSheet } from "@/components/ui/sheet/sheet/replica_sheet/Sheet";
+import type { SnapPointsMode } from "@/components/ui/sheet/sheet/replica_sheet/types";
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
 import type { NativeSheetProps } from "../types";

@@ -1,9 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 
-import type { TrueSheetScrollContentProps } from "@/components/ui/sheet/native_sheet/true_sheet/scroll_content";
-
-import type * as ReplicaSheetModule from "./sheet/Sheet";
-import type * as ReplicaSheetControllerModule from "./sheet/SheetController";
+import type * as ReplicaSheetModule from "./replica_sheet/Sheet";
+import type * as ReplicaSheetControllerModule from "./replica_sheet/SheetController";
 
 export interface SheetProps extends Omit<
   ComponentProps<typeof ReplicaSheetModule.Sheet>,
@@ -14,9 +12,6 @@ export interface SheetProps extends Omit<
   frameProps?: SheetFrameProps;
   handle?: boolean;
   handleProps?: SheetHandleProps;
-  /** 仅 Android / iOS 生效。
-   * iOS 默认 true，Android 默认 false。开启后由 TrueSheet 接管渲染。 */
-  native?: boolean;
   overlay?: boolean;
   overlayProps?: SheetOverlayProps;
   scrollView?: boolean;
@@ -30,5 +25,4 @@ export type SheetControllerProps = ComponentProps<
 export type SheetFrameProps = ComponentProps<typeof ReplicaSheetModule.Sheet.Frame>;
 export type SheetOverlayProps = ComponentProps<typeof ReplicaSheetModule.Sheet.Overlay>;
 export type SheetHandleProps = ComponentProps<typeof ReplicaSheetModule.Sheet.Handle>;
-export type SheetScrollViewProps = ComponentProps<typeof ReplicaSheetModule.Sheet.ScrollView> &
-  Pick<TrueSheetScrollContentProps, "extraBottomPadding">;
+export type SheetScrollViewProps = ComponentProps<typeof ReplicaSheetModule.Sheet.ScrollView>;

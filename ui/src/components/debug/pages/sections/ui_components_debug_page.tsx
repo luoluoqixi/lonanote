@@ -42,7 +42,6 @@ import {
   Select,
   Separator,
   Sheet,
-  SimpleSheet,
   Slider,
   Spinner,
   Switch,
@@ -73,6 +72,63 @@ function DemoRow({ children }: { children: ReactNode }) {
   return <View style={styles.row}>{children}</View>;
 }
 
+type DemoModalSheetProps = {
+  content: ReactNode;
+  native: boolean;
+  onOpenChange: (open: boolean) => void;
+  onPositionChange: (position: number) => void;
+  open: boolean;
+  position: number;
+  snapPoints?: Array<string | number>;
+  snapPointsMode?: "percent" | "constant" | "fit" | "mixed";
+};
+
+function DemoModalSheet({
+  content,
+  native,
+  onOpenChange,
+  onPositionChange,
+  open,
+  position,
+  snapPoints,
+  snapPointsMode,
+}: DemoModalSheetProps) {
+  if (native) {
+    return (
+      <NativeSheet
+        content={content}
+        handle
+        modal
+        onOpenChange={onOpenChange}
+        onPositionChange={onPositionChange}
+        open={open}
+        overlay
+        position={position}
+        snapPoints={snapPoints}
+        snapPointsMode={snapPointsMode}
+      />
+    );
+  }
+
+  return (
+    <Sheet
+      content={content}
+      dismissOnSnapToBottom
+      frameProps={{ style: styles.sheetFrame }}
+      handle
+      modal
+      onOpenChange={onOpenChange}
+      onPositionChange={onPositionChange}
+      open={open}
+      overlay
+      position={position}
+      snapPoints={snapPoints}
+      snapPointsMode={snapPointsMode}
+      transition="medium"
+    />
+  );
+}
+
 export function UiComponentsDebugPage() {
   const { toast } = useToast();
   const [checkboxChecked, setCheckboxChecked] = useState(true);
@@ -101,7 +157,7 @@ export function UiComponentsDebugPage() {
   const [sheetPosition, setSheetPosition] = useState(0);
   const [sheetNativeEnabled, setSheetNativeEnabled] = useState(true);
   const [explicitNativeSheetOpen, setExplicitNativeSheetOpen] = useState(false);
-  const [simpleSheetOpen, setSimpleSheetOpen] = useState(false);
+  const [explicitSheetOpen, setExplicitSheetOpen] = useState(false);
   const [percentSheetOpen, setPercentSheetOpen] = useState(false);
   const [percentSheetPosition, setPercentSheetPosition] = useState(0);
   const [constantSheetOpen, setConstantSheetOpen] = useState(false);
@@ -1226,7 +1282,7 @@ export function UiComponentsDebugPage() {
           {mixedSheetOpen ? `打开，position=${mixedSheetPosition}` : "关闭"}
         </Text>
         <Text color="$color10">显式 NativeSheet：{explicitNativeSheetOpen ? "打开" : "关闭"}</Text>
-        <Text color="$color10">显式 SimpleSheet：{simpleSheetOpen ? "打开" : "关闭"}</Text>
+        <Text color="$color10">显式 Sheet：{explicitSheetOpen ? "打开" : "关闭"}</Text>
 
         <View style={styles.sheetDemoHost}>
           <Text color="$color10">
@@ -1271,7 +1327,7 @@ export function UiComponentsDebugPage() {
           onOpenChange={handlePercentSheetOpenChange}
           open={percentSheetOpen}
         >
-          <Sheet
+          <DemoModalSheet
             content={
               <View style={styles.globalSheetContent}>
                 <Text fontSize="$5" fontWeight="600">
@@ -1308,7 +1364,7 @@ export function UiComponentsDebugPage() {
                   onOpenChange={handleNestedGlobalSheetOpenChange}
                   open={nestedGlobalSheetOpen}
                 >
-                  <Sheet
+                  <DemoModalSheet
                     content={
                       <View style={styles.nestedSheetContent}>
                         <Text fontSize="$6" fontWeight="700">
@@ -1330,36 +1386,24 @@ export function UiComponentsDebugPage() {
                         </Button>
                       </View>
                     }
-                    dismissOnSnapToBottom
-                    frameProps={{ style: styles.sheetFrame }}
-                    handle
-                    modal
                     native={sheetNativeEnabled}
                     onOpenChange={handleNestedGlobalSheetOpenChange}
                     onPositionChange={handleNestedGlobalSheetPositionChange}
                     open={nestedGlobalSheetOpen}
-                    overlay
                     position={nestedGlobalSheetPosition}
                     snapPoints={["72%", "88%"]}
                     snapPointsMode="percent"
-                    transition="medium"
                   />
                 </Sheet.Controller>
               </View>
             }
-            dismissOnSnapToBottom
-            frameProps={{ style: styles.sheetFrame }}
-            handle
-            modal
             native={sheetNativeEnabled}
             onOpenChange={handlePercentSheetOpenChange}
             onPositionChange={handlePercentSheetPositionChange}
             open={percentSheetOpen}
-            overlay
             position={percentSheetPosition}
             snapPoints={["62%", "90%"]}
             snapPointsMode="percent"
-            transition="medium"
           />
         </Sheet.Controller>
 
@@ -1368,7 +1412,7 @@ export function UiComponentsDebugPage() {
           onOpenChange={handleConstantSheetOpenChange}
           open={constantSheetOpen}
         >
-          <Sheet
+          <DemoModalSheet
             content={
               <View style={styles.globalSheetContent}>
                 <Text fontSize="$5" fontWeight="600">
@@ -1391,19 +1435,13 @@ export function UiComponentsDebugPage() {
                 </Button>
               </View>
             }
-            dismissOnSnapToBottom
-            frameProps={{ style: styles.sheetFrame }}
-            handle
-            modal
             native={sheetNativeEnabled}
             onOpenChange={handleConstantSheetOpenChange}
             onPositionChange={handleConstantSheetPositionChange}
             open={constantSheetOpen}
-            overlay
             position={constantSheetPosition}
             snapPoints={[360, 560]}
             snapPointsMode="constant"
-            transition="medium"
           />
         </Sheet.Controller>
 
@@ -1412,7 +1450,7 @@ export function UiComponentsDebugPage() {
           onOpenChange={handleFitSheetOpenChange}
           open={fitSheetOpen}
         >
-          <Sheet
+          <DemoModalSheet
             content={
               <View style={styles.globalSheetContent}>
                 <Text fontSize="$5" fontWeight="600">
@@ -1435,18 +1473,12 @@ export function UiComponentsDebugPage() {
                 </Button>
               </View>
             }
-            dismissOnSnapToBottom
-            frameProps={{ style: styles.sheetFrame }}
-            handle
-            modal
             native={sheetNativeEnabled}
             onOpenChange={handleFitSheetOpenChange}
             onPositionChange={handleFitSheetPositionChange}
             open={fitSheetOpen}
-            overlay
             position={fitSheetPosition}
             snapPointsMode="fit"
-            transition="medium"
           />
         </Sheet.Controller>
 
@@ -1455,7 +1487,7 @@ export function UiComponentsDebugPage() {
           onOpenChange={handleMixedSheetOpenChange}
           open={mixedSheetOpen}
         >
-          <Sheet
+          <DemoModalSheet
             content={
               <View style={styles.globalSheetContent}>
                 <Text fontSize="$5" fontWeight="600">
@@ -1478,19 +1510,13 @@ export function UiComponentsDebugPage() {
                 </Button>
               </View>
             }
-            dismissOnSnapToBottom
-            frameProps={{ style: styles.sheetFrame }}
-            handle
-            modal
             native={sheetNativeEnabled}
             onOpenChange={handleMixedSheetOpenChange}
             onPositionChange={handleMixedSheetPositionChange}
             open={mixedSheetOpen}
-            overlay
             position={mixedSheetPosition}
             snapPoints={["fit", "80%"]}
             snapPointsMode="mixed"
-            transition="medium"
           />
         </Sheet.Controller>
 
@@ -1504,10 +1530,10 @@ export function UiComponentsDebugPage() {
           </Button>
           <Button
             nativeHaptics={debugNativeHaptics}
-            onPress={() => setSimpleSheetOpen(true)}
+            onPress={() => setExplicitSheetOpen(true)}
             variant="outlined"
           >
-            Open SimpleSheet
+            Open Sheet
           </Button>
         </DemoRow>
 
@@ -1536,28 +1562,27 @@ export function UiComponentsDebugPage() {
           snapPointsMode="percent"
         />
 
-        <SimpleSheet
+        <Sheet
           content={
             <View style={styles.globalSheetContent}>
               <Text fontSize="$5" fontWeight="600">
-                SimpleSheet
+                Sheet
               </Text>
               <Text color="$color10">保留 Tamagui/replica 路径的轻量入口。</Text>
               <Button
                 nativeHaptics={debugNativeHaptics}
-                onPress={() => setSimpleSheetOpen(false)}
+                onPress={() => setExplicitSheetOpen(false)}
                 theme="accent"
               >
-                关闭 SimpleSheet
+                关闭 Sheet
               </Button>
             </View>
           }
           dismissOnSnapToBottom
           handle
           modal
-          native={false}
-          onOpenChange={setSimpleSheetOpen}
-          open={simpleSheetOpen}
+          onOpenChange={setExplicitSheetOpen}
+          open={explicitSheetOpen}
           overlay
           snapPoints={["68%"]}
           snapPointsMode="percent"
