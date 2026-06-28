@@ -5,9 +5,9 @@ import { DeviceEventEmitter, Platform } from "react-native";
 import { isDesktop, isWeb } from "@/api/common";
 
 import { toggleDebugPanel } from "./debug_panel_sheet_state";
+import { DebugNativeSheetHost } from "./native_sheet";
 import { isDebugFeatureEnabled } from "./release_gate";
 import { DEBUG_PANEL_TOGGLE_EVENT } from "./routes";
-import { DebugNativeSheetHost } from "./true_sheet";
 import { DebugPanelGestureLayer, DebugWidePanelHost } from "./wide_panel";
 
 function DebugMobilePanelToggleListener() {

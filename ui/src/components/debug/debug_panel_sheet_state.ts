@@ -2,7 +2,7 @@ import { type Href, router } from "expo-router";
 import { useSyncExternalStore } from "react";
 
 import { iosMajorVersion, os } from "@/api/common/platform";
-import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
+import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/debug_overlay_portal";
 
 import { DEBUG_HOME_HREF, type DebugTabKey, getDebugFullPageHref } from "./routes";
 

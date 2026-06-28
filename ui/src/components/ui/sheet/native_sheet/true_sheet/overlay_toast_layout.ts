@@ -1,4 +1,5 @@
 import { os } from "@/api/common/platform";
+import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/debug_overlay_portal";
 import { getTrueSheetPartialDetentCompensationScale } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_metrics";
 
 const platform = os();
@@ -7,9 +8,6 @@ const platform = os();
  * Scoped overlay host 的布局补偿（Toast viewport 间距 + True Sheet 浮层底边）。
  * Toast：toastLayer 1× + Viewport `bottom`；居中 Dialog：`getTrueSheetCenteredModalLiftAmount` → content `y` 偏移（勿缩短 teleport 遮罩）。
  */
-
-/** 与 debug True Sheet 宿主 `ScreenOverlayPortalProvider` 的 hostName 保持一致 */
-export const DEBUG_OVERLAY_PORTAL_HOST = "debug-overlay";
 
 /** Sheet / overlay 内 Toast 默认底边距（Android 等） */
 export const SCOPED_TOAST_VIEWPORT_INSET = 24;

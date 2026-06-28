@@ -1,8 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { os } from "@/api/common/platform";
-import { ScrollView, Text } from "@/components/ui";
-import { TrueSheetScrollContent } from "@/components/ui/sheet/native_sheet/true_sheet/scroll_content";
+import { NativeSheetScrollContent, ScrollView, Text } from "@/components/ui";
 
 import { type DebugTabKey, getDebugPanelRouteDefinition } from "../routes";
 
@@ -22,13 +21,13 @@ export function DebugSectionPage({
 
   if (layoutHost === "nativeSheet" && definition.presentation === "static") {
     return (
-      <TrueSheetScrollContent
+      <NativeSheetScrollContent
         contentContainerStyle={styles.staticScrollContent}
         style={styles.staticScrollView}
       >
         {header != null ? <View style={styles.staticContentHeader}>{header}</View> : null}
         <SectionPage />
-      </TrueSheetScrollContent>
+      </NativeSheetScrollContent>
     );
   }
 
