@@ -1,5 +1,5 @@
 import { useComposedRefs } from "@tamagui/compose-refs";
-import { useIsomorphicLayoutEffect } from "@tamagui/constants";
+import { isWeb, useIsomorphicLayoutEffect } from "@tamagui/constants";
 import type {
   GetProps,
   TamaguiComponent,
@@ -26,6 +26,7 @@ import { getNativeSheet } from "./nativeSheet";
 import type { SheetProps, SheetScopedProps } from "./types";
 import { useSheetController } from "./useSheetController";
 import { useSheetOffscreenSize } from "./useSheetOffscreenSize";
+import { getMaxViewportHeight } from "./webViewport";
 
 type SharedSheetProps = {
   open?: boolean;
@@ -217,6 +218,7 @@ export function createSheet<
             <Frame
               {...props}
               componentName="SheetCover"
+              data-sheet-cover=""
               children={null}
               // Don't inherit testID - this is a visual helper element
               testID={undefined}
@@ -225,7 +227,10 @@ export function createSheet<
               pointerEvents="none"
               top={Math.max(0, context.frameSize - 1)}
               zIndex={0}
-              height={context.frameSize}
+              height={
+                isWeb ? Math.max(context.frameSize, getMaxViewportHeight()) : context.frameSize
+              }
+              maxHeight={isWeb ? "none" : undefined}
               left={0}
               right={0}
               borderWidth={0}

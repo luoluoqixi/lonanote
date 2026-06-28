@@ -36,6 +36,7 @@ import { useKeyboardControllerSheet } from "./useKeyboardControllerSheet";
 import { useSheetOpenState } from "./useSheetOpenState";
 import { useSheetProviderProps } from "./useSheetProviderProps";
 import { useLockPageSheetDismiss } from "./use_lock_page_sheet_dismiss";
+import { getMaxViewportHeight } from "./webViewport";
 
 const INNER_SHEET_PARENT_DRAG_UNLOCK_DELAY_MS = 180;
 
@@ -363,7 +364,8 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     const animateTo = useEvent((position: number, animationOverride?: any) => {
       if (frameSize === 0) return;
 
-      const toValue = isHidden || position === -1 ? screenSize : activePositions[position];
+      const closeTarget = isWeb ? Math.max(screenSize, getMaxViewportHeight()) : screenSize;
+      const toValue = isHidden || position === -1 ? closeTarget : activePositions[position];
 
       if (at.current === toValue) return;
 
