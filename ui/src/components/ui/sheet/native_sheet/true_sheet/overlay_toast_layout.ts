@@ -19,7 +19,7 @@ export const SCOPED_TOAST_VIEWPORT_INSET = 24;
  * Android 端低/中 detent 的嵌套 Sheet 会比可视内容底部略低一截，
  * 这里额外抬高一档，避免 Toast 落回底部留白区。
  */
-export const TRUE_SHEET_TOAST_DETENT_LIFT = platform === "ios" ? -56 : 120;
+export const TRUE_SHEET_TOAST_DETENT_LIFT = platform === "ios" ? -56 : 60;
 
 /** iOS Native Stack pageSheet 等 overlay：略抬高，避免贴 Home 条 */
 export const IOS_PAGE_SHEET_TOAST_VIEWPORT_INSET = 36;
