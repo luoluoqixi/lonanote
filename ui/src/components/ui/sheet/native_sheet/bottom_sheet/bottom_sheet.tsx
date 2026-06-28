@@ -1,21 +1,17 @@
-import { BottomSheetBackdrop, BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BackHandler, StyleSheet, View } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useEffect, useMemo } from "react";
+import { BackHandler, StyleSheet } from "react-native";
 
+import { Sheet as ReplicaSheet } from "@/components/ui/sheet/simple_sheet/sheet/Sheet";
+import type { SnapPointsMode } from "@/components/ui/sheet/simple_sheet/sheet/types";
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
 import type { NativeSheetProps } from "../types";
-import { BottomSheetScrollableProvider } from "./scrollable_context";
-import { resolveBottomSheetSnapPoints } from "./snap_points";
-
-const SHEET_ACTIVE_OFFSET_Y: [number, number] = [-10, 10];
-const SHEET_FAIL_OFFSET_X: [number, number] = [-20, 20];
 
 type BottomSheetPanelProps = {
   children: React.ReactNode;
   dismissOnBackPress?: boolean;
   dismissOnOverlayPress?: boolean;
+  disableDrag?: boolean;
   enableHandle?: boolean;
   name?: string;
   onAnimationComplete?: NativeSheetProps["onAnimationComplete"];
@@ -29,12 +25,62 @@ type BottomSheetPanelProps = {
   snapPointsMode: NativeSheetProps["snapPointsMode"];
 };
 
+type ResolvedReplicaSheetSnapPoints = {
+  snapPoints?: Array<string | number>;
+  snapPointsMode: SnapPointsMode;
+};
+
+const DEFAULT_OVERLAY_ENTER_STYLE = { opacity: 0 } as const;
+const DEFAULT_OVERLAY_EXIT_STYLE = { opacity: 0 } as const;
+
+function normalizePercentString(point: string) {
+  const matched = point.trim().match(/^(\d+(?:\.\d+)?)%$/);
+  return matched == null ? null : Number.parseFloat(matched[1]);
+}
+
+function resolveReplicaSheetSnapPoints(
+  snapPoints: NativeSheetProps["snapPoints"],
+  snapPointsMode: NativeSheetProps["snapPointsMode"],
+): ResolvedReplicaSheetSnapPoints {
+  if (snapPointsMode === "fit") {
+    return {
+      snapPoints: ["fit"],
+      snapPointsMode: "fit",
+    };
+  }
+
+  if (snapPoints == null || snapPoints.length === 0) {
+    return {
+      snapPoints: [100],
+      snapPointsMode: "percent",
+    };
+  }
+
+  const hasFitPoint = snapPoints.some((point) => point === "fit");
+  const resolvedMode =
+    snapPointsMode ?? (hasFitPoint ? "mixed" : ("percent" satisfies SnapPointsMode));
+
+  if (resolvedMode === "percent") {
+    return {
+      snapPoints: snapPoints.map((point) =>
+        typeof point === "string" ? (normalizePercentString(point) ?? point) : point,
+      ),
+      snapPointsMode: "percent",
+    };
+  }
+
+  return {
+    snapPoints,
+    snapPointsMode: resolvedMode,
+  };
+}
+
 export function BottomSheetPanel({
   children,
   dismissOnBackPress = true,
   dismissOnOverlayPress = true,
+  disableDrag,
   enableHandle = true,
-  name,
   onAnimationComplete,
   onOpenChange,
   onPositionChange,
@@ -45,52 +91,11 @@ export function BottomSheetPanel({
   snapPoints,
   snapPointsMode,
 }: BottomSheetPanelProps) {
-  const modalRef = useRef<BottomSheetModal>(null);
-  const requestedOpenRef = useRef(open);
-  const phaseRef = useRef<"closed" | "presenting" | "presented" | "dismissing">("closed");
-  const reopenAfterDismissRef = useRef(false);
-  const [hostInteractive, setHostInteractive] = useState(open);
-  const { enableDynamicSizing, snapPoints: resolvedSnapPoints } = useMemo(
-    () => resolveBottomSheetSnapPoints(snapPoints, snapPointsMode),
+  const { snapPoints: resolvedSnapPoints, snapPointsMode: resolvedSnapPointsMode } = useMemo(
+    () => resolveReplicaSheetSnapPoints(snapPoints, snapPointsMode),
     [snapPoints, snapPointsMode],
   );
   const resolvedPosition = Number.isFinite(position) ? Math.max(0, Math.round(position)) : 0;
-  requestedOpenRef.current = open;
-
-  useEffect(() => {
-    if (open) {
-      setHostInteractive(true);
-      if (phaseRef.current === "dismissing") {
-        reopenAfterDismissRef.current = true;
-        return;
-      }
-
-      reopenAfterDismissRef.current = false;
-      if (phaseRef.current === "closed") {
-        phaseRef.current = "presenting";
-        modalRef.current?.present();
-        return;
-      }
-
-      if (phaseRef.current === "presented") {
-        modalRef.current?.snapToIndex(resolvedPosition);
-      }
-      return;
-    }
-
-    reopenAfterDismissRef.current = false;
-    if (phaseRef.current === "closed") {
-      setHostInteractive(false);
-      return;
-    }
-
-    if (phaseRef.current === "dismissing") {
-      return;
-    }
-
-    phaseRef.current = "dismissing";
-    modalRef.current?.dismiss();
-  }, [open, resolvedPosition]);
 
   useEffect(() => {
     if (!open || !dismissOnBackPress) {
@@ -110,73 +115,38 @@ export function BottomSheetPanel({
   const body =
     overlayPortalHostName != null ? (
       <ScreenOverlayPortalProvider hostName={overlayPortalHostName}>
-        <BottomSheetScrollableProvider>{children}</BottomSheetScrollableProvider>
+        {children}
       </ScreenOverlayPortalProvider>
     ) : (
-      <BottomSheetScrollableProvider>{children}</BottomSheetScrollableProvider>
+      children
     );
 
   return (
-    <View pointerEvents={hostInteractive ? "auto" : "none"} style={styles.hostLayer}>
-      <GestureHandlerRootView pointerEvents="box-none" style={styles.gestureRoot}>
-        <BottomSheetModal
-          ref={modalRef}
-          backdropComponent={
-            overlay
-              ? (props) => (
-                  <BottomSheetBackdrop
-                    {...props}
-                    appearsOnIndex={0}
-                    disappearsOnIndex={-1}
-                    pressBehavior={dismissOnOverlayPress ? "close" : "none"}
-                  />
-                )
-              : undefined
-          }
-          enableDynamicSizing={enableDynamicSizing}
-          enablePanDownToClose
-          activeOffsetY={SHEET_ACTIVE_OFFSET_Y}
-          failOffsetX={SHEET_FAIL_OFFSET_X}
-          handleComponent={enableHandle ? undefined : null}
-          index={resolvedPosition}
-          name={name}
-          stackBehavior="push"
-          onChange={(nextIndex) => {
-            if (nextIndex >= 0) {
-              const previousPhase = phaseRef.current;
-              phaseRef.current = "presented";
-              onPositionChange?.(nextIndex);
-              if (previousPhase !== "presented") {
-                onAnimationComplete?.({ open: true });
-              }
-              return;
-            }
-
-            phaseRef.current = "dismissing";
-            onOpenChange(false);
-          }}
-          onDismiss={() => {
-            phaseRef.current = "closed";
-
-            if (reopenAfterDismissRef.current && requestedOpenRef.current) {
-              reopenAfterDismissRef.current = false;
-              setHostInteractive(true);
-              phaseRef.current = "presenting";
-              modalRef.current?.present();
-              return;
-            }
-
-            reopenAfterDismissRef.current = false;
-            setHostInteractive(false);
-            onOpenChange(false);
-            onAnimationComplete?.({ open: false });
-          }}
-          snapPoints={resolvedSnapPoints as any}
-        >
-          <View style={styles.content}>{body}</View>
-        </BottomSheetModal>
-      </GestureHandlerRootView>
-    </View>
+    <ReplicaSheet
+      disableDrag={disableDrag}
+      dismissOnOverlayPress={dismissOnOverlayPress}
+      dismissOnSnapToBottom
+      modal
+      onAnimationComplete={onAnimationComplete}
+      onOpenChange={onOpenChange}
+      onPositionChange={onPositionChange}
+      open={open}
+      position={resolvedPosition}
+      snapPoints={resolvedSnapPoints}
+      snapPointsMode={resolvedSnapPointsMode}
+    >
+      {overlay ? (
+        <ReplicaSheet.Overlay
+          bg="$shadowColor"
+          enterStyle={DEFAULT_OVERLAY_ENTER_STYLE}
+          exitStyle={DEFAULT_OVERLAY_EXIT_STYLE}
+          opacity={0.5}
+          transition="lazy"
+        />
+      ) : null}
+      {enableHandle ? <ReplicaSheet.Handle /> : null}
+      <ReplicaSheet.Frame style={styles.content}>{body}</ReplicaSheet.Frame>
+    </ReplicaSheet>
   );
 }
 
@@ -184,12 +154,5 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     minHeight: 1,
-  },
-  hostLayer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1000,
-  },
-  gestureRoot: {
-    flex: 1,
   },
 });

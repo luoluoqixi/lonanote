@@ -52,6 +52,7 @@ export function NativeSheet({
   defaultPosition,
   dismissOnBackPress = true,
   dismissOnOverlayPress = true,
+  disableDrag,
   handle,
   modal,
   name,
@@ -86,6 +87,7 @@ export function NativeSheet({
     <BottomSheetPanel
       dismissOnBackPress={dismissOnBackPress}
       dismissOnOverlayPress={dismissOnOverlayPress}
+      disableDrag={disableDrag}
       enableHandle={handle ?? false}
       name={sheetName}
       onAnimationComplete={onAnimationComplete}

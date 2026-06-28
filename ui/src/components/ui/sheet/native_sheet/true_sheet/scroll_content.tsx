@@ -1,4 +1,3 @@
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { type ReactNode, forwardRef } from "react";
 import {
   ScrollView,
@@ -10,7 +9,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { os } from "@/api/common/platform";
-import { useBottomSheetScrollableContext } from "@/components/ui/sheet/native_sheet/bottom_sheet/scrollable_context";
 
 import { AndroidClippedScrollView } from "./android_clipped_scroll_view";
 import {
@@ -33,25 +31,8 @@ export type TrueSheetScrollContentProps = Omit<ScrollViewProps, "children"> & {
 export const TrueSheetScrollContent = forwardRef<ScrollView, TrueSheetScrollContentProps>(
   ({ children, contentContainerStyle, extraBottomPadding, style, ...rest }, ref) => {
     const insets = useSafeAreaInsets();
-    const insideBottomSheetScrollable = useBottomSheetScrollableContext();
     const { automaticContentInsetAdjustment, insetAdjustment, nativeScrollInsetsApplied } =
       useTrueSheetScrollLayout();
-
-    if (os() === "android" && insideBottomSheetScrollable) {
-      return (
-        <BottomSheetScrollView
-          ref={ref as any}
-          keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled
-          showsVerticalScrollIndicator
-          style={[styles.androidScroll, style]}
-          contentContainerStyle={[styles.androidContent, contentContainerStyle]}
-          {...(rest as any)}
-        >
-          {children}
-        </BottomSheetScrollView>
-      );
-    }
 
     // Android：保持库钉住 ScrollView 时的原有 flexGrow 布局，不在此组件改滚动行为。
     if (os() === "android") {
