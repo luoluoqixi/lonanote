@@ -1,3 +1,6 @@
+# LonaNote expo-haptics fallback patch:
+# - Adds CoreHaptics capability checks and AudioServices fallback for iPhone 6s/SE-class devices without Taptic Engine.
+# - Native rebuild required after changes.
 diff --git a/ios/HapticsModule.swift b/ios/HapticsModule.swift
 index 41659a0..b003e35 100644
 --- a/ios/HapticsModule.swift

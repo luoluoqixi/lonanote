@@ -1,3 +1,6 @@
+# LonaNote Metro patch:
+# - Normalizes resolver blockList/blacklistRE handling and watch ignore behavior for this Expo 55 Metro line.
+# - Rebuild together with metro-file-map when Metro versions change.
 diff --git a/src/node-haste/DependencyGraph/createFileMap.js b/src/node-haste/DependencyGraph/createFileMap.js
 index fedef2b..baa38c4 100644
 --- a/src/node-haste/DependencyGraph/createFileMap.js

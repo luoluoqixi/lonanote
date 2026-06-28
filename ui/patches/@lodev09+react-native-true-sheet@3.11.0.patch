@@ -1,3 +1,6 @@
+# TrueSheet iOS scroll indicator patch:
+# - Keeps TrueSheet scroll indicator bottom inset at least at TrueSheet's own bottom inset.
+# - Revalidate iOS TrueSheet stack/native controls and scroll indicators after upgrading this package.
 diff --git a/ios/TrueSheetContentView.mm b/ios/TrueSheetContentView.mm
 index 9d5ead1..b58df37 100644
 --- a/ios/TrueSheetContentView.mm

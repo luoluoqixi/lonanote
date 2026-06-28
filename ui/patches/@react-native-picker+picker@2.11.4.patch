@@ -1,3 +1,7 @@
+# LonaNote RNPicker patch:
+# - See react-native-picker issue #627.
+# - Historical mitigation for iOS wheel/RNPPicker crash behavior used by native select.
+# - Revalidate native select wheel/dialog flows before upgrading or removing.
 diff --git a/ios/RNCPickerComponentView.mm b/ios/RNCPickerComponentView.mm
 index 75edfa9..2634eae 100644
 --- a/ios/RNCPickerComponentView.mm

@@ -1,3 +1,6 @@
+# LonaNote Tamagui NativePortal patch:
+# - Gives NativePortal stable per-item names for teleport-backed scoped portal hosts.
+# - Keep in sync with @tamagui+portal@2.1.0.patch.
 diff --git a/dist/esm/components.native.js b/dist/esm/components.native.js
 index a080ce9..e812668 100644
 --- a/dist/esm/components.native.js
