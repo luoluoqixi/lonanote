@@ -87,6 +87,11 @@ const SliderHorizontal = React.forwardRef<View, SliderHorizontalProps>(
       return value(pointerPosition);
     }
 
+    function getPointerPosition(event: GestureReponderEvent) {
+      const nativeEvent = event.nativeEvent;
+      return isWeb ? nativeEvent.pageX - state.offset : nativeEvent.locationX;
+    }
+
     const measure = () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       sliderRef.current?.measure((_x, _y, width, _height, pageX, _pageY) => {
@@ -123,13 +128,13 @@ const SliderHorizontal = React.forwardRef<View, SliderHorizontalProps>(
             }
           }}
           onSlideMove={(event) => {
-            const value = getValueFromPointer(event.nativeEvent.pageX - state.offset);
+            const value = getValueFromPointer(getPointerPosition(event));
             if (value) {
               onSlideMove?.(value, event);
             }
           }}
           onSlideEnd={(event) => {
-            const value = getValueFromPointer(event.nativeEvent.pageX - state.offset);
+            const value = getValueFromPointer(getPointerPosition(event));
             if (value) {
               onSlideEnd?.(event, value);
             }
@@ -221,6 +226,11 @@ const SliderVertical = React.forwardRef<View, SliderVerticalProps>(
       return value(pointerPosition);
     }
 
+    function getPointerPosition(event: GestureReponderEvent) {
+      const nativeEvent = event.nativeEvent;
+      return isWeb ? nativeEvent.pageY - state.offset : nativeEvent.locationY;
+    }
+
     const measure = () => {
       sliderRef.current?.measure((_x, _y, _width, height, _pageX, pageY) => {
         setState({
@@ -255,13 +265,13 @@ const SliderVertical = React.forwardRef<View, SliderVerticalProps>(
             }
           }}
           onSlideMove={(event) => {
-            const value = getValueFromPointer(event.nativeEvent.pageY - state.offset);
+            const value = getValueFromPointer(getPointerPosition(event));
             if (value) {
               onSlideMove?.(value, event);
             }
           }}
           onSlideEnd={(event) => {
-            const value = getValueFromPointer(event.nativeEvent.pageY - state.offset);
+            const value = getValueFromPointer(getPointerPosition(event));
             onSlideEnd?.(event, value);
           }}
           onStepKeyDown={(event) => {
