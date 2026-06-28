@@ -1,8 +1,8 @@
 diff --git a/dist/esm/ToastComposable.mjs b/dist/esm/ToastComposable.mjs
-index a555cf7..1781314 100644
+index 76425275..38fe7806 100644
 --- a/dist/esm/ToastComposable.mjs
 +++ b/dist/esm/ToastComposable.mjs
-@@ -710,7 +710,6 @@ const ToastItemInner = ToastItemFrame.styleable(function ToastItem(props, ref) {
+@@ -714,7 +714,6 @@ const ToastItemInner = ToastItemFrame.styleable(function ToastItem(props, ref) {
    return /* @__PURE__ */jsx(ToastPositionWrapper, {
      ref,
      testID: rest.testID,
@@ -11,10 +11,10 @@ index a555cf7..1781314 100644
      transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
      animateOnly: isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
 diff --git a/dist/cjs/ToastComposable.cjs b/dist/cjs/ToastComposable.cjs
-index 1b77f90..d24b4df 100644
+index cb5d0399..927ffb61 100644
 --- a/dist/cjs/ToastComposable.cjs
 +++ b/dist/cjs/ToastComposable.cjs
-@@ -750,7 +750,6 @@ const ToastItemInner = import_ToastItemFrame.ToastItemFrame.styleable(function T
+@@ -754,7 +754,6 @@ const ToastItemInner = import_ToastItemFrame.ToastItemFrame.styleable(function T
    return /* @__PURE__ */(0, import_jsx_runtime.jsx)(import_ToastItemFrame.ToastPositionWrapper, {
      ref,
      testID: rest.testID,
@@ -23,10 +23,10 @@ index 1b77f90..d24b4df 100644
      transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
      animateOnly: import_constants.isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
 diff --git a/dist/esm/ToastComposable.native.js b/dist/esm/ToastComposable.native.js
-index dcf9166..d76ba51 100644
+index 67a03d3e..10fa31ef 100644
 --- a/dist/esm/ToastComposable.native.js
 +++ b/dist/esm/ToastComposable.native.js
-@@ -793,7 +793,6 @@ var ToastItemInner = ToastItemFrame.styleable(function ToastItem(props, ref) {
+@@ -797,7 +797,6 @@ var ToastItemInner = ToastItemFrame.styleable(function ToastItem(props, ref) {
    return /* @__PURE__ */_jsx(ToastPositionWrapper, {
      ref,
      testID: rest.testID,
@@ -35,10 +35,10 @@ index dcf9166..d76ba51 100644
      transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
      animateOnly: isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
 diff --git a/dist/cjs/ToastComposable.native.js b/dist/cjs/ToastComposable.native.js
-index 05fb57f..c0dc1aa 100644
+index 5600485f..8a1c270b 100644
 --- a/dist/cjs/ToastComposable.native.js
 +++ b/dist/cjs/ToastComposable.native.js
-@@ -835,7 +835,6 @@ var ToastItemInner = import_ToastItemFrame.ToastItemFrame.styleable(function Toa
+@@ -839,7 +839,6 @@ var ToastItemInner = import_ToastItemFrame.ToastItemFrame.styleable(function Toa
    return /* @__PURE__ */(0, import_jsx_runtime.jsx)(import_ToastItemFrame.ToastPositionWrapper, {
      ref,
      testID: rest.testID,
@@ -47,10 +47,10 @@ index 05fb57f..c0dc1aa 100644
      transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
      animateOnly: import_constants.isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
 diff --git a/dist/jsx/ToastComposable.mjs b/dist/jsx/ToastComposable.mjs
-index a555cf7..1781314 100644
+index 76425275..38fe7806 100644
 --- a/dist/jsx/ToastComposable.mjs
 +++ b/dist/jsx/ToastComposable.mjs
-@@ -710,7 +710,6 @@ const ToastItemInner = ToastItemFrame.styleable(function ToastItem(props, ref) {
+@@ -714,7 +714,6 @@ const ToastItemInner = ToastItemFrame.styleable(function ToastItem(props, ref) {
    return /* @__PURE__ */jsx(ToastPositionWrapper, {
      ref,
      testID: rest.testID,
@@ -59,10 +59,10 @@ index a555cf7..1781314 100644
      transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
      animateOnly: isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
 diff --git a/dist/jsx/ToastComposable.native.js b/dist/jsx/ToastComposable.native.js
-index 05fb57f..c0dc1aa 100644
+index 5600485f..8a1c270b 100644
 --- a/dist/jsx/ToastComposable.native.js
 +++ b/dist/jsx/ToastComposable.native.js
-@@ -835,7 +835,6 @@ var ToastItemInner = import_ToastItemFrame.ToastItemFrame.styleable(function Toa
+@@ -839,7 +839,6 @@ var ToastItemInner = import_ToastItemFrame.ToastItemFrame.styleable(function Toa
    return /* @__PURE__ */(0, import_jsx_runtime.jsx)(import_ToastItemFrame.ToastPositionWrapper, {
      ref,
      testID: rest.testID,
@@ -71,7 +71,7 @@ index 05fb57f..c0dc1aa 100644
      transition: isDragging || ctx.reducedMotion ? void 0 : removed ? "200ms" : "400ms",
      animateOnly: import_constants.isWeb ? ["transform", "opacity", "height"] : ["transform", "opacity"],
 diff --git a/dist/esm/useAnimatedDragGesture.native.js b/dist/esm/useAnimatedDragGesture.native.js
-index d559f4e..3aedc7e 100644
+index d559f4ea..3aedc7ec 100644
 --- a/dist/esm/useAnimatedDragGesture.native.js
 +++ b/dist/esm/useAnimatedDragGesture.native.js
 @@ -1,8 +1,10 @@
@@ -104,7 +104,7 @@ index d559f4e..3aedc7e 100644
      pan.onStart(function () {
        var _onDragStartRef_current;
 diff --git a/dist/cjs/useAnimatedDragGesture.native.js b/dist/cjs/useAnimatedDragGesture.native.js
-index 8571798..739e682 100644
+index 85717989..739e6824 100644
 --- a/dist/cjs/useAnimatedDragGesture.native.js
 +++ b/dist/cjs/useAnimatedDragGesture.native.js
 @@ -42,7 +42,9 @@ var import_native = require("@tamagui/native");

@@ -1,8 +1,8 @@
 # LonaNote Tamagui Dialog sheet-overlay patch:
 # - Routes Dialog portal items through the active portal root host from @tamagui/portal.
-# - Keep in sync with @tamagui+portal@2.1.0.patch.
+# - Keep in sync with @tamagui+portal@2.4.0.patch.
 diff --git a/dist/esm/Dialog.native.js b/dist/esm/Dialog.native.js
-index edb3c2c..ad05e35 100644
+index edb3c2cd..ad05e353 100644
 --- a/dist/esm/Dialog.native.js
 +++ b/dist/esm/Dialog.native.js
 @@ -8,7 +8,7 @@ import { createContext } from "@tamagui/create-context";

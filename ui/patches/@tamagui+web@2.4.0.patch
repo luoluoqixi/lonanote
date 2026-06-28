@@ -1,19 +1,15 @@
 diff --git a/dist/esm/eventHandling.native.js b/dist/esm/eventHandling.native.js
-index c2d7fe5..7677e15 100644
+index 4b989393..b2e0609c 100644
 --- a/dist/esm/eventHandling.native.js
 +++ b/dist/esm/eventHandling.native.js
-@@ -28,6 +28,28 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+@@ -35,6 +35,24 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
      if (events.onBlur) {
        viewProps["onBlur"] = events.onBlur;
      }
-+    // Android: set onClick/onLongClick as backup for hardware key events.
-+    // RNGH/responder handles touch events; onClick would double-fire for touch.
-+    // Use pointerType check: touch events have pointerType="touch",
-+    // keyboard/DPad events have no pointerType so we fire them here.
 +    if (Platform.OS === "android") {
 +      if (events.onPress) {
 +        var _press = events.onPress;
-+        viewProps["onClick"] = function(e) {
++        viewProps["onClick"] = function (e) {
 +          if (!e.nativeEvent || e.nativeEvent.pointerType == null) {
 +            _press(e);
 +          }
@@ -21,17 +17,17 @@ index c2d7fe5..7677e15 100644
 +      }
 +      if (events.onLongPress) {
 +        var _longPress = events.onLongPress;
-+        viewProps["onLongClick"] = function(e) {
++        viewProps["onLongClick"] = function (e) {
 +          if (!e.nativeEvent || e.nativeEvent.pointerType == null) {
 +            _longPress(e);
 +          }
 +        };
 +      }
 +    }
-   }
-   var hasPressEvents = events === null || events === void 0 ? void 0 : events.onPress;
-   var gh = getGestureHandler();
-@@ -78,7 +100,7 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+     if (getIsNativeDesktop()) {
+       if (events.onMouseEnter) {
+         viewProps["onMouseEnter"] = events.onMouseEnter;
+@@ -93,7 +111,7 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
      return null;
    }
    if (isUsingRNGH) {
@@ -40,7 +36,7 @@ index c2d7fe5..7677e15 100644
      var gestureRef = useRef(null);
      var useResponderFallback = getIsAndroid() && !(hasRealPressEvents || stateRef.current.hasRealPressEvents) && Boolean(hasPressEvents);
      useMainThreadPressEvents(events, viewProps, useResponderFallback, debugName);
-@@ -146,7 +168,8 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+@@ -161,7 +179,8 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
      }
      return null;
    }
@@ -51,21 +47,17 @@ index c2d7fe5..7677e15 100644
  }
  function wrapWithGestureDetector(content, gesture, stateRef, isHOC, isCompositeComponent) {
 diff --git a/dist/cjs/eventHandling.native.js b/dist/cjs/eventHandling.native.js
-index 4337d83..1f09aee 100644
+index 78ffd237..481bc795 100644
 --- a/dist/cjs/eventHandling.native.js
 +++ b/dist/cjs/eventHandling.native.js
-@@ -70,6 +70,28 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+@@ -77,6 +77,24 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
      if (events.onBlur) {
        viewProps["onBlur"] = events.onBlur;
      }
-+    // Android: set onClick/onLongClick as backup for hardware key events.
-+    // RNGH/responder handles touch events; onClick would double-fire for touch.
-+    // Use pointerType check: touch events have pointerType="touch",
-+    // keyboard/DPad events have no pointerType so we fire them here.
 +    if (import_react_native.Platform.OS === "android") {
 +      if (events.onPress) {
 +        var _press = events.onPress;
-+        viewProps["onClick"] = function(e) {
++        viewProps["onClick"] = function (e) {
 +          if (!e.nativeEvent || e.nativeEvent.pointerType == null) {
 +            _press(e);
 +          }
@@ -73,17 +65,17 @@ index 4337d83..1f09aee 100644
 +      }
 +      if (events.onLongPress) {
 +        var _longPress = events.onLongPress;
-+        viewProps["onLongClick"] = function(e) {
++        viewProps["onLongClick"] = function (e) {
 +          if (!e.nativeEvent || e.nativeEvent.pointerType == null) {
 +            _longPress(e);
 +          }
 +        };
 +      }
 +    }
-   }
-   var hasPressEvents = events === null || events === void 0 ? void 0 : events.onPress;
-   var gh = (0, import_native.getGestureHandler)();
-@@ -120,7 +142,7 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+     if (getIsNativeDesktop()) {
+       if (events.onMouseEnter) {
+         viewProps["onMouseEnter"] = events.onMouseEnter;
+@@ -135,7 +153,7 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
      return null;
    }
    if (isUsingRNGH) {
@@ -92,7 +84,7 @@ index 4337d83..1f09aee 100644
      var gestureRef = (0, import_react.useRef)(null);
      var useResponderFallback = getIsAndroid() && !(hasRealPressEvents || stateRef.current.hasRealPressEvents) && Boolean(hasPressEvents);
      (0, import_mainThreadPressEvents.useMainThreadPressEvents)(events, viewProps, useResponderFallback, debugName);
-@@ -188,7 +210,8 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
+@@ -203,7 +221,8 @@ function useEvents(events, viewProps, stateRef, staticConfig, isHOC, isInsideNat
      }
      return null;
    }
@@ -103,10 +95,10 @@ index 4337d83..1f09aee 100644
  }
  function wrapWithGestureDetector(content, gesture, stateRef, isHOC, isCompositeComponent) {
 diff --git a/dist/esm/helpers/matchMedia.native.js b/dist/esm/helpers/matchMedia.native.js
-index e4c4d9f..b004632 100644
+index e4c4d9fc..04612793 100644
 --- a/dist/esm/helpers/matchMedia.native.js
 +++ b/dist/esm/helpers/matchMedia.native.js
-@@ -19,14 +19,17 @@ function matchMediaFallback(query) {
+@@ -19,12 +19,11 @@ function matchMediaFallback(query) {
    };
  }
  function setupMatchMedia(_) {
@@ -122,18 +114,12 @@ index e4c4d9f..b004632 100644
 +    return;
    }
    matchMediaImpl = _;
-+  // On native, globalThis === window. Assigning here makes window.matchMedia available
-+  // to any code that calls it directly (e.g. third-party packages, RN internals) rather
-+  // than going through Tamagui's re-exported `matchMedia` helper. Without this, those
-+  // callers get "window.matchMedia is not a function (it is undefined)".
    globalThis["matchMedia"] = _;
- }
- export { matchMedia, setupMatchMedia };
 diff --git a/dist/cjs/helpers/matchMedia.native.js b/dist/cjs/helpers/matchMedia.native.js
-index 7dcc6de..5e5982d 100644
+index 7dcc6de3..85a67889 100644
 --- a/dist/cjs/helpers/matchMedia.native.js
 +++ b/dist/cjs/helpers/matchMedia.native.js
-@@ -49,14 +49,17 @@ function matchMediaFallback(query) {
+@@ -49,12 +49,11 @@ function matchMediaFallback(query) {
    };
  }
  function setupMatchMedia(_) {
@@ -149,10 +135,4 @@ index 7dcc6de..5e5982d 100644
 +    return;
    }
    matchMediaImpl = _;
-+  // On native, globalThis === window. Assigning here makes window.matchMedia available
-+  // to any code that calls it directly (e.g. third-party packages, RN internals) rather
-+  // than going through Tamagui's re-exported `matchMedia` helper. Without this, those
-+  // callers get "window.matchMedia is not a function (it is undefined)".
    globalThis["matchMedia"] = _;
- }
- //# sourceMappingURL=matchMedia.native.js.map

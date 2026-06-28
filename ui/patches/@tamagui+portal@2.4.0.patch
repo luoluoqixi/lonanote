@@ -2,10 +2,10 @@
 # - Adds scoped portal root host support so Dialog/AlertDialog/Menu can render inside the active sheet overlay host.
 # - Revalidate sheet-contained overlay pointer events before changing.
 diff --git a/dist/esm/GorhomPortal.native.js b/dist/esm/GorhomPortal.native.js
-index a72f257..c31102b 100644
+index f98ee58c..cea82baf 100644
 --- a/dist/esm/GorhomPortal.native.js
 +++ b/dist/esm/GorhomPortal.native.js
-@@ -70,6 +70,21 @@ var reducer = function (state, action) {
+@@ -69,6 +69,21 @@ var reducer = function (state, action) {
  var PortalStateContext = /* @__PURE__ */createContext(null);
  var PortalDispatchContext = /* @__PURE__ */createContext(null);
  var PortalProviderActiveContext = /* @__PURE__ */createContext(false);
@@ -19,7 +19,7 @@ index a72f257..c31102b 100644
 +    hostName = "root",
 +    children
 +  } = param;
-+  return /* @__PURE__ */_jsx(PortalRootHostContext.Provider, {
++  return /* @__PURE__ */jsx(PortalRootHostContext.Provider, {
 +    value: hostName,
 +    children
 +  });
@@ -27,7 +27,7 @@ index a72f257..c31102b 100644
  var usePortalState = function (hostName) {
    var state = useContext(PortalStateContext);
    if (state === null) throw new Error("'PortalStateContext' cannot be null, please add 'PortalProvider' to the root component.");
-@@ -200,5 +215,5 @@ function PortalHostNonNative(props) {
+@@ -199,5 +214,5 @@ function PortalHostNonNative(props) {
      return item.node;
    }));
  }
@@ -35,7 +35,7 @@ index a72f257..c31102b 100644
 +export { ACTIONS, INITIAL_STATE, PortalHost, PortalProvider, PortalRootHostProvider, usePortal, usePortalRootHostName };
  //# sourceMappingURL=GorhomPortal.native.js.map
 diff --git a/dist/esm/Portal.native.js b/dist/esm/Portal.native.js
-index 619095a..4f6fcf3 100644
+index 619095a0..63527805 100644
 --- a/dist/esm/Portal.native.js
 +++ b/dist/esm/Portal.native.js
 @@ -2,6 +2,7 @@ import { jsx as _jsx } from "react/jsx-runtime";
@@ -46,15 +46,11 @@ index 619095a..4f6fcf3 100644
  import { GorhomPortalItem } from "./GorhomPortalItem.native.js";
  import { getStackedZIndexProps } from "./helpers.native.js";
  var Portal = function (propsIn) {
-@@ -10,6 +11,7 @@ var Portal = function (propsIn) {
-     children,
-     passThrough
-   } = propsIn;
+@@ -19,16 +20,17 @@ var Portal = function (propsIn) {
+     passThrough,
+     children
+   });
 +  var rootHostName = usePortalRootHostName();
-   var contents = /* @__PURE__ */_jsx(View, {
-     pointerEvents: "box-none",
-     position: "absolute",
-@@ -22,13 +24,13 @@ var Portal = function (propsIn) {
    var portalState = getPortal().state;
    if (portalState.type === "teleport") {
      return /* @__PURE__ */_jsx(NativePortal, {
@@ -71,19 +67,19 @@ index 619095a..4f6fcf3 100644
    });
  };
 diff --git a/dist/esm/GorhomPortalItem.native.js b/dist/esm/GorhomPortalItem.native.js
-index df53f2b..74ca7ae 100644
+index e716ecd2..b9a82d7f 100644
 --- a/dist/esm/GorhomPortalItem.native.js
 +++ b/dist/esm/GorhomPortalItem.native.js
-@@ -3,7 +3,7 @@ import { useIsomorphicLayoutEffect } from "@tamagui/constants";
- import { useEvent } from "@tamagui/core";
+@@ -4,7 +4,7 @@ import { useEvent } from "@tamagui/core";
  import { getPortal, NativePortal } from "@tamagui/native";
+ import { Theme, useThemeName } from "@tamagui/web";
  import { useEffect, useId } from "react";
 -import { usePortal } from "./GorhomPortal.native.js";
 +import { usePortal, usePortalRootHostName } from "./GorhomPortal.native.js";
  var GorhomPortalItem = function (props) {
    var {
      name: _providedName,
-@@ -14,19 +14,21 @@ var GorhomPortalItem = function (props) {
+@@ -15,19 +15,21 @@ var GorhomPortalItem = function (props) {
      children,
      passThrough
    } = props;
@@ -108,7 +104,7 @@ index df53f2b..74ca7ae 100644
      handleOnUnmount: _providedHandleOnUnmount,
      handleOnUpdate: _providedHandleOnUpdate,
 diff --git a/types/GorhomPortal.d.ts b/types/GorhomPortal.d.ts
-index c68dfa6..5e4ab65 100644
+index c68dfa65..5e4ab653 100644
 --- a/types/GorhomPortal.d.ts
 +++ b/types/GorhomPortal.d.ts
 @@ -53,6 +53,12 @@ export interface PortalProviderProps {
