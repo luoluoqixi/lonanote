@@ -119,3 +119,11 @@ export function isIos26Plus(): boolean {
   const major = iosMajorVersion();
   return major != null && major >= 26;
 }
+
+/**
+ * iOS 16+
+ */
+export function isIos16Plus(): boolean {
+  const major = iosMajorVersion();
+  return major != null && major >= 16;
+}

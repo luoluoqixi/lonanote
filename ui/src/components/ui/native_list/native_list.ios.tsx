@@ -12,6 +12,7 @@ import {
   ZStack,
 } from "@expo/ui/swift-ui";
 import {
+  background,
   buttonStyle,
   contentMargins,
   contentShape,
@@ -378,6 +379,7 @@ function NativePressRow({
 }
 
 function NativeListRoot({
+  backgroundColor,
   children,
   contentMarginBottom,
   contentMarginTop,
@@ -393,11 +395,18 @@ function NativeListRoot({
     insetAdjustment,
     nativeScrollInsetsApplied,
   } = useTrueSheetScrollLayout();
+  const resolvedBackgroundColor =
+    backgroundColor != null ? (toSwiftUIHexColor(backgroundColor) ?? undefined) : undefined;
 
   if (!native) {
     return (
       <NativeListContext.Provider value={{ native: false }}>
-        <FallbackRoot {...fallbackProps} style={style} scrollable={scrollable}>
+        <FallbackRoot
+          {...fallbackProps}
+          backgroundColor={backgroundColor}
+          style={style}
+          scrollable={scrollable}
+        >
           {children}
         </FallbackRoot>
       </NativeListContext.Provider>
@@ -422,7 +431,12 @@ function NativeListRoot({
           modifiers={[
             listStyle("insetGrouped"),
             listSectionSpacing("compact"),
+            /**
+             * iOS 15 的 SwiftUI List 不支持 `scrollContentBackground(.hidden)`，
+             * 因此即使这里传入自定义 `backgroundColor`，系统列表内容背景仍可能覆盖它。
+             */
             scrollContentBackground("hidden"),
+            ...(resolvedBackgroundColor != null ? [background(resolvedBackgroundColor)] : []),
             ...(contentMarginTop != null
               ? [
                   contentMargins({

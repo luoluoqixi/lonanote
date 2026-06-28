@@ -50,3 +50,7 @@ export function iosMajorVersion(): number | null {
 export function isIos26Plus(): boolean {
   return false;
 }
+
+export function isIos16Plus(): boolean {
+  return false;
+}

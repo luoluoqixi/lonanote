@@ -656,6 +656,7 @@ export function NativeListSection({ children, footer, title }: NativeListSection
 }
 
 export function NativeListRoot({
+  backgroundColor,
   children,
   contentContainerStyle,
   contentMarginBottom,
@@ -694,7 +695,7 @@ export function NativeListRoot({
     nativeScrollInsetsApplied,
   } = useTrueSheetScrollLayout();
   const theme = useTheme();
-  const rootBackground = { backgroundColor: theme.background.val };
+  const rootBackground = { backgroundColor: backgroundColor ?? theme.background.val };
 
   const bottomPadding = insideTrueSheet
     ? getTrueSheetScrollBottomPadding({

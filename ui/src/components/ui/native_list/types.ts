@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ScrollViewProps } from "react-native";
+import type { ScrollViewProps, ViewStyle } from "react-native";
 
 import type { SelectProps } from "../select";
 import type { SwitchProps } from "../switch";
@@ -58,6 +58,8 @@ export type NativeListSectionProps = {
 
 /** NativeList Root props */
 export type NativeListRootProps = Omit<ScrollViewProps, "children"> & {
+  /** 列表宿主背景色：iOS 原生 List 直接作用于 List，自定义 fallback 作用于根容器。 */
+  backgroundColor?: ViewStyle["backgroundColor"];
   children?: ReactNode;
   /** 原生 List 内容顶部内边距。 */
   contentMarginTop?: number;
