@@ -6,7 +6,7 @@
       "dependencies": {
         "@expo/ui": "~55.0.17",
         "@gorhom/bottom-sheet": "^5.2.14",
-        "@lodev09/react-native-true-sheet": "=3.11.0",
+        "@lodev09/react-native-true-sheet": "=3.11.1",
         "@react-native-menu/menu": "2.0.0",
         "@react-native-picker/picker": "^2.11.4",
         "@react-navigation/bottom-tabs": "^7.16.2",
@@ -114,7 +114,7 @@
     "@gorhom/bottom-sheet@5.2.14": "patches/@gorhom+bottom-sheet@5.2.14.patch",
     "@tamagui/create-menu@2.4.0": "patches/@tamagui+create-menu@2.4.0.patch",
     "@tamagui/portal@2.4.0": "patches/@tamagui+portal@2.4.0.patch",
-    "@lodev09/react-native-true-sheet@3.11.0": "patches/@lodev09+react-native-true-sheet@3.11.0.patch",
+    "@lodev09/react-native-true-sheet@3.11.1": "patches/@lodev09+react-native-true-sheet@3.11.1.patch",
     "@tamagui/web@2.4.0": "patches/@tamagui+web@2.4.0.patch",
     "@tamagui/native@2.4.0": "patches/@tamagui+native@2.4.0.patch",
     "@expo/ui@55.0.17": "patches/@expo+ui@55.0.17.patch",
@@ -576,7 +576,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lodev09/react-native-true-sheet": ["@lodev09/react-native-true-sheet@3.11.0", "", { "peerDependencies": { "@radix-ui/react-dialog": ">=1", "@radix-ui/react-presence": ">=1", "@react-navigation/core": ">=7", "react": "*", "react-native": "*", "react-native-reanimated": ">=4", "react-native-worklets": "*" }, "optionalPeers": ["@radix-ui/react-dialog", "@radix-ui/react-presence", "@react-navigation/core", "react-native-reanimated", "react-native-worklets"] }, "sha512-Dku8Gu7c0AQ4noQM+J8ndFHGR8UfqBV2vnBn9qUEERbo3kFCfhld3Jc/ygrpc62ZonSsw7f/70m2YRaxAa4nww=="],
+    "@lodev09/react-native-true-sheet": ["@lodev09/react-native-true-sheet@3.11.1", "", { "peerDependencies": { "@radix-ui/react-dialog": ">=1", "@radix-ui/react-presence": ">=1", "@react-navigation/core": ">=7", "react": "*", "react-native": "*", "react-native-reanimated": ">=4", "react-native-worklets": "*" }, "optionalPeers": ["@radix-ui/react-dialog", "@radix-ui/react-presence", "@react-navigation/core", "react-native-reanimated", "react-native-worklets"] }, "sha512-bUtNLE/TN+je7X8bPEc3tVJg8nZLGV1nM6Qv/8qE69CcqK0lwhsTOnEof+Mb3KWBNbDNrMQSDj4F2BkOmJzMAg=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.1.5", "", { "dependencies": { "@tybys/wasm-util": "^0.10.2" }, "peerDependencies": { "@emnapi/core": "^1.7.1", "@emnapi/runtime": "^1.7.1" } }, "sha512-AWPoBRJ9tsnVhor4sjO7rkni+7p+2IAEFj6cx06UgP10jkQHqay/36uRV/bFkgrh18D9vb4cr8Q0Pthskgzy+Q=="],
 
