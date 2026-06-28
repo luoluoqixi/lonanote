@@ -1,11 +1,12 @@
-# TrueSheet iOS scroll indicator patch:
-# - Keeps TrueSheet scroll indicator bottom inset at least at TrueSheet's own bottom inset.
-# - Revalidate iOS TrueSheet stack/native controls and scroll indicators after upgrading this package.
+# TrueSheet iOS 补丁：
+# - 保持 TrueSheet scroll indicator 的底部 inset 不小于 TrueSheet 自己的 bottom inset。
+# - sheet 属性更新后重新应用 background 设置。
+# - 扩大 custom native grabber 的透明整行拖拽热区，同时保持 pill 的可见大小不变。
 diff --git a/ios/TrueSheetContentView.mm b/ios/TrueSheetContentView.mm
-index 9d5ead17..b58df37f 100644
+index 5d109316..b58df37f 100644
 --- a/ios/TrueSheetContentView.mm
 +++ b/ios/TrueSheetContentView.mm
-@@ -30,6 +30,10 @@ @implementation TrueSheetContentView {
+@@ -30,6 +30,10 @@ using namespace facebook::react;
    CGFloat _originalIndicatorBottomInset;
  }
  
@@ -16,7 +17,7 @@ index 9d5ead17..b58df37f 100644
  + (ComponentDescriptorProvider)componentDescriptorProvider {
    return concreteComponentDescriptorProvider<TrueSheetContentViewComponentDescriptor>();
  }
-@@ -134,12 +138,13 @@ - (void)setupScrollable:(BOOL)enabled bottomInset:(CGFloat)bottomInset {
+@@ -134,13 +138,13 @@ using namespace facebook::react;
  
    [self updateScrollViewHeight];
  
@@ -26,27 +27,73 @@ index 9d5ead17..b58df37f 100644
    // If keyboard is currently showing, re-apply the keyboard inset to the new ScrollView
    CGFloat keyboardHeight = _keyboardObserver ? _keyboardObserver.currentHeight : 0;
    if (keyboardHeight > 0) {
--    [self setScrollViewContentInset:keyboardHeight indicatorInset:_originalIndicatorBottomInset + keyboardHeight];
-+    [self setScrollViewContentInset:keyboardHeight
+     [self setScrollViewContentInset:keyboardHeight
+-                     indicatorInset:_originalIndicatorBottomInset + keyboardHeight];
 +                     indicatorInset:[self resolvedIndicatorBottomInset] + keyboardHeight];
    }
  }
  
-@@ -258,7 +263,7 @@ - (void)keyboardWillShow:(CGFloat)height duration:(NSTimeInterval)duration curve
+@@ -259,7 +263,7 @@ using namespace facebook::react;
                        options:curve | UIViewAnimationOptionBeginFromCurrentState
                     animations:^{
                       [self setScrollViewContentInset:height
--                                      indicatorInset:self->_originalIndicatorBottomInset + height];
+-                                      indicatorInset:_originalIndicatorBottomInset + height];
 +                                      indicatorInset:[self resolvedIndicatorBottomInset] + height];
                     }
                     completion:nil];
  
-@@ -283,7 +288,7 @@ - (void)keyboardWillHide:(NSTimeInterval)duration curve:(UIViewAnimationOptions)
+@@ -284,7 +288,7 @@ using namespace facebook::react;
                        options:curve | UIViewAnimationOptionBeginFromCurrentState
                     animations:^{
                       [self setScrollViewContentInset:self->_bottomInset
--                                      indicatorInset:self->_originalIndicatorBottomInset];
+-                                      indicatorInset:_originalIndicatorBottomInset];
 +                                      indicatorInset:[self resolvedIndicatorBottomInset]];
                     }
                     completion:nil];
  }
+diff --git a/ios/TrueSheetViewController.mm b/ios/TrueSheetViewController.mm
+index 346b0e96..a750dc03 100644
+--- a/ios/TrueSheetViewController.mm
++++ b/ios/TrueSheetViewController.mm
+@@ -1057,6 +1057,7 @@ static char TrueSheetAccessibilityWindowPreviousElementsKey;
+     sheet.preferredCornerRadius = UISheetPresentationControllerAutomaticDimension;
+   }
+ 
++  [self setupBackground];
+   [self setupGrabber];
+ }
+ 
+diff --git a/ios/core/TrueSheetGrabberView.mm b/ios/core/TrueSheetGrabberView.mm
+index cb24e9c1..1a841607 100644
+--- a/ios/core/TrueSheetGrabberView.mm
++++ b/ios/core/TrueSheetGrabberView.mm
+@@ -22,8 +22,8 @@
+ static const CGFloat kDefaultGrabberWidth = 36.0;
+ static const CGFloat kDefaultGrabberHeight = 5.0;
+ static const CGFloat kDefaultGrabberTopMargin = 5.0;
+-static const CGFloat kHitPaddingHorizontal = 20.0;
+ static const CGFloat kHitPaddingVertical = 10.0;
++static const CGFloat kMinimumHitHeight = 28.0;
+ 
+ @implementation TrueSheetGrabberView {
+   UIVisualEffectView *_vibrancyView;
+@@ -134,14 +134,14 @@ static const CGFloat kHitPaddingVertical = 10.0;
+   CGFloat topMargin = [self effectiveTopMargin];
+   CGFloat parentWidth = self.superview ? self.superview.bounds.size.width : UIScreen.mainScreen.bounds.size.width;
+ 
+-  CGFloat frameWidth = pillWidth + kHitPaddingHorizontal * 2;
+-  CGFloat frameHeight = pillHeight + kHitPaddingVertical * 2;
+-  CGFloat frameY = topMargin - kHitPaddingVertical;
++  CGFloat frameWidth = parentWidth;
++  CGFloat frameHeight = MAX(kMinimumHitHeight, pillHeight + topMargin + kHitPaddingVertical);
++  CGFloat frameY = 0;
+ 
+-  self.frame = CGRectMake((parentWidth - frameWidth) / 2.0, frameY, frameWidth, frameHeight);
++  self.frame = CGRectMake(0, frameY, frameWidth, frameHeight);
+   self.backgroundColor = UIColor.clearColor;
+ 
+-  CGRect pillRect = CGRectMake(kHitPaddingHorizontal, kHitPaddingVertical, pillWidth, pillHeight);
++  CGRect pillRect = CGRectMake((frameWidth - pillWidth) / 2.0, topMargin, pillWidth, pillHeight);
+   _vibrancyView.frame = pillRect;
+   _vibrancyView.layer.cornerRadius = [self effectiveCornerRadius];
+   _vibrancyView.clipsToBounds = YES;

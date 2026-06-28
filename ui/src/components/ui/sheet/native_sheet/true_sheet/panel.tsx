@@ -21,6 +21,8 @@ import { TrueSheetScrollLayoutProvider } from "./true_sheet_scroll_context";
 import { useAndroidSheetBackHandler } from "./use_android_sheet_back_handler";
 import { useTrueSheetOverlayLayoutSync } from "./use_true_sheet_overlay_layout_sync";
 
+const DEFAULT_NATIVE_GRABBER_TOP_MARGIN = 5;
+
 export type TrueSheetPanelProps = {
   backgroundColor?: ViewStyle["backgroundColor"];
   children: ReactNode;
@@ -119,6 +121,15 @@ function TrueSheetPanelInner({
   const resolvedGrabberContentInsetTop = grabberContentInsetTop ?? 0;
   const shouldReserveGrabberContentInset =
     grabber && resolvedHeader == null && resolvedGrabberContentInsetTop > 0;
+  const resolvedGrabberOptions =
+    grabber && resolvedHeader == null
+      ? {
+          // 传任意非默认 grabberOptions 才会走 TrueSheet 的自绘 native grabber 分支，
+          // 这样我们补在原生层的整行透明拖拽热区才会真正生效。
+          topMargin: DEFAULT_NATIVE_GRABBER_TOP_MARGIN,
+          ...sheetProps?.grabberOptions,
+        }
+      : sheetProps?.grabberOptions;
 
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
   const sheetScrollable = sheetProps?.scrollable ?? defaultSheetProps.scrollable;
@@ -160,11 +171,12 @@ function TrueSheetPanelInner({
 
   return (
     <TrueSheet
-      grabber={grabber}
       header={resolvedHeader}
       name={name}
       {...defaultSheetProps}
       {...sheetProps}
+      grabber={grabber}
+      grabberOptions={resolvedGrabberOptions}
       onDetentChange={overlayLayoutSync.onDetentChange}
       onDidDismiss={handleDidDismiss}
       onDidPresent={handleDidPresent}
