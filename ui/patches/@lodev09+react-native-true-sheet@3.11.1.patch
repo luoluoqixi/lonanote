@@ -1,12 +1,97 @@
-# TrueSheet iOS 补丁：
-# - 保持 TrueSheet scroll indicator 的底部 inset 不小于 TrueSheet 自己的 bottom inset。
-# - sheet 属性更新后重新应用 background 设置。
-# - 扩大 custom native grabber 的透明整行拖拽热区，同时保持 pill 的可见大小不变。
+# TrueSheet 补丁：
+# - iOS：保持 TrueSheet scroll indicator 的底部 inset 不小于 TrueSheet 自己的 bottom inset。
+# - iOS：扩大 custom native grabber 的透明整行拖拽热区，同时保持 pill 的可见大小不变。
+# - Android：增加 disableStackingTranslation 开关，可禁用子 sheet 打开时父 sheet 下移的 stacked translation。
+diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
+index d388ced8..d6ff2cf3 100644
+--- a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
++++ b/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
+@@ -43,6 +43,7 @@ class TrueSheetView(private val reactContext: ThemedReactContext) :
+   // Initial present configuration (set by ViewManager before mount)
+   var initialDetentIndex: Int = -1
+   var initialDetentAnimated: Boolean = true
++  internal var disableStackingTranslation: Boolean = false
+   private var didInitiallyPresent: Boolean = false
+ 
+   private var lastContainerWidth: Int = 0
+@@ -253,6 +254,10 @@ class TrueSheetView(private val reactContext: ThemedReactContext) :
+     viewController.draggable = draggable
+   }
+ 
++  fun setDisableStackingTranslation(disableStackingTranslation: Boolean) {
++    this.disableStackingTranslation = disableStackingTranslation
++  }
++
+   fun setGrabber(grabber: Boolean) {
+     viewController.grabber = grabber
+   }
+@@ -455,7 +460,7 @@ class TrueSheetView(private val reactContext: ThemedReactContext) :
+    * Propagates additional translation to parent so the entire stack stays visually consistent.
+    */
+   fun updateTranslationForChild(childSheetTop: Int) {
+-    if (!viewController.isSheetVisible || viewController.isExpanded) return
++    if (disableStackingTranslation || !viewController.isSheetVisible || viewController.isExpanded) return
+ 
+     viewController.sheetView?.behavior?.isDraggable = false
+ 
+@@ -475,7 +480,7 @@ class TrueSheetView(private val reactContext: ThemedReactContext) :
+    * Recursively adds translation to this sheet and all parent sheets.
+    */
+   private fun addTranslation(amount: Int) {
+-    if (viewController.isExpanded) return
++    if (disableStackingTranslation || viewController.isExpanded) return
+ 
+     viewController.translateSheet(viewController.currentTranslationY + amount)
+     TrueSheetStackManager.getParentSheet(this)?.addTranslation(amount)
+@@ -490,6 +495,8 @@ class TrueSheetView(private val reactContext: ThemedReactContext) :
+     viewController.translateSheet(0, onEnd = onTranslateEnd)
+ 
+     // Parent should recalculate its translation based on this sheet's position
++    if (disableStackingTranslation) return
++
+     val mySheetTop = viewController.detentCalculator.getSheetTopForDetentIndex(viewController.currentDetentIndex)
+     TrueSheetStackManager.getParentSheet(this)?.updateTranslationForChild(mySheetTop)
+   }
+diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetViewManager.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetViewManager.kt
+index 35c265a4..95cdc9e9 100644
+--- a/android/src/main/java/com/lodev09/truesheet/TrueSheetViewManager.kt
++++ b/android/src/main/java/com/lodev09/truesheet/TrueSheetViewManager.kt
+@@ -146,6 +146,11 @@ class TrueSheetViewManager :
+     view.setDraggable(draggable)
+   }
+ 
++  @ReactProp(name = "disableStackingTranslation", defaultBoolean = false)
++  override fun setDisableStackingTranslation(view: TrueSheetView, disableStackingTranslation: Boolean) {
++    view.setDisableStackingTranslation(disableStackingTranslation)
++  }
++
+   @ReactProp(name = "dimmed", defaultBoolean = true)
+   override fun setDimmed(view: TrueSheetView, dimmed: Boolean) {
+     view.setDimmed(dimmed)
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetStackManager.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetStackManager.kt
+index c744b195..0e33b72b 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetStackManager.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetStackManager.kt
+@@ -63,10 +63,14 @@ object TrueSheetStackManager {
+    */
+   @JvmStatic
+   fun updateParentTranslation(sheetView: TrueSheetView) {
++    if (sheetView.disableStackingTranslation) return
++
+     synchronized(presentedSheetStack) {
+       val index = presentedSheetStack.indexOf(sheetView)
+       val parentSheet = getParentSheetAt(index, sheetView.rootContainerView) ?: return
+ 
++      if (parentSheet.disableStackingTranslation) return
++
+       // Post to ensure layout is complete before reading position
+       sheetView.viewController.post {
+         val childMinSheetTop = sheetView.viewController.detentCalculator.getSheetTopForDetentIndex(0)
 diff --git a/ios/TrueSheetContentView.mm b/ios/TrueSheetContentView.mm
-index 5d109316..b58df37f 100644
+index 9d5ead17..b58df37f 100644
 --- a/ios/TrueSheetContentView.mm
 +++ b/ios/TrueSheetContentView.mm
-@@ -30,6 +30,10 @@ using namespace facebook::react;
+@@ -30,6 +30,10 @@ @implementation TrueSheetContentView {
    CGFloat _originalIndicatorBottomInset;
  }
  
@@ -17,7 +102,7 @@ index 5d109316..b58df37f 100644
  + (ComponentDescriptorProvider)componentDescriptorProvider {
    return concreteComponentDescriptorProvider<TrueSheetContentViewComponentDescriptor>();
  }
-@@ -134,13 +138,13 @@ using namespace facebook::react;
+@@ -134,12 +138,13 @@ - (void)setupScrollable:(BOOL)enabled bottomInset:(CGFloat)bottomInset {
  
    [self updateScrollViewHeight];
  
@@ -27,47 +112,35 @@ index 5d109316..b58df37f 100644
    // If keyboard is currently showing, re-apply the keyboard inset to the new ScrollView
    CGFloat keyboardHeight = _keyboardObserver ? _keyboardObserver.currentHeight : 0;
    if (keyboardHeight > 0) {
-     [self setScrollViewContentInset:keyboardHeight
--                     indicatorInset:_originalIndicatorBottomInset + keyboardHeight];
+-    [self setScrollViewContentInset:keyboardHeight indicatorInset:_originalIndicatorBottomInset + keyboardHeight];
++    [self setScrollViewContentInset:keyboardHeight
 +                     indicatorInset:[self resolvedIndicatorBottomInset] + keyboardHeight];
    }
  }
  
-@@ -259,7 +263,7 @@ using namespace facebook::react;
+@@ -258,7 +263,7 @@ - (void)keyboardWillShow:(CGFloat)height duration:(NSTimeInterval)duration curve
                        options:curve | UIViewAnimationOptionBeginFromCurrentState
                     animations:^{
                       [self setScrollViewContentInset:height
--                                      indicatorInset:_originalIndicatorBottomInset + height];
+-                                      indicatorInset:self->_originalIndicatorBottomInset + height];
 +                                      indicatorInset:[self resolvedIndicatorBottomInset] + height];
                     }
                     completion:nil];
  
-@@ -284,7 +288,7 @@ using namespace facebook::react;
+@@ -283,7 +288,7 @@ - (void)keyboardWillHide:(NSTimeInterval)duration curve:(UIViewAnimationOptions)
                        options:curve | UIViewAnimationOptionBeginFromCurrentState
                     animations:^{
                       [self setScrollViewContentInset:self->_bottomInset
--                                      indicatorInset:_originalIndicatorBottomInset];
+-                                      indicatorInset:self->_originalIndicatorBottomInset];
 +                                      indicatorInset:[self resolvedIndicatorBottomInset]];
                     }
                     completion:nil];
  }
-diff --git a/ios/TrueSheetViewController.mm b/ios/TrueSheetViewController.mm
-index 346b0e96..a750dc03 100644
---- a/ios/TrueSheetViewController.mm
-+++ b/ios/TrueSheetViewController.mm
-@@ -1057,6 +1057,7 @@ static char TrueSheetAccessibilityWindowPreviousElementsKey;
-     sheet.preferredCornerRadius = UISheetPresentationControllerAutomaticDimension;
-   }
- 
-+  [self setupBackground];
-   [self setupGrabber];
- }
- 
 diff --git a/ios/core/TrueSheetGrabberView.mm b/ios/core/TrueSheetGrabberView.mm
 index cb24e9c1..1a841607 100644
 --- a/ios/core/TrueSheetGrabberView.mm
 +++ b/ios/core/TrueSheetGrabberView.mm
-@@ -22,8 +22,8 @@
+@@ -22,8 +22,8 @@ - (instancetype)init {
  static const CGFloat kDefaultGrabberWidth = 36.0;
  static const CGFloat kDefaultGrabberHeight = 5.0;
  static const CGFloat kDefaultGrabberTopMargin = 5.0;
@@ -77,7 +150,7 @@ index cb24e9c1..1a841607 100644
  
  @implementation TrueSheetGrabberView {
    UIVisualEffectView *_vibrancyView;
-@@ -134,14 +134,14 @@ static const CGFloat kHitPaddingVertical = 10.0;
+@@ -134,14 +134,14 @@ - (void)applyConfiguration {
    CGFloat topMargin = [self effectiveTopMargin];
    CGFloat parentWidth = self.superview ? self.superview.bounds.size.width : UIScreen.mainScreen.bounds.size.width;
  
@@ -97,3 +170,92 @@ index cb24e9c1..1a841607 100644
    _vibrancyView.frame = pillRect;
    _vibrancyView.layer.cornerRadius = [self effectiveCornerRadius];
    _vibrancyView.clipsToBounds = YES;
+diff --git a/lib/module/fabric/TrueSheetViewNativeComponent.ts b/lib/module/fabric/TrueSheetViewNativeComponent.ts
+index 247df7ed..a4eacfe0 100644
+--- a/lib/module/fabric/TrueSheetViewNativeComponent.ts
++++ b/lib/module/fabric/TrueSheetViewNativeComponent.ts
+@@ -104,6 +104,7 @@ export interface NativeProps extends ViewProps {
+   dimmed?: WithDefault<boolean, true>;
+   initialDetentAnimated?: WithDefault<boolean, true>;
+   scrollable?: WithDefault<boolean, false>;
++  disableStackingTranslation?: WithDefault<boolean, false>;
+   scrollableOptions?: ScrollableOptionsType;
+   footerOptions?: FooterOptionsType;
+   presentation?: WithDefault<'page' | 'form', 'page'>;
+diff --git a/lib/typescript/src/TrueSheet.types.d.ts b/lib/typescript/src/TrueSheet.types.d.ts
+index d0153ee0..cb5f40bf 100644
+--- a/lib/typescript/src/TrueSheet.types.d.ts
++++ b/lib/typescript/src/TrueSheet.types.d.ts
+@@ -357,6 +357,14 @@ export interface TrueSheetProps extends ViewProps {
+      * @default 'automatic'
+      */
+     insetAdjustment?: InsetAdjustment;
++    /**
++     * Disables Android's stacked-sheet translation where a child sheet pushes
++     * the parent sheet downward while both are presented.
++     *
++     * @platform android
++     * @default false
++     */
++    disableStackingTranslation?: boolean;
+     /**
+      * The elevation (shadow depth) of the sheet.
+      *
+@@ -563,4 +571,4 @@ export interface TrueSheetStaticMethods {
+      */
+     dismissAll(animated?: boolean): Promise<void>;
+ }
+-//# sourceMappingURL=TrueSheet.types.d.ts.map
+\ No newline at end of file
++//# sourceMappingURL=TrueSheet.types.d.ts.map
+diff --git a/lib/typescript/src/fabric/TrueSheetViewNativeComponent.d.ts b/lib/typescript/src/fabric/TrueSheetViewNativeComponent.d.ts
+index 7d0bba23..fb4b48ad 100644
+--- a/lib/typescript/src/fabric/TrueSheetViewNativeComponent.d.ts
++++ b/lib/typescript/src/fabric/TrueSheetViewNativeComponent.d.ts
+@@ -54,6 +54,7 @@ export interface NativeProps extends ViewProps {
+     dimmed?: WithDefault<boolean, true>;
+     initialDetentAnimated?: WithDefault<boolean, true>;
+     scrollable?: WithDefault<boolean, false>;
++    disableStackingTranslation?: WithDefault<boolean, false>;
+     scrollableOptions?: ScrollableOptionsType;
+     footerOptions?: FooterOptionsType;
+     presentation?: WithDefault<'page' | 'form', 'page'>;
+@@ -77,4 +78,4 @@ export interface NativeProps extends ViewProps {
+ }
+ declare const _default: import("react-native").HostComponent<NativeProps>;
+ export default _default;
+-//# sourceMappingURL=TrueSheetViewNativeComponent.d.ts.map
+\ No newline at end of file
++//# sourceMappingURL=TrueSheetViewNativeComponent.d.ts.map
+diff --git a/src/TrueSheet.types.ts b/src/TrueSheet.types.ts
+index 42741f0e..72ecdf2d 100644
+--- a/src/TrueSheet.types.ts
++++ b/src/TrueSheet.types.ts
+@@ -419,6 +419,15 @@ export interface TrueSheetProps extends ViewProps {
+    */
+   insetAdjustment?: InsetAdjustment;
+ 
++  /**
++   * Disables Android's stacked-sheet translation where a child sheet pushes
++   * the parent sheet downward while both are presented.
++   *
++   * @platform android
++   * @default false
++   */
++  disableStackingTranslation?: boolean;
++
+   /**
+    * The elevation (shadow depth) of the sheet.
+    *
+diff --git a/src/fabric/TrueSheetViewNativeComponent.ts b/src/fabric/TrueSheetViewNativeComponent.ts
+index 247df7ed..a4eacfe0 100644
+--- a/src/fabric/TrueSheetViewNativeComponent.ts
++++ b/src/fabric/TrueSheetViewNativeComponent.ts
+@@ -104,6 +104,7 @@ export interface NativeProps extends ViewProps {
+   dimmed?: WithDefault<boolean, true>;
+   initialDetentAnimated?: WithDefault<boolean, true>;
+   scrollable?: WithDefault<boolean, false>;
++  disableStackingTranslation?: WithDefault<boolean, false>;
+   scrollableOptions?: ScrollableOptionsType;
+   footerOptions?: FooterOptionsType;
+   presentation?: WithDefault<'page' | 'form', 'page'>;

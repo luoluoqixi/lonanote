@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { Platform, StyleSheet, type ViewStyle } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import { os } from "@/api/common/platform";
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
 import { TrueSheetOverlayLayoutProvider } from "./overlay_layout_context";
@@ -48,10 +49,14 @@ export type TrueSheetPanelProps = {
   sheetProps?: Omit<TrueSheetProps, "children" | "header" | "name">;
 };
 
-const defaultSheetProps: Pick<TrueSheetProps, "detents" | "dismissible" | "insetAdjustment"> &
+const defaultSheetProps: Pick<
+  TrueSheetProps,
+  "detents" | "dismissible" | "disableStackingTranslation" | "insetAdjustment"
+> &
   Pick<TrueSheetProps, "scrollable" | "scrollableOptions"> = {
   detents: [1],
   dismissible: true,
+  disableStackingTranslation: os() === "android",
   insetAdjustment: "automatic",
   ...getTrueSheetPanelScrollableProps(),
 };

@@ -6,6 +6,7 @@ import { type ReactNode, useCallback } from "react";
 import { Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import { os } from "@/api/common/platform";
 import { withNativeBackButton } from "@/components/ui/utils/navigation";
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 
@@ -46,11 +47,12 @@ export type TrueSheetStackHostProps<ParamList extends ParamListBase = ParamListB
 
 const defaultSheetProps: Pick<
   TrueSheetProps,
-  "detents" | "dismissible" | "grabber" | "insetAdjustment"
+  "detents" | "dismissible" | "disableStackingTranslation" | "grabber" | "insetAdjustment"
 > &
   Pick<TrueSheetProps, "scrollable" | "scrollableOptions"> = {
   detents: [1],
   dismissible: true,
+  disableStackingTranslation: os() === "android",
   grabber: false,
   insetAdjustment: "automatic" as const,
   ...getTrueSheetStackHostScrollableProps(),
