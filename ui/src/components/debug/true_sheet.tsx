@@ -5,8 +5,8 @@ import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb, os } from "@/api/common";
 import { NativeSheet, NativeSheetStack } from "@/components/ui";
+import { nativeSheetStackScreenOptions } from "@/components/ui/sheet/native_sheet/native_sheet_stack_screen_options";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_toast_layout";
-import { trueSheetInnerStackScreenOptions } from "@/components/ui/sheet/native_sheet/true_sheet/stack";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 import {
@@ -88,7 +88,7 @@ function DebugNativeSheetStackHost() {
       }}
       open={open}
       overlayPortalHostName={DEBUG_OVERLAY_PORTAL_HOST}
-      screenOptions={trueSheetInnerStackScreenOptions(
+      screenOptions={nativeSheetStackScreenOptions(
         colorScheme,
         theme.background.val,
         theme.accentColor.val,

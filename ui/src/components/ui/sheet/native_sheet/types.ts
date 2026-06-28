@@ -1,13 +1,26 @@
-import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import type { ParamListBase } from "@react-navigation/native";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import type { StackNavigationOptions } from "@react-navigation/stack";
 import type { ComponentType, ReactNode } from "react";
 import type { ViewStyle } from "react-native";
-
-import type { TrueSheetInnerStackScreenOptions } from "./true_sheet/stack_navigator";
 
 export type NativeSheetSnapPoint = string | number;
 
 export type NativeSheetSnapPointsMode = "percent" | "constant" | "fit" | "mixed";
+
+export type NativeSheetStackScreenOptions = NativeStackNavigationOptions | StackNavigationOptions;
+
+export type NativeSheetStackSheetProps = {
+  detents?: Array<number | "auto">;
+  dismissible?: boolean;
+  grabber?: boolean;
+  insetAdjustment?: string;
+  scrollable?: boolean;
+  scrollableOptions?: Record<string, unknown>;
+  snapPoints?: NativeSheetSnapPoint[];
+  snapPointsMode?: NativeSheetSnapPointsMode;
+  style?: unknown;
+};
 
 export interface NativeSheetProps {
   backgroundColor?: ViewStyle["backgroundColor"];
@@ -48,9 +61,6 @@ export interface NativeSheetStackProps<ParamList extends ParamListBase = ParamLi
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
   overlayPortalHostName?: string;
-  screenOptions?: TrueSheetInnerStackScreenOptions;
-  sheetProps?: Omit<TrueSheetProps, "children" | "header" | "name"> & {
-    snapPoints?: NativeSheetProps["snapPoints"];
-    snapPointsMode?: NativeSheetProps["snapPointsMode"];
-  };
+  screenOptions?: NativeSheetStackScreenOptions;
+  sheetProps?: NativeSheetStackSheetProps;
 }

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { NativeSheet } from "./native_sheet";
-import { TrueSheetStackHostProvider } from "./true_sheet/stack_context";
-import { TrueSheetStackHeaderCloseButton } from "./true_sheet/stack_header";
+import { BottomSheetStackHostProvider } from "./bottom_sheet/stack_context";
+import { BottomSheetStackHeaderCloseButton } from "./bottom_sheet/stack_header";
 import {
-  TrueSheetInnerStack,
-  TrueSheetStackNavigation,
-  createTrueSheetStackNavigationRef,
-} from "./true_sheet/stack_navigation";
+  BottomSheetInnerStack,
+  BottomSheetStackNavigation,
+  createBottomSheetStackNavigationRef,
+} from "./bottom_sheet/stack_navigation";
+import { NativeSheet } from "./native_sheet";
 import type { NativeSheetStackProps } from "./types";
 
 function NativeSheetStackRoot({
@@ -20,11 +20,11 @@ function NativeSheetStackRoot({
   screenOptions,
   sheetProps,
 }: NativeSheetStackProps) {
-  const [navigationRef] = useState(() => createTrueSheetStackNavigationRef());
+  const [navigationRef] = useState(() => createBottomSheetStackNavigationRef());
   const mergedScreenOptions = useMemo(
     () => ({
       headerBackTitle: "返回",
-      headerRight: () => <TrueSheetStackHeaderCloseButton title="关闭" />,
+      headerRight: () => <BottomSheetStackHeaderCloseButton title="关闭" />,
       headerShown: true,
       ...screenOptions,
     }),
@@ -53,19 +53,19 @@ function NativeSheetStackRoot({
       snapPoints={sheetProps?.snapPoints}
       snapPointsMode={sheetProps?.snapPointsMode}
     >
-      <TrueSheetStackHostProvider onRequestClose={() => onOpenChange?.(false)}>
-        <TrueSheetStackNavigation
+      <BottomSheetStackHostProvider onRequestClose={() => onOpenChange?.(false)}>
+        <BottomSheetStackNavigation
           initialRouteName={initialRouteName}
           navigationRef={navigationRef}
-          screenOptions={mergedScreenOptions}
+          screenOptions={mergedScreenOptions as never}
         >
           {children}
-        </TrueSheetStackNavigation>
-      </TrueSheetStackHostProvider>
+        </BottomSheetStackNavigation>
+      </BottomSheetStackHostProvider>
     </NativeSheet>
   );
 }
 
 export const NativeSheetStack = Object.assign(NativeSheetStackRoot, {
-  Screen: TrueSheetInnerStack.Screen,
+  Screen: BottomSheetInnerStack.Screen,
 });
