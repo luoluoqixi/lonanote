@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { BackHandler, StyleSheet } from "react-native";
+import { useMemo } from "react";
+import { StyleSheet } from "react-native";
 
 import { Sheet as ReplicaSheet } from "@/components/ui/sheet/sheet/replica_sheet/Sheet";
 import type { SnapPointsMode } from "@/components/ui/sheet/sheet/replica_sheet/types";
@@ -10,7 +10,6 @@ import type { NativeSheetProps } from "../types";
 type BottomSheetPanelProps = {
   backgroundColor?: NativeSheetProps["backgroundColor"];
   children: React.ReactNode;
-  dismissOnBackPress?: boolean;
   dismissOnOverlayPress?: boolean;
   disableDrag?: boolean;
   enableHandle?: boolean;
@@ -79,7 +78,6 @@ function resolveReplicaSheetSnapPoints(
 export function BottomSheetPanel({
   backgroundColor,
   children,
-  dismissOnBackPress = true,
   dismissOnOverlayPress = true,
   disableDrag,
   enableHandle = true,
@@ -98,21 +96,6 @@ export function BottomSheetPanel({
     [snapPoints, snapPointsMode],
   );
   const resolvedPosition = Number.isFinite(position) ? Math.max(0, Math.round(position)) : 0;
-
-  useEffect(() => {
-    if (!open || !dismissOnBackPress) {
-      return;
-    }
-
-    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      onOpenChange(false);
-      return true;
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [dismissOnBackPress, onOpenChange, open]);
 
   const body =
     overlayPortalHostName != null ? (

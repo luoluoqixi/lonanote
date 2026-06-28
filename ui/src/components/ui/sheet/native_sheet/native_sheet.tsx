@@ -51,7 +51,6 @@ export function NativeSheet({
   content,
   defaultOpen,
   defaultPosition,
-  dismissOnBackPress = true,
   dismissOnOverlayPress = true,
   disableDrag,
   handle,
@@ -87,7 +86,6 @@ export function NativeSheet({
   return (
     <BottomSheetPanel
       backgroundColor={backgroundColor}
-      dismissOnBackPress={dismissOnBackPress}
       dismissOnOverlayPress={dismissOnOverlayPress}
       disableDrag={disableDrag}
       enableHandle={handle ?? false}

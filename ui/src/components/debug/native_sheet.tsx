@@ -65,13 +65,12 @@ function DebugNativeSheetStackHost() {
   const colorScheme = useResolvedeColorScheme();
   const theme = useTheme();
   const open = useSyncExternalStore(subscribeDebugPanelState, getDebugPanelOpen, getDebugPanelOpen);
-  const bottomSheetProps =
+  const nativeSheetProps =
     os() === "ios"
       ? undefined
       : {
+          detents: [0.92],
           grabber: true,
-          snapPoints: [92],
-          snapPointsMode: "percent" as const,
         };
 
   return (
@@ -94,7 +93,7 @@ function DebugNativeSheetStackHost() {
         theme.accentColor.val,
         theme.color.val,
       )}
-      sheetProps={bottomSheetProps}
+      sheetProps={nativeSheetProps}
     >
       <NativeSheetStack.Screen
         component={DebugHomeRoute}
@@ -150,7 +149,9 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       <View style={{ backgroundColor: theme.background.val, flex: 1 }}>
         <DebugSectionPage
           contentTitle={definition.label}
-          layoutHost={Platform.OS === "ios" ? "nativeSheet" : "default"}
+          layoutHost={
+            Platform.OS === "ios" || Platform.OS === "android" ? "nativeSheet" : "default"
+          }
           sectionKey={sectionKey}
         />
       </View>

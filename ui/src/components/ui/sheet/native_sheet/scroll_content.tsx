@@ -27,7 +27,7 @@ export type NativeSheetScrollContentProps = Omit<ScrollViewProps, "children"> & 
 /**
  * NativeSheet 内滚动容器：
  * - iOS TrueSheet 子树下复用现有 inset / detent 补偿
- * - Android BottomSheet 等其它宿主下保持通用滚动行为
+ * - Android TrueSheet 下使用裁剪滚动容器，避免滚动内容溢出圆角区域
  */
 export const NativeSheetScrollContent = forwardRef<ScrollView, NativeSheetScrollContentProps>(
   ({ children, contentContainerStyle, extraBottomPadding, style, ...rest }, ref) => {

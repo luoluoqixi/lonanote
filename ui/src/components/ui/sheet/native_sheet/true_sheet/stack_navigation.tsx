@@ -67,6 +67,7 @@ function TrueSheetStackNavigationInner({
       <NavigationContainer ref={ref}>
         <View style={styles.stackRoot}>
           <JsStack.Navigator
+            detachInactiveScreens={false}
             initialRouteName={initialRouteName}
             screenOptions={screenOptions as StackNavigationOptions}
           >

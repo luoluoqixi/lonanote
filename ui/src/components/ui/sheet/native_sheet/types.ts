@@ -14,6 +14,7 @@ export type NativeSheetStackSheetProps = {
   detents?: Array<number | "auto">;
   dismissible?: boolean;
   grabber?: boolean;
+  initialDetentIndex?: number;
   insetAdjustment?: string;
   scrollable?: boolean;
   scrollableOptions?: Record<string, unknown>;

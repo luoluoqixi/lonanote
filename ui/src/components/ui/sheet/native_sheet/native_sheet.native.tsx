@@ -2,9 +2,9 @@ import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWindowDimensions } from "react-native";
 
-import { iosMajorVersion } from "@/api/common/platform";
+import { iosMajorVersion, os } from "@/api/common/platform";
 
-import { dismissTrueSheet, presentTrueSheet, resizeTrueSheet } from "./true_sheet";
+import { dismissTrueSheet, resizeTrueSheet } from "./true_sheet";
 import { TrueSheetPanel } from "./true_sheet/panel";
 import type { NativeSheetProps } from "./types";
 
@@ -93,7 +93,11 @@ function resolveNativeDetent(
     : normalizePercentDetent(Number.parseFloat(matchedPercent[1]));
 }
 
-function supportsCustomIosDetents() {
+function supportsCustomDetents() {
+  if (os() !== "ios") {
+    return true;
+  }
+
   const iosMajor = iosMajorVersion();
   return iosMajor != null && iosMajor >= 16;
 }
@@ -160,7 +164,7 @@ function resolveNativeDetents(
     originalIndex,
   }));
 
-  if (!supportsCustomIosDetents()) {
+  if (!supportsCustomDetents()) {
     return normalizeIos15Detents(indexedDetents);
   }
 
@@ -229,6 +233,7 @@ export function NativeSheet({
     open: openProp,
     position: positionProp,
   });
+  const [mounted, setMounted] = useState(() => modal !== false && sheetState.open);
   const presentedRef = useRef(false);
   const dismissingRef = useRef(false);
   const lastRequestedPositionRef = useRef<number | null>(null);
@@ -246,23 +251,26 @@ export function NativeSheet({
     }
 
     if (sheetState.open) {
-      if (presentedRef.current || dismissingRef.current) {
+      if (mounted || dismissingRef.current) {
         return;
       }
 
       dismissingRef.current = false;
       lastRequestedPositionRef.current = resolvedDetentIndex;
-      presentTrueSheet(sheetName, resolvedDetentIndex).catch(() => undefined);
+      setMounted(true);
       return;
     }
 
     if (!presentedRef.current || dismissingRef.current) {
+      if (mounted && !presentedRef.current) {
+        setMounted(false);
+      }
       return;
     }
 
     dismissingRef.current = true;
     dismissTrueSheet(sheetName).catch(() => undefined);
-  }, [modal, resolvedDetentIndex, sheetName, sheetState.open]);
+  }, [modal, mounted, resolvedDetentIndex, sheetName, sheetState.open]);
 
   useEffect(() => {
     if (!presentedRef.current || lastRequestedPositionRef.current === resolvedDetentIndex) {
@@ -273,7 +281,7 @@ export function NativeSheet({
     resizeTrueSheet(sheetName, resolvedDetentIndex).catch(() => undefined);
   }, [resolvedDetentIndex, sheetName]);
 
-  if (modal === false) {
+  if (modal === false || !mounted) {
     return null;
   }
 
@@ -283,6 +291,7 @@ export function NativeSheet({
     dismissible: dismissOnOverlayPress !== false,
     draggable: disableDrag !== true,
     grabber: handle ?? false,
+    initialDetentIndex: resolvedDetentIndex,
     onBackPress: dismissOnBackPress
       ? () => {
           dismissingRef.current = true;
@@ -299,6 +308,7 @@ export function NativeSheet({
       presentedRef.current = false;
       dismissingRef.current = false;
       lastRequestedPositionRef.current = null;
+      setMounted(false);
       sheetState.setOpen(false);
       onAnimationComplete?.({ open: false });
     },
@@ -317,7 +327,6 @@ export function NativeSheet({
       grabberContentInsetTop={grabberContentInsetTop}
       name={sheetName}
       onRequestClose={() => {
-        dismissingRef.current = true;
         sheetState.setOpen(false);
       }}
       overlayPortalHostName={overlayPortalHostName}

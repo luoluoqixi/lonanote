@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { dismissTrueSheet, presentTrueSheet } from "./true_sheet";
+import { dismissTrueSheet } from "./true_sheet";
 import { TrueSheetStackHost } from "./true_sheet/stack_host";
 import {
   TrueSheetInnerStack,
@@ -8,7 +8,7 @@ import {
 } from "./true_sheet/stack_navigation";
 import type { NativeSheetStackProps } from "./types";
 
-function NativeSheetStackRoot({
+function TrueSheetNativeSheetStackRoot({
   children,
   initialRouteName = "index",
   name,
@@ -20,27 +20,35 @@ function NativeSheetStackRoot({
 }: NativeSheetStackProps) {
   const [sheetName] = useState(() => name ?? "native-sheet-stack");
   const [navigationRef] = useState(() => createTrueSheetStackNavigationRef());
+  const [mounted, setMounted] = useState(open);
   const presentedRef = useRef(false);
   const dismissingRef = useRef(false);
 
   useEffect(() => {
     if (open) {
-      if (presentedRef.current || dismissingRef.current) {
+      if (mounted || dismissingRef.current) {
         return;
       }
 
       dismissingRef.current = false;
-      presentTrueSheet(sheetName).catch(() => undefined);
+      setMounted(true);
       return;
     }
 
     if (!presentedRef.current || dismissingRef.current) {
+      if (mounted && !presentedRef.current) {
+        setMounted(false);
+      }
       return;
     }
 
     dismissingRef.current = true;
     dismissTrueSheet(sheetName).catch(() => undefined);
-  }, [open, sheetName]);
+  }, [mounted, open, sheetName]);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <TrueSheetStackHost
@@ -50,6 +58,7 @@ function NativeSheetStackRoot({
       onDidDismiss={() => {
         presentedRef.current = false;
         dismissingRef.current = false;
+        setMounted(false);
         onOpenChange?.(false);
       }}
       onDidPresent={() => {
@@ -57,18 +66,17 @@ function NativeSheetStackRoot({
         dismissingRef.current = false;
       }}
       onRequestClose={() => {
-        dismissingRef.current = true;
         onOpenChange?.(false);
       }}
       overlayPortalHostName={overlayPortalHostName}
       screenOptions={screenOptions}
-      sheetProps={sheetProps as any}
+      sheetProps={{ initialDetentIndex: 0, ...sheetProps } as any}
     >
       {children}
     </TrueSheetStackHost>
   );
 }
 
-export const NativeSheetStack = Object.assign(NativeSheetStackRoot, {
+export const NativeSheetStack = Object.assign(TrueSheetNativeSheetStackRoot, {
   Screen: TrueSheetInnerStack.Screen,
 });
