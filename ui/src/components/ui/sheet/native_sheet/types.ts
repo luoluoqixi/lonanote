@@ -31,7 +31,7 @@ export interface NativeSheetProps {
   dismissOnBackPress?: boolean;
   dismissOnOverlayPress?: boolean;
   disableDrag?: boolean;
-  /** 默认 grabber 下，内容区相对拖拽条预留的顶部占位；设为 0 可回到紧凑布局。 */
+  /** 原生 grabber 需要避让时，为内容区额外预留顶部占位；默认不预留，让拖拽条悬浮覆盖在内容顶部。 */
   grabberContentInsetTop?: number;
   handle?: boolean;
   modal?: boolean;

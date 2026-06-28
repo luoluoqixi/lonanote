@@ -21,14 +21,12 @@ import { TrueSheetScrollLayoutProvider } from "./true_sheet_scroll_context";
 import { useAndroidSheetBackHandler } from "./use_android_sheet_back_handler";
 import { useTrueSheetOverlayLayoutSync } from "./use_true_sheet_overlay_layout_sync";
 
-const DEFAULT_TRUE_SHEET_GRABBER_CONTENT_TOP_INSET = 12;
-
 export type TrueSheetPanelProps = {
   backgroundColor?: ViewStyle["backgroundColor"];
   children: ReactNode;
   /** `plain`：仅 grabber，无顶栏；`toolbar`：自绘工具栏，无 grabber。 */
   chrome?: TrueSheetChromeMode;
-  /** 默认 grabber 下，内容区相对拖拽条预留的顶部占位；设为 0 可回到紧凑布局。 */
+  /** 原生 grabber 需要避让时，为内容区额外预留顶部占位；默认不预留，让拖拽条悬浮覆盖在内容顶部。 */
   grabberContentInsetTop?: number;
   /** 覆盖 `chrome` 默认的 grabber 行为。 */
   grabber?: boolean;
@@ -118,8 +116,7 @@ function TrueSheetPanelInner({
       />
     ) : undefined;
   const resolvedHeader = headerProp ?? toolbarHeader;
-  const resolvedGrabberContentInsetTop =
-    grabberContentInsetTop ?? DEFAULT_TRUE_SHEET_GRABBER_CONTENT_TOP_INSET;
+  const resolvedGrabberContentInsetTop = grabberContentInsetTop ?? 0;
   const shouldReserveGrabberContentInset =
     grabber && resolvedHeader == null && resolvedGrabberContentInsetTop > 0;
 
