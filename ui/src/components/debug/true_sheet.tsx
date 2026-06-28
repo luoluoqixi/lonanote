@@ -133,6 +133,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
 
   return (
     <NativeSheet
+      backgroundColor={theme.background.val}
       handle
       name={getDebugSectionSheetName(sectionKey)}
       onOpenChange={(nextOpen) => {

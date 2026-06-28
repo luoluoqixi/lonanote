@@ -8,6 +8,7 @@ import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overla
 import type { NativeSheetProps } from "../types";
 
 type BottomSheetPanelProps = {
+  backgroundColor?: NativeSheetProps["backgroundColor"];
   children: React.ReactNode;
   dismissOnBackPress?: boolean;
   dismissOnOverlayPress?: boolean;
@@ -76,6 +77,7 @@ function resolveReplicaSheetSnapPoints(
 }
 
 export function BottomSheetPanel({
+  backgroundColor,
   children,
   dismissOnBackPress = true,
   dismissOnOverlayPress = true,
@@ -145,7 +147,11 @@ export function BottomSheetPanel({
         />
       ) : null}
       {enableHandle ? <ReplicaSheet.Handle /> : null}
-      <ReplicaSheet.Frame style={styles.content}>{body}</ReplicaSheet.Frame>
+      <ReplicaSheet.Frame
+        style={[styles.content, backgroundColor != null ? { backgroundColor } : null]}
+      >
+        {body}
+      </ReplicaSheet.Frame>
     </ReplicaSheet>
   );
 }

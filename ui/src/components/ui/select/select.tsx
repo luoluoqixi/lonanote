@@ -309,6 +309,7 @@ function SelectNativeSheet({
           touchSheetConfig={touchSheetConfig}
         />
       }
+      grabberContentInsetTop={0}
       modal
       onAnimationComplete={sheetControl.onAnimationComplete}
       onOpenChange={sheetControl.onOpenChange}

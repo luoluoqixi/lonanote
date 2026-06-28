@@ -46,6 +46,7 @@ function useControllableNativeSheetState({
 }
 
 export function NativeSheet({
+  backgroundColor,
   children,
   content,
   defaultOpen,
@@ -85,6 +86,7 @@ export function NativeSheet({
 
   return (
     <BottomSheetPanel
+      backgroundColor={backgroundColor}
       dismissOnBackPress={dismissOnBackPress}
       dismissOnOverlayPress={dismissOnOverlayPress}
       disableDrag={disableDrag}

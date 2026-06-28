@@ -2,7 +2,7 @@ import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import type { ReactElement, ReactNode } from "react";
 import { useCallback, useState } from "react";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, type ViewStyle } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
@@ -21,10 +21,15 @@ import { TrueSheetScrollLayoutProvider } from "./true_sheet_scroll_context";
 import { useAndroidSheetBackHandler } from "./use_android_sheet_back_handler";
 import { useTrueSheetOverlayLayoutSync } from "./use_true_sheet_overlay_layout_sync";
 
+const DEFAULT_TRUE_SHEET_GRABBER_CONTENT_TOP_INSET = 12;
+
 export type TrueSheetPanelProps = {
+  backgroundColor?: ViewStyle["backgroundColor"];
   children: ReactNode;
   /** `plain`：仅 grabber，无顶栏；`toolbar`：自绘工具栏，无 grabber。 */
   chrome?: TrueSheetChromeMode;
+  /** 默认 grabber 下，内容区相对拖拽条预留的顶部占位；设为 0 可回到紧凑布局。 */
+  grabberContentInsetTop?: number;
   /** 覆盖 `chrome` 默认的 grabber 行为。 */
   grabber?: boolean;
   /** 自绘 toolbar 是否透明。 */
@@ -52,8 +57,10 @@ const defaultSheetProps: Pick<TrueSheetProps, "detents" | "dismissible" | "inset
 };
 
 function TrueSheetPanelInner({
+  backgroundColor,
   children,
   chrome = "plain",
+  grabberContentInsetTop,
   grabber: grabberProp,
   headerTransparent = false,
   header: headerProp,
@@ -111,9 +118,14 @@ function TrueSheetPanelInner({
       />
     ) : undefined;
   const resolvedHeader = headerProp ?? toolbarHeader;
+  const resolvedGrabberContentInsetTop =
+    grabberContentInsetTop ?? DEFAULT_TRUE_SHEET_GRABBER_CONTENT_TOP_INSET;
+  const shouldReserveGrabberContentInset =
+    grabber && resolvedHeader == null && resolvedGrabberContentInsetTop > 0;
 
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
   const sheetScrollable = sheetProps?.scrollable ?? defaultSheetProps.scrollable;
+  const backgroundStyle = backgroundColor != null ? { backgroundColor } : null;
 
   const overlayBody =
     overlayPortalHostName != null ? (
@@ -135,6 +147,10 @@ function TrueSheetPanelInner({
       <GestureHandlerRootView
         style={[
           styles.gestureRoot,
+          backgroundStyle,
+          shouldReserveGrabberContentInset && {
+            paddingTop: resolvedGrabberContentInsetTop,
+          },
           overlayPortalHostName != null && Platform.OS === "ios" && styles.gestureRootScrollSibling,
         ]}
       >
@@ -159,7 +175,7 @@ function TrueSheetPanelInner({
       onDragEnd={overlayLayoutSync.onDragEnd}
       onPositionChange={overlayLayoutSync.onPositionChange}
       onWillPresent={overlayLayoutSync.onWillPresent}
-      style={mergeTrueSheetContentStyle(mergedScrollable, sheetProps?.style)}
+      style={mergeTrueSheetContentStyle(mergedScrollable, [sheetProps?.style, backgroundStyle])}
     >
       {sheetBody}
     </TrueSheet>

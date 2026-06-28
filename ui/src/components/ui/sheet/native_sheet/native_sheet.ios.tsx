@@ -194,6 +194,7 @@ function clampDetentIndex(index: number | undefined, detentCount: number) {
 }
 
 export function NativeSheet({
+  backgroundColor,
   children,
   content,
   defaultOpen,
@@ -201,6 +202,7 @@ export function NativeSheet({
   dismissOnBackPress = true,
   dismissOnOverlayPress = true,
   disableDrag,
+  grabberContentInsetTop,
   handle,
   modal,
   name,
@@ -311,6 +313,8 @@ export function NativeSheet({
 
   return (
     <TrueSheetPanel
+      backgroundColor={backgroundColor}
+      grabberContentInsetTop={grabberContentInsetTop}
       name={sheetName}
       onRequestClose={() => {
         dismissingRef.current = true;
