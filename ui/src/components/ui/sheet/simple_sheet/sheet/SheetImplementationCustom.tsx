@@ -9,7 +9,6 @@ import {
   useDidFinishSSR,
   useEvent,
 } from "@tamagui/core";
-import { getSafeArea } from "@tamagui/native";
 import { Portal, needsPortalRepropagation } from "@tamagui/portal";
 import React, { useState } from "react";
 import type {
@@ -19,6 +18,7 @@ import type {
   PanResponderGestureState,
 } from "react-native";
 import { Dimensions, PanResponder, View } from "react-native";
+import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { os } from "@/api/common/platform";
 
@@ -28,7 +28,11 @@ import { SheetProvider } from "./SheetContext";
 import { ParentSheetContext, SheetInsideSheetContext } from "./contexts";
 import { getGestureHandlerState } from "./gestureState";
 import { resisted } from "./helpers";
-import { getKeyboardOccludedHeight } from "./keyboardAvoidance";
+import {
+  getKeyboardAdjustedSheetY,
+  getKeyboardOccludedHeight,
+  getSheetReleasePosition,
+} from "./keyboardAvoidance";
 import { SheetPortal } from "./sheet_portal";
 import type { SheetProps, SnapPointsMode } from "./types";
 import { useGestureHandlerPan } from "./useGestureHandlerPan";
@@ -47,15 +51,6 @@ const hiddenSize = 10_000.1;
 // 挂载/收起时机来避免关闭白闪，再额外包一层普通 View 控制 close 开始后的命中区域。
 const rnghRootStyleOpen = { width: "100%", height: "100%" } as const;
 const rnghRootStyleClosed = { width: "100%", height: 0 } as const;
-
-// safe area top inset, cached per-session (device-constant value)
-let _cachedSafeAreaTop: number | undefined;
-function getSafeAreaTopInset(): number {
-  if (_cachedSafeAreaTop !== undefined) return _cachedSafeAreaTop;
-  // use @tamagui/native abstraction - returns 0 when not enabled
-  _cachedSafeAreaTop = getSafeArea().getInsets().top;
-  return _cachedSafeAreaTop;
-}
 
 let sheetHiddenStyleSheet: HTMLStyleElement | null = null;
 
@@ -103,6 +98,7 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
 
     const sheetRef = React.useRef<View>(undefined as unknown as View);
     const ref = useComposedRefs(forwardedRef, sheetRef, providerProps.contentRef as any);
+    const safeAreaInsets = useSafeAreaInsets();
 
     // TODO this can be extracted into a helper getAnimationConfig(animationProp as array | string)
     const { animationDriver } = useConfiguration();
@@ -262,18 +258,20 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       if (!isKeyboardVisible || keyboardHeight <= 0) {
         result = positions;
       } else {
-        const safeAreaTop = isWeb ? 0 : getSafeAreaTopInset();
-        result = positions.map((p) => {
-          // don't adjust the off-screen/close position (from dismissOnSnapToBottom's 0% snap)
-          // — it must stay at screenSize so the user can drag between real snap points
-          // without accidentally closing the sheet
-          if (screenSize && p >= screenSize) return p;
-          return Math.max(safeAreaTop, p - keyboardHeight);
-        });
+        result = positions.map((p) =>
+          getKeyboardAdjustedSheetY({
+            sheetY: p,
+            screenSize,
+            isKeyboardVisible,
+            keyboardHeight,
+            shouldTranslate: true,
+            safeAreaTop: isWeb ? 0 : safeAreaInsets.top,
+          }),
+        );
       }
       activePositionsRef.current = result;
       return result;
-    }, [positions, isKeyboardVisible, keyboardHeight, screenSize, isDragging]);
+    }, [positions, isKeyboardVisible, keyboardHeight, screenSize, isDragging, safeAreaInsets.top]);
 
     const topActivePosition = React.useMemo(() => {
       return activePositions.length > 0 ? Math.min(...activePositions) : 0;
@@ -545,17 +543,16 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         // vy goes up to about 4 at most (+ is down, - is up)
         const end = currentPos + frameSize * vy * 0.2;
 
-        let closestPoint = 0;
-        let dist = Number.POSITIVE_INFINITY;
-
-        for (let i = 0; i < positions.length; i++) {
-          const position = positions[i];
-          const curDist = end > position ? end - position : position - end;
-          if (curDist < dist) {
-            dist = curDist;
-            closestPoint = i;
-          }
-        }
+        const closestPoint = getSheetReleasePosition({
+          positions,
+          projectedEnd: end,
+          currentPosition: currentPos,
+          frameSize,
+          dismissOnSnapToBottom: providerProps.dismissOnSnapToBottom,
+          snapPointsMode,
+          isKeyboardVisible,
+          isWeb,
+        });
 
         // have to call both because state may not change but need to snap back
         setPosition(closestPoint);
@@ -680,7 +677,17 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
         onPanResponderTerminate: finish,
         onPanResponderRelease: finish,
       });
-    }, [disableDrag, isInnerSheetDragLocked, animateTo, frameSize, positions, setPosition]);
+    }, [
+      disableDrag,
+      isInnerSheetDragLocked,
+      animateTo,
+      frameSize,
+      positions,
+      setPosition,
+      providerProps.dismissOnSnapToBottom,
+      snapPointsMode,
+      isKeyboardVisible,
+    ]);
 
     // animate to keyboard-adjusted position when keyboard state changes
     React.useEffect(() => {
@@ -727,6 +734,9 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
       resisted,
       disableDrag,
       isShowingInnerSheet: isInnerSheetDragLocked,
+      dismissOnSnapToBottom: providerProps.dismissOnSnapToBottom,
+      snapPointsMode,
+      isKeyboardVisible,
       setAnimatedPosition: (val: number) => {
         // directly set the animated value for smooth dragging
         at.current = val;
@@ -910,7 +920,13 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     if (process.env.TAMAGUI_TARGET === "native" && needsPortalRepropagation()) {
       // TODO alongside sheet scope="" need to pass scope here
       const adaptContext = useAdaptContext();
-      contents = <ProvideAdaptContext {...adaptContext}>{contents}</ProvideAdaptContext>;
+      contents = (
+        <ProvideAdaptContext {...adaptContext}>
+          <SafeAreaInsetsContext.Provider value={safeAreaInsets}>
+            {contents}
+          </SafeAreaInsetsContext.Provider>
+        </ProvideAdaptContext>
+      );
     }
 
     // start mounted so we get an accurate measurement the first time
