@@ -4,6 +4,7 @@
 # - Android：扩大 native grabber 的透明整行拖拽热区，并让该区域强制走 sheet drag。
 # - Android：增加 disableStackingTranslation 开关，可禁用子 sheet 打开时父 sheet 下移的 stacked translation。
 # - Android：Navigation stack 内 scrollable 页面到顶后继续下拉时，允许从 active scrollView 把手势接回 sheet。
+# - Android：下调 TrueSheet 原生 dismiss 判定门槛，减少下拉关闭时的回弹。
 diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
 index d388ced8..d6ff2cf3 100644
 --- a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
@@ -1010,3 +1011,28 @@ index ebd743cd..d7b24391 100644
 -    const val TAG_NAME = "TrueSheet"
 -  }
  }
+diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetViewController.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetViewController.kt
+index 6473a0ff..00df094a 100644
+--- a/android/src/main/java/com/lodev09/truesheet/TrueSheetViewController.kt
++++ b/android/src/main/java/com/lodev09/truesheet/TrueSheetViewController.kt
+@@ -119,6 +119,8 @@ class TrueSheetViewController(private val reactContext: ThemedReactContext) :
+     private const val TRANSLATE_ANIMATION_DURATION = 200L
+     private const val DISMISS_DURATION = 200L
+     private const val SCREEN_FADE_DURATION = 150L
++    private const val ANDROID_HIDE_FRICTION = 0.3f
++    private const val ANDROID_SIGNIFICANT_VELOCITY_THRESHOLD = 200
+   }
+ 
+   // =============================================================================
+@@ -748,6 +750,11 @@ class TrueSheetViewController(private val reactContext: ThemedReactContext) :
+     behavior.isHideable = true
+     behavior.isDraggable = draggable
+     behavior.scrollingExpandsSheet = scrollableOptions?.scrollingExpandsSheet ?: true
++    // Material default dismissal tuning on Android is fairly conservative for
++    // modal sheets. Nudging these closer to gorhom-style momentum makes
++    // drag-to-close feel less sticky without changing detent mapping.
++    behavior.setHideFriction(ANDROID_HIDE_FRICTION)
++    behavior.setSignificantVelocityThreshold(ANDROID_SIGNIFICANT_VELOCITY_THRESHOLD)
+     behavior.state = BottomSheetBehavior.STATE_HIDDEN
+     behavior.addBottomSheetCallback(sheetCallback)
+ 
