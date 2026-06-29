@@ -9,7 +9,7 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "tamagui";
 
@@ -726,6 +726,30 @@ export function NativeListRoot({
     ...(contentTopPadding != null ? { paddingTop: contentTopPadding } : null),
     ...(contentBottomPadding != null ? { paddingBottom: contentBottomPadding } : null),
   };
+  const shouldUseTrueSheetScrollView = insideTrueSheet && os() === "android";
+
+  if (shouldUseTrueSheetScrollView) {
+    return (
+      <ScrollView
+        alwaysBounceVertical={alwaysBounceVertical}
+        contentContainerStyle={[
+          styles.rootContent,
+          styles.scrollViewportFill,
+          rootBackground,
+          contentSpacingStyle,
+          contentContainerStyle,
+        ]}
+        keyboardShouldPersistTaps={keyboardShouldPersistTaps ?? "handled"}
+        nestedScrollEnabled={nestedScrollEnabled ?? true}
+        scrollEnabled={scrollable}
+        showsVerticalScrollIndicator={showsVerticalScrollIndicator ?? true}
+        style={[styles.root, rootBackground, style]}
+        {...scrollViewProps}
+      >
+        {renderStaticEntries(entries)}
+      </ScrollView>
+    );
+  }
 
   return (
     <FlashList

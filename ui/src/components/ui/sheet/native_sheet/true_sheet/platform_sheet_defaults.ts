@@ -4,7 +4,7 @@ import { Platform, type StyleProp, type ViewStyle } from "react-native";
 const scrollableWithPinnedScroll = {
   scrollable: true,
   scrollableOptions: {
-    scrollingExpandsSheet: false,
+    scrollingExpandsSheet: Platform.OS === "android",
   },
 } as const satisfies Pick<TrueSheetProps, "scrollable" | "scrollableOptions">;
 
