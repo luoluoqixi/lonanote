@@ -419,3 +419,593 @@ index b4b5d600..b1642a9a 100644
          }
        }
      } else {
+diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
+index 2af27f15..84971339 100644
+--- a/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
++++ b/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
+@@ -77,6 +77,26 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+     }
+   }
+ 
++  private fun pinScrollView(scrollView: ViewGroup) {
++    originalScrollViewPaddingBottom = scrollView.paddingBottom
++    pinnedScrollView = scrollView
++
++    scrollView.isNestedScrollingEnabled = true
++    (scrollView.parent as? SwipeRefreshLayout)?.isNestedScrollingEnabled = false
++
++    scrollView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
++      if (scrollY != oldScrollY) {
++        delegate?.contentViewDidScroll()
++      }
++    }
++  }
++
++  private fun syncPinnedScrollViewInset() {
++    val keyboardHeight = keyboardObserver?.currentHeight ?: 0
++    val basePadding = if (keyboardHeight > 0) keyboardHeight else bottomInset
++    setScrollViewPaddingBottom(originalScrollViewPaddingBottom + basePadding)
++  }
++
+   fun setupScrollable(enabled: Boolean, bottomInset: Int) {
+     if (!enabled) {
+       clearScrollable()
+@@ -88,37 +108,23 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+       clearScrollable()
+     }
+ 
+-    // Already set up with same inset and valid scroll view
+-    if (pinnedScrollView != null && this.bottomInset == bottomInset) {
+-      return
+-    }
+-
+     val scrollView = findScrollView(this) ?: return
+ 
+-    // Only capture originals on first pin
+-    if (pinnedScrollView == null) {
+-      originalScrollViewPaddingBottom = scrollView.paddingBottom
+-      pinnedScrollView = scrollView
+-
+-      scrollView.isNestedScrollingEnabled = true
+-      (scrollView.parent as? SwipeRefreshLayout)?.isNestedScrollingEnabled = false
++    // Already set up with same inset and still pinned to the current visible scroll view
++    if (pinnedScrollView === scrollView && this.bottomInset == bottomInset) {
++      return
++    }
+ 
+-      scrollView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+-        if (scrollY != oldScrollY) {
+-          delegate?.contentViewDidScroll()
+-        }
+-      }
++    if (pinnedScrollView !== scrollView) {
++      clearScrollable()
++      pinScrollView(scrollView)
++    } else if (pinnedScrollView == null) {
++      pinScrollView(scrollView)
+     }
+ 
+     this.bottomInset = bottomInset
+ 
+-    setScrollViewPaddingBottom(originalScrollViewPaddingBottom + bottomInset)
+-
+-    // If keyboard is currently showing, re-apply the keyboard inset to the new ScrollView
+-    val keyboardHeight = keyboardObserver?.currentHeight ?: 0
+-    if (keyboardHeight > 0) {
+-      setScrollViewPaddingBottom(originalScrollViewPaddingBottom + keyboardHeight)
+-    }
++    syncPinnedScrollViewInset()
+   }
+ 
+   // TODO: Replace this workaround with synchronous state layout updates on every sheet resize.
+@@ -157,6 +163,14 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+   }
+ 
+   fun findScrollView(): ViewGroup? {
++    val visibleScrollView = findScrollView(this as View)
++
++    if (visibleScrollView != null && pinnedScrollView !== visibleScrollView) {
++      clearScrollable()
++      pinScrollView(visibleScrollView)
++      syncPinnedScrollViewInset()
++    }
++
+     if (
+       pinnedScrollView != null &&
+       pinnedScrollView?.isDescendantOf(this) == true &&
+@@ -169,7 +183,7 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+       clearScrollable()
+     }
+ 
+-    return findScrollView(this as View)
++    return visibleScrollView
+   }
+ 
+   private fun findScrollView(view: View): ViewGroup? {
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+index b1642a9a..54080c58 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+@@ -243,12 +243,12 @@ class TrueSheetCoordinatorLayout(context: Context) :
+ 
+     val scrollView = delegate?.findScrollView()
+     val hasRefreshControl = scrollView?.parent is SwipeRefreshLayout
+-    val cannotScroll = scrollView != null &&
++    val canPullSheetFromTop = scrollView != null &&
+       !hasRefreshControl &&
+-      scrollView.scrollY == 0 &&
+-      !scrollView.canScrollVertically(1)
++      !scrollView.canScrollVertically(-1)
++    val cannotScroll = canPullSheetFromTop && !scrollView.canScrollVertically(1)
+ 
+-    if (cannotScroll) {
++    if (canPullSheetFromTop) {
+       when (ev.action and MotionEvent.ACTION_MASK) {
+         MotionEvent.ACTION_DOWN -> {
+           dragging = false
+@@ -261,7 +261,16 @@ class TrueSheetCoordinatorLayout(context: Context) :
+           if (pointerIndex != -1) {
+             val y = ev.getY(pointerIndex)
+             val deltaY = initialY - y
+-            if (kotlin.math.abs(deltaY) > touchSlop) {
++            val shouldStartDragging =
++              if (cannotScroll) {
++                kotlin.math.abs(deltaY) > touchSlop
++              } else {
++                // ScrollView 已在顶部时，仅当用户继续向下拖拽才把手势交回 sheet，
++                // 保持向上滚动仍由列表自己处理。
++                deltaY < -touchSlop
++              }
++
++            if (shouldStartDragging) {
+               dragging = true
+               parent?.requestDisallowInterceptTouchEvent(true)
+             }
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+index 54080c58..63bcb1d6 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+@@ -7,6 +7,7 @@ import android.view.MotionEvent
+ import android.view.View
+ import android.view.ViewConfiguration
+ import android.view.ViewGroup
++import android.util.Log
+ import android.widget.EditText
+ import androidx.coordinatorlayout.widget.CoordinatorLayout
+ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+@@ -56,6 +57,11 @@ class TrueSheetCoordinatorLayout(context: Context) :
+   private var streamHasGestureRoot = false
+   private var streamGestureClaimed = false
+ 
++  private fun describeView(view: View?): String {
++    if (view == null) return "null"
++    return "${view.javaClass.simpleName}@${System.identityHashCode(view)}(scrollY=${view.scrollY}, shown=${view.isShown})"
++  }
++
+   init {
+     layoutParams = LayoutParams(
+       LayoutParams.MATCH_PARENT,
+@@ -254,6 +260,10 @@ class TrueSheetCoordinatorLayout(context: Context) :
+           dragging = false
+           initialY = ev.y
+           activePointerId = ev.getPointerId(0)
++          Log.d(
++            TAG_NAME,
++            "top-pull down scrollView=${describeView(scrollView)} cannotScroll=$cannotScroll hasRefresh=$hasRefreshControl"
++          )
+         }
+ 
+         MotionEvent.ACTION_MOVE -> {
+@@ -273,6 +283,10 @@ class TrueSheetCoordinatorLayout(context: Context) :
+             if (shouldStartDragging) {
+               dragging = true
+               parent?.requestDisallowInterceptTouchEvent(true)
++              Log.d(
++                TAG_NAME,
++                "handoff-to-sheet scrollView=${describeView(scrollView)} cannotScroll=$cannotScroll deltaY=$deltaY touchSlop=$touchSlop"
++              )
+             }
+           }
+         }
+@@ -306,6 +320,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
+   }
+ 
+   companion object {
++    private const val TAG_NAME = "TrueSheetCoord"
+     private const val GESTURE_HANDLER_ROOT_VIEW_CLASS = "com.swmansion.gesturehandler.react.RNGestureHandlerRootView"
+     private const val GESTURE_CLAIM_SLOP_FACTOR = 3
+   }
+diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
+index 91e5219f..ebd743cd 100644
+--- a/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
++++ b/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
+@@ -1,6 +1,7 @@
+ package com.lodev09.truesheet
+ 
+ import android.annotation.SuppressLint
++import android.util.Log
+ import android.view.View
+ import android.view.ViewGroup
+ import android.widget.ScrollView
+@@ -45,6 +46,11 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+   private var keyboardScrollOffset: Float = 0f
+   private var keyboardObserver: TrueSheetKeyboardObserver? = null
+ 
++  private fun describeView(view: View?): String {
++    if (view == null) return "null"
++    return "${view.javaClass.simpleName}@${System.identityHashCode(view)}(scrollY=${view.scrollY}, shown=${view.isShown})"
++  }
++
+   var scrollableOptions: ScrollableOptions? = null
+     set(value) {
+       field = value
+@@ -80,6 +86,8 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+   private fun pinScrollView(scrollView: ViewGroup) {
+     originalScrollViewPaddingBottom = scrollView.paddingBottom
+     pinnedScrollView = scrollView
++    Log.d(TAG_NAME, "pin-scroll-view ${describeView(scrollView)}")
++
+     scrollView.isNestedScrollingEnabled = true
+     (scrollView.parent as? SwipeRefreshLayout)?.isNestedScrollingEnabled = false
+ 
+@@ -115,6 +123,10 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+     }
+ 
+     if (pinnedScrollView !== scrollView) {
++      Log.d(
++        TAG_NAME,
++        "rebind-scroll-view from=${describeView(pinnedScrollView)} to=${describeView(scrollView)} bottomInset=$bottomInset"
++      )
+       clearScrollable()
+       pinScrollView(scrollView)
+     } else if (pinnedScrollView == null) {
+@@ -165,6 +177,10 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+     val visibleScrollView = findScrollView(this as View)
+ 
+     if (visibleScrollView != null && pinnedScrollView !== visibleScrollView) {
++      Log.d(
++        TAG_NAME,
++        "find-scroll-view switch from=${describeView(pinnedScrollView)} to=${describeView(visibleScrollView)}"
++      )
+       clearScrollable()
+       pinScrollView(visibleScrollView)
+       syncPinnedScrollViewInset()
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+index 63bcb1d6..c9ceeaab 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+@@ -118,6 +118,13 @@ class TrueSheetCoordinatorLayout(context: Context) :
+     // (a pinned ScrollView or an overflowing multiline EditText still scrolls). Other children
+     // (maps, sliders, scrollables) keep the standard disallow contract.
+     if (disallowIntercept && touchedViewIsEditText() && !touchedViewCanScrollVertically()) return
++    if (disallowIntercept && shouldIgnoreDisallowInterceptForTopScrollView()) {
++      Log.d(
++        TAG_NAME,
++        "ignore-disallow top scrollView=${describeView(delegate?.findScrollView())}"
++      )
++      return
++    }
+     super.requestDisallowInterceptTouchEvent(disallowIntercept)
+   }
+ 
+@@ -145,6 +152,13 @@ class TrueSheetCoordinatorLayout(context: Context) :
+     return false
+   }
+ 
++  private fun shouldIgnoreDisallowInterceptForTopScrollView(): Boolean {
++    val scrollView = delegate?.findScrollView() ?: return false
++    val hasRefreshControl = scrollView.parent is SwipeRefreshLayout
++    if (hasRefreshControl || scrollView.canScrollVertically(-1)) return false
++    return findDescendantAt(scrollView, streamInitialX.toInt(), streamInitialY.toInt()) { true }
++  }
++
+   /**
+    * Called by descendant RootView implementations (controller, footer) when a child
+    * starts a native gesture — e.g. an RNGH handler activated or a scrollable began
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+index c9ceeaab..c5b72e45 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+@@ -165,6 +165,10 @@ class TrueSheetCoordinatorLayout(context: Context) :
+    * scrolling. Yields sheet interception for the rest of the touch stream.
+    */
+   fun childDidClaimNativeGesture() {
++    Log.d(
++      TAG_NAME,
++      "child-claimed scrollView=${describeView(delegate?.findScrollView())}"
++    )
+     streamGestureClaimed = true
+   }
+ 
+@@ -208,6 +212,10 @@ class TrueSheetCoordinatorLayout(context: Context) :
+       if (dx > touchSlop || dy > touchSlop) {
+         streamDirectionDecided = true
+         streamHorizontalLocked = dx > dy
++        Log.d(
++          TAG_NAME,
++          "direction-decided horizontal=$streamHorizontalLocked dx=$dx dy=$dy touchSlop=$touchSlop"
++        )
+       }
+     }
+ 
+@@ -221,6 +229,12 @@ class TrueSheetCoordinatorLayout(context: Context) :
+     }
+ 
+     if (streamGestureClaimed) {
++      if (action == MotionEvent.ACTION_MOVE) {
++        Log.d(
++          TAG_NAME,
++          "skip-move gesture-claimed scrollView=${describeView(delegate?.findScrollView())}"
++        )
++      }
+       if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+         streamGestureClaimed = false
+         streamStartedInGrabber = false
+@@ -234,6 +248,10 @@ class TrueSheetCoordinatorLayout(context: Context) :
+       action == MotionEvent.ACTION_MOVE &&
+       kotlin.math.abs(ev.rawY - streamInitialY) < touchSlop * GESTURE_CLAIM_SLOP_FACTOR
+     ) {
++      Log.d(
++        TAG_NAME,
++        "wait-gesture-root dy=${kotlin.math.abs(ev.rawY - streamInitialY)} threshold=${touchSlop * GESTURE_CLAIM_SLOP_FACTOR}"
++      )
+       return false
+     }
+ 
+@@ -285,6 +303,10 @@ class TrueSheetCoordinatorLayout(context: Context) :
+           if (pointerIndex != -1) {
+             val y = ev.getY(pointerIndex)
+             val deltaY = initialY - y
++            Log.d(
++              TAG_NAME,
++              "top-pull move scrollView=${describeView(scrollView)} deltaY=$deltaY cannotScroll=$cannotScroll"
++            )
+             val shouldStartDragging =
+               if (cannotScroll) {
+                 kotlin.math.abs(deltaY) > touchSlop
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+index c5b72e45..48a952a6 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+@@ -159,6 +159,18 @@ class TrueSheetCoordinatorLayout(context: Context) :
+     return findDescendantAt(scrollView, streamInitialX.toInt(), streamInitialY.toInt()) { true }
+   }
+ 
++  private fun shouldPreferSheetTopPull(ev: MotionEvent): Boolean {
++    val scrollView = delegate?.findScrollView() ?: return false
++    val hasRefreshControl = scrollView.parent is SwipeRefreshLayout
++    if (hasRefreshControl || scrollView.canScrollVertically(-1)) return false
++
++    val pointerIndex = ev.findPointerIndex(activePointerId)
++    if (pointerIndex == -1) return false
++
++    val deltaY = initialY - ev.getY(pointerIndex)
++    return deltaY < -touchSlop
++  }
++
+   /**
+    * Called by descendant RootView implementations (controller, footer) when a child
+    * starts a native gesture — e.g. an RNGH handler activated or a scrollable began
+@@ -228,6 +240,16 @@ class TrueSheetCoordinatorLayout(context: Context) :
+       return false
+     }
+ 
++    if (streamGestureClaimed) {
++      if (action == MotionEvent.ACTION_MOVE && shouldPreferSheetTopPull(ev)) {
++        Log.d(
++          TAG_NAME,
++          "release-gesture-claim top-pull scrollView=${describeView(delegate?.findScrollView())}"
++        )
++        streamGestureClaimed = false
++      }
++    }
++
+     if (streamGestureClaimed) {
+       if (action == MotionEvent.ACTION_MOVE) {
+         Log.d(
+@@ -246,6 +268,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
+     // under the touch can activate and claim the stream first.
+     if (streamHasGestureRoot &&
+       action == MotionEvent.ACTION_MOVE &&
++      !shouldPreferSheetTopPull(ev) &&
+       kotlin.math.abs(ev.rawY - streamInitialY) < touchSlop * GESTURE_CLAIM_SLOP_FACTOR
+     ) {
+       Log.d(
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+index 48a952a6..8479a445 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+@@ -7,7 +7,6 @@ import android.view.MotionEvent
+ import android.view.View
+ import android.view.ViewConfiguration
+ import android.view.ViewGroup
+-import android.util.Log
+ import android.widget.EditText
+ import androidx.coordinatorlayout.widget.CoordinatorLayout
+ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+@@ -57,11 +56,6 @@ class TrueSheetCoordinatorLayout(context: Context) :
+   private var streamHasGestureRoot = false
+   private var streamGestureClaimed = false
+ 
+-  private fun describeView(view: View?): String {
+-    if (view == null) return "null"
+-    return "${view.javaClass.simpleName}@${System.identityHashCode(view)}(scrollY=${view.scrollY}, shown=${view.isShown})"
+-  }
+-
+   init {
+     layoutParams = LayoutParams(
+       LayoutParams.MATCH_PARENT,
+@@ -118,13 +112,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
+     // (a pinned ScrollView or an overflowing multiline EditText still scrolls). Other children
+     // (maps, sliders, scrollables) keep the standard disallow contract.
+     if (disallowIntercept && touchedViewIsEditText() && !touchedViewCanScrollVertically()) return
+-    if (disallowIntercept && shouldIgnoreDisallowInterceptForTopScrollView()) {
+-      Log.d(
+-        TAG_NAME,
+-        "ignore-disallow top scrollView=${describeView(delegate?.findScrollView())}"
+-      )
+-      return
+-    }
++    if (disallowIntercept && shouldIgnoreDisallowInterceptForTopScrollView()) return
+     super.requestDisallowInterceptTouchEvent(disallowIntercept)
+   }
+ 
+@@ -177,10 +165,6 @@ class TrueSheetCoordinatorLayout(context: Context) :
+    * scrolling. Yields sheet interception for the rest of the touch stream.
+    */
+   fun childDidClaimNativeGesture() {
+-    Log.d(
+-      TAG_NAME,
+-      "child-claimed scrollView=${describeView(delegate?.findScrollView())}"
+-    )
+     streamGestureClaimed = true
+   }
+ 
+@@ -224,10 +208,6 @@ class TrueSheetCoordinatorLayout(context: Context) :
+       if (dx > touchSlop || dy > touchSlop) {
+         streamDirectionDecided = true
+         streamHorizontalLocked = dx > dy
+-        Log.d(
+-          TAG_NAME,
+-          "direction-decided horizontal=$streamHorizontalLocked dx=$dx dy=$dy touchSlop=$touchSlop"
+-        )
+       }
+     }
+ 
+@@ -242,21 +222,11 @@ class TrueSheetCoordinatorLayout(context: Context) :
+ 
+     if (streamGestureClaimed) {
+       if (action == MotionEvent.ACTION_MOVE && shouldPreferSheetTopPull(ev)) {
+-        Log.d(
+-          TAG_NAME,
+-          "release-gesture-claim top-pull scrollView=${describeView(delegate?.findScrollView())}"
+-        )
+         streamGestureClaimed = false
+       }
+     }
+ 
+     if (streamGestureClaimed) {
+-      if (action == MotionEvent.ACTION_MOVE) {
+-        Log.d(
+-          TAG_NAME,
+-          "skip-move gesture-claimed scrollView=${describeView(delegate?.findScrollView())}"
+-        )
+-      }
+       if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+         streamGestureClaimed = false
+         streamStartedInGrabber = false
+@@ -271,10 +241,6 @@ class TrueSheetCoordinatorLayout(context: Context) :
+       !shouldPreferSheetTopPull(ev) &&
+       kotlin.math.abs(ev.rawY - streamInitialY) < touchSlop * GESTURE_CLAIM_SLOP_FACTOR
+     ) {
+-      Log.d(
+-        TAG_NAME,
+-        "wait-gesture-root dy=${kotlin.math.abs(ev.rawY - streamInitialY)} threshold=${touchSlop * GESTURE_CLAIM_SLOP_FACTOR}"
+-      )
+       return false
+     }
+ 
+@@ -315,10 +281,6 @@ class TrueSheetCoordinatorLayout(context: Context) :
+           dragging = false
+           initialY = ev.y
+           activePointerId = ev.getPointerId(0)
+-          Log.d(
+-            TAG_NAME,
+-            "top-pull down scrollView=${describeView(scrollView)} cannotScroll=$cannotScroll hasRefresh=$hasRefreshControl"
+-          )
+         }
+ 
+         MotionEvent.ACTION_MOVE -> {
+@@ -326,10 +288,6 @@ class TrueSheetCoordinatorLayout(context: Context) :
+           if (pointerIndex != -1) {
+             val y = ev.getY(pointerIndex)
+             val deltaY = initialY - y
+-            Log.d(
+-              TAG_NAME,
+-              "top-pull move scrollView=${describeView(scrollView)} deltaY=$deltaY cannotScroll=$cannotScroll"
+-            )
+             val shouldStartDragging =
+               if (cannotScroll) {
+                 kotlin.math.abs(deltaY) > touchSlop
+@@ -342,10 +300,6 @@ class TrueSheetCoordinatorLayout(context: Context) :
+             if (shouldStartDragging) {
+               dragging = true
+               parent?.requestDisallowInterceptTouchEvent(true)
+-              Log.d(
+-                TAG_NAME,
+-                "handoff-to-sheet scrollView=${describeView(scrollView)} cannotScroll=$cannotScroll deltaY=$deltaY touchSlop=$touchSlop"
+-              )
+             }
+           }
+         }
+@@ -379,7 +333,6 @@ class TrueSheetCoordinatorLayout(context: Context) :
+   }
+ 
+   companion object {
+-    private const val TAG_NAME = "TrueSheetCoord"
+     private const val GESTURE_HANDLER_ROOT_VIEW_CLASS = "com.swmansion.gesturehandler.react.RNGestureHandlerRootView"
+     private const val GESTURE_CLAIM_SLOP_FACTOR = 3
+   }
+diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
+index ebd743cd..d7b24391 100644
+--- a/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
++++ b/android/src/main/java/com/lodev09/truesheet/TrueSheetContentView.kt
+@@ -1,7 +1,6 @@
+ package com.lodev09.truesheet
+ 
+ import android.annotation.SuppressLint
+-import android.util.Log
+ import android.view.View
+ import android.view.ViewGroup
+ import android.widget.ScrollView
+@@ -46,11 +45,6 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+   private var keyboardScrollOffset: Float = 0f
+   private var keyboardObserver: TrueSheetKeyboardObserver? = null
+ 
+-  private fun describeView(view: View?): String {
+-    if (view == null) return "null"
+-    return "${view.javaClass.simpleName}@${System.identityHashCode(view)}(scrollY=${view.scrollY}, shown=${view.isShown})"
+-  }
+-
+   var scrollableOptions: ScrollableOptions? = null
+     set(value) {
+       field = value
+@@ -86,7 +80,6 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+   private fun pinScrollView(scrollView: ViewGroup) {
+     originalScrollViewPaddingBottom = scrollView.paddingBottom
+     pinnedScrollView = scrollView
+-    Log.d(TAG_NAME, "pin-scroll-view ${describeView(scrollView)}")
+ 
+     scrollView.isNestedScrollingEnabled = true
+     (scrollView.parent as? SwipeRefreshLayout)?.isNestedScrollingEnabled = false
+@@ -123,10 +116,6 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+     }
+ 
+     if (pinnedScrollView !== scrollView) {
+-      Log.d(
+-        TAG_NAME,
+-        "rebind-scroll-view from=${describeView(pinnedScrollView)} to=${describeView(scrollView)} bottomInset=$bottomInset"
+-      )
+       clearScrollable()
+       pinScrollView(scrollView)
+     } else if (pinnedScrollView == null) {
+@@ -177,10 +166,6 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+     val visibleScrollView = findScrollView(this as View)
+ 
+     if (visibleScrollView != null && pinnedScrollView !== visibleScrollView) {
+-      Log.d(
+-        TAG_NAME,
+-        "find-scroll-view switch from=${describeView(pinnedScrollView)} to=${describeView(visibleScrollView)}"
+-      )
+       clearScrollable()
+       pinScrollView(visibleScrollView)
+       syncPinnedScrollViewInset()
+@@ -288,8 +273,4 @@ class TrueSheetContentView(private val reactContext: ThemedReactContext) : React
+       scrollView.smoothScrollTo(0, relativeBottom - visibleHeight)
+     }
+   }
+-
+-  companion object {
+-    const val TAG_NAME = "TrueSheet"
+-  }
+ }
