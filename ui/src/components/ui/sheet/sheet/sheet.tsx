@@ -22,6 +22,7 @@ import type {
 
 const DEFAULT_OVERLAY_ENTER_STYLE = { opacity: 0 } as const;
 const DEFAULT_OVERLAY_EXIT_STYLE = { opacity: 0 } as const;
+const DEFAULT_OVERLAY_OPACITY = 1;
 const NOOP_HANDLE_PRESS = () => {};
 
 type SnapPointNormalization = {
@@ -124,6 +125,10 @@ function SheetRoot(props: SheetProps) {
     handleProps?.onPress == null && os() === "android"
       ? { ...handleProps, onPress: NOOP_HANDLE_PRESS }
       : handleProps;
+  const resolvedOverlayProps =
+    modal === true && overlayProps?.opacity == null
+      ? { ...overlayProps, opacity: DEFAULT_OVERLAY_OPACITY }
+      : overlayProps;
   const resolvedOnPositionChange = useMemo(() => {
     if (onPositionChange == null) {
       return undefined;
@@ -161,7 +166,7 @@ function SheetRoot(props: SheetProps) {
     <>{children}</>
   ) : (
     <>
-      {overlay ? <SheetOverlay {...overlayProps} /> : null}
+      {overlay ? <SheetOverlay {...resolvedOverlayProps} /> : null}
       {handle ? <SheetHandle {...resolvedHandleProps} /> : null}
       <SheetFrame {...frameProps}>
         {scrollView ? <SheetScrollView {...scrollViewProps}>{content}</SheetScrollView> : content}
@@ -243,7 +248,7 @@ function SheetOverlay(props: SheetOverlayProps) {
       bg={props.bg ?? "$shadowColor"}
       enterStyle={props.enterStyle ?? DEFAULT_OVERLAY_ENTER_STYLE}
       exitStyle={props.exitStyle ?? DEFAULT_OVERLAY_EXIT_STYLE}
-      opacity={props.opacity ?? 0.5}
+      opacity={props.opacity ?? DEFAULT_OVERLAY_OPACITY}
       transition={props.transition ?? "lazy"}
     />
   );
