@@ -124,7 +124,7 @@ function DemoModalSheet({
       position={position}
       snapPoints={snapPoints}
       snapPointsMode={snapPointsMode}
-      transition="medium"
+      transition="200ms"
     />
   );
 }
