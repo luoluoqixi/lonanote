@@ -3,6 +3,7 @@
 # - iOS：扩大 custom native grabber 的透明整行拖拽热区，同时保持 pill 的可见大小不变。
 # - Android：扩大 native grabber 的透明整行拖拽热区，并让该区域强制走 sheet drag。
 # - Android：增加 disableStackingTranslation 开关，可禁用子 sheet 打开时父 sheet 下移的 stacked translation。
+# - Android：Navigation stack 内 scrollable 页面到顶后继续下拉时，允许从 active scrollView 把手势接回 sheet。
 diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
 index d388ced8..d6ff2cf3 100644
 --- a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
