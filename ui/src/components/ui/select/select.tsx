@@ -4,7 +4,7 @@ import {
   useAdaptContext,
   useAdaptIsActive,
 } from "@tamagui/adapt";
-import { Theme, isWeb as isTamaguiWeb, useThemeName } from "@tamagui/core";
+import { Theme, isWeb as isTamaguiWeb, useTheme, useThemeName } from "@tamagui/core";
 import { Dismissable } from "@tamagui/dismissable";
 import { FocusScope } from "@tamagui/focus-scope";
 import { Check, ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
@@ -294,6 +294,10 @@ function SelectNativeSheet({
   touchSheetConfig,
 }: SelectSheetBaseProps) {
   const sheetControl = React.useContext(SelectSheetControlContext);
+  const theme = useTheme();
+  const platform = os();
+  const nativeSheetBackgroundColor =
+    platform === "android" ? (theme.backgroundPress?.val ?? theme.background?.val) : undefined;
 
   if (sheetControl == null) {
     return null;
@@ -301,6 +305,7 @@ function SelectNativeSheet({
 
   return (
     <NativeSheet
+      backgroundColor={nativeSheetBackgroundColor}
       content={
         <SelectNativeSheetFrame
           initialScrollY={initialScrollY}

@@ -176,6 +176,7 @@ function TrueSheetPanelInner({
 
   return (
     <TrueSheet
+      backgroundColor={backgroundColor}
       header={resolvedHeader}
       name={name}
       {...defaultSheetProps}
