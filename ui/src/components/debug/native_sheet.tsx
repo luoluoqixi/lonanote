@@ -3,7 +3,7 @@ import { useCallback, useSyncExternalStore } from "react";
 import { Platform, View } from "react-native";
 import { useTheme } from "tamagui";
 
-import { isDesktop, isWeb, os } from "@/api/common";
+import { isDesktop, isWeb } from "@/api/common";
 import { NativeSheet, NativeSheetStack } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/debug_overlay_portal";
 import { nativeSheetStackScreenOptions } from "@/components/ui/sheet/native_sheet/native_sheet_stack_screen_options";
@@ -65,13 +65,6 @@ function DebugNativeSheetStackHost() {
   const colorScheme = useResolvedeColorScheme();
   const theme = useTheme();
   const open = useSyncExternalStore(subscribeDebugPanelState, getDebugPanelOpen, getDebugPanelOpen);
-  const nativeSheetProps =
-    os() === "ios"
-      ? undefined
-      : {
-          detents: [0.92],
-          grabber: true,
-        };
 
   return (
     <NativeSheetStack
@@ -93,7 +86,6 @@ function DebugNativeSheetStackHost() {
         theme.accentColor.val,
         theme.color.val,
       )}
-      sheetProps={nativeSheetProps}
     >
       <NativeSheetStack.Screen
         component={DebugHomeRoute}
