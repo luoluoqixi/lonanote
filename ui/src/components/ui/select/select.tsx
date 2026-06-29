@@ -23,7 +23,7 @@ import { LinearGradient } from "tamagui/linear-gradient";
 
 import { isWeb, os } from "@/api/common/platform";
 import { Sheet } from "@/components/ui/sheet";
-import { NativeSheet } from "@/components/ui/sheet/native_sheet";
+import { NativeSheet, NativeSheetScrollContent } from "@/components/ui/sheet/native_sheet";
 import {
   resolveAriaLabel,
   triggerNativeHaptics,
@@ -393,6 +393,8 @@ function SelectSheetFrame({
 }
 
 function SelectNativeSheetFrame({
+  initialScrollY,
+  sheetScrollRef,
   shouldUseTouchSheetLayout,
   touchSheetConfig,
 }: SelectSheetBaseProps) {
@@ -400,6 +402,39 @@ function SelectNativeSheetFrame({
     return (
       <YStack style={IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE}>
         <SelectAdapt.Contents />
+      </YStack>
+    );
+  }
+
+  if (os() === "android") {
+    return (
+      <YStack
+        {...(touchSheetConfig.frameMaxHeight != null
+          ? { maxHeight: touchSheetConfig.frameMaxHeight }
+          : null)}
+        borderTopLeftRadius={36}
+        borderTopRightRadius={36}
+        style={{ flex: 1, minHeight: 0, paddingTop: 12 }}
+      >
+        <YStack
+          style={{
+            alignSelf: "center",
+            backgroundColor: "#8e8e93",
+            borderRadius: 999,
+            height: 5,
+            marginBottom: 6,
+            opacity: 0.65,
+            width: 92,
+          }}
+        />
+        <NativeSheetScrollContent
+          ref={sheetScrollRef}
+          contentOffset={initialScrollY != null ? { x: 0, y: initialScrollY } : undefined}
+          contentContainerStyle={TOUCH_SHEET_SCROLL_CONTENT_STYLE}
+          style={{ flex: 1, minHeight: 0 }}
+        >
+          <SelectAdapt.Contents />
+        </NativeSheetScrollContent>
       </YStack>
     );
   }
@@ -985,6 +1020,10 @@ const SelectRoot = forwardRef<any, SelectProps>(
         return null;
       }
 
+      if (!shouldUseIosNativeSheetList && !touchSheetConfig.shouldEnableScroll) {
+        return null;
+      }
+
       const selectedValue = props.value ?? null;
       if (resolvedItems[0]?.value === selectedValue) {
         return null;
@@ -1017,6 +1056,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     }, [
       shouldUseIosNativeSheetList,
       shouldUseTouchSheetLayout,
+      touchSheetConfig.shouldEnableScroll,
       resolvedItems.length,
       resolvedItemGroups,
       props.value,
