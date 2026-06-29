@@ -653,4 +653,40 @@ index 6473a0ff..00df094a 100644
 +    behavior.setSignificantVelocityThreshold(ANDROID_SIGNIFICANT_VELOCITY_THRESHOLD)
      behavior.state = BottomSheetBehavior.STATE_HIDDEN
      behavior.addBottomSheetCallback(sheetCallback)
+
+# - Android：fit + scrollable 打开动画期间改用稳定测量高度，避免 auto detent 因中间态高度回写而反复重布局卡顿。
+diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
+index d6ff2cf3..81a7ade0 100644
+--- a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
++++ b/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
+@@ -569,8 +569,14 @@ class TrueSheetView(private val reactContext: ThemedReactContext) :
  
+   override fun viewControllerDidChangeSize(width: Int, height: Int) {
+     // On android scrollable, we need the actual sheet height to get proper ScrollView height.
+-    // Unlike IOS where ScrollView is pinned to the container.
+-    val effectiveHeight = if (viewController.scrollable) height else viewController.screenHeight
++    // Unlike IOS where ScrollView is pinned to the container. For a single "auto"
++    // detent on Android, feeding back the in-flight opening height causes the
++    // content to relayout in growing steps and makes the present animation stutter.
++    val effectiveHeight = when {
++      viewController.shouldUseScreenHeightForScrollableFitMeasure() -> viewController.screenHeight
++      viewController.scrollable -> height
++      else -> viewController.screenHeight
++    }
+     updateState(width, effectiveHeight)
+   }
+ 
+diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetViewController.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetViewController.kt
+index 00df094a..3fe51f40 100644
+--- a/android/src/main/java/com/lodev09/truesheet/TrueSheetViewController.kt
++++ b/android/src/main/java/com/lodev09/truesheet/TrueSheetViewController.kt
+@@ -341,6 +341,9 @@ class TrueSheetViewController(private val reactContext: ThemedReactContext) :
+ 
+   fun isDimmedAtDetentIndex(index: Int): Boolean = dimmed && index >= dimmedDetentIndex
+ 
++  internal fun shouldUseScreenHeightForScrollableFitMeasure(): Boolean =
++    scrollable && isPresentAnimating && detents.size == 1 && detents.firstOrNull() == -1.0
++
+   // =============================================================================
+   // MARK: - Sheet Creation & Cleanup
+   // =============================================================================
