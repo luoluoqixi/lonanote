@@ -1,6 +1,7 @@
 # TrueSheet 补丁：
 # - iOS：保持 TrueSheet scroll indicator 的底部 inset 不小于 TrueSheet 自己的 bottom inset。
 # - iOS：扩大 custom native grabber 的透明整行拖拽热区，同时保持 pill 的可见大小不变。
+# - Android：扩大 native grabber 的透明整行拖拽热区，并让该区域强制走 sheet drag。
 # - Android：增加 disableStackingTranslation 开关，可禁用子 sheet 打开时父 sheet 下移的 stacked translation。
 diff --git a/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt b/android/src/main/java/com/lodev09/truesheet/TrueSheetView.kt
 index d388ced8..d6ff2cf3 100644
@@ -259,3 +260,162 @@ index 247df7ed..a4eacfe0 100644
    scrollableOptions?: ScrollableOptionsType;
    footerOptions?: FooterOptionsType;
    presentation?: WithDefault<'page' | 'form', 'page'>;
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetGrabberView.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetGrabberView.kt
+index c14a0e08..282cea48 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetGrabberView.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetGrabberView.kt
+@@ -8,6 +8,7 @@ import android.graphics.drawable.GradientDrawable
+ import android.os.Bundle
+ import android.view.Gravity
+ import android.view.View
++import android.view.ViewGroup
+ import android.view.accessibility.AccessibilityNodeInfo
+ import android.widget.FrameLayout
+ import androidx.core.graphics.ColorUtils
+@@ -38,8 +39,8 @@ class TrueSheetGrabberView(context: Context, private val options: GrabberOptions
+     private const val DEFAULT_HEIGHT = 4f // dp
+     private const val DEFAULT_TOP_MARGIN = 16f // dp
+     private const val DEFAULT_ALPHA = 0.4f
+-    private const val HITBOX_PADDING_HORIZONTAL = 16f // dp
+     private const val HITBOX_PADDING_VERTICAL = 16f // dp
++    private const val MINIMUM_HIT_HEIGHT = 28f // dp
+     private val DEFAULT_COLOR = Color.argb((DEFAULT_ALPHA * 255).toInt(), 73, 69, 79) // #49454F @ 40%
+   }
+ 
+@@ -65,15 +66,13 @@ class TrueSheetGrabberView(context: Context, private val options: GrabberOptions
+   var onAccessibilityDecrement: (() -> Unit)? = null
+ 
+   init {
+-    val hitboxWidth = grabberWidth + (HITBOX_PADDING_HORIZONTAL * 2)
+-    val hitboxHeight = grabberHeight + (HITBOX_PADDING_VERTICAL * 2)
++    val hitboxHeight = maxOf(MINIMUM_HIT_HEIGHT, grabberHeight + grabberTopMargin + HITBOX_PADDING_VERTICAL)
+ 
+     layoutParams = LayoutParams(
+-      hitboxWidth.dpToPx().toInt(),
++      ViewGroup.LayoutParams.MATCH_PARENT,
+       hitboxHeight.dpToPx().toInt()
+     ).apply {
+       gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+-      topMargin = (grabberTopMargin - HITBOX_PADDING_VERTICAL).dpToPx().toInt()
+     }
+ 
+     // The visible pill centered inside the hitbox
+@@ -82,7 +81,8 @@ class TrueSheetGrabberView(context: Context, private val options: GrabberOptions
+         grabberWidth.dpToPx().toInt(),
+         grabberHeight.dpToPx().toInt()
+       ).apply {
+-        gravity = Gravity.CENTER
++        gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
++        topMargin = grabberTopMargin.dpToPx().toInt()
+       }
+       background = GradientDrawable().apply {
+         shape = GradientDrawable.RECTANGLE
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetBottomSheetView.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetBottomSheetView.kt
+index 11f43c21..29182f5b 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetBottomSheetView.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetBottomSheetView.kt
+@@ -212,6 +212,17 @@ class TrueSheetBottomSheetView(private val reactContext: ThemedReactContext) : F
+     findViewWithTag<TrueSheetGrabberView>(GRABBER_TAG)?.updateAccessibilityValue(index, detentCount)
+   }
+ 
++  fun isTouchInGrabber(rawX: Int, rawY: Int): Boolean {
++    val grabber = findViewWithTag<View>(GRABBER_TAG) ?: return false
++    val location = IntArray(2)
++    grabber.getLocationOnScreen(location)
++
++    return rawX >= location[0] &&
++      rawX <= location[0] + grabber.width &&
++      rawY >= location[1] &&
++      rawY <= location[1] + grabber.height
++  }
++
+   // =============================================================================
+   // MARK: - Grabber Tap Detection
+   // =============================================================================
+diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+index b4b5d600..b1642a9a 100644
+--- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
++++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
+@@ -45,6 +45,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
+   private var streamInitialY = 0f
+   private var streamHorizontalLocked = false
+   private var streamDirectionDecided = false
++  private var streamStartedInGrabber = false
+ 
+   // Native-gesture-claim tracking. RNGH handlers activate past BottomSheetBehavior's
+   // drag slop and never call requestDisallowInterceptTouchEvent, so the sheet would
+@@ -165,9 +166,17 @@ class TrueSheetCoordinatorLayout(context: Context) :
+       streamHorizontalLocked = false
+       streamDirectionDecided = false
+       streamGestureClaimed = false
+-      streamHasGestureRoot = findDescendantAt(this, ev.rawX.toInt(), ev.rawY.toInt()) {
+-        it.javaClass.name == GESTURE_HANDLER_ROOT_VIEW_CLASS
++      streamStartedInGrabber = delegate?.findSheetView()?.isTouchInGrabber(ev.rawX.toInt(), ev.rawY.toInt()) == true
++      if (streamStartedInGrabber) {
++        dragging = false
++        initialY = ev.y
++        activePointerId = ev.getPointerId(0)
+       }
++      streamHasGestureRoot =
++        !streamStartedInGrabber &&
++          findDescendantAt(this, ev.rawX.toInt(), ev.rawY.toInt()) {
++            it.javaClass.name == GESTURE_HANDLER_ROOT_VIEW_CLASS
++          }
+     }
+ 
+     // Decide gesture direction on first significant movement of the stream.
+@@ -186,6 +195,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
+       if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+         streamHorizontalLocked = false
+         streamDirectionDecided = false
++        streamStartedInGrabber = false
+       }
+       return false
+     }
+@@ -193,6 +203,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
+     if (streamGestureClaimed) {
+       if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+         streamGestureClaimed = false
++        streamStartedInGrabber = false
+       }
+       return false
+     }
+@@ -206,6 +217,30 @@ class TrueSheetCoordinatorLayout(context: Context) :
+       return false
+     }
+ 
++    if (streamStartedInGrabber) {
++      when (ev.action and MotionEvent.ACTION_MASK) {
++        MotionEvent.ACTION_MOVE -> {
++          val pointerIndex = ev.findPointerIndex(activePointerId)
++          if (pointerIndex != -1) {
++            val y = ev.getY(pointerIndex)
++            val deltaY = initialY - y
++            if (kotlin.math.abs(deltaY) > touchSlop) {
++              dragging = true
++              parent?.requestDisallowInterceptTouchEvent(true)
++            }
++          }
++        }
++
++        MotionEvent.ACTION_UP,
++        MotionEvent.ACTION_CANCEL -> {
++          dragging = false
++          streamStartedInGrabber = false
++        }
++      }
++
++      return dragging || super.onInterceptTouchEvent(ev)
++    }
++
+     val scrollView = delegate?.findScrollView()
+     val hasRefreshControl = scrollView?.parent is SwipeRefreshLayout
+     val cannotScroll = scrollView != null &&
+@@ -236,6 +271,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
+         MotionEvent.ACTION_UP,
+         MotionEvent.ACTION_CANCEL -> {
+           dragging = false
++          streamStartedInGrabber = false
+         }
+       }
+     } else {
