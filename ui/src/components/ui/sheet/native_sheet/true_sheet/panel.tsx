@@ -82,7 +82,7 @@ function TrueSheetPanelInner({
   const overlayLayoutSync = useTrueSheetOverlayLayoutSync(sheetProps);
   const [presented, setPresented] = useState(false);
   const showToolbar = chrome === "toolbar" && title != null;
-  const grabber = resolveTrueSheetGrabber(chrome, grabberProp);
+  const grabber = resolveTrueSheetGrabber(chrome, grabberProp ?? sheetProps?.grabber);
 
   const handleClose = useCallback(() => {
     onRequestClose?.();
