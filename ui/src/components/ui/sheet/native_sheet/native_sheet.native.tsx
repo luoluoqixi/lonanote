@@ -10,8 +10,8 @@ import type { NativeSheetProps } from "./types";
 
 let nativeSheetCounter = 0;
 
-// Android TrueSheet 的 auto detent 会在打开动画期间追随内容测量，改用稳定高度避免抖动。
-const ANDROID_FIT_DETENT_HEIGHT = 360;
+// Android TrueSheet 的 auto detent 会在打开动画期间追随内容测量，改用稳定最大百分比避免抖动。
+const ANDROID_FIT_DETENT = 1;
 
 type NativeSheetDetent = NonNullable<TrueSheetProps["detents"]>[number];
 type NativeDetentNormalization = {
@@ -73,8 +73,8 @@ function normalizeConstantDetent(point: number, windowHeight: number) {
   return Math.max(0.01, Math.min(1, point / windowHeight));
 }
 
-function resolveAndroidFitDetent(windowHeight: number): NativeSheetDetent {
-  return normalizeConstantDetent(ANDROID_FIT_DETENT_HEIGHT, windowHeight) ?? 0.5;
+function resolveAndroidFitDetent(): NativeSheetDetent {
+  return ANDROID_FIT_DETENT;
 }
 
 function resolveNativeDetent(
@@ -84,7 +84,7 @@ function resolveNativeDetent(
 ): NativeSheetDetent | null {
   if (point === "fit") {
     if (os() === "android") {
-      return resolveAndroidFitDetent(windowHeight);
+      return resolveAndroidFitDetent();
     }
 
     return "auto";
@@ -158,7 +158,7 @@ function resolveNativeDetents(
 ): NativeDetentNormalization {
   if (snapPointsMode === "fit") {
     return {
-      detents: [os() === "android" ? resolveAndroidFitDetent(windowHeight) : "auto"],
+      detents: [os() === "android" ? resolveAndroidFitDetent() : "auto"],
       sourceDetentCount: 1,
       fromNativeIndex: (index: number) => index,
       toNativeIndex: (index: number) => index,
