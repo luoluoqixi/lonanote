@@ -62,7 +62,7 @@ export function getTrueSheetOverlayLayoutBottomInset(
 export const ANDROID_TRUE_SHEET_TELEPORT_LAYER_BOTTOM_FALLBACK = 48;
 
 /** 在 2× bottom 上额外抬高 teleport 底边，使 flex 居中 Dialog 对齐可视区域（约 +EXTRA/2 视觉） */
-export const ANDROID_TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM = 60;
+export const ANDROID_TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM = 6;
 export const IOS_TRUE_SHEET_TELEPORT_CENTER_EXTRA_BOTTOM = 12;
 
 /**
