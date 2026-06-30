@@ -3,7 +3,7 @@
 import { Picker as RNPPicker } from "@react-native-picker/picker";
 import { useTheme } from "@tamagui/core";
 import React, { useEffect, useImperativeHandle, useRef } from "react";
-import { type StyleProp, View, type ViewStyle } from "react-native";
+import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from "react-native";
 
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
 
@@ -19,6 +19,7 @@ export function NativePickerDialog({
   anchorAlign,
   anchorWidth,
   anchorEdgeOffset = 0,
+  anchorStrategy = "native-offset",
   visible,
   value,
   items,
@@ -29,6 +30,7 @@ export function NativePickerDialog({
   anchorAlign?: SelectNativeDropdownAlign;
   anchorWidth?: number;
   anchorEdgeOffset?: number;
+  anchorStrategy?: "layout" | "native-offset";
   visible: boolean;
   value: string | undefined;
   items: ResolvedSelectItemData[];
@@ -38,6 +40,7 @@ export function NativePickerDialog({
 }) {
   const pickerRef = useRef<any>(null);
   const theme = useTheme();
+  const [anchorContainerWidth, setAnchorContainerWidth] = React.useState(0);
 
   useEffect(() => {
     if (visible) {
@@ -50,39 +53,64 @@ export function NativePickerDialog({
 
   const selectedBg = theme.backgroundPress?.val ?? "rgba(0,0,0,0.06)";
   const selectedColor = theme.color?.val ?? "#1A73E8";
+  const resolvedAnchorWidth = anchorWidth ?? DEFAULT_ANDROID_DROPDOWN_MIN_WIDTH;
+  const resolvedContainerWidth = anchorContainerWidth || resolvedAnchorWidth;
+  const shouldUseNativeOffset = anchorStrategy === "native-offset";
+  const dropdownHorizontalOffset = shouldUseNativeOffset
+    ? anchorAlign === "center"
+      ? (resolvedContainerWidth - resolvedAnchorWidth) / 2 + anchorEdgeOffset
+      : anchorAlign === "end"
+        ? resolvedContainerWidth - resolvedAnchorWidth - anchorEdgeOffset
+        : anchorEdgeOffset
+    : 0;
+  const anchorStyle = shouldUseNativeOffset
+    ? { left: 0, width: resolvedAnchorWidth }
+    : anchorAlign === "center"
+      ? {
+          left: (resolvedContainerWidth - resolvedAnchorWidth) / 2 + anchorEdgeOffset,
+          width: resolvedAnchorWidth,
+        }
+      : anchorAlign === "end"
+        ? { right: anchorEdgeOffset, width: resolvedAnchorWidth }
+        : { left: anchorEdgeOffset, width: resolvedAnchorWidth };
+  const handleAnchorContainerLayout = React.useCallback((event: LayoutChangeEvent) => {
+    const nextWidth = event.nativeEvent.layout.width;
+    setAnchorContainerWidth((prevWidth) =>
+      Math.abs(prevWidth - nextWidth) < 0.5 ? prevWidth : nextWidth,
+    );
+  }, []);
 
   return (
-    <View
-      style={[
-        styles.dialogAnchor,
-        anchorWidth != null ? { width: anchorWidth } : styles.dialogAnchorDefaultWidth,
-        anchorAlign === "end" ? { right: anchorEdgeOffset } : { left: anchorEdgeOffset },
-      ]}
-    >
-      <RNPPicker
-        ref={pickerRef}
-        selectedValue={value ?? ""}
-        onValueChange={onValueChange}
-        onBlur={onBlur}
-        mode={mode}
-      >
-        {items.map((item) => {
-          const isSelected = item.value === value;
+    <View style={styles.dialogContainer} onLayout={handleAnchorContainerLayout}>
+      <View style={[styles.dialogAnchor, anchorStyle]}>
+        <RNPPicker
+          ref={pickerRef}
+          dropdownHorizontalOffset={dropdownHorizontalOffset}
+          dropdownWidth={resolvedAnchorWidth}
+          style={[styles.dialogPicker, { width: resolvedAnchorWidth }]}
+          selectedValue={value ?? ""}
+          onValueChange={onValueChange}
+          onBlur={onBlur}
+          mode={mode}
+        >
+          {items.map((item) => {
+            const isSelected = item.value === value;
 
-          return (
-            <RNPPicker.Item
-              key={item.value}
-              label={item.label}
-              value={item.value}
-              enabled={!(item.disabled ?? item.isDisabled)}
-              style={{
-                backgroundColor: isSelected ? selectedBg : "transparent",
-                color: isSelected ? selectedColor : undefined,
-              }}
-            />
-          );
-        })}
-      </RNPPicker>
+            return (
+              <RNPPicker.Item
+                key={item.value}
+                label={item.label}
+                value={item.value}
+                enabled={!(item.disabled ?? item.isDisabled)}
+                style={{
+                  backgroundColor: isSelected ? selectedBg : "transparent",
+                  color: isSelected ? selectedColor : undefined,
+                }}
+              />
+            );
+          })}
+        </RNPPicker>
+      </View>
     </View>
   );
 }
@@ -177,6 +205,7 @@ export const NativePickerSwiftUI = React.forwardRef<
         anchorAlign={nativeDropdownAlign}
         anchorWidth={nativeDropdownAnchorWidth}
         anchorEdgeOffset={nativeDropdownEdgeOffset}
+        anchorStrategy="layout"
         visible={visible}
         value={(value as string | undefined) ?? ""}
         items={items}
@@ -193,13 +222,19 @@ export const NativePickerSwiftUI = React.forwardRef<
 });
 
 const styles = {
-  dialogAnchor: {
+  dialogContainer: {
+    left: 0,
     opacity: 0,
     pointerEvents: "none" as const,
     position: "absolute" as const,
+    right: 0,
     top: 0,
   },
-  dialogAnchorDefaultWidth: {
+  dialogAnchor: {
+    position: "absolute" as const,
+    top: 0,
+  },
+  dialogPicker: {
     minWidth: DEFAULT_ANDROID_DROPDOWN_MIN_WIDTH,
   },
   triggerAnchor: {

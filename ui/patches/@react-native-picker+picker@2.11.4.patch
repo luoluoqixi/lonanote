@@ -1,7 +1,14 @@
-# LonaNote RNPicker patch:
-# - See react-native-picker issue #627.
-# - Historical mitigation for iOS wheel/RNPPicker crash behavior used by native select.
-# - Revalidate native select wheel/dialog flows before upgrading or removing.
+# RNPicker 补丁说明:
+# - 参考 react-native-picker issue #627。
+# - 用于规避 iOS wheel/RNPPicker 在 native select 场景下的崩溃行为。
+# - Android dropdown 模式为 Select 补充了 popup 定位能力:
+#   - dropdownHorizontalOffset 对应 Spinner#setDropDownHorizontalOffset。
+#   - dropdownWidth 对应 Spinner#setDropDownWidth。
+#   - 用于让普通原生 dropdown Select 居中弹出，同时保持 NativeList/nativeTrigger
+#     继续使用真实 layout anchor，避免弹出动画看起来从左侧开始。
+# - 升级或移除此补丁前，需要重新验证 native select 的 wheel/dialog 流程。
+# - 升级或移除此补丁前，需要重新验证 Android 普通 Select dropdown 的居中效果，
+#   以及 NativeList Select 右侧锚点的弹出动画。
 diff --git a/ios/RNCPickerComponentView.mm b/ios/RNCPickerComponentView.mm
 index 75edfa9..2634eae 100644
 --- a/ios/RNCPickerComponentView.mm
@@ -156,3 +163,114 @@ index 0e21756..3742ccf 100644
  
    /**
     * @platform android
+diff --git a/typings/Picker.d.ts b/typings/Picker.d.ts
+index 3742ccfc..3eaadc7a 100644
+--- a/typings/Picker.d.ts
++++ b/typings/Picker.d.ts
+@@ -95,6 +95,16 @@ export interface PickerProps<T = ItemValue> extends ViewProps {
+    * @platform android
+    */
+   dropdownIconRippleColor?: number | ColorValue;
++  /**
++   * Horizontal offset for the Android dropdown popup, in density-independent pixels.
++   * @platform android
++   */
++  dropdownHorizontalOffset?: number;
++  /**
++   * Width for the Android dropdown popup, in density-independent pixels.
++   * @platform android
++   */
++  dropdownWidth?: number;
+   /**
+    * On Android & iOS, used to truncate the text with an ellipsis after computing the text layout, including line wrapping,
+    * such that the total number of lines does not exceed this number. Default is '1'
+diff --git a/js/AndroidDropdownPickerNativeComponent.js b/js/AndroidDropdownPickerNativeComponent.js
+index 6666e539..6ccedbeb 100644
+--- a/js/AndroidDropdownPickerNativeComponent.js
++++ b/js/AndroidDropdownPickerNativeComponent.js
+@@ -53,6 +53,8 @@ type NativeProps = $ReadOnly<{|
+   backgroundColor?: Int32,
+   dropdownIconColor?: Int32,
+   dropdownIconRippleColor?: Int32,
++  dropdownHorizontalOffset?: ?Double,
++  dropdownWidth?: ?Double,
+   numberOfLines?: ?Int32,
+   onSelect?: BubblingEventHandler<PickerAndroidChangeEvent, 'topSelect'>,
+   onFocus?: BubblingEventHandler<null, 'topFocus'>,
+diff --git a/js/PickerAndroid.android.js b/js/PickerAndroid.android.js
+index 7fade6a2..e023df12 100644
+--- a/js/PickerAndroid.android.js
++++ b/js/PickerAndroid.android.js
+@@ -40,6 +40,8 @@ type PickerAndroidProps = $ReadOnly<{|
+   prompt?: ?string,
+   testID?: string,
+   dropdownIconColor?: string,
++  dropdownHorizontalOffset?: ?number,
++  dropdownWidth?: ?number,
+   numberOfLines?: ?number,
+ |}>;
+ 
+@@ -233,6 +235,10 @@ function PickerAndroid(props: PickerAndroidProps, ref: PickerRef): React.Node {
+     testID: props.testID,
+     numberOfLines: props.numberOfLines,
+   };
++  if (props.mode === MODE_DROPDOWN) {
++    rootProps.dropdownHorizontalOffset = props.dropdownHorizontalOffset;
++    rootProps.dropdownWidth = props.dropdownWidth;
++  }
+ 
+   return <Picker ref={pickerRef} {...rootProps} />;
+ }
+diff --git a/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java b/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java
+index e1c71e23..862b2cd4 100644
+--- a/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java
++++ b/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java
+@@ -181,6 +181,18 @@ public abstract class ReactPickerManager extends BaseViewManager<ReactPicker, Re
+     view.setDropdownIconRippleColor(color);
+   }
+ 
++  @ReactProp(name = "dropdownHorizontalOffset", defaultDouble = 0d)
++  public void setDropdownHorizontalOffset(ReactPicker view, double offset) {
++    view.setDropDownHorizontalOffset(Math.round(PixelUtil.toPixelFromDIP(offset)));
++  }
++
++  @ReactProp(name = "dropdownWidth", defaultDouble = 0d)
++  public void setDropdownWidth(ReactPicker view, double width) {
++    if (width > 0d) {
++      view.setDropDownWidth(Math.round(PixelUtil.toPixelFromDIP(width)));
++    }
++  }
++
+   @ReactProp(name = ViewProps.NUMBER_OF_LINES, defaultInt = 1)
+   public void setNumberOfLines(ReactPicker view, int numberOfLines) {
+     ReactPickerAdapter adapter = (ReactPickerAdapter) view.getAdapter();
+diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java b/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java
+index 8a7b516c..20bcfd61 100644
+--- a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java
++++ b/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java
+@@ -22,6 +22,8 @@ public interface RNCAndroidDropdownPickerManagerInterface<T extends View> {
+   void setBackgroundColor(T view, int value);
+   void setDropdownIconColor(T view, int value);
+   void setDropdownIconRippleColor(T view, int value);
++  void setDropdownHorizontalOffset(T view, double value);
++  void setDropdownWidth(T view, double value);
+   void setNumberOfLines(T view, int value);
+   void focus(T view);
+   void blur(T view);
+diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerDelegate.java b/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerDelegate.java
+index a3cfa495..31d3321b 100644
+--- a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerDelegate.java
++++ b/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerDelegate.java
+@@ -48,6 +48,12 @@ public class RNCAndroidDropdownPickerManagerDelegate<T extends View, U extends B
+       case "dropdownIconRippleColor":
+         mViewManager.setDropdownIconRippleColor(view, value == null ? 0 : ((Double) value).intValue());
+         break;
++      case "dropdownHorizontalOffset":
++        mViewManager.setDropdownHorizontalOffset(view, value == null ? 0d : ((Double) value).doubleValue());
++        break;
++      case "dropdownWidth":
++        mViewManager.setDropdownWidth(view, value == null ? 0d : ((Double) value).doubleValue());
++        break;
+       case "numberOfLines":
+         mViewManager.setNumberOfLines(view, value == null ? 0 : ((Double) value).intValue());
+         break;

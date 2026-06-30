@@ -884,6 +884,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
       resolvedItems.find((item) => item.value === value)?.label ?? null;
     const selectedItem = getItemLabelByValue(props.value ?? null);
     const triggerLabel = selectedItem ?? placeholder ?? "";
+    const defaultAndroidDropdownAlign =
+      platform === "android" && resolvedPickerMode === "dropdown" ? "center" : undefined;
+    const resolvedNativeDropdownAlign = nativeDropdownAlign ?? defaultAndroidDropdownAlign;
     const renderItem = (item: ResolvedSelectItemData) => (
       <SelectItem
         {...(shouldUseTouchSheetLayout
@@ -1095,7 +1098,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
             items={resolvedItems}
             value={props.value}
             placeholder={placeholder}
-            nativeDropdownAlign={nativeDropdownAlign}
+            nativeDropdownAlign={resolvedNativeDropdownAlign}
             nativeDropdownAnchorWidth={nativeDropdownAnchorWidth}
             nativeDropdownEdgeOffset={nativeDropdownEdgeOffset}
             mode={resolvedPickerMode as "dropdown" | "wheel" | "dialog"}
@@ -1273,6 +1276,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
 
         {shouldRenderNativePicker && (
           <NativePickerDialog
+            anchorAlign={resolvedNativeDropdownAlign}
+            anchorWidth={nativeDropdownAnchorWidth}
+            anchorEdgeOffset={nativeDropdownEdgeOffset}
             visible={nativePickerVisible}
             value={(props.value as string | undefined) ?? ""}
             items={resolvedItems}
