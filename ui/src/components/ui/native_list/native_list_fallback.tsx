@@ -608,6 +608,8 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
       disabled={disabled}
       native
       nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
+      nativeDropdownAlign={selectProps.nativeDropdownAlign ?? "end"}
+      nativeDropdownEdgeOffset={selectProps.nativeDropdownEdgeOffset ?? -14}
       nativeTrigger
       nativeTriggerContent={
         <NativeListRow

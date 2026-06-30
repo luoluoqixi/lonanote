@@ -30,7 +30,7 @@ import type { ResolvedColorScheme } from "@/components/ui/utils/navigation/statu
 import type { TextProps } from "../text";
 import { NativeTriggerPressable } from "./native_trigger";
 import type { ResolvedSelectItemData } from "./select_grouping";
-import type { SelectNativeTriggerIcon } from "./types";
+import type { SelectNativeDropdownAlign, SelectNativeTriggerIcon } from "./types";
 
 /** 用于为每个 wheel sheet 实例生成唯一名称的计数器 */
 let wheelSheetCounter = 0;
@@ -471,6 +471,9 @@ export const NativePickerSwiftUI = React.forwardRef<
     value: string | null | undefined;
     placeholder?: React.ReactNode;
     mode: "dropdown" | "wheel";
+    nativeDropdownAlign?: SelectNativeDropdownAlign;
+    nativeDropdownAnchorWidth?: number;
+    nativeDropdownEdgeOffset?: number;
     nativeTrigger?: boolean;
     nativeTriggerContainerStyle?: StyleProp<ViewStyle>;
     nativeTriggerContent?: React.ReactNode;

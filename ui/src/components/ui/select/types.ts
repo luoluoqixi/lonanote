@@ -9,6 +9,7 @@ import type { NativeHapticsSetting } from "../utils";
 export type NativePickerMode = "dialog" | "dropdown" | "wheel";
 export type SelectNativeMode = boolean | "native-sheet" | "custom-sheet";
 export type SelectNativeTriggerIcon = "stacked" | "chevrons-up-down" | "none";
+export type SelectNativeDropdownAlign = "start" | "end";
 
 export interface SelectItemData {
   "aria-label"?: string;
@@ -55,6 +56,12 @@ export interface SelectProps extends Omit<
    * wheel iOS 专用，使用 Expo UI SwiftUI Picker wheel 样式
    * */
   nativePickerMode?: NativePickerMode;
+  /** 原生 dropdown 锚点的水平对齐方式。默认 `start`。 */
+  nativeDropdownAlign?: SelectNativeDropdownAlign;
+  /** 原生 dropdown 锚点相对边缘的内缩距离。默认 `0`。 */
+  nativeDropdownEdgeOffset?: number;
+  /** Android 原生 dropdown 锚点宽度。默认使用组件内部宽度。 */
+  nativeDropdownAnchorWidth?: number;
   /** Select 平台弹出模式。
    * true：移动端走原生 picker；web 走 Tamagui `native=true`
    * false：移动端走 native-sheet；web 保持原有非 native Select

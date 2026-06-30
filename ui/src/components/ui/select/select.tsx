@@ -828,6 +828,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
       itemLabel,
       itemLabelProps,
       nativeHaptics,
+      nativeDropdownAlign,
+      nativeDropdownAnchorWidth,
+      nativeDropdownEdgeOffset,
       nativePickerMode,
       onOpenChange,
       onValueChange,
@@ -1092,6 +1095,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
             items={resolvedItems}
             value={props.value}
             placeholder={placeholder}
+            nativeDropdownAlign={nativeDropdownAlign}
+            nativeDropdownAnchorWidth={nativeDropdownAnchorWidth}
+            nativeDropdownEdgeOffset={nativeDropdownEdgeOffset}
             mode={resolvedPickerMode as "dropdown" | "wheel" | "dialog"}
             nativeTrigger={nativeTrigger ?? false}
             nativeTriggerContainerStyle={nativeTriggerContainerStyle}

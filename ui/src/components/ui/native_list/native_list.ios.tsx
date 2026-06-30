@@ -667,6 +667,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
             ref={pickerRef}
             items={selectItems}
             mode={resolvedPickerMode}
+            nativeDropdownAlign={selectProps.nativeDropdownAlign ?? "end"}
             nativeTrigger
             nativeTriggerContainerStyle={[
               styles.selectInlineTrigger,

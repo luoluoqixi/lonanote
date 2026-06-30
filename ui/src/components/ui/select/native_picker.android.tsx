@@ -10,10 +10,15 @@ import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/
 import type { TextProps } from "../text";
 import { NativeTriggerPressable } from "./native_trigger";
 import type { ResolvedSelectItemData } from "./select_grouping";
-import type { SelectNativeTriggerIcon } from "./types";
+import type { SelectNativeDropdownAlign, SelectNativeTriggerIcon } from "./types";
+
+const DEFAULT_ANDROID_DROPDOWN_MIN_WIDTH = 320;
 
 /** Android 原生 Picker Dialog：隐藏渲染 Picker 并通过 focus() 触发系统 dialog */
 export function NativePickerDialog({
+  anchorAlign,
+  anchorWidth,
+  anchorEdgeOffset = 0,
   visible,
   value,
   items,
@@ -21,6 +26,9 @@ export function NativePickerDialog({
   onValueChange,
   onBlur,
 }: {
+  anchorAlign?: SelectNativeDropdownAlign;
+  anchorWidth?: number;
+  anchorEdgeOffset?: number;
   visible: boolean;
   value: string | undefined;
   items: ResolvedSelectItemData[];
@@ -44,7 +52,13 @@ export function NativePickerDialog({
   const selectedColor = theme.color?.val ?? "#1A73E8";
 
   return (
-    <View style={{ position: "absolute", opacity: 0, pointerEvents: "none", minWidth: 320 }}>
+    <View
+      style={[
+        styles.dialogAnchor,
+        anchorWidth != null ? { width: anchorWidth } : styles.dialogAnchorDefaultWidth,
+        anchorAlign === "end" ? { right: anchorEdgeOffset } : { left: anchorEdgeOffset },
+      ]}
+    >
       <RNPPicker
         ref={pickerRef}
         selectedValue={value ?? ""}
@@ -84,6 +98,9 @@ export const NativePickerSwiftUI = React.forwardRef<
     value: string | null | undefined;
     placeholder?: React.ReactNode;
     mode: "dropdown" | "wheel" | "dialog";
+    nativeDropdownAlign?: SelectNativeDropdownAlign;
+    nativeDropdownAnchorWidth?: number;
+    nativeDropdownEdgeOffset?: number;
     nativeTrigger?: boolean;
     nativeTriggerContainerStyle?: StyleProp<ViewStyle>;
     nativeTriggerContent?: React.ReactNode;
@@ -97,6 +114,9 @@ export const NativePickerSwiftUI = React.forwardRef<
     items,
     value,
     mode,
+    nativeDropdownAlign,
+    nativeDropdownAnchorWidth,
+    nativeDropdownEdgeOffset,
     nativeTriggerContainerStyle,
     nativeTriggerContent,
     nativeTriggerIcon,
@@ -142,7 +162,7 @@ export const NativePickerSwiftUI = React.forwardRef<
   }, [openPicker, openSignal]);
 
   return (
-    <>
+    <View style={styles.triggerAnchor}>
       <NativeTriggerPressable
         content={nativeTriggerContent}
         containerStyle={nativeTriggerContainerStyle}
@@ -154,6 +174,9 @@ export const NativePickerSwiftUI = React.forwardRef<
         }}
       />
       <NativePickerDialog
+        anchorAlign={nativeDropdownAlign}
+        anchorWidth={nativeDropdownAnchorWidth}
+        anchorEdgeOffset={nativeDropdownEdgeOffset}
         visible={visible}
         value={(value as string | undefined) ?? ""}
         items={items}
@@ -165,6 +188,21 @@ export const NativePickerSwiftUI = React.forwardRef<
         }}
         onBlur={() => setVisible(false)}
       />
-    </>
+    </View>
   );
 });
+
+const styles = {
+  dialogAnchor: {
+    opacity: 0,
+    pointerEvents: "none" as const,
+    position: "absolute" as const,
+    top: 0,
+  },
+  dialogAnchorDefaultWidth: {
+    minWidth: DEFAULT_ANDROID_DROPDOWN_MIN_WIDTH,
+  },
+  triggerAnchor: {
+    position: "relative" as const,
+  },
+};
