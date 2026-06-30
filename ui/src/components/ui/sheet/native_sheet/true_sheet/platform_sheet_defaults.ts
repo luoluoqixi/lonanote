@@ -4,7 +4,9 @@ import { Platform, type StyleProp, type ViewStyle } from "react-native";
 const scrollableWithPinnedScroll = {
   scrollable: true,
   scrollableOptions: {
-    scrollingExpandsSheet: Platform.OS === "android",
+    // iOS 也需要开启该行为：当内容已在顶部且 sheet 还未到最大 detent 时，
+    // 继续向上拖动应先扩展 sheet，再进入内容滚动。
+    scrollingExpandsSheet: Platform.OS === "android" || Platform.OS === "ios",
   },
 } as const satisfies Pick<TrueSheetProps, "scrollable" | "scrollableOptions">;
 
