@@ -703,7 +703,7 @@ index a7ca51df..3faeae09 100644
    @Field var selection: [Either<String, Double>]?
    var onSelectionChange = EventDispatcher()
  }
-@@ -11,19 +14,69 @@ final class ListProps: UIBaseViewProps {
+@@ -11,19 +14,72 @@ final class ListProps: UIBaseViewProps {
  struct ListView: ExpoSwiftUI.View {
    @ObservedObject var props: ListProps
    @State private var selection = Set<AnyHashable>()
@@ -767,8 +767,11 @@ index a7ca51df..3faeae09 100644
 +  }
 +
 +  private func scrollToInitialTarget(_ proxy: ScrollViewProxy) {
-+    guard !hasScrolledToInitialTarget,
-+      let target = Self.getHashableFromEither(props.initialScrollTarget) else {
++    let target = Self.getHashableSetFromEither(
++      props.initialScrollTarget.map { [$0] }
++    ).first
++
++    guard !hasScrolledToInitialTarget, let target else {
 +      return
      }
 -    .onChange(of: selection) { newSelection in
@@ -781,23 +784,6 @@ index a7ca51df..3faeae09 100644
      }
    }
  
-@@ -42,6 +95,16 @@ struct ListView: ExpoSwiftUI.View {
-     props.onSelectionChange(["selection": selectionArray])
-   }
- 
-+  private static func getHashableFromEither(_ value: Either<String, Double>?) -> AnyHashable? {
-+    guard let value else { return nil }
-+    if let stringValue: String = value.get() {
-+      return AnyHashable(stringValue)
-+    } else if let doubleValue: Double = value.get() {
-+      return AnyHashable(doubleValue)
-+    }
-+    return nil
-+  }
-+
-   private static func getHashableSetFromEither(_ array: [Either<String, Double>]?) -> Set<AnyHashable> {
-     guard let array else { return Set() }
-     var result = Set<AnyHashable>()
 diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
 index 73c2193b..2639cb1d 100644
 --- a/src/swift-ui/List/index.tsx
