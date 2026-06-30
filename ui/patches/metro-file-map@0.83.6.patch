@@ -1,6 +1,6 @@
-# LonaNote Metro file-map patch:
-# - Restores Expo 55-era metro-file-map watch ignore / Windows path handling behavior.
-# - Rebuild via upgrade_patched_dependencies when Metro versions change.
+# Metro file-map 补丁说明:
+# - 恢复 Expo 55 这一代 metro-file-map 的 watch ignore 和 Windows path 处理行为。
+# - Metro 版本变化后，需要通过 `upgrade_patched_dependencies` 重新构建此补丁。
 diff --git a/src/index.js b/src/index.js
 index 438108b..a4d57f0 100644
 --- a/src/index.js

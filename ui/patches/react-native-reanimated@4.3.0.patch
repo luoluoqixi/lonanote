@@ -1,6 +1,6 @@
-# LonaNote Reanimated patch:
-# - Restores Expo 55-era Web reduced-motion fallback and useReducedMotion runtime value behavior.
-# - Rebuild via upgrade_patched_dependencies when Reanimated versions change.
+# Reanimated 补丁说明:
+# - 恢复 Expo 55 这一代 Web reduced-motion 回退行为，以及 useReducedMotion 的运行时取值逻辑。
+# - Reanimated 版本变化后，需要通过 `upgrade_patched_dependencies` 重新构建此补丁。
 diff --git a/src/ReducedMotion.ts b/src/ReducedMotion.ts
 index 19f863c..8794e40 100644
 --- a/src/ReducedMotion.ts

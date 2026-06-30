@@ -1,10 +1,9 @@
-# LonaNote Android BottomSheetModal mitigation notes:
-# - This patch keeps the minimal BottomSheetBody opacity guard, the Backdrop floor guard,
-#   and the #2690 containerHeight sync attempt for historical mitigation.
-# - Real-device testing still reproduces invisible content / backdrop-only states under
-#   heavy Android sheet open-close cycles.
-# - Do not treat this patch as a reliable fix; migrate heavyweight Android sheet hosts
-#   away from @gorhom/bottom-sheet instead of expanding this patch further.
+# Android BottomSheetModal 补丁说明:
+# - 这个补丁保留了最小范围的 BottomSheetBody opacity guard、Backdrop floor guard，
+#   以及 #2690 的 containerHeight 同步尝试，作为历史兼容性缓解措施。
+# - 真机测试下，Android 在高频 sheet 开关场景中仍可能复现内容不可见或仅剩 backdrop 的状态。
+# - 不应将这个补丁视为可靠根治方案；对于重量级 Android sheet 宿主，更适合逐步迁移
+#   离开 @gorhom/bottom-sheet，而不是继续扩大补丁范围。
 diff --git a/src/components/bottomSheet/BottomSheetBody.tsx b/src/components/bottomSheet/BottomSheetBody.tsx
 index 91b6a6a6..b4b098bf 100644
 --- a/src/components/bottomSheet/BottomSheetBody.tsx

@@ -1,7 +1,7 @@
-# Expo UI local patches:
-# - iOS 26: use unlabeled Slider initializer when no label slot is present.
-# - RNHostView: allow matching horizontal/vertical contents independently.
-# - SwiftUI List: viewport clipping compensation, content margins, and initial scroll target support.
+# Expo UI 补丁说明:
+# - iOS 26: 当没有 label slot 时，改用不带标签的 Slider 初始化方式。
+# - RNHostView: 允许横向和纵向内容分别独立匹配。
+# - SwiftUI List: 补充 viewport clipping 补偿、content margins，以及初始滚动目标支持。
 diff --git a/ios/SliderView.swift b/ios/SliderView.swift
 index 1ffa70e3..50927129 100644
 --- a/ios/SliderView.swift
@@ -703,7 +703,7 @@ index a7ca51df..2c265d4e 100644
    @Field var selection: [Either<String, Double>]?
    var onSelectionChange = EventDispatcher()
  }
-@@ -11,19 +14,56 @@ final class ListProps: UIBaseViewProps {
+@@ -11,19 +14,69 @@ final class ListProps: UIBaseViewProps {
  struct ListView: ExpoSwiftUI.View {
    @ObservedObject var props: ListProps
    @State private var selection = Set<AnyHashable>()

@@ -1,6 +1,7 @@
-# LonaNote Tamagui portal host patch:
-# - Adds scoped portal root host support so Dialog/AlertDialog/Menu can render inside the active sheet overlay host.
-# - Revalidate sheet-contained overlay pointer events before changing.
+# Tamagui portal host 补丁说明:
+# - 增加 scoped portal root host 支持，使 Dialog/AlertDialog/Menu 可以渲染在当前激活的
+#   sheet overlay host 内部。
+# - 调整前需要重新验证 sheet 内 overlay 的 pointer events 行为。
 diff --git a/dist/esm/GorhomPortal.native.js b/dist/esm/GorhomPortal.native.js
 index f98ee58c..cea82baf 100644
 --- a/dist/esm/GorhomPortal.native.js

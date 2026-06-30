@@ -1,6 +1,6 @@
-# LonaNote Tamagui Dialog sheet-overlay patch:
-# - Routes Dialog portal items through the active portal root host from @tamagui/portal.
-# - Keep in sync with @tamagui+portal@2.4.0.patch.
+# Tamagui Dialog sheet-overlay 补丁说明:
+# - 让 Dialog 的 portal 内容通过 @tamagui/portal 当前激活的 portal root host 渲染。
+# - 需要与 @tamagui+portal@2.4.0.patch 保持同步。
 diff --git a/dist/esm/Dialog.native.js b/dist/esm/Dialog.native.js
 index edb3c2cd..ad05e353 100644
 --- a/dist/esm/Dialog.native.js
