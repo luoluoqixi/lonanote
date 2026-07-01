@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { Spinner, XStack, YStack } from "tamagui";
 
-import { isWeb, os } from "@/api/common/platform";
+import { isMobile, isWeb, os } from "@/api/common/platform";
 import { useTrueSheetOverlayLayout } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_context";
 
 import { getScopedToastViewportBottomInset } from "../sheet/native_sheet/true_sheet/overlay_toast_layout";
@@ -263,11 +263,14 @@ export {
   SCOPED_TOAST_VIEWPORT_INSET,
 } from "../sheet/native_sheet/true_sheet/overlay_toast_layout";
 
+const mobile = isMobile();
+
 export function Toaster({ viewportName }: { viewportName?: string }) {
   useWebToastAnimationOverride();
   const { detent } = useTrueSheetOverlayLayout();
 
   const position = isWeb() ? "bottom-right" : "bottom-center";
+  const useNativeToast = mobile && viewportName == null;
   const scopedViewport = viewportName != null;
   const viewportStyle = scopedViewport
     ? {
@@ -279,7 +282,7 @@ export function Toaster({ viewportName }: { viewportName?: string }) {
     : undefined;
   const portalToRoot = viewportName == null;
   return (
-    <Toast position={position} visibleToasts={4} duration={5000} gap={16}>
+    <Toast native={useNativeToast} position={position} visibleToasts={4} duration={5000} gap={16}>
       <Toast.Viewport
         data-toast-container
         {...(!portalToRoot ? ({ portalToRoot: false } as Record<string, unknown>) : null)}

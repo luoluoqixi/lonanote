@@ -1,5 +1,6 @@
 import { PromiseData, PromiseT, toast as tamaguiToast } from "@tamagui/toast/v2";
 
+import { isMobile } from "@/api/common/platform";
 import { useScopedOverlayPortalHostName } from "@/components/ui/utils/screen_overlay_portal";
 
 import type { TitleToast, ToastContext, ToastShowOptions } from "./types";
@@ -7,8 +8,9 @@ import type { TitleToast, ToastContext, ToastShowOptions } from "./types";
 function resolveScopedToastOptions(
   options: ToastShowOptions | undefined,
   viewportName: string | undefined,
+  preserveScopeOnMobile = false,
 ): ToastShowOptions | undefined {
-  if (viewportName == null) {
+  if (viewportName == null || (isMobile() && !preserveScopeOnMobile)) {
     return options;
   }
 
@@ -47,7 +49,7 @@ export function useToast(): ToastContext {
     jsx: (id: string | number) => React.ReactElement,
     options?: ToastShowOptions,
   ) => {
-    return tamaguiToast.custom(jsx, resolveScopedToastOptions(options, viewportName));
+    return tamaguiToast.custom(jsx, resolveScopedToastOptions(options, viewportName, true));
   };
   const promiseFunction = <ToastData>(
     promise: PromiseT<ToastData>,

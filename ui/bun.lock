@@ -17,10 +17,12 @@
         "@shopify/flash-list": "^2.3.2",
         "@tamagui/config": "=2.4.0",
         "@tamagui/lucide-icons-2": "=2.4.0",
+        "@tamagui/native": "2.4.0",
         "@tamagui/toast": "=2.4.0",
         "@tauri-apps/api": "^2.11.0",
         "@tauri-apps/plugin-os": "^2.3.2",
         "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+        "burnt": "^0.13.0",
         "clsx": "^2.1.1",
         "eslint": "^10.4.1",
         "eslint-config-prettier": "^10.1.8",
@@ -115,8 +117,8 @@
     "@tamagui/create-menu@2.4.0": "patches/@tamagui+create-menu@2.4.0.patch",
     "@tamagui/portal@2.4.0": "patches/@tamagui+portal@2.4.0.patch",
     "@lodev09/react-native-true-sheet@3.11.1": "patches/@lodev09+react-native-true-sheet@3.11.1.patch",
-    "@tamagui/web@2.4.0": "patches/@tamagui+web@2.4.0.patch",
     "@tamagui/native@2.4.0": "patches/@tamagui+native@2.4.0.patch",
+    "@tamagui/web@2.4.0": "patches/@tamagui+web@2.4.0.patch",
     "@expo/ui@55.0.17": "patches/@expo+ui@55.0.17.patch",
     "@tamagui/toast@2.4.0": "patches/@tamagui+toast@2.4.0.patch",
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch",
@@ -1150,6 +1152,8 @@
 
     "buffer-from": ["buffer-from@1.1.2", "", {}, "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ=="],
 
+    "burnt": ["burnt@0.13.0", "", { "dependencies": { "sf-symbols-typescript": "^1.0.0", "sonner": "^2.0.1" }, "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-LjlQa7CLkGWUdz08YUIaGCJ8BLXib31/ztKqowgwqd7UH283A/kmdCj+1PYAQwDQEMPNmvSUfFHrjXbcwZibFQ=="],
+
     "bytes": ["bytes@3.1.2", "", {}, "sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg=="],
 
     "cac": ["cac@6.7.14", "", {}, "sha512-b6Ilus+c3RrdDk+JhLKUAQfzzgLEPy6wcXqS7f/xe1EETvsDP6GORG7SFuOs6cID5YkqchW/LXZbX5bc8j7ZcQ=="],
@@ -1934,6 +1938,8 @@
 
     "slugify": ["slugify@1.6.9", "", {}, "sha512-vZ7rfeehZui7wQs438JXBckYLkIIdfHOXsaVEUMyS5fHo1483l1bMdo0EDSWYclY0yZKFOipDy4KHuKs6ssvdg=="],
 
+    "sonner": ["sonner@2.0.7", "", { "peerDependencies": { "react": "^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react-dom": "^18.0.0 || ^19.0.0 || ^19.0.0-rc" } }, "sha512-W6ZN4p58k8aDKA4XPcx2hpIQXBRAgyiWVkYhT7CvK6D3iAu7xjvVyhQHg2/iaKJZ1XVJ4r7XuwGL+WGEK37i9w=="],
+
     "source-map": ["source-map@0.5.7", "", {}, "sha512-LbrmJOMUSdEVxIKvdcJzQC+nQhe8FUZQTXQy6+I75skNgn3OoQ0DZA8YnFa7gp8tqtL3KPf1kmo0R5DoApeSGQ=="],
 
     "source-map-js": ["source-map-js@1.2.1", "", {}, "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA=="],
@@ -2181,6 +2187,8 @@
     "babel-plugin-polyfill-corejs2/semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
     "better-opn/open": ["open@8.4.2", "", { "dependencies": { "define-lazy-prop": "^2.0.0", "is-docker": "^2.1.1", "is-wsl": "^2.2.0" } }, "sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ=="],
+
+    "burnt/sf-symbols-typescript": ["sf-symbols-typescript@1.0.0", "", {}, "sha512-DkS7q3nN68dEMb4E18HFPDAvyrjDZK9YAQQF2QxeFu9gp2xRDXFMF8qLJ1EmQ/qeEGQmop4lmMM1WtYJTIcCMw=="],
 
     "check-dependency-version-consistency/chalk": ["chalk@5.6.2", "", {}, "sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA=="],
 
