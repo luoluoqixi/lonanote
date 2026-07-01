@@ -554,6 +554,20 @@ export function UiComponentsDebugPage() {
             <Button
               nativeHaptics={debugNativeHaptics}
               onPress={() =>
+                toast.success(
+                  "同步完成",
+                  withToastNative({
+                    description: "已同步。",
+                  }),
+                )
+              }
+              theme="green"
+            >
+              Success Short
+            </Button>
+            <Button
+              nativeHaptics={debugNativeHaptics}
+              onPress={() =>
                 toast.error(
                   "导出失败",
                   withToastNative({
