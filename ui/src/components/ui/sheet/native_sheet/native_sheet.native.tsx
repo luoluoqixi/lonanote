@@ -247,6 +247,8 @@ export function NativeSheet({
   const [mounted, setMounted] = useState(() => modal !== false && sheetState.open);
   const presentedRef = useRef(false);
   const dismissingRef = useRef(false);
+  // iOS 15 下若让 initialDetentIndex 跟随受控 position 回写，首次切到上一档后会被原生 props 更新拉回初始档位。
+  const initialDetentIndexRef = useRef<number | null>(null);
   const lastRequestedPositionRef = useRef<number | null>(null);
   const detentNormalization = useMemo(
     () => resolveNativeDetents(snapPoints, snapPointsMode, windowHeight),
@@ -255,6 +257,10 @@ export function NativeSheet({
   const resolvedDetentIndex = detentNormalization.toNativeIndex(
     clampDetentIndex(sheetState.position, detentNormalization.sourceDetentCount),
   );
+
+  if (modal !== false && mounted && initialDetentIndexRef.current == null) {
+    initialDetentIndexRef.current = resolvedDetentIndex;
+  }
 
   useEffect(() => {
     if (modal === false) {
@@ -267,6 +273,7 @@ export function NativeSheet({
       }
 
       dismissingRef.current = false;
+      initialDetentIndexRef.current = resolvedDetentIndex;
       lastRequestedPositionRef.current = resolvedDetentIndex;
       setMounted(true);
       return;
@@ -302,7 +309,7 @@ export function NativeSheet({
     dismissible: dismissOnOverlayPress !== false,
     draggable: disableDrag !== true,
     grabber: handle ?? false,
-    initialDetentIndex: resolvedDetentIndex,
+    initialDetentIndex: initialDetentIndexRef.current ?? resolvedDetentIndex,
     onBackPress: dismissOnBackPress
       ? () => {
           dismissingRef.current = true;
@@ -318,6 +325,7 @@ export function NativeSheet({
     onDidDismiss: () => {
       presentedRef.current = false;
       dismissingRef.current = false;
+      initialDetentIndexRef.current = null;
       lastRequestedPositionRef.current = null;
       setMounted(false);
       sheetState.setOpen(false);
