@@ -2,9 +2,23 @@ import { Alert } from "react-native";
 
 import { isWeb } from "@/api/common/platform";
 
-import type { NativeDialogButton, NativeDialogOptions, NativeDialogResult } from "./types";
+import type {
+  NativeDialogButton,
+  NativeDialogOptions,
+  NativeDialogRequest,
+  NativeDialogResult,
+} from "./types";
 
-function getDefaultButtons(options: NativeDialogOptions): NativeDialogButton[] {
+type NativeDialogHandler = (request: NativeDialogRequest) => void;
+
+let nativeDialogId = 1;
+let webDialogHandler: NativeDialogHandler | null = null;
+
+export function setNativeDialogHandler(handler: NativeDialogHandler | null) {
+  webDialogHandler = handler;
+}
+
+export function getDefaultNativeDialogButtons(options: NativeDialogOptions): NativeDialogButton[] {
   return [
     {
       key: "cancel",
@@ -21,12 +35,14 @@ function getDefaultButtons(options: NativeDialogOptions): NativeDialogButton[] {
   ];
 }
 
-function getButtons(options: NativeDialogOptions): NativeDialogButton[] {
+export function getNativeDialogButtons(options: NativeDialogOptions): NativeDialogButton[] {
   const buttons = options.buttons?.filter((button) => button.text.length > 0);
-  return buttons != null && buttons.length > 0 ? buttons : getDefaultButtons(options);
+  return buttons != null && buttons.length > 0 ? buttons : getDefaultNativeDialogButtons(options);
 }
 
-async function runButton(button: NativeDialogButton): Promise<NativeDialogResult> {
+export async function runNativeDialogButton(
+  button: NativeDialogButton,
+): Promise<NativeDialogResult> {
   await button.onPress?.();
   return button.key;
 }
@@ -41,13 +57,26 @@ function confirmWeb(
     cancelButton ??
     buttons[0];
   const accepted = window.confirm([options.title, options.message].filter(Boolean).join("\n\n"));
-  return runButton(accepted ? confirmButton : (cancelButton ?? confirmButton));
+  return runNativeDialogButton(accepted ? confirmButton : (cancelButton ?? confirmButton));
 }
 
 export function confirmNative(options: NativeDialogOptions): Promise<NativeDialogResult> {
-  const buttons = getButtons(options);
+  const buttons = getNativeDialogButtons(options);
 
   if (isWeb()) {
+    if (webDialogHandler != null) {
+      return new Promise((resolve) => {
+        const requestId = nativeDialogId;
+        nativeDialogId += 1;
+        webDialogHandler?.({
+          buttons,
+          id: requestId,
+          options,
+          resolve,
+        });
+      });
+    }
+
     return confirmWeb(options, buttons);
   }
 
@@ -67,7 +96,7 @@ export function confirmNative(options: NativeDialogOptions): Promise<NativeDialo
       options.message,
       buttons.map((button) => ({
         onPress: () => {
-          void runButton(button).then(resolveOnce);
+          void runNativeDialogButton(button).then(resolveOnce);
         },
         style: button.style,
         text: button.text,

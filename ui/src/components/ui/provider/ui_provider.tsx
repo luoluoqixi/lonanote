@@ -2,6 +2,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TamaguiProvider } from "tamagui";
 
 import config from "../../../../tamagui.config";
+import { NativeDialogProvider } from "../native_dialog";
 import { NativeHapticsProvider } from "../utils";
 import { Toaster } from "./toaster";
 import type { UIProviderProps } from "./types";
@@ -14,10 +15,11 @@ export function UIProvider({
   const insets = useSafeAreaInsets();
   return (
     <TamaguiProvider config={config} defaultTheme={colorScheme} insets={insets}>
-      <NativeHapticsProvider enabledByDefault={defaultNativeHapticsEnabled}>
-        {children}
-        <Toaster />
-        {/* <ToastProvider
+      <NativeDialogProvider>
+        <NativeHapticsProvider enabledByDefault={defaultNativeHapticsEnabled}>
+          {children}
+          <Toaster />
+          {/* <ToastProvider
           swipeDirection="horizontal"
           duration={6000}
           native={
@@ -28,7 +30,8 @@ export function UIProvider({
           }
         >
         </ToastProvider> */}
-      </NativeHapticsProvider>
+        </NativeHapticsProvider>
+      </NativeDialogProvider>
     </TamaguiProvider>
   );
 }

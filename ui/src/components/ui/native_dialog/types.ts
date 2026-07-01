@@ -20,3 +20,10 @@ export type NativeDialogOptions = {
   onConfirm?: () => Promise<void> | void;
   title: string;
 };
+
+export type NativeDialogRequest = {
+  buttons: NativeDialogButton[];
+  id: number;
+  options: NativeDialogOptions;
+  resolve: (result: NativeDialogResult) => void;
+};
