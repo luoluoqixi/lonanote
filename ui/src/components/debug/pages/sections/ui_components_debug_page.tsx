@@ -51,6 +51,7 @@ import {
   TextArea,
   ToggleGroup,
   Tooltip,
+  confirmNative,
 } from "@/components/ui";
 import { useToast } from "@/hooks/ui";
 
@@ -148,6 +149,7 @@ export function UiComponentsDebugPage() {
   const [selectValue, setSelectValue] = useState<string | null>("blue");
   const [selectValue2, setSelectValue2] = useState<string | null>("light");
   const [nativeListSingleChoice, setNativeListSingleChoice] = useState("four-minutes");
+  const [nativeDialogResult, setNativeDialogResult] = useState("尚未触发");
   const [selectGroupedValue, setSelectGroupedValue] = useState<string | null>("edit-desc");
   const [selectNativeGroupedValue, setSelectNativeGroupedValue] = useState<string | null>(
     "name-asc",
@@ -295,6 +297,39 @@ export function UiComponentsDebugPage() {
 
   const handleNestedGlobalSheetPositionChange = (nextPosition: number) => {
     setNestedGlobalSheetPosition(nextPosition);
+  };
+
+  const showBasicNativeDialog = async () => {
+    const result = await confirmNative({
+      cancelText: "稍后",
+      confirmText: "保存",
+      message: "当前草稿还没有写入本地文件。",
+      title: "保存更改",
+    });
+    setNativeDialogResult(`普通确认：${result}`);
+  };
+
+  const showDestructiveNativeDialog = async () => {
+    const result = await confirmNative({
+      confirmText: "删除",
+      destructive: true,
+      message: "删除后仅用于演示，不会真的移除文件。",
+      title: "删除笔记",
+    });
+    setNativeDialogResult(`危险操作：${result}`);
+  };
+
+  const showMultiButtonNativeDialog = async () => {
+    const result = await confirmNative({
+      buttons: [
+        { key: "cancel", style: "cancel", text: "取消" },
+        { key: "archive", text: "归档" },
+        { key: "delete", style: "destructive", text: "删除" },
+      ],
+      message: "系统弹窗最多适合放少量明确动作。",
+      title: "处理当前笔记",
+    });
+    setNativeDialogResult(`多按钮：${result}`);
   };
 
   const showInfoToast = () => {
@@ -1006,7 +1041,30 @@ export function UiComponentsDebugPage() {
             }
             dismissOnOverlayPress
           />
+        </DemoRow>
 
+        <DemoRow>
+          <Button nativeHaptics={debugNativeHaptics} onPress={showBasicNativeDialog}>
+            原生确认
+          </Button>
+          <Button
+            nativeHaptics={debugNativeHaptics}
+            onPress={showDestructiveNativeDialog}
+            theme="red"
+          >
+            原生危险确认
+          </Button>
+          <Button
+            nativeHaptics={debugNativeHaptics}
+            onPress={showMultiButtonNativeDialog}
+            variant="outlined"
+          >
+            原生三按钮
+          </Button>
+          <Text color="$color10">{nativeDialogResult}</Text>
+        </DemoRow>
+
+        <DemoRow>
           <Popover
             arrow
             content={

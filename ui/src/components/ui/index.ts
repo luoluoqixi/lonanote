@@ -16,6 +16,7 @@ export * from "./link";
 export * from "./list_group";
 export * from "./list_item";
 export * from "./menu";
+export * from "./native_dialog";
 export * from "./popover";
 export * from "./provider";
 export * from "./progress";
