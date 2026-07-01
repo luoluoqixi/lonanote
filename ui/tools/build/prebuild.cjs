@@ -36,6 +36,10 @@ function run(cmd, opts = {}) {
   return execAsync(cmd, { cwd: projectRoot, ...opts });
 }
 
+function getStepCount() {
+  return noRestore ? (platform === "ios" ? 3 : 2) : platform === "ios" ? 4 : 3;
+}
+
 // ─── 参数解析 ────────────────────────────────────────────────
 const VALID_PLATFORMS = ["android", "ios"];
 const VALID_MODES = ["dev", "prod", "both"];
@@ -60,6 +64,7 @@ async function runPrebuild(targetMode, isClean) {
   const appMode = isDev ? "development" : "production";
   const cleanFlag = isClean ? "--clean" : "";
   const expoPrebuildCmd = `npx expo prebuild --platform ${platform} ${cleanFlag}`.trim();
+  const stepCount = getStepCount();
 
   const title = `${platform} ${targetMode}${isClean ? " (clean)" : ""}`;
   console.log("\n═══════════════════════════════════════════");
@@ -68,20 +73,27 @@ async function runPrebuild(targetMode, isClean) {
 
   // Step 1: build_check --prebuild（切换目录，传 --dev / --prod 而非环境变量）
   const devFlag = isDev ? "--dev" : "--prod";
-  console.log(`  → [1/${noRestore ? "2" : "3"}] build_check --prebuild`);
+  console.log(`  → [1/${stepCount}] build_check --prebuild`);
   await run(`node tools/build/build_check.cjs --${platform} --prebuild ${devFlag}`);
   await delay(STEP_DELAY_MS);
 
   // Step 2: expo prebuild
-  console.log(`  → [2/${noRestore ? "2" : "3"}] ${expoPrebuildCmd}`);
+  console.log(`  → [2/${stepCount}] ${expoPrebuildCmd}`);
   await run(expoPrebuildCmd, {
     env: { ...process.env, APP_MODE: appMode },
   });
   await delay(STEP_DELAY_MS);
 
-  // Step 3: build_check --postbuild（恢复目录，--no-restore 时跳过）
+  // Step 3: iOS 原生依赖需要显式更新 CocoaPods，否则新增 Expo native module 可能不会进入对应模式的工程
+  if (platform === "ios") {
+    console.log(`  → [3/${stepCount}] pod install`);
+    await run("pod install", { cwd: path.join(projectRoot, "ios") });
+    await delay(STEP_DELAY_MS);
+  }
+
+  // 最后恢复目录，--no-restore 时跳过
   if (!noRestore) {
-    console.log("  → [3/3] build_check --postbuild");
+    console.log(`  → [${stepCount}/${stepCount}] build_check --postbuild`);
     await run(`node tools/build/build_check.cjs --${platform} --postbuild ${devFlag}`);
   }
 
