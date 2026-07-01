@@ -172,11 +172,16 @@ export function UiComponentsDebugPage() {
   const [tamaguiSliderValue, setTamaguiSliderValue] = useState(56);
   const [nativeSliderValue, setNativeSliderValue] = useState(50);
   const [switchValue, setSwitchValue] = useState(true);
+  const [toastNativeEnabled, setToastNativeEnabled] = useState(true);
   const [tabsValue, setTabsValue] = useState("preview");
   const [textAreaValue, setTextAreaValue] = useState("这是一段文本区域示例。");
   const [toggleValue, setToggleValue] = useState("bold");
   const [popoverName, setPopoverName] = useState("LonaNote");
   const debugNativeHaptics = forceNativeHaptics ? true : undefined;
+  const withToastNative = <Options extends object>(options: Options) => ({
+    ...options,
+    native: toastNativeEnabled,
+  });
 
   const selectItems = useMemo(
     () => [
@@ -293,28 +298,40 @@ export function UiComponentsDebugPage() {
   };
 
   const showInfoToast = () => {
-    toast.info("检测到新版本", {
-      description: "设置页里可以查看本次更新内容。",
-    });
+    toast.info(
+      "检测到新版本",
+      withToastNative({
+        description: "设置页里可以查看本次更新内容。",
+      }),
+    );
   };
 
   const showWarningToast = () => {
-    toast.warning("存储空间不足", {
-      description: "建议清理附件缓存后继续导入大文件。",
-    });
+    toast.warning(
+      "存储空间不足",
+      withToastNative({
+        description: "建议清理附件缓存后继续导入大文件。",
+      }),
+    );
   };
 
   const showLoadingToast = () => {
-    const toastId = toast.loading("正在生成离线索引", {
-      description: "请稍候，完成后会自动提示。",
-      duration: Number.POSITIVE_INFINITY,
-    });
+    const toastId = toast.loading(
+      "正在生成离线索引",
+      withToastNative({
+        description: "请稍候，完成后会自动提示。",
+        duration: Number.POSITIVE_INFINITY,
+      }),
+    );
 
     setTimeout(() => {
       toast.close(toastId);
-      toast.success("离线索引已生成", {
-        description: "最近修改的 128 个文件已经可以离线检索。",
-      });
+      toast.success(
+        "离线索引已生成",
+        withToastNative({
+          description: "最近修改的 128 个文件已经可以离线检索。",
+        }),
+      );
     }, 1600);
   };
 
@@ -345,6 +362,7 @@ export function UiComponentsDebugPage() {
         loading: "正在同步工作区",
         success: "同步完成",
         error: "同步失败",
+        native: toastNativeEnabled,
         description: (result) => {
           if (result instanceof Error) {
             return "请检查当前工作区路径是否仍然可访问。";
@@ -459,12 +477,26 @@ export function UiComponentsDebugPage() {
           </Text>
 
           <DemoRow>
+            <Switch
+              checked={toastNativeEnabled}
+              label="原生 Toast"
+              labelPosition="end"
+              native
+              nativeHaptics={debugNativeHaptics}
+              onCheckedChange={setToastNativeEnabled}
+            />
+          </DemoRow>
+
+          <DemoRow>
             <Button
               nativeHaptics={debugNativeHaptics}
               onPress={() =>
-                toast.message("已保存草稿", {
-                  description: "状态栏与编辑区内容已同步。",
-                })
+                toast.message(
+                  "已保存草稿",
+                  withToastNative({
+                    description: "状态栏与编辑区内容已同步。",
+                  }),
+                )
               }
               variant="outlined"
             >
@@ -473,9 +505,12 @@ export function UiComponentsDebugPage() {
             <Button
               nativeHaptics={debugNativeHaptics}
               onPress={() =>
-                toast.success("同步完成", {
-                  description: "全部文件已经更新到本地索引。",
-                })
+                toast.success(
+                  "同步完成",
+                  withToastNative({
+                    description: "全部文件已经更新到本地索引。",
+                  }),
+                )
               }
               theme="green"
             >
@@ -484,9 +519,12 @@ export function UiComponentsDebugPage() {
             <Button
               nativeHaptics={debugNativeHaptics}
               onPress={() =>
-                toast.error("导出失败", {
-                  description: "目标目录没有写入权限。",
-                })
+                toast.error(
+                  "导出失败",
+                  withToastNative({
+                    description: "目标目录没有写入权限。",
+                  }),
+                )
               }
               theme="red"
             >

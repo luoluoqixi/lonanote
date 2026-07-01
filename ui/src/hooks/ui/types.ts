@@ -1,7 +1,11 @@
 import { ExternalToast, PromiseData, PromiseT } from "@tamagui/toast/v2";
 
 export type ToastShowOptions = ExternalToast & {
+  native?: boolean;
   viewportName?: string | "default";
+};
+export type ToastPromiseData<ToastData = unknown> = PromiseData<ToastData> & {
+  native?: boolean;
 };
 export type TitleToast = React.ReactNode | (() => React.ReactNode);
 
@@ -16,7 +20,7 @@ export type ToastCustomFunc = (
 ) => string | number;
 export type ToastPromiseFunc = <ToastData>(
   promise: PromiseT<ToastData>,
-  data?: PromiseData<ToastData>,
+  data?: ToastPromiseData<ToastData>,
 ) =>
   | (string & {
       unwrap: () => Promise<ToastData>;
