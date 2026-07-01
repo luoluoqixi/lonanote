@@ -479,6 +479,8 @@ function FallbackListItemSeparator({
   leadingItem?: FallbackListEntry;
   trailingItem?: FallbackListEntry;
 }) {
+  const theme = useTheme();
+
   if (leadingItem == null || trailingItem == null) {
     return null;
   }
@@ -487,13 +489,33 @@ function FallbackListItemSeparator({
     return <View style={styles.sectionSpacer} />;
   }
 
+  if (leadingItem.type === "row" && trailingItem.type === "row") {
+    return (
+      <View style={styles.rowSeparatorOuter}>
+        <View
+          style={[
+            styles.rowSeparator,
+            { backgroundColor: theme.borderColor?.val ?? theme.color5?.val },
+          ]}
+        />
+      </View>
+    );
+  }
+
   return null;
 }
 
 function renderStaticEntries(entries: FallbackListEntry[]) {
-  return entries.map((entry, index) => (
-    <View key={entry.key}>{renderFallbackListEntry({ item: entry, index, target: "Cell" })}</View>
-  ));
+  return entries.map((entry, index) => {
+    const trailingItem = entries[index + 1];
+
+    return (
+      <View key={entry.key}>
+        {renderFallbackListEntry({ item: entry, index, target: "Cell" })}
+        <FallbackListItemSeparator leadingItem={entry} trailingItem={trailingItem} />
+      </View>
+    );
+  });
 }
 
 function getEntryType(item: FallbackListEntry) {
@@ -843,6 +865,14 @@ const styles = StyleSheet.create({
   rowFrame: {
     width: "100%",
   },
+  rowSeparator: {
+    height: StyleSheet.hairlineWidth,
+    width: "100%",
+  },
+  rowSeparatorOuter: {
+    paddingLeft: 30,
+    width: "100%",
+  },
   scrollRootContent: {
     paddingVertical: 8,
     width: "100%",
@@ -857,6 +887,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     paddingBottom: 8,
     paddingHorizontal: 30,
+    paddingTop: 18,
   },
   sectionSpacer: {
     height: 16,
