@@ -3,6 +3,8 @@ import type { ComponentType } from "react";
 import { StyleSheet, View } from "react-native";
 import type { ViewProps } from "react-native";
 
+import { os } from "@/api/common/platform";
+
 type ExpoGlobalWithViewConfig = typeof globalThis & {
   expo?: {
     getViewConfig?: (
@@ -23,23 +25,36 @@ export type VariableBlurViewProps = ViewProps & {
   transitionHeight?: number;
 };
 
-const nativeViewConfig = (globalThis as ExpoGlobalWithViewConfig).expo?.getViewConfig?.(
-  "NativeIosCommon",
-  "VariableBlurView",
-);
-const hasNativeVariableBlurView = Boolean(nativeViewConfig);
-
 const VariableBlurViewFallback: ComponentType<VariableBlurViewProps> =
   function VariableBlurViewFallback({ style, ...props }) {
     return <View {...props} style={[styles.fallback, style]} />;
   };
 
-export const VariableBlurView = hasNativeVariableBlurView
-  ? (requireNativeViewManager<VariableBlurViewProps>(
+function resolveVariableBlurView(): ComponentType<VariableBlurViewProps> {
+  if (os() !== "ios") {
+    return VariableBlurViewFallback;
+  }
+
+  try {
+    const nativeViewConfig = (globalThis as ExpoGlobalWithViewConfig).expo?.getViewConfig?.(
       "NativeIosCommon",
       "VariableBlurView",
-    ) as ComponentType<VariableBlurViewProps>)
-  : VariableBlurViewFallback;
+    );
+
+    if (!nativeViewConfig) {
+      return VariableBlurViewFallback;
+    }
+
+    return requireNativeViewManager<VariableBlurViewProps>(
+      "NativeIosCommon",
+      "VariableBlurView",
+    ) as ComponentType<VariableBlurViewProps>;
+  } catch {
+    return VariableBlurViewFallback;
+  }
+}
+
+export const VariableBlurView = resolveVariableBlurView();
 
 const styles = StyleSheet.create({
   fallback: {
