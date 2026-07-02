@@ -1,10 +1,18 @@
-import { PortalRootHostProvider } from "@tamagui/portal";
-import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react";
+import * as TamaguiPortal from "@tamagui/portal";
+import {
+  type ComponentType,
+  type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { Dimensions, type LayoutChangeEvent, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PortalHost as TeleportPortalHost } from "react-native-teleport";
 
-import { iosMajorVersion, os } from "@/api/common/platform";
+import { iosMajorVersion, isWeb, os } from "@/api/common/platform";
 import {
   useTrueSheetOverlayDetent,
   useTrueSheetOverlaySheetTopPosition,
@@ -29,6 +37,27 @@ type ScreenOverlayModalLockApi = {
 const ScreenOverlayModalLockApiContext = createContext<ScreenOverlayModalLockApi | null>(null);
 
 export type ScreenOverlayPortalLayout = "wrap" | "scroll-sibling";
+
+type PortalRootHostProviderProps = {
+  children: ReactNode;
+  hostName: string;
+};
+
+const RuntimePortalRootHostProvider = (
+  TamaguiPortal as typeof TamaguiPortal & {
+    PortalRootHostProvider?: ComponentType<PortalRootHostProviderProps>;
+  }
+).PortalRootHostProvider;
+
+function PortalRootHostProviderCompat({ children, hostName }: PortalRootHostProviderProps) {
+  if (RuntimePortalRootHostProvider == null) {
+    return <>{children}</>;
+  }
+
+  return (
+    <RuntimePortalRootHostProvider hostName={hostName}>{children}</RuntimePortalRootHostProvider>
+  );
+}
 
 /**
  * 在独立原生层（iOS pageSheet VC、Android True Sheet 等）内挂载 overlay Portal。
@@ -86,7 +115,9 @@ export function ScreenOverlayPortalProvider({
       <ScreenOverlayModalLockApiContext.Provider value={lockApi}>
         <ScreenOverlayModalLockContext.Provider value={modalLockCount}>
           <ScreenOverlayFloatingProvider teleportHostNode={teleportHostNode}>
-            <PortalRootHostProvider hostName={hostName}>{portalBody}</PortalRootHostProvider>
+            <PortalRootHostProviderCompat hostName={hostName}>
+              {portalBody}
+            </PortalRootHostProviderCompat>
           </ScreenOverlayFloatingProvider>
         </ScreenOverlayModalLockContext.Provider>
       </ScreenOverlayModalLockApiContext.Provider>
@@ -186,7 +217,9 @@ export function ScreenOverlayPortalHost({
   return (
     <View pointerEvents="box-none" style={styles.hostStack} onLayout={handleHostStackLayout}>
       <OverlayToastLayer hostName={hostName} hostStackHeight={hostStackHeight} />
-      <OverlayTeleportLayer hostName={hostName} onTeleportHostNode={onTeleportHostNode} />
+      {!isWeb() && (
+        <OverlayTeleportLayer hostName={hostName} onTeleportHostNode={onTeleportHostNode} />
+      )}
     </View>
   );
 }
