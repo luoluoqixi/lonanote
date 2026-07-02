@@ -12,7 +12,7 @@ import { NativeTriggerPressable } from "./native_trigger";
 import type { ResolvedSelectItemData } from "./select_grouping";
 import type { SelectNativeDropdownAlign, SelectNativeTriggerIcon } from "./types";
 
-const DEFAULT_ANDROID_DROPDOWN_MIN_WIDTH = 320;
+const DEFAULT_ANDROID_DROPDOWN_MIN_WIDTH = 240;
 
 /** Android 原生 Picker Dialog：隐藏渲染 Picker 并通过 focus() 触发系统 dialog */
 export function NativePickerDialog({
