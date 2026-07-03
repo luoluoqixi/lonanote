@@ -498,14 +498,16 @@ export function UiComponentsDebugPage() {
             nativeHaptics={debugNativeHaptics}
             onCheckedChange={setSwitchValue}
           />
-          <Switch
-            checked={switchValue}
-            label="Switch native"
-            labelPosition="end"
-            native
-            nativeHaptics={debugNativeHaptics}
-            onCheckedChange={setSwitchValue}
-          />
+          {!isWeb() && (
+            <Switch
+              checked={switchValue}
+              label="Switch native"
+              labelPosition="end"
+              native
+              nativeHaptics={debugNativeHaptics}
+              onCheckedChange={setSwitchValue}
+            />
+          )}
         </DemoRow>
 
         <View style={styles.demoGroup}>
@@ -513,16 +515,18 @@ export function UiComponentsDebugPage() {
             Toast
           </Text>
 
-          <DemoRow>
-            <Switch
-              checked={toastNativeEnabled}
-              label="原生 Toast"
-              labelPosition="end"
-              native
-              nativeHaptics={debugNativeHaptics}
-              onCheckedChange={setToastNativeEnabled}
-            />
-          </DemoRow>
+          {!isWeb() && (
+            <DemoRow>
+              <Switch
+                checked={toastNativeEnabled}
+                label="原生 Toast"
+                labelPosition="end"
+                native
+                nativeHaptics={debugNativeHaptics}
+                onCheckedChange={setToastNativeEnabled}
+              />
+            </DemoRow>
+          )}
 
           <DemoRow>
             <Button
@@ -699,18 +703,17 @@ export function UiComponentsDebugPage() {
 
         <View style={styles.fieldGroup}>
           <View style={styles.field}>
-            <Label>Select {isWeb() ? "" : "(native-sheet)"}</Label>
-            <Select
-              items={selectItems}
-              native="native-sheet"
-              nativeHaptics={debugNativeHaptics}
-              onValueChange={setSelectValue}
-              placeholder="选择主题色"
-              value={selectValue ?? undefined}
-            />
-
             {!isWeb() && (
               <>
+                <Label>Select (native-sheet)</Label>
+                <Select
+                  items={selectItems}
+                  native="native-sheet"
+                  nativeHaptics={debugNativeHaptics}
+                  onValueChange={setSelectValue}
+                  placeholder="选择主题色"
+                  value={selectValue ?? undefined}
+                />
                 <Label>Select (custom-sheet)</Label>
                 <Select
                   items={selectItems}
@@ -722,9 +725,22 @@ export function UiComponentsDebugPage() {
                 />
               </>
             )}
+            {isWeb() && (
+              <>
+                <Label>Select (sheet)</Label>
+                <Select
+                  items={selectItems}
+                  native="native-sheet"
+                  nativeHaptics={debugNativeHaptics}
+                  onValueChange={setSelectValue}
+                  placeholder="选择主题色"
+                  value={selectValue ?? undefined}
+                />
+              </>
+            )}
             <Select
               items={selectItems}
-              native={false}
+              native="native-sheet"
               nativeTrigger
               nativeHaptics={debugNativeHaptics}
               onValueChange={setSelectValue}
@@ -733,29 +749,31 @@ export function UiComponentsDebugPage() {
             />
             <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
           </View>
-          <View style={styles.field}>
-            <Label>Select Native{isWeb() ? "" : " (Dropdown)"}</Label>
-            <Select
-              items={selectItems}
-              native
-              nativePickerMode="dropdown"
-              nativeHaptics={debugNativeHaptics}
-              onValueChange={setSelectNativePickerValue}
-              placeholder="选择主题色"
-              value={selectNativePickerValue ?? undefined}
-            />
-            <Select
-              items={selectItems}
-              native
-              nativeTrigger
-              nativePickerMode="dropdown"
-              nativeHaptics={debugNativeHaptics}
-              onValueChange={setSelectNativePickerValue}
-              placeholder="选择主题色"
-              value={selectNativePickerValue ?? undefined}
-            />
-            <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
-          </View>
+          {!isWeb() && (
+            <View style={styles.field}>
+              <Label>Select Native (Dropdown)</Label>
+              <Select
+                items={selectItems}
+                native
+                nativePickerMode="dropdown"
+                nativeHaptics={debugNativeHaptics}
+                onValueChange={setSelectNativePickerValue}
+                placeholder="选择主题色"
+                value={selectNativePickerValue ?? undefined}
+              />
+              <Select
+                items={selectItems}
+                native
+                nativeTrigger
+                nativePickerMode="dropdown"
+                nativeHaptics={debugNativeHaptics}
+                onValueChange={setSelectNativePickerValue}
+                placeholder="选择主题色"
+                value={selectNativePickerValue ?? undefined}
+              />
+              <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
+            </View>
+          )}
           {os() === "ios" && (
             <View style={styles.field}>
               <Label>Select Native (Wheel Sheet)</Label>
@@ -810,7 +828,7 @@ export function UiComponentsDebugPage() {
           )}
 
           <View style={styles.field}>
-            {isWeb() && <Label>Select</Label>}
+            <Label>Select</Label>
             <Select
               items={selectItems2}
               native={false}
@@ -831,7 +849,7 @@ export function UiComponentsDebugPage() {
             <Text color="$color10">当前主题：{selectValue2 ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
-            {isWeb() && <Label>Select Native</Label>}
+            <Label>Select Native</Label>
             <Select
               items={selectItems2}
               nativeHaptics={debugNativeHaptics}
