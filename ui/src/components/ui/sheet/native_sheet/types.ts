@@ -1,6 +1,7 @@
 import type { ParamListBase } from "@react-navigation/native";
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import type { StackNavigationOptions } from "@react-navigation/stack";
+import type { TransitionProp } from "@tamagui/core";
 import type { ComponentType, ReactNode } from "react";
 import type { ViewStyle } from "react-native";
 
@@ -47,6 +48,7 @@ export interface NativeSheetProps {
   position?: number;
   snapPoints?: NativeSheetSnapPoint[];
   snapPointsMode?: NativeSheetSnapPointsMode;
+  transition?: TransitionProp;
 }
 
 export type NativeSheetStackScreenProps = {

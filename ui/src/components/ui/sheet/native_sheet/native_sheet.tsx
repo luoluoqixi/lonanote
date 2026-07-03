@@ -65,6 +65,7 @@ export function NativeSheet({
   position: positionProp,
   snapPoints,
   snapPointsMode,
+  transition,
 }: NativeSheetProps) {
   const [generatedSheetName] = useState(() => `ui-sheet-native-${++nativeSheetCounter}`);
   const sheetName = name ?? generatedSheetName;
@@ -99,6 +100,7 @@ export function NativeSheet({
       position={sheetState.position}
       snapPoints={snapPoints}
       snapPointsMode={snapPointsMode}
+      transition={transition}
     >
       {content ?? children}
     </BottomSheetPanel>

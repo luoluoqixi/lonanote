@@ -159,7 +159,9 @@ export function UiComponentsDebugPage() {
   const [sheetPosition, setSheetPosition] = useState(0);
   const [sheetNativeEnabled, setSheetNativeEnabled] = useState(true);
   const [explicitNativeSheetOpen, setExplicitNativeSheetOpen] = useState(false);
+  const [explicitNativeSheetPosition, setExplicitNativeSheetPosition] = useState(0);
   const [explicitSheetOpen, setExplicitSheetOpen] = useState(false);
+  const [explicitSheetPosition, setExplicitSheetPosition] = useState(0);
   const [percentSheetOpen, setPercentSheetOpen] = useState(false);
   const [percentSheetPosition, setPercentSheetPosition] = useState(0);
   const [constantSheetOpen, setConstantSheetOpen] = useState(false);
@@ -1633,70 +1635,93 @@ export function UiComponentsDebugPage() {
         <DemoRow>
           <Button
             nativeHaptics={debugNativeHaptics}
-            onPress={() => setExplicitNativeSheetOpen(true)}
+            onPress={() => {
+              setExplicitNativeSheetPosition(0);
+              setExplicitNativeSheetOpen(true);
+            }}
             variant="outlined"
           >
             Open NativeSheet
           </Button>
           <Button
             nativeHaptics={debugNativeHaptics}
-            onPress={() => setExplicitSheetOpen(true)}
+            onPress={() => {
+              setExplicitSheetPosition(0);
+              setExplicitSheetOpen(true);
+            }}
             variant="outlined"
           >
             Open Sheet
           </Button>
         </DemoRow>
 
-        <NativeSheet
-          content={
-            <View style={styles.globalSheetContent}>
-              <Text fontSize="$5" fontWeight="600">
-                NativeSheet
-              </Text>
-              <Text color="$color10">默认 `Sheet` 之外的显式高级入口。</Text>
-              <Button
-                nativeHaptics={debugNativeHaptics}
-                onPress={() => setExplicitNativeSheetOpen(false)}
-                theme="accent"
-              >
-                关闭 NativeSheet
-              </Button>
-            </View>
-          }
-          handle
-          modal
+        <Sheet.Controller
+          hidden={false}
           onOpenChange={setExplicitNativeSheetOpen}
           open={explicitNativeSheetOpen}
-          overlay
-          snapPoints={["72%", "92%"]}
-          snapPointsMode="percent"
-        />
+        >
+          <NativeSheet
+            content={
+              <View style={styles.globalSheetContent}>
+                <Text fontSize="$5" fontWeight="600">
+                  NativeSheet
+                </Text>
+                <Text color="$color10">默认 `Sheet` 之外的显式高级入口。</Text>
+                <Button
+                  nativeHaptics={debugNativeHaptics}
+                  onPress={() => setExplicitNativeSheetOpen(false)}
+                  theme="accent"
+                >
+                  关闭 NativeSheet
+                </Button>
+              </View>
+            }
+            handle
+            modal
+            onOpenChange={setExplicitNativeSheetOpen}
+            onPositionChange={setExplicitNativeSheetPosition}
+            open={explicitNativeSheetOpen}
+            overlay
+            position={explicitNativeSheetPosition}
+            snapPoints={["72%", "92%"]}
+            snapPointsMode="percent"
+          />
+        </Sheet.Controller>
 
-        <Sheet
-          content={
-            <View style={styles.globalSheetContent}>
-              <Text fontSize="$5" fontWeight="600">
-                Sheet
-              </Text>
-              <Text color="$color10">保留 Tamagui/replica 路径的轻量入口。</Text>
-              <Button
-                nativeHaptics={debugNativeHaptics}
-                onPress={() => setExplicitSheetOpen(false)}
-                theme="accent"
-              >
-                关闭 Sheet
-              </Button>
-            </View>
-          }
-          dismissOnSnapToBottom
-          handle
-          modal
+        <Sheet.Controller
+          hidden={false}
           onOpenChange={setExplicitSheetOpen}
           open={explicitSheetOpen}
-          overlay
-          snapPoints={["68%"]}
-          snapPointsMode="percent"
-        />
+        >
+          <Sheet
+            content={
+              <View style={styles.globalSheetContent}>
+                <Text fontSize="$5" fontWeight="600">
+                  Sheet
+                </Text>
+                <Text color="$color10">保留 Tamagui/replica 路径的轻量入口。</Text>
+                <Button
+                  nativeHaptics={debugNativeHaptics}
+                  onPress={() => setExplicitSheetOpen(false)}
+                  theme="accent"
+                >
+                  关闭 Sheet
+                </Button>
+              </View>
+            }
+            dismissOnSnapToBottom
+            handle
+            modal
+            onOpenChange={setExplicitSheetOpen}
+            onPositionChange={setExplicitSheetPosition}
+            open={explicitSheetOpen}
+            overlay
+            position={explicitSheetPosition}
+            snapPoints={["68%"]}
+            snapPointsMode="percent"
+            transition="200ms"
+          />
+        </Sheet.Controller>
 
         <Text color="$color10">最近菜单动作：{menuAction}</Text>
         <Text color="$color10">最近 ContextMenu 动作：{contextMenuAction}</Text>

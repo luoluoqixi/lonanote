@@ -837,7 +837,8 @@ export const SheetImplementationCustom = React.forwardRef<View, SheetProps>(
     //   portal: true,
     // })
 
-    const overlayContents = shouldHideParentSheet || !open ? null : overlayComponent;
+    const hasVisibleSheet = open || opacity > 0;
+    const overlayContents = shouldHideParentSheet || !hasVisibleSheet ? null : overlayComponent;
 
     let contents = (
       <LayoutMeasurementController disable={!open}>

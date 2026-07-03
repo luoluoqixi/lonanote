@@ -23,6 +23,7 @@ type BottomSheetPanelProps = {
   position: number;
   snapPoints: NativeSheetProps["snapPoints"];
   snapPointsMode: NativeSheetProps["snapPointsMode"];
+  transition?: NativeSheetProps["transition"];
 };
 
 type ResolvedReplicaSheetSnapPoints = {
@@ -90,6 +91,7 @@ export function BottomSheetPanel({
   position,
   snapPoints,
   snapPointsMode,
+  transition = "200ms",
 }: BottomSheetPanelProps) {
   const { snapPoints: resolvedSnapPoints, snapPointsMode: resolvedSnapPointsMode } = useMemo(
     () => resolveReplicaSheetSnapPoints(snapPoints, snapPointsMode),
@@ -119,6 +121,7 @@ export function BottomSheetPanel({
       position={resolvedPosition}
       snapPoints={resolvedSnapPoints}
       snapPointsMode={resolvedSnapPointsMode}
+      transition={transition}
     >
       {overlay ? (
         <ReplicaSheet.Overlay
