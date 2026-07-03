@@ -75,15 +75,21 @@ const DEFAULT_TOUCH_ITEM_CONTENT_STYLE = {
 const DEFAULT_SELECT_ITEM_CONTENT_STYLE = {
   ...DEFAULT_TOUCH_ITEM_CONTENT_STYLE,
   paddingHorizontal: 16,
+  paddingLeft: 16,
+  paddingRight: 16,
 } as const;
 const TOUCH_SELECT_ITEM_CONTENT_STYLE = {
   ...DEFAULT_TOUCH_ITEM_CONTENT_STYLE,
   minHeight: DEFAULT_TOUCH_SHEET_ITEM_HEIGHT,
   paddingHorizontal: 24,
+  paddingLeft: 24,
+  paddingRight: 24,
 } as const;
 const TOUCH_SHEET_SCROLL_CONTENT_STYLE = {
   paddingBottom: 28,
   paddingHorizontal: 16,
+  paddingLeft: 16,
+  paddingRight: 16,
   paddingTop: 10,
   width: "100%",
 } as const;
@@ -103,6 +109,7 @@ const DEFAULT_IOS_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
 const DEFAULT_NATIVE = !isWeb();
 
 const SelectAdaptHiddenContext = React.createContext(true);
+const SelectWebSheetLayoutContext = React.createContext(false);
 type SelectSheetControlContextValue = {
   onAnimationComplete?: (event: { open: boolean }) => void;
   onOpenChange: (open: boolean) => void;
@@ -123,6 +130,7 @@ type ResolvedSelectBehavior = {
   shouldUseCustomSheet: boolean;
   shouldUseNativePicker: boolean;
   shouldUseNativeSheet: boolean;
+  shouldUseWebSheet: boolean;
   tamaguiNative: boolean;
 };
 
@@ -137,12 +145,16 @@ function resolveSelectBehavior(native: SelectNativeMode | undefined): ResolvedSe
   const resolvedNative = native ?? DEFAULT_NATIVE;
 
   if (isWeb()) {
+    const shouldUseWebSheet =
+      resolvedNative === "native-sheet" || resolvedNative === "custom-sheet";
+
     return {
-      shouldRenderNativeOptionText: resolvedNative !== false,
-      shouldUseCustomSheet: false,
+      shouldRenderNativeOptionText: !shouldUseWebSheet && resolvedNative !== false,
+      shouldUseCustomSheet: shouldUseWebSheet,
       shouldUseNativePicker: resolvedNative === true,
       shouldUseNativeSheet: false,
-      tamaguiNative: resolvedNative !== false,
+      shouldUseWebSheet,
+      tamaguiNative: !shouldUseWebSheet && resolvedNative !== false,
     };
   }
 
@@ -154,6 +166,7 @@ function resolveSelectBehavior(native: SelectNativeMode | undefined): ResolvedSe
     shouldUseCustomSheet: resolvedNative === "custom-sheet",
     shouldUseNativePicker: resolvedNative === true,
     shouldUseNativeSheet: resolvedNative === false || resolvedNative === "native-sheet",
+    shouldUseWebSheet: false,
     tamaguiNative: tameguiNative,
   };
 }
@@ -269,6 +282,7 @@ function SelectCustomSheet({
       dismissOnSnapToBottom
       snapPoints={touchSheetConfig.snapPoints}
       snapPointsMode={touchSheetConfig.snapPointsMode}
+      transition={isWeb() ? "200ms" : undefined}
       transitionConfig={{ type: "timing", duration: 150 }}
     >
       <SelectSheetFrame
@@ -330,6 +344,14 @@ function SelectSheetFrame({
   shouldUseTouchSheetLayout,
   touchSheetConfig,
 }: SelectSheetBaseProps) {
+  const shouldUseWebSheetLayout = isWeb() && shouldUseTouchSheetLayout;
+  const shouldUseSheetScrollView = touchSheetConfig.shouldEnableScroll || shouldUseWebSheetLayout;
+  const adaptContents = (
+    <SelectWebSheetLayoutContext.Provider value={shouldUseWebSheetLayout}>
+      <SelectAdapt.Contents />
+    </SelectWebSheetLayoutContext.Provider>
+  );
+
   return (
     <Sheet.Frame
       {...(touchSheetConfig.frameMaxHeight != null
@@ -341,6 +363,7 @@ function SelectSheetFrame({
             borderTopLeftRadius: 36,
             borderTopRightRadius: 36,
             paddingTop: 12,
+            overflow: "hidden",
           }
         : null)}
     >
@@ -357,22 +380,39 @@ function SelectSheetFrame({
         />
       )}
       {shouldUseTouchSheetLayout ? (
-        touchSheetConfig.shouldEnableScroll ? (
-          <Sheet.ScrollView
-            contentOffset={initialScrollY != null ? { x: 0, y: initialScrollY } : undefined}
-            ref={sheetScrollRef}
-            sheetDragDisabledScrollIndicatorWidth={44}
-            showsVerticalScrollIndicator
-          >
-            <YStack
-              background={TOUCH_SHEET_FRAME_BACKGROUND}
-              style={{
-                ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
-              }}
+        shouldUseSheetScrollView ? (
+          <>
+            <Sheet.ScrollView
+              contentOffset={initialScrollY != null ? { x: 0, y: initialScrollY } : undefined}
+              ref={sheetScrollRef}
+              sheetDragDisabledScrollIndicatorWidth={shouldUseWebSheetLayout ? 0 : 44}
+              showsVerticalScrollIndicator
+              contentContainerStyle={
+                shouldUseWebSheetLayout ? ({ minHeight: "100%", width: "100%" } as any) : undefined
+              }
+              style={
+                shouldUseWebSheetLayout
+                  ? ({
+                      background: "transparent",
+                      backgroundColor: "transparent",
+                      flex: 1,
+                      minHeight: 0,
+                      overflowY: "auto",
+                      width: "100%",
+                    } as any)
+                  : undefined
+              }
             >
-              <SelectAdapt.Contents />
-            </YStack>
-          </Sheet.ScrollView>
+              <YStack
+                background={TOUCH_SHEET_FRAME_BACKGROUND}
+                style={{
+                  ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
+                }}
+              >
+                {adaptContents}
+              </YStack>
+            </Sheet.ScrollView>
+          </>
         ) : (
           <YStack
             background={TOUCH_SHEET_FRAME_BACKGROUND}
@@ -380,13 +420,11 @@ function SelectSheetFrame({
               ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
             }}
           >
-            <SelectAdapt.Contents />
+            {adaptContents}
           </YStack>
         )
       ) : (
-        <Sheet.ScrollView>
-          <SelectAdapt.Contents />
-        </Sheet.ScrollView>
+        <Sheet.ScrollView>{adaptContents}</Sheet.ScrollView>
       )}
     </Sheet.Frame>
   );
@@ -677,7 +715,9 @@ function SelectViewport(props: SelectViewportProps) {
     style,
     ...viewportProps
   } = props;
+  const isWebSheetLayout = React.useContext(SelectWebSheetLayoutContext);
   const shouldUseHeadlessWebViewport = isWeb() && unstyled == null;
+  const effectiveDisableScroll = disableScroll || isWebSheetLayout;
   const context = useSelectContext(scope);
   const itemParentContext = useSelectItemParentContext(scope);
   const adaptContext = useAdaptContext();
@@ -691,6 +731,15 @@ function SelectViewport(props: SelectViewportProps) {
           overscrollBehavior: "contain",
           userSelect: "none",
         } as React.CSSProperties,
+        isWebSheetLayout
+          ? ({
+              backgroundColor: "transparent",
+              boxSizing: "border-box",
+              maxWidth: "100%",
+              overflow: "visible",
+              width: "100%",
+            } as React.CSSProperties)
+          : null,
         style,
       ]
     : style;
@@ -721,16 +770,17 @@ function SelectViewport(props: SelectViewportProps) {
   return (
     <TamaguiSelect.Viewport
       {...viewportProps}
-      background={viewportProps.background ?? "$background"}
-      borderColor={borderColor ?? "$borderColor"}
-      borderWidth={borderWidth ?? 1}
-      disableScroll={disableScroll}
-      outlineWidth={outlineWidth ?? 0}
+      background={isWebSheetLayout ? "transparent" : (viewportProps.background ?? "$background")}
+      borderColor={isWebSheetLayout ? "transparent" : (borderColor ?? "$borderColor")}
+      borderWidth={isWebSheetLayout ? 0 : (borderWidth ?? 1)}
+      disableScroll={effectiveDisableScroll}
+      outlineWidth={isWebSheetLayout ? 0 : (outlineWidth ?? 0)}
+      rounded={isWebSheetLayout ? 0 : viewportProps.rounded}
       size={viewportProps.size ?? "$2"}
       overflowX={isWeb() ? "hidden" : undefined}
-      overflowY={disableScroll ? undefined : "auto"}
+      overflowY={effectiveDisableScroll ? undefined : "auto"}
       style={viewportStyle}
-      unstyled={shouldUseHeadlessWebViewport ? true : unstyled}
+      unstyled={shouldUseHeadlessWebViewport || isWebSheetLayout ? true : unstyled}
     >
       {children}
     </TamaguiSelect.Viewport>
@@ -855,7 +905,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const [nativePickerVisible, setNativePickerVisible] = React.useState(false);
     const sheetScrollRef = useRef<any>(null);
     const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
-    const shouldUseTouchSheetLayout = !isWeb();
+    const shouldUseTouchSheetLayout = !isWeb() || selectBehavior.shouldUseWebSheet;
     const resolvedPickerMode =
       nativePickerMode ??
       (platform === "android"
@@ -1090,6 +1140,8 @@ const SelectRoot = forwardRef<any, SelectProps>(
       shouldUseIosNativeSheetList && props.value != null && resolvedItems[0]?.value !== props.value
         ? props.value
         : undefined;
+    const resolvedSelectAdaptWhen = selectBehavior.shouldUseWebSheet ? true : selectAdaptWhen;
+    const resolvedSelectAdaptPlatform = selectBehavior.shouldUseWebSheet ? "web" : "touch";
 
     return (
       <>
@@ -1170,7 +1222,10 @@ const SelectRoot = forwardRef<any, SelectProps>(
                     onOpenAnimationComplete={scrollToSelectedItem}
                     shouldRunOpenAnimationComplete={initialScrollY != null}
                   >
-                    <SelectAdapt when={selectAdaptWhen} platform="touch">
+                    <SelectAdapt
+                      when={resolvedSelectAdaptWhen}
+                      platform={resolvedSelectAdaptPlatform}
+                    >
                       {selectBehavior.shouldUseCustomSheet ? (
                         <SelectCustomSheet
                           initialScrollY={initialScrollY}
