@@ -2,7 +2,7 @@ import type { GetRef } from "@tamagui/core";
 import { forwardRef, useEffect, useMemo, useRef } from "react";
 import { BackHandler } from "react-native";
 
-import { os } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
 
 import {
@@ -144,6 +144,7 @@ function SheetRoot(props: SheetProps) {
   }, [onPositionChange, snapPointNormalization]);
 
   const resolvedRootProps = {
+    disableRemoveScroll: isWeb(),
     ...rootProps,
     ...(resolvedPortalProps != null ? { portalProps: resolvedPortalProps } : null),
     ...(defaultPosition != null

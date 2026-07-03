@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { StyleSheet } from "react-native";
 
+import { isWeb } from "@/api/common/platform";
 import { Sheet as ReplicaSheet } from "@/components/ui/sheet/sheet/replica_sheet/Sheet";
 import type { SnapPointsMode } from "@/components/ui/sheet/sheet/replica_sheet/types";
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
@@ -24,6 +25,7 @@ type BottomSheetPanelProps = {
   snapPoints: NativeSheetProps["snapPoints"];
   snapPointsMode: NativeSheetProps["snapPointsMode"];
   transition?: NativeSheetProps["transition"];
+  disableRemoveScroll?: boolean;
 };
 
 type ResolvedReplicaSheetSnapPoints = {
@@ -92,6 +94,7 @@ export function BottomSheetPanel({
   snapPoints,
   snapPointsMode,
   transition = "200ms",
+  disableRemoveScroll,
 }: BottomSheetPanelProps) {
   const { snapPoints: resolvedSnapPoints, snapPointsMode: resolvedSnapPointsMode } = useMemo(
     () => resolveReplicaSheetSnapPoints(snapPoints, snapPointsMode),
@@ -122,6 +125,7 @@ export function BottomSheetPanel({
       snapPoints={resolvedSnapPoints}
       snapPointsMode={resolvedSnapPointsMode}
       transition={transition}
+      disableRemoveScroll={disableRemoveScroll ?? isWeb()}
     >
       {overlay ? (
         <ReplicaSheet.Overlay
