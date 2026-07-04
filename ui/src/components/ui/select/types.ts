@@ -89,6 +89,8 @@ export interface SelectProps extends Omit<
   touchSheetMaxHeight?: ViewStyle["maxHeight"];
   triggerProps?: SelectTriggerProps;
   viewportProps?: ComponentProps<typeof TamaguiSelect.Viewport>;
+  /** Web 非 native Menu 弹层是否显示指向 trigger 的箭头。默认不显示。 */
+  webMenuArrow?: boolean;
 }
 
 export type SelectAdaptProps = ComponentProps<typeof TamaguiSelect.Adapt>;

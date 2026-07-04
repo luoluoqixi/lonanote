@@ -18,10 +18,18 @@ import {
 } from "@tamagui/select";
 import { forwardRef, useCallback, useRef } from "react";
 import React from "react";
-import { FontSizeTokens, Select as TamaguiSelect, YStack, getFontSize } from "tamagui";
+import {
+  FontSizeTokens,
+  SizableText,
+  Select as TamaguiSelect,
+  XStack,
+  YStack,
+  getFontSize,
+} from "tamagui";
 import { LinearGradient } from "tamagui/linear-gradient";
 
 import { isWeb, os } from "@/api/common/platform";
+import { Menu } from "@/components/ui/menu";
 import { Sheet } from "@/components/ui/sheet";
 import { NativeSheet, NativeSheetScrollContent } from "@/components/ui/sheet/native_sheet";
 import {
@@ -183,6 +191,28 @@ const WEB_NATIVE_TRIGGER_SELECT_OVERLAY_STYLE = {
   width: "100%",
   zIndex: 1,
 } as const;
+
+const WEB_MENU_BLOCKING_OVERLAY_STYLE = {
+  background: "transparent",
+  bottom: 0,
+  left: 0,
+  position: "fixed",
+  right: 0,
+  top: 0,
+  zIndex: 0,
+} as const;
+
+function renderSelectWebMenuTriggerLabel(label: React.ReactNode, isPlaceholder: boolean) {
+  if (typeof label === "string" || typeof label === "number") {
+    return (
+      <SizableText color="$color" opacity={isPlaceholder ? 0.58 : 1} pointerEvents="none">
+        {label}
+      </SizableText>
+    );
+  }
+
+  return label;
+}
 
 function parsePercentSnapPoint(value: SelectProps["touchSheetMaxHeight"]) {
   if (typeof value !== "string") {
@@ -532,7 +562,7 @@ function SelectSheetController(props: {
     if (context.open) {
       setIsAdaptFullyHidden(false);
     } else {
-      // Sheet 关闭时重置，下次打开可再次滚动
+      // Sheet 关闭时重置，下次打开可再次滚动。
       hasScrolledRef.current = false;
     }
   }, [context.open]);
@@ -543,7 +573,7 @@ function SelectSheetController(props: {
         setIsAdaptFullyHidden(true);
         hasScrolledRef.current = false;
       } else if (!hasScrolledRef.current) {
-        // 仅首次打开动画完成时滚动到选中项，松手回弹等重新显示不再触发
+        // 仅首次打开动画完成时滚动到选中项，松手回弹等重新显示不再触发。
         hasScrolledRef.current = true;
         if (props.shouldRunOpenAnimationComplete !== false) {
           props.onOpenAnimationComplete?.();
@@ -902,6 +932,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       touchSheetMaxHeight,
       triggerProps,
       viewportProps,
+      webMenuArrow,
       native,
       nativeTrigger,
       nativeTriggerContainerStyle,
@@ -916,6 +947,11 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const selectBehavior = resolveSelectBehavior(native);
     const platform = os();
     const [nativePickerVisible, setNativePickerVisible] = React.useState(false);
+    const [webMenuValue, setWebMenuValue] = React.useState<string | undefined>(
+      typeof props.defaultValue === "string" ? props.defaultValue : undefined,
+    );
+    const [webMenuOpen, setWebMenuOpen] = React.useState(Boolean(props.defaultOpen));
+    const [webMenuTriggerWidth, setWebMenuTriggerWidth] = React.useState<number | undefined>();
     const sheetScrollRef = useRef<any>(null);
     const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
     const shouldUseTouchSheetLayout = !isWeb() || selectBehavior.shouldUseWebSheet;
@@ -943,9 +979,10 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const renderedItemGroups: ResolvedSelectItemGroupData[] = shouldRenderNativeOptionText
       ? [{ key: "native", items: resolvedItems }]
       : resolvedItemGroups;
+    const selectedValue = props.value !== undefined ? props.value : (webMenuValue ?? null);
     const getItemLabelByValue = (value: string | null | undefined) =>
       resolvedItems.find((item) => item.value === value)?.label ?? null;
-    const selectedItem = getItemLabelByValue(props.value ?? null);
+    const selectedItem = getItemLabelByValue(selectedValue);
     const triggerLabel = selectedItem ?? placeholder ?? "";
     const defaultAndroidDropdownAlign =
       platform === "android" && resolvedPickerMode === "dropdown" ? "center" : undefined;
@@ -1094,11 +1131,15 @@ const SelectRoot = forwardRef<any, SelectProps>(
     };
 
     const handleTamaguiValueChange = (nextValue: string) => {
+      if (props.value === undefined) {
+        setWebMenuValue(nextValue ?? undefined);
+      }
+
       onValueChange?.(nextValue ?? null);
       triggerNativeHaptics(resolvedNativeHaptics);
     };
 
-    /** 打开 Sheet 时滚动到选中项位置 */
+    /** 打开 Sheet 时滚动到选中项位置。 */
     const getSelectedItemScrollY = useCallback(() => {
       if (!shouldUseTouchSheetLayout || resolvedItems.length === 0) {
         return null;
@@ -1172,10 +1213,208 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const resolvedSelectAdaptPlatform = selectBehavior.shouldUseWebSheet ? "web" : "touch";
     const shouldRenderWebNativeTriggerSelect =
       isWeb() && !!nativeTrigger && selectBehavior.shouldUseNativePicker;
+    const shouldRenderWebMenuSelect =
+      isWeb() &&
+      !selectBehavior.tamaguiNative &&
+      !selectBehavior.shouldUseWebSheet &&
+      children == null;
+    const selectDisabled = disabled ?? isDisabled ?? triggerProps?.disabled;
+    const {
+      hoverStyle: triggerHoverStyle,
+      nativeHaptics: _triggerNativeHaptics,
+      onLayout: triggerOnLayout,
+      onPress: triggerOnPress,
+      pressStyle: triggerPressStyle,
+      ...webMenuTriggerProps
+    } = (triggerProps as any) ?? {};
+    void _triggerNativeHaptics;
+    const {
+      minWidth: webMenuContentMinWidth,
+      zIndex: webMenuContentZIndex,
+      ...webMenuContentProps
+    } = {
+      ...(contentProps as any),
+      ...(viewportProps as any),
+    };
+    const resolvedWebMenuOpen = props.open ?? webMenuOpen;
+
+    const handleWebMenuOpenChange = (nextOpen: boolean) => {
+      if (props.open === undefined) {
+        setWebMenuOpen(nextOpen);
+      }
+
+      onOpenChange?.(nextOpen);
+      if (nextOpen) triggerNativeHaptics(resolvedNativeHaptics);
+    };
+
+    const handleWebMenuValueChange = (nextValue: string) => {
+      if (props.value === undefined) {
+        setWebMenuValue(nextValue);
+      }
+
+      onValueChange?.(nextValue);
+      triggerNativeHaptics(resolvedNativeHaptics);
+    };
+
+    const handleWebMenuTriggerLayout = (event: any) => {
+      triggerOnLayout?.(event);
+
+      const nextWidth = event?.nativeEvent?.layout?.width;
+      if (typeof nextWidth === "number" && Number.isFinite(nextWidth) && nextWidth > 0) {
+        setWebMenuTriggerWidth(nextWidth);
+      }
+    };
+
+    const renderWebMenuItem = (item: ResolvedSelectItemData) => {
+      const itemDisabled = item.disabled ?? item.isDisabled ?? itemProps?.disabled;
+      const isSelected = item.value === selectedValue;
+
+      return (
+        <Menu.RadioItem
+          {...(itemProps as any)}
+          aria-label={resolveAriaLabel(item["aria-label"] ?? itemProps?.["aria-label"], item.label)}
+          disabled={itemDisabled}
+          key={item.value}
+          textValue={item.label}
+          value={item.value}
+        >
+          {item.startContent}
+          <YStack flex={1} style={{ minWidth: 0 }}>
+            <Menu.ItemTitle {...(itemTextProps as any)}>{item.label}</Menu.ItemTitle>
+            {item.description != null ? (
+              typeof item.description === "string" || typeof item.description === "number" ? (
+                <SizableText color="$color10" size="$2">
+                  {item.description}
+                </SizableText>
+              ) : (
+                item.description
+              )
+            ) : null}
+          </YStack>
+          {item.endContent}
+          <Menu.ItemIndicator marginLeft="auto" {...(itemIndicatorProps as any)}>
+            {itemIndicatorProps?.children ??
+              (isSelected ? <Check color="$color10" size={12} /> : null)}
+          </Menu.ItemIndicator>
+        </Menu.RadioItem>
+      );
+    };
+
+    const renderWebMenuGroup = (group: ResolvedSelectItemGroupData, groupIndex: number) => {
+      const label = getGroupLabel(group, groupIndex);
+
+      return (
+        <React.Fragment key={group.key}>
+          {groupIndex > 0 ? <Menu.Separator /> : null}
+          {label != null ? <Menu.Label {...(itemLabelProps as any)}>{label}</Menu.Label> : null}
+          {group.items.map(renderWebMenuItem)}
+        </React.Fragment>
+      );
+    };
+
+    const webMenuTrigger = (
+      <XStack
+        aria-label={resolveAriaLabel(
+          triggerProps?.["aria-label"] ?? ariaLabel,
+          selectedItem ?? placeholder,
+        )}
+        backgroundColor={nativeTrigger ? "transparent" : "$background"}
+        borderColor={nativeTrigger ? "transparent" : "$borderColor"}
+        borderRadius={nativeTrigger ? 0 : "$4"}
+        borderWidth={nativeTrigger ? 0 : 1}
+        cursor={selectDisabled ? "default" : "pointer"}
+        hoverStyle={
+          nativeTrigger
+            ? {
+                background: "$backgroundHover",
+                borderColor: "transparent",
+                ...(triggerHoverStyle as any),
+              }
+            : {
+                backgroundColor: "$backgroundHover",
+                borderColor: "$borderColor",
+                ...(triggerHoverStyle as any),
+              }
+        }
+        items="center"
+        justify={nativeTrigger ? "center" : "space-between"}
+        minHeight={44}
+        opacity={selectDisabled ? 0.5 : 1}
+        paddingHorizontal={nativeTrigger ? 0 : "$3"}
+        paddingVertical={nativeTrigger ? 0 : "$2"}
+        pointerEvents={selectDisabled ? "none" : undefined}
+        pressStyle={
+          nativeTrigger
+            ? {
+                backgroundColor: "transparent",
+                borderColor: "transparent",
+                opacity: 0.6,
+                ...(triggerPressStyle as any),
+              }
+            : {
+                backgroundColor: "$backgroundPress",
+                ...(triggerPressStyle as any),
+              }
+        }
+        width="100%"
+        {...(webMenuTriggerProps as any)}
+        onLayout={handleWebMenuTriggerLayout as any}
+        onPress={triggerOnPress as any}
+      >
+        {nativeTrigger ? (
+          <NativeTriggerFace
+            content={nativeTriggerContent}
+            containerStyle={nativeTriggerContainerStyle}
+            icon={nativeTriggerIcon}
+            label={triggerLabel}
+            labelProps={nativeTriggerLabelProps}
+          />
+        ) : (
+          <>
+            {renderSelectWebMenuTriggerLabel(triggerLabel, selectedItem == null)}
+            <ChevronDown
+              color="$color10"
+              size={getFontSize((props.size as FontSizeTokens) ?? "$true")}
+            />
+          </>
+        )}
+      </XStack>
+    );
 
     return (
       <>
-        {shouldRenderWebNativeTriggerSelect ? (
+        {shouldRenderWebMenuSelect ? (
+          resolvedItems.length === 0 ? null : (
+            <Menu onOpenChange={handleWebMenuOpenChange} open={resolvedWebMenuOpen} offset={8}>
+              <Menu.Trigger asChild disabled={selectDisabled}>
+                {webMenuTrigger}
+              </Menu.Trigger>
+              <Menu.Portal zIndex={100_000}>
+                {resolvedWebMenuOpen ? (
+                  <YStack
+                    onPress={() => handleWebMenuOpenChange(false)}
+                    style={WEB_MENU_BLOCKING_OVERLAY_STYLE as any}
+                  />
+                ) : null}
+                <Menu.Content
+                  {...webMenuContentProps}
+                  minWidth={webMenuContentMinWidth ?? webMenuTriggerWidth}
+                  zIndex={webMenuContentZIndex ?? 1}
+                >
+                  {webMenuArrow ? <Menu.Arrow /> : null}
+                  <Menu.ScrollView>
+                    <Menu.RadioGroup
+                      value={selectedValue ?? undefined}
+                      onValueChange={handleWebMenuValueChange}
+                    >
+                      {resolvedItemGroups.map(renderWebMenuGroup)}
+                    </Menu.RadioGroup>
+                  </Menu.ScrollView>
+                </Menu.Content>
+              </Menu.Portal>
+            </Menu>
+          )
+        ) : shouldRenderWebNativeTriggerSelect ? (
           <YStack
             backgroundColor="transparent"
             borderColor="transparent"
