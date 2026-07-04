@@ -1,4 +1,4 @@
-/* eslint-disable quote-props */
+﻿/* eslint-disable quote-props */
 import { StyleSheet, View } from "react-native";
 
 import type { GlobalSettings } from "@/api/commands/settings";
@@ -13,13 +13,9 @@ import {
   type SelectOption,
   Text,
 } from "@/components/ui";
-import {
-  getAccentColorPreset,
-  useColorSchemeSettings,
-  useGlobalSettings,
-  useUiPreferences,
-} from "@/hooks/settings";
+import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 import type { AccentColorSetting, ColorSchemeSetting } from "@/stores/ui";
+import { accentThemeNames, getAccentThemePreset } from "@/theme/accent_themes";
 
 export type SettingsTabKey = "appearance" | "global" | "window";
 
@@ -364,10 +360,8 @@ export function AppearanceSettingsPanel() {
   const { preferredColorScheme, setPreferredColorSchemeAndSave } = useColorSchemeSettings();
   const { preferences, updateAndSave } = useUiPreferences();
 
-  const accentColorOptions: SelectOption[] = (
-    ["blue", "emerald", "orange", "rose"] as AccentColorSetting[]
-  ).map((option) => ({
-    label: getAccentColorPreset(option).label,
+  const accentColorOptions: SelectOption[] = accentThemeNames.map((option) => ({
+    label: getAccentThemePreset(option).label,
     value: option,
   }));
 
@@ -383,11 +377,11 @@ export function AppearanceSettingsPanel() {
         <NativeListSection title="主题">
           <NativeListSelectItem
             selectProps={{
-              "aria-label": "主题色",
+              "aria-label": "主题",
               onValueChange: (nextValue: string | null) => {
                 if (nextValue == null) return;
                 runSettingsAction(
-                  "set accent color",
+                  "set accent theme",
                   updateAndSave((currentPreferences) => ({
                     ...currentPreferences,
                     appearance: {
@@ -398,10 +392,10 @@ export function AppearanceSettingsPanel() {
                 );
               },
               options: accentColorOptions,
-              placeholder: "选择主题色",
+              placeholder: "选择主题",
               value: preferences.appearance.accentColor,
             }}
-            title="主题色"
+            title="主题"
           />
           <NativeListSelectItem
             selectProps={{

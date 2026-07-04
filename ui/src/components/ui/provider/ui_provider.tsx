@@ -1,4 +1,4 @@
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+﻿import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TamaguiProvider, Theme } from "tamagui";
 
 import config from "../../../../tamagui.config";
@@ -8,6 +8,7 @@ import { NativeHapticsProvider } from "../utils";
 import type { UIProviderProps } from "./types";
 
 export function UIProvider({
+  accentThemeName = "ocean",
   children,
   colorScheme,
   defaultNativeHapticsEnabled = false,
@@ -15,7 +16,7 @@ export function UIProvider({
   const insets = useSafeAreaInsets();
   return (
     <TamaguiProvider config={config} defaultTheme={colorScheme} insets={insets}>
-      <Theme name="ocean">
+      <Theme name={accentThemeName}>
         <NativeDialogProvider>
           <NativeHapticsProvider enabledByDefault={defaultNativeHapticsEnabled}>
             {children}

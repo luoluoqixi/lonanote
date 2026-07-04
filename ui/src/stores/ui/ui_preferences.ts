@@ -1,7 +1,12 @@
-import { store } from "@/api/common";
+﻿import { store } from "@/api/common";
+import {
+  type AccentThemeName,
+  defaultAccentThemeName,
+  normalizeAccentThemeName,
+} from "@/theme/accent_themes";
 
 export type ColorSchemeSetting = "light" | "dark" | "system";
-export type AccentColorSetting = "blue" | "emerald" | "orange" | "rose";
+export type AccentColorSetting = AccentThemeName;
 
 export interface DesktopWindowState {
   height: number;
@@ -33,7 +38,7 @@ const UI_RESTORE_WINDOW_STATE_KEY = "ui.window.restoreWindowState";
 export function createDefaultUiPreferences(): UiPreferences {
   return {
     appearance: {
-      accentColor: "blue",
+      accentColor: defaultAccentThemeName,
       themeMode: "system",
       zoomFactor: 1,
     },
@@ -45,9 +50,7 @@ export function createDefaultUiPreferences(): UiPreferences {
 }
 
 function normalizeAccentColor(value: unknown): AccentColorSetting {
-  return value === "blue" || value === "emerald" || value === "orange" || value === "rose"
-    ? value
-    : "blue";
+  return normalizeAccentThemeName(value);
 }
 
 function normalizeThemeMode(value: unknown): ColorSchemeSetting {
