@@ -141,20 +141,25 @@ type SelectSheetBaseProps = {
   touchSheetConfig: TouchSheetConfig;
 };
 
-function resolveSelectBehavior(native: SelectNativeMode | undefined): ResolvedSelectBehavior {
+function resolveSelectBehavior(
+  native: SelectNativeMode | undefined,
+  nativeTrigger?: boolean,
+): ResolvedSelectBehavior {
   const resolvedNative = native ?? DEFAULT_NATIVE;
 
   if (isWeb()) {
     const shouldUseWebSheet =
       resolvedNative === "native-sheet" || resolvedNative === "custom-sheet";
+    const shouldUseWebNativeSelect =
+      !nativeTrigger && !shouldUseWebSheet && resolvedNative !== false;
 
     return {
-      shouldRenderNativeOptionText: !shouldUseWebSheet && resolvedNative !== false,
+      shouldRenderNativeOptionText: shouldUseWebNativeSelect,
       shouldUseCustomSheet: shouldUseWebSheet,
-      shouldUseNativePicker: resolvedNative === true,
+      shouldUseNativePicker: !nativeTrigger && resolvedNative === true,
       shouldUseNativeSheet: false,
       shouldUseWebSheet,
-      tamaguiNative: !shouldUseWebSheet && resolvedNative !== false,
+      tamaguiNative: shouldUseWebNativeSelect,
     };
   }
 
@@ -900,7 +905,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     ref,
   ) => {
     void ref;
-    const selectBehavior = resolveSelectBehavior(native);
+    const selectBehavior = resolveSelectBehavior(native, nativeTrigger);
     const platform = os();
     const [nativePickerVisible, setNativePickerVisible] = React.useState(false);
     const sheetScrollRef = useRef<any>(null);
