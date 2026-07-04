@@ -141,22 +141,18 @@ type SelectSheetBaseProps = {
   touchSheetConfig: TouchSheetConfig;
 };
 
-function resolveSelectBehavior(
-  native: SelectNativeMode | undefined,
-  nativeTrigger?: boolean,
-): ResolvedSelectBehavior {
+function resolveSelectBehavior(native: SelectNativeMode | undefined): ResolvedSelectBehavior {
   const resolvedNative = native ?? DEFAULT_NATIVE;
 
   if (isWeb()) {
     const shouldUseWebSheet =
       resolvedNative === "native-sheet" || resolvedNative === "custom-sheet";
-    const shouldUseWebNativeSelect =
-      !nativeTrigger && !shouldUseWebSheet && resolvedNative !== false;
+    const shouldUseWebNativeSelect = !shouldUseWebSheet && resolvedNative !== false;
 
     return {
       shouldRenderNativeOptionText: shouldUseWebNativeSelect,
       shouldUseCustomSheet: shouldUseWebSheet,
-      shouldUseNativePicker: !nativeTrigger && resolvedNative === true,
+      shouldUseNativePicker: resolvedNative === true,
       shouldUseNativeSheet: false,
       shouldUseWebSheet,
       tamaguiNative: shouldUseWebNativeSelect,
@@ -175,6 +171,18 @@ function resolveSelectBehavior(
     tamaguiNative: tameguiNative,
   };
 }
+
+const WEB_NATIVE_TRIGGER_SELECT_OVERLAY_STYLE = {
+  bottom: 0,
+  height: "100%",
+  left: 0,
+  opacity: 0,
+  position: "absolute",
+  right: 0,
+  top: 0,
+  width: "100%",
+  zIndex: 1,
+} as const;
 
 function parsePercentSnapPoint(value: SelectProps["touchSheetMaxHeight"]) {
   if (typeof value !== "string") {
@@ -905,7 +913,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     ref,
   ) => {
     void ref;
-    const selectBehavior = resolveSelectBehavior(native, nativeTrigger);
+    const selectBehavior = resolveSelectBehavior(native);
     const platform = os();
     const [nativePickerVisible, setNativePickerVisible] = React.useState(false);
     const sheetScrollRef = useRef<any>(null);
@@ -1147,10 +1155,65 @@ const SelectRoot = forwardRef<any, SelectProps>(
         : undefined;
     const resolvedSelectAdaptWhen = selectBehavior.shouldUseWebSheet ? true : selectAdaptWhen;
     const resolvedSelectAdaptPlatform = selectBehavior.shouldUseWebSheet ? "web" : "touch";
+    const shouldRenderWebNativeTriggerSelect =
+      isWeb() && !!nativeTrigger && selectBehavior.shouldUseNativePicker;
 
     return (
       <>
-        {shouldRenderNativePlatformPicker ? (
+        {shouldRenderWebNativeTriggerSelect ? (
+          <YStack
+            backgroundColor="transparent"
+            borderColor="transparent"
+            borderRadius={0}
+            borderWidth={0}
+            hoverStyle={{
+              backgroundColor: "$backgroundHover",
+              borderColor: "transparent",
+              ...(triggerProps?.hoverStyle as any),
+            }}
+            justifyContent="center"
+            minHeight={44}
+            paddingHorizontal={0}
+            paddingVertical={0}
+            position="relative"
+            pressStyle={{
+              backgroundColor: "$backgroundPress",
+              borderColor: "transparent",
+              ...(triggerProps?.pressStyle as any),
+            }}
+            width="100%"
+            {...(triggerProps as any)}
+          >
+            <NativeTriggerFace
+              content={nativeTriggerContent}
+              containerStyle={nativeTriggerContainerStyle}
+              icon={nativeTriggerIcon}
+              label={triggerLabel}
+              labelProps={nativeTriggerLabelProps}
+            />
+            <YStack style={WEB_NATIVE_TRIGGER_SELECT_OVERLAY_STYLE as any}>
+              <TamaguiSelect
+                disablePreventBodyScroll
+                {...props}
+                native={selectBehavior.tamaguiNative}
+                onValueChange={handleTamaguiValueChange}
+                renderValue={props.renderValue ?? ((nextValue) => getItemLabelByValue(nextValue))}
+              >
+                <SelectContent {...contentProps}>
+                  <SelectViewport
+                    bg="$background"
+                    rounded="$4"
+                    borderWidth={1}
+                    borderColor="$borderColor"
+                    {...viewportProps}
+                  >
+                    {renderedItemGroups.map(renderGroup)}
+                  </SelectViewport>
+                </SelectContent>
+              </TamaguiSelect>
+            </YStack>
+          </YStack>
+        ) : shouldRenderNativePlatformPicker ? (
           <NativePickerSwiftUI
             items={resolvedItems}
             value={props.value}
