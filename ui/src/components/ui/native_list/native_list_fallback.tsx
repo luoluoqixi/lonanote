@@ -9,11 +9,11 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "tamagui";
 
-import { os } from "@/api/common/platform";
+import { isWeb, os } from "@/api/common/platform";
 
 import { FlashList, type ListRenderItemInfo } from "../flash_list";
 import { Select } from "../select";
@@ -39,6 +39,7 @@ import type {
 } from "./types";
 
 type RowContainerProps = {
+  backgroundColor?: ViewStyle["backgroundColor"];
   children: ReactNode;
   disabled?: boolean;
   nativeHaptics?: NativeListItemBaseProps["nativeHaptics"];
@@ -75,7 +76,13 @@ type FallbackListEntry =
       type: "sectionFooter";
     };
 
-function FallbackRowContainer({ children, disabled, nativeHaptics, onPress }: RowContainerProps) {
+function FallbackRowContainer({
+  backgroundColor,
+  children,
+  disabled,
+  nativeHaptics,
+  onPress,
+}: RowContainerProps) {
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
   const theme = useTheme();
 
@@ -83,7 +90,7 @@ function FallbackRowContainer({ children, disabled, nativeHaptics, onPress }: Ro
     backgroundColor:
       pressed && !disabled
         ? (theme.backgroundPress?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
-        : theme.background?.val,
+        : (backgroundColor ?? theme.background?.val),
   });
 
   if (onPress == null) {
@@ -121,6 +128,7 @@ function FallbackRowContainer({ children, disabled, nativeHaptics, onPress }: Ro
 }
 
 type NativeListRowProps = NativeListItemBaseProps & {
+  backgroundColor?: ViewStyle["backgroundColor"];
   iconAfter?: ReactNode;
   titleColor?: string | false;
 };
@@ -183,6 +191,7 @@ function renderValueNode(value: ReactNode) {
 }
 
 function NativeListRow({
+  backgroundColor,
   chevron = false,
   disabled,
   iconAfter,
@@ -203,7 +212,12 @@ function NativeListRow({
   const valueNode = renderValueNode(value);
 
   return (
-    <FallbackRowContainer disabled={disabled} nativeHaptics={nativeHaptics} onPress={onPress}>
+    <FallbackRowContainer
+      backgroundColor={backgroundColor}
+      disabled={disabled}
+      nativeHaptics={nativeHaptics}
+      onPress={onPress}
+    >
       <View style={styles.rowContent}>
         <View style={[styles.textColumn, { alignItems: titleAlignment }]}>
           {titleNode}
@@ -636,6 +650,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
       nativeTriggerContent={
         <NativeListRow
           {...itemProps}
+          backgroundColor={isWeb() ? "transparent" : undefined}
           disabled={disabled}
           iconAfter={
             <View style={styles.selectValue}>
@@ -648,7 +663,11 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
         />
       }
       triggerProps={{
-        pressStyle: {
+        ...selectProps.triggerProps,
+        hoverStyle: selectProps.triggerProps?.hoverStyle ?? {
+          backgroundColor: "$backgroundHover",
+        },
+        pressStyle: selectProps.triggerProps?.pressStyle ?? {
           backgroundColor: "$backgroundPress",
         },
       }}
