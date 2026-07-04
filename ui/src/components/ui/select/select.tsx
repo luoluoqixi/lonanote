@@ -1332,7 +1332,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
         borderColor={nativeTrigger ? "transparent" : "$borderColor"}
         borderRadius={nativeTrigger ? 0 : "$4"}
         borderWidth={nativeTrigger ? 0 : 1}
-        cursor={selectDisabled ? "default" : "pointer"}
+        cursor="default"
         hoverStyle={
           nativeTrigger
             ? {

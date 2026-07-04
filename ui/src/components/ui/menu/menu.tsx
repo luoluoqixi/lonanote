@@ -29,6 +29,7 @@ import type {
 
 const DEFAULT_MENU_ENTER_STYLE = { opacity: 0, scale: 0.96, y: -4 } as const;
 const DEFAULT_MENU_EXIT_STYLE = { opacity: 0, scale: 0.98, y: -2 } as const;
+const DEFAULT_MENU_INTERACTIVE_STYLE = { cursor: "default" } as const;
 
 function mergeMenuStyle<T extends object>(baseStyle: T, style: unknown): T {
   return StyleSheet.flatten([baseStyle, style] as any) as T;
@@ -189,7 +190,11 @@ function MenuItem(props: MenuItemProps) {
   const { children, textValue, ...itemProps } = props;
 
   return (
-    <TamaguiMenu.Item {...itemProps} textValue={textValue ?? getChildrenTextValue(children)}>
+    <TamaguiMenu.Item
+      {...itemProps}
+      textValue={textValue ?? getChildrenTextValue(children)}
+      style={mergeMenuStyle(DEFAULT_MENU_INTERACTIVE_STYLE, (props as any).style) as any}
+    >
       {normalizeMenuChildren(children)}
     </TamaguiMenu.Item>
   );
@@ -210,6 +215,7 @@ function MenuCheckboxItem(props: MenuCheckboxItemProps) {
     <TamaguiMenu.CheckboxItem
       {...itemProps}
       textValue={textValue ?? getChildrenTextValue(children)}
+      style={mergeMenuStyle(DEFAULT_MENU_INTERACTIVE_STYLE, (props as any).style) as any}
     >
       {normalizeMenuChildren(children)}
     </TamaguiMenu.CheckboxItem>
@@ -224,7 +230,11 @@ function MenuRadioItem(props: MenuRadioItemProps) {
   const { children, textValue, ...itemProps } = props;
 
   return (
-    <TamaguiMenu.RadioItem {...itemProps} textValue={textValue ?? getChildrenTextValue(children)}>
+    <TamaguiMenu.RadioItem
+      {...itemProps}
+      textValue={textValue ?? getChildrenTextValue(children)}
+      style={mergeMenuStyle(DEFAULT_MENU_INTERACTIVE_STYLE, (props as any).style) as any}
+    >
       {normalizeMenuChildren(children)}
     </TamaguiMenu.RadioItem>
   );
@@ -260,6 +270,7 @@ function MenuSubTrigger(props: MenuSubTriggerProps) {
     <TamaguiMenu.SubTrigger
       {...subTriggerProps}
       textValue={textValue ?? getChildrenTextValue(children)}
+      style={mergeMenuStyle(DEFAULT_MENU_INTERACTIVE_STYLE, (props as any).style) as any}
     >
       {normalizeMenuChildren(children)}
     </TamaguiMenu.SubTrigger>
