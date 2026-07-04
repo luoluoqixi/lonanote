@@ -91,12 +91,9 @@ function FallbackRowContainer({
   const getRowBackground = (pressed = false) => ({
     backgroundColor:
       pressed && !disabled
-        ? (theme.color4?.val ??
-          theme.backgroundPress?.val ??
-          theme.backgroundHover?.val ??
-          theme.background?.val)
+        ? (theme.color4?.val ?? theme.backgroundPress?.val ?? theme.background?.val)
         : hovered && !disabled
-          ? (theme.backgroundPress?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
+          ? (theme.color3?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
           : (backgroundColor ?? theme.background?.val),
   });
 
@@ -687,7 +684,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
       triggerProps={{
         ...selectProps.triggerProps,
         hoverStyle: selectProps.triggerProps?.hoverStyle ?? {
-          backgroundColor: "$backgroundPress",
+          backgroundColor: "$color3",
         },
         pressStyle: selectProps.triggerProps?.pressStyle ?? {
           background: "$color4",

@@ -108,8 +108,8 @@ const IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE = {
   width: "100%",
 } as const;
 const TOUCH_SHEET_GROUP_RADIUS = 24;
-const TOUCH_SHEET_FRAME_BACKGROUND = "$backgroundPress" as const;
-const TOUCH_SHEET_GROUP_BACKGROUND = "$background" as const;
+const TOUCH_SHEET_FRAME_BACKGROUND = "$background" as const;
+const TOUCH_SHEET_GROUP_BACKGROUND = "$color1" as const;
 const TOUCH_SHEET_SEPARATOR_COLOR = "$borderColor" as const;
 
 const DEFAULT_ANDROID_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
@@ -215,7 +215,7 @@ const WEB_MENU_BLOCKING_OVERLAY_STYLE = {
   width: "100vw",
 } as const;
 const DEFAULT_SELECT_TRIGGER_HOVER_STYLE = {
-  backgroundColor: "$backgroundPress",
+  backgroundColor: "$color3",
 } as const;
 
 const DEFAULT_SELECT_TRIGGER_PRESS_STYLE = {
@@ -1093,14 +1093,14 @@ const SelectRoot = forwardRef<any, SelectProps>(
             hoverStyle={
               shouldUseWebSheetItemHover
                 ? {
-                    background: "$color4",
+                    background: "$color3",
                   }
                 : undefined
             }
             pressStyle={
               shouldUseWebSheetItemHover
                 ? {
-                    background: "$color5",
+                    background: "$color4",
                   }
                 : undefined
             }
@@ -1439,12 +1439,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
         hoverStyle={
           nativeTrigger
             ? {
-                background: "$backgroundPress",
+                background: "$color3",
                 borderColor: "transparent",
                 ...(triggerHoverStyle as any),
               }
             : {
-                background: "$backgroundPress",
+                background: "$color3",
                 borderColor: "$borderColor",
                 ...(triggerHoverStyle as any),
               }
@@ -1574,12 +1574,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
             hoverStyle={
               nativeTrigger
                 ? {
-                    background: "$backgroundPress",
+                    background: "$color3",
                     borderColor: "transparent",
                     ...(triggerProps?.hoverStyle as any),
                   }
                 : {
-                    background: "$backgroundPress",
+                    background: "$color3",
                     borderColor: "$borderColor",
                     ...(triggerProps?.hoverStyle as any),
                   }

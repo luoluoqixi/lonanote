@@ -5,7 +5,7 @@ import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/
 import type { ListItemProps } from "./types";
 
 const DEFAULT_HOVER_STYLE = {
-  background: "$backgroundPress",
+  background: "$color3",
 } as const;
 
 const DEFAULT_PRESS_STYLE = {

@@ -22,7 +22,7 @@ type AccordionPrimitiveProps = { children?: ReactNode; [key: string]: unknown };
 const AccordionPrimitive = TamaguiAccordion as unknown as ComponentType<AccordionPrimitiveProps>;
 const SHOULD_PREMEASURE_NATIVE_CONTENT = !isWeb();
 const DEFAULT_TRIGGER_HOVER_STYLE = {
-  background: "$backgroundPress",
+  background: "$color3",
 } as const;
 
 function normalizeAccordionChildren(children: ReactNode) {

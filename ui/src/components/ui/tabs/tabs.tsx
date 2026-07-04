@@ -15,7 +15,7 @@ const DEFAULT_ACTIVE_STYLE = {
 } as const;
 
 const DEFAULT_HOVER_STYLE = {
-  backgroundColor: "$backgroundPress",
+  backgroundColor: "$color3",
 } as const;
 
 const DEFAULT_PRESS_STYLE = {
