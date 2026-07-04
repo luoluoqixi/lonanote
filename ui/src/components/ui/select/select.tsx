@@ -1287,6 +1287,11 @@ const SelectRoot = forwardRef<any, SelectProps>(
         : undefined;
     const resolvedSelectAdaptWhen = selectBehavior.shouldUseWebSheet ? true : selectAdaptWhen;
     const resolvedSelectAdaptPlatform = selectBehavior.shouldUseWebSheet ? "web" : "touch";
+    const shouldUseNativeSheetCompactNativeTrigger =
+      isWeb() &&
+      selectBehavior.shouldUseWebSheet &&
+      !!nativeTrigger &&
+      nativeTriggerContent == null;
     const shouldRenderWebNativeTriggerSelect =
       isWeb() && selectBehavior.shouldUseNativePicker && children == null;
     const shouldRenderWebMenuSelect =
@@ -1693,7 +1698,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
                           paddingHorizontal: 0,
                           paddingVertical: 0,
                           pressStyle: {
-                            backgroundColor: "transparent",
+                            backgroundColor: shouldUseNativeSheetCompactNativeTrigger
+                              ? "$color4"
+                              : "transparent",
                             borderColor: "transparent",
                           },
                         })}
