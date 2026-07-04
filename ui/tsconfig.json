@@ -17,6 +17,7 @@
     "app.config.ts",
     "tamagui.build.ts",
     "tamagui.config.ts",
+    "themes.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
