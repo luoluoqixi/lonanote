@@ -648,7 +648,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
     <Select
       {...selectProps}
       disabled={disabled}
-      native
+      native={selectProps.native ?? !isWeb()}
       nativeHaptics={selectProps.nativeHaptics ?? itemProps.nativeHaptics ?? false}
       nativeDropdownAlign={selectProps.nativeDropdownAlign ?? "end"}
       nativeDropdownEdgeOffset={selectProps.nativeDropdownEdgeOffset ?? -14}
@@ -668,6 +668,19 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
           }
         />
       }
+      viewportProps={{
+        ...selectProps.viewportProps,
+        style: [
+          isWeb()
+            ? {
+                maxWidth: 360,
+                minWidth: 220,
+              }
+            : null,
+          selectProps.viewportProps?.style,
+        ] as any,
+      }}
+      placement={selectProps.placement ?? (isWeb() ? "bottom-end" : undefined)}
       triggerProps={{
         ...selectProps.triggerProps,
         hoverStyle: selectProps.triggerProps?.hoverStyle ?? {

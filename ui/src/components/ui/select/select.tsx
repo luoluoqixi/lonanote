@@ -989,6 +989,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
       onValueChange,
       options,
       placeholder,
+      placement,
       touchSheetMaxHeight,
       triggerProps,
       viewportProps,
@@ -1291,6 +1292,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     void _triggerNativeHaptics;
     const {
       maxHeight: webMenuContentMaxHeight,
+      maxWidth: webMenuContentMaxWidth,
       minWidth: webMenuContentMinWidth,
       style: webMenuContentStyle,
       zIndex: webMenuContentZIndex,
@@ -1482,6 +1484,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
               onOpenChange={handleWebMenuOpenChange}
               open={resolvedWebMenuOpen}
               offset={8}
+              placement={placement}
             >
               <Menu.Trigger asChild disabled={selectDisabled}>
                 {webMenuTrigger}
@@ -1504,12 +1507,16 @@ const SelectRoot = forwardRef<any, SelectProps>(
                 <Menu.Content
                   {...webMenuContentProps}
                   maxHeight={resolvedWebMenuContentMaxHeight}
+                  maxWidth={webMenuContentMaxWidth}
                   minWidth={webMenuContentMinWidth ?? webMenuTriggerWidth}
                   overflow="hidden"
                   style={
                     [
                       {
                         maxHeight: resolvedWebMenuContentMaxHeight,
+                        ...(webMenuContentMaxWidth != null
+                          ? { maxWidth: webMenuContentMaxWidth }
+                          : null),
                         overflow: "hidden",
                       },
                       webMenuContentStyle,

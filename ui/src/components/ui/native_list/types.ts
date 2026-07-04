@@ -30,7 +30,7 @@ export type NativeListSwitchItemProps = NativeListItemBaseProps & {
 };
 
 export type NativeListSelectItemProps = NativeListItemBaseProps & {
-  selectProps: Omit<SelectProps, "native" | "nativeTrigger">;
+  selectProps: Omit<SelectProps, "nativeTrigger">;
 };
 
 export type NativeListItemProps = NativeListItemBaseProps & {

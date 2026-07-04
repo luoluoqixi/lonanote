@@ -30,6 +30,19 @@ export interface SelectItemGroupData {
 
 export type SelectOption = SelectItemData;
 export type SelectOptionGroup = SelectItemGroupData;
+export type SelectWebMenuPlacement =
+  | "top"
+  | "top-start"
+  | "top-end"
+  | "bottom"
+  | "bottom-start"
+  | "bottom-end"
+  | "left"
+  | "left-start"
+  | "left-end"
+  | "right"
+  | "right-start"
+  | "right-end";
 
 export interface SelectProps extends Omit<
   ComponentProps<typeof TamaguiSelect>,
@@ -87,6 +100,8 @@ export interface SelectProps extends Omit<
   options?: SelectItemData[];
   placeholder?: ReactNode;
   touchSheetMaxHeight?: ViewStyle["maxHeight"];
+  /** Web 非 native Menu 弹层的 placement。默认沿用底层 Menu 行为。 */
+  placement?: SelectWebMenuPlacement;
   triggerProps?: SelectTriggerProps;
   viewportProps?: ComponentProps<typeof TamaguiSelect.Viewport>;
   /** Web 非 native Menu 弹层是否显示指向 trigger 的箭头。默认不显示。 */
