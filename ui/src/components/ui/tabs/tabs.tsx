@@ -18,6 +18,10 @@ const DEFAULT_HOVER_STYLE = {
   backgroundColor: "$backgroundPress",
 } as const;
 
+const DEFAULT_PRESS_STYLE = {
+  backgroundColor: "$color4",
+} as const;
+
 function normalizeTriggerChildren(children: ReactNode) {
   return Children.map(children, (child) => {
     if (typeof child === "string" || typeof child === "number") {
@@ -95,13 +99,14 @@ function TabsList(props: TabsListProps) {
 }
 
 function TabsTab(props: TabsTabProps) {
-  const { children, activeStyle, hoverStyle, ...tabProps } = props;
+  const { children, activeStyle, hoverStyle, pressStyle, ...tabProps } = props;
 
   return (
     <TamaguiTabs.Tab
       {...tabProps}
       activeStyle={activeStyle ?? DEFAULT_ACTIVE_STYLE}
       hoverStyle={hoverStyle ?? DEFAULT_HOVER_STYLE}
+      pressStyle={pressStyle ?? DEFAULT_PRESS_STYLE}
     >
       {normalizeTriggerChildren(children)}
     </TamaguiTabs.Tab>

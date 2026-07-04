@@ -91,7 +91,10 @@ function FallbackRowContainer({
   const getRowBackground = (pressed = false) => ({
     backgroundColor:
       pressed && !disabled
-        ? (theme.backgroundPress?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
+        ? (theme.color4?.val ??
+          theme.backgroundPress?.val ??
+          theme.backgroundHover?.val ??
+          theme.background?.val)
         : hovered && !disabled
           ? (theme.backgroundPress?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
           : (backgroundColor ?? theme.background?.val),
@@ -515,7 +518,7 @@ function FallbackListItemSeparator({
         <View
           style={[
             styles.rowSeparator,
-            { backgroundColor: theme.borderColor?.val ?? theme.color5?.val },
+            { backgroundColor: theme.borderColor?.val ?? theme.color4?.val },
           ]}
         />
       </View>
@@ -687,7 +690,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
           backgroundColor: "$backgroundPress",
         },
         pressStyle: selectProps.triggerProps?.pressStyle ?? {
-          background: "$backgroundPress",
+          background: "$color4",
         },
       }}
     />

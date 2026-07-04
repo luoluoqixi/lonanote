@@ -218,6 +218,10 @@ const DEFAULT_SELECT_TRIGGER_HOVER_STYLE = {
   backgroundColor: "$backgroundPress",
 } as const;
 
+const DEFAULT_SELECT_TRIGGER_PRESS_STYLE = {
+  backgroundColor: "$color4",
+} as const;
+
 function renderSelectWebMenuTriggerLabel(label: React.ReactNode, isPlaceholder: boolean) {
   if (typeof label === "string" || typeof label === "number") {
     return (
@@ -790,7 +794,7 @@ function SelectScrollUpButton(props: SelectScrollUpButtonProps) {
 }
 
 function SelectTrigger(props: SelectTriggerProps) {
-  const { hoverStyle, nativeHaptics, onPress, ...triggerProps } = props;
+  const { hoverStyle, nativeHaptics, onPress, pressStyle, ...triggerProps } = props;
   const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const handlePress: NonNullable<SelectTriggerProps["onPress"]> = (event) => {
     onPress?.(event);
@@ -807,6 +811,7 @@ function SelectTrigger(props: SelectTriggerProps) {
       {...triggerProps}
       hoverStyle={hoverStyle ?? DEFAULT_SELECT_TRIGGER_HOVER_STYLE}
       onPress={handlePress}
+      pressStyle={pressStyle ?? DEFAULT_SELECT_TRIGGER_PRESS_STYLE}
     />
   );
 }
@@ -1095,7 +1100,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
             pressStyle={
               shouldUseWebSheetItemHover
                 ? {
-                    background: "$backgroundPress",
+                    background: "$color4",
                   }
                 : undefined
             }
@@ -1449,12 +1454,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
         pressStyle={
           nativeTrigger
             ? {
-                background: "$backgroundPress",
+                background: "$color4",
                 borderColor: "transparent",
                 ...(triggerPressStyle as any),
               }
             : {
-                background: "$backgroundPress",
+                background: "$color4",
                 ...(triggerPressStyle as any),
               }
         }
@@ -1582,12 +1587,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
             pressStyle={
               nativeTrigger
                 ? {
-                    background: "$backgroundPress",
+                    background: "$color4",
                     borderColor: "transparent",
                     ...(triggerProps?.pressStyle as any),
                   }
                 : {
-                    background: "$backgroundPress",
+                    background: "$color4",
                     ...(triggerProps?.pressStyle as any),
                   }
             }

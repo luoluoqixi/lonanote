@@ -8,8 +8,12 @@ const DEFAULT_HOVER_STYLE = {
   background: "$backgroundPress",
 } as const;
 
+const DEFAULT_PRESS_STYLE = {
+  background: "$color4",
+} as const;
+
 export function ListItem(props: ListItemProps) {
-  const { hoverStyle, nativeHaptics, onPress, ...listItemProps } = props;
+  const { hoverStyle, nativeHaptics, onPress, pressStyle, ...listItemProps } = props;
   const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const handlePress: NonNullable<ListItemProps["onPress"]> = (event) => {
     onPress?.(event);
@@ -26,6 +30,7 @@ export function ListItem(props: ListItemProps) {
       {...listItemProps}
       hoverStyle={hoverStyle ?? DEFAULT_HOVER_STYLE}
       onPress={handlePress}
+      pressStyle={pressStyle ?? DEFAULT_PRESS_STYLE}
     />
   );
 }
