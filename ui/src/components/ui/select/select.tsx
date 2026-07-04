@@ -193,6 +193,15 @@ const WEB_NATIVE_TRIGGER_SELECT_OVERLAY_STYLE = {
 } as const;
 
 const WEB_MENU_CONTENT_Z_INDEX = 2_147_483_647;
+const WEB_MENU_SCROLL_VIEW_MAX_HEIGHT =
+  "min(360px, var(--tamagui-menu-content-available-height, 360px))";
+const WEB_MENU_SCROLL_VIEW_STYLE = {
+  display: "block",
+  overflowX: "hidden",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  scrollbarWidth: "auto",
+} as const;
 const WEB_MENU_BLOCKING_OVERLAY_STYLE = {
   background: "transparent",
   bottom: 0,
@@ -216,6 +225,53 @@ function renderSelectWebMenuTriggerLabel(label: React.ReactNode, isPlaceholder: 
   }
 
   return label;
+}
+
+function getWebMenuItemElement(rootId: string, itemValue: string) {
+  if (typeof document === "undefined" || typeof HTMLElement === "undefined") {
+    return null;
+  }
+
+  const roots = document.querySelectorAll("[data-lonanote-select-menu-root]");
+
+  for (let rootIndex = 0; rootIndex < roots.length; rootIndex += 1) {
+    const root = roots[rootIndex];
+
+    if (!(root instanceof HTMLElement) || root.dataset.lonanoteSelectMenuRoot !== rootId) {
+      continue;
+    }
+
+    const itemElements = root.querySelectorAll("[data-lonanote-select-menu-item-value]");
+
+    for (let itemIndex = 0; itemIndex < itemElements.length; itemIndex += 1) {
+      const itemElement = itemElements[itemIndex];
+
+      if (
+        itemElement instanceof HTMLElement &&
+        itemElement.dataset.lonanoteSelectMenuItemValue === itemValue
+      ) {
+        return itemElement;
+      }
+    }
+  }
+
+  return null;
+}
+
+function focusWebMenuItem(rootId: string, itemValue: string) {
+  const element = getWebMenuItemElement(rootId, itemValue);
+
+  if (element == null) {
+    return;
+  }
+
+  element.scrollIntoView({ block: "nearest", inline: "nearest" });
+
+  try {
+    element.focus({ preventScroll: true });
+  } catch {
+    element.focus();
+  }
 }
 
 function parsePercentSnapPoint(value: SelectProps["touchSheetMaxHeight"]) {
@@ -957,6 +1013,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const [webMenuOpen, setWebMenuOpen] = React.useState(Boolean(props.defaultOpen));
     const [webMenuTriggerWidth, setWebMenuTriggerWidth] = React.useState<number | undefined>();
     const sheetScrollRef = useRef<any>(null);
+    const webMenuRootId = React.useId();
     const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
     const shouldUseTouchSheetLayout = !isWeb() || selectBehavior.shouldUseWebSheet;
     const resolvedPickerMode =
@@ -1233,7 +1290,9 @@ const SelectRoot = forwardRef<any, SelectProps>(
     } = (triggerProps as any) ?? {};
     void _triggerNativeHaptics;
     const {
+      maxHeight: webMenuContentMaxHeight,
       minWidth: webMenuContentMinWidth,
+      style: webMenuContentStyle,
       zIndex: webMenuContentZIndex,
       ...webMenuContentProps
     } = {
@@ -1241,6 +1300,28 @@ const SelectRoot = forwardRef<any, SelectProps>(
       ...(viewportProps as any),
     };
     const resolvedWebMenuOpen = props.open ?? webMenuOpen;
+    const resolvedWebMenuContentMaxHeight =
+      webMenuContentMaxHeight ?? WEB_MENU_SCROLL_VIEW_MAX_HEIGHT;
+
+    React.useEffect(() => {
+      if (
+        !shouldRenderWebMenuSelect ||
+        !resolvedWebMenuOpen ||
+        selectedValue == null ||
+        typeof window === "undefined"
+      ) {
+        return;
+      }
+
+      const focusSelectedItem = () => focusWebMenuItem(webMenuRootId, selectedValue);
+      const animationFrame = window.requestAnimationFrame(focusSelectedItem);
+      const fallbackTimer = window.setTimeout(focusSelectedItem, 80);
+
+      return () => {
+        window.cancelAnimationFrame(animationFrame);
+        window.clearTimeout(fallbackTimer);
+      };
+    }, [resolvedWebMenuOpen, selectedValue, shouldRenderWebMenuSelect, webMenuRootId]);
 
     const handleWebMenuOpenChange = (nextOpen: boolean) => {
       if (props.open === undefined) {
@@ -1289,6 +1370,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
           key={item.value}
           textValue={item.label}
           value={item.value}
+          {...({ "data-lonanote-select-menu-item-value": item.value } as any)}
         >
           {item.startContent}
           <YStack flex={1} style={{ minWidth: 0 }}>
@@ -1421,18 +1503,39 @@ const SelectRoot = forwardRef<any, SelectProps>(
                 ) : null}
                 <Menu.Content
                   {...webMenuContentProps}
+                  maxHeight={resolvedWebMenuContentMaxHeight}
                   minWidth={webMenuContentMinWidth ?? webMenuTriggerWidth}
+                  overflow="hidden"
+                  style={
+                    [
+                      {
+                        maxHeight: resolvedWebMenuContentMaxHeight,
+                        overflow: "hidden",
+                      },
+                      webMenuContentStyle,
+                    ] as any
+                  }
                   zIndex={1}
+                  {...({ "data-lonanote-select-menu-root": webMenuRootId } as any)}
                 >
                   {webMenuArrow ? <Menu.Arrow /> : null}
-                  <Menu.ScrollView>
-                    <Menu.RadioGroup
-                      value={selectedValue ?? undefined}
-                      onValueChange={handleWebMenuValueChange}
-                    >
-                      {resolvedItemGroups.map(renderWebMenuGroup)}
-                    </Menu.RadioGroup>
-                  </Menu.ScrollView>
+                  <YStack
+                    style={
+                      {
+                        ...WEB_MENU_SCROLL_VIEW_STYLE,
+                        maxHeight: resolvedWebMenuContentMaxHeight,
+                      } as any
+                    }
+                  >
+                    <YStack p={5}>
+                      <Menu.RadioGroup
+                        value={selectedValue ?? undefined}
+                        onValueChange={handleWebMenuValueChange}
+                      >
+                        {resolvedItemGroups.map(renderWebMenuGroup)}
+                      </Menu.RadioGroup>
+                    </YStack>
+                  </YStack>
                 </Menu.Content>
               </Menu.Portal>
             </Menu>
