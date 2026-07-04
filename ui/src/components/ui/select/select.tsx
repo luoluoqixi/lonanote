@@ -1093,14 +1093,14 @@ const SelectRoot = forwardRef<any, SelectProps>(
             hoverStyle={
               shouldUseWebSheetItemHover
                 ? {
-                    background: "$backgroundPress",
+                    background: "$color4",
                   }
                 : undefined
             }
             pressStyle={
               shouldUseWebSheetItemHover
                 ? {
-                    background: "$color4",
+                    background: "$color5",
                   }
                 : undefined
             }
