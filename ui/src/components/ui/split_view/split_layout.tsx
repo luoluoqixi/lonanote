@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   forwardRef,
   useCallback,
   useEffect,
@@ -18,6 +18,7 @@ import {
 } from "react-native";
 
 import { isMobile, isWeb } from "@/api/common/platform";
+import { getVariableValue, useTheme } from "@/components/ui/theme";
 import { useSeparatorColor } from "@/hooks/ui/use_separator_color";
 
 import { LayoutService } from "./layout_service";
@@ -45,6 +46,12 @@ const SASH_DOUBLE_TAP_DELAY = 280;
 const SASH_TAP_MOVE_TOLERANCE = 4;
 const IS_WEB = isWeb();
 const IS_MOBILE = isMobile();
+const FALLBACK_SASH_ACTIVE_COLOR = "#2563eb";
+
+const resolveThemeColor = (value: unknown, fallback: string) => {
+  const resolvedColor = getVariableValue(value);
+  return typeof resolvedColor === "string" && resolvedColor.length > 0 ? resolvedColor : fallback;
+};
 
 const getPointerCoordinate = (
   event: Pick<PointerEvent, "clientX" | "clientY">,
@@ -182,7 +189,12 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
     const [layoutSize, setLayoutSize] = useState(0);
     const [sizes, setSizes] = useState<number[]>([]);
     const [visible, setVisible] = useState<boolean[]>([]);
+    const theme = useTheme();
     const separatorColor = useSeparatorColor();
+    const sashActiveColor = resolveThemeColor(
+      theme.accent10 ?? theme.accent8 ?? theme.borderColorHover ?? theme.borderColor,
+      FALLBACK_SASH_ACTIVE_COLOR,
+    );
     const {
       ready: storageReady,
       state: storedState,
@@ -726,7 +738,13 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
                             borderLeftColor: separatorColor,
                             borderLeftWidth: 1,
                           }),
-                    sashLineActive && styles.sashLineActive,
+                    sashLineActive &&
+                      (vertical
+                        ? { backgroundColor: sashActiveColor }
+                        : {
+                            backgroundColor: sashActiveColor,
+                            borderLeftColor: sashActiveColor,
+                          }),
                     vertical && sashLineActive && styles.sashLineHorizontalActive,
                     !vertical && sashLineActive && styles.sashLineVerticalActive,
                   ]}
@@ -736,7 +754,10 @@ const SplitLayoutInner = forwardRef<SplitLayoutHandle, SplitLayoutProps>(
                     pointerEvents="none"
                     style={[
                       styles.mobileSashHandle,
-                      sashActive ? styles.mobileSashHandleActive : styles.mobileSashHandleIdle,
+                      {
+                        backgroundColor: sashActive ? sashActiveColor : separatorColor,
+                        opacity: sashActive ? 0.72 : 0.48,
+                      },
                       mobileHandleStyle,
                     ]}
                   />
@@ -914,9 +935,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     position: "absolute",
   },
-  sashLineActive: {
-    backgroundColor: "var(--color-accent-hover, var(--accent))",
-  },
+
   sashLineHorizontal: {
     height: 1,
     left: 0,
@@ -943,11 +962,5 @@ const styles = StyleSheet.create({
   } as never,
   mobileSashHandle: {
     position: "absolute",
-  },
-  mobileSashHandleActive: {
-    backgroundColor: "color-mix(in srgb, var(--accent) 70%, transparent)",
-  },
-  mobileSashHandleIdle: {
-    backgroundColor: "color-mix(in srgb, var(--foreground) 12%, transparent)",
   },
 });
