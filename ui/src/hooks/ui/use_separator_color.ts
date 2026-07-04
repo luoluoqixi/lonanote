@@ -1,4 +1,4 @@
-import { getVariableValue, useTheme } from "tamagui";
+import { getVariableValue, useTheme } from "@/components/ui/theme";
 
 const FALLBACK_SEPARATOR_COLOR = "rgba(128, 128, 128, 0.24)";
 

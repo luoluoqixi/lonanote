@@ -3,8 +3,8 @@ import { TamaguiProvider } from "tamagui";
 
 import config from "../../../../tamagui.config";
 import { NativeDialogProvider } from "../native_dialog";
+import { Toaster } from "../toast/toaster";
 import { NativeHapticsProvider } from "../utils";
-import { Toaster } from "./toaster";
 import type { UIProviderProps } from "./types";
 
 export function UIProvider({

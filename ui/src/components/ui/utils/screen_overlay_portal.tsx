@@ -18,12 +18,12 @@ import {
   useTrueSheetOverlaySheetTopPosition,
 } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_context";
 
-import { Toaster } from "../provider/toaster";
 import {
   TRUE_SHEET_TOAST_DETENT_LIFT,
   getTrueSheetOverlayLayoutBottomInset,
   shouldApplyIosTrueSheetToastLayerInset,
 } from "../sheet/native_sheet/true_sheet/overlay_toast_layout";
+import { Toaster } from "../toast/toaster";
 import { ScreenOverlayFloatingProvider } from "./screen_overlay_floating";
 
 const ScreenOverlayPortalContext = createContext<string | null>(null);
