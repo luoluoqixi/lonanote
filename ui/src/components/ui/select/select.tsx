@@ -192,7 +192,7 @@ const WEB_NATIVE_TRIGGER_SELECT_OVERLAY_STYLE = {
   zIndex: 1,
 } as const;
 
-const WEB_MENU_CONTENT_Z_INDEX = 100_000;
+const WEB_MENU_CONTENT_Z_INDEX = 2_147_483_647;
 const WEB_MENU_BLOCKING_OVERLAY_STYLE = {
   background: "transparent",
   bottom: 0,
@@ -1404,22 +1404,21 @@ const SelectRoot = forwardRef<any, SelectProps>(
               <Menu.Trigger asChild disabled={selectDisabled}>
                 {webMenuTrigger}
               </Menu.Trigger>
-              <Portal
-                open={resolvedWebMenuOpen}
-                stackZIndex={100_000}
-                zIndex={resolvedWebMenuContentZIndex - 1}
-              >
+              <Menu.Portal zIndex={resolvedWebMenuContentZIndex}>
                 {resolvedWebMenuOpen ? (
                   <YStack
                     aria-hidden
                     onClick={handleWebMenuOverlayPress as any}
                     onMouseDown={handleWebMenuOverlayPress as any}
                     onPointerDown={handleWebMenuOverlayPress as any}
-                    style={WEB_MENU_BLOCKING_OVERLAY_STYLE as any}
+                    style={
+                      {
+                        ...WEB_MENU_BLOCKING_OVERLAY_STYLE,
+                        zIndex: 0,
+                      } as any
+                    }
                   />
                 ) : null}
-              </Portal>
-              <Menu.Portal zIndex={resolvedWebMenuContentZIndex}>
                 <Menu.Content
                   {...webMenuContentProps}
                   minWidth={webMenuContentMinWidth ?? webMenuTriggerWidth}
