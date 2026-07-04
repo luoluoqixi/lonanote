@@ -192,14 +192,18 @@ const WEB_NATIVE_TRIGGER_SELECT_OVERLAY_STYLE = {
   zIndex: 1,
 } as const;
 
+const WEB_MENU_CONTENT_Z_INDEX = 100_000;
 const WEB_MENU_BLOCKING_OVERLAY_STYLE = {
   background: "transparent",
   bottom: 0,
+  cursor: "default",
+  height: "100vh",
   left: 0,
+  pointerEvents: "auto",
   position: "fixed",
   right: 0,
   top: 0,
-  zIndex: 0,
+  width: "100vw",
 } as const;
 
 function renderSelectWebMenuTriggerLabel(label: React.ReactNode, isPlaceholder: boolean) {
@@ -1265,6 +1269,14 @@ const SelectRoot = forwardRef<any, SelectProps>(
       }
     };
 
+    const resolvedWebMenuContentZIndex =
+      typeof webMenuContentZIndex === "number" ? webMenuContentZIndex : WEB_MENU_CONTENT_Z_INDEX;
+
+    const handleWebMenuOverlayPress = (event: any) => {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      handleWebMenuOpenChange(false);
+    };
     const renderWebMenuItem = (item: ResolvedSelectItemData) => {
       const itemDisabled = item.disabled ?? item.isDisabled ?? itemProps?.disabled;
       const isSelected = item.value === selectedValue;
@@ -1299,7 +1311,6 @@ const SelectRoot = forwardRef<any, SelectProps>(
         </Menu.RadioItem>
       );
     };
-
     const renderWebMenuGroup = (group: ResolvedSelectItemGroupData, groupIndex: number) => {
       const label = getGroupLabel(group, groupIndex);
 
@@ -1311,7 +1322,6 @@ const SelectRoot = forwardRef<any, SelectProps>(
         </React.Fragment>
       );
     };
-
     const webMenuTrigger = (
       <XStack
         aria-label={resolveAriaLabel(
@@ -1385,21 +1395,35 @@ const SelectRoot = forwardRef<any, SelectProps>(
       <>
         {shouldRenderWebMenuSelect ? (
           resolvedItems.length === 0 ? null : (
-            <Menu onOpenChange={handleWebMenuOpenChange} open={resolvedWebMenuOpen} offset={8}>
+            <Menu
+              modal
+              onOpenChange={handleWebMenuOpenChange}
+              open={resolvedWebMenuOpen}
+              offset={8}
+            >
               <Menu.Trigger asChild disabled={selectDisabled}>
                 {webMenuTrigger}
               </Menu.Trigger>
-              <Menu.Portal zIndex={100_000}>
+              <Portal
+                open={resolvedWebMenuOpen}
+                stackZIndex={100_000}
+                zIndex={resolvedWebMenuContentZIndex - 1}
+              >
                 {resolvedWebMenuOpen ? (
                   <YStack
-                    onPress={() => handleWebMenuOpenChange(false)}
+                    aria-hidden
+                    onClick={handleWebMenuOverlayPress as any}
+                    onMouseDown={handleWebMenuOverlayPress as any}
+                    onPointerDown={handleWebMenuOverlayPress as any}
                     style={WEB_MENU_BLOCKING_OVERLAY_STYLE as any}
                   />
                 ) : null}
+              </Portal>
+              <Menu.Portal zIndex={resolvedWebMenuContentZIndex}>
                 <Menu.Content
                   {...webMenuContentProps}
                   minWidth={webMenuContentMinWidth ?? webMenuTriggerWidth}
-                  zIndex={webMenuContentZIndex ?? 1}
+                  zIndex={1}
                 >
                   {webMenuArrow ? <Menu.Arrow /> : null}
                   <Menu.ScrollView>
