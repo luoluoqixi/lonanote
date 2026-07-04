@@ -110,7 +110,12 @@ const IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE = {
 const TOUCH_SHEET_GROUP_RADIUS = 24;
 const TOUCH_SHEET_FRAME_BACKGROUND = "$background" as const;
 const TOUCH_SHEET_GROUP_BACKGROUND = "$color1" as const;
+const SHEET_GROUP_HOVER = "$color3" as const;
+const SHEET_GROUP_PRESS = "$color4" as const;
 const TOUCH_SHEET_SEPARATOR_COLOR = "$borderColor" as const;
+
+const SELECT_TRIGGER_HOVER_COLOR = "$color3";
+const SELECT_TRIGGER_PRESS_COLOR = "$color4";
 
 const DEFAULT_ANDROID_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
 const DEFAULT_IOS_NATIVE_PICKER_MODE: NativePickerMode = "dropdown";
@@ -215,11 +220,11 @@ const WEB_MENU_BLOCKING_OVERLAY_STYLE = {
   width: "100vw",
 } as const;
 const DEFAULT_SELECT_TRIGGER_HOVER_STYLE = {
-  backgroundColor: "$color3",
+  backgroundColor: SELECT_TRIGGER_HOVER_COLOR,
 } as const;
 
 const DEFAULT_SELECT_TRIGGER_PRESS_STYLE = {
-  backgroundColor: "$color4",
+  backgroundColor: SELECT_TRIGGER_PRESS_COLOR,
 } as const;
 
 function renderSelectWebMenuTriggerLabel(label: React.ReactNode, isPlaceholder: boolean) {
@@ -420,8 +425,7 @@ function SelectNativeSheet({
   const sheetControl = React.useContext(SelectSheetControlContext);
   const theme = useTheme();
   const platform = os();
-  const nativeSheetBackgroundColor =
-    platform === "android" ? (theme.backgroundPress?.val ?? theme.background?.val) : undefined;
+  const nativeSheetBackgroundColor = platform === "android" ? theme.background?.val : undefined;
 
   if (sheetControl == null) {
     return null;
@@ -1088,22 +1092,21 @@ const SelectRoot = forwardRef<any, SelectProps>(
         ) : (
           <YStack
             background={shouldUseTouchSheetLayout ? TOUCH_SHEET_GROUP_BACKGROUND : undefined}
+            backgroundColor={shouldUseTouchSheetLayout ? TOUCH_SHEET_GROUP_BACKGROUND : undefined}
             borderBottomColor={shouldUseTouchSheetLayout ? TOUCH_SHEET_SEPARATOR_COLOR : undefined}
             borderBottomWidth={shouldUseTouchSheetLayout && !item.isLastInGroup ? 1 : 0}
             hoverStyle={
               shouldUseWebSheetItemHover
                 ? {
-                    background: "$color3",
+                    background: SHEET_GROUP_HOVER,
                   }
                 : undefined
             }
-            pressStyle={
-              shouldUseWebSheetItemHover
-                ? {
-                    background: "$color4",
-                  }
-                : undefined
-            }
+            pressStyle={{
+              background: SHEET_GROUP_PRESS,
+              // @ts-expect-error backgroundColor
+              backgroundColor: SHEET_GROUP_PRESS,
+            }}
             style={
               shouldUseTouchSheetLayout
                 ? TOUCH_SELECT_ITEM_CONTENT_STYLE
@@ -1439,12 +1442,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
         hoverStyle={
           nativeTrigger
             ? {
-                background: "$color3",
+                background: SELECT_TRIGGER_HOVER_COLOR,
                 borderColor: "transparent",
                 ...(triggerHoverStyle as any),
               }
             : {
-                background: "$color3",
+                background: SELECT_TRIGGER_HOVER_COLOR,
                 borderColor: "$borderColor",
                 ...(triggerHoverStyle as any),
               }
@@ -1459,12 +1462,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
         pressStyle={
           nativeTrigger
             ? {
-                background: "$color4",
+                background: SELECT_TRIGGER_PRESS_COLOR,
                 borderColor: "transparent",
                 ...(triggerPressStyle as any),
               }
             : {
-                background: "$color4",
+                background: SELECT_TRIGGER_PRESS_COLOR,
                 ...(triggerPressStyle as any),
               }
         }
@@ -1574,12 +1577,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
             hoverStyle={
               nativeTrigger
                 ? {
-                    background: "$color3",
+                    background: SELECT_TRIGGER_HOVER_COLOR,
                     borderColor: "transparent",
                     ...(triggerProps?.hoverStyle as any),
                   }
                 : {
-                    background: "$color3",
+                    background: SELECT_TRIGGER_HOVER_COLOR,
                     borderColor: "$borderColor",
                     ...(triggerProps?.hoverStyle as any),
                   }
@@ -1592,12 +1595,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
             pressStyle={
               nativeTrigger
                 ? {
-                    background: "$color4",
+                    background: SELECT_TRIGGER_PRESS_COLOR,
                     borderColor: "transparent",
                     ...(triggerProps?.pressStyle as any),
                   }
                 : {
-                    background: "$color4",
+                    background: SELECT_TRIGGER_PRESS_COLOR,
                     ...(triggerProps?.pressStyle as any),
                   }
             }
@@ -1699,7 +1702,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                           paddingVertical: 0,
                           pressStyle: {
                             backgroundColor: shouldUseNativeSheetCompactNativeTrigger
-                              ? "$color4"
+                              ? SELECT_TRIGGER_PRESS_COLOR
                               : "transparent",
                             borderColor: "transparent",
                           },
