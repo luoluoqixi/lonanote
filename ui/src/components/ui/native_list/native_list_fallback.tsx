@@ -8,6 +8,7 @@ import {
   isValidElement,
   useContext,
   useMemo,
+  useState,
 } from "react";
 import { Pressable, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -85,12 +86,15 @@ function FallbackRowContainer({
 }: RowContainerProps) {
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
   const theme = useTheme();
+  const [hovered, setHovered] = useState(false);
 
   const getRowBackground = (pressed = false) => ({
     backgroundColor:
       pressed && !disabled
         ? (theme.backgroundPress?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
-        : (backgroundColor ?? theme.background?.val),
+        : hovered && !disabled
+          ? (theme.backgroundHover?.val ?? theme.backgroundPress?.val ?? theme.background?.val)
+          : (backgroundColor ?? theme.background?.val),
   });
 
   if (onPress == null) {
@@ -106,6 +110,8 @@ function FallbackRowContainer({
   return (
     <Pressable
       disabled={disabled}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       onPress={() => {
         onPress();
         triggerNativeHaptics(resolvedHaptics);
