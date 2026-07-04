@@ -10,6 +10,7 @@ import {
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { YStack } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
 import {
@@ -71,6 +72,20 @@ function SectionCard({ children, description, title }: SectionCardProps) {
 
 function DemoRow({ children }: { children: ReactNode }) {
   return <View style={styles.row}>{children}</View>;
+}
+
+function DemoBorderItem({
+  children,
+  paddingVertical = 14,
+}: {
+  children: ReactNode;
+  paddingVertical?: number;
+}) {
+  return (
+    <YStack borderColor="$borderColor" style={[styles.demoBorderItem, { paddingVertical }]}>
+      {children}
+    </YStack>
+  );
 }
 
 type DemoModalSheetProps = {
@@ -1417,7 +1432,7 @@ export function UiComponentsDebugPage() {
         <Text color="$color10">显式 NativeSheet：{explicitNativeSheetOpen ? "打开" : "关闭"}</Text>
         <Text color="$color10">显式 Sheet：{explicitSheetOpen ? "打开" : "关闭"}</Text>
 
-        <View style={styles.sheetDemoHost}>
+        <YStack borderColor="$borderColor" style={styles.sheetDemoHost}>
           <Text color="$color10">
             这个示例在调试面板 Dialog 内以 inline 模式渲染，并通过 wrapper 的默认组合 API 生成结构。
           </Text>
@@ -1426,9 +1441,9 @@ export function UiComponentsDebugPage() {
             <Sheet.Controller hidden={false} onOpenChange={handleSheetOpenChange} open={sheetOpen}>
               <Sheet
                 content={sheetItems.map((item) => (
-                  <View key={item} style={styles.sheetItem}>
+                  <DemoBorderItem key={item}>
                     <Text>{item}</Text>
-                  </View>
+                  </DemoBorderItem>
                 ))}
                 dismissOnSnapToBottom
                 frameProps={{ style: styles.sheetFrame }}
@@ -1453,7 +1468,7 @@ export function UiComponentsDebugPage() {
               />
             </Sheet.Controller>
           </View>
-        </View>
+        </YStack>
 
         <Sheet.Controller
           hidden={false}
@@ -1470,9 +1485,9 @@ export function UiComponentsDebugPage() {
                   这个示例使用 modal 模式渲染到全局层，并固定为 percent snapPoints。
                 </Text>
                 {sheetItems.map((item) => (
-                  <View key={item} style={styles.sheetItem}>
+                  <DemoBorderItem key={item}>
                     <Text>{item}</Text>
-                  </View>
+                  </DemoBorderItem>
                 ))}
                 <Button
                   nativeHaptics={debugNativeHaptics}
@@ -1555,9 +1570,9 @@ export function UiComponentsDebugPage() {
                   这个示例使用 modal 模式渲染到全局层，并固定为 constant snapPoints。
                 </Text>
                 {sheetItems.map((item) => (
-                  <View key={item} style={styles.sheetItem}>
+                  <DemoBorderItem key={item}>
                     <Text>{item}</Text>
-                  </View>
+                  </DemoBorderItem>
                 ))}
                 <Button
                   nativeHaptics={debugNativeHaptics}
@@ -1593,9 +1608,9 @@ export function UiComponentsDebugPage() {
                   这个示例使用 modal 模式渲染到全局层，并固定为 fit 模式。
                 </Text>
                 {sheetItems.map((item) => (
-                  <View key={item} style={styles.sheetItem}>
+                  <DemoBorderItem key={item}>
                     <Text>{item}</Text>
-                  </View>
+                  </DemoBorderItem>
                 ))}
                 <Button
                   nativeHaptics={debugNativeHaptics}
@@ -1630,9 +1645,9 @@ export function UiComponentsDebugPage() {
                   这个示例使用 modal 模式渲染到全局层，并固定为 mixed snapPoints。
                 </Text>
                 {sheetItems.map((item) => (
-                  <View key={item} style={styles.sheetItem}>
+                  <DemoBorderItem key={item}>
                     <Text>{item}</Text>
-                  </View>
+                  </DemoBorderItem>
                 ))}
                 <Button
                   nativeHaptics={debugNativeHaptics}
@@ -1897,21 +1912,23 @@ export function UiComponentsDebugPage() {
         <View style={styles.scrollViewShowcase}>
           <Text color="$color10">ScrollView</Text>
           <Text color="$color10">这个区域应当独立于页面本身上下滚动。</Text>
-          <ScrollView
-            bottomSheetScrollable={false}
-            contentContainerStyle={styles.scrollViewContent}
-            directionalLockEnabled
-            nestedScrollEnabled
-            scrollEnabled
-            showsVerticalScrollIndicator
-            style={styles.scrollViewDemo}
-          >
-            {selectItems.map((item) => (
-              <View key={item.value} style={styles.scrollViewItem}>
-                <Text>{item.label}</Text>
-              </View>
-            ))}
-          </ScrollView>
+          <YStack borderColor="$borderColor" style={styles.scrollViewFrame}>
+            <ScrollView
+              bottomSheetScrollable={false}
+              contentContainerStyle={styles.scrollViewContent}
+              directionalLockEnabled
+              nestedScrollEnabled
+              scrollEnabled
+              showsVerticalScrollIndicator
+              style={styles.scrollViewDemo}
+            >
+              {selectItems.map((item) => (
+                <DemoBorderItem key={item.value} paddingVertical={10}>
+                  <Text>{item.label}</Text>
+                </DemoBorderItem>
+              ))}
+            </ScrollView>
+          </YStack>
         </View>
         <Separator />
         <Card description="Card 默认 API 可直接传 title 和 description。" title="Card 组件示例">
@@ -1937,6 +1954,11 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  demoBorderItem: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
   },
   demoGroup: {
     gap: 12,
@@ -2000,18 +2022,15 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   scrollViewDemo: {
+    flex: 1,
+  },
+  scrollViewFrame: {
     alignSelf: "stretch",
-    borderColor: "#d4d4d8",
     borderRadius: 16,
     borderWidth: 1,
     height: 240,
-  },
-  scrollViewItem: {
-    borderColor: "#e4e4e7",
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    overflow: "hidden",
+    width: "100%",
   },
   scrollViewShowcase: {
     alignSelf: "stretch",
@@ -2034,7 +2053,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   sheetDemoHost: {
-    borderColor: "#e4e4e7",
     borderRadius: 16,
     borderWidth: 1,
     gap: 12,
@@ -2048,13 +2066,7 @@ const styles = StyleSheet.create({
     position: "relative",
     width: "100%",
   },
-  sheetItem: {
-    borderColor: "#e4e4e7",
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-  },
+
   sheetScrollContent: {
     gap: 10,
     paddingBottom: 24,
