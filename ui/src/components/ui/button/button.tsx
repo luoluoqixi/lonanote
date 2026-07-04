@@ -47,7 +47,7 @@ export const Button = forwardRef<ComponentRef<typeof TamaguiButton>, ButtonProps
     return (
       <RNButton
         accessibilityLabel={props["aria-label"]}
-        color={theme.accentColor?.val ?? theme.color6?.val ?? theme.color?.val}
+        color={theme.color10?.val ?? theme.color6?.val ?? theme.color?.val}
         disabled={buttonProps.disabled}
         onPress={handlePress}
         title={resolvedTitle}

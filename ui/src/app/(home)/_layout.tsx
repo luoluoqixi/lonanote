@@ -55,7 +55,7 @@ export default function UILayout() {
             contentStyle: {
               backgroundColor: stackBackgroundColor,
             },
-            headerTintColor: theme.accentColor.val,
+            headerTintColor: theme.color10.val,
             headerShadowVisible: false,
             headerStyle: {
               backgroundColor: stackBackgroundColor,
@@ -69,7 +69,7 @@ export default function UILayout() {
           if (route.name === "index" && os() === "ios") {
             return withNativeStackGestureOptions({
               contentStyle: baseScreenOptions.contentStyle,
-              headerTintColor: theme.accentColor.val,
+              headerTintColor: theme.color10.val,
               headerShadowVisible: false,
               headerShown: true,
               headerLargeTitle: true,

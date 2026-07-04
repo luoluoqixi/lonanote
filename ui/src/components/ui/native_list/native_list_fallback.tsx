@@ -171,7 +171,7 @@ function renderSubtitleNode(subtitle: ReactNode) {
 
   if (typeof subtitle === "string" || typeof subtitle === "number") {
     return (
-      <Text color="$color10" fontSize="$3" numberOfLines={4}>
+      <Text opacity={0.6} fontSize="$3" numberOfLines={4}>
         {subtitle}
       </Text>
     );
@@ -604,7 +604,7 @@ export function NativeListButtonItem({
   ...itemProps
 }: NativeListButtonItemProps) {
   const theme = useTheme();
-  const defaultColor = theme.accent10.val;
+  const defaultColor = theme.color10.val;
   const resolveColor = btnTint ?? defaultColor;
 
   return (

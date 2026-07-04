@@ -35,7 +35,7 @@ export default function DebugStackLayout() {
             contentStyle: {
               backgroundColor: stackBackgroundColor,
             },
-            headerTintColor: theme.accentColor.val,
+            headerTintColor: theme.color10.val,
             headerShadowVisible: false,
             headerShown: true,
             headerStyle: {
@@ -63,7 +63,7 @@ export default function DebugStackLayout() {
             contentStyle: {
               backgroundColor: stackBackgroundColor,
             },
-            headerTintColor: theme.accentColor.val,
+            headerTintColor: theme.color10.val,
             headerShadowVisible: false,
             headerShown: true,
             headerStyle: {

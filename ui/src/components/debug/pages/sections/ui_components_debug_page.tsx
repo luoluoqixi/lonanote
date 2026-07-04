@@ -391,7 +391,9 @@ export function UiComponentsDebugPage() {
           <Text fontSize="$4" fontWeight="700">
             自定义 Toast
           </Text>
-          <Text color="$color10">这里可以放任意 JSX，例如更丰富的排版、图标组合或状态摘要。</Text>
+          <Text color="$color" opacity={0.6}>
+            这里可以放任意 JSX，例如更丰富的排版、图标组合或状态摘要。
+          </Text>
         </View>
       ),
       {
@@ -656,7 +658,7 @@ export function UiComponentsDebugPage() {
           <Progress max={100} size="$4" value={60} width="100%">
             <Progress.Indicator />
           </Progress>
-          <Text color="$color10">当前进度：60%</Text>
+          <Text color="$color">当前进度：60%</Text>
         </View>
 
         <View style={styles.field}>
@@ -669,7 +671,7 @@ export function UiComponentsDebugPage() {
             onValueChange={(nextValue: number[]) => setSliderValue(nextValue[0] ?? 0)}
             value={[sliderValue]}
           />
-          <Text color="$color10">当前值：{sliderValue}</Text>
+          <Text color="$color">当前值：{sliderValue}</Text>
         </View>
         <View style={styles.field}>
           <Label>Slider Tamagui</Label>
@@ -680,7 +682,7 @@ export function UiComponentsDebugPage() {
             onValueChange={(nextValue: number[]) => setTamaguiSliderValue(nextValue[0] ?? 0)}
             value={[tamaguiSliderValue]}
           />
-          <Text color="$color10">当前值：{tamaguiSliderValue}</Text>
+          <Text color="$color">当前值：{tamaguiSliderValue}</Text>
         </View>
         {!isWeb() && (
           <View style={styles.field}>
@@ -693,7 +695,7 @@ export function UiComponentsDebugPage() {
               onValueChange={(nextValue: number[]) => setNativeSliderValue(nextValue[0] ?? 0)}
               value={[nativeSliderValue]}
             />
-            <Text color="$color10">当前值：{nativeSliderValue}</Text>
+            <Text color="$color">当前值：{nativeSliderValue}</Text>
           </View>
         )}
       </SectionCard>
@@ -761,7 +763,7 @@ export function UiComponentsDebugPage() {
               placeholder="选择主题色"
               value={selectValue ?? undefined}
             />
-            <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
+            <Text color="$color">当前主题色：{selectValue ?? "未选择"}</Text>
           </View>
           {!isWeb() && (
             <View style={styles.field}>
@@ -785,7 +787,7 @@ export function UiComponentsDebugPage() {
                 placeholder="选择主题色"
                 value={selectNativePickerValue ?? undefined}
               />
-              <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
+              <Text color="$color">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
             </View>
           )}
 
@@ -809,7 +811,7 @@ export function UiComponentsDebugPage() {
                 placeholder="选择主题色"
                 value={selectValue ?? undefined}
               />
-              <Text color="$color10">当前主题色：{selectValue ?? "未选择"}</Text>
+              <Text color="$color">当前主题色：{selectValue ?? "未选择"}</Text>
             </View>
           )}
 
@@ -835,7 +837,7 @@ export function UiComponentsDebugPage() {
                 placeholder="选择主题色"
                 value={selectNativePickerValue ?? undefined}
               />
-              <Text color="$color10">
+              <Text color="$color">
                 当前主题色(原生 Sheet)：{selectNativePickerValue ?? "未选择"}
               </Text>
             </View>
@@ -862,7 +864,7 @@ export function UiComponentsDebugPage() {
                 placeholder="选择主题色"
                 value={selectNativePickerValue ?? undefined}
               />
-              <Text color="$color10">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
+              <Text color="$color">当前主题色(原生)：{selectNativePickerValue ?? "未选择"}</Text>
             </View>
           )}
 
@@ -885,7 +887,7 @@ export function UiComponentsDebugPage() {
               placeholder="选择主题"
               value={selectValue2 ?? undefined}
             />
-            <Text color="$color10">当前主题：{selectValue2 ?? "未选择"}</Text>
+            <Text color="$color">当前主题：{selectValue2 ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
             <Label>Select Native</Label>
@@ -906,7 +908,7 @@ export function UiComponentsDebugPage() {
               value={selectValue2 ?? undefined}
               native
             />
-            <Text color="$color10">当前主题(原生)：{selectValue2 ?? "未选择"}</Text>
+            <Text color="$color">当前主题(原生)：{selectValue2 ?? "未选择"}</Text>
           </View>
           <View style={styles.field}>
             <Label>Select Grouped</Label>
@@ -927,7 +929,7 @@ export function UiComponentsDebugPage() {
               placeholder="选择排序方式"
               value={selectGroupedValue ?? undefined}
             />
-            <Text color="$color10">当前排序：{selectGroupedValue ?? "未选择"}</Text>
+            <Text color="$color">当前排序：{selectGroupedValue ?? "未选择"}</Text>
           </View>
         </View>
 
@@ -939,7 +941,7 @@ export function UiComponentsDebugPage() {
           >
             <View style={styles.formContent}>
               <Input onChangeText={setInputValue} placeholder="workspace name" value={inputValue} />
-              <Text color="$color10">已通过 Form 提交：{formSubmitCount} 次</Text>
+              <Text color="$color">已通过 Form 提交：{formSubmitCount} 次</Text>
             </View>
           </Form>
         </View>
@@ -1113,7 +1115,7 @@ export function UiComponentsDebugPage() {
           >
             原生三按钮
           </Button>
-          <Text color="$color10">{nativeDialogResult}</Text>
+          <Text color="$color">{nativeDialogResult}</Text>
         </DemoRow>
 
         <DemoRow>
@@ -1223,7 +1225,7 @@ export function UiComponentsDebugPage() {
                   <Menu.Separator />
 
                   <Menu.Item disabled key="locked-notes">
-                    <Menu.ItemTitle color="$color10">锁定笔记</Menu.ItemTitle>
+                    <Menu.ItemTitle color="$color">锁定笔记</Menu.ItemTitle>
                   </Menu.Item>
                   <Menu.Item
                     destructive
@@ -1410,30 +1412,30 @@ export function UiComponentsDebugPage() {
           </Button>
         </DemoRow>
 
-        <Text color="$color10">
+        <Text color="$color">
           inline Sheet 状态：{sheetOpen ? `打开，position=${sheetPosition}` : "关闭"}
         </Text>
-        <Text color="$color10">
+        <Text color="$color">
           全局 Sheet percent：
           {percentSheetOpen ? `打开，position=${percentSheetPosition}` : "关闭"}
         </Text>
-        <Text color="$color10">
+        <Text color="$color">
           全局 Sheet constant：
           {constantSheetOpen ? `打开，position=${constantSheetPosition}` : "关闭"}
         </Text>
-        <Text color="$color10">
+        <Text color="$color">
           全局 Sheet fit：
           {fitSheetOpen ? `打开，position=${fitSheetPosition}` : "关闭"}
         </Text>
-        <Text color="$color10">
+        <Text color="$color">
           全局 Sheet mixed：
           {mixedSheetOpen ? `打开，position=${mixedSheetPosition}` : "关闭"}
         </Text>
-        <Text color="$color10">显式 NativeSheet：{explicitNativeSheetOpen ? "打开" : "关闭"}</Text>
-        <Text color="$color10">显式 Sheet：{explicitSheetOpen ? "打开" : "关闭"}</Text>
+        <Text color="$color">显式 NativeSheet：{explicitNativeSheetOpen ? "打开" : "关闭"}</Text>
+        <Text color="$color">显式 Sheet：{explicitSheetOpen ? "打开" : "关闭"}</Text>
 
         <YStack borderColor="$borderColor" style={styles.sheetDemoHost}>
-          <Text color="$color10">
+          <Text color="$color">
             这个示例在调试面板 Dialog 内以 inline 模式渲染，并通过 wrapper 的默认组合 API 生成结构。
           </Text>
 
@@ -1481,7 +1483,7 @@ export function UiComponentsDebugPage() {
                 <Text fontSize="$5" fontWeight="600">
                   全局 Sheet percent
                 </Text>
-                <Text color="$color10">
+                <Text color="$color">
                   这个示例使用 modal 模式渲染到全局层，并固定为 percent snapPoints。
                 </Text>
                 {sheetItems.map((item) => (
@@ -1518,7 +1520,7 @@ export function UiComponentsDebugPage() {
                         <Text fontSize="$6" fontWeight="700">
                           内层 Sheet
                         </Text>
-                        <Text color="$color10">
+                        <Text color="$color">
                           这个示例复用当前 wrapper，在外层 Sheet 内再打开一个 modal Sheet。
                         </Text>
                         <Text>
@@ -1566,7 +1568,7 @@ export function UiComponentsDebugPage() {
                 <Text fontSize="$5" fontWeight="600">
                   全局 Sheet constant
                 </Text>
-                <Text color="$color10">
+                <Text color="$color">
                   这个示例使用 modal 模式渲染到全局层，并固定为 constant snapPoints。
                 </Text>
                 {sheetItems.map((item) => (
@@ -1604,9 +1606,7 @@ export function UiComponentsDebugPage() {
                 <Text fontSize="$5" fontWeight="600">
                   全局 Sheet fit
                 </Text>
-                <Text color="$color10">
-                  这个示例使用 modal 模式渲染到全局层，并固定为 fit 模式。
-                </Text>
+                <Text color="$color">这个示例使用 modal 模式渲染到全局层，并固定为 fit 模式。</Text>
                 {sheetItems.map((item) => (
                   <DemoBorderItem key={item}>
                     <Text>{item}</Text>
@@ -1641,7 +1641,7 @@ export function UiComponentsDebugPage() {
                 <Text fontSize="$5" fontWeight="600">
                   全局 Sheet mixed
                 </Text>
-                <Text color="$color10">
+                <Text color="$color">
                   这个示例使用 modal 模式渲染到全局层，并固定为 mixed snapPoints。
                 </Text>
                 {sheetItems.map((item) => (
@@ -1702,7 +1702,7 @@ export function UiComponentsDebugPage() {
                 <Text fontSize="$5" fontWeight="600">
                   NativeSheet
                 </Text>
-                <Text color="$color10">默认 `Sheet` 之外的显式高级入口。</Text>
+                <Text color="$color">默认 `Sheet` 之外的显式高级入口。</Text>
                 <Button
                   nativeHaptics={debugNativeHaptics}
                   onPress={() => setExplicitNativeSheetOpen(false)}
@@ -1735,7 +1735,7 @@ export function UiComponentsDebugPage() {
                 <Text fontSize="$5" fontWeight="600">
                   Sheet
                 </Text>
-                <Text color="$color10">保留 Tamagui/replica 路径的轻量入口。</Text>
+                <Text color="$color">保留 Tamagui/replica 路径的轻量入口。</Text>
                 <Button
                   nativeHaptics={debugNativeHaptics}
                   onPress={() => setExplicitSheetOpen(false)}
@@ -1759,8 +1759,8 @@ export function UiComponentsDebugPage() {
           />
         </Sheet.Controller>
 
-        <Text color="$color10">最近菜单动作：{menuAction}</Text>
-        <Text color="$color10">最近 ContextMenu 动作：{contextMenuAction}</Text>
+        <Text color="$color">最近菜单动作：{menuAction}</Text>
+        <Text color="$color">最近 ContextMenu 动作：{contextMenuAction}</Text>
       </SectionCard>
 
       <SectionCard description="头像、文本、分隔线和卡片默认结构。" title="展示组件">
@@ -1770,7 +1770,9 @@ export function UiComponentsDebugPage() {
             <Text fontSize="$5" fontWeight="600">
               Text 组件示例
             </Text>
-            <Text color="$color10">这里展示标题、正文和说明文案的基础排版。</Text>
+            <Text color="$color" opacity={0.6}>
+              这里展示标题、正文和说明文案的基础排版。
+            </Text>
           </View>
         </DemoRow>
         <Link
@@ -1898,7 +1900,7 @@ export function UiComponentsDebugPage() {
         />
         <Separator />
         <View style={styles.mediaDemo}>
-          <Text color="$color10">Image</Text>
+          <Text color="$color">Image</Text>
           <Image
             alt="LonaNote 组件演示图片"
             borderRadius={16}
@@ -1910,8 +1912,10 @@ export function UiComponentsDebugPage() {
         </View>
 
         <View style={styles.scrollViewShowcase}>
-          <Text color="$color10">ScrollView</Text>
-          <Text color="$color10">这个区域应当独立于页面本身上下滚动。</Text>
+          <Text color="$color">ScrollView</Text>
+          <Text color="$color" opacity={0.6}>
+            这个区域应当独立于页面本身上下滚动。
+          </Text>
           <YStack borderColor="$borderColor" style={styles.scrollViewFrame}>
             <ScrollView
               bottomSheetScrollable={false}

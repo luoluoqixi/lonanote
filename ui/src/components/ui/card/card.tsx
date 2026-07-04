@@ -25,7 +25,11 @@ function CardRoot(props: CardProps) {
           {header ?? (
             <>
               {title != null ? <H2 fontWeight="600">{title}</H2> : null}
-              {description != null ? <Paragraph color="$color10">{description}</Paragraph> : null}
+              {description != null ? (
+                <Paragraph color="$color" opacity={0.6}>
+                  {description}
+                </Paragraph>
+              ) : null}
             </>
           )}
         </CardHeader>

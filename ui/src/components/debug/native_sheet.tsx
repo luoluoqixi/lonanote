@@ -83,7 +83,7 @@ function DebugNativeSheetStackHost() {
       screenOptions={nativeSheetStackScreenOptions(
         colorScheme,
         theme.background.val,
-        theme.accentColor.val,
+        theme.color10.val,
         theme.color.val,
       )}
     >

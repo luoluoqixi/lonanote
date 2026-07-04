@@ -150,7 +150,7 @@ function SettingsSummaryActionRow({
         <Text fontSize="$5" fontWeight="500">
           {title}
         </Text>
-        <Text color="$color10" fontSize="$3">
+        <Text color="$color" opacity={0.6} fontSize="$3">
           {description}
         </Text>
       </View>
