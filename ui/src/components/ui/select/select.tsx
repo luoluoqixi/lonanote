@@ -950,6 +950,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const defaultAndroidDropdownAlign =
       platform === "android" && resolvedPickerMode === "dropdown" ? "center" : undefined;
     const resolvedNativeDropdownAlign = nativeDropdownAlign ?? defaultAndroidDropdownAlign;
+    const shouldUseWebSheetItemHover = isWeb() && shouldUseTouchSheetLayout;
     const renderItem = (item: ResolvedSelectItemData) => (
       <SelectItem
         {...(shouldUseTouchSheetLayout
@@ -976,6 +977,20 @@ const SelectRoot = forwardRef<any, SelectProps>(
             background={shouldUseTouchSheetLayout ? TOUCH_SHEET_GROUP_BACKGROUND : undefined}
             borderBottomColor={shouldUseTouchSheetLayout ? TOUCH_SHEET_SEPARATOR_COLOR : undefined}
             borderBottomWidth={shouldUseTouchSheetLayout && !item.isLastInGroup ? 1 : 0}
+            hoverStyle={
+              shouldUseWebSheetItemHover
+                ? {
+                    background: "$backgroundHover",
+                  }
+                : undefined
+            }
+            pressStyle={
+              shouldUseWebSheetItemHover
+                ? {
+                    background: "$backgroundPress",
+                  }
+                : undefined
+            }
             style={
               shouldUseTouchSheetLayout
                 ? TOUCH_SELECT_ITEM_CONTENT_STYLE
@@ -1167,7 +1182,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
             borderRadius={0}
             borderWidth={0}
             hoverStyle={{
-              backgroundColor: "$backgroundHover",
+              background: "$backgroundHover",
               borderColor: "transparent",
               ...(triggerProps?.hoverStyle as any),
             }}
@@ -1177,7 +1192,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
             paddingVertical={0}
             position="relative"
             pressStyle={{
-              backgroundColor: "$backgroundPress",
+              background: "$backgroundPress",
               borderColor: "transparent",
               ...(triggerProps?.pressStyle as any),
             }}
