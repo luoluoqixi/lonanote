@@ -1,4 +1,4 @@
-import { ChevronDown } from "@tamagui/lucide-icons-2";
+﻿import { ChevronDown } from "@tamagui/lucide-icons-2";
 import { Children, type ComponentType, type ReactNode, isValidElement } from "react";
 import { SizableText, Square, Accordion as TamaguiAccordion, YStack } from "tamagui";
 
@@ -21,6 +21,9 @@ import type {
 type AccordionPrimitiveProps = { children?: ReactNode; [key: string]: unknown };
 const AccordionPrimitive = TamaguiAccordion as unknown as ComponentType<AccordionPrimitiveProps>;
 const SHOULD_PREMEASURE_NATIVE_CONTENT = !isWeb();
+const DEFAULT_TRIGGER_HOVER_STYLE = {
+  background: "$backgroundPress",
+} as const;
 
 function normalizeAccordionChildren(children: ReactNode) {
   return Children.map(children, (child) => {
@@ -179,11 +182,18 @@ function AccordionMultipleRoot(props: AccordionProps) {
 }
 
 function AccordionTrigger(props: AccordionTriggerProps) {
-  const { children, ...triggerProps } = props;
+  const { children, hoverStyle, ...triggerProps } = props;
   const triggerChildren =
     typeof children === "function" ? children : normalizeAccordionChildren(children);
 
-  return <TamaguiAccordion.Trigger {...triggerProps}>{triggerChildren}</TamaguiAccordion.Trigger>;
+  return (
+    <TamaguiAccordion.Trigger
+      {...triggerProps}
+      hoverStyle={hoverStyle ?? DEFAULT_TRIGGER_HOVER_STYLE}
+    >
+      {triggerChildren}
+    </TamaguiAccordion.Trigger>
+  );
 }
 
 function AccordionHeader(props: AccordionHeaderProps) {

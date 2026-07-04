@@ -1,4 +1,4 @@
-import { Children, type ReactNode, isValidElement } from "react";
+﻿import { Children, type ReactNode, isValidElement } from "react";
 import { SizableText, Tabs as TamaguiTabs } from "tamagui";
 
 import {
@@ -15,7 +15,7 @@ const DEFAULT_ACTIVE_STYLE = {
 } as const;
 
 const DEFAULT_HOVER_STYLE = {
-  background: "$backgroundHover",
+  backgroundColor: "$backgroundPress",
 } as const;
 
 function normalizeTriggerChildren(children: ReactNode) {

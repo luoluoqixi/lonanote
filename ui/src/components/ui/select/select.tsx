@@ -1,4 +1,4 @@
-import {
+﻿import {
   AdaptContext,
   AdaptPortalContents,
   useAdaptContext,
@@ -213,6 +213,9 @@ const WEB_MENU_BLOCKING_OVERLAY_STYLE = {
   right: 0,
   top: 0,
   width: "100vw",
+} as const;
+const DEFAULT_SELECT_TRIGGER_HOVER_STYLE = {
+  backgroundColor: "$backgroundPress",
 } as const;
 
 function renderSelectWebMenuTriggerLabel(label: React.ReactNode, isPlaceholder: boolean) {
@@ -787,7 +790,7 @@ function SelectScrollUpButton(props: SelectScrollUpButtonProps) {
 }
 
 function SelectTrigger(props: SelectTriggerProps) {
-  const { nativeHaptics, onPress, ...triggerProps } = props;
+  const { hoverStyle, nativeHaptics, onPress, ...triggerProps } = props;
   const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
   const handlePress: NonNullable<SelectTriggerProps["onPress"]> = (event) => {
     onPress?.(event);
@@ -799,7 +802,13 @@ function SelectTrigger(props: SelectTriggerProps) {
     triggerNativeHaptics(resolvedNativeHaptics);
   };
 
-  return <TamaguiSelect.Trigger {...triggerProps} onPress={handlePress} />;
+  return (
+    <TamaguiSelect.Trigger
+      {...triggerProps}
+      hoverStyle={hoverStyle ?? DEFAULT_SELECT_TRIGGER_HOVER_STYLE}
+      onPress={handlePress}
+    />
+  );
 }
 
 function SelectValue(props: SelectValueProps) {
@@ -1079,7 +1088,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
             hoverStyle={
               shouldUseWebSheetItemHover
                 ? {
-                    background: "$backgroundHover",
+                    background: "$backgroundPress",
                   }
                 : undefined
             }
@@ -1274,7 +1283,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
     const resolvedSelectAdaptWhen = selectBehavior.shouldUseWebSheet ? true : selectAdaptWhen;
     const resolvedSelectAdaptPlatform = selectBehavior.shouldUseWebSheet ? "web" : "touch";
     const shouldRenderWebNativeTriggerSelect =
-      isWeb() && !!nativeTrigger && selectBehavior.shouldUseNativePicker;
+      isWeb() && selectBehavior.shouldUseNativePicker && children == null;
     const shouldRenderWebMenuSelect =
       isWeb() &&
       !selectBehavior.tamaguiNative &&
@@ -1420,12 +1429,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
         hoverStyle={
           nativeTrigger
             ? {
-                background: "$backgroundHover",
+                background: "$backgroundPress",
                 borderColor: "transparent",
                 ...(triggerHoverStyle as any),
               }
             : {
-                backgroundColor: "$backgroundHover",
+                background: "$backgroundPress",
                 borderColor: "$borderColor",
                 ...(triggerHoverStyle as any),
               }
@@ -1440,13 +1449,12 @@ const SelectRoot = forwardRef<any, SelectProps>(
         pressStyle={
           nativeTrigger
             ? {
-                backgroundColor: "transparent",
+                background: "$backgroundPress",
                 borderColor: "transparent",
-                opacity: 0.6,
                 ...(triggerPressStyle as any),
               }
             : {
-                backgroundColor: "$backgroundPress",
+                background: "$backgroundPress",
                 ...(triggerPressStyle as any),
               }
         }
@@ -1549,35 +1557,67 @@ const SelectRoot = forwardRef<any, SelectProps>(
           )
         ) : shouldRenderWebNativeTriggerSelect ? (
           <YStack
-            backgroundColor="transparent"
-            borderColor="transparent"
-            borderRadius={0}
-            borderWidth={0}
-            hoverStyle={{
-              background: "$backgroundHover",
-              borderColor: "transparent",
-              ...(triggerProps?.hoverStyle as any),
-            }}
-            justifyContent="center"
+            backgroundColor={nativeTrigger ? "transparent" : "$background"}
+            borderColor={nativeTrigger ? "transparent" : "$borderColor"}
+            borderRadius={nativeTrigger ? 0 : "$4"}
+            borderWidth={nativeTrigger ? 0 : 1}
+            hoverStyle={
+              nativeTrigger
+                ? {
+                    background: "$backgroundPress",
+                    borderColor: "transparent",
+                    ...(triggerProps?.hoverStyle as any),
+                  }
+                : {
+                    background: "$backgroundPress",
+                    borderColor: "$borderColor",
+                    ...(triggerProps?.hoverStyle as any),
+                  }
+            }
+            justifyContent={nativeTrigger ? "center" : "space-between"}
             minHeight={44}
-            paddingHorizontal={0}
-            paddingVertical={0}
+            paddingHorizontal={nativeTrigger ? 0 : "$3"}
+            paddingVertical={nativeTrigger ? 0 : "$2"}
             position="relative"
-            pressStyle={{
-              background: "$backgroundPress",
-              borderColor: "transparent",
-              ...(triggerProps?.pressStyle as any),
-            }}
+            pressStyle={
+              nativeTrigger
+                ? {
+                    background: "$backgroundPress",
+                    borderColor: "transparent",
+                    ...(triggerProps?.pressStyle as any),
+                  }
+                : {
+                    background: "$backgroundPress",
+                    ...(triggerProps?.pressStyle as any),
+                  }
+            }
             width="100%"
             {...(triggerProps as any)}
           >
-            <NativeTriggerFace
-              content={nativeTriggerContent}
-              containerStyle={nativeTriggerContainerStyle}
-              icon={nativeTriggerIcon}
-              label={triggerLabel}
-              labelProps={nativeTriggerLabelProps}
-            />
+            {nativeTrigger ? (
+              <NativeTriggerFace
+                content={nativeTriggerContent}
+                containerStyle={nativeTriggerContainerStyle}
+                icon={nativeTriggerIcon}
+                label={triggerLabel}
+                labelProps={nativeTriggerLabelProps}
+              />
+            ) : (
+              <>
+                {renderSelectWebMenuTriggerLabel(triggerLabel, selectedItem == null)}
+                <YStack
+                  position="absolute"
+                  r={0}
+                  t={16}
+                  items="center"
+                  justify="center"
+                  width={"$4"}
+                  pointerEvents="none"
+                >
+                  <ChevronDown size={getFontSize((props.size as FontSizeTokens) ?? "$true")} />
+                </YStack>
+              </>
+            )}
             <YStack style={WEB_NATIVE_TRIGGER_SELECT_OVERLAY_STYLE as any}>
               <TamaguiSelect
                 disablePreventBodyScroll
@@ -1650,7 +1690,6 @@ const SelectRoot = forwardRef<any, SelectProps>(
                           pressStyle: {
                             backgroundColor: "transparent",
                             borderColor: "transparent",
-                            opacity: 0.6,
                           },
                         })}
                     {...triggerProps}

@@ -1,4 +1,4 @@
-import { HeaderHeightContext } from "@react-navigation/elements";
+﻿import { HeaderHeightContext } from "@react-navigation/elements";
 import { Check, ChevronRight, ChevronsUpDown } from "@tamagui/lucide-icons-2";
 import {
   Children,
@@ -93,7 +93,7 @@ function FallbackRowContainer({
       pressed && !disabled
         ? (theme.backgroundPress?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
         : hovered && !disabled
-          ? (theme.backgroundHover?.val ?? theme.backgroundPress?.val ?? theme.background?.val)
+          ? (theme.backgroundPress?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
           : (backgroundColor ?? theme.background?.val),
   });
 
@@ -684,10 +684,10 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
       triggerProps={{
         ...selectProps.triggerProps,
         hoverStyle: selectProps.triggerProps?.hoverStyle ?? {
-          backgroundColor: "$backgroundHover",
+          backgroundColor: "$backgroundPress",
         },
         pressStyle: selectProps.triggerProps?.pressStyle ?? {
-          backgroundColor: "$backgroundPress",
+          background: "$backgroundPress",
         },
       }}
     />
