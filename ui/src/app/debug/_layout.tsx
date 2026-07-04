@@ -1,12 +1,12 @@
 import { Redirect, Stack } from "expo-router";
 import { Platform } from "react-native";
-import { useTheme } from "tamagui";
 
 import {
   getDebugPanelRouteDefinition,
   isDebugFeatureEnabled,
   isDebugTabKey,
 } from "@/components/debug";
+import { useTheme } from "@/components/ui/theme";
 import {
   getIosTransparentHeaderFallbackOptions,
   nativeStackStatusBarOptions,

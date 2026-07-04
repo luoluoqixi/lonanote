@@ -1,12 +1,12 @@
 import { type NavigationProp, useNavigation } from "@react-navigation/native";
 import { useCallback, useSyncExternalStore } from "react";
 import { Platform, View } from "react-native";
-import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb } from "@/api/common";
 import { NativeSheet, NativeSheetStack } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/debug_overlay_portal";
 import { nativeSheetStackScreenOptions } from "@/components/ui/sheet/native_sheet/native_sheet_stack_screen_options";
+import { useTheme } from "@/components/ui/theme";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 
 import {

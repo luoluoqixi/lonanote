@@ -1,7 +1,6 @@
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { useWindowDimensions } from "react-native";
-import { useTheme } from "tamagui";
 
 import { isDesktop, os } from "@/api/common";
 import { WideScreenHome } from "@/components/home";
@@ -13,6 +12,7 @@ import {
   withNativeBackButton,
   withNativeStackGestureOptions,
 } from "@/components/ui";
+import { useTheme } from "@/components/ui/theme";
 import {
   WIDE_LAYOUT_MINIMUM_WIDTH,
   getAppHomeTitle,

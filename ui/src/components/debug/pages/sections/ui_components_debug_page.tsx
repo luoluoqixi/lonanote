@@ -667,18 +667,20 @@ export function UiComponentsDebugPage() {
           />
           <Text color="$color10">当前值：{tamaguiSliderValue}</Text>
         </View>
-        <View style={styles.field}>
-          <Label>Slider Native（@expo/ui SwiftUI / Material3）</Label>
-          <Slider
-            max={100}
-            min={0}
-            native
-            nativeHaptics={debugNativeHaptics}
-            onValueChange={(nextValue: number[]) => setNativeSliderValue(nextValue[0] ?? 0)}
-            value={[nativeSliderValue]}
-          />
-          <Text color="$color10">当前值：{nativeSliderValue}</Text>
-        </View>
+        {!isWeb() && (
+          <View style={styles.field}>
+            <Label>Slider Native（@expo/ui SwiftUI / Material3）</Label>
+            <Slider
+              max={100}
+              min={0}
+              native
+              nativeHaptics={debugNativeHaptics}
+              onValueChange={(nextValue: number[]) => setNativeSliderValue(nextValue[0] ?? 0)}
+              value={[nativeSliderValue]}
+            />
+            <Text color="$color10">当前值：{nativeSliderValue}</Text>
+          </View>
+        )}
       </SectionCard>
 
       <SectionCard description="文本输入、多行输入、选择器和滑杆。" title="输入与选择">

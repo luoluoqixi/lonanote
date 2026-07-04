@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import { useTheme } from "tamagui";
 
 import { Text } from "@/components/ui";
+import { useTheme } from "@/components/ui/theme";
 
 export type ActivityBarProps = {
   showAssistSidebar: boolean;

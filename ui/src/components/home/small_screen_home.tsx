@@ -1,11 +1,11 @@
 import { type Href, useRouter } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "tamagui";
 
 import { isDesktop, isWeb, os } from "@/api/common";
 import { isDebugFeatureEnabled, openDebugPanel } from "@/components/debug";
 import { Button, Text } from "@/components/ui";
+import { useTheme } from "@/components/ui/theme";
 import { getAppHomeTitle } from "@/config";
 
 const SETTINGS_HREF = "/settings" as Href;
