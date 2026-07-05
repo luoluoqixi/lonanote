@@ -1705,6 +1705,7 @@ const SelectRoot = forwardRef<any, SelectProps>(
                               ? SELECT_TRIGGER_PRESS_COLOR
                               : "transparent",
                             borderColor: "transparent",
+                            opacity: 0.6,
                           },
                         })}
                     {...triggerProps}
