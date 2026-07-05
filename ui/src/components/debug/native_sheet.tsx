@@ -7,7 +7,7 @@ import { NativeSheet, NativeSheetStack } from "@/components/ui";
 import { DEBUG_OVERLAY_PORTAL_HOST } from "@/components/ui/sheet/native_sheet/debug_overlay_portal";
 import { nativeSheetStackScreenOptions } from "@/components/ui/sheet/native_sheet/native_sheet_stack_screen_options";
 import { useTheme } from "@/components/ui/theme";
-import { useResolvedeColorScheme } from "@/hooks/settings";
+import { useAppBackgroundColors, useResolvedeColorScheme } from "@/hooks/settings";
 
 import {
   DEBUG_NATIVE_SHEET_NAME,
@@ -63,6 +63,7 @@ function createDebugSectionRoute(key: DebugTabKey) {
 
 function DebugNativeSheetStackHost() {
   const colorScheme = useResolvedeColorScheme();
+  const appBackgroundColors = useAppBackgroundColors();
   const theme = useTheme();
   const open = useSyncExternalStore(subscribeDebugPanelState, getDebugPanelOpen, getDebugPanelOpen);
 
@@ -82,7 +83,7 @@ function DebugNativeSheetStackHost() {
       overlayPortalHostName={DEBUG_OVERLAY_PORTAL_HOST}
       screenOptions={nativeSheetStackScreenOptions(
         colorScheme,
-        theme.background.val,
+        appBackgroundColors.sheet,
         theme.color10.val,
         theme.color.val,
       )}
@@ -108,7 +109,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
   const definition = DEBUG_PANEL_ROUTE_DEFINITIONS.find(
     (routeDefinition) => routeDefinition.key === sectionKey,
   );
-  const theme = useTheme();
+  const appBackgroundColors = useAppBackgroundColors();
   const presentedSheets = useSyncExternalStore(
     subscribeDebugSectionSheetState,
     getPresentedDebugSectionSheets,
@@ -124,7 +125,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
 
   return (
     <NativeSheet
-      backgroundColor={theme.background.val}
+      backgroundColor={appBackgroundColors.sheet}
       handle
       name={getDebugSectionSheetName(sectionKey)}
       onOpenChange={(nextOpen) => {
@@ -138,7 +139,7 @@ function DebugSectionSheet({ sectionKey }: { sectionKey: DebugTabKey }) {
       snapPoints={getDebugNestedSectionSheetSnapPoints()}
       snapPointsMode="percent"
     >
-      <View style={{ backgroundColor: theme.background.val, flex: 1 }}>
+      <View style={{ backgroundColor: appBackgroundColors.sheet, flex: 1 }}>
         <DebugSectionPage
           contentTitle={definition.label}
           layoutHost={

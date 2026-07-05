@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
+import { useAppBackgroundColors } from "@/hooks/settings";
 
 import { FlashList, type ListRenderItemInfo } from "../flash_list";
 import { Select } from "../select";
@@ -85,6 +86,7 @@ function FallbackRowContainer({
   onPress,
 }: RowContainerProps) {
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
+  const appBackgroundColors = useAppBackgroundColors();
   const theme = useTheme();
   const [hovered, setHovered] = useState(false);
 
@@ -94,7 +96,7 @@ function FallbackRowContainer({
         ? (theme.color4?.val ?? theme.backgroundPress?.val ?? theme.background?.val)
         : hovered && !disabled
           ? (theme.color3?.val ?? theme.backgroundHover?.val ?? theme.background?.val)
-          : (backgroundColor ?? theme.background?.val),
+          : (backgroundColor ?? appBackgroundColors.card),
   });
 
   if (onPress == null) {
@@ -756,8 +758,8 @@ export function NativeListRoot({
     insetAdjustment,
     nativeScrollInsetsApplied,
   } = useTrueSheetScrollLayout();
-  const theme = useTheme();
-  const rootBackground = { backgroundColor: backgroundColor ?? theme.background.val };
+  const appBackgroundColors = useAppBackgroundColors();
+  const rootBackground = { backgroundColor: backgroundColor ?? appBackgroundColors.screen };
 
   const bottomPadding = insideTrueSheet
     ? getTrueSheetScrollBottomPadding({

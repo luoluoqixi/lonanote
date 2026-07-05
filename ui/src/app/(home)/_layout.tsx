@@ -20,7 +20,7 @@ import {
   getVersion,
   initConfig,
 } from "@/config";
-import { useResolvedeColorScheme } from "@/hooks/settings";
+import { useAppBackgroundColors, useResolvedeColorScheme } from "@/hooks/settings";
 
 export const unstable_settings = {
   anchor: "index",
@@ -30,6 +30,7 @@ export default function UILayout() {
   const { width } = useWindowDimensions();
   const desktop = isDesktop();
   const colorScheme = useResolvedeColorScheme();
+  const appBackgroundColors = useAppBackgroundColors();
   const theme = useTheme();
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function UILayout() {
       {desktop && <TitleBar />}
       <Stack
         screenOptions={({ navigation, route }) => {
-          const stackBackgroundColor = theme.background.val;
+          const stackBackgroundColor = appBackgroundColors.screen;
           const baseScreenOptions = {
             ...nativeStackStatusBarOptions(colorScheme),
             contentStyle: {

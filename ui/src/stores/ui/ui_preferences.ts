@@ -20,6 +20,7 @@ export interface DesktopWindowState {
 export interface UiPreferences {
   appearance: {
     accentColor: AccentColorSetting;
+    backgroundFollowsTheme: boolean;
     themeMode: ColorSchemeSetting;
     zoomFactor: number;
   };
@@ -30,6 +31,7 @@ export interface UiPreferences {
 }
 
 const UI_ACCENT_COLOR_KEY = "ui.appearance.accentColor";
+const UI_BACKGROUND_FOLLOWS_THEME_KEY = "ui.appearance.backgroundFollowsTheme";
 const UI_THEME_MODE_KEY = "ui.appearance.themeMode";
 const UI_ZOOM_FACTOR_KEY = "ui.appearance.zoomFactor";
 const UI_WINDOW_LAST_STATE_KEY = "ui.window.lastState";
@@ -39,6 +41,7 @@ export function createDefaultUiPreferences(): UiPreferences {
   return {
     appearance: {
       accentColor: defaultAccentThemeName,
+      backgroundFollowsTheme: false,
       themeMode: "system",
       zoomFactor: 1,
     },
@@ -97,6 +100,7 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
   return {
     appearance: {
       accentColor: normalizeAccentColor(preferences.appearance.accentColor),
+      backgroundFollowsTheme: Boolean(preferences.appearance.backgroundFollowsTheme),
       themeMode: normalizeThemeMode(preferences.appearance.themeMode),
       zoomFactor: normalizeZoomFactor(preferences.appearance.zoomFactor),
     },
@@ -110,6 +114,7 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
 function readUiPreferencesFromStore(): UiPreferences {
   const defaults = createDefaultUiPreferences();
   const accentColor = store.commonGetSync<unknown>(UI_ACCENT_COLOR_KEY);
+  const backgroundFollowsTheme = store.commonGetSync<unknown>(UI_BACKGROUND_FOLLOWS_THEME_KEY);
   const themeMode = store.commonGetSync<unknown>(UI_THEME_MODE_KEY);
   const zoomFactor = store.commonGetSync<unknown>(UI_ZOOM_FACTOR_KEY);
   const restoreWindowState = store.commonGetSync<unknown>(UI_RESTORE_WINDOW_STATE_KEY);
@@ -118,6 +123,10 @@ function readUiPreferencesFromStore(): UiPreferences {
   return {
     appearance: {
       accentColor: normalizeAccentColor(accentColor ?? defaults.appearance.accentColor),
+      backgroundFollowsTheme:
+        typeof backgroundFollowsTheme === "boolean"
+          ? backgroundFollowsTheme
+          : defaults.appearance.backgroundFollowsTheme,
       themeMode: normalizeThemeMode(themeMode ?? defaults.appearance.themeMode),
       zoomFactor: normalizeZoomFactor(zoomFactor ?? defaults.appearance.zoomFactor),
     },
@@ -135,6 +144,10 @@ function applyUiPreferencesToStore(preferences: UiPreferences): UiPreferences {
   const normalizedPreferences = normalizeUiPreferences(preferences);
 
   store.commonSetSync(UI_ACCENT_COLOR_KEY, normalizedPreferences.appearance.accentColor);
+  store.commonSetSync(
+    UI_BACKGROUND_FOLLOWS_THEME_KEY,
+    normalizedPreferences.appearance.backgroundFollowsTheme,
+  );
   store.commonSetSync(UI_THEME_MODE_KEY, normalizedPreferences.appearance.themeMode);
   store.commonSetSync(UI_ZOOM_FACTOR_KEY, normalizedPreferences.appearance.zoomFactor);
   store.commonSetSync(UI_RESTORE_WINDOW_STATE_KEY, normalizedPreferences.window.restoreWindowState);

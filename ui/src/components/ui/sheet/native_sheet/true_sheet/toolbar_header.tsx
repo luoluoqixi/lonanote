@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useTheme } from "tamagui";
 
 import { Text } from "@/components/ui/text";
+import { useAppBackgroundColors } from "@/hooks/settings";
 
 export type TrueSheetToolbarHeaderProps = {
   /** 是否显示返回箭头（子页为 true，根页为 false）。 */
@@ -26,7 +27,8 @@ export function TrueSheetToolbarHeader({
   title,
 }: TrueSheetToolbarHeaderProps) {
   const theme = useTheme();
-  const background = theme.background.val;
+  const appBackgroundColors = useAppBackgroundColors();
+  const background = appBackgroundColors.sheet;
   const borderColor = theme.borderColor.val;
   const titleColor = theme.color.val;
 

@@ -413,6 +413,24 @@ export function AppearanceSettingsPanel() {
             }}
             title="主题模式"
           />
+          <NativeListSwitchItem
+            switchProps={{
+              checked: preferences.appearance.backgroundFollowsTheme,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle background follows theme",
+                  updateAndSave((currentPreferences) => ({
+                    ...currentPreferences,
+                    appearance: {
+                      ...currentPreferences.appearance,
+                      backgroundFollowsTheme: nextValue,
+                    },
+                  })),
+                );
+              },
+            }}
+            title="背景跟随主题"
+          />
         </NativeListSection>
       </NativeList>
     </View>

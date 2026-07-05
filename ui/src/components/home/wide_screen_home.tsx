@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { WideSettingsDialog } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
 import { SplitLayout, type SplitLayoutHandle, SplitLayoutPriority } from "@/components/ui";
+import { useAppBackgroundColors } from "@/hooks/settings";
 
 import { ActivityBar, AssistPanel, EditorPanel, SidePanel, StatusBar } from "./wide_shell";
 
@@ -15,6 +16,7 @@ const DEFAULT_LAYOUT_STATE = {
 };
 
 export function WideScreenHome() {
+  const appBackgroundColors = useAppBackgroundColors();
   const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(DEFAULT_LAYOUT_STATE.visible[1] ?? true);
@@ -23,9 +25,9 @@ export function WideScreenHome() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+    <SafeAreaView style={{ backgroundColor: appBackgroundColors.screen, flex: 1 }} edges={["top"]}>
       <TitleBar />
-      <View style={{ flex: 1 }}>
+      <View style={{ backgroundColor: appBackgroundColors.screen, flex: 1 }}>
         <SplitLayout vertical>
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
             <SplitLayout

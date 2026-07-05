@@ -4,7 +4,7 @@
   useAdaptContext,
   useAdaptIsActive,
 } from "@tamagui/adapt";
-import { Theme, isWeb as isTamaguiWeb, useTheme, useThemeName } from "@tamagui/core";
+import { Theme, isWeb as isTamaguiWeb, useThemeName } from "@tamagui/core";
 import { Dismissable } from "@tamagui/dismissable";
 import { FocusScope } from "@tamagui/focus-scope";
 import { Check, ChevronDown, ChevronUp } from "@tamagui/lucide-icons-2";
@@ -37,6 +37,7 @@ import {
   triggerNativeHaptics,
   useResolvedNativeHaptics,
 } from "@/components/ui/utils";
+import { useAppBackgroundColors } from "@/hooks/settings";
 
 import { NativePickerDialog, NativePickerSwiftUI } from "./native_picker";
 import { NativeTriggerFace } from "./native_trigger";
@@ -423,9 +424,9 @@ function SelectNativeSheet({
   touchSheetConfig,
 }: SelectSheetBaseProps) {
   const sheetControl = React.useContext(SelectSheetControlContext);
-  const theme = useTheme();
+  const appBackgroundColors = useAppBackgroundColors();
   const platform = os();
-  const nativeSheetBackgroundColor = platform === "android" ? theme.background?.val : undefined;
+  const nativeSheetBackgroundColor = platform === "android" ? appBackgroundColors.sheet : undefined;
 
   if (sheetControl == null) {
     return null;

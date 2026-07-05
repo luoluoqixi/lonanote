@@ -3,16 +3,12 @@ import { useEffect, useEffectEvent, useRef } from "react";
 import { win } from "@/api/commands";
 import { isTauri } from "@/api/common";
 import type { ColorSchemeSetting } from "@/stores/ui";
+import { getStandardAppBackgroundColors } from "@/theme/app_background";
 
 import type { ResolvedColorScheme } from "./use_color_scheme_settings";
 
-const DESKTOP_WINDOW_BACKGROUND_COLORS: Record<ResolvedColorScheme, string> = {
-  light: "#F5F5F5",
-  dark: "#060607",
-};
-
 export function getDesktopWindowBackgroundColor(colorScheme: ResolvedColorScheme): string {
-  return DESKTOP_WINDOW_BACKGROUND_COLORS[colorScheme];
+  return getStandardAppBackgroundColors(colorScheme).screen;
 }
 
 // Keep the native desktop window background aligned with the resolved app theme.

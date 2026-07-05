@@ -5,11 +5,11 @@ import type { NativeStackNavigationOptions } from "@react-navigation/native-stac
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BackHandler, Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useTheme } from "tamagui";
 
 import { os } from "@/api/common/platform";
 import { withNativeBackButton } from "@/components/ui/utils/navigation";
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
+import { useAppBackgroundColors } from "@/hooks/settings";
 
 import { TrueSheetOverlayLayoutProvider } from "./overlay_layout_context";
 import {
@@ -78,7 +78,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
   screenOptions,
   sheetProps,
 }: TrueSheetStackHostProps<ParamList>) {
-  const theme = useTheme();
+  const appBackgroundColors = useAppBackgroundColors();
   const navigationRef = navigationRefProp ?? createTrueSheetStackNavigationRef<ParamList>();
   const overlayLayoutSync = useTrueSheetOverlayLayoutSync(sheetProps);
   const customSheetBackHandler = sheetProps?.onBackPress;
@@ -161,7 +161,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
     : mergedScreenOptions;
 
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
-  const resolvedBackgroundColor = sheetProps?.backgroundColor ?? theme.background?.val;
+  const resolvedBackgroundColor = sheetProps?.backgroundColor ?? appBackgroundColors.sheet;
   const backgroundStyle =
     resolvedBackgroundColor != null ? { backgroundColor: resolvedBackgroundColor } : null;
   const resolvedSheetProps = {

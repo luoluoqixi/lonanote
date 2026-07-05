@@ -13,17 +13,18 @@ import {
   withNativeBackButton,
   withNativeStackGestureOptions,
 } from "@/components/ui/utils/navigation";
-import { useResolvedeColorScheme } from "@/hooks/settings";
+import { useAppBackgroundColors, useResolvedeColorScheme } from "@/hooks/settings";
 
 export default function DebugStackLayout() {
   const colorScheme = useResolvedeColorScheme();
+  const appBackgroundColors = useAppBackgroundColors();
   const theme = useTheme();
 
   if (!isDebugFeatureEnabled()) {
     return <Redirect href="/" />;
   }
 
-  const stackBackgroundColor = theme.background.val;
+  const stackBackgroundColor = appBackgroundColors.screen;
   const transparentHeaderFallback = getIosTransparentHeaderFallbackOptions();
 
   return (

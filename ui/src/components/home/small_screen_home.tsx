@@ -7,11 +7,13 @@ import { isDebugFeatureEnabled, openDebugPanel } from "@/components/debug";
 import { Button, Text } from "@/components/ui";
 import { useTheme } from "@/components/ui/theme";
 import { getAppHomeTitle } from "@/config";
+import { useAppBackgroundColors } from "@/hooks/settings";
 
 const SETTINGS_HREF = "/settings" as Href;
 
 export function SmallScreenHome() {
   const router = useRouter();
+  const appBackgroundColors = useAppBackgroundColors();
   const theme = useTheme();
   const usesNativeHomeHeader = os() === "ios";
 
@@ -41,7 +43,7 @@ export function SmallScreenHome() {
           style={[
             styles.card,
             {
-              backgroundColor: theme.color2.val,
+              backgroundColor: appBackgroundColors.card,
               borderColor: theme.borderColor.val,
             },
           ]}

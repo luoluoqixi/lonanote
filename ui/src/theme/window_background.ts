@@ -1,10 +1,6 @@
 import type { ResolvedColorScheme } from "@/hooks/settings";
-
-const APP_WINDOW_BACKGROUND_COLORS: Record<ResolvedColorScheme, string> = {
-  light: "#F8F9FA",
-  dark: "#121418",
-};
+import { getStandardAppBackgroundColors } from "@/theme/app_background";
 
 export function getAppWindowBackgroundColor(colorScheme: ResolvedColorScheme): string {
-  return APP_WINDOW_BACKGROUND_COLORS[colorScheme];
+  return getStandardAppBackgroundColors(colorScheme).screen;
 }

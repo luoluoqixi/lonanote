@@ -1,3 +1,4 @@
+export * from "./use_app_background_colors";
 export * from "./use_color_scheme_settings";
 export * from "./use_desktop_accent_color";
 export * from "./use_desktop_window_background";
