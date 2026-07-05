@@ -130,12 +130,12 @@ function resolveNativeListTitleColor(
 
 function resolveNativeListAssistColor(theme: ReturnType<typeof useTheme>) {
   return (
+    toSwiftUIHexColor(theme.color06?.val) ??
     toSwiftUIHexColor(theme.gray11?.val) ??
-    toSwiftUIHexColor(theme.color10?.val) ??
-    toSwiftUIHexColor(theme.color.val) ??
+    toSwiftUIHexColor(theme.color4.val) ??
+    theme.color06?.val ??
     theme.gray11?.val ??
-    theme.color10?.val ??
-    theme.color.val
+    theme.color4.val
   );
 }
 
@@ -157,7 +157,7 @@ function NativeRowLabel({
   const theme = useTheme();
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
-  const primaryColor = toSwiftUIHexColor(theme.color.val) ?? theme.color.val;
+  const primaryColor = toSwiftUIHexColor(theme.color12.val) ?? theme.color12.val;
   const assistColor = resolveNativeListAssistColor(theme);
   const resolvedTextAlignment =
     titleAlign === "center" ? "center" : titleAlign === "right" ? "trailing" : "leading";
@@ -334,7 +334,7 @@ function NativePressRow({
 }) {
   const theme = useTheme();
   const resolvedHaptics = useResolvedNativeHaptics(nativeHaptics);
-  const accentColor = toSwiftUIHexColor(theme.accent10.val) ?? theme.accent10.val;
+  const accentColor = toSwiftUIHexColor(theme.color10.val) ?? theme.color10.val;
   const assistColor = resolveNativeListAssistColor(theme);
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
@@ -545,9 +545,8 @@ export function NativeListButtonItem({
   btnTint,
   ...itemProps
 }: NativeListButtonItemProps) {
-  // const theme = useTheme();
-  // const defaultColor = theme.accent10.val;
-  const defaultColor = false;
+  const theme = useTheme();
+  const defaultColor = theme.accent10.val;
   let resolveColor = btnTint ?? defaultColor;
   if (typeof resolveColor === "string") {
     resolveColor = toSwiftUIHexColor(resolveColor) ?? false;
@@ -675,7 +674,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
             ]}
             nativeTriggerIcon="chevrons-up-down"
             nativeTriggerLabelProps={{
-              color: "$gray11",
+              color: "$color06",
               fontSize: "$4",
               numberOfLines: 1,
               opacity: 0.72,

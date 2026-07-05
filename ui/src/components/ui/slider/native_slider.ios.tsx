@@ -1,21 +1,29 @@
 // iOS 原生 Slider：使用 @expo/ui/swift-ui 的 SwiftUI Slider
 import { Slider as ExpoSlider, Host } from "@expo/ui/swift-ui";
+import { tint } from "@expo/ui/swift-ui/modifiers";
+import { useTheme } from "@tamagui/core";
 import React from "react";
 import { View } from "react-native";
 
 import { supportsImpactHaptics } from "@/api/common/platform";
-import { triggerSliderNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
+import {
+  toSwiftUIHexColor,
+  triggerSliderNativeHaptics,
+  useResolvedNativeHaptics,
+} from "@/components/ui/utils";
 
 import type { SliderProps } from "./types";
 
 export function NativeSlider(props: SliderProps) {
   const { value, onValueChange, min, max, step: stepProp, nativeHaptics } = props;
+  const theme = useTheme();
 
   const safeMin = min ?? 0;
   const safeMax = max ?? 100;
   const safeStep = stepProp ?? 1;
 
   const currentValue = value?.[0] ?? safeMin;
+  const trackTintColor = toSwiftUIHexColor(theme.color6?.val) ?? theme.color6?.val;
 
   // 触感反馈
   const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);
@@ -66,6 +74,7 @@ export function NativeSlider(props: SliderProps) {
           min={safeMin}
           max={safeMax}
           step={safeStep}
+          modifiers={trackTintColor != null ? [tint(trackTintColor)] : undefined}
         />
       </Host>
     </View>
