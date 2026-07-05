@@ -55,7 +55,65 @@ const lightPalette = [
   "#111317",
 ];
 
-const builtThemes = createV5Theme({
+const accentChildThemeNames = [
+  "mono",
+  "ocean",
+  "sakura",
+  "lavender",
+  "sunset",
+  "forest",
+  "ruby",
+  "golden",
+  "aqua",
+  "success",
+  "warning",
+  "error",
+] as const;
+
+const accentChildThemeNamePattern = new RegExp(
+  `^(light|dark)_(${accentChildThemeNames.join("|")})(?:_|$)`,
+);
+
+function withDynamicAccentThemes<ThemeMap extends Record<string, Record<string, string>>>(
+  themeMap: ThemeMap,
+): ThemeMap {
+  const nextThemes: Record<string, Record<string, string>> = { ...themeMap };
+
+  for (const [themeName, theme] of Object.entries(themeMap)) {
+    const match = themeName.match(accentChildThemeNamePattern);
+    if (match == null) {
+      continue;
+    }
+
+    const [, colorScheme, accentThemeName] = match;
+    const baseAccentTheme = themeMap[`${colorScheme}_${accentThemeName}`];
+    if (baseAccentTheme == null) {
+      continue;
+    }
+
+    nextThemes[themeName] = {
+      ...theme,
+      accentBackground: baseAccentTheme.color3,
+      accentColor: baseAccentTheme.color10,
+      accent1: baseAccentTheme.color1,
+      accent2: baseAccentTheme.color2,
+      accent3: baseAccentTheme.color3,
+      accent4: baseAccentTheme.color4,
+      accent5: baseAccentTheme.color5,
+      accent6: baseAccentTheme.color6,
+      accent7: baseAccentTheme.color7,
+      accent8: baseAccentTheme.color8,
+      accent9: baseAccentTheme.color9,
+      accent10: baseAccentTheme.color10,
+      accent11: baseAccentTheme.color11,
+      accent12: baseAccentTheme.color12,
+    };
+  }
+
+  return nextThemes as ThemeMap;
+}
+
+const rawThemes = createV5Theme({
   darkPalette,
   lightPalette,
   componentThemes: v5ComponentThemes,
@@ -129,6 +187,8 @@ const builtThemes = createV5Theme({
     },
   },
 });
+
+const builtThemes = withDynamicAccentThemes(rawThemes);
 
 export type Themes = typeof builtThemes;
 

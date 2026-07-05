@@ -20,7 +20,7 @@ export function UIProvider({
         <NativeDialogProvider>
           <NativeHapticsProvider enabledByDefault={defaultNativeHapticsEnabled}>
             {children}
-            <Toaster />
+            <Toaster accentThemeName={accentThemeName} />
             {/* <ToastProvider
           swipeDirection="horizontal"
           duration={6000}

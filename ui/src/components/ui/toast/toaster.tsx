@@ -6,6 +6,9 @@ import { Spinner, XStack, YStack } from "tamagui";
 
 import { isWeb, os } from "@/api/common/platform";
 import { useTrueSheetOverlayLayout } from "@/components/ui/sheet/native_sheet/true_sheet/overlay_layout_context";
+import { useUiPreferences } from "@/hooks/settings";
+import type { AccentThemeName } from "@/theme/accent_themes";
+import { getAccentThemePreset } from "@/theme/accent_themes";
 
 import { getScopedToastViewportBottomInset } from "../sheet/native_sheet/true_sheet/overlay_toast_layout";
 
@@ -46,7 +49,7 @@ const TOAST_APPEARANCES: Record<ToastAppearanceType, ToastAppearance> = {
     closeBorderColor: "$borderColor",
     descriptionColor: "$color10",
     iconBackground: "$color4",
-    titleColor: "$color12",
+    titleColor: "$color11",
   },
   error: {
     background: "$red2",
@@ -57,20 +60,20 @@ const TOAST_APPEARANCES: Record<ToastAppearanceType, ToastAppearance> = {
     titleColor: "$red11",
   },
   info: {
-    background: "$blue2",
-    borderColor: "$blue6",
-    closeBorderColor: "$blue7",
-    descriptionColor: "$blue10",
-    iconBackground: "$blue4",
-    titleColor: "$blue11",
+    background: "$accent2",
+    borderColor: "$accent6",
+    closeBorderColor: "$accent7",
+    descriptionColor: "$accent10",
+    iconBackground: "$accent4",
+    titleColor: "$accent11",
   },
   loading: {
-    background: "$blue1",
-    borderColor: "$blue6",
-    closeBorderColor: "$blue7",
-    descriptionColor: "$blue10",
-    iconBackground: "$blue3",
-    titleColor: "$blue11",
+    background: "$accent1",
+    borderColor: "$accent6",
+    closeBorderColor: "$accent7",
+    descriptionColor: "$accent10",
+    iconBackground: "$accent3",
+    titleColor: "$accent11",
   },
   success: {
     background: "$green2",
@@ -154,8 +157,7 @@ function useWebToastAnimationOverride() {
   }, []);
 }
 
-function ToastContent({ toast: t }: { toast: ToastT }) {
-  const appearance = getToastAppearance(t);
+function ToastContent({ appearance, toast: t }: { appearance: ToastAppearance; toast: ToastT }) {
   const title = typeof t.title === "function" ? t.title() : t.title;
   const description = typeof t.description === "function" ? t.description() : t.description;
   const isTitleOnlyToast = description == null;
@@ -163,8 +165,8 @@ function ToastContent({ toast: t }: { toast: ToastT }) {
 
   const iconByType = {
     error: <CircleAlert color="$red11" size={16} />,
-    info: <Info color="$blue11" size={16} />,
-    loading: <Spinner color="$blue11" size="small" />,
+    info: <Info color="$accent11" size={16} />,
+    loading: <Spinner color="$accent11" size="small" />,
     success: <CircleCheckBig color="$green11" size={16} />,
     warning: <TriangleAlert color="$yellow11" size={16} />,
   } as const;
@@ -249,7 +251,7 @@ function ToastList({ viewportName }: { viewportName?: string }) {
                 : undefined
             }
           >
-            {t.jsx ?? <ToastContent toast={t} />}
+            {t.jsx ?? <ToastContent appearance={appearance} toast={t} />}
           </Toast.Item>
         );
       }}
@@ -263,9 +265,18 @@ export {
   SCOPED_TOAST_VIEWPORT_INSET,
 } from "../sheet/native_sheet/true_sheet/overlay_toast_layout";
 
-export function Toaster({ viewportName }: { viewportName?: string }) {
+export function Toaster({
+  accentThemeName,
+  viewportName,
+}: {
+  accentThemeName?: AccentThemeName;
+  viewportName?: string;
+}) {
   useWebToastAnimationOverride();
   const { detent } = useTrueSheetOverlayLayout();
+  const { preferences } = useUiPreferences();
+  const resolvedAccentThemeName =
+    accentThemeName ?? getAccentThemePreset(preferences.appearance.accentColor).themeName;
 
   const position = isWeb() ? "bottom-right" : "bottom-center";
   const scopedViewport = viewportName != null;
@@ -279,7 +290,13 @@ export function Toaster({ viewportName }: { viewportName?: string }) {
     : undefined;
   const portalToRoot = viewportName == null;
   return (
-    <Toast position={position} visibleToasts={4} duration={5000} gap={16}>
+    <Toast
+      position={position}
+      visibleToasts={4}
+      duration={5000}
+      gap={16}
+      theme={resolvedAccentThemeName as "system"}
+    >
       <Toast.Viewport
         data-toast-container
         {...(!portalToRoot ? ({ portalToRoot: false } as Record<string, unknown>) : null)}
