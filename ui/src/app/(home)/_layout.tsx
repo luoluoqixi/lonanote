@@ -81,7 +81,6 @@ export default function UILayout() {
                 color: theme.color.val,
               },
               headerTransparent: true,
-              ...transparentHeaderFallback,
               title: getAppHomeTitle(),
             });
           }
