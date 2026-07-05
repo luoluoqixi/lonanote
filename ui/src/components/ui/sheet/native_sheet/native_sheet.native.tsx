@@ -305,7 +305,8 @@ export function NativeSheet({
     return null;
   }
 
-  const resolvedBackgroundColor = backgroundColor ?? appBackgroundColors.sheet;
+  const resolvedBackgroundColor =
+    backgroundColor ?? (os() === "ios" ? undefined : appBackgroundColors.sheet);
   const sheetProps: Omit<TrueSheetProps, "children" | "header" | "name"> = {
     detents: detentNormalization.detents,
     dimmed: overlay ?? true,

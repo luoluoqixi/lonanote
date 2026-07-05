@@ -161,7 +161,8 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
     : mergedScreenOptions;
 
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
-  const resolvedBackgroundColor = sheetProps?.backgroundColor ?? appBackgroundColors.sheet;
+  const resolvedBackgroundColor =
+    sheetProps?.backgroundColor ?? (platform === "ios" ? undefined : appBackgroundColors.sheet);
   const backgroundStyle =
     resolvedBackgroundColor != null ? { backgroundColor: resolvedBackgroundColor } : null;
   const resolvedSheetProps = {
