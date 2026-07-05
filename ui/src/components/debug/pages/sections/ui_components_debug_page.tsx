@@ -54,6 +54,7 @@ import {
   Tooltip,
   confirmNative,
 } from "@/components/ui";
+import { useAppBackgroundColors } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
 
 type SectionCardProps = {
@@ -146,6 +147,7 @@ function DemoModalSheet({
 }
 
 export function UiComponentsDebugPage() {
+  const appBackgroundColors = useAppBackgroundColors();
   const { toast } = useToast();
   const [checkboxChecked, setCheckboxChecked] = useState(true);
   const [forceNativeHaptics, setForceNativeHaptics] = useState(true);
@@ -1783,7 +1785,14 @@ export function UiComponentsDebugPage() {
           Tamagui llms.txt
         </Link>
         <Separator />
-        <View style={styles.demoSectionList}>
+        <View
+          style={[
+            styles.demoSectionList,
+            {
+              backgroundColor: appBackgroundColors.screen,
+            },
+          ]}
+        >
           <NativeList>
             <NativeListSection title="NativeList 示例">
               <NativeListNavigationItem

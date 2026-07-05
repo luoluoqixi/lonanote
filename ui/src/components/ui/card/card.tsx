@@ -1,5 +1,7 @@
 import { H2, Paragraph, Card as TamaguiCard, View } from "tamagui";
 
+import { useAppBackgroundColors } from "@/hooks/settings";
+
 import type { CardBackgroundProps, CardFooterProps, CardHeaderProps, CardProps } from "./types";
 
 function CardRoot(props: CardProps) {
@@ -13,13 +15,21 @@ function CardRoot(props: CardProps) {
     header,
     headerProps,
     contentProps,
+    style,
     title,
     ...rootProps
   } = props;
   const hasHeader = header != null || title != null || description != null;
+  const appBackgroundColors = useAppBackgroundColors();
 
   return (
-    <TamaguiCard size="$4" borderWidth={1} borderColor="$borderColor" {...rootProps}>
+    <TamaguiCard
+      size="$4"
+      borderWidth={1}
+      borderColor="$borderColor"
+      {...rootProps}
+      style={[{ backgroundColor: appBackgroundColors.card }, style]}
+    >
       {hasHeader ? (
         <CardHeader p="$4" {...headerProps}>
           {header ?? (
