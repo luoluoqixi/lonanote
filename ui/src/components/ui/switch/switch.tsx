@@ -67,13 +67,16 @@ function SwitchRoot(props: SwitchProps) {
   const shouldHandleLabelPress = ios;
   const switchTheme = getComponentTheme(themeName, "Switch");
   const switchThumbTheme = getComponentTheme(themeName, "SwitchThumb");
-  const nativeTrackOffColor = resolveThemeColor([switchTheme?.background, theme.background]);
-  const nativeTrackOnColor = resolveThemeColor([switchTheme?.color6, theme.color6]);
-  const nativeThumbColor = resolveThemeColor([switchThumbTheme?.background, theme.background]);
+  const colorBackground = resolveThemeColor([switchThumbTheme?.background, theme.background]);
+  const nativeTrackOffColor = colorBackground;
+  const nativeTrackOnColor = ios
+    ? colorBackground
+    : resolveThemeColor([switchTheme?.color6, theme.color6]);
+  const nativeThumbColor = ios ? undefined : colorBackground;
   const nativeSwitchProps: NativeSwitchProps | undefined = native
     ? {
         ...nativeProps,
-        ios_backgroundColor: nativeProps?.ios_backgroundColor ?? nativeTrackOffColor,
+        ios_backgroundColor: nativeProps?.ios_backgroundColor,
         thumbColor: nativeProps?.thumbColor ?? nativeThumbColor,
         trackColor: {
           false: nativeTrackOffColor,
