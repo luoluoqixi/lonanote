@@ -2,7 +2,7 @@ import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWindowDimensions } from "react-native";
 
-import { iosMajorVersion, os } from "@/api/common/platform";
+import { iosMajorVersion, isIos26Plus, os } from "@/api/common/platform";
 import { useAppBackgroundColors } from "@/hooks/settings";
 
 import { dismissTrueSheet, resizeTrueSheet } from "./true_sheet";
@@ -305,8 +305,9 @@ export function NativeSheet({
     return null;
   }
 
+  // iOS26 以上有透明背景, 默认不用自定义颜色覆盖它
   const resolvedBackgroundColor =
-    backgroundColor ?? (os() === "ios" ? undefined : appBackgroundColors.sheet);
+    backgroundColor ?? (isIos26Plus() ? undefined : appBackgroundColors.sheet);
   const sheetProps: Omit<TrueSheetProps, "children" | "header" | "name"> = {
     detents: detentNormalization.detents,
     dimmed: overlay ?? true,

@@ -6,7 +6,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BackHandler, Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { os } from "@/api/common/platform";
+import { isIos26Plus, os } from "@/api/common/platform";
 import { withNativeBackButton } from "@/components/ui/utils/navigation";
 import { ScreenOverlayPortalProvider } from "@/components/ui/utils/screen_overlay_portal";
 import { useAppBackgroundColors } from "@/hooks/settings";
@@ -161,8 +161,9 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
     : mergedScreenOptions;
 
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
+  // iOS26 以上有透明背景, 默认不用自定义颜色覆盖它
   const resolvedBackgroundColor =
-    sheetProps?.backgroundColor ?? (platform === "ios" ? undefined : appBackgroundColors.sheet);
+    sheetProps?.backgroundColor ?? (isIos26Plus() ? undefined : appBackgroundColors.sheet);
   const backgroundStyle =
     resolvedBackgroundColor != null ? { backgroundColor: resolvedBackgroundColor } : null;
   const resolvedSheetProps = {
