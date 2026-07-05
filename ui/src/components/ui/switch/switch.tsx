@@ -5,8 +5,10 @@ import {
   Switch as TamaguiSwitch,
   XStack,
   YStack,
+  getThemes,
   getVariableValue,
   useTheme,
+  useThemeName,
 } from "tamagui";
 
 import { isWeb, os, supportsImpactHaptics } from "@/api/common/platform";
@@ -17,6 +19,8 @@ import type { SwitchProps, SwitchThumbProps } from "./types";
 const platform = os();
 const web = isWeb();
 const ios = platform === "ios";
+
+type ThemeRecord = Record<string, unknown>;
 
 function resolveThemeColor(values: unknown[]) {
   for (const value of values) {
@@ -29,9 +33,15 @@ function resolveThemeColor(values: unknown[]) {
   return undefined;
 }
 
+function getComponentTheme(themeName: string, componentName: string): ThemeRecord | undefined {
+  const themes = getThemes() as Record<string, ThemeRecord | undefined>;
+  return themes[`${themeName}_${componentName}`];
+}
+
 function SwitchRoot(props: SwitchProps) {
   const generatedId = useId();
   const theme = useTheme();
+  const themeName = useThemeName();
   const {
     checked: checkedProp,
     children,
@@ -55,20 +65,19 @@ function SwitchRoot(props: SwitchProps) {
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked ?? false);
   const checked = checkedProp ?? uncontrolledChecked;
   const shouldHandleLabelPress = ios;
+  const switchTheme = getComponentTheme(themeName, "Switch");
+  const switchThumbTheme = getComponentTheme(themeName, "SwitchThumb");
+  const nativeTrackOffColor = resolveThemeColor([switchTheme?.background, theme.background]);
+  const nativeTrackOnColor = resolveThemeColor([switchTheme?.color6, theme.color6]);
+  const nativeThumbColor = resolveThemeColor([switchThumbTheme?.background, theme.background]);
   const nativeSwitchProps: NativeSwitchProps | undefined = native
     ? {
         ...nativeProps,
-        ios_backgroundColor:
-          nativeProps?.ios_backgroundColor ??
-          resolveThemeColor([theme.color5, theme.color4, theme.borderColor]),
-        thumbColor:
-          nativeProps?.thumbColor ??
-          (checked
-            ? resolveThemeColor([theme.accent10, theme.accent9, theme.color10])
-            : resolveThemeColor([theme.color1, theme.background])),
+        ios_backgroundColor: nativeProps?.ios_backgroundColor ?? nativeTrackOffColor,
+        thumbColor: nativeProps?.thumbColor ?? nativeThumbColor,
         trackColor: {
-          false: resolveThemeColor([theme.color5, theme.color4, theme.borderColor]),
-          true: resolveThemeColor([theme.accent6, theme.accent5, theme.color6]),
+          false: nativeTrackOffColor,
+          true: nativeTrackOnColor,
           ...nativeProps?.trackColor,
         },
       }
