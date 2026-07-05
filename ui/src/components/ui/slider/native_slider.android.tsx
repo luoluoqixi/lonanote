@@ -41,11 +41,11 @@ export function NativeSlider(props: SliderProps) {
         inactiveTickColor: toARGB(colorsProp.inactiveTickColor),
       }
     : {
-        thumbColor: toARGB(theme.borderColor?.val),
+        thumbColor: toARGB(theme.color6?.val),
         activeTrackColor: toARGB(theme.color6?.val),
         inactiveTrackColor: toARGB(theme.color3?.val),
         activeTickColor: toARGB(theme.color6?.val),
-        inactiveTickColor: toARGB(theme.color3?.val),
+        inactiveTickColor: toARGB(theme.color6?.val),
       };
 
   // 触感反馈
