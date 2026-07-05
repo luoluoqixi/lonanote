@@ -51,7 +51,7 @@ export function NativePickerDialog({
 
   if (!visible) return null;
 
-  const selectedBg = theme.backgroundPress?.val ?? "rgba(0,0,0,0.06)";
+  const selectedBg = theme.color3?.val ?? "rgba(0,0,0,0.06)";
   const selectedColor = theme.color?.val ?? "#1A73E8";
   const resolvedAnchorWidth = anchorWidth ?? DEFAULT_ANDROID_DROPDOWN_MIN_WIDTH;
   const resolvedContainerWidth = anchorContainerWidth || resolvedAnchorWidth;
