@@ -14,11 +14,13 @@ import {
 import { getAppHomeTitle } from "@/config";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
+import { getAppWindowBackgroundColor } from "@/theme/window_background";
 
 applyThemeBootstrap();
 
 export default function RootLayout() {
   const colorScheme = useResolvedeColorScheme();
+  const rootBackgroundColor = getAppWindowBackgroundColor(colorScheme);
   return (
     <RootProvider>
       <AppStatusBar colorScheme={colorScheme} />
@@ -30,12 +32,18 @@ export default function RootLayout() {
             if (isWeb()) {
               return {
                 ...statusBar,
+                contentStyle: {
+                  backgroundColor: rootBackgroundColor,
+                },
                 headerShown: false,
               };
             }
 
             return withNativeStackGestureOptions({
               ...statusBar,
+              contentStyle: {
+                backgroundColor: rootBackgroundColor,
+              },
               headerShown: false,
             });
           }}

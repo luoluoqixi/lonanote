@@ -5,6 +5,7 @@ import type { NativeStackNavigationOptions } from "@react-navigation/native-stac
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BackHandler, Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useTheme } from "tamagui";
 
 import { os } from "@/api/common/platform";
 import { withNativeBackButton } from "@/components/ui/utils/navigation";
@@ -77,6 +78,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
   screenOptions,
   sheetProps,
 }: TrueSheetStackHostProps<ParamList>) {
+  const theme = useTheme();
   const navigationRef = navigationRefProp ?? createTrueSheetStackNavigationRef<ParamList>();
   const overlayLayoutSync = useTrueSheetOverlayLayoutSync(sheetProps);
   const customSheetBackHandler = sheetProps?.onBackPress;
@@ -159,6 +161,14 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
     : mergedScreenOptions;
 
   const insetAdjustment = sheetProps?.insetAdjustment ?? defaultSheetProps.insetAdjustment;
+  const resolvedBackgroundColor = sheetProps?.backgroundColor ?? theme.background?.val;
+  const backgroundStyle =
+    resolvedBackgroundColor != null ? { backgroundColor: resolvedBackgroundColor } : null;
+  const resolvedSheetProps = {
+    ...sheetProps,
+    backgroundColor: resolvedBackgroundColor,
+    style: [sheetProps?.style, backgroundStyle],
+  };
 
   const stackNavigation = (
     <TrueSheetStackHostProvider onRequestClose={handleRequestClose}>
@@ -178,7 +188,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
       insetAdjustment={insetAdjustment}
       nativeScrollInsetsApplied={false}
     >
-      <GestureHandlerRootView style={styles.gestureRoot}>
+      <GestureHandlerRootView style={[styles.gestureRoot, backgroundStyle]}>
         {overlayPortalHostName != null ? (
           <ScreenOverlayPortalProvider hostName={overlayPortalHostName}>
             {stackNavigation}
@@ -194,7 +204,7 @@ function TrueSheetStackHostInner<ParamList extends ParamListBase = ParamListBase
     <TrueSheet
       name={name}
       {...defaultSheetProps}
-      {...sheetProps}
+      {...resolvedSheetProps}
       onBackPress={customSheetBackHandler}
       onDetentChange={overlayLayoutSync.onDetentChange}
       onDidDismiss={handleDidDismiss}

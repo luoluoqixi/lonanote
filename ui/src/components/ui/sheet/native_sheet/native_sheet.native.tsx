@@ -1,6 +1,7 @@
 import type { TrueSheetProps } from "@lodev09/react-native-true-sheet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWindowDimensions } from "react-native";
+import { useTheme } from "tamagui";
 
 import { iosMajorVersion, os } from "@/api/common/platform";
 
@@ -232,6 +233,7 @@ export function NativeSheet({
   snapPointsMode,
 }: NativeSheetProps) {
   const { height: windowHeight } = useWindowDimensions();
+  const theme = useTheme();
   const [generatedSheetName] = useState(() => `ui-sheet-native-${++nativeSheetCounter}`);
   const sheetName = name ?? generatedSheetName;
   const [generatedOverlayPortalHostName] = useState(() => `${sheetName}-overlay`);
@@ -303,6 +305,7 @@ export function NativeSheet({
     return null;
   }
 
+  const resolvedBackgroundColor = backgroundColor ?? theme.background?.val;
   const sheetProps: Omit<TrueSheetProps, "children" | "header" | "name"> = {
     detents: detentNormalization.detents,
     dimmed: overlay ?? true,
@@ -342,7 +345,7 @@ export function NativeSheet({
 
   return (
     <TrueSheetPanel
-      backgroundColor={backgroundColor}
+      backgroundColor={resolvedBackgroundColor}
       grabberContentInsetTop={grabberContentInsetTop}
       name={sheetName}
       onRequestClose={() => {
