@@ -1,5 +1,13 @@
 import { useId, useState } from "react";
-import { Label as TamaguiLabel, Switch as TamaguiSwitch, XStack, YStack } from "tamagui";
+import type { SwitchProps as NativeSwitchProps } from "react-native";
+import {
+  Label as TamaguiLabel,
+  Switch as TamaguiSwitch,
+  XStack,
+  YStack,
+  getVariableValue,
+  useTheme,
+} from "tamagui";
 
 import { isWeb, os, supportsImpactHaptics } from "@/api/common/platform";
 import { triggerNativeHaptics, useResolvedNativeHaptics } from "@/components/ui/utils";
@@ -10,8 +18,20 @@ const platform = os();
 const web = isWeb();
 const ios = platform === "ios";
 
+function resolveThemeColor(values: unknown[]) {
+  for (const value of values) {
+    const resolved = getVariableValue(value);
+
+    if (typeof resolved === "string" && resolved.length > 0) {
+      return resolved;
+    }
+  }
+  return undefined;
+}
+
 function SwitchRoot(props: SwitchProps) {
   const generatedId = useId();
+  const theme = useTheme();
   const {
     checked: checkedProp,
     children,
@@ -22,6 +42,7 @@ function SwitchRoot(props: SwitchProps) {
     labelProps,
     native = !web,
     nativeHaptics = true,
+    nativeProps,
     onCheckedChange,
     overflow,
     size = "$4",
@@ -34,6 +55,24 @@ function SwitchRoot(props: SwitchProps) {
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked ?? false);
   const checked = checkedProp ?? uncontrolledChecked;
   const shouldHandleLabelPress = ios;
+  const nativeSwitchProps: NativeSwitchProps | undefined = native
+    ? {
+        ...nativeProps,
+        ios_backgroundColor:
+          nativeProps?.ios_backgroundColor ??
+          resolveThemeColor([theme.color5, theme.color4, theme.borderColor]),
+        thumbColor:
+          nativeProps?.thumbColor ??
+          (checked
+            ? resolveThemeColor([theme.accent10, theme.accent9, theme.color10])
+            : resolveThemeColor([theme.color1, theme.background])),
+        trackColor: {
+          false: resolveThemeColor([theme.color5, theme.color4, theme.borderColor]),
+          true: resolveThemeColor([theme.accent6, theme.accent5, theme.color6]),
+          ...nativeProps?.trackColor,
+        },
+      }
+    : nativeProps;
 
   // iOS 原生 UISwitch 作为 flex container 直接子节点时无法正确垂直居中，
   // 套一层 YStack 容器让 flexbox 对齐机制正常工作
@@ -65,6 +104,7 @@ function SwitchRoot(props: SwitchProps) {
       cursor={rootProps.cursor ?? "pointer"}
       id={controlId}
       onCheckedChange={handleCheckedChange}
+      nativeProps={nativeSwitchProps}
       overflow={overflow ?? "hidden"}
       padding={rootProps.padding ?? 0}
       size={size}
