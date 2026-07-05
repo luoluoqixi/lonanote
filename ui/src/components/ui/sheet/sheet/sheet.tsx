@@ -4,6 +4,7 @@ import { BackHandler } from "react-native";
 
 import { isWeb, os } from "@/api/common/platform";
 import { useScreenOverlayPortalHost } from "@/components/ui/utils/screen_overlay_portal";
+import { useAppBackgroundColors } from "@/hooks/settings";
 
 import {
   Sheet as ReplicaSheet,
@@ -239,7 +240,15 @@ function SheetController(props: SheetControllerProps) {
 }
 
 function SheetFrame(props: SheetFrameProps) {
-  return <ReplicaSheet.Frame {...props} />;
+  const { style, ...frameProps } = props;
+  const appBackgroundColors = useAppBackgroundColors();
+
+  return (
+    <ReplicaSheet.Frame
+      {...frameProps}
+      style={[{ backgroundColor: appBackgroundColors.sheet }, style]}
+    />
+  );
 }
 
 function SheetOverlay(props: SheetOverlayProps) {

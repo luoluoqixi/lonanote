@@ -109,7 +109,6 @@ const IOS_NATIVE_SHEET_SCROLL_CONTENT_STYLE = {
   width: "100%",
 } as const;
 const TOUCH_SHEET_GROUP_RADIUS = 24;
-const TOUCH_SHEET_FRAME_BACKGROUND = "$background" as const;
 const TOUCH_SHEET_GROUP_BACKGROUND = "$color1" as const;
 const SHEET_GROUP_HOVER = "$color3" as const;
 const SHEET_GROUP_PRESS = "$color4" as const;
@@ -459,8 +458,10 @@ function SelectSheetFrame({
   shouldUseTouchSheetLayout,
   touchSheetConfig,
 }: SelectSheetBaseProps) {
+  const appBackgroundColors = useAppBackgroundColors();
   const shouldUseWebSheetLayout = isWeb() && shouldUseTouchSheetLayout;
   const shouldUseSheetScrollView = touchSheetConfig.shouldEnableScroll || shouldUseWebSheetLayout;
+  const touchSheetFrameBackground = appBackgroundColors.sheet;
   const adaptContents = (
     <SelectWebSheetLayoutContext.Provider value={shouldUseWebSheetLayout}>
       <SelectAdapt.Contents />
@@ -474,7 +475,7 @@ function SelectSheetFrame({
         : null)}
       {...(shouldUseTouchSheetLayout
         ? {
-            backgroundColor: TOUCH_SHEET_FRAME_BACKGROUND,
+            backgroundColor: touchSheetFrameBackground,
             borderTopLeftRadius: 36,
             borderTopRightRadius: 36,
             paddingTop: 12,
@@ -519,7 +520,7 @@ function SelectSheetFrame({
               }
             >
               <YStack
-                background={TOUCH_SHEET_FRAME_BACKGROUND}
+                background={touchSheetFrameBackground}
                 style={{
                   ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
                 }}
@@ -530,7 +531,7 @@ function SelectSheetFrame({
           </>
         ) : (
           <YStack
-            background={TOUCH_SHEET_FRAME_BACKGROUND}
+            background={touchSheetFrameBackground}
             style={{
               ...TOUCH_SHEET_SCROLL_CONTENT_STYLE,
             }}
