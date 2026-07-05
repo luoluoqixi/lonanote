@@ -23,7 +23,7 @@ export function NativeSlider(props: SliderProps) {
   const safeStep = stepProp ?? 1;
 
   const currentValue = value?.[0] ?? safeMin;
-  const trackTintColor = toSwiftUIHexColor(theme.color6?.val) ?? theme.color6?.val;
+  const trackTintColor = toSwiftUIHexColor(theme.color10?.val) ?? theme.color6?.val;
 
   // 触感反馈
   const resolvedNativeHaptics = useResolvedNativeHaptics(nativeHaptics);

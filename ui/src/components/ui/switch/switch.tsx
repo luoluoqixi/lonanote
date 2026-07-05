@@ -68,7 +68,7 @@ function SwitchRoot(props: SwitchProps) {
   const switchTheme = getComponentTheme(themeName, "Switch");
   const switchThumbTheme = getComponentTheme(themeName, "SwitchThumb");
   const colorBackground = resolveThemeColor([switchThumbTheme?.background, theme.background]);
-  const nativeTrackOffColor = colorBackground;
+  const nativeTrackOffColor = resolveThemeColor([switchTheme?.background, theme.background]);
   const nativeTrackOnColor = ios
     ? colorBackground
     : resolveThemeColor([switchTheme?.color6, theme.color6]);
