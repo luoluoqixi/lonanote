@@ -187,7 +187,7 @@ function renderValueNode(value: ReactNode) {
 
   if (typeof value === "string" || typeof value === "number") {
     return (
-      <Text color="$color" fontSize="$5" numberOfLines={1} opacity={0.58}>
+      <Text color="$color" fontSize="$4" numberOfLines={1} opacity={0.58}>
         {value}
       </Text>
     );
