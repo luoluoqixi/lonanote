@@ -673,10 +673,10 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
             ]}
             nativeTriggerIcon="chevrons-up-down"
             nativeTriggerLabelProps={{
-              color: "$color11",
+              color: "$color10",
               fontSize: "$4",
               numberOfLines: 1,
-              opacity: 0.72,
+              opacity: 1,
             }}
             onValueChange={selectProps.onValueChange}
             placeholder={selectProps.placeholder}
