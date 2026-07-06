@@ -7,7 +7,6 @@ import { WideScreenHome } from "@/components/home";
 import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
 import {
-  getIosTransparentHeaderFallbackOptions,
   nativeStackStatusBarOptions,
   withNativeBackButton,
   withNativeStackGestureOptions,
@@ -51,6 +50,7 @@ export default function UILayout() {
       <Stack
         screenOptions={({ navigation, route }) => {
           const stackBackgroundColor = appBackgroundColors.screen;
+          const headerTitleColor = theme.gray12.val;
           const baseScreenOptions = {
             ...nativeStackStatusBarOptions(colorScheme),
             contentStyle: {
@@ -62,10 +62,9 @@ export default function UILayout() {
               backgroundColor: stackBackgroundColor,
             },
             headerTitleStyle: {
-              color: theme.color.val,
+              color: headerTitleColor,
             },
           } as const;
-          const transparentHeaderFallback = getIosTransparentHeaderFallbackOptions();
 
           if (route.name === "index" && os() === "ios") {
             return withNativeStackGestureOptions({
@@ -75,11 +74,11 @@ export default function UILayout() {
               headerShown: true,
               headerLargeTitle: true,
               headerLargeTitleStyle: {
-                color: theme.color.val,
+                color: headerTitleColor,
               },
               headerLargeTitleShadowVisible: false,
               headerTitleStyle: {
-                color: theme.color.val,
+                color: headerTitleColor,
               },
               headerTransparent: true,
               title: getAppHomeTitle(),
@@ -98,7 +97,6 @@ export default function UILayout() {
                         backgroundColor: "transparent",
                       },
                       headerTransparent: true,
-                      ...transparentHeaderFallback,
                     }
                   : {}),
                 headerShown: settingsTitle != null,
