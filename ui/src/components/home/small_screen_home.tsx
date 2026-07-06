@@ -23,7 +23,7 @@ export function SmallScreenHome() {
       style={styles.screen}
     >
       <ScrollView
-        alwaysBounceVertical={false}
+        alwaysBounceVertical={usesNativeHomeHeader}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior={usesNativeHomeHeader ? "automatic" : "never"}
         style={styles.scrollView}

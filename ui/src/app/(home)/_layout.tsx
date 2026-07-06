@@ -50,6 +50,7 @@ export default function UILayout() {
       <Stack
         screenOptions={({ navigation, route }) => {
           const stackBackgroundColor = appBackgroundColors.screen;
+          const headerBackgroundColor = appBackgroundColors.header;
           const headerTitleColor = theme.gray12.val;
           const baseScreenOptions = {
             ...nativeStackStatusBarOptions(colorScheme),
@@ -71,6 +72,12 @@ export default function UILayout() {
               contentStyle: baseScreenOptions.contentStyle,
               headerTintColor: theme.color10.val,
               headerShadowVisible: false,
+              headerLargeStyle: {
+                backgroundColor: stackBackgroundColor,
+              },
+              headerStyle: {
+                backgroundColor: stackBackgroundColor,
+              },
               headerShown: true,
               headerLargeTitle: true,
               headerLargeTitleStyle: {
@@ -87,21 +94,34 @@ export default function UILayout() {
 
           if (route.name.startsWith("settings/")) {
             const settingsTitle = getSettingsMobileHeaderTitle(route.name);
+            const settingsScreenOptions = withNativeStackGestureOptions({
+              ...baseScreenOptions,
+              ...(os() === "ios"
+                ? {
+                    headerLargeStyle: {
+                      backgroundColor: headerBackgroundColor,
+                    },
+                    headerLargeTitleShadowVisible: false,
+                    headerShadowVisible: false,
+                    headerStyle: {
+                      backgroundColor: headerBackgroundColor,
+                    },
+                  }
+                : {}),
+              headerShown: settingsTitle != null,
+              title: settingsTitle ?? "设置",
+            });
 
             return withNativeBackButton(
-              withNativeStackGestureOptions({
-                ...baseScreenOptions,
+              {
+                ...settingsScreenOptions,
                 ...(os() === "ios"
                   ? {
-                      headerStyle: {
-                        backgroundColor: "transparent",
-                      },
-                      headerTransparent: true,
+                      fullScreenGestureEnabled: false,
+                      fullScreenGestureShadowEnabled: false,
                     }
                   : {}),
-                headerShown: settingsTitle != null,
-                title: settingsTitle ?? "设置",
-              }),
+              },
               {
                 label: getAppHomeTitle(),
                 onPress: () => navigation.goBack(),

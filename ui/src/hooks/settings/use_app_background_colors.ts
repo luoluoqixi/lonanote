@@ -16,6 +16,7 @@ export function useAppBackgroundColors(): AppBackgroundColors {
       screen,
       sheet: screen,
       card: theme.color2?.val ?? screen,
+      header: theme.color1?.val ?? screen,
     };
   }
 
