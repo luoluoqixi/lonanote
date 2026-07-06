@@ -119,22 +119,22 @@ function resolveNativeListBtnTintColor(
 
 function resolveNativeListTitleColor(
   titleColor: boolean | string | undefined,
-  primaryColor: string,
+  theme: ReturnType<typeof useTheme>,
 ) {
   if (titleColor === false) {
     return null;
   }
-
+  const primaryColor = toSwiftUIHexColor(theme.gray12.val) ?? theme.gray12.val;
   return typeof titleColor === "string" ? titleColor : primaryColor;
 }
 
 function resolveNativeListAssistColor(theme: ReturnType<typeof useTheme>) {
   return (
-    toSwiftUIHexColor(theme.color06?.val) ??
     toSwiftUIHexColor(theme.gray11?.val) ??
+    toSwiftUIHexColor(theme.color06?.val) ??
     toSwiftUIHexColor(theme.color4.val) ??
-    theme.color06?.val ??
     theme.gray11?.val ??
+    theme.color06?.val ??
     theme.color4.val
   );
 }
@@ -157,11 +157,10 @@ function NativeRowLabel({
   const theme = useTheme();
   const titleText = toPlainText(title);
   const subtitleText = toPlainText(subtitle);
-  const primaryColor = toSwiftUIHexColor(theme.color12.val) ?? theme.color12.val;
   const assistColor = resolveNativeListAssistColor(theme);
   const resolvedTextAlignment =
     titleAlign === "center" ? "center" : titleAlign === "right" ? "trailing" : "leading";
-  const resolvedTitleColor = resolveNativeListTitleColor(titleColor ?? undefined, primaryColor);
+  const resolvedTitleColor = resolveNativeListTitleColor(titleColor ?? undefined, theme);
 
   if ((title != null && titleText == null) || (subtitle != null && subtitleText == null)) {
     return null;
@@ -674,7 +673,7 @@ export function NativeListSelectItem({ selectProps, ...itemProps }: NativeListSe
             ]}
             nativeTriggerIcon="chevrons-up-down"
             nativeTriggerLabelProps={{
-              color: "$color06",
+              color: "$color11",
               fontSize: "$4",
               numberOfLines: 1,
               opacity: 0.72,
