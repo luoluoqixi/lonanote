@@ -1,7 +1,5 @@
 ﻿/* eslint-disable quote-props */
 import { StyleSheet, View } from "react-native";
-
-import type { GlobalSettings } from "@/api/commands/settings";
 import {
   Button,
   NativeList,
@@ -12,7 +10,9 @@ import {
   NativeListSwitchItem,
   type SelectOption,
   Text,
-} from "@/components/ui";
+} from "rn-ui-kit";
+
+import type { GlobalSettings } from "@/api/commands/settings";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 import type { AccentColorSetting, ColorSchemeSetting } from "@/stores/ui";
 import { accentThemeNames, getAccentThemePreset } from "@/theme/accent_themes";

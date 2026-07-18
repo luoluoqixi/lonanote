@@ -1,11 +1,10 @@
 import { Pressable, StyleSheet, View } from "react-native";
-
-import { Text } from "@/components/ui";
-import { useTheme } from "@/components/ui/theme";
+import { Text, useTheme } from "rn-ui-kit";
 
 export type ActivityBarProps = {
   showAssistSidebar: boolean;
   showSidebar: boolean;
+  onOpenDebug: () => void;
   onOpenSettings: () => void;
   onToggleAssistSidebar: () => void;
   onToggleSidebar: () => void;
@@ -14,6 +13,7 @@ export type ActivityBarProps = {
 export function ActivityBar({
   showAssistSidebar,
   showSidebar,
+  onOpenDebug,
   onOpenSettings,
   onToggleAssistSidebar,
   onToggleSidebar,
@@ -21,6 +21,7 @@ export function ActivityBar({
   return (
     <View style={styles.root}>
       <ActivityButton active={showSidebar} label="⌘" onPress={onToggleSidebar} />
+      <ActivityButton active={false} label="⚒" onPress={onOpenDebug} />
       <ActivityButton active={false} label="⌕" onPress={() => {}} />
       <View style={styles.spacer} />
       <ActivityButton active={showAssistSidebar} label="☷" onPress={onToggleAssistSidebar} />

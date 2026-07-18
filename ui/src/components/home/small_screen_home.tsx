@@ -1,14 +1,13 @@
 import { type Href, useRouter } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Button, Text, useTheme } from "rn-ui-kit";
 
-import { isDesktop, isWeb, os } from "@/api/common";
-import { isDebugFeatureEnabled, openDebugPanel } from "@/components/debug";
-import { Button, Text } from "@/components/ui";
-import { useTheme } from "@/components/ui/theme";
+import { os } from "@/api/common";
 import { getAppHomeTitle } from "@/config";
 import { useAppBackgroundColors } from "@/hooks/settings";
 
+const DEBUG_HREF = "/debug" as Href;
 const SETTINGS_HREF = "/settings" as Href;
 
 export function SmallScreenHome() {
@@ -55,9 +54,7 @@ export function SmallScreenHome() {
             主题、窗口和编辑器默认值。
           </Text>
           <Button onPress={() => router.push(SETTINGS_HREF)}>打开全局设置</Button>
-          {isDebugFeatureEnabled() && !isWeb() && !isDesktop() ? (
-            <Button onPress={() => void openDebugPanel()}>打开调试面板</Button>
-          ) : null}
+          <Button onPress={() => router.push(DEBUG_HREF)}>打开 UI 调试界面</Button>
         </View>
       </ScrollView>
     </SafeAreaView>

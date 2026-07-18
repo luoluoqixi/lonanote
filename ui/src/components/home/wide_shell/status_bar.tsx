@@ -1,6 +1,5 @@
 import { StyleSheet, View } from "react-native";
-
-import { Text } from "@/components/ui";
+import { Text } from "rn-ui-kit";
 
 export function StatusBar() {
   return (

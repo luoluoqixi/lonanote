@@ -1,14 +1,17 @@
+import { type Href, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SplitLayout, type SplitLayoutHandle, SplitLayoutPriority } from "rn-ui-kit";
 
+import { rnUiKitStorageAdapter } from "@/api/common";
 import { WideSettingsDialog } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
-import { SplitLayout, type SplitLayoutHandle, SplitLayoutPriority } from "@/components/ui";
 import { useAppBackgroundColors } from "@/hooks/settings";
 
 import { ActivityBar, AssistPanel, EditorPanel, SidePanel, StatusBar } from "./wide_shell";
 
+const DEBUG_HREF = "/debug" as Href;
 const LAYOUT_STORAGE_KEY = "lonanote.wideScreenHome.layout";
 const DEFAULT_LAYOUT_STATE = {
   sizes: [],
@@ -16,6 +19,7 @@ const DEFAULT_LAYOUT_STATE = {
 };
 
 export function WideScreenHome() {
+  const router = useRouter();
   const appBackgroundColors = useAppBackgroundColors();
   const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -35,6 +39,7 @@ export function WideScreenHome() {
               proportionalLayout={false}
               storageFallbackState={DEFAULT_LAYOUT_STATE}
               storageKey={LAYOUT_STORAGE_KEY}
+              storageAdapter={rnUiKitStorageAdapter}
               mobileHandlePositions={{ 1: "right", 2: "left" }}
               mobileHandleOffset={-2}
               onStateChange={(state) => {
@@ -50,6 +55,7 @@ export function WideScreenHome() {
                 <ActivityBar
                   showAssistSidebar={showAssistSidebar}
                   showSidebar={showSidebar}
+                  onOpenDebug={() => router.push(DEBUG_HREF)}
                   onOpenSettings={() => {
                     setIsSettingsOpen(true);
                   }}

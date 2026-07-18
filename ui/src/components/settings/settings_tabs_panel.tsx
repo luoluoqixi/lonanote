@@ -1,7 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-
-import { Tabs } from "@/components/ui";
+import { Tabs } from "rn-ui-kit";
 
 import {
   AppearanceSettingsPanel,

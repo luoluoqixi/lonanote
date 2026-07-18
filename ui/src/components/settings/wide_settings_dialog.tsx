@@ -1,9 +1,9 @@
 import { View } from "react-native";
+import { Dialog } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common/platform";
 import { useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
-import { Dialog } from "../ui";
 import { SettingsSyncState } from "./settings_panels";
 import { SettingsTabsPanel } from "./settings_tabs_panel";
 

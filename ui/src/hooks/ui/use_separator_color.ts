@@ -1,4 +1,4 @@
-import { getVariableValue, useTheme } from "@/components/ui/theme";
+import { getVariableValue, useTheme } from "rn-ui-kit";
 
 const FALLBACK_SEPARATOR_COLOR = "rgba(128, 128, 128, 0.24)";
 

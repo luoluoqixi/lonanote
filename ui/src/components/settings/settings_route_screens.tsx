@@ -2,12 +2,12 @@ import { type Href, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import { type Edge, SafeAreaView } from "react-native-safe-area-context";
+import { NativeList, NativeListNavigationItem, NativeListSection, Text } from "rn-ui-kit";
 
 import { isDesktop, isWeb } from "@/api/common";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import { TitleBar } from "../titlebar";
-import { NativeList, NativeListNavigationItem, NativeListSection, Text } from "../ui";
 import { AppearanceSettingsPanel, GlobalSettingsPanel, SettingsSyncState } from "./settings_panels";
 
 const SCREEN_MAX_WIDTH = 960;

@@ -1,17 +1,17 @@
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { useWindowDimensions } from "react-native";
+import {
+  nativeStackStatusBarOptions,
+  withNativeBackButton,
+  withNativeStackGestureOptions,
+} from "rn-ui-kit";
+import { useTheme } from "rn-ui-kit";
 
 import { isDesktop, os } from "@/api/common";
 import { WideScreenHome } from "@/components/home";
 import { getSettingsMobileHeaderTitle } from "@/components/settings";
 import { TitleBar } from "@/components/titlebar";
-import {
-  nativeStackStatusBarOptions,
-  withNativeBackButton,
-  withNativeStackGestureOptions,
-} from "@/components/ui";
-import { useTheme } from "@/components/ui/theme";
 import {
   WIDE_LAYOUT_MINIMUM_WIDTH,
   getAppHomeTitle,

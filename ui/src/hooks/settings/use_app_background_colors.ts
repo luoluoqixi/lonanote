@@ -1,4 +1,5 @@
-import { useTheme } from "@/components/ui/theme";
+import { useTheme } from "rn-ui-kit";
+
 import { type AppBackgroundColors, getStandardAppBackgroundColors } from "@/theme/app_background";
 
 import { useResolvedeColorScheme } from "./use_color_scheme_settings";
