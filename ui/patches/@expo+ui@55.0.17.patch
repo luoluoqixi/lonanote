@@ -1,12 +1,58 @@
 # Expo UI 补丁说明:
+# - iOS 26+ SwiftUI Slider: 始终接受 JS `value` 更新，避免拖拽后 editing 状态阻断受控值同步。
 # - iOS 26: 当没有 label slot 时，改用不带标签的 Slider 初始化方式。
 # - RNHostView: 允许横向和纵向内容分别独立匹配。
-# - SwiftUI List: 补充 viewport clipping 补偿、content margins，以及初始滚动目标支持。
+# - SwiftUI List: 补充 viewport clipping、content margins、初始滚动目标、原生 inset 调整，以及 UIKit 顶部 content scroll view 注册。
 diff --git a/ios/SliderView.swift b/ios/SliderView.swift
-index 1ffa70e3..50927129 100644
+index 1ffa70e..488c98b 100644
 --- a/ios/SliderView.swift
 +++ b/ios/SliderView.swift
-@@ -40,51 +40,91 @@ struct SliderView: ExpoSwiftUI.View {
+@@ -1,102 +1,146 @@
+ // Copyright 2025-present 650 Industries. All rights reserved.
+ 
+ import SwiftUI
+ import ExpoModulesCore
+ 
+ struct SliderView: ExpoSwiftUI.View {
+   @ObservedObject var props: SliderProps
+   @State var value: Float = 0.0
+   @State var isEditing: Bool = false
+   
+   init(props: SliderProps) {
+     self.props = props
+   }
+ 
+   var body: some View {
+ #if !os(tvOS)
+     sliderContent
+       .onAppear {
+         value = props.value ?? 0.0
+       }
+       .onChange(of: props.value) { newValue in
+-        guard !isEditing else { return }
+-        value = newValue ?? 0.0
++        if #available(iOS 26.0, *) {
++          value = newValue ?? 0.0
++        } else {
++          guard !isEditing else { return }
++          value = newValue ?? 0.0
++        }
+       }
+       .onChange(of: value) { newValue in
+         if props.value != newValue {
+           props.onValueChanged([
+             "value": newValue
+           ])
+         }
+       }
+ #else
+     Text("Slider is not supported on tvOS")
+ #endif
+   }
+ 
+ #if !os(tvOS)
+   @ViewBuilder
+   private var sliderContent: some View {
      let label = props.children?.slot("label")
      let minimumValueLabel = props.children?.slot("minimum")
      let maximumValueLabel = props.children?.slot("maximum")
@@ -135,8 +181,20 @@ index 1ffa70e3..50927129 100644
        }
      }
    }
+ #endif
+ }
+ 
+ final class SliderProps: UIBaseViewProps {
+   @Field var value: Float?
+   @Field var step: Float?
+   @Field var min: Float?
+   @Field var max: Float?
+   var onValueChanged = EventDispatcher()
+   var onEditingChanged = EventDispatcher()
+ }
+ 
 diff --git a/src/swift-ui/RNHostView.tsx b/src/swift-ui/RNHostView.tsx
-index 4e634d0c..6a60b0e2 100644
+index 4e634d0..6a60b0e 100644
 --- a/src/swift-ui/RNHostView.tsx
 +++ b/src/swift-ui/RNHostView.tsx
 @@ -9,7 +9,7 @@ export type RNHostViewProps = {
@@ -172,7 +230,7 @@ index 4e634d0c..6a60b0e2 100644
    );
  }
 diff --git a/build/swift-ui/RNHostView.d.ts b/build/swift-ui/RNHostView.d.ts
-index e1c5cded..c488bbca 100644
+index e1c5cde..c488bbc 100644
 --- a/build/swift-ui/RNHostView.d.ts
 +++ b/build/swift-ui/RNHostView.d.ts
 @@ -5,7 +5,10 @@ export type RNHostViewProps = {
@@ -188,7 +246,7 @@ index e1c5cded..c488bbca 100644
       * The RN View to be hosted.
       */
 diff --git a/src/jetpack-compose/RNHostView/index.tsx b/src/jetpack-compose/RNHostView/index.tsx
-index 290f9d4e..1340fb16 100644
+index 290f9d4..1340fb1 100644
 --- a/src/jetpack-compose/RNHostView/index.tsx
 +++ b/src/jetpack-compose/RNHostView/index.tsx
 @@ -12,7 +12,7 @@ export interface RNHostProps extends PrimitiveBaseProps {
@@ -250,7 +308,7 @@ index 290f9d4e..1340fb16 100644
    );
  }
 diff --git a/build/jetpack-compose/RNHostView/index.d.ts b/build/jetpack-compose/RNHostView/index.d.ts
-index f8ad9a4e..3a147273 100644
+index f8ad9a4..3a14727 100644
 --- a/build/jetpack-compose/RNHostView/index.d.ts
 +++ b/build/jetpack-compose/RNHostView/index.d.ts
 @@ -8,7 +8,10 @@ export interface RNHostProps extends PrimitiveBaseProps {
@@ -266,7 +324,7 @@ index f8ad9a4e..3a147273 100644
       * The RN View to be hosted.
       */
 diff --git a/ios/RNHostView.swift b/ios/RNHostView.swift
-index f8cba36a..ced9b626 100644
+index f8cba36..ced9b62 100644
 --- a/ios/RNHostView.swift
 +++ b/ios/RNHostView.swift
 @@ -4,7 +4,9 @@ import SwiftUI
@@ -388,7 +446,7 @@ index f8cba36a..ced9b626 100644
  
    func body(content: Content) -> some View {
 diff --git a/android/src/main/java/expo/modules/ui/RNHostView.kt b/android/src/main/java/expo/modules/ui/RNHostView.kt
-index 79076729..b7d071e8 100644
+index 7907672..b7d071e 100644
 --- a/android/src/main/java/expo/modules/ui/RNHostView.kt
 +++ b/android/src/main/java/expo/modules/ui/RNHostView.kt
 @@ -7,8 +7,11 @@ import android.view.MotionEvent
@@ -508,7 +566,7 @@ index 79076729..b7d071e8 100644
        }
      }
 diff --git a/src/swift-ui/modifiers/index.ts b/src/swift-ui/modifiers/index.ts
-index d64100ee..6a3440ae 100644
+index d64100e..6a3440a 100644
 --- a/src/swift-ui/modifiers/index.ts
 +++ b/src/swift-ui/modifiers/index.ts
 @@ -569,6 +569,28 @@ export const scrollDismissesKeyboard = (
@@ -550,7 +608,7 @@ index d64100ee..6a3440ae 100644
    | ReturnType<typeof scrollDisabled>
    | ReturnType<typeof defaultScrollAnchor>
 diff --git a/build/swift-ui/modifiers/index.d.ts b/build/swift-ui/modifiers/index.d.ts
-index 1e0d2ba0..d0d1a5de 100644
+index 1e0d2ba..d0d1a5d 100644
 --- a/build/swift-ui/modifiers/index.d.ts
 +++ b/build/swift-ui/modifiers/index.d.ts
 @@ -455,6 +455,26 @@ export declare const scrollDismissesKeyboard: (mode: "automatic" | "never" | "in
@@ -597,7 +655,7 @@ index 1e0d2ba0..d0d1a5de 100644
 \ No newline at end of file
 +//# sourceMappingURL=index.d.ts.map
 diff --git a/ios/Modifiers/ViewModifierRegistry.swift b/ios/Modifiers/ViewModifierRegistry.swift
-index 552adc52..3a44a626 100644
+index 552adc5..3a44a62 100644
 --- a/ios/Modifiers/ViewModifierRegistry.swift
 +++ b/ios/Modifiers/ViewModifierRegistry.swift
 @@ -120,6 +120,25 @@ internal struct OpacityModifier: ViewModifier, Record {
@@ -649,7 +707,7 @@ index 552adc52..3a44a626 100644
        return try ScrollTargetBehaviorModifier(from: params, appContext: appContext)
      }
 diff --git a/ios/Modifiers/ContainerRelativeFrameModifier.swift b/ios/Modifiers/ContainerRelativeFrameModifier.swift
-index ee649568..be7d2ab2 100644
+index ee64956..be7d2ab 100644
 --- a/ios/Modifiers/ContainerRelativeFrameModifier.swift
 +++ b/ios/Modifiers/ContainerRelativeFrameModifier.swift
 @@ -40,3 +40,36 @@ internal struct ContainerRelativeFrameModifier: ViewModifier, Record {
@@ -690,20 +748,45 @@ index ee649568..be7d2ab2 100644
 +  }
 +}
 diff --git a/ios/ListView.swift b/ios/ListView.swift
-index a7ca51df..3faeae09 100644
+index a7ca51d..7aec0f4 100644
 --- a/ios/ListView.swift
 +++ b/ios/ListView.swift
-@@ -4,6 +4,9 @@ import ExpoModulesCore
+@@ -3,27 +3,113 @@
+ import ExpoModulesCore
  import SwiftUI
  
++internal enum ListContentInsetAdjustmentBehavior: String, Enumerable {
++  case automatic
++  case scrollableAxes
++  case never
++  case always
++
++  var uiKitValue: UIScrollView.ContentInsetAdjustmentBehavior {
++    switch self {
++    case .automatic:
++      return .automatic
++    case .scrollableAxes:
++      return .scrollableAxes
++    case .never:
++      return .never
++    case .always:
++      return .always
++    }
++  }
++}
++
  final class ListProps: UIBaseViewProps {
++  @Field var automaticallyAdjustsScrollIndicatorInsets: Bool?
 +  @Field var compensatesForViewportClipping = false
++  @Field var contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
 +  @Field var initialScrollAnchor: UnitPointOptions = .center
 +  @Field var initialScrollTarget: Either<String, Double>?
    @Field var selection: [Either<String, Double>]?
++  @Field var tracksNavigationBarScrollEdge = false
    var onSelectionChange = EventDispatcher()
  }
-@@ -11,19 +14,72 @@ final class ListProps: UIBaseViewProps {
+-
++
  struct ListView: ExpoSwiftUI.View {
    @ObservedObject var props: ListProps
    @State private var selection = Set<AnyHashable>()
@@ -747,6 +830,13 @@ index a7ca51df..3faeae09 100644
 +      List(selection: $selection) {
 +        Children()
 +      }
++      .background {
++        ScrollInsetAdjustmentView(
++          automaticallyAdjustsScrollIndicatorInsets: props.automaticallyAdjustsScrollIndicatorInsets ?? true,
++          contentInsetAdjustmentBehavior: props.contentInsetAdjustmentBehavior,
++          tracksNavigationBarScrollEdge: props.tracksNavigationBarScrollEdge
++        )
++      }
 +      .onAppear {
 +        selection = Self.getHashableSetFromEither(props.selection)
 +        scrollToInitialTarget(proxy)
@@ -784,14 +874,283 @@ index a7ca51df..3faeae09 100644
      }
    }
  
+@@ -55,3 +141,256 @@ struct ListView: ExpoSwiftUI.View {
+     return result
+   }
+ }
++
++private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
++  let automaticallyAdjustsScrollIndicatorInsets: Bool
++  let contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
++  let tracksNavigationBarScrollEdge: Bool
++
++  func makeUIViewController(context: Context) -> ScrollInsetAdjustmentViewController {
++    let viewController = ScrollInsetAdjustmentViewController()
++    let view = viewController.adjustmentView
++    view.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
++    view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
++    view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
++    return viewController
++  }
++
++  func updateUIViewController(_ uiViewController: ScrollInsetAdjustmentViewController, context: Context) {
++    let view = uiViewController.adjustmentView
++    view.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
++    view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
++    view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
++  }
++}
++
++private final class ScrollInsetAdjustmentViewController: UIViewController {
++  let adjustmentView = ScrollInsetAdjustmentUIView()
++
++  override func loadView() {
++    adjustmentView.isUserInteractionEnabled = false
++    view = adjustmentView
++  }
++
++  override func viewDidAppear(_ animated: Bool) {
++    super.viewDidAppear(animated)
++    adjustmentView.refreshNavigationBarScrollEdgeRegistration()
++  }
++}
++
++private final class ScrollInsetAdjustmentUIView: UIView {
++  var automaticallyAdjustsScrollIndicatorInsets = true {
++    didSet {
++      scheduleUpdate()
++    }
++  }
++
++  var contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior? {
++    didSet {
++      scheduleUpdate()
++    }
++  }
++
++  var tracksNavigationBarScrollEdge = false {
++    didSet {
++      guard oldValue != tracksNavigationBarScrollEdge else { return }
++      if tracksNavigationBarScrollEdge {
++        refreshNavigationBarScrollEdgeRegistration()
++      } else {
++        scheduleUpdate()
++      }
++    }
++  }
++
++  private weak var configuredScrollView: UIScrollView?
++  private weak var configuredViewController: UIViewController?
++  private weak var registeredContentScrollView: UIScrollView?
++  private var updateScheduled = false
++  private var forceContentScrollViewRegistration = false
++  private var registrationRetryAttemptsRemaining = 0
++  private var registrationRetryScheduled = false
++
++  private static let maximumRegistrationRetryAttempts = 30
++
++  func refreshNavigationBarScrollEdgeRegistration() {
++    registrationRetryAttemptsRemaining = Self.maximumRegistrationRetryAttempts
++    scheduleUpdate(forceContentScrollViewRegistration: true)
++  }
++
++  override func didMoveToWindow() {
++    super.didMoveToWindow()
++
++    if window == nil {
++      unregisterContentScrollView()
++    } else {
++      refreshNavigationBarScrollEdgeRegistration()
++    }
++  }
++
++  override func layoutSubviews() {
++    super.layoutSubviews()
++
++    if configuredScrollView?.window == nil {
++      unregisterContentScrollView()
++      configuredScrollView = nil
++      scheduleUpdate()
++    }
++  }
++
++  private func scheduleUpdate(forceContentScrollViewRegistration: Bool = false) {
++    self.forceContentScrollViewRegistration =
++      self.forceContentScrollViewRegistration || forceContentScrollViewRegistration
++    guard !updateScheduled else { return }
++    updateScheduled = true
++
++    DispatchQueue.main.async { [weak self] in
++      guard let self else { return }
++      self.updateScheduled = false
++      self.applyAdjustment()
++    }
++  }
++
++  private func applyAdjustment() {
++    guard let scrollView = configuredScrollView ?? findListScrollView() else { return }
++
++    configuredScrollView = scrollView
++    let forceRegistration = forceContentScrollViewRegistration
++    forceContentScrollViewRegistration = false
++    var needsLayout = false
++
++    if scrollView.automaticallyAdjustsScrollIndicatorInsets != automaticallyAdjustsScrollIndicatorInsets {
++      scrollView.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
++      needsLayout = true
++    }
++
++    if let contentInsetAdjustmentBehavior,
++      scrollView.contentInsetAdjustmentBehavior != contentInsetAdjustmentBehavior.uiKitValue {
++      scrollView.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior.uiKitValue
++      needsLayout = true
++    }
++
++    if needsLayout {
++      scrollView.setNeedsLayout()
++    }
++
++    updateContentScrollViewRegistration(scrollView, force: forceRegistration)
++  }
++
++  private func updateContentScrollViewRegistration(_ scrollView: UIScrollView, force: Bool) {
++    guard tracksNavigationBarScrollEdge else {
++      unregisterContentScrollView()
++      return
++    }
++
++    guard let viewController = findContentViewController() else {
++      if configuredViewController != nil {
++        unregisterContentScrollView()
++      }
++      scheduleContentViewControllerRegistrationRetry()
++      return
++    }
++
++    registrationRetryAttemptsRemaining = 0
++
++    if configuredViewController !== viewController {
++      unregisterContentScrollView()
++    }
++
++    configuredViewController = viewController
++    if force, viewController.contentScrollView(for: .top) === scrollView {
++      viewController.setContentScrollView(nil, for: .top)
++    }
++    if force || viewController.contentScrollView(for: .top) !== scrollView {
++      viewController.setContentScrollView(scrollView, for: .top)
++      viewController.navigationController?.navigationBar.setNeedsLayout()
++    }
++    registeredContentScrollView = scrollView
++  }
++
++  private func scheduleContentViewControllerRegistrationRetry() {
++    guard window != nil,
++      tracksNavigationBarScrollEdge,
++      registrationRetryAttemptsRemaining > 0,
++      !registrationRetryScheduled else {
++      return
++    }
++
++    registrationRetryAttemptsRemaining -= 1
++    registrationRetryScheduled = true
++
++    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
++      guard let self else { return }
++      self.registrationRetryScheduled = false
++      self.scheduleUpdate(forceContentScrollViewRegistration: true)
++    }
++  }
++
++  private func unregisterContentScrollView() {
++    guard let viewController = configuredViewController else { return }
++
++    if viewController.contentScrollView(for: .top) === registeredContentScrollView {
++      viewController.setContentScrollView(nil, for: .top)
++    }
++    configuredViewController = nil
++    registeredContentScrollView = nil
++  }
++
++  private func findContentViewController() -> UIViewController? {
++    var responder: UIResponder? = self
++
++    while let current = responder {
++      if let hostingViewController = current as? UIViewController {
++        var contentViewController = hostingViewController
++
++        while let parent = contentViewController.parent,
++          !(parent is UINavigationController),
++          !(parent is UITabBarController) {
++          contentViewController = parent
++        }
++
++        guard contentViewController.navigationController != nil ||
++          contentViewController.parent is UINavigationController else {
++          return nil
++        }
++        return contentViewController
++      }
++      responder = current.next
++    }
++
++    return nil
++  }
++
++  private func findListScrollView() -> UIScrollView? {
++    var ancestor: UIView? = superview
++
++    while let current = ancestor {
++      if let listScrollView = findListScrollView(in: current) {
++        return listScrollView
++      }
++      ancestor = current.superview
++    }
++
++    return nil
++  }
++
++  private func findListScrollView(in view: UIView) -> UIScrollView? {
++    // SwiftUI List is backed by UITableView on iOS 15 and UICollectionView on
++    // newer systems. Both are UIScrollView subclasses and can drive UIKit's
++    // navigation-bar scroll-edge appearance.
++    if let tableView = view as? UITableView {
++      return tableView
++    }
++
++    if let collectionView = view as? UICollectionView {
++      return collectionView
++    }
++
++    for child in view.subviews {
++      if let listScrollView = findListScrollView(in: child) {
++        return listScrollView
++      }
++    }
++
++    return nil
++  }
++}
 diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
-index 73c2193b..2639cb1d 100644
+index 73c2193..70d0ca0 100644
 --- a/src/swift-ui/List/index.tsx
 +++ b/src/swift-ui/List/index.tsx
-@@ -21,6 +21,35 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
+@@ -21,6 +21,54 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
  }
  
  export interface ListProps extends CommonViewModifierProps {
++  /**
++   * Whether UIKit automatically adjusts the native scroll indicator insets.
++   * @default true
++   */
++  automaticallyAdjustsScrollIndicatorInsets?: boolean;
++
++  /**
++   * How UIKit adjusts the native list's content insets for navigation bars and safe areas.
++   * @default 'automatic'
++   */
++  contentInsetAdjustmentBehavior?: 'automatic' | 'scrollableAxes' | 'never' | 'always';
++
 +  /**
 +   * Shrinks the list viewport when its host extends below the physical screen boundary.
 +   * Useful for native sheet containers that clip hosted SwiftUI content at smaller detents.
@@ -821,17 +1180,34 @@ index 73c2193b..2639cb1d 100644
 +   */
 +  initialScrollTarget?: string | number;
 +
++  /**
++   * Registers the backing native list as the current view controller's top content scroll view.
++   * This lets UIKit drive navigation-bar scroll-edge appearance changes without JS scroll events.
++   * @default false
++   */
++  tracksNavigationBarScrollEdge?: boolean;
++
    /**
     * The children elements to be rendered inside the list.
     */
 diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
-index 02e9345c..20eb4274 100644
+index 02e9345..6b7b840 100644
 --- a/build/swift-ui/List/index.d.ts
 +++ b/build/swift-ui/List/index.d.ts
-@@ -1,6 +1,22 @@
+@@ -1,6 +1,38 @@
  import { ListForEach, type ListForEachProps } from './ListForEach';
  import { type CommonViewModifierProps } from '../types';
  export interface ListProps extends CommonViewModifierProps {
++    /**
++     * Whether UIKit automatically adjusts the native scroll indicator insets.
++     * @default true
++     */
++    automaticallyAdjustsScrollIndicatorInsets?: boolean;
++    /**
++     * How UIKit adjusts the native list's content insets for navigation bars and safe areas.
++     * @default 'automatic'
++     */
++    contentInsetAdjustmentBehavior?: 'automatic' | 'scrollableAxes' | 'never' | 'always';
 +    /**
 +     * Shrinks the list viewport when its host extends below the physical screen boundary.
 +     * Useful for native sheet containers that clip hosted SwiftUI content at smaller detents.
@@ -848,10 +1224,16 @@ index 02e9345c..20eb4274 100644
 +     * Children should use the `viewID` modifier with the same value.
 +     */
 +    initialScrollTarget?: string | number;
++    /**
++     * Registers the backing native list as the current view controller's top content scroll view.
++     * This lets UIKit drive navigation-bar scroll-edge appearance changes without JS scroll events.
++     * @default false
++     */
++    tracksNavigationBarScrollEdge?: boolean;
      /**
       * The children elements to be rendered inside the list.
       */
-@@ -23,4 +39,4 @@ export declare namespace List {
+@@ -23,4 +55,4 @@ export declare namespace List {
      var ForEach: typeof ListForEach;
  }
  export { ListForEach, ListForEachProps };
