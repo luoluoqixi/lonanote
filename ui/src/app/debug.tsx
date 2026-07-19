@@ -1,10 +1,7 @@
-import { NavigationIndependentTree } from "@react-navigation/native";
 import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
+import { getAppHomeTitle } from "@/config";
+
 export default function DebugScreen() {
-  return (
-    <NavigationIndependentTree>
-      <RnUiKitDebugPanel />
-    </NavigationIndependentTree>
-  );
+  return <RnUiKitDebugPanel backButtonLabel={getAppHomeTitle()} navigationMode="host" />;
 }
