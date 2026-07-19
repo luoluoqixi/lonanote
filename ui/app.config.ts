@@ -46,6 +46,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     "expo-router",
+    [
+      "expo-build-properties",
+      {
+        ios: {
+          // react-native 补丁包含原生 Fabric 代码，必须从源码构建才能进入最终 App。
+          buildReactNativeFromSource: true,
+        },
+      },
+    ],
     "./tools/prebuild/with_android_sdk_versions.cjs",
     "./tools/prebuild/with_android_gradle_memory.cjs",
     [
