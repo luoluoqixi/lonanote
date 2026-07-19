@@ -1,6 +1,58 @@
 # Metro 补丁说明:
 # - 统一这一代 Expo 55 Metro 中 resolver blockList/blacklistRE 的处理方式，以及 watch ignore 行为。
+# - 校验 Asset Server 已解析出的实际平台资源文件，避免把虚拟缩放资源名误判为被 blockList 阻止。
 # - Metro 版本变化后，需要和 metro-file-map 一起重新构建。
+diff --git a/src/Assets.js b/src/Assets.js
+index ac3302ca..b34df882 100644
+--- a/src/Assets.js
++++ b/src/Assets.js
+@@ -221,26 +221,33 @@ async function getAsset(
+       `'${relativePath}' cannot be loaded as its extension is not registered in assetExts`,
+     );
+   }
+-  if (fileExistsInFileMap != null) {
+-    if (!fileExistsInFileMap(absolutePath)) {
+-      throw new Error(
+-        `'${relativePath}' could not be found, because it is not within the projectRoot or watchFolders, or it is blocked via the resolver.blockList config`,
+-      );
+-    }
+-  } else {
+-    if (!pathBelongsToRoots(absolutePath, [projectRoot, ...watchFolders])) {
+-      throw new Error(
+-        `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
+-      );
+-    }
++  if (
++    fileExistsInFileMap == null &&
++    !pathBelongsToRoots(absolutePath, [projectRoot, ...watchFolders])
++  ) {
++    throw new Error(
++      `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
++    );
+   }
+   const record = await getAbsoluteAssetRecord(absolutePath, platform ?? null);
+   for (let i = 0; i < record.scales.length; i++) {
+     if (record.scales[i] >= assetData.resolution) {
++      if (
++        fileExistsInFileMap != null &&
++        !fileExistsInFileMap(record.files[i])
++      ) {
++        continue;
++      }
+       return _fs.default.promises.readFile(record.files[i]);
+     }
+   }
+-  return _fs.default.promises.readFile(record.files[record.files.length - 1]);
++  const lastFile = record.files[record.files.length - 1];
++  if (fileExistsInFileMap != null && !fileExistsInFileMap(lastFile)) {
++    throw new Error(
++      `'${relativePath}' could not be found, because it is not within the projectRoot or watchFolders, or it is blocked via the resolver.blockList config`,
++    );
++  }
++  return _fs.default.promises.readFile(lastFile);
+ }
+ function pathBelongsToRoots(pathToCheck, roots) {
+   for (const rootFolder of roots) {
 diff --git a/src/node-haste/DependencyGraph/createFileMap.js b/src/node-haste/DependencyGraph/createFileMap.js
 index fedef2b..baa38c4 100644
 --- a/src/node-haste/DependencyGraph/createFileMap.js
