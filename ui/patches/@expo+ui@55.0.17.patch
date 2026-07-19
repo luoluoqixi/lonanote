@@ -874,7 +874,7 @@ index a7ca51d..7aec0f4 100644
      }
    }
  
-@@ -55,3 +141,256 @@ struct ListView: ExpoSwiftUI.View {
+@@ -55,3 +141,292 @@ struct ListView: ExpoSwiftUI.View {
      return result
    }
  }
@@ -903,6 +903,7 @@ index a7ca51d..7aec0f4 100644
 +
 +private final class ScrollInsetAdjustmentViewController: UIViewController {
 +  let adjustmentView = ScrollInsetAdjustmentUIView()
++  private var applicationDidBecomeActiveObserver: NSObjectProtocol?
 +
 +  override func loadView() {
 +    adjustmentView.isUserInteractionEnabled = false
@@ -911,7 +912,42 @@ index a7ca51d..7aec0f4 100644
 +
 +  override func viewDidAppear(_ animated: Bool) {
 +    super.viewDidAppear(animated)
++    startObservingApplicationActivation()
 +    adjustmentView.refreshNavigationBarScrollEdgeRegistration()
++  }
++
++  override func viewDidDisappear(_ animated: Bool) {
++    super.viewDidDisappear(animated)
++    stopObservingApplicationActivation()
++  }
++
++  deinit {
++    stopObservingApplicationActivation()
++  }
++
++  private func startObservingApplicationActivation() {
++    guard applicationDidBecomeActiveObserver == nil else { return }
++
++    // iOS 15 may discard UINavigationController's content-scroll-view
++    // observation while the app is inactive without replaying appearance
++    // callbacks when it becomes active again.
++    if #available(iOS 16.0, *) {
++      return
++    }
++
++    applicationDidBecomeActiveObserver = NotificationCenter.default.addObserver(
++      forName: UIApplication.didBecomeActiveNotification,
++      object: nil,
++      queue: .main
++    ) { [weak self] _ in
++      self?.adjustmentView.refreshNavigationBarScrollEdgeRegistration()
++    }
++  }
++
++  private func stopObservingApplicationActivation() {
++    guard let applicationDidBecomeActiveObserver else { return }
++    NotificationCenter.default.removeObserver(applicationDidBecomeActiveObserver)
++    self.applicationDidBecomeActiveObserver = nil
 +  }
 +}
 +

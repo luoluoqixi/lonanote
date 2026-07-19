@@ -1,0 +1,170 @@
+# rn-ui-kit：iOS ScrollView 空白视口触摸命中的显式开关
+#
+# 本补丁为 React Native ScrollView 增加仅限 iOS 的布尔属性
+# `iosEmptyViewportScrollEnabled`。该属性默认为 false；调用方没有显式开启时，
+# 完全保留 React Native 原本的行为。
+#
+# 在 Fabric 下开启后，ScrollView 可见范围内未命中内容子视图的触摸，会交给内部
+# UIScrollView，而不是外层组件视图。这样，短内容页面可以从原本的空白区域开始
+# 原生滚动或回弹手势，同时不会改变内容尺寸或制造真实滚动范围。
+#
+# 旧架构会安全接收该属性但不改变行为；Android 和 Web 不受影响。升级 React
+# Native 时必须重新检查或移除此补丁，因为上游的 ScrollView 命中测试和属性
+# 传递实现可能已经发生变化。
+
+diff --git a/Libraries/Components/ScrollView/ScrollView.d.ts b/Libraries/Components/ScrollView/ScrollView.d.ts
+index b6e538ddc5a1be58b6227f461546fa6d84ca8871..b3db7cbf65e58731c196a37f4ac079c8ef4d34c4 100644
+--- a/Libraries/Components/ScrollView/ScrollView.d.ts
++++ b/Libraries/Components/ScrollView/ScrollView.d.ts
+@@ -347,6 +347,14 @@ export interface ScrollViewPropsIOS {
+    */
+   alwaysBounceVertical?: boolean | undefined;
+ 
++  /**
++   * When true, touches in the empty portion of a short ScrollView are handled
++   * by the underlying UIScrollView so the whole viewport can participate in
++   * native scrolling and bounce gestures. The default value is false.
++   * @platform ios
++   */
++  iosEmptyViewportScrollEnabled?: boolean | undefined;
++
+   /**
+    * Controls whether iOS should automatically adjust the content inset for scroll views that are placed behind a navigation bar or tab bar/ toolbar.
+    * The default value is true.
+diff --git a/Libraries/Components/ScrollView/ScrollView.js b/Libraries/Components/ScrollView/ScrollView.js
+index fdb830dc6e6244ceeb42688c7ba2a2823d10814f..7a1d54692229d566ad449ca27f6a0bc16f09f873 100644
+--- a/Libraries/Components/ScrollView/ScrollView.js
++++ b/Libraries/Components/ScrollView/ScrollView.js
+@@ -236,6 +236,13 @@ export type ScrollViewPropsIOS = $ReadOnly<{
+    * @platform ios
+    */
+   alwaysBounceVertical?: ?boolean,
++  /**
++   * When true, touches in the empty portion of a short ScrollView are handled
++   * by the underlying UIScrollView so the whole viewport can participate in
++   * native scrolling and bounce gestures. The default value is false.
++   * @platform ios
++   */
++  iosEmptyViewportScrollEnabled?: ?boolean,
+   /**
+    * When true, the scroll view automatically centers the content when the
+    * content is smaller than the scroll view bounds; when the content is
+diff --git a/Libraries/Components/ScrollView/ScrollViewNativeComponent.js b/Libraries/Components/ScrollView/ScrollViewNativeComponent.js
+index 82f9c93baf348c355de0ccbfe676ec75d1c53289..f9a094046f1c1c8beedec45ca0a8ccad471f2f8e 100644
+--- a/Libraries/Components/ScrollView/ScrollViewNativeComponent.js
++++ b/Libraries/Components/ScrollView/ScrollViewNativeComponent.js
+@@ -136,6 +136,7 @@ export const __INTERNAL_VIEW_CONFIG: PartialViewConfig =
+           disableIntervalMomentum: true,
+           indicatorStyle: true,
+           inverted: true,
++          iosEmptyViewportScrollEnabled: true,
+           keyboardDismissMode: true,
+           maintainVisibleContentPosition: true,
+           maximumZoomScale: true,
+diff --git a/Libraries/Components/ScrollView/ScrollViewNativeComponentType.js b/Libraries/Components/ScrollView/ScrollViewNativeComponentType.js
+index 1feee6999541c0f07522fc82fda34576312718c1..7c28eafcc3351bb3f4c206812c7e838bedf19f88 100644
+--- a/Libraries/Components/ScrollView/ScrollViewNativeComponentType.js
++++ b/Libraries/Components/ScrollView/ScrollViewNativeComponentType.js
+@@ -45,6 +45,7 @@ export type ScrollViewNativeProps = $ReadOnly<{
+   fadingEdgeLength?: ?number | {start: number, end: number},
+   indicatorStyle?: ?('default' | 'black' | 'white'),
+   isInvertedVirtualizedList?: ?boolean,
++  iosEmptyViewportScrollEnabled?: ?boolean,
+   keyboardDismissMode?: ?('none' | 'on-drag' | 'interactive'),
+   maintainVisibleContentPosition?: ?$ReadOnly<{
+     minIndexForVisible: number,
+diff --git a/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm b/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
+index 15a5ab7bce4581e0ff42ea4983ae3fbe3885835e..abb75033f0e87dc5d077735daf61e8e7e34ce24f 100644
+--- a/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
++++ b/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
+@@ -521,7 +521,14 @@ - (UIView *)betterHitTest:(CGPoint)point withEvent:(UIEvent *)event
+     }
+   }
+ 
+-  return isPointInside ? self : nil;
++  if (!isPointInside) {
++    return nil;
++  }
++
++  const auto &props = static_cast<const ScrollViewProps &>(*_props);
++  // Opt in to routing otherwise-unhandled empty viewport touches to the inner
++  // UIScrollView, where the native pan gesture recognizer actually lives.
++  return props.iosEmptyViewportScrollEnabled ? _scrollView : self;
+ }
+ 
+ /*
+diff --git a/React/Views/ScrollView/RCTScrollView.h b/React/Views/ScrollView/RCTScrollView.h
+index 2aa0f7989ee2c15915d37ee6e6018e129e39bea2..be3e663f2244bef3e937892e1992a0952bc38347 100644
+--- a/React/Views/ScrollView/RCTScrollView.h
++++ b/React/Views/ScrollView/RCTScrollView.h
+@@ -39,6 +39,7 @@ __attribute__((deprecated("This API will be removed along with the legacy archit
+ @property (nonatomic, assign) UIEdgeInsets contentInset;
+ @property (nonatomic, assign) BOOL automaticallyAdjustContentInsets;
+ @property (nonatomic, assign) BOOL automaticallyAdjustKeyboardInsets;
++@property (nonatomic, assign) BOOL iosEmptyViewportScrollEnabled;
+ @property (nonatomic, assign) BOOL DEPRECATED_sendUpdatedChildFrames;
+ @property (nonatomic, assign) NSTimeInterval scrollEventThrottle;
+ @property (nonatomic, assign) BOOL centerContent;
+diff --git a/React/Views/ScrollView/RCTScrollViewManager.m b/React/Views/ScrollView/RCTScrollViewManager.m
+index 985771805c59dac011b5e19b51a80771996df044..3038a2600f488c730909f3c83b3b127541a9dc3a 100644
+--- a/React/Views/ScrollView/RCTScrollViewManager.m
++++ b/React/Views/ScrollView/RCTScrollViewManager.m
+@@ -62,6 +62,7 @@ - (UIView *)view
+ 
+ RCT_EXPORT_VIEW_PROPERTY(alwaysBounceHorizontal, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(alwaysBounceVertical, BOOL)
++RCT_EXPORT_VIEW_PROPERTY(iosEmptyViewportScrollEnabled, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(bounces, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(bouncesZoom, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(canCancelContentTouches, BOOL)
+diff --git a/ReactCommon/react/renderer/components/scrollview/BaseScrollViewProps.cpp b/ReactCommon/react/renderer/components/scrollview/BaseScrollViewProps.cpp
+index a683cb87f825661b6fc039b6b066c20e620eab16..1edf36063ca600f32351ca5c4ac67fa8bb4f9a5d 100644
+--- a/ReactCommon/react/renderer/components/scrollview/BaseScrollViewProps.cpp
++++ b/ReactCommon/react/renderer/components/scrollview/BaseScrollViewProps.cpp
+@@ -40,6 +40,15 @@ BaseScrollViewProps::BaseScrollViewProps(
+                     "alwaysBounceVertical",
+                     sourceProps.alwaysBounceVertical,
+                     {})),
++      iosEmptyViewportScrollEnabled(
++          ReactNativeFeatureFlags::enableCppPropsIteratorSetter()
++              ? sourceProps.iosEmptyViewportScrollEnabled
++              : convertRawProp(
++                    context,
++                    rawProps,
++                    "iosEmptyViewportScrollEnabled",
++                    sourceProps.iosEmptyViewportScrollEnabled,
++                    {})),
+       bounces(
+           ReactNativeFeatureFlags::enableCppPropsIteratorSetter()
+               ? sourceProps.bounces
+@@ -389,6 +398,7 @@ void BaseScrollViewProps::setProp(
+   switch (hash) {
+     RAW_SET_PROP_SWITCH_CASE_BASIC(alwaysBounceHorizontal);
+     RAW_SET_PROP_SWITCH_CASE_BASIC(alwaysBounceVertical);
++    RAW_SET_PROP_SWITCH_CASE_BASIC(iosEmptyViewportScrollEnabled);
+     RAW_SET_PROP_SWITCH_CASE_BASIC(bounces);
+     RAW_SET_PROP_SWITCH_CASE_BASIC(bouncesZoom);
+     RAW_SET_PROP_SWITCH_CASE_BASIC(canCancelContentTouches);
+@@ -444,6 +454,10 @@ SharedDebugStringConvertibleList BaseScrollViewProps::getDebugProps() const {
+               "alwaysBounceVertical",
+               alwaysBounceVertical,
+               defaultScrollViewProps.alwaysBounceVertical),
++          debugStringConvertibleItem(
++              "iosEmptyViewportScrollEnabled",
++              iosEmptyViewportScrollEnabled,
++              defaultScrollViewProps.iosEmptyViewportScrollEnabled),
+           debugStringConvertibleItem(
+               "bounces", bounces, defaultScrollViewProps.bounces),
+           debugStringConvertibleItem(
+diff --git a/ReactCommon/react/renderer/components/scrollview/BaseScrollViewProps.h b/ReactCommon/react/renderer/components/scrollview/BaseScrollViewProps.h
+index f6de1cd07fd58ad6cf521524e0326e2a76f8e775..39c7680773bcd770e76fe8d88f148011a49943a1 100644
+--- a/ReactCommon/react/renderer/components/scrollview/BaseScrollViewProps.h
++++ b/ReactCommon/react/renderer/components/scrollview/BaseScrollViewProps.h
+@@ -31,6 +31,7 @@ class BaseScrollViewProps : public ViewProps {
+ 
+   bool alwaysBounceHorizontal{};
+   bool alwaysBounceVertical{};
++  bool iosEmptyViewportScrollEnabled{};
+   bool bounces{true};
+   bool bouncesZoom{true};
+   bool canCancelContentTouches{true};
