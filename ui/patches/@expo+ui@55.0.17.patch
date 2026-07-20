@@ -1,8 +1,9 @@
-# Expo UI 补丁说明:
+# Expo UI 补丁说明：
 # - iOS 26+ SwiftUI Slider: 始终接受 JS `value` 更新，避免拖拽后 editing 状态阻断受控值同步。
 # - iOS 26: 当没有 label slot 时，改用不带标签的 Slider 初始化方式。
 # - RNHostView: 允许横向和纵向内容分别独立匹配。
 # - SwiftUI List: 补充 viewport clipping、content margins、初始滚动目标、原生 inset 调整，以及 UIKit 顶部 content scroll view 注册。
+# - SwiftUI List: 提供通用 indicator frame 校正开关；具体系统版本由调用方决定。
 diff --git a/ios/SliderView.swift b/ios/SliderView.swift
 index 1ffa70e..488c98b 100644
 --- a/ios/SliderView.swift
@@ -748,10 +749,10 @@ index ee64956..be7d2ab 100644
 +  }
 +}
 diff --git a/ios/ListView.swift b/ios/ListView.swift
-index a7ca51d..7aec0f4 100644
+index a7ca51d..ba4896d 100644
 --- a/ios/ListView.swift
 +++ b/ios/ListView.swift
-@@ -3,27 +3,113 @@
+@@ -3,27 +3,115 @@
  import ExpoModulesCore
  import SwiftUI
  
@@ -779,6 +780,7 @@ index a7ca51d..7aec0f4 100644
 +  @Field var automaticallyAdjustsScrollIndicatorInsets: Bool?
 +  @Field var compensatesForViewportClipping = false
 +  @Field var contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
++  @Field var correctsNestedScrollIndicatorFrame = false
 +  @Field var initialScrollAnchor: UnitPointOptions = .center
 +  @Field var initialScrollTarget: Either<String, Double>?
    @Field var selection: [Either<String, Double>]?
@@ -834,6 +836,7 @@ index a7ca51d..7aec0f4 100644
 +        ScrollInsetAdjustmentView(
 +          automaticallyAdjustsScrollIndicatorInsets: props.automaticallyAdjustsScrollIndicatorInsets ?? true,
 +          contentInsetAdjustmentBehavior: props.contentInsetAdjustmentBehavior,
++          correctsNestedScrollIndicatorFrame: props.correctsNestedScrollIndicatorFrame,
 +          tracksNavigationBarScrollEdge: props.tracksNavigationBarScrollEdge
 +        )
 +      }
@@ -874,7 +877,7 @@ index a7ca51d..7aec0f4 100644
      }
    }
  
-@@ -55,3 +141,292 @@ struct ListView: ExpoSwiftUI.View {
+@@ -55,3 +143,477 @@ struct ListView: ExpoSwiftUI.View {
      return result
    }
  }
@@ -882,6 +885,7 @@ index a7ca51d..7aec0f4 100644
 +private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
 +  let automaticallyAdjustsScrollIndicatorInsets: Bool
 +  let contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
++  let correctsNestedScrollIndicatorFrame: Bool
 +  let tracksNavigationBarScrollEdge: Bool
 +
 +  func makeUIViewController(context: Context) -> ScrollInsetAdjustmentViewController {
@@ -889,6 +893,7 @@ index a7ca51d..7aec0f4 100644
 +    let view = viewController.adjustmentView
 +    view.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
 +    view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
++    view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
 +    view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
 +    return viewController
 +  }
@@ -897,6 +902,7 @@ index a7ca51d..7aec0f4 100644
 +    let view = uiViewController.adjustmentView
 +    view.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
 +    view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
++    view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
 +    view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
 +  }
 +}
@@ -964,6 +970,13 @@ index a7ca51d..7aec0f4 100644
 +    }
 +  }
 +
++  var correctsNestedScrollIndicatorFrame = false {
++    didSet {
++      guard oldValue != correctsNestedScrollIndicatorFrame else { return }
++      scheduleUpdate()
++    }
++  }
++
 +  var tracksNavigationBarScrollEdge = false {
 +    didSet {
 +      guard oldValue != tracksNavigationBarScrollEdge else { return }
@@ -977,7 +990,14 @@ index a7ca51d..7aec0f4 100644
 +
 +  private weak var configuredScrollView: UIScrollView?
 +  private weak var configuredViewController: UIViewController?
++  private weak var correctedIndicatorScrollView: UIScrollView?
++  private weak var observedAncestorScrollView: UIScrollView?
 +  private weak var registeredContentScrollView: UIScrollView?
++  private var ancestorContentOffsetObservation: NSKeyValueObservation?
++  private var indicatorBoundsObservation: NSKeyValueObservation?
++  private var indicatorContentOffsetObservation: NSKeyValueObservation?
++  private var indicatorContentSizeObservation: NSKeyValueObservation?
++  private var indicatorFrameCorrectionScheduled = false
 +  private var updateScheduled = false
 +  private var forceContentScrollViewRegistration = false
 +  private var registrationRetryAttemptsRemaining = 0
@@ -994,6 +1014,7 @@ index a7ca51d..7aec0f4 100644
 +    super.didMoveToWindow()
 +
 +    if window == nil {
++      stopNestedScrollIndicatorFrameCorrection()
 +      unregisterContentScrollView()
 +    } else {
 +      refreshNavigationBarScrollEdgeRegistration()
@@ -1004,8 +1025,11 @@ index a7ca51d..7aec0f4 100644
 +    super.layoutSubviews()
 +
 +    if configuredScrollView?.window == nil {
++      stopNestedScrollIndicatorFrameCorrection()
 +      unregisterContentScrollView()
 +      configuredScrollView = nil
++      scheduleUpdate()
++    } else if correctsNestedScrollIndicatorFrame {
 +      scheduleUpdate()
 +    }
 +  }
@@ -1046,7 +1070,171 @@ index a7ca51d..7aec0f4 100644
 +      scrollView.setNeedsLayout()
 +    }
 +
++    updateNestedScrollIndicatorFrameCorrection(for: scrollView)
 +    updateContentScrollViewRegistration(scrollView, force: forceRegistration)
++  }
++
++  private func updateNestedScrollIndicatorFrameCorrection(for scrollView: UIScrollView) {
++    guard correctsNestedScrollIndicatorFrame else {
++      stopNestedScrollIndicatorFrameCorrection()
++      return
++    }
++
++    if correctedIndicatorScrollView !== scrollView {
++      stopNestedScrollIndicatorFrameCorrection()
++      correctedIndicatorScrollView = scrollView
++      startObservingIndicatorGeometry(of: scrollView)
++    }
++
++    observeAncestorScrollView(of: scrollView)
++    scheduleIndicatorFrameCorrection(for: scrollView)
++  }
++
++  private func startObservingIndicatorGeometry(of scrollView: UIScrollView) {
++    indicatorBoundsObservation = scrollView.observe(
++      \.bounds,
++      options: [.new]
++    ) { [weak self, weak scrollView] _, _ in
++      guard let self, let scrollView else { return }
++      self.scheduleIndicatorFrameCorrection(for: scrollView)
++    }
++    indicatorContentOffsetObservation = scrollView.observe(
++      \.contentOffset,
++      options: [.new]
++    ) { [weak self, weak scrollView] _, _ in
++      guard let self, let scrollView else { return }
++      self.scheduleIndicatorFrameCorrection(for: scrollView)
++    }
++    indicatorContentSizeObservation = scrollView.observe(
++      \.contentSize,
++      options: [.new]
++    ) { [weak self, weak scrollView] _, _ in
++      guard let self, let scrollView else { return }
++      self.scheduleIndicatorFrameCorrection(for: scrollView)
++    }
++  }
++
++  private func scheduleIndicatorFrameCorrection(for scrollView: UIScrollView) {
++    guard !indicatorFrameCorrectionScheduled else { return }
++    indicatorFrameCorrectionScheduled = true
++
++    // UIScrollView lays out its private indicator after publishing contentOffset.
++    // Correct on the next main-loop turn so the opt-in frame wins that layout pass.
++    DispatchQueue.main.async { [weak self, weak scrollView] in
++      guard let self else { return }
++      self.indicatorFrameCorrectionScheduled = false
++      guard let scrollView,
++        self.correctedIndicatorScrollView === scrollView,
++        self.correctsNestedScrollIndicatorFrame else {
++        return
++      }
++      self.correctVerticalIndicatorFrame(in: scrollView)
++    }
++  }
++
++  private func correctVerticalIndicatorFrame(in scrollView: UIScrollView) {
++    guard let indicatorView = findVerticalIndicatorView(in: scrollView) else { return }
++
++    let indicatorInsets = scrollView.verticalScrollIndicatorInsets
++    let adjustedInsets = scrollView.adjustedContentInset
++    let trackPadding: CGFloat = 3
++    let minimumThumbLength: CGFloat = 7
++    let trackLength = max(
++      0,
++      scrollView.bounds.height -
++        indicatorInsets.top -
++        indicatorInsets.bottom -
++        trackPadding * 2
++    )
++    let visibleContentLength = max(
++      0,
++      scrollView.bounds.height - adjustedInsets.top - adjustedInsets.bottom
++    )
++    let totalContentLength = max(
++      visibleContentLength,
++      scrollView.contentSize.height + adjustedInsets.top + adjustedInsets.bottom
++    )
++    guard trackLength > 0, totalContentLength > 0 else { return }
++
++    let thumbLength = min(
++      trackLength,
++      max(minimumThumbLength, trackLength * visibleContentLength / totalContentLength)
++    )
++    let minimumOffset = -adjustedInsets.top
++    let maximumOffset = max(
++      minimumOffset,
++      scrollView.contentSize.height - scrollView.bounds.height + adjustedInsets.bottom
++    )
++    let offsetRange = maximumOffset - minimumOffset
++    let progress = offsetRange > 0
++      ? min(1, max(0, (scrollView.contentOffset.y - minimumOffset) / offsetRange))
++      : 0
++    let trackTop = scrollView.contentOffset.y + indicatorInsets.top + trackPadding
++    let thumbOriginY = trackTop + (trackLength - thumbLength) * progress
++    let expectedFrame = CGRect(
++      x: indicatorView.frame.origin.x,
++      y: thumbOriginY,
++      width: indicatorView.frame.width,
++      height: thumbLength
++    )
++
++    if abs(indicatorView.frame.minY - expectedFrame.minY) > 0.5 ||
++      abs(indicatorView.frame.height - expectedFrame.height) > 0.5 {
++      indicatorView.frame = expectedFrame
++    }
++  }
++
++  private func findVerticalIndicatorView(in scrollView: UIScrollView) -> UIView? {
++    scrollView.subviews.first { subview in
++      let frame = subview.frame
++      return frame.width > 0 &&
++        frame.width <= 8 &&
++        frame.height >= frame.width &&
++        frame.maxX >= scrollView.bounds.width - 16
++    }
++  }
++
++  private func observeAncestorScrollView(of scrollView: UIScrollView) {
++    let ancestorScrollView = findAncestorScrollView(of: scrollView)
++    guard observedAncestorScrollView !== ancestorScrollView else { return }
++
++    ancestorContentOffsetObservation = nil
++    observedAncestorScrollView = ancestorScrollView
++    guard let ancestorScrollView else { return }
++
++    ancestorContentOffsetObservation = ancestorScrollView.observe(
++      \.contentOffset,
++      options: [.new]
++    ) { [weak self, weak scrollView] _, _ in
++      guard let self, let scrollView else { return }
++      self.scheduleIndicatorFrameCorrection(for: scrollView)
++    }
++  }
++
++  private func findAncestorScrollView(of scrollView: UIScrollView) -> UIScrollView? {
++    var ancestor = scrollView.superview
++    while let current = ancestor {
++      if let ancestorScrollView = current as? UIScrollView {
++        return ancestorScrollView
++      }
++      ancestor = current.superview
++    }
++    return nil
++  }
++
++  private func stopNestedScrollIndicatorFrameCorrection() {
++    ancestorContentOffsetObservation = nil
++    indicatorBoundsObservation = nil
++    indicatorContentOffsetObservation = nil
++    indicatorContentSizeObservation = nil
++    observedAncestorScrollView = nil
++    indicatorFrameCorrectionScheduled = false
++
++    if let scrollView = correctedIndicatorScrollView {
++      scrollView.setNeedsLayout()
++    }
++
++    correctedIndicatorScrollView = nil
 +  }
 +
 +  private func updateContentScrollViewRegistration(_ scrollView: UIScrollView, force: Bool) {
@@ -1168,10 +1356,10 @@ index a7ca51d..7aec0f4 100644
 +  }
 +}
 diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
-index 73c2193..70d0ca0 100644
+index 73c2193..2f1471d 100644
 --- a/src/swift-ui/List/index.tsx
 +++ b/src/swift-ui/List/index.tsx
-@@ -21,6 +21,54 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
+@@ -21,6 +21,61 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
  }
  
  export interface ListProps extends CommonViewModifierProps {
@@ -1193,6 +1381,13 @@ index 73c2193..70d0ca0 100644
 +   * @default false
 +   */
 +  compensatesForViewportClipping?: boolean;
++
++  /**
++   * Corrects a cached safe-area offset in a nested List's private scroll-indicator track.
++   * This is opt-in; callers are responsible for platform and OS-version gating.
++   * @default false
++   */
++  correctsNestedScrollIndicatorFrame?: boolean;
 +
 +  /**
 +   * The anchor used when scrolling to `initialScrollTarget`.
@@ -1227,10 +1422,10 @@ index 73c2193..70d0ca0 100644
     * The children elements to be rendered inside the list.
     */
 diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
-index 02e9345..6b7b840 100644
+index 02e9345..64ae4e1 100644
 --- a/build/swift-ui/List/index.d.ts
 +++ b/build/swift-ui/List/index.d.ts
-@@ -1,6 +1,38 @@
+@@ -1,6 +1,44 @@
  import { ListForEach, type ListForEachProps } from './ListForEach';
  import { type CommonViewModifierProps } from '../types';
  export interface ListProps extends CommonViewModifierProps {
@@ -1251,6 +1446,12 @@ index 02e9345..6b7b840 100644
 +     */
 +    compensatesForViewportClipping?: boolean;
 +    /**
++     * Corrects a cached safe-area offset in a nested List's private scroll-indicator track.
++     * This is opt-in; callers are responsible for platform and OS-version gating.
++     * @default false
++     */
++    correctsNestedScrollIndicatorFrame?: boolean;
++    /**
 +     * The anchor used when scrolling to `initialScrollTarget`.
 +     * @default 'center'
 +     */
@@ -1269,7 +1470,7 @@ index 02e9345..6b7b840 100644
      /**
       * The children elements to be rendered inside the list.
       */
-@@ -23,4 +55,4 @@ export declare namespace List {
+@@ -23,4 +61,4 @@ export declare namespace List {
      var ForEach: typeof ListForEach;
  }
  export { ListForEach, ListForEachProps };
