@@ -273,10 +273,20 @@ index 11f43c2..29182f5 100644
    // MARK: - Grabber Tap Detection
    // =============================================================================
 diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
-index b4b5d60..02f4055 100644
+index b4b5d60..57b0f91 100644
 --- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
 +++ b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetCoordinatorLayout.kt
-@@ -43,8 +43,12 @@ class TrueSheetCoordinatorLayout(context: Context) :
+@@ -8,7 +8,9 @@ import android.view.View
+ import android.view.ViewConfiguration
+ import android.view.ViewGroup
+ import android.widget.EditText
++import android.widget.ScrollView
+ import androidx.coordinatorlayout.widget.CoordinatorLayout
++import androidx.core.widget.NestedScrollView
+ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+ import com.facebook.react.uimanager.PointerEvents
+ import com.facebook.react.uimanager.ReactPointerEventsView
+@@ -43,8 +45,14 @@ class TrueSheetCoordinatorLayout(context: Context) :
    // interception once the first significant movement of a stream is horizontal.
    private var streamInitialX = 0f
    private var streamInitialY = 0f
@@ -286,10 +296,12 @@ index b4b5d60..02f4055 100644
    private var streamDirectionDecided = false
 +  private var streamStartedInGrabber = false
 +  private var streamStartedInScrollView = false
++  private var streamScrollView: ViewGroup? = null
++  private var streamScrollViewChain: List<ViewGroup> = emptyList()
  
    // Native-gesture-claim tracking. RNGH handlers activate past BottomSheetBehavior's
    // drag slop and never call requestDisallowInterceptTouchEvent, so the sheet would
-@@ -111,6 +115,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
+@@ -111,6 +119,7 @@ class TrueSheetCoordinatorLayout(context: Context) :
      // (a pinned ScrollView or an overflowing multiline EditText still scrolls). Other children
      // (maps, sliders, scrollables) keep the standard disallow contract.
      if (disallowIntercept && touchedViewIsEditText() && !touchedViewCanScrollVertically()) return
@@ -297,27 +309,89 @@ index b4b5d60..02f4055 100644
      super.requestDisallowInterceptTouchEvent(disallowIntercept)
    }
  
-@@ -138,6 +143,34 @@ class TrueSheetCoordinatorLayout(context: Context) :
+@@ -138,6 +147,96 @@ class TrueSheetCoordinatorLayout(context: Context) :
      return false
    }
  
 +  private fun shouldIgnoreDisallowInterceptForTopScrollView(): Boolean {
-+    val scrollView = delegate?.findScrollView() ?: return false
-+    val hasRefreshControl = scrollView.parent is SwipeRefreshLayout
-+    if (hasRefreshControl || scrollView.canScrollVertically(-1)) return false
++    val scrollView = streamScrollView ?: delegate?.findScrollView() ?: return false
++    val scrollViews = streamScrollViewChain.ifEmpty { listOf(scrollView) }
++    val hasRefreshControl = scrollViews.any { it.parent is SwipeRefreshLayout }
++    if (hasRefreshControl || scrollViews.any { it.canScrollVertically(-1) }) return false
 +    return findDescendantAt(scrollView, streamInitialX.toInt(), streamInitialY.toInt()) { true }
 +  }
 +
 +  private fun shouldPreferSheetTopPull(ev: MotionEvent): Boolean {
-+    val scrollView = delegate?.findScrollView() ?: return false
-+    val hasRefreshControl = scrollView.parent is SwipeRefreshLayout
-+    if (!streamStartedInScrollView || hasRefreshControl || scrollView.canScrollVertically(-1)) return false
++    val scrollView = streamScrollView ?: delegate?.findScrollView() ?: return false
++    val scrollViews = streamScrollViewChain.ifEmpty { listOf(scrollView) }
++    val hasRefreshControl = scrollViews.any { it.parent is SwipeRefreshLayout }
++    if (
++      !streamStartedInScrollView ||
++      hasRefreshControl ||
++      scrollViews.any { it.canScrollVertically(-1) }
++    ) return false
 +
 +    val pointerIndex = ev.findPointerIndex(activePointerId)
 +    if (pointerIndex == -1) return false
 +
 +    val deltaY = initialY - ev.getY(pointerIndex)
 +    return deltaY < -touchSlop
++  }
++
++  /**
++   * Returns the deepest vertical ScrollView under this touch.
++   *
++   * TrueSheet pins one page-level ScrollView, but a page can contain another
++   * independently scrolling view. Gesture ownership must follow the view that
++   * was actually touched; otherwise an outer ScrollView at offset 0 makes the
++   * sheet steal a downward drag while the inner ScrollView is still scrolled.
++   */
++  private fun findDeepestScrollViewAt(view: View, rawX: Int, rawY: Int): ViewGroup? {
++    val location = IntArray(2)
++    view.getLocationOnScreen(location)
++    if (
++      rawX < location[0] ||
++      rawX > location[0] + view.width ||
++      rawY < location[1] ||
++      rawY > location[1] + view.height
++    ) {
++      return null
++    }
++
++    if (view is ViewGroup) {
++      for (i in view.childCount - 1 downTo 0) {
++        val scrollView = findDeepestScrollViewAt(view.getChildAt(i), rawX, rawY)
++        if (scrollView != null) return scrollView
++      }
++    }
++
++    return if (view is ScrollView || view is NestedScrollView) view as ViewGroup else null
++  }
++
++  /**
++   * Returns the touched ScrollView followed by each scrolling ancestor up to
++   * TrueSheet's pinned page ScrollView. The sheet may handle a top pull only
++   * after every view in this chain has reached its top edge.
++   */
++  private fun buildScrollViewChain(
++    scrollView: ViewGroup,
++    boundaryScrollView: ViewGroup
++  ): List<ViewGroup> {
++    val chain = mutableListOf<ViewGroup>()
++    var current: View? = scrollView
++
++    while (current != null) {
++      if (current is ScrollView || current is NestedScrollView) {
++        chain.add(current as ViewGroup)
++      }
++      if (current === boundaryScrollView) break
++      current = current.parent as? View
++    }
++
++    if (chain.none { it === boundaryScrollView }) {
++      chain.add(boundaryScrollView)
++    }
++    return chain
 +  }
 +
 +  private fun primeSheetDragFromInitialTouch(ev: MotionEvent) {
@@ -332,7 +406,7 @@ index b4b5d60..02f4055 100644
    /**
     * Called by descendant RootView implementations (controller, footer) when a child
     * starts a native gesture — e.g. an RNGH handler activated or a scrollable began
-@@ -162,12 +195,26 @@ class TrueSheetCoordinatorLayout(context: Context) :
+@@ -162,12 +261,32 @@ class TrueSheetCoordinatorLayout(context: Context) :
  
        streamInitialX = ev.rawX
        streamInitialY = ev.rawY
@@ -345,14 +419,20 @@ index b4b5d60..02f4055 100644
 -        it.javaClass.name == GESTURE_HANDLER_ROOT_VIEW_CLASS
 +      streamStartedInGrabber = delegate?.findSheetView()?.isTouchInGrabber(ev.rawX.toInt(), ev.rawY.toInt()) == true
 +      val initialScrollView = delegate?.findScrollView()
-+      streamStartedInScrollView =
-+        initialScrollView != null &&
-+          findDescendantAt(initialScrollView, streamInitialX.toInt(), streamInitialY.toInt()) { true }
++      streamScrollView = initialScrollView?.let {
++        findDeepestScrollViewAt(it, streamInitialX.toInt(), streamInitialY.toInt())
++      }
++      streamScrollViewChain = if (initialScrollView != null && streamScrollView != null) {
++        buildScrollViewChain(streamScrollView!!, initialScrollView)
++      } else {
++        emptyList()
+       }
++      streamStartedInScrollView = streamScrollView != null
 +      initialY = ev.y
 +      activePointerId = ev.getPointerId(0)
 +      if (streamStartedInGrabber) {
 +        dragging = false
-       }
++      }
 +      streamHasGestureRoot =
 +        !streamStartedInGrabber &&
 +          findDescendantAt(this, ev.rawX.toInt(), ev.rawY.toInt()) {
@@ -361,12 +441,14 @@ index b4b5d60..02f4055 100644
      }
  
      // Decide gesture direction on first significant movement of the stream.
-@@ -186,13 +233,23 @@ class TrueSheetCoordinatorLayout(context: Context) :
+@@ -186,13 +305,27 @@ class TrueSheetCoordinatorLayout(context: Context) :
        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
          streamHorizontalLocked = false
          streamDirectionDecided = false
 +        streamStartedInGrabber = false
 +        streamStartedInScrollView = false
++        streamScrollView = null
++        streamScrollViewChain = emptyList()
        }
        return false
      }
@@ -382,10 +464,12 @@ index b4b5d60..02f4055 100644
          streamGestureClaimed = false
 +        streamStartedInGrabber = false
 +        streamStartedInScrollView = false
++        streamScrollView = null
++        streamScrollViewChain = emptyList()
        }
        return false
      }
-@@ -201,19 +258,47 @@ class TrueSheetCoordinatorLayout(context: Context) :
+@@ -201,19 +334,54 @@ class TrueSheetCoordinatorLayout(context: Context) :
      // under the touch can activate and claim the stream first.
      if (streamHasGestureRoot &&
        action == MotionEvent.ACTION_MOVE &&
@@ -395,6 +479,9 @@ index b4b5d60..02f4055 100644
        return false
      }
  
+-    val scrollView = delegate?.findScrollView()
+-    val hasRefreshControl = scrollView?.parent is SwipeRefreshLayout
+-    val cannotScroll = scrollView != null &&
 +    if (streamStartedInGrabber) {
 +      when (ev.action and MotionEvent.ACTION_MASK) {
 +        MotionEvent.ACTION_MOVE -> {
@@ -414,6 +501,8 @@ index b4b5d60..02f4055 100644
 +          dragging = false
 +          streamStartedInGrabber = false
 +          streamStartedInScrollView = false
++          streamScrollView = null
++          streamScrollViewChain = emptyList()
 +        }
 +      }
 +
@@ -421,23 +510,27 @@ index b4b5d60..02f4055 100644
 +      return super.onInterceptTouchEvent(ev)
 +    }
 +
-     val scrollView = delegate?.findScrollView()
-     val hasRefreshControl = scrollView?.parent is SwipeRefreshLayout
--    val cannotScroll = scrollView != null &&
++    val scrollView = streamScrollView ?: delegate?.findScrollView()
++    val scrollViews = if (streamScrollViewChain.isNotEmpty()) {
++      streamScrollViewChain
++    } else {
++      listOfNotNull(scrollView)
++    }
++    val hasRefreshControl = scrollViews.any { it.parent is SwipeRefreshLayout }
 +    val canPullSheetFromTop = scrollView != null &&
 +      streamStartedInScrollView &&
        !hasRefreshControl &&
 -      scrollView.scrollY == 0 &&
 -      !scrollView.canScrollVertically(1)
-+      !scrollView.canScrollVertically(-1)
-+    val cannotScroll = canPullSheetFromTop && !scrollView.canScrollVertically(1)
++      scrollViews.none { it.canScrollVertically(-1) }
++    val cannotScroll = canPullSheetFromTop && scrollViews.none { it.canScrollVertically(1) }
  
 -    if (cannotScroll) {
 +    if (canPullSheetFromTop) {
        when (ev.action and MotionEvent.ACTION_MASK) {
          MotionEvent.ACTION_DOWN -> {
            dragging = false
-@@ -226,7 +311,17 @@ class TrueSheetCoordinatorLayout(context: Context) :
+@@ -226,7 +394,17 @@ class TrueSheetCoordinatorLayout(context: Context) :
            if (pointerIndex != -1) {
              val y = ev.getY(pointerIndex)
              val deltaY = initialY - y
@@ -456,12 +549,14 @@ index b4b5d60..02f4055 100644
                dragging = true
                parent?.requestDisallowInterceptTouchEvent(true)
              }
-@@ -236,13 +331,23 @@ class TrueSheetCoordinatorLayout(context: Context) :
+@@ -236,13 +414,25 @@ class TrueSheetCoordinatorLayout(context: Context) :
          MotionEvent.ACTION_UP,
          MotionEvent.ACTION_CANCEL -> {
            dragging = false
 +          streamStartedInGrabber = false
 +          streamStartedInScrollView = false
++          streamScrollView = null
++          streamScrollViewChain = emptyList()
          }
        }
      } else {
@@ -481,6 +576,15 @@ index b4b5d60..02f4055 100644
    }
  
    @SuppressLint("ClickableViewAccessibility")
+@@ -252,6 +442,8 @@ class TrueSheetCoordinatorLayout(context: Context) :
+         MotionEvent.ACTION_UP,
+         MotionEvent.ACTION_CANCEL -> {
+           dragging = false
++          streamScrollView = null
++          streamScrollViewChain = emptyList()
+         }
+       }
+       // Let parent CoordinatorLayout handle the touch for BottomSheetBehavior
 diff --git a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetGrabberView.kt b/android/src/main/java/com/lodev09/truesheet/core/TrueSheetGrabberView.kt
 index c14a0e0..282cea4 100644
 --- a/android/src/main/java/com/lodev09/truesheet/core/TrueSheetGrabberView.kt
