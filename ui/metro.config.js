@@ -3,6 +3,9 @@ const { getDefaultConfig } = require("expo/metro-config");
 const path = require("node:path");
 const { blockList, watchBlockList } = require("./tools/metro_ignore");
 
+const isProd = process.env.NODE_ENV === "production";
+console.log(`metro prod: ${isProd}`);
+
 const defaultConfig = getDefaultConfig(__dirname);
 
 /** @type {import('expo/metro-config').MetroConfig} */
@@ -17,6 +20,11 @@ const config = {
     watchBlockList: watchBlockList,
   },
 };
+
+if (isProd) {
+  // 生产模式时不使用缓存 build, 防止安卓构建时因为 package 更新但 src 未改动导致产物未更新
+  config.cacheStores = [];
+}
 
 // Expo Router 与应用可能安装两份 React Navigation。统一从应用 node_modules 解析，
 // 确保 NavigationContainer 与消费方使用同一个 React Context。
