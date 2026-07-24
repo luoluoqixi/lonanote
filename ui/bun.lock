@@ -52,7 +52,7 @@
         "react-native": "=0.83.9",
         "react-native-gesture-handler": "=2.31.1",
         "react-native-ios-context-menu": "^3.2.1",
-        "react-native-ios-utilities": "github:dominicstop/react-native-ios-utilities#e520d1a64b2d",
+        "react-native-ios-utilities": "=5.2.0",
         "react-native-reanimated": "=4.3.0",
         "react-native-safe-area-context": "=5.7.0",
         "react-native-screens": "=4.24.0",
@@ -60,7 +60,7 @@
         "react-native-teleport": "^1.1.7",
         "react-native-web": "=0.21.2",
         "react-native-worklets": "=0.8.1",
-        "rn-ui-kit": "github:luoluoqixi/rn-ui-kit#rn-ui-kit-1.1.1",
+        "rn-ui-kit": "github:luoluoqixi/rn-ui-kit#rn-ui-kit-1.1.3",
         "tamagui": "=2.4.0",
         "typescript-eslint": "^8.59.1",
         "zeego": "=3.0.6",
@@ -108,6 +108,7 @@
     },
   },
   "patchedDependencies": {
+    "@tamagui/dialog@2.4.0": "patches/@tamagui+dialog@2.4.0.patch",
     "metro-file-map@0.83.6": "patches/metro-file-map@0.83.6.patch",
     "@lodev09/react-native-true-sheet@3.11.6": "patches/@lodev09+react-native-true-sheet@3.11.6.patch",
     "zeego@3.0.6": "patches/zeego@3.0.6.patch",
@@ -115,15 +116,16 @@
     "expo-haptics@55.0.14": "patches/expo-haptics@55.0.14.patch",
     "metro@0.83.6": "patches/metro@0.83.6.patch",
     "@tamagui/create-menu@2.4.0": "patches/@tamagui+create-menu@2.4.0.patch",
+    "react-native-ios-utilities@5.2.0": "patches/react-native-ios-utilities@5.2.0.patch",
     "@tamagui/portal@2.4.0": "patches/@tamagui+portal@2.4.0.patch",
     "@tamagui/native@2.4.0": "patches/@tamagui+native@2.4.0.patch",
     "@tamagui/web@2.4.0": "patches/@tamagui+web@2.4.0.patch",
-    "@expo/cli@55.0.32": "patches/@expo+cli@55.0.32.patch",
+    "react-native-screens@4.24.0": "patches/react-native-screens@4.24.0.patch",
     "@expo/ui@55.0.17": "patches/@expo+ui@55.0.17.patch",
     "@tamagui/toast@2.4.0": "patches/@tamagui+toast@2.4.0.patch",
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch",
     "react-native@0.83.9": "patches/react-native@0.83.9.patch",
-    "@tamagui/dialog@2.4.0": "patches/@tamagui+dialog@2.4.0.patch",
+    "@expo/cli@55.0.32": "patches/@expo+cli@55.0.32.patch",
   },
   "overrides": {
     "expo-modules-autolinking": "=55.0.24",
@@ -1824,7 +1826,7 @@
 
     "react-native-ios-context-menu": ["react-native-ios-context-menu@3.2.1", "", { "dependencies": { "@dominicstop/ts-event-emitter": "^1.1.0" }, "peerDependencies": { "react": "*", "react-native": "*", "react-native-ios-utilities": "*" } }, "sha512-OBQbb3I/VUx2wQgz4cqN614kt3nJ+qx5wxEdtGN1Aj4nYYL1orp7VLFkV6axof6DgOyv0YD6af2RUTok6a2xDQ=="],
 
-    "react-native-ios-utilities": ["react-native-ios-utilities@github:dominicstop/react-native-ios-utilities#e520d1a", { "peerDependencies": { "react": "*", "react-native": "*" } }, "dominicstop-react-native-ios-utilities-e520d1a"],
+    "react-native-ios-utilities": ["react-native-ios-utilities@5.2.0", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-RTw1Gk8rQhBL43+U80I+Nu8T7mLTNkj5RaG8vTs3ETEDqphS3L0Mrzk79RX0Jmm64HMad70GXHctXFlW1n0V8w=="],
 
     "react-native-is-edge-to-edge": ["react-native-is-edge-to-edge@1.3.1", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-NIXU/iT5+ORyCc7p0z2nnlkouYKX425vuU1OEm6bMMtWWR9yvb+Xg5AZmImTKoF9abxCPqrKC3rOZsKzUYgYZA=="],
 
@@ -1882,7 +1884,7 @@
 
     "rimraf": ["rimraf@3.0.2", "", { "dependencies": { "glob": "^7.1.3" }, "bin": { "rimraf": "bin.js" } }, "sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA=="],
 
-    "rn-ui-kit": ["rn-ui-kit@github:luoluoqixi/rn-ui-kit#e609969", { "peerDependencies": { "@expo/ui": "=55.0.17", "@lodev09/react-native-true-sheet": "=3.11.6", "@react-native-picker/picker": "^2.11.4", "@react-navigation/elements": "^2.9.26", "@react-navigation/native": "^7.3.4", "@react-navigation/native-stack": "^7.17.6", "@react-navigation/stack": "^7.10.6", "@shopify/flash-list": "^2.3.2", "@tamagui/adapt": "=2.4.0", "@tamagui/animate-presence": "=2.4.0", "@tamagui/compose-refs": "=2.4.0", "@tamagui/config": "=2.4.0", "@tamagui/constants": "=2.4.0", "@tamagui/core": "=2.4.0", "@tamagui/create-context": "=2.4.0", "@tamagui/dialog": "=2.4.0", "@tamagui/dismissable": "=2.4.0", "@tamagui/floating": "=2.4.0", "@tamagui/focus-scope": "=2.4.0", "@tamagui/get-token": "=2.4.0", "@tamagui/helpers": "=2.4.0", "@tamagui/lucide-icons-2": "=2.4.0", "@tamagui/native": "=2.4.0", "@tamagui/popover": "=2.4.0", "@tamagui/portal": "=2.4.0", "@tamagui/remove-scroll": "=2.4.0", "@tamagui/scroll-view": "=2.4.0", "@tamagui/select": "=2.4.0", "@tamagui/sheet": "=2.4.0", "@tamagui/slider": "=2.4.0", "@tamagui/stacks": "=2.4.0", "@tamagui/toast": "=2.4.0", "@tamagui/use-constant": "=2.4.0", "@tamagui/use-controllable-state": "=2.4.0", "@tamagui/use-did-finish-ssr": "=2.4.0", "@tamagui/use-direction": "=2.4.0", "@tamagui/z-index-stack": "=2.4.0", "burnt": "^0.13.0", "expo": "=55.0.26", "expo-haptics": "=55.0.14", "expo-modules-core": "=55.0.25", "expo-status-bar": "=55.0.6", "react": "=19.2.5", "react-dom": "=19.2.5", "react-native": "=0.83.9", "react-native-gesture-handler": "=2.31.1", "react-native-reanimated": "=4.3.0", "react-native-safe-area-context": "=5.7.0", "react-native-screens": "=4.24.0", "react-native-svg": "^15.15.5", "react-native-teleport": "^1.1.7", "react-native-web": "=0.21.2", "react-native-worklets": "=0.8.1", "tamagui": "=2.4.0", "zeego": "=3.0.6" }, "bin": { "rn-ui-sync-patches": "./scripts/sync-patches.mjs" } }, "luoluoqixi-rn-ui-kit-e609969"],
+    "rn-ui-kit": ["rn-ui-kit@github:luoluoqixi/rn-ui-kit#c25bcc6", { "peerDependencies": { "@expo/ui": "=55.0.17", "@lodev09/react-native-true-sheet": "=3.11.6", "@react-native-picker/picker": "^2.11.4", "@react-navigation/elements": "^2.9.26", "@react-navigation/native": "^7.3.4", "@react-navigation/native-stack": "^7.17.6", "@react-navigation/stack": "^7.10.6", "@shopify/flash-list": "^2.3.2", "@tamagui/adapt": "=2.4.0", "@tamagui/animate-presence": "=2.4.0", "@tamagui/compose-refs": "=2.4.0", "@tamagui/config": "=2.4.0", "@tamagui/constants": "=2.4.0", "@tamagui/core": "=2.4.0", "@tamagui/create-context": "=2.4.0", "@tamagui/dialog": "=2.4.0", "@tamagui/dismissable": "=2.4.0", "@tamagui/floating": "=2.4.0", "@tamagui/focus-scope": "=2.4.0", "@tamagui/get-token": "=2.4.0", "@tamagui/helpers": "=2.4.0", "@tamagui/lucide-icons-2": "=2.4.0", "@tamagui/native": "=2.4.0", "@tamagui/popover": "=2.4.0", "@tamagui/portal": "=2.4.0", "@tamagui/remove-scroll": "=2.4.0", "@tamagui/scroll-view": "=2.4.0", "@tamagui/select": "=2.4.0", "@tamagui/sheet": "=2.4.0", "@tamagui/slider": "=2.4.0", "@tamagui/stacks": "=2.4.0", "@tamagui/toast": "=2.4.0", "@tamagui/use-constant": "=2.4.0", "@tamagui/use-controllable-state": "=2.4.0", "@tamagui/use-did-finish-ssr": "=2.4.0", "@tamagui/use-direction": "=2.4.0", "@tamagui/z-index-stack": "=2.4.0", "burnt": "^0.13.0", "expo": "=55.0.26", "expo-haptics": "=55.0.14", "expo-modules-core": "=55.0.25", "expo-status-bar": "=55.0.6", "react": "=19.2.5", "react-dom": "=19.2.5", "react-native": "=0.83.9", "react-native-gesture-handler": "=2.31.1", "react-native-reanimated": "=4.3.0", "react-native-safe-area-context": "=5.7.0", "react-native-screens": "=4.24.0", "react-native-svg": "^15.15.5", "react-native-teleport": "^1.1.7", "react-native-web": "=0.21.2", "react-native-worklets": "=0.8.1", "tamagui": "=2.4.0", "zeego": "=3.0.6" }, "bin": { "rn-ui-sync-patches": "./scripts/sync-patches.mjs" } }, "luoluoqixi-rn-ui-kit-c25bcc6", "sha512-UGRreD/y6fdMyWlBH137SYHKu9qFynZRVK572IiUc2lQFdSh9veRwas5xx/QZUe0GIeGvLZrE/LpWjNpaaMN8A=="],
 
     "rolldown": ["rolldown@1.0.0-beta.45", "", { "dependencies": { "@oxc-project/types": "=0.95.0", "@rolldown/pluginutils": "1.0.0-beta.45" }, "optionalDependencies": { "@rolldown/binding-android-arm64": "1.0.0-beta.45", "@rolldown/binding-darwin-arm64": "1.0.0-beta.45", "@rolldown/binding-darwin-x64": "1.0.0-beta.45", "@rolldown/binding-freebsd-x64": "1.0.0-beta.45", "@rolldown/binding-linux-arm-gnueabihf": "1.0.0-beta.45", "@rolldown/binding-linux-arm64-gnu": "1.0.0-beta.45", "@rolldown/binding-linux-arm64-musl": "1.0.0-beta.45", "@rolldown/binding-linux-x64-gnu": "1.0.0-beta.45", "@rolldown/binding-linux-x64-musl": "1.0.0-beta.45", "@rolldown/binding-openharmony-arm64": "1.0.0-beta.45", "@rolldown/binding-wasm32-wasi": "1.0.0-beta.45", "@rolldown/binding-win32-arm64-msvc": "1.0.0-beta.45", "@rolldown/binding-win32-ia32-msvc": "1.0.0-beta.45", "@rolldown/binding-win32-x64-msvc": "1.0.0-beta.45" }, "bin": { "rolldown": "bin/cli.mjs" } }, "sha512-iMmuD72XXLf26Tqrv1cryNYLX6NNPLhZ3AmNkSf8+xda0H+yijjGJ+wVT9UdBUHOpKzq9RjKtQKRCWoEKQQBZQ=="],
 
