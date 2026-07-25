@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { NativeList, NativeListItem, NativeListSection, triggerNativeHaptics } from "rn-ui-kit";
 
+import { openExternalUrl } from "@/api/commands/utils";
 import { getAppHomeTitle, getVersion } from "@/config";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
@@ -9,6 +10,7 @@ import type { SettingsPageProps } from "../settings_config";
 
 const DEVELOPER_OPTIONS_TAP_COUNT = 10;
 const DEVELOPER_OPTIONS_ENABLED_TOAST_COOLDOWN_MS = 10_000;
+const GITHUB_REPOSITORY_URL = "https://github.com/luoluoqixi/lonanote";
 
 export function AboutSettingsPage({
   tracksNavigationBarScrollEdge = false,
@@ -73,6 +75,20 @@ export function AboutSettingsPage({
       <NativeListSection title="应用信息">
         <NativeListItem title="名称" value={getAppHomeTitle()} />
         <NativeListItem onPress={handleVersionPress} title="版本" value={getVersion()} />
+      </NativeListSection>
+
+      <NativeListSection title="相关链接">
+        <NativeListItem
+          onPress={() => {
+            void openExternalUrl(GITHUB_REPOSITORY_URL).catch((error) => {
+              console.error("[about] open GitHub failed", error);
+              toast.error("无法打开 GitHub");
+            });
+          }}
+          title="GitHub"
+          value={GITHUB_REPOSITORY_URL}
+          chevron
+        />
       </NativeListSection>
     </NativeList>
   );

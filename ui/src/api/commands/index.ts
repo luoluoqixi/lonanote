@@ -4,6 +4,7 @@ export * from "./fs";
 export * from "./path";
 export * from "./settings";
 export * from "./test";
+export * from "./utils";
 export * from "./win";
 export * from "./workspace";
 export * from "./system";
