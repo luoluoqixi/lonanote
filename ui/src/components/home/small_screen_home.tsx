@@ -1,7 +1,7 @@
 import { type Href, useRouter } from "expo-router";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Text, useTheme } from "rn-ui-kit";
+import { Button, ScrollView, Text, useTheme } from "rn-ui-kit";
 
 import { os } from "@/api/common";
 import { getAppHomeTitle } from "@/config";
@@ -26,6 +26,7 @@ export function SmallScreenHome() {
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior={usesNativeHomeHeader ? "automatic" : "never"}
         style={styles.scrollView}
+        tracksNavigationBarScrollEdge
       >
         <View style={styles.intro}>
           {!usesNativeHomeHeader ? (

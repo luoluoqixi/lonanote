@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { useWindowDimensions } from "react-native";
 import {
+  getNativeStackScrollEdgeHeaderOptions,
   nativeStackStatusBarOptions,
   withNativeBackButton,
   withNativeStackGestureOptions,
@@ -52,16 +53,28 @@ export default function UILayout() {
           const stackBackgroundColor = appBackgroundColors.screen;
           const headerBackgroundColor = appBackgroundColors.header;
           const headerTitleColor = theme.gray12.val;
+          const nativeStackScrollEdgeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
+            headerBackgroundColor,
+            screenBackgroundColor: stackBackgroundColor,
+          });
+          const scrollEdgeHeaderOptions = {
+            headerBackButtonDisplayMode:
+              nativeStackScrollEdgeHeaderOptions.headerBackButtonDisplayMode,
+            headerBackButtonMenuEnabled:
+              nativeStackScrollEdgeHeaderOptions.headerBackButtonMenuEnabled,
+            headerBlurEffect: nativeStackScrollEdgeHeaderOptions.headerBlurEffect,
+            headerLargeStyle: nativeStackScrollEdgeHeaderOptions.headerLargeStyle,
+            headerShadowVisible: nativeStackScrollEdgeHeaderOptions.headerShadowVisible,
+            headerStyle: nativeStackScrollEdgeHeaderOptions.headerStyle,
+            headerTransparent: nativeStackScrollEdgeHeaderOptions.headerTransparent,
+          };
           const baseScreenOptions = {
             ...nativeStackStatusBarOptions(colorScheme),
             contentStyle: {
               backgroundColor: stackBackgroundColor,
             },
+            ...scrollEdgeHeaderOptions,
             headerTintColor: theme.color10.val,
-            headerShadowVisible: false,
-            headerStyle: {
-              backgroundColor: stackBackgroundColor,
-            },
             headerTitleStyle: {
               color: headerTitleColor,
             },
@@ -69,15 +82,7 @@ export default function UILayout() {
 
           if (route.name === "index" && os() === "ios") {
             return withNativeStackGestureOptions({
-              contentStyle: baseScreenOptions.contentStyle,
-              headerTintColor: theme.color10.val,
-              headerShadowVisible: false,
-              headerLargeStyle: {
-                backgroundColor: stackBackgroundColor,
-              },
-              headerStyle: {
-                backgroundColor: stackBackgroundColor,
-              },
+              ...baseScreenOptions,
               headerShown: true,
               headerLargeTitle: true,
               headerLargeTitleStyle: {
@@ -87,7 +92,6 @@ export default function UILayout() {
               headerTitleStyle: {
                 color: headerTitleColor,
               },
-              headerTransparent: true,
               title: getAppHomeTitle(),
             });
           }
@@ -96,18 +100,6 @@ export default function UILayout() {
             const settingsTitle = getSettingsMobileHeaderTitle(route.name);
             const settingsScreenOptions = withNativeStackGestureOptions({
               ...baseScreenOptions,
-              ...(os() === "ios"
-                ? {
-                    headerLargeStyle: {
-                      backgroundColor: headerBackgroundColor,
-                    },
-                    headerLargeTitleShadowVisible: false,
-                    headerShadowVisible: false,
-                    headerStyle: {
-                      backgroundColor: headerBackgroundColor,
-                    },
-                  }
-                : {}),
               headerShown: settingsTitle != null,
               title: settingsTitle ?? "设置",
             });

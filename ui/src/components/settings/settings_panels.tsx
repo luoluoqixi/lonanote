@@ -179,12 +179,22 @@ export function SettingsSyncState({ error, isLoading }: PanelHeaderProps) {
   );
 }
 
-export function GlobalSettingsPanel() {
+type SettingsPanelProps = {
+  tracksNavigationBarScrollEdge?: boolean;
+};
+
+export function GlobalSettingsPanel({
+  tracksNavigationBarScrollEdge = false,
+}: SettingsPanelProps = {}) {
   const { settings, updateAndSave } = useGlobalSettings();
 
   return (
     <View style={styles.inlineSectionList}>
-      <NativeList>
+      <NativeList
+        automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
+        contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+        tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
+      >
         <NativeListSection title="应用行为">
           <NativeListSwitchItem
             switchProps={{
@@ -356,7 +366,9 @@ export function GlobalSettingsPanel() {
   );
 }
 
-export function AppearanceSettingsPanel() {
+export function AppearanceSettingsPanel({
+  tracksNavigationBarScrollEdge = false,
+}: SettingsPanelProps = {}) {
   const { preferredColorScheme, setPreferredColorSchemeAndSave } = useColorSchemeSettings();
   const { preferences, updateAndSave } = useUiPreferences();
 
@@ -373,7 +385,11 @@ export function AppearanceSettingsPanel() {
 
   return (
     <View style={styles.inlineSectionList}>
-      <NativeList>
+      <NativeList
+        automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
+        contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+        tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
+      >
         <NativeListSection title="主题">
           <NativeListSelectItem
             selectProps={{

@@ -1,10 +1,17 @@
 import { type Href, useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { type Edge, SafeAreaView } from "react-native-safe-area-context";
-import { NativeList, NativeListNavigationItem, NativeListSection, Text } from "rn-ui-kit";
+import {
+  NativeList,
+  NativeListNavigationItem,
+  NativeListSection,
+  ScrollView,
+  Text,
+  isIos26Plus,
+} from "rn-ui-kit";
 
-import { isDesktop, isWeb } from "@/api/common";
+import { isDesktop, isWeb, os } from "@/api/common";
 import { useColorSchemeSettings, useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import { TitleBar } from "../titlebar";
@@ -15,11 +22,15 @@ const SCREEN_MAX_WIDTH = 960;
 type SettingsRouteKey = "global" | "appearance";
 
 type SettingsRouteDefinition = {
-  Component: () => ReactNode;
+  Component: (props: SettingsPanelProps) => ReactNode;
   description?: string;
   href: Href;
   key: SettingsRouteKey;
   label: string;
+};
+
+type SettingsPanelProps = {
+  tracksNavigationBarScrollEdge?: boolean;
 };
 
 const SETTINGS_ROUTE_DEFINITIONS: SettingsRouteDefinition[] = [
@@ -71,7 +82,7 @@ type ScreenLayoutProps = {
 function SettingsScreenLayout({ children, error, isLoading, title }: ScreenLayoutProps) {
   const desktop = isDesktop();
   const usesNativeHeader = !isWeb();
-  const usesNativeSettingsList = Platform.OS === "ios";
+  const usesNativeSettingsList = os() === "ios";
   const showMeta = error != null || isLoading;
   const safeAreaEdges: Edge[] = usesNativeSettingsList
     ? ["left", "right", "bottom"]
@@ -111,6 +122,7 @@ function SettingsScreenLayout({ children, error, isLoading, title }: ScreenLayou
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator
                 style={styles.content}
+                tracksNavigationBarScrollEdge={usesNativeHeader}
               >
                 {children}
               </ScrollView>
@@ -151,10 +163,16 @@ function useSettingsSectionSyncState(sectionKey: SettingsRouteKey): SettingsSync
 export function SettingsHomeScreen() {
   const router = useRouter();
   const syncState = useSettingsHomeSyncState();
+  const usesNativeIosHeader = os() === "ios";
+  const usesPreIos26ScrollEdgeHeader = usesNativeIosHeader && !isIos26Plus();
 
   return (
     <SettingsScreenLayout error={syncState.error} isLoading={syncState.isLoading} title="设置">
-      <NativeList>
+      <NativeList
+        automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
+        contentInsetAdjustmentBehavior={usesPreIos26ScrollEdgeHeader ? "automatic" : undefined}
+        tracksNavigationBarScrollEdge={usesPreIos26ScrollEdgeHeader}
+      >
         <NativeListSection title="通用">
           {SETTINGS_ROUTE_DEFINITIONS.map((d) => (
             <NativeListNavigationItem
@@ -174,7 +192,8 @@ function SettingsSectionScreen({ sectionKey }: { sectionKey: SettingsRouteKey })
   const definition = getSettingsRouteDefinition(sectionKey);
   const syncState = useSettingsSectionSyncState(sectionKey);
   const SectionComponent = definition.Component;
-  const usesNativeSettingsList = Platform.OS === "ios";
+  const usesNativeSettingsList = os() === "ios";
+  const usesPreIos26ScrollEdgeHeader = usesNativeSettingsList && !isIos26Plus();
 
   return (
     <SettingsScreenLayout
@@ -185,7 +204,7 @@ function SettingsSectionScreen({ sectionKey }: { sectionKey: SettingsRouteKey })
       <View style={styles.panelHost}>
         {usesNativeSettingsList ? (
           <View style={styles.panelScrollView}>
-            <SectionComponent />
+            <SectionComponent tracksNavigationBarScrollEdge={usesPreIos26ScrollEdgeHeader} />
           </View>
         ) : (
           <ScrollView
