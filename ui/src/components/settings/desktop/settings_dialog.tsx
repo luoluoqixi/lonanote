@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { Dialog, Tabs } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common";
+import { useUiPreferences } from "@/hooks/settings";
 
 import { type SettingsPageId, getSettingsPage, settingsPages } from "../settings_config";
 
@@ -20,7 +21,16 @@ export function DesktopSettingsDialog({
   isOpen,
   onOpenChange,
 }: DesktopSettingsDialogProps) {
-  const desktopPages = useMemo(() => settingsPages.filter((page) => page.desktopTab), []);
+  const { isLoaded, preferences } = useUiPreferences();
+  const desktopPages = useMemo(
+    () =>
+      settingsPages.filter(
+        (page) =>
+          page.desktopTab &&
+          (!page.requiresDeveloperOptions || preferences.developer.optionsEnabled),
+      ),
+    [preferences.developer.optionsEnabled],
+  );
   const [selectedPageId, setSelectedPageId] = useState<SettingsPageId>(initialPageId);
 
   useEffect(() => {
@@ -28,6 +38,12 @@ export function DesktopSettingsDialog({
       setSelectedPageId(initialPageId);
     }
   }, [initialPageId]);
+
+  useEffect(() => {
+    if (isLoaded && selectedPageId === "developer" && !preferences.developer.optionsEnabled) {
+      setSelectedPageId("global");
+    }
+  }, [isLoaded, preferences.developer.optionsEnabled, selectedPageId]);
 
   return (
     <Dialog

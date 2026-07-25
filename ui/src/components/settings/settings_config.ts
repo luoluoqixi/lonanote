@@ -4,11 +4,18 @@ import type { AppLayoutMode } from "@/stores/ui";
 
 import { AboutSettingsPage } from "./pages/about_settings_page";
 import { AppearanceSettingsPage } from "./pages/appearance_settings_page";
+import { DeveloperSettingsPage } from "./pages/developer_settings_page";
 import { GlobalSettingsPage } from "./pages/global_settings_page";
 import { LanguageSettingsPage } from "./pages/language_settings_page";
 import { WindowSettingsPage } from "./pages/window_settings_page";
 
-export type SettingsPageId = "about" | "appearance" | "global" | "language" | "window";
+export type SettingsPageId =
+  | "about"
+  | "appearance"
+  | "developer"
+  | "global"
+  | "language"
+  | "window";
 export type MobileSettingsSectionId = "general" | "more";
 
 export type SettingsPageProps = {
@@ -21,6 +28,7 @@ export type SettingsPageConfig = {
   desktopTab: boolean;
   id: SettingsPageId;
   mobileSection?: MobileSettingsSectionId;
+  requiresDeveloperOptions?: boolean;
   title: string;
 };
 
@@ -57,8 +65,16 @@ export const settingsPages: SettingsPageConfig[] = [
     Component: LanguageSettingsPage,
     desktopTab: true,
     id: "language",
+    mobileSection: "general",
+    title: "语言设置",
+  },
+  {
+    Component: DeveloperSettingsPage,
+    desktopTab: true,
+    id: "developer",
     mobileSection: "more",
-    title: "语言",
+    requiresDeveloperOptions: true,
+    title: "开发者选项",
   },
   {
     Component: AboutSettingsPage,

@@ -8,8 +8,9 @@ import {
   type SelectOption,
 } from "rn-ui-kit";
 
+import { useLayoutMode } from "@/hooks/layout";
 import { useColorSchemeSettings, useUiPreferences } from "@/hooks/settings";
-import type { AccentColorSetting, ColorSchemeSetting } from "@/stores/ui";
+import type { AccentColorSetting, AppLayoutMode, ColorSchemeSetting } from "@/stores/ui";
 import { accentThemeNames, getAccentThemePreset } from "@/theme/accent_themes";
 
 import type { SettingsPageProps } from "../settings_config";
@@ -21,9 +22,11 @@ function runSettingsAction(scope: string, action: Promise<unknown>) {
 }
 
 export function AppearanceSettingsPage({
+  onLayoutModeChange,
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
   const colorSchemeSettings = useColorSchemeSettings();
+  const { layoutMode, setLayoutMode } = useLayoutMode();
   const uiPreferences = useUiPreferences();
   const error = colorSchemeSettings.error ?? uiPreferences.error;
   const isLoading = colorSchemeSettings.isLoading || uiPreferences.isLoading;
@@ -36,6 +39,10 @@ export function AppearanceSettingsPage({
     { label: "浅色", value: "light" },
     { label: "深色", value: "dark" },
     { label: "跟随系统", value: "system" },
+  ];
+  const layoutModeOptions: SelectOption[] = [
+    { label: "桌面", value: "desktop" },
+    { label: "移动", value: "mobile" },
   ];
 
   return (
@@ -110,6 +117,29 @@ export function AppearanceSettingsPage({
             },
           }}
           title="背景跟随主题"
+        />
+      </NativeListSection>
+
+      <NativeListSection title="界面布局">
+        <NativeListSelectItem
+          selectProps={{
+            "aria-label": "界面布局",
+            onValueChange: (nextValue: string | null) => {
+              if (nextValue !== "desktop" && nextValue !== "mobile") return;
+
+              const nextLayoutMode = nextValue as AppLayoutMode;
+              runSettingsAction(
+                "set layout mode",
+                setLayoutMode(nextLayoutMode).then(() => {
+                  onLayoutModeChange?.(nextLayoutMode);
+                }),
+              );
+            },
+            options: layoutModeOptions,
+            placeholder: "选择界面布局",
+            value: layoutMode,
+          }}
+          title="布局模式"
         />
       </NativeListSection>
     </NativeList>

@@ -1,12 +1,51 @@
+import { useRef } from "react";
 import { NativeList, NativeListItem, NativeListSection } from "rn-ui-kit";
 
 import { getAppHomeTitle, getVersion } from "@/config";
+import { useUiPreferences } from "@/hooks/settings";
+import { useToast } from "@/hooks/ui";
 
 import type { SettingsPageProps } from "../settings_config";
+
+const DEVELOPER_OPTIONS_TAP_COUNT = 10;
 
 export function AboutSettingsPage({
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
+  const versionPressCountRef = useRef(0);
+  const unlockPendingRef = useRef(false);
+  const { isLoaded, preferences, updateAndSave } = useUiPreferences();
+  const { toast } = useToast();
+
+  const handleVersionPress = () => {
+    if (!isLoaded || preferences.developer.optionsEnabled || unlockPendingRef.current) {
+      return;
+    }
+
+    versionPressCountRef.current += 1;
+    if (versionPressCountRef.current < DEVELOPER_OPTIONS_TAP_COUNT) {
+      return;
+    }
+
+    unlockPendingRef.current = true;
+    void updateAndSave((currentPreferences) => ({
+      ...currentPreferences,
+      developer: {
+        ...currentPreferences.developer,
+        optionsEnabled: true,
+      },
+    }))
+      .then(() => {
+        toast.success("已开启开发者选项");
+      })
+      .catch((error) => {
+        versionPressCountRef.current = 0;
+        unlockPendingRef.current = false;
+        console.error("[settings] enable developer options failed", error);
+        toast.error("开发者选项开启失败");
+      });
+  };
+
   return (
     <NativeList
       automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
@@ -16,7 +55,7 @@ export function AboutSettingsPage({
     >
       <NativeListSection title="应用信息">
         <NativeListItem title="名称" value={getAppHomeTitle()} />
-        <NativeListItem title="版本" value={getVersion()} />
+        <NativeListItem onPress={handleVersionPress} title="版本" value={getVersion()} />
       </NativeListSection>
     </NativeList>
   );

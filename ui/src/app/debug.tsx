@@ -1,11 +1,9 @@
 import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
-import { getAppHomeTitle } from "@/config";
-
 export default function DebugScreen() {
   return (
     <RnUiKitDebugPanel
-      backButtonLabel={getAppHomeTitle()}
+      backButtonLabel="开发者选项"
       navigationMode="host"
       panelSheetProps={{
         snapPoints: ["95%"],

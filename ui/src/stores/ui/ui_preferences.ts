@@ -28,6 +28,9 @@ export interface UiPreferences {
     themeMode: ColorSchemeSetting;
     zoomFactor: number;
   };
+  developer: {
+    optionsEnabled: boolean;
+  };
   window: {
     lastWindowState: DesktopWindowState | null;
     restoreWindowState: boolean;
@@ -38,6 +41,7 @@ const UI_ACCENT_COLOR_KEY = "ui.appearance.accentColor";
 const UI_BACKGROUND_FOLLOWS_THEME_KEY = "ui.appearance.backgroundFollowsTheme";
 const UI_THEME_MODE_KEY = "ui.appearance.themeMode";
 const UI_ZOOM_FACTOR_KEY = "ui.appearance.zoomFactor";
+const UI_DEVELOPER_OPTIONS_ENABLED_KEY = "ui.developer.optionsEnabled";
 const UI_LAYOUT_MODE_KEY = "ui.shell.layoutMode";
 const UI_WINDOW_LAST_STATE_KEY = "ui.window.lastState";
 const UI_RESTORE_WINDOW_STATE_KEY = "ui.window.restoreWindowState";
@@ -52,6 +56,9 @@ export function createDefaultUiPreferences(): UiPreferences {
       backgroundFollowsTheme: false,
       themeMode: "system",
       zoomFactor: 1,
+    },
+    developer: {
+      optionsEnabled: false,
     },
     window: {
       lastWindowState: null,
@@ -133,6 +140,9 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
       themeMode: normalizeThemeMode(preferences.appearance.themeMode),
       zoomFactor: normalizeZoomFactor(preferences.appearance.zoomFactor),
     },
+    developer: {
+      optionsEnabled: Boolean(preferences.developer?.optionsEnabled),
+    },
     window: {
       lastWindowState: normalizeDesktopWindowState(preferences.window.lastWindowState),
       restoreWindowState: Boolean(preferences.window.restoreWindowState),
@@ -146,6 +156,7 @@ function readUiPreferencesFromStore(): UiPreferences {
   const backgroundFollowsTheme = store.commonGetSync<unknown>(UI_BACKGROUND_FOLLOWS_THEME_KEY);
   const themeMode = store.commonGetSync<unknown>(UI_THEME_MODE_KEY);
   const zoomFactor = store.commonGetSync<unknown>(UI_ZOOM_FACTOR_KEY);
+  const developerOptionsEnabled = store.commonGetSync<unknown>(UI_DEVELOPER_OPTIONS_ENABLED_KEY);
   const restoreWindowState = store.commonGetSync<unknown>(UI_RESTORE_WINDOW_STATE_KEY);
   const lastWindowState = store.commonGetSync<unknown>(UI_WINDOW_LAST_STATE_KEY);
   const layoutMode = store.commonGetSync<unknown>(UI_LAYOUT_MODE_KEY);
@@ -162,6 +173,12 @@ function readUiPreferencesFromStore(): UiPreferences {
           : defaults.appearance.backgroundFollowsTheme,
       themeMode: normalizeThemeMode(themeMode ?? defaults.appearance.themeMode),
       zoomFactor: normalizeZoomFactor(zoomFactor ?? defaults.appearance.zoomFactor),
+    },
+    developer: {
+      optionsEnabled:
+        typeof developerOptionsEnabled === "boolean"
+          ? developerOptionsEnabled
+          : defaults.developer.optionsEnabled,
     },
     window: {
       lastWindowState: normalizeDesktopWindowState(lastWindowState),
@@ -184,6 +201,10 @@ function applyUiPreferencesToStore(preferences: UiPreferences): UiPreferences {
   );
   store.commonSetSync(UI_THEME_MODE_KEY, normalizedPreferences.appearance.themeMode);
   store.commonSetSync(UI_ZOOM_FACTOR_KEY, normalizedPreferences.appearance.zoomFactor);
+  store.commonSetSync(
+    UI_DEVELOPER_OPTIONS_ENABLED_KEY,
+    normalizedPreferences.developer.optionsEnabled,
+  );
   store.commonSetSync(UI_RESTORE_WINDOW_STATE_KEY, normalizedPreferences.window.restoreWindowState);
   store.commonSetSync(UI_WINDOW_LAST_STATE_KEY, normalizedPreferences.window.lastWindowState);
 

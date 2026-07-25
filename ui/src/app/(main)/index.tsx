@@ -20,9 +20,6 @@ export default function HomeScreen() {
         </Text>
       </View>
       <Button onPress={() => router.push("/settings" as Href)}>设置</Button>
-      <Button onPress={() => router.push("/debug" as Href)} variant="outlined">
-        UI 调试
-      </Button>
     </ScrollView>
   );
 }

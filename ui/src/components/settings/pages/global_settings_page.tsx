@@ -1,25 +1,15 @@
-﻿/* eslint-disable quote-props */
-import {
+﻿import {
   NativeList,
   NativeListItem,
   NativeListNavigationItem,
   NativeListSection,
-  NativeListSelectItem,
   NativeListSwitchItem,
-  type SelectOption,
 } from "rn-ui-kit";
 
 import type { GlobalSettings } from "@/api/commands/settings";
-import { useLayoutMode } from "@/hooks/layout";
 import { useGlobalSettings } from "@/hooks/settings";
-import type { AppLayoutMode } from "@/stores/ui";
 
 import type { SettingsPageProps } from "../settings_config";
-
-const layoutModeOptions: SelectOption[] = [
-  { label: "桌面", value: "desktop" },
-  { label: "移动", value: "mobile" },
-];
 
 function runSettingsAction(scope: string, action: Promise<unknown>) {
   void action.catch((error) => {
@@ -39,11 +29,9 @@ function updateSettingsSection<K extends keyof GlobalSettings>(
 }
 
 export function GlobalSettingsPage({
-  onLayoutModeChange,
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
   const { error, isLoading, settings, updateAndSave } = useGlobalSettings();
-  const { layoutMode, setLayoutMode } = useLayoutMode();
 
   return (
     <NativeList
@@ -193,29 +181,6 @@ export function GlobalSettingsPage({
           }}
           title="自动保存间隔"
           value={`${settings.editorDefaults.autoSaveIntervalSeconds.toFixed(1)} 秒`}
-        />
-      </NativeListSection>
-
-      <NativeListSection title="界面布局">
-        <NativeListSelectItem
-          selectProps={{
-            "aria-label": "界面布局",
-            onValueChange: (nextValue: string | null) => {
-              if (nextValue !== "desktop" && nextValue !== "mobile") return;
-
-              const nextLayoutMode = nextValue as AppLayoutMode;
-              runSettingsAction(
-                "set layout mode",
-                setLayoutMode(nextLayoutMode).then(() => {
-                  onLayoutModeChange?.(nextLayoutMode);
-                }),
-              );
-            },
-            options: layoutModeOptions,
-            placeholder: "选择界面布局",
-            value: layoutMode,
-          }}
-          title="布局模式"
         />
       </NativeListSection>
     </NativeList>
