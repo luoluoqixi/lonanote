@@ -104,21 +104,10 @@ export default function UILayout() {
               title: settingsTitle ?? "设置",
             });
 
-            return withNativeBackButton(
-              {
-                ...settingsScreenOptions,
-                ...(os() === "ios"
-                  ? {
-                      fullScreenGestureEnabled: false,
-                      fullScreenGestureShadowEnabled: false,
-                    }
-                  : {}),
-              },
-              {
-                label: getAppHomeTitle(),
-                onPress: () => navigation.goBack(),
-              },
-            );
+            return withNativeBackButton(settingsScreenOptions, {
+              label: getAppHomeTitle(),
+              onPress: () => navigation.goBack(),
+            });
           }
 
           return withNativeStackGestureOptions({
