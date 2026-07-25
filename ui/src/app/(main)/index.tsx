@@ -10,11 +10,9 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       style={styles.screen}
+      iosEmptyViewportScrollEnabled
     >
       <View style={styles.header}>
-        <Text fontSize="$10" fontWeight="600">
-          露娜笔记
-        </Text>
         <Text color="$color10" fontSize="$4">
           选择一个入口继续。
         </Text>

@@ -73,8 +73,8 @@ export function AboutSettingsPage({
       tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
     >
       <NativeListSection title="应用信息">
-        <NativeListItem title="名称" value={getAppHomeTitle()} />
-        <NativeListItem onPress={handleVersionPress} title="版本" value={getVersion()} />
+        <NativeListItem title="名称" value={getAppHomeTitle()} onPress={() => {}} />
+        <NativeListItem onPress={handleVersionPress} title="版本号" value={`v${getVersion()}`} />
       </NativeListSection>
 
       <NativeListSection title="相关链接">
@@ -87,6 +87,7 @@ export function AboutSettingsPage({
           }}
           title="GitHub"
           value={GITHUB_REPOSITORY_URL}
+          valueFontSize={14}
           chevron
         />
       </NativeListSection>
