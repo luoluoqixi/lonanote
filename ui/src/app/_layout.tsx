@@ -2,14 +2,15 @@
 import "../initialize";
 
 import { Stack } from "expo-router";
+import { useEffect } from "react";
 
-import { isWeb } from "@/api/common";
+import { isWeb, os } from "@/api/common";
 import {
   AppStatusBar,
   nativeStackStatusBarOptions,
   withNativeStackGestureOptions,
 } from "rn-ui-kit";
-import { getAppHomeTitle } from "@/config";
+import { getAppHomeTitle, getAppName, getVersion, initConfig } from "@/config";
 import { AppProvider } from "@/providers/app_provider";
 import { useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
@@ -20,6 +21,16 @@ applyThemeBootstrap();
 export default function RootLayout() {
   const colorScheme = useResolvedeColorScheme();
   const rootBackgroundColor = getAppWindowBackgroundColor(colorScheme);
+
+  useEffect(() => {
+    const initialize = async () => {
+      await initConfig();
+      console.log(`inited, ${getAppName()} - ${getVersion()}, ${os()}.`);
+    };
+
+    void initialize();
+  }, []);
+
   return (
     <AppProvider>
       <AppStatusBar colorScheme={colorScheme} />
@@ -46,7 +57,7 @@ export default function RootLayout() {
           });
         }}
       >
-        <Stack.Screen name="(home)" options={{ title: getAppHomeTitle() }} />
+        <Stack.Screen name="(main)" options={{ title: getAppHomeTitle() }} />
         <Stack.Screen name="debug" options={{ headerShown: false }} />
       </Stack>
     </AppProvider>

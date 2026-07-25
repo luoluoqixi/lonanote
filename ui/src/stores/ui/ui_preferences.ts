@@ -1,4 +1,4 @@
-﻿import { store } from "@/api/common";
+﻿import { isDesktop, store } from "@/api/common";
 import {
   type AccentThemeName,
   defaultAccentThemeName,
@@ -7,6 +7,7 @@ import {
 
 export type ColorSchemeSetting = "light" | "dark" | "system";
 export type AccentColorSetting = AccentThemeName;
+export type AppLayoutMode = "wide" | "compact";
 
 export interface DesktopWindowState {
   height: number;
@@ -18,6 +19,9 @@ export interface DesktopWindowState {
 }
 
 export interface UiPreferences {
+  shell: {
+    layoutMode: AppLayoutMode;
+  };
   appearance: {
     accentColor: AccentColorSetting;
     backgroundFollowsTheme: boolean;
@@ -34,11 +38,15 @@ const UI_ACCENT_COLOR_KEY = "ui.appearance.accentColor";
 const UI_BACKGROUND_FOLLOWS_THEME_KEY = "ui.appearance.backgroundFollowsTheme";
 const UI_THEME_MODE_KEY = "ui.appearance.themeMode";
 const UI_ZOOM_FACTOR_KEY = "ui.appearance.zoomFactor";
+const UI_LAYOUT_MODE_KEY = "ui.shell.layoutMode";
 const UI_WINDOW_LAST_STATE_KEY = "ui.window.lastState";
 const UI_RESTORE_WINDOW_STATE_KEY = "ui.window.restoreWindowState";
 
 export function createDefaultUiPreferences(): UiPreferences {
   return {
+    shell: {
+      layoutMode: isDesktop() ? "wide" : "compact",
+    },
     appearance: {
       accentColor: defaultAccentThemeName,
       backgroundFollowsTheme: false,
@@ -58,6 +66,10 @@ function normalizeAccentColor(value: unknown): AccentColorSetting {
 
 function normalizeThemeMode(value: unknown): ColorSchemeSetting {
   return value === "light" || value === "dark" || value === "system" ? value : "system";
+}
+
+function normalizeLayoutMode(value: unknown, fallback: AppLayoutMode): AppLayoutMode {
+  return value === "wide" || value === "compact" ? value : fallback;
 }
 
 function normalizeZoomFactor(value: unknown): number {
@@ -97,7 +109,12 @@ function normalizeDesktopWindowState(value: unknown): DesktopWindowState | null 
 }
 
 function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
+  const defaults = createDefaultUiPreferences();
+
   return {
+    shell: {
+      layoutMode: normalizeLayoutMode(preferences.shell?.layoutMode, defaults.shell.layoutMode),
+    },
     appearance: {
       accentColor: normalizeAccentColor(preferences.appearance.accentColor),
       backgroundFollowsTheme: Boolean(preferences.appearance.backgroundFollowsTheme),
@@ -119,8 +136,12 @@ function readUiPreferencesFromStore(): UiPreferences {
   const zoomFactor = store.commonGetSync<unknown>(UI_ZOOM_FACTOR_KEY);
   const restoreWindowState = store.commonGetSync<unknown>(UI_RESTORE_WINDOW_STATE_KEY);
   const lastWindowState = store.commonGetSync<unknown>(UI_WINDOW_LAST_STATE_KEY);
+  const layoutMode = store.commonGetSync<unknown>(UI_LAYOUT_MODE_KEY);
 
   return {
+    shell: {
+      layoutMode: normalizeLayoutMode(layoutMode, defaults.shell.layoutMode),
+    },
     appearance: {
       accentColor: normalizeAccentColor(accentColor ?? defaults.appearance.accentColor),
       backgroundFollowsTheme:
@@ -143,6 +164,7 @@ function readUiPreferencesFromStore(): UiPreferences {
 function applyUiPreferencesToStore(preferences: UiPreferences): UiPreferences {
   const normalizedPreferences = normalizeUiPreferences(preferences);
 
+  store.commonSetSync(UI_LAYOUT_MODE_KEY, normalizedPreferences.shell.layoutMode);
   store.commonSetSync(UI_ACCENT_COLOR_KEY, normalizedPreferences.appearance.accentColor);
   store.commonSetSync(
     UI_BACKGROUND_FOLLOWS_THEME_KEY,

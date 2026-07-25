@@ -1,3 +1,2 @@
 export * from "./compact";
-export * from "./sections";
 export * from "./wide";
