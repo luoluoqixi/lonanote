@@ -23,17 +23,19 @@ export function DesktopSettingsDialog({
   onOpenChange,
   trigger,
 }: DesktopSettingsDialogProps) {
-  const { isLoaded, preferences } = useUiPreferences();
+  const { preferences } = useUiPreferences();
+  const [selectedPageId, setSelectedPageId] = useState<SettingsPageId>(initialPageId);
   const desktopPages = useMemo(
     () =>
       settingsPages.filter(
         (page) =>
           page.desktopTab &&
-          (!page.requiresDeveloperOptions || preferences.developer.optionsEnabled),
+          (!page.requiresDeveloperOptions ||
+            preferences.developer.optionsEnabled ||
+            page.id === selectedPageId),
       ),
-    [preferences.developer.optionsEnabled],
+    [preferences.developer.optionsEnabled, selectedPageId],
   );
-  const [selectedPageId, setSelectedPageId] = useState<SettingsPageId>(initialPageId);
 
   useEffect(() => {
     if (getSettingsPage(initialPageId)?.desktopTab) {
@@ -42,10 +44,10 @@ export function DesktopSettingsDialog({
   }, [initialPageId]);
 
   useEffect(() => {
-    if (isLoaded && selectedPageId === "developer" && !preferences.developer.optionsEnabled) {
+    if (!isOpen && selectedPageId === "developer" && !preferences.developer.optionsEnabled) {
       setSelectedPageId("global");
     }
-  }, [isLoaded, preferences.developer.optionsEnabled, selectedPageId]);
+  }, [isOpen, preferences.developer.optionsEnabled, selectedPageId]);
 
   const selectedPage = desktopPages.find((page) => page.id === selectedPageId) ?? desktopPages[0];
   const SelectedPageComponent = selectedPage?.Component;

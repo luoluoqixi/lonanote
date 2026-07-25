@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { NativeList, NativeListItem, NativeListSection } from "rn-ui-kit";
+import { NativeList, NativeListItem, NativeListSection, triggerNativeHaptics } from "rn-ui-kit";
 
 import { getAppHomeTitle, getVersion } from "@/config";
 import { useUiPreferences } from "@/hooks/settings";
@@ -31,6 +31,7 @@ export function AboutSettingsPage({
       }
 
       enabledToastShownAtRef.current = now;
+      triggerNativeHaptics("medium");
       toast.info("开发者选项已开启");
       return;
     }
@@ -51,6 +52,7 @@ export function AboutSettingsPage({
       .then(() => {
         versionPressCountRef.current = 0;
         unlockPendingRef.current = false;
+        enabledToastShownAtRef.current = Date.now();
         toast.success("已开启开发者选项");
       })
       .catch((error) => {
