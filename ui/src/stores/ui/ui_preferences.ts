@@ -1,4 +1,5 @@
-﻿import { isDesktop, store } from "@/api/common";
+﻿import { store } from "@/api/commands/store";
+import { isDesktop } from "@/api/common";
 import {
   type AccentThemeName,
   defaultAccentThemeName,

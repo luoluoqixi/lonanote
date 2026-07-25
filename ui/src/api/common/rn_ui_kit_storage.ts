@@ -1,6 +1,6 @@
 import type { UiStorageAdapter } from "rn-ui-kit";
 
-import { store } from "./store";
+import { store } from "@/api/commands/store";
 
 export const rnUiKitStorageAdapter: UiStorageAdapter = {
   getItem: (key) => store.commonGetSync(key),

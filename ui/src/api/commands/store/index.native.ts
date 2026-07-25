@@ -1,11 +1,11 @@
-import { store as asyncStore } from "@/api/commands/store/store";
+import { File, Paths } from "expo-file-system";
+
 import { isInvokeAvailable } from "@/api/invoke";
 
+import { store as asyncStore } from "./store";
 import { COMMON_STORE_FILE_NAME, STORE_COMMON_KEY } from "./store_constants";
 import { type StoreRecord, createStoreCache, parseStoreRecord } from "./store_shared";
 import type { UnifiedStore } from "./store_types";
-
-const COMMON_STORAGE_KEY = "lonanote.store.common";
 
 function ensureCommonStoreKey(storeKey: string): void {
   if (storeKey !== STORE_COMMON_KEY) {
@@ -13,38 +13,40 @@ function ensureCommonStoreKey(storeKey: string): void {
   }
 }
 
-function canUseLocalStorage(): boolean {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+function getCommonStoreFile() {
+  return new File(Paths.document, COMMON_STORE_FILE_NAME);
 }
 
 function loadCommonStoreRecord(): StoreRecord {
-  if (!canUseLocalStorage()) {
-    return {};
-  }
-
   try {
-    return parseStoreRecord(window.localStorage.getItem(COMMON_STORAGE_KEY));
+    const file = getCommonStoreFile();
+    if (!file.exists) {
+      return {};
+    }
+
+    return parseStoreRecord(file.textSync());
   } catch (error) {
-    console.error("[store] failed to read localStorage", error);
+    console.error("[store] failed to read common store file", error);
     return {};
   }
 }
 
 function saveCommonStoreRecord(data: StoreRecord): void {
-  if (!canUseLocalStorage()) {
-    return;
-  }
-
   try {
-    window.localStorage.setItem(COMMON_STORAGE_KEY, JSON.stringify(data));
+    const file = getCommonStoreFile();
+    if (!file.exists) {
+      file.create({ intermediates: true });
+    }
+
+    file.write(JSON.stringify(data, null, 2));
   } catch (error) {
-    console.error("[store] failed to persist localStorage", error);
+    console.error("[store] failed to persist common store file", error);
   }
 }
 
 const commonStoreCache = createStoreCache({
   fileName: () => COMMON_STORE_FILE_NAME,
-  filePath: () => `localStorage:${COMMON_STORAGE_KEY}`,
+  filePath: () => getCommonStoreFile().uri,
   load: loadCommonStoreRecord,
   save: saveCommonStoreRecord,
 });
