@@ -25,6 +25,7 @@ export function SmallScreenHome() {
         alwaysBounceVertical={usesNativeHomeHeader}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior={usesNativeHomeHeader ? "automatic" : "never"}
+        iosEmptyViewportScrollEnabled={usesNativeHomeHeader ? true : undefined}
         style={styles.scrollView}
         tracksNavigationBarScrollEdge
       >
