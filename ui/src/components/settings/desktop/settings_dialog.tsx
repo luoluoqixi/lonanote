@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Dialog, Tabs } from "rn-ui-kit";
 
@@ -11,6 +11,7 @@ type DesktopSettingsDialogProps = {
   initialPageId?: SettingsPageId;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  trigger?: ReactNode;
 };
 
 const DIALOG_WIDTH = isWeb() ? "80%" : "90%";
@@ -20,6 +21,7 @@ export function DesktopSettingsDialog({
   initialPageId = "global",
   isOpen,
   onOpenChange,
+  trigger,
 }: DesktopSettingsDialogProps) {
   const { isLoaded, preferences } = useUiPreferences();
   const desktopPages = useMemo(
@@ -45,6 +47,9 @@ export function DesktopSettingsDialog({
     }
   }, [isLoaded, preferences.developer.optionsEnabled, selectedPageId]);
 
+  const selectedPage = desktopPages.find((page) => page.id === selectedPageId) ?? desktopPages[0];
+  const SelectedPageComponent = selectedPage?.Component;
+
   return (
     <Dialog
       height={DIALOG_HEIGHT}
@@ -52,30 +57,28 @@ export function DesktopSettingsDialog({
       onOpenChange={onOpenChange}
       open={isOpen}
       title="设置"
+      trigger={trigger}
       width={DIALOG_WIDTH}
     >
       <View style={styles.root}>
         <Tabs
           aria-label="设置页面导航"
-          contentProps={{ style: styles.content }}
-          items={desktopPages.map((page) => {
-            const PageComponent = page.Component;
-            return {
-              content: (
-                <View style={styles.page}>
-                  <PageComponent />
-                </View>
-              ),
-              label: page.title,
-              value: page.id,
-            };
-          })}
-          listProps={{ style: styles.list }}
           onValueChange={(nextValue) => setSelectedPageId(nextValue as SettingsPageId)}
           orientation="vertical"
           style={styles.tabs}
           value={selectedPageId}
-        />
+        >
+          <Tabs.List aria-label="设置页面导航" style={styles.list}>
+            {desktopPages.map((page) => (
+              <Tabs.Tab key={page.id} value={page.id}>
+                {page.title}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+          <View style={styles.content}>
+            {SelectedPageComponent ? <SelectedPageComponent /> : null}
+          </View>
+        </Tabs>
       </View>
     </Dialog>
   );
@@ -92,10 +95,6 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 4,
     width: 140,
-  },
-  page: {
-    flex: 1,
-    minHeight: 0,
   },
   root: {
     flex: 1,
