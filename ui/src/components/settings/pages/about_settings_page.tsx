@@ -8,17 +8,30 @@ import { useToast } from "@/hooks/ui";
 import type { SettingsPageProps } from "../settings_config";
 
 const DEVELOPER_OPTIONS_TAP_COUNT = 10;
+const DEVELOPER_OPTIONS_ENABLED_TOAST_COOLDOWN_MS = 10_000;
 
 export function AboutSettingsPage({
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
   const versionPressCountRef = useRef(0);
   const unlockPendingRef = useRef(false);
+  const enabledToastShownAtRef = useRef(0);
   const { isLoaded, preferences, updateAndSave } = useUiPreferences();
   const { toast } = useToast();
 
   const handleVersionPress = () => {
-    if (!isLoaded || preferences.developer.optionsEnabled || unlockPendingRef.current) {
+    if (!isLoaded || unlockPendingRef.current) {
+      return;
+    }
+
+    if (preferences.developer.optionsEnabled) {
+      const now = Date.now();
+      if (now - enabledToastShownAtRef.current < DEVELOPER_OPTIONS_ENABLED_TOAST_COOLDOWN_MS) {
+        return;
+      }
+
+      enabledToastShownAtRef.current = now;
+      toast.info("开发者选项已开启");
       return;
     }
 
@@ -36,6 +49,8 @@ export function AboutSettingsPage({
       },
     }))
       .then(() => {
+        versionPressCountRef.current = 0;
+        unlockPendingRef.current = false;
         toast.success("已开启开发者选项");
       })
       .catch((error) => {
