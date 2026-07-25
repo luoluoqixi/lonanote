@@ -7,7 +7,7 @@ import {
 
 export type ColorSchemeSetting = "light" | "dark" | "system";
 export type AccentColorSetting = AccentThemeName;
-export type AppLayoutMode = "wide" | "compact";
+export type AppLayoutMode = "mobile" | "desktop";
 
 export interface DesktopWindowState {
   height: number;
@@ -45,7 +45,7 @@ const UI_RESTORE_WINDOW_STATE_KEY = "ui.window.restoreWindowState";
 export function createDefaultUiPreferences(): UiPreferences {
   return {
     shell: {
-      layoutMode: isDesktop() ? "wide" : "compact",
+      layoutMode: isDesktop() ? "desktop" : "mobile",
     },
     appearance: {
       accentColor: defaultAccentThemeName,
@@ -69,7 +69,19 @@ function normalizeThemeMode(value: unknown): ColorSchemeSetting {
 }
 
 function normalizeLayoutMode(value: unknown, fallback: AppLayoutMode): AppLayoutMode {
-  return value === "wide" || value === "compact" ? value : fallback;
+  if (value === "desktop" || value === "mobile") {
+    return value;
+  }
+
+  if (value === "wide") {
+    return "desktop";
+  }
+
+  if (value === "compact") {
+    return "mobile";
+  }
+
+  return fallback;
 }
 
 function normalizeZoomFactor(value: unknown): number {

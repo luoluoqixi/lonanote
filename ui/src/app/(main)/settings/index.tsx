@@ -1,5 +1,5 @@
-import { SettingsHomeScreen } from "@/components/settings";
+import { MobileSettingsHome } from "@/components/settings/mobile/settings_home";
 
 export default function SettingsIndexScreen() {
-  return <SettingsHomeScreen />;
+  return <MobileSettingsHome />;
 }

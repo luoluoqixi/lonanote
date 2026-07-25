@@ -1,4 +1,5 @@
-import { CompactAppStack, WideAppShell } from "@/components/app_shell";
+import { DesktopAppShell } from "@/components/app_shell/desktop_app_shell";
+import { MobileAppStack } from "@/components/app_shell/mobile_app_stack";
 import { useLayoutMode } from "@/hooks/layout";
 
 export const unstable_settings = {
@@ -8,9 +9,9 @@ export const unstable_settings = {
 export default function MainLayout() {
   const { layoutMode } = useLayoutMode();
 
-  if (layoutMode === "wide") {
-    return <WideAppShell />;
+  if (layoutMode === "desktop") {
+    return <DesktopAppShell />;
   }
 
-  return <CompactAppStack />;
+  return <MobileAppStack />;
 }
