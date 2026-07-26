@@ -199,7 +199,7 @@ export function WorkspaceSelect() {
         style={styles.list}
         tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
       >
-        <NativeListSection>
+        <NativeListSection title="选择工作区">
           {statusMessage ? (
             <NativeListCustomItem paddingVertical={0}>
               <WorkspaceSelectStatus message={statusMessage} />
