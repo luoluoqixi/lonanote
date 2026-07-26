@@ -51,10 +51,8 @@ export function MobileAppStack() {
             return withNativeStackGestureOptions({
               ...baseScreenOptions,
               headerLargeTitle: true,
+              headerLargeTitleEnabled: true,
               headerLargeTitleShadowVisible: false,
-              headerLargeTitleStyle: {
-                color: headerTitleColor,
-              },
               headerShown: true,
               title: getAppHomeTitle(),
             });
