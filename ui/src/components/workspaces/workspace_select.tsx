@@ -1,14 +1,14 @@
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
   Button,
   Menu,
   MenuItemData,
   NativeList,
-  NativeListItem,
   NativeListNavigationItem,
   NativeListSection,
+  ScrollView,
   Text,
   isIos26Plus,
   triggerNativeHaptics,
@@ -45,6 +45,9 @@ const headerMengItems: MenuItemData[] = [
   {
     label: "设置",
     value: "settings",
+    onPress() {
+      router.push("/settings");
+    },
   },
 ];
 
@@ -78,6 +81,18 @@ function formatWorkspaceTime(timestamp?: number | null) {
     dateStyle: "medium",
     timeStyle: "short",
   })}`;
+}
+
+function WorkspaceSelectStatus({ message }: { message: string }) {
+  return (
+    <ScrollView contentInsetAdjustmentBehavior="automatic" iosEmptyViewportScrollEnabled>
+      <View style={styles.status}>
+        <Text color="$color10" fontSize="$4">
+          {message}
+        </Text>
+      </View>
+    </ScrollView>
+  );
 }
 
 export function WorkspaceSelect({
@@ -148,21 +163,21 @@ export function WorkspaceSelect({
           ),
         }}
       />
-      <NativeList
-        automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
-        contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
-        style={styles.list}
-        tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
-      >
-        <NativeListSection>
-          {isLoading ? (
-            <NativeListItem disabled title="正在加载工作区" />
-          ) : hasError ? (
-            <NativeListItem disabled title="工作区加载失败" />
-          ) : sortedWorkspaces.length === 0 ? (
-            <NativeListItem disabled title="暂无工作区" />
-          ) : (
-            sortedWorkspaces.map((workspace) => (
+      {isLoading ? (
+        <WorkspaceSelectStatus message="正在加载工作区" />
+      ) : hasError ? (
+        <WorkspaceSelectStatus message="工作区加载失败" />
+      ) : sortedWorkspaces.length === 0 ? (
+        <WorkspaceSelectStatus message="暂无工作区" />
+      ) : (
+        <NativeList
+          automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
+          contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+          style={styles.list}
+          tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
+        >
+          <NativeListSection>
+            {sortedWorkspaces.map((workspace) => (
               <NativeListNavigationItem
                 icon={
                   <Text color="$color10" fontSize="$7">
@@ -181,10 +196,10 @@ export function WorkspaceSelect({
                 title={workspace.metadata.name}
                 titleFontSize={16}
               />
-            ))
-          )}
-        </NativeListSection>
-      </NativeList>
+            ))}
+          </NativeListSection>
+        </NativeList>
+      )}
     </>
   );
 }
@@ -200,5 +215,11 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
+  },
+  status: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
   },
 });
