@@ -351,10 +351,36 @@ args = ["ios:prebuild:prod", "--clean"]
 run_dir = "ui"
 
 
+# lint:rust command
+[[commands]]
+name = "lint:rust"
+description = "Lint Rust code and reject all warnings"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"]
+run_dir = "."
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["clippy", "--manifest-path", "cli/Cargo.toml", "--workspace", "--all-targets", "--", "-D", "warnings"]
+run_dir = "."
+
+
 # lint command
 [[commands]]
 name = "lint"
 description = "Lint the codebase"
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"]
+run_dir = "."
+
+[[commands.cmds]]
+cmd = "cargo"
+args = ["clippy", "--manifest-path", "cli/Cargo.toml", "--workspace", "--all-targets", "--", "-D", "warnings"]
+run_dir = "."
 
 [[commands.cmds]]
 cmd = "bun"

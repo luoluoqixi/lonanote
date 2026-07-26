@@ -1,7 +1,7 @@
 import { invoke } from "@/api/invoke";
 import { workspaceSessionStore } from "@/stores/workspace";
 
-import { FileNode, FileTree, FileTreeSortType, WorkspaceState } from "./types";
+import type { FileNode, FileTree, WorkspaceRelativePath, WorkspaceState } from "./types";
 
 const invokeWorkspaceRuntime = <T = unknown>(
   command: string,
@@ -11,9 +11,6 @@ const invokeWorkspaceRuntime = <T = unknown>(
 };
 
 export const workspaceRuntime = {
-  importInitWorkspace: async (path: string): Promise<boolean> => {
-    return path ? (await invokeWorkspaceRuntime("import_init_workspace", { path }))! : false;
-  },
   isOpen: async (workspaceId: string): Promise<boolean> => {
     return workspaceId
       ? (await invokeWorkspaceRuntime("is_workspace_open", { workspaceId }))!
@@ -28,34 +25,34 @@ export const workspaceRuntime = {
   },
   close: async (workspaceId: string): Promise<void> => {
     await invokeWorkspaceRuntime("close_workspace", { workspaceId });
-
     if (workspaceSessionStore.getCurrentWorkspaceId() === workspaceId) {
       workspaceSessionStore.clearCurrentWorkspaceId();
     }
   },
   getState: async (workspaceId: string): Promise<WorkspaceState | null> => {
     return workspaceId
-      ? (await invokeWorkspaceRuntime("get_open_workspace", { workspaceId }))!
+      ? (await invokeWorkspaceRuntime("get_workspace_state", { workspaceId }))!
       : null;
   },
-  getFileTree: async (workspaceId: string): Promise<FileTree> => {
-    return (await invokeWorkspaceRuntime("get_open_workspace_file_tree", { workspaceId }))!;
-  },
-  reinit: async (workspaceId: string): Promise<void> => {
-    return (await invokeWorkspaceRuntime("call_open_workspace_reinit", { workspaceId }))!;
+  getFileTree: async (workspaceId: string, recursive = false): Promise<FileTree> => {
+    return (await invokeWorkspaceRuntime<FileTree>("get_file_tree", {
+      workspaceId,
+      recursive,
+    }))!;
   },
   getFileNode: async (
     workspaceId: string,
-    nodePath: string | null | undefined,
-    sortType: FileTreeSortType,
-    recursive: boolean,
-  ): Promise<FileNode> => {
-    return (await invokeWorkspaceRuntime("get_open_workspace_file_node", {
+    path: WorkspaceRelativePath,
+    recursive = false,
+  ): Promise<FileNode | null> => {
+    return (await invokeWorkspaceRuntime<FileNode | null>("get_file_node", {
       workspaceId,
-      nodePath,
-      sortType,
+      path,
       recursive,
     }))!;
+  },
+  reinit: async (workspaceId: string): Promise<void> => {
+    await invokeWorkspaceRuntime("refresh_workspace", { workspaceId });
   },
   getCurrentWorkspaceId: (): string | null => {
     return workspaceSessionStore.getCurrentWorkspaceId();
@@ -70,20 +67,19 @@ export const workspaceRuntime = {
     const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
     return await workspaceRuntime.getState(workspaceId);
   },
-  getCurrentFileTree: async (): Promise<FileTree> => {
+  getCurrentFileTree: async (recursive = false): Promise<FileTree> => {
     const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
-    return await workspaceRuntime.getFileTree(workspaceId);
+    return await workspaceRuntime.getFileTree(workspaceId, recursive);
+  },
+  getCurrentFileNode: async (
+    path: WorkspaceRelativePath,
+    recursive = false,
+  ): Promise<FileNode | null> => {
+    const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
+    return await workspaceRuntime.getFileNode(workspaceId, path, recursive);
   },
   reinitCurrent: async (): Promise<void> => {
     const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
     await workspaceRuntime.reinit(workspaceId);
-  },
-  getCurrentFileNode: async (
-    nodePath: string | null | undefined,
-    sortType: FileTreeSortType,
-    recursive: boolean,
-  ): Promise<FileNode> => {
-    const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
-    return await workspaceRuntime.getFileNode(workspaceId, nodePath, sortType, recursive);
   },
 };

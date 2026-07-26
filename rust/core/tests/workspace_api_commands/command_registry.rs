@@ -12,10 +12,17 @@ fn command_registry_exposes_workspace_api_keys() {
 
     let async_keys = get_command_async_keys().expect("get async command keys");
     assert!(async_keys.contains(&String::from("settings.get_settings")));
+    assert!(async_keys.contains(&String::from("workspace.storage.register_mount")));
+    assert!(async_keys.contains(&String::from("workspace.storage.list_mount_statuses")));
+    assert!(async_keys.contains(&String::from("workspace.storage.scan_mount")));
     assert!(async_keys.contains(&String::from("workspace.registry.create_workspace")));
-    assert!(async_keys.contains(&String::from("workspace.registry.set_workspace_roots")));
+    assert!(async_keys.contains(&String::from("workspace.registry.attach_workspace")));
     assert!(async_keys.contains(&String::from("workspace.runtime.open_workspace")));
-    assert!(async_keys.contains(&String::from(
-        "workspace.runtime.get_open_workspace_file_node"
-    )));
+    assert!(async_keys.contains(&String::from("workspace.runtime.get_workspace_state")));
+    assert!(async_keys.contains(&String::from("workspace.runtime.refresh_workspace")));
+    assert!(async_keys.contains(&String::from("workspace.runtime.get_file_tree")));
+    assert!(async_keys.contains(&String::from("workspace.runtime.get_file_node")));
+    assert!(async_keys.contains(&String::from("workspace.file.write_text")));
+    assert!(async_keys.contains(&String::from("workspace.file.capabilities")));
+    assert!(async_keys.contains(&String::from("workspace.file.move")));
 }

@@ -165,10 +165,7 @@ export function WorkspaceSelect() {
   }, [refreshWorkspaces]);
 
   const sortedWorkspaces = useMemo(
-    () =>
-      [...workspaces].sort(
-        (left, right) => (right.metadata.updateTime ?? 0) - (left.metadata.updateTime ?? 0),
-      ),
+    () => [...workspaces].sort((left, right) => (right.updateTime ?? 0) - (left.updateTime ?? 0)),
     [workspaces],
   );
   const statusMessage = isLoading
@@ -214,14 +211,14 @@ export function WorkspaceSelect() {
                 }
                 iconSize={24}
                 iconSlotWidth={28}
-                key={workspace.metadata.id}
-                nativeScrollId={workspace.metadata.id}
+                key={workspace.id}
+                nativeScrollId={workspace.id}
                 onPress={() => {}}
                 paddingVertical={10}
                 sfSymbol="folder.fill"
-                subtitle={formatWorkspaceTime(workspace.metadata.updateTime)}
+                subtitle={formatWorkspaceTime(workspace.updateTime)}
                 subtitleFontSize={12}
-                title={workspace.metadata.name}
+                title={workspace.name}
                 titleFontSize={16}
               />
             ))

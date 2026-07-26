@@ -1,58 +1,51 @@
 import { invoke } from "@/api/invoke";
 
-import {
+import type {
+  AttachWorkspaceRequest,
+  CreateWorkspaceRequest,
+  MoveWorkspaceRequest,
+  MoveWorkspaceResult,
+  RemoveWorkspaceResult,
   WorkspaceRecord,
-  WorkspaceRoot,
+  WorkspaceRecordStatus,
   WorkspaceSaveData,
   WorkspaceSettings,
-  WorkspaceSyncSummary,
 } from "./types";
-
-export const normalizeWorkspacePath = (path: string) => {
-  return path.replace(/\\/g, "/");
-};
 
 const invokeWorkspaceRegistry = <T = unknown>(
   command: string,
-  args?: Record<string, unknown>,
+  args?: object,
 ): Promise<T | undefined> => {
   return invoke<T>(`workspace.registry.${command}`, args);
 };
 
 export const workspaceRegistry = {
-  initSetup: async (path: string) => {
-    return await invokeWorkspaceRegistry("init_setup", { path: normalizeWorkspacePath(path) });
-  },
   listRecords: async (): Promise<WorkspaceRecord[]> => {
     return (await invokeWorkspaceRegistry("list_workspace_records"))!;
   },
   getRecord: async (workspaceId: string): Promise<WorkspaceRecord> => {
     return (await invokeWorkspaceRegistry("get_workspace_record", { workspaceId }))!;
   },
-  create: async (path: string): Promise<WorkspaceRecord> => {
-    return (await invokeWorkspaceRegistry("create_workspace", {
-      path: normalizeWorkspacePath(path),
-    }))!;
+  getStatus: async (workspaceId: string): Promise<WorkspaceRecordStatus> => {
+    return (await invokeWorkspaceRegistry("get_workspace_status", { workspaceId }))!;
   },
-  createInRoot: async (rootKey: string, name: string): Promise<WorkspaceRecord> => {
-    return (await invokeWorkspaceRegistry("create_workspace_in_root", { rootKey, name }))!;
+  listStatuses: async (): Promise<WorkspaceRecordStatus[]> => {
+    return (await invokeWorkspaceRegistry("list_workspace_statuses"))!;
   },
-  rename: async (
-    workspaceId: string,
-    newName: string,
-    isMove: boolean,
-  ): Promise<WorkspaceRecord> => {
-    return (await invokeWorkspaceRegistry("rename_workspace", { workspaceId, newName, isMove }))!;
+  create: async (request: CreateWorkspaceRequest): Promise<WorkspaceRecord> => {
+    return (await invokeWorkspaceRegistry("create_workspace", request))!;
   },
-  move: async (workspaceId: string, newPath: string, isMove: boolean): Promise<WorkspaceRecord> => {
-    return (await invokeWorkspaceRegistry("move_workspace", {
-      workspaceId,
-      newPath: normalizeWorkspacePath(newPath),
-      isMove,
-    }))!;
+  attach: async (request: AttachWorkspaceRequest): Promise<WorkspaceRecord> => {
+    return (await invokeWorkspaceRegistry("attach_workspace", request))!;
   },
-  remove: async (workspaceId: string, deleteFile = false): Promise<void> => {
-    return (await invokeWorkspaceRegistry("remove_workspace", { workspaceId, deleteFile }))!;
+  rename: async (workspaceId: string, newName: string): Promise<WorkspaceRecord> => {
+    return (await invokeWorkspaceRegistry("rename_workspace", { workspaceId, newName }))!;
+  },
+  move: async (request: MoveWorkspaceRequest): Promise<MoveWorkspaceResult> => {
+    return (await invokeWorkspaceRegistry("move_workspace", request))!;
+  },
+  remove: async (workspaceId: string, deleteFiles = false): Promise<RemoveWorkspaceResult> => {
+    return (await invokeWorkspaceRegistry("remove_workspace", { workspaceId, deleteFiles }))!;
   },
   getLastWorkspaceId: async (): Promise<string | null> => {
     return (await invokeWorkspaceRegistry("get_last_workspace_id"))!;
@@ -70,25 +63,6 @@ export const workspaceRegistry = {
     return (await invokeWorkspaceRegistry("get_workspace_savedata", { workspaceId }))!;
   },
   setSaveData: async (workspaceId: string, data: WorkspaceSaveData): Promise<void> => {
-    return (await invokeWorkspaceRegistry("set_workspace_savedata", { workspaceId, data }))!;
-  },
-  setRoots: async (roots: WorkspaceRoot[]): Promise<WorkspaceSyncSummary> => {
-    return (await invokeWorkspaceRegistry("set_workspace_roots", { roots }))!;
-  },
-  getRoots: async (): Promise<WorkspaceRoot[]> => {
-    return (await invokeWorkspaceRegistry("get_workspace_roots_config"))!;
-  },
-  syncRoots: async (): Promise<WorkspaceSyncSummary> => {
-    return (await invokeWorkspaceRegistry("sync_workspace_roots"))!;
-  },
-  checkPathExists: async (workspacePath: string): Promise<boolean | null> => {
-    return (await invokeWorkspaceRegistry("check_workspace_path_exist", {
-      workspacePath: normalizeWorkspacePath(workspacePath),
-    }))!;
-  },
-  checkPathLegal: async (workspacePath: string): Promise<boolean | null> => {
-    return (await invokeWorkspaceRegistry("check_workspace_path_legal", {
-      workspacePath: normalizeWorkspacePath(workspacePath),
-    }))!;
+    await invokeWorkspaceRegistry("set_workspace_savedata", { workspaceId, data });
   },
 };

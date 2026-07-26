@@ -119,7 +119,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     try {
       await workspaceRuntime.close(targetWorkspaceId);
 
-      if (state?.record.metadata.id === targetWorkspaceId || workspaceId === targetWorkspaceId) {
+      if (state?.record.id === targetWorkspaceId || workspaceId === targetWorkspaceId) {
         commitState(null);
       }
     } catch (nextError) {

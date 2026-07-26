@@ -6,7 +6,5 @@ mod path_commands;
 mod settings_commands;
 #[path = "workspace_api_commands/support.rs"]
 mod support;
-#[path = "workspace_api_commands/workspace_registry_commands.rs"]
-mod workspace_registry_commands;
-#[path = "workspace_api_commands/workspace_runtime_commands.rs"]
-mod workspace_runtime_commands;
+#[path = "workspace_api_commands/workspace_v2_commands.rs"]
+mod workspace_v2_commands;

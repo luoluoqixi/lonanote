@@ -93,7 +93,7 @@ pub(crate) async fn cleanup_workspace_state() {
         invoke_async_json::<Vec<Value>>("workspace.registry.list_workspace_records", None).await;
 
     for record in records {
-        let workspace_id = record["metadata"]["id"].as_str().expect("workspace id");
+        let workspace_id = record["id"].as_str().expect("workspace id");
         let _ = invoke_command_async(
             "workspace.runtime.close_workspace",
             CommandContext::Value(&json!({ "workspaceId": workspace_id })),
@@ -103,17 +103,22 @@ pub(crate) async fn cleanup_workspace_state() {
             "workspace.registry.remove_workspace",
             CommandContext::Value(&json!({
                 "workspaceId": workspace_id,
-                "deleteFile": true
+                "deleteFiles": true
             })),
         )
         .await;
     }
 
-    let _ = invoke_command_async(
-        "workspace.registry.set_workspace_roots",
-        CommandContext::Value(&json!({ "roots": [] })),
-    )
-    .await;
+    let mounts = invoke_async_json::<Vec<Value>>("workspace.storage.list_mounts", None).await;
+    for mount in mounts {
+        if let Some(mount_id) = mount["id"].as_str() {
+            let _ = invoke_command_async(
+                "workspace.storage.remove_mount",
+                CommandContext::Value(&json!({ "mountId": mount_id })),
+            )
+            .await;
+        }
+    }
 }
 
 pub(crate) async fn reset_settings_to_default() {
@@ -195,37 +200,6 @@ pub(crate) async fn invoke_async_error(command: &str, args: Option<Value>) -> St
     .expect_err("command should fail");
 
     error.to_string()
-}
-
-pub(crate) fn create_external_workspace(path: &Path, with_id: bool) {
-    fs::create_dir_all(path.join(".lonanote")).expect("create external workspace config dir");
-
-    let workspace_id = if with_id {
-        uuid::Uuid::new_v4().to_string()
-    } else {
-        String::new()
-    };
-
-    fs::write(
-        path.join(".lonanote/workspace.json"),
-        serde_json::to_string_pretty(&json!({
-            "id": workspace_id,
-            "createTime": 1,
-            "fileTreeSortType": "name",
-            "followGitignore": true,
-            "customIgnore": "",
-            "uploadImagePath": "assets/images",
-            "uploadAttachmentPath": "assets/attachments",
-            "histroySnapshootCount": 20
-        }))
-        .expect("serialize workspace settings"),
-    )
-    .expect("write external workspace settings");
-}
-
-pub(crate) fn json_field<'a>(value: &'a Value, keys: &[&str]) -> Option<&'a str> {
-    keys.iter()
-        .find_map(|key| value.get(*key).and_then(Value::as_str))
 }
 
 fn workspace_api_tests_root() -> PathBuf {

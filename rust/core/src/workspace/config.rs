@@ -1,86 +1,128 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
-use serde::{de, Serialize};
+use rust_embed::Embed;
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::config::app_path;
 
-use super::{error::WorkspaceError, workspace_path::WorkspacePath};
-
-use rust_embed::Embed;
+use super::{
+    error::WorkspaceError,
+    storage::{WorkspaceStorage, WriteOptions},
+    workspace_manifest::{WorkspaceManifest, WORKSPACE_MANIFEST_SCHEMA_VERSION},
+    workspace_relative_path::WorkspaceRelativePath,
+};
 
 #[derive(Embed)]
 #[folder = "assets/default_workspace/"]
 pub struct DefaultWorkspace;
 
-pub static WORKSPACE_CONFIG_FOLDER: &str = ".lonanote";
-pub static WORKSPACE_SETTINGS_FILE: &str = "workspace.json";
-pub static DEFAULT_GIT_IGNORE: &str = include_str!("../../assets/default_gitignore.txt");
+pub const WORKSPACE_CONFIG_FOLDER: &str = ".lonanote";
+pub const WORKSPACE_SETTINGS_FILE: &str = "workspace.json";
+pub const DEFAULT_GIT_IGNORE: &str = include_str!("../../assets/default_gitignore.txt");
 
 pub fn get_workspace_global_config_path() -> PathBuf {
-    let path = app_path::get_data_dir();
-    PathBuf::from(path).join("workspaces.json")
+    PathBuf::from(app_path::get_data_dir()).join("workspaces.json")
 }
 
-pub fn create_workspace_init_files(workspace_path: &WorkspacePath) -> Result<(), WorkspaceError> {
-    let path = workspace_path.to_path_buf_cow();
-    let folder = path.join(WORKSPACE_CONFIG_FOLDER);
-    let gitignore_path = folder.join(".gitignore");
-    if !gitignore_path.exists() {
-        fs::write(gitignore_path, DEFAULT_GIT_IGNORE)
-            .map_err(|err| WorkspaceError::IOError(err.to_string()))?;
+pub async fn load_workspace_manifest(
+    storage: &dyn WorkspaceStorage,
+) -> Result<Option<WorkspaceManifest>, WorkspaceError> {
+    let path = manifest_path();
+    if !storage.exists(&path).await? {
+        return Ok(None);
     }
 
-    Ok(())
+    let manifest = read_json(storage, &path).await?;
+    Ok(Some(manifest))
 }
 
-pub fn create_workspace_config_folder(
-    workspace_path: &WorkspacePath,
+pub async fn save_workspace_manifest(
+    storage: &dyn WorkspaceStorage,
+    manifest: &WorkspaceManifest,
 ) -> Result<(), WorkspaceError> {
-    let path = workspace_path.to_path_buf_cow();
-    let folder = path.join(WORKSPACE_CONFIG_FOLDER);
-    if !folder.exists() {
-        std::fs::create_dir_all(folder).map_err(|err| WorkspaceError::IOError(err.to_string()))?;
+    if manifest.schema_version != WORKSPACE_MANIFEST_SCHEMA_VERSION {
+        return Err(WorkspaceError::UnsupportedManifestSchema(
+            manifest.schema_version,
+        ));
+    }
+
+    let config_dir = WorkspaceRelativePath::parse(WORKSPACE_CONFIG_FOLDER)?;
+    storage.create_dir_all(&config_dir).await?;
+    write_json(storage, &manifest_path(), manifest).await
+}
+
+pub async fn initialize_workspace_files(
+    storage: &dyn WorkspaceStorage,
+    manifest: &WorkspaceManifest,
+) -> Result<(), WorkspaceError> {
+    save_workspace_manifest(storage, manifest).await?;
+
+    let gitignore = WorkspaceRelativePath::parse(format!("{WORKSPACE_CONFIG_FOLDER}/.gitignore"))?;
+    if !storage.exists(&gitignore).await? {
+        storage
+            .write(
+                &gitignore,
+                DEFAULT_GIT_IGNORE.as_bytes(),
+                WriteOptions {
+                    overwrite: false,
+                    create_parent: true,
+                },
+            )
+            .await?;
+    }
+
+    for file_path in DefaultWorkspace::iter() {
+        let path = WorkspaceRelativePath::parse(file_path.as_ref())?;
+        if storage.exists(&path).await? {
+            continue;
+        }
+        if let Some(file) = DefaultWorkspace::get(file_path.as_ref()) {
+            storage
+                .write(
+                    &path,
+                    file.data.as_ref(),
+                    WriteOptions {
+                        overwrite: false,
+                        create_parent: true,
+                    },
+                )
+                .await?;
+        }
     }
 
     Ok(())
 }
 
-pub fn from_json_config<T>(
-    workspace_path: &WorkspacePath,
-    file: &str,
-) -> Result<Option<T>, WorkspaceError>
+async fn read_json<T>(
+    storage: &dyn WorkspaceStorage,
+    path: &WorkspaceRelativePath,
+) -> Result<T, WorkspaceError>
 where
-    T: for<'a> de::Deserialize<'a>,
+    T: DeserializeOwned,
 {
-    create_workspace_config_folder(workspace_path)?;
-    let path = workspace_path.to_path_buf_cow();
-    let config_path = path.join(WORKSPACE_CONFIG_FOLDER).join(file);
-    if config_path.exists() {
-        let data = fs::read_to_string(config_path)
-            .map_err(|err| WorkspaceError::IOError(err.to_string()))?;
-        let index = serde_json::from_str::<T>(&data)
-            .map_err(|err| WorkspaceError::ParseConfigError(err.to_string()))?;
-
-        Ok(Some(index))
-    } else {
-        Ok(None)
-    }
+    let data = storage.read(path).await?;
+    serde_json::from_slice(&data).map_err(|error| WorkspaceError::Json(error.to_string()))
 }
 
-pub fn save_json_config<T>(
-    workspace_path: &WorkspacePath,
-    file: &str,
+async fn write_json<T>(
+    storage: &dyn WorkspaceStorage,
+    path: &WorkspaceRelativePath,
     value: &T,
 ) -> Result<(), WorkspaceError>
 where
     T: ?Sized + Serialize,
 {
-    create_workspace_config_folder(workspace_path)?;
-    let path = workspace_path.to_path_buf_cow();
-    let config_path = path.join(WORKSPACE_CONFIG_FOLDER).join(file);
-    let s = serde_json::to_string_pretty(value)
-        .map_err(|err| WorkspaceError::JsonError(err.to_string()))?;
-    std::fs::write(config_path, s).map_err(|err| WorkspaceError::IOError(err.to_string()))?;
+    let data = serde_json::to_vec_pretty(value)
+        .map_err(|error| WorkspaceError::Json(error.to_string()))?;
+    storage
+        .write(path, &data, WriteOptions::default())
+        .await
+        .map_err(WorkspaceError::from)
+}
 
-    Ok(())
+fn manifest_path() -> WorkspaceRelativePath {
+    WorkspaceRelativePath::parse(format!(
+        "{WORKSPACE_CONFIG_FOLDER}/{WORKSPACE_SETTINGS_FILE}"
+    ))
+    .expect("静态 manifest 路径必须合法")
 }

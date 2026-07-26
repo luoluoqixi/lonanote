@@ -1,8 +1,13 @@
 mod api;
 mod invoke;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use invoke::*;
+use lonanote_core::workspace_storage::{
+    install_workspace_host_services, register_storage_mount, LocalPathStorageFactory,
+    StorageMountId, StorageMountKind, StorageMountRecord, WorkspaceHostServices,
+};
+use std::sync::Arc;
 use tauri::{AppHandle, Builder, Manager, Runtime};
 
 pub fn resolve_default_paths(app: &AppHandle) -> Result<lonanote_core::config::app_path::AppPaths> {
@@ -50,6 +55,17 @@ pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {
 pub fn init_commands(app: &AppHandle) -> Result<()> {
     let paths = resolve_default_paths(app)?;
     lonanote_core::config::app_path::init_paths(paths);
+    let documents_dir = app.path().document_dir()?;
+    install_workspace_host_services(WorkspaceHostServices::new(Arc::new(
+        LocalPathStorageFactory::new().with_desktop_documents(documents_dir),
+    )))
+    .map_err(|error| anyhow!(error.to_string()))?;
     lonanote_core::init()?;
+    tauri::async_runtime::block_on(register_storage_mount(StorageMountRecord {
+        id: StorageMountId::parse("desktop-documents")?,
+        display_name: String::from("Documents"),
+        kind: StorageMountKind::DesktopDocuments,
+        created_time: 0,
+    }))?;
     Ok(())
 }

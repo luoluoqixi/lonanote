@@ -1,20 +1,21 @@
-use serde::Serialize;
 use std::sync::Arc;
-use tokio::sync::{RwLock, RwLockReadGuard};
+
+use serde::Serialize;
+use tokio::sync::RwLock;
 
 use super::{
-    config::{create_workspace_config_folder, create_workspace_init_files},
-    error::WorkspaceError,
-    file_tree::{FileNode, FileTreeSortType},
-    workspace_index::WorkspaceIndex,
-    workspace_path::WorkspacePath,
+    file_tree::{FileNode, FileTree, FileTreeError, WorkspaceFileTreeBuilder},
+    storage::{MountedStorage, WorkspaceStorage},
+    workspace_id::WorkspaceId,
+    workspace_locator::WorkspaceLocator,
+    workspace_relative_path::WorkspaceRelativePath,
     workspace_settings::WorkspaceSettings,
 };
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceRuntimeConfig {
-    pub file_tree_sort_type: FileTreeSortType,
+    pub file_tree_sort_type: super::file_tree::FileTreeSortType,
     pub follow_gitignore: bool,
     pub custom_ignore: String,
 }
@@ -34,32 +35,38 @@ impl From<&WorkspaceSettings> for WorkspaceRuntimeConfig {
 pub enum WorkspaceRuntimeStatus {
     Opening,
     Opened,
-    Reinitializing,
     Closing,
 }
 
 #[derive(Debug)]
 pub struct WorkspaceInstance {
-    pub runtime_config: Arc<RwLock<WorkspaceRuntimeConfig>>,
-    pub runtime_status: Arc<RwLock<WorkspaceRuntimeStatus>>,
-    pub index: Arc<RwLock<WorkspaceIndex>>,
+    pub id: WorkspaceId,
+    pub locator: WorkspaceLocator,
+    mounted_storage: MountedStorage,
+    runtime_config: Arc<RwLock<WorkspaceRuntimeConfig>>,
+    runtime_status: Arc<RwLock<WorkspaceRuntimeStatus>>,
+    file_tree: Arc<RwLock<Option<FileTree>>>,
 }
 
 impl WorkspaceInstance {
     pub fn new(
-        _workspace_id: impl Into<String>,
-        workspace_path: &WorkspacePath,
+        id: WorkspaceId,
+        locator: WorkspaceLocator,
+        mounted_storage: MountedStorage,
         settings: &WorkspaceSettings,
-    ) -> Result<Self, WorkspaceError> {
-        create_workspace_config_folder(workspace_path)?;
-        create_workspace_init_files(workspace_path)?;
-        let index = WorkspaceIndex::new(workspace_path, settings.file_tree_sort_type.clone())?;
-
-        Ok(Self {
+    ) -> Self {
+        Self {
+            id,
+            locator,
+            mounted_storage,
             runtime_config: Arc::new(RwLock::new(WorkspaceRuntimeConfig::from(settings))),
             runtime_status: Arc::new(RwLock::new(WorkspaceRuntimeStatus::Opening)),
-            index: Arc::new(RwLock::new(index)),
-        })
+            file_tree: Arc::new(RwLock::new(None)),
+        }
+    }
+
+    pub fn storage(&self) -> Arc<dyn WorkspaceStorage> {
+        self.mounted_storage.storage()
     }
 
     pub async fn get_runtime_config(&self) -> WorkspaceRuntimeConfig {
@@ -79,86 +86,64 @@ impl WorkspaceInstance {
             .await;
     }
 
-    pub async fn mark_closing(&self) {
+    pub async fn apply_settings(&self, settings: &WorkspaceSettings) {
+        *self.runtime_config.write().await = WorkspaceRuntimeConfig::from(settings);
+        self.invalidate_file_tree().await;
+    }
+
+    pub async fn get_file_tree(&self, recursive: bool) -> Result<FileTree, FileTreeError> {
+        if !recursive {
+            if let Some(file_tree) = self.file_tree.read().await.clone() {
+                return Ok(file_tree);
+            }
+        }
+
+        let builder = self.create_file_tree_builder().await?;
+        let file_tree = builder.build(recursive).await?;
+        if !recursive {
+            *self.file_tree.write().await = Some(file_tree.clone());
+        }
+        Ok(file_tree)
+    }
+
+    pub async fn get_file_node(
+        &self,
+        path: WorkspaceRelativePath,
+        recursive: bool,
+    ) -> Result<Option<FileNode>, FileTreeError> {
+        self.create_file_tree_builder()
+            .await?
+            .build_entry(path, recursive)
+            .await
+    }
+
+    pub async fn invalidate_file_tree(&self) {
+        *self.file_tree.write().await = None;
+    }
+
+    /// 重新读取 provider 的根目录，用于用户刷新或 App 回到前台时同步外部变更。
+    pub async fn reinit(&self) -> Result<(), FileTreeError> {
+        self.invalidate_file_tree().await;
+        self.get_file_tree(false).await?;
+        self.set_runtime_status(WorkspaceRuntimeStatus::Opened)
+            .await;
+        Ok(())
+    }
+
+    pub async fn unload(&self) {
+        self.invalidate_file_tree().await;
         self.set_runtime_status(WorkspaceRuntimeStatus::Closing)
             .await;
     }
 
-    pub async fn apply_settings(&self, settings: &WorkspaceSettings) -> Result<(), WorkspaceError> {
-        let next = WorkspaceRuntimeConfig::from(settings);
-        let previous = self.get_runtime_config().await;
-        if previous == next {
-            return Ok(());
-        }
-
-        {
-            let mut runtime_config = self.runtime_config.write().await;
-            *runtime_config = next.clone();
-        }
-
-        if previous.follow_gitignore != next.follow_gitignore
-            || previous.custom_ignore != next.custom_ignore
-        {
-            self.reinit().await?;
-        } else if previous.file_tree_sort_type != next.file_tree_sort_type {
-            self.index
-                .write()
-                .await
-                .file_tree
-                .set_sort_type(next.file_tree_sort_type);
-        }
-
-        Ok(())
-    }
-
-    pub async fn reinit(&self) -> Result<(), WorkspaceError> {
-        let previous_status = self.get_runtime_status().await;
-        if previous_status != WorkspaceRuntimeStatus::Opening {
-            self.set_runtime_status(WorkspaceRuntimeStatus::Reinitializing)
-                .await;
-        }
-
-        let runtime_config = self.get_runtime_config().await;
-        let index = Arc::clone(&self.index);
-        let result = index
-            .write()
-            .await
-            .reinit(
-                runtime_config.file_tree_sort_type,
-                runtime_config.follow_gitignore,
-                runtime_config.custom_ignore,
-            )
-            .map_err(WorkspaceError::InitError);
-        self.set_runtime_status(WorkspaceRuntimeStatus::Opened)
-            .await;
-
-        result
-    }
-
-    pub async fn get_node(
-        &self,
-        path: Option<&String>,
-        sort_type: FileTreeSortType,
-        recursive: bool,
-    ) -> Result<FileNode, String> {
-        let runtime_config = self.get_runtime_config().await;
-        let index = Arc::clone(&self.index);
-        let index = index.read().await;
-        index.get_node(
-            path,
-            runtime_config.follow_gitignore,
-            runtime_config.custom_ignore,
-            recursive,
-            sort_type,
+    async fn create_file_tree_builder(&self) -> Result<WorkspaceFileTreeBuilder, FileTreeError> {
+        let config = self.get_runtime_config().await;
+        WorkspaceFileTreeBuilder::new(
+            self.storage(),
+            config.file_tree_sort_type,
+            config.follow_gitignore,
+            &config.custom_ignore,
         )
-    }
-
-    pub async fn get_workspace_index(&self) -> RwLockReadGuard<'_, WorkspaceIndex> {
-        self.index.read().await
-    }
-
-    pub async fn unload(&self) -> Result<(), WorkspaceError> {
-        self.mark_closing().await;
-        Ok(())
+        .await
     }
 }
