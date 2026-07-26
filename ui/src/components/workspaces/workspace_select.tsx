@@ -1,14 +1,15 @@
 import { Stack, router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import {
   Button,
   Menu,
   MenuItemData,
   NativeList,
+  NativeListButtonItem,
+  NativeListCustomItem,
   NativeListNavigationItem,
   NativeListSection,
-  ScrollView,
   Text,
   isIos26Plus,
   triggerNativeHaptics,
@@ -17,37 +18,49 @@ import {
 import { type WorkspaceRecord, workspaceRegistry } from "@/api/commands/workspace";
 import { os } from "@/api/common";
 
-type WorkspaceSelectProps = {
-  onLeftActionPress?: () => void;
-  onRightActionPress?: () => void;
-  onWorkspacePress?: (workspace: WorkspaceRecord) => void;
-};
-
 type HeaderActionButtonProps = {
   accessibilityLabel: string;
   label: string;
   onPress?: () => void;
 };
 
+const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
+
+const pressActions = {
+  selectWorkspacePress: () => {
+    console.log("todo");
+  },
+  createWorkspacePress: () => {
+    console.log("todo");
+  },
+  sortWorkspacePress: () => {
+    console.log("todo");
+  },
+  openSettingsPress: () => {
+    router.push("/settings");
+  },
+};
+
 const headerMengItems: MenuItemData[] = [
   {
     label: "选择工作区",
     value: "select-workspace",
+    onPress: pressActions.selectWorkspacePress,
   },
   {
     label: "创建工作区",
     value: "create-workspace",
+    onPress: pressActions.createWorkspacePress,
   },
   {
     label: "排序方式",
     value: "sort-workspace",
+    onPress: pressActions.sortWorkspacePress,
   },
   {
     label: "设置",
     value: "settings",
-    onPress() {
-      router.push("/settings");
-    },
+    onPress: pressActions.openSettingsPress,
   },
 ];
 
@@ -85,57 +98,71 @@ function formatWorkspaceTime(timestamp?: number | null) {
 
 function WorkspaceSelectStatus({ message }: { message: string }) {
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" iosEmptyViewportScrollEnabled>
-      <View style={styles.status}>
-        <Text color="$color10" fontSize="$4">
-          {message}
-        </Text>
-      </View>
-    </ScrollView>
+    <View style={styles.status}>
+      <Text color="$gray11" fontSize="$4">
+        {message}
+      </Text>
+    </View>
   );
 }
 
-export function WorkspaceSelect({
-  onRightActionPress,
-  onWorkspacePress,
-}: WorkspaceSelectProps = {}) {
+async function waitForMinimumDuration(startedAt: number, minimumDurationMs: number) {
+  const remainingDuration = minimumDurationMs - (Date.now() - startedAt);
+  if (remainingDuration <= 0) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, remainingDuration);
+  });
+}
+
+export function WorkspaceSelect() {
   const [workspaces, setWorkspaces] = useState<WorkspaceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const requestIdRef = useRef(0);
   const usesNativeIosHeader = os() === "ios";
   const tracksNavigationBarScrollEdge = usesNativeIosHeader && !isIos26Plus();
 
-  useEffect(() => {
-    let isActive = true;
+  const refreshWorkspaces = useCallback(async (minimumDurationMs = 0) => {
+    const requestId = ++requestIdRef.current;
+    const startedAt = Date.now();
 
-    void workspaceRegistry
-      .listRecords()
-      .then((records) => {
-        if (!isActive) {
-          return;
-        }
+    try {
+      const records = await workspaceRegistry.listRecords();
+      await waitForMinimumDuration(startedAt, minimumDurationMs);
 
+      if (requestId === requestIdRef.current) {
         setWorkspaces(records);
         setHasError(false);
-      })
-      .catch((nextError: unknown) => {
-        if (!isActive) {
-          return;
-        }
+      }
+    } catch (nextError: unknown) {
+      await waitForMinimumDuration(startedAt, minimumDurationMs);
 
+      if (requestId === requestIdRef.current) {
         console.error("[workspace-select] load workspaces failed", nextError);
         setHasError(true);
-      })
-      .finally(() => {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      });
+      }
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  const handlePullToRefresh = useCallback(
+    () => refreshWorkspaces(MIN_PULL_TO_REFRESH_DURATION_MS),
+    [refreshWorkspaces],
+  );
+
+  useEffect(() => {
+    void refreshWorkspaces();
 
     return () => {
-      isActive = false;
+      requestIdRef.current += 1;
     };
-  }, []);
+  }, [refreshWorkspaces]);
 
   const sortedWorkspaces = useMemo(
     () =>
@@ -144,6 +171,14 @@ export function WorkspaceSelect({
       ),
     [workspaces],
   );
+  const statusMessage = isLoading
+    ? "正在加载工作区"
+    : hasError && sortedWorkspaces.length === 0
+      ? "工作区加载失败"
+      : sortedWorkspaces.length === 0
+        ? "暂无工作区"
+        : null;
+  const showCreateWorkspaceButton = !isLoading && !hasError && sortedWorkspaces.length === 0;
 
   return (
     <>
@@ -151,33 +186,26 @@ export function WorkspaceSelect({
         options={{
           headerRight: () => (
             <Menu
-              trigger={
-                <HeaderActionButton
-                  accessibilityLabel="右侧操作"
-                  label="•••"
-                  onPress={onRightActionPress}
-                />
-              }
+              trigger={<HeaderActionButton accessibilityLabel="右侧操作" label="•••" />}
               items={headerMengItems}
             />
           ),
         }}
       />
-      {isLoading ? (
-        <WorkspaceSelectStatus message="正在加载工作区" />
-      ) : hasError ? (
-        <WorkspaceSelectStatus message="工作区加载失败" />
-      ) : sortedWorkspaces.length === 0 ? (
-        <WorkspaceSelectStatus message="暂无工作区" />
-      ) : (
-        <NativeList
-          automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
-          contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
-          style={styles.list}
-          tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
-        >
-          <NativeListSection>
-            {sortedWorkspaces.map((workspace) => (
+      <NativeList
+        automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
+        contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+        onRefresh={handlePullToRefresh}
+        style={styles.list}
+        tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
+      >
+        <NativeListSection>
+          {statusMessage ? (
+            <NativeListCustomItem paddingVertical={0}>
+              <WorkspaceSelectStatus message={statusMessage} />
+            </NativeListCustomItem>
+          ) : (
+            sortedWorkspaces.map((workspace) => (
               <NativeListNavigationItem
                 icon={
                   <Text color="$color10" fontSize="$7">
@@ -188,7 +216,7 @@ export function WorkspaceSelect({
                 iconSlotWidth={28}
                 key={workspace.metadata.id}
                 nativeScrollId={workspace.metadata.id}
-                onPress={onWorkspacePress ? () => onWorkspacePress(workspace) : undefined}
+                onPress={() => {}}
                 paddingVertical={10}
                 sfSymbol="folder.fill"
                 subtitle={formatWorkspaceTime(workspace.metadata.updateTime)}
@@ -196,10 +224,13 @@ export function WorkspaceSelect({
                 title={workspace.metadata.name}
                 titleFontSize={16}
               />
-            ))}
-          </NativeListSection>
-        </NativeList>
-      )}
+            ))
+          )}
+          {showCreateWorkspaceButton ? (
+            <NativeListButtonItem onPress={pressActions.createWorkspacePress} title="新建工作区" />
+          ) : null}
+        </NativeListSection>
+      </NativeList>
     </>
   );
 }
@@ -218,8 +249,8 @@ const styles = StyleSheet.create({
   },
   status: {
     alignItems: "center",
-    flex: 1,
     justifyContent: "center",
-    padding: 24,
+    minHeight: 40,
+    width: "100%",
   },
 });
