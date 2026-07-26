@@ -3,7 +3,6 @@ import {
   getNativeStackScrollEdgeHeaderOptions,
   nativeStackStatusBarOptions,
   useTheme,
-  withNativeBackButton,
   withNativeStackGestureOptions,
 } from "rn-ui-kit";
 
@@ -22,7 +21,7 @@ export function MobileAppStack() {
     <>
       {desktop ? <TitleBar /> : null}
       <Stack
-        screenOptions={({ navigation, route }) => {
+        screenOptions={({ route }) => {
           const stackBackgroundColor = appBackgroundColors.screen;
           const headerBackgroundColor = appBackgroundColors.header;
           const headerTitleColor = theme.gray12.val;
@@ -61,22 +60,9 @@ export function MobileAppStack() {
             });
           }
 
-          if (route.name.startsWith("settings/")) {
-            const settingsOptions = withNativeStackGestureOptions({
-              ...baseScreenOptions,
-              headerShown: true,
-              title: route.name === "settings/index" ? "设置" : undefined,
-            });
-
-            return withNativeBackButton(settingsOptions, {
-              label: getAppHomeTitle(),
-              onPress: () => navigation.goBack(),
-            });
-          }
-
           return withNativeStackGestureOptions({
             ...baseScreenOptions,
-            headerShown: false,
+            headerShown: true,
           });
         }}
       >
