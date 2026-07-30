@@ -1,0 +1,636 @@
+use std::{
+    collections::HashSet,
+    path::PathBuf,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
+
+use rust_embed::Embed;
+use tokio::sync::Mutex;
+
+use crate::workspace::{
+    domain::{
+        RelocateWorkspaceResult, RemoveWorkspaceResult, StorageCleanupStatus, StorageProviderId,
+        WorkspaceAvailability, WorkspaceCachedSummary, WorkspaceDirectoryName, WorkspaceId,
+        WorkspaceListItem, WorkspaceLocalState, WorkspaceManifest, WorkspaceRecord,
+        WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
+        WorkspaceStorageKindView, WorkspaceStorageTarget,
+    },
+    error::{StorageError, WorkspaceError},
+    file_tree::{FileNode, FileTree},
+    persistence::{
+        WorkspaceCatalog, WorkspaceLocalStateStore, WORKSPACE_CATALOG_FILE_NAME,
+        WORKSPACE_LOCAL_STATE_FILE_NAME,
+    },
+    runtime::{WorkspaceInstance, WorkspaceRuntime},
+    storage::{
+        copy_workspace_tree, load_manifest, save_manifest, StorageCapabilities, StorageEntry,
+        StorageEntryMetadata, WorkspaceStorageResolver, WriteOptions,
+    },
+};
+
+#[derive(Embed)]
+#[folder = "assets/default_workspace/"]
+struct DefaultWorkspace;
+
+const WORKSPACE_GITIGNORE_PATH: &str = ".lonanote/.gitignore";
+const DEFAULT_GIT_IGNORE: &str = include_str!("../../assets/default_gitignore.txt");
+
+pub struct WorkspaceManager {
+    catalog: WorkspaceCatalog,
+    local_state: WorkspaceLocalStateStore,
+    runtime: WorkspaceRuntime,
+    storage_resolver: Arc<dyn WorkspaceStorageResolver>,
+    lifecycle_lock: Mutex<()>,
+}
+
+impl std::fmt::Debug for WorkspaceManager {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("WorkspaceManager")
+            .field("catalog", &self.catalog)
+            .field("local_state", &self.local_state)
+            .field("runtime", &self.runtime)
+            .finish_non_exhaustive()
+    }
+}
+
+impl WorkspaceManager {
+    pub async fn load(
+        data_directory: impl Into<PathBuf>,
+        storage_resolver: Arc<dyn WorkspaceStorageResolver>,
+    ) -> Result<Self, WorkspaceError> {
+        let data_directory = data_directory.into();
+        let catalog =
+            WorkspaceCatalog::load(data_directory.join(WORKSPACE_CATALOG_FILE_NAME)).await?;
+        let local_state =
+            WorkspaceLocalStateStore::load(data_directory.join(WORKSPACE_LOCAL_STATE_FILE_NAME))
+                .await?;
+        let valid_workspace_ids = catalog
+            .list()
+            .await
+            .into_iter()
+            .map(|record| record.id)
+            .collect::<HashSet<_>>();
+        local_state.reconcile(&valid_workspace_ids).await?;
+        Ok(Self::new(catalog, local_state, storage_resolver))
+    }
+
+    pub fn new(
+        catalog: WorkspaceCatalog,
+        local_state: WorkspaceLocalStateStore,
+        storage_resolver: Arc<dyn WorkspaceStorageResolver>,
+    ) -> Self {
+        Self {
+            catalog,
+            local_state,
+            runtime: WorkspaceRuntime::new(),
+            storage_resolver,
+            lifecycle_lock: Mutex::new(()),
+        }
+    }
+
+    pub async fn list_workspaces(&self) -> Vec<WorkspaceListItem> {
+        let records = self.catalog.list().await;
+        let local_state = self.local_state.snapshot().await;
+        let mut items = Vec::with_capacity(records.len());
+        for record in records {
+            let is_open = self.runtime.contains(&record.id).await;
+            let last_opened_at = local_state
+                .workspaces
+                .get(&record.id)
+                .and_then(|state| state.last_opened_at);
+            items.push(WorkspaceListItem {
+                id: record.id,
+                display_name: record.cached_summary.display_name,
+                storage_kind: if record.storage_binding.is_managed() {
+                    WorkspaceStorageKindView::Managed
+                } else {
+                    WorkspaceStorageKindView::External
+                },
+                availability: if is_open {
+                    WorkspaceAvailability::Available
+                } else {
+                    WorkspaceAvailability::Unknown
+                },
+                last_opened_at,
+            });
+        }
+        items.sort_by(|left, right| {
+            right
+                .last_opened_at
+                .cmp(&left.last_opened_at)
+                .then_with(|| left.display_name.cmp(&right.display_name))
+        });
+        items
+    }
+
+    pub async fn get_workspace(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceSnapshot, WorkspaceError> {
+        Ok(self.get_open_instance(id).await?.snapshot().await)
+    }
+
+    pub async fn is_workspace_open(&self, id: &WorkspaceId) -> bool {
+        self.runtime.contains(id).await
+    }
+
+    pub async fn create_managed_workspace(
+        &self,
+        provider_id: StorageProviderId,
+        display_name: String,
+    ) -> Result<WorkspaceSnapshot, WorkspaceError> {
+        validate_display_name(&display_name)?;
+        let _lifecycle = self.lifecycle_lock.lock().await;
+        let base_name = WorkspaceDirectoryName::from_display_name(&display_name);
+        let mut suffix = 1usize;
+        let (binding, session) = loop {
+            let directory_name = if suffix == 1 {
+                base_name.clone()
+            } else {
+                base_name.with_suffix(suffix)
+            };
+            match self
+                .storage_resolver
+                .create_managed(&provider_id, &directory_name)
+                .await
+            {
+                Ok(result) => break result,
+                Err(StorageError::AlreadyExists { .. }) => suffix += 1,
+                Err(error) => return Err(error.into()),
+            }
+        };
+
+        let manifest = WorkspaceManifest::new(WorkspaceId::new(), display_name, now_timestamp());
+        initialize_workspace(session.as_ref(), &manifest).await?;
+        let record = record_from_manifest(binding, &manifest, now_timestamp());
+        self.catalog.add(record).await?;
+        self.open_workspace_locked(&manifest.id).await
+    }
+
+    pub async fn create_external_workspace(
+        &self,
+        binding: WorkspaceStorageBinding,
+        display_name: String,
+    ) -> Result<WorkspaceSnapshot, WorkspaceError> {
+        validate_display_name(&display_name)?;
+        if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
+            return Err(WorkspaceError::ExpectedExternalBinding);
+        }
+        let _lifecycle = self.lifecycle_lock.lock().await;
+        let session = self.storage_resolver.open(&binding).await?;
+        if manifest_exists(session.as_ref()).await? {
+            return Err(WorkspaceError::ManifestAlreadyExists);
+        }
+        let manifest = WorkspaceManifest::new(WorkspaceId::new(), display_name, now_timestamp());
+        initialize_workspace(session.as_ref(), &manifest).await?;
+        let record = record_from_manifest(binding, &manifest, now_timestamp());
+        self.catalog.add(record).await?;
+        self.open_workspace_locked(&manifest.id).await
+    }
+
+    pub async fn attach_workspace(
+        &self,
+        binding: WorkspaceStorageBinding,
+    ) -> Result<WorkspaceRecord, WorkspaceError> {
+        if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
+            return Err(WorkspaceError::ExpectedExternalBinding);
+        }
+        let _lifecycle = self.lifecycle_lock.lock().await;
+        let session = self.storage_resolver.open(&binding).await?;
+        let manifest = load_manifest(session.as_ref())
+            .await?
+            .ok_or(WorkspaceError::ManifestNotFound)?;
+        let record = record_from_manifest(binding, &manifest, now_timestamp());
+        self.catalog.add_or_validate_same_binding(record).await
+    }
+
+    pub async fn open_workspace(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceSnapshot, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.lock().await;
+        self.open_workspace_locked(id).await
+    }
+
+    pub async fn close_workspace(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.lock().await;
+        self.runtime.remove(id).await;
+        Ok(())
+    }
+
+    pub async fn remove_workspace(
+        &self,
+        id: &WorkspaceId,
+        delete_files: bool,
+    ) -> Result<RemoveWorkspaceResult, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.lock().await;
+        if self.runtime.contains(id).await {
+            return Err(WorkspaceError::CannotModifyOpenWorkspace(*id));
+        }
+        let removed_record = self.catalog.remove(id).await?;
+        self.local_state.remove(id).await?;
+        let file_cleanup = if delete_files {
+            match self
+                .storage_resolver
+                .remove_workspace_root(&removed_record.storage_binding)
+                .await
+            {
+                Ok(()) => StorageCleanupStatus::Removed,
+                Err(error) => StorageCleanupStatus::Failed {
+                    message: error.to_string(),
+                },
+            }
+        } else {
+            StorageCleanupStatus::Retained
+        };
+        Ok(RemoveWorkspaceResult {
+            removed_record,
+            file_cleanup,
+        })
+    }
+
+    pub async fn relocate_workspace(
+        &self,
+        id: &WorkspaceId,
+        target: WorkspaceStorageTarget,
+    ) -> Result<RelocateWorkspaceResult, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.lock().await;
+        if self.runtime.contains(id).await {
+            return Err(WorkspaceError::CannotModifyOpenWorkspace(*id));
+        }
+        let source_record = self.catalog.get(id).await?;
+        let source_session = self
+            .storage_resolver
+            .open(&source_record.storage_binding)
+            .await?;
+        let (target_binding, target_session) = match target {
+            WorkspaceStorageTarget::Managed {
+                provider_id,
+                preferred_directory_name,
+            } => {
+                let expected_binding = WorkspaceStorageBinding::Managed {
+                    provider_id: provider_id.clone(),
+                    directory_name: preferred_directory_name.clone(),
+                };
+                if expected_binding == source_record.storage_binding {
+                    return Err(WorkspaceError::SameStorageBinding);
+                }
+                self.storage_resolver
+                    .create_managed(&provider_id, &preferred_directory_name)
+                    .await?
+            }
+            WorkspaceStorageTarget::External { binding } => {
+                if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
+                    return Err(WorkspaceError::ExpectedExternalBinding);
+                }
+                if binding == source_record.storage_binding {
+                    return Err(WorkspaceError::SameStorageBinding);
+                }
+                let session = self.storage_resolver.open(&binding).await?;
+                if !session
+                    .list_dir(&WorkspaceRelativePath::root())
+                    .await?
+                    .is_empty()
+                {
+                    return Err(WorkspaceError::TargetNotEmpty);
+                }
+                (binding, session)
+            }
+        };
+        copy_workspace_tree(source_session.as_ref(), target_session.as_ref()).await?;
+        let target_manifest = load_manifest(target_session.as_ref())
+            .await?
+            .ok_or(WorkspaceError::ManifestNotFound)?;
+        if target_manifest.id != *id {
+            return Err(WorkspaceError::WorkspaceIdMismatch {
+                expected: *id,
+                actual: target_manifest.id,
+            });
+        }
+        self.catalog
+            .update_binding(id, target_binding.clone())
+            .await?;
+        Ok(RelocateWorkspaceResult {
+            workspace_id: *id,
+            source_binding: source_record.storage_binding,
+            target_binding,
+            source_cleanup: StorageCleanupStatus::Retained,
+        })
+    }
+
+    pub async fn update_display_name(
+        &self,
+        id: &WorkspaceId,
+        display_name: String,
+    ) -> Result<WorkspaceSnapshot, WorkspaceError> {
+        validate_display_name(&display_name)?;
+        let workspace = self.get_open_instance(id).await?;
+        let manifest = workspace.update_display_name(display_name).await?;
+        self.catalog
+            .update_summary(id, summary_from_manifest(&manifest, now_timestamp()))
+            .await?;
+        Ok(workspace.snapshot().await)
+    }
+
+    pub async fn get_settings(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceSettings, WorkspaceError> {
+        Ok(self.get_open_instance(id).await?.manifest().await.settings)
+    }
+
+    pub async fn set_settings(
+        &self,
+        id: &WorkspaceId,
+        settings: WorkspaceSettings,
+    ) -> Result<WorkspaceSettings, WorkspaceError> {
+        let workspace = self.get_open_instance(id).await?;
+        let manifest = workspace.set_settings(settings).await?;
+        Ok(manifest.settings)
+    }
+
+    pub async fn get_last_workspace_id(&self) -> Option<WorkspaceId> {
+        self.local_state.last_workspace_id().await
+    }
+
+    pub async fn get_local_state(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceLocalState, WorkspaceError> {
+        self.catalog.get(id).await?;
+        Ok(self.local_state.get(id).await)
+    }
+
+    pub async fn set_last_open_file(
+        &self,
+        id: &WorkspaceId,
+        path: Option<WorkspaceRelativePath>,
+    ) -> Result<WorkspaceLocalState, WorkspaceError> {
+        self.catalog.get(id).await?;
+        self.local_state.set_last_open_file(id, path).await
+    }
+
+    pub async fn capabilities(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<StorageCapabilities, WorkspaceError> {
+        self.get_open_instance(id).await?.capabilities().await
+    }
+
+    pub async fn file_exists(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+    ) -> Result<bool, WorkspaceError> {
+        self.get_open_instance(id).await?.exists(path).await
+    }
+
+    pub async fn file_metadata(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+    ) -> Result<StorageEntryMetadata, WorkspaceError> {
+        self.get_open_instance(id).await?.metadata(path).await
+    }
+
+    pub async fn list_directory(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+    ) -> Result<Vec<StorageEntry>, WorkspaceError> {
+        self.get_open_instance(id).await?.list_directory(path).await
+    }
+
+    pub async fn read_bytes(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+    ) -> Result<Vec<u8>, WorkspaceError> {
+        self.get_open_instance(id).await?.read_bytes(path).await
+    }
+
+    pub async fn read_text(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+    ) -> Result<String, WorkspaceError> {
+        self.get_open_instance(id).await?.read_text(path).await
+    }
+
+    pub async fn write_bytes(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+        data: &[u8],
+        options: WriteOptions,
+    ) -> Result<(), WorkspaceError> {
+        self.get_open_instance(id)
+            .await?
+            .write_bytes(path, data, options)
+            .await
+    }
+
+    pub async fn write_text(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+        text: &str,
+        options: WriteOptions,
+    ) -> Result<(), WorkspaceError> {
+        self.get_open_instance(id)
+            .await?
+            .write_text(path, text, options)
+            .await
+    }
+
+    pub async fn create_directory(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+    ) -> Result<(), WorkspaceError> {
+        self.get_open_instance(id)
+            .await?
+            .create_directory(path)
+            .await
+    }
+
+    pub async fn rename(
+        &self,
+        id: &WorkspaceId,
+        from: &WorkspaceRelativePath,
+        to: &WorkspaceRelativePath,
+    ) -> Result<(), WorkspaceError> {
+        self.get_open_instance(id).await?.rename(from, to).await
+    }
+
+    pub async fn remove(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+        recursive: bool,
+    ) -> Result<(), WorkspaceError> {
+        self.get_open_instance(id)
+            .await?
+            .remove(path, recursive)
+            .await
+    }
+
+    pub async fn get_tree(
+        &self,
+        id: &WorkspaceId,
+        recursive: bool,
+    ) -> Result<FileTree, WorkspaceError> {
+        self.get_open_instance(id).await?.get_tree(recursive).await
+    }
+
+    pub async fn get_node(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+        recursive: bool,
+    ) -> Result<FileNode, WorkspaceError> {
+        self.get_open_instance(id)
+            .await?
+            .get_node(path, recursive)
+            .await
+    }
+
+    pub async fn refresh_index(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
+        self.get_open_instance(id).await?.refresh_index().await
+    }
+
+    async fn get_open_instance(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<Arc<WorkspaceInstance>, WorkspaceError> {
+        self.runtime
+            .get(id)
+            .await
+            .ok_or(WorkspaceError::NotOpen(*id))
+    }
+
+    async fn open_workspace_locked(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceSnapshot, WorkspaceError> {
+        if let Some(workspace) = self.runtime.get(id).await {
+            return Ok(workspace.snapshot().await);
+        }
+        let record = self.catalog.get(id).await?;
+        let session = self.storage_resolver.open(&record.storage_binding).await?;
+        let manifest = load_manifest(session.as_ref())
+            .await?
+            .ok_or(WorkspaceError::ManifestNotFound)?;
+        if manifest.id != *id {
+            return Err(WorkspaceError::WorkspaceIdMismatch {
+                expected: *id,
+                actual: manifest.id,
+            });
+        }
+        let workspace = Arc::new(
+            WorkspaceInstance::new(record.storage_binding, session, manifest.clone()).await?,
+        );
+        self.runtime.insert(*id, Arc::clone(&workspace)).await?;
+        let now = now_timestamp();
+        if let Err(error) = self
+            .catalog
+            .update_summary(id, summary_from_manifest(&manifest, now))
+            .await
+        {
+            self.runtime.remove(id).await;
+            return Err(error);
+        }
+        if let Err(error) = self.local_state.mark_opened(id, now).await {
+            self.runtime.remove(id).await;
+            return Err(error);
+        }
+        Ok(workspace.snapshot().await)
+    }
+}
+
+async fn initialize_workspace(
+    session: &super::storage::WorkspaceStorageSession,
+    manifest: &WorkspaceManifest,
+) -> Result<(), WorkspaceError> {
+    save_manifest(session, manifest).await?;
+    let gitignore_path = WorkspaceRelativePath::parse(WORKSPACE_GITIGNORE_PATH)?;
+    if !session.exists(&gitignore_path).await? {
+        session
+            .write(
+                &gitignore_path,
+                DEFAULT_GIT_IGNORE.as_bytes(),
+                WriteOptions {
+                    overwrite: false,
+                    create_parent: true,
+                    atomic: false,
+                },
+            )
+            .await?;
+    }
+    for asset_path in DefaultWorkspace::iter() {
+        let path = WorkspaceRelativePath::parse(asset_path.as_ref().replace('\\', "/"))?;
+        if session.exists(&path).await? {
+            continue;
+        }
+        if let Some(asset) = DefaultWorkspace::get(asset_path.as_ref()) {
+            session
+                .write(
+                    &path,
+                    asset.data.as_ref(),
+                    WriteOptions {
+                        overwrite: false,
+                        create_parent: true,
+                        atomic: false,
+                    },
+                )
+                .await?;
+        }
+    }
+    Ok(())
+}
+
+async fn manifest_exists(
+    session: &super::storage::WorkspaceStorageSession,
+) -> Result<bool, WorkspaceError> {
+    let path = WorkspaceRelativePath::parse(super::domain::WORKSPACE_MANIFEST_PATH)?;
+    Ok(session.exists(&path).await?)
+}
+
+fn record_from_manifest(
+    storage_binding: WorkspaceStorageBinding,
+    manifest: &WorkspaceManifest,
+    validated_at: u64,
+) -> WorkspaceRecord {
+    WorkspaceRecord {
+        id: manifest.id,
+        storage_binding,
+        cached_summary: summary_from_manifest(manifest, validated_at),
+    }
+}
+
+fn summary_from_manifest(
+    manifest: &WorkspaceManifest,
+    validated_at: u64,
+) -> WorkspaceCachedSummary {
+    WorkspaceCachedSummary {
+        display_name: manifest.display_name.clone(),
+        created_at: Some(manifest.created_at),
+        last_validated_at: Some(validated_at),
+    }
+}
+
+fn validate_display_name(display_name: &str) -> Result<(), WorkspaceError> {
+    if display_name.trim().is_empty() || display_name.chars().any(char::is_control) {
+        return Err(WorkspaceError::InvalidDisplayName);
+    }
+    Ok(())
+}
+
+fn now_timestamp() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+}

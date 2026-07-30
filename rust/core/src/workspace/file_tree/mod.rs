@@ -13,6 +13,7 @@ pub use file_type::*;
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FileTree {
+    #[serde(skip)]
     pub path: PathBuf,
     pub root: Option<FileNode>,
     pub sort_type: FileTreeSortType,
@@ -30,12 +31,13 @@ impl FileTree {
         &mut self,
         follow_gitignore: bool,
         custom_ignore: String,
+        recursive: bool,
     ) -> Result<(), String> {
         self.root.replace(FileNode::from_path(
             &self.path,
             follow_gitignore,
             custom_ignore,
-            true,
+            recursive,
         )?);
         self.sort();
 
@@ -46,7 +48,7 @@ impl FileTree {
         self.sort();
     }
     pub fn sort(&mut self) {
-        let sort_type = self.sort_type.clone();
+        let sort_type = self.sort_type;
         if let Some(root) = &mut self.root {
             // let start = std::time::Instant::now();
             let mut stack = vec![root];

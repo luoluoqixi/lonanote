@@ -1,22 +1,7 @@
 use std::cmp::Ordering;
 
-use serde::{Deserialize, Serialize};
-
 use super::{FileNode, FileType};
-
-#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum FileTreeSortType {
-    #[default]
-    Name,
-    NameRev,
-
-    LastModifiedTime,
-    LastModifiedTimeRev,
-
-    CreateTime,
-    CreateTimeRev,
-}
+pub use crate::workspace::domain::FileTreeSortType;
 
 fn file_tree_compare_name(a: &FileNode, b: &FileNode) -> Ordering {
     // 对比的路径永远不应该出现 "foo.txt/.." "/" 这样的路径, 所以直接unwrap

@@ -2,7 +2,7 @@ pub mod api;
 pub mod config;
 pub(crate) mod settings;
 pub mod utils;
-pub(crate) mod workspace;
+pub mod workspace;
 
 use anyhow::Result;
 pub use cmdreg::*;

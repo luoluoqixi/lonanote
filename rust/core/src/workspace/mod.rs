@@ -1,26 +1,43 @@
-pub mod config;
 pub mod error;
 pub mod file_tree;
-pub mod workspace_index;
-pub mod workspace_instance;
-pub mod workspace_manager;
-pub mod workspace_metadata;
-pub mod workspace_path;
-pub mod workspace_savedata;
-pub mod workspace_settings;
+pub mod storage;
 
-use std::sync::{Arc, LazyLock};
-use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+mod domain;
+mod manager;
+mod persistence;
+mod runtime;
 
-use workspace_manager::WorkspaceManager;
+use std::sync::OnceLock;
 
-pub static WORKSPACE_MANAGER: LazyLock<Arc<RwLock<WorkspaceManager>>> =
-    LazyLock::new(|| Arc::new(RwLock::new(WorkspaceManager::new())));
+use thiserror::Error;
 
-pub async fn get_workspace_manager() -> RwLockReadGuard<'static, WorkspaceManager> {
-    WORKSPACE_MANAGER.read().await
+pub use domain::*;
+pub use error::*;
+pub use manager::WorkspaceManager;
+pub use persistence::{
+    WorkspaceCatalog, WorkspaceCatalogData, WorkspaceLocalStateData, WorkspaceLocalStateStore,
+};
+pub use runtime::{WorkspaceInstance, WorkspaceRuntime};
+pub use storage::*;
+
+static WORKSPACE_MANAGER: OnceLock<WorkspaceManager> = OnceLock::new();
+
+pub fn install_workspace_manager(
+    manager: WorkspaceManager,
+) -> Result<(), WorkspaceManagerInstallError> {
+    WORKSPACE_MANAGER
+        .set(manager)
+        .map_err(|_| WorkspaceManagerInstallError::AlreadyInstalled)
 }
 
-pub async fn get_workspace_manager_mut() -> RwLockWriteGuard<'static, WorkspaceManager> {
-    WORKSPACE_MANAGER.write().await
+pub fn workspace_manager() -> &'static WorkspaceManager {
+    WORKSPACE_MANAGER
+        .get()
+        .expect("WorkspaceManager 尚未初始化")
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+pub enum WorkspaceManagerInstallError {
+    #[error("WorkspaceManager 已安装")]
+    AlreadyInstalled,
 }
