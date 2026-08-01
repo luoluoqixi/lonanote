@@ -90,6 +90,10 @@ async fn index_refresh_flow() {
         .await
         .unwrap();
     let id = workspace.id;
+    manager
+        .create_directory(&id, &path("assets"))
+        .await
+        .unwrap();
 
     manager
         .write_text(&id, &path("z.md"), "z", WriteOptions::default())

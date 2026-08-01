@@ -38,6 +38,7 @@ struct DefaultWorkspace;
 
 const WORKSPACE_GITIGNORE_PATH: &str = ".lonanote/.gitignore";
 const DEFAULT_GIT_IGNORE: &str = include_str!("../../assets/default_gitignore.txt");
+pub const INITIAL_WORKSPACE_DISPLAY_NAME: &str = "我的笔记";
 
 pub struct WorkspaceManager {
     catalog: WorkspaceCatalog,
@@ -141,6 +142,37 @@ impl WorkspaceManager {
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
         validate_display_name(&display_name)?;
         let _lifecycle = self.lifecycle_lock.write().await;
+        self.create_managed_workspace_locked(provider_id, display_name, false)
+            .await
+    }
+
+    /// 在全新安装时创建一次包含示例内容的默认 Workspace。
+    ///
+    /// `initial_workspace_copied` 是 Catalog 的单向历史标记；即使用户删除这个
+    /// Workspace，后续启动也不会再次创建。
+    pub async fn create_initial_workspace_if_needed(
+        &self,
+        provider_id: StorageProviderId,
+    ) -> Result<Option<WorkspaceSnapshot>, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.write().await;
+        if self.catalog.initial_workspace_copied().await || !self.catalog.is_empty().await {
+            return Ok(None);
+        }
+        self.create_managed_workspace_locked(
+            provider_id,
+            INITIAL_WORKSPACE_DISPLAY_NAME.to_string(),
+            true,
+        )
+        .await
+        .map(Some)
+    }
+
+    async fn create_managed_workspace_locked(
+        &self,
+        provider_id: StorageProviderId,
+        display_name: String,
+        include_default_workspace: bool,
+    ) -> Result<WorkspaceSnapshot, WorkspaceError> {
         let base_name = WorkspaceDirectoryName::from_display_name(&display_name);
         let mut suffix = 1usize;
         let (binding, session) = loop {
@@ -160,12 +192,22 @@ impl WorkspaceManager {
             }
         };
         let manifest = WorkspaceManifest::new(WorkspaceId::new(), display_name, now_timestamp());
-        if let Err(error) = initialize_workspace(session.as_ref(), &manifest).await {
+        if let Err(error) =
+            initialize_workspace(session.as_ref(), &manifest, include_default_workspace).await
+        {
             let _ = self.storage_resolver.remove_workspace_root(&binding).await;
             return Err(error);
         }
-        let record = record_from_manifest(binding, &manifest, now_timestamp());
-        self.catalog.add(record).await?;
+        let record = record_from_manifest(binding.clone(), &manifest, now_timestamp());
+        let catalog_result = if include_default_workspace {
+            self.catalog.add_initial_workspace(record).await
+        } else {
+            self.catalog.add(record).await
+        };
+        if let Err(error) = catalog_result {
+            let _ = self.storage_resolver.remove_workspace_root(&binding).await;
+            return Err(error);
+        }
         self.open_workspace_locked(&manifest.id).await
     }
 
@@ -185,7 +227,7 @@ impl WorkspaceManager {
             return Err(WorkspaceError::ManifestAlreadyExists);
         }
         let manifest = WorkspaceManifest::new(WorkspaceId::new(), display_name, now_timestamp());
-        initialize_workspace(session.as_ref(), &manifest).await?;
+        initialize_workspace(session.as_ref(), &manifest, false).await?;
         let record = record_from_manifest(binding, &manifest, now_timestamp());
         self.catalog.add(record).await?;
         self.open_workspace_locked(&manifest.id).await
@@ -606,6 +648,7 @@ impl WorkspaceManager {
 async fn initialize_workspace(
     session: &super::storage::WorkspaceStorageSession,
     manifest: &WorkspaceManifest,
+    include_default_workspace: bool,
 ) -> Result<(), WorkspaceError> {
     save_workspace_settings(session, &WorkspaceSettings::default()).await?;
     save_local_setting(session, &WorkspaceLocalSetting::default()).await?;
@@ -623,23 +666,25 @@ async fn initialize_workspace(
             )
             .await?;
     }
-    for asset_path in DefaultWorkspace::iter() {
-        let path = WorkspaceRelativePath::parse(asset_path.as_ref().replace('\\', "/"))?;
-        if session.exists(&path).await? {
-            continue;
-        }
-        if let Some(asset) = DefaultWorkspace::get(asset_path.as_ref()) {
-            session
-                .write(
-                    &path,
-                    asset.data.as_ref(),
-                    WriteOptions {
-                        overwrite: false,
-                        create_parent: true,
-                        atomic: false,
-                    },
-                )
-                .await?;
+    if include_default_workspace {
+        for asset_path in DefaultWorkspace::iter() {
+            let path = WorkspaceRelativePath::parse(asset_path.as_ref().replace('\\', "/"))?;
+            if session.exists(&path).await? {
+                continue;
+            }
+            if let Some(asset) = DefaultWorkspace::get(asset_path.as_ref()) {
+                session
+                    .write(
+                        &path,
+                        asset.data.as_ref(),
+                        WriteOptions {
+                            overwrite: false,
+                            create_parent: true,
+                            atomic: false,
+                        },
+                    )
+                    .await?;
+            }
         }
     }
     // Manifest 是 Workspace 初始化完成的提交标记，必须最后写入。

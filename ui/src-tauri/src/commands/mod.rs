@@ -10,6 +10,7 @@ use lonanote_core::workspace::{
 use std::{path::PathBuf, sync::Arc};
 use tauri::{AppHandle, Builder, Manager, Runtime};
 
+const APP_LOCAL_PROVIDER_ID: &str = "app-local";
 const DESKTOP_DOCUMENTS_PROVIDER_ID: &str = "desktop-documents";
 const DESKTOP_FOLDER_PROVIDER_ID: &str = "desktop-folder";
 const MANAGED_WORKSPACE_DIRECTORY: &str = "lonanote";
@@ -60,17 +61,25 @@ pub fn init_commands(app: &AppHandle) -> Result<()> {
     let paths = resolve_default_paths(app)?;
     let data_dir = PathBuf::from(&paths.data_dir);
     lonanote_core::config::app_path::init_paths(paths);
-    let managed_root = app.path().document_dir()?.join(MANAGED_WORKSPACE_DIRECTORY);
-    let storage_resolver = Arc::new(
-        LocalFsResolver::new()
-            .with_managed_provider(
-                StorageProviderId::parse(DESKTOP_DOCUMENTS_PROVIDER_ID)?,
-                managed_root,
-            )
-            .with_external_provider(StorageProviderId::parse(DESKTOP_FOLDER_PROVIDER_ID)?),
-    ) as Arc<dyn WorkspaceStorageResolver>;
+    let mut storage_resolver = LocalFsResolver::new()
+        .with_managed_provider(
+            StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?,
+            data_dir.clone(),
+        )
+        .with_external_provider(StorageProviderId::parse(DESKTOP_FOLDER_PROVIDER_ID)?);
+    if let Ok(documents_dir) = app.path().document_dir() {
+        storage_resolver = storage_resolver.with_managed_provider(
+            StorageProviderId::parse(DESKTOP_DOCUMENTS_PROVIDER_ID)?,
+            documents_dir.join(MANAGED_WORKSPACE_DIRECTORY),
+        );
+    }
+    let storage_resolver = Arc::new(storage_resolver) as Arc<dyn WorkspaceStorageResolver>;
     let workspace_manager =
         tauri::async_runtime::block_on(WorkspaceManager::load(data_dir, storage_resolver))?;
+    tauri::async_runtime::block_on(
+        workspace_manager
+            .create_initial_workspace_if_needed(StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?),
+    )?;
     install_workspace_manager(workspace_manager).map_err(|error| anyhow!(error.to_string()))?;
     lonanote_core::init()?;
     Ok(())

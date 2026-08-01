@@ -71,14 +71,17 @@ fn initialize_native_runtime(module_data_path: &str, sandbox_path: &str) -> Resu
 fn initialize_native_runtime_once(sandbox_path: &Path) -> Result<()> {
     let app_paths = lonanote_core::config::app_path::resolve_default_paths(sandbox_path);
     lonanote_core::config::app_path::init_paths(app_paths);
-    lonanote_core::init()?;
 
     let resolver = Arc::new(LocalFsResolver::new().with_managed_provider(
         StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?,
         sandbox_path,
     )) as Arc<dyn WorkspaceStorageResolver>;
     let manager = runtime()?.block_on(WorkspaceManager::load(sandbox_path, resolver))?;
+    runtime()?.block_on(manager.create_initial_workspace_if_needed(StorageProviderId::parse(
+        APP_LOCAL_PROVIDER_ID,
+    )?))?;
     install_workspace_manager(manager).map_err(|error| anyhow!(error.to_string()))?;
+    lonanote_core::init()?;
     Ok(())
 }
 

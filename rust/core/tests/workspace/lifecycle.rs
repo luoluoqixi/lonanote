@@ -41,13 +41,13 @@ async fn managed_restart_flow() {
         std::fs::read_to_string(root.join(".lonanote/.gitignore")).unwrap(),
         "settings.local.json\n"
     );
-    assert!(root.join("README.md").exists());
-    assert!(root.join("README_en.md").exists());
-    assert!(root.join("assets/images/icon.png").exists());
+    assert!(!root.join("README.md").exists());
+    assert!(!root.join("README_en.md").exists());
+    assert!(!root.join("assets/images/icon.png").exists());
     assert_eq!(manager.get_last_workspace_id().await, Some(id));
 
     manager
-        .set_last_open_file(&id, Some(path("README.md")))
+        .set_last_open_file(&id, Some(path("notes.md")))
         .await
         .unwrap();
     let mut settings = manager.get_settings(&id).await.unwrap();
@@ -75,10 +75,51 @@ async fn managed_restart_flow() {
             .unwrap()
             .last_open_file
             .unwrap(),
-        path("README.md")
+        path("notes.md")
     );
     assert!(app.data_dir.join("workspace-session.json").exists());
     assert!(!app.data_dir.join("workspace-local-state.json").exists());
+}
+
+#[tokio::test]
+async fn initial_workspace_is_copied_once_even_after_deletion() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+
+    let created = manager
+        .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+        .await
+        .unwrap()
+        .expect("首次启动必须创建默认 Workspace");
+    let root = app.managed_workspace_root(&created);
+
+    assert_eq!(created.display_name, "我的笔记");
+    assert!(root.join("README.md").exists());
+    assert!(root.join("README_en.md").exists());
+    assert!(root.join("assets/images/icon.png").exists());
+    let catalog: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(app.data_dir.join("workspace-catalog.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(catalog["initialWorkspaceCopied"], true);
+
+    manager.close_workspace(&created.id).await.unwrap();
+    manager.remove_workspace(&created.id, true).await.unwrap();
+    assert!(manager.list_workspaces().await.is_empty());
+    assert!(manager
+        .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+        .await
+        .unwrap()
+        .is_none());
+
+    drop(manager);
+    let restarted = app.start().await;
+    assert!(restarted
+        .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+        .await
+        .unwrap()
+        .is_none());
+    assert!(restarted.list_workspaces().await.is_empty());
 }
 
 #[tokio::test]

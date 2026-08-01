@@ -21,6 +21,11 @@ pub const WORKSPACE_CATALOG_FILE_NAME: &str = "workspace-catalog.json";
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceCatalogData {
     pub schema_version: u32,
+    /// 是否已经复制过首次启动的默认 Workspace 内容。
+    ///
+    /// 这是一次性历史标记：用户随后删除默认 Workspace，也不能再次触发复制。
+    #[serde(default)]
+    pub initial_workspace_copied: bool,
     pub workspaces: HashMap<WorkspaceId, WorkspaceRecord>,
 }
 
@@ -28,6 +33,7 @@ impl Default for WorkspaceCatalogData {
     fn default() -> Self {
         Self {
             schema_version: WORKSPACE_CATALOG_SCHEMA_VERSION,
+            initial_workspace_copied: false,
             workspaces: HashMap::new(),
         }
     }
@@ -114,6 +120,14 @@ impl WorkspaceCatalog {
         records
     }
 
+    pub async fn is_empty(&self) -> bool {
+        self.state.read().await.workspaces.is_empty()
+    }
+
+    pub async fn initial_workspace_copied(&self) -> bool {
+        self.state.read().await.initial_workspace_copied
+    }
+
     pub async fn get(&self, id: &WorkspaceId) -> Result<WorkspaceRecord, WorkspaceError> {
         self.state
             .read()
@@ -130,6 +144,22 @@ impl WorkspaceCatalog {
                 return Err(WorkspaceError::AlreadyRegistered(record.id));
             }
             data.workspaces.insert(record.id, record);
+            Ok(())
+        })
+        .await
+    }
+
+    /// 写入首次启动创建的 Workspace，并在同一次 Catalog 原子写入中记录历史标记。
+    pub async fn add_initial_workspace(
+        &self,
+        record: WorkspaceRecord,
+    ) -> Result<(), WorkspaceError> {
+        self.update(move |data| {
+            if data.workspaces.contains_key(&record.id) {
+                return Err(WorkspaceError::AlreadyRegistered(record.id));
+            }
+            data.workspaces.insert(record.id, record);
+            data.initial_workspace_copied = true;
             Ok(())
         })
         .await

@@ -115,7 +115,8 @@ flowchart LR
     Platform --> Paths["初始化 Core AppPaths"]
     Paths --> Resolver["构造 LocalFsResolver"]
     Resolver --> Load["WorkspaceManager::load(app_data)"]
-    Load --> Install["install_workspace_manager"]
+    Load --> Bootstrap["首次启动时创建默认 Workspace"]
+    Bootstrap --> Install["install_workspace_manager"]
     Install --> Ready["平台 runtime ready"]
 ```
 
@@ -127,19 +128,21 @@ RootLayout
   → expo-file-system Paths.document.uri
   → LonanoteRustModule.init(sandboxPath)
   → Rust 校验 sandboxPath 是绝对、存在且位于原生模块 data path 内
-  → 初始化 AppPaths 与 cmdreg
+  → 初始化 AppPaths
   → LocalFsResolver(providerId = "app-local", root = <sandbox>)
   → WorkspaceManager::load(<sandbox>)
+  → 仅首次启动：使用 app-local 创建并复制默认 Workspace
   → install_workspace_manager
+  → 注册 cmdreg
 ```
 
 因此移动端只从 TS 传递一个 sandbox path。Catalog 与 App Session 位于该 sandbox 根目录；`app-local` Managed Workspace 位于 `<sandbox>/workspaces/<directoryName>`。移动端沙盒已经由系统隔离到当前应用，不再额外创建 `lonanote` 目录。初始化发生在 `RootLayout` 组件创建前，只有 Rust Core、Provider 与 Manager 全部就绪后才开始渲染应用界面；普通 command 仍会同步检查初始化状态作为防御。
 
-Core 初始化必须保持为有界的本地启动工作：注册 command、初始化 AppPaths、声明当前平台支持的 Storage Provider，并加载本地 Catalog、App Session 与 Manager。SAF/bookmark 授权弹窗、网络同步、用户目录选择和其他交互式或长耗时流程不属于 Core 初始化，必须在启动完成后由 TypeScript 显式发起异步请求。
+Core 初始化必须保持为有界的本地启动工作：注册 command、初始化 AppPaths、声明当前平台支持的 Storage Provider、加载本地 Catalog/App Session/Manager，并仅在首次启动时复制默认 Workspace。SAF/bookmark 授权弹窗、网络同步、用户目录选择和其他交互式或长耗时流程不属于 Core 初始化，必须在启动完成后由 TypeScript 显式发起异步请求。
 
 旧的 `path.init_dir` 命令已经移除。路径初始化是平台启动职责，不能由任意业务 command 在 runtime 中途重写。移动端当前只注册 Managed `app-local` Provider，不把任意外部路径暴露为 External Local FS；未来的 SAF/bookmark 必须作为各自的授权 Provider 接入。
 
-平台支持的 Provider ID 同样以 Resolver 的实际注册结果为唯一事实来源。`WorkspaceStorageResolver::provider_ids()` 返回排序且去重后的列表，`WorkspaceManager::storage_provider_ids()` 只负责转发，Core 通过统一 command `workspace.list_storage_provider_ids` 暴露该结果。Craby Native 与 Tauri 继续复用已有的通用 `invoke`，不维护专用桥接接口。当前移动端返回 `app-local`，桌面端返回 `desktop-documents` 与 `desktop-folder`，TypeScript 不维护重复常量。
+平台支持的 Provider ID 同样以 Resolver 的实际注册结果为唯一事实来源。`WorkspaceStorageResolver::provider_ids()` 返回排序且去重后的列表，`WorkspaceManager::storage_provider_ids()` 只负责转发，Core 通过统一 command `workspace.list_storage_provider_ids` 暴露该结果。Craby Native 与 Tauri 继续复用已有的通用 `invoke`，不维护专用桥接接口。当前移动端返回 `app-local`；桌面始终返回 `app-local`、`desktop-folder`，在系统能解析 Documents 路径时额外返回 `desktop-documents`。TypeScript 不维护重复常量。
 
 这个列表表示“当前平台安装了对应 Provider 能力”，不表示某个具体目录已经获得 bookmark/SAF 等访问授权。Provider 的 label、介绍和后续能力描述可以在上层功能实现时扩展，但是否实际支持某个 Provider 仍由 Rust 平台初始化决定。
 
@@ -252,6 +255,7 @@ Catalog 保存：
 - `WorkspaceId → WorkspaceStorageBinding`；
 - 列表展示用的 `displayName`、`createdAt` 缓存摘要；
 - 最近验证摘要的时间。
+- `initialWorkspaceCopied`：一次性历史标记；首次默认 Workspace 成功写入时设为 `true`，之后即使用户删除该 Workspace 也不会再次复制。
 
 Binding 可以是 Managed，也可以是 External。它可能包含本机路径或未来平台授权引用，因此不能进入 Workspace 目录。
 
@@ -439,13 +443,16 @@ Manager 是唯一跨组件编排入口，持有：
   → 写默认 settings.json
   → 写默认 settings.local.json
   → 写 .lonanote/.gitignore
-  → 写默认 Workspace 资源
   → 最后写 manifest.json 作为初始化完成标记
   → 添加 Catalog record
   → 执行打开流程
 ```
 
 Managed 创建遇到同名目录时依次尝试 `name`、`name-2`、`name-3`。
+
+### 8.2.1 首次默认 Workspace
+
+平台启动时以 `app-local` 作为默认 Managed Provider 调用 `create_initial_workspace_if_needed()`。只有 Catalog 为空且 `initialWorkspaceCopied` 为 `false` 时，才会额外复制 `assets/default_workspace/`。默认 Workspace record 与该标记同一次原子 Catalog 写入；普通 `create_managed` 和 `create_external` 不复制示例内容。
 
 ### 8.3 Attach
 
@@ -629,6 +636,7 @@ Manifest、Settings、LocalSetting 通过 Storage contract 原子写入。Instan
 - `settings.json` 缺失时不从旧 Manifest 推断。
 - LocalSetting 放在 Workspace 内，但默认由 Git 忽略。
 - App Session 放在应用数据目录，不随 Workspace 移动或同步。
+- 首次默认 Workspace 使用 `app-local`；Catalog 的 `initialWorkspaceCopied` 保证用户删除后不再自动重建。
 - File Tree 仍要求 native root path。
 - Tauri、Android/iOS Local FS 与 TypeScript command wrapper 已接入；SAF、bookmark、iCloud 等授权 Provider 尚未实现。
 
