@@ -1,13 +1,18 @@
 use std::{
     collections::HashMap,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicU64, Ordering},
-        Mutex, OnceLock,
+        Arc, Mutex, OnceLock,
     },
 };
 
 use anyhow::{anyhow, Result};
 use craby::{prelude::*, throw};
+use lonanote_core::workspace::{
+    install_workspace_manager, LocalFsResolver, StorageProviderId, WorkspaceManager,
+    WorkspaceStorageResolver,
+};
 use lonanote_core::{
     invoke_command, invoke_command_async, CommandContext, CommandResponse, CommandResult,
 };
@@ -18,23 +23,74 @@ use crate::generated::*;
 
 type CallbackSender = oneshot::Sender<Result<Option<String>, String>>;
 
-static INIT_RESULT: OnceLock<Option<String>> = OnceLock::new();
+const DOCUMENTS_PROVIDER_ID: &str = "documents";
+const MANAGED_WORKSPACE_DIRECTORY: &str = "lonanote";
+
+struct InitResult {
+    sandbox_path: PathBuf,
+    error: Option<String>,
+}
+
+static INIT_RESULT: OnceLock<InitResult> = OnceLock::new();
 static RUNTIME_RESULT: OnceLock<Result<Runtime, String>> = OnceLock::new();
 static CALLBACK_ID: AtomicU64 = AtomicU64::new(1);
 static PENDING_CALLBACKS: OnceLock<Mutex<HashMap<String, CallbackSender>>> = OnceLock::new();
 
-fn init_error() -> &'static Option<String> {
-    INIT_RESULT.get_or_init(|| {
-        lonanote_core::init()
+fn canonicalize_directory(path: &str, field: &str) -> Result<PathBuf> {
+    if path.trim().is_empty() {
+        return Err(anyhow!("{field} 不能为空"));
+    }
+    let path = Path::new(path);
+    if !path.is_absolute() {
+        return Err(anyhow!("{field} 必须是绝对路径"));
+    }
+    std::fs::canonicalize(path).map_err(|error| anyhow!("解析 {field} 失败: {error}"))
+}
+
+fn initialize_native_runtime(module_data_path: &str, sandbox_path: &str) -> Result<()> {
+    let module_data_path = canonicalize_directory(module_data_path, "module data path")?;
+    let sandbox_path = canonicalize_directory(sandbox_path, "sandbox path")?;
+    if !sandbox_path.starts_with(&module_data_path) {
+        return Err(anyhow!("sandbox path 必须位于原生模块允许的数据目录内"));
+    }
+
+    let result = INIT_RESULT.get_or_init(|| InitResult {
+        sandbox_path: sandbox_path.clone(),
+        error: initialize_native_runtime_once(&sandbox_path)
             .err()
-            .map(|err| format!("init rust error: {err}"))
-    })
+            .map(|error| format!("init rust error: {error}")),
+    });
+    if result.sandbox_path != sandbox_path {
+        return Err(anyhow!("Rust 已使用其他 sandbox path 初始化"));
+    }
+    match &result.error {
+        Some(error) => Err(anyhow!(error.clone())),
+        None => Ok(()),
+    }
+}
+
+fn initialize_native_runtime_once(sandbox_path: &Path) -> Result<()> {
+    let app_paths = lonanote_core::config::app_path::resolve_default_paths(sandbox_path);
+    lonanote_core::config::app_path::init_paths(app_paths);
+    lonanote_core::init()?;
+
+    let managed_root = sandbox_path.join(MANAGED_WORKSPACE_DIRECTORY);
+    let resolver = Arc::new(LocalFsResolver::new().with_managed_provider(
+        StorageProviderId::parse(DOCUMENTS_PROVIDER_ID)?,
+        managed_root,
+    )) as Arc<dyn WorkspaceStorageResolver>;
+    let manager = runtime()?.block_on(WorkspaceManager::load(sandbox_path, resolver))?;
+    install_workspace_manager(manager).map_err(|error| anyhow!(error.to_string()))?;
+    Ok(())
 }
 
 fn ensure_init() -> Result<()> {
-    match init_error() {
-        Some(err) => Err(anyhow!(err.clone())),
-        None => Ok(()),
+    match INIT_RESULT.get() {
+        Some(InitResult {
+            error: Some(error), ..
+        }) => Err(anyhow!(error.clone())),
+        Some(InitResult { error: None, .. }) => Ok(()),
+        None => Err(anyhow!("Rust 尚未初始化")),
     }
 }
 
@@ -103,11 +159,8 @@ pub struct LonanoteRustModule {
 
 #[craby_module]
 impl LonanoteRustModuleSpec for LonanoteRustModule {
-    fn init(&mut self) -> Nullable<String> {
-        match init_error() {
-            Some(err) => Nullable::some(err.clone()),
-            None => Nullable::none(),
-        }
+    fn init(&mut self, sandbox_path: &str) -> Promise<Void> {
+        initialize_native_runtime(&self.ctx.data_path, sandbox_path)
     }
 
     fn invoke(&mut self, command: &str, args: Nullable<String>) -> Nullable<String> {

@@ -1123,7 +1123,7 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_get_command_length(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, double *return$) noexcept;
 
-::rust::repr::PtrLen craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::craby::lonanoterustmodule::bridging::NullableString *return$) noexcept;
+::rust::repr::PtrLen craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str sandbox_path) noexcept;
 
 ::rust::repr::PtrLen craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_invoke(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str command, ::craby::lonanoterustmodule::bridging::NullableString *args, ::craby::lonanoterustmodule::bridging::NullableString *return$) noexcept;
 
@@ -1233,13 +1233,11 @@ double getCommandLength(::craby::lonanoterustmodule::bridging::LonanoteRustModul
   return ::std::move(return$.value);
 }
 
-::craby::lonanoterustmodule::bridging::NullableString init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_) {
-  ::rust::MaybeUninit<::craby::lonanoterustmodule::bridging::NullableString> return$;
-  ::rust::repr::PtrLen error$ = craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_init(it_, &return$.value);
+void init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str sandbox_path) {
+  ::rust::repr::PtrLen error$ = craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_init(it_, sandbox_path);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
-  return ::std::move(return$.value);
 }
 
 ::craby::lonanoterustmodule::bridging::NullableString invoke(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str command, ::craby::lonanoterustmodule::bridging::NullableString args) {

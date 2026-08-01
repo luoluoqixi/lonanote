@@ -55,7 +55,7 @@ struct Bridging<rust::Str> {
   }
 
   static jsi::Value toJs(jsi::Runtime& rt, const rust::Str& value) {
-    return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+    return jsi::String::createFromUtf8(rt, std::string(value.data(), value.size()));
   }
 };
 
@@ -67,7 +67,7 @@ struct Bridging<rust::String> {
   }
 
   static jsi::Value toJs(jsi::Runtime& rt, const rust::String& value) {
-    return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+    return jsi::String::createFromUtf8(rt, std::string(value.data(), value.size()));
   }
 };
 
@@ -132,7 +132,7 @@ struct Bridging<craby::lonanoterustmodule::bridging::NullableString> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::lonanoterustmodule::bridging::NullableString value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::lonanoterustmodule::bridging::NullableString& value) {
     if (value.null) {
       return jsi::Value::null();
     }
@@ -162,7 +162,7 @@ struct Bridging<craby::lonanoterustmodule::bridging::CallbackRequest> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::lonanoterustmodule::bridging::CallbackRequest value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::lonanoterustmodule::bridging::CallbackRequest& value) {
     jsi::Object obj = jsi::Object(rt);
     auto _obj$id = react::bridging::toJs(rt, value.id);
     auto _obj$key = react::bridging::toJs(rt, value.key);

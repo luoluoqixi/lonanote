@@ -1048,7 +1048,7 @@ double getCommandCallbackLength(::craby::lonanoterustmodule::bridging::LonanoteR
 
 double getCommandLength(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
 
-::craby::lonanoterustmodule::bridging::NullableString init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
+void init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str sandbox_path);
 
 ::craby::lonanoterustmodule::bridging::NullableString invoke(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str command, ::craby::lonanoterustmodule::bridging::NullableString args);
 

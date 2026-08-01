@@ -21,8 +21,3 @@ fn get_data_dir() -> String {
 fn get_download_dir() -> String {
     app_path::get_download_dir()
 }
-
-#[command("path")]
-fn init_dir(data_dir: String, cache_dir: String, download_dir: String, home_dir: String) {
-    app_path::init_dir(data_dir, cache_dir, download_dir, home_dir);
-}

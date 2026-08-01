@@ -9,7 +9,7 @@ export interface CallbackRequest {
 
 interface Spec extends NativeModule {
   onCallbackRequest: Signal<CallbackRequest>;
-  init(): string | null;
+  init(sandboxPath: string): Promise<void>;
   invoke(command: string, args: string | null): string | null;
   getCommandKeys(): string[];
   getCommandLength(): number;

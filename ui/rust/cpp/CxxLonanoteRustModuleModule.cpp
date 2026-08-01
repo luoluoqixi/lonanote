@@ -37,7 +37,7 @@ CxxLonanoteRustModuleModule::CxxLonanoteRustModuleModule(
   methodMap_["getCommandCallbackLength"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandCallbackLength};
   methodMap_["getCommandKeys"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandKeys};
   methodMap_["getCommandLength"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandLength};
-  methodMap_["init"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::init};
+  methodMap_["init"] = MethodMetadata{1, &CxxLonanoteRustModuleModule::init};
   methodMap_["invoke"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::invoke};
   methodMap_["invokeAsync"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::invokeAsync};
   methodMap_["regCallbackFunction"] = MethodMetadata{1, &CxxLonanoteRustModuleModule::regCallbackFunction};
@@ -314,13 +314,26 @@ jsi::Value CxxLonanoteRustModuleModule::init(jsi::Runtime &rt,
   auto it_ = thisModule.module_;
 
   try {
-    if (0 != count) {
-      throw jsi::JSError(rt, "Expected 0 argument");
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    auto ret = craby::lonanoterustmodule::bridging::init(*it_);
+    auto arg0$raw = args[0].asString(rt).utf8(rt);
+    react::AsyncPromise<std::monostate> promise(rt, callInvoker);
 
-    return react::bridging::toJs(rt, ret);
+    thisModule.threadPool_->enqueue([it_, promise, arg0$raw]() mutable {
+      try {
+        auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
+        craby::lonanoterustmodule::bridging::init(*it_, arg0);
+        promise.resolve(std::monostate{});
+      } catch (const jsi::JSError &err) {
+        promise.reject(err.getMessage());
+      } catch (const std::exception &err) {
+        promise.reject(craby::lonanoterustmodule::utils::errorMessage(err));
+      }
+    });
+
+    return react::bridging::toJs(rt, promise);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {

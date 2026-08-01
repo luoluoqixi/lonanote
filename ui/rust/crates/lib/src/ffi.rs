@@ -2,8 +2,8 @@
 #[rustfmt::skip]
 use craby::prelude::*;
 
-use crate::generated::*;
 use crate::lonanote_rust_module_impl::*;
+use crate::generated::*;
 
 use bridging::*;
 
@@ -29,79 +29,46 @@ pub mod bridging {
         fn create_lonanote_rust_module(id: usize, data_path: &str) -> Box<LonanoteRustModule>;
 
         #[cxx_name = "clearCallbackFunction"]
-        fn lonanote_rust_module_clear_callback_function(it_: &mut LonanoteRustModule)
-            -> Result<()>;
+        fn lonanote_rust_module_clear_callback_function(it_: &mut LonanoteRustModule) -> Result<()>;
 
         #[cxx_name = "getCommandAsyncKeys"]
-        fn lonanote_rust_module_get_command_async_keys(
-            it_: &mut LonanoteRustModule,
-        ) -> Result<Vec<String>>;
+        fn lonanote_rust_module_get_command_async_keys(it_: &mut LonanoteRustModule) -> Result<Vec<String>>;
 
         #[cxx_name = "getCommandAsyncLength"]
-        fn lonanote_rust_module_get_command_async_length(
-            it_: &mut LonanoteRustModule,
-        ) -> Result<f64>;
+        fn lonanote_rust_module_get_command_async_length(it_: &mut LonanoteRustModule) -> Result<f64>;
 
         #[cxx_name = "getCommandCallbackKeys"]
-        fn lonanote_rust_module_get_command_callback_keys(
-            it_: &mut LonanoteRustModule,
-        ) -> Result<Vec<String>>;
+        fn lonanote_rust_module_get_command_callback_keys(it_: &mut LonanoteRustModule) -> Result<Vec<String>>;
 
         #[cxx_name = "getCommandCallbackLength"]
-        fn lonanote_rust_module_get_command_callback_length(
-            it_: &mut LonanoteRustModule,
-        ) -> Result<f64>;
+        fn lonanote_rust_module_get_command_callback_length(it_: &mut LonanoteRustModule) -> Result<f64>;
 
         #[cxx_name = "getCommandKeys"]
-        fn lonanote_rust_module_get_command_keys(
-            it_: &mut LonanoteRustModule,
-        ) -> Result<Vec<String>>;
+        fn lonanote_rust_module_get_command_keys(it_: &mut LonanoteRustModule) -> Result<Vec<String>>;
 
         #[cxx_name = "getCommandLength"]
         fn lonanote_rust_module_get_command_length(it_: &mut LonanoteRustModule) -> Result<f64>;
 
         #[cxx_name = "init"]
-        fn lonanote_rust_module_init(it_: &mut LonanoteRustModule) -> Result<NullableString>;
+        fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str) -> Result<()>;
 
         #[cxx_name = "invoke"]
-        fn lonanote_rust_module_invoke(
-            it_: &mut LonanoteRustModule,
-            command: &str,
-            args: NullableString,
-        ) -> Result<NullableString>;
+        fn lonanote_rust_module_invoke(it_: &mut LonanoteRustModule, command: &str, args: NullableString) -> Result<NullableString>;
 
         #[cxx_name = "invokeAsync"]
-        fn lonanote_rust_module_invoke_async(
-            it_: &mut LonanoteRustModule,
-            command: &str,
-            args: NullableString,
-        ) -> Result<NullableString>;
+        fn lonanote_rust_module_invoke_async(it_: &mut LonanoteRustModule, command: &str, args: NullableString) -> Result<NullableString>;
 
         #[cxx_name = "regCallbackFunction"]
-        fn lonanote_rust_module_reg_callback_function(
-            it_: &mut LonanoteRustModule,
-            key: &str,
-        ) -> Result<()>;
+        fn lonanote_rust_module_reg_callback_function(it_: &mut LonanoteRustModule, key: &str) -> Result<()>;
 
         #[cxx_name = "rejectCallback"]
-        fn lonanote_rust_module_reject_callback(
-            it_: &mut LonanoteRustModule,
-            id: &str,
-            error: &str,
-        ) -> Result<()>;
+        fn lonanote_rust_module_reject_callback(it_: &mut LonanoteRustModule, id: &str, error: &str) -> Result<()>;
 
         #[cxx_name = "resolveCallback"]
-        fn lonanote_rust_module_resolve_callback(
-            it_: &mut LonanoteRustModule,
-            id: &str,
-            result: NullableString,
-        ) -> Result<()>;
+        fn lonanote_rust_module_resolve_callback(it_: &mut LonanoteRustModule, id: &str, result: NullableString) -> Result<()>;
 
         #[cxx_name = "unregCallbackFunction"]
-        fn lonanote_rust_module_unreg_callback_function(
-            it_: &mut LonanoteRustModule,
-            key: &str,
-        ) -> Result<()>;
+        fn lonanote_rust_module_unreg_callback_function(it_: &mut LonanoteRustModule, key: &str) -> Result<()>;
     }
 
     extern "Rust" {
@@ -116,12 +83,7 @@ pub mod bridging {
 
         type SignalManager;
 
-        unsafe fn emit(
-            self: &SignalManager,
-            id: usize,
-            name: &str,
-            signal: *mut LonanoteRustModuleSignal,
-        );
+        unsafe fn emit(self: &SignalManager, id: usize, name: &str, signal: *mut LonanoteRustModuleSignal);
 
         #[rust_name = "get_signal_manager"]
         fn getSignalManager() -> &'static SignalManager;
@@ -133,95 +95,70 @@ fn create_lonanote_rust_module(id: usize, data_path: &str) -> Box<LonanoteRustMo
     Box::new(LonanoteRustModule::new(ctx))
 }
 
-fn lonanote_rust_module_clear_callback_function(
-    it_: &mut LonanoteRustModule,
-) -> Result<(), anyhow::Error> {
+fn lonanote_rust_module_clear_callback_function(it_: &mut LonanoteRustModule) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.clear_callback_function();
         ret
-    })
-    .and_then(|r| r)
+    }).and_then(|r| r)
 }
 
-fn lonanote_rust_module_get_command_async_keys(
-    it_: &mut LonanoteRustModule,
-) -> Result<Vec<String>, anyhow::Error> {
+fn lonanote_rust_module_get_command_async_keys(it_: &mut LonanoteRustModule) -> Result<Vec<String>, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.get_command_async_keys();
         ret
     })
 }
 
-fn lonanote_rust_module_get_command_async_length(
-    it_: &mut LonanoteRustModule,
-) -> Result<f64, anyhow::Error> {
+fn lonanote_rust_module_get_command_async_length(it_: &mut LonanoteRustModule) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.get_command_async_length();
         ret
     })
 }
 
-fn lonanote_rust_module_get_command_callback_keys(
-    it_: &mut LonanoteRustModule,
-) -> Result<Vec<String>, anyhow::Error> {
+fn lonanote_rust_module_get_command_callback_keys(it_: &mut LonanoteRustModule) -> Result<Vec<String>, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.get_command_callback_keys();
         ret
     })
 }
 
-fn lonanote_rust_module_get_command_callback_length(
-    it_: &mut LonanoteRustModule,
-) -> Result<f64, anyhow::Error> {
+fn lonanote_rust_module_get_command_callback_length(it_: &mut LonanoteRustModule) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.get_command_callback_length();
         ret
     })
 }
 
-fn lonanote_rust_module_get_command_keys(
-    it_: &mut LonanoteRustModule,
-) -> Result<Vec<String>, anyhow::Error> {
+fn lonanote_rust_module_get_command_keys(it_: &mut LonanoteRustModule) -> Result<Vec<String>, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.get_command_keys();
         ret
     })
 }
 
-fn lonanote_rust_module_get_command_length(
-    it_: &mut LonanoteRustModule,
-) -> Result<f64, anyhow::Error> {
+fn lonanote_rust_module_get_command_length(it_: &mut LonanoteRustModule) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.get_command_length();
         ret
     })
 }
 
-fn lonanote_rust_module_init(
-    it_: &mut LonanoteRustModule,
-) -> Result<NullableString, anyhow::Error> {
+fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
-        let ret = it_.init();
-        ret.into()
-    })
+        let ret = it_.init(sandbox_path);
+        ret
+    }).and_then(|r| r)
 }
 
-fn lonanote_rust_module_invoke(
-    it_: &mut LonanoteRustModule,
-    command: &str,
-    args: NullableString,
-) -> Result<NullableString, anyhow::Error> {
+fn lonanote_rust_module_invoke(it_: &mut LonanoteRustModule, command: &str, args: NullableString) -> Result<NullableString, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.invoke(command, args.into());
         ret.into()
     })
 }
 
-fn lonanote_rust_module_invoke_async(
-    it_: &mut LonanoteRustModule,
-    command: &str,
-    args: NullableString,
-) -> Result<NullableString, anyhow::Error> {
+fn lonanote_rust_module_invoke_async(it_: &mut LonanoteRustModule, command: &str, args: NullableString) -> Result<NullableString, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.invoke_async(command, args.into());
         ret
@@ -230,48 +167,32 @@ fn lonanote_rust_module_invoke_async(
     .map(Into::into)
 }
 
-fn lonanote_rust_module_reg_callback_function(
-    it_: &mut LonanoteRustModule,
-    key: &str,
-) -> Result<(), anyhow::Error> {
+fn lonanote_rust_module_reg_callback_function(it_: &mut LonanoteRustModule, key: &str) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.reg_callback_function(key);
         ret
-    })
-    .and_then(|r| r)
+    }).and_then(|r| r)
 }
 
-fn lonanote_rust_module_reject_callback(
-    it_: &mut LonanoteRustModule,
-    id: &str,
-    error: &str,
-) -> Result<(), anyhow::Error> {
+fn lonanote_rust_module_reject_callback(it_: &mut LonanoteRustModule, id: &str, error: &str) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.reject_callback(id, error);
         ret
     })
 }
 
-fn lonanote_rust_module_resolve_callback(
-    it_: &mut LonanoteRustModule,
-    id: &str,
-    result: NullableString,
-) -> Result<(), anyhow::Error> {
+fn lonanote_rust_module_resolve_callback(it_: &mut LonanoteRustModule, id: &str, result: NullableString) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.resolve_callback(id, result.into());
         ret
     })
 }
 
-fn lonanote_rust_module_unreg_callback_function(
-    it_: &mut LonanoteRustModule,
-    key: &str,
-) -> Result<(), anyhow::Error> {
+fn lonanote_rust_module_unreg_callback_function(it_: &mut LonanoteRustModule, key: &str) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.unreg_callback_function(key);
         ret
-    })
-    .and_then(|r| r)
+    }).and_then(|r| r)
 }
 
 fn get_on_callback_request_payload(s: &LonanoteRustModuleSignal) -> CallbackRequest {

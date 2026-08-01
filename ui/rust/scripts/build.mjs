@@ -32,6 +32,7 @@ const codeFileExtensions = new Set([
   ".hpp",
   ".js",
   ".jsx",
+  ".mjs",
   ".m",
   ".mm",
   ".rs",
@@ -209,6 +210,7 @@ function getSourceFileSnapshot() {
   const sourceRoots = [
     path.join(rustRoot, "src"),
     path.join(rustRoot, "crates"),
+    path.join(rustRoot, "scripts"),
     path.join(workspaceRoot, "rust"),
   ];
   const sourceFiles = sourceRoots.flatMap((rootPath) => collectCodeFiles(rootPath));
@@ -383,6 +385,7 @@ function restoreCrabyToml(originalContent) {
 
 function getAndroidArtifactPaths(androidTargets) {
   const artifactPaths = [
+    path.join(rustRoot, "android", "src", "main", "jni", "include", "cxx.h"),
     path.join(rustRoot, "android", "src", "main", "jni", "include", "ffi.rs.h"),
     path.join(rustRoot, "android", "src", "main", "jni", "src", "ffi.rs.cc"),
   ];
@@ -419,6 +422,7 @@ function getIosArtifactPaths() {
   );
 
   return [
+    path.join(rustRoot, "ios", "include", "cxx.h"),
     path.join(rustRoot, "ios", "include", "ffi.rs.h"),
     path.join(xcframeworkRoot, "Info.plist"),
     path.join(xcframeworkRoot, "ios-arm64", "liblonanoterustmodule-prebuilt.a"),
@@ -608,8 +612,26 @@ function run(command, args, options = {}) {
   }
 }
 
+function normalizeGeneratedCxxHeaders() {
+  const headerPaths = [
+    path.join(rustRoot, "android", "src", "main", "jni", "include", "cxx.h"),
+    path.join(rustRoot, "ios", "include", "cxx.h"),
+  ];
+  const duplicate = "  using element_type = T;\n  using element_type = T;";
+
+  for (const headerPath of headerPaths) {
+    const content = fs.readFileSync(headerPath, "utf8");
+    const normalized = content.replaceAll(duplicate, "  using element_type = T;");
+
+    if (normalized !== content) {
+      fs.writeFileSync(headerPath, normalized, "utf8");
+    }
+  }
+}
+
 function buildIos() {
   run("bun", ["x", "craby", "build"]);
+  normalizeGeneratedCxxHeaders();
   syncIosXcframeworkArtifacts();
   run("bun", ["x", "tsdown"]);
 }
@@ -658,6 +680,7 @@ function buildAndroid(androidTargets) {
   }
 
   run("bun", ["x", "craby", "build"], { env });
+  normalizeGeneratedCxxHeaders();
   run("bun", ["x", "tsdown"], { env });
 }
 

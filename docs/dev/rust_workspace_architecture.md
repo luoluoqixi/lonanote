@@ -10,15 +10,16 @@
 - [`rust/core/src/api/workspace`](../../rust/core/src/api/workspace/)
 - [`rust/core/tests/workspace`](../../rust/core/tests/workspace/)
 
-当前只实现并验证：
+当前已经实现并验证：
 
 - 普通 Rust 文件系统；
+- Tauri 桌面目录与 Android/iOS 应用沙盒目录的 Local FS 接入；
 - 用于 contract test 的内存 Storage；
 - Workspace 创建、挂载、打开、关闭、移除与迁移；
 - Workspace 文件操作、Settings、LocalSetting 和 File Tree Index；
 - 面向上层调用的 cmdreg command API。
 
-Android SAF、iOS bookmark/iCloud 和 TypeScript wrapper 不在当前范围内。
+Android SAF、iOS bookmark/iCloud 和用户自选目录 Provider 不在当前范围内。TypeScript 的 Workspace command wrapper 仍待 Rust API 稳定后单独对齐；当前只接入了移动端 Rust runtime 初始化。
 
 旧 v1 的 `workspaces.json` 与 `.lonanote/workspace.json` 不会被读取、迁移或改写。当前格式要求新的 `manifest.json` 与 `settings.json`。
 
@@ -102,6 +103,38 @@ rust/core/src/api/workspace/
 | API | JSON 参数与 Manager 的薄适配 | 复制业务规则 |
 
 `manager.rs` 只有一个主要门面，因此保留为顶层单文件。其他拥有多个概念的层使用子目录拆分。
+
+### 3.1 平台启动与 Manager 安装
+
+Workspace Core 不自行猜测平台目录。平台壳负责提供可访问的 app data / sandbox 路径，并在任何 command 调用前安装一个全局 `WorkspaceManager`。
+
+```mermaid
+flowchart LR
+    Startup["应用启动"] --> Platform["平台壳解析可访问目录"]
+    Platform --> Paths["初始化 Core AppPaths"]
+    Paths --> Resolver["构造 LocalFsResolver"]
+    Resolver --> Load["WorkspaceManager::load(app_data)"]
+    Load --> Install["install_workspace_manager"]
+    Install --> Ready["平台 runtime ready"]
+```
+
+Tauri 在原生 `setup` 阶段同步完成这个流程。Android/iOS 的流程由 TypeScript 显式启动：
+
+```text
+RootLayout
+  → initializeRustRuntime()
+  → expo-file-system Paths.document.uri
+  → LonanoteRustModule.init(sandboxPath)
+  → Rust 校验 sandboxPath 是绝对、存在且位于原生模块 data path 内
+  → 初始化 AppPaths 与 cmdreg
+  → LocalFsResolver(providerId = "documents", root = <sandbox>/lonanote)
+  → WorkspaceManager::load(<sandbox>)
+  → install_workspace_manager
+```
+
+因此移动端只从 TS 传递一个 sandbox path。Catalog 与 App Session 位于该 sandbox 根目录；Managed Workspace 位于 `<sandbox>/lonanote/workspaces/<directoryName>`。普通 command 仍会复用同一个初始化 Promise 作为防御，避免应用启动和首个 command 并发时重复初始化。
+
+旧的 `path.init_dir` 命令已经移除。路径初始化是平台启动职责，不能由任意业务 command 在 runtime 中途重写。移动端当前只注册 Managed `documents` Provider，不把任意外部路径暴露为 External Local FS；未来的 SAF/bookmark 必须作为各自的授权 Provider 接入。
 
 ## 4. 持久化数据设计
 

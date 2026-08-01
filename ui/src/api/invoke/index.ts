@@ -4,6 +4,7 @@ import {
   clearCallbackFunction as rawClearCallbackFunction,
   getCommandCallbackKeys as rawGetCommandCallbackKeys,
   getCommandCallbackLength as rawGetCommandCallbackLength,
+  initializeRustRuntime as rawInitializeRustRuntime,
   invoke as rawInvoke,
   invokeAsync as rawInvokeAsync,
   regCallbackFunction as rawRegCallbackFunction,
@@ -17,6 +18,14 @@ export type { InvokeArgs, InvokeCommand } from "./types";
 export { isTauri, isMobile, isWeb, isInvokeAvailable, os as OS } from "./runtime";
 
 const state: any = {};
+
+/**
+ * 显式完成当前平台的 Rust runtime 初始化。
+ * Tauri 在 setup 阶段已经初始化；移动端会把应用沙盒目录交给原生 Rust 模块。
+ */
+export async function initializeRustRuntime(): Promise<void> {
+  await rawInitializeRustRuntime();
+}
 
 async function initializeCommands() {
   if (!state.syncCommands || !state.asyncCommands) {

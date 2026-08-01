@@ -103,17 +103,3 @@ pub fn get_download_dir() -> String {
 pub fn init_paths(paths: AppPaths) {
     DEFAULT_APP_PATHS.write().unwrap().replace(paths);
 }
-
-pub fn init_dir(
-    data_dir: impl AsRef<str>,
-    cache_dir: impl AsRef<str>,
-    download_dir: impl AsRef<str>,
-    home_dir: impl AsRef<str>,
-) {
-    init_paths(AppPaths::new(
-        data_dir.as_ref(),
-        cache_dir.as_ref(),
-        download_dir.as_ref(),
-        home_dir.as_ref(),
-    ));
-}

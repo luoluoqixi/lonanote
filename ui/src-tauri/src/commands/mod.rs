@@ -12,6 +12,7 @@ use tauri::{AppHandle, Builder, Manager, Runtime};
 
 const DOCUMENTS_PROVIDER_ID: &str = "documents";
 const DESKTOP_FOLDER_PROVIDER_ID: &str = "desktop-folder";
+const MANAGED_WORKSPACE_DIRECTORY: &str = "lonanote";
 
 pub fn resolve_default_paths(app: &AppHandle) -> Result<lonanote_core::config::app_path::AppPaths> {
     fn path_to_string(path: std::path::PathBuf, field: &str) -> Result<String> {
@@ -59,7 +60,7 @@ pub fn init_commands(app: &AppHandle) -> Result<()> {
     let paths = resolve_default_paths(app)?;
     let data_dir = PathBuf::from(&paths.data_dir);
     lonanote_core::config::app_path::init_paths(paths);
-    let managed_root = app.path().document_dir()?.join("LonaNote");
+    let managed_root = app.path().document_dir()?.join(MANAGED_WORKSPACE_DIRECTORY);
     let storage_resolver = Arc::new(
         LocalFsResolver::new()
             .with_managed_provider(

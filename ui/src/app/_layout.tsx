@@ -5,6 +5,7 @@ import { Stack } from "expo-router";
 import { useEffect } from "react";
 
 import { isWeb, os } from "@/api/common";
+import { initializeRustRuntime } from "@/api/invoke";
 import {
   AppStatusBar,
   nativeStackStatusBarOptions,
@@ -24,6 +25,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     const initialize = async () => {
+      await initializeRustRuntime();
       await initConfig();
       console.log(`inited, ${getAppName()} - ${getVersion()}, ${os()}.`);
     };
