@@ -3,7 +3,7 @@ import { NativeList, NativeListButtonItem, NativeListSection } from "rn-ui-kit";
 
 import { system } from "@/api";
 import { gm } from "@/api/commands/gm";
-import { isSystemLocaleCN, systemLocale } from "@/api/common/platform";
+import { isSystemLocaleCN, isWeb, systemLocale } from "@/api/common/platform";
 import { useToast } from "@/hooks/ui";
 
 import type { SettingsPageProps } from "../settings_config";
@@ -12,6 +12,8 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
   const { toast } = useToast();
   const [isResettingInitialWorkspace, setIsResettingInitialWorkspace] = useState(false);
   const [isGettingSystemLocale, setIsGettingSystemLocale] = useState(false);
+  // 桌面端 GM Sheet 使用 JS Stack；需要由页面级列表驱动 Header 的 scroll-edge 背景。
+  const tracksScrollEdgeHeader = isWeb() || tracksNavigationBarScrollEdge;
 
   const resetInitialWorkspace = () => {
     if (isResettingInitialWorkspace) {
@@ -79,10 +81,10 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
 
   return (
     <NativeList
-      automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
-      contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+      automaticallyAdjustsScrollIndicatorInsets={tracksScrollEdgeHeader ? true : undefined}
+      contentInsetAdjustmentBehavior={tracksScrollEdgeHeader ? "automatic" : undefined}
       style={{ flex: 1 }}
-      tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
+      tracksNavigationBarScrollEdge={tracksScrollEdgeHeader}
     >
       <NativeListSection title="Runtime">
         <NativeListButtonItem

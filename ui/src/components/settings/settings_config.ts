@@ -21,6 +21,10 @@ export type SettingsPageId =
 export type MobileSettingsSectionId = "general" | "more";
 
 export type SettingsPageProps = {
+  /** 由桌面设置容器提供，用于在 Dialog 外层打开调试 Sheet。 */
+  onOpenDebugSheet?: () => void;
+  /** 由桌面设置容器提供，用于在 Dialog 外层打开 GM 调试 Sheet。 */
+  onOpenGmSheet?: () => void;
   onLayoutModeChange?: (layoutMode: AppLayoutMode) => void;
   tracksNavigationBarScrollEdge?: boolean;
 };
