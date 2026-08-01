@@ -3,7 +3,7 @@ use cmdreg::command;
 use crate::workspace::{
     workspace_manager, AttachWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
     StorageProviderId, WorkspaceId, WorkspaceListItem, WorkspaceLocalSetting,
-    WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
+    WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBindingRequest,
     WorkspaceStorageTarget,
 };
 
@@ -34,7 +34,7 @@ async fn create_managed(
 
 #[command("workspace")]
 async fn create_external(
-    binding: WorkspaceStorageBinding,
+    binding: WorkspaceStorageBindingRequest,
     display_name: String,
 ) -> anyhow::Result<WorkspaceSnapshot> {
     Ok(workspace_manager()
@@ -43,7 +43,7 @@ async fn create_external(
 }
 
 #[command("workspace")]
-async fn attach(binding: WorkspaceStorageBinding) -> anyhow::Result<AttachWorkspaceResult> {
+async fn attach(binding: WorkspaceStorageBindingRequest) -> anyhow::Result<AttachWorkspaceResult> {
     Ok(workspace_manager().attach_workspace(binding).await?)
 }
 

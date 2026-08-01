@@ -7,6 +7,7 @@ use std::{
 };
 
 use async_trait::async_trait;
+use sha2::{Digest, Sha256};
 use tokio::io::AsyncWriteExt;
 
 use super::{
@@ -15,7 +16,7 @@ use super::{
 };
 use crate::workspace::domain::{
     StorageProviderId, StorageResourceIdentity, WorkspaceDirectoryName, WorkspaceRelativePath,
-    WorkspaceStorageBinding,
+    WorkspaceStorageBinding, WorkspaceStorageBindingRequest, WorkspaceStorageLocation,
 };
 
 const LOCAL_FS_PROVIDER_SCHEMA_VERSION: u32 = 1;
@@ -415,25 +416,22 @@ impl LocalFsResolver {
         self
     }
 
-    fn resolve_root(&self, binding: &WorkspaceStorageBinding) -> Result<PathBuf, StorageError> {
-        self.ensure_supported_schema(binding)?;
-        match binding {
-            WorkspaceStorageBinding::Managed {
-                provider_id,
-                directory_name,
-                ..
-            } => self
+    fn resolve_root(
+        &self,
+        provider_id: &StorageProviderId,
+        provider_schema_version: u32,
+        location: &WorkspaceStorageLocation,
+    ) -> Result<PathBuf, StorageError> {
+        self.ensure_supported_schema(provider_id, provider_schema_version)?;
+        match location {
+            WorkspaceStorageLocation::Managed { directory_name } => self
                 .managed_roots
                 .get(provider_id)
                 .map(|root| root.join("workspaces").join(directory_name.as_str()))
                 .ok_or_else(|| StorageError::UnsupportedProvider {
                     provider_id: provider_id.clone(),
                 }),
-            WorkspaceStorageBinding::External {
-                provider_id,
-                resource_ref,
-                ..
-            } => {
+            WorkspaceStorageLocation::External { resource_ref } => {
                 if !self.external_providers.contains(provider_id) {
                     return Err(StorageError::UnsupportedProvider {
                         provider_id: provider_id.clone(),
@@ -453,49 +451,47 @@ impl LocalFsResolver {
 
     fn ensure_supported_schema(
         &self,
-        binding: &WorkspaceStorageBinding,
+        provider_id: &StorageProviderId,
+        provider_schema_version: u32,
     ) -> Result<(), StorageError> {
-        if binding.provider_schema_version() != LOCAL_FS_PROVIDER_SCHEMA_VERSION {
+        if provider_schema_version != LOCAL_FS_PROVIDER_SCHEMA_VERSION {
             return Err(StorageError::UnsupportedProviderSchema {
-                provider_id: binding.provider_id().clone(),
-                schema_version: binding.provider_schema_version(),
+                provider_id: provider_id.clone(),
+                schema_version: provider_schema_version,
             });
         }
         Ok(())
     }
 
     fn identity_for_root(&self, root: &Path) -> Result<StorageResourceIdentity, StorageError> {
-        let canonical = std::fs::canonicalize(root)
-            .map_err(|error| map_root_io("resolve_identity_canonicalize", error))?;
-        let metadata = std::fs::metadata(&canonical)
-            .map_err(|error| map_root_io("resolve_identity_metadata", error))?;
-
-        #[cfg(unix)]
-        let value = {
-            use std::os::unix::fs::MetadataExt;
-
-            format!("local-fs:unix:{:x}:{:x}", metadata.dev(), metadata.ino())
+        let absolute = if root.is_absolute() {
+            root.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .map_err(|error| map_root_io("resolve_identity_current_dir", error))?
+                .join(root)
         };
-
+        let mut normalized = PathBuf::new();
+        for component in absolute.components() {
+            match component {
+                std::path::Component::CurDir => {}
+                std::path::Component::ParentDir => {
+                    normalized.pop();
+                }
+                _ => normalized.push(component.as_os_str()),
+            }
+        }
+        let path_key = normalized.to_string_lossy().into_owned();
         #[cfg(windows)]
-        let value = {
-            use std::os::windows::fs::MetadataExt;
-
-            let volume = metadata
-                .volume_serial_number()
-                .ok_or_else(|| StorageError::Io {
-                    operation: "resolve_identity",
-                    message: "文件系统未提供 volume serial number".into(),
-                })?;
-            let file = metadata.file_index().ok_or_else(|| StorageError::Io {
-                operation: "resolve_identity",
-                message: "文件系统未提供 file index".into(),
-            })?;
-            format!("local-fs:windows:{volume:x}:{file:x}")
-        };
-
-        #[cfg(not(any(unix, windows)))]
-        let value = format!("local-fs:path:{}", canonical.to_string_lossy());
+        let path_key = path_key.replace('\\', "/");
+        #[cfg(any(target_os = "macos", windows))]
+        let path_key = path_key.to_lowercase();
+        let digest = Sha256::digest(path_key.as_bytes());
+        let digest = digest
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        let value = format!("local-fs:path-sha256:{digest}");
 
         StorageResourceIdentity::parse(value).map_err(|error| StorageError::Io {
             operation: "resolve_identity",
@@ -508,9 +504,13 @@ impl LocalFsResolver {
 impl WorkspaceStorageResolver for LocalFsResolver {
     async fn resolve_identity(
         &self,
-        binding: &WorkspaceStorageBinding,
+        request: &WorkspaceStorageBindingRequest,
     ) -> Result<StorageResourceIdentity, StorageError> {
-        let root = self.resolve_root(binding)?;
+        let root = self.resolve_root(
+            &request.provider_id,
+            request.provider_schema_version,
+            &request.location,
+        )?;
         self.identity_for_root(&root)
     }
 
@@ -518,7 +518,11 @@ impl WorkspaceStorageResolver for LocalFsResolver {
         &self,
         binding: &WorkspaceStorageBinding,
     ) -> Result<Arc<WorkspaceStorageSession>, StorageError> {
-        let root = self.resolve_root(binding)?;
+        let root = self.resolve_root(
+            &binding.provider_id,
+            binding.provider_schema_version,
+            &binding.location,
+        )?;
         let storage = LocalPathStorage::open(root)?;
         Ok(Arc::new(WorkspaceStorageSession::new(Arc::new(storage))))
     }
@@ -528,13 +532,18 @@ impl WorkspaceStorageResolver for LocalFsResolver {
         provider_id: &StorageProviderId,
         directory_name: &WorkspaceDirectoryName,
     ) -> Result<(WorkspaceStorageBinding, Arc<WorkspaceStorageSession>), StorageError> {
-        let binding = WorkspaceStorageBinding::Managed {
+        let request = WorkspaceStorageBindingRequest {
             provider_id: provider_id.clone(),
             provider_schema_version: LOCAL_FS_PROVIDER_SCHEMA_VERSION,
-            directory_name: directory_name.clone(),
-            resource_identity: None,
+            location: WorkspaceStorageLocation::Managed {
+                directory_name: directory_name.clone(),
+            },
         };
-        let root = self.resolve_root(&binding)?;
+        let root = self.resolve_root(
+            &request.provider_id,
+            request.provider_schema_version,
+            &request.location,
+        )?;
         if root.exists() {
             return Err(StorageError::AlreadyExists {
                 path: WorkspaceRelativePath::root(),
@@ -542,7 +551,7 @@ impl WorkspaceStorageResolver for LocalFsResolver {
         }
         std::fs::create_dir_all(&root).map_err(|error| map_root_io("create_managed", error))?;
         let storage = LocalPathStorage::open(root)?;
-        let binding = binding.with_resource_identity(self.identity_for_root(storage.root_path())?);
+        let binding = request.resolve(self.identity_for_root(storage.root_path())?);
         Ok((
             binding,
             Arc::new(WorkspaceStorageSession::new(Arc::new(storage))),
@@ -553,7 +562,11 @@ impl WorkspaceStorageResolver for LocalFsResolver {
         &self,
         binding: &WorkspaceStorageBinding,
     ) -> Result<(), StorageError> {
-        let root = self.resolve_root(binding)?;
+        let root = self.resolve_root(
+            &binding.provider_id,
+            binding.provider_schema_version,
+            &binding.location,
+        )?;
         if !root.exists() {
             return Err(StorageError::NotFound {
                 path: WorkspaceRelativePath::root(),

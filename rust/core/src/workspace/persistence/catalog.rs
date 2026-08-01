@@ -48,14 +48,9 @@ impl WorkspaceCatalogData {
                     record.id
                 )));
             }
-            if record.storage_binding.provider_schema_version() == 0 {
+            if record.storage_binding.provider_schema_version == 0 {
                 return Err(WorkspaceError::Catalog(format!(
                     "Workspace {id} 的 provider schema version 不能为 0"
-                )));
-            }
-            if record.storage_binding.resource_identity().is_none() {
-                return Err(WorkspaceError::Catalog(format!(
-                    "Workspace {id} 的 StorageBinding 尚未解析 resource identity"
                 )));
             }
         }

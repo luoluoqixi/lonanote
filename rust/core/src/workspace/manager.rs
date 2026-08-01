@@ -14,8 +14,9 @@ use crate::workspace::{
         StorageCleanupStatus, StorageProviderId, WorkspaceAvailability, WorkspaceCachedSummary,
         WorkspaceDirectoryName, WorkspaceId, WorkspaceListItem, WorkspaceLocalSetting,
         WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath, WorkspaceSettings,
-        WorkspaceSnapshot, WorkspaceStorageBinding, WorkspaceStorageKindView,
-        WorkspaceStorageTarget, WorkspaceStorageView,
+        WorkspaceSnapshot, WorkspaceStorageBinding, WorkspaceStorageBindingRequest,
+        WorkspaceStorageKindView, WorkspaceStorageLocation, WorkspaceStorageTarget,
+        WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
     file_tree::{FileNode, FileTree},
@@ -154,18 +155,6 @@ impl WorkspaceManager {
                 Err(error) => return Err(error.into()),
             }
         };
-        let cleanup_binding = binding.clone();
-        let binding = match self.resolve_binding_identity(binding).await {
-            Ok(binding) => binding,
-            Err(error) => {
-                let _ = self
-                    .storage_resolver
-                    .remove_workspace_root(&cleanup_binding)
-                    .await;
-                return Err(error);
-            }
-        };
-
         let manifest = WorkspaceManifest::new(WorkspaceId::new(), display_name, now_timestamp());
         if let Err(error) = initialize_workspace(session.as_ref(), &manifest).await {
             let _ = self.storage_resolver.remove_workspace_root(&binding).await;
@@ -178,15 +167,15 @@ impl WorkspaceManager {
 
     pub async fn create_external_workspace(
         &self,
-        binding: WorkspaceStorageBinding,
+        request: WorkspaceStorageBindingRequest,
         display_name: String,
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
         validate_display_name(&display_name)?;
-        if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
+        if request.is_managed() {
             return Err(WorkspaceError::ExpectedExternalBinding);
         }
         let _lifecycle = self.lifecycle_lock.write().await;
-        let binding = self.resolve_binding_identity(binding).await?;
+        let binding = self.resolve_binding(request).await?;
         let session = self.storage_resolver.open(&binding).await?;
         if manifest_exists(session.as_ref()).await? {
             return Err(WorkspaceError::ManifestAlreadyExists);
@@ -200,13 +189,13 @@ impl WorkspaceManager {
 
     pub async fn attach_workspace(
         &self,
-        binding: WorkspaceStorageBinding,
+        request: WorkspaceStorageBindingRequest,
     ) -> Result<AttachWorkspaceResult, WorkspaceError> {
-        if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
+        if request.is_managed() {
             return Err(WorkspaceError::ExpectedExternalBinding);
         }
         let _lifecycle = self.lifecycle_lock.write().await;
-        let binding = self.resolve_binding_identity(binding).await?;
+        let binding = self.resolve_binding(request).await?;
         let session = self.storage_resolver.open(&binding).await?;
         let manifest = load_manifest(session.as_ref())
             .await?
@@ -283,29 +272,26 @@ impl WorkspaceManager {
                 provider_id,
                 preferred_directory_name,
             } => {
-                if matches!(
-                    &source_record.storage_binding,
-                    WorkspaceStorageBinding::Managed {
-                        provider_id: source_provider,
-                        directory_name: source_directory,
-                        ..
-                    } if source_provider == &provider_id
-                        && source_directory == &preferred_directory_name
-                ) {
+                if source_record.storage_binding.provider_id == provider_id
+                    && matches!(
+                        &source_record.storage_binding.location,
+                        WorkspaceStorageLocation::Managed { directory_name }
+                            if directory_name == &preferred_directory_name
+                    )
+                {
                     return Err(WorkspaceError::SameStorageBinding);
                 }
                 let (binding, session) = self
                     .storage_resolver
                     .create_managed(&provider_id, &preferred_directory_name)
                     .await?;
-                let binding = self.resolve_binding_identity(binding).await?;
                 (binding, session)
             }
-            WorkspaceStorageTarget::External { binding } => {
-                if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
+            WorkspaceStorageTarget::External { binding: request } => {
+                if request.is_managed() {
                     return Err(WorkspaceError::ExpectedExternalBinding);
                 }
-                let binding = self.resolve_binding_identity(binding).await?;
+                let binding = self.resolve_binding(request).await?;
                 if binding.same_resource(&source_record.storage_binding) {
                     return Err(WorkspaceError::SameStorageBinding);
                 }
@@ -553,12 +539,12 @@ impl WorkspaceManager {
             .ok_or(WorkspaceError::NotOpen(*id))
     }
 
-    async fn resolve_binding_identity(
+    async fn resolve_binding(
         &self,
-        binding: WorkspaceStorageBinding,
+        request: WorkspaceStorageBindingRequest,
     ) -> Result<WorkspaceStorageBinding, WorkspaceError> {
-        let identity = self.storage_resolver.resolve_identity(&binding).await?;
-        Ok(binding.with_resource_identity(identity))
+        let identity = self.storage_resolver.resolve_identity(&request).await?;
+        Ok(request.resolve(identity))
     }
 
     async fn open_workspace_locked(

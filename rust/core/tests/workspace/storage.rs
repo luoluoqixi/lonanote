@@ -4,15 +4,15 @@ use std::sync::{
 };
 
 use crate::support::{
-    assert_storage_contract, external_binding, path, provider, EXTERNAL_PROVIDER,
+    assert_storage_contract, external_binding, path, provider, resolved_external_binding,
+    EXTERNAL_PROVIDER,
 };
 use lonanote_core::workspace::{
     copy_workspace_tree, load_local_setting, load_manifest, load_workspace_settings,
     save_local_setting, save_manifest, save_workspace_settings, LocalFsResolver, LocalPathStorage,
     MemoryStorage, StorageAccessLease, StorageError, WorkspaceError, WorkspaceId,
     WorkspaceInstance, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceSettings,
-    WorkspaceStorage, WorkspaceStorageBinding, WorkspaceStorageResolver, WorkspaceStorageSession,
-    WriteOptions,
+    WorkspaceStorage, WorkspaceStorageResolver, WorkspaceStorageSession, WriteOptions,
 };
 use tempfile::TempDir;
 
@@ -99,14 +99,7 @@ async fn local_resolver_identifies_same_directory() {
 async fn local_resolver_rejects_unknown_provider_schema() {
     let temp = TempDir::new().unwrap();
     let mut binding = external_binding(temp.path());
-    let WorkspaceStorageBinding::External {
-        provider_schema_version,
-        ..
-    } = &mut binding
-    else {
-        unreachable!()
-    };
-    *provider_schema_version = 999;
+    binding.provider_schema_version = 999;
     let resolver = LocalFsResolver::new().with_external_provider(provider(EXTERNAL_PROVIDER));
 
     assert!(matches!(
@@ -116,6 +109,48 @@ async fn local_resolver_rejects_unknown_provider_schema() {
             ..
         }
     ));
+}
+
+#[tokio::test]
+async fn local_resolver_keeps_identity_when_directory_is_recreated() {
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().join("workspace");
+    std::fs::create_dir(&root).unwrap();
+    let resolver = LocalFsResolver::new().with_external_provider(provider(EXTERNAL_PROVIDER));
+    let request = external_binding(&root);
+    let identity = resolver.resolve_identity(&request).await.unwrap();
+    let binding = request.resolve(identity.clone());
+
+    std::fs::remove_dir(&root).unwrap();
+    std::fs::create_dir(&root).unwrap();
+    let recreated_identity = resolver
+        .resolve_identity(&external_binding(&root))
+        .await
+        .unwrap();
+
+    assert_eq!(identity, recreated_identity);
+    resolver.open(&binding).await.unwrap();
+}
+
+#[cfg(any(target_os = "macos", windows))]
+#[tokio::test]
+async fn local_resolver_normalizes_path_case() {
+    #[cfg(target_os = "macos")]
+    let (upper, lower) = ("/Users/Example/Notes", "/users/example/notes");
+    #[cfg(windows)]
+    let (upper, lower) = ("C:/Users/Example/Notes", "c:/users/example/notes");
+    let resolver = LocalFsResolver::new().with_external_provider(provider(EXTERNAL_PROVIDER));
+
+    assert_eq!(
+        resolver
+            .resolve_identity(&external_binding(upper))
+            .await
+            .unwrap(),
+        resolver
+            .resolve_identity(&external_binding(lower))
+            .await
+            .unwrap()
+    );
 }
 
 #[tokio::test]
@@ -173,7 +208,7 @@ async fn instance_rejects_invalid_settings() {
     };
 
     let error = WorkspaceInstance::new(
-        external_binding("/virtual/workspace"),
+        resolved_external_binding("/virtual/workspace"),
         Arc::new(WorkspaceStorageSession::new(Arc::new(MemoryStorage::new()))),
         WorkspaceManifest::new(id, "Invalid Settings".into(), 1),
         settings,
@@ -194,7 +229,7 @@ async fn instance_rejects_invalid_local_setting() {
     };
 
     let error = WorkspaceInstance::new(
-        external_binding("/virtual/workspace"),
+        resolved_external_binding("/virtual/workspace"),
         Arc::new(WorkspaceStorageSession::new(Arc::new(MemoryStorage::new()))),
         WorkspaceManifest::new(id, "Invalid Local Setting".into(), 1),
         WorkspaceSettings::default(),

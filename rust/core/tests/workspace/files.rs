@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::support::{external_binding, path, provider, WorkspaceTestApp, MANAGED_PROVIDER};
+use crate::support::{path, provider, WorkspaceTestApp, MANAGED_PROVIDER};
 use lonanote_core::workspace::{
     FileTreeSortType, MemoryStorage, StorageError, WorkspaceError, WorkspaceId, WorkspaceInstance,
     WorkspaceLocalSetting, WorkspaceManifest, WorkspaceSettings, WorkspaceStorage,
@@ -149,7 +149,7 @@ async fn rejects_index_without_native_path() {
     let session = Arc::new(WorkspaceStorageSession::new(storage));
     let id = WorkspaceId::new();
     let instance = WorkspaceInstance::new(
-        external_binding("/virtual/workspace"),
+        crate::support::resolved_external_binding("/virtual/workspace"),
         session,
         WorkspaceManifest::new(id, "Memory".into(), 1),
         WorkspaceSettings::default(),

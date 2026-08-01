@@ -62,7 +62,7 @@ impl<'de> Deserialize<'de> for StorageResourceRef {
     }
 }
 
-/// Provider 为底层资源生成的稳定身份，仅用于比较两个 Binding 是否指向同一资源。
+/// Provider 为存储目标或访问范围生成的稳定身份，用于比较两个 Binding 是否等价。
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StorageResourceIdentity(String);
 
@@ -116,125 +116,90 @@ impl<'de> Deserialize<'de> for StorageResourceIdentity {
     }
 }
 
+/// Provider 定位 Workspace 资源所需的数据。
+///
+/// Managed 与 External 只在定位方式上存在差异，因此由请求态和已解析态共享。
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
     tag = "kind",
     rename_all = "camelCase",
     rename_all_fields = "camelCase"
 )]
-pub enum WorkspaceStorageBinding {
+pub enum WorkspaceStorageLocation {
     Managed {
-        provider_id: StorageProviderId,
-        provider_schema_version: u32,
         directory_name: WorkspaceDirectoryName,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        resource_identity: Option<StorageResourceIdentity>,
     },
     External {
-        provider_id: StorageProviderId,
-        provider_schema_version: u32,
         resource_ref: StorageResourceRef,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        resource_identity: Option<StorageResourceIdentity>,
     },
 }
 
-impl WorkspaceStorageBinding {
-    pub fn provider_id(&self) -> &StorageProviderId {
-        match self {
-            Self::Managed { provider_id, .. } | Self::External { provider_id, .. } => provider_id,
-        }
+impl WorkspaceStorageLocation {
+    pub fn is_managed(&self) -> bool {
+        matches!(self, Self::Managed { .. })
     }
+}
 
-    pub fn provider_schema_version(&self) -> u32 {
-        match self {
-            Self::Managed {
-                provider_schema_version,
-                ..
-            }
-            | Self::External {
-                provider_schema_version,
-                ..
-            } => *provider_schema_version,
-        }
-    }
+/// 尚未由 Storage Resolver 解析的 Binding 请求。
+///
+/// 该类型只作为 API、Manager 与 Resolver 之间的临时输入，不能写入 Catalog。
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceStorageBindingRequest {
+    pub provider_id: StorageProviderId,
+    pub provider_schema_version: u32,
+    #[serde(flatten)]
+    pub location: WorkspaceStorageLocation,
+}
 
-    pub fn resource_identity(&self) -> Option<&StorageResourceIdentity> {
-        match self {
-            Self::Managed {
-                resource_identity, ..
-            }
-            | Self::External {
-                resource_identity, ..
-            } => resource_identity.as_ref(),
-        }
-    }
-
-    pub fn with_resource_identity(mut self, identity: StorageResourceIdentity) -> Self {
-        match &mut self {
-            Self::Managed {
-                resource_identity, ..
-            }
-            | Self::External {
-                resource_identity, ..
-            } => *resource_identity = Some(identity),
-        }
-        self
-    }
-
-    /// 判断两个已解析 Binding 是否指向同一个 Provider 资源。
-    pub fn same_resource(&self, other: &Self) -> bool {
-        self.provider_id() == other.provider_id()
-            && self
-                .resource_identity()
-                .zip(other.resource_identity())
-                .is_some_and(|(left, right)| left == right)
-    }
-
-    /// 判断两个 Binding 是否使用完全相同的定位引用，忽略解析后的 resource identity。
-    pub fn same_reference(&self, other: &Self) -> bool {
-        match (self, other) {
-            (
-                Self::Managed {
-                    provider_id: left_provider,
-                    provider_schema_version: left_version,
-                    directory_name: left_directory,
-                    ..
-                },
-                Self::Managed {
-                    provider_id: right_provider,
-                    provider_schema_version: right_version,
-                    directory_name: right_directory,
-                    ..
-                },
-            ) => {
-                left_provider == right_provider
-                    && left_version == right_version
-                    && left_directory == right_directory
-            }
-            (
-                Self::External {
-                    provider_id: left_provider,
-                    provider_schema_version: left_version,
-                    resource_ref: left_reference,
-                    ..
-                },
-                Self::External {
-                    provider_id: right_provider,
-                    provider_schema_version: right_version,
-                    resource_ref: right_reference,
-                    ..
-                },
-            ) => {
-                left_provider == right_provider
-                    && left_version == right_version
-                    && left_reference == right_reference
-            }
-            _ => false,
+impl WorkspaceStorageBindingRequest {
+    pub fn resolve(self, resource_identity: StorageResourceIdentity) -> WorkspaceStorageBinding {
+        WorkspaceStorageBinding {
+            provider_id: self.provider_id,
+            provider_schema_version: self.provider_schema_version,
+            location: self.location,
+            resource_identity,
         }
     }
 
     pub fn is_managed(&self) -> bool {
-        matches!(self, Self::Managed { .. })
+        self.location.is_managed()
+    }
+}
+
+/// 已由 Storage Resolver 解析、可以持久化到 Catalog 的 Binding。
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceStorageBinding {
+    pub provider_id: StorageProviderId,
+    pub provider_schema_version: u32,
+    #[serde(flatten)]
+    pub location: WorkspaceStorageLocation,
+    pub resource_identity: StorageResourceIdentity,
+}
+
+impl WorkspaceStorageBinding {
+    pub fn to_request(&self) -> WorkspaceStorageBindingRequest {
+        WorkspaceStorageBindingRequest {
+            provider_id: self.provider_id.clone(),
+            provider_schema_version: self.provider_schema_version,
+            location: self.location.clone(),
+        }
+    }
+
+    /// 判断两个已解析 Binding 是否代表同一个 Provider 存储目标或访问范围。
+    pub fn same_resource(&self, other: &Self) -> bool {
+        self.provider_id == other.provider_id && self.resource_identity == other.resource_identity
+    }
+
+    /// 判断两个 Binding 是否使用完全相同的定位引用，忽略解析后的 resource identity。
+    pub fn same_reference(&self, other: &Self) -> bool {
+        self.provider_id == other.provider_id
+            && self.provider_schema_version == other.provider_schema_version
+            && self.location == other.location
+    }
+
+    pub fn is_managed(&self) -> bool {
+        self.location.is_managed()
     }
 }

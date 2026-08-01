@@ -3,6 +3,7 @@ use lonanote_core::workspace::{
     StorageProviderId, StorageResourceIdentity, StorageResourceRef, WorkspaceDirectoryName,
     WorkspaceId, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRelativePath,
     WorkspaceSessionData, WorkspaceSettings, WorkspaceStorageBinding,
+    WorkspaceStorageBindingRequest, WorkspaceStorageLocation,
 };
 use serde_json::json;
 
@@ -46,33 +47,89 @@ fn storage_resource_ref_validation() {
 
 #[test]
 fn binding_distinguishes_reference_and_resource_identity() {
-    let identity = StorageResourceIdentity::parse("local-fs:unix:1:2").unwrap();
-    let first = WorkspaceStorageBinding::External {
+    let identity = StorageResourceIdentity::parse("local-fs:path:/notes").unwrap();
+    let first = WorkspaceStorageBinding {
         provider_id: provider("desktop-folder"),
         provider_schema_version: 1,
-        resource_ref: StorageResourceRef::parse("/notes").unwrap(),
-        resource_identity: Some(identity.clone()),
+        location: WorkspaceStorageLocation::External {
+            resource_ref: StorageResourceRef::parse("/notes").unwrap(),
+        },
+        resource_identity: identity.clone(),
     };
-    let alias = WorkspaceStorageBinding::External {
+    let alias = WorkspaceStorageBinding {
         provider_id: provider("desktop-folder"),
         provider_schema_version: 1,
-        resource_ref: StorageResourceRef::parse("/documents/../notes").unwrap(),
-        resource_identity: Some(identity),
+        location: WorkspaceStorageLocation::External {
+            resource_ref: StorageResourceRef::parse("/documents/../notes").unwrap(),
+        },
+        resource_identity: identity,
     };
-    let copy = WorkspaceStorageBinding::External {
+    let copy = WorkspaceStorageBinding {
         provider_id: provider("desktop-folder"),
         provider_schema_version: 1,
-        resource_ref: StorageResourceRef::parse("/notes-copy").unwrap(),
-        resource_identity: Some(StorageResourceIdentity::parse("local-fs:unix:1:3").unwrap()),
+        location: WorkspaceStorageLocation::External {
+            resource_ref: StorageResourceRef::parse("/notes-copy").unwrap(),
+        },
+        resource_identity: StorageResourceIdentity::parse("local-fs:path:/notes-copy").unwrap(),
     };
 
     assert_ne!(first, alias);
     assert!(!first.same_reference(&alias));
     assert!(first.same_resource(&alias));
     assert!(!first.same_resource(&copy));
+
+    let mut new_provider_schema = first.clone();
+    new_provider_schema.provider_schema_version = 2;
+    assert!(first.same_resource(&new_provider_schema));
+    assert!(!first.same_reference(&new_provider_schema));
+
+    let mut new_identity = first.clone();
+    new_identity.resource_identity =
+        StorageResourceIdentity::parse("local-fs:path:/other").unwrap();
+    assert!(first.same_reference(&new_identity));
+    assert!(!first.same_resource(&new_identity));
+
+    let mut new_provider = first.clone();
+    new_provider.provider_id = provider("another-provider");
+    assert!(!first.same_resource(&new_provider));
+
+    let managed_alias = WorkspaceStorageBinding {
+        provider_id: first.provider_id.clone(),
+        provider_schema_version: first.provider_schema_version,
+        location: WorkspaceStorageLocation::Managed {
+            directory_name: WorkspaceDirectoryName::parse("notes").unwrap(),
+        },
+        resource_identity: first.resource_identity.clone(),
+    };
+    assert!(first.same_resource(&managed_alias));
+    assert!(!first.same_reference(&managed_alias));
+
     let encoded = serde_json::to_value(&first).unwrap();
     assert_eq!(encoded["providerSchemaVersion"], 1);
-    assert_eq!(encoded["resourceIdentity"], "local-fs:unix:1:2");
+    assert_eq!(encoded["resourceIdentity"], "local-fs:path:/notes");
+}
+
+#[test]
+fn binding_request_requires_resolution_before_persistence() {
+    let request_json = json!({
+        "kind": "external",
+        "providerId": "desktop-folder",
+        "providerSchemaVersion": 1,
+        "resourceRef": "/notes"
+    });
+    let request =
+        serde_json::from_value::<WorkspaceStorageBindingRequest>(request_json.clone()).unwrap();
+
+    assert!(serde_json::from_value::<WorkspaceStorageBinding>(request_json).is_err());
+
+    let binding = request.resolve(StorageResourceIdentity::parse("local-fs:path:/notes").unwrap());
+    let binding_json = serde_json::to_value(&binding).unwrap();
+    assert_eq!(binding_json["kind"], "external");
+    assert_eq!(binding_json["resourceIdentity"], "local-fs:path:/notes");
+    assert_eq!(
+        serde_json::from_value::<WorkspaceStorageBinding>(binding_json).unwrap(),
+        binding
+    );
 }
 
 #[test]
@@ -129,11 +186,12 @@ fn relative_path_validation() {
 #[test]
 fn public_json_contract() {
     let id = WorkspaceId::new();
-    let binding = WorkspaceStorageBinding::Managed {
+    let binding = WorkspaceStorageBindingRequest {
         provider_id: provider(MANAGED_PROVIDER),
         provider_schema_version: 1,
-        directory_name: WorkspaceDirectoryName::parse("个人笔记").unwrap(),
-        resource_identity: None,
+        location: WorkspaceStorageLocation::Managed {
+            directory_name: WorkspaceDirectoryName::parse("个人笔记").unwrap(),
+        },
     };
     let binding_json = serde_json::to_value(binding).unwrap();
     assert_eq!(binding_json["kind"], "managed");

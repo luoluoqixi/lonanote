@@ -10,8 +10,9 @@ use super::{
     domain::{
         StorageProviderId, StorageResourceIdentity, WorkspaceDirectoryName, WorkspaceLocalSetting,
         WorkspaceManifest, WorkspaceRelativePath, WorkspaceSettings, WorkspaceStorageBinding,
-        WORKSPACE_LOCAL_SETTING_PATH, WORKSPACE_LOCAL_SETTING_SCHEMA_VERSION,
-        WORKSPACE_MANIFEST_PATH, WORKSPACE_SETTINGS_PATH, WORKSPACE_SETTINGS_SCHEMA_VERSION,
+        WorkspaceStorageBindingRequest, WORKSPACE_LOCAL_SETTING_PATH,
+        WORKSPACE_LOCAL_SETTING_SCHEMA_VERSION, WORKSPACE_MANIFEST_PATH, WORKSPACE_SETTINGS_PATH,
+        WORKSPACE_SETTINGS_SCHEMA_VERSION,
     },
     error::{StorageError, WorkspaceError},
 };
@@ -242,7 +243,7 @@ pub trait WorkspaceStorageResolver: Send + Sync {
     /// 解析底层资源的稳定身份。返回值用于资源比较，不用于重新打开资源。
     async fn resolve_identity(
         &self,
-        binding: &WorkspaceStorageBinding,
+        request: &WorkspaceStorageBindingRequest,
     ) -> Result<StorageResourceIdentity, StorageError>;
 
     async fn open(

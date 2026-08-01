@@ -98,14 +98,7 @@ async fn catalog_accepts_provider_specific_schema() {
     let catalog_path = temp.path().join("workspace-catalog.json");
     let catalog = WorkspaceCatalog::load(&catalog_path).await.unwrap();
     let mut record = test_record("Future Provider", temp.path().join("future"));
-    let lonanote_core::workspace::WorkspaceStorageBinding::External {
-        provider_schema_version,
-        ..
-    } = &mut record.storage_binding
-    else {
-        unreachable!()
-    };
-    *provider_schema_version = 7;
+    record.storage_binding.provider_schema_version = 7;
 
     catalog.add(record.clone()).await.unwrap();
     let loaded = WorkspaceCatalog::load(catalog_path).await.unwrap();
@@ -116,7 +109,7 @@ async fn catalog_accepts_provider_specific_schema() {
             .await
             .unwrap()
             .storage_binding
-            .provider_schema_version(),
+            .provider_schema_version,
         7
     );
 }

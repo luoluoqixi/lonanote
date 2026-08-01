@@ -4,7 +4,8 @@ use lonanote_core::workspace::{
     LocalFsResolver, StorageProviderId, StorageResourceIdentity, StorageResourceRef,
     WorkspaceCachedSummary, WorkspaceDirectoryName, WorkspaceId, WorkspaceManager,
     WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath, WorkspaceSnapshot,
-    WorkspaceStorageBinding, WorkspaceStorageResolver,
+    WorkspaceStorageBinding, WorkspaceStorageBindingRequest, WorkspaceStorageLocation,
+    WorkspaceStorageResolver,
 };
 use tempfile::TempDir;
 
@@ -76,22 +77,27 @@ pub fn path(value: &str) -> WorkspaceRelativePath {
     WorkspaceRelativePath::parse(value).expect("测试中的相对路径必须有效")
 }
 
-pub fn external_binding(root: impl AsRef<Path>) -> WorkspaceStorageBinding {
-    WorkspaceStorageBinding::External {
+pub fn external_binding(root: impl AsRef<Path>) -> WorkspaceStorageBindingRequest {
+    WorkspaceStorageBindingRequest {
         provider_id: provider(EXTERNAL_PROVIDER),
         provider_schema_version: 1,
-        resource_ref: StorageResourceRef::parse(root.as_ref().to_string_lossy()).unwrap(),
-        resource_identity: None,
+        location: WorkspaceStorageLocation::External {
+            resource_ref: StorageResourceRef::parse(root.as_ref().to_string_lossy()).unwrap(),
+        },
     }
+}
+
+pub fn resolved_external_binding(root: impl AsRef<Path>) -> WorkspaceStorageBinding {
+    let root = root.as_ref();
+    external_binding(root)
+        .resolve(StorageResourceIdentity::parse(format!("test:path:{}", root.display())).unwrap())
 }
 
 pub fn test_record(display_name: &str, root: impl AsRef<Path>) -> WorkspaceRecord {
     let root = root.as_ref();
     WorkspaceRecord {
         id: WorkspaceId::new(),
-        storage_binding: external_binding(root).with_resource_identity(
-            StorageResourceIdentity::parse(format!("test:path:{}", root.display())).unwrap(),
-        ),
+        storage_binding: resolved_external_binding(root),
         cached_summary: WorkspaceCachedSummary {
             display_name: display_name.to_string(),
             created_at: Some(1),
@@ -101,10 +107,13 @@ pub fn test_record(display_name: &str, root: impl AsRef<Path>) -> WorkspaceRecor
 }
 
 pub fn managed_binding(directory_name: &str) -> WorkspaceStorageBinding {
-    WorkspaceStorageBinding::Managed {
+    WorkspaceStorageBinding {
         provider_id: provider(MANAGED_PROVIDER),
         provider_schema_version: 1,
-        directory_name: WorkspaceDirectoryName::parse(directory_name).unwrap(),
-        resource_identity: None,
+        location: WorkspaceStorageLocation::Managed {
+            directory_name: WorkspaceDirectoryName::parse(directory_name).unwrap(),
+        },
+        resource_identity: StorageResourceIdentity::parse(format!("test:managed:{directory_name}"))
+            .unwrap(),
     }
 }

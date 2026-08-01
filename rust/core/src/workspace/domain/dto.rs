@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     StorageProviderId, WorkspaceDirectoryName, WorkspaceId, WorkspaceRecord, WorkspaceSettings,
-    WorkspaceStorageBinding,
+    WorkspaceStorageBinding, WorkspaceStorageBindingRequest,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,19 +45,15 @@ pub struct WorkspaceStorageView {
 
 impl From<&WorkspaceStorageBinding> for WorkspaceStorageView {
     fn from(binding: &WorkspaceStorageBinding) -> Self {
-        match binding {
-            WorkspaceStorageBinding::Managed {
-                provider_id,
-                directory_name,
-                ..
-            } => Self {
+        match &binding.location {
+            super::WorkspaceStorageLocation::Managed { directory_name } => Self {
                 kind: WorkspaceStorageKindView::Managed,
-                provider_id: provider_id.clone(),
+                provider_id: binding.provider_id.clone(),
                 directory_name: Some(directory_name.clone()),
             },
-            WorkspaceStorageBinding::External { provider_id, .. } => Self {
+            super::WorkspaceStorageLocation::External { .. } => Self {
                 kind: WorkspaceStorageKindView::External,
-                provider_id: provider_id.clone(),
+                provider_id: binding.provider_id.clone(),
                 directory_name: None,
             },
         }
@@ -113,7 +109,7 @@ pub enum WorkspaceStorageTarget {
         preferred_directory_name: WorkspaceDirectoryName,
     },
     External {
-        binding: WorkspaceStorageBinding,
+        binding: WorkspaceStorageBindingRequest,
     },
 }
 

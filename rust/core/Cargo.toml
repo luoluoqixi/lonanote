@@ -27,6 +27,7 @@ indexmap = { workspace = true }
 encoding_rs = { workspace = true }
 futures = { workspace = true }
 rust-embed = { workspace = true, features = ["debug-embed"] }
+sha2 = { workspace = true }
 uuid = { workspace = true }
 ignore = { workspace = true }
 alphanumeric-sort = { workspace = true }

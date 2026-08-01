@@ -218,7 +218,7 @@ External Binding 使用经过校验的 `StorageResourceRef` 值对象，而不�
 进入 Catalog 的 Binding 还包含：
 
 - `providerSchemaVersion`：Provider 自己的数据格式版本，由对应 Resolver 校验；
-- `resourceIdentity`：Resolver 根据真实资源生成的稳定身份，只用于判断两个 Binding 是否指向同一底层资源。
+- `resourceIdentity`：Resolver 根据 Provider 规则生成的稳定绑定身份，用于判断两个 Binding 是否代表同一个存储目标或访问范围；它不要求等同于底层目录 inode。
 
 ```json
 {
@@ -226,15 +226,15 @@ External Binding 使用经过校验的 `StorageResourceRef` 值对象，而不�
   "providerId": "desktop-folder",
   "providerSchemaVersion": 1,
   "resourceRef": "/Users/example/Notes",
-  "resourceIdentity": "local-fs:unix:1000004:123456"
+  "resourceIdentity": "local-fs:path-sha256:4b6d..."
 }
 ```
 
-API 输入可以不提供 `resourceIdentity`，Manager 在写入 Catalog 前总会调用 `Resolver.resolve_identity()` 并覆盖该字段；Catalog 拒绝没有 identity 或 version 为 0 的 Binding。`resourceIdentity` 不能用于打开目录，因此 `resourceRef` 仍然必需。
+API 输入使用独立的 `WorkspaceStorageBindingRequest`，该类型根本不包含 `resourceIdentity`。Manager 调用 `Resolver.resolve_identity()` 后，显式构造 identity 必填的 `WorkspaceStorageBinding`；因此未解析状态无法进入 Catalog。`resourceIdentity` 不能用于打开目录，所以 `resourceRef` 仍然必需。
 
 Provider 的 `resourceRef` 编码发生变化时，只提升 `providerSchemaVersion` 并让 Resolver 支持或迁移对应版本，不需要提升整个 Catalog schema。待格式投入生产后，只有 Catalog 公共 envelope 本身发生不兼容变化时才需要提升 Catalog schema。
 
-同一个 Provider 必须让 `resourceIdentity` 的语义跨 Provider schema version 保持稳定；否则升级前后的 Binding 无法可靠执行 `same_resource()`。
+同一个 Provider 必须让 `resourceIdentity` 的语义跨 Provider schema version 保持稳定；否则升级前后的 Binding 无法可靠执行 `same_resource()`。identity 标识访问绑定，权限当前是否有效是另一件事，应由 Resolver `open()` 返回 `AuthorizationRequired`、`AuthorizationRevoked` 等状态。
 
 Catalog 主文件、backup 和 App Session 通过原子临时文件写入；Unix 平台上的文件权限固定为 `0600`。完整 Binding 只用于 Core 内的定位，不会由 attach/remove/relocate command 返回，上层只得到不含 `resourceRef` 的 `WorkspaceStorageView`。
 
@@ -292,32 +292,35 @@ Runtime 不持久化。关闭 Workspace 是从 map 移除 `Arc`，已经获得 I
 ### 5.1 Binding、Resolver、Session、Storage
 
 ```text
-WorkspaceStorageBinding
-  → WorkspaceStorageResolver.resolve_identity(binding)
-  → 写入已解析 Binding
+WorkspaceStorageBindingRequest
+  → WorkspaceStorageResolver.resolve_identity(request)
+  → WorkspaceStorageBinding（resource identity 必填）
+  → 写入 Catalog
   → WorkspaceStorageResolver.open(binding)
   → WorkspaceStorageSession
       ├── Arc<dyn WorkspaceStorage>
       └── 可选 WorkspaceAccessLease
 ```
 
-- Binding：可序列化的本机位置/授权引用，存入 Catalog。
+- BindingRequest：API、Manager 与 Resolver 之间的临时输入，不进入 Catalog。
+- Binding：Resolver 已解析的持久化领域模型，`resourceIdentity` 必填，只存入 Catalog。
 - Resolver：理解 Binding，负责生成资源 identity、校验 Provider schema version，并打开或创建实际存储。
 - Session：把文件能力与访问授权 lease 绑定到同一生命周期。
 - Storage：只接受 `WorkspaceRelativePath` 的文件能力接口。
 
 `WorkspaceAccessLease` 为 iOS security-scoped access、Android SAF 等预留。即使当前普通文件系统不需要 lease，生命周期边界已经固定。
 
-`WorkspaceStorageBinding::PartialEq` 仍表示所有结构字段完全相同，不用于物理资源判断。资源判断使用 `same_resource()`，其语义是 `providerId + resourceIdentity` 相同；定位引用判断使用 `same_reference()`。
+`WorkspaceStorageBindingRequest` 与 `WorkspaceStorageBinding` 是两个独立结构，不互相嵌套；它们只共享描述 Managed/External 差异的 `WorkspaceStorageLocation`。`WorkspaceStorageBinding::PartialEq` 表示已解析 Binding 的所有结构字段完全相同，不用于 Provider 目标判断。目标等价判断使用 `same_resource()`，其语义是 `providerId + resourceIdentity` 相同；定位引用判断使用 `same_reference()`。
 
-普通 Rust FS 的 identity：
+各类 Provider 的 identity 规则：
 
-- Unix：filesystem device ID + inode，同一文件系统内重命名或移动目录后保持稳定；
-- Windows：volume serial number + file index；
-- 其他平台 fallback 为 canonical path；
-- 复制目录会产生新 identity，这是预期行为。
+- Desktop 普通 Local FS：规范化路径后计算 SHA-256 identity；消除 `.`、`..`，Windows 统一路径分隔符，macOS 与 Windows 统一转为小写。相同路径删除后重新创建仍视为同一个绑定目标，不读取 inode、volume ID 或 file index，也不在 identity 中重复暴露原始路径。
+- Android/iOS 用户自选目录：应标识持久授权引用本身，例如 bookmark 或 SAF grant。只要原授权引用仍能访问该目录，即使目录曾删除后重新创建，也保持相同 identity；授权是否仍有效由 `open()` 判断。
+- Android/iOS 应用沙盒目录：应用始终拥有权限，identity 由 Provider scope 与 Workspace 相对路径生成即可。
 
-因此不同路径别名可以幂等 attach，同一目录的 alias relocate 会返回 `SameStorageBinding`，而复制出来但保留相同 Manifest ID 的目录仍会被判定为冲突。
+identity 不负责自动追踪目录移动。应用内显式 `relocate_workspace` 会解析目标 Request、复制 Workspace，并以新的 Binding 更新 Catalog；之后只使用新目录打开。若未来支持“用户在系统文件管理器中移动后重新选择”，应提供显式 rebind 操作，不能让普通 attach 静默覆盖已有 Workspace ID。
+
+因此 `/notes/../notes` 这类语法等价路径可以幂等 attach，并会在 relocate 时返回 `SameStorageBinding`；symlink 等指向同一物理目录但路径不同的引用仍视为不同绑定。复制到另一条路径但保留相同 Manifest ID 的目录也会被判定为冲突。
 
 ### 5.2 路径安全
 
