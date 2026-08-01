@@ -10,11 +10,12 @@ use tokio::sync::RwLock;
 
 use crate::workspace::{
     domain::{
-        RelocateWorkspaceResult, RemoveWorkspaceResult, StorageCleanupStatus, StorageProviderId,
-        WorkspaceAvailability, WorkspaceCachedSummary, WorkspaceDirectoryName, WorkspaceId,
-        WorkspaceListItem, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRecord,
-        WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
-        WorkspaceStorageKindView, WorkspaceStorageTarget,
+        AttachWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
+        StorageCleanupStatus, StorageProviderId, WorkspaceAvailability, WorkspaceCachedSummary,
+        WorkspaceDirectoryName, WorkspaceId, WorkspaceListItem, WorkspaceLocalSetting,
+        WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath, WorkspaceSettings,
+        WorkspaceSnapshot, WorkspaceStorageBinding, WorkspaceStorageKindView,
+        WorkspaceStorageTarget, WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
     file_tree::{FileNode, FileTree},
@@ -153,6 +154,17 @@ impl WorkspaceManager {
                 Err(error) => return Err(error.into()),
             }
         };
+        let cleanup_binding = binding.clone();
+        let binding = match self.resolve_binding_identity(binding).await {
+            Ok(binding) => binding,
+            Err(error) => {
+                let _ = self
+                    .storage_resolver
+                    .remove_workspace_root(&cleanup_binding)
+                    .await;
+                return Err(error);
+            }
+        };
 
         let manifest = WorkspaceManifest::new(WorkspaceId::new(), display_name, now_timestamp());
         if let Err(error) = initialize_workspace(session.as_ref(), &manifest).await {
@@ -174,6 +186,7 @@ impl WorkspaceManager {
             return Err(WorkspaceError::ExpectedExternalBinding);
         }
         let _lifecycle = self.lifecycle_lock.write().await;
+        let binding = self.resolve_binding_identity(binding).await?;
         let session = self.storage_resolver.open(&binding).await?;
         if manifest_exists(session.as_ref()).await? {
             return Err(WorkspaceError::ManifestAlreadyExists);
@@ -188,18 +201,20 @@ impl WorkspaceManager {
     pub async fn attach_workspace(
         &self,
         binding: WorkspaceStorageBinding,
-    ) -> Result<WorkspaceRecord, WorkspaceError> {
+    ) -> Result<AttachWorkspaceResult, WorkspaceError> {
         if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
             return Err(WorkspaceError::ExpectedExternalBinding);
         }
         let _lifecycle = self.lifecycle_lock.write().await;
+        let binding = self.resolve_binding_identity(binding).await?;
         let session = self.storage_resolver.open(&binding).await?;
         let manifest = load_manifest(session.as_ref())
             .await?
             .ok_or(WorkspaceError::ManifestNotFound)?;
         load_workspace_settings(session.as_ref()).await?;
         let record = record_from_manifest(binding, &manifest, now_timestamp());
-        self.catalog.add_or_validate_same_binding(record).await
+        let record = self.catalog.add_or_validate_same_binding(record).await?;
+        Ok(AttachWorkspaceResult::from(&record))
     }
 
     pub async fn open_workspace(
@@ -227,6 +242,7 @@ impl WorkspaceManager {
         }
         self.session.remove(id).await?;
         let removed_record = self.catalog.remove(id).await?;
+        let removed_storage = WorkspaceStorageView::from(&removed_record.storage_binding);
         let file_cleanup = if delete_files {
             match self
                 .storage_resolver
@@ -242,7 +258,8 @@ impl WorkspaceManager {
             StorageCleanupStatus::Retained
         };
         Ok(RemoveWorkspaceResult {
-            removed_record,
+            workspace_id: removed_record.id,
+            storage: removed_storage,
             file_cleanup,
         })
     }
@@ -266,22 +283,30 @@ impl WorkspaceManager {
                 provider_id,
                 preferred_directory_name,
             } => {
-                let expected_binding = WorkspaceStorageBinding::Managed {
-                    provider_id: provider_id.clone(),
-                    directory_name: preferred_directory_name.clone(),
-                };
-                if expected_binding == source_record.storage_binding {
+                if matches!(
+                    &source_record.storage_binding,
+                    WorkspaceStorageBinding::Managed {
+                        provider_id: source_provider,
+                        directory_name: source_directory,
+                        ..
+                    } if source_provider == &provider_id
+                        && source_directory == &preferred_directory_name
+                ) {
                     return Err(WorkspaceError::SameStorageBinding);
                 }
-                self.storage_resolver
+                let (binding, session) = self
+                    .storage_resolver
                     .create_managed(&provider_id, &preferred_directory_name)
-                    .await?
+                    .await?;
+                let binding = self.resolve_binding_identity(binding).await?;
+                (binding, session)
             }
             WorkspaceStorageTarget::External { binding } => {
                 if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
                     return Err(WorkspaceError::ExpectedExternalBinding);
                 }
-                if binding == source_record.storage_binding {
+                let binding = self.resolve_binding_identity(binding).await?;
+                if binding.same_resource(&source_record.storage_binding) {
                     return Err(WorkspaceError::SameStorageBinding);
                 }
                 let session = self.storage_resolver.open(&binding).await?;
@@ -311,8 +336,8 @@ impl WorkspaceManager {
             .await?;
         Ok(RelocateWorkspaceResult {
             workspace_id: *id,
-            source_binding: source_record.storage_binding,
-            target_binding,
+            source_storage: WorkspaceStorageView::from(&source_record.storage_binding),
+            target_storage: WorkspaceStorageView::from(&target_binding),
             source_cleanup: StorageCleanupStatus::Retained,
         })
     }
@@ -526,6 +551,14 @@ impl WorkspaceManager {
             .get(id)
             .await
             .ok_or(WorkspaceError::NotOpen(*id))
+    }
+
+    async fn resolve_binding_identity(
+        &self,
+        binding: WorkspaceStorageBinding,
+    ) -> Result<WorkspaceStorageBinding, WorkspaceError> {
+        let identity = self.storage_resolver.resolve_identity(&binding).await?;
+        Ok(binding.with_resource_identity(identity))
     }
 
     async fn open_workspace_locked(

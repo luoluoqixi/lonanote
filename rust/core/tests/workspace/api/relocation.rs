@@ -27,6 +27,10 @@ fn relocation_flow() {
         .await;
         assert_eq!(relocated["workspaceId"], id.to_string());
         assert_eq!(relocated["sourceCleanup"]["status"], "retained");
+        assert_eq!(relocated["sourceStorage"]["kind"], "managed");
+        assert_eq!(relocated["targetStorage"]["kind"], "external");
+        assert!(!relocated.to_string().contains("resourceRef"));
+        assert!(!relocated.to_string().contains("resourceIdentity"));
         remove_closed(id).await;
     });
 }

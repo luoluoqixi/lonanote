@@ -64,7 +64,10 @@ pub(super) async fn remove_closed(id: WorkspaceId) {
         json!({"workspaceId": id, "deleteFiles": true}),
     )
     .await;
-    assert_eq!(removed["removedRecord"]["id"], id.to_string());
+    assert_eq!(removed["workspaceId"], id.to_string());
+    assert!(removed.get("removedRecord").is_none());
+    assert!(!removed.to_string().contains("resourceRef"));
+    assert!(!removed.to_string().contains("resourceIdentity"));
 }
 
 pub(super) fn workspace_args(id: WorkspaceId) -> Value {
@@ -75,6 +78,7 @@ pub(super) fn external_binding_json(path: &Path) -> Value {
     json!({
         "kind": "external",
         "providerId": EXTERNAL_PROVIDER,
+        "providerSchemaVersion": 1,
         "resourceRef": path.to_string_lossy()
     })
 }

@@ -49,6 +49,7 @@ impl From<&WorkspaceStorageBinding> for WorkspaceStorageView {
             WorkspaceStorageBinding::Managed {
                 provider_id,
                 directory_name,
+                ..
             } => Self {
                 kind: WorkspaceStorageKindView::Managed,
                 provider_id: provider_id.clone(),
@@ -83,6 +84,24 @@ pub struct WorkspaceListItem {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttachWorkspaceResult {
+    pub id: WorkspaceId,
+    pub display_name: String,
+    pub storage: WorkspaceStorageView,
+}
+
+impl From<&WorkspaceRecord> for AttachWorkspaceResult {
+    fn from(record: &WorkspaceRecord) -> Self {
+        Self {
+            id: record.id,
+            display_name: record.cached_summary.display_name.clone(),
+            storage: WorkspaceStorageView::from(&record.storage_binding),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
     tag = "kind",
     rename_all = "camelCase",
@@ -109,7 +128,8 @@ pub enum StorageCleanupStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoveWorkspaceResult {
-    pub removed_record: WorkspaceRecord,
+    pub workspace_id: WorkspaceId,
+    pub storage: WorkspaceStorageView,
     pub file_cleanup: StorageCleanupStatus,
 }
 
@@ -117,7 +137,7 @@ pub struct RemoveWorkspaceResult {
 #[serde(rename_all = "camelCase")]
 pub struct RelocateWorkspaceResult {
     pub workspace_id: WorkspaceId,
-    pub source_binding: WorkspaceStorageBinding,
-    pub target_binding: WorkspaceStorageBinding,
+    pub source_storage: WorkspaceStorageView,
+    pub target_storage: WorkspaceStorageView,
     pub source_cleanup: StorageCleanupStatus,
 }

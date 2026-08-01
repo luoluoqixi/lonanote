@@ -1,9 +1,10 @@
 use cmdreg::command;
 
 use crate::workspace::{
-    workspace_manager, RelocateWorkspaceResult, RemoveWorkspaceResult, StorageProviderId,
-    WorkspaceId, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceRecord, WorkspaceRelativePath,
-    WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding, WorkspaceStorageTarget,
+    workspace_manager, AttachWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
+    StorageProviderId, WorkspaceId, WorkspaceListItem, WorkspaceLocalSetting,
+    WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
+    WorkspaceStorageTarget,
 };
 
 #[command("workspace")]
@@ -42,7 +43,7 @@ async fn create_external(
 }
 
 #[command("workspace")]
-async fn attach(binding: WorkspaceStorageBinding) -> anyhow::Result<WorkspaceRecord> {
+async fn attach(binding: WorkspaceStorageBinding) -> anyhow::Result<AttachWorkspaceResult> {
     Ok(workspace_manager().attach_workspace(binding).await?)
 }
 

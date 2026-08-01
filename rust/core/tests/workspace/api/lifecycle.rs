@@ -59,6 +59,9 @@ fn external_attach_flow() {
         )
         .await;
         assert_eq!(removed["fileCleanup"]["status"], "retained");
+        assert_eq!(removed["storage"]["kind"], "external");
+        assert!(!removed.to_string().contains("resourceRef"));
+        assert!(!removed.to_string().contains("resourceIdentity"));
 
         let attached: Value = invoke_json(
             "workspace.attach",
@@ -66,6 +69,9 @@ fn external_attach_flow() {
         )
         .await;
         assert_eq!(attached["id"], created.id.to_string());
+        assert_eq!(attached["storage"]["kind"], "external");
+        assert!(!attached.to_string().contains("resourceRef"));
+        assert!(!attached.to_string().contains("resourceIdentity"));
         remove_closed(created.id).await;
     });
 }

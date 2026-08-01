@@ -1,9 +1,10 @@
 use std::{path::Path, sync::Arc};
 
 use lonanote_core::workspace::{
-    LocalFsResolver, StorageProviderId, WorkspaceCachedSummary, WorkspaceDirectoryName,
-    WorkspaceId, WorkspaceManager, WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath,
-    WorkspaceSnapshot, WorkspaceStorageBinding, WorkspaceStorageResolver,
+    LocalFsResolver, StorageProviderId, StorageResourceIdentity, StorageResourceRef,
+    WorkspaceCachedSummary, WorkspaceDirectoryName, WorkspaceId, WorkspaceManager,
+    WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath, WorkspaceSnapshot,
+    WorkspaceStorageBinding, WorkspaceStorageResolver,
 };
 use tempfile::TempDir;
 
@@ -78,14 +79,19 @@ pub fn path(value: &str) -> WorkspaceRelativePath {
 pub fn external_binding(root: impl AsRef<Path>) -> WorkspaceStorageBinding {
     WorkspaceStorageBinding::External {
         provider_id: provider(EXTERNAL_PROVIDER),
-        resource_ref: root.as_ref().to_string_lossy().into_owned(),
+        provider_schema_version: 1,
+        resource_ref: StorageResourceRef::parse(root.as_ref().to_string_lossy()).unwrap(),
+        resource_identity: None,
     }
 }
 
 pub fn test_record(display_name: &str, root: impl AsRef<Path>) -> WorkspaceRecord {
+    let root = root.as_ref();
     WorkspaceRecord {
         id: WorkspaceId::new(),
-        storage_binding: external_binding(root),
+        storage_binding: external_binding(root).with_resource_identity(
+            StorageResourceIdentity::parse(format!("test:path:{}", root.display())).unwrap(),
+        ),
         cached_summary: WorkspaceCachedSummary {
             display_name: display_name.to_string(),
             created_at: Some(1),
@@ -97,6 +103,8 @@ pub fn test_record(display_name: &str, root: impl AsRef<Path>) -> WorkspaceRecor
 pub fn managed_binding(directory_name: &str) -> WorkspaceStorageBinding {
     WorkspaceStorageBinding::Managed {
         provider_id: provider(MANAGED_PROVIDER),
+        provider_schema_version: 1,
         directory_name: WorkspaceDirectoryName::parse(directory_name).unwrap(),
+        resource_identity: None,
     }
 }

@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     domain::{
-        StorageProviderId, WorkspaceDirectoryName, WorkspaceLocalSetting, WorkspaceManifest,
-        WorkspaceRelativePath, WorkspaceSettings, WorkspaceStorageBinding,
+        StorageProviderId, StorageResourceIdentity, WorkspaceDirectoryName, WorkspaceLocalSetting,
+        WorkspaceManifest, WorkspaceRelativePath, WorkspaceSettings, WorkspaceStorageBinding,
         WORKSPACE_LOCAL_SETTING_PATH, WORKSPACE_LOCAL_SETTING_SCHEMA_VERSION,
         WORKSPACE_MANIFEST_PATH, WORKSPACE_SETTINGS_PATH, WORKSPACE_SETTINGS_SCHEMA_VERSION,
     },
@@ -239,6 +239,12 @@ impl fmt::Debug for WorkspaceStorageSession {
 
 #[async_trait]
 pub trait WorkspaceStorageResolver: Send + Sync {
+    /// 解析底层资源的稳定身份。返回值用于资源比较，不用于重新打开资源。
+    async fn resolve_identity(
+        &self,
+        binding: &WorkspaceStorageBinding,
+    ) -> Result<StorageResourceIdentity, StorageError>;
+
     async fn open(
         &self,
         binding: &WorkspaceStorageBinding,

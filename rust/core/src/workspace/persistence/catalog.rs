@@ -48,7 +48,16 @@ impl WorkspaceCatalogData {
                     record.id
                 )));
             }
-            record.storage_binding.validate()?;
+            if record.storage_binding.provider_schema_version() == 0 {
+                return Err(WorkspaceError::Catalog(format!(
+                    "Workspace {id} 的 provider schema version 不能为 0"
+                )));
+            }
+            if record.storage_binding.resource_identity().is_none() {
+                return Err(WorkspaceError::Catalog(format!(
+                    "Workspace {id} 的 StorageBinding 尚未解析 resource identity"
+                )));
+            }
         }
         Ok(())
     }
@@ -137,7 +146,10 @@ impl WorkspaceCatalog {
     ) -> Result<WorkspaceRecord, WorkspaceError> {
         self.update(move |data| {
             if let Some(existing) = data.workspaces.get(&record.id) {
-                if existing.storage_binding == record.storage_binding {
+                if existing
+                    .storage_binding
+                    .same_resource(&record.storage_binding)
+                {
                     data.workspaces.insert(record.id, record.clone());
                     return Ok(record);
                 }

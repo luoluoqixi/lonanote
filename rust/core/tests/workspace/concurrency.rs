@@ -4,9 +4,9 @@ use crate::support::{external_binding, path, ControlledStorage};
 use async_trait::async_trait;
 use lonanote_core::workspace::{
     save_local_setting, save_manifest, save_workspace_settings, StorageError, StorageProviderId,
-    WorkspaceCachedSummary, WorkspaceCatalog, WorkspaceDirectoryName, WorkspaceId,
-    WorkspaceInstance, WorkspaceLocalSetting, WorkspaceManager, WorkspaceManifest, WorkspaceRecord,
-    WorkspaceRuntime, WorkspaceSessionStore, WorkspaceSettings, WorkspaceStorage,
+    StorageResourceIdentity, WorkspaceCachedSummary, WorkspaceCatalog, WorkspaceDirectoryName,
+    WorkspaceId, WorkspaceInstance, WorkspaceLocalSetting, WorkspaceManager, WorkspaceManifest,
+    WorkspaceRecord, WorkspaceRuntime, WorkspaceSessionStore, WorkspaceSettings, WorkspaceStorage,
     WorkspaceStorageBinding, WorkspaceStorageResolver, WorkspaceStorageSession, WriteOptions,
 };
 use tempfile::TempDir;
@@ -127,6 +127,13 @@ struct SingleStorageResolver {
 
 #[async_trait]
 impl WorkspaceStorageResolver for SingleStorageResolver {
+    async fn resolve_identity(
+        &self,
+        _binding: &WorkspaceStorageBinding,
+    ) -> Result<StorageResourceIdentity, StorageError> {
+        Ok(StorageResourceIdentity::parse("test:single-storage").unwrap())
+    }
+
     async fn open(
         &self,
         _binding: &WorkspaceStorageBinding,
@@ -159,7 +166,8 @@ async fn close_waits_for_active_operation() {
     let erased: Arc<dyn WorkspaceStorage> = storage.clone();
     let storage_session = Arc::new(WorkspaceStorageSession::new(erased));
     let id = WorkspaceId::new();
-    let binding = external_binding("/virtual/workspace");
+    let binding = external_binding("/virtual/workspace")
+        .with_resource_identity(StorageResourceIdentity::parse("test:single-storage").unwrap());
     let manifest = WorkspaceManifest::new(id, "Draining".into(), 1);
     save_workspace_settings(storage_session.as_ref(), &WorkspaceSettings::default())
         .await

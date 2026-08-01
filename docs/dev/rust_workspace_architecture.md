@@ -203,6 +203,8 @@ LocalSetting 必须通过已经打开的 `WorkspaceInstance` 访问。这保证�
 
 位置：`<app data>/workspace-catalog.json`
 
+当前 Catalog schema version 为 1。项目尚处于开发阶段，`providerSchemaVersion` 与 `resourceIdentity` 直接属于 version 1 的既定格式，不产生迁移。
+
 Catalog 保存：
 
 - `WorkspaceId → WorkspaceStorageBinding`；
@@ -210,6 +212,31 @@ Catalog 保存：
 - 最近验证摘要的时间。
 
 Binding 可以是 Managed，也可以是 External。它可能包含本机路径或未来平台授权引用，因此不能进入 Workspace 目录。
+
+External Binding 使用经过校验的 `StorageResourceRef` 值对象，而不是裸 `String`。JSON 仍表现为 `resourceRef` 字符串；它的具体语义由 `providerId` 对应的 Resolver 解释。普通 Rust 文件系统将其解释为绝对路径，未来平台可以将其解释为 bookmark、SAF URI 或安全存储引用 ID。
+
+进入 Catalog 的 Binding 还包含：
+
+- `providerSchemaVersion`：Provider 自己的数据格式版本，由对应 Resolver 校验；
+- `resourceIdentity`：Resolver 根据真实资源生成的稳定身份，只用于判断两个 Binding 是否指向同一底层资源。
+
+```json
+{
+  "kind": "external",
+  "providerId": "desktop-folder",
+  "providerSchemaVersion": 1,
+  "resourceRef": "/Users/example/Notes",
+  "resourceIdentity": "local-fs:unix:1000004:123456"
+}
+```
+
+API 输入可以不提供 `resourceIdentity`，Manager 在写入 Catalog 前总会调用 `Resolver.resolve_identity()` 并覆盖该字段；Catalog 拒绝没有 identity 或 version 为 0 的 Binding。`resourceIdentity` 不能用于打开目录，因此 `resourceRef` 仍然必需。
+
+Provider 的 `resourceRef` 编码发生变化时，只提升 `providerSchemaVersion` 并让 Resolver 支持或迁移对应版本，不需要提升整个 Catalog schema。待格式投入生产后，只有 Catalog 公共 envelope 本身发生不兼容变化时才需要提升 Catalog schema。
+
+同一个 Provider 必须让 `resourceIdentity` 的语义跨 Provider schema version 保持稳定；否则升级前后的 Binding 无法可靠执行 `same_resource()`。
+
+Catalog 主文件、backup 和 App Session 通过原子临时文件写入；Unix 平台上的文件权限固定为 `0600`。完整 Binding 只用于 Core 内的定位，不会由 attach/remove/relocate command 返回，上层只得到不含 `resourceRef` 的 `WorkspaceStorageView`。
 
 缓存摘要允许应用在不打开所有 Workspace 的情况下列出工作区。Manifest 仍是名称和创建时间的最终权威；每次成功打开会刷新摘要。
 
@@ -266,6 +293,8 @@ Runtime 不持久化。关闭 Workspace 是从 map 移除 `Arc`，已经获得 I
 
 ```text
 WorkspaceStorageBinding
+  → WorkspaceStorageResolver.resolve_identity(binding)
+  → 写入已解析 Binding
   → WorkspaceStorageResolver.open(binding)
   → WorkspaceStorageSession
       ├── Arc<dyn WorkspaceStorage>
@@ -273,11 +302,22 @@ WorkspaceStorageBinding
 ```
 
 - Binding：可序列化的本机位置/授权引用，存入 Catalog。
-- Resolver：理解 Binding，负责打开或创建实际存储。
+- Resolver：理解 Binding，负责生成资源 identity、校验 Provider schema version，并打开或创建实际存储。
 - Session：把文件能力与访问授权 lease 绑定到同一生命周期。
 - Storage：只接受 `WorkspaceRelativePath` 的文件能力接口。
 
 `WorkspaceAccessLease` 为 iOS security-scoped access、Android SAF 等预留。即使当前普通文件系统不需要 lease，生命周期边界已经固定。
+
+`WorkspaceStorageBinding::PartialEq` 仍表示所有结构字段完全相同，不用于物理资源判断。资源判断使用 `same_resource()`，其语义是 `providerId + resourceIdentity` 相同；定位引用判断使用 `same_reference()`。
+
+普通 Rust FS 的 identity：
+
+- Unix：filesystem device ID + inode，同一文件系统内重命名或移动目录后保持稳定；
+- Windows：volume serial number + file index；
+- 其他平台 fallback 为 canonical path；
+- 复制目录会产生新 identity，这是预期行为。
+
+因此不同路径别名可以幂等 attach，同一目录的 alias relocate 会返回 `SameStorageBinding`，而复制出来但保留相同 Manifest ID 的目录仍会被判定为冲突。
 
 ### 5.2 路径安全
 
@@ -453,6 +493,8 @@ Catalog Binding 是最终提交点。当前 relocate 成功后保留源目录，
 - Index：`get_tree`、`get_node`、`refresh_index`。
 
 所有 API 都通过全局安装的 `WorkspaceManager`。未安装 Manager、ID/路径反序列化失败和业务错误会由 cmdreg 统一返回。
+
+StorageBinding 是 command 的输入模型，但不是输出模型：attach/remove/relocate 返回的 Storage 信息统一使用 `WorkspaceStorageView`，External View 不包含 `resourceRef`。
 
 `get_last_workspace_id` 与 `get_local_setting` 是刻意分开的：前者属于应用级 Session，后者属于某个 Workspace 的本机设置。
 

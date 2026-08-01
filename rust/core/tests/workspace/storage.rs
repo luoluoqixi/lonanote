@@ -3,13 +3,16 @@ use std::sync::{
     Arc,
 };
 
-use crate::support::{assert_storage_contract, external_binding, path};
+use crate::support::{
+    assert_storage_contract, external_binding, path, provider, EXTERNAL_PROVIDER,
+};
 use lonanote_core::workspace::{
     copy_workspace_tree, load_local_setting, load_manifest, load_workspace_settings,
-    save_local_setting, save_manifest, save_workspace_settings, LocalPathStorage, MemoryStorage,
-    StorageAccessLease, StorageError, WorkspaceError, WorkspaceId, WorkspaceInstance,
-    WorkspaceLocalSetting, WorkspaceManifest, WorkspaceSettings, WorkspaceStorage,
-    WorkspaceStorageSession, WriteOptions,
+    save_local_setting, save_manifest, save_workspace_settings, LocalFsResolver, LocalPathStorage,
+    MemoryStorage, StorageAccessLease, StorageError, WorkspaceError, WorkspaceId,
+    WorkspaceInstance, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceSettings,
+    WorkspaceStorage, WorkspaceStorageBinding, WorkspaceStorageResolver, WorkspaceStorageSession,
+    WriteOptions,
 };
 use tempfile::TempDir;
 
@@ -63,6 +66,56 @@ async fn local_atomic_write_and_symlink_guard() {
             "secret"
         );
     }
+}
+
+#[tokio::test]
+async fn local_resolver_identifies_same_directory() {
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().join("workspace");
+    let copy = temp.path().join("workspace-copy");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::create_dir_all(&copy).unwrap();
+    let alias = root.join("..").join("workspace");
+    let resolver = LocalFsResolver::new().with_external_provider(provider(EXTERNAL_PROVIDER));
+
+    let identity = resolver
+        .resolve_identity(&external_binding(&root))
+        .await
+        .unwrap();
+    let alias_identity = resolver
+        .resolve_identity(&external_binding(alias))
+        .await
+        .unwrap();
+    let copy_identity = resolver
+        .resolve_identity(&external_binding(copy))
+        .await
+        .unwrap();
+
+    assert_eq!(identity, alias_identity);
+    assert_ne!(identity, copy_identity);
+}
+
+#[tokio::test]
+async fn local_resolver_rejects_unknown_provider_schema() {
+    let temp = TempDir::new().unwrap();
+    let mut binding = external_binding(temp.path());
+    let WorkspaceStorageBinding::External {
+        provider_schema_version,
+        ..
+    } = &mut binding
+    else {
+        unreachable!()
+    };
+    *provider_schema_version = 999;
+    let resolver = LocalFsResolver::new().with_external_provider(provider(EXTERNAL_PROVIDER));
+
+    assert!(matches!(
+        resolver.resolve_identity(&binding).await.unwrap_err(),
+        StorageError::UnsupportedProviderSchema {
+            schema_version: 999,
+            ..
+        }
+    ));
 }
 
 #[tokio::test]

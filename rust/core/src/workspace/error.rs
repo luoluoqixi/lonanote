@@ -26,6 +26,22 @@ pub enum StorageProviderIdError {
     InvalidCharacter,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+pub enum StorageResourceRefError {
+    #[error("Storage resource ref 不能为空")]
+    Empty,
+    #[error("Storage resource ref 不能包含控制字符")]
+    ControlCharacter,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+pub enum StorageResourceIdentityError {
+    #[error("Storage resource identity 不能为空")]
+    Empty,
+    #[error("Storage resource identity 不能包含控制字符")]
+    ControlCharacter,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum WorkspaceDirectoryNameError {
     #[error(transparent)]
@@ -66,8 +82,6 @@ pub enum WorkspaceManifestError {
     UnsupportedSchema(u32),
     #[error("Workspace display name 不能为空或包含控制字符")]
     InvalidDisplayName,
-    #[error("Workspace StorageBinding 无效")]
-    InvalidStorageBinding,
 }
 
 #[derive(Debug, Error)]
@@ -88,6 +102,11 @@ pub enum StorageError {
     OutsideWorkspace { path: WorkspaceRelativePath },
     #[error("不支持的 Storage Provider: {provider_id}")]
     UnsupportedProvider { provider_id: StorageProviderId },
+    #[error("Storage Provider {provider_id} 不支持 binding schema version: {schema_version}")]
+    UnsupportedProviderSchema {
+        provider_id: StorageProviderId,
+        schema_version: u32,
+    },
     #[error("存储不支持操作: {operation}")]
     UnsupportedOperation { operation: &'static str },
     #[error("存储授权尚未提供")]

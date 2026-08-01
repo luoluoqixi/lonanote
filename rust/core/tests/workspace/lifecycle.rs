@@ -193,6 +193,55 @@ async fn external_attach_flow() {
 }
 
 #[tokio::test]
+async fn reattaches_same_external_resource_through_alias() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let root = app.external_dir("external-alias");
+    let created = manager
+        .create_external_workspace(external_binding(&root), "Alias".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&created.id).await.unwrap();
+    let alias = root.join("..").join("external-alias");
+
+    let attached = manager
+        .attach_workspace(external_binding(alias))
+        .await
+        .unwrap();
+
+    assert_eq!(attached.id, created.id);
+}
+
+#[tokio::test]
+async fn rejects_copied_workspace_with_same_manifest_id() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let root = app.external_dir("external-original");
+    let copy = app.external_dir("external-copy");
+    let created = manager
+        .create_external_workspace(external_binding(&root), "Original".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&created.id).await.unwrap();
+    std::fs::create_dir_all(copy.join(".lonanote")).unwrap();
+    for file_name in ["manifest.json", "settings.json"] {
+        std::fs::copy(
+            root.join(".lonanote").join(file_name),
+            copy.join(".lonanote").join(file_name),
+        )
+        .unwrap();
+    }
+
+    assert!(matches!(
+        manager
+            .attach_workspace(external_binding(copy))
+            .await
+            .unwrap_err(),
+        WorkspaceError::DuplicateWorkspaceId(id) if id == created.id
+    ));
+}
+
+#[tokio::test]
 async fn retries_failed_open() {
     let app = WorkspaceTestApp::new();
     let manager = app.start().await;

@@ -6,6 +6,9 @@ use std::{
 
 use serde::{de::DeserializeOwned, Serialize};
 
+#[cfg(unix)]
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+
 use crate::workspace::error::WorkspaceError;
 
 type ErrorFactory = fn(String) -> WorkspaceError;
@@ -19,8 +22,10 @@ pub(crate) fn load_json_with_backup<T>(
 where
     T: Default + DeserializeOwned,
 {
+    let backup = backup_path(path);
+    restrict_existing_file_permissions(path, label, error_factory)?;
+    restrict_existing_file_permissions(&backup, label, error_factory)?;
     if !path.exists() {
-        let backup = backup_path(path);
         if backup.exists() {
             return read_json(&backup, label, error_factory, validate);
         }
@@ -32,7 +37,6 @@ where
     match read_json(path, label, error_factory, validate) {
         Ok(data) => Ok(data),
         Err(primary_error) => {
-            let backup = backup_path(path);
             read_json(&backup, label, error_factory, validate).map_err(|backup_error| {
                 error_factory(format!(
                     "{label} 与 backup 均无法读取；primary: {primary_error}; backup: {backup_error}"
@@ -40,6 +44,17 @@ where
             })
         }
     }
+}
+
+fn restrict_existing_file_permissions(
+    path: &Path,
+    label: &str,
+    error_factory: ErrorFactory,
+) -> Result<(), WorkspaceError> {
+    if path.exists() {
+        restrict_file_permissions(path, label, error_factory)?;
+    }
+    Ok(())
 }
 
 pub(crate) fn write_json_atomically<T>(
@@ -79,12 +94,39 @@ fn read_json<T>(
 where
     T: DeserializeOwned,
 {
+    restrict_file_permissions(path, label, error_factory)?;
     let bytes =
         fs::read(path).map_err(|error| error_factory(format!("读取 {label} 失败: {error}")))?;
     let mut data = serde_json::from_slice::<T>(&bytes)
         .map_err(|error| error_factory(format!("解析 {label} 失败: {error}")))?;
     validate(&mut data)?;
     Ok(data)
+}
+
+#[cfg(unix)]
+fn restrict_file_permissions(
+    path: &Path,
+    label: &str,
+    error_factory: ErrorFactory,
+) -> Result<(), WorkspaceError> {
+    let mut permissions = fs::metadata(path)
+        .map_err(|error| error_factory(format!("读取 {label} 文件权限失败: {error}")))?
+        .permissions();
+    if permissions.mode() & 0o777 == 0o600 {
+        return Ok(());
+    }
+    permissions.set_mode(0o600);
+    fs::set_permissions(path, permissions)
+        .map_err(|error| error_factory(format!("收紧 {label} 文件权限失败: {error}")))
+}
+
+#[cfg(not(unix))]
+fn restrict_file_permissions(
+    _path: &Path,
+    _label: &str,
+    _error_factory: ErrorFactory,
+) -> Result<(), WorkspaceError> {
+    Ok(())
 }
 
 fn write_bytes_atomically(
@@ -106,9 +148,11 @@ fn write_bytes_atomically(
         uuid::Uuid::new_v4().hyphenated()
     ));
     let result = (|| {
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
+        let mut options = fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        options.mode(0o600);
+        let mut file = options
             .open(&temporary)
             .map_err(|error| error_factory(format!("创建 {label} 临时文件失败: {error}")))?;
         file.write_all(bytes)

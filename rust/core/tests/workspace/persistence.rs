@@ -37,6 +37,28 @@ async fn catalog_concurrent_writes() {
         assert_eq!(loaded.get(&id).await.unwrap().id, id);
     }
     assert!(catalog_path.with_extension("json.bak").exists());
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+
+        assert_eq!(
+            std::fs::metadata(&catalog_path)
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o600
+        );
+        assert_eq!(
+            std::fs::metadata(catalog_path.with_extension("json.bak"))
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o600
+        );
+    }
 }
 
 #[tokio::test]
@@ -68,6 +90,68 @@ async fn catalog_backup_recovery() {
         .list()
         .await
         .is_empty());
+}
+
+#[tokio::test]
+async fn catalog_accepts_provider_specific_schema() {
+    let temp = TempDir::new().unwrap();
+    let catalog_path = temp.path().join("workspace-catalog.json");
+    let catalog = WorkspaceCatalog::load(&catalog_path).await.unwrap();
+    let mut record = test_record("Future Provider", temp.path().join("future"));
+    let lonanote_core::workspace::WorkspaceStorageBinding::External {
+        provider_schema_version,
+        ..
+    } = &mut record.storage_binding
+    else {
+        unreachable!()
+    };
+    *provider_schema_version = 7;
+
+    catalog.add(record.clone()).await.unwrap();
+    let loaded = WorkspaceCatalog::load(catalog_path).await.unwrap();
+
+    assert_eq!(
+        loaded
+            .get(&record.id)
+            .await
+            .unwrap()
+            .storage_binding
+            .provider_schema_version(),
+        7
+    );
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn catalog_load_restricts_permissions() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let temp = TempDir::new().unwrap();
+    let catalog_path = temp.path().join("workspace-catalog.json");
+    std::fs::write(
+        &catalog_path,
+        serde_json::to_vec_pretty(&json!({"schemaVersion": 1, "workspaces": {}})).unwrap(),
+    )
+    .unwrap();
+    let backup_path = catalog_path.with_extension("json.bak");
+    std::fs::copy(&catalog_path, &backup_path).unwrap();
+    std::fs::set_permissions(&catalog_path, std::fs::Permissions::from_mode(0o644)).unwrap();
+    std::fs::set_permissions(&backup_path, std::fs::Permissions::from_mode(0o644)).unwrap();
+
+    WorkspaceCatalog::load(&catalog_path).await.unwrap();
+
+    assert_eq!(
+        std::fs::metadata(catalog_path)
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o600
+    );
+    assert_eq!(
+        std::fs::metadata(backup_path).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
 }
 
 #[tokio::test]

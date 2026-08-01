@@ -58,6 +58,32 @@ async fn validates_target() {
 }
 
 #[tokio::test]
+async fn rejects_external_alias_as_same_target() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let root = app.external_dir("same-external-target");
+    let created = manager
+        .create_external_workspace(external_binding(&root), "Same Target".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&created.id).await.unwrap();
+    let alias = root.join("..").join("same-external-target");
+
+    assert!(matches!(
+        manager
+            .relocate_workspace(
+                &created.id,
+                WorkspaceStorageTarget::External {
+                    binding: external_binding(alias),
+                },
+            )
+            .await
+            .unwrap_err(),
+        WorkspaceError::SameStorageBinding
+    ));
+}
+
+#[tokio::test]
 async fn relocates_and_retains_source() {
     let app = WorkspaceTestApp::new();
     let manager = app.start().await;
@@ -137,8 +163,10 @@ async fn relocates_to_managed_storage() {
         .await
         .unwrap();
     assert_eq!(
-        result.target_binding,
-        crate::support::workspace_test_app::managed_binding(directory_name.as_str())
+        result.target_storage,
+        lonanote_core::workspace::WorkspaceStorageView::from(
+            &crate::support::workspace_test_app::managed_binding(directory_name.as_str())
+        )
     );
     assert!(app
         .managed_root
