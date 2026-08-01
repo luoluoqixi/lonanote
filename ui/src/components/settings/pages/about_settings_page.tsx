@@ -1,5 +1,11 @@
 import { useRef } from "react";
-import { NativeList, NativeListItem, NativeListSection, triggerNativeHaptics } from "rn-ui-kit";
+import {
+  NativeList,
+  NativeListItem,
+  NativeListSection,
+  isIos15,
+  triggerNativeHaptics,
+} from "rn-ui-kit";
 
 import { openExternalUrl } from "@/api/commands/utils";
 import { getAppHomeTitle, getVersion } from "@/config";
@@ -33,7 +39,7 @@ export function AboutSettingsPage({
       }
 
       enabledToastShownAtRef.current = now;
-      triggerNativeHaptics("medium");
+      triggerNativeHaptics(true);
       toast.info("开发者选项已开启");
       return;
     }
@@ -55,6 +61,10 @@ export function AboutSettingsPage({
         versionPressCountRef.current = 0;
         unlockPendingRef.current = false;
         enabledToastShownAtRef.current = Date.now();
+        if (isIos15()) {
+          // ios15 的 native toast success 不会震动
+          triggerNativeHaptics(true);
+        }
         toast.success("已开启开发者选项");
       })
       .catch((error) => {
