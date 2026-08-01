@@ -2,7 +2,7 @@ use cmdreg::command;
 
 use crate::workspace::{
     workspace_manager, RelocateWorkspaceResult, RemoveWorkspaceResult, StorageProviderId,
-    WorkspaceId, WorkspaceListItem, WorkspaceLocalState, WorkspaceRecord, WorkspaceRelativePath,
+    WorkspaceId, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceRecord, WorkspaceRelativePath,
     WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding, WorkspaceStorageTarget,
 };
 
@@ -107,15 +107,15 @@ async fn get_last_workspace_id() -> Option<WorkspaceId> {
 }
 
 #[command("workspace")]
-async fn get_local_state(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceLocalState> {
-    Ok(workspace_manager().get_local_state(&workspace_id).await?)
+async fn get_local_setting(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceLocalSetting> {
+    Ok(workspace_manager().get_local_setting(&workspace_id).await?)
 }
 
 #[command("workspace")]
 async fn set_last_open_file(
     workspace_id: WorkspaceId,
     path: Option<WorkspaceRelativePath>,
-) -> anyhow::Result<WorkspaceLocalState> {
+) -> anyhow::Result<WorkspaceLocalSetting> {
     Ok(workspace_manager()
         .set_last_open_file(&workspace_id, path)
         .await?)

@@ -4,13 +4,15 @@ use tokio::sync::{Mutex, RwLock};
 
 use crate::workspace::{
     domain::{
-        WorkspaceId, WorkspaceManifest, WorkspaceRelativePath, WorkspaceRuntimeStatus,
-        WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding, WorkspaceStorageView,
+        WorkspaceId, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRelativePath,
+        WorkspaceRuntimeStatus, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
+        WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
     file_tree::{FileNode, FileTree},
     storage::{
-        save_manifest, StorageCapabilities, StorageEntry, StorageEntryMetadata,
+        save_local_setting, save_manifest, save_workspace_settings, validate_local_setting,
+        validate_workspace_settings, StorageCapabilities, StorageEntry, StorageEntryMetadata,
         WorkspaceStorageSession, WriteOptions,
     },
 };
@@ -23,6 +25,8 @@ pub struct WorkspaceInstance {
     pub storage_binding: WorkspaceStorageBinding,
     session: Arc<WorkspaceStorageSession>,
     manifest: RwLock<WorkspaceManifest>,
+    settings: RwLock<WorkspaceSettings>,
+    local_setting: RwLock<WorkspaceLocalSetting>,
     mutation_lock: Mutex<()>,
     index: WorkspaceIndex,
 }
@@ -32,14 +36,20 @@ impl WorkspaceInstance {
         storage_binding: WorkspaceStorageBinding,
         session: Arc<WorkspaceStorageSession>,
         manifest: WorkspaceManifest,
+        settings: WorkspaceSettings,
+        local_setting: WorkspaceLocalSetting,
     ) -> Result<Self, WorkspaceError> {
         manifest.validate()?;
+        validate_workspace_settings(&settings)?;
+        validate_local_setting(&local_setting)?;
         let native_root = session.native_root_path().map(ToOwned::to_owned);
         Ok(Self {
             id: manifest.id,
             storage_binding,
             session,
             manifest: RwLock::new(manifest),
+            settings: RwLock::new(settings),
+            local_setting: RwLock::new(local_setting),
             mutation_lock: Mutex::new(()),
             index: WorkspaceIndex::new(native_root),
         })
@@ -51,13 +61,22 @@ impl WorkspaceInstance {
 
     pub async fn snapshot(&self) -> WorkspaceSnapshot {
         let manifest = self.manifest().await;
+        let settings = self.settings().await;
         WorkspaceSnapshot {
             id: self.id,
             display_name: manifest.display_name,
             storage: WorkspaceStorageView::from(&self.storage_binding),
-            settings: manifest.settings,
+            settings,
             status: WorkspaceRuntimeStatus::Open,
         }
+    }
+
+    pub async fn settings(&self) -> WorkspaceSettings {
+        self.settings.read().await.clone()
+    }
+
+    pub async fn local_setting(&self) -> WorkspaceLocalSetting {
+        self.local_setting.read().await.clone()
     }
 
     pub async fn capabilities(&self) -> Result<StorageCapabilities, WorkspaceError> {
@@ -168,19 +187,37 @@ impl WorkspaceInstance {
     pub async fn set_settings(
         &self,
         settings: WorkspaceSettings,
-    ) -> Result<WorkspaceManifest, WorkspaceError> {
+    ) -> Result<WorkspaceSettings, WorkspaceError> {
         let _mutation = self.mutation_lock.lock().await;
-        let mut next = self.manifest().await;
-        next.settings = settings;
-        next.validate()?;
-        save_manifest(self.session.as_ref(), &next).await?;
-        *self.manifest.write().await = next.clone();
+        save_workspace_settings(self.session.as_ref(), &settings).await?;
+        *self.settings.write().await = settings.clone();
         self.index.invalidate().await;
+        Ok(settings)
+    }
+
+    pub async fn mark_opened(&self, opened_at: u64) -> Result<(), WorkspaceError> {
+        let _mutation = self.mutation_lock.lock().await;
+        let mut next = self.local_setting().await;
+        next.last_opened_at = Some(opened_at);
+        save_local_setting(self.session.as_ref(), &next).await?;
+        *self.local_setting.write().await = next;
+        Ok(())
+    }
+
+    pub async fn set_last_open_file(
+        &self,
+        path: Option<WorkspaceRelativePath>,
+    ) -> Result<WorkspaceLocalSetting, WorkspaceError> {
+        let _mutation = self.mutation_lock.lock().await;
+        let mut next = self.local_setting().await;
+        next.last_open_file = path;
+        save_local_setting(self.session.as_ref(), &next).await?;
+        *self.local_setting.write().await = next.clone();
         Ok(next)
     }
 
     pub async fn get_tree(&self, recursive: bool) -> Result<FileTree, WorkspaceError> {
-        let settings = self.manifest().await.settings;
+        let settings = self.settings().await;
         self.index.get_tree(&settings, recursive).await
     }
 
@@ -189,12 +226,12 @@ impl WorkspaceInstance {
         path: &WorkspaceRelativePath,
         recursive: bool,
     ) -> Result<FileNode, WorkspaceError> {
-        let settings = self.manifest().await.settings;
+        let settings = self.settings().await;
         self.index.get_node(path, &settings, recursive).await
     }
 
     pub async fn refresh_index(&self) -> Result<(), WorkspaceError> {
-        let settings = self.manifest().await.settings;
+        let settings = self.settings().await;
         self.index.refresh(&settings).await
     }
 }

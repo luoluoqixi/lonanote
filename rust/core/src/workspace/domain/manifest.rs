@@ -1,22 +1,11 @@
-use std::collections::BTreeMap;
-
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::workspace::error::WorkspaceManifestError;
 
-use super::{StorageProviderId, WorkspaceId, WorkspaceSettings};
+use super::WorkspaceId;
 
 pub const WORKSPACE_MANIFEST_SCHEMA_VERSION: u32 = 1;
 pub const WORKSPACE_MANIFEST_PATH: &str = ".lonanote/manifest.json";
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorkspaceSyncSettings {
-    pub provider_id: Option<StorageProviderId>,
-    #[serde(default, flatten)]
-    pub options: BTreeMap<String, Value>,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,9 +14,6 @@ pub struct WorkspaceManifest {
     pub id: WorkspaceId,
     pub display_name: String,
     pub created_at: u64,
-    pub settings: WorkspaceSettings,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sync: Option<WorkspaceSyncSettings>,
 }
 
 impl WorkspaceManifest {
@@ -37,8 +23,6 @@ impl WorkspaceManifest {
             id,
             display_name,
             created_at,
-            settings: WorkspaceSettings::default(),
-            sync: None,
         }
     }
 

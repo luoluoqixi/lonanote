@@ -15,7 +15,7 @@ pub use domain::*;
 pub use error::*;
 pub use manager::WorkspaceManager;
 pub use persistence::{
-    WorkspaceCatalog, WorkspaceCatalogData, WorkspaceLocalStateData, WorkspaceLocalStateStore,
+    WorkspaceCatalog, WorkspaceCatalogData, WorkspaceSessionData, WorkspaceSessionStore,
 };
 pub use runtime::{WorkspaceInstance, WorkspaceRuntime};
 pub use storage::*;

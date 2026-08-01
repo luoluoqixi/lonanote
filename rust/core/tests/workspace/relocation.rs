@@ -93,6 +93,9 @@ async fn relocates_and_retains_source() {
         std::fs::read_to_string(target.join("notes/important.md")).unwrap(),
         "content"
     );
+    assert!(target.join(".lonanote/manifest.json").exists());
+    assert!(target.join(".lonanote/settings.json").exists());
+    assert!(target.join(".lonanote/settings.local.json").exists());
 
     drop(manager);
     let restarted = app.start().await;

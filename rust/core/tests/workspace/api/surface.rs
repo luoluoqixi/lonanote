@@ -55,7 +55,7 @@ fn expected_keys() -> BTreeSet<String> {
         "workspace.file.write_text",
         "workspace.get",
         "workspace.get_last_workspace_id",
-        "workspace.get_local_state",
+        "workspace.get_local_setting",
         "workspace.get_settings",
         "workspace.index.get_node",
         "workspace.index.get_tree",

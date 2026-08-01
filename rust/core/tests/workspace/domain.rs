@@ -1,7 +1,8 @@
 use crate::support::{path, provider, MANAGED_PROVIDER};
 use lonanote_core::workspace::{
-    StorageProviderId, WorkspaceDirectoryName, WorkspaceId, WorkspaceManifest,
-    WorkspaceRelativePath, WorkspaceSettings, WorkspaceStorageBinding,
+    StorageProviderId, WorkspaceDirectoryName, WorkspaceId, WorkspaceLocalSetting,
+    WorkspaceManifest, WorkspaceRelativePath, WorkspaceSessionData, WorkspaceSettings,
+    WorkspaceStorageBinding,
 };
 use serde_json::json;
 
@@ -90,6 +91,7 @@ fn public_json_contract() {
     assert_eq!(binding_json["directoryName"], "个人笔记");
 
     let settings: WorkspaceSettings = serde_json::from_value(json!({
+        "schemaVersion": 1,
         "fileTreeSortType": "name",
         "followGitignore": true,
         "customIgnore": "",
@@ -99,14 +101,28 @@ fn public_json_contract() {
     }))
     .unwrap();
     assert_eq!(settings.history_snapshot_count, 37);
-    assert_eq!(
-        serde_json::to_value(settings).unwrap()["historySnapshotCount"],
-        37
-    );
+    let settings_json = serde_json::to_value(settings).unwrap();
+    assert_eq!(settings_json["schemaVersion"], 1);
+    assert_eq!(settings_json["historySnapshotCount"], 37);
 
     let manifest_json =
         serde_json::to_value(WorkspaceManifest::new(id, "笔记".into(), 123)).unwrap();
     assert_eq!(manifest_json["schemaVersion"], 1);
+    assert!(manifest_json.get("settings").is_none());
     assert!(manifest_json.get("storageBinding").is_none());
     assert!(!manifest_json.to_string().contains("resourceRef"));
+}
+
+#[test]
+fn versioned_models_require_schema() {
+    assert!(serde_json::from_value::<WorkspaceSettings>(json!({})).is_err());
+    assert!(serde_json::from_value::<WorkspaceLocalSetting>(json!({
+        "lastOpenedAt": null,
+        "lastOpenFile": null
+    }))
+    .is_err());
+    assert!(serde_json::from_value::<WorkspaceSessionData>(json!({
+        "lastWorkspaceId": null
+    }))
+    .is_err());
 }

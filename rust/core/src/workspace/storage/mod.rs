@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     domain::{
-        StorageProviderId, WorkspaceDirectoryName, WorkspaceManifest, WorkspaceRelativePath,
-        WorkspaceStorageBinding, WORKSPACE_MANIFEST_PATH,
+        StorageProviderId, WorkspaceDirectoryName, WorkspaceLocalSetting, WorkspaceManifest,
+        WorkspaceRelativePath, WorkspaceSettings, WorkspaceStorageBinding,
+        WORKSPACE_LOCAL_SETTING_PATH, WORKSPACE_LOCAL_SETTING_SCHEMA_VERSION,
+        WORKSPACE_MANIFEST_PATH, WORKSPACE_SETTINGS_PATH, WORKSPACE_SETTINGS_SCHEMA_VERSION,
     },
     error::{StorageError, WorkspaceError},
 };
@@ -281,6 +283,62 @@ pub async fn save_manifest(
     Ok(())
 }
 
+pub async fn load_workspace_settings(
+    session: &WorkspaceStorageSession,
+) -> Result<WorkspaceSettings, WorkspaceError> {
+    let path = WorkspaceRelativePath::parse(WORKSPACE_SETTINGS_PATH)?;
+    if !session.exists(&path).await? {
+        return Err(WorkspaceError::SettingsNotFound);
+    }
+    let bytes = session.read(&path).await?;
+    let settings = serde_json::from_slice::<WorkspaceSettings>(&bytes)
+        .map_err(|error| WorkspaceError::InvalidSettings(error.to_string()))?;
+    validate_workspace_settings(&settings)?;
+    Ok(settings)
+}
+
+pub async fn save_workspace_settings(
+    session: &WorkspaceStorageSession,
+    settings: &WorkspaceSettings,
+) -> Result<(), WorkspaceError> {
+    validate_workspace_settings(settings)?;
+    let path = WorkspaceRelativePath::parse(WORKSPACE_SETTINGS_PATH)?;
+    let data = serde_json::to_vec_pretty(settings)
+        .map_err(|error| WorkspaceError::InvalidSettings(error.to_string()))?;
+    session
+        .write(&path, &data, WriteOptions::atomic_replace())
+        .await?;
+    Ok(())
+}
+
+pub async fn load_local_setting(
+    session: &WorkspaceStorageSession,
+) -> Result<WorkspaceLocalSetting, WorkspaceError> {
+    let path = WorkspaceRelativePath::parse(WORKSPACE_LOCAL_SETTING_PATH)?;
+    if !session.exists(&path).await? {
+        return Ok(WorkspaceLocalSetting::default());
+    }
+    let bytes = session.read(&path).await?;
+    let setting = serde_json::from_slice::<WorkspaceLocalSetting>(&bytes)
+        .map_err(|error| WorkspaceError::InvalidLocalSetting(error.to_string()))?;
+    validate_local_setting(&setting)?;
+    Ok(setting)
+}
+
+pub async fn save_local_setting(
+    session: &WorkspaceStorageSession,
+    setting: &WorkspaceLocalSetting,
+) -> Result<(), WorkspaceError> {
+    validate_local_setting(setting)?;
+    let path = WorkspaceRelativePath::parse(WORKSPACE_LOCAL_SETTING_PATH)?;
+    let data = serde_json::to_vec_pretty(setting)
+        .map_err(|error| WorkspaceError::InvalidLocalSetting(error.to_string()))?;
+    session
+        .write(&path, &data, WriteOptions::atomic_replace())
+        .await?;
+    Ok(())
+}
+
 fn validate_manifest(manifest: &WorkspaceManifest) -> Result<(), WorkspaceError> {
     match manifest.validate() {
         Ok(()) => Ok(()),
@@ -289,6 +347,30 @@ fn validate_manifest(manifest: &WorkspaceManifest) -> Result<(), WorkspaceError>
         }
         Err(error) => Err(error.into()),
     }
+}
+
+pub(crate) fn validate_workspace_settings(
+    settings: &WorkspaceSettings,
+) -> Result<(), WorkspaceError> {
+    if settings.schema_version != WORKSPACE_SETTINGS_SCHEMA_VERSION {
+        return Err(WorkspaceError::InvalidSettings(format!(
+            "不支持的 schema: {}",
+            settings.schema_version
+        )));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_local_setting(
+    setting: &WorkspaceLocalSetting,
+) -> Result<(), WorkspaceError> {
+    if setting.schema_version != WORKSPACE_LOCAL_SETTING_SCHEMA_VERSION {
+        return Err(WorkspaceError::InvalidLocalSetting(format!(
+            "不支持的 schema: {}",
+            setting.schema_version
+        )));
+    }
+    Ok(())
 }
 
 pub async fn copy_workspace_tree(

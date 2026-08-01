@@ -150,12 +150,18 @@ pub enum WorkspaceError {
     UnsupportedManifestSchema(u32),
     #[error("Workspace manifest 无效: {0}")]
     InvalidManifest(String),
+    #[error("Workspace settings 不存在")]
+    SettingsNotFound,
+    #[error("Workspace settings 无效: {0}")]
+    InvalidSettings(String),
+    #[error("Workspace local setting 无效: {0}")]
+    InvalidLocalSetting(String),
     #[error("Workspace 已打开，不能执行该生命周期操作: {0}")]
     CannotModifyOpenWorkspace(WorkspaceId),
     #[error("Workspace Catalog 错误: {0}")]
     Catalog(String),
-    #[error("Workspace 本机状态错误: {0}")]
-    LocalState(String),
+    #[error("Workspace Session 错误: {0}")]
+    Session(String),
     #[error("Workspace display name 无效")]
     InvalidDisplayName,
     #[error("目标目录必须为空")]

@@ -19,6 +19,12 @@ async fn managed_restart_flow() {
 
     assert!(manager.is_workspace_open(&id).await);
     assert_eq!(app.read_manifest(&created).id, id);
+    assert!(root.join(".lonanote/settings.json").exists());
+    assert!(root.join(".lonanote/settings.local.json").exists());
+    assert_eq!(
+        std::fs::read_to_string(root.join(".lonanote/.gitignore")).unwrap(),
+        "settings.local.json\n"
+    );
     assert!(root.join("README.md").exists());
     assert!(root.join("README_en.md").exists());
     assert!(root.join("assets/images/icon.png").exists());
@@ -28,22 +34,80 @@ async fn managed_restart_flow() {
         .set_last_open_file(&id, Some(path("README.md")))
         .await
         .unwrap();
+    let mut settings = manager.get_settings(&id).await.unwrap();
+    settings.history_snapshot_count = 31;
+    manager.set_settings(&id, settings).await.unwrap();
     manager.close_workspace(&id).await.unwrap();
     drop(manager);
 
     let restarted = app.start().await;
     assert!(!restarted.is_workspace_open(&id).await);
     assert_eq!(restarted.list_workspaces().await[0].id, id);
+    restarted.open_workspace(&id).await.unwrap();
     assert_eq!(
         restarted
-            .get_local_state(&id)
+            .get_settings(&id)
+            .await
+            .unwrap()
+            .history_snapshot_count,
+        31
+    );
+    assert_eq!(
+        restarted
+            .get_local_setting(&id)
             .await
             .unwrap()
             .last_open_file
             .unwrap(),
         path("README.md")
     );
-    assert_eq!(restarted.open_workspace(&id).await.unwrap().id, id);
+    assert!(app.data_dir.join("workspace-session.json").exists());
+    assert!(!app.data_dir.join("workspace-local-state.json").exists());
+}
+
+#[tokio::test]
+async fn recreates_missing_local_setting() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let created = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "Local Setting".into())
+        .await
+        .unwrap();
+    let local_path = app
+        .managed_workspace_root(&created)
+        .join(".lonanote/settings.local.json");
+    manager.close_workspace(&created.id).await.unwrap();
+    std::fs::remove_file(&local_path).unwrap();
+
+    manager.open_workspace(&created.id).await.unwrap();
+
+    let setting = manager.get_local_setting(&created.id).await.unwrap();
+    assert!(setting.last_opened_at.is_some());
+    assert_eq!(setting.last_open_file, None);
+    assert!(local_path.exists());
+}
+
+#[tokio::test]
+async fn manifest_marks_completed_initialization() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let root = app.external_dir("retry-initialization");
+    let blocked_local_setting = root.join(".lonanote/settings.local.json");
+    std::fs::create_dir_all(&blocked_local_setting).unwrap();
+
+    assert!(manager
+        .create_external_workspace(external_binding(&root), "Retry".into())
+        .await
+        .is_err());
+    assert!(!root.join(".lonanote/manifest.json").exists());
+
+    std::fs::remove_dir(&blocked_local_setting).unwrap();
+    let created = manager
+        .create_external_workspace(external_binding(&root), "Retry".into())
+        .await
+        .unwrap();
+    assert!(root.join(".lonanote/manifest.json").exists());
+    assert_eq!(created.display_name, "Retry");
 }
 
 #[tokio::test]
@@ -211,8 +275,10 @@ async fn reports_cleanup_failure() {
         result.file_cleanup,
         StorageCleanupStatus::Failed { .. }
     ));
-    assert!(matches!(
-        manager.get_local_state(&created.id).await.unwrap_err(),
-        WorkspaceError::NotFoundWorkspace(id) if id == created.id
-    ));
+    assert!(!manager
+        .list_workspaces()
+        .await
+        .iter()
+        .any(|workspace| workspace.id == created.id));
+    assert_eq!(manager.get_last_workspace_id().await, None);
 }

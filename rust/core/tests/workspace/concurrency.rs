@@ -1,10 +1,15 @@
 use std::sync::Arc;
 
 use crate::support::{external_binding, path, ControlledStorage};
+use async_trait::async_trait;
 use lonanote_core::workspace::{
-    WorkspaceId, WorkspaceInstance, WorkspaceManifest, WorkspaceRuntime, WorkspaceStorage,
-    WorkspaceStorageSession, WriteOptions,
+    save_local_setting, save_manifest, save_workspace_settings, StorageError, StorageProviderId,
+    WorkspaceCachedSummary, WorkspaceCatalog, WorkspaceDirectoryName, WorkspaceId,
+    WorkspaceInstance, WorkspaceLocalSetting, WorkspaceManager, WorkspaceManifest, WorkspaceRecord,
+    WorkspaceRuntime, WorkspaceSessionStore, WorkspaceSettings, WorkspaceStorage,
+    WorkspaceStorageBinding, WorkspaceStorageResolver, WorkspaceStorageSession, WriteOptions,
 };
+use tempfile::TempDir;
 
 async fn instance(storage: Arc<ControlledStorage>, name: &str) -> Arc<WorkspaceInstance> {
     let id = WorkspaceId::new();
@@ -14,6 +19,8 @@ async fn instance(storage: Arc<ControlledStorage>, name: &str) -> Arc<WorkspaceI
             external_binding("/virtual/workspace"),
             Arc::new(WorkspaceStorageSession::new(storage)),
             WorkspaceManifest::new(id, name.into(), 1),
+            WorkspaceSettings::default(),
+            WorkspaceLocalSetting::default(),
         )
         .await
         .unwrap(),
@@ -111,4 +118,112 @@ async fn cloned_instance_outlives_runtime_entry() {
         cloned.read_text(&path("after-close.md")).await.unwrap(),
         "still alive"
     );
+}
+
+#[derive(Debug)]
+struct SingleStorageResolver {
+    session: Arc<WorkspaceStorageSession>,
+}
+
+#[async_trait]
+impl WorkspaceStorageResolver for SingleStorageResolver {
+    async fn open(
+        &self,
+        _binding: &WorkspaceStorageBinding,
+    ) -> Result<Arc<WorkspaceStorageSession>, StorageError> {
+        Ok(Arc::clone(&self.session))
+    }
+
+    async fn create_managed(
+        &self,
+        _provider_id: &StorageProviderId,
+        _directory_name: &WorkspaceDirectoryName,
+    ) -> Result<(WorkspaceStorageBinding, Arc<WorkspaceStorageSession>), StorageError> {
+        Err(StorageError::UnsupportedOperation {
+            operation: "create_managed",
+        })
+    }
+
+    async fn remove_workspace_root(
+        &self,
+        _binding: &WorkspaceStorageBinding,
+    ) -> Result<(), StorageError> {
+        Ok(())
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn close_waits_for_active_operation() {
+    let temp = TempDir::new().unwrap();
+    let storage = Arc::new(ControlledStorage::active());
+    let erased: Arc<dyn WorkspaceStorage> = storage.clone();
+    let storage_session = Arc::new(WorkspaceStorageSession::new(erased));
+    let id = WorkspaceId::new();
+    let binding = external_binding("/virtual/workspace");
+    let manifest = WorkspaceManifest::new(id, "Draining".into(), 1);
+    save_workspace_settings(storage_session.as_ref(), &WorkspaceSettings::default())
+        .await
+        .unwrap();
+    save_local_setting(storage_session.as_ref(), &WorkspaceLocalSetting::default())
+        .await
+        .unwrap();
+    save_manifest(storage_session.as_ref(), &manifest)
+        .await
+        .unwrap();
+
+    let catalog = WorkspaceCatalog::load(temp.path().join("workspace-catalog.json"))
+        .await
+        .unwrap();
+    catalog
+        .add(WorkspaceRecord {
+            id,
+            storage_binding: binding,
+            cached_summary: WorkspaceCachedSummary {
+                display_name: "Draining".into(),
+                created_at: Some(1),
+                last_validated_at: Some(1),
+            },
+        })
+        .await
+        .unwrap();
+    let app_session = WorkspaceSessionStore::load(temp.path().join("workspace-session.json"))
+        .await
+        .unwrap();
+    let resolver: Arc<dyn WorkspaceStorageResolver> = Arc::new(SingleStorageResolver {
+        session: storage_session,
+    });
+    let manager = Arc::new(WorkspaceManager::new(catalog, app_session, resolver));
+    manager.open_workspace(&id).await.unwrap();
+    storage.pause_next_write();
+
+    let write = {
+        let manager = Arc::clone(&manager);
+        tokio::spawn(async move {
+            manager
+                .write_text(
+                    &id,
+                    &path("note.md"),
+                    "finished before close",
+                    WriteOptions::default(),
+                )
+                .await
+        })
+    };
+    storage.wait_until_first_write_enters().await;
+    let close = {
+        let manager = Arc::clone(&manager);
+        tokio::spawn(async move { manager.close_workspace(&id).await })
+    };
+    for _ in 0..10 {
+        tokio::task::yield_now().await;
+    }
+    assert!(
+        !close.is_finished(),
+        "close 应等待已经开始的 Workspace 操作"
+    );
+
+    storage.release_first_write();
+    write.await.unwrap().unwrap();
+    close.await.unwrap().unwrap();
+    assert!(!manager.is_workspace_open(&id).await);
 }

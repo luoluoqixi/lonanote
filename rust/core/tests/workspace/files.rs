@@ -3,7 +3,8 @@ use std::sync::Arc;
 use crate::support::{external_binding, path, provider, WorkspaceTestApp, MANAGED_PROVIDER};
 use lonanote_core::workspace::{
     FileTreeSortType, MemoryStorage, StorageError, WorkspaceError, WorkspaceId, WorkspaceInstance,
-    WorkspaceManifest, WorkspaceSettings, WorkspaceStorage, WorkspaceStorageSession, WriteOptions,
+    WorkspaceLocalSetting, WorkspaceManifest, WorkspaceSettings, WorkspaceStorage,
+    WorkspaceStorageSession, WriteOptions,
 };
 
 #[tokio::test]
@@ -151,6 +152,8 @@ async fn rejects_index_without_native_path() {
         external_binding("/virtual/workspace"),
         session,
         WorkspaceManifest::new(id, "Memory".into(), 1),
+        WorkspaceSettings::default(),
+        WorkspaceLocalSetting::default(),
     )
     .await
     .unwrap();

@@ -1,8 +1,8 @@
 use std::{collections::HashSet, sync::Arc};
 
-use crate::support::{path, test_record};
+use crate::support::test_record;
 use lonanote_core::workspace::{
-    WorkspaceCatalog, WorkspaceError, WorkspaceId, WorkspaceLocalStateStore,
+    WorkspaceCatalog, WorkspaceError, WorkspaceId, WorkspaceSessionStore,
 };
 use serde_json::json;
 use tempfile::TempDir;
@@ -71,31 +71,20 @@ async fn catalog_backup_recovery() {
 }
 
 #[tokio::test]
-async fn local_state_reconciliation() {
+async fn session_reconciliation() {
     let temp = TempDir::new().unwrap();
-    let state_path = temp.path().join("workspace-local-state.json");
-    let state = WorkspaceLocalStateStore::load(&state_path).await.unwrap();
+    let session_path = temp.path().join("workspace-session.json");
+    let session = WorkspaceSessionStore::load(&session_path).await.unwrap();
     let kept = WorkspaceId::new();
     let stale = WorkspaceId::new();
 
-    state.mark_opened(&kept, 10).await.unwrap();
-    state.mark_opened(&stale, 20).await.unwrap();
-    state
-        .set_last_open_file(&kept, Some(path("notes/today.md")))
-        .await
-        .unwrap();
-    state.reconcile(&HashSet::from([kept])).await.unwrap();
+    session.mark_opened(stale).await.unwrap();
+    session.reconcile(&HashSet::from([kept])).await.unwrap();
+    assert_eq!(session.last_workspace_id().await, None);
 
-    let snapshot = state.snapshot().await;
-    assert_eq!(snapshot.last_workspace_id, None);
-    assert_eq!(
-        snapshot.workspaces[&kept].last_open_file.as_ref().unwrap(),
-        &path("notes/today.md")
-    );
-    assert!(!snapshot.workspaces.contains_key(&stale));
-
-    let loaded = WorkspaceLocalStateStore::load(&state_path).await.unwrap();
-    assert_eq!(loaded.snapshot().await.workspaces, snapshot.workspaces);
+    session.mark_opened(kept).await.unwrap();
+    let loaded = WorkspaceSessionStore::load(&session_path).await.unwrap();
+    assert_eq!(loaded.last_workspace_id().await, Some(kept));
 }
 
 #[tokio::test]
@@ -112,21 +101,20 @@ async fn rejects_unknown_schema() {
         WorkspaceError::Catalog(_)
     ));
 
-    let state_path = temp.path().join("unsupported-state.json");
+    let session_path = temp.path().join("unsupported-session.json");
     std::fs::write(
-        &state_path,
+        &session_path,
         serde_json::to_vec_pretty(&json!({
             "schemaVersion": 999,
-            "lastWorkspaceId": null,
-            "workspaces": {}
+            "lastWorkspaceId": null
         }))
         .unwrap(),
     )
     .unwrap();
     assert!(matches!(
-        WorkspaceLocalStateStore::load(&state_path)
+        WorkspaceSessionStore::load(&session_path)
             .await
             .unwrap_err(),
-        WorkspaceError::LocalState(_)
+        WorkspaceError::Session(_)
     ));
 }

@@ -12,7 +12,7 @@ use tokio::sync::Notify;
 pub struct ControlledStorage {
     inner: MemoryStorage,
     entered: AtomicUsize,
-    pause_first: bool,
+    pause_at: AtomicUsize,
     started: Notify,
     release: Notify,
 }
@@ -22,17 +22,16 @@ impl ControlledStorage {
         Self {
             inner: MemoryStorage::new(),
             entered: AtomicUsize::new(0),
-            pause_first: true,
+            pause_at: AtomicUsize::new(0),
             started: Notify::new(),
             release: Notify::new(),
         }
     }
 
     pub fn active() -> Self {
-        Self {
-            pause_first: false,
-            ..Self::paused()
-        }
+        let storage = Self::paused();
+        storage.pause_at.store(usize::MAX, Ordering::SeqCst);
+        storage
     }
 
     pub fn entered(&self) -> usize {
@@ -45,6 +44,11 @@ impl ControlledStorage {
 
     pub fn release_first_write(&self) {
         self.release.notify_waiters();
+    }
+
+    pub fn pause_next_write(&self) {
+        self.pause_at
+            .store(self.entered.load(Ordering::SeqCst), Ordering::SeqCst);
     }
 }
 
@@ -83,7 +87,7 @@ impl WorkspaceStorage for ControlledStorage {
         options: WriteOptions,
     ) -> Result<(), StorageError> {
         let entered_before = self.entered.fetch_add(1, Ordering::SeqCst);
-        if self.pause_first && entered_before == 0 {
+        if entered_before == self.pause_at.load(Ordering::SeqCst) {
             self.started.notify_one();
             self.release.notified().await;
         }

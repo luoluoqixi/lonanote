@@ -80,7 +80,6 @@ pub struct WorkspaceListItem {
     pub display_name: String,
     pub storage_kind: WorkspaceStorageKindView,
     pub availability: WorkspaceAvailability,
-    pub last_opened_at: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

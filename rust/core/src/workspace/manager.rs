@@ -6,26 +6,27 @@ use std::{
 };
 
 use rust_embed::Embed;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::workspace::{
     domain::{
         RelocateWorkspaceResult, RemoveWorkspaceResult, StorageCleanupStatus, StorageProviderId,
         WorkspaceAvailability, WorkspaceCachedSummary, WorkspaceDirectoryName, WorkspaceId,
-        WorkspaceListItem, WorkspaceLocalState, WorkspaceManifest, WorkspaceRecord,
+        WorkspaceListItem, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRecord,
         WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
         WorkspaceStorageKindView, WorkspaceStorageTarget,
     },
     error::{StorageError, WorkspaceError},
     file_tree::{FileNode, FileTree},
     persistence::{
-        WorkspaceCatalog, WorkspaceLocalStateStore, WORKSPACE_CATALOG_FILE_NAME,
-        WORKSPACE_LOCAL_STATE_FILE_NAME,
+        WorkspaceCatalog, WorkspaceSessionStore, WORKSPACE_CATALOG_FILE_NAME,
+        WORKSPACE_SESSION_FILE_NAME,
     },
     runtime::{WorkspaceInstance, WorkspaceRuntime},
     storage::{
-        copy_workspace_tree, load_manifest, save_manifest, StorageCapabilities, StorageEntry,
-        StorageEntryMetadata, WorkspaceStorageResolver, WriteOptions,
+        copy_workspace_tree, load_local_setting, load_manifest, load_workspace_settings,
+        save_local_setting, save_manifest, save_workspace_settings, StorageCapabilities,
+        StorageEntry, StorageEntryMetadata, WorkspaceStorageResolver, WriteOptions,
     },
 };
 
@@ -38,10 +39,10 @@ const DEFAULT_GIT_IGNORE: &str = include_str!("../../assets/default_gitignore.tx
 
 pub struct WorkspaceManager {
     catalog: WorkspaceCatalog,
-    local_state: WorkspaceLocalStateStore,
+    session: WorkspaceSessionStore,
     runtime: WorkspaceRuntime,
     storage_resolver: Arc<dyn WorkspaceStorageResolver>,
-    lifecycle_lock: Mutex<()>,
+    lifecycle_lock: RwLock<()>,
 }
 
 impl std::fmt::Debug for WorkspaceManager {
@@ -49,7 +50,7 @@ impl std::fmt::Debug for WorkspaceManager {
         formatter
             .debug_struct("WorkspaceManager")
             .field("catalog", &self.catalog)
-            .field("local_state", &self.local_state)
+            .field("session", &self.session)
             .field("runtime", &self.runtime)
             .finish_non_exhaustive()
     }
@@ -63,43 +64,38 @@ impl WorkspaceManager {
         let data_directory = data_directory.into();
         let catalog =
             WorkspaceCatalog::load(data_directory.join(WORKSPACE_CATALOG_FILE_NAME)).await?;
-        let local_state =
-            WorkspaceLocalStateStore::load(data_directory.join(WORKSPACE_LOCAL_STATE_FILE_NAME))
-                .await?;
+        let session =
+            WorkspaceSessionStore::load(data_directory.join(WORKSPACE_SESSION_FILE_NAME)).await?;
         let valid_workspace_ids = catalog
             .list()
             .await
             .into_iter()
             .map(|record| record.id)
             .collect::<HashSet<_>>();
-        local_state.reconcile(&valid_workspace_ids).await?;
-        Ok(Self::new(catalog, local_state, storage_resolver))
+        session.reconcile(&valid_workspace_ids).await?;
+        Ok(Self::new(catalog, session, storage_resolver))
     }
 
     pub fn new(
         catalog: WorkspaceCatalog,
-        local_state: WorkspaceLocalStateStore,
+        session: WorkspaceSessionStore,
         storage_resolver: Arc<dyn WorkspaceStorageResolver>,
     ) -> Self {
         Self {
             catalog,
-            local_state,
+            session,
             runtime: WorkspaceRuntime::new(),
             storage_resolver,
-            lifecycle_lock: Mutex::new(()),
+            lifecycle_lock: RwLock::new(()),
         }
     }
 
     pub async fn list_workspaces(&self) -> Vec<WorkspaceListItem> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         let records = self.catalog.list().await;
-        let local_state = self.local_state.snapshot().await;
         let mut items = Vec::with_capacity(records.len());
         for record in records {
             let is_open = self.runtime.contains(&record.id).await;
-            let last_opened_at = local_state
-                .workspaces
-                .get(&record.id)
-                .and_then(|state| state.last_opened_at);
             items.push(WorkspaceListItem {
                 id: record.id,
                 display_name: record.cached_summary.display_name,
@@ -113,15 +109,9 @@ impl WorkspaceManager {
                 } else {
                     WorkspaceAvailability::Unknown
                 },
-                last_opened_at,
             });
         }
-        items.sort_by(|left, right| {
-            right
-                .last_opened_at
-                .cmp(&left.last_opened_at)
-                .then_with(|| left.display_name.cmp(&right.display_name))
-        });
+        items.sort_by(|left, right| left.display_name.cmp(&right.display_name));
         items
     }
 
@@ -129,10 +119,12 @@ impl WorkspaceManager {
         &self,
         id: &WorkspaceId,
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         Ok(self.get_open_instance(id).await?.snapshot().await)
     }
 
     pub async fn is_workspace_open(&self, id: &WorkspaceId) -> bool {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.runtime.contains(id).await
     }
 
@@ -142,7 +134,7 @@ impl WorkspaceManager {
         display_name: String,
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
         validate_display_name(&display_name)?;
-        let _lifecycle = self.lifecycle_lock.lock().await;
+        let _lifecycle = self.lifecycle_lock.write().await;
         let base_name = WorkspaceDirectoryName::from_display_name(&display_name);
         let mut suffix = 1usize;
         let (binding, session) = loop {
@@ -163,7 +155,10 @@ impl WorkspaceManager {
         };
 
         let manifest = WorkspaceManifest::new(WorkspaceId::new(), display_name, now_timestamp());
-        initialize_workspace(session.as_ref(), &manifest).await?;
+        if let Err(error) = initialize_workspace(session.as_ref(), &manifest).await {
+            let _ = self.storage_resolver.remove_workspace_root(&binding).await;
+            return Err(error);
+        }
         let record = record_from_manifest(binding, &manifest, now_timestamp());
         self.catalog.add(record).await?;
         self.open_workspace_locked(&manifest.id).await
@@ -178,7 +173,7 @@ impl WorkspaceManager {
         if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
             return Err(WorkspaceError::ExpectedExternalBinding);
         }
-        let _lifecycle = self.lifecycle_lock.lock().await;
+        let _lifecycle = self.lifecycle_lock.write().await;
         let session = self.storage_resolver.open(&binding).await?;
         if manifest_exists(session.as_ref()).await? {
             return Err(WorkspaceError::ManifestAlreadyExists);
@@ -197,11 +192,12 @@ impl WorkspaceManager {
         if !matches!(binding, WorkspaceStorageBinding::External { .. }) {
             return Err(WorkspaceError::ExpectedExternalBinding);
         }
-        let _lifecycle = self.lifecycle_lock.lock().await;
+        let _lifecycle = self.lifecycle_lock.write().await;
         let session = self.storage_resolver.open(&binding).await?;
         let manifest = load_manifest(session.as_ref())
             .await?
             .ok_or(WorkspaceError::ManifestNotFound)?;
+        load_workspace_settings(session.as_ref()).await?;
         let record = record_from_manifest(binding, &manifest, now_timestamp());
         self.catalog.add_or_validate_same_binding(record).await
     }
@@ -210,12 +206,12 @@ impl WorkspaceManager {
         &self,
         id: &WorkspaceId,
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
-        let _lifecycle = self.lifecycle_lock.lock().await;
+        let _lifecycle = self.lifecycle_lock.write().await;
         self.open_workspace_locked(id).await
     }
 
     pub async fn close_workspace(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
-        let _lifecycle = self.lifecycle_lock.lock().await;
+        let _lifecycle = self.lifecycle_lock.write().await;
         self.runtime.remove(id).await;
         Ok(())
     }
@@ -225,12 +221,12 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         delete_files: bool,
     ) -> Result<RemoveWorkspaceResult, WorkspaceError> {
-        let _lifecycle = self.lifecycle_lock.lock().await;
+        let _lifecycle = self.lifecycle_lock.write().await;
         if self.runtime.contains(id).await {
             return Err(WorkspaceError::CannotModifyOpenWorkspace(*id));
         }
+        self.session.remove(id).await?;
         let removed_record = self.catalog.remove(id).await?;
-        self.local_state.remove(id).await?;
         let file_cleanup = if delete_files {
             match self
                 .storage_resolver
@@ -256,7 +252,7 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         target: WorkspaceStorageTarget,
     ) -> Result<RelocateWorkspaceResult, WorkspaceError> {
-        let _lifecycle = self.lifecycle_lock.lock().await;
+        let _lifecycle = self.lifecycle_lock.write().await;
         if self.runtime.contains(id).await {
             return Err(WorkspaceError::CannotModifyOpenWorkspace(*id));
         }
@@ -309,6 +305,7 @@ impl WorkspaceManager {
                 actual: target_manifest.id,
             });
         }
+        load_workspace_settings(target_session.as_ref()).await?;
         self.catalog
             .update_binding(id, target_binding.clone())
             .await?;
@@ -326,6 +323,7 @@ impl WorkspaceManager {
         display_name: String,
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
         validate_display_name(&display_name)?;
+        let _lifecycle = self.lifecycle_lock.write().await;
         let workspace = self.get_open_instance(id).await?;
         let manifest = workspace.update_display_name(display_name).await?;
         self.catalog
@@ -338,7 +336,8 @@ impl WorkspaceManager {
         &self,
         id: &WorkspaceId,
     ) -> Result<WorkspaceSettings, WorkspaceError> {
-        Ok(self.get_open_instance(id).await?.manifest().await.settings)
+        let _lifecycle = self.lifecycle_lock.read().await;
+        Ok(self.get_open_instance(id).await?.settings().await)
     }
 
     pub async fn set_settings(
@@ -346,36 +345,41 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         settings: WorkspaceSettings,
     ) -> Result<WorkspaceSettings, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         let workspace = self.get_open_instance(id).await?;
-        let manifest = workspace.set_settings(settings).await?;
-        Ok(manifest.settings)
+        workspace.set_settings(settings).await
     }
 
     pub async fn get_last_workspace_id(&self) -> Option<WorkspaceId> {
-        self.local_state.last_workspace_id().await
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.session.last_workspace_id().await
     }
 
-    pub async fn get_local_state(
+    pub async fn get_local_setting(
         &self,
         id: &WorkspaceId,
-    ) -> Result<WorkspaceLocalState, WorkspaceError> {
-        self.catalog.get(id).await?;
-        Ok(self.local_state.get(id).await)
+    ) -> Result<WorkspaceLocalSetting, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        Ok(self.get_open_instance(id).await?.local_setting().await)
     }
 
     pub async fn set_last_open_file(
         &self,
         id: &WorkspaceId,
         path: Option<WorkspaceRelativePath>,
-    ) -> Result<WorkspaceLocalState, WorkspaceError> {
-        self.catalog.get(id).await?;
-        self.local_state.set_last_open_file(id, path).await
+    ) -> Result<WorkspaceLocalSetting, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.get_open_instance(id)
+            .await?
+            .set_last_open_file(path)
+            .await
     }
 
     pub async fn capabilities(
         &self,
         id: &WorkspaceId,
     ) -> Result<StorageCapabilities, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.capabilities().await
     }
 
@@ -384,6 +388,7 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         path: &WorkspaceRelativePath,
     ) -> Result<bool, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.exists(path).await
     }
 
@@ -392,6 +397,7 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         path: &WorkspaceRelativePath,
     ) -> Result<StorageEntryMetadata, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.metadata(path).await
     }
 
@@ -400,6 +406,7 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         path: &WorkspaceRelativePath,
     ) -> Result<Vec<StorageEntry>, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.list_directory(path).await
     }
 
@@ -408,6 +415,7 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         path: &WorkspaceRelativePath,
     ) -> Result<Vec<u8>, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.read_bytes(path).await
     }
 
@@ -416,6 +424,7 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         path: &WorkspaceRelativePath,
     ) -> Result<String, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.read_text(path).await
     }
 
@@ -426,6 +435,7 @@ impl WorkspaceManager {
         data: &[u8],
         options: WriteOptions,
     ) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id)
             .await?
             .write_bytes(path, data, options)
@@ -439,6 +449,7 @@ impl WorkspaceManager {
         text: &str,
         options: WriteOptions,
     ) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id)
             .await?
             .write_text(path, text, options)
@@ -450,6 +461,7 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         path: &WorkspaceRelativePath,
     ) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id)
             .await?
             .create_directory(path)
@@ -462,6 +474,7 @@ impl WorkspaceManager {
         from: &WorkspaceRelativePath,
         to: &WorkspaceRelativePath,
     ) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.rename(from, to).await
     }
 
@@ -471,6 +484,7 @@ impl WorkspaceManager {
         path: &WorkspaceRelativePath,
         recursive: bool,
     ) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id)
             .await?
             .remove(path, recursive)
@@ -482,6 +496,7 @@ impl WorkspaceManager {
         id: &WorkspaceId,
         recursive: bool,
     ) -> Result<FileTree, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.get_tree(recursive).await
     }
 
@@ -491,6 +506,7 @@ impl WorkspaceManager {
         path: &WorkspaceRelativePath,
         recursive: bool,
     ) -> Result<FileNode, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id)
             .await?
             .get_node(path, recursive)
@@ -498,6 +514,7 @@ impl WorkspaceManager {
     }
 
     pub async fn refresh_index(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.refresh_index().await
     }
 
@@ -529,8 +546,17 @@ impl WorkspaceManager {
                 actual: manifest.id,
             });
         }
+        let settings = load_workspace_settings(session.as_ref()).await?;
+        let local_setting = load_local_setting(session.as_ref()).await?;
         let workspace = Arc::new(
-            WorkspaceInstance::new(record.storage_binding, session, manifest.clone()).await?,
+            WorkspaceInstance::new(
+                record.storage_binding,
+                session,
+                manifest.clone(),
+                settings,
+                local_setting,
+            )
+            .await?,
         );
         self.runtime.insert(*id, Arc::clone(&workspace)).await?;
         let now = now_timestamp();
@@ -542,7 +568,11 @@ impl WorkspaceManager {
             self.runtime.remove(id).await;
             return Err(error);
         }
-        if let Err(error) = self.local_state.mark_opened(id, now).await {
+        if let Err(error) = workspace.mark_opened(now).await {
+            self.runtime.remove(id).await;
+            return Err(error);
+        }
+        if let Err(error) = self.session.mark_opened(*id).await {
             self.runtime.remove(id).await;
             return Err(error);
         }
@@ -554,7 +584,8 @@ async fn initialize_workspace(
     session: &super::storage::WorkspaceStorageSession,
     manifest: &WorkspaceManifest,
 ) -> Result<(), WorkspaceError> {
-    save_manifest(session, manifest).await?;
+    save_workspace_settings(session, &WorkspaceSettings::default()).await?;
+    save_local_setting(session, &WorkspaceLocalSetting::default()).await?;
     let gitignore_path = WorkspaceRelativePath::parse(WORKSPACE_GITIGNORE_PATH)?;
     if !session.exists(&gitignore_path).await? {
         session
@@ -588,6 +619,8 @@ async fn initialize_workspace(
                 .await?;
         }
     }
+    // Manifest 是 Workspace 初始化完成的提交标记，必须最后写入。
+    save_manifest(session, manifest).await?;
     Ok(())
 }
 
