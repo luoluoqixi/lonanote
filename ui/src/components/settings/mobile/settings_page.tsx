@@ -16,7 +16,9 @@ export function MobileSettingsPage() {
 
   if (
     !pageConfig ||
-    (pageConfig.requiresDeveloperOptions && !preferences.developer.optionsEnabled)
+    (pageConfig.requiresDeveloperOptions &&
+      !preferences.developer.optionsEnabled &&
+      pageConfig.id !== "developer")
   ) {
     return <Redirect href="/settings" />;
   }

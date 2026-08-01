@@ -15,7 +15,7 @@ import {
 } from "rn-ui-kit";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
-import { os } from "@/api/common";
+import { isIos, os } from "@/api/common";
 
 type HeaderActionButtonProps = {
   accessibilityLabel: string;
@@ -72,7 +72,8 @@ function HeaderActionButton({ accessibilityLabel, label, onPress }: HeaderAction
       onPress={() => {
         onPress?.();
       }}
-      native
+      native={isIos()}
+      chromeless
       title={label}
     />
   );

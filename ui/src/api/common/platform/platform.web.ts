@@ -21,6 +21,14 @@ export function isMobile(): boolean {
   return false;
 }
 
+export function isIos(): boolean {
+  return false;
+}
+
+export function isAndroid(): boolean {
+  return false;
+}
+
 export function isWeb(): boolean {
   return true;
 }
@@ -55,6 +63,13 @@ export function isIos26Plus(): boolean {
 }
 
 export function isIos16Plus(): boolean {
+  return false;
+}
+
+/**
+ * iOS 15
+ */
+export function isIos15(): boolean {
   return false;
 }
 

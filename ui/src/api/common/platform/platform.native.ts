@@ -23,6 +23,16 @@ export function isMobile(): boolean {
   return os === "android" || os === "ios";
 }
 
+export function isIos(): boolean {
+  const os = Platform.OS;
+  return os === "ios";
+}
+
+export function isAndroid(): boolean {
+  const os = Platform.OS;
+  return os === "android";
+}
+
 export function isWeb(): boolean {
   const os = Platform.OS;
   return os === "web";
@@ -129,6 +139,14 @@ export function isIos26Plus(): boolean {
 export function isIos16Plus(): boolean {
   const major = iosMajorVersion();
   return major != null && major >= 16;
+}
+
+/**
+ * iOS 15
+ */
+export function isIos15(): boolean {
+  const major = iosMajorVersion();
+  return major != null && major <= 15;
 }
 
 /**

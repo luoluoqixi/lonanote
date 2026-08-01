@@ -47,19 +47,12 @@ export function DesktopSettingsDialog({
     }
   }, [initialPageId]);
 
-  useEffect(() => {
-    if (
-      !preferences.developer.optionsEnabled &&
-      getSettingsPage(selectedPageId)?.requiresDeveloperOptions
-    ) {
-      setSelectedPageId("global");
-    }
-  }, [preferences.developer.optionsEnabled, selectedPageId]);
-
   const selectedPageConfig = getSettingsPage(selectedPageId);
   const selectedPage =
     selectedPageConfig &&
-    (!selectedPageConfig.requiresDeveloperOptions || preferences.developer.optionsEnabled)
+    (!selectedPageConfig.requiresDeveloperOptions ||
+      preferences.developer.optionsEnabled ||
+      selectedPageConfig.id === "developer")
       ? selectedPageConfig
       : desktopPages[0];
   const selectedTabId = selectedPage?.desktopTab
