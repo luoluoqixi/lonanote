@@ -1,6 +1,7 @@
 import { type } from "@tauri-apps/plugin-os";
 import { Platform } from "react-native";
 
+import { isLocaleCN } from "./common";
 import type { OSType } from "./types";
 
 let SYSTEM_LOCALE: string | undefined;
@@ -67,6 +68,14 @@ export function systemLocale(): string {
     SYSTEM_LOCALE = getSystemLocale();
   }
   return SYSTEM_LOCALE;
+}
+
+/**
+ * 系统语言是否是CN
+ * @returns 是否是CN
+ */
+export function isSystemLocaleCN(): boolean {
+  return isLocaleCN(systemLocale());
 }
 
 function getSystemLocale(): string {

@@ -75,7 +75,7 @@ export function WindowSettingsPage({
               <Text fontSize="$5" fontWeight="500">
                 最近保存的窗口状态
               </Text>
-              <Text color="$color" opacity={0.6} fontSize="$3" selectable>
+              <Text color="$color" opacity={0.6} fontSize="$3" style={{ userSelect: "text" }}>
                 {formatWindowStateSummary(preferences.window.lastWindowState)}
               </Text>
             </View>

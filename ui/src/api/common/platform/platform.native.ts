@@ -1,6 +1,7 @@
 import * as Device from "expo-device";
 import { I18nManager, NativeModules, Platform } from "react-native";
 
+import { isLocaleCN } from "./common";
 import type { OSType } from "./types";
 
 const UNKNOWN: OSType = "unknown";
@@ -139,6 +140,14 @@ export function systemLocale(): string {
     SYSTEM_LOCALE = getSystemLocale();
   }
   return SYSTEM_LOCALE;
+}
+
+/**
+ * 系统语言是否是CN
+ * @returns 是否是CN
+ */
+export function isSystemLocaleCN(): boolean {
+  return isLocaleCN(systemLocale());
 }
 
 function getSystemLocale(): string {
