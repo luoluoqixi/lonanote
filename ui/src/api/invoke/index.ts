@@ -23,8 +23,8 @@ const state: any = {};
  * 显式完成当前平台的 Rust runtime 初始化。
  * Tauri 在 setup 阶段已经初始化；移动端会把应用沙盒目录交给原生 Rust 模块。
  */
-export async function initializeRustRuntime(): Promise<void> {
-  await rawInitializeRustRuntime();
+export function initializeRustRuntime(): void {
+  rawInitializeRustRuntime();
 }
 
 async function initializeCommands() {

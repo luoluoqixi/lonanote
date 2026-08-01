@@ -18,6 +18,7 @@ import { applyThemeBootstrap } from "@/stores/ui";
 import { getAppWindowBackgroundColor } from "@/theme/window_background";
 
 applyThemeBootstrap();
+initializeRustRuntime();
 
 export default function RootLayout() {
   const colorScheme = useResolvedeColorScheme();
@@ -25,7 +26,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     const initialize = async () => {
-      await initializeRustRuntime();
       await initConfig();
       console.log(`inited, ${getAppName()} - ${getVersion()}, ${os()}.`);
     };

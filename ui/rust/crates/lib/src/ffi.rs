@@ -99,7 +99,8 @@ fn lonanote_rust_module_clear_callback_function(it_: &mut LonanoteRustModule) ->
     craby::catch_panic!({
         let ret = it_.clear_callback_function();
         ret
-    }).and_then(|r| r)
+    })
+    .and_then(|r| r)
 }
 
 fn lonanote_rust_module_get_command_async_keys(it_: &mut LonanoteRustModule) -> Result<Vec<String>, anyhow::Error> {
@@ -148,7 +149,7 @@ fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str) -
     craby::catch_panic!({
         let ret = it_.init(sandbox_path);
         ret
-    }).and_then(|r| r)
+    })
 }
 
 fn lonanote_rust_module_invoke(it_: &mut LonanoteRustModule, command: &str, args: NullableString) -> Result<NullableString, anyhow::Error> {

@@ -122,7 +122,7 @@ Tauri 在原生 `setup` 阶段同步完成这个流程。Android/iOS 的流程�
 
 ```text
 RootLayout
-  → initializeRustRuntime()
+  → initializeRustRuntime()（同步）
   → expo-file-system Paths.document.uri
   → LonanoteRustModule.init(sandboxPath)
   → Rust 校验 sandboxPath 是绝对、存在且位于原生模块 data path 内
@@ -132,7 +132,9 @@ RootLayout
   → install_workspace_manager
 ```
 
-因此移动端只从 TS 传递一个 sandbox path。Catalog 与 App Session 位于该 sandbox 根目录；Managed Workspace 位于 `<sandbox>/lonanote/workspaces/<directoryName>`。普通 command 仍会复用同一个初始化 Promise 作为防御，避免应用启动和首个 command 并发时重复初始化。
+因此移动端只从 TS 传递一个 sandbox path。Catalog 与 App Session 位于该 sandbox 根目录；Managed Workspace 位于 `<sandbox>/lonanote/workspaces/<directoryName>`。初始化发生在 `RootLayout` 组件创建前，只有 Rust Core、Provider 与 Manager 全部就绪后才开始渲染应用界面；普通 command 仍会同步检查初始化状态作为防御。
+
+Core 初始化必须保持为有界的本地启动工作：注册 command、初始化 AppPaths、声明当前平台支持的 Storage Provider，并加载本地 Catalog、App Session 与 Manager。SAF/bookmark 授权弹窗、网络同步、用户目录选择和其他交互式或长耗时流程不属于 Core 初始化，必须在启动完成后由 TypeScript 显式发起异步请求。
 
 旧的 `path.init_dir` 命令已经移除。路径初始化是平台启动职责，不能由任意业务 command 在 runtime 中途重写。移动端当前只注册 Managed `documents` Provider，不把任意外部路径暴露为 External Local FS；未来的 SAF/bookmark 必须作为各自的授权 Provider 接入。
 

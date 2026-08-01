@@ -159,8 +159,8 @@ pub struct LonanoteRustModule {
 
 #[craby_module]
 impl LonanoteRustModuleSpec for LonanoteRustModule {
-    fn init(&mut self, sandbox_path: &str) -> Promise<Void> {
-        initialize_native_runtime(&self.ctx.data_path, sandbox_path)
+    fn init(&mut self, sandbox_path: &str) -> Void {
+        unwrap_or_throw(initialize_native_runtime(&self.ctx.data_path, sandbox_path))
     }
 
     fn invoke(&mut self, command: &str, args: Nullable<String>) -> Nullable<String> {

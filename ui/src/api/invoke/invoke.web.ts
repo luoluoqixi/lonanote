@@ -3,7 +3,7 @@ import type { InvokeCommand } from "./types";
 const state: any = {};
 
 // Tauri 在原生 setup 阶段完成 Rust 初始化；普通 Web 没有 Rust runtime。
-export async function initializeRustRuntime(): Promise<void> {}
+export function initializeRustRuntime(): void {}
 
 const getInvoke = async () => {
   let invoke: typeof import("@tauri-apps/api/core").invoke = state.invoke;

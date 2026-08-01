@@ -319,21 +319,10 @@ jsi::Value CxxLonanoteRustModuleModule::init(jsi::Runtime &rt,
     }
 
     auto arg0$raw = args[0].asString(rt).utf8(rt);
-    react::AsyncPromise<std::monostate> promise(rt, callInvoker);
+    auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
+    craby::lonanoterustmodule::bridging::init(*it_, arg0);
 
-    thisModule.threadPool_->enqueue([it_, promise, arg0$raw]() mutable {
-      try {
-        auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
-        craby::lonanoterustmodule::bridging::init(*it_, arg0);
-        promise.resolve(std::monostate{});
-      } catch (const jsi::JSError &err) {
-        promise.reject(err.getMessage());
-      } catch (const std::exception &err) {
-        promise.reject(craby::lonanoterustmodule::utils::errorMessage(err));
-      }
-    });
-
-    return react::bridging::toJs(rt, promise);
+    return jsi::Value::undefined();
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {

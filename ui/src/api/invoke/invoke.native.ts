@@ -18,21 +18,13 @@ function normalizeFilePath(uri: string): string {
   return path || "/";
 }
 
-export async function initializeRustRuntime(): Promise<void> {
+export function initializeRustRuntime(): void {
   if (state.initialized) {
     return;
   }
-  if (!state.initPromise) {
-    const sandboxPath = normalizeFilePath(Paths.document.uri);
-    state.initPromise = LonanoteRustModule.init(sandboxPath)
-      .then(() => {
-        state.initialized = true;
-      })
-      .finally(() => {
-        state.initPromise = null;
-      });
-  }
-  await state.initPromise;
+  const sandboxPath = normalizeFilePath(Paths.document.uri);
+  LonanoteRustModule.init(sandboxPath);
+  state.initialized = true;
 }
 
 function listenCallbackRequests() {
@@ -59,17 +51,17 @@ export async function invoke(
   command: InvokeCommand,
   args?: string | null | undefined,
 ): Promise<string | null | undefined> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   return LonanoteRustModule.invoke(command, normalizeArgs(args));
 }
 
 export async function getCommandKeys(): Promise<string[]> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   return LonanoteRustModule.getCommandKeys();
 }
 
 export async function getCommandLength(): Promise<number> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   return LonanoteRustModule.getCommandLength();
 }
 
@@ -77,17 +69,17 @@ export async function invokeAsync(
   command: InvokeCommand,
   args?: string | null | undefined,
 ): Promise<string | null | undefined> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   return await LonanoteRustModule.invokeAsync(command, normalizeArgs(args));
 }
 
 export async function getCommandAsyncKeys(): Promise<string[]> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   return LonanoteRustModule.getCommandAsyncKeys();
 }
 
 export async function getCommandAsyncLength(): Promise<number> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   return LonanoteRustModule.getCommandAsyncLength();
 }
 
@@ -95,7 +87,7 @@ export async function regCallbackFunction(
   key: string,
   callback: (args: string | null | undefined) => Promise<string | null | undefined>,
 ): Promise<() => void> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   listenCallbackRequests();
   state.callbackMap = state.callbackMap || {};
   state.callbackMap[key] = callback;
@@ -107,23 +99,23 @@ export async function regCallbackFunction(
 }
 
 export async function unregCallbackFunction(key: string): Promise<void> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   delete state.callbackMap?.[key];
   await LonanoteRustModule.unregCallbackFunction(key);
 }
 
 export async function clearCallbackFunction(): Promise<void> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   state.callbackMap = {};
   await LonanoteRustModule.clearCallbackFunction();
 }
 
 export async function getCommandCallbackKeys(): Promise<string[]> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   return LonanoteRustModule.getCommandCallbackKeys();
 }
 
 export async function getCommandCallbackLength(): Promise<number> {
-  await initializeRustRuntime();
+  initializeRustRuntime();
   return LonanoteRustModule.getCommandCallbackLength();
 }
