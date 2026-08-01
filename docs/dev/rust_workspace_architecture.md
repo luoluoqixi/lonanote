@@ -127,12 +127,12 @@ RootLayout
   → LonanoteRustModule.init(sandboxPath)
   → Rust 校验 sandboxPath 是绝对、存在且位于原生模块 data path 内
   → 初始化 AppPaths 与 cmdreg
-  → LocalFsResolver(providerId = "app-local", root = <sandbox>/lonanote)
+  → LocalFsResolver(providerId = "app-local", root = <sandbox>)
   → WorkspaceManager::load(<sandbox>)
   → install_workspace_manager
 ```
 
-因此移动端只从 TS 传递一个 sandbox path。Catalog 与 App Session 位于该 sandbox 根目录；Managed Workspace 位于 `<sandbox>/lonanote/workspaces/<directoryName>`。初始化发生在 `RootLayout` 组件创建前，只有 Rust Core、Provider 与 Manager 全部就绪后才开始渲染应用界面；普通 command 仍会同步检查初始化状态作为防御。
+因此移动端只从 TS 传递一个 sandbox path。Catalog 与 App Session 位于该 sandbox 根目录；`app-local` Managed Workspace 位于 `<sandbox>/workspaces/<directoryName>`。移动端沙盒已经由系统隔离到当前应用，不再额外创建 `lonanote` 目录。初始化发生在 `RootLayout` 组件创建前，只有 Rust Core、Provider 与 Manager 全部就绪后才开始渲染应用界面；普通 command 仍会同步检查初始化状态作为防御。
 
 Core 初始化必须保持为有界的本地启动工作：注册 command、初始化 AppPaths、声明当前平台支持的 Storage Provider，并加载本地 Catalog、App Session 与 Manager。SAF/bookmark 授权弹窗、网络同步、用户目录选择和其他交互式或长耗时流程不属于 Core 初始化，必须在启动完成后由 TypeScript 显式发起异步请求。
 
