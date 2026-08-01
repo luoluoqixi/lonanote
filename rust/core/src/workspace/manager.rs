@@ -8,6 +8,7 @@ use std::{
 use rust_embed::Embed;
 use tokio::sync::RwLock;
 
+use crate::config::system_locale::system_locale;
 use crate::workspace::{
     domain::{
         AttachWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
@@ -38,7 +39,8 @@ struct DefaultWorkspace;
 
 const WORKSPACE_GITIGNORE_PATH: &str = ".lonanote/.gitignore";
 const DEFAULT_GIT_IGNORE: &str = include_str!("../../assets/default_gitignore.txt");
-pub const INITIAL_WORKSPACE_DISPLAY_NAME: &str = "我的笔记";
+pub const INITIAL_WORKSPACE_DISPLAY_NAME_CN: &str = "我的笔记";
+pub const INITIAL_WORKSPACE_DISPLAY_NAME_EN: &str = "My Notes";
 
 pub struct WorkspaceManager {
     catalog: WorkspaceCatalog,
@@ -158,13 +160,71 @@ impl WorkspaceManager {
         if self.catalog.initial_workspace_copied().await || !self.catalog.is_empty().await {
             return Ok(None);
         }
-        self.create_managed_workspace_locked(
-            provider_id,
-            INITIAL_WORKSPACE_DISPLAY_NAME.to_string(),
-            true,
-        )
-        .await
-        .map(Some)
+        let result = self
+            .create_managed_workspace_locked(
+                provider_id,
+                initial_workspace_display_name(&system_locale()).to_string(),
+                true,
+            )
+            .await
+            .map(Some);
+        log::info!(
+            "initial workspace created: {:?}",
+            if let Err(err) = &result {
+                err.to_string()
+            } else {
+                "ok".to_string()
+            }
+        );
+        result
+    }
+
+    /// GM 调试用途：删除首次自动创建的 Workspace，并允许再次触发首次启动复制。
+    ///
+    /// 新 Catalog 通过 `initial_workspace_id` 精确定位首次 Workspace。旧 Catalog 没有
+    /// 该字段时，只有当前恰好存在一个 Workspace 才会将其视为首次 Workspace，避免
+    /// 在存在多个 Workspace 时误删用户数据。
+    pub async fn gm_reset_initial_workspace(
+        &self,
+    ) -> Result<Option<RemoveWorkspaceResult>, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.write().await;
+        let catalog = self.catalog.snapshot().await;
+        let initial_workspace_id = catalog.initial_workspace_id.or_else(|| {
+            (catalog.initial_workspace_copied && catalog.workspaces.len() == 1).then(|| {
+                *catalog
+                    .workspaces
+                    .keys()
+                    .next()
+                    .expect("已检查唯一 Workspace")
+            })
+        });
+        if let Some(workspace_id) = initial_workspace_id {
+            self.runtime.remove(&workspace_id).await;
+            self.session.remove(&workspace_id).await?;
+        }
+        let removed_record = self
+            .catalog
+            .reset_initial_workspace(initial_workspace_id)
+            .await?;
+        let Some(removed_record) = removed_record else {
+            return Ok(None);
+        };
+        let storage = WorkspaceStorageView::from(&removed_record.storage_binding);
+        let file_cleanup = match self
+            .storage_resolver
+            .remove_workspace_root(&removed_record.storage_binding)
+            .await
+        {
+            Ok(()) => StorageCleanupStatus::Removed,
+            Err(error) => StorageCleanupStatus::Failed {
+                message: error.to_string(),
+            },
+        };
+        Ok(Some(RemoveWorkspaceResult {
+            workspace_id: removed_record.id,
+            storage,
+            file_cleanup,
+        }))
     }
 
     async fn create_managed_workspace_locked(
@@ -645,6 +705,23 @@ impl WorkspaceManager {
     }
 }
 
+/// 根据平台传入的 BCP 47 locale 选择首次默认 Workspace 名称。
+///
+/// 仅中文（`zh`、`zh-CN`、`zh_Hant` 等）使用中文名称；无法识别或其他语言一律
+/// 使用英文名称，确保首次启动始终能创建有效的 Workspace。
+fn initial_workspace_display_name(system_locale: &str) -> &'static str {
+    let language = system_locale
+        .trim()
+        .split(['-', '_'])
+        .next()
+        .unwrap_or_default();
+    if language.eq_ignore_ascii_case("zh") {
+        INITIAL_WORKSPACE_DISPLAY_NAME_CN
+    } else {
+        INITIAL_WORKSPACE_DISPLAY_NAME_EN
+    }
+}
+
 async fn initialize_workspace(
     session: &super::storage::WorkspaceStorageSession,
     manifest: &WorkspaceManifest,
@@ -734,4 +811,28 @@ fn now_timestamp() -> u64 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        initial_workspace_display_name, INITIAL_WORKSPACE_DISPLAY_NAME_CN,
+        INITIAL_WORKSPACE_DISPLAY_NAME_EN,
+    };
+
+    #[test]
+    fn initial_workspace_display_name_uses_chinese_only_for_zh_locales() {
+        for locale in ["zh", "zh-CN", "ZH_hant"] {
+            assert_eq!(
+                initial_workspace_display_name(locale),
+                INITIAL_WORKSPACE_DISPLAY_NAME_CN
+            );
+        }
+        for locale in ["", "en-US", "ja-JP", "yue-Hant"] {
+            assert_eq!(
+                initial_workspace_display_name(locale),
+                INITIAL_WORKSPACE_DISPLAY_NAME_EN
+            );
+        }
+    }
 }

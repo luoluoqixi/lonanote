@@ -97,6 +97,11 @@ public:
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
+  static facebook::jsi::Value
+  onRustLog(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
 protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
   std::shared_ptr<craby::lonanoterustmodule::bridging::LonanoteRustModule> module_;

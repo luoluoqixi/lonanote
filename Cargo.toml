@@ -36,6 +36,7 @@ rust-embed = "8.11"
 sha2 = "0.10"
 uuid = { version = "1.18", features = ["v4", "serde"] }
 dark-light = "2.0"
+sys-locale = "0.3"
 
 # cmdreg = "0.2"
 cmdreg = { git = "https://github.com/luoluoqixi/cmdreg", branch = "main" }

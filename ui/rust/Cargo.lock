@@ -759,6 +759,7 @@ dependencies = [
  "craby",
  "craby_build",
  "cxx",
+ "log",
  "lonanote-core",
  "tokio",
 ]

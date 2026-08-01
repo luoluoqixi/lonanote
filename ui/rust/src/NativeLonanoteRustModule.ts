@@ -7,9 +7,16 @@ export interface CallbackRequest {
   args: string | null;
 }
 
+export interface RustLogEntry {
+  level: string;
+  target: string;
+  message: string;
+}
+
 interface Spec extends NativeModule {
   onCallbackRequest: Signal<CallbackRequest>;
-  init(sandboxPath: string): void;
+  onRustLog: Signal<RustLogEntry>;
+  init(sandboxPath: string, systemLocale: string): void;
   invoke(command: string, args: string | null): string | null;
   getCommandKeys(): string[];
   getCommandLength(): number;

@@ -55,6 +55,10 @@ export function DeveloperSettingsPage({
           onPress={() => router.push("/debug" as Href)}
           title="UI 组件调试"
         />
+        <NativeListNavigationItem
+          onPress={() => router.push("/settings/gm" as Href)}
+          title="GM 调试"
+        />
       </NativeListSection>
     </NativeList>
   );

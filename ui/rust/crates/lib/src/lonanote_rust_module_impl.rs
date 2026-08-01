@@ -9,6 +9,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use craby::{prelude::*, throw};
+use log::{LevelFilter, Log, Metadata, Record};
 use lonanote_core::workspace::{
     install_workspace_manager, LocalFsResolver, StorageProviderId, WorkspaceManager,
     WorkspaceStorageResolver,
@@ -27,11 +28,14 @@ const APP_LOCAL_PROVIDER_ID: &str = "app-local";
 
 struct InitResult {
     sandbox_path: PathBuf,
+    system_locale: String,
     error: Option<String>,
 }
 
 static INIT_RESULT: OnceLock<InitResult> = OnceLock::new();
 static RUNTIME_RESULT: OnceLock<Result<Runtime, String>> = OnceLock::new();
+static NATIVE_LOGGER: OnceLock<NativeRustLogger> = OnceLock::new();
+static NATIVE_LOGGER_INIT_RESULT: OnceLock<Result<(), String>> = OnceLock::new();
 static CALLBACK_ID: AtomicU64 = AtomicU64::new(1);
 static PENDING_CALLBACKS: OnceLock<Mutex<HashMap<String, CallbackSender>>> = OnceLock::new();
 
@@ -46,21 +50,31 @@ fn canonicalize_directory(path: &str, field: &str) -> Result<PathBuf> {
     std::fs::canonicalize(path).map_err(|error| anyhow!("解析 {field} 失败: {error}"))
 }
 
-fn initialize_native_runtime(module_data_path: &str, sandbox_path: &str) -> Result<()> {
+fn initialize_native_runtime(
+    module_id: usize,
+    module_data_path: &str,
+    sandbox_path: &str,
+    system_locale: &str,
+) -> Result<()> {
     let module_data_path = canonicalize_directory(module_data_path, "module data path")?;
     let sandbox_path = canonicalize_directory(sandbox_path, "sandbox path")?;
+    let system_locale = system_locale.trim().to_string();
     if !sandbox_path.starts_with(&module_data_path) {
         return Err(anyhow!("sandbox path 必须位于原生模块允许的数据目录内"));
     }
 
     let result = INIT_RESULT.get_or_init(|| InitResult {
         sandbox_path: sandbox_path.clone(),
-        error: initialize_native_runtime_once(&sandbox_path)
+        system_locale: system_locale.clone(),
+        error: initialize_native_runtime_once(module_id, &sandbox_path, &system_locale)
             .err()
             .map(|error| format!("init rust error: {error}")),
     });
     if result.sandbox_path != sandbox_path {
         return Err(anyhow!("Rust 已使用其他 sandbox path 初始化"));
+    }
+    if result.system_locale != system_locale {
+        return Err(anyhow!("Rust 已使用其他 system locale 初始化"));
     }
     match &result.error {
         Some(error) => Err(anyhow!(error.clone())),
@@ -68,21 +82,66 @@ fn initialize_native_runtime(module_data_path: &str, sandbox_path: &str) -> Resu
     }
 }
 
-fn initialize_native_runtime_once(sandbox_path: &Path) -> Result<()> {
+fn initialize_native_runtime_once(
+    module_id: usize,
+    sandbox_path: &Path,
+    system_locale: &str,
+) -> Result<()> {
+    init_native_logger(module_id)?;
     let app_paths = lonanote_core::config::app_path::resolve_default_paths(sandbox_path);
     lonanote_core::config::app_path::init_paths(app_paths);
+    lonanote_core::config::system_locale::init_system_locale(system_locale);
 
     let resolver = Arc::new(LocalFsResolver::new().with_managed_provider(
         StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?,
         sandbox_path,
     )) as Arc<dyn WorkspaceStorageResolver>;
     let manager = runtime()?.block_on(WorkspaceManager::load(sandbox_path, resolver))?;
-    runtime()?.block_on(manager.create_initial_workspace_if_needed(StorageProviderId::parse(
-        APP_LOCAL_PROVIDER_ID,
-    )?))?;
+    runtime()?.block_on(
+        manager
+            .create_initial_workspace_if_needed(StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?),
+    )?;
     install_workspace_manager(manager).map_err(|error| anyhow!(error.to_string()))?;
     lonanote_core::init()?;
     Ok(())
+}
+
+struct NativeRustLogger {
+    module_id: usize,
+}
+
+impl Log for NativeRustLogger {
+    fn enabled(&self, metadata: &Metadata<'_>) -> bool {
+        metadata.level() <= log::Level::Trace
+    }
+
+    fn log(&self, record: &Record<'_>) {
+        if self.enabled(record.metadata()) {
+            emit_rust_log(
+                self.module_id,
+                record.level().to_string(),
+                record.target().to_string(),
+                record.args().to_string(),
+            );
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+fn init_native_logger(module_id: usize) -> Result<()> {
+    match NATIVE_LOGGER_INIT_RESULT.get_or_init(|| {
+        let logger = NATIVE_LOGGER.get_or_init(|| NativeRustLogger { module_id });
+        if logger.module_id != module_id {
+            return Err("Rust logger 已绑定到其他原生模块实例".to_string());
+        }
+        log::set_logger(logger)
+            .map(|()| log::set_max_level(LevelFilter::Trace))
+            .map_err(|error| format!("初始化移动端 Rust logger 失败: {error}"))
+    }) {
+        Ok(()) => Ok(()),
+        Err(error) => Err(anyhow!(error.clone())),
+    }
 }
 
 fn ensure_init() -> Result<()> {
@@ -144,6 +203,19 @@ fn emit_callback_request(module_id: usize, id: String, key: String, args: Option
     }
 }
 
+fn emit_rust_log(module_id: usize, level: String, target: String, message: String) {
+    let signal = Box::new(LonanoteRustModuleSignal::OnRustLog(RustLogEntry {
+        level,
+        target,
+        message,
+    }));
+    let signal_ptr = Box::into_raw(signal);
+    let manager = crate::ffi::bridging::get_signal_manager();
+    unsafe {
+        manager.emit(module_id, "onRustLog", signal_ptr);
+    }
+}
+
 fn resolve_pending_callback(id: &str, result: Result<Option<String>, String>) {
     let sender = pending_callbacks()
         .lock()
@@ -160,8 +232,13 @@ pub struct LonanoteRustModule {
 
 #[craby_module]
 impl LonanoteRustModuleSpec for LonanoteRustModule {
-    fn init(&mut self, sandbox_path: &str) -> Void {
-        unwrap_or_throw(initialize_native_runtime(&self.ctx.data_path, sandbox_path))
+    fn init(&mut self, sandbox_path: &str, system_locale: &str) -> Void {
+        unwrap_or_throw(initialize_native_runtime(
+            self.id(),
+            &self.ctx.data_path,
+            sandbox_path,
+            system_locale,
+        ))
     }
 
     fn invoke(&mut self, command: &str, args: Nullable<String>) -> Nullable<String> {

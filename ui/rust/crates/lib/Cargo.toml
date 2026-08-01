@@ -8,6 +8,7 @@ anyhow = "1.0.99"
 craby = "0.1.0-rc"
 cxx = { version = "1.0.187", features = ["c++20"] }
 lonanote-core = { path = "../../../../rust/core" }
+log = "0.4"
 tokio = { version = "1.52", features = ["rt-multi-thread", "sync"] }
 
 [build-dependencies]

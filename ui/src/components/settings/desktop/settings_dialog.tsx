@@ -38,18 +38,29 @@ export function DesktopSettingsDialog({
   );
 
   useEffect(() => {
-    if (getSettingsPage(initialPageId)?.desktopTab) {
+    if (getSettingsPage(initialPageId)) {
       setSelectedPageId(initialPageId);
     }
   }, [initialPageId]);
 
   useEffect(() => {
-    if (!isOpen && selectedPageId === "developer" && !preferences.developer.optionsEnabled) {
+    if (
+      !preferences.developer.optionsEnabled &&
+      getSettingsPage(selectedPageId)?.requiresDeveloperOptions
+    ) {
       setSelectedPageId("global");
     }
-  }, [isOpen, preferences.developer.optionsEnabled, selectedPageId]);
+  }, [preferences.developer.optionsEnabled, selectedPageId]);
 
-  const selectedPage = desktopPages.find((page) => page.id === selectedPageId) ?? desktopPages[0];
+  const selectedPageConfig = getSettingsPage(selectedPageId);
+  const selectedPage =
+    selectedPageConfig &&
+    (!selectedPageConfig.requiresDeveloperOptions || preferences.developer.optionsEnabled)
+      ? selectedPageConfig
+      : desktopPages[0];
+  const selectedTabId = selectedPage?.desktopTab
+    ? selectedPage.id
+    : (selectedPage?.parentId ?? desktopPages[0]?.id ?? "global");
   const SelectedPageComponent = selectedPage?.Component;
 
   return (
@@ -68,7 +79,7 @@ export function DesktopSettingsDialog({
           onValueChange={(nextValue) => setSelectedPageId(nextValue as SettingsPageId)}
           orientation="vertical"
           style={styles.tabs}
-          value={selectedPageId}
+          value={selectedTabId}
         >
           <Tabs.List aria-label="设置页面导航" style={styles.list}>
             {desktopPages.map((page) => (

@@ -26,7 +26,7 @@ const DEFAULT_LAYOUT_STATE = {
 function getSettingsPageId(pathname: string): SettingsPageId {
   const pageId = pathname.split("/")[2];
   const page = getSettingsPage(pageId);
-  return page?.desktopTab ? page.id : "global";
+  return page?.desktopTab || page?.parentId ? page.id : "global";
 }
 
 export function DesktopAppShell() {

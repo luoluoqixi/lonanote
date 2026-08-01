@@ -26,6 +26,12 @@ pub struct WorkspaceCatalogData {
     /// 这是一次性历史标记：用户随后删除默认 Workspace，也不能再次触发复制。
     #[serde(default)]
     pub initial_workspace_copied: bool,
+    /// 首次启动自动创建的 Workspace ID。
+    ///
+    /// 用户普通删除该 Workspace 后仍保留这个 ID，用于保留首次启动历史；GM 调试
+    /// 命令可以借此精确删除并重置该状态。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub initial_workspace_id: Option<WorkspaceId>,
     pub workspaces: HashMap<WorkspaceId, WorkspaceRecord>,
 }
 
@@ -34,6 +40,7 @@ impl Default for WorkspaceCatalogData {
         Self {
             schema_version: WORKSPACE_CATALOG_SCHEMA_VERSION,
             initial_workspace_copied: false,
+            initial_workspace_id: None,
             workspaces: HashMap::new(),
         }
     }
@@ -158,9 +165,24 @@ impl WorkspaceCatalog {
             if data.workspaces.contains_key(&record.id) {
                 return Err(WorkspaceError::AlreadyRegistered(record.id));
             }
-            data.workspaces.insert(record.id, record);
+            let workspace_id = record.id;
+            data.workspaces.insert(workspace_id, record);
             data.initial_workspace_copied = true;
+            data.initial_workspace_id = Some(workspace_id);
             Ok(())
+        })
+        .await
+    }
+
+    /// 清除首次启动历史，并可在同一次原子 Catalog 写入中删除对应 record。
+    pub async fn reset_initial_workspace(
+        &self,
+        workspace_id: Option<WorkspaceId>,
+    ) -> Result<Option<WorkspaceRecord>, WorkspaceError> {
+        self.update(move |data| {
+            data.initial_workspace_copied = false;
+            data.initial_workspace_id = None;
+            Ok(workspace_id.and_then(|workspace_id| data.workspaces.remove(&workspace_id)))
         })
         .await
     }

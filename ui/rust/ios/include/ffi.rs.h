@@ -970,6 +970,7 @@ namespace craby {
   namespace lonanoterustmodule {
     namespace bridging {
       struct NullableString;
+      struct RustLogEntry;
       struct CallbackRequest;
       struct LonanoteRustModule;
       struct LonanoteRustModuleSignal;
@@ -992,6 +993,17 @@ struct NullableString final {
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$NullableString
+
+#ifndef CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$RustLogEntry
+#define CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$RustLogEntry
+struct RustLogEntry final {
+  ::rust::String level;
+  ::rust::String target;
+  ::rust::String message;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$RustLogEntry
 
 #ifndef CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$CallbackRequest
 #define CXXBRIDGE1_STRUCT_craby$lonanoterustmodule$bridging$CallbackRequest
@@ -1048,7 +1060,7 @@ double getCommandCallbackLength(::craby::lonanoterustmodule::bridging::LonanoteR
 
 double getCommandLength(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_);
 
-void init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str sandbox_path);
+void init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str sandbox_path, ::rust::Str system_locale);
 
 ::craby::lonanoterustmodule::bridging::NullableString invoke(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str command, ::craby::lonanoterustmodule::bridging::NullableString args);
 
@@ -1063,6 +1075,8 @@ void resolveCallback(::craby::lonanoterustmodule::bridging::LonanoteRustModule &
 void unregCallbackFunction(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str key);
 
 ::craby::lonanoterustmodule::bridging::CallbackRequest get_on_callback_request_payload(::craby::lonanoterustmodule::bridging::LonanoteRustModuleSignal const &s) noexcept;
+
+::craby::lonanoterustmodule::bridging::RustLogEntry get_on_rust_log_payload(::craby::lonanoterustmodule::bridging::LonanoteRustModuleSignal const &s) noexcept;
 
 void drop_signal(::craby::lonanoterustmodule::bridging::LonanoteRustModuleSignal *signal) noexcept;
 } // namespace bridging

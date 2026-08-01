@@ -16,6 +16,13 @@ pub mod bridging {
     }
 
     #[derive(Clone)]
+    struct RustLogEntry {
+        level: String,
+        target: String,
+        message: String,
+    }
+
+    #[derive(Clone)]
     struct CallbackRequest {
         id: String,
         key: String,
@@ -50,7 +57,7 @@ pub mod bridging {
         fn lonanote_rust_module_get_command_length(it_: &mut LonanoteRustModule) -> Result<f64>;
 
         #[cxx_name = "init"]
-        fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str) -> Result<()>;
+        fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str, system_locale: &str) -> Result<()>;
 
         #[cxx_name = "invoke"]
         fn lonanote_rust_module_invoke(it_: &mut LonanoteRustModule, command: &str, args: NullableString) -> Result<NullableString>;
@@ -74,6 +81,7 @@ pub mod bridging {
     extern "Rust" {
         type LonanoteRustModuleSignal;
         fn get_on_callback_request_payload(s: &LonanoteRustModuleSignal) -> CallbackRequest;
+        fn get_on_rust_log_payload(s: &LonanoteRustModuleSignal) -> RustLogEntry;
         unsafe fn drop_signal(signal: *mut LonanoteRustModuleSignal);
     }
 
@@ -145,9 +153,9 @@ fn lonanote_rust_module_get_command_length(it_: &mut LonanoteRustModule) -> Resu
     })
 }
 
-fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str) -> Result<(), anyhow::Error> {
+fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str, system_locale: &str) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
-        let ret = it_.init(sandbox_path);
+        let ret = it_.init(sandbox_path, system_locale);
         ret
     })
 }
@@ -200,6 +208,13 @@ fn get_on_callback_request_payload(s: &LonanoteRustModuleSignal) -> CallbackRequ
     match s {
         LonanoteRustModuleSignal::OnCallbackRequest(payload) => (*payload).clone(),
         _ => panic!("Invalid signal type for get_on_callback_request_payload"),
+    }
+}
+
+fn get_on_rust_log_payload(s: &LonanoteRustModuleSignal) -> RustLogEntry {
+    match s {
+        LonanoteRustModuleSignal::OnRustLog(payload) => (*payload).clone(),
+        _ => panic!("Invalid signal type for get_on_rust_log_payload"),
     }
 }
 

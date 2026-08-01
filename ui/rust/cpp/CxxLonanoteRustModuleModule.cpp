@@ -37,7 +37,7 @@ CxxLonanoteRustModuleModule::CxxLonanoteRustModuleModule(
   methodMap_["getCommandCallbackLength"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandCallbackLength};
   methodMap_["getCommandKeys"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandKeys};
   methodMap_["getCommandLength"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandLength};
-  methodMap_["init"] = MethodMetadata{1, &CxxLonanoteRustModuleModule::init};
+  methodMap_["init"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::init};
   methodMap_["invoke"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::invoke};
   methodMap_["invokeAsync"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::invokeAsync};
   methodMap_["regCallbackFunction"] = MethodMetadata{1, &CxxLonanoteRustModuleModule::regCallbackFunction};
@@ -45,6 +45,7 @@ CxxLonanoteRustModuleModule::CxxLonanoteRustModuleModule(
   methodMap_["resolveCallback"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::resolveCallback};
   methodMap_["unregCallbackFunction"] = MethodMetadata{1, &CxxLonanoteRustModuleModule::unregCallbackFunction};
   methodMap_["onCallbackRequest"] = MethodMetadata{1, &CxxLonanoteRustModuleModule::onCallbackRequest};
+  methodMap_["onRustLog"] = MethodMetadata{1, &CxxLonanoteRustModuleModule::onRustLog};
 }
 
 CxxLonanoteRustModuleModule::~CxxLonanoteRustModuleModule() {
@@ -105,6 +106,9 @@ void CxxLonanoteRustModuleModule::emit(std::string name, bridging::LonanoteRustM
           jsi::Value data = jsi::Value::undefined();
           if (name == "onCallbackRequest") {
             auto payload = craby::lonanoterustmodule::bridging::get_on_callback_request_payload(*signalPtr);
+            data = react::bridging::toJs(rt, payload);
+          } else if (name == "onRustLog") {
+            auto payload = craby::lonanoterustmodule::bridging::get_on_rust_log_payload(*signalPtr);
             data = react::bridging::toJs(rt, payload);
           }
           listener->call(rt, data);
@@ -314,13 +318,15 @@ jsi::Value CxxLonanoteRustModuleModule::init(jsi::Runtime &rt,
   auto it_ = thisModule.module_;
 
   try {
-    if (1 != count) {
-      throw jsi::JSError(rt, "Expected 1 argument");
+    if (2 != count) {
+      throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
     auto arg0$raw = args[0].asString(rt).utf8(rt);
     auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
-    craby::lonanoterustmodule::bridging::init(*it_, arg0);
+    auto arg1$raw = args[1].asString(rt).utf8(rt);
+    auto arg1 = rust::Str(arg1$raw.data(), arg1$raw.size());
+    craby::lonanoterustmodule::bridging::init(*it_, arg0, arg1);
 
     return jsi::Value::undefined();
   } catch (const jsi::JSError &err) {
@@ -535,6 +541,61 @@ jsi::Value CxxLonanoteRustModuleModule::onCallbackRequest(jsi::Runtime &rt,
     auto callbackRef = std::make_shared<jsi::Function>(std::move(callback));
     auto id = thisModule.nextListenerId_.fetch_add(1);
     auto name = "onCallbackRequest";
+
+    if (thisModule.listenersMap_.find(name) == thisModule.listenersMap_.end()) {
+      thisModule.listenersMap_[name] = std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>();
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(thisModule.listenersMutex_);
+      thisModule.listenersMap_[name].emplace(id, callbackRef);
+    }
+
+    auto modulePtr = &thisModule;
+    auto cleanup = [modulePtr, name, id] {
+      std::lock_guard<std::mutex> lock(modulePtr->listenersMutex_);
+      auto eventMap = modulePtr->listenersMap_.find(name);
+      if (eventMap != modulePtr->listenersMap_.end()) {
+        auto it = eventMap->second.find(id);
+        if (it != eventMap->second.end()) {
+          eventMap->second.erase(it);
+        }
+      }
+      return jsi::Value::undefined();
+    };
+
+    return jsi::Function::createFromHostFunction(
+      rt,
+      jsi::PropNameID::forAscii(rt, "cleanup"),
+      0,
+      [cleanup](jsi::Runtime& rt, const jsi::Value&, const jsi::Value*, size_t) -> jsi::Value {
+        return cleanup();
+      }
+    );
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::lonanoterustmodule::utils::errorMessage(err));
+  }
+}
+
+jsi::Value CxxLonanoteRustModuleModule::onRustLog(jsi::Runtime &rt,
+                      react::TurboModule &turboModule,
+                      const jsi::Value args[],
+                      size_t count) {
+  auto &thisModule = static_cast<CxxLonanoteRustModuleModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto callback = args[0].asObject(rt).asFunction(rt);
+    auto callbackRef = std::make_shared<jsi::Function>(std::move(callback));
+    auto id = thisModule.nextListenerId_.fetch_add(1);
+    auto name = "onRustLog";
 
     if (thisModule.listenersMap_.find(name) == thisModule.listenersMap_.end()) {
       thisModule.listenersMap_[name] = std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>();

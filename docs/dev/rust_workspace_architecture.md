@@ -109,6 +109,8 @@ rust/core/src/api/workspace/
 
 Workspace Core 不自行猜测平台目录。平台壳负责提供可访问的 app data / sandbox 路径，并在任何 command 调用前安装一个全局 `WorkspaceManager`。
 
+平台壳也必须在加载 Manager 前将系统 BCP 47 locale 写入 Core 的全局 `config::system_locale`。Tauri 通过 `sys-locale` 获取它；Android/iOS 由 TypeScript 在同步原生 `init` 调用中传入。后续 Rust 业务直接读取该上下文，不在业务 API 上传递 locale 参数。
+
 ```mermaid
 flowchart LR
     Startup["应用启动"] --> Platform["平台壳解析可访问目录"]
@@ -126,7 +128,8 @@ Tauri 在原生 `setup` 阶段同步完成这个流程。Android/iOS 的流程�
 RootLayout
   → initializeRustRuntime()（同步）
   → expo-file-system Paths.document.uri
-  → LonanoteRustModule.init(sandboxPath)
+  → Intl.DateTimeFormat().resolvedOptions().locale
+  → LonanoteRustModule.init(sandboxPath, systemLocale)
   → Rust 校验 sandboxPath 是绝对、存在且位于原生模块 data path 内
   → 初始化 AppPaths
   → LocalFsResolver(providerId = "app-local", root = <sandbox>)
@@ -136,7 +139,7 @@ RootLayout
   → 注册 cmdreg
 ```
 
-因此移动端只从 TS 传递一个 sandbox path。Catalog 与 App Session 位于该 sandbox 根目录；`app-local` Managed Workspace 位于 `<sandbox>/workspaces/<directoryName>`。移动端沙盒已经由系统隔离到当前应用，不再额外创建 `lonanote` 目录。初始化发生在 `RootLayout` 组件创建前，只有 Rust Core、Provider 与 Manager 全部就绪后才开始渲染应用界面；普通 command 仍会同步检查初始化状态作为防御。
+因此移动端从 TS 传递 sandbox path 与系统 BCP 47 locale。Catalog 与 App Session 位于该 sandbox 根目录；`app-local` Managed Workspace 位于 `<sandbox>/workspaces/<directoryName>`。移动端沙盒已经由系统隔离到当前应用，不再额外创建 `lonanote` 目录。初始化发生在 `RootLayout` 组件创建前，只有 Rust Core、Provider 与 Manager 全部就绪后才开始渲染应用界面；普通 command 仍会同步检查初始化状态作为防御。
 
 Core 初始化必须保持为有界的本地启动工作：注册 command、初始化 AppPaths、声明当前平台支持的 Storage Provider、加载本地 Catalog/App Session/Manager，并仅在首次启动时复制默认 Workspace。SAF/bookmark 授权弹窗、网络同步、用户目录选择和其他交互式或长耗时流程不属于 Core 初始化，必须在启动完成后由 TypeScript 显式发起异步请求。
 
@@ -256,6 +259,7 @@ Catalog 保存：
 - 列表展示用的 `displayName`、`createdAt` 缓存摘要；
 - 最近验证摘要的时间。
 - `initialWorkspaceCopied`：一次性历史标记；首次默认 Workspace 成功写入时设为 `true`，之后即使用户删除该 Workspace 也不会再次复制。
+- `initialWorkspaceId`：首次默认 Workspace 的 ID。用户普通删除后仍保留，用于保留历史；GM 调试重置时用于精确定位待删除的 Workspace。
 
 Binding 可以是 Managed，也可以是 External。它可能包含本机路径或未来平台授权引用，因此不能进入 Workspace 目录。
 
@@ -452,7 +456,11 @@ Managed 创建遇到同名目录时依次尝试 `name`、`name-2`、`name-3`。
 
 ### 8.2.1 首次默认 Workspace
 
-平台启动时以 `app-local` 作为默认 Managed Provider 调用 `create_initial_workspace_if_needed()`。只有 Catalog 为空且 `initialWorkspaceCopied` 为 `false` 时，才会额外复制 `assets/default_workspace/`。默认 Workspace record 与该标记同一次原子 Catalog 写入；普通 `create_managed` 和 `create_external` 不复制示例内容。
+平台启动时以 `app-local` 作为默认 Managed Provider 调用 `create_initial_workspace_if_needed(providerId)`。只有 Catalog 为空且 `initialWorkspaceCopied` 为 `false` 时，才会额外复制 `assets/default_workspace/`。默认 Workspace record、`initialWorkspaceCopied` 与 `initialWorkspaceId` 在同一次原子 Catalog 写入中提交；普通 `create_managed` 和 `create_external` 不复制示例内容。
+
+首次名称由 Core 全局 `system_locale` 的 BCP 47 主语言子标签决定：`zh`、`zh-CN`、`zh_Hant` 等中文 locale 使用“我的笔记”，其余 locale（包括缺失或无法识别的 locale）一律使用 “My Notes”。语言只影响首次创建的显示名称，不作为 Catalog 或 Workspace 持久化身份的一部分。
+
+开发阶段提供 `gm.workspace.reset_initial_workspace`：它关闭并删除被 `initialWorkspaceId` 追踪的首次 Workspace，清除首次复制标记与 ID，使下一次 `create_initial_workspace_if_needed` 能重新复制默认内容。若旧 Catalog 尚未记录 ID，只会在 Catalog 中恰好只有一个 Workspace 时推断并删除，避免误删其他 Workspace。该命令当前不按 Rust 构建 profile 限制，而是只通过开发者选项页面提供入口；投入生产前再决定是否收紧。
 
 ### 8.3 Attach
 

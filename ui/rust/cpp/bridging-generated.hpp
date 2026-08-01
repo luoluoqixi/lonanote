@@ -176,5 +176,40 @@ struct Bridging<craby::lonanoterustmodule::bridging::CallbackRequest> {
   }
 };
 
+template <>
+struct Bridging<craby::lonanoterustmodule::bridging::RustLogEntry> {
+  static craby::lonanoterustmodule::bridging::RustLogEntry fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto obj = value.asObject(rt);
+    auto obj$level = obj.getProperty(rt, "level");
+    auto obj$target = obj.getProperty(rt, "target");
+    auto obj$message = obj.getProperty(rt, "message");
+
+    auto _obj$level = react::bridging::fromJs<rust::String>(rt, obj$level, callInvoker);
+    auto _obj$target = react::bridging::fromJs<rust::String>(rt, obj$target, callInvoker);
+    auto _obj$message = react::bridging::fromJs<rust::String>(rt, obj$message, callInvoker);
+
+    craby::lonanoterustmodule::bridging::RustLogEntry ret = {
+      _obj$level,
+      _obj$target,
+      _obj$message
+    };
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::lonanoterustmodule::bridging::RustLogEntry& value) {
+    jsi::Object obj = jsi::Object(rt);
+    auto _obj$level = react::bridging::toJs(rt, value.level);
+    auto _obj$target = react::bridging::toJs(rt, value.target);
+    auto _obj$message = react::bridging::toJs(rt, value.message);
+
+    obj.setProperty(rt, "level", _obj$level);
+    obj.setProperty(rt, "target", _obj$target);
+    obj.setProperty(rt, "message", _obj$message);
+
+    return jsi::Value(rt, obj);
+  }
+};
+
 } // namespace react
 } // namespace facebook

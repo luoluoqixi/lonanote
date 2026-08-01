@@ -1,7 +1,10 @@
-use lonanote_core::workspace::WorkspaceSnapshot;
+use lonanote_core::{
+    config::system_locale::system_locale,
+    workspace::{workspace_manager, WorkspaceSnapshot},
+};
 use serde_json::{json, Value};
 
-use crate::support::{invoke_json, invoke_unit};
+use crate::support::{invoke_json, invoke_unit, provider, MANAGED_PROVIDER};
 
 use super::fixture::{
     close_and_remove, create_managed, external_binding_json, locked_app, remove_closed, run,
@@ -73,5 +76,34 @@ fn external_attach_flow() {
         assert!(!attached.to_string().contains("resourceRef"));
         assert!(!attached.to_string().contains("resourceIdentity"));
         remove_closed(created.id).await;
+    });
+}
+
+#[test]
+fn gm_reset_initial_workspace_flow() {
+    let (_app, _guard) = locked_app();
+    run(async {
+        let initial = workspace_manager()
+            .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+            .await
+            .unwrap()
+            .expect("首次启动必须创建默认 Workspace");
+
+        let removed: Option<Value> =
+            invoke_json("gm.workspace.reset_initial_workspace", json!({})).await;
+        let removed = removed.expect("GM 命令必须删除首次默认 Workspace");
+        assert_eq!(removed["workspaceId"], initial.id.to_string());
+
+        let workspaces: Vec<Value> = invoke_json("workspace.list", json!({})).await;
+        assert!(workspaces.is_empty());
+    });
+}
+
+#[test]
+fn gm_get_system_locale_flow() {
+    let (_app, _guard) = locked_app();
+    run(async {
+        let locale: String = invoke_json("gm.system.get_system_locale", json!({})).await;
+        assert_eq!(locale, system_locale());
     });
 }

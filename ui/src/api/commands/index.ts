@@ -1,6 +1,7 @@
 export * from "./app";
 export * from "./dialog";
 export * from "./fs";
+export * from "./gm";
 export * from "./path";
 export * from "./settings";
 export * from "./store";

@@ -13,7 +13,9 @@ use thiserror::Error;
 
 pub use domain::*;
 pub use error::*;
-pub use manager::WorkspaceManager;
+pub use manager::{
+    WorkspaceManager, INITIAL_WORKSPACE_DISPLAY_NAME_CN, INITIAL_WORKSPACE_DISPLAY_NAME_EN,
+};
 pub use persistence::{
     WorkspaceCatalog, WorkspaceCatalogData, WorkspaceSessionData, WorkspaceSessionStore,
 };

@@ -5,6 +5,7 @@ use crate::support::{
 };
 use lonanote_core::workspace::{
     StorageCleanupStatus, WorkspaceError, WorkspaceId, WorkspaceManifest,
+    INITIAL_WORKSPACE_DISPLAY_NAME_EN,
 };
 use tokio::sync::Barrier;
 
@@ -93,7 +94,7 @@ async fn initial_workspace_is_copied_once_even_after_deletion() {
         .expect("首次启动必须创建默认 Workspace");
     let root = app.managed_workspace_root(&created);
 
-    assert_eq!(created.display_name, "我的笔记");
+    assert_eq!(created.display_name, INITIAL_WORKSPACE_DISPLAY_NAME_EN);
     assert!(root.join("README.md").exists());
     assert!(root.join("README_en.md").exists());
     assert!(root.join("assets/images/icon.png").exists());
@@ -102,6 +103,7 @@ async fn initial_workspace_is_copied_once_even_after_deletion() {
     )
     .unwrap();
     assert_eq!(catalog["initialWorkspaceCopied"], true);
+    assert_eq!(catalog["initialWorkspaceId"], created.id.to_string());
 
     manager.close_workspace(&created.id).await.unwrap();
     manager.remove_workspace(&created.id, true).await.unwrap();
@@ -120,6 +122,55 @@ async fn initial_workspace_is_copied_once_even_after_deletion() {
         .unwrap()
         .is_none());
     assert!(restarted.list_workspaces().await.is_empty());
+}
+
+#[tokio::test]
+async fn initial_workspace_uses_fallback_locale_when_platform_does_not_initialize_it() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+
+    let created = manager
+        .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+        .await
+        .unwrap()
+        .expect("首次启动必须创建默认 Workspace");
+
+    assert_eq!(created.display_name, INITIAL_WORKSPACE_DISPLAY_NAME_EN);
+}
+
+#[tokio::test]
+async fn gm_reset_initial_workspace_removes_seed_and_allows_recreation() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let initial = manager
+        .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+        .await
+        .unwrap()
+        .expect("首次启动必须创建默认 Workspace");
+    let initial_root = app.managed_workspace_root(&initial);
+
+    let removed = manager
+        .gm_reset_initial_workspace()
+        .await
+        .unwrap()
+        .expect("GM 重置必须删除首次默认 Workspace");
+    assert_eq!(removed.workspace_id, initial.id);
+    assert_eq!(removed.file_cleanup, StorageCleanupStatus::Removed);
+    assert!(!initial_root.exists());
+    assert!(manager.list_workspaces().await.is_empty());
+    let catalog: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(app.data_dir.join("workspace-catalog.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(catalog["initialWorkspaceCopied"], false);
+    assert!(catalog.get("initialWorkspaceId").is_none());
+
+    let recreated = manager
+        .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+        .await
+        .unwrap()
+        .expect("GM 重置后必须允许再次创建默认 Workspace");
+    assert_eq!(recreated.display_name, INITIAL_WORKSPACE_DISPLAY_NAME_EN);
 }
 
 #[tokio::test]

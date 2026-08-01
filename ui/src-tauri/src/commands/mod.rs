@@ -8,6 +8,7 @@ use lonanote_core::workspace::{
     WorkspaceStorageResolver,
 };
 use std::{path::PathBuf, sync::Arc};
+use sys_locale::get_locale;
 use tauri::{AppHandle, Builder, Manager, Runtime};
 
 const APP_LOCAL_PROVIDER_ID: &str = "app-local";
@@ -61,6 +62,7 @@ pub fn init_commands(app: &AppHandle) -> Result<()> {
     let paths = resolve_default_paths(app)?;
     let data_dir = PathBuf::from(&paths.data_dir);
     lonanote_core::config::app_path::init_paths(paths);
+    lonanote_core::config::system_locale::init_system_locale(get_locale().unwrap_or_default());
     let mut storage_resolver = LocalFsResolver::new()
         .with_managed_provider(
             StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?,
