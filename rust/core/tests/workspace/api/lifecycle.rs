@@ -100,10 +100,10 @@ fn gm_reset_initial_workspace_flow() {
 }
 
 #[test]
-fn gm_get_system_locale_flow() {
+fn system_get_system_locale_flow() {
     let (_app, _guard) = locked_app();
     run(async {
-        let locale: String = invoke_json("gm.system.get_system_locale", json!({})).await;
+        let locale: String = invoke_json("system.get_system_locale", json!({})).await;
         assert_eq!(locale, system_locale());
     });
 }

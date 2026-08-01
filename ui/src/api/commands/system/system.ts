@@ -1,31 +1,23 @@
-// TODO
-// export const system = {
-//   cut: async (): Promise<void> => {
-//     if (window.api) {
-//       await (window.api as any).system.cut();
-//       return;
-//     }
-//     throw new Error('未实现cut');
-//   },
-//   copy: async (): Promise<void> => {
-//     if (window.api) {
-//       await (window.api as any).system.copy();
-//       return;
-//     }
-//     throw new Error('未实现copy');
-//   },
-//   paste: async (): Promise<void> => {
-//     if (window.api) {
-//       await (window.api as any).system.paste();
-//       return;
-//     }
-//     throw new Error('未实现paste');
-//   },
-//   selectAll: async (): Promise<void> => {
-//     if (window.api) {
-//       await (window.api as any).system.selectAll();
-//       return;
-//     }
-//     throw new Error('未实现selectAll');
-//   },
-// };
+import { invoke } from "@/api/invoke";
+
+import { clipboard } from "./clipboard";
+
+async function invokeSystemResult<TResult>(
+	command: `system.${string}`,
+): Promise<TResult> {
+	const result = await invoke<TResult>(command);
+	if (result === undefined) {
+		throw new Error(`Rust system command ${command} 未返回结果`);
+	}
+	return result;
+}
+
+export { clipboard };
+
+export const system = {
+	getSystemLocale: (): Promise<string> => {
+		return invokeSystemResult("system.get_system_locale");
+	},
+
+	clipboard,
+};

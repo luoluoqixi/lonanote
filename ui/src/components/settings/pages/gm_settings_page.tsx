@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NativeList, NativeListButtonItem, NativeListSection } from "rn-ui-kit";
 
+import { system } from "@/api";
 import { gm } from "@/api/commands/gm";
 import { useToast } from "@/hooks/ui";
 
@@ -41,7 +42,7 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
     }
 
     setIsGettingSystemLocale(true);
-    void gm.system
+    void system
       .getSystemLocale()
       .then((locale) => {
         toast.success(`当前系统语言：${locale}`);

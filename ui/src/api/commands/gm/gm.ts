@@ -13,12 +13,6 @@ async function invokeGmResult<TResult>(command: GmCommand): Promise<TResult> {
 }
 
 export const gm = {
-  system: {
-    getSystemLocale: (): Promise<string> => {
-      return invokeGmResult("gm.system.get_system_locale");
-    },
-  },
-
   workspace: {
     resetInitialWorkspace: (): Promise<RemoveWorkspaceResult | null> => {
       return invokeGmResult("gm.workspace.reset_initial_workspace");

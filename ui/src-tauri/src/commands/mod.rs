@@ -2,6 +2,7 @@ mod api;
 mod invoke;
 
 use anyhow::{anyhow, Result};
+use api::system_api::*;
 use invoke::*;
 use lonanote_core::workspace::{
     install_workspace_manager, LocalFsResolver, StorageProviderId, WorkspaceManager,
@@ -55,6 +56,8 @@ pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {
         get_callback_keys,
         get_callback_len,
         invoke_callback,
+        read_clipboard_text,
+        write_clipboard_text,
     ])
 }
 
