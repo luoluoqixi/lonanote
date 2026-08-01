@@ -19,7 +19,8 @@ index 7de389aa..74e03612 100644
 +    if (__menuRef !== void 0) {
 +      rootProps.__menuRef = __menuRef;
 +    }
-     if (isContextMenu && onOpenWillChange) {
+-    if (isContextMenu && onOpenWillChange) {
++    if (onOpenWillChange) {
        rootProps.onOpenWillChange = handleOpenWillChange;
      }
 diff --git a/dist/esm/createNativeMenu/createNativeMenu.native.js b/dist/esm/createNativeMenu/createNativeMenu.native.js
@@ -43,7 +44,8 @@ index 9c0869e8..444be500 100644
 +    if (__menuRef !== void 0) {
 +      rootProps.__menuRef = __menuRef;
 +    }
-     if (isContextMenu && onOpenWillChange) {
+-    if (isContextMenu && onOpenWillChange) {
++    if (onOpenWillChange) {
        rootProps.onOpenWillChange = handleOpenWillChange;
      }
 diff --git a/dist/jsx/createNativeMenu/createNativeMenu.native.js b/dist/jsx/createNativeMenu/createNativeMenu.native.js
@@ -67,6 +69,7 @@ index 7de389aa..74e03612 100644
 +    if (__menuRef !== void 0) {
 +      rootProps.__menuRef = __menuRef;
 +    }
-     if (isContextMenu && onOpenWillChange) {
+-    if (isContextMenu && onOpenWillChange) {
++    if (onOpenWillChange) {
        rootProps.onOpenWillChange = handleOpenWillChange;
      }

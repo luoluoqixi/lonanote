@@ -12,7 +12,6 @@ import {
   NativeListSection,
   Text,
   isIos26Plus,
-  triggerNativeHaptics,
 } from "rn-ui-kit";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
@@ -71,7 +70,6 @@ function HeaderActionButton({ accessibilityLabel, label, onPress }: HeaderAction
       accessibilityRole="button"
       hitSlop={8}
       onPress={() => {
-        triggerNativeHaptics(true);
         onPress?.();
       }}
       native
@@ -165,6 +163,7 @@ export function WorkspaceSelect() {
             <Menu
               trigger={<HeaderActionButton accessibilityLabel="右侧操作" label="•••" />}
               items={headerMengItems}
+              nativeHaptics
             />
           ),
         }}
