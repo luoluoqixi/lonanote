@@ -3,12 +3,15 @@ mod invoke;
 
 use anyhow::{anyhow, Result};
 use invoke::*;
-use lonanote_core::workspace_storage::{
-    install_workspace_host_services, register_storage_mount, LocalPathStorageFactory,
-    StorageMountId, StorageMountKind, StorageMountRecord, WorkspaceHostServices,
+use lonanote_core::workspace::{
+    install_workspace_manager, LocalFsResolver, StorageProviderId, WorkspaceManager,
+    WorkspaceStorageResolver,
 };
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 use tauri::{AppHandle, Builder, Manager, Runtime};
+
+const DOCUMENTS_PROVIDER_ID: &str = "documents";
+const DESKTOP_FOLDER_PROVIDER_ID: &str = "desktop-folder";
 
 pub fn resolve_default_paths(app: &AppHandle) -> Result<lonanote_core::config::app_path::AppPaths> {
     fn path_to_string(path: std::path::PathBuf, field: &str) -> Result<String> {
@@ -54,18 +57,20 @@ pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {
 
 pub fn init_commands(app: &AppHandle) -> Result<()> {
     let paths = resolve_default_paths(app)?;
+    let data_dir = PathBuf::from(&paths.data_dir);
     lonanote_core::config::app_path::init_paths(paths);
-    let documents_dir = app.path().document_dir()?;
-    install_workspace_host_services(WorkspaceHostServices::new(Arc::new(
-        LocalPathStorageFactory::new().with_desktop_documents(documents_dir),
-    )))
-    .map_err(|error| anyhow!(error.to_string()))?;
+    let managed_root = app.path().document_dir()?.join("LonaNote");
+    let storage_resolver = Arc::new(
+        LocalFsResolver::new()
+            .with_managed_provider(
+                StorageProviderId::parse(DOCUMENTS_PROVIDER_ID)?,
+                managed_root,
+            )
+            .with_external_provider(StorageProviderId::parse(DESKTOP_FOLDER_PROVIDER_ID)?),
+    ) as Arc<dyn WorkspaceStorageResolver>;
+    let workspace_manager =
+        tauri::async_runtime::block_on(WorkspaceManager::load(data_dir, storage_resolver))?;
+    install_workspace_manager(workspace_manager).map_err(|error| anyhow!(error.to_string()))?;
     lonanote_core::init()?;
-    tauri::async_runtime::block_on(register_storage_mount(StorageMountRecord {
-        id: StorageMountId::parse("desktop-documents")?,
-        display_name: String::from("Documents"),
-        kind: StorageMountKind::DesktopDocuments,
-        created_time: 0,
-    }))?;
     Ok(())
 }
