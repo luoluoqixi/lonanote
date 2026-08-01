@@ -1,20 +1,10 @@
 import { Paths } from "expo-file-system";
 import { LonanoteRustModule } from "lonanote_rust_module";
-import { I18nManager, NativeModules } from "react-native";
 
+import { systemLocale } from "./runtime";
 import type { InvokeCommand } from "./types";
 
 type CallbackFunction = (args: string | null | undefined) => Promise<string | null | undefined>;
-
-interface AppleSettings {
-  AppleLanguages?: unknown;
-  AppleLocale?: unknown;
-}
-
-interface AppleSettingsManager {
-  settings?: AppleSettings;
-  getConstants?: () => { settings?: AppleSettings };
-}
 
 interface NativeRuntimeState {
   initialized?: boolean;
@@ -36,42 +26,6 @@ function normalizeFilePath(uri: string): string {
 
   const path = decodeURIComponent(uri.slice("file://".length));
   return path || "/";
-}
-
-function systemLocale(): string {
-  const appleLocale = getApplePreferredLocale();
-  if (appleLocale) {
-    return appleLocale;
-  }
-
-  const nativeLocale = I18nManager.getConstants().localeIdentifier?.trim();
-  if (nativeLocale) {
-    return nativeLocale;
-  }
-
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().locale || "en";
-  } catch {
-    return "en";
-  }
-}
-
-function getApplePreferredLocale(): string | undefined {
-  try {
-    const settingsManager = NativeModules.SettingsManager as AppleSettingsManager | undefined;
-    const settings = settingsManager?.settings ?? settingsManager?.getConstants?.().settings;
-    const preferredLanguage = Array.isArray(settings?.AppleLanguages)
-      ? settings.AppleLanguages.find(
-          (language): language is string => typeof language === "string" && language.trim() !== "",
-        )
-      : undefined;
-    if (preferredLanguage) {
-      return preferredLanguage.trim();
-    }
-    return typeof settings?.AppleLocale === "string" ? settings.AppleLocale.trim() : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function listenRustLogs(): void {

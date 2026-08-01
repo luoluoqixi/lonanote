@@ -1,9 +1,11 @@
 import * as Device from "expo-device";
-import { Platform } from "react-native";
+import { I18nManager, NativeModules, Platform } from "react-native";
 
 import type { OSType } from "./types";
 
 const UNKNOWN: OSType = "unknown";
+
+let SYSTEM_LOCALE: string | undefined;
 
 export function isTauri() {
   return false;
@@ -126,4 +128,61 @@ export function isIos26Plus(): boolean {
 export function isIos16Plus(): boolean {
   const major = iosMajorVersion();
   return major != null && major >= 16;
+}
+
+/**
+ * 同步返回当前系统语言。
+ *
+ */
+export function systemLocale(): string {
+  if (!SYSTEM_LOCALE) {
+    SYSTEM_LOCALE = getSystemLocale();
+  }
+  return SYSTEM_LOCALE;
+}
+
+function getSystemLocale(): string {
+  const appleLocale = getApplePreferredLocale();
+  if (appleLocale) {
+    return appleLocale;
+  }
+
+  const nativeLocale = I18nManager.getConstants().localeIdentifier?.trim();
+  if (nativeLocale) {
+    return nativeLocale;
+  }
+
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().locale || "en";
+  } catch {
+    return "en";
+  }
+}
+
+function getApplePreferredLocale(): string | undefined {
+  try {
+    const settingsManager = NativeModules.SettingsManager as AppleSettingsManager | undefined;
+    const settings = settingsManager?.settings ?? settingsManager?.getConstants?.().settings;
+    const preferredLanguage = Array.isArray(settings?.AppleLanguages)
+      ? settings.AppleLanguages.find(
+          (language): language is string => typeof language === "string" && language.trim() !== "",
+        )
+      : undefined;
+    if (preferredLanguage) {
+      return preferredLanguage.trim();
+    }
+    return typeof settings?.AppleLocale === "string" ? settings.AppleLocale.trim() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+interface AppleSettings {
+  AppleLanguages?: unknown;
+  AppleLocale?: unknown;
+}
+
+interface AppleSettingsManager {
+  settings?: AppleSettings;
+  getConstants?: () => { settings?: AppleSettings };
 }

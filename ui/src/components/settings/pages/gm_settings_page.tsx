@@ -3,6 +3,7 @@ import { NativeList, NativeListButtonItem, NativeListSection } from "rn-ui-kit";
 
 import { system } from "@/api";
 import { gm } from "@/api/commands/gm";
+import { systemLocale } from "@/api/common/platform";
 import { useToast } from "@/hooks/ui";
 
 import type { SettingsPageProps } from "../settings_config";
@@ -56,6 +57,16 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
       });
   };
 
+  const getSystemLocaleSync = () => {
+    try {
+      const locale = systemLocale();
+      toast.success(`当前系统语言：${locale}`);
+    } catch (error) {
+      console.error("[gm] get system locale sync failed", error);
+      toast.error(error instanceof Error ? error.message : "获取当前系统语言失败");
+    }
+  };
+
   return (
     <NativeList
       automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
@@ -69,6 +80,7 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
           onPress={getSystemLocale}
           title={isGettingSystemLocale ? "正在获取系统语言…" : "获取当前系统语言"}
         />
+        <NativeListButtonItem onPress={getSystemLocaleSync} title={"同步获取当前系统语言"} />
       </NativeListSection>
 
       <NativeListSection title="Workspace">
