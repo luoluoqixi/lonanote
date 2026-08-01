@@ -20,7 +20,12 @@ fn id_json_contract() {
 
 #[test]
 fn provider_id_validation() {
-    for valid in ["documents", "desktop-folder", "app-local", "memory"] {
+    for valid in [
+        "desktop-documents",
+        "app-local",
+        "desktop-folder",
+        "ios-icloud",
+    ] {
         assert_eq!(StorageProviderId::parse(valid).unwrap().as_str(), valid);
     }
     for invalid in ["", " Documents", "iCloud", "a/b", "a\nb"] {

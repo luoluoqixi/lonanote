@@ -127,7 +127,7 @@ RootLayout
   → LonanoteRustModule.init(sandboxPath)
   → Rust 校验 sandboxPath 是绝对、存在且位于原生模块 data path 内
   → 初始化 AppPaths 与 cmdreg
-  → LocalFsResolver(providerId = "documents", root = <sandbox>/lonanote)
+  → LocalFsResolver(providerId = "app-local", root = <sandbox>/lonanote)
   → WorkspaceManager::load(<sandbox>)
   → install_workspace_manager
 ```
@@ -136,7 +136,13 @@ RootLayout
 
 Core 初始化必须保持为有界的本地启动工作：注册 command、初始化 AppPaths、声明当前平台支持的 Storage Provider，并加载本地 Catalog、App Session 与 Manager。SAF/bookmark 授权弹窗、网络同步、用户目录选择和其他交互式或长耗时流程不属于 Core 初始化，必须在启动完成后由 TypeScript 显式发起异步请求。
 
-旧的 `path.init_dir` 命令已经移除。路径初始化是平台启动职责，不能由任意业务 command 在 runtime 中途重写。移动端当前只注册 Managed `documents` Provider，不把任意外部路径暴露为 External Local FS；未来的 SAF/bookmark 必须作为各自的授权 Provider 接入。
+旧的 `path.init_dir` 命令已经移除。路径初始化是平台启动职责，不能由任意业务 command 在 runtime 中途重写。移动端当前只注册 Managed `app-local` Provider，不把任意外部路径暴露为 External Local FS；未来的 SAF/bookmark 必须作为各自的授权 Provider 接入。
+
+平台支持的 Provider ID 同样以 Resolver 的实际注册结果为唯一事实来源。`WorkspaceStorageResolver::provider_ids()` 返回排序且去重后的列表，`WorkspaceManager::storage_provider_ids()` 只负责转发，Core 通过统一 command `workspace.list_storage_provider_ids` 暴露该结果。Craby Native 与 Tauri 继续复用已有的通用 `invoke`，不维护专用桥接接口。当前移动端返回 `app-local`，桌面端返回 `desktop-documents` 与 `desktop-folder`，TypeScript 不维护重复常量。
+
+这个列表表示“当前平台安装了对应 Provider 能力”，不表示某个具体目录已经获得 bookmark/SAF 等访问授权。Provider 的 label、介绍和后续能力描述可以在上层功能实现时扩展，但是否实际支持某个 Provider 仍由 Rust 平台初始化决定。
+
+Provider ID 由 Provider 实现方定义，但它是会进入 Catalog Binding 的稳定协议标识，不是面向用户的显示名称。ID 只能使用小写 ASCII 字母、数字、`-`、`_`、`.`。优先按访问语义命名，例如应用自有且无需授权的目录使用 `app-local`；确实属于特定平台的能力再使用 `desktop-*`、`ios-*`、`android-*` 前缀，例如 `desktop-documents`、`ios-icloud`。一旦投入生产，重命名需要 Catalog 迁移；label 与介绍应作为独立展示元数据演进。
 
 ## 4. 持久化数据设计
 
@@ -340,6 +346,7 @@ WorkspaceStorageBindingRequest
 - BindingRequest：API、Manager 与 Resolver 之间的临时输入，不进入 Catalog。
 - Binding：Resolver 已解析的持久化领域模型，`resourceIdentity` 必填，只存入 Catalog。
 - Resolver：理解 Binding，负责生成资源 identity、校验 Provider schema version，并打开或创建实际存储。
+- Resolver 还声明当前平台实际注册的 Provider ID；Manager 和平台 bridge 只读取该列表，不自行推断或复制。
 - Session：把文件能力与访问授权 lease 绑定到同一生命周期。
 - Storage：只接受 `WorkspaceRelativePath` 的文件能力接口。
 

@@ -128,6 +128,10 @@ struct SingleStorageResolver {
 
 #[async_trait]
 impl WorkspaceStorageResolver for SingleStorageResolver {
+    fn provider_ids(&self) -> Vec<StorageProviderId> {
+        Vec::new()
+    }
+
     async fn resolve_identity(
         &self,
         _binding: &WorkspaceStorageBindingRequest,

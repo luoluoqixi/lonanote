@@ -62,6 +62,7 @@ fn expected_keys() -> BTreeSet<String> {
         "workspace.index.refresh",
         "workspace.is_open",
         "workspace.list",
+        "workspace.list_storage_provider_ids",
         "workspace.open",
         "workspace.relocate",
         "workspace.remove",

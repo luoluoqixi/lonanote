@@ -1,10 +1,26 @@
 use std::sync::Arc;
 
-use crate::support::{external_binding, path, provider, WorkspaceTestApp, MANAGED_PROVIDER};
+use crate::support::{
+    external_binding, path, provider, WorkspaceTestApp, EXTERNAL_PROVIDER, MANAGED_PROVIDER,
+};
 use lonanote_core::workspace::{
     StorageCleanupStatus, WorkspaceError, WorkspaceId, WorkspaceManifest,
 };
 use tokio::sync::Barrier;
+
+#[tokio::test]
+async fn lists_storage_providers() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+
+    let provider_ids = manager
+        .storage_provider_ids()
+        .into_iter()
+        .map(|provider_id| provider_id.to_string())
+        .collect::<Vec<_>>();
+
+    assert_eq!(provider_ids, [MANAGED_PROVIDER, EXTERNAL_PROVIDER]);
+}
 
 #[tokio::test]
 async fn managed_restart_flow() {

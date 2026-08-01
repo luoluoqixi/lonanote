@@ -92,6 +92,10 @@ impl WorkspaceManager {
         }
     }
 
+    pub fn storage_provider_ids(&self) -> Vec<StorageProviderId> {
+        self.storage_resolver.provider_ids()
+    }
+
     pub async fn list_workspaces(&self) -> Vec<WorkspaceListItem> {
         let _lifecycle = self.lifecycle_lock.read().await;
         let records = self.catalog.list().await;

@@ -10,7 +10,7 @@ use lonanote_core::workspace::{
 use std::{path::PathBuf, sync::Arc};
 use tauri::{AppHandle, Builder, Manager, Runtime};
 
-const DOCUMENTS_PROVIDER_ID: &str = "documents";
+const DESKTOP_DOCUMENTS_PROVIDER_ID: &str = "desktop-documents";
 const DESKTOP_FOLDER_PROVIDER_ID: &str = "desktop-folder";
 const MANAGED_WORKSPACE_DIRECTORY: &str = "lonanote";
 
@@ -64,7 +64,7 @@ pub fn init_commands(app: &AppHandle) -> Result<()> {
     let storage_resolver = Arc::new(
         LocalFsResolver::new()
             .with_managed_provider(
-                StorageProviderId::parse(DOCUMENTS_PROVIDER_ID)?,
+                StorageProviderId::parse(DESKTOP_DOCUMENTS_PROVIDER_ID)?,
                 managed_root,
             )
             .with_external_provider(StorageProviderId::parse(DESKTOP_FOLDER_PROVIDER_ID)?),

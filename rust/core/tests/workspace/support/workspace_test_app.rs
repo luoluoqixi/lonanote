@@ -9,7 +9,7 @@ use lonanote_core::workspace::{
 };
 use tempfile::TempDir;
 
-pub const MANAGED_PROVIDER: &str = "documents";
+pub const MANAGED_PROVIDER: &str = "desktop-documents";
 pub const EXTERNAL_PROVIDER: &str = "desktop-folder";
 
 pub struct WorkspaceTestApp {

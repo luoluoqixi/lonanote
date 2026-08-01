@@ -240,6 +240,12 @@ impl fmt::Debug for WorkspaceStorageSession {
 
 #[async_trait]
 pub trait WorkspaceStorageResolver: Send + Sync {
+    /// 返回当前平台已经注册的 Provider ID。
+    ///
+    /// 列表只描述 Provider 能力是否存在，不代表某个具体资源已经获得授权。
+    /// 实现应返回按 ID 排序且不重复的结果。
+    fn provider_ids(&self) -> Vec<StorageProviderId>;
+
     /// 解析底层资源的稳定身份。返回值用于资源比较，不用于重新打开资源。
     async fn resolve_identity(
         &self,

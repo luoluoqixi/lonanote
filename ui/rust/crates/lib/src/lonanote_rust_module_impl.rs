@@ -23,7 +23,7 @@ use crate::generated::*;
 
 type CallbackSender = oneshot::Sender<Result<Option<String>, String>>;
 
-const DOCUMENTS_PROVIDER_ID: &str = "documents";
+const APP_LOCAL_PROVIDER_ID: &str = "app-local";
 const MANAGED_WORKSPACE_DIRECTORY: &str = "lonanote";
 
 struct InitResult {
@@ -76,7 +76,7 @@ fn initialize_native_runtime_once(sandbox_path: &Path) -> Result<()> {
 
     let managed_root = sandbox_path.join(MANAGED_WORKSPACE_DIRECTORY);
     let resolver = Arc::new(LocalFsResolver::new().with_managed_provider(
-        StorageProviderId::parse(DOCUMENTS_PROVIDER_ID)?,
+        StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?,
         managed_root,
     )) as Arc<dyn WorkspaceStorageResolver>;
     let manager = runtime()?.block_on(WorkspaceManager::load(sandbox_path, resolver))?;
