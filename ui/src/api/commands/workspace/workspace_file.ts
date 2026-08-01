@@ -1,103 +1,94 @@
-import { invoke } from "@/api/invoke";
+import { invokeWorkspaceResult, invokeWorkspaceUnit } from "./invoke_workspace";
+import type {
+  ByteArrayJson,
+  StorageCapabilities,
+  StorageEntry,
+  StorageEntryMetadata,
+  WorkspaceId,
+  WorkspaceRelativePath,
+  WriteWorkspaceFileOptions,
+} from "./types";
 
-import type { StorageCapabilities, StorageEntry, StorageEntryMetadata } from "./types";
-
-const invokeWorkspaceFile = <T = unknown>(
-  command: string,
-  args: object,
-): Promise<T | undefined> => {
-  return invoke<T>(`workspace.file.${command}`, args);
-};
+function writeOptions(options?: WriteWorkspaceFileOptions) {
+  return {
+    overwrite: options?.overwrite ?? true,
+    createParent: options?.createParent ?? true,
+  };
+}
 
 export const workspaceFile = {
-  capabilities: async (workspaceId: string): Promise<StorageCapabilities> => {
-    return (await invokeWorkspaceFile("capabilities", {
-      workspaceId,
-    }))!;
+  capabilities: (workspaceId: WorkspaceId): Promise<StorageCapabilities> => {
+    return invokeWorkspaceResult("workspace.file.capabilities", { workspaceId });
   },
-  exists: async (workspaceId: string, path: string): Promise<boolean> => {
-    return (await invokeWorkspaceFile("exists", {
-      workspaceId,
-      path,
-    }))!;
+
+  exists: (workspaceId: WorkspaceId, path: WorkspaceRelativePath): Promise<boolean> => {
+    return invokeWorkspaceResult("workspace.file.exists", { workspaceId, path });
   },
-  metadata: async (workspaceId: string, path: string): Promise<StorageEntryMetadata> => {
-    return (await invokeWorkspaceFile("metadata", {
-      workspaceId,
-      path,
-    }))!;
+
+  metadata: (
+    workspaceId: WorkspaceId,
+    path: WorkspaceRelativePath,
+  ): Promise<StorageEntryMetadata> => {
+    return invokeWorkspaceResult("workspace.file.metadata", { workspaceId, path });
   },
-  listDirectory: async (workspaceId: string, path = ""): Promise<StorageEntry[]> => {
-    return (await invokeWorkspaceFile("list_directory", {
-      workspaceId,
-      path,
-    }))!;
+
+  list: (workspaceId: WorkspaceId, path: WorkspaceRelativePath = ""): Promise<StorageEntry[]> => {
+    return invokeWorkspaceResult("workspace.file.list", { workspaceId, path });
   },
-  readBytes: async (workspaceId: string, path: string): Promise<number[]> => {
-    return (await invokeWorkspaceFile("read_bytes", {
-      workspaceId,
-      path,
-    }))!;
+
+  readText: (workspaceId: WorkspaceId, path: WorkspaceRelativePath): Promise<string> => {
+    return invokeWorkspaceResult("workspace.file.read_text", { workspaceId, path });
   },
-  readText: async (workspaceId: string, path: string): Promise<string> => {
-    return (await invokeWorkspaceFile("read_text", {
-      workspaceId,
-      path,
-    }))!;
+
+  readBytes: (workspaceId: WorkspaceId, path: WorkspaceRelativePath): Promise<ByteArrayJson> => {
+    return invokeWorkspaceResult("workspace.file.read_bytes", { workspaceId, path });
   },
-  writeBytes: async (
-    workspaceId: string,
-    path: string,
-    data: number[],
-    options?: { overwrite?: boolean; createParent?: boolean },
-  ): Promise<void> => {
-    await invokeWorkspaceFile("write_bytes", {
-      workspaceId,
-      path,
-      data,
-      overwrite: options?.overwrite ?? true,
-      createParent: options?.createParent ?? true,
-    });
-  },
-  writeText: async (
-    workspaceId: string,
-    path: string,
+
+  writeText: (
+    workspaceId: WorkspaceId,
+    path: WorkspaceRelativePath,
     text: string,
-    options?: { overwrite?: boolean; createParent?: boolean },
+    options?: WriteWorkspaceFileOptions,
   ): Promise<void> => {
-    await invokeWorkspaceFile("write_text", {
+    return invokeWorkspaceUnit("workspace.file.write_text", {
       workspaceId,
       path,
       text,
-      overwrite: options?.overwrite ?? true,
-      createParent: options?.createParent ?? true,
+      ...writeOptions(options),
     });
   },
-  createDirectory: async (workspaceId: string, path: string): Promise<void> => {
-    await invokeWorkspaceFile("create_directory", {
+
+  writeBytes: (
+    workspaceId: WorkspaceId,
+    path: WorkspaceRelativePath,
+    data: ByteArrayJson,
+    options?: WriteWorkspaceFileOptions,
+  ): Promise<void> => {
+    return invokeWorkspaceUnit("workspace.file.write_bytes", {
       workspaceId,
       path,
+      data,
+      ...writeOptions(options),
     });
   },
-  rename: async (workspaceId: string, fromPath: string, toPath: string): Promise<void> => {
-    await invokeWorkspaceFile("rename", {
-      workspaceId,
-      fromPath,
-      toPath,
-    });
+
+  createDirectory: (workspaceId: WorkspaceId, path: WorkspaceRelativePath): Promise<void> => {
+    return invokeWorkspaceUnit("workspace.file.create_directory", { workspaceId, path });
   },
-  move: async (workspaceId: string, fromPath: string, toPath: string): Promise<void> => {
-    await invokeWorkspaceFile("move", {
-      workspaceId,
-      fromPath,
-      toPath,
-    });
+
+  rename: (
+    workspaceId: WorkspaceId,
+    fromPath: WorkspaceRelativePath,
+    toPath: WorkspaceRelativePath,
+  ): Promise<void> => {
+    return invokeWorkspaceUnit("workspace.file.rename", { workspaceId, fromPath, toPath });
   },
-  remove: async (workspaceId: string, path: string, recursive = false): Promise<void> => {
-    await invokeWorkspaceFile("remove", {
-      workspaceId,
-      path,
-      recursive,
-    });
+
+  remove: (
+    workspaceId: WorkspaceId,
+    path: WorkspaceRelativePath,
+    recursive = false,
+  ): Promise<void> => {
+    return invokeWorkspaceUnit("workspace.file.remove", { workspaceId, path, recursive });
   },
 };

@@ -17,9 +17,10 @@
 - 用于 contract test 的内存 Storage；
 - Workspace 创建、挂载、打开、关闭、移除与迁移；
 - Workspace 文件操作、Settings、LocalSetting 和 File Tree Index；
-- 面向上层调用的 cmdreg command API。
+- 面向上层调用的 cmdreg command API；
+- 与当前 cmdreg 契约对齐的 TypeScript `workspace`、`workspaceFile`、`workspaceIndex` wrapper。
 
-Android SAF、iOS bookmark/iCloud 和用户自选目录 Provider 不在当前范围内。TypeScript 的 Workspace command wrapper 仍待 Rust API 稳定后单独对齐；当前只接入了移动端 Rust runtime 初始化。
+Android SAF、iOS bookmark/iCloud 和用户自选目录 Provider 不在当前范围内。TypeScript Workspace API 已接入现有 Rust 能力；未来平台 Provider 的授权与资源选择接口仍需单独实现。
 
 旧 v1 的 `workspaces.json` 与 `.lonanote/workspace.json` 不会被读取、迁移或改写。当前格式要求新的 `manifest.json` 与 `settings.json`。
 
@@ -531,17 +532,30 @@ Catalog Binding 是最终提交点。当前 relocate 成功后保留源目录，
 
 当前 Workspace 相关 command 分为：
 
-- 生命周期：`list`、`get`、`is_open`、`create_managed`、`create_external`、`attach`、`open`、`close`、`remove`、`relocate`；
+- 生命周期：`list`、`list_storage_provider_ids`、`get`、`is_open`、`create_managed`、`create_external`、`attach`、`open`、`close`、`remove`、`relocate`；
 - 元数据与设置：`update_display_name`、`get_settings`、`set_settings`；
 - 本机恢复：`get_last_workspace_id`、`get_local_setting`、`set_last_open_file`；
-- Storage 能力和文件操作：`capabilities`、`exists`、`metadata`、`list_directory`、读写、建目录、重命名、删除；
-- Index：`get_tree`、`get_node`、`refresh_index`。
+- Storage 能力和文件操作：`capabilities`、`exists`、`metadata`、`list`、读写、建目录、重命名、删除；
+- Index：`get_tree`、`get_node`、`refresh`。
 
 所有 API 都通过全局安装的 `WorkspaceManager`。未安装 Manager、ID/路径反序列化失败和业务错误会由 cmdreg 统一返回。
 
 StorageBinding 是 command 的输入模型，但不是输出模型：attach/remove/relocate 返回的 Storage 信息统一使用 `WorkspaceStorageView`，External View 不包含 `resourceRef`。
 
 `get_last_workspace_id` 与 `get_local_setting` 是刻意分开的：前者属于应用级 Session，后者属于某个 Workspace 的本机设置。
+
+### 9.1 TypeScript API
+
+TypeScript 入口位于 `ui/src/api/commands/workspace/`：
+
+- `workspace.ts`：生命周期、Provider 列表、Settings 与 LocalSetting；
+- `workspace_file.ts`：Workspace 内文件能力；
+- `workspace_index.ts`：File Tree 查询与刷新；
+- `types.ts`：Rust serde DTO 的 camelCase 类型镜像。
+
+旧 `workspace.registry.*`、`workspace.runtime.*`、`workspace.storage.*` wrapper 已删除，不提供兼容层。Wrapper 只负责参数与返回值类型化，不修改前端 Workspace Session store；当前 Workspace 的选择状态由 hook 或上层流程显式维护。
+
+所有时间字段都是 Unix 秒，字节数据通过 JSON `number[]` 传输。`resourceRef` 是 Provider opaque reference，不能在通用 TS 代码中假设它一定是路径。`get`、Settings、LocalSetting、File 与 Index 操作要求 Workspace 已打开；`remove` 与 `relocate` 要求 Workspace 已关闭。
 
 ## 10. 并发与持久化保证
 
@@ -616,7 +630,7 @@ Manifest、Settings、LocalSetting 通过 Storage contract 原子写入。Instan
 - LocalSetting 放在 Workspace 内，但默认由 Git 忽略。
 - App Session 放在应用数据目录，不随 Workspace 移动或同步。
 - File Tree 仍要求 native root path。
-- 当前只完成 Rust Core，原生平台与 TypeScript 接入留待 API 稳定后进行。
+- Tauri、Android/iOS Local FS 与 TypeScript command wrapper 已接入；SAF、bookmark、iCloud 等授权 Provider 尚未实现。
 
 ## 14. 推荐阅读顺序
 

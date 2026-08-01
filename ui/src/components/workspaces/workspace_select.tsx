@@ -1,5 +1,5 @@
 import { Stack, router } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import {
   Button,
@@ -15,7 +15,7 @@ import {
   triggerNativeHaptics,
 } from "rn-ui-kit";
 
-import { type WorkspaceRecord, workspaceRegistry } from "@/api/commands/workspace";
+import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
 import { os } from "@/api/common";
 
 type HeaderActionButtonProps = {
@@ -80,22 +80,6 @@ function HeaderActionButton({ accessibilityLabel, label, onPress }: HeaderAction
   );
 }
 
-function formatWorkspaceTime(timestamp?: number | null) {
-  if (timestamp == null) {
-    return undefined;
-  }
-
-  const date = new Date(timestamp * 1000);
-  if (Number.isNaN(date.getTime())) {
-    return undefined;
-  }
-
-  return `最近打开于 ${date.toLocaleString("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  })}`;
-}
-
 function WorkspaceSelectStatus({ message }: { message: string }) {
   return (
     <View style={styles.status}>
@@ -118,7 +102,7 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
 }
 
 export function WorkspaceSelect() {
-  const [workspaces, setWorkspaces] = useState<WorkspaceRecord[]>([]);
+  const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const requestIdRef = useRef(0);
@@ -130,7 +114,7 @@ export function WorkspaceSelect() {
     const startedAt = Date.now();
 
     try {
-      const records = await workspaceRegistry.listRecords();
+      const records = await workspace.list();
       await waitForMinimumDuration(startedAt, minimumDurationMs);
 
       if (requestId === requestIdRef.current) {
@@ -164,18 +148,14 @@ export function WorkspaceSelect() {
     };
   }, [refreshWorkspaces]);
 
-  const sortedWorkspaces = useMemo(
-    () => [...workspaces].sort((left, right) => (right.updateTime ?? 0) - (left.updateTime ?? 0)),
-    [workspaces],
-  );
   const statusMessage = isLoading
     ? "正在加载工作区"
-    : hasError && sortedWorkspaces.length === 0
+    : hasError && workspaces.length === 0
       ? "工作区加载失败"
-      : sortedWorkspaces.length === 0
+      : workspaces.length === 0
         ? "暂无工作区"
         : null;
-  const showCreateWorkspaceButton = !isLoading && !hasError && sortedWorkspaces.length === 0;
+  const showCreateWorkspaceButton = !isLoading && !hasError && workspaces.length === 0;
 
   return (
     <>
@@ -202,7 +182,7 @@ export function WorkspaceSelect() {
               <WorkspaceSelectStatus message={statusMessage} />
             </NativeListCustomItem>
           ) : (
-            sortedWorkspaces.map((workspace) => (
+            workspaces.map((workspaceItem) => (
               <NativeListNavigationItem
                 icon={
                   <Text color="$color10" fontSize="$7">
@@ -211,14 +191,12 @@ export function WorkspaceSelect() {
                 }
                 iconSize={24}
                 iconSlotWidth={28}
-                key={workspace.id}
-                nativeScrollId={workspace.id}
+                key={workspaceItem.id}
+                nativeScrollId={workspaceItem.id}
                 onPress={() => {}}
                 paddingVertical={10}
                 sfSymbol="folder.fill"
-                subtitle={formatWorkspaceTime(workspace.updateTime)}
-                subtitleFontSize={12}
-                title={workspace.name}
+                title={workspaceItem.displayName}
                 titleFontSize={16}
               />
             ))

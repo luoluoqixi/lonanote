@@ -1,6 +1,7 @@
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 
-import { type WorkspaceState, workspaceRuntime } from "@/api/commands/workspace";
+import { type WorkspaceSnapshot, workspace, workspaceIndex } from "@/api/commands/workspace";
+import { workspaceSessionStore } from "@/stores/workspace";
 
 import { useCurrentWorkspaceId } from "./use_workspace_session";
 
@@ -10,29 +11,29 @@ function toErrorMessage(error: unknown): string {
 
 export interface UseWorkspaceStateResult {
   workspaceId: string | null;
-  state: WorkspaceState | null;
+  state: WorkspaceSnapshot | null;
   error: string | null;
   isLoading: boolean;
   isRefreshing: boolean;
   isOpening: boolean;
   isClosing: boolean;
-  isReinitializing: boolean;
+  isRefreshingIndex: boolean;
   isBusy: boolean;
   clearError: () => void;
-  refresh: (workspaceId?: string | null) => Promise<WorkspaceState | null>;
-  open: (workspaceId: string) => Promise<WorkspaceState>;
-  close: (workspaceId?: string | null) => Promise<void>;
-  reinit: (workspaceId?: string | null) => Promise<WorkspaceState | null>;
+  refresh: (workspaceId?: string) => Promise<WorkspaceSnapshot | null>;
+  open: (workspaceId: string) => Promise<WorkspaceSnapshot>;
+  close: (workspaceId?: string) => Promise<void>;
+  refreshIndex: (workspaceId?: string) => Promise<WorkspaceSnapshot | null>;
 }
 
 export function useWorkspaceState(workspaceId: string | null): UseWorkspaceStateResult {
-  const [state, setState] = useState<WorkspaceState | null>(null);
+  const [state, setState] = useState<WorkspaceSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(workspaceId));
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [isReinitializing, setIsReinitializing] = useState(false);
+  const [isRefreshingIndex, setIsRefreshingIndex] = useState(false);
   const requestIdRef = useRef(0);
 
   const clearError = useEffectEvent(() => {
@@ -41,7 +42,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     });
   });
 
-  const commitState = useEffectEvent((nextState: WorkspaceState | null) => {
+  const commitState = useEffectEvent((nextState: WorkspaceSnapshot | null) => {
     startTransition(() => {
       setState(nextState);
     });
@@ -53,7 +54,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     });
   });
 
-  const refresh = useEffectEvent(async (nextWorkspaceId?: string | null) => {
+  const refresh = useEffectEvent(async (nextWorkspaceId?: string) => {
     const targetWorkspaceId = nextWorkspaceId ?? workspaceId;
 
     if (!targetWorkspaceId) {
@@ -68,7 +69,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     commitError(null);
 
     try {
-      const nextState = await workspaceRuntime.getState(targetWorkspaceId);
+      const nextState = await workspace.get(targetWorkspaceId);
 
       if (requestId === requestIdRef.current) {
         commitState(nextState);
@@ -93,7 +94,8 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     commitError(null);
 
     try {
-      const nextState = await workspaceRuntime.open(nextWorkspaceId);
+      const nextState = await workspace.open(nextWorkspaceId);
+      workspaceSessionStore.setCurrentWorkspaceId(nextWorkspaceId);
       commitState(nextState);
       return nextState;
     } catch (nextError) {
@@ -104,7 +106,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     }
   });
 
-  const close = useEffectEvent(async (nextWorkspaceId?: string | null) => {
+  const close = useEffectEvent(async (nextWorkspaceId?: string) => {
     const targetWorkspaceId = nextWorkspaceId ?? workspaceId;
 
     if (!targetWorkspaceId) {
@@ -117,9 +119,12 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     commitError(null);
 
     try {
-      await workspaceRuntime.close(targetWorkspaceId);
+      await workspace.close(targetWorkspaceId);
 
-      if (state?.record.id === targetWorkspaceId || workspaceId === targetWorkspaceId) {
+      if (workspaceSessionStore.getCurrentWorkspaceId() === targetWorkspaceId) {
+        workspaceSessionStore.clearCurrentWorkspaceId();
+      }
+      if (state?.id === targetWorkspaceId || workspaceId === targetWorkspaceId) {
         commitState(null);
       }
     } catch (nextError) {
@@ -130,7 +135,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     }
   });
 
-  const reinit = useEffectEvent(async (nextWorkspaceId?: string | null) => {
+  const refreshIndex = useEffectEvent(async (nextWorkspaceId?: string) => {
     const targetWorkspaceId = nextWorkspaceId ?? workspaceId;
 
     if (!targetWorkspaceId) {
@@ -140,12 +145,12 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     }
 
     const requestId = ++requestIdRef.current;
-    setIsReinitializing(true);
+    setIsRefreshingIndex(true);
     commitError(null);
 
     try {
-      await workspaceRuntime.reinit(targetWorkspaceId);
-      const nextState = await workspaceRuntime.getState(targetWorkspaceId);
+      await workspaceIndex.refresh(targetWorkspaceId);
+      const nextState = await workspace.get(targetWorkspaceId);
 
       if (requestId === requestIdRef.current) {
         commitState(nextState);
@@ -160,7 +165,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
       throw nextError;
     } finally {
       if (requestId === requestIdRef.current) {
-        setIsReinitializing(false);
+        setIsRefreshingIndex(false);
       }
     }
   });
@@ -172,7 +177,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
       setIsRefreshing(false);
       setIsOpening(false);
       setIsClosing(false);
-      setIsReinitializing(false);
+      setIsRefreshingIndex(false);
       clearError();
       commitState(null);
       return;
@@ -183,8 +188,8 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     commitError(null);
     commitState(null);
 
-    void workspaceRuntime
-      .getState(workspaceId)
+    void workspace
+      .get(workspaceId)
       .then((nextState) => {
         if (requestId === requestIdRef.current) {
           commitState(nextState);
@@ -210,13 +215,13 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     isRefreshing,
     isOpening,
     isClosing,
-    isReinitializing,
-    isBusy: isLoading || isRefreshing || isOpening || isClosing || isReinitializing,
+    isRefreshingIndex,
+    isBusy: isLoading || isRefreshing || isOpening || isClosing || isRefreshingIndex,
     clearError,
     refresh,
     open,
     close,
-    reinit,
+    refreshIndex,
   };
 }
 

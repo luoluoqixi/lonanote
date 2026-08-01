@@ -1,6 +1,20 @@
 export type WorkspaceId = string;
-export type StorageMountId = string;
+export type StorageProviderId = string;
+export type WorkspaceDirectoryName = string;
 export type WorkspaceRelativePath = string;
+/** Provider 自己解释的资源引用；通用 TS 代码不应把它当作文件路径。 */
+export type StorageResourceRef = string;
+/** Rust Workspace DTO 使用的 Unix 秒时间戳。 */
+export type UnixSeconds = number;
+/** `Vec<u8>` 经过当前 JSON invoke bridge 后的传输形态。 */
+export type ByteArrayJson = number[];
+export type JsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
 export type FileTreeSortType =
   | "name"
@@ -10,196 +24,125 @@ export type FileTreeSortType =
   | "createTime"
   | "createTimeRev";
 
+export interface WorkspaceSyncSettings {
+  providerId: StorageProviderId | null;
+  [option: string]: JsonValue;
+}
+
 export interface WorkspaceSettings {
+  schemaVersion: number;
   fileTreeSortType: FileTreeSortType;
   followGitignore: boolean;
   customIgnore: string;
   uploadImagePath: WorkspaceRelativePath;
   uploadAttachmentPath: WorkspaceRelativePath;
-  histroySnapshootCount: number;
+  historySnapshotCount: number;
+  sync?: WorkspaceSyncSettings;
 }
 
-export interface WorkspaceSaveData {
-  id: WorkspaceId;
-  lastOpenFilePath?: WorkspaceRelativePath | null;
+export interface WorkspaceLocalSetting {
+  schemaVersion: number;
+  lastOpenedAt: UnixSeconds | null;
+  lastOpenFile: WorkspaceRelativePath | null;
 }
 
-export interface WorkspaceLocator {
-  mountId: StorageMountId;
-  relativePath: WorkspaceRelativePath;
-}
-
-export interface WorkspaceRecord {
-  id: WorkspaceId;
-  name: string;
-  locator: WorkspaceLocator;
-  createTime?: number | null;
-  updateTime?: number | null;
-  saveData: WorkspaceSaveData;
-}
-
-export type WorkspaceRecordAvailability =
+export type WorkspaceAvailability =
+  | "unknown"
   | "available"
-  | "workspaceNotFound"
-  | "mountNotFound"
-  | "mountUnavailable"
-  | "manifestNotFound"
-  | "workspaceIdMismatch"
-  | "unsupportedManifestSchema"
-  | "invalid";
-
-export interface WorkspaceRecordStatus {
-  workspaceId: WorkspaceId;
-  availability: WorkspaceRecordAvailability;
-  mountStatus?: StorageMountStatus | null;
-  message?: string | null;
-}
-
-export type StorageMountKind =
-  | {
-      kind: "desktopAbsolute";
-      basePath: string;
-    }
-  | {
-      kind: "desktopDocuments";
-    }
-  | {
-      kind: "iosAppDocuments";
-    }
-  | {
-      kind: "iosICloud";
-      containerId: string;
-    }
-  | {
-      kind: "iosBookmark";
-      bookmarkRef: string;
-    }
-  | {
-      kind: "androidAppInternal";
-    }
-  | {
-      kind: "androidDocumentTree";
-      grantRef: string;
-    };
-
-export interface StorageMountRecord {
-  id: StorageMountId;
-  displayName: string;
-  kind: StorageMountKind;
-  createdTime: number;
-}
-
-export type StorageAvailability =
-  | "available"
-  | "offline"
-  | "notDownloaded"
+  | "notFound"
   | "authorizationRequired"
   | "authorizationRevoked"
-  | "volumeUnavailable"
   | "providerUnavailable"
-  | "notFound"
-  | "unsupported";
+  | "offline"
+  | "notDownloaded"
+  | "volumeUnavailable"
+  | "invalidManifest"
+  | "workspaceIdMismatch";
 
-export interface StorageMountStatus {
-  mountId: StorageMountId;
-  availability: StorageAvailability;
-  capabilities?: StorageCapabilities | null;
-  message?: string | null;
+export type WorkspaceRuntimeStatus = "open" | "closed";
+export type WorkspaceStorageKind = "managed" | "external";
+
+export interface WorkspaceStorageView {
+  kind: WorkspaceStorageKind;
+  providerId: StorageProviderId;
+  directoryName: WorkspaceDirectoryName | null;
 }
 
-export interface ScanStorageMountRequest {
-  mountId: StorageMountId;
-  parentPath: WorkspaceRelativePath;
+export interface WorkspaceSnapshot {
+  id: WorkspaceId;
+  displayName: string;
+  storage: WorkspaceStorageView;
+  settings: WorkspaceSettings;
+  status: WorkspaceRuntimeStatus;
 }
 
-export type WorkspaceScanEntryStatus =
-  | "ready"
-  | "registered"
-  | "duplicateWorkspaceId"
-  | "manifestMissing"
-  | "unsupportedManifestSchema"
-  | "invalid";
-
-export interface WorkspaceScanEntry {
-  locator: WorkspaceLocator;
-  status: WorkspaceScanEntryStatus;
-  workspaceId?: WorkspaceId | null;
-  name?: string | null;
-  createTime?: number | null;
-  registeredLocator?: WorkspaceLocator | null;
-  message?: string | null;
+export interface WorkspaceListItem {
+  id: WorkspaceId;
+  displayName: string;
+  storageKind: WorkspaceStorageKind;
+  availability: WorkspaceAvailability;
 }
 
-export interface ScanStorageMountResult {
-  mountId: StorageMountId;
-  parentPath: WorkspaceRelativePath;
-  entries: WorkspaceScanEntry[];
+export type ManagedWorkspaceStorageBindingRequest = {
+  kind: "managed";
+  providerId: StorageProviderId;
+  providerSchemaVersion: number;
+  directoryName: WorkspaceDirectoryName;
+};
+
+export type ExternalWorkspaceStorageBindingRequest = {
+  kind: "external";
+  providerId: StorageProviderId;
+  providerSchemaVersion: number;
+  resourceRef: StorageResourceRef;
+};
+
+export type WorkspaceStorageBindingRequest =
+  | ManagedWorkspaceStorageBindingRequest
+  | ExternalWorkspaceStorageBindingRequest;
+
+export interface AttachWorkspaceResult {
+  id: WorkspaceId;
+  displayName: string;
+  storage: WorkspaceStorageView;
 }
 
-export interface CreateWorkspaceRequest {
-  name: string;
-  mountId: StorageMountId;
-  parentPath: WorkspaceRelativePath;
-}
-
-export interface AttachWorkspaceRequest {
-  mountId: StorageMountId;
-  workspacePath: WorkspaceRelativePath;
-  initializeIfMissing?: boolean;
-}
-
-export interface MoveWorkspaceRequest {
-  workspaceId: WorkspaceId;
-  destinationMountId: StorageMountId;
-  destinationParentPath: WorkspaceRelativePath;
-  deleteSourceAfterCommit?: boolean;
-}
-
-export type WorkspaceCleanupStatus =
+export type WorkspaceStorageTarget =
   | {
-      status: "notRequested";
+      kind: "managed";
+      providerId: StorageProviderId;
+      preferredDirectoryName: WorkspaceDirectoryName;
     }
   | {
-      status: "removed";
-    }
-  | {
-      status: "failed";
-      message: string;
+      kind: "external";
+      binding: ExternalWorkspaceStorageBindingRequest;
     };
 
-export interface MoveWorkspaceResult {
-  record: WorkspaceRecord;
-  sourceLocator: WorkspaceLocator;
-  sourceCleanup: WorkspaceCleanupStatus;
-}
+export type StorageCleanupStatus =
+  | { status: "retained" }
+  | { status: "removed" }
+  | { status: "failed"; message: string };
 
 export interface RemoveWorkspaceResult {
-  record: WorkspaceRecord;
-  fileCleanup: WorkspaceCleanupStatus;
+  workspaceId: WorkspaceId;
+  storage: WorkspaceStorageView;
+  fileCleanup: StorageCleanupStatus;
 }
 
-export interface WorkspaceRuntimeConfig {
-  fileTreeSortType: FileTreeSortType;
-  followGitignore: boolean;
-  customIgnore: string;
-}
-
-export type WorkspaceRuntimeStatus = "opening" | "opened" | "closing";
-
-export interface WorkspaceState {
-  record: WorkspaceRecord;
-  settings: WorkspaceSettings;
-  runtimeConfig: WorkspaceRuntimeConfig;
-  runtimeStatus: WorkspaceRuntimeStatus;
+export interface RelocateWorkspaceResult {
+  workspaceId: WorkspaceId;
+  sourceStorage: WorkspaceStorageView;
+  targetStorage: WorkspaceStorageView;
+  sourceCleanup: StorageCleanupStatus;
 }
 
 export type StorageEntryKind = "file" | "directory";
 
 export interface StorageEntryMetadata {
   kind: StorageEntryKind;
-  size?: number | null;
-  createdTime?: number | null;
-  modifiedTime?: number | null;
+  size: number | null;
+  createdAt: UnixSeconds | null;
+  modifiedAt: UnixSeconds | null;
 }
 
 export interface StorageEntry {
@@ -213,30 +156,31 @@ export interface StorageCapabilities {
   canCreateDirectory: boolean;
   canDelete: boolean;
   canRename: boolean;
-  canMove: boolean;
   canAtomicReplace: boolean;
   canWatch: boolean;
-  hasCreationTime: boolean;
-  hasModifiedTime: boolean;
   hasNativePath: boolean;
 }
 
+export type FileType = "file" | "directory";
+
 export interface FileNode {
   path: WorkspaceRelativePath;
-  kind: StorageEntryKind;
-  size?: number | null;
-  createdTime?: number | null;
-  modifiedTime?: number | null;
+  fileType: FileType;
+  lastModifiedTime: UnixSeconds | null;
+  createTime: UnixSeconds | null;
+  size: number | null;
   fileCount: number;
-  directoryCount: number;
-  /**
-   * `undefined`/`null` 表示目录尚未展开，空数组表示已展开且为空。
-   */
-  children?: FileNode[] | null;
+  dirCount: number;
+  /** `null` 表示没有返回 children，可能是未递归展开，也可能是空目录。 */
+  children: FileNode[] | null;
 }
 
 export interface FileTree {
-  root: FileNode;
+  root: FileNode | null;
   sortType: FileTreeSortType;
-  recursive: boolean;
+}
+
+export interface WriteWorkspaceFileOptions {
+  overwrite?: boolean;
+  createParent?: boolean;
 }
