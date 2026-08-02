@@ -1,21 +1,18 @@
-import { useIsFocused } from "@react-navigation/native";
 import { Stack, router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import {
   Button,
-  Input,
-  Label,
   Menu,
   MenuItemData,
   NativeList,
   NativeListButtonItem,
   NativeListCustomItem,
+  NativeListInputItem,
   NativeListNavigationItem,
   NativeListSection,
-  NativeSheetScrollContent,
+  NativeListSelectItem,
   NativeSheetStack,
-  Select,
   Text,
   getNativeStackScrollEdgeHeaderOptions,
   useAppBackgroundColors,
@@ -58,7 +55,7 @@ const getDefaultNewNoteName = () => {
 function getStorageProviderLabel(providerId: StorageProviderId): string {
   switch (providerId) {
     case "app-local":
-      return "应用内部存储";
+      return isIos() ? "我的iPhone" : "应用内部存储";
     case "desktop-documents":
       return "文稿";
     default:
@@ -168,7 +165,8 @@ function CreateWorkspaceSheetContent({
   storageProviderIds: StorageProviderId[];
   storageProviderId: StorageProviderId | null;
 }) {
-  const isFocused = useIsFocused();
+  const usesNativeIosScrollEdgeHeader = isIos();
+  const tracksScrollEdgeHeader = true;
   const canSubmit =
     displayName.trim().length > 0 &&
     storageProviderId !== null &&
@@ -176,59 +174,57 @@ function CreateWorkspaceSheetContent({
     !isCreating;
 
   return (
-    <NativeSheetScrollContent
-      bindToNativeSheet={isFocused}
-      contentContainerStyle={styles.createSheetContent}
+    <NativeList
+      automaticallyAdjustsScrollIndicatorInsets={usesNativeIosScrollEdgeHeader ? true : undefined}
+      contentInsetAdjustmentBehavior={usesNativeIosScrollEdgeHeader ? "automatic" : undefined}
+      style={styles.list}
+      tracksNavigationBarScrollEdge={tracksScrollEdgeHeader}
     >
-      <Label
-        htmlFor="workspace-display-name"
-        color="$gray12"
-        style={{ paddingTop: 0, paddingBottom: 0, marginTop: 0, marginBottom: 0 }}
-      >
-        工作区名称
-      </Label>
-      <Input
-        autoFocus
-        id="workspace-display-name"
-        onChangeText={onChange}
-        placeholder="我的笔记"
-        value={displayName}
-      />
-      {isLoadingStorageProviders ? (
-        <Text color="$gray11">正在加载存储位置…</Text>
-      ) : storageProviderError ? (
-        <Text color="$red10">{storageProviderError}</Text>
-      ) : storageProviderIds.length === 0 ? (
-        <Text color="$red10">当前设备没有可用的存储位置</Text>
-      ) : (
-        //     :
-        //     storageProviderIds.length === 1 ? (
-        // <Text color="$gray11">存储位置：{getStorageProviderLabel(storageProviderIds[0])}</Text>
-        //     )
-        <>
-          <Label htmlFor="workspace-storage-provider" color="$gray12">
-            存储位置
-          </Label>
-          <Select
-            aria-label="存储位置"
-            id="workspace-storage-provider"
-            native
-            onValueChange={onStorageProviderChange}
-            options={storageProviderIds.map((providerId) => ({
-              label: getStorageProviderLabel(providerId),
-              value: providerId,
-            }))}
-            value={storageProviderId ?? undefined}
+      <NativeListSection title="基本信息">
+        <NativeListInputItem
+          title="工作区名称"
+          inputProps={{
+            autoFocus: true,
+            onChangeText: onChange,
+            placeholder: "我的笔记",
+            value: displayName,
+            textAlign: "right",
+          }}
+        />
+        {isLoadingStorageProviders ? (
+          <NativeListCustomItem>
+            <Text color="$gray11">正在加载存储位置…</Text>
+          </NativeListCustomItem>
+        ) : storageProviderError ? (
+          <NativeListCustomItem>
+            <Text color="$red10">{storageProviderError}</Text>
+          </NativeListCustomItem>
+        ) : storageProviderIds.length === 0 ? (
+          <NativeListCustomItem>
+            <Text color="$red10">当前设备没有可用的存储位置</Text>
+          </NativeListCustomItem>
+        ) : (
+          <NativeListSelectItem
+            title="存储位置"
+            selectProps={{
+              onValueChange: onStorageProviderChange,
+              options: storageProviderIds.map((providerId) => ({
+                label: getStorageProviderLabel(providerId),
+                value: providerId,
+              })),
+              value: storageProviderId ?? undefined,
+            }}
           />
-        </>
-      )}
-      <Button
-        disabled={!canSubmit}
-        theme="accent"
-        title={isCreating ? "正在创建…" : "确定"}
-        onPress={onSubmit}
-      />
-    </NativeSheetScrollContent>
+        )}
+      </NativeListSection>
+      <NativeListSection>
+        <NativeListButtonItem
+          disabled={!canSubmit}
+          onPress={onSubmit}
+          title={isCreating ? "正在创建…" : "创建工作区"}
+        />
+      </NativeListSection>
+    </NativeList>
   );
 }
 
@@ -488,10 +484,6 @@ export function WorkspaceSelect() {
 }
 
 const styles = StyleSheet.create({
-  createSheetContent: {
-    gap: 12,
-    padding: 20,
-  },
   headerAction: {
     alignItems: "center",
     borderRadius: 18,
