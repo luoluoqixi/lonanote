@@ -59,7 +59,9 @@ async fn managed_restart_flow() {
 
     let restarted = app.start().await;
     assert!(!restarted.is_workspace_open(&id).await);
-    assert_eq!(restarted.list_workspaces().await[0].id, id);
+    let listed = restarted.list_workspaces().await;
+    assert_eq!(listed[0].id, id);
+    assert!(listed[0].last_opened_at.is_some());
     restarted.open_workspace(&id).await.unwrap();
     assert_eq!(
         restarted

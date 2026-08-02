@@ -75,6 +75,8 @@ pub struct WorkspaceSnapshot {
 pub struct WorkspaceListItem {
     pub id: WorkspaceId,
     pub display_name: String,
+    pub created_at: Option<u64>,
+    pub last_opened_at: Option<u64>,
     pub storage_kind: WorkspaceStorageKindView,
     pub availability: WorkspaceAvailability,
 }

@@ -14,7 +14,7 @@ import {
 } from "rn-ui-kit";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
-import { isIos, os } from "@/api/common";
+import { formatUnixSecondsDateTime, isIos, os } from "@/api/common";
 
 type HeaderActionButtonProps = {
   accessibilityLabel: string;
@@ -193,9 +193,9 @@ export function WorkspaceSelect() {
                 key={workspaceItem.id}
                 nativeScrollId={workspaceItem.id}
                 onPress={() => {}}
-                paddingVertical={10}
                 sfSymbol="folder.fill"
                 title={workspaceItem.displayName}
+                subtitle={formatUnixSecondsDateTime(workspaceItem.createdAt) ?? "创建时间未知"}
                 titleFontSize={16}
               />
             ))

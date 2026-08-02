@@ -108,6 +108,8 @@ impl WorkspaceManager {
             items.push(WorkspaceListItem {
                 id: record.id,
                 display_name: record.cached_summary.display_name,
+                created_at: record.cached_summary.created_at,
+                last_opened_at: record.cached_summary.last_opened_at,
                 storage_kind: if record.storage_binding.is_managed() {
                     WorkspaceStorageKindView::Managed
                 } else {
@@ -443,8 +445,12 @@ impl WorkspaceManager {
         let _lifecycle = self.lifecycle_lock.write().await;
         let workspace = self.get_open_instance(id).await?;
         let manifest = workspace.update_display_name(display_name).await?;
+        let previous_summary = self.catalog.get(id).await?.cached_summary;
         self.catalog
-            .update_summary(id, summary_from_manifest(&manifest, now_timestamp()))
+            .update_summary(
+                id,
+                summary_from_manifest(&manifest, now_timestamp(), previous_summary.last_opened_at),
+            )
             .await?;
         Ok(workspace.snapshot().await)
     }
@@ -685,15 +691,15 @@ impl WorkspaceManager {
         );
         self.runtime.insert(*id, Arc::clone(&workspace)).await?;
         let now = now_timestamp();
-        if let Err(error) = self
-            .catalog
-            .update_summary(id, summary_from_manifest(&manifest, now))
-            .await
-        {
+        if let Err(error) = workspace.mark_opened(now).await {
             self.runtime.remove(id).await;
             return Err(error);
         }
-        if let Err(error) = workspace.mark_opened(now).await {
+        if let Err(error) = self
+            .catalog
+            .update_summary(id, summary_from_manifest(&manifest, now, Some(now)))
+            .await
+        {
             self.runtime.remove(id).await;
             return Err(error);
         }
@@ -784,17 +790,19 @@ fn record_from_manifest(
     WorkspaceRecord {
         id: manifest.id,
         storage_binding,
-        cached_summary: summary_from_manifest(manifest, validated_at),
+        cached_summary: summary_from_manifest(manifest, validated_at, None),
     }
 }
 
 fn summary_from_manifest(
     manifest: &WorkspaceManifest,
     validated_at: u64,
+    last_opened_at: Option<u64>,
 ) -> WorkspaceCachedSummary {
     WorkspaceCachedSummary {
         display_name: manifest.display_name.clone(),
         created_at: Some(manifest.created_at),
+        last_opened_at,
         last_validated_at: Some(validated_at),
     }
 }

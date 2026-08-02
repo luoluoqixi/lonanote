@@ -9,6 +9,9 @@ pub const WORKSPACE_CATALOG_SCHEMA_VERSION: u32 = 1;
 pub struct WorkspaceCachedSummary {
     pub display_name: String,
     pub created_at: Option<u64>,
+    /// 最近一次成功打开时间，供未打开的 Workspace 列表展示。
+    #[serde(default)]
+    pub last_opened_at: Option<u64>,
     pub last_validated_at: Option<u64>,
 }
 

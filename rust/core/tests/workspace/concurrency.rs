@@ -193,6 +193,7 @@ async fn close_waits_for_active_operation() {
             cached_summary: WorkspaceCachedSummary {
                 display_name: "Draining".into(),
                 created_at: Some(1),
+                last_opened_at: None,
                 last_validated_at: Some(1),
             },
         })

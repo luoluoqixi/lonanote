@@ -79,6 +79,8 @@ export interface WorkspaceSnapshot {
 export interface WorkspaceListItem {
   id: WorkspaceId;
   displayName: string;
+  createdAt: UnixSeconds | null;
+  lastOpenedAt: UnixSeconds | null;
   storageKind: WorkspaceStorageKind;
   availability: WorkspaceAvailability;
 }

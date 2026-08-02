@@ -101,6 +101,7 @@ pub fn test_record(display_name: &str, root: impl AsRef<Path>) -> WorkspaceRecor
         cached_summary: WorkspaceCachedSummary {
             display_name: display_name.to_string(),
             created_at: Some(1),
+            last_opened_at: None,
             last_validated_at: Some(1),
         },
     }

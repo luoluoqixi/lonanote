@@ -25,7 +25,12 @@ fn managed_flow() {
         assert!(is_open);
 
         let listed: Vec<Value> = invoke_json("workspace.list", json!({})).await;
-        assert!(listed.iter().any(|item| item["id"] == id.to_string()));
+        let listed = listed
+            .iter()
+            .find(|item| item["id"] == id.to_string())
+            .expect("创建的 Workspace 必须出现在列表中");
+        assert!(listed["createdAt"].as_u64().is_some());
+        assert!(listed["lastOpenedAt"].as_u64().is_some());
 
         let renamed: Value = invoke_json(
             "workspace.update_display_name",
