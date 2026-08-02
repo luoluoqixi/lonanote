@@ -11,7 +11,6 @@ import {
   NativeListNavigationItem,
   NativeListSection,
   Text,
-  isIos26Plus,
 } from "rn-ui-kit";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
@@ -106,7 +105,7 @@ export function WorkspaceSelect() {
   const [hasError, setHasError] = useState(false);
   const requestIdRef = useRef(0);
   const usesNativeIosHeader = os() === "ios";
-  const tracksNavigationBarScrollEdge = usesNativeIosHeader && !isIos26Plus();
+  const tracksNavigationBarScrollEdge = usesNativeIosHeader;
 
   const refreshWorkspaces = useCallback(async (minimumDurationMs = 0) => {
     const requestId = ++requestIdRef.current;

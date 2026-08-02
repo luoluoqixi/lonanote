@@ -1,5 +1,4 @@
 import { Redirect, Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { isIos26Plus } from "rn-ui-kit";
 
 import { os } from "@/api/common";
 import { useUiPreferences } from "@/hooks/settings";
@@ -12,7 +11,7 @@ export function MobileSettingsPage() {
   const { page } = useLocalSearchParams<{ page?: string | string[] }>();
   const pageId = Array.isArray(page) ? page[0] : page;
   const pageConfig = getSettingsPage(pageId);
-  const tracksNavigationBarScrollEdge = os() === "ios" && !isIos26Plus();
+  const tracksNavigationBarScrollEdge = os() === "ios";
 
   if (
     !pageConfig ||

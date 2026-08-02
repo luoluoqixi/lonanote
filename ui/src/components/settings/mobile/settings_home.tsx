@@ -1,5 +1,5 @@
 import { type Href, Stack, useRouter } from "expo-router";
-import { NativeList, NativeListNavigationItem, NativeListSection, isIos26Plus } from "rn-ui-kit";
+import { NativeList, NativeListNavigationItem, NativeListSection } from "rn-ui-kit";
 
 import { os } from "@/api/common";
 import { useUiPreferences } from "@/hooks/settings";
@@ -10,7 +10,7 @@ export function MobileSettingsHome() {
   const router = useRouter();
   const { preferences } = useUiPreferences();
   const usesNativeIosHeader = os() === "ios";
-  const tracksNavigationBarScrollEdge = usesNativeIosHeader && !isIos26Plus();
+  const tracksNavigationBarScrollEdge = usesNativeIosHeader;
 
   return (
     <>
