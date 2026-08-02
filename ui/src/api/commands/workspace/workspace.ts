@@ -23,6 +23,10 @@ export const workspace = {
     return invokeWorkspaceResult("workspace.list_storage_provider_ids");
   },
 
+  listManagedStorageProviderIds: (): Promise<StorageProviderId[]> => {
+    return invokeWorkspaceResult("workspace.list_managed_storage_provider_ids");
+  },
+
   get: (workspaceId: WorkspaceId): Promise<WorkspaceSnapshot> => {
     return invokeWorkspaceResult("workspace.get", { workspaceId });
   },

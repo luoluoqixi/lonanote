@@ -10,5 +10,13 @@ fn lists_storage_providers() {
             invoke_json("workspace.list_storage_provider_ids", serde_json::json!({})).await;
 
         assert_eq!(provider_ids, [MANAGED_PROVIDER, EXTERNAL_PROVIDER]);
+
+        let managed_provider_ids: Vec<String> = invoke_json(
+            "workspace.list_managed_storage_provider_ids",
+            serde_json::json!({}),
+        )
+        .await;
+
+        assert_eq!(managed_provider_ids, [MANAGED_PROVIDER]);
     });
 }

@@ -18,6 +18,11 @@ async fn list_storage_provider_ids() -> Vec<StorageProviderId> {
 }
 
 #[command("workspace")]
+async fn list_managed_storage_provider_ids() -> Vec<StorageProviderId> {
+    workspace_manager().managed_storage_provider_ids()
+}
+
+#[command("workspace")]
 async fn get(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceSnapshot> {
     Ok(workspace_manager().get_workspace(&workspace_id).await?)
 }

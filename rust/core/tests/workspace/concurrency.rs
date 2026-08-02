@@ -132,6 +132,10 @@ impl WorkspaceStorageResolver for SingleStorageResolver {
         Vec::new()
     }
 
+    fn managed_provider_ids(&self) -> Vec<StorageProviderId> {
+        Vec::new()
+    }
+
     async fn resolve_identity(
         &self,
         _binding: &WorkspaceStorageBindingRequest,

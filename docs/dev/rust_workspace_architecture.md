@@ -145,7 +145,7 @@ Core 初始化必须保持为有界的本地启动工作：注册 command、初�
 
 旧的 `path.init_dir` 命令已经移除。路径初始化是平台启动职责，不能由任意业务 command 在 runtime 中途重写。移动端当前只注册 Managed `app-local` Provider，不把任意外部路径暴露为 External Local FS；未来的 SAF/bookmark 必须作为各自的授权 Provider 接入。
 
-平台支持的 Provider ID 同样以 Resolver 的实际注册结果为唯一事实来源。`WorkspaceStorageResolver::provider_ids()` 返回排序且去重后的列表，`WorkspaceManager::storage_provider_ids()` 只负责转发，Core 通过统一 command `workspace.list_storage_provider_ids` 暴露该结果。Craby Native 与 Tauri 继续复用已有的通用 `invoke`，不维护专用桥接接口。当前移动端返回 `app-local`；桌面始终返回 `app-local`、`desktop-folder`，在系统能解析 Documents 路径时额外返回 `desktop-documents`。TypeScript 不维护重复常量。
+平台支持的 Provider ID 同样以 Resolver 的实际注册结果为唯一事实来源。`WorkspaceStorageResolver::provider_ids()` 返回排序且去重后的完整列表，`WorkspaceManager::storage_provider_ids()` 只负责转发，Core 通过统一 command `workspace.list_storage_provider_ids` 暴露该结果。创建 Managed Workspace 时，前端应改用 `WorkspaceStorageResolver::managed_provider_ids()` 与 `workspace.list_managed_storage_provider_ids`，以排除必须先由平台层取得具体资源授权的 External Provider。Craby Native 与 Tauri 继续复用已有的通用 `invoke`，不维护专用桥接接口。当前移动端的 Managed 列表为 `app-local`；桌面始终包含 `app-local`，在系统能解析 Documents 路径时额外包含 `desktop-documents`，完整列表另含 `desktop-folder`。TypeScript 不维护重复常量。
 
 这个列表表示“当前平台安装了对应 Provider 能力”，不表示某个具体目录已经获得 bookmark/SAF 等访问授权。Provider 的 label、介绍和后续能力描述可以在上层功能实现时扩展，但是否实际支持某个 Provider 仍由 Rust 平台初始化决定。
 
@@ -547,7 +547,7 @@ Catalog Binding 是最终提交点。当前 relocate 成功后保留源目录，
 
 当前 Workspace 相关 command 分为：
 
-- 生命周期：`list`、`list_storage_provider_ids`、`get`、`is_open`、`create_managed`、`create_external`、`attach`、`open`、`close`、`remove`、`relocate`；
+- 生命周期：`list`、`list_storage_provider_ids`、`list_managed_storage_provider_ids`、`get`、`is_open`、`create_managed`、`create_external`、`attach`、`open`、`close`、`remove`、`relocate`；
 - 元数据与设置：`update_display_name`、`get_settings`、`set_settings`；
 - 本机恢复：`get_last_workspace_id`、`get_local_setting`、`set_last_open_file`；
 - Storage 能力和文件操作：`capabilities`、`exists`、`metadata`、`list`、读写、建目录、重命名、删除；

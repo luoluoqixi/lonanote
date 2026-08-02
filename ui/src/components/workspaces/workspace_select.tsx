@@ -15,13 +15,20 @@ import {
   NativeListSection,
   NativeSheetScrollContent,
   NativeSheetStack,
+  Select,
   Text,
   getNativeStackScrollEdgeHeaderOptions,
   useAppBackgroundColors,
 } from "rn-ui-kit";
 
-import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
+import {
+  type StorageProviderId,
+  type WorkspaceListItem,
+  workspace,
+} from "@/api/commands/workspace";
 import { formatUnixSecondsDateTime, isIos, isSystemLocaleCN, os } from "@/api/common";
+import { useToast } from "@/hooks/ui";
+import { useWorkspaceSession } from "@/hooks/workspace";
 
 type HeaderActionButtonProps = {
   accessibilityLabel: string;
@@ -42,14 +49,26 @@ const pressActions = {
   openSettingsPress: () => {
     router.push("/settings");
   },
-  createWorkspacePress: (wsName: string) => {
-    console.log(wsName);
-  },
 };
 
 const getDefaultNewNoteName = () => {
   return isSystemLocaleCN() ? "我的笔记" : "My Notes";
 };
+
+function getStorageProviderLabel(providerId: StorageProviderId): string {
+  switch (providerId) {
+    case "app-local":
+      return "应用内部存储";
+    case "desktop-documents":
+      return "文稿";
+    default:
+      return providerId;
+  }
+}
+
+function getErrorMessage(error: unknown, fallbackMessage: string): string {
+  return error instanceof Error ? error.message : fallbackMessage;
+}
 
 function HeaderActionButton({ accessibilityLabel, label, onPress }: HeaderActionButtonProps) {
   return (
@@ -71,12 +90,26 @@ function CreateWorkspaceSheet({
   onOpenChange,
   open,
   displayName,
+  isCreating,
+  isLoadingStorageProviders,
+  onStorageProviderChange,
   setDisplayName,
+  storageProviderError,
+  storageProviderIds,
+  storageProviderId,
+  onSubmit,
 }: {
   onOpenChange: (open: boolean) => void;
   open: boolean;
   displayName: string;
+  isCreating: boolean;
+  isLoadingStorageProviders: boolean;
+  onStorageProviderChange: (providerId: string | null) => void;
   setDisplayName: (v: string) => void;
+  storageProviderError: string | null;
+  storageProviderIds: StorageProviderId[];
+  storageProviderId: StorageProviderId | null;
+  onSubmit: () => void;
 }) {
   const appBackgroundColors = useAppBackgroundColors();
   const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
@@ -100,9 +133,13 @@ function CreateWorkspaceSheet({
           <CreateWorkspaceSheetContent
             displayName={displayName}
             onChange={setDisplayName}
-            onSubmit={() => {
-              pressActions.createWorkspacePress(displayName);
-            }}
+            isCreating={isCreating}
+            isLoadingStorageProviders={isLoadingStorageProviders}
+            onStorageProviderChange={onStorageProviderChange}
+            onSubmit={onSubmit}
+            storageProviderError={storageProviderError}
+            storageProviderIds={storageProviderIds}
+            storageProviderId={storageProviderId}
           />
         )}
       </NativeSheetStack.Screen>
@@ -112,21 +149,42 @@ function CreateWorkspaceSheet({
 
 function CreateWorkspaceSheetContent({
   displayName,
+  isCreating,
+  isLoadingStorageProviders,
   onChange,
+  onStorageProviderChange,
   onSubmit,
+  storageProviderError,
+  storageProviderIds,
+  storageProviderId,
 }: {
   displayName: string;
+  isCreating: boolean;
+  isLoadingStorageProviders: boolean;
   onChange: (value: string) => void;
+  onStorageProviderChange: (providerId: string | null) => void;
   onSubmit: () => void;
+  storageProviderError: string | null;
+  storageProviderIds: StorageProviderId[];
+  storageProviderId: StorageProviderId | null;
 }) {
   const isFocused = useIsFocused();
+  const canSubmit =
+    displayName.trim().length > 0 &&
+    storageProviderId !== null &&
+    !isLoadingStorageProviders &&
+    !isCreating;
 
   return (
     <NativeSheetScrollContent
       bindToNativeSheet={isFocused}
       contentContainerStyle={styles.createSheetContent}
     >
-      <Label htmlFor="workspace-display-name" color="$gray12">
+      <Label
+        htmlFor="workspace-display-name"
+        color="$gray12"
+        style={{ paddingTop: 0, paddingBottom: 0, marginTop: 0, marginBottom: 0 }}
+      >
         工作区名称
       </Label>
       <Input
@@ -136,7 +194,40 @@ function CreateWorkspaceSheetContent({
         placeholder="我的笔记"
         value={displayName}
       />
-      <Button theme="accent" title="确定" onPress={onSubmit} />
+      {isLoadingStorageProviders ? (
+        <Text color="$gray11">正在加载存储位置…</Text>
+      ) : storageProviderError ? (
+        <Text color="$red10">{storageProviderError}</Text>
+      ) : storageProviderIds.length === 0 ? (
+        <Text color="$red10">当前设备没有可用的存储位置</Text>
+      ) : (
+        //     :
+        //     storageProviderIds.length === 1 ? (
+        // <Text color="$gray11">存储位置：{getStorageProviderLabel(storageProviderIds[0])}</Text>
+        //     )
+        <>
+          <Label htmlFor="workspace-storage-provider" color="$gray12">
+            存储位置
+          </Label>
+          <Select
+            aria-label="存储位置"
+            id="workspace-storage-provider"
+            native
+            onValueChange={onStorageProviderChange}
+            options={storageProviderIds.map((providerId) => ({
+              label: getStorageProviderLabel(providerId),
+              value: providerId,
+            }))}
+            value={storageProviderId ?? undefined}
+          />
+        </>
+      )}
+      <Button
+        disabled={!canSubmit}
+        theme="accent"
+        title={isCreating ? "正在创建…" : "确定"}
+        onPress={onSubmit}
+      />
     </NativeSheetScrollContent>
   );
 }
@@ -163,12 +254,20 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
 }
 
 export function WorkspaceSelect() {
+  const { toast } = useToast();
+  const { setCurrentWorkspaceId } = useWorkspaceSession();
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isCreateWorkspaceSheetOpen, setIsCreateWorkspaceSheetOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [storageProviderIds, setStorageProviderIds] = useState<StorageProviderId[]>([]);
+  const [storageProviderId, setStorageProviderId] = useState<StorageProviderId | null>(null);
+  const [storageProviderError, setStorageProviderError] = useState<string | null>(null);
+  const [isLoadingStorageProviders, setIsLoadingStorageProviders] = useState(false);
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const requestIdRef = useRef(0);
+  const storageProviderRequestIdRef = useRef(0);
   const usesNativeIosHeader = os() === "ios";
   const tracksNavigationBarScrollEdge = usesNativeIosHeader;
 
@@ -202,10 +301,80 @@ export function WorkspaceSelect() {
     () => refreshWorkspaces(MIN_PULL_TO_REFRESH_DURATION_MS),
     [refreshWorkspaces],
   );
+  const loadManagedStorageProviders = useCallback(async () => {
+    const requestId = ++storageProviderRequestIdRef.current;
+    setIsLoadingStorageProviders(true);
+    setStorageProviderError(null);
+
+    try {
+      const nextStorageProviderIds = await workspace.listManagedStorageProviderIds();
+
+      if (requestId === storageProviderRequestIdRef.current) {
+        setStorageProviderIds(nextStorageProviderIds);
+        setStorageProviderId((currentProviderId) =>
+          currentProviderId && nextStorageProviderIds.includes(currentProviderId)
+            ? currentProviderId
+            : (nextStorageProviderIds[0] ?? null),
+        );
+      }
+    } catch (error) {
+      console.error("[workspace-select] load managed storage providers failed", error);
+
+      if (requestId === storageProviderRequestIdRef.current) {
+        setStorageProviderIds([]);
+        setStorageProviderId(null);
+        setStorageProviderError(getErrorMessage(error, "无法加载存储位置"));
+      }
+    } finally {
+      if (requestId === storageProviderRequestIdRef.current) {
+        setIsLoadingStorageProviders(false);
+      }
+    }
+  }, []);
   const openCreateWorkspaceSheet = useCallback(() => {
     setDisplayName(getDefaultNewNoteName());
+    setStorageProviderIds([]);
+    setStorageProviderId(null);
+    setStorageProviderError(null);
     setIsCreateWorkspaceSheetOpen(true);
-  }, []);
+    void loadManagedStorageProviders();
+  }, [loadManagedStorageProviders]);
+  const createWorkspace = useCallback(async () => {
+    if (isCreatingWorkspace) {
+      return;
+    }
+
+    const nextDisplayName = displayName.trim();
+    if (!nextDisplayName) {
+      toast.error("请输入工作区名称");
+      return;
+    }
+    if (!storageProviderId) {
+      toast.error("请选择存储位置");
+      return;
+    }
+
+    setIsCreatingWorkspace(true);
+    try {
+      const createdWorkspace = await workspace.createManaged(storageProviderId, nextDisplayName);
+      setCurrentWorkspaceId(createdWorkspace.id);
+      setIsCreateWorkspaceSheetOpen(false);
+      void refreshWorkspaces();
+      toast.success(`已创建工作区“${createdWorkspace.displayName}”`);
+    } catch (error) {
+      console.error("[workspace-select] create workspace failed", error);
+      toast.error(getErrorMessage(error, "创建工作区失败"));
+    } finally {
+      setIsCreatingWorkspace(false);
+    }
+  }, [
+    displayName,
+    isCreatingWorkspace,
+    refreshWorkspaces,
+    setCurrentWorkspaceId,
+    storageProviderId,
+    toast,
+  ]);
   const headerMenuItems = useMemo<MenuItemData[]>(
     () => [
       {
@@ -303,7 +472,16 @@ export function WorkspaceSelect() {
         onOpenChange={setIsCreateWorkspaceSheetOpen}
         open={isCreateWorkspaceSheetOpen}
         displayName={displayName}
+        isCreating={isCreatingWorkspace}
+        isLoadingStorageProviders={isLoadingStorageProviders}
+        onStorageProviderChange={setStorageProviderId}
+        onSubmit={() => {
+          void createWorkspace();
+        }}
         setDisplayName={setDisplayName}
+        storageProviderError={storageProviderError}
+        storageProviderIds={storageProviderIds}
+        storageProviderId={storageProviderId}
       />
     </>
   );

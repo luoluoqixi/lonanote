@@ -514,6 +514,13 @@ impl WorkspaceStorageResolver for LocalFsResolver {
         provider_ids
     }
 
+    fn managed_provider_ids(&self) -> Vec<StorageProviderId> {
+        let mut provider_ids = self.managed_roots.keys().cloned().collect::<Vec<_>>();
+        provider_ids.sort();
+        provider_ids.dedup();
+        provider_ids
+    }
+
     async fn resolve_identity(
         &self,
         request: &WorkspaceStorageBindingRequest,

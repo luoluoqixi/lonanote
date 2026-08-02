@@ -246,6 +246,13 @@ pub trait WorkspaceStorageResolver: Send + Sync {
     /// 实现应返回按 ID 排序且不重复的结果。
     fn provider_ids(&self) -> Vec<StorageProviderId>;
 
+    /// 返回当前可创建 Managed Workspace 的 Provider ID。
+    ///
+    /// External Provider 虽然也会出现在 `provider_ids` 中，但创建时必须先由平台层
+    /// 获得具体资源授权，不能作为 `create_managed` 的目标。
+    /// 实现应返回按 ID 排序且不重复的结果。
+    fn managed_provider_ids(&self) -> Vec<StorageProviderId>;
+
     /// 解析底层资源的稳定身份。返回值用于资源比较，不用于重新打开资源。
     async fn resolve_identity(
         &self,
