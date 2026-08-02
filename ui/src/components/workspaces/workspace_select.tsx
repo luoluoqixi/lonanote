@@ -1,8 +1,11 @@
+import { useIsFocused } from "@react-navigation/native";
 import { Stack, router } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import {
   Button,
+  Input,
+  Label,
   Menu,
   MenuItemData,
   NativeList,
@@ -10,11 +13,15 @@ import {
   NativeListCustomItem,
   NativeListNavigationItem,
   NativeListSection,
+  NativeSheetScrollContent,
+  NativeSheetStack,
   Text,
+  getNativeStackScrollEdgeHeaderOptions,
+  useAppBackgroundColors,
 } from "rn-ui-kit";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
-import { formatUnixSecondsDateTime, isIos, os } from "@/api/common";
+import { formatUnixSecondsDateTime, isIos, isSystemLocaleCN, os } from "@/api/common";
 
 type HeaderActionButtonProps = {
   accessibilityLabel: string;
@@ -23,12 +30,10 @@ type HeaderActionButtonProps = {
 };
 
 const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
+const CREATE_WORKSPACE_SNAP_POINTS = [40, 60, 90];
 
 const pressActions = {
   selectWorkspacePress: () => {
-    console.log("todo");
-  },
-  createWorkspacePress: () => {
     console.log("todo");
   },
   sortWorkspacePress: () => {
@@ -37,30 +42,14 @@ const pressActions = {
   openSettingsPress: () => {
     router.push("/settings");
   },
+  createWorkspacePress: (wsName: string) => {
+    console.log(wsName);
+  },
 };
 
-const headerMengItems: MenuItemData[] = [
-  {
-    label: "选择工作区",
-    value: "select-workspace",
-    onPress: pressActions.selectWorkspacePress,
-  },
-  {
-    label: "创建工作区",
-    value: "create-workspace",
-    onPress: pressActions.createWorkspacePress,
-  },
-  {
-    label: "排序方式",
-    value: "sort-workspace",
-    onPress: pressActions.sortWorkspacePress,
-  },
-  {
-    label: "设置",
-    value: "settings",
-    onPress: pressActions.openSettingsPress,
-  },
-];
+const getDefaultNewNoteName = () => {
+  return isSystemLocaleCN() ? "我的笔记" : "My Notes";
+};
 
 function HeaderActionButton({ accessibilityLabel, label, onPress }: HeaderActionButtonProps) {
   return (
@@ -75,6 +64,80 @@ function HeaderActionButton({ accessibilityLabel, label, onPress }: HeaderAction
       chromeless
       title={label}
     />
+  );
+}
+
+function CreateWorkspaceSheet({
+  onOpenChange,
+  open,
+  displayName,
+  setDisplayName,
+}: {
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  displayName: string;
+  setDisplayName: (v: string) => void;
+}) {
+  const appBackgroundColors = useAppBackgroundColors();
+  const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
+    headerBackgroundColor: appBackgroundColors.header,
+    screenBackgroundColor: appBackgroundColors.sheet,
+  });
+  return (
+    <NativeSheetStack
+      initialRouteName="create-workspace"
+      name="create-workspace-sheet"
+      onOpenChange={onOpenChange}
+      open={open}
+      sheetProps={{
+        snapPoints: CREATE_WORKSPACE_SNAP_POINTS,
+        snapPointsMode: "percent",
+      }}
+      screenOptions={nativeHeaderOptions}
+    >
+      <NativeSheetStack.Screen name="create-workspace" options={{ title: "创建工作区" }}>
+        {() => (
+          <CreateWorkspaceSheetContent
+            displayName={displayName}
+            onChange={setDisplayName}
+            onSubmit={() => {
+              pressActions.createWorkspacePress(displayName);
+            }}
+          />
+        )}
+      </NativeSheetStack.Screen>
+    </NativeSheetStack>
+  );
+}
+
+function CreateWorkspaceSheetContent({
+  displayName,
+  onChange,
+  onSubmit,
+}: {
+  displayName: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  const isFocused = useIsFocused();
+
+  return (
+    <NativeSheetScrollContent
+      bindToNativeSheet={isFocused}
+      contentContainerStyle={styles.createSheetContent}
+    >
+      <Label htmlFor="workspace-display-name" color="$gray12">
+        工作区名称
+      </Label>
+      <Input
+        autoFocus
+        id="workspace-display-name"
+        onChangeText={onChange}
+        placeholder="我的笔记"
+        value={displayName}
+      />
+      <Button theme="accent" title="确定" onPress={onSubmit} />
+    </NativeSheetScrollContent>
   );
 }
 
@@ -103,6 +166,8 @@ export function WorkspaceSelect() {
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isCreateWorkspaceSheetOpen, setIsCreateWorkspaceSheetOpen] = useState(false);
+  const [displayName, setDisplayName] = useState("");
   const requestIdRef = useRef(0);
   const usesNativeIosHeader = os() === "ios";
   const tracksNavigationBarScrollEdge = usesNativeIosHeader;
@@ -137,6 +202,35 @@ export function WorkspaceSelect() {
     () => refreshWorkspaces(MIN_PULL_TO_REFRESH_DURATION_MS),
     [refreshWorkspaces],
   );
+  const openCreateWorkspaceSheet = useCallback(() => {
+    setDisplayName(getDefaultNewNoteName());
+    setIsCreateWorkspaceSheetOpen(true);
+  }, []);
+  const headerMenuItems = useMemo<MenuItemData[]>(
+    () => [
+      {
+        label: "选择工作区",
+        value: "select-workspace",
+        onPress: pressActions.selectWorkspacePress,
+      },
+      {
+        label: "创建工作区",
+        value: "create-workspace",
+        onPress: openCreateWorkspaceSheet,
+      },
+      {
+        label: "排序方式",
+        value: "sort-workspace",
+        onPress: pressActions.sortWorkspacePress,
+      },
+      {
+        label: "设置",
+        value: "settings",
+        onPress: pressActions.openSettingsPress,
+      },
+    ],
+    [openCreateWorkspaceSheet],
+  );
 
   useEffect(() => {
     void refreshWorkspaces();
@@ -153,7 +247,7 @@ export function WorkspaceSelect() {
       : workspaces.length === 0
         ? "暂无工作区"
         : null;
-  const showCreateWorkspaceButton = !isLoading && !hasError && workspaces.length === 0;
+  const showCreateWorkspaceButton = !isLoading && !hasError;
 
   return (
     <>
@@ -162,7 +256,7 @@ export function WorkspaceSelect() {
           headerRight: () => (
             <Menu
               trigger={<HeaderActionButton accessibilityLabel="右侧操作" label="•••" />}
-              items={headerMengItems}
+              items={headerMenuItems}
               nativeHaptics
             />
           ),
@@ -201,15 +295,25 @@ export function WorkspaceSelect() {
             ))
           )}
           {showCreateWorkspaceButton ? (
-            <NativeListButtonItem onPress={pressActions.createWorkspacePress} title="新建工作区" />
+            <NativeListButtonItem onPress={openCreateWorkspaceSheet} title="创建工作区" />
           ) : null}
         </NativeListSection>
       </NativeList>
+      <CreateWorkspaceSheet
+        onOpenChange={setIsCreateWorkspaceSheetOpen}
+        open={isCreateWorkspaceSheetOpen}
+        displayName={displayName}
+        setDisplayName={setDisplayName}
+      />
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  createSheetContent: {
+    gap: 12,
+    padding: 20,
+  },
   headerAction: {
     alignItems: "center",
     borderRadius: 18,
