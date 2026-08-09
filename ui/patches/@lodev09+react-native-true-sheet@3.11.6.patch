@@ -2,6 +2,7 @@
 # - iOS：保持 TrueSheet scroll indicator 的底部 inset 不小于 TrueSheet 自己的 bottom inset。
 # - iOS：支持通过 native tag 显式绑定 ScrollView；未绑定时保持原有两层自动查找。
 # - iOS：扩大 custom native grabber 的透明整行拖拽热区，同时保持 pill 的可见大小不变。
+# - iOS：键盘隐藏时在 animateChanges 事务内重算 custom detent，使 Sheet 平滑回弹。
 # - Android：扩大 native grabber 的透明整行拖拽热区，并让该区域强制走 sheet drag。
 # - Android：增加 disableStackingTranslation 开关，可禁用子 sheet 打开时父 sheet 下移的 stacked translation。
 # - Android：Navigation stack 内 scrollable 页面到顶后继续下拉时，允许从 active scrollView 把手势接回 sheet。
@@ -1650,3 +1651,23 @@ index c3a5efb..a1ca216 100644
    /**
     * Dismiss all presented sheets
     * @param animated - Whether to animate the dismissals
+diff --git a/ios/core/TrueSheetKeyboardObserver.mm b/ios/core/TrueSheetKeyboardObserver.mm
+index 6aed44b..6f4c8c5 100644
+--- a/ios/core/TrueSheetKeyboardObserver.mm
++++ b/ios/core/TrueSheetKeyboardObserver.mm
+@@ -81,6 +81,15 @@ - (void)keyboardWillChangeFrame:(NSNotification *)notification {
+   CGRect keyboardFrameInWindow = [window convertRect:keyboardFrame fromWindow:nil];
+   CGFloat keyboardHeight = MAX(0, window.bounds.size.height - keyboardFrameInWindow.origin.y);
+ 
++  if (keyboardHeight <= 0) {
++    if (@available(iOS 16.0, *)) {
++      UISheetPresentationController *sheet = _viewController.sheetPresentationController;
++      [sheet animateChanges:^{
++        [sheet invalidateDetents];
++      }];
++    }
++  }
++
+   _currentHeight = keyboardHeight;
+ 
+   for (id<TrueSheetKeyboardObserverDelegate> delegate in _delegates) {

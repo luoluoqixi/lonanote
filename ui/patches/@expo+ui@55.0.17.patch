@@ -3,7 +3,11 @@
 # - iOS 26: 当没有 label slot 时，改用不带标签的 Slider 初始化方式。
 # - RNHostView: 允许横向和纵向内容分别独立匹配。
 # - SwiftUI List: 补充 viewport clipping、content margins、初始滚动目标、原生 inset 调整，以及 UIKit 顶部 content scroll view 注册。
+# - SwiftUI List: iOS 15 大标题滚动时补齐导航栏布局失效通知，保留 UIKit 原生过渡与回弹动画。
 # - SwiftUI List: 提供通用 indicator frame 校正开关；具体系统版本由调用方决定。
+# - SwiftUI List: 提供 `nativeEditMode` / `nativeEditTint` 原生属性；编辑态由宿主 binding 驱动，避免动态 modifier 更新重建 List、丢失滚动位置。
+# - SwiftUI modifier: iOS 15 可为透明辅助行后的首个内容行恢复顶部圆角。
+# - SwiftUI modifier: iOS 15 隐藏辅助行 separator 时直接隔离 UIKit cell，并在复用、编辑态切换导致系统复位 inset 后持续重新隐藏。
 diff --git a/ios/SliderView.swift b/ios/SliderView.swift
 index 1ffa70e..488c98b 100644
 --- a/ios/SliderView.swift
@@ -599,7 +603,38 @@ index d64100e..6a3440a 100644
  type UnitPointValue =
    | 'zero'
    | 'topLeading'
-@@ -1267,6 +1289,8 @@ export type BuiltInModifier =
+@@ -773,3 +795,29 @@ export const scrollContentBackground = (visible: 'automatic' | 'hidden' | 'visib
+ export const listRowBackground = (color: Color) => createModifier('listRowBackground', { color });
+-
++
++/**
++ * Masks the square top corners of a row on iOS 15 without replacing its native background.
++ * This preserves the system pressed highlight when a transparent helper row precedes it.
++ * Ignored on newer iOS versions.
++ * @platform ios 15
++ */
++export const ios15ListRowTopRoundedBackground = (
++  cornerRadius: number = 10,
++  insets: { horizontal?: number; leading?: number; trailing?: number; top?: number } = {}
++) =>
++  createModifier('ios15ListRowTopRoundedBackground', {
++    cornerRadius,
++    horizontalInset: insets.horizontal ?? 0,
++    leadingInset: insets.leading,
++    trailingInset: insets.trailing,
++    topInset: insets.top ?? 0,
++  });
++
++/**
++ * Hides only the enclosing UITableViewCell separator on iOS 15 and restores
++ * the original inset when the row is removed or reused.
++ * @platform ios 15
++ */
++export const ios15ListRowSeparatorHidden = () =>
++  createModifier('ios15ListRowSeparatorHidden', {});
++
+ /**
+@@ -1267,6 +1307,8 @@ export type BuiltInModifier =
    | ReturnType<typeof containerShape>
    | ReturnType<typeof contentShape>
    | ReturnType<typeof containerRelativeFrame>
@@ -608,6 +643,15 @@ index d64100e..6a3440a 100644
    | ReturnType<typeof scrollContentBackground>
    | ReturnType<typeof scrollDisabled>
    | ReturnType<typeof defaultScrollAnchor>
+@@ -1277,6 +1319,8 @@ export type BuiltInModifier =
+   | ReturnType<typeof deleteDisabled>
+   | ReturnType<typeof environment>
+   | ReturnType<typeof listRowBackground>
++  | ReturnType<typeof ios15ListRowTopRoundedBackground>
++  | ReturnType<typeof ios15ListRowSeparatorHidden>
+   | ReturnType<typeof listRowSeparator>
+   | ReturnType<typeof truncationMode>
+   | ReturnType<typeof allowsTightening>
 diff --git a/build/swift-ui/modifiers/index.d.ts b/build/swift-ui/modifiers/index.d.ts
 index 1e0d2ba..d0d1a5d 100644
 --- a/build/swift-ui/modifiers/index.d.ts
@@ -639,16 +683,41 @@ index 1e0d2ba..d0d1a5d 100644
  type UnitPointValue = 'zero' | 'topLeading' | 'top' | 'topTrailing' | 'leading' | 'center' | 'trailing' | 'bottomLeading' | 'bottom' | 'bottomTrailing';
  /**
   * Sets the default anchor point for a scroll view's content.
-@@ -925,7 +945,7 @@ export declare const resizable: (capInsets?: {
+@@ -611,6 +631,24 @@ export declare const scrollContentBackground: (visible: "automatic" | "visible"
+  * @see Official [SwiftUI documentation](https://developer.apple.com/documentation/swiftui/view/listrowbackground(_:)).
+  */
+ export declare const listRowBackground: (color: Color) => ModifierConfig;
++/**
++ * Masks the square top corners of a row on iOS 15 without replacing its native background.
++ * This preserves the system pressed highlight when a transparent helper row precedes it.
++ * Ignored on newer iOS versions.
++ * @platform ios 15
++ */
++export declare const ios15ListRowTopRoundedBackground: (cornerRadius?: number, insets?: {
++    horizontal?: number;
++    leading?: number;
++    trailing?: number;
++    top?: number;
++}) => ModifierConfig;
++/**
++ * Hides only the enclosing UITableViewCell separator on iOS 15 and restores
++ * the original inset when the row is removed or reused.
++ * @platform ios 15
++ */
++export declare const ios15ListRowSeparatorHidden: () => ModifierConfig;
+ /**
+  * Controls the visibility of the separator for a list row.
+  * @param visibility - The visibility to apply.
+@@ -925,7 +963,7 @@ export declare const resizable: (capInsets?: {
   * This provides type safety for the modifiers array.
   * @hidden
   */
 -export type BuiltInModifier = ReturnType<typeof listSectionSpacing> | ReturnType<typeof background> | ReturnType<typeof cornerRadius> | ReturnType<typeof shadow> | ReturnType<typeof frame> | ReturnType<typeof padding> | ReturnType<typeof fixedSize> | ReturnType<typeof ignoreSafeArea> | ReturnType<typeof onTapGesture> | ReturnType<typeof onLongPressGesture> | ReturnType<typeof onAppear> | ReturnType<typeof luminanceToAlpha> | ReturnType<typeof onDisappear> | ReturnType<typeof opacity> | ReturnType<typeof clipShape> | ReturnType<typeof border> | ReturnType<typeof scaleEffect> | ReturnType<typeof rotationEffect> | ReturnType<typeof rotation3DEffect> | ReturnType<typeof offset> | ReturnType<typeof foregroundColor> | ReturnType<typeof foregroundStyle> | ReturnType<typeof bold> | ReturnType<typeof italic> | ReturnType<typeof monospacedDigit> | ReturnType<typeof tint> | ReturnType<typeof hidden> | ReturnType<typeof disabled> | ReturnType<typeof zIndex> | ReturnType<typeof blur> | ReturnType<typeof brightness> | ReturnType<typeof contrast> | ReturnType<typeof saturation> | ReturnType<typeof hueRotation> | ReturnType<typeof colorInvert> | ReturnType<typeof grayscale> | ReturnType<typeof buttonStyle> | ReturnType<typeof toggleStyle> | ReturnType<typeof controlSize> | ReturnType<typeof labelStyle> | ReturnType<typeof labelsHidden> | ReturnType<typeof textFieldStyle> | ReturnType<typeof menuActionDismissBehavior> | ReturnType<typeof accessibilityLabel> | ReturnType<typeof accessibilityHint> | ReturnType<typeof accessibilityValue> | ReturnType<typeof layoutPriority> | ReturnType<typeof mask> | ReturnType<typeof overlay> | ReturnType<typeof backgroundOverlay> | ReturnType<typeof aspectRatio> | ReturnType<typeof clipped> | ReturnType<typeof glassEffect> | ReturnType<typeof glassEffectId> | ReturnType<typeof animation> | ReturnType<typeof containerShape> | ReturnType<typeof contentShape> | ReturnType<typeof containerRelativeFrame> | ReturnType<typeof scrollContentBackground> | ReturnType<typeof scrollDisabled> | ReturnType<typeof defaultScrollAnchor> | ReturnType<typeof defaultScrollAnchorForRole> | ReturnType<typeof scrollTargetBehavior> | ReturnType<typeof scrollTargetLayout> | ReturnType<typeof moveDisabled> | ReturnType<typeof deleteDisabled> | ReturnType<typeof environment> | ReturnType<typeof listRowBackground> | ReturnType<typeof listRowSeparator> | ReturnType<typeof truncationMode> | ReturnType<typeof allowsTightening> | ReturnType<typeof kerning> | ReturnType<typeof textCase> | ReturnType<typeof underline> | ReturnType<typeof strikethrough> | ReturnType<typeof multilineTextAlignment> | ReturnType<typeof textSelection> | ReturnType<typeof lineSpacing> | ReturnType<typeof lineLimit> | ReturnType<typeof headerProminence> | ReturnType<typeof listRowInsets> | ReturnType<typeof badgeProminence> | ReturnType<typeof badge> | ReturnType<typeof listSectionMargins> | ReturnType<typeof font> | ReturnType<typeof gridCellUnsizedAxes> | ReturnType<typeof gridCellColumns> | ReturnType<typeof gridColumnAlignment> | ReturnType<typeof gridCellAnchor> | ReturnType<typeof submitLabel> | ReturnType<typeof keyboardType> | ReturnType<typeof autocorrectionDisabled> | ReturnType<typeof onSubmit> | ReturnType<typeof textInputAutocapitalization> | ReturnType<typeof textContentType> | ReturnType<typeof datePickerStyle> | ReturnType<typeof progressViewStyle> | ReturnType<typeof gaugeStyle> | ReturnType<typeof listStyle> | ReturnType<typeof contentTransition> | ReturnType<typeof resizable> | ReturnType<typeof widgetAccentedRenderingMode> | ReturnType<typeof widgetURL>;
-+export type BuiltInModifier = ReturnType<typeof listSectionSpacing> | ReturnType<typeof background> | ReturnType<typeof cornerRadius> | ReturnType<typeof shadow> | ReturnType<typeof frame> | ReturnType<typeof padding> | ReturnType<typeof fixedSize> | ReturnType<typeof ignoreSafeArea> | ReturnType<typeof onTapGesture> | ReturnType<typeof onLongPressGesture> | ReturnType<typeof onAppear> | ReturnType<typeof luminanceToAlpha> | ReturnType<typeof onDisappear> | ReturnType<typeof opacity> | ReturnType<typeof clipShape> | ReturnType<typeof border> | ReturnType<typeof scaleEffect> | ReturnType<typeof rotationEffect> | ReturnType<typeof rotation3DEffect> | ReturnType<typeof offset> | ReturnType<typeof foregroundColor> | ReturnType<typeof foregroundStyle> | ReturnType<typeof bold> | ReturnType<typeof italic> | ReturnType<typeof monospacedDigit> | ReturnType<typeof tint> | ReturnType<typeof hidden> | ReturnType<typeof disabled> | ReturnType<typeof zIndex> | ReturnType<typeof blur> | ReturnType<typeof brightness> | ReturnType<typeof contrast> | ReturnType<typeof saturation> | ReturnType<typeof hueRotation> | ReturnType<typeof colorInvert> | ReturnType<typeof grayscale> | ReturnType<typeof buttonStyle> | ReturnType<typeof toggleStyle> | ReturnType<typeof controlSize> | ReturnType<typeof labelStyle> | ReturnType<typeof labelsHidden> | ReturnType<typeof textFieldStyle> | ReturnType<typeof menuActionDismissBehavior> | ReturnType<typeof accessibilityLabel> | ReturnType<typeof accessibilityHint> | ReturnType<typeof accessibilityValue> | ReturnType<typeof layoutPriority> | ReturnType<typeof mask> | ReturnType<typeof overlay> | ReturnType<typeof backgroundOverlay> | ReturnType<typeof aspectRatio> | ReturnType<typeof clipped> | ReturnType<typeof glassEffect> | ReturnType<typeof glassEffectId> | ReturnType<typeof animation> | ReturnType<typeof containerShape> | ReturnType<typeof contentShape> | ReturnType<typeof containerRelativeFrame> | ReturnType<typeof contentMargins> | ReturnType<typeof viewID> | ReturnType<typeof scrollContentBackground> | ReturnType<typeof scrollDisabled> | ReturnType<typeof defaultScrollAnchor> | ReturnType<typeof defaultScrollAnchorForRole> | ReturnType<typeof scrollTargetBehavior> | ReturnType<typeof scrollTargetLayout> | ReturnType<typeof moveDisabled> | ReturnType<typeof deleteDisabled> | ReturnType<typeof environment> | ReturnType<typeof listRowBackground> | ReturnType<typeof listRowSeparator> | ReturnType<typeof truncationMode> | ReturnType<typeof allowsTightening> | ReturnType<typeof kerning> | ReturnType<typeof textCase> | ReturnType<typeof underline> | ReturnType<typeof strikethrough> | ReturnType<typeof multilineTextAlignment> | ReturnType<typeof textSelection> | ReturnType<typeof lineSpacing> | ReturnType<typeof lineLimit> | ReturnType<typeof headerProminence> | ReturnType<typeof listRowInsets> | ReturnType<typeof badgeProminence> | ReturnType<typeof badge> | ReturnType<typeof listSectionMargins> | ReturnType<typeof font> | ReturnType<typeof gridCellUnsizedAxes> | ReturnType<typeof gridCellColumns> | ReturnType<typeof gridColumnAlignment> | ReturnType<typeof gridCellAnchor> | ReturnType<typeof submitLabel> | ReturnType<typeof keyboardType> | ReturnType<typeof autocorrectionDisabled> | ReturnType<typeof onSubmit> | ReturnType<typeof textInputAutocapitalization> | ReturnType<typeof textContentType> | ReturnType<typeof datePickerStyle> | ReturnType<typeof progressViewStyle> | ReturnType<typeof gaugeStyle> | ReturnType<typeof listStyle> | ReturnType<typeof contentTransition> | ReturnType<typeof resizable> | ReturnType<typeof widgetAccentedRenderingMode> | ReturnType<typeof widgetURL>;
++export type BuiltInModifier = ReturnType<typeof listSectionSpacing> | ReturnType<typeof background> | ReturnType<typeof cornerRadius> | ReturnType<typeof shadow> | ReturnType<typeof frame> | ReturnType<typeof padding> | ReturnType<typeof fixedSize> | ReturnType<typeof ignoreSafeArea> | ReturnType<typeof onTapGesture> | ReturnType<typeof onLongPressGesture> | ReturnType<typeof onAppear> | ReturnType<typeof luminanceToAlpha> | ReturnType<typeof onDisappear> | ReturnType<typeof opacity> | ReturnType<typeof clipShape> | ReturnType<typeof border> | ReturnType<typeof scaleEffect> | ReturnType<typeof rotationEffect> | ReturnType<typeof rotation3DEffect> | ReturnType<typeof offset> | ReturnType<typeof foregroundColor> | ReturnType<typeof foregroundStyle> | ReturnType<typeof bold> | ReturnType<typeof italic> | ReturnType<typeof monospacedDigit> | ReturnType<typeof tint> | ReturnType<typeof hidden> | ReturnType<typeof disabled> | ReturnType<typeof zIndex> | ReturnType<typeof blur> | ReturnType<typeof brightness> | ReturnType<typeof contrast> | ReturnType<typeof saturation> | ReturnType<typeof hueRotation> | ReturnType<typeof colorInvert> | ReturnType<typeof grayscale> | ReturnType<typeof buttonStyle> | ReturnType<typeof toggleStyle> | ReturnType<typeof controlSize> | ReturnType<typeof labelStyle> | ReturnType<typeof labelsHidden> | ReturnType<typeof textFieldStyle> | ReturnType<typeof menuActionDismissBehavior> | ReturnType<typeof accessibilityLabel> | ReturnType<typeof accessibilityHint> | ReturnType<typeof accessibilityValue> | ReturnType<typeof layoutPriority> | ReturnType<typeof mask> | ReturnType<typeof overlay> | ReturnType<typeof backgroundOverlay> | ReturnType<typeof aspectRatio> | ReturnType<typeof clipped> | ReturnType<typeof glassEffect> | ReturnType<typeof glassEffectId> | ReturnType<typeof animation> | ReturnType<typeof containerShape> | ReturnType<typeof contentShape> | ReturnType<typeof containerRelativeFrame> | ReturnType<typeof contentMargins> | ReturnType<typeof viewID> | ReturnType<typeof scrollContentBackground> | ReturnType<typeof scrollDisabled> | ReturnType<typeof defaultScrollAnchor> | ReturnType<typeof defaultScrollAnchorForRole> | ReturnType<typeof scrollTargetBehavior> | ReturnType<typeof scrollTargetLayout> | ReturnType<typeof moveDisabled> | ReturnType<typeof deleteDisabled> | ReturnType<typeof environment> | ReturnType<typeof listRowBackground> | ReturnType<typeof ios15ListRowTopRoundedBackground> | ReturnType<typeof ios15ListRowSeparatorHidden> | ReturnType<typeof listRowSeparator> | ReturnType<typeof truncationMode> | ReturnType<typeof allowsTightening> | ReturnType<typeof kerning> | ReturnType<typeof textCase> | ReturnType<typeof underline> | ReturnType<typeof strikethrough> | ReturnType<typeof multilineTextAlignment> | ReturnType<typeof textSelection> | ReturnType<typeof lineSpacing> | ReturnType<typeof lineLimit> | ReturnType<typeof headerProminence> | ReturnType<typeof listRowInsets> | ReturnType<typeof badgeProminence> | ReturnType<typeof badge> | ReturnType<typeof listSectionMargins> | ReturnType<typeof font> | ReturnType<typeof gridCellUnsizedAxes> | ReturnType<typeof gridCellColumns> | ReturnType<typeof gridColumnAlignment> | ReturnType<typeof gridCellAnchor> | ReturnType<typeof submitLabel> | ReturnType<typeof keyboardType> | ReturnType<typeof autocorrectionDisabled> | ReturnType<typeof onSubmit> | ReturnType<typeof textInputAutocapitalization> | ReturnType<typeof textContentType> | ReturnType<typeof datePickerStyle> | ReturnType<typeof progressViewStyle> | ReturnType<typeof gaugeStyle> | ReturnType<typeof listStyle> | ReturnType<typeof contentTransition> | ReturnType<typeof resizable> | ReturnType<typeof widgetAccentedRenderingMode> | ReturnType<typeof widgetURL>;
  /**
   * Main ViewModifier type that supports both built-in and 3rd party modifiers.
   * 3rd party modifiers should return ModifierConfig objects with their own type strings.
-@@ -959,4 +979,4 @@ export * from './presentationModifiers';
+@@ -959,4 +991,4 @@ export * from './presentationModifiers';
  export * from './environment';
  export * from './widgets';
  export type { TimingAnimationParams, SpringAnimationParams, InterpolatingSpringAnimationParams, ChainableAnimationType, } from './animation/types';
@@ -685,28 +754,412 @@ index 552adc5..3a44a62 100644
  internal struct ScaleEffectModifier: ViewModifier, Record {
    @Field var x: CGFloat = 1.0
    @Field var y: CGFloat = 1.0
-@@ -1699,6 +1718,10 @@ extension ViewModifierRegistry {
-       return try ContainerRelativeFrameModifier(from: params, appContext: appContext)
+@@ -786,3 +805,383 @@ internal struct ListRowBackground: ViewModifier, Record {
+ }
+-
++
++#if os(iOS)
++private final class Ios15ListRowBackgroundDecoration {
++  weak var view: UIView?
++  let cornerRadius: CGFloat
++  let maskedCorners: CACornerMask
++  let masksToBounds: Bool
++  let cornerCurve: CALayerCornerCurve
++
++  init(view: UIView) {
++    self.view = view
++    cornerRadius = view.layer.cornerRadius
++    maskedCorners = view.layer.maskedCorners
++    masksToBounds = view.layer.masksToBounds
++    cornerCurve = view.layer.cornerCurve
++  }
++
++  func restore() {
++    guard let view else { return }
++    view.layer.cornerRadius = cornerRadius
++    view.layer.maskedCorners = maskedCorners
++    view.layer.masksToBounds = masksToBounds
++    view.layer.cornerCurve = cornerCurve
++  }
++}
++
++private final class Ios15ListRowTopRoundedBackgroundView: UIView {
++  var cornerRadius: CGFloat = 10 {
++    didSet {
++      scheduleUpdates()
++    }
++  }
++
++  private weak var decoratedCell: UITableViewCell?
++  private var decorations: [Ios15ListRowBackgroundDecoration] = []
++  private var updateScheduled = false
++
++  override init(frame: CGRect) {
++    super.init(frame: frame)
++    isUserInteractionEnabled = false
++    isHidden = true
++  }
++
++  required init?(coder: NSCoder) {
++    fatalError("init(coder:) has not been implemented")
++  }
++
++  override func didMoveToSuperview() {
++    super.didMoveToSuperview()
++    scheduleUpdates()
++  }
++
++  override func didMoveToWindow() {
++    super.didMoveToWindow()
++    if window == nil {
++      restoreDecorations()
++    } else {
++      scheduleUpdates()
++    }
++  }
++
++  override func layoutSubviews() {
++    super.layoutSubviews()
++    scheduleUpdate()
++  }
++
++  func scheduleUpdates() {
++    scheduleUpdate()
++    scheduleUpdate(after: 0.05)
++    scheduleUpdate(after: 0.2)
++  }
++
++  private func scheduleUpdate(after delay: TimeInterval = 0) {
++    if delay == 0 {
++      guard !updateScheduled else { return }
++      updateScheduled = true
++    }
++
++    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
++      guard let self else { return }
++      if delay == 0 {
++        self.updateScheduled = false
++      }
++      self.applyDecorations()
++    }
++  }
++
++  private func applyDecorations() {
++    guard window != nil else { return }
++    let cell = enclosingTableViewCell()
++
++    if decoratedCell !== cell {
++      restoreDecorations()
++      decoratedCell = cell
++    }
++
++    guard let cell else { return }
++    var backgroundViews: [UIView] = []
++
++    for candidate in [
++      cell.backgroundView,
++      cell.selectedBackgroundView,
++      cell.multipleSelectionBackgroundView
++    ].compactMap({ $0 }) where !backgroundViews.contains(where: { $0 === candidate }) {
++      backgroundViews.append(candidate)
++    }
++
++    decorations.removeAll { decoration in
++      guard let view = decoration.view,
++        backgroundViews.contains(where: { $0 === view }) else {
++        decoration.restore()
++        return true
++      }
++      return false
++    }
++
++    CATransaction.begin()
++    CATransaction.setDisableActions(true)
++
++    for backgroundView in backgroundViews {
++      if !decorations.contains(where: { $0.view === backgroundView }) {
++        decorations.append(Ios15ListRowBackgroundDecoration(view: backgroundView))
++      }
++      backgroundView.layer.cornerRadius = max(0, cornerRadius)
++      backgroundView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
++      backgroundView.layer.masksToBounds = true
++      backgroundView.layer.cornerCurve = .continuous
++    }
++
++    CATransaction.commit()
++  }
++
++  private func restoreDecorations() {
++    CATransaction.begin()
++    CATransaction.setDisableActions(true)
++    decorations.forEach { $0.restore() }
++    CATransaction.commit()
++    decorations.removeAll()
++    decoratedCell = nil
++  }
++
++  private func enclosingTableViewCell() -> UITableViewCell? {
++    var ancestor = superview
++    while let view = ancestor {
++      if let cell = view as? UITableViewCell {
++        return cell
++      }
++      ancestor = view.superview
++    }
++    return nil
++  }
++}
++
++private struct Ios15ListRowTopRoundedBackgroundProbe: UIViewRepresentable {
++  let cornerRadius: CGFloat
++
++  func makeUIView(context: Context) -> Ios15ListRowTopRoundedBackgroundView {
++    let view = Ios15ListRowTopRoundedBackgroundView()
++    view.cornerRadius = cornerRadius
++    return view
++  }
++
++  func updateUIView(_ uiView: Ios15ListRowTopRoundedBackgroundView, context: Context) {
++    uiView.cornerRadius = cornerRadius
++    uiView.scheduleUpdates()
++  }
++}
++
++private final class Ios15ListRowSeparatorHiddenView: UIView {
++  private weak var decoratedCell: UITableViewCell?
++  private var originalSeparatorInset: UIEdgeInsets?
++  private var separatorInsetObservation: NSKeyValueObservation?
++  private var updateScheduled = false
++
++  override init(frame: CGRect) {
++    super.init(frame: frame)
++    isUserInteractionEnabled = false
++    isHidden = true
++  }
++
++  required init?(coder: NSCoder) {
++    fatalError("init(coder:) has not been implemented")
++  }
++
++  override func didMoveToSuperview() {
++    super.didMoveToSuperview()
++    scheduleUpdates()
++  }
++
++  override func didMoveToWindow() {
++    super.didMoveToWindow()
++    if window == nil {
++      restoreSeparatorInset()
++    } else {
++      scheduleUpdates()
++    }
++  }
++
++  override func willMove(toSuperview newSuperview: UIView?) {
++    if newSuperview == nil {
++      restoreSeparatorInset()
++    }
++    super.willMove(toSuperview: newSuperview)
++  }
++
++  override func layoutSubviews() {
++    super.layoutSubviews()
++    scheduleUpdate()
++  }
++
++  func scheduleUpdates() {
++    scheduleUpdate()
++    scheduleUpdate(after: 0.05)
++    scheduleUpdate(after: 0.2)
++  }
++
++  func restoreSeparatorInset() {
++    separatorInsetObservation?.invalidate()
++    separatorInsetObservation = nil
++    guard let decoratedCell, let originalSeparatorInset else {
++      self.decoratedCell = nil
++      self.originalSeparatorInset = nil
++      return
++    }
++    decoratedCell.separatorInset = originalSeparatorInset
++    self.decoratedCell = nil
++    self.originalSeparatorInset = nil
++  }
++
++  private func scheduleUpdate(after delay: TimeInterval = 0) {
++    if delay == 0 {
++      guard !updateScheduled else { return }
++      updateScheduled = true
++    }
++
++    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
++      guard let self else { return }
++      if delay == 0 {
++        self.updateScheduled = false
++      }
++      self.hideSeparator()
++    }
++  }
++
++  private func hideSeparator() {
++    guard superview != nil, window != nil else { return }
++    let cell = enclosingTableViewCell()
++
++    if decoratedCell !== cell {
++      restoreSeparatorInset()
++      decoratedCell = cell
++      originalSeparatorInset = cell?.separatorInset
++      if let cell {
++        separatorInsetObservation = cell.observe(\.separatorInset, options: [.new]) { [weak self] _, _ in
++          self?.scheduleUpdate()
++        }
++      }
++    }
++
++    guard let cell, let originalSeparatorInset, cell.bounds.width > 0 else { return }
++    var hiddenInset = originalSeparatorInset
++    hiddenInset.left = max(hiddenInset.left, cell.bounds.width)
++    if cell.separatorInset != hiddenInset {
++      cell.separatorInset = hiddenInset
++    }
++  }
++
++  private func enclosingTableViewCell() -> UITableViewCell? {
++    var ancestor = superview
++    while let view = ancestor {
++      if let cell = view as? UITableViewCell {
++        return cell
++      }
++      ancestor = view.superview
++    }
++    return nil
++  }
++}
++
++private struct Ios15ListRowSeparatorHiddenProbe: UIViewRepresentable {
++  func makeUIView(context: Context) -> Ios15ListRowSeparatorHiddenView {
++    Ios15ListRowSeparatorHiddenView()
++  }
++
++  func updateUIView(_ uiView: Ios15ListRowSeparatorHiddenView, context: Context) {
++    uiView.scheduleUpdates()
++  }
++
++  static func dismantleUIView(
++    _ uiView: Ios15ListRowSeparatorHiddenView,
++    coordinator: Void
++  ) {
++    uiView.restoreSeparatorInset()
++  }
++}
++#endif
++
++private struct Ios15TopCornerCutouts: Shape {
++  let cornerRadius: CGFloat
++
++  func path(in rect: CGRect) -> Path {
++    let radius = min(max(0, cornerRadius), min(rect.width / 2, rect.height))
++    var path = Path()
++    path.move(to: CGPoint(x: rect.minX, y: rect.minY))
++    path.addLine(to: CGPoint(x: rect.minX + radius, y: rect.minY))
++    path.addQuadCurve(
++      to: CGPoint(x: rect.minX, y: rect.minY + radius),
++      control: CGPoint(x: rect.minX, y: rect.minY)
++    )
++    path.closeSubpath()
++
++    path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
++    path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + radius))
++    path.addQuadCurve(
++      to: CGPoint(x: rect.maxX - radius, y: rect.minY),
++      control: CGPoint(x: rect.maxX, y: rect.minY)
++    )
++    path.closeSubpath()
++    return path
++  }
++}
++
++internal struct Ios15ListRowTopRoundedBackground: ViewModifier, Record {
++  @Environment(\.layoutDirection) private var layoutDirection
++  @Field var cornerRadius: CGFloat = 10
++  @Field var horizontalInset: CGFloat = 0
++  @Field var leadingInset: CGFloat?
++  @Field var trailingInset: CGFloat?
++  @Field var topInset: CGFloat = 0
++
++  @ViewBuilder
++  func body(content: Content) -> some View {
++#if os(tvOS)
++    content
++#else
++    if #available(iOS 16.0, *) {
++      content
++    } else {
++      let fallbackHorizontalInset = max(0, horizontalInset)
++      let resolvedLeadingInset = max(0, leadingInset ?? fallbackHorizontalInset)
++      let resolvedTrailingInset = max(0, trailingInset ?? fallbackHorizontalInset)
++      let leftInset = layoutDirection == .rightToLeft
++        ? resolvedTrailingInset
++        : resolvedLeadingInset
++      let rightInset = layoutDirection == .rightToLeft
++        ? resolvedLeadingInset
++        : resolvedTrailingInset
++
++      content.overlay(
++        GeometryReader { geometry in
++          Ios15TopCornerCutouts(cornerRadius: cornerRadius)
++            .fill(Color.expoSystemGroupedBackground)
++            .frame(
++              width: geometry.size.width + leftInset + rightInset,
++              height: geometry.size.height + max(0, topInset),
++              alignment: .top
++            )
++            .offset(x: -leftInset, y: -max(0, topInset))
++        }
++          .allowsHitTesting(false)
++      )
++    }
++#endif
++  }
++}
++
++internal struct Ios15ListRowSeparatorHidden: ViewModifier, Record {
++  @ViewBuilder
++  func body(content: Content) -> some View {
++#if os(tvOS)
++    content
++#else
++    if #available(iOS 16.0, *) {
++      content
++    } else {
++      content.background(Ios15ListRowSeparatorHiddenProbe())
++    }
++#endif
++  }
++}
++
+ internal enum VerticalEdgeOptions: String, Enumerable {
+@@ -1922,5 +2321,20 @@ extension ViewModifierRegistry {
+     register("onSubmit") { params, appContext, eventDispatcher in
+       return try OnSubmitModifier(from: params, appContext: appContext, eventDispatcher: eventDispatcher)
      }
- 
 +    register("contentMargins") { params, appContext, _ in
 +      return try ContentMarginsModifier(from: params, appContext: appContext)
 +    }
 +
-     register("buttonStyle") { params, appContext, _ in
-       return try ButtonStyleModifier(from: params, appContext: appContext)
-     }
-@@ -1823,6 +1846,10 @@ extension ViewModifierRegistry {
-       return try TagModifier(from: params, appContext: appContext)
-     }
- 
++    register("ios15ListRowTopRoundedBackground") { params, appContext, _ in
++      return try Ios15ListRowTopRoundedBackground(from: params, appContext: appContext)
++    }
++
++    register("ios15ListRowSeparatorHidden") { params, appContext, _ in
++      return try Ios15ListRowSeparatorHidden(from: params, appContext: appContext)
++    }
++
 +    register("viewID") { params, appContext, _ in
 +      return try ViewIDModifier(from: params, appContext: appContext)
 +    }
-+
-     register("scrollTargetBehavior") { params, appContext, _ in
-       return try ScrollTargetBehaviorModifier(from: params, appContext: appContext)
-     }
+   }
+ }
 diff --git a/ios/Modifiers/ContainerRelativeFrameModifier.swift b/ios/Modifiers/ContainerRelativeFrameModifier.swift
 index ee64956..be7d2ab 100644
 --- a/ios/Modifiers/ContainerRelativeFrameModifier.swift
@@ -752,7 +1205,7 @@ diff --git a/ios/ListView.swift b/ios/ListView.swift
 index a7ca51d..ba4896d 100644
 --- a/ios/ListView.swift
 +++ b/ios/ListView.swift
-@@ -3,27 +3,115 @@
+@@ -3,27 +3,126 @@
  import ExpoModulesCore
  import SwiftUI
  
@@ -783,12 +1236,21 @@ index a7ca51d..ba4896d 100644
 +  @Field var correctsNestedScrollIndicatorFrame = false
 +  @Field var initialScrollAnchor: UnitPointOptions = .center
 +  @Field var initialScrollTarget: Either<String, Double>?
++  @Field var nativeEditMode: EditModeType = .inactive
++  @Field var nativeEditTint: Color?
++  @Field var scrollPositionRestoreToken = 0
    @Field var selection: [Either<String, Double>]?
 +  @Field var tracksNavigationBarScrollEdge = false
++  fileprivate let scrollPositionStore = ListScrollPositionStore()
    var onSelectionChange = EventDispatcher()
  }
 -
 +
++private final class ListScrollPositionStore {
++  weak var scrollView: UIScrollView?
++  var hasObservedScrollView = false
++  var offset: CGPoint?
++}
  struct ListView: ExpoSwiftUI.View {
    @ObservedObject var props: ListProps
    @State private var selection = Set<AnyHashable>()
@@ -837,6 +1299,8 @@ index a7ca51d..ba4896d 100644
 +          automaticallyAdjustsScrollIndicatorInsets: props.automaticallyAdjustsScrollIndicatorInsets ?? true,
 +          contentInsetAdjustmentBehavior: props.contentInsetAdjustmentBehavior,
 +          correctsNestedScrollIndicatorFrame: props.correctsNestedScrollIndicatorFrame,
++          scrollPositionRestoreToken: props.scrollPositionRestoreToken,
++          scrollPositionStore: props.scrollPositionStore,
 +          tracksNavigationBarScrollEdge: props.tracksNavigationBarScrollEdge
 +        )
 +      }
@@ -877,7 +1341,7 @@ index a7ca51d..ba4896d 100644
      }
    }
  
-@@ -55,3 +143,477 @@ struct ListView: ExpoSwiftUI.View {
+@@ -55,3 +154,624 @@ struct ListView: ExpoSwiftUI.View {
      return result
    }
  }
@@ -886,6 +1350,8 @@ index a7ca51d..ba4896d 100644
 +  let automaticallyAdjustsScrollIndicatorInsets: Bool
 +  let contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
 +  let correctsNestedScrollIndicatorFrame: Bool
++  let scrollPositionRestoreToken: Int
++  let scrollPositionStore: ListScrollPositionStore
 +  let tracksNavigationBarScrollEdge: Bool
 +
 +  func makeUIViewController(context: Context) -> ScrollInsetAdjustmentViewController {
@@ -894,6 +1360,8 @@ index a7ca51d..ba4896d 100644
 +    view.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
 +    view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
 +    view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
++    view.scrollPositionRestoreToken = scrollPositionRestoreToken
++    view.scrollPositionStore = scrollPositionStore
 +    view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
 +    return viewController
 +  }
@@ -903,6 +1371,8 @@ index a7ca51d..ba4896d 100644
 +    view.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
 +    view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
 +    view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
++    view.scrollPositionRestoreToken = scrollPositionRestoreToken
++    view.scrollPositionStore = scrollPositionStore
 +    view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
 +  }
 +}
@@ -977,6 +1447,20 @@ index a7ca51d..ba4896d 100644
 +    }
 +  }
 +
++  var scrollPositionRestoreToken = 0 {
++    didSet {
++      guard oldValue != scrollPositionRestoreToken else { return }
++      pendingScrollPositionRestore = true
++      scheduleUpdate()
++    }
++  }
++
++  var scrollPositionStore: ListScrollPositionStore? {
++    didSet {
++      scheduleUpdate()
++    }
++  }
++
 +  var tracksNavigationBarScrollEdge = false {
 +    didSet {
 +      guard oldValue != tracksNavigationBarScrollEdge else { return }
@@ -997,6 +1481,10 @@ index a7ca51d..ba4896d 100644
 +  private var indicatorBoundsObservation: NSKeyValueObservation?
 +  private var indicatorContentOffsetObservation: NSKeyValueObservation?
 +  private var indicatorContentSizeObservation: NSKeyValueObservation?
++  private var scrollPositionObservation: NSKeyValueObservation?
++  private var pendingScrollPositionRestore = false
++  private var ios15ContentOffsetObservation: NSKeyValueObservation?
++  private weak var ios15ObservedContentScrollView: UIScrollView?
 +  private var indicatorFrameCorrectionScheduled = false
 +  private var updateScheduled = false
 +  private var forceContentScrollViewRegistration = false
@@ -1048,11 +1536,18 @@ index a7ca51d..ba4896d 100644
 +  }
 +
 +  private func applyAdjustment() {
++    guard window != nil else { return }
 +    guard let scrollView = configuredScrollView ?? findListScrollView() else { return }
++
++    let replacesPreviousScrollView =
++      scrollPositionStore?.hasObservedScrollView == true &&
++      scrollPositionStore?.scrollView !== scrollView
 +
 +    configuredScrollView = scrollView
 +    let forceRegistration = forceContentScrollViewRegistration
 +    forceContentScrollViewRegistration = false
++    let shouldRestoreScrollPosition = replacesPreviousScrollView || pendingScrollPositionRestore
++    pendingScrollPositionRestore = false
 +    var needsLayout = false
 +
 +    if scrollView.automaticallyAdjustsScrollIndicatorInsets != automaticallyAdjustsScrollIndicatorInsets {
@@ -1070,8 +1565,57 @@ index a7ca51d..ba4896d 100644
 +      scrollView.setNeedsLayout()
 +    }
 +
++    observeScrollPosition(of: scrollView, restore: shouldRestoreScrollPosition)
++
 +    updateNestedScrollIndicatorFrameCorrection(for: scrollView)
 +    updateContentScrollViewRegistration(scrollView, force: forceRegistration)
++  }
++
++  private func observeScrollPosition(of scrollView: UIScrollView, restore: Bool) {
++    guard let scrollPositionStore else { return }
++    if scrollPositionStore.scrollView === scrollView, restore,
++      let savedOffset = scrollPositionStore.offset {
++      restoreScrollPosition(savedOffset, in: scrollView, attemptsRemaining: 8)
++      return
++    }
++    guard scrollPositionStore.scrollView !== scrollView else { return }
++
++    scrollPositionObservation = nil
++    let savedOffset = scrollPositionStore.offset
++    scrollPositionStore.scrollView = scrollView
++    scrollPositionStore.hasObservedScrollView = true
++
++    if restore, let savedOffset {
++      restoreScrollPosition(savedOffset, in: scrollView, attemptsRemaining: 8)
++    }
++
++    scrollPositionObservation = scrollView.observe(\.contentOffset, options: [.new]) {
++      [weak scrollPositionStore, weak scrollView] _, _ in
++      guard let scrollPositionStore, let scrollView else { return }
++      let offset = scrollView.contentOffset
++      let topOffset = -scrollView.adjustedContentInset.top
++      if scrollView.isTracking || scrollView.isDragging || scrollView.isDecelerating ||
++        abs(offset.y - topOffset) >= 0.5 {
++        scrollPositionStore.offset = offset
++      }
++    }
++  }
++
++  private func restoreScrollPosition(
++    _ offset: CGPoint,
++    in scrollView: UIScrollView,
++    attemptsRemaining: Int
++  ) {
++    guard attemptsRemaining > 0 else { return }
++
++    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self, weak scrollView] in
++      guard let self, let scrollView,
++        self.scrollPositionStore?.scrollView === scrollView else {
++        return
++      }
++      scrollView.setContentOffset(offset, animated: false)
++      self.restoreScrollPosition(offset, in: scrollView, attemptsRemaining: attemptsRemaining - 1)
++    }
 +  }
 +
 +  private func updateNestedScrollIndicatorFrameCorrection(for scrollView: UIScrollView) {
@@ -1266,6 +1810,72 @@ index a7ca51d..ba4896d 100644
 +      viewController.navigationController?.navigationBar.setNeedsLayout()
 +    }
 +    registeredContentScrollView = scrollView
++    updateIos15LargeTitleScrollTracking(for: scrollView)
++  }
++
++  private func updateIos15LargeTitleScrollTracking(for scrollView: UIScrollView) {
++#if os(tvOS)
++    return
++#else
++    if #available(iOS 16.0, *) {
++      stopIos15LargeTitleScrollTracking()
++      return
++    }
++
++    guard ios15ObservedContentScrollView !== scrollView else { return }
++    stopIos15LargeTitleScrollTracking()
++    ios15ObservedContentScrollView = scrollView
++    ios15ContentOffsetObservation = scrollView.observe(
++      \.contentOffset,
++      options: [.new]
++    ) { [weak self, weak scrollView] _, _ in
++      guard let self, let scrollView else { return }
++      self.invalidateIos15LargeTitleLayout(for: scrollView)
++    }
++#endif
++  }
++
++  private func invalidateIos15LargeTitleLayout(for scrollView: UIScrollView) {
++#if !os(tvOS)
++    if #available(iOS 16.0, *) { return }
++    guard window != nil,
++      ios15ObservedContentScrollView === scrollView,
++      usesLargeTitle,
++      let viewController = configuredViewController,
++      let navigationController = viewController.navigationController else {
++      return
++    }
++
++    // SwiftUI's iOS 15 UITableView can miss the navigation controller's
++    // content-offset invalidation during a large-title transition. Preserve the
++    // existing association and only restore it if another container replaced it.
++    if viewController.contentScrollView(for: .top) !== scrollView {
++      viewController.setContentScrollView(scrollView, for: .top)
++    }
++    navigationController.view.setNeedsLayout()
++    navigationController.navigationBar.setNeedsLayout()
++#endif
++  }
++
++  private func stopIos15LargeTitleScrollTracking() {
++    ios15ContentOffsetObservation = nil
++    ios15ObservedContentScrollView = nil
++  }
++
++  private var usesLargeTitle: Bool {
++#if os(tvOS)
++    return false
++#else
++    if #available(iOS 16.0, *) {
++      return false
++    }
++    guard let viewController = configuredViewController,
++      let navigationBar = viewController.navigationController?.navigationBar else {
++      return false
++    }
++    return navigationBar.prefersLargeTitles &&
++      viewController.navigationItem.largeTitleDisplayMode != .never
++#endif
 +  }
 +
 +  private func scheduleContentViewControllerRegistrationRetry() {
@@ -1287,6 +1897,7 @@ index a7ca51d..ba4896d 100644
 +  }
 +
 +  private func unregisterContentScrollView() {
++    stopIos15LargeTitleScrollTracking()
 +    guard let viewController = configuredViewController else { return }
 +
 +    if viewController.contentScrollView(for: .top) === registeredContentScrollView {
@@ -1359,7 +1970,7 @@ diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
 index 73c2193..2f1471d 100644
 --- a/src/swift-ui/List/index.tsx
 +++ b/src/swift-ui/List/index.tsx
-@@ -21,6 +21,61 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
+@@ -21,6 +21,78 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
  }
  
  export interface ListProps extends CommonViewModifierProps {
@@ -1412,6 +2023,23 @@ index 73c2193..2f1471d 100644
 +  initialScrollTarget?: string | number;
 +
 +  /**
++   * The native edit state used by List selection controls.
++   * @default 'inactive'
++   */
++  nativeEditMode?: 'active' | 'inactive' | 'transient';
++
++  /**
++   * Tint used by native List selection controls while editing.
++   */
++  nativeEditTint?: string;
++
++  /**
++   * Requests restoration of the native list's last recorded scroll offset.
++   * Increment this after a state transition that causes SwiftUI List to reset its offset.
++   */
++  scrollPositionRestoreToken?: number;
++
++  /**
 +   * Registers the backing native list as the current view controller's top content scroll view.
 +   * This lets UIKit drive navigation-bar scroll-edge appearance changes without JS scroll events.
 +   * @default false
@@ -1425,7 +2053,7 @@ diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
 index 02e9345..64ae4e1 100644
 --- a/build/swift-ui/List/index.d.ts
 +++ b/build/swift-ui/List/index.d.ts
-@@ -1,6 +1,44 @@
+@@ -1,6 +1,58 @@
  import { ListForEach, type ListForEachProps } from './ListForEach';
  import { type CommonViewModifierProps } from '../types';
  export interface ListProps extends CommonViewModifierProps {
@@ -1462,6 +2090,20 @@ index 02e9345..64ae4e1 100644
 +     */
 +    initialScrollTarget?: string | number;
 +    /**
++     * The native edit state used by List selection controls.
++     * @default 'inactive'
++     */
++    nativeEditMode?: 'active' | 'inactive' | 'transient';
++    /**
++     * Tint used by native List selection controls while editing.
++     */
++    nativeEditTint?: string;
++    /**
++     * Requests restoration of the native list's last recorded scroll offset.
++     * Increment this after a state transition that causes SwiftUI List to reset its offset.
++     */
++    scrollPositionRestoreToken?: number;
++    /**
 +     * Registers the backing native list as the current view controller's top content scroll view.
 +     * This lets UIKit drive navigation-bar scroll-edge appearance changes without JS scroll events.
 +     * @default false
@@ -1470,10 +2112,46 @@ index 02e9345..64ae4e1 100644
      /**
       * The children elements to be rendered inside the list.
       */
-@@ -23,4 +61,4 @@ export declare namespace List {
+@@ -23,4 +70,4 @@ export declare namespace List {
      var ForEach: typeof ListForEach;
  }
  export { ListForEach, ListForEachProps };
 -//# sourceMappingURL=index.d.ts.map
 \ No newline at end of file
 +//# sourceMappingURL=index.d.ts.map
+diff --git a/ios/UIBaseView.swift b/ios/UIBaseView.swift
+index a451a01..5f8f15c 100644
+--- a/ios/UIBaseView.swift
++++ b/ios/UIBaseView.swift
+@@ -8,16 +8,28 @@ import SwiftUI
+  */
+ public struct UIBaseView<Props: UIBaseViewProps, Content: ExpoSwiftUI.View<Props>>: ExpoSwiftUI.View {
+   @ObservedObject public var props: Props
+   let innerView: Content
+ 
+   public init(props: Props) {
+     self.props = props
+     self.innerView = Content(props: props)
+   }
+ 
+   public var body: some View {
+-    innerView
+-      .applyAccessibilityIdentifier(props.testID)
+-      .applyModifiers(props.modifiers, appContext: props.appContext, globalEventDispatcher: props.globalEventDispatcher)
++    if let listProps = props as? ListProps {
++      let editMode = Binding<EditMode>(
++        get: { listProps.nativeEditMode.toNativeEditMode() },
++        set: { _ in }
++      )
++      innerView
++        .applyAccessibilityIdentifier(props.testID)
++        .applyModifiers(props.modifiers, appContext: props.appContext, globalEventDispatcher: props.globalEventDispatcher)
++        .environment(\.editMode, editMode)
++        .tint(listProps.nativeEditMode == .active ? listProps.nativeEditTint : nil)
++    } else {
++      innerView
++        .applyAccessibilityIdentifier(props.testID)
++        .applyModifiers(props.modifiers, appContext: props.appContext, globalEventDispatcher: props.globalEventDispatcher)
++    }
+  }
+ }

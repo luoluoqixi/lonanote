@@ -1,0 +1,129 @@
+# - Web Menu trigger only responds to a primary click, leaving right-click and
+#   macOS Control-click available to an enclosing ContextMenu.
+diff --git a/src/createNonNativeMenu.tsx b/src/createNonNativeMenu.tsx
+--- a/src/createNonNativeMenu.tsx
++++ b/src/createNonNativeMenu.tsx
+@@ -350,13 +350,14 @@ export function createNonNativeMenu({
+                   // only call handler if it's the left button (mousedown gets triggered by all mouse buttons)
+                   // but not when the control key is pressed (avoiding MacOS right click)
+                   if (!disabled) {
+-                    if (
+-                      isWeb &&
+-                      event instanceof PointerEvent &&
+-                      event.button !== 0 &&
+-                      event.ctrlKey === true
+-                    )
+-                      return
++                    if (isWeb) {
++                      const pointerEvent = event.nativeEvent ?? event
++                      const isNonPrimaryPointer =
++                        typeof pointerEvent.button === 'number' && pointerEvent.button !== 0
++                      const isControlClick =
++                        pointerEvent.button === 0 && pointerEvent.ctrlKey === true
++                      if (isNonPrimaryPointer || isControlClick) return
++                    }
+                     if (context.openRef.current) {
+                       context.setActiveTrigger(null)
+                     } else {
+diff --git a/dist/esm/createNonNativeMenu.mjs b/dist/esm/createNonNativeMenu.mjs
+--- a/dist/esm/createNonNativeMenu.mjs
++++ b/dist/esm/createNonNativeMenu.mjs
+@@ -161,7 +161,12 @@ function createNonNativeMenu({
+           //@ts-ignore
+           props[pressEvent], event => {
+             if (!disabled) {
+-              if (isWeb && event instanceof PointerEvent && event.button !== 0 && event.ctrlKey === true) return;
++              if (isWeb) {
++                const pointerEvent = event.nativeEvent ?? event;
++                const isNonPrimaryPointer = typeof pointerEvent.button === "number" && pointerEvent.button !== 0;
++                const isControlClick = pointerEvent.button === 0 && pointerEvent.ctrlKey === true;
++                if (isNonPrimaryPointer || isControlClick) return;
++              }
+               if (context.openRef.current) {
+                 context.setActiveTrigger(null);
+               } else {
+diff --git a/dist/esm/createNonNativeMenu.native.js b/dist/esm/createNonNativeMenu.native.js
+--- a/dist/esm/createNonNativeMenu.native.js
++++ b/dist/esm/createNonNativeMenu.native.js
+@@ -182,7 +182,12 @@ function createNonNativeMenu(param) {
+         //@ts-ignore
+         props[pressEvent], function (event) {
+           if (!disabled) {
+-            if (isWeb && _instanceof(event, PointerEvent) && event.button !== 0 && event.ctrlKey === true) return;
++            if (isWeb) {
++              var pointerEvent = event.nativeEvent ?? event;
++              var isNonPrimaryPointer = typeof pointerEvent.button === "number" && pointerEvent.button !== 0;
++              var isControlClick = pointerEvent.button === 0 && pointerEvent.ctrlKey === true;
++              if (isNonPrimaryPointer || isControlClick) return;
++            }
+             if (context.openRef.current) {
+               context.setActiveTrigger(null);
+             } else {
+diff --git a/dist/cjs/createNonNativeMenu.cjs b/dist/cjs/createNonNativeMenu.cjs
+--- a/dist/cjs/createNonNativeMenu.cjs
++++ b/dist/cjs/createNonNativeMenu.cjs
+@@ -200,7 +200,12 @@ function createNonNativeMenu({
+           //@ts-ignore
+           props[pressEvent], event => {
+             if (!disabled) {
+-              if (import_web.isWeb && event instanceof PointerEvent && event.button !== 0 && event.ctrlKey === true) return;
++              if (import_web.isWeb) {
++                const pointerEvent = event.nativeEvent ?? event;
++                const isNonPrimaryPointer = typeof pointerEvent.button === "number" && pointerEvent.button !== 0;
++                const isControlClick = pointerEvent.button === 0 && pointerEvent.ctrlKey === true;
++                if (isNonPrimaryPointer || isControlClick) return;
++              }
+               if (context.openRef.current) {
+                 context.setActiveTrigger(null);
+               } else {
+diff --git a/dist/cjs/createNonNativeMenu.native.js b/dist/cjs/createNonNativeMenu.native.js
+--- a/dist/cjs/createNonNativeMenu.native.js
++++ b/dist/cjs/createNonNativeMenu.native.js
+@@ -223,7 +223,12 @@ function createNonNativeMenu(param) {
+         //@ts-ignore
+         props[pressEvent], function (event) {
+           if (!disabled) {
+-            if (import_web.isWeb && _instanceof(event, PointerEvent) && event.button !== 0 && event.ctrlKey === true) return;
++            if (import_web.isWeb) {
++              var pointerEvent = event.nativeEvent ?? event;
++              var isNonPrimaryPointer = typeof pointerEvent.button === "number" && pointerEvent.button !== 0;
++              var isControlClick = pointerEvent.button === 0 && pointerEvent.ctrlKey === true;
++              if (isNonPrimaryPointer || isControlClick) return;
++            }
+             if (context.openRef.current) {
+               context.setActiveTrigger(null);
+             } else {
+diff --git a/dist/jsx/createNonNativeMenu.mjs b/dist/jsx/createNonNativeMenu.mjs
+--- a/dist/jsx/createNonNativeMenu.mjs
++++ b/dist/jsx/createNonNativeMenu.mjs
+@@ -161,7 +161,12 @@ function createNonNativeMenu({
+           //@ts-ignore
+           props[pressEvent], event => {
+             if (!disabled) {
+-              if (isWeb && event instanceof PointerEvent && event.button !== 0 && event.ctrlKey === true) return;
++              if (isWeb) {
++                const pointerEvent = event.nativeEvent ?? event;
++                const isNonPrimaryPointer = typeof pointerEvent.button === "number" && pointerEvent.button !== 0;
++                const isControlClick = pointerEvent.button === 0 && pointerEvent.ctrlKey === true;
++                if (isNonPrimaryPointer || isControlClick) return;
++              }
+               if (context.openRef.current) {
+                 context.setActiveTrigger(null);
+               } else {
+diff --git a/dist/jsx/createNonNativeMenu.native.js b/dist/jsx/createNonNativeMenu.native.js
+--- a/dist/jsx/createNonNativeMenu.native.js
++++ b/dist/jsx/createNonNativeMenu.native.js
+@@ -223,7 +223,12 @@ function createNonNativeMenu(param) {
+         //@ts-ignore
+         props[pressEvent], function (event) {
+           if (!disabled) {
+-            if (import_web.isWeb && _instanceof(event, PointerEvent) && event.button !== 0 && event.ctrlKey === true) return;
++            if (import_web.isWeb) {
++              var pointerEvent = event.nativeEvent ?? event;
++              var isNonPrimaryPointer = typeof pointerEvent.button === "number" && pointerEvent.button !== 0;
++              var isControlClick = pointerEvent.button === 0 && pointerEvent.ctrlKey === true;
++              if (isNonPrimaryPointer || isControlClick) return;
++            }
+             if (context.openRef.current) {
+               context.setActiveTrigger(null);
+             } else {

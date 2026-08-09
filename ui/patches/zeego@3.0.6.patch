@@ -1,22 +1,116 @@
-diff --git a/src/menu/create-ios-menu/index.ios.tsx b/src/menu/create-ios-menu/index.ios.tsx
---- a/src/menu/create-ios-menu/index.ios.tsx
-+++ b/src/menu/create-ios-menu/index.ios.tsx
-@@ -536,6 +536,11 @@
-     const auxiliaryProps = auxiliary?.[0]?.props
- 
-     const menuRef = useRef<ContextMenuButton>()
-+    // @ts-expect-error
-+    const __menuRef = props.__menuRef
+# - 标记 Android 选中 action，将选中背景色附加到该 action，并把对齐和背景色属性传递给
+#   @react-native-menu/menu。
+# - 保留 iOS 菜单的编程式 ref，并为 Android 菜单暴露等价的 show ref；Android DropdownMenu 和 ContextMenu 直接导入对应 factory，
+#   避免 createAndroidMenu 经过空的聚合导出解析。
+# - 不要恢复原有的 EOF/source-map-only hunks：附近 hunk 长度变化后，Bun 曾将其错误覆盖到
+#   factory exports，导致 `createAndroidMenu is not a function (it is undefined)`。
+diff --git a/lib/commonjs/menu/create-android-menu/index.android.js b/lib/commonjs/menu/create-android-menu/index.android.js
+index ba7ef46..7201878 100644
+--- a/lib/commonjs/menu/create-android-menu/index.android.js
++++ b/lib/commonjs/menu/create-android-menu/index.android.js
+@@ -165,4 +165,17 @@ If you want to use a custom component as your <Content />, you can use the creat
+   const Root = (0, _displayNames.create)(props => {
++    const menuRef = (0, _react.useRef)(null);
++    const __menuRef = props.__menuRef;
++
 +    if (__menuRef) {
-+      __menuRef.current = { presentMenu: () => menuRef.current?.presentMenu() }
++      __menuRef.current = {
++        presentMenu: () => {
++          var _menuRef$current;
++
++          return (_menuRef$current = menuRef.current) === null || _menuRef$current === void 0 ? void 0 : _menuRef$current.show();
++        }
++      };
 +    }
++
+     const trigger = (0, _children.pickChildren)(props.children, Trigger);
+     const content = (0, _children.pickChildren)(props.children, Content).targetChildren?.[0];
+     const callbacks = {};
+@@ -308,10 +321,12 @@ If you want to use a custom component as your <Content />, you can use the creat
+             } = item;
+             const finalItem = {
+               id: key,
+-              title,
+-              image: icon,
+-              attributes: menuAttributes,
+-              subtitle
++                title,
++                image: icon,
++                attributes: menuAttributes,
++                state: child.props.selected ? 'on' : undefined,
++                selectedBackgroundColor: child.props.selected ? props.selectedItemBackgroundColor : undefined,
++                subtitle
+             };
+             return finalItem;
+           }
+@@ -400,6 +415,10 @@ If you want to use a custom component as your <Content />, you can use the creat
+     return /*#__PURE__*/_react.default.createElement(_menu.MenuView, {
++      ref: menuRef,
+       title: menuTitle,
+       style: props.style,
++      anchorAlignment: props.anchorAlignment,
++      isAnchoredToRight: props.isAnchoredToRight,
++      selectedItemBackgroundColor: props.selectedItemBackgroundColor,
+       onPressAction: _ref11 => {
+         var _callbacks$nativeEven;
  
-     return (
-       <Component
+diff --git a/lib/module/menu/create-android-menu/index.android.js b/lib/module/menu/create-android-menu/index.android.js
+index 5f47781..60c6abf 100644
+--- a/lib/module/menu/create-android-menu/index.android.js
++++ b/lib/module/menu/create-android-menu/index.android.js
+@@ -1,4 +1,4 @@
+-import React, { Children, cloneElement } from 'react';
++import React, { Children, cloneElement, useRef } from 'react';
+ import { MenuView } from '@react-native-menu/menu';
+ import { flattenChildren, pickChildren, isInstanceOfComponent } from '../children';
+ import { create } from '../display-names';
+@@ -149,4 +149,13 @@ If you want to use a custom component as your <Content />, you can use the creat
+   const Root = create(props => {
++    const menuRef = useRef(null);
++    const __menuRef = props.__menuRef;
++
++    if (__menuRef) {
++      __menuRef.current = {
++        presentMenu: () => menuRef.current?.show()
++      };
++    }
++
+     const trigger = pickChildren(props.children, Trigger);
+     const content = pickChildren(props.children, Content).targetChildren?.[0];
+     const callbacks = {};
+@@ -292,10 +301,12 @@ If you want to use a custom component as your <Content />, you can use the creat
+             } = item;
+             const finalItem = {
+               id: key,
+-              title,
+-              image: icon,
+-              attributes: menuAttributes,
+-              subtitle
++                title,
++                image: icon,
++                attributes: menuAttributes,
++                state: child.props.selected ? 'on' : undefined,
++                selectedBackgroundColor: child.props.selected ? props.selectedItemBackgroundColor : undefined,
++                subtitle
+             };
+             return finalItem;
+           }
+@@ -384,6 +395,10 @@ If you want to use a custom component as your <Content />, you can use the creat
+     return /*#__PURE__*/React.createElement(MenuView, {
++      ref: menuRef,
+       title: menuTitle,
+       style: props.style,
++      anchorAlignment: props.anchorAlignment,
++      isAnchoredToRight: props.isAnchoredToRight,
++      selectedItemBackgroundColor: props.selectedItemBackgroundColor,
+       onPressAction: _ref11 => {
+         var _callbacks$nativeEven;
+ 
 diff --git a/lib/commonjs/menu/create-ios-menu/index.ios.js b/lib/commonjs/menu/create-ios-menu/index.ios.js
+index ad14282..cb0c6d9 100644
 --- a/lib/commonjs/menu/create-ios-menu/index.ios.js
 +++ b/lib/commonjs/menu/create-ios-menu/index.ios.js
-@@ -500,6 +500,11 @@
+@@ -500,6 +500,11 @@ If you want to use a custom component as your <Content />, you can use the creat
      const auxiliary = Menu === 'ContextMenu' ? (_pickChildren = (0, _children.pickChildren)(content === null || content === void 0 ? void 0 : content.props.children, Auxiliary)) === null || _pickChildren === void 0 ? void 0 : _pickChildren.targetChildren : undefined;
      const auxiliaryProps = auxiliary === null || auxiliary === void 0 ? void 0 : (_auxiliary$ = auxiliary[0]) === null || _auxiliary$ === void 0 ? void 0 : _auxiliary$.props;
      const menuRef = (0, _react.useRef)();
@@ -29,9 +123,10 @@ diff --git a/lib/commonjs/menu/create-ios-menu/index.ios.js b/lib/commonjs/menu/
        ref: menuRef,
        onPressMenuItem: _ref11 => {
 diff --git a/lib/module/menu/create-ios-menu/index.ios.js b/lib/module/menu/create-ios-menu/index.ios.js
+index 8b733bb..ae87b4b 100644
 --- a/lib/module/menu/create-ios-menu/index.ios.js
 +++ b/lib/module/menu/create-ios-menu/index.ios.js
-@@ -483,6 +483,11 @@
+@@ -483,6 +483,11 @@ If you want to use a custom component as your <Content />, you can use the creat
      const auxiliary = Menu === 'ContextMenu' ? (_pickChildren = pickChildren(content === null || content === void 0 ? void 0 : content.props.children, Auxiliary)) === null || _pickChildren === void 0 ? void 0 : _pickChildren.targetChildren : undefined;
      const auxiliaryProps = auxiliary === null || auxiliary === void 0 ? void 0 : (_auxiliary$ = auxiliary[0]) === null || _auxiliary$ === void 0 ? void 0 : _auxiliary$.props;
      const menuRef = useRef();
@@ -43,3 +138,102 @@ diff --git a/lib/module/menu/create-ios-menu/index.ios.js b/lib/module/menu/crea
      return /*#__PURE__*/React.createElement(Component, _extends({
        ref: menuRef,
        onPressMenuItem: _ref11 => {
+diff --git a/src/menu/create-android-menu/index.android.tsx b/src/menu/create-android-menu/index.android.tsx
+index 1676fac..0a326e2 100644
+--- a/src/menu/create-android-menu/index.android.tsx
++++ b/src/menu/create-android-menu/index.android.tsx
+@@ -1 +1 @@
+-import React, { Children, ReactElement, cloneElement } from 'react'
++import React, { Children, ReactElement, cloneElement, useRef } from 'react'
+@@ -3 +3 @@
+-import { MenuView } from '@react-native-menu/menu'
++import { MenuView, type MenuComponentRef } from '@react-native-menu/menu'
+@@ -165,4 +165,10 @@ If you want to use a custom component as your <Content />, you can use the creat
+   const Root = create((props: MenuRootProps) => {
++    const menuRef = useRef<MenuComponentRef>(null)
++    // @ts-expect-error Internal programmatic handle used by composite native rows.
++    const __menuRef = props.__menuRef
++    if (__menuRef) {
++      __menuRef.current = { presentMenu: () => menuRef.current?.show() }
++    }
+     const trigger = pickChildren<MenuTriggerProps>(props.children, Trigger)
+     const content = pickChildren<MenuContentProps | ContextMenuContentProps>(
+       props.children,
+@@ -350,6 +356,8 @@ If you want to use a custom component as your <Content />, you can use the creat
+                 title,
+                 image: icon,
+                 attributes: menuAttributes,
++                state: (child.props as any).selected ? 'on' : undefined,
++                selectedBackgroundColor: (child.props as any).selected ? (props as any).selectedItemBackgroundColor : undefined,
+                 subtitle,
+               }
+               return finalItem
+@@ -453,6 +461,10 @@ If you want to use a custom component as your <Content />, you can use the creat
+       <MenuView
++        ref={menuRef}
+         title={menuTitle}
+         style={props.style as any}
++        anchorAlignment={(props as any).anchorAlignment}
++        isAnchoredToRight={(props as any).isAnchoredToRight}
++        selectedItemBackgroundColor={(props as any).selectedItemBackgroundColor}
+         onPressAction={({ nativeEvent }) => {
+           callbacks[nativeEvent.event]?.()
+         }}
+diff --git a/src/menu/create-ios-menu/index.ios.tsx b/src/menu/create-ios-menu/index.ios.tsx
+index ad14f47..1e71dcf 100644
+--- a/src/menu/create-ios-menu/index.ios.tsx
++++ b/src/menu/create-ios-menu/index.ios.tsx
+@@ -536,6 +536,11 @@ If you want to use a custom component as your <Content />, you can use the creat
+     const auxiliaryProps = auxiliary?.[0]?.props
+ 
+     const menuRef = useRef<ContextMenuButton>()
++    // @ts-expect-error
++    const __menuRef = props.__menuRef
++    if (__menuRef) {
++      __menuRef.current = { presentMenu: () => menuRef.current?.presentMenu() }
++    }
+ 
+     return (
+       <Component
+diff --git a/lib/commonjs/context-menu/context-menu.android.js b/lib/commonjs/context-menu/context-menu.android.js
+index d3de614..0000000 100644
+--- a/lib/commonjs/context-menu/context-menu.android.js
++++ b/lib/commonjs/context-menu/context-menu.android.js
+@@ -7 +7 @@ exports.Trigger = exports.SubTrigger = exports.SubContent = exports.Sub = exports
+-var _menu = require("../menu");
++var _menu = require("../menu/create-android-menu/index.android");
+diff --git a/lib/commonjs/dropdown-menu/dropdown-menu.android.js b/lib/commonjs/dropdown-menu/dropdown-menu.android.js
+index aa4f48d..0000000 100644
+--- a/lib/commonjs/dropdown-menu/dropdown-menu.android.js
++++ b/lib/commonjs/dropdown-menu/dropdown-menu.android.js
+@@ -7 +7 @@ exports.Trigger = exports.SubTrigger = exports.SubContent = exports.Sub = exports
+-var _menu = require("../menu");
++var _menu = require("../menu/create-android-menu/index.android");
+diff --git a/lib/module/context-menu/context-menu.android.js b/lib/module/context-menu/context-menu.android.js
+index 59670d7..0000000 100644
+--- a/lib/module/context-menu/context-menu.android.js
++++ b/lib/module/context-menu/context-menu.android.js
+@@ -1 +1 @@
+-import { createAndroidMenu } from '../menu';
++import { createAndroidMenu } from '../menu/create-android-menu/index.android';
+diff --git a/lib/module/dropdown-menu/dropdown-menu.android.js b/lib/module/dropdown-menu/dropdown-menu.android.js
+index a6ac4cc..0000000 100644
+--- a/lib/module/dropdown-menu/dropdown-menu.android.js
++++ b/lib/module/dropdown-menu/dropdown-menu.android.js
+@@ -1 +1 @@
+-import { createAndroidMenu } from '../menu';
++import { createAndroidMenu } from '../menu/create-android-menu/index.android';
+diff --git a/src/context-menu/context-menu.android.tsx b/src/context-menu/context-menu.android.tsx
+index c81f305..0000000 100644
+--- a/src/context-menu/context-menu.android.tsx
++++ b/src/context-menu/context-menu.android.tsx
+@@ -1 +1 @@
+-import { createAndroidMenu } from '../menu'
++import { createAndroidMenu } from '../menu/create-android-menu/index.android'
+diff --git a/src/dropdown-menu/dropdown-menu.android.tsx b/src/dropdown-menu/dropdown-menu.android.tsx
+index 3652797..0000000 100644
+--- a/src/dropdown-menu/dropdown-menu.android.tsx
++++ b/src/dropdown-menu/dropdown-menu.android.tsx
+@@ -1 +1 @@
+-import { createAndroidMenu } from '../menu'
++import { createAndroidMenu } from '../menu/create-android-menu/index.android'

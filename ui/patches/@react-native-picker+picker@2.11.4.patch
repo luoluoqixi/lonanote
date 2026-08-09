@@ -3,6 +3,7 @@
 # - 用于规避 iOS wheel/RNPPicker 在 native select 场景下的崩溃行为。
 # - Android dropdown 模式为 Select 补充了 popup 定位能力:
 #   - dropdownHorizontalOffset 对应 Spinner#setDropDownHorizontalOffset。
+#   - dropdownVerticalOffset 对应 Spinner#setDropDownVerticalOffset。
 #   - dropdownWidth 对应 Spinner#setDropDownWidth。
 #   - 用于让普通原生 dropdown Select 居中弹出，同时保持 NativeList/nativeTrigger
 #     继续使用真实 layout anchor，避免弹出动画看起来从左侧开始。
@@ -167,7 +168,7 @@ diff --git a/typings/Picker.d.ts b/typings/Picker.d.ts
 index 3742ccfc..3eaadc7a 100644
 --- a/typings/Picker.d.ts
 +++ b/typings/Picker.d.ts
-@@ -95,6 +95,16 @@ export interface PickerProps<T = ItemValue> extends ViewProps {
+@@ -95,6 +95,21 @@ export interface PickerProps<T = ItemValue> extends ViewProps {
     * @platform android
     */
    dropdownIconRippleColor?: number | ColorValue;
@@ -176,6 +177,11 @@ index 3742ccfc..3eaadc7a 100644
 +   * @platform android
 +   */
 +  dropdownHorizontalOffset?: number;
++  /**
++   * Vertical offset for the Android dropdown popup, in density-independent pixels.
++   * @platform android
++   */
++  dropdownVerticalOffset?: number;
 +  /**
 +   * Width for the Android dropdown popup, in density-independent pixels.
 +   * @platform android
@@ -188,11 +194,12 @@ diff --git a/js/AndroidDropdownPickerNativeComponent.js b/js/AndroidDropdownPick
 index 6666e539..6ccedbeb 100644
 --- a/js/AndroidDropdownPickerNativeComponent.js
 +++ b/js/AndroidDropdownPickerNativeComponent.js
-@@ -53,6 +53,8 @@ type NativeProps = $ReadOnly<{|
+@@ -53,6 +53,9 @@ type NativeProps = $ReadOnly<{|
    backgroundColor?: Int32,
    dropdownIconColor?: Int32,
    dropdownIconRippleColor?: Int32,
 +  dropdownHorizontalOffset?: ?Double,
++  dropdownVerticalOffset?: ?Double,
 +  dropdownWidth?: ?Double,
    numberOfLines?: ?Int32,
    onSelect?: BubblingEventHandler<PickerAndroidChangeEvent, 'topSelect'>,
@@ -201,21 +208,23 @@ diff --git a/js/PickerAndroid.android.js b/js/PickerAndroid.android.js
 index 7fade6a2..e023df12 100644
 --- a/js/PickerAndroid.android.js
 +++ b/js/PickerAndroid.android.js
-@@ -40,6 +40,8 @@ type PickerAndroidProps = $ReadOnly<{|
+@@ -40,6 +40,9 @@ type PickerAndroidProps = $ReadOnly<{|
    prompt?: ?string,
    testID?: string,
    dropdownIconColor?: string,
 +  dropdownHorizontalOffset?: ?number,
++  dropdownVerticalOffset?: ?number,
 +  dropdownWidth?: ?number,
    numberOfLines?: ?number,
  |}>;
  
-@@ -233,6 +235,10 @@ function PickerAndroid(props: PickerAndroidProps, ref: PickerRef): React.Node {
+@@ -233,6 +236,11 @@ function PickerAndroid(props: PickerAndroidProps, ref: PickerRef): React.Node {
      testID: props.testID,
      numberOfLines: props.numberOfLines,
    };
 +  if (props.mode === MODE_DROPDOWN) {
 +    rootProps.dropdownHorizontalOffset = props.dropdownHorizontalOffset;
++    rootProps.dropdownVerticalOffset = props.dropdownVerticalOffset;
 +    rootProps.dropdownWidth = props.dropdownWidth;
 +  }
  
@@ -225,13 +234,18 @@ diff --git a/android/src/main/java/com/reactnativecommunity/picker/ReactPickerMa
 index e1c71e23..862b2cd4 100644
 --- a/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java
 +++ b/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java
-@@ -181,6 +181,18 @@ public abstract class ReactPickerManager extends BaseViewManager<ReactPicker, Re
+@@ -181,6 +181,23 @@ public abstract class ReactPickerManager extends BaseViewManager<ReactPicker, Re
      view.setDropdownIconRippleColor(color);
    }
  
 +  @ReactProp(name = "dropdownHorizontalOffset", defaultDouble = 0d)
 +  public void setDropdownHorizontalOffset(ReactPicker view, double offset) {
 +    view.setDropDownHorizontalOffset(Math.round(PixelUtil.toPixelFromDIP(offset)));
++  }
++
++  @ReactProp(name = "dropdownVerticalOffset", defaultDouble = 0d)
++  public void setDropdownVerticalOffset(ReactPicker view, double offset) {
++    view.setDropDownVerticalOffset(Math.round(PixelUtil.toPixelFromDIP(offset)));
 +  }
 +
 +  @ReactProp(name = "dropdownWidth", defaultDouble = 0d)
@@ -248,11 +262,12 @@ diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDr
 index 8a7b516c..20bcfd61 100644
 --- a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java
 +++ b/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java
-@@ -22,6 +22,8 @@ public interface RNCAndroidDropdownPickerManagerInterface<T extends View> {
+@@ -22,6 +22,9 @@ public interface RNCAndroidDropdownPickerManagerInterface<T extends View> {
    void setBackgroundColor(T view, int value);
    void setDropdownIconColor(T view, int value);
    void setDropdownIconRippleColor(T view, int value);
 +  void setDropdownHorizontalOffset(T view, double value);
++  void setDropdownVerticalOffset(T view, double value);
 +  void setDropdownWidth(T view, double value);
    void setNumberOfLines(T view, int value);
    void focus(T view);
@@ -261,12 +276,15 @@ diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDr
 index a3cfa495..31d3321b 100644
 --- a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerDelegate.java
 +++ b/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerDelegate.java
-@@ -48,6 +48,12 @@ public class RNCAndroidDropdownPickerManagerDelegate<T extends View, U extends B
+@@ -48,6 +48,15 @@ public class RNCAndroidDropdownPickerManagerDelegate<T extends View, U extends B
        case "dropdownIconRippleColor":
          mViewManager.setDropdownIconRippleColor(view, value == null ? 0 : ((Double) value).intValue());
          break;
 +      case "dropdownHorizontalOffset":
 +        mViewManager.setDropdownHorizontalOffset(view, value == null ? 0d : ((Double) value).doubleValue());
++        break;
++      case "dropdownVerticalOffset":
++        mViewManager.setDropdownVerticalOffset(view, value == null ? 0d : ((Double) value).doubleValue());
 +        break;
 +      case "dropdownWidth":
 +        mViewManager.setDropdownWidth(view, value == null ? 0d : ((Double) value).doubleValue());
