@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { NativeList, NativeListButtonItem, NativeListSection } from "rn-ui-kit";
+import {
+  NativeList,
+  NativeListButtonItem,
+  NativeListSection,
+  confirmNative,
+  toSwiftUIHexColor,
+  triggerNativeHaptics,
+  useTheme,
+} from "rn-ui-kit";
 
 import { system } from "@/api";
 import { gm } from "@/api/commands/gm";
@@ -10,15 +18,31 @@ import type { SettingsPageProps } from "../settings_config";
 
 export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: SettingsPageProps = {}) {
   const { toast } = useToast();
+  const theme = useTheme();
   const [isResettingInitialWorkspace, setIsResettingInitialWorkspace] = useState(false);
   const [isGettingSystemLocale, setIsGettingSystemLocale] = useState(false);
+
+  const redColor = toSwiftUIHexColor(theme.red11.val) ?? theme.color11.val;
+
   // 桌面端 GM Sheet 使用 JS Stack；需要由页面级列表驱动 Header 的 scroll-edge 背景。
   const tracksScrollEdgeHeader = isWeb() || tracksNavigationBarScrollEdge;
 
-  const resetInitialWorkspace = () => {
+  const resetInitialWorkspace = async () => {
     if (isResettingInitialWorkspace) {
       return;
     }
+    triggerNativeHaptics(true);
+
+    const next = await confirmNative({
+      buttons: [
+        { key: "cancel", style: "cancel", text: "取消" },
+        { key: "confirm", style: "destructive", text: "重置" },
+      ],
+      message: "此操作会删除默认工作区, 无法恢复, 是否确定？",
+      title: "警告",
+    });
+
+    if (next !== "confirm") return;
 
     setIsResettingInitialWorkspace(true);
     void gm.workspace
@@ -100,6 +124,7 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
         <NativeListButtonItem
           disabled={isResettingInitialWorkspace}
           onPress={resetInitialWorkspace}
+          btnTint={redColor}
           title={isResettingInitialWorkspace ? "正在重置默认工作区…" : "重置首次默认工作区"}
         />
       </NativeListSection>
