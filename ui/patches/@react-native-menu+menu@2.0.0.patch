@@ -8,6 +8,48 @@
 #   background/tint，避免滚动时出现随机高亮。
 # - Android 新架构调用 show 命令时传递空参数数组，避免 undefined 被桥接成 null 后触发
 #   UnexpectedNativeTypeException。
+# - 原生弹层的居中与选中背景需要反射 AppCompat Popup 内部成员；通过 consumer ProGuard
+#   规则保留相应名称，避免开启 R8 的 release 包静默退回默认布局。
+diff --git a/android/build.gradle b/android/build.gradle
+index f1d2631f..bad56ab9 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -91,6 +91,9 @@ android {
+  defaultConfig {
+    minSdkVersion 24
+    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
++    // MenuView 需要在 release 包中反射 AppCompat 的 Popup 内部成员以调整 Select 弹层。
++    // 作为库的 consumer rules 随 AAR 传递，避免应用侧单独配置。
++    consumerProguardFiles "consumer-rules.pro"
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+    versionCode 1
+    versionName "1.0"
+diff --git a/android/consumer-rules.pro b/android/consumer-rules.pro
+new file mode 100644
+index 00000000..084bb5e9
+--- /dev/null
++++ b/android/consumer-rules.pro
+@@ -0,0 +1,20 @@
++# MenuView 通过反射获取 AppCompat Popup 的 ListView，用于 Select 的居中定位与选中行背景。
++# R8 会改名这些非公开成员，导致 release 包静默退回系统默认菜单布局。
++-keepclassmembers class androidx.appcompat.widget.PopupMenu {
++    androidx.appcompat.view.menu.MenuPopupHelper mPopup;
++}
++
++-keepclassmembers class androidx.appcompat.view.menu.MenuPopupHelper {
++    androidx.appcompat.view.menu.MenuPopup getPopup();
++}
++
++-keepclassmembers class androidx.appcompat.view.menu.StandardMenuPopup {
++    androidx.appcompat.widget.MenuPopupWindow mPopup;
++}
++
++-keepclassmembers class androidx.appcompat.widget.ListPopupWindow {
++    public boolean isShowing();
++    public void show();
++    public void setHorizontalOffset(int);
++    public android.widget.ListView getListView();
++}
 diff --git a/android/src/main/java/com/reactnativemenu/MenuView.kt b/android/src/main/java/com/reactnativemenu/MenuView.kt
 index c45f5cc..0000000 100644
 --- a/android/src/main/java/com/reactnativemenu/MenuView.kt

@@ -31,6 +31,7 @@ type HeaderActionButtonProps = {
   accessibilityLabel: string;
   label: string;
   onPress?: () => void;
+  opacity?: number;
 };
 
 const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
@@ -67,7 +68,12 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
 }
 
-function HeaderActionButton({ accessibilityLabel, label, onPress }: HeaderActionButtonProps) {
+function HeaderActionButton({
+  accessibilityLabel,
+  label,
+  onPress,
+  opacity,
+}: HeaderActionButtonProps) {
   return (
     <Button
       accessibilityLabel={accessibilityLabel}
@@ -78,6 +84,7 @@ function HeaderActionButton({ accessibilityLabel, label, onPress }: HeaderAction
       }}
       native={isIos()}
       chromeless
+      opacity={opacity}
       title={label}
     />
   );
@@ -263,6 +270,7 @@ export function WorkspaceSelect() {
   const [storageProviderError, setStorageProviderError] = useState<string | null>(null);
   const [isLoadingStorageProviders, setIsLoadingStorageProviders] = useState(false);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const requestIdRef = useRef(0);
   const storageProviderRequestIdRef = useRef(0);
   const usesNativeIosHeader = os() === "ios";
@@ -421,7 +429,15 @@ export function WorkspaceSelect() {
         options={{
           headerRight: () => (
             <Menu
-              trigger={<HeaderActionButton accessibilityLabel="右侧操作" label="•••" />}
+              onOpenChange={setIsHeaderMenuOpen}
+              onOpenWillChange={setIsHeaderMenuOpen}
+              trigger={
+                <HeaderActionButton
+                  accessibilityLabel="右侧操作"
+                  label="•••"
+                  opacity={isHeaderMenuOpen ? 0.5 : 1}
+                />
+              }
               items={headerMenuItems}
               nativeHaptics
             />
