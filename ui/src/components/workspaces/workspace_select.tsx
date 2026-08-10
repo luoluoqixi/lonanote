@@ -177,6 +177,7 @@ function CreateWorkspaceSheetContent({
     <NativeList
       automaticallyAdjustsScrollIndicatorInsets={usesNativeIosScrollEdgeHeader ? true : undefined}
       contentInsetAdjustmentBehavior={usesNativeIosScrollEdgeHeader ? "automatic" : undefined}
+      dismissKeyboardOnTap
       style={styles.list}
       tracksNavigationBarScrollEdge={tracksScrollEdgeHeader}
     >
