@@ -8,6 +8,7 @@
 # - SwiftUI List: 提供 `nativeEditMode` / `nativeEditTint` 原生属性；编辑态由宿主 binding 驱动，避免动态 modifier 更新重建 List、丢失滚动位置。
 # - SwiftUI modifier: iOS 15 可为透明辅助行后的首个内容行恢复顶部圆角。
 # - SwiftUI modifier: iOS 15 隐藏辅助行 separator 时直接隔离 UIKit cell，并在复用、编辑态切换导致系统复位 inset 后持续重新隐藏。
+# - SwiftUI modifier: 提供并行 tap 手势，避免父级手势拦截 List 中 Button、TextField 等子控件。
 diff --git a/ios/SliderView.swift b/ios/SliderView.swift
 index 1ffa70e..488c98b 100644
 --- a/ios/SliderView.swift
@@ -2155,3 +2156,281 @@ index a451a01..5f8f15c 100644
 +    }
   }
  }
+diff --git a/src/swift-ui/modifiers/index.ts b/src/swift-ui/modifiers/index.ts
+index d64100ee..85442dc4 100644
+--- a/src/swift-ui/modifiers/index.ts
++++ b/src/swift-ui/modifiers/index.ts
+@@ -155,6 +155,13 @@ export const ignoreSafeArea = (params?: {
+ export const onTapGesture = (handler: () => void) =>
+   createModifierWithEventListener('onTapGesture', handler);
+ 
++/**
++ * Adds a tap gesture recognizer that ignores child controls.
++ * @param handler - Function to call when tapped.
++ */
++export const simultaneousTapGesture = (handler: () => void) =>
++  createModifierWithEventListener('simultaneousTapGesture', handler);
++
+ /**
+  * Adds a long press gesture recognizer.
+  * @param handler - Function to call when long pressed.
+diff --git a/ios/Modifiers/ViewModifierRegistry.swift b/ios/Modifiers/ViewModifierRegistry.swift
+index 552adc52..193d5573 100644
+--- a/ios/Modifiers/ViewModifierRegistry.swift
++++ b/ios/Modifiers/ViewModifierRegistry.swift
+@@ -335,6 +335,28 @@ internal struct OnTapGestureModifier: ViewModifier, Record {
+   }
+ }
+ 
++internal struct SimultaneousTapGestureModifier: ViewModifier, Record {
++  var eventDispatcher: EventDispatcher?
++
++  init() {}
++
++  init(from params: Dict, appContext: AppContext, eventDispatcher: EventDispatcher) throws {
++    try self = .init(from: params, appContext: appContext)
++    self.eventDispatcher = eventDispatcher
++  }
++
++  func body(content: Content) -> some View {
++    if #available(iOS 15.0, tvOS 16.0, *) {
++      content.simultaneousGesture(
++        TapGesture().onEnded {
++          eventDispatcher?(["simultaneousTapGesture": [:]])
++        },
++        including: .gesture
++      )
++    }
++  }
++}
++
+ internal struct OnLongPressGestureModifier: ViewModifier, Record {
+   @Field var minimumDuration: Double = 0.5
+   var eventDispatcher: EventDispatcher?
+@@ -1602,11 +2022,19 @@ extension ViewModifierRegistry {
+     register("clipShape") { params, appContext, _ in
+       return try ClipShapeModifier(from: params, appContext: appContext)
+     }
+ 
+     register("onTapGesture") { params, appContext, eventDispatcher in
+       return try OnTapGestureModifier(from: params, appContext: appContext, eventDispatcher: eventDispatcher)
+     }
+ 
++    register("simultaneousTapGesture") { params, appContext, eventDispatcher in
++      return try SimultaneousTapGestureModifier(
++        from: params,
++        appContext: appContext,
++        eventDispatcher: eventDispatcher
++      )
++    }
++
+     register("onLongPressGesture") { params, appContext, eventDispatcher in
+       return try OnLongPressGestureModifier(from: params, appContext: appContext, eventDispatcher: eventDispatcher)
+     }
+diff --git a/build/swift-ui/modifiers/index.d.ts b/build/swift-ui/modifiers/index.d.ts
+index 1e0d2ba0..3f030b42 100644
+--- a/build/swift-ui/modifiers/index.d.ts
++++ b/build/swift-ui/modifiers/index.d.ts
+@@ -112,6 +112,11 @@ export declare const ignoreSafeArea: (params?: {
+  * @see Official [SwiftUI documentation](https://developer.apple.com/documentation/swiftui/view/ontapgesture(count:perform:)).
+  */
+ export declare const onTapGesture: (handler: () => void) => ModifierConfig;
++/**
++ * Adds a tap gesture recognizer that ignores child controls.
++ * @param handler - Function to call when tapped.
++ */
++export declare const simultaneousTapGesture: (handler: () => void) => ModifierConfig;
+ /**
+  * Adds a long press gesture recognizer.
+  * @param handler - Function to call when long pressed.
+diff --git a/ios/ListView.swift b/ios/ListView.swift
+index c15cae9..f82505b 100644
+--- a/ios/ListView.swift
++++ b/ios/ListView.swift
+@@ -28,6 +28,7 @@ final class ListProps: UIBaseViewProps {
+   @Field var compensatesForViewportClipping = false
+   @Field var contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
+   @Field var correctsNestedScrollIndicatorFrame = false
++  @Field var dismissKeyboardOnTap = false
+   @Field var initialScrollAnchor: UnitPointOptions = .center
+   @Field var initialScrollTarget: Either<String, Double>?
+   @Field var nativeEditMode: EditModeType = .inactive
+@@ -88,6 +89,7 @@ struct ListView: ExpoSwiftUI.View {
+           automaticallyAdjustsScrollIndicatorInsets: props.automaticallyAdjustsScrollIndicatorInsets ?? true,
+           contentInsetAdjustmentBehavior: props.contentInsetAdjustmentBehavior,
+           correctsNestedScrollIndicatorFrame: props.correctsNestedScrollIndicatorFrame,
++          dismissKeyboardOnTap: props.dismissKeyboardOnTap,
+           scrollPositionRestoreToken: props.scrollPositionRestoreToken,
+           scrollPositionStore: props.scrollPositionStore,
+           tracksNavigationBarScrollEdge: props.tracksNavigationBarScrollEdge
+@@ -159,6 +161,7 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+   let automaticallyAdjustsScrollIndicatorInsets: Bool
+   let contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
+   let correctsNestedScrollIndicatorFrame: Bool
++  let dismissKeyboardOnTap: Bool
+   let scrollPositionRestoreToken: Int
+   let scrollPositionStore: ListScrollPositionStore
+   let tracksNavigationBarScrollEdge: Bool
+@@ -169,6 +172,7 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+     view.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
+     view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
+     view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
++    view.dismissKeyboardOnTap = dismissKeyboardOnTap
+     view.scrollPositionRestoreToken = scrollPositionRestoreToken
+     view.scrollPositionStore = scrollPositionStore
+     view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
+@@ -180,6 +184,7 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+     view.automaticallyAdjustsScrollIndicatorInsets = automaticallyAdjustsScrollIndicatorInsets
+     view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
+     view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
++    view.dismissKeyboardOnTap = dismissKeyboardOnTap
+     view.scrollPositionRestoreToken = scrollPositionRestoreToken
+     view.scrollPositionStore = scrollPositionStore
+     view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
+@@ -236,7 +241,7 @@ private final class ScrollInsetAdjustmentViewController: UIViewController {
+   }
+ }
+ 
+-private final class ScrollInsetAdjustmentUIView: UIView {
++private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDelegate {
+   var automaticallyAdjustsScrollIndicatorInsets = true {
+     didSet {
+       scheduleUpdate()
+@@ -256,6 +261,13 @@ private final class ScrollInsetAdjustmentUIView: UIView {
+     }
+   }
+ 
++  var dismissKeyboardOnTap = false {
++    didSet {
++      guard oldValue != dismissKeyboardOnTap else { return }
++      scheduleUpdate()
++    }
++  }
++
+   var scrollPositionRestoreToken = 0 {
+     didSet {
+       guard oldValue != scrollPositionRestoreToken else { return }
+@@ -282,6 +294,7 @@ private final class ScrollInsetAdjustmentUIView: UIView {
+   }
+ 
+   private weak var configuredScrollView: UIScrollView?
++  private weak var keyboardDismissScrollView: UIScrollView?
+   private weak var configuredViewController: UIViewController?
+   private weak var correctedIndicatorScrollView: UIScrollView?
+   private weak var observedAncestorScrollView: UIScrollView?
+@@ -300,6 +313,18 @@ private final class ScrollInsetAdjustmentUIView: UIView {
+   private var registrationRetryAttemptsRemaining = 0
+   private var registrationRetryScheduled = false
+ 
++  private lazy var keyboardDismissTapGestureRecognizer: UITapGestureRecognizer = {
++    let recognizer = UITapGestureRecognizer(
++      target: self,
++      action: #selector(handleKeyboardDismissTap)
++    )
++    recognizer.cancelsTouchesInView = false
++    recognizer.delaysTouchesBegan = false
++    recognizer.delaysTouchesEnded = false
++    recognizer.delegate = self
++    return recognizer
++  }()
++
+   private static let maximumRegistrationRetryAttempts = 30
+ 
+   func refreshNavigationBarScrollEdgeRegistration() {
+@@ -313,6 +338,7 @@ private final class ScrollInsetAdjustmentUIView: UIView {
+     if window == nil {
+       stopNestedScrollIndicatorFrameCorrection()
+       unregisterContentScrollView()
++      removeKeyboardDismissTapGestureRecognizer()
+     } else {
+       refreshNavigationBarScrollEdgeRegistration()
+     }
+@@ -324,6 +350,7 @@ private final class ScrollInsetAdjustmentUIView: UIView {
+     if configuredScrollView?.window == nil {
+       stopNestedScrollIndicatorFrameCorrection()
+       unregisterContentScrollView()
++      removeKeyboardDismissTapGestureRecognizer()
+       configuredScrollView = nil
+       scheduleUpdate()
+     } else if correctsNestedScrollIndicatorFrame {
+@@ -378,6 +405,45 @@ private final class ScrollInsetAdjustmentUIView: UIView {
+ 
+     updateNestedScrollIndicatorFrameCorrection(for: scrollView)
+     updateContentScrollViewRegistration(scrollView, force: forceRegistration)
++    updateKeyboardDismissTapGestureRecognizer(for: scrollView)
++  }
++
++  private func updateKeyboardDismissTapGestureRecognizer(for scrollView: UIScrollView) {
++    guard dismissKeyboardOnTap else {
++      removeKeyboardDismissTapGestureRecognizer()
++      return
++    }
++
++    if keyboardDismissScrollView !== scrollView {
++      removeKeyboardDismissTapGestureRecognizer()
++      scrollView.addGestureRecognizer(keyboardDismissTapGestureRecognizer)
++      keyboardDismissScrollView = scrollView
++    }
++  }
++
++  private func removeKeyboardDismissTapGestureRecognizer() {
++    keyboardDismissScrollView?.removeGestureRecognizer(keyboardDismissTapGestureRecognizer)
++    keyboardDismissScrollView = nil
++  }
++
++  @objc private func handleKeyboardDismissTap() {
++    window?.endEditing(true)
++  }
++
++  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
++    guard gestureRecognizer === keyboardDismissTapGestureRecognizer else { return true }
++
++    var touchedView = touch.view
++    while let currentView = touchedView {
++      if currentView is UITextField || currentView is UITextView {
++        return false
++      }
++      if currentView === keyboardDismissScrollView {
++        break
++      }
++      touchedView = currentView.superview
++    }
++    return true
+   }
+ 
+   private func observeScrollPosition(of scrollView: UIScrollView, restore: Bool) {
+diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
+index e314328..8f7dc44 100644
+--- a/src/swift-ui/List/index.tsx
++++ b/src/swift-ui/List/index.tsx
+@@ -47,6 +47,13 @@ export interface ListProps extends CommonViewModifierProps {
+    */
+   correctsNestedScrollIndicatorFrame?: boolean;
+ 
++  /**
++   * Dismisses the current keyboard when a non-text-input area of the native list is tapped.
++   * The native recognizer does not cancel child control touches.
++   * @default false
++   */
++  dismissKeyboardOnTap?: boolean;
++
+   /**
+    * The anchor used when scrolling to `initialScrollTarget`.
+    * @default 'center'
+diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
+index e8417b5..c5380b8 100644
+--- a/build/swift-ui/List/index.d.ts
++++ b/build/swift-ui/List/index.d.ts
+@@ -23,6 +23,12 @@ export interface ListProps extends CommonViewModifierProps {
+      * @default false
+      */
+     correctsNestedScrollIndicatorFrame?: boolean;
++    /**
++     * Dismisses the current keyboard when a non-text-input area of the native list is tapped.
++     * The native recognizer does not cancel child control touches.
++     * @default false
++     */
++    dismissKeyboardOnTap?: boolean;
+     /**
+      * The anchor used when scrolling to `initialScrollTarget`.
+      * @default 'center'
