@@ -14,7 +14,8 @@ import {
   NativeListSelectItem,
   NativeSheetStack,
   Select,
-  SelectItemData,
+  type SelectHandle,
+  type SelectItemGroupData,
   Text,
   getNativeStackScrollEdgeHeaderOptions,
   useAppBackgroundColors,
@@ -28,7 +29,7 @@ import {
 } from "@/api/commands/workspace";
 import { formatUnixSecondsDateTime, isIos, isSystemLocaleCN, os } from "@/api/common";
 import { useToast } from "@/hooks/ui";
-import { useWorkspaceSession } from "@/hooks/workspace";
+import { useWorkspaceSession, useWorkspaceState } from "@/hooks/workspace";
 
 type HeaderActionButtonProps = {
   accessibilityLabel: string;
@@ -39,33 +40,40 @@ type HeaderActionButtonProps = {
 
 const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
 const CREATE_WORKSPACE_SNAP_POINTS = [88];
+type WorkspaceSortField = "last-opened" | "created-at" | "title";
+type WorkspaceSortDirection = "ascending" | "descending";
+type WorkspaceSortValue =
+  | "last-opened-desc"
+  | "last-opened-asc"
+  | "created-at-desc"
+  | "created-at-asc"
+  | "title-asc"
+  | "title-desc";
 
-const WORKSPACE_SORT_ITEMS: SelectItemData[] = [
+const DEFAULT_WORKSPACE_SORT_VALUE: WorkspaceSortValue = "last-opened-desc";
+const WORKSPACE_SORT_ITEM_GROUPS: SelectItemGroupData[] = [
   {
-    label: "默认排序",
-    value: "default-sort",
+    items: [
+      { label: "最近打开（默认）", value: "last-opened-desc" },
+      { label: "最早打开", value: "last-opened-asc" },
+    ],
+    key: "last-opened",
   },
   {
-    label: "编辑日期",
-    value: "update-date-sort",
+    items: [
+      { label: "最近创建", value: "created-at-desc" },
+      { label: "最早创建", value: "created-at-asc" },
+    ],
+    key: "created-at",
   },
   {
-    label: "创建日期",
-    value: "create-date-sort",
+    items: [
+      { label: "标题：A–Z", value: "title-asc" },
+      { label: "标题：Z–A", value: "title-desc" },
+    ],
+    key: "title",
   },
 ];
-
-const pressActions = {
-  selectWorkspacePress: () => {
-    console.log("todo");
-  },
-  sortWorkspacePress: () => {
-    console.log("todo");
-  },
-  openSettingsPress: () => {
-    router.push("/settings");
-  },
-};
 
 const getDefaultNewNoteName = () => {
   return isSystemLocaleCN() ? "我的笔记" : "My Notes";
@@ -284,26 +292,82 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
   });
 }
 
-function WorkspaceSortActionTrailing() {
+function sortWorkspaces(
+  workspaces: WorkspaceListItem[],
+  sortValue: WorkspaceSortValue,
+): WorkspaceListItem[] {
+  const { sortDirection, sortField } = getWorkspaceSortConfig(sortValue);
+
+  return [...workspaces].sort((left, right) => {
+    if (sortField === "title") {
+      const comparison = left.displayName.localeCompare(right.displayName);
+      return sortDirection === "ascending" ? comparison : -comparison;
+    }
+
+    const dateField = sortField === "last-opened" ? "lastOpenedAt" : "createdAt";
+    const leftDate = left[dateField];
+    const rightDate = right[dateField];
+
+    if (leftDate == null || rightDate == null) {
+      if (leftDate == null && rightDate == null) {
+        return left.displayName.localeCompare(right.displayName);
+      }
+
+      return leftDate == null ? 1 : -1;
+    }
+
+    const comparison = leftDate - rightDate;
+    return sortDirection === "ascending" ? comparison : -comparison;
+  });
+}
+
+function getWorkspaceSortConfig(sortValue: WorkspaceSortValue): {
+  sortField: WorkspaceSortField;
+  sortDirection: WorkspaceSortDirection;
+} {
+  switch (sortValue) {
+    case "last-opened-desc":
+      return { sortField: "last-opened", sortDirection: "descending" };
+    case "last-opened-asc":
+      return { sortField: "last-opened", sortDirection: "ascending" };
+    case "created-at-desc":
+      return { sortField: "created-at", sortDirection: "descending" };
+    case "created-at-asc":
+      return { sortField: "created-at", sortDirection: "ascending" };
+    case "title-asc":
+      return { sortField: "title", sortDirection: "ascending" };
+    case "title-desc":
+      return { sortField: "title", sortDirection: "descending" };
+  }
+}
+
+function isWorkspaceSortValue(value: string | null): value is WorkspaceSortValue {
   return (
-    <Select
-      nativeTrigger
-      defaultValue={WORKSPACE_SORT_ITEMS[0].value}
-      items={WORKSPACE_SORT_ITEMS}
-      // @ts-expect-error color 类型不匹配, 实际没问题
-      nativeTriggerLabelProps={styles.sortActionTrailingLabel}
-      nativeTriggerContainerStyle={styles.sortActionTrailing}
-    />
+    value === "last-opened-desc" ||
+    value === "last-opened-asc" ||
+    value === "created-at-desc" ||
+    value === "created-at-asc" ||
+    value === "title-asc" ||
+    value === "title-desc"
   );
 }
 
 export function WorkspaceSelect() {
   const { toast } = useToast();
   const { setCurrentWorkspaceId } = useWorkspaceSession();
+  const { open: openWorkspace } = useWorkspaceState(null);
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
+  const [workspaceSortValue, setWorkspaceSortValue] = useState<WorkspaceSortValue>(
+    DEFAULT_WORKSPACE_SORT_VALUE,
+  );
+  const [isWorkspaceSortSelectOpen, setIsWorkspaceSortSelectOpen] = useState(false);
+  const [isWorkspaceSelectionMode, setIsWorkspaceSelectionMode] = useState(false);
+  const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>([]);
+  const [isOpeningWorkspace, setIsOpeningWorkspace] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isCreateWorkspaceSheetOpen, setIsCreateWorkspaceSheetOpen] = useState(false);
+  const workspaceSortSelectRef = useRef<SelectHandle>(null);
   const [displayName, setDisplayName] = useState("");
   const [storageProviderIds, setStorageProviderIds] = useState<StorageProviderId[]>([]);
   const [storageProviderId, setStorageProviderId] = useState<StorageProviderId | null>(null);
@@ -424,7 +488,10 @@ export function WorkspaceSelect() {
       {
         label: "选择工作区",
         value: "select-workspace",
-        onPress: pressActions.selectWorkspacePress,
+        onPress: () => {
+          setIsWorkspaceSelectionMode((currentValue) => !currentValue);
+          setSelectedWorkspaceIds([]);
+        },
       },
       {
         label: "创建工作区",
@@ -432,12 +499,60 @@ export function WorkspaceSelect() {
         onPress: openCreateWorkspaceSheet,
       },
       {
+        separator: true,
+        value: "separator-01",
+      },
+      {
+        label: "排序方式",
+        onPress: () => workspaceSortSelectRef.current?.open(),
+        value: "sort-workspaces",
+      },
+      {
+        separator: true,
+        value: "separator-02",
+      },
+      {
         label: "设置",
         value: "settings",
-        onPress: pressActions.openSettingsPress,
+        onPress: () => {
+          router.push("/settings");
+        },
       },
     ],
     [openCreateWorkspaceSheet],
+  );
+
+  const sortedWorkspaces = useMemo(
+    () => sortWorkspaces(workspaces, workspaceSortValue),
+    [workspaceSortValue, workspaces],
+  );
+  const handleSelectedWorkspaceIdsChange = useCallback(
+    async (nextSelectedIds: Array<string | number>) => {
+      const nextWorkspaceId = nextSelectedIds.find((id) => typeof id === "string");
+
+      if (!nextWorkspaceId || isOpeningWorkspace) {
+        setSelectedWorkspaceIds([]);
+        return;
+      }
+
+      setSelectedWorkspaceIds([nextWorkspaceId]);
+      setIsOpeningWorkspace(true);
+
+      try {
+        await openWorkspace(nextWorkspaceId);
+        setCurrentWorkspaceId(nextWorkspaceId);
+        setIsWorkspaceSelectionMode(false);
+        setSelectedWorkspaceIds([]);
+        void refreshWorkspaces();
+      } catch (error) {
+        console.error("[workspace-select] open workspace failed", error);
+        setSelectedWorkspaceIds([]);
+        toast.error(getErrorMessage(error, "打开工作区失败"));
+      } finally {
+        setIsOpeningWorkspace(false);
+      }
+    },
+    [isOpeningWorkspace, openWorkspace, refreshWorkspaces, setCurrentWorkspaceId, toast],
   );
 
   useEffect(() => {
@@ -469,18 +584,22 @@ export function WorkspaceSelect() {
       <NativeList
         automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
         contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+        editMode={isWorkspaceSelectionMode}
         onRefresh={handlePullToRefresh}
+        onSelectedIdsChange={handleSelectedWorkspaceIdsChange}
+        selectedIds={selectedWorkspaceIds}
         style={styles.list}
         tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
       >
-        <NativeListSection title="选择工作区" trailing={WorkspaceSortActionTrailing}>
+        <NativeListSection title="选择工作区">
           {statusMessage ? (
             <NativeListCustomItem paddingVertical={0}>
               <WorkspaceSelectStatus message={statusMessage} />
             </NativeListCustomItem>
           ) : (
-            workspaces.map((workspaceItem) => (
+            sortedWorkspaces.map((workspaceItem) => (
               <NativeListNavigationItem
+                disabled={isOpeningWorkspace}
                 icon={
                   <Text color="$color10" fontSize="$7">
                     ▣
@@ -490,7 +609,6 @@ export function WorkspaceSelect() {
                 iconSlotWidth={28}
                 key={workspaceItem.id}
                 nativeScrollId={workspaceItem.id}
-                onPress={() => {}}
                 sfSymbol="folder.fill"
                 title={workspaceItem.displayName}
                 subtitle={formatUnixSecondsDateTime(workspaceItem.createdAt) ?? "创建时间未知"}
@@ -503,6 +621,24 @@ export function WorkspaceSelect() {
           ) : null}
         </NativeListSection>
       </NativeList>
+      <Select
+        ref={workspaceSortSelectRef}
+        itemGroups={WORKSPACE_SORT_ITEM_GROUPS}
+        native="native-sheet"
+        onOpenChange={setIsWorkspaceSortSelectOpen}
+        onValueChange={(nextValue) => {
+          if (!isWorkspaceSortValue(nextValue)) {
+            return;
+          }
+
+          setWorkspaceSortValue(nextValue);
+          setIsWorkspaceSortSelectOpen(false);
+        }}
+        open={isWorkspaceSortSelectOpen}
+        placeholder="排序方式"
+        triggerProps={{ display: "none" }}
+        value={workspaceSortValue}
+      />
       <CreateWorkspaceSheet
         onOpenChange={setIsCreateWorkspaceSheetOpen}
         open={isCreateWorkspaceSheetOpen}
@@ -539,19 +675,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 40,
     width: "100%",
-  },
-  sortActionTrailingLabel: {
-    fontSize: 14,
-    color: "$accent11",
-    opacity: 1,
-  },
-  sortActionTrailing: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexShrink: 1,
-    gap: 4,
-    maxWidth: 180,
-    minHeight: 32,
-    minWidth: 0,
   },
 });
