@@ -16,6 +16,7 @@ import {
   Text,
   getNativeStackScrollEdgeHeaderOptions,
   useAppBackgroundColors,
+  useMenuTriggerState,
 } from "rn-ui-kit";
 
 import {
@@ -35,7 +36,7 @@ type HeaderActionButtonProps = {
 };
 
 const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
-const CREATE_WORKSPACE_SNAP_POINTS = [40, 60, 90];
+const CREATE_WORKSPACE_SNAP_POINTS = [88];
 
 const pressActions = {
   selectWorkspacePress: () => {
@@ -84,9 +85,18 @@ function HeaderActionButton({
       }}
       native={isIos()}
       chromeless
+      circular
       opacity={opacity}
       title={label}
     />
+  );
+}
+
+function HeaderMenuActionButton() {
+  const { isActive } = useMenuTriggerState();
+
+  return (
+    <HeaderActionButton accessibilityLabel="右侧操作" label="•••" opacity={isActive ? 0.4 : 1} />
   );
 }
 
@@ -270,7 +280,6 @@ export function WorkspaceSelect() {
   const [storageProviderError, setStorageProviderError] = useState<string | null>(null);
   const [isLoadingStorageProviders, setIsLoadingStorageProviders] = useState(false);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
-  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const requestIdRef = useRef(0);
   const storageProviderRequestIdRef = useRef(0);
   const usesNativeIosHeader = os() === "ios";
@@ -428,19 +437,7 @@ export function WorkspaceSelect() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Menu
-              onOpenChange={setIsHeaderMenuOpen}
-              onOpenWillChange={setIsHeaderMenuOpen}
-              trigger={
-                <HeaderActionButton
-                  accessibilityLabel="右侧操作"
-                  label="•••"
-                  opacity={isHeaderMenuOpen ? 0.5 : 1}
-                />
-              }
-              items={headerMenuItems}
-              nativeHaptics
-            />
+            <Menu trigger={HeaderMenuActionButton} items={headerMenuItems} nativeHaptics />
           ),
         }}
       />
