@@ -13,6 +13,8 @@ import {
   NativeListSection,
   NativeListSelectItem,
   NativeSheetStack,
+  Select,
+  SelectItemData,
   Text,
   getNativeStackScrollEdgeHeaderOptions,
   useAppBackgroundColors,
@@ -37,6 +39,21 @@ type HeaderActionButtonProps = {
 
 const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
 const CREATE_WORKSPACE_SNAP_POINTS = [88];
+
+const WORKSPACE_SORT_ITEMS: SelectItemData[] = [
+  {
+    label: "默认排序",
+    value: "default-sort",
+  },
+  {
+    label: "编辑日期",
+    value: "update-date-sort",
+  },
+  {
+    label: "创建日期",
+    value: "create-date-sort",
+  },
+];
 
 const pressActions = {
   selectWorkspacePress: () => {
@@ -267,6 +284,19 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
   });
 }
 
+function WorkspaceSortActionTrailing() {
+  return (
+    <Select
+      nativeTrigger
+      defaultValue={WORKSPACE_SORT_ITEMS[0].value}
+      items={WORKSPACE_SORT_ITEMS}
+      // @ts-expect-error color 类型不匹配, 实际没问题
+      nativeTriggerLabelProps={styles.sortActionTrailingLabel}
+      nativeTriggerContainerStyle={styles.sortActionTrailing}
+    />
+  );
+}
+
 export function WorkspaceSelect() {
   const { toast } = useToast();
   const { setCurrentWorkspaceId } = useWorkspaceSession();
@@ -402,11 +432,6 @@ export function WorkspaceSelect() {
         onPress: openCreateWorkspaceSheet,
       },
       {
-        label: "排序方式",
-        value: "sort-workspace",
-        onPress: pressActions.sortWorkspacePress,
-      },
-      {
         label: "设置",
         value: "settings",
         onPress: pressActions.openSettingsPress,
@@ -448,7 +473,7 @@ export function WorkspaceSelect() {
         style={styles.list}
         tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
       >
-        <NativeListSection title="选择工作区">
+        <NativeListSection title="选择工作区" trailing={WorkspaceSortActionTrailing}>
           {statusMessage ? (
             <NativeListCustomItem paddingVertical={0}>
               <WorkspaceSelectStatus message={statusMessage} />
@@ -514,5 +539,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 40,
     width: "100%",
+  },
+  sortActionTrailingLabel: {
+    fontSize: 14,
+    color: "$accent11",
+    opacity: 1,
+  },
+  sortActionTrailing: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 1,
+    gap: 4,
+    maxWidth: 180,
+    minHeight: 32,
+    minWidth: 0,
   },
 });
