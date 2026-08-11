@@ -68,6 +68,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     "./tools/prebuild/with_android_app_theme.cjs",
+    "./tools/prebuild/with_android_menu_icons.cjs",
     "./tools/prebuild/with_android_native_build_long_path_fix.cjs",
     // "./tools/prebuild/with_android_nested_scroll_view.cjs",
     ["./tools/prebuild/with_android_adaptive_icon_inset.cjs", { inset: "16%" }],

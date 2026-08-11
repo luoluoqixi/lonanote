@@ -34,6 +34,8 @@ import { useWorkspaceSession, useWorkspaceState } from "@/hooks/workspace";
 
 type HeaderActionButtonProps = {
   accessibilityLabel: string;
+  circular?: boolean;
+  disabled?: boolean;
   label: string;
   onPress?: () => void;
   opacity?: number;
@@ -97,6 +99,8 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
 
 function HeaderActionButton({
   accessibilityLabel,
+  circular = true,
+  disabled,
   label,
   onPress,
   opacity,
@@ -105,13 +109,14 @@ function HeaderActionButton({
     <Button
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
+      disabled={disabled}
       hitSlop={8}
       onPress={() => {
         onPress?.();
       }}
       native={isIos()}
       chromeless
-      circular
+      circular={circular}
       opacity={opacity}
       title={label}
     />
@@ -342,6 +347,18 @@ function getWorkspaceSortConfig(sortValue: WorkspaceSortValue): {
   }
 }
 
+function getWorkspaceSubtitle(
+  workspaceItem: WorkspaceListItem,
+  sortValue: WorkspaceSortValue,
+): string {
+  const { sortField } = getWorkspaceSortConfig(sortValue);
+  const timestamp =
+    sortField === "created-at" ? workspaceItem.createdAt : workspaceItem.lastOpenedAt;
+  const fallbackMessage = sortField === "created-at" ? "创建时间未知" : "打开时间未知";
+
+  return formatUnixSecondsDateTime(timestamp) ?? fallbackMessage;
+}
+
 function isWorkspaceSortValue(value: string | null): value is WorkspaceSortValue {
   return (
     value === "last-opened-desc" ||
@@ -487,9 +504,10 @@ export function WorkspaceSelect() {
   const headerMenuItems = useMemo<MenuItemData[]>(
     () => [
       {
+        disabled: workspaces.length === 0,
         icon: <FolderOpen color="$color10" size={14} />,
         iconProps: {
-          androidIconName: "ic_menu_myplaces",
+          androidIconName: "ic_workspace_select",
           ios: { name: "folder" },
         },
         label: "选择工作区",
@@ -502,7 +520,7 @@ export function WorkspaceSelect() {
       {
         icon: <FolderPlus color="$color10" size={14} />,
         iconProps: {
-          androidIconName: "ic_menu_add",
+          androidIconName: "ic_workspace_create",
           ios: { name: "folder.badge.plus" },
         },
         label: "创建工作区",
@@ -516,7 +534,7 @@ export function WorkspaceSelect() {
       {
         icon: <ArrowDownUp color="$color10" size={14} />,
         iconProps: {
-          androidIconName: "ic_menu_sort_by_size",
+          androidIconName: "ic_workspace_sort",
           ios: { name: "arrow.up.arrow.down" },
         },
         label: "排序方式",
@@ -530,7 +548,7 @@ export function WorkspaceSelect() {
       {
         icon: <Settings color="$color10" size={14} />,
         iconProps: {
-          androidIconName: "ic_menu_preferences",
+          androidIconName: "ic_workspace_settings",
           ios: { name: "gearshape" },
         },
         label: "设置",
@@ -540,7 +558,7 @@ export function WorkspaceSelect() {
         },
       },
     ],
-    [openCreateWorkspaceSheet],
+    [openCreateWorkspaceSheet, workspaces.length],
   );
 
   const sortedWorkspaces = useMemo(
@@ -574,6 +592,18 @@ export function WorkspaceSelect() {
     },
     [],
   );
+  const areAllWorkspacesSelected =
+    workspaces.length > 0 &&
+    workspaces.every((workspaceItem) => selectedWorkspaceIds.includes(workspaceItem.id));
+  const toggleSelectAllWorkspaces = useCallback(() => {
+    setSelectedWorkspaceIds(
+      areAllWorkspacesSelected ? [] : workspaces.map((workspaceItem) => workspaceItem.id),
+    );
+  }, [areAllWorkspacesSelected, workspaces]);
+  const finishWorkspaceSelection = useCallback(() => {
+    setIsWorkspaceSelectionMode(false);
+    setSelectedWorkspaceIds([]);
+  }, []);
 
   useEffect(() => {
     void refreshWorkspaces();
@@ -596,9 +626,28 @@ export function WorkspaceSelect() {
     <>
       <Stack.Screen
         options={{
-          headerRight: () => (
-            <Menu trigger={HeaderMenuActionButton} items={headerMenuItems} nativeHaptics />
-          ),
+          headerRight: () => {
+            if (isWorkspaceSelectionMode) {
+              return (
+                <View style={styles.headerActions}>
+                  <HeaderActionButton
+                    accessibilityLabel={areAllWorkspacesSelected ? "取消全选工作区" : "全选工作区"}
+                    circular={false}
+                    label={areAllWorkspacesSelected ? "取消全选" : "全选"}
+                    onPress={toggleSelectAllWorkspaces}
+                  />
+                  <HeaderActionButton
+                    accessibilityLabel="完成选择工作区"
+                    circular={false}
+                    label="完成"
+                    onPress={finishWorkspaceSelection}
+                  />
+                </View>
+              );
+            }
+
+            return <Menu trigger={HeaderMenuActionButton} items={headerMenuItems} nativeHaptics />;
+          },
         }}
       />
       <NativeList
@@ -634,7 +683,7 @@ export function WorkspaceSelect() {
                 }}
                 sfSymbol="folder.fill"
                 title={workspaceItem.displayName}
-                subtitle={formatUnixSecondsDateTime(workspaceItem.createdAt) ?? "创建时间未知"}
+                subtitle={getWorkspaceSubtitle(workspaceItem, workspaceSortValue)}
                 titleFontSize={16}
               />
             ))
@@ -686,6 +735,10 @@ export function WorkspaceSelect() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: "row",
+    gap: 0,
+  },
   headerAction: {
     alignItems: "center",
     borderRadius: 18,
