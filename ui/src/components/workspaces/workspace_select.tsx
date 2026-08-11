@@ -1,3 +1,4 @@
+import { ArrowDownUp, FolderOpen, FolderPlus, Settings } from "@tamagui/lucide-icons-2";
 import { Stack, router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -486,6 +487,11 @@ export function WorkspaceSelect() {
   const headerMenuItems = useMemo<MenuItemData[]>(
     () => [
       {
+        icon: <FolderOpen color="$color10" size={14} />,
+        iconProps: {
+          androidIconName: "ic_menu_myplaces",
+          ios: { name: "folder" },
+        },
         label: "选择工作区",
         value: "select-workspace",
         onPress: () => {
@@ -494,6 +500,11 @@ export function WorkspaceSelect() {
         },
       },
       {
+        icon: <FolderPlus color="$color10" size={14} />,
+        iconProps: {
+          androidIconName: "ic_menu_add",
+          ios: { name: "folder.badge.plus" },
+        },
         label: "创建工作区",
         value: "create-workspace",
         onPress: openCreateWorkspaceSheet,
@@ -503,6 +514,11 @@ export function WorkspaceSelect() {
         value: "separator-01",
       },
       {
+        icon: <ArrowDownUp color="$color10" size={14} />,
+        iconProps: {
+          androidIconName: "ic_menu_sort_by_size",
+          ios: { name: "arrow.up.arrow.down" },
+        },
         label: "排序方式",
         onPress: () => workspaceSortSelectRef.current?.open(),
         value: "sort-workspaces",
@@ -512,6 +528,11 @@ export function WorkspaceSelect() {
         value: "separator-02",
       },
       {
+        icon: <Settings color="$color10" size={14} />,
+        iconProps: {
+          androidIconName: "ic_menu_preferences",
+          ios: { name: "gearshape" },
+        },
         label: "设置",
         value: "settings",
         onPress: () => {
@@ -526,33 +547,32 @@ export function WorkspaceSelect() {
     () => sortWorkspaces(workspaces, workspaceSortValue),
     [workspaceSortValue, workspaces],
   );
-  const handleSelectedWorkspaceIdsChange = useCallback(
-    async (nextSelectedIds: Array<string | number>) => {
-      const nextWorkspaceId = nextSelectedIds.find((id) => typeof id === "string");
-
-      if (!nextWorkspaceId || isOpeningWorkspace) {
-        setSelectedWorkspaceIds([]);
+  const handleWorkspacePress = useCallback(
+    async (workspaceId: string) => {
+      if (isOpeningWorkspace) {
         return;
       }
 
-      setSelectedWorkspaceIds([nextWorkspaceId]);
       setIsOpeningWorkspace(true);
 
       try {
-        await openWorkspace(nextWorkspaceId);
-        setCurrentWorkspaceId(nextWorkspaceId);
-        setIsWorkspaceSelectionMode(false);
-        setSelectedWorkspaceIds([]);
+        await openWorkspace(workspaceId);
+        setCurrentWorkspaceId(workspaceId);
         void refreshWorkspaces();
       } catch (error) {
         console.error("[workspace-select] open workspace failed", error);
-        setSelectedWorkspaceIds([]);
         toast.error(getErrorMessage(error, "打开工作区失败"));
       } finally {
         setIsOpeningWorkspace(false);
       }
     },
     [isOpeningWorkspace, openWorkspace, refreshWorkspaces, setCurrentWorkspaceId, toast],
+  );
+  const handleSelectedWorkspaceIdsChange = useCallback(
+    (nextSelectedIds: Array<string | number>) => {
+      setSelectedWorkspaceIds(nextSelectedIds.filter((id): id is string => typeof id === "string"));
+    },
+    [],
   );
 
   useEffect(() => {
@@ -609,6 +629,9 @@ export function WorkspaceSelect() {
                 iconSlotWidth={28}
                 key={workspaceItem.id}
                 nativeScrollId={workspaceItem.id}
+                onPress={() => {
+                  void handleWorkspacePress(workspaceItem.id);
+                }}
                 sfSymbol="folder.fill"
                 title={workspaceItem.displayName}
                 subtitle={formatUnixSecondsDateTime(workspaceItem.createdAt) ?? "创建时间未知"}
@@ -617,7 +640,11 @@ export function WorkspaceSelect() {
             ))
           )}
           {showCreateWorkspaceButton ? (
-            <NativeListButtonItem onPress={openCreateWorkspaceSheet} title="创建工作区" />
+            <NativeListButtonItem
+              selectionDisabled
+              onPress={openCreateWorkspaceSheet}
+              title="创建工作区"
+            />
           ) : null}
         </NativeListSection>
       </NativeList>
