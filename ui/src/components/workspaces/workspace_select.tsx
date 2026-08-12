@@ -1,4 +1,4 @@
-import { ArrowDownUp, FolderOpen, FolderPlus, Settings } from "@tamagui/lucide-icons-2";
+import { ArrowDownUp, CircleCheck, FolderPlus, Settings } from "@tamagui/lucide-icons-2";
 import { Stack, router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -694,10 +694,10 @@ export function WorkspaceSelect() {
     () => [
       {
         disabled: workspaces.length === 0,
-        icon: <FolderOpen color="$color10" size={14} />,
+        icon: <CircleCheck color="$color10" size={14} />,
         iconProps: {
           androidIconName: "ic_workspace_select",
-          ios: { name: "folder" },
+          ios: { name: "checkmark.circle" },
         },
         label: "选择工作区",
         value: "select-workspace",
@@ -851,7 +851,7 @@ export function WorkspaceSelect() {
         automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
         contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
         editMode={isWorkspaceSelectionMode}
-        onRefresh={isWorkspaceSelectionMode ? undefined : handlePullToRefresh}
+        onRefresh={handlePullToRefresh}
         onSelectedIdsChange={handleSelectedWorkspaceIdsChange}
         selectedIds={selectedWorkspaceIds}
         style={styles.list}

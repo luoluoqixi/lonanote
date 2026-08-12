@@ -6,6 +6,7 @@
 # - SwiftUI List: iOS 15 大标题滚动时补齐导航栏布局失效通知，保留 UIKit 原生过渡与回弹动画。
 # - SwiftUI List: 提供通用 indicator frame 校正开关；具体系统版本由调用方决定。
 # - SwiftUI List: 提供 `nativeEditMode` / `nativeEditTint` 原生属性；编辑态由宿主 binding 驱动，避免动态 modifier 更新重建 List、丢失滚动位置。
+# - SwiftUI List: 原生持有稳定的 `UIRefreshControl`，通过属性和事件控制刷新，不再依赖 `refreshable` modifier。
 # - SwiftUI modifier: iOS 15 可为透明辅助行后的首个内容行恢复顶部圆角。
 # - SwiftUI modifier: iOS 15 隐藏辅助行 separator 时直接隔离 UIKit cell，并在复用、编辑态切换导致系统复位 inset 后持续重新隐藏。
 # - SwiftUI modifier: 提供并行 tap 手势，避免父级手势拦截 List 中 Button、TextField 等子控件。
@@ -15,10 +16,10 @@ index 1ffa70e..488c98b 100644
 +++ b/ios/SliderView.swift
 @@ -1,102 +1,146 @@
  // Copyright 2025-present 650 Industries. All rights reserved.
- 
+
  import SwiftUI
  import ExpoModulesCore
- 
+
  struct SliderView: ExpoSwiftUI.View {
    @ObservedObject var props: SliderProps
    @State var value: Float = 0.0
@@ -27,7 +28,7 @@ index 1ffa70e..488c98b 100644
    init(props: SliderProps) {
      self.props = props
    }
- 
+
    var body: some View {
  #if !os(tvOS)
      sliderContent
@@ -55,7 +56,7 @@ index 1ffa70e..488c98b 100644
      Text("Slider is not supported on tvOS")
  #endif
    }
- 
+
  #if !os(tvOS)
    @ViewBuilder
    private var sliderContent: some View {
@@ -63,7 +64,7 @@ index 1ffa70e..488c98b 100644
      let minimumValueLabel = props.children?.slot("minimum")
      let maximumValueLabel = props.children?.slot("maximum")
 +    let hasAnyLabel = label != nil || minimumValueLabel != nil || maximumValueLabel != nil
- 
+
      if let min = props.min, let max = props.max, let step = props.step {
 -      Slider(
 -        value: $value,
@@ -189,7 +190,7 @@ index 1ffa70e..488c98b 100644
    }
  #endif
  }
- 
+
  final class SliderProps: UIBaseViewProps {
    @Field var value: Float?
    @Field var step: Float?
@@ -198,7 +199,7 @@ index 1ffa70e..488c98b 100644
    var onValueChanged = EventDispatcher()
    var onEditingChanged = EventDispatcher()
  }
- 
+
 diff --git a/src/swift-ui/RNHostView.tsx b/src/swift-ui/RNHostView.tsx
 index 4e634d0..6a60b0e 100644
 --- a/src/swift-ui/RNHostView.tsx
@@ -214,7 +215,7 @@ index 4e634d0..6a60b0e 100644
     */
 @@ -17,12 +17,20 @@ export type RNHostViewProps = {
  };
- 
+
  export function RNHostView(props: RNHostViewProps) {
 +  const { matchContents, ...restProps } = props;
 +  const matchContentsVertical =
@@ -267,7 +268,7 @@ index 290f9d4..1340fb1 100644
 @@ -23,28 +23,45 @@ export interface RNHostProps extends PrimitiveBaseProps {
    modifiers?: ModifierConfig[];
  }
- 
+
 -type NativeRNHostProps = RNHostProps;
 +type NativeRNHostProps = Omit<RNHostProps, 'matchContents'> & {
 +  matchContentsHorizontal?: boolean;
@@ -277,7 +278,7 @@ index 290f9d4..1340fb1 100644
    'ExpoUI',
    'RNHostView'
  );
- 
+
  function transformProps(props: RNHostProps): NativeRNHostProps {
 -  const { modifiers, ...restProps } = props;
 +  const { matchContents, modifiers, ...restProps } = props;
@@ -294,7 +295,7 @@ index 290f9d4..1340fb1 100644
      ...restProps,
    };
  }
- 
+
  export function RNHostView(props: RNHostProps) {
 +  const matchContentsVertical =
 +    typeof props.matchContents === 'object' ? props.matchContents.vertical : props.matchContents;
@@ -335,18 +336,18 @@ index f8cba36..ced9b62 100644
 +++ b/ios/RNHostView.swift
 @@ -4,7 +4,9 @@ import SwiftUI
  import ExpoModulesCore
- 
+
  internal final class RNHostViewProps: ExpoSwiftUI.ViewProps {
 -  @Field var matchContents: Bool = false
 +  @Field var matchContents: Bool?
 +  @Field var matchContentsHorizontal: Bool?
 +  @Field var matchContentsVertical: Bool?
  }
- 
+
  struct RNHostView: ExpoSwiftUI.View {
 @@ -12,8 +14,16 @@ struct RNHostView: ExpoSwiftUI.View {
    @ObservedObject var props: RNHostViewProps
- 
+
    var body: some View {
 -    if props.matchContents, let childUIView = firstChildUIView {
 -      ApplySizeFromYogaNode(childUIView: childUIView) {
@@ -384,7 +385,7 @@ index f8cba36..ced9b62 100644
 +  let matchContentsHorizontal: Bool
 +  let matchContentsVertical: Bool
    let content: Content
- 
+
 -  init(childUIView: UIView, @ViewBuilder content: () -> Content) {
 +  init(
 +    childUIView: UIView,
@@ -399,7 +400,7 @@ index f8cba36..ced9b62 100644
 +    self.matchContentsVertical = matchContentsVertical
      self.content = content()
    }
- 
+
    var body: some SwiftUI.View {
      content
 -      .frame(width: observer.size.width, height: observer.size.height)
@@ -421,7 +422,7 @@ index f8cba36..ced9b62 100644
 +        )
 +      )
    }
- 
+
    @MainActor
 @@ -76,9 +118,26 @@ private struct ApplySizeFromYogaNode<Content: SwiftUI.View>: SwiftUI.View {
  // Listens to SwiftUI view size changes and updates the Yoga node size
@@ -439,7 +440,7 @@ index f8cba36..ced9b62 100644
 +    self.reportHorizontal = reportHorizontal
 +    self.reportVertical = reportVertical
 +  }
- 
+
    private func handleSizeChange(_ size: CGSize) {
 -    shadowNodeProxy.setViewSize?(size)
 +    shadowNodeProxy.setViewSize?(
@@ -449,7 +450,7 @@ index f8cba36..ced9b62 100644
 +      )
 +    )
    }
- 
+
    func body(content: Content) -> some View {
 diff --git a/android/src/main/java/expo/modules/ui/RNHostView.kt b/android/src/main/java/expo/modules/ui/RNHostView.kt
 index 7907672..b7d071e 100644
@@ -470,24 +471,24 @@ index 7907672..b7d071e 100644
  import androidx.compose.runtime.MutableState
 @@ -35,7 +38,9 @@ import expo.modules.kotlin.views.ExpoComposeView
  import expo.modules.kotlin.views.RNHostViewInterface
- 
+
  internal data class RNHostViewProps(
 -  val matchContents: MutableState<Boolean?> = mutableStateOf(null)
 +  val matchContents: MutableState<Boolean?> = mutableStateOf(null),
 +  val matchContentsHorizontal: MutableState<Boolean?> = mutableStateOf(null),
 +  val matchContentsVertical: MutableState<Boolean?> = mutableStateOf(null)
  ) : ComposeProps
- 
+
  @SuppressLint("ViewConstructor")
 @@ -84,14 +89,25 @@ internal class RNHostView(context: Context, appContext: AppContext) :
- 
+
    @Composable
    override fun ComposableScope.Content() {
 -    val matchContents = props.matchContents.value ?: false
 +    val legacyMatchContents = props.matchContents.value
 +    val matchContentsHorizontal = props.matchContentsHorizontal.value ?: legacyMatchContents ?: false
 +    val matchContentsVertical = props.matchContentsVertical.value ?: legacyMatchContents ?: false
- 
+
      wrapperState.value?.let { wrapper ->
        val childView = childViewState.value ?: return@let
 -      if (matchContents) {
@@ -519,11 +520,11 @@ index 7907672..b7d071e 100644
 +    matchContentsVertical: Boolean
 +  ): Modifier {
      val density = LocalDensity.current
- 
+
      val childSize = remember {
 @@ -126,27 +146,39 @@ internal class RNHostView(context: Context, appContext: AppContext) :
      }
- 
+
      return with(density) {
 -      if (childSize.value.width > 0 && childSize.value.height > 0) {
 -        Modifier.requiredSize(
@@ -551,7 +552,7 @@ index 7907672..b7d071e 100644
 -      }
      }
    }
- 
+
    // Sets Yoga node size from Compose view size
    // Listens Compose view size changes and updates the Yoga node size
    @Composable
@@ -578,7 +579,7 @@ index d64100e..6a3440a 100644
 @@ -569,6 +569,28 @@ export const scrollDismissesKeyboard = (
  export const scrollDisabled = (disabled: boolean = true) =>
    createModifier('scrollDisabled', { disabled });
- 
+
 +/**
 + * Sets content margins for scrollable content or scroll indicators.
 + * @param params - The target edges, inset length and placement.
@@ -732,7 +733,7 @@ index 552adc5..3a44a62 100644
 @@ -120,6 +120,25 @@ internal struct OpacityModifier: ViewModifier, Record {
    }
  }
- 
+
 +internal struct ViewIDModifier: ViewModifier, Record {
 +  @Field var value: Either<String, Double>?
 +
@@ -1209,7 +1210,7 @@ index a7ca51d..ba4896d 100644
 @@ -3,27 +3,126 @@
  import ExpoModulesCore
  import SwiftUI
- 
+
 +internal enum ListContentInsetAdjustmentBehavior: String, Enumerable {
 +  case automatic
 +  case scrollableAxes
@@ -1256,7 +1257,7 @@ index a7ca51d..ba4896d 100644
    @ObservedObject var props: ListProps
    @State private var selection = Set<AnyHashable>()
 +  @State private var hasScrolledToInitialTarget = false
- 
+
 +  @ViewBuilder
    var body: some View {
 -    List(selection: $selection) {
@@ -1341,7 +1342,7 @@ index a7ca51d..ba4896d 100644
 +      proxy.scrollTo(target, anchor: props.initialScrollAnchor.toUnitPoint)
      }
    }
- 
+
 @@ -55,3 +154,624 @@ struct ListView: ExpoSwiftUI.View {
      return result
    }
@@ -1973,7 +1974,7 @@ index 73c2193..2f1471d 100644
 +++ b/src/swift-ui/List/index.tsx
 @@ -21,6 +21,78 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
  }
- 
+
  export interface ListProps extends CommonViewModifierProps {
 +  /**
 +   * Whether UIKit automatically adjusts the native scroll indicator insets.
@@ -2129,12 +2130,12 @@ index a451a01..5f8f15c 100644
  public struct UIBaseView<Props: UIBaseViewProps, Content: ExpoSwiftUI.View<Props>>: ExpoSwiftUI.View {
    @ObservedObject public var props: Props
    let innerView: Content
- 
+
    public init(props: Props) {
      self.props = props
      self.innerView = Content(props: props)
    }
- 
+
    public var body: some View {
 -    innerView
 -      .applyAccessibilityIdentifier(props.testID)
@@ -2163,7 +2164,7 @@ index d64100ee..85442dc4 100644
 @@ -155,6 +155,13 @@ export const ignoreSafeArea = (params?: {
  export const onTapGesture = (handler: () => void) =>
    createModifierWithEventListener('onTapGesture', handler);
- 
+
 +/**
 + * Adds a tap gesture recognizer that ignores child controls.
 + * @param handler - Function to call when tapped.
@@ -2181,7 +2182,7 @@ index 552adc52..193d5573 100644
 @@ -335,6 +335,28 @@ internal struct OnTapGestureModifier: ViewModifier, Record {
    }
  }
- 
+
 +internal struct SimultaneousTapGestureModifier: ViewModifier, Record {
 +  var eventDispatcher: EventDispatcher?
 +
@@ -2211,11 +2212,11 @@ index 552adc52..193d5573 100644
      register("clipShape") { params, appContext, _ in
        return try ClipShapeModifier(from: params, appContext: appContext)
      }
- 
+
      register("onTapGesture") { params, appContext, eventDispatcher in
        return try OnTapGestureModifier(from: params, appContext: appContext, eventDispatcher: eventDispatcher)
      }
- 
+
 +    register("simultaneousTapGesture") { params, appContext, eventDispatcher in
 +      return try SimultaneousTapGestureModifier(
 +        from: params,
@@ -2290,7 +2291,7 @@ index c15cae9..f82505b 100644
 @@ -236,7 +241,7 @@ private final class ScrollInsetAdjustmentViewController: UIViewController {
    }
  }
- 
+
 -private final class ScrollInsetAdjustmentUIView: UIView {
 +private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDelegate {
    var automaticallyAdjustsScrollIndicatorInsets = true {
@@ -2299,7 +2300,7 @@ index c15cae9..f82505b 100644
 @@ -256,6 +261,13 @@ private final class ScrollInsetAdjustmentUIView: UIView {
      }
    }
- 
+
 +  var dismissKeyboardOnTap = false {
 +    didSet {
 +      guard oldValue != dismissKeyboardOnTap else { return }
@@ -2312,7 +2313,7 @@ index c15cae9..f82505b 100644
        guard oldValue != scrollPositionRestoreToken else { return }
 @@ -282,6 +294,7 @@ private final class ScrollInsetAdjustmentUIView: UIView {
    }
- 
+
    private weak var configuredScrollView: UIScrollView?
 +  private weak var keyboardDismissScrollView: UIScrollView?
    private weak var configuredViewController: UIViewController?
@@ -2321,7 +2322,7 @@ index c15cae9..f82505b 100644
 @@ -300,6 +313,18 @@ private final class ScrollInsetAdjustmentUIView: UIView {
    private var registrationRetryAttemptsRemaining = 0
    private var registrationRetryScheduled = false
- 
+
 +  private lazy var keyboardDismissTapGestureRecognizer: UITapGestureRecognizer = {
 +    let recognizer = UITapGestureRecognizer(
 +      target: self,
@@ -2335,7 +2336,7 @@ index c15cae9..f82505b 100644
 +  }()
 +
    private static let maximumRegistrationRetryAttempts = 30
- 
+
    func refreshNavigationBarScrollEdgeRegistration() {
 @@ -313,6 +338,7 @@ private final class ScrollInsetAdjustmentUIView: UIView {
      if window == nil {
@@ -2354,7 +2355,7 @@ index c15cae9..f82505b 100644
        scheduleUpdate()
      } else if correctsNestedScrollIndicatorFrame {
 @@ -378,6 +405,45 @@ private final class ScrollInsetAdjustmentUIView: UIView {
- 
+
      updateNestedScrollIndicatorFrameCorrection(for: scrollView)
      updateContentScrollViewRegistration(scrollView, force: forceRegistration)
 +    updateKeyboardDismissTapGestureRecognizer(for: scrollView)
@@ -2397,7 +2398,7 @@ index c15cae9..f82505b 100644
 +    }
 +    return true
    }
- 
+
    private func observeScrollPosition(of scrollView: UIScrollView, restore: Bool) {
 diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
 index e314328..8f7dc44 100644
@@ -2406,7 +2407,7 @@ index e314328..8f7dc44 100644
 @@ -47,6 +47,13 @@ export interface ListProps extends CommonViewModifierProps {
     */
    correctsNestedScrollIndicatorFrame?: boolean;
- 
+
 +  /**
 +   * Dismisses the current keyboard when a non-text-input area of the native list is tapped.
 +   * The native recognizer does not cancel child control touches.
@@ -2415,8 +2416,156 @@ index e314328..8f7dc44 100644
 +  dismissKeyboardOnTap?: boolean;
 +
    /**
-    * The anchor used when scrolling to `initialScrollTarget`.
-    * @default 'center'
+     * The anchor used when scrolling to `initialScrollTarget`.
+     * @default 'center'
+diff --git a/ios/ListView.swift b/ios/ListView.swift
+--- a/ios/ListView.swift
++++ b/ios/ListView.swift
+@@ -33,6 +33,7 @@ final class ListProps: UIBaseViewProps {
+   @Field var initialScrollTarget: Either<String, Double>?
+   @Field var nativeEditMode: EditModeType = .inactive
+   @Field var nativeEditTint: Color?
++  @Field var refreshControlEnabled = true
+   @Field var scrollPositionRestoreToken = 0
+   @Field var selection: [Either<String, Double>]?
+   @Field var tracksNavigationBarScrollEdge = false
+@@ -90,6 +91,7 @@ struct ListView: ExpoSwiftUI.View {
+           contentInsetAdjustmentBehavior: props.contentInsetAdjustmentBehavior,
+           correctsNestedScrollIndicatorFrame: props.correctsNestedScrollIndicatorFrame,
+           dismissKeyboardOnTap: props.dismissKeyboardOnTap,
++          refreshControlEnabled: props.refreshControlEnabled,
+           scrollPositionRestoreToken: props.scrollPositionRestoreToken,
+           scrollPositionStore: props.scrollPositionStore,
+           tracksNavigationBarScrollEdge: props.tracksNavigationBarScrollEdge
+@@ -162,6 +164,7 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+   let contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
+   let correctsNestedScrollIndicatorFrame: Bool
+   let dismissKeyboardOnTap: Bool
++  let refreshControlEnabled: Bool
+   let scrollPositionRestoreToken: Int
+   let scrollPositionStore: ListScrollPositionStore
+   let tracksNavigationBarScrollEdge: Bool
+@@ -173,6 +176,7 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+     view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
+     view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
+     view.dismissKeyboardOnTap = dismissKeyboardOnTap
++    view.refreshControlEnabled = refreshControlEnabled
+     view.scrollPositionRestoreToken = scrollPositionRestoreToken
+     view.scrollPositionStore = scrollPositionStore
+     view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
+@@ -185,6 +189,7 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+     view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
+     view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
+     view.dismissKeyboardOnTap = dismissKeyboardOnTap
++    view.refreshControlEnabled = refreshControlEnabled
+     view.scrollPositionRestoreToken = scrollPositionRestoreToken
+     view.scrollPositionStore = scrollPositionStore
+     view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
+@@ -268,6 +273,14 @@ private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDele
+     }
+   }
+-
++
++  var refreshControlEnabled = true {
++    didSet {
++      guard oldValue != refreshControlEnabled else { return }
++      refreshControlUpdateAttemptsRemaining = Self.maximumRefreshControlUpdateAttempts
++      scheduleUpdate()
++    }
++  }
++
+   var scrollPositionRestoreToken = 0 {
+     didSet {
+       guard oldValue != scrollPositionRestoreToken else { return }
+@@ -312,6 +325,8 @@ private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDele
+   private var forceContentScrollViewRegistration = false
+   private var registrationRetryAttemptsRemaining = 0
+   private var registrationRetryScheduled = false
++  private var refreshControlUpdateAttemptsRemaining = 0
++  private var refreshControlUpdateScheduled = false
+-
++
+   private lazy var keyboardDismissTapGestureRecognizer: UITapGestureRecognizer = {
+     let recognizer = UITapGestureRecognizer(
+@@ -326,6 +341,7 @@ private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDele
+   }()
+-
++
+   private static let maximumRegistrationRetryAttempts = 30
++  private static let maximumRefreshControlUpdateAttempts = 8
+-
++
+   func refreshNavigationBarScrollEdgeRegistration() {
+     registrationRetryAttemptsRemaining = Self.maximumRegistrationRetryAttempts
+@@ -406,6 +422,33 @@ private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDele
+     updateNestedScrollIndicatorFrameCorrection(for: scrollView)
+     updateContentScrollViewRegistration(scrollView, force: forceRegistration)
+     updateKeyboardDismissTapGestureRecognizer(for: scrollView)
++    updateRefreshControlEnabledState(for: scrollView)
++  }
++
++  private func updateRefreshControlEnabledState(for scrollView: UIScrollView) {
++    guard let refreshControl = scrollView.refreshControl else {
++      guard !refreshControlEnabled, refreshControlUpdateAttemptsRemaining > 0 else { return }
++      refreshControlUpdateAttemptsRemaining -= 1
++      scheduleRefreshControlUpdate()
++      return
++    }
++
++    refreshControlUpdateAttemptsRemaining = 0
++    if refreshControl.isEnabled != refreshControlEnabled {
++      refreshControl.isEnabled = refreshControlEnabled
++    }
++    refreshControl.isHidden = !refreshControlEnabled
++  }
++
++  private func scheduleRefreshControlUpdate() {
++    guard !refreshControlUpdateScheduled else { return }
++    refreshControlUpdateScheduled = true
++
++    DispatchQueue.main.async { [weak self] in
++      guard let self else { return }
++      self.refreshControlUpdateScheduled = false
++      self.scheduleUpdate()
++    }
+   }
+-
++
+   private func updateKeyboardDismissTapGestureRecognizer(for scrollView: UIScrollView) {
+diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
+--- a/src/swift-ui/List/index.tsx
++++ b/src/swift-ui/List/index.tsx
+@@ -88,6 +88,13 @@ export interface ListProps extends CommonViewModifierProps {
+   nativeEditTint?: string;
+-
++
+   /**
++   * Whether the backing UIKit refresh control accepts pull-to-refresh gestures.
++   * This updates the existing control without removing SwiftUI's refreshable modifier.
++   * @default true
++   */
++  refreshControlEnabled?: boolean;
++
++  /**
+    * Requests restoration of the native list's last recorded scroll offset.
+    * Increment this after a state transition that causes SwiftUI List to reset its offset.
+    */
+diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
+--- a/build/swift-ui/List/index.d.ts
++++ b/build/swift-ui/List/index.d.ts
+@@ -49,6 +49,12 @@ export interface ListProps extends CommonViewModifierProps {
+      */
+     nativeEditTint?: string;
+     /**
++     * Whether the backing UIKit refresh control accepts pull-to-refresh gestures.
++     * This updates the existing control without removing SwiftUI's refreshable modifier.
++     * @default true
++     */
++    refreshControlEnabled?: boolean;
++    /**
+      * Requests restoration of the native list's last recorded scroll offset.
+      * Increment this after a state transition that causes SwiftUI List to reset its offset.
+      */
 diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
 index e8417b5..c5380b8 100644
 --- a/build/swift-ui/List/index.d.ts
@@ -2434,3 +2583,263 @@ index e8417b5..c5380b8 100644
      /**
       * The anchor used when scrolling to `initialScrollTarget`.
       * @default 'center'
+diff --git a/ios/ListView.swift b/ios/ListView.swift
+--- a/ios/ListView.swift
++++ b/ios/ListView.swift
+@@ -33,11 +33,14 @@ final class ListProps: UIBaseViewProps {
+   @Field var initialScrollTarget: Either<String, Double>?
+   @Field var nativeEditMode: EditModeType = .inactive
+   @Field var nativeEditTint: Color?
+-  @Field var refreshControlEnabled = true
++  @Field var refreshEnabled = true
++  @Field var refreshable = false
++  @Field var refreshing = false
+   @Field var scrollPositionRestoreToken = 0
+   @Field var selection: [Either<String, Double>]?
+   @Field var tracksNavigationBarScrollEdge = false
+   fileprivate let scrollPositionStore = ListScrollPositionStore()
++  var onRefresh = EventDispatcher()
+   var onSelectionChange = EventDispatcher()
+ }
+
+@@ -91,7 +94,12 @@ struct ListView: ExpoSwiftUI.View {
+           contentInsetAdjustmentBehavior: props.contentInsetAdjustmentBehavior,
+           correctsNestedScrollIndicatorFrame: props.correctsNestedScrollIndicatorFrame,
+           dismissKeyboardOnTap: props.dismissKeyboardOnTap,
+-          refreshControlEnabled: props.refreshControlEnabled,
++          onRefresh: {
++            props.onRefresh(["refreshing": true])
++          },
++          refreshEnabled: props.refreshEnabled,
++          refreshable: props.refreshable,
++          refreshing: props.refreshing,
+           scrollPositionRestoreToken: props.scrollPositionRestoreToken,
+           scrollPositionStore: props.scrollPositionStore,
+           tracksNavigationBarScrollEdge: props.tracksNavigationBarScrollEdge
+@@ -164,7 +172,10 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+   let contentInsetAdjustmentBehavior: ListContentInsetAdjustmentBehavior?
+   let correctsNestedScrollIndicatorFrame: Bool
+   let dismissKeyboardOnTap: Bool
+-  let refreshControlEnabled: Bool
++  let onRefresh: () -> Void
++  let refreshEnabled: Bool
++  let refreshable: Bool
++  let refreshing: Bool
+   let scrollPositionRestoreToken: Int
+   let scrollPositionStore: ListScrollPositionStore
+   let tracksNavigationBarScrollEdge: Bool
+@@ -176,7 +187,10 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+     view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
+     view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
+     view.dismissKeyboardOnTap = dismissKeyboardOnTap
+-    view.refreshControlEnabled = refreshControlEnabled
++    view.onRefresh = onRefresh
++    view.refreshEnabled = refreshEnabled
++    view.refreshable = refreshable
++    view.refreshing = refreshing
+     view.scrollPositionRestoreToken = scrollPositionRestoreToken
+     view.scrollPositionStore = scrollPositionStore
+     view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
+@@ -189,7 +203,10 @@ private struct ScrollInsetAdjustmentView: UIViewControllerRepresentable {
+     view.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
+     view.correctsNestedScrollIndicatorFrame = correctsNestedScrollIndicatorFrame
+     view.dismissKeyboardOnTap = dismissKeyboardOnTap
+-    view.refreshControlEnabled = refreshControlEnabled
++    view.onRefresh = onRefresh
++    view.refreshEnabled = refreshEnabled
++    view.refreshable = refreshable
++    view.refreshing = refreshing
+     view.scrollPositionRestoreToken = scrollPositionRestoreToken
+     view.scrollPositionStore = scrollPositionStore
+     view.tracksNavigationBarScrollEdge = tracksNavigationBarScrollEdge
+@@ -273,14 +290,29 @@ private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDele
+     }
+   }
+
+-  var refreshControlEnabled = true {
++  var refreshEnabled = true {
+     didSet {
+-      guard oldValue != refreshControlEnabled else { return }
+-      refreshControlUpdateAttemptsRemaining = Self.maximumRefreshControlUpdateAttempts
++      guard oldValue != refreshEnabled else { return }
+       scheduleUpdate()
+     }
+   }
+
++  var refreshable = false {
++    didSet {
++      guard oldValue != refreshable else { return }
++      scheduleUpdate()
++    }
++  }
++
++  var refreshing = false {
++    didSet {
++      guard oldValue != refreshing else { return }
++      scheduleUpdate()
++    }
++  }
++
++  var onRefresh: (() -> Void)?
++
+   var scrollPositionRestoreToken = 0 {
+     didSet {
+       guard oldValue != scrollPositionRestoreToken else { return }
+@@ -325,8 +357,6 @@ private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDele
+   private var forceContentScrollViewRegistration = false
+   private var registrationRetryAttemptsRemaining = 0
+   private var registrationRetryScheduled = false
+-  private var refreshControlUpdateAttemptsRemaining = 0
+-  private var refreshControlUpdateScheduled = false
+
+   private lazy var keyboardDismissTapGestureRecognizer: UITapGestureRecognizer = {
+     let recognizer = UITapGestureRecognizer(
+@@ -341,7 +371,16 @@ private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDele
+   }()
+
+   private static let maximumRegistrationRetryAttempts = 30
+-  private static let maximumRefreshControlUpdateAttempts = 8
++
++  private lazy var nativeRefreshControl: UIRefreshControl = {
++    let refreshControl = UIRefreshControl()
++    refreshControl.addTarget(
++      self,
++      action: #selector(handleNativeRefresh),
++      for: .valueChanged
++    )
++    return refreshControl
++  }()
+
+   func refreshNavigationBarScrollEdgeRegistration() {
+     registrationRetryAttemptsRemaining = Self.maximumRegistrationRetryAttempts
+@@ -422,35 +461,41 @@ private final class ScrollInsetAdjustmentUIView: UIView, UIGestureRecognizerDele
+     updateNestedScrollIndicatorFrameCorrection(for: scrollView)
+     updateContentScrollViewRegistration(scrollView, force: forceRegistration)
+     updateKeyboardDismissTapGestureRecognizer(for: scrollView)
+-    updateRefreshControlEnabledState(for: scrollView)
++    updateNativeRefreshControl(for: scrollView)
+   }
+
+-  private func updateRefreshControlEnabledState(for scrollView: UIScrollView) {
+-    guard let refreshControl = scrollView.refreshControl else {
+-      guard !refreshControlEnabled, refreshControlUpdateAttemptsRemaining > 0 else { return }
+-      refreshControlUpdateAttemptsRemaining -= 1
+-      scheduleRefreshControlUpdate()
++  private func updateNativeRefreshControl(for scrollView: UIScrollView) {
++    guard refreshable && refreshEnabled else {
++      if scrollView.refreshControl === nativeRefreshControl {
++        nativeRefreshControl.endRefreshing()
++        scrollView.refreshControl = nil
++      }
+       return
+     }
+
+-    refreshControlUpdateAttemptsRemaining = 0
+-    if refreshControl.isEnabled != refreshControlEnabled {
+-      refreshControl.isEnabled = refreshControlEnabled
++    if scrollView.refreshControl !== nativeRefreshControl {
++      scrollView.refreshControl = nativeRefreshControl
+     }
+-    refreshControl.isHidden = !refreshControlEnabled
+-  }
+
+-  private func scheduleRefreshControlUpdate() {
+-    guard !refreshControlUpdateScheduled else { return }
+-    refreshControlUpdateScheduled = true
++    nativeRefreshControl.isEnabled = true
++    nativeRefreshControl.isHidden = false
+
+-    DispatchQueue.main.async { [weak self] in
+-      guard let self else { return }
+-      self.refreshControlUpdateScheduled = false
+-      self.scheduleUpdate()
++    if !refreshing {
++      nativeRefreshControl.endRefreshing()
++    } else if !nativeRefreshControl.isRefreshing {
++      nativeRefreshControl.beginRefreshing()
+     }
+   }
+
++  @objc private func handleNativeRefresh() {
++    guard refreshable && refreshEnabled,
++      configuredScrollView?.refreshControl === nativeRefreshControl else {
++      nativeRefreshControl.endRefreshing()
++      return
++    }
++    onRefresh?()
++  }
++
+   private func updateKeyboardDismissTapGestureRecognizer(for scrollView: UIScrollView) {
+     guard dismissKeyboardOnTap else {
+       removeKeyboardDismissTapGestureRecognizer()
+diff --git a/src/swift-ui/List/index.tsx b/src/swift-ui/List/index.tsx
+--- a/src/swift-ui/List/index.tsx
++++ b/src/swift-ui/List/index.tsx
+@@ -16,6 +16,7 @@ function transformListProps(props: Omit<ListProps, 'children'>): Omit<NativeList
+     modifiers,
+     ...(modifiers ? createViewModifierEventListener(modifiers) : undefined),
+     ...restProps,
++    onRefresh: () => props?.onRefresh?.(),
+     onSelectionChange: ({ nativeEvent: { selection } }) => props?.onSelectionChange?.(selection),
+   };
+ }
+@@ -88,12 +89,20 @@ export interface ListProps extends CommonViewModifierProps {
+   nativeEditTint?: string;
+
+   /**
+-   * Whether the backing UIKit refresh control accepts pull-to-refresh gestures.
+-   * This updates the existing control without removing SwiftUI's refreshable modifier.
++   * Whether the native refresh control accepts pull-to-refresh gestures.
+    * @default true
+    */
+-  refreshControlEnabled?: boolean;
++  refreshEnabled?: boolean;
+
++  /** Whether the List installs its stable native refresh control. */
++  refreshable?: boolean;
++
++  /** Whether the native refresh indicator is active. */
++  refreshing?: boolean;
++
++  /** Called when the native refresh control is triggered. */
++  onRefresh?: () => void;
++
+   /**
+    * Requests restoration of the native list's last recorded scroll offset.
+    * Increment this after a state transition that causes SwiftUI List to reset its offset.
+@@ -128,8 +137,10 @@ export interface ListProps extends CommonViewModifierProps {
+  * SelectItemEvent represents an event triggered when the selection changes in a list.
+  */
+ type SelectItemEvent = ViewEvent<'onSelectionChange', { selection: (string | number)[] }>;
++type RefreshEvent = ViewEvent<'onRefresh', object>;
+
+-type NativeListProps = Omit<ListProps, 'onSelectionChange'> &
++type NativeListProps = Omit<ListProps, 'onRefresh' | 'onSelectionChange'> &
++  RefreshEvent &
+   SelectItemEvent & {
+     children: React.ReactNode;
+   };
+diff --git a/build/swift-ui/List/index.d.ts b/build/swift-ui/List/index.d.ts
+--- a/build/swift-ui/List/index.d.ts
++++ b/build/swift-ui/List/index.d.ts
+@@ -49,12 +49,17 @@ export interface ListProps extends CommonViewModifierProps {
+      */
+     nativeEditTint?: string;
+     /**
+-     * Whether the backing UIKit refresh control accepts pull-to-refresh gestures.
+-     * This updates the existing control without removing SwiftUI's refreshable modifier.
++     * Whether the native refresh control accepts pull-to-refresh gestures.
+      * @default true
+      */
+-    refreshControlEnabled?: boolean;
++    refreshEnabled?: boolean;
++    /** Whether the List installs its stable native refresh control. */
++    refreshable?: boolean;
++    /** Whether the native refresh indicator is active. */
++    refreshing?: boolean;
++    /** Called when the native refresh control is triggered. */
++    onRefresh?: () => void;
+     /**
+      * Requests restoration of the native list's last recorded scroll offset.
+      * Increment this after a state transition that causes SwiftUI List to reset its offset.
+      */
