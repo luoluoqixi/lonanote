@@ -18,6 +18,7 @@ import {
   type SelectHandle,
   type SelectItemGroupData,
   Text,
+  confirmNative,
   getNativeStackScrollEdgeHeaderOptions,
   useAppBackgroundColors,
   useMenuTriggerState,
@@ -43,6 +44,7 @@ type HeaderActionButtonProps = {
 
 const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
 const CREATE_WORKSPACE_SNAP_POINTS = [88];
+const EDIT_WORKSPACE_SNAP_POINTS = [50];
 type WorkspaceSortField = "last-opened" | "created-at" | "title";
 type WorkspaceSortDirection = "ascending" | "descending";
 type WorkspaceSortValue =
@@ -277,6 +279,78 @@ function CreateWorkspaceSheetContent({
   );
 }
 
+function EditWorkspaceSheet({
+  displayName,
+  isUpdating,
+  onChange,
+  onOpenChange,
+  onSubmit,
+  open,
+}: {
+  displayName: string;
+  isUpdating: boolean;
+  onChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: () => void;
+  open: boolean;
+}) {
+  const appBackgroundColors = useAppBackgroundColors();
+  const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
+    headerBackgroundColor: appBackgroundColors.header,
+    screenBackgroundColor: appBackgroundColors.sheet,
+  });
+  const usesNativeIosScrollEdgeHeader = isIos();
+  const canSubmit = displayName.trim().length > 0 && !isUpdating;
+
+  return (
+    <NativeSheetStack
+      initialRouteName="edit-workspace"
+      name="edit-workspace-sheet"
+      onOpenChange={onOpenChange}
+      open={open}
+      sheetProps={{
+        snapPoints: EDIT_WORKSPACE_SNAP_POINTS,
+        snapPointsMode: "percent",
+      }}
+      screenOptions={nativeHeaderOptions}
+    >
+      <NativeSheetStack.Screen name="edit-workspace" options={{ title: "编辑工作区" }}>
+        {() => (
+          <NativeList
+            automaticallyAdjustsScrollIndicatorInsets={
+              usesNativeIosScrollEdgeHeader ? true : undefined
+            }
+            contentInsetAdjustmentBehavior={usesNativeIosScrollEdgeHeader ? "automatic" : undefined}
+            dismissKeyboardOnTap
+            style={styles.list}
+            tracksNavigationBarScrollEdge
+          >
+            <NativeListSection title="基本信息">
+              <NativeListInputItem
+                title="工作区名称"
+                inputProps={{
+                  autoFocus: true,
+                  onChangeText: onChange,
+                  placeholder: "我的笔记",
+                  textAlign: "right",
+                  value: displayName,
+                }}
+              />
+            </NativeListSection>
+            <NativeListSection>
+              <NativeListButtonItem
+                disabled={!canSubmit}
+                onPress={onSubmit}
+                title={isUpdating ? "正在保存…" : "保存"}
+              />
+            </NativeListSection>
+          </NativeList>
+        )}
+      </NativeSheetStack.Screen>
+    </NativeSheetStack>
+  );
+}
+
 function WorkspaceSelectStatus({ message }: { message: string }) {
   return (
     <View style={styles.status}>
@@ -372,7 +446,7 @@ function isWorkspaceSortValue(value: string | null): value is WorkspaceSortValue
 
 export function WorkspaceSelect() {
   const { toast } = useToast();
-  const { setCurrentWorkspaceId } = useWorkspaceSession();
+  const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { open: openWorkspace } = useWorkspaceState(null);
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const [workspaceSortValue, setWorkspaceSortValue] = useState<WorkspaceSortValue>(
@@ -392,6 +466,11 @@ export function WorkspaceSelect() {
   const [storageProviderError, setStorageProviderError] = useState<string | null>(null);
   const [isLoadingStorageProviders, setIsLoadingStorageProviders] = useState(false);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState<WorkspaceListItem | null>(null);
+  const [editedWorkspaceName, setEditedWorkspaceName] = useState("");
+  const [isEditWorkspaceSheetOpen, setIsEditWorkspaceSheetOpen] = useState(false);
+  const [isUpdatingWorkspace, setIsUpdatingWorkspace] = useState(false);
+  const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
   const requestIdRef = useRef(0);
   const storageProviderRequestIdRef = useRef(0);
   const usesNativeIosHeader = os() === "ios";
@@ -501,6 +580,116 @@ export function WorkspaceSelect() {
     storageProviderId,
     toast,
   ]);
+  const openEditWorkspaceSheet = useCallback((workspaceItem: WorkspaceListItem) => {
+    setEditingWorkspace(workspaceItem);
+    setEditedWorkspaceName(workspaceItem.displayName);
+    setIsEditWorkspaceSheetOpen(true);
+  }, []);
+  const handleEditWorkspaceSheetOpenChange = useCallback((open: boolean) => {
+    setIsEditWorkspaceSheetOpen(open);
+
+    if (!open) {
+      setEditingWorkspace(null);
+      setEditedWorkspaceName("");
+    }
+  }, []);
+  const updateWorkspace = useCallback(async () => {
+    if (!editingWorkspace || isUpdatingWorkspace) {
+      return;
+    }
+
+    const nextDisplayName = editedWorkspaceName.trim();
+    if (!nextDisplayName) {
+      toast.error("请输入工作区名称");
+      return;
+    }
+
+    setIsUpdatingWorkspace(true);
+    let openedForUpdate = false;
+
+    try {
+      const isWorkspaceOpen = await workspace.isOpen(editingWorkspace.id);
+      if (!isWorkspaceOpen) {
+        await workspace.open(editingWorkspace.id);
+        openedForUpdate = true;
+      }
+
+      const updatedWorkspace = await workspace.updateDisplayName(
+        editingWorkspace.id,
+        nextDisplayName,
+      );
+      handleEditWorkspaceSheetOpenChange(false);
+      await refreshWorkspaces();
+      toast.success(`已更新工作区“${updatedWorkspace.displayName}”`);
+    } catch (error) {
+      console.error("[workspace-select] update workspace failed", error);
+      toast.error(getErrorMessage(error, "更新工作区失败"));
+    } finally {
+      if (openedForUpdate && currentWorkspaceId !== editingWorkspace.id) {
+        try {
+          await workspace.close(editingWorkspace.id);
+        } catch (error) {
+          console.error("[workspace-select] close workspace after update failed", error);
+        }
+      }
+
+      setIsUpdatingWorkspace(false);
+    }
+  }, [
+    editedWorkspaceName,
+    editingWorkspace,
+    handleEditWorkspaceSheetOpenChange,
+    isUpdatingWorkspace,
+    currentWorkspaceId,
+    refreshWorkspaces,
+    toast,
+  ]);
+  const deleteWorkspace = useCallback(
+    async (workspaceItem: WorkspaceListItem) => {
+      if (isDeletingWorkspace) {
+        return;
+      }
+
+      const result = await confirmNative({
+        buttons: [
+          { key: "cancel", style: "cancel", text: "取消" },
+          { key: "delete", style: "destructive", text: "删除" },
+        ],
+        message: `删除工作区“${workspaceItem.displayName}”及其中的所有文件后无法恢复，是否继续？`,
+        title: "警告",
+      });
+
+      if (result !== "delete") {
+        return;
+      }
+
+      setIsDeletingWorkspace(true);
+
+      try {
+        await workspace.close(workspaceItem.id);
+        const removedWorkspace = await workspace.remove(workspaceItem.id, true);
+
+        if (currentWorkspaceId === workspaceItem.id) {
+          setCurrentWorkspaceId(null);
+        }
+
+        await refreshWorkspaces();
+
+        if (removedWorkspace.fileCleanup.status === "failed") {
+          toast.warning("工作区已移除，但部分文件删除失败");
+          return;
+        }
+
+        toast.success(`已删除工作区“${workspaceItem.displayName}”`);
+      } catch (error) {
+        console.error("[workspace-select] delete workspace failed", error);
+        toast.error(getErrorMessage(error, "删除工作区失败"));
+      } finally {
+        setIsDeletingWorkspace(false);
+      }
+    },
+    [currentWorkspaceId, isDeletingWorkspace, refreshWorkspaces, setCurrentWorkspaceId, toast],
+  );
   const headerMenuItems = useMemo<MenuItemData[]>(
     () => [
       {
@@ -567,7 +756,7 @@ export function WorkspaceSelect() {
   );
   const handleWorkspacePress = useCallback(
     async (workspaceId: string) => {
-      if (isOpeningWorkspace) {
+      if (isOpeningWorkspace || isDeletingWorkspace || isUpdatingWorkspace) {
         return;
       }
 
@@ -584,7 +773,15 @@ export function WorkspaceSelect() {
         setIsOpeningWorkspace(false);
       }
     },
-    [isOpeningWorkspace, openWorkspace, refreshWorkspaces, setCurrentWorkspaceId, toast],
+    [
+      isDeletingWorkspace,
+      isOpeningWorkspace,
+      isUpdatingWorkspace,
+      openWorkspace,
+      refreshWorkspaces,
+      setCurrentWorkspaceId,
+      toast,
+    ],
   );
   const handleSelectedWorkspaceIdsChange = useCallback(
     (nextSelectedIds: Array<string | number>) => {
@@ -654,7 +851,7 @@ export function WorkspaceSelect() {
         automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
         contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
         editMode={isWorkspaceSelectionMode}
-        onRefresh={handlePullToRefresh}
+        onRefresh={isWorkspaceSelectionMode ? undefined : handlePullToRefresh}
         onSelectedIdsChange={handleSelectedWorkspaceIdsChange}
         selectedIds={selectedWorkspaceIds}
         style={styles.list}
@@ -668,7 +865,24 @@ export function WorkspaceSelect() {
           ) : (
             sortedWorkspaces.map((workspaceItem) => (
               <NativeListNavigationItem
-                disabled={isOpeningWorkspace}
+                contextMenuProps={{
+                  items: [
+                    {
+                      label: "编辑工作区",
+                      onSelect: () => openEditWorkspaceSheet(workspaceItem),
+                      value: `edit-workspace-${workspaceItem.id}`,
+                    },
+                    {
+                      destructive: true,
+                      label: "删除工作区",
+                      onSelect: () => {
+                        void deleteWorkspace(workspaceItem);
+                      },
+                      value: `delete-workspace-${workspaceItem.id}`,
+                    },
+                  ],
+                }}
+                disabled={isOpeningWorkspace || isDeletingWorkspace || isUpdatingWorkspace}
                 icon={
                   <Text color="$color10" fontSize="$7">
                     ▣
@@ -729,6 +943,16 @@ export function WorkspaceSelect() {
         storageProviderError={storageProviderError}
         storageProviderIds={storageProviderIds}
         storageProviderId={storageProviderId}
+      />
+      <EditWorkspaceSheet
+        displayName={editedWorkspaceName}
+        isUpdating={isUpdatingWorkspace}
+        onChange={setEditedWorkspaceName}
+        onOpenChange={handleEditWorkspaceSheetOpenChange}
+        onSubmit={() => {
+          void updateWorkspace();
+        }}
+        open={isEditWorkspaceSheetOpen}
       />
     </>
   );
