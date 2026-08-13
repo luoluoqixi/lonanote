@@ -14,6 +14,7 @@ import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
 import { WorkspaceSelectHeader } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
+import { WorkspaceSelectionToolbar } from "./workspace_selection_toolbar";
 import {
   DEFAULT_WORKSPACE_SORT_VALUE,
   WorkspaceSortSelect,
@@ -249,18 +250,21 @@ export function WorkspaceSelect() {
     toast,
   ]);
 
-  const deleteWorkspace = useCallback(
-    async (workspaceItem: WorkspaceListItem) => {
-      if (isDeletingWorkspace) {
+  const deleteWorkspaces = useCallback(
+    async (workspaceItems: WorkspaceListItem[]) => {
+      if (isDeletingWorkspace || workspaceItems.length === 0) {
         return;
       }
 
+      const isSingleWorkspace = workspaceItems.length === 1;
       const result = await confirmNative({
         buttons: [
           { key: "cancel", style: "cancel", text: "取消" },
           { key: "delete", style: "destructive", text: "删除" },
         ],
-        message: `删除工作区“${workspaceItem.displayName}”及其中的所有文件后无法恢复，是否继续？`,
+        message: isSingleWorkspace
+          ? `删除工作区“${workspaceItems[0]?.displayName}”及其中的所有文件后无法恢复，是否继续？`
+          : `删除选中的 ${workspaceItems.length} 个工作区及其中的所有文件后无法恢复，是否继续？`,
         title: "警告",
       });
 
@@ -270,25 +274,58 @@ export function WorkspaceSelect() {
 
       setIsDeletingWorkspace(true);
 
-      try {
-        await workspace.close(workspaceItem.id);
-        const removedWorkspace = await workspace.remove(workspaceItem.id, true);
+      const removedWorkspaceIds: string[] = [];
+      let failedCount = 0;
+      let fileCleanupFailedCount = 0;
 
-        if (currentWorkspaceId === workspaceItem.id) {
-          setCurrentWorkspaceId(null);
+      try {
+        for (const workspaceItem of workspaceItems) {
+          try {
+            await workspace.close(workspaceItem.id);
+            const removedWorkspace = await workspace.remove(workspaceItem.id, true);
+            removedWorkspaceIds.push(workspaceItem.id);
+
+            if (removedWorkspace.fileCleanup.status === "failed") {
+              fileCleanupFailedCount += 1;
+            }
+          } catch (error) {
+            failedCount += 1;
+            console.error(`[workspace-select] delete workspace ${workspaceItem.id} failed`, error);
+          }
         }
 
+        if (currentWorkspaceId && removedWorkspaceIds.includes(currentWorkspaceId)) {
+          setCurrentWorkspaceId(null);
+        }
+        setSelectedWorkspaceIds((currentIds) =>
+          currentIds.filter((id) => !removedWorkspaceIds.includes(id)),
+        );
         await refreshWorkspaces();
 
-        if (removedWorkspace.fileCleanup.status === "failed") {
-          toast.warning("工作区已移除，但部分文件删除失败");
+        if (failedCount > 0) {
+          const removedCount = removedWorkspaceIds.length;
+          if (removedCount > 0) {
+            toast.warning(`已删除 ${removedCount} 个工作区，${failedCount} 个删除失败`);
+          } else {
+            toast.error("删除工作区失败");
+          }
           return;
         }
 
-        toast.success(`已删除工作区“${workspaceItem.displayName}”`);
-      } catch (error) {
-        console.error("[workspace-select] delete workspace failed", error);
-        toast.error(getErrorMessage(error, "删除工作区失败"));
+        if (fileCleanupFailedCount > 0) {
+          toast.warning(
+            isSingleWorkspace
+              ? "工作区已移除，但部分文件删除失败"
+              : `工作区已移除，其中 ${fileCleanupFailedCount} 个工作区的部分文件删除失败`,
+          );
+          return;
+        }
+
+        toast.success(
+          isSingleWorkspace
+            ? `已删除工作区“${workspaceItems[0]?.displayName}”`
+            : `已删除 ${workspaceItems.length} 个工作区`,
+        );
       } finally {
         setIsDeletingWorkspace(false);
       }
@@ -299,6 +336,10 @@ export function WorkspaceSelect() {
   const sortedWorkspaces = useMemo(
     () => sortWorkspaces(workspaces, workspaceSortValue),
     [workspaceSortValue, workspaces],
+  );
+  const selectedWorkspaces = useMemo(
+    () => workspaces.filter((workspaceItem) => selectedWorkspaceIds.includes(workspaceItem.id)),
+    [selectedWorkspaceIds, workspaces],
   );
 
   const handleWorkspacePress = useCallback(
@@ -383,7 +424,7 @@ export function WorkspaceSelect() {
         isWorkspaceSelectionMode={isWorkspaceSelectionMode}
         onCreateWorkspace={openCreateWorkspaceSheet}
         onDeleteWorkspace={(workspaceItem) => {
-          void deleteWorkspace(workspaceItem);
+          void deleteWorkspaces([workspaceItem]);
         }}
         onEditWorkspace={openEditWorkspaceSheet}
         onRefresh={handlePullToRefresh}
@@ -397,6 +438,22 @@ export function WorkspaceSelect() {
         usesNativeIosHeader={usesNativeIosHeader}
         workspaces={sortedWorkspaces}
       />
+      {isWorkspaceSelectionMode ? (
+        <WorkspaceSelectionToolbar
+          isDeleting={isDeletingWorkspace}
+          isUpdating={isUpdatingWorkspace}
+          onDelete={() => {
+            void deleteWorkspaces(selectedWorkspaces);
+          }}
+          onEdit={() => {
+            const selectedWorkspace = selectedWorkspaces[0];
+            if (selectedWorkspaces.length === 1 && selectedWorkspace) {
+              openEditWorkspaceSheet(selectedWorkspace);
+            }
+          }}
+          selectedCount={selectedWorkspaces.length}
+        />
+      ) : null}
       <WorkspaceSortSelect
         onOpenChange={setIsWorkspaceSortSelectOpen}
         onValueChange={(nextValue) => {
