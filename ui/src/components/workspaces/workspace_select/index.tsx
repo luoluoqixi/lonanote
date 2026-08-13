@@ -1,3 +1,4 @@
+import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
@@ -44,6 +45,7 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
 }
 
 export function WorkspaceSelect() {
+  const router = useRouter();
   const { toast } = useToast();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { open: openWorkspace } = useWorkspaceState(null);
@@ -354,6 +356,10 @@ export function WorkspaceSelect() {
         await openWorkspace(workspaceId);
         setCurrentWorkspaceId(workspaceId);
         void refreshWorkspaces();
+        if (router.canDismiss()) {
+          router.dismissAll();
+        }
+        router.replace("/workspace" as Href);
       } catch (error) {
         console.error("[workspace-select] open workspace failed", error);
         toast.error(getErrorMessage(error, "打开工作区失败"));
@@ -367,6 +373,7 @@ export function WorkspaceSelect() {
       isUpdatingWorkspace,
       openWorkspace,
       refreshWorkspaces,
+      router,
       setCurrentWorkspaceId,
       toast,
     ],
