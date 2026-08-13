@@ -55,7 +55,7 @@ export function WorkspaceSelectionToolbar({
             onPress={onEdit}
             style={styles.actionButton}
           >
-            <Pencil color="#34c759" size={24} />
+            <Pencil color="$color10" size={24} />
           </Button>
           <Button
             accessibilityLabel="删除所选工作区"
@@ -63,6 +63,7 @@ export function WorkspaceSelectionToolbar({
             circular
             disabled={!canDelete}
             hitSlop={8}
+            nativeHaptics
             onPress={onDelete}
             style={styles.actionButton}
           >
