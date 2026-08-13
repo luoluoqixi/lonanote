@@ -1135,7 +1135,7 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_get_command_length(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, double *return$) noexcept;
 
-::rust::repr::PtrLen craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str sandbox_path, ::rust::Str system_locale) noexcept;
+::rust::repr::PtrLen craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str app_data_path, ::rust::Str managed_workspace_path, ::rust::Str system_locale) noexcept;
 
 ::rust::repr::PtrLen craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_invoke(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str command, ::craby::lonanoterustmodule::bridging::NullableString *args, ::craby::lonanoterustmodule::bridging::NullableString *return$) noexcept;
 
@@ -1247,8 +1247,8 @@ double getCommandLength(::craby::lonanoterustmodule::bridging::LonanoteRustModul
   return ::std::move(return$.value);
 }
 
-void init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str sandbox_path, ::rust::Str system_locale) {
-  ::rust::repr::PtrLen error$ = craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_init(it_, sandbox_path, system_locale);
+void init(::craby::lonanoterustmodule::bridging::LonanoteRustModule &it_, ::rust::Str app_data_path, ::rust::Str managed_workspace_path, ::rust::Str system_locale) {
+  ::rust::repr::PtrLen error$ = craby$lonanoterustmodule$bridging$cxxbridge1$194$lonanote_rust_module_init(it_, app_data_path, managed_workspace_path, system_locale);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }

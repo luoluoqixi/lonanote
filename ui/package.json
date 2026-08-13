@@ -34,6 +34,7 @@
     "clear-patch-cache": "rn-ui-clear-patch-cache"
   },
   "dependencies": {
+    "@dr.pogodin/react-native-fs": "^2.40.0",
     "@expo/ui": "=55.0.17",
     "@lodev09/react-native-true-sheet": "=3.11.6",
     "@react-native-clipboard/clipboard": "1.16.1",

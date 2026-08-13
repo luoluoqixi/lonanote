@@ -21,7 +21,7 @@ const state: any = {};
 
 /**
  * 显式完成当前平台的 Rust runtime 初始化。
- * Tauri 在 setup 阶段已经初始化；移动端会把应用沙盒目录交给原生 Rust 模块。
+ * Tauri 在 setup 阶段已经初始化；移动端会把内部配置目录与 Managed Provider 根目录交给原生 Rust 模块。
  */
 export function initializeRustRuntime(): void {
   rawInitializeRustRuntime();

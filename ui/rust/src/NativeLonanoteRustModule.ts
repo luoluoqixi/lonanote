@@ -16,7 +16,7 @@ export interface RustLogEntry {
 interface Spec extends NativeModule {
   onCallbackRequest: Signal<CallbackRequest>;
   onRustLog: Signal<RustLogEntry>;
-  init(sandboxPath: string, systemLocale: string): void;
+  init(appDataPath: string, managedWorkspacePath: string, systemLocale: string): void;
   invoke(command: string, args: string | null): string | null;
   getCommandKeys(): string[];
   getCommandLength(): number;

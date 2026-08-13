@@ -37,7 +37,7 @@ CxxLonanoteRustModuleModule::CxxLonanoteRustModuleModule(
   methodMap_["getCommandCallbackLength"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandCallbackLength};
   methodMap_["getCommandKeys"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandKeys};
   methodMap_["getCommandLength"] = MethodMetadata{0, &CxxLonanoteRustModuleModule::getCommandLength};
-  methodMap_["init"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::init};
+  methodMap_["init"] = MethodMetadata{3, &CxxLonanoteRustModuleModule::init};
   methodMap_["invoke"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::invoke};
   methodMap_["invokeAsync"] = MethodMetadata{2, &CxxLonanoteRustModuleModule::invokeAsync};
   methodMap_["regCallbackFunction"] = MethodMetadata{1, &CxxLonanoteRustModuleModule::regCallbackFunction};
@@ -318,15 +318,17 @@ jsi::Value CxxLonanoteRustModuleModule::init(jsi::Runtime &rt,
   auto it_ = thisModule.module_;
 
   try {
-    if (2 != count) {
-      throw jsi::JSError(rt, "Expected 2 arguments");
+    if (3 != count) {
+      throw jsi::JSError(rt, "Expected 3 arguments");
     }
 
     auto arg0$raw = args[0].asString(rt).utf8(rt);
     auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
     auto arg1$raw = args[1].asString(rt).utf8(rt);
     auto arg1 = rust::Str(arg1$raw.data(), arg1$raw.size());
-    craby::lonanoterustmodule::bridging::init(*it_, arg0, arg1);
+    auto arg2$raw = args[2].asString(rt).utf8(rt);
+    auto arg2 = rust::Str(arg2$raw.data(), arg2$raw.size());
+    craby::lonanoterustmodule::bridging::init(*it_, arg0, arg1, arg2);
 
     return jsi::Value::undefined();
   } catch (const jsi::JSError &err) {

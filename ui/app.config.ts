@@ -27,6 +27,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: true,
     bundleIdentifier,
     infoPlist: {
+      LSSupportsOpeningDocumentsInPlace: true,
+      UIFileSharingEnabled: true,
       UIViewControllerBasedStatusBarAppearance: true,
     },
     // icon: "./assets/expo.icon",

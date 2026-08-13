@@ -27,7 +27,8 @@ type CallbackSender = oneshot::Sender<Result<Option<String>, String>>;
 const APP_LOCAL_PROVIDER_ID: &str = "app-local";
 
 struct InitResult {
-    sandbox_path: PathBuf,
+    app_data_path: PathBuf,
+    managed_workspace_path: PathBuf,
     system_locale: String,
     error: Option<String>,
 }
@@ -50,28 +51,50 @@ fn canonicalize_directory(path: &str, field: &str) -> Result<PathBuf> {
     std::fs::canonicalize(path).map_err(|error| anyhow!("解析 {field} 失败: {error}"))
 }
 
+fn prepare_directory(path: &str, field: &str) -> Result<PathBuf> {
+    if path.trim().is_empty() {
+        return Err(anyhow!("{field} 不能为空"));
+    }
+    let path = Path::new(path);
+    if !path.is_absolute() {
+        return Err(anyhow!("{field} 必须是绝对路径"));
+    }
+    std::fs::create_dir_all(path).map_err(|error| anyhow!("创建 {field} 失败: {error}"))?;
+    std::fs::canonicalize(path).map_err(|error| anyhow!("解析 {field} 失败: {error}"))
+}
+
 fn initialize_native_runtime(
     module_id: usize,
     module_data_path: &str,
-    sandbox_path: &str,
+    app_data_path: &str,
+    managed_workspace_path: &str,
     system_locale: &str,
 ) -> Result<()> {
     let module_data_path = canonicalize_directory(module_data_path, "module data path")?;
-    let sandbox_path = canonicalize_directory(sandbox_path, "sandbox path")?;
+    let app_data_path = prepare_directory(app_data_path, "app data path")?;
+    let managed_workspace_path =
+        prepare_directory(managed_workspace_path, "managed workspace path")?;
     let system_locale = system_locale.trim().to_string();
-    if !sandbox_path.starts_with(&module_data_path) {
-        return Err(anyhow!("sandbox path 必须位于原生模块允许的数据目录内"));
-    }
+    validate_native_storage_paths(&module_data_path, &app_data_path, &managed_workspace_path)?;
 
     let result = INIT_RESULT.get_or_init(|| InitResult {
-        sandbox_path: sandbox_path.clone(),
+        app_data_path: app_data_path.clone(),
+        managed_workspace_path: managed_workspace_path.clone(),
         system_locale: system_locale.clone(),
-        error: initialize_native_runtime_once(module_id, &sandbox_path, &system_locale)
-            .err()
-            .map(|error| format!("init rust error: {error}")),
+        error: initialize_native_runtime_once(
+            module_id,
+            &app_data_path,
+            &managed_workspace_path,
+            &system_locale,
+        )
+        .err()
+        .map(|error| format!("init rust error: {error}")),
     });
-    if result.sandbox_path != sandbox_path {
-        return Err(anyhow!("Rust 已使用其他 sandbox path 初始化"));
+    if result.app_data_path != app_data_path {
+        return Err(anyhow!("Rust 已使用其他 app data path 初始化"));
+    }
+    if result.managed_workspace_path != managed_workspace_path {
+        return Err(anyhow!("Rust 已使用其他 managed workspace path 初始化"));
     }
     if result.system_locale != system_locale {
         return Err(anyhow!("Rust 已使用其他 system locale 初始化"));
@@ -84,25 +107,68 @@ fn initialize_native_runtime(
 
 fn initialize_native_runtime_once(
     module_id: usize,
-    sandbox_path: &Path,
+    app_data_path: &Path,
+    managed_workspace_path: &Path,
     system_locale: &str,
 ) -> Result<()> {
     init_native_logger(module_id)?;
-    let app_paths = lonanote_core::config::app_path::resolve_default_paths(sandbox_path);
+    let app_paths = lonanote_core::config::app_path::resolve_default_paths(app_data_path);
     lonanote_core::config::app_path::init_paths(app_paths);
     lonanote_core::config::system_locale::init_system_locale(system_locale);
 
-    let resolver = Arc::new(LocalFsResolver::new().with_managed_provider(
-        StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?,
-        sandbox_path,
-    )) as Arc<dyn WorkspaceStorageResolver>;
-    let manager = runtime()?.block_on(WorkspaceManager::load(sandbox_path, resolver))?;
-    runtime()?.block_on(
-        manager
-            .create_initial_workspace_if_needed(StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?),
-    )?;
+    let provider_id = StorageProviderId::parse(APP_LOCAL_PROVIDER_ID)?;
+    let resolver = Arc::new(
+        LocalFsResolver::new().with_managed_provider(provider_id.clone(), managed_workspace_path),
+    ) as Arc<dyn WorkspaceStorageResolver>;
+    let manager = runtime()?.block_on(WorkspaceManager::load(app_data_path, resolver))?;
+    runtime()?.block_on(manager.create_initial_workspace_if_needed(provider_id))?;
     install_workspace_manager(manager).map_err(|error| anyhow!(error.to_string()))?;
     lonanote_core::init()?;
+    Ok(())
+}
+
+fn validate_native_storage_paths(
+    module_data_path: &Path,
+    app_data_path: &Path,
+    managed_workspace_path: &Path,
+) -> Result<()> {
+    #[cfg(target_os = "android")]
+    {
+        if app_data_path != module_data_path {
+            return Err(anyhow!(
+                "Android app data path 必须等于原生模块内部数据目录"
+            ));
+        }
+        let package_name = module_data_path
+            .parent()
+            .and_then(Path::file_name)
+            .ok_or_else(|| anyhow!("无法从 Android 内部数据目录解析包名"))?;
+        let expected_suffix = PathBuf::from("Android")
+            .join("data")
+            .join(package_name)
+            .join("files");
+        if !managed_workspace_path.ends_with(&expected_suffix) {
+            return Err(anyhow!(
+                "Android managed workspace path 必须位于应用的外部专属 files 目录"
+            ));
+        }
+    }
+
+    #[cfg(target_os = "ios")]
+    {
+        let container_path = module_data_path
+            .parent()
+            .ok_or_else(|| anyhow!("无法解析 iOS App Container"))?;
+        if !app_data_path.starts_with(container_path)
+            || !managed_workspace_path.starts_with(container_path)
+        {
+            return Err(anyhow!("iOS 存储路径必须位于当前 App Container 内"));
+        }
+    }
+
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    let _ = (module_data_path, app_data_path, managed_workspace_path);
+
     Ok(())
 }
 
@@ -232,11 +298,17 @@ pub struct LonanoteRustModule {
 
 #[craby_module]
 impl LonanoteRustModuleSpec for LonanoteRustModule {
-    fn init(&mut self, sandbox_path: &str, system_locale: &str) -> Void {
+    fn init(
+        &mut self,
+        app_data_path: &str,
+        managed_workspace_path: &str,
+        system_locale: &str,
+    ) -> Void {
         unwrap_or_throw(initialize_native_runtime(
             self.id(),
             &self.ctx.data_path,
-            sandbox_path,
+            app_data_path,
+            managed_workspace_path,
             system_locale,
         ))
     }

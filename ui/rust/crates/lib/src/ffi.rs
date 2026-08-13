@@ -57,7 +57,7 @@ pub mod bridging {
         fn lonanote_rust_module_get_command_length(it_: &mut LonanoteRustModule) -> Result<f64>;
 
         #[cxx_name = "init"]
-        fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str, system_locale: &str) -> Result<()>;
+        fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, app_data_path: &str, managed_workspace_path: &str, system_locale: &str) -> Result<()>;
 
         #[cxx_name = "invoke"]
         fn lonanote_rust_module_invoke(it_: &mut LonanoteRustModule, command: &str, args: NullableString) -> Result<NullableString>;
@@ -107,8 +107,7 @@ fn lonanote_rust_module_clear_callback_function(it_: &mut LonanoteRustModule) ->
     craby::catch_panic!({
         let ret = it_.clear_callback_function();
         ret
-    })
-    .and_then(|r| r)
+    }).and_then(|r| r)
 }
 
 fn lonanote_rust_module_get_command_async_keys(it_: &mut LonanoteRustModule) -> Result<Vec<String>, anyhow::Error> {
@@ -153,9 +152,9 @@ fn lonanote_rust_module_get_command_length(it_: &mut LonanoteRustModule) -> Resu
     })
 }
 
-fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, sandbox_path: &str, system_locale: &str) -> Result<(), anyhow::Error> {
+fn lonanote_rust_module_init(it_: &mut LonanoteRustModule, app_data_path: &str, managed_workspace_path: &str, system_locale: &str) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
-        let ret = it_.init(sandbox_path, system_locale);
+        let ret = it_.init(app_data_path, managed_workspace_path, system_locale);
         ret
     })
 }

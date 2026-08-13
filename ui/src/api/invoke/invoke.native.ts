@@ -1,5 +1,9 @@
-import { Paths } from "expo-file-system";
 import { LonanoteRustModule } from "lonanote_rust_module";
+
+import {
+  getAppDataDirectory,
+  getManagedWorkspaceDirectory,
+} from "@/api/common/storage_paths.native";
 
 import { systemLocale } from "./runtime";
 import type { InvokeCommand } from "./types";
@@ -17,15 +21,6 @@ const state: NativeRuntimeState = {};
 
 function normalizeArgs(args?: string | null | undefined): string | null {
   return args ?? null;
-}
-
-function normalizeFilePath(uri: string): string {
-  if (!uri.startsWith("file://")) {
-    return uri;
-  }
-
-  const path = decodeURIComponent(uri.slice("file://".length));
-  return path || "/";
 }
 
 function listenRustLogs(): void {
@@ -50,12 +45,14 @@ export function initializeRustRuntime(): void {
   if (state.initialized) {
     return;
   }
-  const sandboxPath = normalizeFilePath(Paths.document.uri);
+  const appDataPath = getAppDataDirectory();
+  const managedWorkspacePath = getManagedWorkspaceDirectory();
   const locale = systemLocale();
   listenRustLogs();
   console.info("systemLocale: ", locale);
-  console.info("sandboxPath: ", sandboxPath);
-  LonanoteRustModule.init(sandboxPath, locale);
+  console.info("appDataPath: ", appDataPath);
+  console.info("managedWorkspacePath: ", managedWorkspacePath);
+  LonanoteRustModule.init(appDataPath, managedWorkspacePath, locale);
   state.initialized = true;
 }
 

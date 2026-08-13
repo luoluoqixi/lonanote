@@ -1,5 +1,6 @@
-import { File, Paths } from "expo-file-system";
+import { File } from "expo-file-system";
 
+import { getAppDataDirectory, nativePathToFileUri } from "@/api/common/storage_paths.native";
 import { isInvokeAvailable } from "@/api/invoke";
 
 import { store as asyncStore } from "./store";
@@ -13,8 +14,12 @@ function ensureCommonStoreKey(storeKey: string): void {
   }
 }
 
-function getCommonStoreFile() {
-  return new File(Paths.document, COMMON_STORE_FILE_NAME);
+function commonStoreFileAt(directoryPath: string): File {
+  return new File(nativePathToFileUri(directoryPath), COMMON_STORE_FILE_NAME);
+}
+
+function getCommonStoreFile(): File {
+  return commonStoreFileAt(getAppDataDirectory());
 }
 
 function loadCommonStoreRecord(): StoreRecord {
