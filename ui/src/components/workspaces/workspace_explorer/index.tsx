@@ -33,7 +33,7 @@ import {
   type WorkspaceExplorerSortValue,
   sortWorkspaceExplorerEntries,
 } from "./workspace_explorer_sort";
-import { WorkspaceExplorerToolbar } from "./workspace_explorer_toolbar";
+import { useWorkspaceExplorerToolbar } from "./workspace_explorer_toolbar_host";
 
 export type WorkspaceExplorerMode = "directory" | "tree";
 
@@ -459,6 +459,25 @@ function WorkspaceExplorerForWorkspace({
     setSelectedEntryPaths([]);
   }, []);
 
+  useWorkspaceExplorerToolbar({
+    canGoBack: currentPath.length > 0,
+    isSelectionMode,
+    isUpdating: isUpdatingEntries,
+    onCreateDirectory: () => openCreateEntrySheet("directory"),
+    onCreateNote: () => openCreateEntrySheet("note"),
+    onDelete: () => {
+      void deleteEntries(selectedEntries);
+    },
+    onEdit: () => {
+      const selectedEntry = selectedEntries[0];
+      if (selectedEntries.length === 1 && selectedEntry) {
+        openRenameEntrySheet(selectedEntry);
+      }
+    },
+    onGoBack: () => router.back(),
+    selectedCount: selectedEntryPaths.length,
+  });
+
   if (mode !== "directory") {
     return null;
   }
@@ -502,24 +521,6 @@ function WorkspaceExplorerForWorkspace({
         selectedEntryPaths={selectedEntryPaths}
         sortValue={sortValue}
         tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
-      />
-      <WorkspaceExplorerToolbar
-        canGoBack={currentPath.length > 0}
-        isSelectionMode={isSelectionMode}
-        isUpdating={isUpdatingEntries}
-        onCreateDirectory={() => openCreateEntrySheet("directory")}
-        onCreateNote={() => openCreateEntrySheet("note")}
-        onDelete={() => {
-          void deleteEntries(selectedEntries);
-        }}
-        onEdit={() => {
-          const selectedEntry = selectedEntries[0];
-          if (selectedEntries.length === 1 && selectedEntry) {
-            openRenameEntrySheet(selectedEntry);
-          }
-        }}
-        onGoBack={() => router.back()}
-        selectedCount={selectedEntryPaths.length}
       />
       <WorkspaceExplorerSortSelect
         onOpenChange={setIsSortSelectOpen}

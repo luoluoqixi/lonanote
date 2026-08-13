@@ -8,6 +8,7 @@ import {
 
 import { isDesktop, os } from "@/api/common";
 import { TitleBar } from "@/components/window/titlebar";
+import { WorkspaceExplorerToolbarHost } from "@/components/workspaces/workspace_explorer/workspace_explorer_toolbar_host";
 import { getAppHomeTitle } from "@/config";
 import { useAppBackgroundColors, useResolvedeColorScheme } from "@/hooks/settings";
 
@@ -20,52 +21,54 @@ export function MobileAppStack() {
   return (
     <>
       {desktop ? <TitleBar /> : null}
-      <Stack
-        screenOptions={({ route }) => {
-          const stackBackgroundColor = appBackgroundColors.screen;
-          const headerBackgroundColor = appBackgroundColors.header;
-          const headerTitleColor = theme.gray12.val;
-          const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
-            headerBackgroundColor,
-            screenBackgroundColor: stackBackgroundColor,
-          });
-          const baseScreenOptions = {
-            ...nativeStackStatusBarOptions(colorScheme),
-            contentStyle: {
-              backgroundColor: stackBackgroundColor,
-            },
-            headerBackButtonDisplayMode: nativeHeaderOptions.headerBackButtonDisplayMode,
-            headerBackButtonMenuEnabled: nativeHeaderOptions.headerBackButtonMenuEnabled,
-            headerBlurEffect: nativeHeaderOptions.headerBlurEffect,
-            headerLargeStyle: nativeHeaderOptions.headerLargeStyle,
-            headerShadowVisible: nativeHeaderOptions.headerShadowVisible,
-            headerStyle: nativeHeaderOptions.headerStyle,
-            headerTintColor: theme.color10.val,
-            headerTitleStyle: {
-              color: headerTitleColor,
-            },
-            headerTransparent: nativeHeaderOptions.headerTransparent,
-          } as const;
+      <WorkspaceExplorerToolbarHost>
+        <Stack
+          screenOptions={({ route }) => {
+            const stackBackgroundColor = appBackgroundColors.screen;
+            const headerBackgroundColor = appBackgroundColors.header;
+            const headerTitleColor = theme.gray12.val;
+            const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
+              headerBackgroundColor,
+              screenBackgroundColor: stackBackgroundColor,
+            });
+            const baseScreenOptions = {
+              ...nativeStackStatusBarOptions(colorScheme),
+              contentStyle: {
+                backgroundColor: stackBackgroundColor,
+              },
+              headerBackButtonDisplayMode: nativeHeaderOptions.headerBackButtonDisplayMode,
+              headerBackButtonMenuEnabled: nativeHeaderOptions.headerBackButtonMenuEnabled,
+              headerBlurEffect: nativeHeaderOptions.headerBlurEffect,
+              headerLargeStyle: nativeHeaderOptions.headerLargeStyle,
+              headerShadowVisible: nativeHeaderOptions.headerShadowVisible,
+              headerStyle: nativeHeaderOptions.headerStyle,
+              headerTintColor: theme.color10.val,
+              headerTitleStyle: {
+                color: headerTitleColor,
+              },
+              headerTransparent: nativeHeaderOptions.headerTransparent,
+            } as const;
 
-          if (route.name === "index" && os() === "ios") {
+            if (route.name === "index" && os() === "ios") {
+              return withNativeStackGestureOptions({
+                ...baseScreenOptions,
+                headerLargeTitle: true,
+                headerLargeTitleEnabled: true,
+                headerLargeTitleShadowVisible: false,
+                headerShown: true,
+                title: getAppHomeTitle(),
+              });
+            }
+
             return withNativeStackGestureOptions({
               ...baseScreenOptions,
-              headerLargeTitle: true,
-              headerLargeTitleEnabled: true,
-              headerLargeTitleShadowVisible: false,
               headerShown: true,
-              title: getAppHomeTitle(),
             });
-          }
-
-          return withNativeStackGestureOptions({
-            ...baseScreenOptions,
-            headerShown: true,
-          });
-        }}
-      >
-        <Stack.Screen name="index" options={{ title: getAppHomeTitle() }} />
-      </Stack>
+          }}
+        >
+          <Stack.Screen name="index" options={{ title: getAppHomeTitle() }} />
+        </Stack>
+      </WorkspaceExplorerToolbarHost>
     </>
   );
 }

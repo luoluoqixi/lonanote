@@ -9,7 +9,7 @@ import {
   useAppBackgroundColors,
 } from "rn-ui-kit";
 
-type WorkspaceExplorerToolbarProps = {
+export type WorkspaceExplorerToolbarProps = {
   canGoBack: boolean;
   isSelectionMode: boolean;
   isUpdating: boolean;
