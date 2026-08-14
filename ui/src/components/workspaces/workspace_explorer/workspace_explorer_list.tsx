@@ -1,4 +1,5 @@
 import { FileText, Folder, Pencil, Trash2 } from "@tamagui/lucide-icons-2";
+import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import {
   NativeList,
@@ -178,6 +179,7 @@ function WorkspaceExplorerEntryItem({
   sortValue: WorkspaceExplorerSortValue;
 }) {
   const theme = useTheme();
+  const accentColor = theme.color10.val as ComponentProps<typeof Folder>["color"];
   const isDirectory = entry.fileType === "directory";
   const timestamp = getWorkspaceExplorerEntryTimestamp(entry, sortValue);
   const subtitle = formatUnixSecondsDateTime(timestamp) ?? "时间未知";
@@ -185,7 +187,7 @@ function WorkspaceExplorerEntryItem({
     contextMenuProps: {
       items: [
         {
-          icon: <Pencil color="$color10" size={14} />,
+          icon: <Pencil color={accentColor} size={14} />,
           iconProps: { ios: { name: "pencil" as const } },
           label: "编辑名称",
           onSelect: onEdit,
@@ -203,9 +205,9 @@ function WorkspaceExplorerEntryItem({
     },
     disabled: isUpdating,
     icon: isDirectory ? (
-      <Folder color="$color10" fill="$color10" size={24} />
+      <Folder color={accentColor} fill={theme.color10.val} size={24} />
     ) : (
-      <FileText color="$color10" size={24} />
+      <FileText color={accentColor} size={24} />
     ),
     iconColor: theme.color10.val,
     iconSize: 24,

@@ -1,4 +1,3 @@
-import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
@@ -9,7 +8,7 @@ import {
 } from "@/api/commands/workspace";
 import { isSystemLocaleCN, os } from "@/api/common";
 import { useToast } from "@/hooks/ui";
-import { useWorkspaceSession, useWorkspaceState } from "@/hooks/workspace";
+import { useWorkspaceNavigation, useWorkspaceSession, useWorkspaceState } from "@/hooks/workspace";
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
@@ -45,8 +44,8 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
 }
 
 export function WorkspaceSelect() {
-  const router = useRouter();
   const { toast } = useToast();
+  const { resetToWorkspace } = useWorkspaceNavigation();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { open: openWorkspace } = useWorkspaceState(null);
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
@@ -351,20 +350,20 @@ export function WorkspaceSelect() {
       }
 
       setIsOpeningWorkspace(true);
+      let didResetNavigation = false;
 
       try {
         await openWorkspace(workspaceId);
         setCurrentWorkspaceId(workspaceId);
-        void refreshWorkspaces();
-        if (router.canDismiss()) {
-          router.dismissAll();
-        }
-        router.replace("/workspace" as Href);
+        resetToWorkspace();
+        didResetNavigation = true;
       } catch (error) {
         console.error("[workspace-select] open workspace failed", error);
         toast.error(getErrorMessage(error, "打开工作区失败"));
       } finally {
-        setIsOpeningWorkspace(false);
+        if (!didResetNavigation) {
+          setIsOpeningWorkspace(false);
+        }
       }
     },
     [
@@ -372,8 +371,7 @@ export function WorkspaceSelect() {
       isOpeningWorkspace,
       isUpdatingWorkspace,
       openWorkspace,
-      refreshWorkspaces,
-      router,
+      resetToWorkspace,
       setCurrentWorkspaceId,
       toast,
     ],

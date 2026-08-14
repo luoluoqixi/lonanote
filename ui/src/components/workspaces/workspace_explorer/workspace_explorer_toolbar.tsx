@@ -1,4 +1,5 @@
 import { ArrowLeft, FilePlus2, FolderPlus, Pencil, Trash2 } from "@tamagui/lucide-icons-2";
+import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -7,6 +8,7 @@ import {
   Text,
   isLiquidGlassAvailable,
   useAppBackgroundColors,
+  useTheme,
 } from "rn-ui-kit";
 
 export type WorkspaceExplorerToolbarProps = {
@@ -34,6 +36,8 @@ export function WorkspaceExplorerToolbar({
 }: WorkspaceExplorerToolbarProps) {
   const insets = useSafeAreaInsets();
   const appBackgroundColors = useAppBackgroundColors();
+  const theme = useTheme();
+  const accentColor = theme.color10.val as ComponentProps<typeof ArrowLeft>["color"];
   const fallbackSurfaceStyle = isLiquidGlassAvailable()
     ? undefined
     : { backgroundColor: appBackgroundColors.card };
@@ -57,7 +61,7 @@ export function WorkspaceExplorerToolbar({
                 disabled={selectedCount !== 1 || isUpdating}
                 onPress={onEdit}
               >
-                <Pencil color="$color10" size={23} />
+                <Pencil color={accentColor} size={23} />
               </ToolbarButton>
               <ToolbarButton
                 accessibilityLabel="删除所选项目"
@@ -75,13 +79,13 @@ export function WorkspaceExplorerToolbar({
               disabled={!canGoBack}
               onPress={onGoBack}
             >
-              <ArrowLeft color="$color10" size={25} />
+              <ArrowLeft color={accentColor} size={25} />
             </ToolbarButton>
             <ToolbarButton accessibilityLabel="创建笔记" onPress={onCreateNote}>
-              <FilePlus2 color="$color10" size={25} />
+              <FilePlus2 color={accentColor} size={25} />
             </ToolbarButton>
             <ToolbarButton accessibilityLabel="创建文件夹" onPress={onCreateDirectory}>
-              <FolderPlus color="$color10" size={25} />
+              <FolderPlus color={accentColor} size={25} />
             </ToolbarButton>
           </>
         )}

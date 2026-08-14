@@ -8,11 +8,12 @@ import {
   SwitchCamera,
 } from "@tamagui/lucide-icons-2";
 import { type Href, Stack, useRouter } from "expo-router";
-import { useMemo } from "react";
+import { type ComponentProps, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Menu, type MenuItemData, useMenuTriggerState } from "rn-ui-kit";
+import { Button, Menu, type MenuItemData, useMenuTriggerState, useTheme } from "rn-ui-kit";
 
 import { isIos } from "@/api/common";
+import { useWorkspaceNavigation } from "@/hooks/workspace";
 
 type WorkspaceExplorerHeaderProps = {
   areAllEntriesSelected: boolean;
@@ -74,25 +75,28 @@ export function WorkspaceExplorerHeader({
   title,
 }: WorkspaceExplorerHeaderProps) {
   const router = useRouter();
+  const { resetToWorkspaceSelect } = useWorkspaceNavigation();
+  const theme = useTheme();
+  const accentColor = theme.color10.val as ComponentProps<typeof CircleCheck>["color"];
   const menuItems = useMemo<MenuItemData[]>(
     () => [
       {
         disabled: !canSelectEntries,
-        icon: <CircleCheck color="$color10" size={14} />,
+        icon: <CircleCheck color={accentColor} size={14} />,
         iconProps: { ios: { name: "checkmark.circle" } },
         label: "选择",
         onPress: onToggleSelectionMode,
         value: "select",
       },
       {
-        icon: <FilePlus2 color="$color10" size={14} />,
+        icon: <FilePlus2 color={accentColor} size={14} />,
         iconProps: { ios: { name: "square.and.pencil" } },
         label: "创建笔记",
         onPress: onCreateNote,
         value: "create-note",
       },
       {
-        icon: <FolderPlus color="$color10" size={14} />,
+        icon: <FolderPlus color={accentColor} size={14} />,
         iconProps: { ios: { name: "folder.badge.plus" } },
         label: "创建文件夹",
         onPress: onCreateDirectory,
@@ -100,14 +104,14 @@ export function WorkspaceExplorerHeader({
       },
       { separator: true, value: "separator-01" },
       {
-        icon: <ArrowDownUp color="$color10" size={14} />,
+        icon: <ArrowDownUp color={accentColor} size={14} />,
         iconProps: { ios: { name: "arrow.up.arrow.down" } },
         label: "排序方式",
         onPress: onOpenSort,
         value: "sort",
       },
       {
-        icon: <Group color="$color10" size={14} />,
+        icon: <Group color={accentColor} size={14} />,
         iconProps: { ios: { name: "rectangle.3.group" } },
         label: "分组方式",
         onPress: onOpenGroupMode,
@@ -115,19 +119,14 @@ export function WorkspaceExplorerHeader({
       },
       { separator: true, value: "separator-02" },
       {
-        icon: <SwitchCamera color="$color10" size={14} />,
+        icon: <SwitchCamera color={accentColor} size={14} />,
         iconProps: { ios: { name: "arrow.left.arrow.right" } },
         label: "切换工作区",
-        onPress: () => {
-          if (router.canDismiss()) {
-            router.dismissAll();
-          }
-          router.replace("/" as Href);
-        },
+        onPress: resetToWorkspaceSelect,
         value: "switch-workspace",
       },
       {
-        icon: <Settings color="$color10" size={14} />,
+        icon: <Settings color={accentColor} size={14} />,
         iconProps: { ios: { name: "gearshape" } },
         label: "设置",
         onPress: () => router.push("/settings" as Href),
@@ -135,12 +134,14 @@ export function WorkspaceExplorerHeader({
       },
     ],
     [
+      accentColor,
       canSelectEntries,
       onCreateDirectory,
       onCreateNote,
       onOpenGroupMode,
       onOpenSort,
       onToggleSelectionMode,
+      resetToWorkspaceSelect,
       router,
     ],
   );
