@@ -31,10 +31,15 @@ export function AppearanceSettingsPage({
   const error = colorSchemeSettings.error ?? uiPreferences.error;
   const isLoading = colorSchemeSettings.isLoading || uiPreferences.isLoading;
 
-  const accentColorOptions: SelectOption[] = accentThemeNames.map((option) => ({
-    label: getAccentThemePreset(option).label,
-    value: option,
-  }));
+  const accentColorOptions: SelectOption[] = accentThemeNames.map((option) => {
+    const preset = getAccentThemePreset(option);
+
+    return {
+      label: preset.label,
+      swatchColor: preset.accent,
+      value: option,
+    };
+  });
   const colorSchemeOptions: SelectOption[] = [
     { label: "浅色", value: "light" },
     { label: "深色", value: "dark" },

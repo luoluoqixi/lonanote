@@ -7,6 +7,7 @@
 #   - dropdownWidth 对应 Spinner#setDropDownWidth。
 #   - 用于让普通原生 dropdown Select 居中弹出，同时保持 NativeList/nativeTrigger
 #     继续使用真实 layout anchor，避免弹出动画看起来从左侧开始。
+# - Android item 支持 swatchColor，并在原有 Spinner dialog/dropdown 行左侧绘制圆形色块。
 # - 升级或移除此补丁前，需要重新验证 native select 的 wheel/dialog 流程。
 # - 升级或移除此补丁前，需要重新验证 Android 普通 Select dropdown 的居中效果，
 #   以及 NativeList Select 右侧锚点的弹出动画。
@@ -190,11 +191,31 @@ index 3742ccfc..3eaadc7a 100644
    /**
     * On Android & iOS, used to truncate the text with an ellipsis after computing the text layout, including line wrapping,
     * such that the total number of lines does not exceed this number. Default is '1'
+diff --git a/js/AndroidDialogPickerNativeComponent.js b/js/AndroidDialogPickerNativeComponent.js
+index 444b919..b7afb17 100644
+--- a/js/AndroidDialogPickerNativeComponent.js
++++ b/js/AndroidDialogPickerNativeComponent.js
+@@ -40,5 +40,7 @@ export type PickerItem = $ReadOnly<{|
+   color?: ColorValue,
+   fontFamily: ?string,
+   enabled?: ?boolean,
++  hasSwatchColor: boolean,
++  swatchColor: ColorValue,
+   style?: ?PickerItemStyle,
+ |}>;
 diff --git a/js/AndroidDropdownPickerNativeComponent.js b/js/AndroidDropdownPickerNativeComponent.js
 index 6666e539..6ccedbeb 100644
 --- a/js/AndroidDropdownPickerNativeComponent.js
 +++ b/js/AndroidDropdownPickerNativeComponent.js
-@@ -53,6 +53,9 @@ type NativeProps = $ReadOnly<{|
+@@ -40,5 +40,7 @@ export type PickerItem = $ReadOnly<{|
+   color?: ColorValue,
+   fontFamily: ?string,
+   enabled?: ?boolean,
++  hasSwatchColor: boolean,
++  swatchColor: ColorValue,
+   style?: ?PickerItemStyle,
+ |}>;
+@@ -53,6 +55,9 @@ type NativeProps = $ReadOnly<{|
    backgroundColor?: Int32,
    dropdownIconColor?: Int32,
    dropdownIconRippleColor?: Int32,
@@ -218,7 +239,16 @@ index 7fade6a2..e023df12 100644
    numberOfLines?: ?number,
  |}>;
  
-@@ -233,6 +236,11 @@ function PickerAndroid(props: PickerAndroidProps, ref: PickerRef): React.Node {
+@@ -168 +171,2 @@ function PickerAndroid(props: PickerAndroidProps, ref: PickerRef): React.Node {
+-      const {color, contentDescription, label, style = {}} = child.props || {};
++      const {color, contentDescription, label, style = {}, swatchColor} =
++        child.props || {};
+@@ -176,2 +180,4 @@ function PickerAndroid(props: PickerAndroidProps, ref: PickerRef): React.Node {
+         enabled,
++        hasSwatchColor: swatchColor != null,
++        swatchColor: processColor(swatchColor ?? '#000000'),
+         style: {
+@@ -233,6 +239,11 @@ function PickerAndroid(props: PickerAndroidProps, ref: PickerRef): React.Node {
      testID: props.testID,
      numberOfLines: props.numberOfLines,
    };
@@ -230,11 +260,41 @@ index 7fade6a2..e023df12 100644
  
    return <Picker ref={pickerRef} {...rootProps} />;
  }
+diff --git a/android/src/main/jni/conversions.h b/android/src/main/jni/conversions.h
+index 98df06e..daa54c0 100644
+--- a/android/src/main/jni/conversions.h
++++ b/android/src/main/jni/conversions.h
+@@ -29,6 +29,8 @@ inline folly::dynamic dialogItemsToDynamic(
+     itemValues["color"] = *item.color;
+     itemValues["fontFamily"] = item.fontFamily;
+     itemValues["enabled"] = item.enabled;
++    itemValues["hasSwatchColor"] = item.hasSwatchColor;
++    itemValues["swatchColor"] = *item.swatchColor;
+     itemValues["style"] = dialogStyleToDynamic(item.style);
+     values.push_back(itemValues);
+   }
+@@ -75,6 +77,8 @@ inline folly::dynamic dropdownItemsToDynamic(
+     itemValues["color"] = *item.color;
+     itemValues["fontFamily"] = item.fontFamily;
+     itemValues["enabled"] = item.enabled;
++    itemValues["hasSwatchColor"] = item.hasSwatchColor;
++    itemValues["swatchColor"] = *item.swatchColor;
+     itemValues["style"] = dropdownStyleToDynamic(item.style);
+     values.push_back(itemValues);
+   }
 diff --git a/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java b/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java
 index e1c71e23..862b2cd4 100644
 --- a/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java
 +++ b/android/src/main/java/com/reactnativecommunity/picker/ReactPickerManager.java
-@@ -181,6 +181,23 @@ public abstract class ReactPickerManager extends BaseViewManager<ReactPicker, Re
+@@ -12,6 +12,7 @@ import android.content.res.AssetManager;
+ import android.content.res.Resources;
+ import android.graphics.Color;
+ import android.graphics.Typeface;
++import android.graphics.drawable.GradientDrawable;
+ import android.util.TypedValue;
+ import android.view.LayoutInflater;
+ import android.view.View;
+@@ -181,6 +182,23 @@ public abstract class ReactPickerManager extends BaseViewManager<ReactPicker, Re
      view.setDropdownIconRippleColor(color);
    }
  
@@ -258,6 +318,25 @@ index e1c71e23..862b2cd4 100644
    @ReactProp(name = ViewProps.NUMBER_OF_LINES, defaultInt = 1)
    public void setNumberOfLines(ReactPicker view, int numberOfLines) {
      ReactPickerAdapter adapter = (ReactPickerAdapter) view.getAdapter();
+@@ -353,4 +371,17 @@ public abstract class ReactPickerManager extends BaseViewManager<ReactPicker, Re
+       final TextView textView = (TextView) convertView;
+       textView.setText(item.getString("label"));
+       textView.setMaxLines(mNumberOfLines);
+-
++      textView.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null);
++      textView.setCompoundDrawablePadding(0);
++
++      if (item.hasKey("hasSwatchColor") && item.getBoolean("hasSwatchColor")) {
++        int swatchSize = Math.round(PixelUtil.toPixelFromDIP(16));
++        int swatchPadding = Math.round(PixelUtil.toPixelFromDIP(12));
++        GradientDrawable swatch = new GradientDrawable();
++        swatch.setShape(GradientDrawable.OVAL);
++        swatch.setColor(item.getInt("swatchColor"));
++        swatch.setSize(swatchSize, swatchSize);
++        textView.setCompoundDrawablesRelativeWithIntrinsicBounds(swatch, null, null, null);
++        textView.setCompoundDrawablePadding(swatchPadding);
++      }
++
 diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java b/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java
 index 8a7b516c..20bcfd61 100644
 --- a/android/src/paper/java/com/facebook/react/viewmanagers/RNCAndroidDropdownPickerManagerInterface.java
