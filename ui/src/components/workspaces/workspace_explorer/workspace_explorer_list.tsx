@@ -12,7 +12,12 @@ import {
 } from "rn-ui-kit";
 
 import type { FileNode } from "@/api/commands/workspace";
-import { formatUnixSecondsDateTime, getFileName, isMarkdownFile } from "@/api/common";
+import {
+  formatUnixSecondsDateTime,
+  getFileName,
+  groupItemsByDate,
+  isMarkdownFile,
+} from "@/api/common";
 
 import {
   type WorkspaceExplorerGroupMode,
@@ -52,67 +57,6 @@ function getEntryTitle(entry: FileNode): string {
     : name;
 }
 
-function getCalendarDayNumber(date: Date): number {
-  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000);
-}
-
-function getDateGroupKey(timestamp: number | null): string {
-  if (timestamp == null) {
-    return "unknown";
-  }
-
-  const date = new Date(timestamp * 1000);
-  if (Number.isNaN(date.getTime())) {
-    return "unknown";
-  }
-
-  const now = new Date();
-  const dayDifference = getCalendarDayNumber(now) - getCalendarDayNumber(date);
-
-  if (dayDifference === 0) {
-    return "today";
-  }
-  if (dayDifference === 1) {
-    return "yesterday";
-  }
-  if (dayDifference >= 2 && dayDifference < 7) {
-    return "past-7-days";
-  }
-  if (dayDifference >= 7 && dayDifference < 30) {
-    return "past-30-days";
-  }
-  if (date.getFullYear() === now.getFullYear()) {
-    return `month-${date.getMonth() + 1}`;
-  }
-
-  return `year-${date.getFullYear()}`;
-}
-
-function getDateGroupTitle(timestamp: number | null): string {
-  const key = getDateGroupKey(timestamp);
-
-  if (key === "today") {
-    return "今天";
-  }
-  if (key === "yesterday") {
-    return "昨天";
-  }
-  if (key === "unknown") {
-    return "日期未知";
-  }
-  if (key === "past-7-days") {
-    return "过去7天";
-  }
-  if (key === "past-30-days") {
-    return "过去30天";
-  }
-  if (key.startsWith("month-")) {
-    return `${key.slice("month-".length)}月`;
-  }
-
-  return `${key.slice("year-".length)}年`;
-}
-
 export function groupWorkspaceExplorerEntries(
   entries: FileNode[],
   groupMode: WorkspaceExplorerGroupMode,
@@ -122,49 +66,17 @@ export function groupWorkspaceExplorerEntries(
     return [{ entries, id: "all" }];
   }
 
-  const sectionById = new Map<
-    string,
-    WorkspaceExplorerSection & { representativeTimestamp: number | null }
-  >();
-
-  for (const entry of entries) {
-    const timestamp = getWorkspaceExplorerEntryTimestamp(entry, sortValue);
-    const groupKey = getDateGroupKey(timestamp);
-    const section = sectionById.get(groupKey);
-
-    if (section) {
-      section.entries.push(entry);
-    } else {
-      sectionById.set(groupKey, {
-        entries: [entry],
-        id: groupKey,
-        representativeTimestamp: timestamp,
-        title: getDateGroupTitle(timestamp),
-      });
-    }
-  }
-
   const ascending = sortValue === "lastModifiedTimeRev" || sortValue === "createTimeRev";
 
-  return [...sectionById.values()]
-    .sort((left, right) => {
-      if (left.representativeTimestamp == null || right.representativeTimestamp == null) {
-        if (left.representativeTimestamp == null && right.representativeTimestamp == null) {
-          return 0;
-        }
-
-        return left.representativeTimestamp == null ? 1 : -1;
-      }
-
-      return ascending
-        ? left.representativeTimestamp - right.representativeTimestamp
-        : right.representativeTimestamp - left.representativeTimestamp;
-    })
-    .map(({ entries: sectionEntries, id, title }) => ({
-      entries: sectionEntries,
-      id,
-      title,
-    }));
+  return groupItemsByDate(
+    entries,
+    (entry) => getWorkspaceExplorerEntryTimestamp(entry, sortValue),
+    ascending ? "ascending" : "descending",
+  ).map((section) => ({
+    entries: section.items,
+    id: section.id,
+    title: section.title,
+  }));
 }
 
 function WorkspaceExplorerStatus({ message }: { message: string }) {

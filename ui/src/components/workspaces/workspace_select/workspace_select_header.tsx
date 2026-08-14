@@ -1,8 +1,14 @@
-import { ArrowDownUp, CircleCheck, FolderPlus, Settings } from "@tamagui/lucide-icons-2";
+import {
+  ArrowDownUp,
+  CalendarDays,
+  CircleCheck,
+  FolderPlus,
+  Settings,
+} from "@tamagui/lucide-icons-2";
 import { Stack, router } from "expo-router";
-import { useMemo } from "react";
+import { type ComponentProps, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Menu, type MenuItemData, useMenuTriggerState } from "rn-ui-kit";
+import { Button, Menu, type MenuItemData, useMenuTriggerState, useTheme } from "rn-ui-kit";
 
 import { isIos } from "@/api/common";
 
@@ -21,6 +27,7 @@ type WorkspaceSelectHeaderProps = {
   isWorkspaceSelectionMode: boolean;
   onCreateWorkspace: () => void;
   onFinishWorkspaceSelection: () => void;
+  onOpenWorkspaceGroupMode: () => void;
   onOpenWorkspaceSort: () => void;
   onToggleSelectAllWorkspaces: () => void;
   onToggleWorkspaceSelectionMode: () => void;
@@ -66,15 +73,18 @@ export function WorkspaceSelectHeader({
   isWorkspaceSelectionMode,
   onCreateWorkspace,
   onFinishWorkspaceSelection,
+  onOpenWorkspaceGroupMode,
   onOpenWorkspaceSort,
   onToggleSelectAllWorkspaces,
   onToggleWorkspaceSelectionMode,
 }: WorkspaceSelectHeaderProps) {
+  const theme = useTheme();
+  const accentColor = theme.color10.val as ComponentProps<typeof CircleCheck>["color"];
   const menuItems = useMemo<MenuItemData[]>(
     () => [
       {
         disabled: !canSelectWorkspaces,
-        icon: <CircleCheck color="$color10" size={14} />,
+        icon: <CircleCheck color={accentColor} size={14} />,
         iconProps: {
           androidIconName: "ic_workspace_select",
           ios: { name: "checkmark.circle" },
@@ -84,7 +94,7 @@ export function WorkspaceSelectHeader({
         value: "select-workspace",
       },
       {
-        icon: <FolderPlus color="$color10" size={14} />,
+        icon: <FolderPlus color={accentColor} size={14} />,
         iconProps: {
           androidIconName: "ic_workspace_create",
           ios: { name: "folder.badge.plus" },
@@ -98,7 +108,7 @@ export function WorkspaceSelectHeader({
         value: "separator-01",
       },
       {
-        icon: <ArrowDownUp color="$color10" size={14} />,
+        icon: <ArrowDownUp color={accentColor} size={14} />,
         iconProps: {
           androidIconName: "ic_workspace_sort",
           ios: { name: "arrow.up.arrow.down" },
@@ -108,11 +118,21 @@ export function WorkspaceSelectHeader({
         value: "sort-workspaces",
       },
       {
+        icon: <CalendarDays color={accentColor} size={14} />,
+        iconProps: {
+          androidIconName: "ic_workspace_group",
+          ios: { name: "calendar" },
+        },
+        label: "分组方式",
+        onPress: onOpenWorkspaceGroupMode,
+        value: "group-workspaces",
+      },
+      {
         separator: true,
         value: "separator-02",
       },
       {
-        icon: <Settings color="$color10" size={14} />,
+        icon: <Settings color={accentColor} size={14} />,
         iconProps: {
           androidIconName: "ic_workspace_settings",
           ios: { name: "gearshape" },
@@ -124,7 +144,14 @@ export function WorkspaceSelectHeader({
         value: "settings",
       },
     ],
-    [canSelectWorkspaces, onCreateWorkspace, onOpenWorkspaceSort, onToggleWorkspaceSelectionMode],
+    [
+      accentColor,
+      canSelectWorkspaces,
+      onCreateWorkspace,
+      onOpenWorkspaceGroupMode,
+      onOpenWorkspaceSort,
+      onToggleWorkspaceSelectionMode,
+    ],
   );
 
   return (

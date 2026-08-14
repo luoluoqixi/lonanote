@@ -1,11 +1,11 @@
 import {
   ArrowDownUp,
+  ArrowLeftRight,
+  CalendarDays,
   CircleCheck,
   FilePlus2,
   FolderPlus,
-  Group,
   Settings,
-  SwitchCamera,
 } from "@tamagui/lucide-icons-2";
 import { type Href, Stack, useRouter } from "expo-router";
 import { type ComponentProps, useMemo } from "react";
@@ -13,18 +13,19 @@ import { StyleSheet, View } from "react-native";
 import { Button, Menu, type MenuItemData, useMenuTriggerState, useTheme } from "rn-ui-kit";
 
 import { isIos } from "@/api/common";
-import { useWorkspaceNavigation } from "@/hooks/workspace";
 
 type WorkspaceExplorerHeaderProps = {
   areAllEntriesSelected: boolean;
   canSelectEntries: boolean;
   isGroupModeDisabled: boolean;
   isSelectionMode: boolean;
+  isSwitchingWorkspace: boolean;
   onCreateDirectory: () => void;
   onCreateNote: () => void;
   onFinishSelection: () => void;
   onOpenGroupMode: () => void;
   onOpenSort: () => void;
+  onSwitchWorkspace: () => void;
   onToggleSelectAllEntries: () => void;
   onToggleSelectionMode: () => void;
   title: string;
@@ -67,17 +68,18 @@ export function WorkspaceExplorerHeader({
   canSelectEntries,
   isGroupModeDisabled,
   isSelectionMode,
+  isSwitchingWorkspace,
   onCreateDirectory,
   onCreateNote,
   onFinishSelection,
   onOpenGroupMode,
   onOpenSort,
+  onSwitchWorkspace,
   onToggleSelectAllEntries,
   onToggleSelectionMode,
   title,
 }: WorkspaceExplorerHeaderProps) {
   const router = useRouter();
-  const { resetToWorkspaceSelect } = useWorkspaceNavigation();
   const theme = useTheme();
   const accentColor = theme.color10.val as ComponentProps<typeof CircleCheck>["color"];
   const menuItems = useMemo<MenuItemData[]>(
@@ -85,21 +87,30 @@ export function WorkspaceExplorerHeader({
       {
         disabled: !canSelectEntries,
         icon: <CircleCheck color={accentColor} size={14} />,
-        iconProps: { ios: { name: "checkmark.circle" } },
+        iconProps: {
+          androidIconName: "ic_workspace_select",
+          ios: { name: "checkmark.circle" },
+        },
         label: "选择",
         onPress: onToggleSelectionMode,
         value: "select",
       },
       {
         icon: <FilePlus2 color={accentColor} size={14} />,
-        iconProps: { ios: { name: "square.and.pencil" } },
+        iconProps: {
+          androidIconName: "ic_workspace_create_note",
+          ios: { name: "doc.badge.plus" },
+        },
         label: "创建笔记",
         onPress: onCreateNote,
         value: "create-note",
       },
       {
         icon: <FolderPlus color={accentColor} size={14} />,
-        iconProps: { ios: { name: "folder.badge.plus" } },
+        iconProps: {
+          androidIconName: "ic_workspace_create",
+          ios: { name: "folder.badge.plus" },
+        },
         label: "创建文件夹",
         onPress: onCreateDirectory,
         value: "create-directory",
@@ -107,30 +118,43 @@ export function WorkspaceExplorerHeader({
       { separator: true, value: "separator-01" },
       {
         icon: <ArrowDownUp color={accentColor} size={14} />,
-        iconProps: { ios: { name: "arrow.up.arrow.down" } },
+        iconProps: {
+          androidIconName: "ic_workspace_sort",
+          ios: { name: "arrow.up.arrow.down" },
+        },
         label: "排序方式",
         onPress: onOpenSort,
         value: "sort",
       },
       {
         disabled: isGroupModeDisabled,
-        icon: <Group color={accentColor} size={14} />,
-        iconProps: { ios: { name: "rectangle.3.group" } },
+        icon: <CalendarDays color={accentColor} size={14} />,
+        iconProps: {
+          androidIconName: "ic_workspace_group",
+          ios: { name: "calendar" },
+        },
         label: "分组方式",
         onPress: onOpenGroupMode,
         value: "group",
       },
       { separator: true, value: "separator-02" },
       {
-        icon: <SwitchCamera color={accentColor} size={14} />,
-        iconProps: { ios: { name: "arrow.left.arrow.right" } },
+        disabled: isSwitchingWorkspace,
+        icon: <ArrowLeftRight color={accentColor} size={14} />,
+        iconProps: {
+          androidIconName: "ic_workspace_switch",
+          ios: { name: "arrow.left.arrow.right" },
+        },
         label: "切换工作区",
-        onPress: resetToWorkspaceSelect,
+        onPress: onSwitchWorkspace,
         value: "switch-workspace",
       },
       {
         icon: <Settings color={accentColor} size={14} />,
-        iconProps: { ios: { name: "gearshape" } },
+        iconProps: {
+          androidIconName: "ic_workspace_settings",
+          ios: { name: "gearshape" },
+        },
         label: "设置",
         onPress: () => router.push("/settings" as Href),
         value: "settings",
@@ -140,12 +164,13 @@ export function WorkspaceExplorerHeader({
       accentColor,
       canSelectEntries,
       isGroupModeDisabled,
+      isSwitchingWorkspace,
       onCreateDirectory,
       onCreateNote,
       onOpenGroupMode,
       onOpenSort,
+      onSwitchWorkspace,
       onToggleSelectionMode,
-      resetToWorkspaceSelect,
       router,
     ],
   );

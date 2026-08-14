@@ -17,6 +17,14 @@ export type WorkspaceExplorerSortSetting =
   | "lastModifiedTimeRev"
   | "createTime"
   | "createTimeRev";
+export type WorkspaceSelectGroupModeSetting = "date" | "storage" | "none";
+export type WorkspaceSelectSortSetting =
+  | "last-opened-desc"
+  | "last-opened-asc"
+  | "created-at-desc"
+  | "created-at-asc"
+  | "title-asc"
+  | "title-desc";
 
 export interface DesktopWindowState {
   height: number;
@@ -46,6 +54,10 @@ export interface UiPreferences {
     showFloatingToolbar: boolean;
     sortValue: WorkspaceExplorerSortSetting;
   };
+  workspaceSelect: {
+    groupMode: WorkspaceSelectGroupModeSetting;
+    sortValue: WorkspaceSelectSortSetting;
+  };
   window: {
     lastWindowState: DesktopWindowState | null;
     restoreWindowState: boolean;
@@ -62,6 +74,8 @@ const UI_WORKSPACE_EXPLORER_FOLDERS_FIRST_KEY = "ui.workspaceExplorer.foldersFir
 const UI_WORKSPACE_EXPLORER_GROUP_MODE_KEY = "ui.workspaceExplorer.groupMode";
 const UI_WORKSPACE_EXPLORER_SHOW_FLOATING_TOOLBAR_KEY = "ui.workspaceExplorer.showFloatingToolbar";
 const UI_WORKSPACE_EXPLORER_SORT_VALUE_KEY = "ui.workspaceExplorer.sortValue";
+const UI_WORKSPACE_SELECT_GROUP_MODE_KEY = "ui.workspaceSelect.groupMode";
+const UI_WORKSPACE_SELECT_SORT_VALUE_KEY = "ui.workspaceSelect.sortValue";
 const UI_WINDOW_LAST_STATE_KEY = "ui.window.lastState";
 const UI_RESTORE_WINDOW_STATE_KEY = "ui.window.restoreWindowState";
 
@@ -84,6 +98,10 @@ export function createDefaultUiPreferences(): UiPreferences {
       groupMode: "date",
       showFloatingToolbar: true,
       sortValue: "lastModifiedTime",
+    },
+    workspaceSelect: {
+      groupMode: "date",
+      sortValue: "last-opened-desc",
     },
     window: {
       lastWindowState: null,
@@ -137,6 +155,21 @@ function normalizeWorkspaceExplorerSortValue(value: unknown): WorkspaceExplorerS
 
 function normalizeWorkspaceExplorerGroupMode(value: unknown): WorkspaceExplorerGroupModeSetting {
   return value === "none" ? "none" : "date";
+}
+
+function normalizeWorkspaceSelectSortValue(value: unknown): WorkspaceSelectSortSetting {
+  return value === "last-opened-desc" ||
+    value === "last-opened-asc" ||
+    value === "created-at-desc" ||
+    value === "created-at-asc" ||
+    value === "title-asc" ||
+    value === "title-desc"
+    ? value
+    : "last-opened-desc";
+}
+
+function normalizeWorkspaceSelectGroupMode(value: unknown): WorkspaceSelectGroupModeSetting {
+  return value === "storage" || value === "none" ? value : "date";
 }
 
 function normalizeDesktopWindowState(value: unknown): DesktopWindowState | null {
@@ -195,6 +228,10 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
       showFloatingToolbar: preferences.workspaceExplorer?.showFloatingToolbar !== false,
       sortValue: workspaceExplorerSortValue,
     },
+    workspaceSelect: {
+      groupMode: normalizeWorkspaceSelectGroupMode(preferences.workspaceSelect?.groupMode),
+      sortValue: normalizeWorkspaceSelectSortValue(preferences.workspaceSelect?.sortValue),
+    },
     window: {
       lastWindowState: normalizeDesktopWindowState(preferences.window.lastWindowState),
       restoreWindowState: Boolean(preferences.window.restoreWindowState),
@@ -224,6 +261,8 @@ function readUiPreferencesFromStore(): UiPreferences {
   const workspaceExplorerSortValue = normalizeWorkspaceExplorerSortValue(
     store.commonGetSync<unknown>(UI_WORKSPACE_EXPLORER_SORT_VALUE_KEY),
   );
+  const workspaceSelectGroupMode = store.commonGetSync<unknown>(UI_WORKSPACE_SELECT_GROUP_MODE_KEY);
+  const workspaceSelectSortValue = store.commonGetSync<unknown>(UI_WORKSPACE_SELECT_SORT_VALUE_KEY);
 
   return {
     shell: {
@@ -258,6 +297,14 @@ function readUiPreferencesFromStore(): UiPreferences {
           ? workspaceExplorerShowFloatingToolbar
           : defaults.workspaceExplorer.showFloatingToolbar,
       sortValue: workspaceExplorerSortValue,
+    },
+    workspaceSelect: {
+      groupMode: normalizeWorkspaceSelectGroupMode(
+        workspaceSelectGroupMode ?? defaults.workspaceSelect.groupMode,
+      ),
+      sortValue: normalizeWorkspaceSelectSortValue(
+        workspaceSelectSortValue ?? defaults.workspaceSelect.sortValue,
+      ),
     },
     window: {
       lastWindowState: normalizeDesktopWindowState(lastWindowState),
@@ -299,6 +346,14 @@ function applyUiPreferencesToStore(preferences: UiPreferences): UiPreferences {
   store.commonSetSync(
     UI_WORKSPACE_EXPLORER_SORT_VALUE_KEY,
     normalizedPreferences.workspaceExplorer.sortValue,
+  );
+  store.commonSetSync(
+    UI_WORKSPACE_SELECT_GROUP_MODE_KEY,
+    normalizedPreferences.workspaceSelect.groupMode,
+  );
+  store.commonSetSync(
+    UI_WORKSPACE_SELECT_SORT_VALUE_KEY,
+    normalizedPreferences.workspaceSelect.sortValue,
   );
   store.commonSetSync(UI_RESTORE_WINDOW_STATE_KEY, normalizedPreferences.window.restoreWindowState);
   store.commonSetSync(UI_WINDOW_LAST_STATE_KEY, normalizedPreferences.window.lastWindowState);

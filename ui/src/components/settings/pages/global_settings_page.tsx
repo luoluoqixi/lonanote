@@ -8,7 +8,6 @@
 
 import type { GlobalSettings } from "@/api/commands/settings";
 import { useGlobalSettings, useUiPreferences } from "@/hooks/settings";
-import type { WorkspaceExplorerGroupModeSetting, WorkspaceExplorerSortSetting } from "@/stores/ui";
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
@@ -23,32 +22,6 @@ const AUTO_SAVE_INTERVAL_OPTIONS: SelectOption[] = [
   { label: "10 秒", value: "10" },
   { label: "30 秒", value: "30" },
 ];
-
-const WORKSPACE_EXPLORER_SORT_OPTIONS: SelectOption[] = [
-  { label: "最近修改（默认）", value: "lastModifiedTime" },
-  { label: "最早修改", value: "lastModifiedTimeRev" },
-  { label: "最近创建", value: "createTime" },
-  { label: "最早创建", value: "createTimeRev" },
-  { label: "名称：A–Z", value: "name" },
-  { label: "名称：Z–A", value: "nameRev" },
-];
-
-const WORKSPACE_EXPLORER_GROUP_OPTIONS: SelectOption[] = [
-  { label: "按日期分组", value: "date" },
-  { label: "不分组", value: "none" },
-];
-
-function isWorkspaceExplorerSortSetting(
-  value: string | null,
-): value is WorkspaceExplorerSortSetting {
-  return WORKSPACE_EXPLORER_SORT_OPTIONS.some((option) => option.value === value);
-}
-
-function isWorkspaceExplorerGroupMode(
-  value: string | null,
-): value is WorkspaceExplorerGroupModeSetting {
-  return value === "date" || value === "none";
-}
 
 function runSettingsAction(scope: string, action: Promise<unknown>) {
   void action.catch((error) => {
@@ -79,9 +52,6 @@ export function GlobalSettingsPage({
   const uiPreferences = useUiPreferences();
   const error = globalSettingsError ?? uiPreferences.error;
   const isLoading = isGlobalSettingsLoading || uiPreferences.isLoading;
-  const workspaceExplorerSortValue = uiPreferences.preferences.workspaceExplorer.sortValue;
-  const isWorkspaceExplorerGroupDisabled =
-    workspaceExplorerSortValue === "name" || workspaceExplorerSortValue === "nameRev";
 
   return (
     <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
@@ -132,59 +102,6 @@ export function GlobalSettingsPage({
       </NativeListSection>
 
       <NativeListSection title="UI">
-        <NativeListSelectItem
-          selectProps={{
-            "aria-label": "文件排序方式",
-            onValueChange: (nextValue) => {
-              if (!isWorkspaceExplorerSortSetting(nextValue)) return;
-
-              runSettingsAction(
-                "set workspace explorer sort",
-                uiPreferences.updateAndSave((currentPreferences) => ({
-                  ...currentPreferences,
-                  workspaceExplorer: {
-                    ...currentPreferences.workspaceExplorer,
-                    groupMode:
-                      nextValue === "name" || nextValue === "nameRev"
-                        ? "none"
-                        : currentPreferences.workspaceExplorer.groupMode,
-                    sortValue: nextValue,
-                  },
-                })),
-              );
-            },
-            options: WORKSPACE_EXPLORER_SORT_OPTIONS,
-            placeholder: "选择排序方式",
-            value: workspaceExplorerSortValue,
-          }}
-          title="文件排序方式"
-        />
-        <NativeListSelectItem
-          disabled={isWorkspaceExplorerGroupDisabled}
-          selectProps={{
-            "aria-label": "文件分组方式",
-            disabled: isWorkspaceExplorerGroupDisabled,
-            onValueChange: (nextValue) => {
-              if (!isWorkspaceExplorerGroupMode(nextValue)) return;
-
-              runSettingsAction(
-                "set workspace explorer group mode",
-                uiPreferences.updateAndSave((currentPreferences) => ({
-                  ...currentPreferences,
-                  workspaceExplorer: {
-                    ...currentPreferences.workspaceExplorer,
-                    groupMode: nextValue,
-                  },
-                })),
-              );
-            },
-            options: WORKSPACE_EXPLORER_GROUP_OPTIONS,
-            placeholder: "选择分组方式",
-            value: uiPreferences.preferences.workspaceExplorer.groupMode,
-          }}
-          subtitle={isWorkspaceExplorerGroupDisabled ? "名称排序时不可用" : undefined}
-          title="文件分组方式"
-        />
         <NativeListSwitchItem
           switchProps={{
             checked: uiPreferences.preferences.workspaceExplorer.foldersFirst,

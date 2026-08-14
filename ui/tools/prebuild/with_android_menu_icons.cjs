@@ -10,7 +10,10 @@ const MENU_RESOURCE_GROUPS = [
     fileNames: [
       "ic_workspace_select.xml",
       "ic_workspace_create.xml",
+      "ic_workspace_create_note.xml",
+      "ic_workspace_group.xml",
       "ic_workspace_sort.xml",
+      "ic_workspace_switch.xml",
       "ic_workspace_settings.xml",
     ],
   },

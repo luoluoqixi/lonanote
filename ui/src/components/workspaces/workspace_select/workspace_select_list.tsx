@@ -1,3 +1,5 @@
+import { Folder } from "@tamagui/lucide-icons-2";
+import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import {
   NativeList,
@@ -6,14 +8,17 @@ import {
   NativeListNavigationItem,
   NativeListSection,
   Text,
+  useTheme,
 } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
 
+import { type WorkspaceGroupMode, groupWorkspaces } from "./workspace_group";
 import { type WorkspaceSortValue, getWorkspaceSubtitle } from "./workspace_sort";
 
 type WorkspaceSelectListProps = {
   hasError: boolean;
+  groupMode: WorkspaceGroupMode;
   isDeletingWorkspace: boolean;
   isLoading: boolean;
   isOpeningWorkspace: boolean;
@@ -44,6 +49,7 @@ function WorkspaceSelectStatus({ message }: { message: string }) {
 
 export function WorkspaceSelectList({
   hasError,
+  groupMode,
   isDeletingWorkspace,
   isLoading,
   isOpeningWorkspace,
@@ -61,6 +67,8 @@ export function WorkspaceSelectList({
   usesNativeIosHeader,
   workspaces,
 }: WorkspaceSelectListProps) {
+  const theme = useTheme();
+  const accentColor = theme.color10.val as ComponentProps<typeof Folder>["color"];
   const statusMessage = isLoading
     ? "正在加载工作区"
     : hasError && workspaces.length === 0
@@ -70,11 +78,12 @@ export function WorkspaceSelectList({
         : null;
   const showCreateWorkspaceButton = !isLoading && !hasError;
   const isInteractionDisabled = isOpeningWorkspace || isDeletingWorkspace || isUpdatingWorkspace;
+  const sections = groupWorkspaces(workspaces, groupMode, sortValue);
 
   return (
     <NativeList
       automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
-      contentMarginBottom={isWorkspaceSelectionMode ? 120 : undefined}
+      contentMarginBottom={isWorkspaceSelectionMode ? 120 : 24}
       contentInsetAdjustmentBehavior={usesNativeIosHeader ? "automatic" : undefined}
       editMode={isWorkspaceSelectionMode}
       onRefresh={onRefresh}
@@ -83,51 +92,54 @@ export function WorkspaceSelectList({
       style={styles.list}
       tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
     >
-      <NativeListSection title="选择工作区">
-        {statusMessage ? (
+      {statusMessage ? (
+        <NativeListSection title="选择工作区">
           <NativeListCustomItem paddingVertical={0}>
             <WorkspaceSelectStatus message={statusMessage} />
           </NativeListCustomItem>
-        ) : (
-          workspaces.map((workspaceItem) => (
-            <NativeListNavigationItem
-              contextMenuProps={{
-                items: [
-                  {
-                    label: "编辑工作区",
-                    onSelect: () => onEditWorkspace(workspaceItem),
-                    value: `edit-workspace-${workspaceItem.id}`,
-                  },
-                  {
-                    destructive: true,
-                    label: "删除工作区",
-                    onSelect: () => onDeleteWorkspace(workspaceItem),
-                    value: `delete-workspace-${workspaceItem.id}`,
-                  },
-                ],
-              }}
-              disabled={isInteractionDisabled}
-              icon={
-                <Text color="$color10" fontSize="$7">
-                  ▣
-                </Text>
-              }
-              iconSize={24}
-              iconSlotWidth={28}
-              key={workspaceItem.id}
-              nativeScrollId={workspaceItem.id}
-              onPress={() => onWorkspacePress(workspaceItem.id)}
-              sfSymbol="folder.fill"
-              subtitle={getWorkspaceSubtitle(workspaceItem, sortValue)}
-              title={workspaceItem.displayName}
-              titleFontSize={16}
-            />
-          ))
-        )}
-        {showCreateWorkspaceButton ? (
+        </NativeListSection>
+      ) : (
+        sections.map((section) => (
+          <NativeListSection key={section.id} title={section.title}>
+            {section.workspaces.map((workspaceItem) => (
+              <NativeListNavigationItem
+                contextMenuProps={{
+                  items: [
+                    {
+                      label: "编辑工作区",
+                      onSelect: () => onEditWorkspace(workspaceItem),
+                      value: `edit-workspace-${workspaceItem.id}`,
+                    },
+                    {
+                      destructive: true,
+                      label: "删除工作区",
+                      onSelect: () => onDeleteWorkspace(workspaceItem),
+                      value: `delete-workspace-${workspaceItem.id}`,
+                    },
+                  ],
+                }}
+                disabled={isInteractionDisabled}
+                icon={<Folder color={accentColor} fill={theme.color10.val} size={24} />}
+                iconColor={theme.color10.val}
+                iconSize={24}
+                iconSlotWidth={30}
+                key={workspaceItem.id}
+                nativeScrollId={workspaceItem.id}
+                onPress={() => onWorkspacePress(workspaceItem.id)}
+                sfSymbol="folder.fill"
+                subtitle={getWorkspaceSubtitle(workspaceItem, sortValue)}
+                title={workspaceItem.displayName}
+                titleFontSize={16}
+              />
+            ))}
+          </NativeListSection>
+        ))
+      )}
+      {showCreateWorkspaceButton ? (
+        <NativeListSection>
           <NativeListButtonItem selectionDisabled onPress={onCreateWorkspace} title="创建工作区" />
-        ) : null}
-      </NativeListSection>
+        </NativeListSection>
+      ) : null}
     </NativeList>
   );
 }

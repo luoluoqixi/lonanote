@@ -1,6 +1,7 @@
 import { Select, type SelectHandle, type SelectItemGroupData } from "rn-ui-kit";
 
 import type { FileNode } from "@/api/commands/workspace";
+import { compareNames, getFileName, isMarkdownFile } from "@/api/common";
 import type { WorkspaceExplorerGroupModeSetting, WorkspaceExplorerSortSetting } from "@/stores/ui";
 
 export type WorkspaceExplorerSortValue = WorkspaceExplorerSortSetting;
@@ -59,48 +60,11 @@ function isWorkspaceExplorerGroupMode(value: string | null): value is WorkspaceE
   return value === "date" || value === "none";
 }
 
-function getFileName(path: string): string {
-  return path.split("/").filter(Boolean).at(-1) ?? path;
-}
-
-const WORKSPACE_EXPLORER_NAME_GROUP = {
-  symbol: 0,
-  number: 1,
-  latin: 2,
-  other: 3,
-} as const;
-
-function getWorkspaceExplorerNameGroup(name: string): number {
-  if (/^\p{Number}/u.test(name)) {
-    return WORKSPACE_EXPLORER_NAME_GROUP.number;
-  }
-
-  if (/^\p{Script=Latin}/u.test(name)) {
-    return WORKSPACE_EXPLORER_NAME_GROUP.latin;
-  }
-
-  if (/^\p{Letter}/u.test(name)) {
-    return WORKSPACE_EXPLORER_NAME_GROUP.other;
-  }
-
-  return WORKSPACE_EXPLORER_NAME_GROUP.symbol;
-}
-
-function compareWorkspaceExplorerNames(
-  leftName: string,
-  rightName: string,
-  collator: Intl.Collator,
-  descending = false,
-): number {
-  // 分类优先级不受系统 locale 影响，倒序只反转同一分类内的名称顺序。
-  const groupComparison =
-    getWorkspaceExplorerNameGroup(leftName) - getWorkspaceExplorerNameGroup(rightName);
-  if (groupComparison !== 0) {
-    return groupComparison;
-  }
-
-  const nameComparison = collator.compare(leftName, rightName);
-  return descending ? -nameComparison : nameComparison;
+function getWorkspaceExplorerSortName(entry: FileNode): string {
+  const fileName = getFileName(entry.path);
+  return entry.fileType === "file" && isMarkdownFile(fileName)
+    ? fileName.slice(0, fileName.lastIndexOf("."))
+    : fileName;
 }
 
 function compareNullableTimestamp(
@@ -133,18 +97,20 @@ export function sortWorkspaceExplorerEntries(
   sortValue: WorkspaceExplorerSortValue,
   foldersFirst = true,
 ): FileNode[] {
-  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
-
   return [...entries].sort((left, right) => {
     if (foldersFirst && left.fileType !== right.fileType) {
       return left.fileType === "directory" ? -1 : 1;
     }
 
-    const leftName = getFileName(left.path);
-    const rightName = getFileName(right.path);
+    const leftName = getWorkspaceExplorerSortName(left);
+    const rightName = getWorkspaceExplorerSortName(right);
 
     if (sortValue === "name" || sortValue === "nameRev") {
-      return compareWorkspaceExplorerNames(leftName, rightName, collator, sortValue === "nameRev");
+      return compareNames(
+        leftName,
+        rightName,
+        sortValue === "nameRev" ? "descending" : "ascending",
+      );
     }
 
     const timestampComparison = compareNullableTimestamp(
@@ -153,7 +119,7 @@ export function sortWorkspaceExplorerEntries(
       sortValue === "lastModifiedTime" || sortValue === "createTime",
     );
 
-    return timestampComparison || compareWorkspaceExplorerNames(leftName, rightName, collator);
+    return timestampComparison || compareNames(leftName, rightName);
   });
 }
 

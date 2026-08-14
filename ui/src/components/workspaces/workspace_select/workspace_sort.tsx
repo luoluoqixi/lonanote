@@ -1,19 +1,12 @@
 import { Select, type SelectHandle, type SelectItemGroupData } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
-import { formatUnixSecondsDateTime } from "@/api/common";
+import { compareNames, formatUnixSecondsDateTime } from "@/api/common";
+import type { WorkspaceSelectSortSetting } from "@/stores/ui";
 
 type WorkspaceSortField = "last-opened" | "created-at" | "title";
-type WorkspaceSortDirection = "ascending" | "descending";
-export type WorkspaceSortValue =
-  | "last-opened-desc"
-  | "last-opened-asc"
-  | "created-at-desc"
-  | "created-at-asc"
-  | "title-asc"
-  | "title-desc";
-
-export const DEFAULT_WORKSPACE_SORT_VALUE: WorkspaceSortValue = "last-opened-desc";
+export type WorkspaceSortDirection = "ascending" | "descending";
+export type WorkspaceSortValue = WorkspaceSelectSortSetting;
 
 const WORKSPACE_SORT_ITEM_GROUPS: SelectItemGroupData[] = [
   {
@@ -47,7 +40,7 @@ type WorkspaceSortSelectProps = {
   value: WorkspaceSortValue;
 };
 
-function getWorkspaceSortConfig(sortValue: WorkspaceSortValue): {
+export function getWorkspaceSortConfig(sortValue: WorkspaceSortValue): {
   sortField: WorkspaceSortField;
   sortDirection: WorkspaceSortDirection;
 } {
@@ -65,6 +58,14 @@ function getWorkspaceSortConfig(sortValue: WorkspaceSortValue): {
     case "title-desc":
       return { sortField: "title", sortDirection: "descending" };
   }
+}
+
+export function getWorkspaceSortTimestamp(
+  workspaceItem: WorkspaceListItem,
+  sortValue: WorkspaceSortValue,
+): number | null {
+  const { sortField } = getWorkspaceSortConfig(sortValue);
+  return sortField === "created-at" ? workspaceItem.createdAt : workspaceItem.lastOpenedAt;
 }
 
 function isWorkspaceSortValue(value: string | null): value is WorkspaceSortValue {
@@ -86,8 +87,7 @@ export function sortWorkspaces(
 
   return [...workspaces].sort((left, right) => {
     if (sortField === "title") {
-      const comparison = left.displayName.localeCompare(right.displayName);
-      return sortDirection === "ascending" ? comparison : -comparison;
+      return compareNames(left.displayName, right.displayName, sortDirection);
     }
 
     const dateField = sortField === "last-opened" ? "lastOpenedAt" : "createdAt";
@@ -96,7 +96,7 @@ export function sortWorkspaces(
 
     if (leftDate == null || rightDate == null) {
       if (leftDate == null && rightDate == null) {
-        return left.displayName.localeCompare(right.displayName);
+        return compareNames(left.displayName, right.displayName);
       }
 
       return leftDate == null ? 1 : -1;
@@ -112,8 +112,7 @@ export function getWorkspaceSubtitle(
   sortValue: WorkspaceSortValue,
 ): string {
   const { sortField } = getWorkspaceSortConfig(sortValue);
-  const timestamp =
-    sortField === "created-at" ? workspaceItem.createdAt : workspaceItem.lastOpenedAt;
+  const timestamp = getWorkspaceSortTimestamp(workspaceItem, sortValue);
   const fallbackMessage = sortField === "created-at" ? "创建时间未知" : "打开时间未知";
 
   return formatUnixSecondsDateTime(timestamp) ?? fallbackMessage;

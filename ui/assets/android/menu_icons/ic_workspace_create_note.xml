@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="24dp"
+  android:height="24dp"
+  android:viewportWidth="24"
+  android:viewportHeight="24">
+  <path
+    android:fillColor="@color/workspace_menu_icon"
+    android:pathData="M14,2L6,2C4.9,2 4,2.9 4,4L4,20C4,21.1 4.9,22 6,22L13,22L13,20L6,20L6,4L13,4L13,9L18,9L18,13L20,13L20,8L14,2ZM15,4.5L17.5,7L15,7L15,4.5ZM19,14L17,14L17,17L14,17L14,19L17,19L17,22L19,22L19,19L22,19L22,17L19,17L19,14Z" />
+</vector>

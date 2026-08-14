@@ -7,20 +7,18 @@ import {
   workspace,
 } from "@/api/commands/workspace";
 import { isSystemLocaleCN, os } from "@/api/common";
+import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
+import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
 import { useWorkspaceNavigation, useWorkspaceSession, useWorkspaceState } from "@/hooks/workspace";
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
+import { type WorkspaceGroupMode, WorkspaceGroupModeSelect } from "./workspace_group";
 import { WorkspaceSelectHeader } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
 import { WorkspaceSelectionToolbar } from "./workspace_selection_toolbar";
-import {
-  DEFAULT_WORKSPACE_SORT_VALUE,
-  WorkspaceSortSelect,
-  type WorkspaceSortValue,
-  sortWorkspaces,
-} from "./workspace_sort";
+import { WorkspaceSortSelect, type WorkspaceSortValue, sortWorkspaces } from "./workspace_sort";
 
 const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
 
@@ -44,15 +42,17 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
 }
 
 export function WorkspaceSelect() {
+  useAndroidDoubleBackToExit();
   const { toast } = useToast();
   const { resetToWorkspace } = useWorkspaceNavigation();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { open: openWorkspace } = useWorkspaceState(null);
+  const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
-  const [workspaceSortValue, setWorkspaceSortValue] = useState<WorkspaceSortValue>(
-    DEFAULT_WORKSPACE_SORT_VALUE,
-  );
+  const workspaceSortValue = preferences.workspaceSelect.sortValue;
+  const workspaceGroupMode = preferences.workspaceSelect.groupMode;
   const [isWorkspaceSortSelectOpen, setIsWorkspaceSortSelectOpen] = useState(false);
+  const [isWorkspaceGroupModeSelectOpen, setIsWorkspaceGroupModeSelectOpen] = useState(false);
   const [isWorkspaceSelectionMode, setIsWorkspaceSelectionMode] = useState(false);
   const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>([]);
   const [isOpeningWorkspace, setIsOpeningWorkspace] = useState(false);
@@ -60,6 +60,7 @@ export function WorkspaceSelect() {
   const [hasError, setHasError] = useState(false);
   const [isCreateWorkspaceSheetOpen, setIsCreateWorkspaceSheetOpen] = useState(false);
   const workspaceSortSelectRef = useRef<SelectHandle>(null);
+  const workspaceGroupModeSelectRef = useRef<SelectHandle>(null);
   const [displayName, setDisplayName] = useState("");
   const [storageProviderIds, setStorageProviderIds] = useState<StorageProviderId[]>([]);
   const [storageProviderId, setStorageProviderId] = useState<StorageProviderId | null>(null);
@@ -344,6 +345,46 @@ export function WorkspaceSelect() {
     [selectedWorkspaceIds, workspaces],
   );
 
+  const changeWorkspaceSortValue = useCallback(
+    async (nextValue: WorkspaceSortValue) => {
+      setIsWorkspaceSortSelectOpen(false);
+
+      try {
+        await updateUiPreferencesAndSave((currentPreferences) => ({
+          ...currentPreferences,
+          workspaceSelect: {
+            ...currentPreferences.workspaceSelect,
+            sortValue: nextValue,
+          },
+        }));
+      } catch (error) {
+        console.error("[workspace-select] update sort preference failed", error);
+        toast.error(getErrorMessage(error, "保存排序方式失败"));
+      }
+    },
+    [toast, updateUiPreferencesAndSave],
+  );
+
+  const changeWorkspaceGroupMode = useCallback(
+    async (nextValue: WorkspaceGroupMode) => {
+      setIsWorkspaceGroupModeSelectOpen(false);
+
+      try {
+        await updateUiPreferencesAndSave((currentPreferences) => ({
+          ...currentPreferences,
+          workspaceSelect: {
+            ...currentPreferences.workspaceSelect,
+            groupMode: nextValue,
+          },
+        }));
+      } catch (error) {
+        console.error("[workspace-select] update group preference failed", error);
+        toast.error(getErrorMessage(error, "保存分组方式失败"));
+      }
+    },
+    [toast, updateUiPreferencesAndSave],
+  );
+
   const handleWorkspacePress = useCallback(
     async (workspaceId: string) => {
       if (isOpeningWorkspace || isDeletingWorkspace || isUpdatingWorkspace) {
@@ -354,6 +395,11 @@ export function WorkspaceSelect() {
       let didResetNavigation = false;
 
       try {
+        if (currentWorkspaceId && currentWorkspaceId !== workspaceId) {
+          await workspace.close(currentWorkspaceId);
+          setCurrentWorkspaceId(null);
+        }
+
         await openWorkspace(workspaceId);
         setCurrentWorkspaceId(workspaceId);
         resetToWorkspace();
@@ -368,6 +414,7 @@ export function WorkspaceSelect() {
       }
     },
     [
+      currentWorkspaceId,
       isDeletingWorkspace,
       isOpeningWorkspace,
       isUpdatingWorkspace,
@@ -417,11 +464,13 @@ export function WorkspaceSelect() {
         isWorkspaceSelectionMode={isWorkspaceSelectionMode}
         onCreateWorkspace={openCreateWorkspaceSheet}
         onFinishWorkspaceSelection={finishWorkspaceSelection}
+        onOpenWorkspaceGroupMode={() => workspaceGroupModeSelectRef.current?.open()}
         onOpenWorkspaceSort={() => workspaceSortSelectRef.current?.open()}
         onToggleSelectAllWorkspaces={toggleSelectAllWorkspaces}
         onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
       />
       <WorkspaceSelectList
+        groupMode={workspaceGroupMode}
         hasError={hasError}
         isDeletingWorkspace={isDeletingWorkspace}
         isLoading={isLoading}
@@ -463,12 +512,20 @@ export function WorkspaceSelect() {
       <WorkspaceSortSelect
         onOpenChange={setIsWorkspaceSortSelectOpen}
         onValueChange={(nextValue) => {
-          setWorkspaceSortValue(nextValue);
-          setIsWorkspaceSortSelectOpen(false);
+          void changeWorkspaceSortValue(nextValue);
         }}
         open={isWorkspaceSortSelectOpen}
         selectRef={workspaceSortSelectRef}
         value={workspaceSortValue}
+      />
+      <WorkspaceGroupModeSelect
+        onOpenChange={setIsWorkspaceGroupModeSelectOpen}
+        onValueChange={(nextValue) => {
+          void changeWorkspaceGroupMode(nextValue);
+        }}
+        open={isWorkspaceGroupModeSelectOpen}
+        selectRef={workspaceGroupModeSelectRef}
+        value={workspaceGroupMode}
       />
       <CreateWorkspaceSheet
         displayName={displayName}
