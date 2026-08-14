@@ -29,9 +29,7 @@ impl WorkspaceIndex {
     ) -> Result<FileTree, WorkspaceError> {
         if recursive {
             if let Some(tree) = self.cached_tree.read().await.clone() {
-                if tree.sort_type == settings.file_tree_sort_type {
-                    return Ok(tree);
-                }
+                return Ok(tree);
             }
         }
         let tree = self.build_tree(settings, recursive)?;
@@ -51,7 +49,7 @@ impl WorkspaceIndex {
             .native_root
             .as_ref()
             .ok_or(WorkspaceError::FileTreeUnavailable)?;
-        let tree = FileTree::new(root, settings.file_tree_sort_type);
+        let tree = FileTree::new(root);
         let path = (!path.is_root()).then(|| path.as_str().to_string());
         let mut node = tree
             .get_node(
@@ -59,7 +57,6 @@ impl WorkspaceIndex {
                 settings.follow_gitignore,
                 settings.custom_ignore.clone(),
                 recursive,
-                settings.file_tree_sort_type,
             )
             .map_err(WorkspaceError::InvalidManifest)?;
         if let Some(prefix) = path.as_deref() {
@@ -87,7 +84,7 @@ impl WorkspaceIndex {
             .native_root
             .as_ref()
             .ok_or(WorkspaceError::FileTreeUnavailable)?;
-        let mut tree = FileTree::new(root, settings.file_tree_sort_type);
+        let mut tree = FileTree::new(root);
         tree.update_tree(
             settings.follow_gitignore,
             settings.custom_ignore.clone(),

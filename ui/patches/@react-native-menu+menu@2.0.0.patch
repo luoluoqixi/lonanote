@@ -54,7 +54,7 @@ diff --git a/android/src/main/java/com/reactnativemenu/MenuView.kt b/android/src
 index c45f5cc..0000000 100644
 --- a/android/src/main/java/com/reactnativemenu/MenuView.kt
 +++ b/android/src/main/java/com/reactnativemenu/MenuView.kt
-@@ -1,320 +1,709 @@
+@@ -1,320 +1,741 @@
 -package com.reactnativemenu
 -
 -import android.content.res.ColorStateList
@@ -395,6 +395,7 @@ index c45f5cc..0000000 100644
 +import android.widget.ListView
 +import android.widget.PopupMenu as FrameworkPopupMenu
 +import androidx.appcompat.widget.PopupMenu
++import androidx.core.view.MenuCompat
 +import com.facebook.react.bridge.*
 +import com.facebook.react.uimanager.UIManagerHelper
 +import com.facebook.react.views.view.ReactViewGroup
@@ -529,6 +530,26 @@ index c45f5cc..0000000 100644
 +    return null
 +  }
 +
++  private fun hasSeparatorBefore(config: ReadableMap?): Boolean {
++    return config != null &&
++      config.hasKey("separatorBefore") &&
++      !config.isNull("separatorBefore") &&
++      config.getBoolean("separatorBefore")
++  }
++
++  private fun hasSeparators(actions: ReadableArray): Boolean {
++    for (index in 0 until actions.size()) {
++      if (actions.isNull(index)) continue
++      val action = actions.getMap(index) ?: continue
++      if (hasSeparatorBefore(action)) return true
++      if (action.hasKey("subactions") && !action.isNull("subactions")) {
++        val subactions = action.getArray("subactions")
++        if (subactions != null && hasSeparators(subactions)) return true
++      }
++    }
++    return false
++  }
++
 +  private fun prepareMenuItem(menuItem: MenuItem, config: ReadableMap?) {
 +    val titleColor = when (config != null && config.hasKey("titleColor") && !config.isNull("titleColor")) {
 +      true -> config.getInt("titleColor")
@@ -626,11 +647,17 @@ index c45f5cc..0000000 100644
 +    // we are checking if item has submenu (which will occur only for 1 lvl nesting)
 +    if (subactions != null && menuItem.hasSubMenu()) {
 +      var i = 0
++      var groupId = 0
++      var hasGroupDividers = false
 +      val subactionsCount = subactions.size()
 +      while (i < subactionsCount) {
 +        if (!subactions.isNull(i)) {
 +          val subMenuConfig = subactions.getMap(i)
-+          val subMenuItem = menuItem.subMenu?.add(Menu.NONE, Menu.NONE, i, subMenuConfig?.getString("title"))
++          if (hasSeparatorBefore(subMenuConfig)) {
++            groupId++
++            hasGroupDividers = true
++          }
++          val subMenuItem = menuItem.subMenu?.add(groupId, Menu.NONE, i, subMenuConfig?.getString("title"))
 +          if (subMenuItem != null) {
 +            prepareMenuItem(subMenuItem, subMenuConfig)
 +            subMenuItem.setOnMenuItemClickListener {
@@ -654,17 +681,19 @@ index c45f5cc..0000000 100644
 +        }
 +        i++
 +      }
++      menuItem.subMenu?.let { MenuCompat.setGroupDividerEnabled(it, hasGroupDividers) }
 +    }
 +  }
 +
 +  private fun prepareMenu() {
 +    if (getActionsCount > 0) {
++      val hasMenuDividers = hasSeparators(mActions)
 +      if (mSelectedItemBackgroundColor == null) {
 +        mSelectedItemBackgroundColor = resolveSelectedItemBackgroundColorFromActions()
 +      }
 +      // Custom row backgrounds and reliable center alignment require AppCompat's popup ListView.
 +      // Start/end ordinary menus can retain the framework PopupMenu presentation.
-+      if (mSelectedItemBackgroundColor == null && mAnchorAlignment != "center") {
++      if (!hasMenuDividers && mSelectedItemBackgroundColor == null && mAnchorAlignment != "center") {
 +        prepareFrameworkMenu()
 +        return
 +      }
@@ -681,12 +710,14 @@ index c45f5cc..0000000 100644
 +        mPopupMenu.setForceShowIcon(true)
 +      }
 +      var i = 0
++      var groupId = 0
 +      while (i < getActionsCount) {
 +        if (!mActions.isNull(i)) {
 +          val item = mActions.getMap(i)
++          if (hasSeparatorBefore(item)) groupId++
 +          val menuItem = when (item != null && item.hasKey("subactions") && !item.isNull("subactions")) {
-+            true -> mPopupMenu.menu.addSubMenu(Menu.NONE, Menu.NONE, i, item.getString("title")).item
-+            else -> mPopupMenu.menu.add(Menu.NONE, Menu.NONE, i, item?.getString("title"))
++            true -> mPopupMenu.menu.addSubMenu(groupId, Menu.NONE, i, item.getString("title")).item
++            else -> mPopupMenu.menu.add(groupId, Menu.NONE, i, item?.getString("title"))
 +          }
 +          prepareMenuItem(menuItem, item)
 +          menuItem.setOnMenuItemClickListener {
@@ -714,6 +745,7 @@ index c45f5cc..0000000 100644
 +        }
 +        i++
 +      }
++      MenuCompat.setGroupDividerEnabled(mPopupMenu.menu, hasMenuDividers)
 +      mPopupMenu.setOnDismissListener {
 +        mIsMenuDisplayed = false
 +        detachPopupScrollObserver()
@@ -1109,11 +1141,13 @@ diff --git a/src/NativeModuleSpecs/UIMenuNativeComponent.ts b/src/NativeModuleSp
 index e650935..856f7d7 100644
 --- a/src/NativeModuleSpecs/UIMenuNativeComponent.ts
 +++ b/src/NativeModuleSpecs/UIMenuNativeComponent.ts
-@@ -19,0 +20 @@ type SubAction = {
+@@ -19,0 +20,2 @@ type SubAction = {
 +	selectedBackgroundColor?: Int32;
-@@ -34,0 +36 @@ type MenuAction = {
++	separatorBefore?: boolean;
+@@ -34,0 +37,2 @@ type MenuAction = {
 +	selectedBackgroundColor?: Int32;
-@@ -52,6 +54,9 @@ export interface NativeProps extends ViewProps {
++	separatorBefore?: boolean;
+@@ -52,6 +56,9 @@ export interface NativeProps extends ViewProps {
  	actionsHash: string; // just a workaround to make sure we don't have to manually compare MenuActions manually in C++ (since it's a struct and that's a pain)
  	title?: string;
  	themeVariant?: string;
@@ -1150,13 +1184,18 @@ diff --git a/src/types.ts b/src/types.ts
 index 9c323d9..9c26b9a 100644
 --- a/src/types.ts
 +++ b/src/types.ts
-@@ -59,0 +60,5 @@ export type MenuAction = {
+@@ -59,0 +60,10 @@ export type MenuAction = {
 +	/**
 +	 * Background color used when this Android menu action is selected.
 +	 * @platform Android
 +	 */
 +	selectedBackgroundColor?: number | ColorValue;
-@@ -139,6 +144,17 @@ type MenuComponentPropsBase = {
++	/**
++	 * Draws a native group divider immediately before this Android action.
++	 * @platform Android
++	 */
++	separatorBefore?: boolean;
+@@ -139,6 +149,17 @@ type MenuComponentPropsBase = {
  	 * @platform Android
  	 */
  	isAnchoredToRight?: boolean;
@@ -1174,10 +1213,10 @@ index 9c323d9..9c26b9a 100644
  	/**
  	 * Determines if menu should open after long press or on normal press
  	 *
-@@ -191 +207 @@ export type ProcessedMenuAction = Omit<
+@@ -191 +212 @@ export type ProcessedMenuAction = Omit<
 -	"imageColor" | "titleColor" | "subactions"
 +	"imageColor" | "selectedBackgroundColor" | "titleColor" | "subactions"
-@@ -193,0 +210 @@ export type ProcessedMenuAction = Omit<
+@@ -193,0 +215 @@ export type ProcessedMenuAction = Omit<
 +	selectedBackgroundColor: ReturnType<typeof processColor>;
 diff --git a/src/UIMenuView.android.tsx b/src/UIMenuView.android.tsx
 index 4c8a0cd..0000000 100644

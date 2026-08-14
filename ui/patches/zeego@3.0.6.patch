@@ -1,5 +1,5 @@
 # - 标记 Android 选中 action，将选中背景色附加到该 action，并把对齐和背景色属性传递给
-#   @react-native-menu/menu；同时透传菜单项的逐项图标颜色。
+#   @react-native-menu/menu；同时透传菜单项的逐项图标颜色和分割线位置。
 # - 保留 iOS 菜单的编程式 ref，并为 Android 菜单暴露等价的 show ref；Android DropdownMenu 和 ContextMenu 直接导入对应 factory，
 #   避免 createAndroidMenu 经过空的聚合导出解析。
 # - 不要恢复原有的 EOF/source-map-only hunks：附近 hunk 长度变化后，Bun 曾将其错误覆盖到
@@ -26,7 +26,7 @@ index ba7ef46..7201878 100644
      const trigger = (0, _children.pickChildren)(props.children, Trigger);
      const content = (0, _children.pickChildren)(props.children, Content).targetChildren?.[0];
      const callbacks = {};
-@@ -308,10 +321,13 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -308,10 +321,14 @@ If you want to use a custom component as your <Content />, you can use the creat
              } = item;
              const finalItem = {
                id: key,
@@ -40,11 +40,32 @@ index ba7ef46..7201878 100644
 +                attributes: menuAttributes,
 +                state: child.props.selected ? 'on' : undefined,
 +                selectedBackgroundColor: child.props.selected ? props.selectedItemBackgroundColor : undefined,
++                separatorBefore: child.props.separatorBefore,
 +                subtitle
              };
              return finalItem;
            }
-@@ -400,6 +416,10 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -342,8 +359,9 @@ If you want to use a custom component as your <Content />, you can use the creat
+               id: key,
+               title,
+               image,
+               attributes: menuAttributes,
+               subtitle,
++              separatorBefore: child.props.separatorBefore,
+               state: currentState
+             };
+             return finalItem;
+@@ -370,7 +388,8 @@ If you want to use a custom component as your <Content />, you can use the creat
+                   title: triggerItem === null || triggerItem === void 0 ? void 0 : triggerItem.title,
+                   image: triggerItem === null || triggerItem === void 0 ? void 0 : triggerItem.icon,
+                   subactions: nestedItems,
+-                  attributes: triggerItem.menuAttributes
++                  attributes: triggerItem.menuAttributes,
++                  separatorBefore: triggerItemChild === null || triggerItemChild === void 0 ? void 0 : triggerItemChild.props.separatorBefore
+                 };
+                 return menuConfig;
+               }
+@@ -400,6 +419,10 @@ If you want to use a custom component as your <Content />, you can use the creat
      return /*#__PURE__*/_react.default.createElement(_menu.MenuView, {
 +      ref: menuRef,
        title: menuTitle,
@@ -54,7 +75,7 @@ index ba7ef46..7201878 100644
 +      selectedItemBackgroundColor: props.selectedItemBackgroundColor,
        onPressAction: _ref11 => {
          var _callbacks$nativeEven;
- 
+
 diff --git a/lib/module/menu/create-android-menu/index.android.js b/lib/module/menu/create-android-menu/index.android.js
 index 5f47781..60c6abf 100644
 --- a/lib/module/menu/create-android-menu/index.android.js
@@ -79,7 +100,7 @@ index 5f47781..60c6abf 100644
      const trigger = pickChildren(props.children, Trigger);
      const content = pickChildren(props.children, Content).targetChildren?.[0];
      const callbacks = {};
-@@ -292,10 +301,13 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -292,10 +301,14 @@ If you want to use a custom component as your <Content />, you can use the creat
              } = item;
              const finalItem = {
                id: key,
@@ -93,11 +114,32 @@ index 5f47781..60c6abf 100644
 +                attributes: menuAttributes,
 +                state: child.props.selected ? 'on' : undefined,
 +                selectedBackgroundColor: child.props.selected ? props.selectedItemBackgroundColor : undefined,
++                separatorBefore: child.props.separatorBefore,
 +                subtitle
              };
              return finalItem;
            }
-@@ -384,6 +396,10 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -326,8 +339,9 @@ If you want to use a custom component as your <Content />, you can use the creat
+               id: key,
+               title,
+               image,
+               attributes: menuAttributes,
+               subtitle,
++              separatorBefore: child.props.separatorBefore,
+               state: currentState
+             };
+             return finalItem;
+@@ -354,7 +368,8 @@ If you want to use a custom component as your <Content />, you can use the creat
+                   title: triggerItem === null || triggerItem === void 0 ? void 0 : triggerItem.title,
+                   image: triggerItem === null || triggerItem === void 0 ? void 0 : triggerItem.icon,
+                   subactions: nestedItems,
+-                  attributes: triggerItem.menuAttributes
++                  attributes: triggerItem.menuAttributes,
++                  separatorBefore: triggerItemChild === null || triggerItemChild === void 0 ? void 0 : triggerItemChild.props.separatorBefore
+                 };
+                 return menuConfig;
+               }
+@@ -384,6 +399,10 @@ If you want to use a custom component as your <Content />, you can use the creat
      return /*#__PURE__*/React.createElement(MenuView, {
 +      ref: menuRef,
        title: menuTitle,
@@ -150,7 +192,15 @@ index 1676fac..0a326e2 100644
 @@ -3 +3 @@
 -import { MenuView } from '@react-native-menu/menu'
 +import { MenuView, type MenuComponentRef } from '@react-native-menu/menu'
-@@ -183,4 +183,10 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -167,2 +167,3 @@ If you want to use a custom component as your <Content />, you can use the creat
+     image?: MenuItemIcon
++    separatorBefore?: boolean
+   }
+@@ -177,2 +178,3 @@ If you want to use a custom component as your <Content />, you can use the creat
+     image?: string
++    separatorBefore?: boolean
+     imageColor?: string
+@@ -183,4 +185,10 @@ If you want to use a custom component as your <Content />, you can use the creat
    const Root = create((props: MenuRootProps) => {
 +    const menuRef = useRef<MenuComponentRef>(null)
 +    // @ts-expect-error Internal programmatic handle used by composite native rows.
@@ -161,17 +211,37 @@ index 1676fac..0a326e2 100644
      const trigger = pickChildren<MenuTriggerProps>(props.children, Trigger)
      const content = pickChildren<MenuContentProps | ContextMenuContentProps>(
        props.children,
-@@ -350,6 +356,9 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -350,6 +358,10 @@ If you want to use a custom component as your <Content />, you can use the creat
                  title,
                  image: icon,
 +                imageColor: (child.props as any).androidIconColor,
                  attributes: menuAttributes,
 +                state: (child.props as any).selected ? 'on' : undefined,
 +                selectedBackgroundColor: (child.props as any).selected ? (props as any).selectedItemBackgroundColor : undefined,
++                separatorBefore: (child.props as any).separatorBefore,
                  subtitle,
                }
                return finalItem
-@@ -453,6 +462,10 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -385,8 +397,9 @@ If you want to use a custom component as your <Content />, you can use the creat
+                 id: key,
+                 title,
+                 image,
+                 attributes: menuAttributes,
+                 subtitle,
++                separatorBefore: (child.props as any).separatorBefore,
+                 state: currentState,
+               }
+               return finalItem
+@@ -418,7 +431,8 @@ If you want to use a custom component as your <Content />, you can use the creat
+                     title: triggerItem?.title,
+                     image: triggerItem?.icon,
+                     subactions: nestedItems,
+                     attributes: triggerItem.menuAttributes,
++                    separatorBefore: (triggerItemChild?.props as any).separatorBefore,
+                   }
+                   return menuConfig
+                 }
+@@ -453,6 +467,10 @@ If you want to use a custom component as your <Content />, you can use the creat
        <MenuView
 +        ref={menuRef}
          title={menuTitle}

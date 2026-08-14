@@ -1,11 +1,5 @@
 import { useRef } from "react";
-import {
-  NativeList,
-  NativeListItem,
-  NativeListSection,
-  isIos15,
-  triggerNativeHaptics,
-} from "rn-ui-kit";
+import { NativeListItem, NativeListSection, isIos15, triggerNativeHaptics } from "rn-ui-kit";
 
 import { openExternalUrl } from "@/api/commands/utils";
 import { getAppHomeTitle, getVersion } from "@/config";
@@ -13,6 +7,7 @@ import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
 
 import type { SettingsPageProps } from "../settings_config";
+import { SettingsList } from "../settings_list";
 
 const DEVELOPER_OPTIONS_TAP_COUNT = 10;
 const DEVELOPER_OPTIONS_ENABLED_TOAST_COOLDOWN_MS = 10_000;
@@ -76,12 +71,7 @@ export function AboutSettingsPage({
   };
 
   return (
-    <NativeList
-      automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
-      contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
-      style={{ flex: 1 }}
-      tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
-    >
+    <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
       <NativeListSection title="应用信息">
         <NativeListItem title="名称" value={getAppHomeTitle()} onPress={() => {}} />
         <NativeListItem onPress={handleVersionPress} title="版本号" value={`v${getVersion()}`} />
@@ -101,6 +91,6 @@ export function AboutSettingsPage({
           chevron
         />
       </NativeListSection>
-    </NativeList>
+    </SettingsList>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  NativeList,
   NativeListButtonItem,
   NativeListSection,
   confirmNative,
@@ -15,6 +14,7 @@ import { isSystemLocaleCN, isWeb, systemLocale } from "@/api/common/platform";
 import { useToast } from "@/hooks/ui";
 
 import type { SettingsPageProps } from "../settings_config";
+import { SettingsList } from "../settings_list";
 
 export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: SettingsPageProps = {}) {
   const { toast } = useToast();
@@ -104,9 +104,7 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
   };
 
   return (
-    <NativeList
-      automaticallyAdjustsScrollIndicatorInsets={tracksScrollEdgeHeader ? true : undefined}
-      contentInsetAdjustmentBehavior={tracksScrollEdgeHeader ? "automatic" : undefined}
+    <SettingsList
       style={{ flex: 1 }}
       tracksNavigationBarScrollEdge={tracksScrollEdgeHeader}
     >
@@ -128,6 +126,6 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
           title={isResettingInitialWorkspace ? "正在重置默认工作区…" : "重置首次默认工作区"}
         />
       </NativeListSection>
-    </NativeList>
+    </SettingsList>
   );
 }

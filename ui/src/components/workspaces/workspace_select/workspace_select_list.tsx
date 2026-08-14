@@ -75,7 +75,7 @@ export function WorkspaceSelectList({
     <NativeList
       automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
       contentMarginBottom={isWorkspaceSelectionMode ? 120 : undefined}
-      contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+      contentInsetAdjustmentBehavior={usesNativeIosHeader ? "automatic" : undefined}
       editMode={isWorkspaceSelectionMode}
       onRefresh={onRefresh}
       onSelectedIdsChange={onSelectedWorkspaceIdsChange}

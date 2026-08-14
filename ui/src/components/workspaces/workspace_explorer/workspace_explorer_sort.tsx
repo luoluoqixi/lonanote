@@ -1,25 +1,16 @@
 import { Select, type SelectHandle, type SelectItemGroupData } from "rn-ui-kit";
 
-import type { FileNode, FileTreeSortType } from "@/api/commands/workspace";
+import type { FileNode } from "@/api/commands/workspace";
+import type { WorkspaceExplorerGroupModeSetting, WorkspaceExplorerSortSetting } from "@/stores/ui";
 
-export type WorkspaceExplorerSortValue = FileTreeSortType;
-export type WorkspaceExplorerGroupMode = "date" | "none";
-
-export const DEFAULT_WORKSPACE_EXPLORER_SORT_VALUE: WorkspaceExplorerSortValue = "name";
-export const DEFAULT_WORKSPACE_EXPLORER_GROUP_MODE: WorkspaceExplorerGroupMode = "date";
+export type WorkspaceExplorerSortValue = WorkspaceExplorerSortSetting;
+export type WorkspaceExplorerGroupMode = WorkspaceExplorerGroupModeSetting;
 
 const WORKSPACE_EXPLORER_SORT_GROUPS: SelectItemGroupData[] = [
   {
-    key: "name",
-    items: [
-      { label: "名称：A–Z", value: "name" },
-      { label: "名称：Z–A", value: "nameRev" },
-    ],
-  },
-  {
     key: "modified-at",
     items: [
-      { label: "最近修改", value: "lastModifiedTime" },
+      { label: "最近修改（默认）", value: "lastModifiedTime" },
       { label: "最早修改", value: "lastModifiedTimeRev" },
     ],
   },
@@ -28,6 +19,13 @@ const WORKSPACE_EXPLORER_SORT_GROUPS: SelectItemGroupData[] = [
     items: [
       { label: "最近创建", value: "createTime" },
       { label: "最早创建", value: "createTimeRev" },
+    ],
+  },
+  {
+    key: "name",
+    items: [
+      { label: "名称：A–Z", value: "name" },
+      { label: "名称：Z–A", value: "nameRev" },
     ],
   },
 ];
@@ -53,12 +51,56 @@ function isWorkspaceExplorerSortValue(value: string | null): value is WorkspaceE
   );
 }
 
+export function isWorkspaceExplorerNameSortValue(value: WorkspaceExplorerSortValue): boolean {
+  return value === "name" || value === "nameRev";
+}
+
 function isWorkspaceExplorerGroupMode(value: string | null): value is WorkspaceExplorerGroupMode {
   return value === "date" || value === "none";
 }
 
 function getFileName(path: string): string {
   return path.split("/").filter(Boolean).at(-1) ?? path;
+}
+
+const WORKSPACE_EXPLORER_NAME_GROUP = {
+  symbol: 0,
+  number: 1,
+  latin: 2,
+  other: 3,
+} as const;
+
+function getWorkspaceExplorerNameGroup(name: string): number {
+  if (/^\p{Number}/u.test(name)) {
+    return WORKSPACE_EXPLORER_NAME_GROUP.number;
+  }
+
+  if (/^\p{Script=Latin}/u.test(name)) {
+    return WORKSPACE_EXPLORER_NAME_GROUP.latin;
+  }
+
+  if (/^\p{Letter}/u.test(name)) {
+    return WORKSPACE_EXPLORER_NAME_GROUP.other;
+  }
+
+  return WORKSPACE_EXPLORER_NAME_GROUP.symbol;
+}
+
+function compareWorkspaceExplorerNames(
+  leftName: string,
+  rightName: string,
+  collator: Intl.Collator,
+  descending = false,
+): number {
+  // 分类优先级不受系统 locale 影响，倒序只反转同一分类内的名称顺序。
+  const groupComparison =
+    getWorkspaceExplorerNameGroup(leftName) - getWorkspaceExplorerNameGroup(rightName);
+  if (groupComparison !== 0) {
+    return groupComparison;
+  }
+
+  const nameComparison = collator.compare(leftName, rightName);
+  return descending ? -nameComparison : nameComparison;
 }
 
 function compareNullableTimestamp(
@@ -89,11 +131,12 @@ export function getWorkspaceExplorerEntryTimestamp(
 export function sortWorkspaceExplorerEntries(
   entries: FileNode[],
   sortValue: WorkspaceExplorerSortValue,
+  foldersFirst = true,
 ): FileNode[] {
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
   return [...entries].sort((left, right) => {
-    if (left.fileType !== right.fileType) {
+    if (foldersFirst && left.fileType !== right.fileType) {
       return left.fileType === "directory" ? -1 : 1;
     }
 
@@ -101,8 +144,7 @@ export function sortWorkspaceExplorerEntries(
     const rightName = getFileName(right.path);
 
     if (sortValue === "name" || sortValue === "nameRev") {
-      const comparison = collator.compare(leftName, rightName);
-      return sortValue === "name" ? comparison : -comparison;
+      return compareWorkspaceExplorerNames(leftName, rightName, collator, sortValue === "nameRev");
     }
 
     const timestampComparison = compareNullableTimestamp(
@@ -111,7 +153,7 @@ export function sortWorkspaceExplorerEntries(
       sortValue === "lastModifiedTime" || sortValue === "createTime",
     );
 
-    return timestampComparison || collator.compare(leftName, rightName);
+    return timestampComparison || compareWorkspaceExplorerNames(leftName, rightName, collator);
   });
 }
 

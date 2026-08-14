@@ -18,6 +18,7 @@ import { useWorkspaceNavigation } from "@/hooks/workspace";
 type WorkspaceExplorerHeaderProps = {
   areAllEntriesSelected: boolean;
   canSelectEntries: boolean;
+  isGroupModeDisabled: boolean;
   isSelectionMode: boolean;
   onCreateDirectory: () => void;
   onCreateNote: () => void;
@@ -64,6 +65,7 @@ function HeaderMenuActionButton() {
 export function WorkspaceExplorerHeader({
   areAllEntriesSelected,
   canSelectEntries,
+  isGroupModeDisabled,
   isSelectionMode,
   onCreateDirectory,
   onCreateNote,
@@ -111,6 +113,7 @@ export function WorkspaceExplorerHeader({
         value: "sort",
       },
       {
+        disabled: isGroupModeDisabled,
         icon: <Group color={accentColor} size={14} />,
         iconProps: { ios: { name: "rectangle.3.group" } },
         label: "分组方式",
@@ -136,6 +139,7 @@ export function WorkspaceExplorerHeader({
     [
       accentColor,
       canSelectEntries,
+      isGroupModeDisabled,
       onCreateDirectory,
       onCreateNote,
       onOpenGroupMode,

@@ -11,6 +11,8 @@ import {
 } from "react";
 import { StyleSheet, View } from "react-native";
 
+import { useUiPreferences } from "@/hooks/settings";
+
 import {
   WorkspaceExplorerToolbar,
   type WorkspaceExplorerToolbarProps,
@@ -26,6 +28,7 @@ const WorkspaceExplorerToolbarContext = createContext<WorkspaceExplorerToolbarCo
 
 export function WorkspaceExplorerToolbarHost({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { preferences } = useUiPreferences();
   const [toolbarProps, setToolbarProps] = useState<WorkspaceExplorerToolbarProps | null>(null);
   const updateToolbar = useCallback((props: WorkspaceExplorerToolbarProps) => {
     setToolbarProps(props);
@@ -41,7 +44,9 @@ export function WorkspaceExplorerToolbarHost({ children }: { children: ReactNode
     <WorkspaceExplorerToolbarContext.Provider value={contextValue}>
       <View style={styles.container}>
         {children}
-        {pathname === "/workspace" && toolbarProps ? (
+        {pathname === "/workspace" &&
+        preferences.workspaceExplorer.showFloatingToolbar &&
+        toolbarProps ? (
           <WorkspaceExplorerToolbar {...toolbarProps} />
         ) : null}
       </View>

@@ -218,6 +218,7 @@ fn public_json_contract() {
     let settings_json = serde_json::to_value(settings).unwrap();
     assert_eq!(settings_json["schemaVersion"], 1);
     assert_eq!(settings_json["historySnapshotCount"], 37);
+    assert!(settings_json.get("fileTreeSortType").is_none());
 
     let manifest_json =
         serde_json::to_value(WorkspaceManifest::new(id, "笔记".into(), 123)).unwrap();

@@ -1,15 +1,11 @@
 import { type Href, useRouter } from "expo-router";
-import {
-  NativeList,
-  NativeListNavigationItem,
-  NativeListSection,
-  NativeListSwitchItem,
-} from "rn-ui-kit";
+import { NativeListNavigationItem, NativeListSection, NativeListSwitchItem } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common/platform";
 import { useUiPreferences } from "@/hooks/settings";
 
 import type { SettingsPageProps } from "../settings_config";
+import { SettingsList } from "../settings_list";
 
 function runSettingsAction(scope: string, action: Promise<unknown>) {
   void action.catch((error) => {
@@ -27,9 +23,7 @@ export function DeveloperSettingsPage({
 
   return (
     <>
-      <NativeList
-        automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
-        contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+      <SettingsList
         style={{ flex: 1 }}
         tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
       >
@@ -78,7 +72,7 @@ export function DeveloperSettingsPage({
             title="GM 调试"
           />
         </NativeListSection>
-      </NativeList>
+      </SettingsList>
     </>
   );
 }

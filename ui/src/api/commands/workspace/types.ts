@@ -16,14 +16,6 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-export type FileTreeSortType =
-  | "name"
-  | "nameRev"
-  | "lastModifiedTime"
-  | "lastModifiedTimeRev"
-  | "createTime"
-  | "createTimeRev";
-
 export interface WorkspaceSyncSettings {
   providerId: StorageProviderId | null;
   [option: string]: JsonValue;
@@ -31,7 +23,6 @@ export interface WorkspaceSyncSettings {
 
 export interface WorkspaceSettings {
   schemaVersion: number;
-  fileTreeSortType: FileTreeSortType;
   followGitignore: boolean;
   customIgnore: string;
   uploadImagePath: WorkspaceRelativePath;
@@ -179,7 +170,6 @@ export interface FileNode {
 
 export interface FileTree {
   root: FileNode | null;
-  sortType: FileTreeSortType;
 }
 
 export interface WriteWorkspaceFileOptions {

@@ -1,23 +1,22 @@
 import { type Href, Stack, useRouter } from "expo-router";
-import { NativeList, NativeListNavigationItem, NativeListSection } from "rn-ui-kit";
+import { NativeListNavigationItem, NativeListSection } from "rn-ui-kit";
 
 import { os } from "@/api/common";
 import { useUiPreferences } from "@/hooks/settings";
 
 import { mobileSettingsSections, settingsPages } from "../settings_config";
+import { SettingsList } from "../settings_list";
 
 export function MobileSettingsHome() {
   const router = useRouter();
   const { preferences } = useUiPreferences();
-  const usesNativeIosHeader = os() === "ios";
-  const tracksNavigationBarScrollEdge = usesNativeIosHeader;
+  const currentOs = os();
+  const tracksNavigationBarScrollEdge = currentOs === "ios" || currentOs === "android";
 
   return (
     <>
       <Stack.Screen options={{ headerShown: true, title: "设置" }} />
-      <NativeList
-        automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
-        contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+      <SettingsList
         style={{ flex: 1 }}
         tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
       >
@@ -38,7 +37,7 @@ export function MobileSettingsHome() {
               ))}
           </NativeListSection>
         ))}
-      </NativeList>
+      </SettingsList>
     </>
   );
 }

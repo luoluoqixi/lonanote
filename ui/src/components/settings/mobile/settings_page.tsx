@@ -11,7 +11,8 @@ export function MobileSettingsPage() {
   const { page } = useLocalSearchParams<{ page?: string | string[] }>();
   const pageId = Array.isArray(page) ? page[0] : page;
   const pageConfig = getSettingsPage(pageId);
-  const tracksNavigationBarScrollEdge = os() === "ios";
+  const currentOs = os();
+  const tracksNavigationBarScrollEdge = currentOs === "ios" || currentOs === "android";
 
   if (
     !pageConfig ||

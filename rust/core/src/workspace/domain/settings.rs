@@ -16,24 +16,10 @@ pub struct WorkspaceSyncSettings {
     pub options: BTreeMap<String, Value>,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum FileTreeSortType {
-    #[default]
-    Name,
-    NameRev,
-    LastModifiedTime,
-    LastModifiedTimeRev,
-    CreateTime,
-    CreateTimeRev,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceSettings {
     pub schema_version: u32,
-    #[serde(default)]
-    pub file_tree_sort_type: FileTreeSortType,
     #[serde(default = "default_true")]
     pub follow_gitignore: bool,
     #[serde(default = "default_custom_ignore")]
@@ -52,7 +38,6 @@ impl Default for WorkspaceSettings {
     fn default() -> Self {
         Self {
             schema_version: WORKSPACE_SETTINGS_SCHEMA_VERSION,
-            file_tree_sort_type: FileTreeSortType::Name,
             follow_gitignore: true,
             custom_ignore: default_custom_ignore(),
             upload_image_path: default_upload_image_path(),

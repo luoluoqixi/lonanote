@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::support::{path, provider, WorkspaceTestApp, MANAGED_PROVIDER};
 use lonanote_core::workspace::{
-    FileTreeSortType, MemoryStorage, StorageError, WorkspaceError, WorkspaceId, WorkspaceInstance,
+    MemoryStorage, StorageError, WorkspaceError, WorkspaceId, WorkspaceInstance,
     WorkspaceLocalSetting, WorkspaceManifest, WorkspaceSettings, WorkspaceStorage,
     WorkspaceStorageSession, WriteOptions,
 };
@@ -112,14 +112,10 @@ async fn index_refresh_flow() {
         .into_iter()
         .map(|node| node.path.to_string())
         .collect::<Vec<_>>();
-    assert!(
-        first_names.iter().position(|name| name == "a.md")
-            < first_names.iter().position(|name| name == "z.md")
-    );
+    assert_eq!(first_names.first().map(String::as_str), Some("assets"));
     assert!(!first_names.iter().any(|name| name.starts_with(".lonanote")));
 
     let mut settings = manager.get_settings(&id).await.unwrap();
-    settings.file_tree_sort_type = FileTreeSortType::NameRev;
     settings.custom_ignore.push_str("\nignored.md\n");
     manager.set_settings(&id, settings).await.unwrap();
     manager
@@ -129,7 +125,6 @@ async fn index_refresh_flow() {
     manager.refresh_index(&id).await.unwrap();
 
     let tree = manager.get_tree(&id, true).await.unwrap();
-    assert_eq!(tree.sort_type, FileTreeSortType::NameRev);
     let names = tree
         .root
         .unwrap()
@@ -138,9 +133,7 @@ async fn index_refresh_flow() {
         .into_iter()
         .map(|node| node.path.to_string())
         .collect::<Vec<_>>();
-    assert!(
-        names.iter().position(|name| name == "z.md") < names.iter().position(|name| name == "a.md")
-    );
+    assert_eq!(names.first().map(String::as_str), Some("assets"));
     assert!(!names.iter().any(|name| name == "ignored.md"));
 
     let node = manager.get_node(&id, &path("assets"), true).await.unwrap();

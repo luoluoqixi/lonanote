@@ -39,8 +39,10 @@ type WorkspaceExplorerListProps = {
   onRefresh: () => Promise<void>;
   onSelectedEntryPathsChange: (selectedIds: Array<string | number>) => void;
   selectedEntryPaths: string[];
+  showsFloatingToolbar: boolean;
   sortValue: WorkspaceExplorerSortValue;
   tracksNavigationBarScrollEdge: boolean;
+  usesNativeIosHeader: boolean;
 };
 
 function getEntryTitle(entry: FileNode): string {
@@ -50,8 +52,8 @@ function getEntryTitle(entry: FileNode): string {
     : name;
 }
 
-function getStartOfDay(date: Date): number {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+function getCalendarDayNumber(date: Date): number {
+  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000);
 }
 
 function getDateGroupKey(timestamp: number | null): string {
@@ -65,13 +67,19 @@ function getDateGroupKey(timestamp: number | null): string {
   }
 
   const now = new Date();
-  const dayDifference = Math.round((getStartOfDay(now) - getStartOfDay(date)) / 86_400_000);
+  const dayDifference = getCalendarDayNumber(now) - getCalendarDayNumber(date);
 
   if (dayDifference === 0) {
     return "today";
   }
   if (dayDifference === 1) {
     return "yesterday";
+  }
+  if (dayDifference >= 2 && dayDifference < 7) {
+    return "past-7-days";
+  }
+  if (dayDifference >= 7 && dayDifference < 30) {
+    return "past-30-days";
   }
   if (date.getFullYear() === now.getFullYear()) {
     return `month-${date.getMonth() + 1}`;
@@ -91,6 +99,12 @@ function getDateGroupTitle(timestamp: number | null): string {
   }
   if (key === "unknown") {
     return "日期未知";
+  }
+  if (key === "past-7-days") {
+    return "过去7天";
+  }
+  if (key === "past-30-days") {
+    return "过去30天";
   }
   if (key.startsWith("month-")) {
     return `${key.slice("month-".length)}月`;
@@ -240,8 +254,10 @@ export function WorkspaceExplorerList({
   onRefresh,
   onSelectedEntryPathsChange,
   selectedEntryPaths,
+  showsFloatingToolbar,
   sortValue,
   tracksNavigationBarScrollEdge,
+  usesNativeIosHeader,
 }: WorkspaceExplorerListProps) {
   const statusMessage = isLoading
     ? "正在加载文件"
@@ -254,9 +270,9 @@ export function WorkspaceExplorerList({
 
   return (
     <NativeList
-      automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
-      contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
-      contentMarginBottom={120}
+      automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
+      contentInsetAdjustmentBehavior={usesNativeIosHeader ? "automatic" : undefined}
+      contentMarginBottom={showsFloatingToolbar ? 120 : 24}
       editMode={isSelectionMode}
       onRefresh={onRefresh}
       onSelectedIdsChange={onSelectedEntryPathsChange}

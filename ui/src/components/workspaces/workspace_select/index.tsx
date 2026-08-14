@@ -73,8 +73,9 @@ export function WorkspaceSelect() {
   const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
   const requestIdRef = useRef(0);
   const storageProviderRequestIdRef = useRef(0);
-  const usesNativeIosHeader = os() === "ios";
-  const tracksNavigationBarScrollEdge = usesNativeIosHeader;
+  const currentOs = os();
+  const usesNativeIosHeader = currentOs === "ios";
+  const tracksNavigationBarScrollEdge = usesNativeIosHeader || currentOs === "android";
 
   const refreshWorkspaces = useCallback(async (minimumDurationMs = 0) => {
     const requestId = ++requestIdRef.current;

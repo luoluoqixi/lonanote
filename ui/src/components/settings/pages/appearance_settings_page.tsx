@@ -1,6 +1,5 @@
 ﻿/* eslint-disable quote-props */
 import {
-  NativeList,
   NativeListItem,
   NativeListSection,
   NativeListSelectItem,
@@ -14,6 +13,7 @@ import type { AccentColorSetting, AppLayoutMode, ColorSchemeSetting } from "@/st
 import { accentThemeNames, getAccentThemePreset } from "@/theme/accent_themes";
 
 import type { SettingsPageProps } from "../settings_config";
+import { SettingsList } from "../settings_list";
 
 function runSettingsAction(scope: string, action: Promise<unknown>) {
   void action.catch((error) => {
@@ -51,12 +51,7 @@ export function AppearanceSettingsPage({
   ];
 
   return (
-    <NativeList
-      automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
-      contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
-      style={{ flex: 1 }}
-      tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
-    >
+    <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
       {isLoading || error ? (
         <NativeListSection title="状态">
           <NativeListItem
@@ -147,6 +142,6 @@ export function AppearanceSettingsPage({
           title="布局模式"
         />
       </NativeListSection>
-    </NativeList>
+    </SettingsList>
   );
 }

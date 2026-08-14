@@ -2,14 +2,9 @@ import { type Href, Redirect, useLocalSearchParams, useRouter } from "expo-route
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
-import {
-  type FileNode,
-  type FileTreeSortType,
-  workspace,
-  workspaceFile,
-  workspaceIndex,
-} from "@/api/commands/workspace";
+import { type FileNode, workspaceFile, workspaceIndex } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, getFileName, os } from "@/api/common";
+import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
 import {
   useCurrentWorkspaceId,
@@ -25,12 +20,11 @@ import { RenameWorkspaceEntrySheet } from "./rename_workspace_entry_sheet";
 import { WorkspaceExplorerHeader } from "./workspace_explorer_header";
 import { WorkspaceExplorerList } from "./workspace_explorer_list";
 import {
-  DEFAULT_WORKSPACE_EXPLORER_GROUP_MODE,
-  DEFAULT_WORKSPACE_EXPLORER_SORT_VALUE,
   type WorkspaceExplorerGroupMode,
   WorkspaceExplorerGroupModeSelect,
   WorkspaceExplorerSortSelect,
   type WorkspaceExplorerSortValue,
+  isWorkspaceExplorerNameSortValue,
   sortWorkspaceExplorerEntries,
 } from "./workspace_explorer_sort";
 import { useWorkspaceExplorerToolbar } from "./workspace_explorer_toolbar_host";
@@ -88,11 +82,6 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
   });
 }
 
-function normalizeGroupMode(value: string | string[] | undefined): WorkspaceExplorerGroupMode {
-  const groupMode = Array.isArray(value) ? value[0] : value;
-  return groupMode === "none" ? "none" : DEFAULT_WORKSPACE_EXPLORER_GROUP_MODE;
-}
-
 export function WorkspaceExplorer() {
   const workspaceId = useCurrentWorkspaceId();
 
@@ -117,21 +106,15 @@ function WorkspaceExplorerForWorkspace({
   workspaceId: string;
 }) {
   const router = useRouter();
-  const { groupMode: initialGroupMode, path } = useLocalSearchParams<{
-    groupMode?: string | string[];
+  const { path } = useLocalSearchParams<{
     path?: string | string[];
   }>();
   const { toast } = useToast();
+  const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
   const { openNoteEditor } = useWorkspaceEditorSession(workspaceId);
-  const { refresh: refreshWorkspace, state: workspaceState } = useWorkspaceState(workspaceId);
+  const { state: workspaceState } = useWorkspaceState(workspaceId);
   const currentPath = (Array.isArray(path) ? path[0] : path) ?? "";
   const [entries, setEntries] = useState<FileNode[]>([]);
-  const [sortValue, setSortValue] = useState<WorkspaceExplorerSortValue>(
-    DEFAULT_WORKSPACE_EXPLORER_SORT_VALUE,
-  );
-  const [groupMode, setGroupMode] = useState<WorkspaceExplorerGroupMode>(
-    normalizeGroupMode(initialGroupMode),
-  );
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -147,10 +130,13 @@ function WorkspaceExplorerForWorkspace({
   const [isRenameEntrySheetOpen, setIsRenameEntrySheetOpen] = useState(false);
   const [isRenamingEntry, setIsRenamingEntry] = useState(false);
   const [isDeletingEntries, setIsDeletingEntries] = useState(false);
+  const isCreatingEntryRef = useRef(false);
   const requestIdRef = useRef(0);
   const sortSelectRef = useRef<SelectHandle>(null);
   const groupModeSelectRef = useRef<SelectHandle>(null);
-  const tracksNavigationBarScrollEdge = os() === "ios";
+  const currentOs = os();
+  const usesNativeIosHeader = currentOs === "ios";
+  const tracksNavigationBarScrollEdge = usesNativeIosHeader || currentOs === "android";
 
   const loadEntries = useCallback(
     async (minimumDurationMs = 0) => {
@@ -191,15 +177,19 @@ function WorkspaceExplorerForWorkspace({
     };
   }, [loadEntries]);
 
-  useEffect(() => {
-    if (workspaceState?.settings.fileTreeSortType) {
-      setSortValue(workspaceState.settings.fileTreeSortType);
-    }
-  }, [workspaceState?.settings.fileTreeSortType]);
+  const sortValue = preferences.workspaceExplorer.sortValue;
+  const groupMode = preferences.workspaceExplorer.groupMode;
+  const isGroupModeDisabled = isWorkspaceExplorerNameSortValue(sortValue);
+  const effectiveGroupMode = isGroupModeDisabled ? "none" : groupMode;
 
   const sortedEntries = useMemo(
-    () => sortWorkspaceExplorerEntries(entries, sortValue),
-    [entries, sortValue],
+    () =>
+      sortWorkspaceExplorerEntries(
+        entries,
+        sortValue,
+        preferences.workspaceExplorer.foldersFirst && effectiveGroupMode === "none",
+      ),
+    [effectiveGroupMode, entries, preferences.workspaceExplorer.foldersFirst, sortValue],
   );
   const title = currentPath ? getFileName(currentPath) : (workspaceState?.displayName ?? "工作区");
   const areAllEntriesSelected =
@@ -208,7 +198,7 @@ function WorkspaceExplorerForWorkspace({
     () => entries.filter((entry) => selectedEntryPaths.includes(entry.path)),
     [entries, selectedEntryPaths],
   );
-  const isUpdatingEntries = isRenamingEntry || isDeletingEntries;
+  const isUpdatingEntries = isCreatingEntry || isRenamingEntry || isDeletingEntries;
 
   const openCreateEntrySheet = useCallback(
     (entryKind: CreateWorkspaceEntryKind) => {
@@ -223,60 +213,99 @@ function WorkspaceExplorerForWorkspace({
     [entries],
   );
 
-  const createEntry = useCallback(async () => {
-    if (isCreatingEntry) {
-      return;
-    }
-
-    const trimmedName = createEntryName.trim();
-    const validationError = validateEntryName(trimmedName);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
-
-    const normalizedName =
-      createEntryKind === "note" && !trimmedName.toLocaleLowerCase().endsWith(".md")
-        ? `${trimmedName}.md`
-        : trimmedName;
-    const path = joinWorkspacePath(currentPath, normalizedName);
-    setIsCreatingEntry(true);
-
-    try {
-      if (await workspaceFile.exists(workspaceId, path)) {
-        toast.error(`“${normalizedName}”已存在`);
+  const createWorkspaceEntry = useCallback(
+    async ({
+      entryKind,
+      name,
+      openAfterCreate,
+    }: {
+      entryKind: CreateWorkspaceEntryKind;
+      name: string;
+      openAfterCreate: boolean;
+    }) => {
+      if (isCreatingEntryRef.current) {
         return;
       }
 
-      if (createEntryKind === "note") {
-        await workspaceFile.writeText(workspaceId, path, "", {
-          createParent: false,
-          overwrite: false,
-        });
-      } else {
-        await workspaceFile.createDirectory(workspaceId, path);
+      const trimmedName = name.trim();
+      const validationError = validateEntryName(trimmedName);
+      if (validationError) {
+        toast.error(validationError);
+        return;
       }
 
-      setIsCreateEntrySheetOpen(false);
-      await loadEntries();
-      toast.success(createEntryKind === "note" ? "笔记已创建" : "文件夹已创建");
-    } catch (error) {
-      console.error("[workspace-explorer] create entry failed", error);
-      toast.error(
-        getErrorMessage(error, createEntryKind === "note" ? "创建笔记失败" : "创建文件夹失败"),
-      );
-    } finally {
-      setIsCreatingEntry(false);
-    }
-  }, [
-    createEntryKind,
-    createEntryName,
-    currentPath,
-    isCreatingEntry,
-    loadEntries,
-    toast,
-    workspaceId,
-  ]);
+      const normalizedName =
+        entryKind === "note" && !trimmedName.toLocaleLowerCase().endsWith(".md")
+          ? `${trimmedName}.md`
+          : trimmedName;
+      const entryPath = joinWorkspacePath(currentPath, normalizedName);
+      isCreatingEntryRef.current = true;
+      setIsCreatingEntry(true);
+
+      try {
+        if (await workspaceFile.exists(workspaceId, entryPath)) {
+          toast.error(`“${normalizedName}”已存在`);
+          return;
+        }
+
+        if (entryKind === "note") {
+          await workspaceFile.writeText(workspaceId, entryPath, "", {
+            createParent: false,
+            overwrite: false,
+          });
+        } else {
+          await workspaceFile.createDirectory(workspaceId, entryPath);
+        }
+
+        setIsCreateEntrySheetOpen(false);
+        await loadEntries();
+        toast.success(entryKind === "note" ? "笔记已创建" : "文件夹已创建");
+
+        if (openAfterCreate) {
+          if (entryKind === "note") {
+            const editorId = openNoteEditor(entryPath);
+            router.push({
+              pathname: "/editor/[editorId]",
+              params: { editorId, path: entryPath },
+            } as Href);
+          } else {
+            router.push({
+              pathname: "/workspace",
+              params: { path: entryPath },
+            } as Href);
+          }
+        }
+      } catch (error) {
+        console.error("[workspace-explorer] create entry failed", error);
+        toast.error(
+          getErrorMessage(error, entryKind === "note" ? "创建笔记失败" : "创建文件夹失败"),
+        );
+      } finally {
+        isCreatingEntryRef.current = false;
+        setIsCreatingEntry(false);
+      }
+    },
+    [currentPath, loadEntries, openNoteEditor, router, toast, workspaceId],
+  );
+
+  const createEntry = useCallback(async () => {
+    await createWorkspaceEntry({
+      entryKind: createEntryKind,
+      name: createEntryName,
+      openAfterCreate: false,
+    });
+  }, [createEntryKind, createEntryName, createWorkspaceEntry]);
+
+  const quickCreateEntry = useCallback(
+    (entryKind: CreateWorkspaceEntryKind) => {
+      const name =
+        entryKind === "note"
+          ? getAvailableEntryName(entries, "未命名笔记", ".md")
+          : getAvailableEntryName(entries, "新建文件夹");
+      void createWorkspaceEntry({ entryKind, name, openAfterCreate: true });
+    },
+    [createWorkspaceEntry, entries],
+  );
 
   const openRenameEntrySheet = useCallback((entry: FileNode) => {
     setEditingEntry(entry);
@@ -402,7 +431,7 @@ function WorkspaceExplorerForWorkspace({
       if (entry.fileType === "directory") {
         router.push({
           pathname: "/workspace",
-          params: { groupMode, path: entry.path },
+          params: { path: entry.path },
         } as Href);
         return;
       }
@@ -426,32 +455,54 @@ function WorkspaceExplorerForWorkspace({
 
       toast.warning("暂不支持打开此文件类型");
     },
-    [groupMode, openNoteEditor, router, toast],
+    [openNoteEditor, router, toast],
   );
 
   const changeSortValue = useCallback(
-    async (nextSortValue: FileTreeSortType) => {
-      const previousSortValue = sortValue;
-      setSortValue(nextSortValue);
+    async (nextSortValue: WorkspaceExplorerSortValue) => {
+      const nextGroupMode = isWorkspaceExplorerNameSortValue(nextSortValue) ? "none" : groupMode;
       setIsSortSelectOpen(false);
-
-      if (!workspaceState) {
-        return;
-      }
+      setIsGroupModeSelectOpen(false);
 
       try {
-        await workspace.setSettings(workspaceId, {
-          ...workspaceState.settings,
-          fileTreeSortType: nextSortValue,
-        });
-        await refreshWorkspace();
+        await updateUiPreferencesAndSave((currentPreferences) => ({
+          ...currentPreferences,
+          workspaceExplorer: {
+            ...currentPreferences.workspaceExplorer,
+            groupMode: nextGroupMode,
+            sortValue: nextSortValue,
+          },
+        }));
       } catch (error) {
-        console.error("[workspace-explorer] update sort setting failed", error);
-        setSortValue(previousSortValue);
+        console.error("[workspace-explorer] update sort preference failed", error);
         toast.error(getErrorMessage(error, "保存排序方式失败"));
       }
     },
-    [refreshWorkspace, sortValue, toast, workspaceId, workspaceState],
+    [groupMode, toast, updateUiPreferencesAndSave],
+  );
+
+  const changeGroupMode = useCallback(
+    async (nextGroupMode: WorkspaceExplorerGroupMode) => {
+      if (isGroupModeDisabled) {
+        return;
+      }
+
+      setIsGroupModeSelectOpen(false);
+
+      try {
+        await updateUiPreferencesAndSave((currentPreferences) => ({
+          ...currentPreferences,
+          workspaceExplorer: {
+            ...currentPreferences.workspaceExplorer,
+            groupMode: nextGroupMode,
+          },
+        }));
+      } catch (error) {
+        console.error("[workspace-explorer] update group preference failed", error);
+        toast.error(getErrorMessage(error, "保存分组方式失败"));
+      }
+    },
+    [isGroupModeDisabled, toast, updateUiPreferencesAndSave],
   );
 
   const finishSelection = useCallback(() => {
@@ -463,8 +514,8 @@ function WorkspaceExplorerForWorkspace({
     canGoBack: currentPath.length > 0,
     isSelectionMode,
     isUpdating: isUpdatingEntries,
-    onCreateDirectory: () => openCreateEntrySheet("directory"),
-    onCreateNote: () => openCreateEntrySheet("note"),
+    onCreateDirectory: () => quickCreateEntry("directory"),
+    onCreateNote: () => quickCreateEntry("note"),
     onDelete: () => {
       void deleteEntries(selectedEntries);
     },
@@ -487,11 +538,16 @@ function WorkspaceExplorerForWorkspace({
       <WorkspaceExplorerHeader
         areAllEntriesSelected={areAllEntriesSelected}
         canSelectEntries={entries.length > 0}
+        isGroupModeDisabled={isGroupModeDisabled}
         isSelectionMode={isSelectionMode}
         onCreateDirectory={() => openCreateEntrySheet("directory")}
         onCreateNote={() => openCreateEntrySheet("note")}
         onFinishSelection={finishSelection}
-        onOpenGroupMode={() => groupModeSelectRef.current?.open()}
+        onOpenGroupMode={() => {
+          if (!isGroupModeDisabled) {
+            groupModeSelectRef.current?.open();
+          }
+        }}
         onOpenSort={() => sortSelectRef.current?.open()}
         onToggleSelectAllEntries={() => {
           setSelectedEntryPaths(areAllEntriesSelected ? [] : entries.map((entry) => entry.path));
@@ -504,7 +560,7 @@ function WorkspaceExplorerForWorkspace({
       />
       <WorkspaceExplorerList
         entries={sortedEntries}
-        groupMode={groupMode}
+        groupMode={effectiveGroupMode}
         hasError={hasError}
         isLoading={isLoading}
         isSelectionMode={isSelectionMode}
@@ -519,8 +575,10 @@ function WorkspaceExplorerForWorkspace({
           setSelectedEntryPaths(selectedIds.filter((id): id is string => typeof id === "string"));
         }}
         selectedEntryPaths={selectedEntryPaths}
+        showsFloatingToolbar={preferences.workspaceExplorer.showFloatingToolbar}
         sortValue={sortValue}
         tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
+        usesNativeIosHeader={usesNativeIosHeader}
       />
       <WorkspaceExplorerSortSelect
         onOpenChange={setIsSortSelectOpen}
@@ -534,12 +592,11 @@ function WorkspaceExplorerForWorkspace({
       <WorkspaceExplorerGroupModeSelect
         onOpenChange={setIsGroupModeSelectOpen}
         onValueChange={(nextValue) => {
-          setGroupMode(nextValue);
-          setIsGroupModeSelectOpen(false);
+          void changeGroupMode(nextValue);
         }}
         open={isGroupModeSelectOpen}
         selectRef={groupModeSelectRef}
-        value={groupMode}
+        value={effectiveGroupMode}
       />
       <CreateWorkspaceEntrySheet
         entryKind={createEntryKind}

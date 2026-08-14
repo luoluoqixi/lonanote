@@ -1,7 +1,6 @@
 import { StyleSheet, View } from "react-native";
 import {
   Button,
-  NativeList,
   NativeListCustomItem,
   NativeListSection,
   NativeListSwitchItem,
@@ -12,6 +11,7 @@ import { useUiPreferences } from "@/hooks/settings";
 import type { DesktopWindowState } from "@/stores/ui";
 
 import type { SettingsPageProps } from "../settings_config";
+import { SettingsList } from "../settings_list";
 
 function runSettingsAction(scope: string, action: Promise<unknown>) {
   void action.catch((error) => {
@@ -41,9 +41,7 @@ export function WindowSettingsPage({
   const { preferences, updateAndSave } = useUiPreferences();
 
   return (
-    <NativeList
-      automaticallyAdjustsScrollIndicatorInsets={tracksNavigationBarScrollEdge ? true : undefined}
-      contentInsetAdjustmentBehavior={tracksNavigationBarScrollEdge ? "automatic" : undefined}
+    <SettingsList
       style={{ flex: 1 }}
       tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
     >
@@ -99,7 +97,7 @@ export function WindowSettingsPage({
           </View>
         </NativeListCustomItem>
       </NativeListSection>
-    </NativeList>
+    </SettingsList>
   );
 }
 

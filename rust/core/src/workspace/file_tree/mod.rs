@@ -16,15 +16,13 @@ pub struct FileTree {
     #[serde(skip)]
     pub path: PathBuf,
     pub root: Option<FileNode>,
-    pub sort_type: FileTreeSortType,
 }
 
 impl FileTree {
-    pub fn new(path: impl AsRef<Path>, sort_type: FileTreeSortType) -> Self {
+    pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
             root: None,
-            sort_type,
         }
     }
     pub fn update_tree(
@@ -43,18 +41,13 @@ impl FileTree {
 
         Ok(())
     }
-    pub fn set_sort_type(&mut self, sort_type: FileTreeSortType) {
-        self.sort_type = sort_type;
-        self.sort();
-    }
     pub fn sort(&mut self) {
-        let sort_type = self.sort_type;
         if let Some(root) = &mut self.root {
             // let start = std::time::Instant::now();
             let mut stack = vec![root];
             while let Some(node) = stack.pop() {
                 if let Some(children) = node.children.as_mut() {
-                    children.sort_by(|a, b| file_tree_compare(a, b, &sort_type));
+                    children.sort_by(file_tree_compare);
                     stack.extend(children.iter_mut());
                 }
             }
@@ -71,7 +64,6 @@ impl FileTree {
         follow_gitignore: bool,
         custom_ignore: String,
         recursive: bool,
-        sort_type: FileTreeSortType,
     ) -> Result<FileNode, String> {
         let path = if let Some(s) = path {
             &self.path.join(s)
@@ -80,7 +72,7 @@ impl FileTree {
         };
         let mut node = FileNode::from_path(path, follow_gitignore, custom_ignore, recursive)?;
         if let Some(children) = &mut node.children {
-            children.sort_by(|a, b| file_tree_compare(a, b, &sort_type));
+            children.sort_by(file_tree_compare);
         }
         Ok(node)
     }
