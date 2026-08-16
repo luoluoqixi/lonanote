@@ -1,29 +1,48 @@
 import { Zoomable } from "@likashefqet/react-native-image-zoom";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { Maximize, Pause, Play } from "@tamagui/lucide-icons-2";
+import { ExternalLink, Maximize, Pause, Play } from "@tamagui/lucide-icons-2";
 import { useEventListener } from "expo";
 import { Image } from "expo-image";
-import { Redirect, Stack, useLocalSearchParams } from "expo-router";
+import { Redirect, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Text as NativeText, StyleSheet, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import PagerView, { type PagerViewOnPageSelectedEvent } from "react-native-pager-view";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Slider, Text } from "rn-ui-kit";
+import {
+  Button,
+  Menu,
+  type MenuItemData,
+  Slider,
+  Text,
+  useMenuTriggerState,
+  useTheme,
+} from "rn-ui-kit";
 
 import { workspace } from "@/api/commands/workspace";
 import {
   detectWorkspaceFileKind,
   getFileName,
+  isIos as isIosPlatform,
   isWeb,
   os,
   resolveWorkspaceFileUrl,
 } from "@/api/common";
-import { OpenInOtherAppMenu, useOpenInOtherApp } from "@/components/files/open_in_other_app";
+import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useMediaNavigation } from "@/hooks/media";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 export type WorkspaceMediaKind = "image" | "video";
+
+const MEDIA_DISMISS_DISTANCE = 120;
+const MEDIA_DISMISS_VELOCITY = 1000;
 
 type MediaViewerProps = {
   isActive: boolean;
@@ -31,6 +50,23 @@ type MediaViewerProps = {
   uri: string;
   title: string;
 };
+
+function HeaderMenuActionButton() {
+  const { isActive } = useMenuTriggerState();
+
+  return (
+    <Button
+      accessibilityLabel="媒体文件操作"
+      accessibilityRole="button"
+      chromeless
+      circular
+      hitSlop={8}
+      native={isIosPlatform()}
+      opacity={isActive ? 0.4 : 1}
+      title="•••"
+    />
+  );
+}
 
 function getFirstParamValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -249,8 +285,10 @@ function MediaContent(props: MediaViewerProps) {
 export function MediaViewer() {
   const pagerRef = useRef<PagerView>(null);
   const headerHeight = useHeaderHeight();
+  const router = useRouter();
   const workspaceId = useCurrentWorkspaceId();
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const { mediaSequence } = useMediaNavigation();
   const { mediaIndex: rawMediaIndex, path } = useLocalSearchParams<{
     mediaIndex?: string | string[];
@@ -274,6 +312,63 @@ export function MediaViewer() {
   const mediaKind = filePath ? detectWorkspaceFileKind(filePath) : null;
   const isMedia = mediaKind === "image" || mediaKind === "video";
   const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
+  const accentColor = theme.color10.val as ComponentProps<typeof ExternalLink>["color"];
+  const menuItems = useMemo<MenuItemData[]>(
+    () => [
+      {
+        disabled: isOpening,
+        icon: <ExternalLink color={accentColor} size={14} />,
+        iconProps: { ios: { name: "arrow.up.forward.app" } },
+        label: isOpening ? "正在打开…" : "在其他应用中打开",
+        onPress: openInOtherApp,
+        value: "open-in-other-app",
+      },
+    ],
+    [accentColor, isOpening, openInOtherApp],
+  );
+  const dismissTranslationY = useSharedValue(0);
+  const isAndroid = os() === "android";
+  const isIosDevice = os() === "ios";
+  const supportsDragDismiss = isAndroid || isIosDevice;
+
+  const dismissMedia = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  const dismissGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(supportsDragDismiss)
+        .activeOffsetY(12)
+        .failOffsetX([-20, 20])
+        .onUpdate((event) => {
+          dismissTranslationY.value = Math.max(event.translationY, 0);
+        })
+        .onEnd((event) => {
+          if (
+            event.translationY >= MEDIA_DISMISS_DISTANCE ||
+            event.velocityY >= MEDIA_DISMISS_VELOCITY
+          ) {
+            runOnJS(dismissMedia)();
+            return;
+          }
+
+          dismissTranslationY.value = withSpring(0, {
+            damping: 20,
+            stiffness: 220,
+          });
+        }),
+    [dismissMedia, dismissTranslationY, supportsDragDismiss],
+  );
+
+  const dismissAnimatedStyle = useAnimatedStyle(() => {
+    const progress = Math.min(dismissTranslationY.value / MEDIA_DISMISS_DISTANCE, 1);
+
+    return {
+      opacity: 1 - progress * 0.35,
+      transform: [{ translateY: dismissTranslationY.value }, { scale: 1 - progress * 0.04 }],
+    };
+  });
 
   useEffect(() => {
     setActiveMediaIndex(initialMediaIndex);
@@ -365,54 +460,59 @@ export function MediaViewer() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <OpenInOtherAppMenu
-              accessibilityLabel="媒体文件操作"
-              isOpening={isOpening}
-              onOpenInOtherApp={openInOtherApp}
-            />
+            <Menu trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
           ),
           title,
         }}
       />
-      <View style={[styles.container, os() === "ios" && { paddingTop: headerHeight }]}>
-        <View style={styles.mediaContent}>
-          {isLoading ? <ActivityIndicator /> : null}
-          {!isLoading && error ? <MediaError message={error} /> : null}
-          {!isLoading && !error ? (
-            <PagerView
-              ref={pagerRef}
-              style={styles.pager}
-              initialPage={initialMediaIndex}
-              offscreenPageLimit={1}
-              onPageSelected={handlePageSelected}
-            >
-              {mediaPaths.map((mediaPath, index) => {
-                const pageKind = detectWorkspaceFileKind(mediaPath);
-                const pageUrl = mediaUrls[mediaPath];
-                if ((pageKind !== "image" && pageKind !== "video") || !pageUrl) {
-                  return <View key={mediaPath} style={styles.page} />;
-                }
+      <GestureDetector gesture={dismissGesture}>
+        <Animated.View
+          style={[
+            styles.container,
+            dismissAnimatedStyle,
+            isIosDevice && { paddingTop: headerHeight },
+          ]}
+        >
+          <View style={styles.mediaContent}>
+            {isLoading ? <ActivityIndicator /> : null}
+            {!isLoading && error ? <MediaError message={error} /> : null}
+            {!isLoading && !error ? (
+              <PagerView
+                ref={pagerRef}
+                style={styles.pager}
+                initialPage={initialMediaIndex}
+                offscreenPageLimit={1}
+                overdrag
+                onPageSelected={handlePageSelected}
+              >
+                {mediaPaths.map((mediaPath, index) => {
+                  const pageKind = detectWorkspaceFileKind(mediaPath);
+                  const pageUrl = mediaUrls[mediaPath];
+                  if ((pageKind !== "image" && pageKind !== "video") || !pageUrl) {
+                    return <View key={mediaPath} style={styles.page} />;
+                  }
 
-                return (
-                  <View key={mediaPath} style={styles.page}>
-                    <MediaContent
-                      isActive={index === activeMediaIndex}
-                      mediaKind={pageKind}
-                      uri={pageUrl}
-                      title={getFileName(mediaPath)}
-                    />
-                  </View>
-                );
-              })}
-            </PagerView>
-          ) : null}
-        </View>
-        <View style={[styles.positionIndicator, { paddingBottom: insets.bottom + 16 }]}>
-          <Text color="$gray11" fontSize="$3">
-            {activeMediaIndex + 1} / {mediaPaths.length}
-          </Text>
-        </View>
-      </View>
+                  return (
+                    <View key={mediaPath} style={styles.page}>
+                      <MediaContent
+                        isActive={index === activeMediaIndex}
+                        mediaKind={pageKind}
+                        uri={pageUrl}
+                        title={getFileName(mediaPath)}
+                      />
+                    </View>
+                  );
+                })}
+              </PagerView>
+            ) : null}
+          </View>
+          <View style={[styles.positionIndicator, { paddingBottom: insets.bottom + 16 }]}>
+            <Text color="$gray11" fontSize="$3">
+              {activeMediaIndex + 1} / {mediaPaths.length}
+            </Text>
+          </View>
+        </Animated.View>
+      </GestureDetector>
     </>
   );
 }
