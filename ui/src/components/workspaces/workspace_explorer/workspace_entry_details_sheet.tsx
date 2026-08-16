@@ -1,7 +1,6 @@
 import { StyleSheet } from "react-native";
 import {
   NativeList,
-  NativeListItem,
   NativeListSection,
   NativeSheetStack,
   getNativeStackScrollEdgeHeaderOptions,
@@ -10,6 +9,8 @@ import {
 
 import type { FileNode } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime, getFileName } from "@/api/common";
+
+import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
 type WorkspaceEntryDetailsSheetProps = {
   entry: FileNode | null;
@@ -57,13 +58,34 @@ export function WorkspaceEntryDetailsSheet({
         {() => (
           <NativeList style={styles.list} tracksNavigationBarScrollEdge>
             <NativeListSection title="基本信息">
-              <NativeListItem title="名称" value={getFileName(entry.path)} />
-              <NativeListItem title="类型" value={isDirectory ? "文件夹" : "文件"} />
-              <NativeListItem title="路径" value={entry.path} valueFontSize={14} />
+              <WorkspaceDetailsListItem
+                copyId="entry-name"
+                title="名称"
+                value={getFileName(entry.path)}
+              />
+              <WorkspaceDetailsListItem
+                copyId="entry-type"
+                title="类型"
+                value={isDirectory ? "文件夹" : "文件"}
+              />
+              <WorkspaceDetailsListItem
+                copyId="entry-path"
+                title="路径"
+                value={entry.path}
+                valueFontSize={14}
+              />
             </NativeListSection>
             <NativeListSection title="时间">
-              <NativeListItem title="创建时间" value={formatDate(entry.createTime)} />
-              <NativeListItem title="编辑时间" value={formatDate(entry.lastModifiedTime)} />
+              <WorkspaceDetailsListItem
+                copyId="entry-created-at"
+                title="创建时间"
+                value={formatDate(entry.createTime)}
+              />
+              <WorkspaceDetailsListItem
+                copyId="entry-last-modified-at"
+                title="编辑时间"
+                value={formatDate(entry.lastModifiedTime)}
+              />
             </NativeListSection>
           </NativeList>
         )}

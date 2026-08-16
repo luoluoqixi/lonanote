@@ -1,7 +1,6 @@
 import { StyleSheet } from "react-native";
 import {
   NativeList,
-  NativeListItem,
   NativeListSection,
   NativeSheetStack,
   getNativeStackScrollEdgeHeaderOptions,
@@ -10,6 +9,8 @@ import {
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime } from "@/api/common";
+
+import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
 const WORKSPACE_DETAILS_SNAP_POINTS = [72];
 
@@ -63,19 +64,45 @@ export function WorkspaceDetailsSheet({
         {() => (
           <NativeList style={styles.list} tracksNavigationBarScrollEdge>
             <NativeListSection title="基本信息">
-              <NativeListItem title="工作区名称" value={workspaceItem.displayName} />
-              <NativeListItem title="存储位置" value={storageKindLabel} />
-              <NativeListItem title="存储 Provider" value={formatValue(storage?.providerId)} />
-              <NativeListItem
+              <WorkspaceDetailsListItem
+                copyId="workspace-display-name"
+                title="工作区名称"
+                value={workspaceItem.displayName}
+              />
+              <WorkspaceDetailsListItem
+                copyId="workspace-storage-kind"
+                title="存储位置"
+                value={storageKindLabel}
+              />
+              <WorkspaceDetailsListItem
+                copyId="workspace-storage-provider"
+                title="存储 Provider"
+                value={formatValue(storage?.providerId)}
+              />
+              <WorkspaceDetailsListItem
+                copyId="workspace-local-directory-path"
                 title="本地文件夹路径"
                 value={localDirectoryPath}
                 valueFontSize={14}
               />
-              <NativeListItem title="Workspace ID" value={workspaceItem.id} valueFontSize={14} />
+              <WorkspaceDetailsListItem
+                copyId="workspace-id"
+                title="Workspace ID"
+                value={workspaceItem.id}
+                valueFontSize={14}
+              />
             </NativeListSection>
             <NativeListSection title="时间">
-              <NativeListItem title="创建时间" value={formatDate(workspaceItem.createdAt)} />
-              <NativeListItem title="上次打开时间" value={formatDate(workspaceItem.lastOpenedAt)} />
+              <WorkspaceDetailsListItem
+                copyId="workspace-created-at"
+                title="创建时间"
+                value={formatDate(workspaceItem.createdAt)}
+              />
+              <WorkspaceDetailsListItem
+                copyId="workspace-last-opened-at"
+                title="上次打开时间"
+                value={formatDate(workspaceItem.lastOpenedAt)}
+              />
             </NativeListSection>
           </NativeList>
         )}
