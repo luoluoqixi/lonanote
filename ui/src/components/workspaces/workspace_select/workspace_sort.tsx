@@ -1,7 +1,7 @@
 import { Select, type SelectHandle, type SelectItemGroupData } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
-import { compareNames, formatUnixSecondsDateTime } from "@/api/common";
+import { compareNames, formatUnixSecondsRelativeDate } from "@/api/common";
 import type { WorkspaceSelectSortSetting } from "@/stores/ui";
 
 type WorkspaceSortField = "last-opened" | "created-at" | "title";
@@ -119,7 +119,7 @@ export function getWorkspaceSubtitle(
   const timestamp = getWorkspaceSortTimestamp(workspaceItem, sortValue);
   const fallbackMessage = sortField === "created-at" ? "创建时间未知" : "打开时间未知";
 
-  return formatUnixSecondsDateTime(timestamp) ?? fallbackMessage;
+  return formatUnixSecondsRelativeDate(timestamp) ?? fallbackMessage;
 }
 
 export function WorkspaceSortSelect({

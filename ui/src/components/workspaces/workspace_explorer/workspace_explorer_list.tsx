@@ -13,7 +13,7 @@ import {
 
 import type { FileNode } from "@/api/commands/workspace";
 import {
-  formatUnixSecondsDateTime,
+  formatUnixSecondsRelativeDate,
   getFileName,
   groupItemsByDate,
   isMarkdownFile,
@@ -111,7 +111,7 @@ function WorkspaceExplorerEntryItem({
   const accentColor = theme.color10.val as ComponentProps<typeof Folder>["color"];
   const isDirectory = entry.fileType === "directory";
   const timestamp = getWorkspaceExplorerEntryTimestamp(entry, sortValue);
-  const subtitle = formatUnixSecondsDateTime(timestamp) ?? "时间未知";
+  const subtitle = formatUnixSecondsRelativeDate(timestamp) ?? "时间未知";
   const sharedProps = {
     contextMenuProps: {
       items: [
