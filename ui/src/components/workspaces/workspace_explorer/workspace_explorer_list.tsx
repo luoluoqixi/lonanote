@@ -23,6 +23,7 @@ import {
   type WorkspaceExplorerGroupMode,
   type WorkspaceExplorerSortValue,
   getWorkspaceExplorerEntryTimestamp,
+  sortWorkspaceExplorerEntries,
 } from "./workspace_explorer_sort";
 
 export type WorkspaceExplorerSection = {
@@ -33,6 +34,7 @@ export type WorkspaceExplorerSection = {
 
 type WorkspaceExplorerListProps = {
   entries: FileNode[];
+  foldersFirst: boolean;
   groupMode: WorkspaceExplorerGroupMode;
   hasError: boolean;
   isLoading: boolean;
@@ -59,11 +61,12 @@ function getEntryTitle(entry: FileNode): string {
 
 export function groupWorkspaceExplorerEntries(
   entries: FileNode[],
+  foldersFirst: boolean,
   groupMode: WorkspaceExplorerGroupMode,
   sortValue: WorkspaceExplorerSortValue,
 ): WorkspaceExplorerSection[] {
   if (groupMode === "none") {
-    return [{ entries, id: "all" }];
+    return [{ entries: sortWorkspaceExplorerEntries(entries, sortValue, foldersFirst), id: "all" }];
   }
 
   const ascending = sortValue === "lastModifiedTimeRev" || sortValue === "createTimeRev";
@@ -73,7 +76,7 @@ export function groupWorkspaceExplorerEntries(
     (entry) => getWorkspaceExplorerEntryTimestamp(entry, sortValue),
     ascending ? "ascending" : "descending",
   ).map((section) => ({
-    entries: section.items,
+    entries: sortWorkspaceExplorerEntries(section.items, sortValue, foldersFirst),
     id: section.id,
     title: section.title,
   }));
@@ -155,6 +158,7 @@ function WorkspaceExplorerEntryItem({
 
 export function WorkspaceExplorerList({
   entries,
+  foldersFirst,
   groupMode,
   hasError,
   isLoading,
@@ -178,7 +182,7 @@ export function WorkspaceExplorerList({
       : entries.length === 0
         ? "当前文件夹为空"
         : null;
-  const sections = groupWorkspaceExplorerEntries(entries, groupMode, sortValue);
+  const sections = groupWorkspaceExplorerEntries(entries, foldersFirst, groupMode, sortValue);
 
   return (
     <NativeList

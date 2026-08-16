@@ -615,6 +615,7 @@ function WorkspaceExplorerForWorkspace({
       />
       <WorkspaceExplorerList
         entries={sortedEntries}
+        foldersFirst={preferences.workspaceExplorer.foldersFirst}
         groupMode={effectiveGroupMode}
         hasError={hasError}
         isLoading={isLoading}
