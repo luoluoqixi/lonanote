@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn keeps_directories_before_files() {
-        let mut nodes = vec![
+        let mut nodes = [
             node("newer.md", FileType::File, Some(20)),
             node("assets", FileType::Directory, Some(10)),
         ];

@@ -536,8 +536,10 @@ function WorkspaceExplorerForWorkspace({
 
     try {
       await workspace.close(workspaceId);
-      clearCurrentWorkspaceId();
       resetToWorkspaceSelect();
+      // 先完成 stack reset，再清理会触发 Redirect 的 workspace session，避免两个
+      // 导航动作同时作用于 native-stack 的 header 转场。
+      clearCurrentWorkspaceId();
     } catch (error) {
       console.error("[workspace-explorer] close workspace before switching failed", error);
       toast.error(getErrorMessage(error, "关闭当前工作区失败"));
