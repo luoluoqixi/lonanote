@@ -1,5 +1,5 @@
-import { EditorPlaceholder } from "@/components/editor/editor_placeholder";
+import { EditorPage } from "@/components/editor/editor_page";
 
 export default function EditorRoute() {
-  return <EditorPlaceholder />;
+  return <EditorPage />;
 }

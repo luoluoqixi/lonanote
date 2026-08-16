@@ -8,6 +8,8 @@ import { getFileName, isIos } from "@/api/common";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
+import { EditorWebView } from "./editor_webview";
+
 function HeaderMenuActionButton() {
   const { isActive } = useMenuTriggerState();
 
@@ -25,7 +27,7 @@ function HeaderMenuActionButton() {
   );
 }
 
-export function EditorPlaceholder() {
+export function EditorPage() {
   const workspaceId = useCurrentWorkspaceId();
   const { path } = useLocalSearchParams<{ path?: string | string[] }>();
   const filePath = Array.isArray(path) ? path[0] : path;
@@ -60,7 +62,9 @@ export function EditorPlaceholder() {
           title: getFileName(filePath),
         }}
       />
-      <View style={styles.container} />
+      <View style={styles.container}>
+        <EditorWebView />
+      </View>
     </>
   );
 }

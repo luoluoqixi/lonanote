@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>LonaNote 编辑器</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: Canvas;
+        color: CanvasText;
+        margin: 0;
+      }
+
+      main {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      h1,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      p {
+        color: GrayText;
+        font-size: 14px;
+      }
+
+      textarea {
+        background: transparent;
+        border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+        border-radius: 6px;
+        color: inherit;
+        flex: 1;
+        font:
+          16px/1.6 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Monaco,
+          Consolas,
+          monospace;
+        min-height: 240px;
+        outline: none;
+        padding: 14px;
+        resize: none;
+      }
+
+      textarea:focus {
+        border-color: Highlight;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>编辑器</h1>
+      <p>这是由本地 HTML 渲染的最小编辑器。</p>
+      <textarea aria-label="笔记内容" autofocus>从这里开始输入。</textarea>
+    </main>
+  </body>
+</html>
