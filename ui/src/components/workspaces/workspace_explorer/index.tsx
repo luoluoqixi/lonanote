@@ -20,6 +20,7 @@ import {
   CreateWorkspaceEntrySheet,
 } from "./create_workspace_entry_sheet";
 import { RenameWorkspaceEntrySheet } from "./rename_workspace_entry_sheet";
+import { WorkspaceEntryDetailsSheet } from "./workspace_entry_details_sheet";
 import { WorkspaceExplorerHeader } from "./workspace_explorer_header";
 import { WorkspaceExplorerList } from "./workspace_explorer_list";
 import {
@@ -139,6 +140,8 @@ function WorkspaceExplorerForWorkspace({
   const [editingEntry, setEditingEntry] = useState<FileNode | null>(null);
   const [editedEntryName, setEditedEntryName] = useState("");
   const [isRenameEntrySheetOpen, setIsRenameEntrySheetOpen] = useState(false);
+  const [detailsEntry, setDetailsEntry] = useState<FileNode | null>(null);
+  const [isEntryDetailsSheetOpen, setIsEntryDetailsSheetOpen] = useState(false);
   const [isRenamingEntry, setIsRenamingEntry] = useState(false);
   const [isDeletingEntries, setIsDeletingEntries] = useState(false);
   const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
@@ -625,6 +628,10 @@ function WorkspaceExplorerForWorkspace({
           void deleteEntries([entry]);
         }}
         onEditEntry={openRenameEntrySheet}
+        onEntryDetails={(entry) => {
+          setDetailsEntry(entry);
+          setIsEntryDetailsSheetOpen(true);
+        }}
         onEntryPress={openEntry}
         onRefresh={() => loadEntries({ minimumDurationMs: 300, showLoading: false })}
         onSelectedEntryPathsChange={(selectedIds) => {
@@ -674,6 +681,11 @@ function WorkspaceExplorerForWorkspace({
           void renameEntry();
         }}
         open={isRenameEntrySheetOpen}
+      />
+      <WorkspaceEntryDetailsSheet
+        entry={detailsEntry}
+        onOpenChange={setIsEntryDetailsSheetOpen}
+        open={isEntryDetailsSheetOpen}
       />
     </>
   );

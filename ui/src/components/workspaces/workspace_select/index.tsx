@@ -14,6 +14,7 @@ import { useWorkspaceNavigation, useWorkspaceSession, useWorkspaceState } from "
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
+import { WorkspaceDetailsSheet } from "./workspace_details_sheet";
 import { type WorkspaceGroupMode, WorkspaceGroupModeSelect } from "./workspace_group";
 import { WorkspaceSelectHeader } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
@@ -84,6 +85,8 @@ export function WorkspaceSelect() {
   const [editingWorkspace, setEditingWorkspace] = useState<WorkspaceListItem | null>(null);
   const [editedWorkspaceName, setEditedWorkspaceName] = useState("");
   const [isEditWorkspaceSheetOpen, setIsEditWorkspaceSheetOpen] = useState(false);
+  const [detailsWorkspace, setDetailsWorkspace] = useState<WorkspaceListItem | null>(null);
+  const [isWorkspaceDetailsSheetOpen, setIsWorkspaceDetailsSheetOpen] = useState(false);
   const [isUpdatingWorkspace, setIsUpdatingWorkspace] = useState(false);
   const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
   const requestIdRef = useRef(0);
@@ -508,6 +511,10 @@ export function WorkspaceSelect() {
           void deleteWorkspaces([workspaceItem]);
         }}
         onEditWorkspace={openEditWorkspaceSheet}
+        onWorkspaceDetails={(workspaceItem) => {
+          setDetailsWorkspace(workspaceItem);
+          setIsWorkspaceDetailsSheetOpen(true);
+        }}
         onRefresh={handlePullToRefresh}
         onSelectedWorkspaceIdsChange={handleSelectedWorkspaceIdsChange}
         onWorkspacePress={(workspaceId) => {
@@ -577,6 +584,11 @@ export function WorkspaceSelect() {
           void updateWorkspace();
         }}
         open={isEditWorkspaceSheetOpen}
+      />
+      <WorkspaceDetailsSheet
+        onOpenChange={setIsWorkspaceDetailsSheetOpen}
+        open={isWorkspaceDetailsSheetOpen}
+        workspaceItem={detailsWorkspace}
       />
     </>
   );

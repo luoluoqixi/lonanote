@@ -1,4 +1,4 @@
-import { Folder } from "@tamagui/lucide-icons-2";
+import { Folder, Info } from "@tamagui/lucide-icons-2";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import {
@@ -27,6 +27,7 @@ type WorkspaceSelectListProps = {
   onCreateWorkspace: () => void;
   onDeleteWorkspace: (workspaceItem: WorkspaceListItem) => void;
   onEditWorkspace: (workspaceItem: WorkspaceListItem) => void;
+  onWorkspaceDetails: (workspaceItem: WorkspaceListItem) => void;
   onRefresh: () => Promise<void>;
   onSelectedWorkspaceIdsChange: (selectedIds: Array<string | number>) => void;
   onWorkspacePress: (workspaceId: string) => void;
@@ -58,6 +59,7 @@ export function WorkspaceSelectList({
   onCreateWorkspace,
   onDeleteWorkspace,
   onEditWorkspace,
+  onWorkspaceDetails,
   onRefresh,
   onSelectedWorkspaceIdsChange,
   onWorkspacePress,
@@ -105,6 +107,12 @@ export function WorkspaceSelectList({
               <NativeListNavigationItem
                 contextMenuProps={{
                   items: [
+                    {
+                      icon: <Info color={accentColor} size={14} />,
+                      label: "查看详情",
+                      onSelect: () => onWorkspaceDetails(workspaceItem),
+                      value: `details-workspace-${workspaceItem.id}`,
+                    },
                     {
                       label: "编辑工作区",
                       onSelect: () => onEditWorkspace(workspaceItem),

@@ -1,4 +1,4 @@
-import { FileText, Folder, Pencil, Trash2 } from "@tamagui/lucide-icons-2";
+import { FileText, Folder, Info, Pencil, Trash2 } from "@tamagui/lucide-icons-2";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import {
@@ -42,6 +42,7 @@ type WorkspaceExplorerListProps = {
   isUpdating: boolean;
   onDeleteEntry: (entry: FileNode) => void;
   onEditEntry: (entry: FileNode) => void;
+  onEntryDetails: (entry: FileNode) => void;
   onEntryPress: (entry: FileNode) => void;
   onRefresh: () => Promise<void>;
   onSelectedEntryPathsChange: (selectedIds: Array<string | number>) => void;
@@ -96,6 +97,7 @@ function WorkspaceExplorerEntryItem({
   entry,
   isUpdating,
   onDelete,
+  onDetails,
   onEdit,
   onPress,
   sortValue,
@@ -103,6 +105,7 @@ function WorkspaceExplorerEntryItem({
   entry: FileNode;
   isUpdating: boolean;
   onDelete: () => void;
+  onDetails: () => void;
   onEdit: () => void;
   onPress: () => void;
   sortValue: WorkspaceExplorerSortValue;
@@ -115,6 +118,13 @@ function WorkspaceExplorerEntryItem({
   const sharedProps = {
     contextMenuProps: {
       items: [
+        {
+          icon: <Info color={accentColor} size={14} />,
+          iconProps: { ios: { name: "info.circle" as const } },
+          label: "查看详情",
+          onSelect: onDetails,
+          value: `details-entry-${entry.path}`,
+        },
         {
           icon: <Pencil color={accentColor} size={14} />,
           iconProps: { ios: { name: "pencil" as const } },
@@ -165,6 +175,7 @@ export function WorkspaceExplorerList({
   isSelectionMode,
   isUpdating,
   onDeleteEntry,
+  onEntryDetails,
   onEditEntry,
   onEntryPress,
   onRefresh,
@@ -211,6 +222,7 @@ export function WorkspaceExplorerList({
                 isUpdating={isUpdating}
                 key={entry.path}
                 onDelete={() => onDeleteEntry(entry)}
+                onDetails={() => onEntryDetails(entry)}
                 onEdit={() => onEditEntry(entry)}
                 onPress={() => onEntryPress(entry)}
                 sortValue={sortValue}

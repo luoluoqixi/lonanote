@@ -114,6 +114,7 @@ impl WorkspaceManager {
                 display_name: record.cached_summary.display_name,
                 created_at: record.cached_summary.created_at,
                 last_opened_at: record.cached_summary.last_opened_at,
+                storage: WorkspaceStorageView::from(&record.storage_binding),
                 storage_kind: if record.storage_binding.is_managed() {
                     WorkspaceStorageKindView::Managed
                 } else {
