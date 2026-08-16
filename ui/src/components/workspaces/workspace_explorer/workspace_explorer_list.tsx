@@ -1,4 +1,13 @@
-import { FileText, Folder, Info, Pencil, Trash2 } from "@tamagui/lucide-icons-2";
+import {
+  FileImage,
+  FileQuestion,
+  FileText,
+  FileVideo,
+  Folder,
+  Info,
+  Pencil,
+  Trash2,
+} from "@tamagui/lucide-icons-2";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import {
@@ -13,6 +22,7 @@ import {
 
 import type { FileNode } from "@/api/commands/workspace";
 import {
+  detectWorkspaceFileKind,
   formatUnixSecondsRelativeDate,
   getFileName,
   groupItemsByDate,
@@ -113,6 +123,7 @@ function WorkspaceExplorerEntryItem({
   const theme = useTheme();
   const accentColor = theme.color10.val as ComponentProps<typeof Folder>["color"];
   const isDirectory = entry.fileType === "directory";
+  const fileKind = isDirectory ? null : detectWorkspaceFileKind(entry.path);
   const timestamp = getWorkspaceExplorerEntryTimestamp(entry, sortValue);
   const subtitle = formatUnixSecondsRelativeDate(timestamp) ?? "时间未知";
   const sharedProps = {
@@ -145,6 +156,12 @@ function WorkspaceExplorerEntryItem({
     disabled: isUpdating,
     icon: isDirectory ? (
       <Folder color={accentColor} fill={theme.color10.val} size={24} />
+    ) : fileKind === "image" ? (
+      <FileImage color={accentColor} size={24} />
+    ) : fileKind === "video" ? (
+      <FileVideo color={accentColor} size={24} />
+    ) : fileKind === "unsupported" ? (
+      <FileQuestion color={accentColor} size={24} />
     ) : (
       <FileText color={accentColor} size={24} />
     ),
@@ -153,7 +170,15 @@ function WorkspaceExplorerEntryItem({
     iconSlotWidth: 30,
     nativeScrollId: entry.path,
     selectionId: entry.path,
-    sfSymbol: isDirectory ? ("folder.fill" as const) : ("doc.text.fill" as const),
+    sfSymbol: isDirectory
+      ? ("folder.fill" as const)
+      : fileKind === "image"
+        ? ("photo.fill" as const)
+        : fileKind === "video"
+          ? ("video.fill" as const)
+          : fileKind === "unsupported"
+            ? ("doc.questionmark.fill" as const)
+            : ("doc.text.fill" as const),
     subtitle,
     title: getEntryTitle(entry),
     titleFontSize: 16,

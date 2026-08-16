@@ -4,6 +4,7 @@ import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
 import { type FileNode, workspace, workspaceFile, workspaceIndex } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
+import { useMediaNavigation } from "@/hooks/media";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
@@ -123,6 +124,7 @@ function WorkspaceExplorerForWorkspace({
   const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
   const { resetToWorkspaceSelect } = useWorkspaceNavigation();
   const { clearCurrentWorkspaceId } = useWorkspaceSession();
+  const { setMediaSequence } = useMediaNavigation();
   const { openNoteEditor } = useWorkspaceEditorSession(workspaceId);
   const { state: workspaceState } = useWorkspaceState(workspaceId);
   const currentPath = (Array.isArray(path) ? path[0] : path) ?? "";
@@ -476,9 +478,22 @@ function WorkspaceExplorerForWorkspace({
         return;
       }
       if (fileKind === "image" || fileKind === "video") {
+        const mediaPaths = sortedEntries
+          .filter((item) => {
+            const itemKind = detectWorkspaceFileKind(item.path);
+            return itemKind === "image" || itemKind === "video";
+          })
+          .map((item) => item.path);
+        const mediaIndex = mediaPaths.indexOf(entry.path);
+        setMediaSequence({ mediaPaths, workspaceId });
+
         router.push({
           pathname: "/media/[kind]",
-          params: { kind: fileKind, path: entry.path },
+          params: {
+            kind: fileKind,
+            mediaIndex: String(Math.max(mediaIndex, 0)),
+            path: entry.path,
+          },
         } as Href);
         return;
       }
@@ -488,7 +503,7 @@ function WorkspaceExplorerForWorkspace({
         params: { path: entry.path },
       } as Href);
     },
-    [openNoteEditor, router],
+    [openNoteEditor, router, setMediaSequence, sortedEntries, workspaceId],
   );
 
   const changeSortValue = useCallback(
