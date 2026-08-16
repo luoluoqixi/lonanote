@@ -196,6 +196,13 @@ function WorkspaceExplorerForWorkspace({
   const groupMode = preferences.workspaceExplorer.groupMode;
   const isGroupModeDisabled = isWorkspaceExplorerNameSortValue(sortValue);
   const effectiveGroupMode = isGroupModeDisabled ? "none" : groupMode;
+  const groupModeBeforeNameSortRef = useRef(groupMode);
+
+  useEffect(() => {
+    if (!isGroupModeDisabled) {
+      groupModeBeforeNameSortRef.current = groupMode;
+    }
+  }, [groupMode, isGroupModeDisabled]);
 
   const sortedEntries = useMemo(
     () =>
@@ -482,7 +489,9 @@ function WorkspaceExplorerForWorkspace({
 
   const changeSortValue = useCallback(
     async (nextSortValue: WorkspaceExplorerSortValue) => {
-      const nextGroupMode = isWorkspaceExplorerNameSortValue(nextSortValue) ? "none" : groupMode;
+      const nextGroupMode = isWorkspaceExplorerNameSortValue(nextSortValue)
+        ? "none"
+        : groupModeBeforeNameSortRef.current;
       setIsSortSelectOpen(false);
       setIsGroupModeSelectOpen(false);
 

@@ -221,10 +221,7 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
     },
     workspaceExplorer: {
       foldersFirst: preferences.workspaceExplorer?.foldersFirst !== false,
-      groupMode:
-        workspaceExplorerSortValue === "name" || workspaceExplorerSortValue === "nameRev"
-          ? "none"
-          : normalizeWorkspaceExplorerGroupMode(preferences.workspaceExplorer?.groupMode),
+      groupMode: normalizeWorkspaceExplorerGroupMode(preferences.workspaceExplorer?.groupMode),
       showFloatingToolbar: preferences.workspaceExplorer?.showFloatingToolbar !== false,
       sortValue: workspaceExplorerSortValue,
     },
@@ -288,10 +285,7 @@ function readUiPreferencesFromStore(): UiPreferences {
         typeof workspaceExplorerFoldersFirst === "boolean"
           ? workspaceExplorerFoldersFirst
           : defaults.workspaceExplorer.foldersFirst,
-      groupMode:
-        workspaceExplorerSortValue === "name" || workspaceExplorerSortValue === "nameRev"
-          ? "none"
-          : normalizeWorkspaceExplorerGroupMode(workspaceExplorerGroupMode),
+      groupMode: normalizeWorkspaceExplorerGroupMode(workspaceExplorerGroupMode),
       showFloatingToolbar:
         typeof workspaceExplorerShowFloatingToolbar === "boolean"
           ? workspaceExplorerShowFloatingToolbar

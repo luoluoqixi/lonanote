@@ -18,7 +18,12 @@ import { type WorkspaceGroupMode, WorkspaceGroupModeSelect } from "./workspace_g
 import { WorkspaceSelectHeader } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
 import { WorkspaceSelectionToolbar } from "./workspace_selection_toolbar";
-import { WorkspaceSortSelect, type WorkspaceSortValue, sortWorkspaces } from "./workspace_sort";
+import {
+  WorkspaceSortSelect,
+  type WorkspaceSortValue,
+  isWorkspaceTitleSortValue,
+  sortWorkspaces,
+} from "./workspace_sort";
 
 const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
 
@@ -51,6 +56,15 @@ export function WorkspaceSelect() {
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const workspaceSortValue = preferences.workspaceSelect.sortValue;
   const workspaceGroupMode = preferences.workspaceSelect.groupMode;
+  const isGroupModeDisabled = isWorkspaceTitleSortValue(workspaceSortValue);
+  const effectiveGroupMode = isGroupModeDisabled ? "none" : workspaceGroupMode;
+  const groupModeBeforeTitleSortRef = useRef(workspaceGroupMode);
+
+  useEffect(() => {
+    if (!isGroupModeDisabled) {
+      groupModeBeforeTitleSortRef.current = workspaceGroupMode;
+    }
+  }, [isGroupModeDisabled, workspaceGroupMode]);
   const [isWorkspaceSortSelectOpen, setIsWorkspaceSortSelectOpen] = useState(false);
   const [isWorkspaceGroupModeSelectOpen, setIsWorkspaceGroupModeSelectOpen] = useState(false);
   const [isWorkspaceSelectionMode, setIsWorkspaceSelectionMode] = useState(false);
@@ -354,6 +368,9 @@ export function WorkspaceSelect() {
           ...currentPreferences,
           workspaceSelect: {
             ...currentPreferences.workspaceSelect,
+            groupMode: isWorkspaceTitleSortValue(nextValue)
+              ? "none"
+              : groupModeBeforeTitleSortRef.current,
             sortValue: nextValue,
           },
         }));
@@ -367,6 +384,10 @@ export function WorkspaceSelect() {
 
   const changeWorkspaceGroupMode = useCallback(
     async (nextValue: WorkspaceGroupMode) => {
+      if (isGroupModeDisabled) {
+        return;
+      }
+
       setIsWorkspaceGroupModeSelectOpen(false);
 
       try {
@@ -382,7 +403,7 @@ export function WorkspaceSelect() {
         toast.error(getErrorMessage(error, "保存分组方式失败"));
       }
     },
-    [toast, updateUiPreferencesAndSave],
+    [isGroupModeDisabled, toast, updateUiPreferencesAndSave],
   );
 
   const handleWorkspacePress = useCallback(
@@ -461,16 +482,21 @@ export function WorkspaceSelect() {
       <WorkspaceSelectHeader
         areAllWorkspacesSelected={areAllWorkspacesSelected}
         canSelectWorkspaces={workspaces.length > 0}
+        isGroupModeDisabled={isGroupModeDisabled}
         isWorkspaceSelectionMode={isWorkspaceSelectionMode}
         onCreateWorkspace={openCreateWorkspaceSheet}
         onFinishWorkspaceSelection={finishWorkspaceSelection}
-        onOpenWorkspaceGroupMode={() => workspaceGroupModeSelectRef.current?.open()}
+        onOpenWorkspaceGroupMode={() => {
+          if (!isGroupModeDisabled) {
+            workspaceGroupModeSelectRef.current?.open();
+          }
+        }}
         onOpenWorkspaceSort={() => workspaceSortSelectRef.current?.open()}
         onToggleSelectAllWorkspaces={toggleSelectAllWorkspaces}
         onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
       />
       <WorkspaceSelectList
-        groupMode={workspaceGroupMode}
+        groupMode={effectiveGroupMode}
         hasError={hasError}
         isDeletingWorkspace={isDeletingWorkspace}
         isLoading={isLoading}
@@ -525,7 +551,7 @@ export function WorkspaceSelect() {
         }}
         open={isWorkspaceGroupModeSelectOpen}
         selectRef={workspaceGroupModeSelectRef}
-        value={workspaceGroupMode}
+        value={effectiveGroupMode}
       />
       <CreateWorkspaceSheet
         displayName={displayName}

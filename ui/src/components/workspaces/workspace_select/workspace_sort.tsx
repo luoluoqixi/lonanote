@@ -79,6 +79,10 @@ function isWorkspaceSortValue(value: string | null): value is WorkspaceSortValue
   );
 }
 
+export function isWorkspaceTitleSortValue(value: WorkspaceSortValue): boolean {
+  return value === "title-asc" || value === "title-desc";
+}
+
 export function sortWorkspaces(
   workspaces: WorkspaceListItem[],
   sortValue: WorkspaceSortValue,

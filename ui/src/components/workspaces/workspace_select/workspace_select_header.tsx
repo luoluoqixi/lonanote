@@ -24,6 +24,7 @@ type HeaderActionButtonProps = {
 type WorkspaceSelectHeaderProps = {
   areAllWorkspacesSelected: boolean;
   canSelectWorkspaces: boolean;
+  isGroupModeDisabled: boolean;
   isWorkspaceSelectionMode: boolean;
   onCreateWorkspace: () => void;
   onFinishWorkspaceSelection: () => void;
@@ -70,6 +71,7 @@ function HeaderMenuActionButton() {
 export function WorkspaceSelectHeader({
   areAllWorkspacesSelected,
   canSelectWorkspaces,
+  isGroupModeDisabled,
   isWorkspaceSelectionMode,
   onCreateWorkspace,
   onFinishWorkspaceSelection,
@@ -118,6 +120,7 @@ export function WorkspaceSelectHeader({
         value: "sort-workspaces",
       },
       {
+        disabled: isGroupModeDisabled,
         icon: <CalendarDays color={accentColor} size={14} />,
         iconProps: {
           androidIconName: "ic_workspace_group",
@@ -147,6 +150,7 @@ export function WorkspaceSelectHeader({
     [
       accentColor,
       canSelectWorkspaces,
+      isGroupModeDisabled,
       onCreateWorkspace,
       onOpenWorkspaceGroupMode,
       onOpenWorkspaceSort,
