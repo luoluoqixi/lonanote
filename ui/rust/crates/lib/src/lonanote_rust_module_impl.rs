@@ -25,6 +25,7 @@ use crate::generated::*;
 type CallbackSender = oneshot::Sender<Result<Option<String>, String>>;
 
 const APP_LOCAL_PROVIDER_ID: &str = "app-local";
+const LOG_THIRD_LIST: &[&str] = &["tao", "globset", "ignore"];
 
 struct InitResult {
     app_data_path: PathBuf,
@@ -176,9 +177,35 @@ struct NativeRustLogger {
     module_id: usize,
 }
 
+fn third_party_log_filter() -> LevelFilter {
+    if cfg!(debug_assertions) {
+        LevelFilter::Info
+    } else {
+        LevelFilter::Error
+    }
+}
+
+fn target_matches_module(target: &str, module: &str) -> bool {
+    target == module
+        || target
+            .strip_prefix(module)
+            .is_some_and(|suffix| suffix.starts_with("::"))
+}
+
+fn level_for_target(target: &str) -> LevelFilter {
+    if LOG_THIRD_LIST
+        .iter()
+        .any(|module| target_matches_module(target, module))
+    {
+        third_party_log_filter()
+    } else {
+        LevelFilter::Info
+    }
+}
+
 impl Log for NativeRustLogger {
     fn enabled(&self, metadata: &Metadata<'_>) -> bool {
-        metadata.level() <= log::Level::Trace
+        metadata.level() <= level_for_target(metadata.target())
     }
 
     fn log(&self, record: &Record<'_>) {
@@ -279,6 +306,31 @@ fn emit_rust_log(module_id: usize, level: String, target: String, message: Strin
     let manager = crate::ffi::bridging::get_signal_manager();
     unsafe {
         manager.emit(module_id, "onRustLog", signal_ptr);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{level_for_target, target_matches_module, LevelFilter};
+
+    #[test]
+    fn matches_module_targets_without_matching_similar_names() {
+        assert!(target_matches_module("ignore::walk", "ignore"));
+        assert!(target_matches_module("globset", "globset"));
+        assert!(!target_matches_module("ignore_extra", "ignore"));
+    }
+
+    #[test]
+    fn applies_default_and_third_party_log_levels() {
+        let third_party_level = if cfg!(debug_assertions) {
+            LevelFilter::Info
+        } else {
+            LevelFilter::Error
+        };
+
+        assert_eq!(level_for_target("ignore::walk"), third_party_level);
+        assert_eq!(level_for_target("globset"), third_party_level);
+        assert_eq!(level_for_target("lonanote-core"), LevelFilter::Info);
     }
 }
 

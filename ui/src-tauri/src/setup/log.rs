@@ -1,7 +1,7 @@
 use tauri::{plugin::TauriPlugin, Runtime};
 
 pub static LOG_INFO_LIST: &[&str] = &["lonanote", "lonanote_lib", "lonanote-core"];
-pub static LOG_THIRD_LIST: &[&str] = &["tao"];
+pub static LOG_THIRD_LIST: &[&str] = &["tao", "globset", "ignore"];
 
 pub fn init_tauri_log<R: Runtime>() -> TauriPlugin<R> {
     let third_log_filter = if cfg!(debug_assertions) {
