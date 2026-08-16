@@ -102,7 +102,7 @@ export function WorkspaceSelectList({
         </NativeListSection>
       ) : (
         sections.map((section) => (
-          <NativeListSection key={section.id} title={section.title}>
+          <NativeListSection key={section.id} title={section.title} disabledStyle={false}>
             {section.workspaces.map((workspaceItem) => (
               <NativeListNavigationItem
                 contextMenuProps={{

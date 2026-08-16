@@ -50,8 +50,8 @@ export function initializeRustRuntime(): void {
   const locale = systemLocale();
   listenRustLogs();
   console.info("systemLocale: ", locale);
-  console.info("appDataPath: ", appDataPath);
-  console.info("managedWorkspacePath: ", managedWorkspacePath);
+  // console.info("appDataPath: ", appDataPath);
+  // console.info("managedWorkspacePath: ", managedWorkspacePath);
   LonanoteRustModule.init(appDataPath, managedWorkspacePath, locale);
   state.initialized = true;
 }
