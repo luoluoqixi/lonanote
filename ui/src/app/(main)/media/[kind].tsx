@@ -1,5 +1,5 @@
-import { MediaPlaceholder } from "@/components/media/media_placeholder";
+import { MediaViewer } from "@/components/media/media_viewer";
 
 export default function MediaRoute() {
-  return <MediaPlaceholder />;
+  return <MediaViewer />;
 }

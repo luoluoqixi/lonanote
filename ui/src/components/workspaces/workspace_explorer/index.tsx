@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
 import { type FileNode, workspace, workspaceFile, workspaceIndex } from "@/api/commands/workspace";
-import { detectWorkspaceFileKind, getFileName, os } from "@/api/common";
+import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
@@ -260,9 +260,7 @@ function WorkspaceExplorerForWorkspace({
       }
 
       const normalizedName =
-        entryKind === "note" && !trimmedName.toLocaleLowerCase().endsWith(".md")
-          ? `${trimmedName}.md`
-          : trimmedName;
+        entryKind === "note" ? ensureNewNoteFileExtension(trimmedName) : trimmedName;
       const entryPath = joinWorkspacePath(currentPath, normalizedName);
       isCreatingEntryRef.current = true;
       setIsCreatingEntry(true);
@@ -485,9 +483,12 @@ function WorkspaceExplorerForWorkspace({
         return;
       }
 
-      toast.warning("暂不支持打开此文件类型");
+      router.push({
+        pathname: "/unknown",
+        params: { path: entry.path },
+      } as Href);
     },
-    [openNoteEditor, router, toast],
+    [openNoteEditor, router],
   );
 
   const changeSortValue = useCallback(

@@ -134,6 +134,10 @@ export function getFileExtension(path: string): string | null {
   return fileName.slice(extensionStart + 1);
 }
 
+export function ensureNewNoteFileExtension(name: string): string {
+  return getFileExtension(name) === null ? `${name}.md` : name;
+}
+
 export function isMarkdownFile(path: string): boolean {
   const extension = getFileExtension(path);
   return extension !== null && markdownExtensionSet.has(extension);
