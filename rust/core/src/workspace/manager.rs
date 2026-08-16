@@ -478,6 +478,13 @@ impl WorkspaceManager {
         workspace.set_settings(settings).await
     }
 
+    pub async fn reset_settings(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceSettings, WorkspaceError> {
+        self.set_settings(id, WorkspaceSettings::default()).await
+    }
+
     pub async fn get_last_workspace_id(&self) -> Option<WorkspaceId> {
         let _lifecycle = self.lifecycle_lock.read().await;
         self.session.last_workspace_id().await

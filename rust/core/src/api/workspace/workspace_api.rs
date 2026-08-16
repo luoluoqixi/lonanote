@@ -113,6 +113,16 @@ async fn set_settings(
 }
 
 #[command("workspace")]
+async fn reset_settings(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceSettings> {
+    Ok(workspace_manager().reset_settings(&workspace_id).await?)
+}
+
+#[command("workspace")]
+async fn get_default_settings() -> WorkspaceSettings {
+    WorkspaceSettings::default()
+}
+
+#[command("workspace")]
 async fn get_last_workspace_id() -> Option<WorkspaceId> {
     workspace_manager().get_last_workspace_id().await
 }

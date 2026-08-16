@@ -90,6 +90,14 @@ export const workspace = {
     return invokeWorkspaceResult("workspace.set_settings", { workspaceId, settings });
   },
 
+  resetSettings: (workspaceId: WorkspaceId): Promise<WorkspaceSettings> => {
+    return invokeWorkspaceResult("workspace.reset_settings", { workspaceId });
+  },
+
+  getDefaultSettings: (): Promise<WorkspaceSettings> => {
+    return invokeWorkspaceResult("workspace.get_default_settings");
+  },
+
   getLastWorkspaceId: (): Promise<WorkspaceId | null> => {
     return invokeWorkspaceResult("workspace.get_last_workspace_id");
   },

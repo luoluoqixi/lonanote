@@ -26,6 +26,17 @@ fn settings_round_trip() {
 }
 
 #[test]
+fn default_settings_are_available_without_workspace_arguments() {
+    let (_app, _guard) = locked_app();
+    run(async {
+        let defaults: Value = invoke_json("workspace.get_default_settings", json!({})).await;
+        assert_eq!(defaults["followGitignore"], true);
+        assert_eq!(defaults["uploadImagePath"], "assets/images");
+        assert_eq!(defaults["uploadAttachmentPath"], "assets/attachments");
+    });
+}
+
+#[test]
 fn session_tracks_last_workspace() {
     let (_app, _guard) = locked_app();
     run(async {

@@ -18,7 +18,7 @@ export type SettingsPageId =
   | "global"
   | "language"
   | "window";
-export type MobileSettingsSectionId = "general" | "more";
+export type MobileSettingsSectionId = "general" | "workspace" | "more";
 
 export type SettingsPageProps = {
   /** 由桌面设置容器提供，用于在 Dialog 外层打开调试 Sheet。 */
@@ -44,6 +44,7 @@ export const mobileSettingsSections: Array<{
   title: string;
 }> = [
   { id: "general", title: "通用" },
+  { id: "workspace", title: "工作区" },
   { id: "more", title: "更多" },
 ];
 
