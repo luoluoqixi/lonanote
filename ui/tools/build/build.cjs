@@ -19,12 +19,13 @@
  *   node tools/build/build.cjs build:web --dev
  */
 
-const { execSync } = require("node:child_process");
+const { execSync, spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
 const projectRoot = path.resolve(__dirname, "../..");
 const buildOutputRoot = path.join(projectRoot, "build");
+const editorRoot = path.join(projectRoot, "assets/editor");
 
 // 从共用配置读取应用信息
 const appConfig = require("./app_config.cjs");
@@ -33,6 +34,44 @@ const appConfig = require("./app_config.cjs");
 function run(cmd, opts = {}) {
   console.log(`\nrun: ${cmd}`);
   execSync(cmd, { cwd: projectRoot, stdio: "inherit", ...opts });
+}
+
+function buildEditor() {
+  console.log("\nrun: bun run build (ui/assets/editor)");
+  execSync("bun run build", { cwd: editorRoot, stdio: "inherit" });
+}
+
+function startDevProcesses(appCommand) {
+  const editorProcess = spawn("bun run dev", {
+    cwd: editorRoot,
+    env: process.env,
+    shell: true,
+    stdio: "inherit",
+  });
+  const appProcess = spawn(appCommand, {
+    cwd: projectRoot,
+    env: process.env,
+    shell: true,
+    stdio: "inherit",
+  });
+  let stopping = false;
+
+  const stop = (code) => {
+    if (stopping) return;
+    stopping = true;
+    editorProcess.kill("SIGTERM");
+    appProcess.kill("SIGTERM");
+    if (typeof code === "number") process.exitCode = code;
+  };
+
+  editorProcess.on("exit", (code) => {
+    if (!stopping) stop(code ?? 1);
+  });
+  appProcess.on("exit", (code) => {
+    if (!stopping) stop(code ?? 1);
+  });
+  process.on("SIGINT", () => stop(0));
+  process.on("SIGTERM", () => stop(0));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -146,12 +185,15 @@ function devEntry() {
     run(checkCmd);
   }
 
+  // Native Metro 需要一个已经存在的本地 HTML；桌面 Web 同时使用下面启动的 Vite 服务。
+  buildEditor();
+
   // 根据 --ci 标志选择命令
   let cmd = DEV_COMMANDS[mode];
   if (mode === "dev:web" && isCI) {
     cmd = DEV_COMMANDS["dev:web:ci"];
   }
-  run(cmd);
+  startDevProcesses(cmd);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -169,6 +211,8 @@ function buildEntry() {
   console.log("\n═══════════════════════════════════════════");
   console.log(`  [build] ${label}`);
   console.log("═══════════════════════════════════════════\n");
+
+  buildEditor();
 
   // android/ios 需要在执行前切换目录
   const checkCmd = BUILD_NEEDS_CHECK[mode];

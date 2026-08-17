@@ -1,5 +1,7 @@
 const localeCNList = ["zh", "cn", "hans"];
 
+export const isDev = () => typeof __DEV__ !== "undefined" && __DEV__;
+
 export const isLocaleCN = (locale: string) => {
   const localeLower = locale.toLowerCase();
   const count = localeCNList.length;

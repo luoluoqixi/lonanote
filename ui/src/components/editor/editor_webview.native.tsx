@@ -1,28 +1,25 @@
-import { Asset } from "expo-asset";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import WebView from "react-native-webview";
 
-import editorHtml from "@/assets/editor/editor.html";
+import { isDev } from "@/api/common/platform";
+
+import { getEditorDevUrl } from "./editor_dev_url";
+import { loadEditorHtml } from "./editor_html.native";
 
 export function EditorWebView() {
-  const [editorUri, setEditorUri] = useState<string | null>(null);
+  const editorDevUrl = isDev() ? getEditorDevUrl() : null;
+  const [editorHtml, setEditorHtml] = useState<string | null>(null);
   const [hasLoadingError, setHasLoadingError] = useState(false);
 
   useEffect(() => {
+    if (editorDevUrl) return;
+
     let isActive = true;
 
-    void Asset.fromModule(editorHtml)
-      .downloadAsync()
-      .then((asset) => {
-        const localUri = asset.localUri ?? asset.uri;
-
-        if (!localUri.startsWith("file://")) {
-          throw new Error("编辑器 HTML asset 未解析为本地文件");
-        }
-        if (isActive) {
-          setEditorUri(localUri);
-        }
+    void loadEditorHtml()
+      .then((html) => {
+        if (isActive) setEditorHtml(html);
       })
       .catch(() => {
         if (isActive) {
@@ -33,7 +30,18 @@ export function EditorWebView() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [editorDevUrl]);
+
+  if (editorDevUrl) {
+    return (
+      <WebView
+        javaScriptEnabled
+        originWhitelist={["*"]}
+        source={{ uri: editorDevUrl }}
+        style={styles.webView}
+      />
+    );
+  }
 
   if (hasLoadingError) {
     return (
@@ -42,7 +50,7 @@ export function EditorWebView() {
       </View>
     );
   }
-  if (!editorUri) {
+  if (!editorHtml) {
     return (
       <View style={styles.statusContainer}>
         <ActivityIndicator />
@@ -50,15 +58,11 @@ export function EditorWebView() {
     );
   }
 
-  // WebView 的 Windows props 会把 source 收窄为不可能类型；此断言不改变运行时 source 值。
-  const editorSource = { uri: editorUri } as never;
-
   return (
     <WebView
-      allowFileAccess
       javaScriptEnabled
-      originWhitelist={["file://*"]}
-      source={editorSource}
+      originWhitelist={["*"]}
+      source={{ html: editorHtml }}
       style={styles.webView}
     />
   );

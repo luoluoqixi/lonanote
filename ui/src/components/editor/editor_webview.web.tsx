@@ -1,6 +1,9 @@
 import type { CSSProperties } from "react";
 
-import editorHtml from "@/assets/editor/editor.html";
+import { isDev } from "@/api/common/platform";
+import editorHtml from "@/assets/editor/dist/index.html";
+
+import { getEditorDevUrl } from "./editor_dev_url";
 
 const iframeStyle: CSSProperties = {
   border: 0,
@@ -10,5 +13,6 @@ const iframeStyle: CSSProperties = {
 };
 
 export function EditorWebView() {
-  return <iframe aria-label="笔记编辑器" src={editorHtml} style={iframeStyle} title="笔记编辑器" />;
+  const source = isDev() ? (getEditorDevUrl() ?? editorHtml) : editorHtml;
+  return <iframe aria-label="笔记编辑器" src={source} style={iframeStyle} title="笔记编辑器" />;
 }

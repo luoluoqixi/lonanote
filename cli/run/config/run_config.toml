@@ -26,6 +26,11 @@ args = ["install"]
 run_dir = "./ui"
 
 [[commands.cmds]]
+cmd = "bun"
+args = ["install"]
+run_dir = "./ui/assets/editor"
+
+[[commands.cmds]]
 cmd = "cargo"
 args = ["install", "tauri-cli", "--version", "^2.1.0", "--locked"]
 run_dir = "."
