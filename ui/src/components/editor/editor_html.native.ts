@@ -3,15 +3,14 @@ import { File } from "expo-file-system";
 
 import editorHtmlAsset from "@/assets/editor/dist/index.html";
 
-let cachedEditorHtml: string | null = null;
-let loadingEditorHtml: Promise<string> | null = null;
+const cachedEditorHtml = { html: "", inited: false };
+let loadingEditorHtml: Promise<void> | null = null;
 
-/** 下载并读取编辑器 HTML；成功后在当前应用进程内复用字符串缓存。 */
-export function loadEditorHtml(): Promise<string> {
-  if (cachedEditorHtml !== null) {
-    return Promise.resolve(cachedEditorHtml);
+/** 初始化编辑器 HTML */
+export function initEditorHtml(): Promise<void> {
+  if (cachedEditorHtml.inited) {
+    return Promise.resolve();
   }
-
   if (loadingEditorHtml === null) {
     loadingEditorHtml = Asset.fromModule(editorHtmlAsset)
       .downloadAsync()
@@ -22,8 +21,7 @@ export function loadEditorHtml(): Promise<string> {
         return new File(asset.localUri).text();
       })
       .then((html) => {
-        cachedEditorHtml = html;
-        return html;
+        cachedEditorHtml.html = html;
       })
       .finally(() => {
         loadingEditorHtml = null;
@@ -32,3 +30,5 @@ export function loadEditorHtml(): Promise<string> {
 
   return loadingEditorHtml;
 }
+
+export const EDITOR_HTML = cachedEditorHtml;

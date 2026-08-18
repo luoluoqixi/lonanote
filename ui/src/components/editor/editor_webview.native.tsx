@@ -5,43 +5,34 @@ import WebView from "react-native-webview";
 import { isDev } from "@/api/common/platform";
 
 import { getEditorDevUrl } from "./editor_dev_url";
-import { loadEditorHtml } from "./editor_html.native";
+import { EDITOR_HTML, initEditorHtml } from "./editor_html.native";
+
+function getSource(devMode: boolean) {
+  const editorDevUrl = devMode ? getEditorDevUrl() : null;
+  return editorDevUrl ? { uri: editorDevUrl } : { html: EDITOR_HTML.html };
+}
 
 export function EditorWebView() {
-  const editorDevUrl = isDev() ? getEditorDevUrl() : null;
-  const [editorHtml, setEditorHtml] = useState<string | null>(null);
+  const devMode = isDev();
+  const [inited, setInited] = useState<boolean>(false);
   const [hasLoadingError, setHasLoadingError] = useState(false);
 
   useEffect(() => {
-    if (editorDevUrl) return;
-
+    if (devMode) return;
     let isActive = true;
-
-    void loadEditorHtml()
-      .then((html) => {
-        if (isActive) setEditorHtml(html);
+    initEditorHtml()
+      .then(() => {
+        if (isActive) setInited(true);
       })
       .catch(() => {
         if (isActive) {
           setHasLoadingError(true);
         }
       });
-
     return () => {
       isActive = false;
     };
-  }, [editorDevUrl]);
-
-  if (editorDevUrl) {
-    return (
-      <WebView
-        javaScriptEnabled
-        originWhitelist={["*"]}
-        source={{ uri: editorDevUrl }}
-        style={styles.webView}
-      />
-    );
-  }
+  }, [devMode]);
 
   if (hasLoadingError) {
     return (
@@ -50,7 +41,7 @@ export function EditorWebView() {
       </View>
     );
   }
-  if (!editorHtml) {
+  if (!devMode && !inited) {
     return (
       <View style={styles.statusContainer}>
         <ActivityIndicator />
@@ -58,13 +49,9 @@ export function EditorWebView() {
     );
   }
 
+  const source = getSource(devMode);
   return (
-    <WebView
-      javaScriptEnabled
-      originWhitelist={["*"]}
-      source={{ html: editorHtml }}
-      style={styles.webView}
-    />
+    <WebView javaScriptEnabled originWhitelist={["*"]} source={source} style={styles.webView} />
   );
 }
 

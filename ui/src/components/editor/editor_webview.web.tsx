@@ -14,5 +14,5 @@ const iframeStyle: CSSProperties = {
 
 export function EditorWebView() {
   const source = isDev() ? (getEditorDevUrl() ?? editorHtml) : editorHtml;
-  return <iframe aria-label="笔记编辑器" src={source} style={iframeStyle} title="笔记编辑器" />;
+  return <iframe aria-label="编辑器" src={source} style={iframeStyle} title="编辑器" />;
 }
