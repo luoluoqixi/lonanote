@@ -123,6 +123,7 @@
     "metro-file-map@0.83.6": "patches/metro-file-map@0.83.6.patch",
     "@lodev09/react-native-true-sheet@3.11.6": "patches/@lodev09+react-native-true-sheet@3.11.6.patch",
     "zeego@3.0.6": "patches/zeego@3.0.6.patch",
+    "react-native-webview@14.0.1": "patches/react-native-webview@14.0.1.patch",
     "@react-native-picker/picker@2.11.4": "patches/@react-native-picker+picker@2.11.4.patch",
     "expo-haptics@55.0.14": "patches/expo-haptics@55.0.14.patch",
     "metro@0.83.6": "patches/metro@0.83.6.patch",

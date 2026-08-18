@@ -11,7 +11,8 @@ const editor = new LonaEditor();
 
 editor.create({
   root,
-  defaultValue: "\n\n\n# LonaNote\n\n开始编辑你的笔记。",
+  defaultValue:
+    "\n11\n11\n11# LonaNote\n11\n11开始编辑你的笔记。\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11\n11",
   filePath: "untitled.md",
   theme: "light",
   extensionsConfig: {

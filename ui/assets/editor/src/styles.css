@@ -17,19 +17,25 @@ body,
   margin: 0;
 }
 
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 body {
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
 }
 
 #editor {
   padding: 0 8px 24px;
-  overflow: auto;
+  overflow: visible;
   cursor: text;
 }
 
 .cm-editor {
   min-height: 100%;
+  overflow: visible;
   padding: 12px 0;
   outline: 0 !important;
   background: transparent;

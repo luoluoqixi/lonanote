@@ -1,0 +1,165 @@
+# react-native-webview iOS 滚动条 inset 补丁说明：
+# - 增加 `scrollIndicatorInsets`，直接设置 WKWebView.scrollView 的原生滚动条 inset。
+# - 用于让透明 header、底部安全区和键盘遮挡区避让滚动条，不改变 HTML 内容布局。
+# - Fabric 与旧架构均透传该属性；原生 layout 后会重新应用，避免系统布局覆盖。
+
+diff --git a/src/WebViewTypes.ts b/src/WebViewTypes.ts
+index 4e7247f8..04efe4ae 100644
+--- a/src/WebViewTypes.ts
++++ b/src/WebViewTypes.ts
+@@ -438,6 +438,12 @@ export interface IOSWebViewProps extends WebViewSharedProps {
+    */
+   automaticallyAdjustsScrollIndicatorInsets?: boolean;
+ 
++  /**
++   * 设置 iOS 原生滚动条的 inset，不会改变 WebView 内容的布局。
++   * @platform ios
++   */
++  scrollIndicatorInsets?: ContentInsetProp;
++
+   /**
+    * This property specifies how the safe area insets are used to modify the
+    * content area of the scroll view. The default value of this property is
+diff --git a/src/RNCWebViewNativeComponent.ts b/src/RNCWebViewNativeComponent.ts
+index ca3af151..040a6404 100644
+--- a/src/RNCWebViewNativeComponent.ts
++++ b/src/RNCWebViewNativeComponent.ts
+@@ -179,6 +179,12 @@ export interface NativeProps extends ViewProps {
+     bottom?: Double;
+     right?: Double;
+   }>;
++  scrollIndicatorInsets?: Readonly<{
++    top?: Double;
++    left?: Double;
++    bottom?: Double;
++    right?: Double;
++  }>;
+   contentInsetAdjustmentBehavior?: WithDefault<
+     'never' | 'automatic' | 'scrollableAxes' | 'always',
+     'never'
+diff --git a/lib/WebViewTypes.d.ts b/lib/WebViewTypes.d.ts
+index f666e814..ba54945a 100644
+--- a/lib/WebViewTypes.d.ts
++++ b/lib/WebViewTypes.d.ts
+@@ -316,6 +316,11 @@ export interface IOSWebViewProps extends WebViewSharedProps {
+      * @platform ios
+      */
+     automaticallyAdjustsScrollIndicatorInsets?: boolean;
++    /**
++     * 设置 iOS 原生滚动条的 inset，不会改变 WebView 内容的布局。
++     * @platform ios
++     */
++    scrollIndicatorInsets?: ContentInsetProp;
+     /**
+      * This property specifies how the safe area insets are used to modify the
+      * content area of the scroll view. The default value of this property is
+diff --git a/lib/RNCWebViewNativeComponent.d.ts b/lib/RNCWebViewNativeComponent.d.ts
+index 6b789f98..40e4ac3a 100644
+--- a/lib/RNCWebViewNativeComponent.d.ts
++++ b/lib/RNCWebViewNativeComponent.d.ts
+@@ -153,6 +153,12 @@ export interface NativeProps extends ViewProps {
+         bottom?: Double;
+         right?: Double;
+     }>;
++    scrollIndicatorInsets?: Readonly<{
++        top?: Double;
++        left?: Double;
++        bottom?: Double;
++        right?: Double;
++    }>;
+     contentInsetAdjustmentBehavior?: WithDefault<'never' | 'automatic' | 'scrollableAxes' | 'always', 'never'>;
+     contentMode?: WithDefault<'recommended' | 'mobile' | 'desktop', 'recommended'>;
+     dataDetectorTypes?: WithDefault<ReadonlyArray<'address' | 'link' | 'calendarEvent' | 'trackingNumber' | 'flightNumber' | 'lookupSuggestion' | 'phoneNumber' | 'all' | 'none'>, 'phoneNumber'>;
+diff --git a/apple/RNCWebViewImpl.h b/apple/RNCWebViewImpl.h
+index 1f637c1d..8548ec31 100644
+--- a/apple/RNCWebViewImpl.h
++++ b/apple/RNCWebViewImpl.h
+@@ -86,6 +86,7 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
+ @property (nonatomic, assign) BOOL bounces;
+ @property (nonatomic, assign) BOOL mediaPlaybackRequiresUserAction;
+ @property (nonatomic, assign) UIEdgeInsets contentInset;
++@property (nonatomic, assign) UIEdgeInsets scrollIndicatorInsets;
+ @property (nonatomic, assign) BOOL automaticallyAdjustContentInsets;
+ @property (nonatomic, assign) BOOL keyboardDisplayRequiresUserAction;
+ @property (nonatomic, assign) BOOL hideKeyboardAccessoryView;
+diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
+index 38904266..9f57ba79 100644
+--- a/apple/RNCWebViewImpl.m
++++ b/apple/RNCWebViewImpl.m
+@@ -175,6 +175,7 @@ - (instancetype)initWithFrame:(CGRect)frame
+     _automaticallyAdjustContentInsets = YES;
+     _autoManageStatusBarEnabled = YES;
+     _contentInset = UIEdgeInsetsZero;
++    _scrollIndicatorInsets = UIEdgeInsetsZero;
+     _savedKeyboardDisplayRequiresUserAction = YES;
+     _injectedJavaScript = nil;
+     _injectedJavaScriptForMainFrameOnly = YES;
+@@ -578,6 +579,10 @@ - (void)didMoveToWindow
+     }
+ #endif
+ 
++#if !TARGET_OS_OSX
++    _webView.scrollView.scrollIndicatorInsets = _scrollIndicatorInsets;
++#endif
++
+ #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130300 || \
+     __IPHONE_OS_VERSION_MAX_ALLOWED >= 160400 || \
+     __TV_OS_VERSION_MAX_ALLOWED >= 160400
+@@ -837,6 +842,16 @@ - (void)setContentInset:(UIEdgeInsets)contentInset
+ #endif // !TARGET_OS_OSX
+ }
+ 
++- (void)setScrollIndicatorInsets:(UIEdgeInsets)scrollIndicatorInsets
++{
++  _scrollIndicatorInsets = scrollIndicatorInsets;
++#if !TARGET_OS_OSX
++  if (_webView != nil) {
++    _webView.scrollView.scrollIndicatorInsets = scrollIndicatorInsets;
++  }
++#endif // !TARGET_OS_OSX
++}
++
+ - (void)refreshContentInset
+ {
+ #if !TARGET_OS_OSX
+@@ -1140,6 +1155,7 @@ - (void)layoutSubviews
+   _webView.frame = self.bounds;
+ #if !TARGET_OS_OSX
+   _webView.scrollView.contentInset = _contentInset;
++  _webView.scrollView.scrollIndicatorInsets = _scrollIndicatorInsets;
+ #endif // !TARGET_OS_OSX
+ }
+ 
+diff --git a/apple/RNCWebView.mm b/apple/RNCWebView.mm
+index 2be78778..fae292af 100644
+--- a/apple/RNCWebView.mm
++++ b/apple/RNCWebView.mm
+@@ -382,6 +382,16 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
+         [_view setContentInset: edgesInsets];
+     }
+ 
++    if (oldViewProps.scrollIndicatorInsets.top != newViewProps.scrollIndicatorInsets.top || oldViewProps.scrollIndicatorInsets.left != newViewProps.scrollIndicatorInsets.left || oldViewProps.scrollIndicatorInsets.right != newViewProps.scrollIndicatorInsets.right || oldViewProps.scrollIndicatorInsets.bottom != newViewProps.scrollIndicatorInsets.bottom) {
++        UIEdgeInsets edgesInsets = {
++            .top = newViewProps.scrollIndicatorInsets.top,
++            .left = newViewProps.scrollIndicatorInsets.left,
++            .right = newViewProps.scrollIndicatorInsets.right,
++            .bottom = newViewProps.scrollIndicatorInsets.bottom
++        };
++        [_view setScrollIndicatorInsets: edgesInsets];
++    }
++
+     if (oldViewProps.basicAuthCredential.username != newViewProps.basicAuthCredential.username || oldViewProps.basicAuthCredential.password != newViewProps.basicAuthCredential.password) {
+         [_view setBasicAuthCredential: @{
+             @"username": RCTNSStringFromString(newViewProps.basicAuthCredential.username),
+diff --git a/apple/RNCWebViewManager.mm b/apple/RNCWebViewManager.mm
+index a510ffd9..88dca4f4 100644
+--- a/apple/RNCWebViewManager.mm
++++ b/apple/RNCWebViewManager.mm
+@@ -68,6 +68,7 @@ - (RNCView *)view
+ RCT_EXPORT_VIEW_PROPERTY(mediaPlaybackRequiresUserAction, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(dataDetectorTypes, WKDataDetectorTypes)
+ RCT_EXPORT_VIEW_PROPERTY(contentInset, UIEdgeInsets)
++RCT_EXPORT_VIEW_PROPERTY(scrollIndicatorInsets, UIEdgeInsets)
+ RCT_EXPORT_VIEW_PROPERTY(automaticallyAdjustContentInsets, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(autoManageStatusBarEnabled, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(hideKeyboardAccessoryView, BOOL)
