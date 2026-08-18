@@ -6,10 +6,19 @@ import { isDev } from "@/api/common/platform";
 
 import { getEditorDevUrl } from "./editor_dev_url";
 import { EDITOR_HTML, initEditorHtml } from "./editor_html.native";
+import { onError, onHttpError, onLoad, onLoadEnd, onLoadStart } from "./editor_webview_event";
 
 function getSource(devMode: boolean) {
   const editorDevUrl = devMode ? getEditorDevUrl() : null;
   return editorDevUrl ? { uri: editorDevUrl } : { html: EDITOR_HTML.html };
+}
+
+function RenderLoading() {
+  return (
+    <View style={styles.statusContainer}>
+      <ActivityIndicator />
+    </View>
+  );
 }
 
 export function EditorWebView() {
@@ -51,7 +60,18 @@ export function EditorWebView() {
 
   const source = getSource(devMode);
   return (
-    <WebView javaScriptEnabled originWhitelist={["*"]} source={source} style={styles.webView} />
+    <WebView
+      onError={onError}
+      onHttpError={onHttpError}
+      onLoad={onLoad}
+      onLoadStart={onLoadStart}
+      onLoadEnd={onLoadEnd}
+      renderLoading={RenderLoading}
+      javaScriptEnabled
+      originWhitelist={["*"]}
+      source={source}
+      style={styles.webView}
+    />
   );
 }
 
