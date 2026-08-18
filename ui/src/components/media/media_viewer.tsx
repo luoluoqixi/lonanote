@@ -1,6 +1,6 @@
 import { Zoomable } from "@likashefqet/react-native-image-zoom";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { ExternalLink, Maximize, Pause, Play } from "@tamagui/lucide-icons-2";
+import { ExternalLink, Maximize, Pause, Play, Volume2, VolumeX } from "@tamagui/lucide-icons-2";
 import { useEventListener } from "expo";
 import { Image } from "expo-image";
 import { Redirect, Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -46,7 +46,9 @@ const MEDIA_DISMISS_VELOCITY = 1000;
 
 type MediaViewerProps = {
   isActive: boolean;
+  isMuted: boolean;
   mediaKind: WorkspaceMediaKind;
+  onToggleMuted: () => void;
   uri: string;
   title: string;
 };
@@ -134,7 +136,7 @@ function ImageMediaViewer({ uri, title }: MediaViewerProps) {
   );
 }
 
-function VideoMediaViewer({ isActive, uri }: MediaViewerProps) {
+function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewerProps) {
   const videoViewRef = useRef<VideoView>(null);
   const isScrubbingRef = useRef(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
@@ -144,6 +146,7 @@ function VideoMediaViewer({ isActive, uri }: MediaViewerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const player = useVideoPlayer(uri, (videoPlayer) => {
     videoPlayer.loop = false;
+    videoPlayer.muted = isMuted;
     videoPlayer.timeUpdateEventInterval = 0.25;
   });
 
@@ -176,13 +179,22 @@ function VideoMediaViewer({ isActive, uri }: MediaViewerProps) {
     player.pause();
   }, [isActive, player]);
 
+  useEffect(() => {
+    player.muted = isMuted;
+  }, [isMuted, player]);
+
   const togglePlayback = useCallback(() => {
     if (player.playing) {
       player.pause();
     } else {
+      if (duration > 0 && player.currentTime >= duration - 0.1) {
+        player.currentTime = 0;
+        setCurrentTime(0);
+      }
+
       player.play();
     }
-  }, [player]);
+  }, [duration, player]);
 
   const updateScrubbingTime = useCallback((nextValue: number[]) => {
     isScrubbingRef.current = true;
@@ -253,6 +265,15 @@ function VideoMediaViewer({ isActive, uri }: MediaViewerProps) {
         </View>
         <NativeText style={styles.videoTime}>{formatVideoTime(duration)}</NativeText>
         <Button
+          accessibilityLabel={isMuted ? "取消静音" : "静音"}
+          chromeless
+          circular
+          hitSlop={8}
+          onPress={onToggleMuted}
+        >
+          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        </Button>
+        <Button
           accessibilityLabel="全屏播放"
           chromeless
           circular
@@ -308,6 +329,7 @@ export function MediaViewer() {
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
   const filePath = mediaPaths[activeMediaIndex];
   const mediaKind = filePath ? detectWorkspaceFileKind(filePath) : null;
   const isMedia = mediaKind === "image" || mediaKind === "video";
@@ -330,6 +352,10 @@ export function MediaViewer() {
   const isAndroid = os() === "android";
   const isIosDevice = os() === "ios";
   const supportsDragDismiss = isAndroid || isIosDevice;
+
+  const toggleMuted = useCallback(() => {
+    setIsMuted((previousIsMuted) => !previousIsMuted);
+  }, []);
 
   const dismissMedia = useCallback(() => {
     router.back();
@@ -496,7 +522,9 @@ export function MediaViewer() {
                     <View key={mediaPath} style={styles.page}>
                       <MediaContent
                         isActive={index === activeMediaIndex}
+                        isMuted={isMuted}
                         mediaKind={pageKind}
+                        onToggleMuted={toggleMuted}
                         uri={pageUrl}
                         title={getFileName(mediaPath)}
                       />
