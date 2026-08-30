@@ -45,6 +45,9 @@ export function WorkspaceEntryDetailsSheet({
       name="workspace-entry-details-sheet"
       onOpenChange={onOpenChange}
       open={open}
+      headerRightButtonProps={{
+        buttonSize: { width: 50, height: 40 },
+      }}
       sheetProps={{
         snapPoints: ["58%"],
       }}

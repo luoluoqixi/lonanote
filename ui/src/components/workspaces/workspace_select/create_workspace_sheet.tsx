@@ -157,6 +157,9 @@ export function CreateWorkspaceSheet({
       sheetProps={{
         snapPoints: CREATE_WORKSPACE_SNAP_POINTS,
       }}
+      headerRightButtonProps={{
+        buttonSize: { width: 50, height: 40 },
+      }}
       screenOptions={nativeHeaderOptions}
     >
       <NativeSheetStack.Screen name="create-workspace" options={{ title: "创建工作区" }}>
