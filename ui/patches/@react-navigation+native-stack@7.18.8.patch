@@ -1,0 +1,84 @@
+# @react-navigation/native-stack 补丁：
+# - 暴露 headerCancelledTransitionGeometryFixEnabled，并将该三态选项传递给
+#   react-native-screens：未传为自动，true 为强制启用，false 为显式禁用。
+diff --git a/lib/module/views/useHeaderConfigProps.js b/lib/module/views/useHeaderConfigProps.js
+index a56cb12fc83995973fad7d9e851d6fdbaf999a17..8fa9a6cb8bcddd9fbbfa0e5c1cc701e9b97dbb8a 100644
+--- a/lib/module/views/useHeaderConfigProps.js
++++ b/lib/module/views/useHeaderConfigProps.js
+@@ -153,6 +153,7 @@ export function useHeaderConfigProps({
+   headerTitleAlign,
+   headerTitleStyle,
+   headerTransparent,
++  headerCancelledTransitionGeometryFixEnabled,
+   headerSearchBarOptions,
+   headerTopInsetEnabled,
+   headerBack,
+@@ -337,6 +338,7 @@ export function useHeaderConfigProps({
+   return {
+     backButtonInCustomView,
+     backgroundColor: headerBackgroundColor,
++    cancelledTransitionHeaderGeometryFixEnabled: headerCancelledTransitionGeometryFixEnabled,
+     backTitle: headerBackTitle,
+     backTitleVisible: isBackButtonDisplayModeAvailable ? undefined : headerBackButtonDisplayMode !== 'minimal',
+     backButtonDisplayMode: isBackButtonDisplayModeAvailable ? headerBackButtonDisplayMode : undefined,
+diff --git a/lib/typescript/src/types.d.ts b/lib/typescript/src/types.d.ts
+index d38030aafdf8e02bc1648156cd20eb7d24c2505b..554d3ad7edc53fb6f6cfe190253c1985b5e4ae68 100644
+--- a/lib/typescript/src/types.d.ts
++++ b/lib/typescript/src/types.d.ts
+@@ -252,6 +252,15 @@ export type NativeStackNavigationOptions = {
+      * and changes the background color to `transparent` unless specified in `headerStyle`.
+      */
+     headerTransparent?: boolean;
++    /**
++     * Controls the iOS workaround for stale native header geometry after cancelling
++     * an interactive back transition. It is detected automatically when omitted.
++     *
++     * Only supported on iOS.
++     *
++     * @platform ios
++     */
++    headerCancelledTransitionGeometryFixEnabled?: boolean;
+     /**
+      * Blur effect for the translucent header.
+      * The `headerTransparent` option needs to be set to `true` for this to work.
+diff --git a/src/types.tsx b/src/types.tsx
+index be3c93a9c088cd2b65caca66aa8454ed908c1d65..bfc80609945cccdd2d2257a63fc916afcd64dcc7 100644
+--- a/src/types.tsx
++++ b/src/types.tsx
+@@ -296,6 +296,15 @@ export type NativeStackNavigationOptions = {
+    * and changes the background color to `transparent` unless specified in `headerStyle`.
+    */
+   headerTransparent?: boolean;
++  /**
++   * Controls the iOS workaround for stale native header geometry after cancelling
++   * an interactive back transition. It is detected automatically when omitted.
++   *
++   * Only supported on iOS.
++   *
++   * @platform ios
++   */
++  headerCancelledTransitionGeometryFixEnabled?: boolean;
+   /**
+    * Blur effect for the translucent header.
+    * The `headerTransparent` option needs to be set to `true` for this to work.
+diff --git a/src/views/useHeaderConfigProps.tsx b/src/views/useHeaderConfigProps.tsx
+index a7e3004318753aa0757b038da1e7fbc8663a7f02..39acad4804f99f23c48916cc26b2cbe06d59a712 100644
+--- a/src/views/useHeaderConfigProps.tsx
++++ b/src/views/useHeaderConfigProps.tsx
+@@ -214,6 +214,7 @@ export function useHeaderConfigProps({
+   headerTitleAlign,
+   headerTitleStyle,
+   headerTransparent,
++  headerCancelledTransitionGeometryFixEnabled,
+   headerSearchBarOptions,
+   headerTopInsetEnabled,
+   headerBack,
+@@ -496,6 +497,8 @@ export function useHeaderConfigProps({
+   return {
+     backButtonInCustomView,
+     backgroundColor: headerBackgroundColor,
++    cancelledTransitionHeaderGeometryFixEnabled:
++      headerCancelledTransitionGeometryFixEnabled,
+     backTitle: headerBackTitle,
+     backTitleVisible: isBackButtonDisplayModeAvailable
+       ? undefined

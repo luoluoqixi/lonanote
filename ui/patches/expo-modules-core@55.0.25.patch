@@ -1,0 +1,82 @@
+# SDK 55 回移 Expo #40604 的最终修复方案。
+# 通过一次性隔离容器承载 SwiftUI，避免 SwiftUI 延迟修改 Fabric 原生 View 的
+# frame/autoresizing 状态，并在 RN View 回收复用后污染其他组件。
+# Issue: https://github.com/expo/expo/issues/40604
+# 修复 PR: https://github.com/expo/expo/pull/47707
+diff --git a/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift b/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift
+--- a/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift
++++ b/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift
+@@ -13,7 +13,6 @@ extension ExpoSwiftUI {
+ 
+     #if os(macOS)
+     func makeNSView(context: Context) -> NSView {
+-      context.coordinator.originalAutoresizingMask = view.autoresizingMask
+       return view
+     }
+ 
+@@ -23,8 +22,17 @@ extension ExpoSwiftUI {
+     #endif
+ 
+     func makeUIView(context: Context) -> UIView {
+-      context.coordinator.originalAutoresizingMask = view.autoresizingMask
++      #if os(macOS)
+       return view
++      #else
++      // SwiftUI mutates the view it hosts (autoresizingMask, frame, visibility), sometimes
++      // asynchronously after teardown, corrupting unmounted or recycled React views.
++      // Hand it a disposable container instead. This keeps SwiftUI mutations away from RN.
++      let container = ReactViewIsolationContainer()
++      container.hostedView = view
++      container.addSubview(view)
++      return container
++      #endif
+     }
+ 
+     func updateUIView(_ uiView: UIView, context: Context) {
+@@ -32,11 +40,7 @@ extension ExpoSwiftUI {
+     }
+ 
+     static func dismantleUIView(_ uiView: UIView, coordinator: Coordinator) {
+-      // https://github.com/expo/expo/issues/40604
+-      // UIViewRepresentable attaches autoresizingMask w+h to the hosted UIView
+-      // This causes issues for RN views when they are recycled.
+-      // So we restore the original autoresizingMask to avoid issues.
+-      uiView.autoresizingMask = coordinator.originalAutoresizingMask
++      // SwiftUI only ever touched the disposable container.
+     }
+ 
+     func makeCoordinator() -> Coordinator {
+@@ -44,5 +48,4 @@ extension ExpoSwiftUI {
+     }
+ 
+     class Coordinator {
+-      var originalAutoresizingMask: UIView.AutoresizingMask = []
+       init() {}
+@@ -63,4 +66,26 @@ extension ExpoSwiftUI {
+     }
+ +}
+
+-}
++#if !os(macOS)
++/**
++ * Disposable UIView handed to SwiftUI in place of the React-managed view.
++ */
++private final class ReactViewIsolationContainer: UIView {
++  weak var hostedView: UIView?
++
++  override func layoutSubviews() {
++    super.layoutSubviews()
++
++    // Ignore transient zero bounds during initial layout and teardown.
++    guard let hostedView, hostedView.superview === self, !bounds.isEmpty else {
++      return
++    }
++
++    if hostedView.frame != bounds {
++      hostedView.frame = bounds
++    }
++  }
++}
++#endif
++
++}
