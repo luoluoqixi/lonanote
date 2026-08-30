@@ -55,10 +55,6 @@ function HeaderActionButton({
   );
 }
 
-function HeaderMenuActionButton({ open }: { open: boolean }) {
-  return <HeaderActionButton accessibilityLabel="右侧操作" label="•••" opacity={open ? 0.4 : 1} />;
-}
-
 export function WorkspaceSelectHeader({
   areAllWorkspacesSelected,
   canSelectWorkspaces,
@@ -174,7 +170,11 @@ export function WorkspaceSelectHeader({
 
           return (
             <Dropdown
-              trigger={HeaderMenuActionButton}
+              triggerLabel="•••"
+              triggerProps={{
+                circular: true,
+                native: true,
+              }}
               items={menuItems}
               nativeHaptics
               itemNativeHaptics

@@ -133,7 +133,6 @@ function WorkspaceExplorerForWorkspace({
   const [hasError, setHasError] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedEntryPaths, setSelectedEntryPaths] = useState<string[]>([]);
-  const [isSortSelectOpen, setIsSortSelectOpen] = useState(false);
   const [isGroupModeSelectOpen, setIsGroupModeSelectOpen] = useState(false);
   const [createEntryKind, setCreateEntryKind] = useState<CreateWorkspaceEntryKind>("note");
   const [createEntryName, setCreateEntryName] = useState("");
@@ -511,7 +510,6 @@ function WorkspaceExplorerForWorkspace({
       const nextGroupMode = isWorkspaceExplorerNameSortValue(nextSortValue)
         ? "none"
         : groupModeBeforeNameSortRef.current;
-      setIsSortSelectOpen(false);
       setIsGroupModeSelectOpen(false);
 
       try {
@@ -660,11 +658,9 @@ function WorkspaceExplorerForWorkspace({
         usesNativeIosHeader={usesNativeIosHeader}
       />
       <WorkspaceExplorerSortSelect
-        onOpenChange={setIsSortSelectOpen}
         onValueChange={(nextValue) => {
           void changeSortValue(nextValue);
         }}
-        open={isSortSelectOpen}
         selectRef={sortSelectRef}
         value={sortValue}
       />

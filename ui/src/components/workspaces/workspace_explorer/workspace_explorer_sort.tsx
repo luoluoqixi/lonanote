@@ -124,17 +124,13 @@ export function sortWorkspaceExplorerEntries(
 }
 
 type WorkspaceExplorerSortSelectProps = {
-  onOpenChange: (open: boolean) => void;
   onValueChange: (value: WorkspaceExplorerSortValue) => void;
-  open: boolean;
   selectRef: React.RefObject<SelectHandle | null>;
   value: WorkspaceExplorerSortValue;
 };
 
 export function WorkspaceExplorerSortSelect({
-  onOpenChange,
   onValueChange,
-  open,
   selectRef,
   value,
 }: WorkspaceExplorerSortSelectProps) {
@@ -143,7 +139,6 @@ export function WorkspaceExplorerSortSelect({
       ref={selectRef}
       itemGroups={WORKSPACE_EXPLORER_SORT_GROUPS}
       native="sheet"
-      onOpenChange={onOpenChange}
       onValueChange={(nextValue) => {
         if (isWorkspaceExplorerSortValue(nextValue)) {
           onValueChange(nextValue);
@@ -167,7 +162,6 @@ type WorkspaceExplorerGroupModeSelectProps = {
 export function WorkspaceExplorerGroupModeSelect({
   onOpenChange,
   onValueChange,
-  open,
   selectRef,
   value,
 }: WorkspaceExplorerGroupModeSelectProps) {
