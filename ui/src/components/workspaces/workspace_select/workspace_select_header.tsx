@@ -189,6 +189,6 @@ export function WorkspaceSelectHeader({
 const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
-    gap: 10,
+    gap: isIos() ? 10 : 0,
   },
 });
