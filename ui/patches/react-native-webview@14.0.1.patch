@@ -163,3 +163,13 @@ index a510ffd9..88dca4f4 100644
  RCT_EXPORT_VIEW_PROPERTY(automaticallyAdjustContentInsets, BOOL)
  RCT_EXPORT_VIEW_PROPERTY(autoManageStatusBarEnabled, BOOL)
  RCT_EXPORT_VIEW_PROPERTY(hideKeyboardAccessoryView, BOOL)
+diff --git a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
+--- a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
++++ b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
+@@ -369,2 +369,5 @@
+     @Override
+-    public void setContentInset(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
++    public void setContentInset(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
++
++    @Override
++    public void setScrollIndicatorInsets(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
