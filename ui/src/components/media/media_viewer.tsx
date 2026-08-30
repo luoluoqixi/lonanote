@@ -1,10 +1,10 @@
 import { Zoomable } from "@likashefqet/react-native-image-zoom";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { ExternalLink, Maximize, Pause, Play, Volume2, VolumeX } from "lucide-react-native";
 import { useEventListener } from "expo";
 import { Image } from "expo-image";
 import { Redirect, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
+import { ExternalLink, Maximize, Pause, Play, Volume2, VolumeX } from "lucide-react-native";
 import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Text as NativeText, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -16,14 +16,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Button,
-  Dropdown,
-  type DropdownItemData,
-  Slider,
-  Text,
-  useUiTheme,
-} from "rn-ui-kit";
+import { Button, Dropdown, type DropdownItemData, Slider, Text, useUiTheme } from "rn-ui-kit";
 
 import { workspace } from "@/api/commands/workspace";
 import {
@@ -239,6 +232,7 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
       />
       <View style={styles.videoControls}>
         <Button
+          variant="ghost"
           accessibilityLabel={isPlaying ? "暂停" : "播放"}
           circular
           hitSlop={8}
@@ -261,6 +255,7 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
         </View>
         <NativeText style={styles.videoTime}>{formatVideoTime(duration)}</NativeText>
         <Button
+          variant="ghost"
           accessibilityLabel={isMuted ? "取消静音" : "静音"}
           circular
           hitSlop={8}
@@ -269,6 +264,7 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
           {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </Button>
         <Button
+          variant="ghost"
           accessibilityLabel="全屏播放"
           circular
           hitSlop={8}
