@@ -1,30 +1,73 @@
+import {
+  accentThemeSeeds,
+  accentThemeNames as kitAccentThemeNames,
+  defaultAccentThemeName as kitDefaultAccentThemeName,
+  resolveGeneratedAccentTheme,
+} from "rn-ui-kit";
+
+export { accentThemeSeeds };
+
 type AccentThemeDefinition = {
   accent: string;
   accentForeground: string;
   label: string;
 };
 
-export const accentThemeDefinitions = {
-  mono: { accent: "#71717a", accentForeground: "#ffffff", label: "素色" },
-  ocean: { accent: "#2563eb", accentForeground: "#ffffff", label: "海洋" },
-  sakura: { accent: "#db2777", accentForeground: "#ffffff", label: "樱花" },
-  lavender: { accent: "#7c3aed", accentForeground: "#ffffff", label: "薰衣草" },
-  sunset: { accent: "#d97706", accentForeground: "#2b1700", label: "日落" },
-  forest: { accent: "#059669", accentForeground: "#05312c", label: "森林" },
-  ruby: { accent: "#e11d48", accentForeground: "#ffffff", label: "红宝石" },
-  golden: { accent: "#ca8a04", accentForeground: "#3a2a00", label: "金耀" },
-  aqua: { accent: "#0891b2", accentForeground: "#00313d", label: "水色" },
-} as const satisfies Record<string, AccentThemeDefinition>;
+export const accentThemeNames = [...kitAccentThemeNames] as const;
+export type AccentThemeName = (typeof accentThemeNames)[number];
 
-export type AccentThemeName = keyof typeof accentThemeDefinitions;
-export const accentThemeNames = Object.keys(accentThemeDefinitions) as AccentThemeName[];
-export const defaultAccentThemeName: AccentThemeName = "ocean";
+const accentThemeLabels: Record<AccentThemeName, string> = {
+  aqua: "水色",
+  forest: "森林",
+  golden: "金耀",
+  lavender: "薰衣草",
+  mono: "素色",
+  ocean: "海洋",
+  ruby: "红宝石",
+  sakura: "樱花",
+  sunset: "日落",
+};
 
-export function getAccentThemePreset(themeName: AccentThemeName) {
-  return { ...accentThemeDefinitions[themeName], themeName };
+export const accentThemeDefinitions = Object.fromEntries(
+  accentThemeNames.map((themeName) => [
+    themeName,
+    {
+      accent: accentThemeSeeds[themeName],
+      accentForeground: resolveGeneratedAccentTheme(accentThemeSeeds[themeName]).light
+        .primaryForeground,
+      label: accentThemeLabels[themeName],
+    },
+  ]),
+) as Record<AccentThemeName, AccentThemeDefinition>;
+
+export const defaultAccentThemeName: AccentThemeName = kitDefaultAccentThemeName as AccentThemeName;
+
+const CUSTOM_ACCENT_COLOR = /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i;
+
+export function isCustomAccentColor(value: unknown): value is string {
+  return typeof value === "string" && CUSTOM_ACCENT_COLOR.test(value.trim());
 }
 
-export function normalizeAccentThemeName(value: unknown): AccentThemeName {
+export function getAccentThemePreset(themeName: string) {
+  if (isCustomAccentColor(themeName)) {
+    const normalized = themeName.trim().toLowerCase();
+    const generatedTheme = resolveGeneratedAccentTheme(normalized);
+    return {
+      accent: normalized,
+      accentForeground: generatedTheme.light.primaryForeground,
+      label: "自定义颜色",
+      themeName: normalized,
+    };
+  }
+
+  const normalizedThemeName = normalizeAccentThemeName(themeName);
+  return {
+    ...accentThemeDefinitions[normalizedThemeName as AccentThemeName],
+    themeName: normalizedThemeName,
+  };
+}
+
+export function normalizeAccentThemeName(value: unknown): string {
   const aliases: Record<string, AccentThemeName> = {
     blue: "ocean",
     emerald: "forest",
@@ -35,8 +78,10 @@ export function normalizeAccentThemeName(value: unknown): AccentThemeName {
     error: "ruby",
   };
   if (typeof value === "string") {
-    if (value in aliases) return aliases[value];
-    if (value in accentThemeDefinitions) return value as AccentThemeName;
+    const normalized = value.trim();
+    if (isCustomAccentColor(normalized)) return normalized.toLowerCase();
+    if (normalized in aliases) return aliases[normalized];
+    if (normalized in accentThemeDefinitions) return normalized;
   }
   return defaultAccentThemeName;
 }

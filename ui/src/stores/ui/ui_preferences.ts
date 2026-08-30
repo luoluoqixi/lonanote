@@ -7,7 +7,8 @@ import {
 } from "@/theme/accent_themes";
 
 export type ColorSchemeSetting = "light" | "dark" | "system";
-export type AccentColorSetting = AccentThemeName;
+/** A preset theme name or an opaque hex color selected by the user. */
+export type AccentColorSetting = AccentThemeName | string;
 export type AppLayoutMode = "mobile" | "desktop";
 export type WorkspaceExplorerGroupModeSetting = "date" | "none";
 export type WorkspaceExplorerSortSetting =

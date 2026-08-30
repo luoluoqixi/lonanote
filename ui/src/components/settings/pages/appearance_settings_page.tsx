@@ -1,16 +1,27 @@
 ﻿/* eslint-disable quote-props */
 import {
+  BrightnessSlider,
+  HueSlider,
+  NativeListColorPickerItem,
   NativeListItem,
   NativeListSection,
   NativeListSelectItem,
   NativeListSwitchItem,
+  Panel1,
+  Preview,
   type SelectOption,
+  Swatches,
 } from "rn-ui-kit";
 
 import { useLayoutMode } from "@/hooks/layout";
 import { useColorSchemeSettings, useUiPreferences } from "@/hooks/settings";
 import type { AccentColorSetting, AppLayoutMode, ColorSchemeSetting } from "@/stores/ui";
-import { accentThemeNames, getAccentThemePreset } from "@/theme/accent_themes";
+import {
+  accentThemeNames,
+  accentThemeSeeds,
+  getAccentThemePreset,
+  isCustomAccentColor,
+} from "@/theme/accent_themes";
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
@@ -30,16 +41,24 @@ export function AppearanceSettingsPage({
   const uiPreferences = useUiPreferences();
   const error = colorSchemeSettings.error ?? uiPreferences.error;
   const isLoading = colorSchemeSettings.isLoading || uiPreferences.isLoading;
+  const currentAccentColor = uiPreferences.preferences.appearance.accentColor;
+  const customAccentColor = isCustomAccentColor(currentAccentColor)
+    ? currentAccentColor
+    : accentThemeSeeds.lavender;
 
-  const accentColorOptions: SelectOption[] = accentThemeNames.map((option) => {
-    const preset = getAccentThemePreset(option);
+  const accentColorOptions: SelectOption[] = [
+    ...accentThemeNames.map((option) => {
+      const preset = getAccentThemePreset(option);
 
-    return {
-      label: preset.label,
-      swatchColor: preset.accent,
-      value: option,
-    };
-  });
+      return {
+        label: preset.label,
+        swatchColor: accentThemeSeeds[option],
+        value: option,
+      };
+    }),
+    { label: "自定义颜色", swatchColor: customAccentColor, value: customAccentColor },
+  ];
+  const presetThemeColors = accentThemeNames.map((name) => accentThemeSeeds[name]);
   const colorSchemeOptions: SelectOption[] = [
     { label: "浅色", value: "light" },
     { label: "深色", value: "dark" },
@@ -80,10 +99,49 @@ export function AppearanceSettingsPage({
             },
             options: accentColorOptions,
             placeholder: "选择主题",
-            value: uiPreferences.preferences.appearance.accentColor,
+            value: currentAccentColor,
           }}
           title="主题"
         />
+        {isCustomAccentColor(currentAccentColor) ? (
+          <NativeListColorPickerItem
+            color={customAccentColor}
+            colorPickerProps={{
+              adaptSpectrum: true,
+              thumbShape: "circle",
+              children: (
+                <>
+                  <Preview style={{ height: 44, width: "100%" }} />
+                  <Panel1 style={{ height: 240, width: "100%" }} />
+                  <HueSlider />
+                  <BrightnessSlider />
+                  <Swatches
+                    colors={presetThemeColors}
+                    swatchStyle={{
+                      height: 26,
+                      marginBottom: 0,
+                      marginHorizontal: 2,
+                      width: 26,
+                    }}
+                  />
+                </>
+              ),
+            }}
+            onColorChange={(color) =>
+              runSettingsAction(
+                "set custom accent color",
+                uiPreferences.updateAndSave((currentPreferences) => ({
+                  ...currentPreferences,
+                  appearance: {
+                    ...currentPreferences.appearance,
+                    accentColor: color,
+                  },
+                })),
+              )
+            }
+            title="自定义主题颜色"
+          />
+        ) : null}
         <NativeListSelectItem
           selectProps={{
             "aria-label": "主题模式",
