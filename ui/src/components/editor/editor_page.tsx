@@ -1,8 +1,8 @@
-import { ExternalLink } from "@tamagui/lucide-icons-2";
+import { ExternalLink } from "lucide-react-native";
 import { Redirect, Stack, useLocalSearchParams } from "expo-router";
 import { type ComponentProps, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Menu, type MenuItemData, useMenuTriggerState, useTheme } from "rn-ui-kit";
+import { Button, Dropdown, type DropdownItemData, useUiTheme } from "rn-ui-kit";
 
 import { getFileName, isIos } from "@/api/common";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
@@ -10,19 +10,17 @@ import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 import { EditorWebView } from "./editor_webview";
 
-function HeaderMenuActionButton() {
-  const { isActive } = useMenuTriggerState();
-
+function HeaderMenuActionButton({ open }: { open: boolean }) {
   return (
     <Button
       accessibilityLabel="编辑器文件操作"
       accessibilityRole="button"
-      chromeless
       circular
       hitSlop={8}
       native={isIos()}
-      opacity={isActive ? 0.4 : 1}
+      style={{ opacity: open ? 0.4 : 1 }}
       title="•••"
+      variant="ghost"
     />
   );
 }
@@ -32,9 +30,9 @@ export function EditorPage() {
   const { path } = useLocalSearchParams<{ path?: string | string[] }>();
   const filePath = Array.isArray(path) ? path[0] : path;
   const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
-  const theme = useTheme();
-  const accentColor = theme.color10.val as ComponentProps<typeof ExternalLink>["color"];
-  const menuItems = useMemo<MenuItemData[]>(
+  const theme = useUiTheme();
+  const accentColor = theme.primary as ComponentProps<typeof ExternalLink>["color"];
+  const menuItems = useMemo<DropdownItemData[]>(
     () => [
       {
         disabled: isOpening,
@@ -57,7 +55,7 @@ export function EditorPage() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Menu trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
+            <Dropdown trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
           ),
           title: getFileName(filePath),
         }}

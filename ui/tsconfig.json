@@ -15,15 +15,11 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "app.config.ts",
-    "tamagui.build.ts",
-    "tamagui.config.ts",
-    "themes.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
   "exclude": [
     ".expo",
-    ".tamagui",
     "android",
     "ios",
     "node_modules",

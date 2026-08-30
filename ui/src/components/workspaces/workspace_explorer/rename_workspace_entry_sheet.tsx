@@ -39,8 +39,7 @@ export function RenameWorkspaceEntrySheet({
       onOpenChange={onOpenChange}
       open={open}
       sheetProps={{
-        snapPoints: [62],
-        snapPointsMode: "percent",
+        snapPoints: ["62%"],
       }}
       screenOptions={nativeHeaderOptions}
     >

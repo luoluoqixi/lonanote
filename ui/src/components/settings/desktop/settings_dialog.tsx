@@ -64,14 +64,11 @@ export function DesktopSettingsDialog({
   return (
     <>
       <Dialog
-        height={DIALOG_HEIGHT}
-        minHeight={0}
-        dismissOnOverlayPress={!isNestedSheetOpen}
         onOpenChange={onOpenChange}
         open={isOpen}
         title="设置"
         trigger={trigger}
-        width={DIALOG_WIDTH}
+        contentProps={{ style: { height: DIALOG_HEIGHT, width: DIALOG_WIDTH } }}
       >
         <View style={styles.root}>
           <Tabs
@@ -83,9 +80,9 @@ export function DesktopSettingsDialog({
           >
             <Tabs.List aria-label="设置页面导航" style={styles.list}>
               {desktopPages.map((page) => (
-                <Tabs.Tab key={page.id} value={page.id}>
+                <Tabs.Trigger key={page.id} value={page.id}>
                   {page.title}
-                </Tabs.Tab>
+                </Tabs.Trigger>
               ))}
             </Tabs.List>
             <View style={styles.content}>
@@ -115,7 +112,7 @@ export function DesktopSettingsDialog({
             onOpenChange={setIsGmSheetOpen}
             open={isGmSheetOpen}
             overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
-            sheetProps={{ snapPoints: ["60%"], snapPointsMode: "percent" }}
+            sheetProps={{ snapPoints: ["60%"] }}
             screenOptions={{ headerShadowVisible: false }}
           >
             <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>

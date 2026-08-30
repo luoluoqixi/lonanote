@@ -5,7 +5,7 @@ import {
   confirmNative,
   toSwiftUIHexColor,
   triggerNativeHaptics,
-  useTheme,
+  useUiTheme,
 } from "rn-ui-kit";
 
 import { system } from "@/api";
@@ -18,11 +18,11 @@ import { SettingsList } from "../settings_list";
 
 export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: SettingsPageProps = {}) {
   const { toast } = useToast();
-  const theme = useTheme();
+  const theme = useUiTheme();
   const [isResettingInitialWorkspace, setIsResettingInitialWorkspace] = useState(false);
   const [isGettingSystemLocale, setIsGettingSystemLocale] = useState(false);
 
-  const redColor = toSwiftUIHexColor(theme.red11.val) ?? theme.color11.val;
+  const redColor = toSwiftUIHexColor(theme.destructive) ?? theme.destructive;
 
   // 桌面端 GM Sheet 使用 JS Stack；需要由页面级列表驱动 Header 的 scroll-edge 背景。
   const tracksScrollEdgeHeader = isWeb() || tracksNavigationBarScrollEdge;

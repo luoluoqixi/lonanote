@@ -1,4 +1,4 @@
-import { ArrowLeft, FilePlus2, FolderPlus, Pencil, Trash2 } from "@tamagui/lucide-icons-2";
+import { ArrowLeft, FilePlus2, FolderPlus, Pencil, Trash2 } from "lucide-react-native";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,7 +8,7 @@ import {
   Text,
   isLiquidGlassAvailable,
   useAppBackgroundColors,
-  useTheme,
+  useUiTheme,
 } from "rn-ui-kit";
 
 export type WorkspaceExplorerToolbarProps = {
@@ -36,8 +36,8 @@ export function WorkspaceExplorerToolbar({
 }: WorkspaceExplorerToolbarProps) {
   const insets = useSafeAreaInsets();
   const appBackgroundColors = useAppBackgroundColors();
-  const theme = useTheme();
-  const accentColor = theme.color10.val as ComponentProps<typeof ArrowLeft>["color"];
+  const theme = useUiTheme();
+  const accentColor = theme.primary as ComponentProps<typeof ArrowLeft>["color"];
   const fallbackSurfaceStyle = isLiquidGlassAvailable()
     ? undefined
     : { backgroundColor: appBackgroundColors.card };
@@ -52,7 +52,7 @@ export function WorkspaceExplorerToolbar({
       >
         {isSelectionMode ? (
           <>
-            <Text fontSize={16} fontWeight="500" style={styles.selectionLabel}>
+            <Text className="text-base font-medium" style={styles.selectionLabel}>
               已选择 {selectedCount} 项
             </Text>
             <View style={styles.selectionActions}>
@@ -108,13 +108,13 @@ function ToolbarButton({
   return (
     <Button
       accessibilityLabel={accessibilityLabel}
-      chromeless
       circular
       disabled={disabled}
       hitSlop={8}
       nativeHaptics
       onPress={onPress}
       style={styles.actionButton}
+      variant="ghost"
     >
       {children}
     </Button>

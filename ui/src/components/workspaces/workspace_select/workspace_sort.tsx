@@ -133,7 +133,7 @@ export function WorkspaceSortSelect({
     <Select
       ref={selectRef}
       itemGroups={WORKSPACE_SORT_ITEM_GROUPS}
-      native="native-sheet"
+      native="sheet"
       onOpenChange={onOpenChange}
       onValueChange={(nextValue) => {
         if (!isWorkspaceSortValue(nextValue)) {
@@ -142,9 +142,8 @@ export function WorkspaceSortSelect({
 
         onValueChange(nextValue);
       }}
-      open={open}
       placeholder="排序方式"
-      triggerProps={{ display: "none" }}
+      triggerProps={{ style: { display: "none" } }}
       value={value}
     />
   );

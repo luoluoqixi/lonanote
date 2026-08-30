@@ -11,7 +11,7 @@ import {
   type SelectOption,
   confirmNative,
   toSwiftUIHexColor,
-  useTheme,
+  useUiTheme,
 } from "rn-ui-kit";
 
 import { type WorkspaceSettings, workspace } from "@/api/commands/workspace";
@@ -67,9 +67,9 @@ export function CurrentWorkspaceSettingsPage({
   const [isResetting, setIsResetting] = useState(false);
   const isDirty = !areSettingsEqual(settings, savedSettings);
   const isEditingDisabled = isLoading || isSaving || isResetting;
-  const theme = useTheme();
+  const theme = useUiTheme();
   const { toast } = useToast();
-  const destructiveColor = toSwiftUIHexColor(theme.red11.val) ?? theme.red11.val;
+  const destructiveColor = toSwiftUIHexColor(theme.destructive) ?? theme.destructive;
 
   useEffect(() => {
     activeWorkspaceIdRef.current = workspaceId;

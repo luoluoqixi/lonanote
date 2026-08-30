@@ -142,16 +142,15 @@ export function WorkspaceExplorerSortSelect({
     <Select
       ref={selectRef}
       itemGroups={WORKSPACE_EXPLORER_SORT_GROUPS}
-      native="native-sheet"
+      native="sheet"
       onOpenChange={onOpenChange}
       onValueChange={(nextValue) => {
         if (isWorkspaceExplorerSortValue(nextValue)) {
           onValueChange(nextValue);
         }
       }}
-      open={open}
       placeholder="排序方式"
-      triggerProps={{ display: "none" }}
+      triggerProps={{ style: { display: "none" } }}
       value={value}
     />
   );
@@ -176,16 +175,15 @@ export function WorkspaceExplorerGroupModeSelect({
     <Select
       ref={selectRef}
       itemGroups={WORKSPACE_EXPLORER_GROUP_MODE_GROUPS}
-      native="native-sheet"
+      native="sheet"
       onOpenChange={onOpenChange}
       onValueChange={(nextValue) => {
         if (isWorkspaceExplorerGroupMode(nextValue)) {
           onValueChange(nextValue);
         }
       }}
-      open={open}
       placeholder="分组方式"
-      triggerProps={{ display: "none" }}
+      triggerProps={{ style: { display: "none" } }}
       value={value}
     />
   );

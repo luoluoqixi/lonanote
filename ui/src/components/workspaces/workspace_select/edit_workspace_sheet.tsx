@@ -11,7 +11,7 @@ import {
 
 import { isIos } from "@/api/common";
 
-const EDIT_WORKSPACE_SNAP_POINTS = [50];
+const EDIT_WORKSPACE_SNAP_POINTS = ["50%" as const];
 
 type EditWorkspaceSheetProps = {
   displayName: string;
@@ -46,7 +46,6 @@ export function EditWorkspaceSheet({
       open={open}
       sheetProps={{
         snapPoints: EDIT_WORKSPACE_SNAP_POINTS,
-        snapPointsMode: "percent",
       }}
       screenOptions={nativeHeaderOptions}
     >

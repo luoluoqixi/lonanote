@@ -15,7 +15,7 @@ import {
 import type { StorageProviderId } from "@/api/commands/workspace";
 import { isIos } from "@/api/common";
 
-const CREATE_WORKSPACE_SNAP_POINTS = [88];
+const CREATE_WORKSPACE_SNAP_POINTS = ["88%" as const];
 
 type CreateWorkspaceSheetProps = {
   displayName: string;
@@ -94,15 +94,15 @@ function CreateWorkspaceSheetContent({
         />
         {isLoadingStorageProviders ? (
           <NativeListCustomItem>
-            <Text color="$gray11">正在加载存储位置…</Text>
+            <Text className="text-muted-foreground">正在加载存储位置…</Text>
           </NativeListCustomItem>
         ) : storageProviderError ? (
           <NativeListCustomItem>
-            <Text color="$red10">{storageProviderError}</Text>
+            <Text className="text-destructive">{storageProviderError}</Text>
           </NativeListCustomItem>
         ) : storageProviderIds.length === 0 ? (
           <NativeListCustomItem>
-            <Text color="$red10">当前设备没有可用的存储位置</Text>
+            <Text className="text-destructive">当前设备没有可用的存储位置</Text>
           </NativeListCustomItem>
         ) : (
           <NativeListSelectItem
@@ -156,7 +156,6 @@ export function CreateWorkspaceSheet({
       open={open}
       sheetProps={{
         snapPoints: CREATE_WORKSPACE_SNAP_POINTS,
-        snapPointsMode: "percent",
       }}
       screenOptions={nativeHeaderOptions}
     >

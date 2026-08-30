@@ -1,6 +1,6 @@
 import { Zoomable } from "@likashefqet/react-native-image-zoom";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { ExternalLink, Maximize, Pause, Play, Volume2, VolumeX } from "@tamagui/lucide-icons-2";
+import { ExternalLink, Maximize, Pause, Play, Volume2, VolumeX } from "lucide-react-native";
 import { useEventListener } from "expo";
 import { Image } from "expo-image";
 import { Redirect, Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -18,12 +18,11 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Button,
-  Menu,
-  type MenuItemData,
+  Dropdown,
+  type DropdownItemData,
   Slider,
   Text,
-  useMenuTriggerState,
-  useTheme,
+  useUiTheme,
 } from "rn-ui-kit";
 
 import { workspace } from "@/api/commands/workspace";
@@ -53,19 +52,17 @@ type MediaViewerProps = {
   title: string;
 };
 
-function HeaderMenuActionButton() {
-  const { isActive } = useMenuTriggerState();
-
+function HeaderMenuActionButton({ open }: { open: boolean }) {
   return (
     <Button
       accessibilityLabel="媒体文件操作"
       accessibilityRole="button"
-      chromeless
       circular
       hitSlop={8}
       native={isIosPlatform()}
-      opacity={isActive ? 0.4 : 1}
+      style={{ opacity: open ? 0.4 : 1 }}
       title="•••"
+      variant="ghost"
     />
   );
 }
@@ -243,7 +240,6 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
       <View style={styles.videoControls}>
         <Button
           accessibilityLabel={isPlaying ? "暂停" : "播放"}
-          chromeless
           circular
           hitSlop={8}
           onPress={togglePlayback}
@@ -266,7 +262,6 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
         <NativeText style={styles.videoTime}>{formatVideoTime(duration)}</NativeText>
         <Button
           accessibilityLabel={isMuted ? "取消静音" : "静音"}
-          chromeless
           circular
           hitSlop={8}
           onPress={onToggleMuted}
@@ -275,7 +270,6 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
         </Button>
         <Button
           accessibilityLabel="全屏播放"
-          chromeless
           circular
           hitSlop={8}
           onPress={enterFullscreen}
@@ -309,7 +303,7 @@ export function MediaViewer() {
   const router = useRouter();
   const workspaceId = useCurrentWorkspaceId();
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const theme = useUiTheme();
   const { mediaSequence } = useMediaNavigation();
   const { mediaIndex: rawMediaIndex, path } = useLocalSearchParams<{
     mediaIndex?: string | string[];
@@ -334,8 +328,8 @@ export function MediaViewer() {
   const mediaKind = filePath ? detectWorkspaceFileKind(filePath) : null;
   const isMedia = mediaKind === "image" || mediaKind === "video";
   const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
-  const accentColor = theme.color10.val as ComponentProps<typeof ExternalLink>["color"];
-  const menuItems = useMemo<MenuItemData[]>(
+  const accentColor = theme.primary as ComponentProps<typeof ExternalLink>["color"];
+  const menuItems = useMemo<DropdownItemData[]>(
     () => [
       {
         disabled: isOpening,
@@ -486,7 +480,7 @@ export function MediaViewer() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Menu trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
+            <Dropdown trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
           ),
           title,
         }}
@@ -535,7 +529,7 @@ export function MediaViewer() {
             ) : null}
           </View>
           <View style={[styles.positionIndicator, { paddingBottom: insets.bottom + 16 }]}>
-            <Text color="$gray11" fontSize="$3">
+            <Text className="text-muted-foreground text-sm">
               {activeMediaIndex + 1} / {mediaPaths.length}
             </Text>
           </View>

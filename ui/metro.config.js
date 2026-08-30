@@ -1,5 +1,6 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
+const { withUniwindConfig } = require("uniwind/metro");
 const path = require("node:path");
 const { blockList, watchBlockList } = require("./tools/metro_ignore");
 
@@ -47,4 +48,7 @@ if (!rnUiKitRoot.startsWith(`${__dirname}${path.sep}`)) {
 // 通过全局变量让 @expo/metro-file-map patch 在 watch 阶段使用更宽的忽略规则。
 globalThis.__LONANOTE_METRO_WATCH_IGNORE__ = watchBlockList;
 
-module.exports = config;
+module.exports = withUniwindConfig(config, {
+  cssEntryFile: "./global.css",
+  dtsFile: "./uniwind-types.d.ts",
+});

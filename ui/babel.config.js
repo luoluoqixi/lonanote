@@ -38,15 +38,6 @@ module.exports = function (api) {
           },
         },
       ],
-      [
-        "@tamagui/babel-plugin",
-        {
-          components: ["tamagui"],
-          config: "./tamagui.config.ts",
-          logTimings: true,
-          disableExtraction: process.env.NODE_ENV === "development",
-        },
-      ],
       "@babel/plugin-proposal-export-namespace-from",
       "react-native-worklets/plugin",
     ],

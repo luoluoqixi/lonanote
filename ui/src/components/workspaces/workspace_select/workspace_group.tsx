@@ -89,16 +89,15 @@ export function WorkspaceGroupModeSelect({
     <Select
       ref={selectRef}
       itemGroups={WORKSPACE_GROUP_MODE_GROUPS}
-      native="native-sheet"
+      native="sheet"
       onOpenChange={onOpenChange}
       onValueChange={(nextValue) => {
         if (isWorkspaceGroupMode(nextValue)) {
           onValueChange(nextValue);
         }
       }}
-      open={open}
       placeholder="分组方式"
-      triggerProps={{ display: "none" }}
+      triggerProps={{ style: { display: "none" } }}
       value={value}
     />
   );

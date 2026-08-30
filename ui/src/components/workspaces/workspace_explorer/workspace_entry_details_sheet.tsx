@@ -46,8 +46,7 @@ export function WorkspaceEntryDetailsSheet({
       onOpenChange={onOpenChange}
       open={open}
       sheetProps={{
-        snapPoints: [58],
-        snapPointsMode: "percent",
+        snapPoints: ["58%"],
       }}
       screenOptions={nativeHeaderOptions}
     >

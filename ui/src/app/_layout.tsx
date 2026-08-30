@@ -13,17 +13,13 @@ import {
 } from "rn-ui-kit";
 import { getAppHomeTitle, getAppName, getVersion, initConfig } from "@/config";
 import { AppProvider } from "@/providers/app_provider";
-import { useResolvedeColorScheme } from "@/hooks/settings";
+import { useAppBackgroundColors, useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
-import { getAppWindowBackgroundColor } from "@/theme/window_background";
 
 applyThemeBootstrap();
 initializeRustRuntime();
 
 export default function RootLayout() {
-  const colorScheme = useResolvedeColorScheme();
-  const rootBackgroundColor = getAppWindowBackgroundColor(colorScheme);
-
   useEffect(() => {
     const initialize = async () => {
       await initConfig();
@@ -35,6 +31,18 @@ export default function RootLayout() {
 
   return (
     <AppProvider>
+      <RootNavigation />
+    </AppProvider>
+  );
+}
+
+function RootNavigation() {
+  const colorScheme = useResolvedeColorScheme();
+  const appBackgroundColors = useAppBackgroundColors();
+  const rootBackgroundColor = appBackgroundColors.screen;
+
+  return (
+    <>
       <AppStatusBar colorScheme={colorScheme} />
       <Stack
         screenOptions={() => {
@@ -62,6 +70,6 @@ export default function RootLayout() {
         <Stack.Screen name="(main)" options={{ title: getAppHomeTitle() }} />
         <Stack.Screen name="debug" options={{ headerShown: false }} />
       </Stack>
-    </AppProvider>
+    </>
   );
 }

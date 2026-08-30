@@ -7,7 +7,7 @@ import {
   Info,
   Pencil,
   Trash2,
-} from "@tamagui/lucide-icons-2";
+} from "lucide-react-native";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import {
@@ -17,7 +17,7 @@ import {
   NativeListNavigationItem,
   NativeListSection,
   Text,
-  useTheme,
+  useUiTheme,
 } from "rn-ui-kit";
 
 import type { FileNode } from "@/api/commands/workspace";
@@ -96,9 +96,7 @@ export function groupWorkspaceExplorerEntries(
 function WorkspaceExplorerStatus({ message }: { message: string }) {
   return (
     <View style={styles.status}>
-      <Text color="$gray11" fontSize="$4">
-        {message}
-      </Text>
+      <Text className="text-muted-foreground text-base">{message}</Text>
     </View>
   );
 }
@@ -120,8 +118,8 @@ function WorkspaceExplorerEntryItem({
   onPress: () => void;
   sortValue: WorkspaceExplorerSortValue;
 }) {
-  const theme = useTheme();
-  const accentColor = theme.color10.val as ComponentProps<typeof Folder>["color"];
+  const theme = useUiTheme();
+  const accentColor = theme.primary as ComponentProps<typeof Folder>["color"];
   const isDirectory = entry.fileType === "directory";
   const fileKind = isDirectory ? null : detectWorkspaceFileKind(entry.path);
   const timestamp = getWorkspaceExplorerEntryTimestamp(entry, sortValue);
@@ -155,7 +153,7 @@ function WorkspaceExplorerEntryItem({
     },
     disabled: isUpdating,
     icon: isDirectory ? (
-      <Folder color={accentColor} fill={theme.color10.val} size={24} />
+      <Folder color={accentColor} fill={theme.primary} size={24} />
     ) : fileKind === "image" ? (
       <FileImage color={accentColor} size={24} />
     ) : fileKind === "video" ? (
@@ -165,7 +163,7 @@ function WorkspaceExplorerEntryItem({
     ) : (
       <FileText color={accentColor} size={24} />
     ),
-    iconColor: theme.color10.val,
+    iconColor: theme.primary,
     iconSize: 24,
     iconSlotWidth: 30,
     nativeScrollId: entry.path,

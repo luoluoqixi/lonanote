@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "@tamagui/lucide-icons-2";
+import { Pencil, Trash2 } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -7,6 +7,7 @@ import {
   Text,
   isLiquidGlassAvailable,
   useAppBackgroundColors,
+  useUiTheme,
 } from "rn-ui-kit";
 
 type WorkspaceSelectionToolbarProps = {
@@ -24,6 +25,7 @@ export function WorkspaceSelectionToolbar({
   onEdit,
   selectedCount,
 }: WorkspaceSelectionToolbarProps) {
+  const theme = useUiTheme();
   const insets = useSafeAreaInsets();
   const appBackgroundColors = useAppBackgroundColors();
   const hasSelection = selectedCount > 0;
@@ -33,6 +35,7 @@ export function WorkspaceSelectionToolbar({
   const fallbackSurfaceStyle = isLiquidGlassAvailable()
     ? undefined
     : { backgroundColor: appBackgroundColors.card };
+  const accentColor = theme.primary;
 
   return (
     <View pointerEvents="box-none" style={[styles.overlay, { bottom: insets.bottom + 20 }]}>
@@ -42,30 +45,30 @@ export function WorkspaceSelectionToolbar({
         isInteractive
         style={[styles.toolbar, fallbackSurfaceStyle]}
       >
-        <Text fontSize={16} fontWeight="500" numberOfLines={1} style={styles.selectionLabel}>
+        <Text className="text-base font-medium" numberOfLines={1} style={styles.selectionLabel}>
           已选择 {selectedCount} 个
         </Text>
         <View style={styles.actions}>
           <Button
             accessibilityLabel="编辑所选工作区"
-            chromeless
             circular
             disabled={!canEdit}
             hitSlop={8}
             onPress={onEdit}
             style={styles.actionButton}
+            variant="ghost"
           >
-            <Pencil color="$color10" size={24} />
+            <Pencil color={accentColor} size={22} />
           </Button>
           <Button
             accessibilityLabel="删除所选工作区"
-            chromeless
             circular
             disabled={!canDelete}
             hitSlop={8}
             nativeHaptics
             onPress={onDelete}
             style={styles.actionButton}
+            variant="ghost"
           >
             <Trash2 color="#ff3b30" size={24} />
           </Button>

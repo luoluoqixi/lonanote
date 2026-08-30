@@ -7,7 +7,7 @@ import {
   type SplitLayoutHandle,
   SplitLayoutPriority,
   Text,
-  useTheme,
+  useUiTheme,
 } from "rn-ui-kit";
 
 import { isDesktop, rnUiKitStorageAdapter } from "@/api/common";
@@ -187,15 +187,15 @@ type ActivityButtonProps = {
 };
 
 function ActivityButton({ accessibilityLabel, active, label, onPress }: ActivityButtonProps) {
-  const theme = useTheme();
+  const theme = useUiTheme();
 
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={[styles.activityButton, active ? { backgroundColor: theme.color3.val } : null]}
+      style={[styles.activityButton, active ? { backgroundColor: theme.muted } : null]}
     >
-      <Text color={active ? "$color" : "$color10"} fontSize="$8">
+      <Text className={active ? "text-foreground text-4xl" : "text-primary text-4xl"}>
         {label}
       </Text>
     </Pressable>
@@ -206,7 +206,7 @@ function SidePanel() {
   return (
     <View style={styles.fullHeight}>
       <View style={styles.sidePanelHeader}>
-        <Text fontSize="$6" fontWeight="600">
+        <Text className="text-2xl font-semibold">
           资源面板
         </Text>
       </View>
@@ -218,7 +218,7 @@ function EditorArea() {
   return (
     <View style={styles.fullHeight}>
       <View style={styles.editorHeader}>
-        <Text fontSize="$4">编辑区</Text>
+        <Text className="text-base">编辑区</Text>
       </View>
     </View>
   );
@@ -227,7 +227,7 @@ function EditorArea() {
 function AssistPanel() {
   return (
     <View style={styles.assistPanel}>
-      <Text fontSize="$6" fontWeight="600">
+      <Text className="text-2xl font-semibold">
         辅助面板
       </Text>
     </View>
@@ -237,7 +237,7 @@ function AssistPanel() {
 function StatusBar() {
   return (
     <View style={styles.statusBar}>
-      <Text color="$color10" fontSize="$3">
+      <Text className="text-primary text-sm">
         状态栏
       </Text>
     </View>

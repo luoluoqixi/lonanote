@@ -1,4 +1,4 @@
-import { Folder, Info } from "@tamagui/lucide-icons-2";
+import { Folder, Info } from "lucide-react-native";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import {
@@ -8,7 +8,7 @@ import {
   NativeListNavigationItem,
   NativeListSection,
   Text,
-  useTheme,
+  useUiTheme,
 } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
@@ -41,9 +41,7 @@ type WorkspaceSelectListProps = {
 function WorkspaceSelectStatus({ message }: { message: string }) {
   return (
     <View style={styles.status}>
-      <Text color="$gray11" fontSize="$4">
-        {message}
-      </Text>
+      <Text className="text-muted-foreground text-base">{message}</Text>
     </View>
   );
 }
@@ -69,8 +67,8 @@ export function WorkspaceSelectList({
   usesNativeIosHeader,
   workspaces,
 }: WorkspaceSelectListProps) {
-  const theme = useTheme();
-  const accentColor = theme.color10.val as ComponentProps<typeof Folder>["color"];
+  const theme = useUiTheme();
+  const accentColor = theme.primary as ComponentProps<typeof Folder>["color"];
   const statusMessage = isLoading
     ? "正在加载工作区"
     : hasError && workspaces.length === 0
@@ -127,8 +125,8 @@ export function WorkspaceSelectList({
                   ],
                 }}
                 disabled={isInteractionDisabled}
-                icon={<Folder color={accentColor} fill={theme.color10.val} size={24} />}
-                iconColor={theme.color10.val}
+                icon={<Folder color={accentColor} fill={theme.primary} size={24} />}
+                iconColor={theme.primary}
                 iconSize={24}
                 iconSlotWidth={30}
                 key={workspaceItem.id}

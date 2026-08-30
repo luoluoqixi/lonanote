@@ -1,14 +1,8 @@
-import {
-  ArrowDownUp,
-  CalendarDays,
-  CircleCheck,
-  FolderPlus,
-  Settings,
-} from "@tamagui/lucide-icons-2";
 import { Stack, router } from "expo-router";
+import { ArrowDownUp, CalendarDays, CircleCheck, FolderPlus, Settings } from "lucide-react-native";
 import { type ComponentProps, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Menu, type MenuItemData, useMenuTriggerState, useTheme } from "rn-ui-kit";
+import { Button, Dropdown, type DropdownItemData, useUiTheme } from "rn-ui-kit";
 
 import { isIos } from "@/api/common";
 
@@ -46,26 +40,23 @@ function HeaderActionButton({
     <Button
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      chromeless
       circular={circular}
       disabled={disabled}
       hitSlop={8}
       native={isIos()}
+      nativeButtonStyle="glass"
       onPress={() => {
         onPress?.();
       }}
-      opacity={opacity}
+      style={{ opacity }}
       title={label}
+      variant="ghost"
     />
   );
 }
 
-function HeaderMenuActionButton() {
-  const { isActive } = useMenuTriggerState();
-
-  return (
-    <HeaderActionButton accessibilityLabel="右侧操作" label="•••" opacity={isActive ? 0.4 : 1} />
-  );
+function HeaderMenuActionButton({ open }: { open: boolean }) {
+  return <HeaderActionButton accessibilityLabel="右侧操作" label="•••" opacity={open ? 0.4 : 1} />;
 }
 
 export function WorkspaceSelectHeader({
@@ -80,9 +71,9 @@ export function WorkspaceSelectHeader({
   onToggleSelectAllWorkspaces,
   onToggleWorkspaceSelectionMode,
 }: WorkspaceSelectHeaderProps) {
-  const theme = useTheme();
-  const accentColor = theme.color10.val as ComponentProps<typeof CircleCheck>["color"];
-  const menuItems = useMemo<MenuItemData[]>(
+  const theme = useUiTheme();
+  const accentColor = theme.primary as ComponentProps<typeof CircleCheck>["color"];
+  const menuItems = useMemo<DropdownItemData[]>(
     () => [
       {
         disabled: !canSelectWorkspaces,
@@ -181,7 +172,14 @@ export function WorkspaceSelectHeader({
             );
           }
 
-          return <Menu trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />;
+          return (
+            <Dropdown
+              trigger={HeaderMenuActionButton}
+              items={menuItems}
+              nativeHaptics
+              itemNativeHaptics
+            />
+          );
         },
       }}
     />
@@ -191,6 +189,6 @@ export function WorkspaceSelectHeader({
 const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
-    gap: 0,
+    gap: 10,
   },
 });

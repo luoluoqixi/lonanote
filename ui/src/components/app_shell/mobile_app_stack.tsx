@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import {
   getNativeStackScrollEdgeHeaderOptions,
   nativeStackStatusBarOptions,
-  useTheme,
+  useUiTheme,
   withNativeStackGestureOptions,
 } from "rn-ui-kit";
 
@@ -16,7 +16,7 @@ export function MobileAppStack() {
   const desktop = isDesktop();
   const colorScheme = useResolvedeColorScheme();
   const appBackgroundColors = useAppBackgroundColors();
-  const theme = useTheme();
+  const theme = useUiTheme();
 
   return (
     <>
@@ -26,7 +26,7 @@ export function MobileAppStack() {
           screenOptions={({ route }) => {
             const stackBackgroundColor = appBackgroundColors.screen;
             const headerBackgroundColor = appBackgroundColors.header;
-            const headerTitleColor = theme.gray12.val;
+            const headerTitleColor = theme.foreground;
             const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
               headerBackgroundColor,
               screenBackgroundColor: stackBackgroundColor,
@@ -42,7 +42,7 @@ export function MobileAppStack() {
               headerLargeStyle: nativeHeaderOptions.headerLargeStyle,
               headerShadowVisible: nativeHeaderOptions.headerShadowVisible,
               headerStyle: nativeHeaderOptions.headerStyle,
-              headerTintColor: theme.color10.val,
+              headerTintColor: theme.primary,
               headerTitleStyle: {
                 color: headerTitleColor,
               },

@@ -12,7 +12,7 @@ import { formatUnixSecondsFullDateTime } from "@/api/common";
 
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
-const WORKSPACE_DETAILS_SNAP_POINTS = [72];
+const WORKSPACE_DETAILS_SNAP_POINTS = ["72%" as const];
 
 type WorkspaceDetailsSheetProps = {
   onOpenChange: (open: boolean) => void;
@@ -56,7 +56,6 @@ export function WorkspaceDetailsSheet({
       open={open}
       sheetProps={{
         snapPoints: WORKSPACE_DETAILS_SNAP_POINTS,
-        snapPointsMode: "percent",
       }}
       screenOptions={nativeHeaderOptions}
     >

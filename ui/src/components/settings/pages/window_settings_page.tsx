@@ -70,10 +70,10 @@ export function WindowSettingsPage({
         <NativeListCustomItem>
           <View style={styles.row}>
             <View style={styles.rowText}>
-              <Text fontSize="$5" fontWeight="500">
+              <Text className="text-base font-medium">
                 最近保存的窗口状态
               </Text>
-              <Text color="$color" opacity={0.6} fontSize="$3" style={{ userSelect: "text" }}>
+              <Text className="text-sm text-foreground/60" style={{ userSelect: "text" }}>
                 {formatWindowStateSummary(preferences.window.lastWindowState)}
               </Text>
             </View>
@@ -90,7 +90,7 @@ export function WindowSettingsPage({
                   })),
                 );
               }}
-              variant="outlined"
+              variant="outline"
             >
               清除
             </Button>
