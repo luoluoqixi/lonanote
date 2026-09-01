@@ -1,3 +1,5 @@
+import { isSystemLocaleCN } from "../platform";
+
 export type DateInput = Date | number | string;
 
 const DEFAULT_DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
@@ -75,6 +77,13 @@ export function formatUnixSecondsRelativeDate(value: number | null | undefined):
   }
 
   const dayDifference = getCalendarDayNumber(new Date()) - getCalendarDayNumber(date);
+  const isChinese = isSystemLocaleCN();
+  const locale = isChinese ? "zh-CN" : "en-US";
+
+  if (dayDifference === 1) {
+    return isChinese ? "昨天" : "Yesterday";
+  }
+
   const options =
     dayDifference === 0
       ? RELATIVE_DATE_TIME_FORMAT_OPTIONS
@@ -82,5 +91,5 @@ export function formatUnixSecondsRelativeDate(value: number | null | undefined):
         ? RELATIVE_DATE_WEEKDAY_FORMAT_OPTIONS
         : RELATIVE_DATE_CALENDAR_FORMAT_OPTIONS;
 
-  return date.toLocaleString(dayDifference > 0 && dayDifference < 7 ? "zh-CN" : undefined, options);
+  return date.toLocaleString(locale, options);
 }

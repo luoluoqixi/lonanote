@@ -26,18 +26,21 @@ export function HeaderActionButton({
   onPress?: () => void;
   opacity?: number;
 }) {
+  const ios = isIos();
+  const ios16 = ios && isIos16Plus();
   return (
     <Button
       accessibilityLabel={accessibilityLabel}
       circular={circular}
       hitSlop={8}
-      native={isIos() && isIos16Plus()}
+      native={ios16}
       nativeButtonStyle="glass"
       onPress={onPress}
       style={{ opacity }}
       title={label}
-      className="no-underline"
       variant="link"
+      textClassName={!ios ? "no-underline" : undefined}
+      className={!ios ? "px-2" : undefined}
     />
   );
 }
