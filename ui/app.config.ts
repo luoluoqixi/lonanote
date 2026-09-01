@@ -1,7 +1,12 @@
 import { type ConfigContext, type ExpoConfig } from "expo/config";
 
 import pkg from "./package.json";
-import { getAppName, getScheme, getUniqueIdentifier } from "./tools/build/app_config.cjs";
+import {
+  getAppName,
+  getDevHost,
+  getScheme,
+  getUniqueIdentifier,
+} from "./tools/build/app_config.cjs";
 
 const IS_DEV = process.env.APP_MODE === "development";
 const ENABLE_REACT_COMPILER = true;
@@ -85,5 +90,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   experiments: {
     typedRoutes: true,
     reactCompiler: ENABLE_REACT_COMPILER,
+  },
+  extra: {
+    ...config.extra,
+    devHost: getDevHost(),
   },
 });

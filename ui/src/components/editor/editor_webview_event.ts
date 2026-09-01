@@ -43,8 +43,8 @@ export const onLoadEnd = (event: WebViewNavigationEvent | WebViewErrorEvent) => 
   if ("navigationType" in e) {
     // console.log(`[editor_webview] onLoadEnd: ${e.url}, navigationType: ${e.navigationType}`);
   } else {
-    console.error(
-      `[editor_webview] onError: ${e.url}, code: ${e.code}, description: ${e.description}`,
-    );
+    // console.log(
+    //   `[editor_webview] onLoadEnd: ${e.url}, code: ${e.code}, description: ${e.description}`,
+    // );
   }
 };

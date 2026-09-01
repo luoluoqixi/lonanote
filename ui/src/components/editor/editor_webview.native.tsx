@@ -94,7 +94,7 @@ export function EditorWebView() {
   const source = getSource(devMode);
   return (
     <WebView
-      decelerationRate="normal"
+      decelerationRate={isIos() ? 0.998 : undefined}
       onError={onError}
       onHttpError={onHttpError}
       onLoad={onLoad}
