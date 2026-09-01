@@ -1,19 +1,9 @@
 import { Stack, router } from "expo-router";
 import { ArrowDownUp, CalendarDays, CircleCheck, FolderPlus, Settings } from "lucide-react-native";
 import { type ComponentProps, useMemo } from "react";
-import { StyleSheet, View } from "react-native";
-import { Button, Dropdown, type DropdownItemData, useUiTheme } from "rn-ui-kit";
+import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
 
-import { isIos } from "@/api/common";
-
-type HeaderActionButtonProps = {
-  accessibilityLabel: string;
-  circular?: boolean;
-  disabled?: boolean;
-  label: string;
-  onPress?: () => void;
-  opacity?: number;
-};
+import { getSelectionHeaderRightMenuProps } from "@/components/common/header_actions";
 
 type WorkspaceSelectHeaderProps = {
   areAllWorkspacesSelected: boolean;
@@ -27,33 +17,6 @@ type WorkspaceSelectHeaderProps = {
   onToggleSelectAllWorkspaces: () => void;
   onToggleWorkspaceSelectionMode: () => void;
 };
-
-function HeaderActionButton({
-  accessibilityLabel,
-  circular = true,
-  disabled,
-  label,
-  onPress,
-  opacity,
-}: HeaderActionButtonProps) {
-  return (
-    <Button
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      circular={circular}
-      disabled={disabled}
-      hitSlop={8}
-      native={isIos()}
-      nativeButtonStyle="glass"
-      onPress={() => {
-        onPress?.();
-      }}
-      style={{ opacity }}
-      title={label}
-      variant="ghost"
-    />
-  );
-}
 
 export function WorkspaceSelectHeader({
   areAllWorkspacesSelected,
@@ -148,47 +111,15 @@ export function WorkspaceSelectHeader({
   return (
     <Stack.Screen
       options={{
-        headerRight: () => {
-          if (isWorkspaceSelectionMode) {
-            return (
-              <View style={styles.headerActions}>
-                <HeaderActionButton
-                  accessibilityLabel={areAllWorkspacesSelected ? "取消全选工作区" : "全选工作区"}
-                  circular={false}
-                  label={areAllWorkspacesSelected ? "取消全选" : "全选"}
-                  onPress={onToggleSelectAllWorkspaces}
-                />
-                <HeaderActionButton
-                  accessibilityLabel="完成选择工作区"
-                  circular={false}
-                  label="完成"
-                  onPress={onFinishWorkspaceSelection}
-                />
-              </View>
-            );
-          }
-
-          return (
-            <Dropdown
-              triggerLabel="•••"
-              triggerProps={{
-                circular: true,
-                native: true,
-              }}
-              items={menuItems}
-              nativeHaptics
-              itemNativeHaptics
-            />
-          );
-        },
+        ...getSelectionHeaderRightMenuProps({
+          labelColor: theme.primary,
+          menuItems,
+          isSelectionMode: isWorkspaceSelectionMode,
+          areAllEntriesSelected: areAllWorkspacesSelected,
+          onFinishSelection: onFinishWorkspaceSelection,
+          onToggleSelectAllEntries: onToggleSelectAllWorkspaces,
+        }),
       }}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  headerActions: {
-    flexDirection: "row",
-    gap: isIos() ? 10 : 0,
-  },
-});

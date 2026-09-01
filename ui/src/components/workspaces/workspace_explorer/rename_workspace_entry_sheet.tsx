@@ -38,9 +38,6 @@ export function RenameWorkspaceEntrySheet({
       name="rename-workspace-entry-sheet"
       onOpenChange={onOpenChange}
       open={open}
-      headerRightButtonProps={{
-        buttonSize: { width: 50, height: 40 },
-      }}
       sheetProps={{
         snapPoints: ["62%"],
       }}

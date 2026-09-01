@@ -44,9 +44,6 @@ export function EditWorkspaceSheet({
       name="edit-workspace-sheet"
       onOpenChange={onOpenChange}
       open={open}
-      headerRightButtonProps={{
-        buttonSize: { width: 50, height: 40 },
-      }}
       sheetProps={{
         snapPoints: EDIT_WORKSPACE_SNAP_POINTS,
       }}

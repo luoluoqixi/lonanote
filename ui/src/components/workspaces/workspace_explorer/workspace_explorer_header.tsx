@@ -9,10 +9,9 @@ import {
   Settings,
 } from "lucide-react-native";
 import { type ComponentProps, useMemo } from "react";
-import { StyleSheet, View } from "react-native";
-import { Button, Dropdown, type DropdownItemData, useUiTheme } from "rn-ui-kit";
+import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
 
-import { isIos } from "@/api/common";
+import { getSelectionHeaderRightMenuProps } from "@/components/common/header_actions";
 
 type WorkspaceExplorerHeaderProps = {
   areAllEntriesSelected: boolean;
@@ -30,34 +29,6 @@ type WorkspaceExplorerHeaderProps = {
   onToggleSelectionMode: () => void;
   title: string;
 };
-
-function HeaderActionButton({
-  accessibilityLabel,
-  circular = true,
-  label,
-  onPress,
-  opacity,
-}: {
-  accessibilityLabel: string;
-  circular?: boolean;
-  label: string;
-  onPress?: () => void;
-  opacity?: number;
-}) {
-  return (
-    <Button
-      accessibilityLabel={accessibilityLabel}
-      circular={circular}
-      hitSlop={8}
-      native={isIos()}
-      nativeButtonStyle="glass"
-      onPress={onPress}
-      style={{ opacity }}
-      title={label}
-      variant="ghost"
-    />
-  );
-}
 
 export function WorkspaceExplorerHeader({
   areAllEntriesSelected,
@@ -174,51 +145,19 @@ export function WorkspaceExplorerHeader({
   return (
     <Stack.Screen
       options={{
+        title,
         headerLargeTitle: true,
         headerLargeTitleEnabled: true,
         headerLargeTitleShadowVisible: false,
-        headerRight: () => {
-          if (isSelectionMode) {
-            return (
-              <View style={styles.headerActions}>
-                <HeaderActionButton
-                  accessibilityLabel={areAllEntriesSelected ? "取消全选" : "全选"}
-                  circular={false}
-                  label={areAllEntriesSelected ? "取消全选" : "全选"}
-                  onPress={onToggleSelectAllEntries}
-                />
-                <HeaderActionButton
-                  accessibilityLabel="完成选择"
-                  circular={false}
-                  label="完成"
-                  onPress={onFinishSelection}
-                />
-              </View>
-            );
-          }
-
-          return (
-            <Dropdown
-              triggerLabel="•••"
-              triggerProps={{
-                circular: true,
-                native: true,
-              }}
-              items={menuItems}
-              nativeHaptics
-              itemNativeHaptics
-            />
-          );
-        },
-        title,
+        ...getSelectionHeaderRightMenuProps({
+          labelColor: theme.primary,
+          isSelectionMode,
+          areAllEntriesSelected,
+          menuItems,
+          onFinishSelection,
+          onToggleSelectAllEntries,
+        }),
       }}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  headerActions: {
-    flexDirection: "row",
-    gap: isIos() ? 10 : 0,
-  },
-});
