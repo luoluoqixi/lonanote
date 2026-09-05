@@ -6,7 +6,7 @@ import { Stack, useRouter } from "expo-router";
 import { ChevronLeft, Ellipsis } from "lucide-react-native";
 import { VariableBlurView } from "native-ios-common";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 import {
   Button,
   Dropdown,
@@ -20,6 +20,21 @@ import { isIos, isIos16Plus, isIos26Plus, os } from "@/api/common";
 import { getMenuHeaderRightMenuProps } from "@/components/common/header_actions";
 
 const HEADER_SURFACE_OPACITY = 0.8;
+type HeaderSurfaceShadowLevel = false | 0 | 1 | 2 | 3;
+
+// 0 或 false 关闭阴影；1–3 依次增强阴影。
+const HEADER_SURFACE_SHADOW_LEVEL: HeaderSurfaceShadowLevel = 1;
+const HEADER_SURFACE_SHADOWS = {
+  1: "0 1px 3px rgba(0, 0, 0, 0.10)",
+  2: "0 2px 7px rgba(0, 0, 0, 0.14)",
+  3: "0 4px 12px rgba(0, 0, 0, 0.18)",
+} satisfies Record<Exclude<HeaderSurfaceShadowLevel, false | 0>, ViewStyle["boxShadow"]>;
+
+function getHeaderSurfaceShadowStyle(level: HeaderSurfaceShadowLevel): ViewStyle | undefined {
+  if (!level || isIos26Plus()) return undefined;
+
+  return { boxShadow: HEADER_SURFACE_SHADOWS[level] };
+}
 
 function withBackgroundOpacity(color: string, opacity: number): string {
   const value = color.trim();
@@ -67,6 +82,7 @@ function EditorBackButton({ isAndroid, onPress }: { isAndroid: boolean; onPress:
       size="sm"
       style={[
         styles.headerSurface,
+        getHeaderSurfaceShadowStyle(HEADER_SURFACE_SHADOW_LEVEL),
         styles.headerBackButton,
         isAndroid ? styles.headerBackButtonAndroid : null,
         {
@@ -118,6 +134,7 @@ function EditorHeaderTitle({ children }: { children: string }) {
     <View
       style={[
         styles.headerSurface,
+        getHeaderSurfaceShadowStyle(HEADER_SURFACE_SHADOW_LEVEL),
         styles.headerTitle,
         isIos15 ? styles.headerTitleIos15 : null,
         {
@@ -154,6 +171,7 @@ function EditorMenuButton({
           size="sm"
           style={[
             styles.headerSurface,
+            getHeaderSurfaceShadowStyle(HEADER_SURFACE_SHADOW_LEVEL),
             styles.headerMenuButton,
             isAndroid ? styles.headerMenuButtonAndroid : null,
             {
