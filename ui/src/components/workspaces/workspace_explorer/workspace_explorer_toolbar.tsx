@@ -158,6 +158,5 @@ const styles = StyleSheet.create({
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    width: "100%",
   },
 });
