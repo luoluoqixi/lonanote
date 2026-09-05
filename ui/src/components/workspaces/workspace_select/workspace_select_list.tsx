@@ -1,6 +1,7 @@
 import { Folder, Info } from "lucide-react-native";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   NativeList,
   NativeListButtonItem,
@@ -12,6 +13,7 @@ import {
 } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
+import { isAndroid } from "@/api/common";
 
 import { type WorkspaceGroupMode, groupWorkspaces } from "./workspace_group";
 import { type WorkspaceSortValue, getWorkspaceSubtitle } from "./workspace_sort";
@@ -68,6 +70,7 @@ export function WorkspaceSelectList({
   workspaces,
 }: WorkspaceSelectListProps) {
   const theme = useUiTheme();
+  const insets = useSafeAreaInsets();
   const accentColor = theme.primary as ComponentProps<typeof Folder>["color"];
   const statusMessage = isLoading
     ? "正在加载工作区"
@@ -83,6 +86,11 @@ export function WorkspaceSelectList({
   return (
     <NativeList
       automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
+      basicScrollViewProps={
+        isAndroid()
+          ? { customScrollbar: { insets: { bottom: insets.bottom, right: 2 } } }
+          : undefined
+      }
       contentMarginBottom={isWorkspaceSelectionMode ? 120 : 24}
       contentInsetAdjustmentBehavior={usesNativeIosHeader ? "automatic" : undefined}
       editMode={isWorkspaceSelectionMode}

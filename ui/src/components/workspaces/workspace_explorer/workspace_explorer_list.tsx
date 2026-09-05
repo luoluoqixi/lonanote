@@ -10,6 +10,7 @@ import {
 } from "lucide-react-native";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   NativeList,
   NativeListCustomItem,
@@ -26,6 +27,7 @@ import {
   formatUnixSecondsRelativeDate,
   getFileName,
   groupItemsByDate,
+  isAndroid,
   isIos17Plus,
   isMarkdownFile,
 } from "@/api/common";
@@ -215,6 +217,7 @@ export function WorkspaceExplorerList({
   tracksNavigationBarScrollEdge,
   usesNativeIosHeader,
 }: WorkspaceExplorerListProps) {
+  const insets = useSafeAreaInsets();
   const statusMessage = isLoading
     ? "正在加载文件"
     : hasError && entries.length === 0
@@ -227,6 +230,11 @@ export function WorkspaceExplorerList({
   return (
     <NativeList
       automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
+      basicScrollViewProps={
+        isAndroid()
+          ? { customScrollbar: { insets: { bottom: insets.bottom, right: 2 } } }
+          : undefined
+      }
       contentInsetAdjustmentBehavior={usesNativeIosHeader ? "automatic" : undefined}
       contentMarginBottom={showsFloatingToolbar ? 120 : 24}
       editMode={isSelectionMode}
