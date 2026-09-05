@@ -540,7 +540,11 @@ export function MediaViewer() {
     <>
       <Stack.Screen
         options={{
-          ...getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary }),
+          ...getMenuHeaderRightMenuProps({
+            isVisible: isUiVisible,
+            menuItems,
+            labelColor: theme.primary,
+          }),
           headerBackVisible: isUiVisible,
           headerShown: true,
           headerTransparent: true,

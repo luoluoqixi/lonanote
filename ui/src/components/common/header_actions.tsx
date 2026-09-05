@@ -16,6 +16,7 @@ export interface SelectionHeaderRightProps {
 export interface MenuHeaderRightProps {
   menuItems: DropdownItemData[];
   labelColor: string;
+  isVisible?: boolean;
 }
 
 export function HeaderActionButton({
@@ -123,11 +124,13 @@ export function MenuHeaderRight({ menuItems, labelColor }: MenuHeaderRightProps)
 }
 
 export function getMenuHeaderRightMenuProps({
+  isVisible = true,
   menuItems,
   labelColor,
 }: MenuHeaderRightProps): NativeStackNavigationOptions {
   return {
-    headerRight: () => <MenuHeaderRight menuItems={menuItems} labelColor={labelColor} />,
+    headerRight: () =>
+      isVisible ? <MenuHeaderRight menuItems={menuItems} labelColor={labelColor} /> : null,
   };
 }
 
