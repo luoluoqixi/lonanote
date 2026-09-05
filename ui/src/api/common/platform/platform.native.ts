@@ -142,6 +142,22 @@ export function isIos16Plus(): boolean {
 }
 
 /**
+ * iOS 17+
+ */
+export function isIos17Plus(): boolean {
+  const major = iosMajorVersion();
+  return major != null && major >= 17;
+}
+
+/**
+ * iOS 18+
+ */
+export function isIos18Plus(): boolean {
+  const major = iosMajorVersion();
+  return major != null && major >= 18;
+}
+
+/**
  * iOS 15
  */
 export function isIos15(): boolean {

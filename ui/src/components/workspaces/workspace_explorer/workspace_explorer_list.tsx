@@ -26,6 +26,7 @@ import {
   formatUnixSecondsRelativeDate,
   getFileName,
   groupItemsByDate,
+  isIos17Plus,
   isMarkdownFile,
 } from "@/api/common";
 
@@ -68,6 +69,11 @@ function getEntryTitle(entry: FileNode): string {
   return entry.fileType === "file" && isMarkdownFile(name)
     ? name.slice(0, name.lastIndexOf("."))
     : name;
+}
+
+function getUnsupportedFileSfSymbol(): "doc.fill" | "doc.questionmark.fill" {
+  // doc.questionmark.fill 从 iOS 17 才可用；旧系统需要使用稳定的文档图标。
+  return isIos17Plus() ? "doc.questionmark.fill" : "doc.fill";
 }
 
 export function groupWorkspaceExplorerEntries(
@@ -175,7 +181,7 @@ function WorkspaceExplorerEntryItem({
         : fileKind === "video"
           ? ("video.fill" as const)
           : fileKind === "unsupported"
-            ? ("doc.questionmark.fill" as const)
+            ? getUnsupportedFileSfSymbol()
             : ("doc.text.fill" as const),
     subtitle,
     title: getEntryTitle(entry),
