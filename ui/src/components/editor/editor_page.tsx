@@ -15,7 +15,7 @@ import { EditorWebView } from "./editor_webview";
 function EditorHeaderBackground() {
   if (!isIos() || isIos26Plus()) return null;
 
-  return <VariableBlurView blurRadius={24} style={styles.headerBlur} transitionHeight={36} />;
+  return <VariableBlurView blurRadius={24} style={styles.headerBlur} transitionHeight={100} />;
 }
 
 export function EditorPage() {
@@ -49,6 +49,7 @@ export function EditorPage() {
         options={{
           headerBackground: EditorHeaderBackground,
           headerBlurEffect: "none",
+          headerCancelledTransitionGeometryFixEnabled: false,
           ...getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary }),
           headerShadowVisible: false,
           headerStyle: {
