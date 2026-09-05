@@ -7,7 +7,14 @@ import { ChevronLeft, Ellipsis } from "lucide-react-native";
 import { VariableBlurView } from "native-ios-common";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Button, Dropdown, type DropdownItemData, useUiTheme } from "rn-ui-kit";
+import {
+  Button,
+  Dropdown,
+  type DropdownItemData,
+  GlassEffect,
+  isLiquidGlassAvailable,
+  useUiTheme,
+} from "rn-ui-kit";
 
 import { isIos, isIos16Plus, isIos26Plus, os } from "@/api/common";
 import { getMenuHeaderRightMenuProps } from "@/components/common/header_actions";
@@ -84,20 +91,41 @@ function EditorBackButton({ isAndroid, onPress }: { isAndroid: boolean; onPress:
 
 function EditorHeaderTitle({ children }: { children: string }) {
   const theme = useUiTheme();
+  const isIos15 = isIos() && !isIos16Plus();
+  const usesLiquidGlass = isIos26Plus() && isLiquidGlassAvailable();
+  const titleText = (
+    <Text
+      numberOfLines={1}
+      style={[
+        styles.headerTitleText,
+        isIos15 ? styles.headerTitleTextIos15 : null,
+        { color: theme.primary },
+      ]}
+    >
+      {children}
+    </Text>
+  );
+
+  if (usesLiquidGlass) {
+    return (
+      <GlassEffect glassEffectStyle="regular" style={[styles.headerSurface, styles.headerTitle]}>
+        {titleText}
+      </GlassEffect>
+    );
+  }
 
   return (
     <View
       style={[
         styles.headerSurface,
         styles.headerTitle,
+        isIos15 ? styles.headerTitleIos15 : null,
         {
           backgroundColor: withBackgroundOpacity(theme.muted, HEADER_SURFACE_OPACITY),
         },
       ]}
     >
-      <Text numberOfLines={1} style={[styles.headerTitleText, { color: theme.primary }]}>
-        {children}
-      </Text>
+      {titleText}
     </View>
   );
 }
@@ -155,6 +183,7 @@ export function EditorHeader({
   const theme = useUiTheme();
   const isAndroid = os() === "android";
   const usesCustomHeaderControls = (isIos16Plus() && !isIos26Plus()) || isAndroid;
+  const usesCustomHeaderTitle = isIos() || isAndroid;
   const renderCustomBackButton = ({ canGoBack }: NativeStackHeaderBackProps) =>
     canGoBack ? <EditorBackButton isAndroid={isAndroid} onPress={() => router.back()} /> : null;
   const headerControlsOptions: NativeStackNavigationOptions = usesCustomHeaderControls
@@ -163,10 +192,14 @@ export function EditorHeader({
         headerBackVisible: false,
         headerLeft: renderCustomBackButton,
         headerRight: () => <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />,
+      }
+    : getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
+  const headerTitleOptions: NativeStackNavigationOptions = usesCustomHeaderTitle
+    ? {
         headerTitle: ({ children }) => <EditorHeaderTitle>{children}</EditorHeaderTitle>,
         ...(isAndroid ? { headerTitleAlign: "center" as const } : {}),
       }
-    : getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
+    : {};
 
   return (
     <Stack.Screen
@@ -175,6 +208,7 @@ export function EditorHeader({
         headerBlurEffect: "none",
         headerCancelledTransitionGeometryFixEnabled: false,
         ...headerControlsOptions,
+        ...headerTitleOptions,
         headerShadowVisible: false,
         headerStyle: {
           backgroundColor: "transparent",
@@ -224,9 +258,17 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
     paddingHorizontal: 16,
   },
+  headerTitleIos15: {
+    borderRadius: 18,
+    height: 36,
+    paddingHorizontal: 14,
+  },
   headerTitleText: {
     flexShrink: 1,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
+  },
+  headerTitleTextIos15: {
+    fontSize: 14,
   },
 });
