@@ -234,8 +234,8 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
         <Button
           variant="ghost"
           accessibilityLabel={isPlaying ? "暂停" : "播放"}
-          circular
           hitSlop={8}
+          size="xs"
           onPress={togglePlayback}
         >
           {isPlaying ? <Pause size={20} /> : <Play size={20} />}
@@ -257,7 +257,7 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
         <Button
           variant="ghost"
           accessibilityLabel={isMuted ? "取消静音" : "静音"}
-          circular
+          size="xs"
           hitSlop={8}
           onPress={onToggleMuted}
         >
@@ -266,7 +266,7 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
         <Button
           variant="ghost"
           accessibilityLabel="全屏播放"
-          circular
+          size="xs"
           hitSlop={8}
           onPress={enterFullscreen}
         >

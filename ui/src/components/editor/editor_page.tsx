@@ -1,10 +1,11 @@
-import { ExternalLink } from "lucide-react-native";
 import { Redirect, Stack, useLocalSearchParams } from "expo-router";
+import { ExternalLink } from "lucide-react-native";
+import { VariableBlurView } from "native-ios-common";
 import { type ComponentProps, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Dropdown, type DropdownItemData, useUiTheme } from "rn-ui-kit";
 
-import { getFileName, isIos } from "@/api/common";
+import { getFileName, isIos, isIos26Plus } from "@/api/common";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
@@ -23,6 +24,12 @@ function HeaderMenuActionButton({ open }: { open: boolean }) {
       variant="ghost"
     />
   );
+}
+
+function EditorHeaderBackground() {
+  if (!isIos() || isIos26Plus()) return null;
+
+  return <VariableBlurView blurRadius={24} style={styles.headerBlur} transitionHeight={36} />;
 }
 
 export function EditorPage() {
@@ -54,9 +61,16 @@ export function EditorPage() {
     <>
       <Stack.Screen
         options={{
+          headerBackground: EditorHeaderBackground,
+          headerBlurEffect: "none",
           headerRight: () => (
             <Dropdown trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
           ),
+          headerShadowVisible: false,
+          headerStyle: {
+            backgroundColor: "transparent",
+          },
+          headerTransparent: true,
           title: getFileName(filePath),
         }}
       />
@@ -69,6 +83,9 @@ export function EditorPage() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  headerBlur: {
     flex: 1,
   },
 });
