@@ -1,28 +1,14 @@
-import { ExternalLink } from "lucide-react-native";
 import { type Href, Redirect, Stack, useLocalSearchParams } from "expo-router";
+import { ExternalLink } from "lucide-react-native";
 import { type ComponentProps, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Dropdown, type DropdownItemData, Text, useUiTheme } from "rn-ui-kit";
+import { type DropdownItemData, Text, useUiTheme } from "rn-ui-kit";
 
-import { getFileName, isIos } from "@/api/common";
+import { getFileName } from "@/api/common";
+import { getMenuHeaderRightMenuProps } from "@/components/common/header_actions";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 import { OpenInOtherAppButton, useOpenInOtherApp } from "./open_in_other_app";
-
-function HeaderMenuActionButton({ open }: { open: boolean }) {
-  return (
-    <Button
-      accessibilityLabel="未知文件操作"
-      accessibilityRole="button"
-      circular
-      hitSlop={8}
-      native={isIos()}
-      style={{ opacity: open ? 0.4 : 1 }}
-      title="•••"
-      variant="ghost"
-    />
-  );
-}
 
 export function UnknownFileViewer() {
   const workspaceId = useCurrentWorkspaceId();
@@ -57,16 +43,12 @@ export function UnknownFileViewer() {
     <>
       <Stack.Screen
         options={{
-          headerRight: () => (
-            <Dropdown trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
-          ),
+          ...getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary }),
           title,
         }}
       />
       <View style={styles.container}>
-        <Text className="text-muted-foreground text-base">
-          无法预览此文件
-        </Text>
+        <Text className="text-muted-foreground text-base">无法预览此文件</Text>
         <View style={styles.openButton}>
           <OpenInOtherAppButton isOpening={isOpening} onOpenInOtherApp={openInOtherApp} />
         </View>

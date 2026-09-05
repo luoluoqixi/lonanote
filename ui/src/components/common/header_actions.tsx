@@ -13,6 +13,11 @@ export interface SelectionHeaderRightProps {
   labelColor: string;
 }
 
+export interface MenuHeaderRightProps {
+  menuItems: DropdownItemData[];
+  labelColor: string;
+}
+
 export function HeaderActionButton({
   accessibilityLabel,
   circular = true,
@@ -92,6 +97,38 @@ export function SelectionHeaderRightMenu({
       itemNativeHaptics
     />
   );
+}
+
+export function MenuHeaderRight({ menuItems, labelColor }: MenuHeaderRightProps) {
+  return (
+    <Dropdown
+      triggerLabel="•••"
+      nativeTrigger
+      nativeTriggerIcon="none"
+      nativeTriggerLabelProps={{
+        style: {
+          color: labelColor,
+          opacity: 1,
+        },
+      }}
+      nativeTriggerContainerStyle={{
+        paddingHorizontal: 5,
+        gap: 0,
+      }}
+      items={menuItems}
+      nativeHaptics
+      itemNativeHaptics
+    />
+  );
+}
+
+export function getMenuHeaderRightMenuProps({
+  menuItems,
+  labelColor,
+}: MenuHeaderRightProps): NativeStackNavigationOptions {
+  return {
+    headerRight: () => <MenuHeaderRight menuItems={menuItems} labelColor={labelColor} />,
+  };
 }
 
 export function getSelectionHeaderRightMenuProps({

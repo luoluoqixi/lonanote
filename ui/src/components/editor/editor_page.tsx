@@ -3,28 +3,14 @@ import { ExternalLink } from "lucide-react-native";
 import { VariableBlurView } from "native-ios-common";
 import { type ComponentProps, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Dropdown, type DropdownItemData, useUiTheme } from "rn-ui-kit";
+import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
 
 import { getFileName, isIos, isIos26Plus } from "@/api/common";
+import { getMenuHeaderRightMenuProps } from "@/components/common/header_actions";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 import { EditorWebView } from "./editor_webview";
-
-function HeaderMenuActionButton({ open }: { open: boolean }) {
-  return (
-    <Button
-      accessibilityLabel="编辑器文件操作"
-      accessibilityRole="button"
-      circular
-      hitSlop={8}
-      native={isIos()}
-      style={{ opacity: open ? 0.4 : 1 }}
-      title="•••"
-      variant="ghost"
-    />
-  );
-}
 
 function EditorHeaderBackground() {
   if (!isIos() || isIos26Plus()) return null;
@@ -63,9 +49,7 @@ export function EditorPage() {
         options={{
           headerBackground: EditorHeaderBackground,
           headerBlurEffect: "none",
-          headerRight: () => (
-            <Dropdown trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
-          ),
+          ...getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary }),
           headerShadowVisible: false,
           headerStyle: {
             backgroundColor: "transparent",

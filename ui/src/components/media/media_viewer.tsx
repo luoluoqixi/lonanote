@@ -18,7 +18,6 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Button,
-  Dropdown,
   type DropdownItemData,
   Slider,
   Text,
@@ -30,11 +29,11 @@ import { workspace } from "@/api/commands/workspace";
 import {
   detectWorkspaceFileKind,
   getFileName,
-  isIos as isIosPlatform,
   isWeb,
   os,
   resolveWorkspaceFileUrl,
 } from "@/api/common";
+import { getMenuHeaderRightMenuProps } from "@/components/common/header_actions";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useMediaNavigation } from "@/hooks/media";
 import { useAppBackgroundColors } from "@/hooks/settings";
@@ -62,21 +61,6 @@ type MediaViewerProps = {
   uri: string;
   title: string;
 };
-
-function HeaderMenuActionButton({ open }: { open: boolean }) {
-  return (
-    <Button
-      accessibilityLabel="媒体文件操作"
-      accessibilityRole="button"
-      circular
-      hitSlop={8}
-      native={isIosPlatform()}
-      style={{ opacity: open ? 0.4 : 1 }}
-      title="•••"
-      variant="ghost"
-    />
-  );
-}
 
 function getFirstParamValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -556,14 +540,7 @@ export function MediaViewer() {
     <>
       <Stack.Screen
         options={{
-          headerRight: () => (
-            <View
-              pointerEvents={isUiVisible ? "auto" : "none"}
-              style={!isUiVisible ? styles.hiddenUi : undefined}
-            >
-              <Dropdown trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
-            </View>
-          ),
+          ...getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary }),
           headerBackVisible: isUiVisible,
           headerShown: true,
           headerTransparent: true,
