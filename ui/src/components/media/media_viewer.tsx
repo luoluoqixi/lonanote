@@ -150,6 +150,7 @@ function VideoMediaViewer({
 }: MediaViewerProps) {
   const videoViewRef = useRef<VideoView>(null);
   const isScrubbingRef = useRef(false);
+  const theme = useUiTheme();
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -293,9 +294,15 @@ function VideoMediaViewer({
           size="xs"
           onPress={togglePlayback}
         >
-          {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+          {isPlaying ? (
+            <Pause color={theme.foreground} size={20} />
+          ) : (
+            <Play color={theme.foreground} size={20} />
+          )}
         </Button>
-        <NativeText style={styles.videoTime}>{formatVideoTime(progressValue)}</NativeText>
+        <NativeText style={[styles.videoTime, { color: theme.foreground }]}>
+          {formatVideoTime(progressValue)}
+        </NativeText>
         <View style={styles.videoProgress}>
           <Slider
             disabled={duration <= 0}
@@ -308,7 +315,9 @@ function VideoMediaViewer({
             value={[progressValue]}
           />
         </View>
-        <NativeText style={styles.videoTime}>{formatVideoTime(duration)}</NativeText>
+        <NativeText style={[styles.videoTime, { color: theme.foreground }]}>
+          {formatVideoTime(duration)}
+        </NativeText>
         <Button
           variant="ghost"
           accessibilityLabel={isMuted ? "取消静音" : "静音"}
@@ -316,7 +325,11 @@ function VideoMediaViewer({
           hitSlop={8}
           onPress={onToggleMuted}
         >
-          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          {isMuted ? (
+            <VolumeX color={theme.foreground} size={20} />
+          ) : (
+            <Volume2 color={theme.foreground} size={20} />
+          )}
         </Button>
         <Button
           variant="ghost"
@@ -325,7 +338,7 @@ function VideoMediaViewer({
           hitSlop={8}
           onPress={enterFullscreen}
         >
-          <Maximize size={20} />
+          <Maximize color={theme.foreground} size={20} />
         </Button>
       </View>
       <View pointerEvents="none" style={[styles.videoIndicator, !isUiVisible && styles.hiddenUi]}>

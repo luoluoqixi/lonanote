@@ -9,6 +9,7 @@ import { initializeRustRuntime } from "@/api/invoke";
 import {
   AppStatusBar,
   nativeStackStatusBarOptions,
+  resolveNativeStackStatusBarStyle,
   withNativeStackGestureOptions,
 } from "rn-ui-kit";
 import { getAppHomeTitle, getAppName, getVersion, initConfig } from "@/config";
@@ -47,6 +48,7 @@ function RootNavigation() {
       <Stack
         screenOptions={() => {
           const statusBar = nativeStackStatusBarOptions(colorScheme);
+          const statusBarStyle = resolveNativeStackStatusBarStyle(colorScheme);
 
           if (isWeb()) {
             return {
@@ -60,6 +62,7 @@ function RootNavigation() {
 
           return withNativeStackGestureOptions({
             ...statusBar,
+            statusBarStyle,
             contentStyle: {
               backgroundColor: rootBackgroundColor,
             },

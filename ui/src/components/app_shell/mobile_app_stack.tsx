@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import {
   getNativeStackScrollEdgeHeaderOptions,
   nativeStackStatusBarOptions,
+  resolveNativeStackStatusBarStyle,
   useUiTheme,
   withNativeStackGestureOptions,
 } from "rn-ui-kit";
@@ -33,6 +34,7 @@ export function MobileAppStack() {
             });
             const baseScreenOptions = {
               ...nativeStackStatusBarOptions(colorScheme),
+              statusBarStyle: resolveNativeStackStatusBarStyle(colorScheme),
               contentStyle: {
                 backgroundColor: stackBackgroundColor,
               },
