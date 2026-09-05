@@ -16,7 +16,15 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Dropdown, type DropdownItemData, Slider, Text, useUiTheme } from "rn-ui-kit";
+import {
+  Button,
+  Dropdown,
+  type DropdownItemData,
+  Slider,
+  Text,
+  useUiColorScheme,
+  useUiTheme,
+} from "rn-ui-kit";
 
 import { workspace } from "@/api/commands/workspace";
 import {
@@ -29,18 +37,28 @@ import {
 } from "@/api/common";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useMediaNavigation } from "@/hooks/media";
+import { useAppBackgroundColors } from "@/hooks/settings";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 export type WorkspaceMediaKind = "image" | "video";
 
 const MEDIA_DISMISS_DISTANCE = 120;
 const MEDIA_DISMISS_VELOCITY = 1000;
+const MEDIA_INDICATOR_HEIGHT = 48;
+const MEDIA_CONTROLS_HEIGHT = 52;
+const MEDIA_INDICATOR_GAP = 14;
+const MEDIA_VIDEO_FRAME_SHIFT = 32;
 
 type MediaViewerProps = {
   isActive: boolean;
   isMuted: boolean;
   mediaKind: WorkspaceMediaKind;
   onToggleMuted: () => void;
+  onToggleUi: () => void;
+  isUiVisible: boolean;
+  bottomInset: number;
+  indicatorLabel: string;
+  topInset: number;
   uri: string;
   title: string;
 };
@@ -112,21 +130,40 @@ function formatVideoTime(value: number): string {
   return hours > 0 ? `${hours}:${minutePart}:${secondPart}` : `${minutePart}:${secondPart}`;
 }
 
-function ImageMediaViewer({ uri, title }: MediaViewerProps) {
+function ImageMediaViewer({ bottomInset, onToggleUi, topInset, uri, title }: MediaViewerProps) {
   return (
-    <Zoomable style={styles.zoomable} maxScale={4} doubleTapScale={2} isDoubleTapEnabled>
-      <Image
-        source={{ uri }}
-        style={styles.image}
-        contentFit="contain"
-        transition={150}
-        accessibilityLabel={title}
-      />
-    </Zoomable>
+    <GestureDetector
+      gesture={Gesture.Tap().onEnd((_event, success) => {
+        if (success) runOnJS(onToggleUi)();
+      })}
+    >
+      <Zoomable style={styles.zoomable} maxScale={4} doubleTapScale={2} isDoubleTapEnabled>
+        <Image
+          source={{ uri }}
+          style={[
+            styles.image,
+            { marginBottom: MEDIA_INDICATOR_HEIGHT + bottomInset, marginTop: topInset },
+          ]}
+          contentFit="contain"
+          transition={150}
+          accessibilityLabel={title}
+        />
+      </Zoomable>
+    </GestureDetector>
   );
 }
 
-function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewerProps) {
+function VideoMediaViewer({
+  isActive,
+  bottomInset,
+  topInset,
+  indicatorLabel,
+  isMuted,
+  isUiVisible,
+  onToggleUi,
+  onToggleMuted,
+  uri,
+}: MediaViewerProps) {
   const videoViewRef = useRef<VideoView>(null);
   const isScrubbingRef = useRef(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
@@ -219,18 +256,52 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
   const progressValue = Math.min(Math.max(currentTime, 0), progressMaximum);
 
   return (
-    <View style={styles.videoContainer}>
-      <VideoView
-        ref={videoViewRef}
-        player={player}
-        style={styles.video}
-        contentFit="contain"
-        fullscreenOptions={{ enable: true }}
-        nativeControls={isFullscreen}
-        onFullscreenEnter={() => setIsFullscreen(true)}
-        onFullscreenExit={() => setIsFullscreen(false)}
-      />
-      <View style={styles.videoControls}>
+    <View
+      style={[
+        styles.videoContainer,
+        {
+          paddingTop: topInset,
+          paddingBottom:
+            MEDIA_CONTROLS_HEIGHT +
+            bottomInset +
+            MEDIA_INDICATOR_HEIGHT +
+            MEDIA_INDICATOR_GAP -
+            MEDIA_VIDEO_FRAME_SHIFT,
+        },
+      ]}
+    >
+      <View style={styles.videoFrame}>
+        <GestureDetector
+          gesture={Gesture.Tap().onEnd((_event, success) => {
+            if (success) runOnJS(onToggleUi)();
+          })}
+        >
+          <View style={styles.videoFrame}>
+            <VideoView
+              ref={videoViewRef}
+              player={player}
+              style={styles.video}
+              contentFit="contain"
+              fullscreenOptions={{ enable: true }}
+              nativeControls={isFullscreen}
+              onFullscreenEnter={() => setIsFullscreen(true)}
+              onFullscreenExit={() => setIsFullscreen(false)}
+            />
+          </View>
+        </GestureDetector>
+      </View>
+      <View
+        pointerEvents={isUiVisible ? "auto" : "none"}
+        style={[
+          styles.videoControls,
+          {
+            bottom: 0,
+            height: MEDIA_CONTROLS_HEIGHT + bottomInset,
+            paddingBottom: bottomInset,
+          },
+          !isUiVisible && styles.hiddenUi,
+        ]}
+      >
         <Button
           variant="ghost"
           accessibilityLabel={isPlaying ? "暂停" : "播放"}
@@ -273,6 +344,9 @@ function VideoMediaViewer({ isActive, isMuted, onToggleMuted, uri }: MediaViewer
           <Maximize size={20} />
         </Button>
       </View>
+      <View pointerEvents="none" style={[styles.videoIndicator, !isUiVisible && styles.hiddenUi]}>
+        <Text className="text-muted-foreground text-sm">{indicatorLabel}</Text>
+      </View>
     </View>
   );
 }
@@ -299,7 +373,9 @@ export function MediaViewer() {
   const router = useRouter();
   const workspaceId = useCurrentWorkspaceId();
   const insets = useSafeAreaInsets();
+  const colorScheme = useUiColorScheme();
   const theme = useUiTheme();
+  const appBackgroundColors = useAppBackgroundColors();
   const { mediaSequence } = useMediaNavigation();
   const { mediaIndex: rawMediaIndex, path } = useLocalSearchParams<{
     mediaIndex?: string | string[];
@@ -320,6 +396,7 @@ export function MediaViewer() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
+  const [isUiVisible, setIsUiVisible] = useState(true);
   const filePath = mediaPaths[activeMediaIndex];
   const mediaKind = filePath ? detectWorkspaceFileKind(filePath) : null;
   const isMedia = mediaKind === "image" || mediaKind === "video";
@@ -345,6 +422,10 @@ export function MediaViewer() {
 
   const toggleMuted = useCallback(() => {
     setIsMuted((previousIsMuted) => !previousIsMuted);
+  }, []);
+
+  const toggleUi = useCallback(() => {
+    setIsUiVisible((previousIsUiVisible) => !previousIsUiVisible);
   }, []);
 
   const dismissMedia = useCallback(() => {
@@ -476,17 +557,38 @@ export function MediaViewer() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Dropdown trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
+            <View
+              pointerEvents={isUiVisible ? "auto" : "none"}
+              style={!isUiVisible ? styles.hiddenUi : undefined}
+            >
+              <Dropdown trigger={HeaderMenuActionButton} items={menuItems} nativeHaptics />
+            </View>
           ),
-          title,
+          headerBackVisible: isUiVisible,
+          headerShown: true,
+          headerTransparent: true,
+          headerStyle: {
+            backgroundColor: "transparent",
+          },
+          headerTintColor: isUiVisible ? theme.primary : "transparent",
+          headerTitleStyle: {
+            color: isUiVisible ? theme.foreground : "transparent",
+          },
+          headerShadowVisible: false,
+          statusBarStyle: isUiVisible ? (colorScheme === "dark" ? "light" : "dark") : "light",
+          title: isUiVisible ? title : "",
         }}
+      />
+      <View
+        pointerEvents="none"
+        style={[styles.headerMask, { backgroundColor: "transparent" }, { height: headerHeight }]}
       />
       <GestureDetector gesture={dismissGesture}>
         <Animated.View
           style={[
             styles.container,
             dismissAnimatedStyle,
-            isIosDevice && { paddingTop: headerHeight },
+            { backgroundColor: isUiVisible ? appBackgroundColors.screen : "#000000" },
           ]}
         >
           <View style={styles.mediaContent}>
@@ -515,6 +617,11 @@ export function MediaViewer() {
                         isMuted={isMuted}
                         mediaKind={pageKind}
                         onToggleMuted={toggleMuted}
+                        onToggleUi={toggleUi}
+                        isUiVisible={isUiVisible}
+                        bottomInset={insets.bottom}
+                        indicatorLabel={`${index + 1} / ${mediaPaths.length}`}
+                        topInset={headerHeight}
                         uri={pageUrl}
                         title={getFileName(mediaPath)}
                       />
@@ -524,11 +631,23 @@ export function MediaViewer() {
               </PagerView>
             ) : null}
           </View>
-          <View style={[styles.positionIndicator, { paddingBottom: insets.bottom + 16 }]}>
-            <Text className="text-muted-foreground text-sm">
-              {activeMediaIndex + 1} / {mediaPaths.length}
-            </Text>
-          </View>
+          {mediaKind !== "video" ? (
+            <View
+              style={[
+                styles.positionIndicator,
+                {
+                  bottom: 0,
+                  height: MEDIA_INDICATOR_HEIGHT + insets.bottom,
+                  paddingBottom: insets.bottom,
+                },
+                !isUiVisible && styles.hiddenUi,
+              ]}
+            >
+              <Text className="text-muted-foreground text-sm">
+                {activeMediaIndex + 1} / {mediaPaths.length}
+              </Text>
+            </View>
+          ) : null}
         </Animated.View>
       </GestureDetector>
     </>
@@ -549,6 +668,16 @@ const styles = StyleSheet.create({
     color: "#dc2626",
     textAlign: "center",
   },
+  hiddenUi: {
+    opacity: 0,
+  },
+  headerMask: {
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 2,
+  },
   image: {
     flex: 1,
     width: "100%",
@@ -567,6 +696,9 @@ const styles = StyleSheet.create({
     minHeight: 32,
     paddingHorizontal: 24,
     paddingTop: 6,
+    position: "absolute",
+    left: 0,
+    right: 0,
   },
   video: {
     flex: 1,
@@ -575,12 +707,28 @@ const styles = StyleSheet.create({
   videoContainer: {
     flex: 1,
   },
+  videoFrame: {
+    flex: 1,
+  },
+  videoIndicator: {
+    alignItems: "center",
+    bottom: MEDIA_CONTROLS_HEIGHT + MEDIA_INDICATOR_GAP,
+    height: MEDIA_INDICATOR_HEIGHT,
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
   videoControls: {
     alignItems: "center",
+    bottom: 0,
     flexDirection: "row",
     gap: 8,
     minHeight: 52,
     paddingHorizontal: 12,
+    position: "absolute",
+    left: 0,
+    right: 0,
   },
   videoProgress: {
     flex: 1,
