@@ -124,7 +124,11 @@ function EditorHeaderTitle({ children }: { children: string }) {
 
   if (usesLiquidGlass) {
     return (
-      <GlassEffect glassEffectStyle="regular" style={[styles.headerSurface, styles.headerTitle]}>
+      <GlassEffect
+        isInteractive
+        glassEffectStyle="regular"
+        style={[styles.headerSurface, styles.headerTitle]}
+      >
         {titleText}
       </GlassEffect>
     );
