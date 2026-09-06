@@ -2,7 +2,7 @@
 // CodeMirror6的某个版本出现了一个bug, 中文输入法输入时会偶尔跳到左上角
 // 此bug是Chrome的bug, 似乎已经修复, 但需要升级Chrome和Electron
 // https://github.com/codemirror/dev/issues/1396
-import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
+import { autocompletion, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import {
   defaultKeymap,
   history,
@@ -12,7 +12,7 @@ import {
   redoDepth,
   undo,
   undoDepth,
-} from '@codemirror/commands';
+} from "@codemirror/commands";
 import {
   LanguageSupport,
   bracketMatching,
@@ -20,9 +20,9 @@ import {
   foldGutter,
   indentOnInput,
   syntaxHighlighting,
-} from '@codemirror/language';
-import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
-import { Compartment, EditorState, Extension, Transaction } from '@codemirror/state';
+} from "@codemirror/language";
+import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
+import { Compartment, EditorState, Extension, Transaction } from "@codemirror/state";
 import {
   EditorView,
   KeyBinding,
@@ -35,11 +35,11 @@ import {
   keymap,
   lineNumbers,
   rectangularSelection,
-} from '@codemirror/view';
-import { PurrMDConfig, PurrMDThemeConfig } from 'purrmd';
+} from "@codemirror/view";
+import { PurrMDConfig, PurrMDThemeConfig } from "purrmd";
 
 import { findMarkdownAnchorLine } from "../resources/markdown_anchor";
-import { defaultDetectLanguage } from './detect_language';
+import { defaultDetectLanguage } from "./detect_language";
 
 export interface LonaEditorConfig {
   /** root */
@@ -97,10 +97,10 @@ export interface LonaEditorConfig {
   keyBindings?: KeyBinding[] | null;
   /** 主题 @default light */
   theme?:
-    | 'light'
-    | 'dark'
-    | 'none'
-    | { mode: 'light' | 'dark'; theme: Extension | null }
+    | "light"
+    | "dark"
+    | "none"
+    | { mode: "light" | "dark"; theme: Extension | null }
     | undefined;
   /** 语言检测函数并获取插件 */
   detectLanguage?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
@@ -162,7 +162,7 @@ export class LonaEditor {
   }
 
   get editor(): EditorView {
-    if (!this.#editor) throw new Error('Editor not initialized');
+    if (!this.#editor) throw new Error("Editor not initialized");
     return this.#editor;
   }
 
@@ -205,12 +205,12 @@ export class LonaEditor {
       allowMultipleSelections = true,
     } = extensionsConfig || {};
     if (this.#editor != null) {
-      console.warn('LonaEditor already created.');
+      console.warn("LonaEditor already created.");
       return;
     }
     this.#root = root;
     const saveBinding: KeyBinding = {
-      key: 'Mod-s', // Mod 代表 Ctrl（Windows）或 Cmd（Mac）
+      key: "Mod-s", // Mod 代表 Ctrl（Windows）或 Cmd（Mac）
       preventDefault: true,
       run: () => {
         this.#onSave();
@@ -234,16 +234,14 @@ export class LonaEditor {
     this.#presentationBase = { filePath, detectLanguage, markdownConfig, markdownTheme };
 
     const state = EditorState.create({
-      doc: defaultValue || this.defaultValue || '',
+      doc: defaultValue || this.defaultValue || "",
       extensions: [
         this.#readOnlyEx.of([
           EditorState.readOnly.of(Boolean(readOnly)),
           EditorView.editable.of(!readOnly),
         ]),
         focusChangeListener,
-        this.#lineWrappingEx.of(
-          this.#presentation.lineWrapping ? EditorView.lineWrapping : [],
-        ),
+        this.#lineWrappingEx.of(this.#presentation.lineWrapping ? EditorView.lineWrapping : []),
         updateListener,
         this.#lineNumbersEx.of(this.#presentation.lineNumbers ? lineNumbers() : []),
         // 用占位符替换不可打印字符
@@ -344,7 +342,7 @@ export class LonaEditor {
         changes: {
           from: 0,
           to: this.#editor.state.doc.length,
-          insert: content || '',
+          insert: content || "",
         },
       });
 
@@ -354,7 +352,7 @@ export class LonaEditor {
         });
       }
     } catch (e) {
-      console.error('setValue Error', e);
+      console.error("setValue Error", e);
       throw e;
     }
   };
@@ -376,7 +374,9 @@ export class LonaEditor {
     this.#presentation = options;
     const effects = [];
     if (previous.lineWrapping !== options.lineWrapping) {
-      effects.push(this.#lineWrappingEx.reconfigure(options.lineWrapping ? EditorView.lineWrapping : []));
+      effects.push(
+        this.#lineWrappingEx.reconfigure(options.lineWrapping ? EditorView.lineWrapping : []),
+      );
     }
     if (previous.lineNumbers !== options.lineNumbers) {
       effects.push(this.#lineNumbersEx.reconfigure(options.lineNumbers ? lineNumbers() : []));
@@ -392,7 +392,9 @@ export class LonaEditor {
     const { filePath, detectLanguage, markdownConfig, markdownTheme } = this.#presentationBase;
     const resolvedMarkdownConfig = {
       ...markdownConfig,
-      formattingDisplayMode: (this.#presentation.sourceMode ? "show" : "auto") as PurrMDConfig["formattingDisplayMode"],
+      formattingDisplayMode: (this.#presentation.sourceMode
+        ? "show"
+        : "auto") as PurrMDConfig["formattingDisplayMode"],
     };
     const language = detectLanguage
       ? detectLanguage(filePath || "")
@@ -409,7 +411,7 @@ export class LonaEditor {
 
   /// 获取焦点并设置光标到最后位置
   focus = (pos?: { x: number; y: number }) => {
-    if (!this.#editor) throw new Error('Editor not initialized');
+    if (!this.#editor) throw new Error("Editor not initialized");
     const lastLine = this.#editor.state.doc.lines;
     const lastPos = this.#editor.state.doc.line(lastLine).to;
     let targetPos: number;
@@ -433,13 +435,18 @@ export class LonaEditor {
 
     this.#editor.dispatch({
       selection: { anchor: targetPos, head: targetPos },
-      effects: EditorView.scrollIntoView(targetPos, { y: 'center' }),
+      effects: EditorView.scrollIntoView(targetPos, { y: "center" }),
     });
     this.#editor.focus();
   };
 
+  /** 让 CodeMirror 释放原生输入焦点，以便宿主安全收起软键盘。 */
+  blur = () => {
+    this.#editor?.contentDOM.blur();
+  };
+
   getStatusInfo = (): LonaEditorStatusInfo => {
-    if (!this.#editor) throw new Error('Editor not initialized');
+    if (!this.#editor) throw new Error("Editor not initialized");
     const charCount = this.#editor.state.doc.length;
     const cursorPos = this.#editor.state.selection.main.head;
     const line = this.#editor.state.doc.lineAt(cursorPos);
@@ -530,7 +537,7 @@ export class LonaEditor {
   scrollToCursor = (
     container?: Element | null,
     force?: boolean,
-    getY?: (isTop: boolean) => 'nearest' | 'start' | 'end' | 'center',
+    getY?: (isTop: boolean) => "nearest" | "start" | "end" | "center",
   ) => {
     if (!this.#editor) return;
     if (!this.#editor) return undefined;
@@ -542,7 +549,7 @@ export class LonaEditor {
     const scrollDispatch = (isTop: boolean) => {
       this.#editor?.dispatch({
         effects: EditorView.scrollIntoView(pos, {
-          y: getY?.(isTop) || 'center',
+          y: getY?.(isTop) || "center",
           yMargin: 0,
         }),
       });
@@ -588,7 +595,7 @@ export class LonaEditor {
   };
 
   addListener = <K extends keyof LonaEditorEvent>(type: K, listener: LonaEditorEvent[K]): void => {
-    if (!this.#editor) throw new Error('Editor not initialized');
+    if (!this.#editor) throw new Error("Editor not initialized");
     if (!this.#events[type]) {
       this.#events[type] = [];
     }
@@ -635,23 +642,23 @@ export class LonaEditor {
   };
 
   #onSave = () => {
-    this.#callEvent('onSave', this);
+    this.#callEvent("onSave", this);
     return true;
   };
 
   #onCreated = () => {
-    this.#callEvent('onCreated', this);
+    this.#callEvent("onCreated", this);
   };
 
   #onDestroy = () => {
-    this.#callEvent('onDestroy', this);
+    this.#callEvent("onDestroy", this);
   };
 
   #onFocus = (focus: boolean, event: FocusEvent) => {
-    this.#callEvent('onFocus', this, focus, event);
+    this.#callEvent("onFocus", this, focus, event);
   };
 
   #onUpdate = (update: ViewUpdate) => {
-    this.#callEvent('onUpdate', this, update);
+    this.#callEvent("onUpdate", this, update);
   };
 }

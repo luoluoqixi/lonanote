@@ -29,6 +29,7 @@ import { onError, onHttpError, onLoad, onLoadEnd, onLoadStart } from "./editor_w
 type EditorWebViewProps = {
   document: DocumentModel;
   editor: EditorViewSession;
+  mobileToolbarOverlayHeight?: number;
 };
 
 const MAX_SURFACE_RECOVERY_ATTEMPTS = 3;
@@ -49,7 +50,12 @@ function getEditorPlatform(): EditorPlatform {
   return currentOs === "ios" || currentOs === "android" ? currentOs : "android";
 }
 
-function getContentBottomInset(safeAreaBottom: number, keyboardHeight: number): number {
+function getContentBottomInset(
+  safeAreaBottom: number,
+  keyboardHeight: number,
+  mobileToolbarOverlayHeight: number,
+): number {
+  if (mobileToolbarOverlayHeight > 0) return mobileToolbarOverlayHeight;
   if (os() === "ios") {
     return keyboardHeight > 0
       ? Math.max(safeAreaBottom, keyboardHeight + MOBILE_EDITOR_TOOLBAR_HEIGHT)
@@ -77,7 +83,11 @@ function RenderLoading() {
   );
 }
 
-export function EditorWebView({ document, editor }: EditorWebViewProps) {
+export function EditorWebView({
+  document,
+  editor,
+  mobileToolbarOverlayHeight = 0,
+}: EditorWebViewProps) {
   const devMode = isDev();
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -119,7 +129,11 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
           contentInsets: {
             top: headerHeight,
             right: insets.right,
-            bottom: getContentBottomInset(insets.bottom, keyboardHeight),
+            bottom: getContentBottomInset(
+              insets.bottom,
+              keyboardHeight,
+              mobileToolbarOverlayHeight,
+            ),
             left: insets.left,
           },
           locale: systemLocale(),
@@ -141,6 +155,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
       headerHeight,
       insets,
       keyboardHeight,
+      mobileToolbarOverlayHeight,
       resourceContext.context,
       settings,
       theme,
@@ -341,7 +356,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
       renderLoading={RenderLoading}
       scrollIndicatorInsets={{
         top: headerHeight,
-        bottom: Math.max(insets.bottom, keyboardHeight),
+        bottom: Math.max(insets.bottom, keyboardHeight, mobileToolbarOverlayHeight),
       }}
       source={getSource(devMode)}
       style={styles.webView}

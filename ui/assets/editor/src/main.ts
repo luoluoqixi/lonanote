@@ -192,7 +192,10 @@ function applyRuntimeStyles(runtime: EditorRuntimeUpdatePayload): void {
   editorRoot.style.setProperty("--lonanote-editor-foreground", runtime.colors.foreground);
   editorRoot.style.setProperty("--lonanote-editor-primary", runtime.colors.primary);
   editorRoot.style.setProperty("--lonanote-editor-content-top", `${runtime.contentInsets.top}px`);
-  editorRoot.style.setProperty("--lonanote-editor-content-right", `${runtime.contentInsets.right}px`);
+  editorRoot.style.setProperty(
+    "--lonanote-editor-content-right",
+    `${runtime.contentInsets.right}px`,
+  );
   editorRoot.style.setProperty(
     "--lonanote-editor-content-bottom",
     `${runtime.contentInsets.bottom}px`,
@@ -443,6 +446,7 @@ function executeCommand(request: EditorBridgeRequest): void {
   const command: EditorCommand = request.payload;
   if (
     command.type !== "editor.focus" &&
+    command.type !== "editor.blur" &&
     command.type !== "navigation.scrollToAnchor" &&
     (session.documentReadOnly || !session.inputEnabled)
   ) {
@@ -453,6 +457,7 @@ function executeCommand(request: EditorBridgeRequest): void {
   if (command.type === "history.undo") session.editor.undo();
   if (command.type === "history.redo") session.editor.redo();
   if (command.type === "editor.focus") session.editor.focus();
+  if (command.type === "editor.blur") session.editor.blur();
   if (command.type === "navigation.scrollToAnchor") session.editor.scrollToAnchor(command.fragment);
   if (command.type === "mark.toggle") {
     const commandByMark = {

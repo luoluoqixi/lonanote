@@ -35,6 +35,7 @@ export function EditorPage() {
   const { settings } = useGlobalSettings();
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [isSavingBeforeClose, setIsSavingBeforeClose] = useState(false);
+  const [mobileToolbarOverlayHeight, setMobileToolbarOverlayHeight] = useState(0);
   const [closeSaveError, setCloseSaveError] = useState<string | null>(null);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
   const [dismissedConflictAt, setDismissedConflictAt] = useState<string | null>(null);
@@ -161,7 +162,11 @@ export function EditorPage() {
       <EditorHeader menuItems={menuItems} title={document.title} />
       <View style={styles.container}>
         {document.loadState === "ready" ? (
-          <EditorWebView document={document} editor={view} />
+          <EditorWebView
+            document={document}
+            editor={view}
+            mobileToolbarOverlayHeight={mobileToolbarOverlayHeight}
+          />
         ) : (
           <View style={styles.statusContainer}>
             {document.loadState === "error" ? (
@@ -172,7 +177,11 @@ export function EditorPage() {
           </View>
         )}
       </View>
-      <EditorToolbar document={document} editor={view} />
+      <EditorToolbar
+        document={document}
+        editor={view}
+        onMobileOverlayHeightChange={setMobileToolbarOverlayHeight}
+      />
       <AlertDialog
         actionLabel={closeSaveError ? "重试保存" : "保存"}
         actionProps={{ disabled: isSavingBeforeClose, onPress: () => void saveBeforeClose() }}

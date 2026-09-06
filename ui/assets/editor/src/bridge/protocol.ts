@@ -116,6 +116,7 @@ export type EditorCommand =
   | { type: "history.undo" }
   | { type: "history.redo" }
   | { type: "editor.focus" }
+  | { type: "editor.blur" }
   | { type: "navigation.scrollToAnchor"; fragment: string }
   | { type: "mark.toggle"; mark: "bold" | "italic" | "strikethrough" | "highlight" | "inlineCode" }
   | {
@@ -388,7 +389,8 @@ export function isEditorCommand(value: unknown): value is EditorCommand {
   if (
     value.type === "history.undo" ||
     value.type === "history.redo" ||
-    value.type === "editor.focus"
+    value.type === "editor.focus" ||
+    value.type === "editor.blur"
   )
     return true;
   if (value.type === "navigation.scrollToAnchor") return isNonEmptyString(value.fragment);
