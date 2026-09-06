@@ -30,6 +30,7 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true }
+futures = { workspace = true }
 dark-light = { workspace = true }
 sys-locale = { workspace = true }
 

@@ -7,12 +7,14 @@ use crate::support::{
     assert_storage_contract, external_binding, path, provider, resolved_external_binding,
     EXTERNAL_PROVIDER,
 };
+use futures::TryStreamExt;
 use lonanote_core::workspace::{
     copy_workspace_tree, load_local_setting, load_manifest, load_workspace_settings,
     save_local_setting, save_manifest, save_workspace_settings, LocalFsResolver, LocalPathStorage,
-    MemoryStorage, StorageAccessLease, StorageError, WorkspaceError, WorkspaceId,
-    WorkspaceInstance, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceSettings,
-    WorkspaceStorage, WorkspaceStorageResolver, WorkspaceStorageSession, WriteOptions,
+    MemoryStorage, StorageAccessLease, StorageByteRange, StorageError, StorageReadOptions,
+    WorkspaceError, WorkspaceId, WorkspaceInstance, WorkspaceLocalSetting, WorkspaceManifest,
+    WorkspaceSettings, WorkspaceStorage, WorkspaceStorageResolver, WorkspaceStorageSession,
+    WriteOptions,
 };
 use tempfile::TempDir;
 
@@ -25,6 +27,104 @@ async fn memory_contract() {
 async fn local_contract() {
     let root = TempDir::new().unwrap();
     assert_storage_contract(&LocalPathStorage::open(root.path()).unwrap()).await;
+}
+
+async fn read_stream(storage: &dyn WorkspaceStorage, options: StorageReadOptions) -> Vec<u8> {
+    let stream = storage
+        .open_read(&path("bytes.bin"), options)
+        .await
+        .unwrap();
+    stream
+        .body
+        .try_collect::<Vec<Vec<u8>>>()
+        .await
+        .unwrap()
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
+async fn assert_range_contract(storage: &dyn WorkspaceStorage) {
+    let file = path("bytes.bin");
+    storage
+        .write(&file, b"0123456789", WriteOptions::default())
+        .await
+        .unwrap();
+
+    assert_eq!(
+        read_stream(
+            storage,
+            StorageReadOptions {
+                range: Some(StorageByteRange {
+                    start: 2,
+                    end_inclusive: 5,
+                }),
+            },
+        )
+        .await,
+        b"2345"
+    );
+    assert_eq!(
+        read_stream(
+            storage,
+            StorageReadOptions {
+                range: Some(StorageByteRange {
+                    start: 8,
+                    end_inclusive: 99,
+                }),
+            },
+        )
+        .await,
+        b"89"
+    );
+    let unsatisfied_range = storage
+        .open_read(
+            &file,
+            StorageReadOptions {
+                range: Some(StorageByteRange {
+                    start: 10,
+                    end_inclusive: 12,
+                }),
+            },
+        )
+        .await;
+    assert!(matches!(
+        unsatisfied_range,
+        Err(StorageError::RangeNotSatisfiable {
+            start: 10,
+            end_inclusive: 12,
+            total_length: 10,
+        })
+    ));
+    let reversed_range = storage
+        .open_read(
+            &file,
+            StorageReadOptions {
+                range: Some(StorageByteRange {
+                    start: 5,
+                    end_inclusive: 4,
+                }),
+            },
+        )
+        .await;
+    assert!(matches!(
+        reversed_range,
+        Err(StorageError::InvalidByteRange {
+            start: 5,
+            end_inclusive: 4,
+        })
+    ));
+}
+
+#[tokio::test]
+async fn memory_open_read_honors_range_contract() {
+    assert_range_contract(&MemoryStorage::new()).await;
+}
+
+#[tokio::test]
+async fn local_open_read_honors_range_contract() {
+    let root = TempDir::new().unwrap();
+    assert_range_contract(&LocalPathStorage::open(root.path()).unwrap()).await;
 }
 
 #[tokio::test]

@@ -1,18 +1,20 @@
 use std::{
     collections::{HashMap, HashSet},
-    io::ErrorKind,
+    io::{ErrorKind, SeekFrom},
     path::{Path, PathBuf},
     sync::Arc,
     time::UNIX_EPOCH,
 };
 
 use async_trait::async_trait;
+use futures::stream;
 use sha2::{Digest, Sha256};
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
 use super::{
-    StorageCapabilities, StorageEntry, StorageEntryKind, StorageEntryMetadata, StorageError,
-    WorkspaceStorage, WorkspaceStorageResolver, WorkspaceStorageSession, WriteOptions,
+    resolve_storage_range, StorageCapabilities, StorageEntry, StorageEntryKind,
+    StorageEntryMetadata, StorageError, StorageReadOptions, StorageReadStream, WorkspaceStorage,
+    WorkspaceStorageResolver, WorkspaceStorageSession, WriteOptions,
 };
 use crate::workspace::domain::{
     StorageProviderId, StorageResourceIdentity, WorkspaceDirectoryName, WorkspaceRelativePath,
@@ -284,6 +286,58 @@ impl WorkspaceStorage for LocalPathStorage {
         tokio::fs::read(native)
             .await
             .map_err(|error| map_path_io(path, "read", error))
+    }
+
+    async fn open_read(
+        &self,
+        path: &WorkspaceRelativePath,
+        options: StorageReadOptions,
+    ) -> Result<StorageReadStream, StorageError> {
+        const CHUNK_SIZE: usize = 64 * 1024;
+
+        let native = self.checked_existing(path)?;
+        let native_metadata = tokio::fs::metadata(&native)
+            .await
+            .map_err(|error| map_path_io(path, "metadata_open_read", error))?;
+        if native_metadata.is_dir() {
+            return Err(StorageError::IsDirectory { path: path.clone() });
+        }
+        let resolved_range = resolve_storage_range(options.range, native_metadata.len())?;
+        let start = resolved_range.map(|range| range.start).unwrap_or(0);
+        let remaining = resolved_range
+            .map(|range| range.end_inclusive - range.start + 1)
+            .unwrap_or_else(|| native_metadata.len());
+        let mut file = tokio::fs::File::open(native)
+            .await
+            .map_err(|error| map_path_io(path, "open_read", error))?;
+        file.seek(SeekFrom::Start(start))
+            .await
+            .map_err(|error| map_path_io(path, "seek_open_read", error))?;
+
+        let path_for_stream = path.clone();
+        let body = stream::try_unfold((file, remaining), move |(mut file, remaining)| {
+            let path = path_for_stream.clone();
+            async move {
+                if remaining == 0 {
+                    return Ok(None);
+                }
+                let mut buffer = vec![0; CHUNK_SIZE.min(remaining as usize)];
+                let read_count = file
+                    .read(&mut buffer)
+                    .await
+                    .map_err(|error| map_path_io(&path, "read_open_stream", error))?;
+                if read_count == 0 {
+                    return Ok(None);
+                }
+                buffer.truncate(read_count);
+                Ok(Some((buffer, (file, remaining - read_count as u64))))
+            }
+        });
+        Ok(StorageReadStream {
+            metadata: metadata_to_entry(&native_metadata),
+            resolved_range,
+            body: Box::pin(body),
+        })
     }
 
     async fn write(

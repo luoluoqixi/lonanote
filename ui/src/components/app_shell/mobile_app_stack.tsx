@@ -69,6 +69,7 @@ export function MobileAppStack() {
           }}
         >
           <Stack.Screen name="index" options={{ title: getAppHomeTitle() }} />
+          <Stack.Screen name="editor/[editorId]" options={{ headerBackButtonMenuEnabled: false }} />
         </Stack>
       </WorkspaceExplorerToolbarHost>
     </>

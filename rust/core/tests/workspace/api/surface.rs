@@ -69,6 +69,7 @@ fn expected_keys() -> BTreeSet<String> {
         "workspace.relocate",
         "workspace.remove",
         "workspace.reset_settings",
+        "workspace.resource.acquire_scope",
         "workspace.set_last_open_file",
         "workspace.set_settings",
         "workspace.update_display_name",

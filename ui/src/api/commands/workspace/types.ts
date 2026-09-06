@@ -1,4 +1,9 @@
 export type WorkspaceId = string;
+/** 仅用于 Native WebView resource endpoint 的可撤销 capability，不包含资源内容。 */
+export interface WorkspaceResourceScope {
+  scopeId: string;
+  generation: number;
+}
 export type StorageProviderId = string;
 export type WorkspaceDirectoryName = string;
 export type WorkspaceRelativePath = string;

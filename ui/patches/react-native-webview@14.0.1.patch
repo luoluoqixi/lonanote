@@ -173,3 +173,86 @@ diff --git a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewMana
 +
 +    @Override
 +    public void setScrollIndicatorInsets(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
+diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
+index 9f57ba79..b19ca4fb 100644
+--- a/apple/RNCWebViewImpl.m
++++ b/apple/RNCWebViewImpl.m
+@@ -424,6 +424,13 @@ - (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelPara
+ - (WKWebViewConfiguration *)setUpWkWebViewConfig
+ {
+   WKWebViewConfiguration *wkWebViewConfig = [WKWebViewConfiguration new];
++#if TARGET_OS_IOS
++  Class resourceHandlerClass = NSClassFromString(@"LonanoteResourceSchemeHandler");
++  if (resourceHandlerClass != Nil && [resourceHandlerClass conformsToProtocol:@protocol(WKURLSchemeHandler)]) {
++    id<WKURLSchemeHandler> resourceHandler = [[resourceHandlerClass alloc] init];
++    [wkWebViewConfig setURLSchemeHandler:resourceHandler forURLScheme:@"lonanote-resource"];
++  }
++#endif
+   WKPreferences *prefs = [[WKPreferences alloc]init];
+   BOOL _prefsUsed = NO;
+   if (!_javaScriptEnabled) {
+diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java b/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java
+index 209b8552..4d48778d 100644
+--- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java
++++ b/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java
+@@ -32,6 +32,7 @@ import com.reactnativecommunity.webview.events.TopRenderProcessGoneEvent;
+ import com.reactnativecommunity.webview.events.TopShouldStartLoadWithRequestEvent;
+ import android.webkit.CookieManager;
+ 
++import java.lang.reflect.Method;
+ import java.util.concurrent.atomic.AtomicReference;
+ 
+ public class RNCWebViewClient extends WebViewClient {
+@@ -41,6 +42,39 @@ public class RNCWebViewClient extends WebViewClient {
+     protected boolean mLastLoadFailed = false;
+     protected RNCWebView.ProgressChangedFilter progressChangedFilter = null;
+     protected @Nullable RNCBasicAuthCredential basicAuthCredential = null;
++    private static final String LONANOTE_RESOURCE_SCHEME = "lonanote-resource";
++    private static boolean resourceGatewayResolutionAttempted = false;
++    protected static @Nullable Method resourceGatewayShouldIntercept = null;
++
++    private static synchronized @Nullable Method getResourceGatewayShouldIntercept() {
++        if (resourceGatewayResolutionAttempted) {
++            return resourceGatewayShouldIntercept;
++        }
++        resourceGatewayResolutionAttempted = true;
++        try {
++            Class<?> gatewayClass = Class.forName("rs.craby.lonanoterustmodule.LonanoteResourceGateway");
++            resourceGatewayShouldIntercept = gatewayClass.getMethod("shouldIntercept", WebResourceRequest.class);
++        } catch (ReflectiveOperationException | LinkageError ignored) {
++            resourceGatewayShouldIntercept = null;
++        }
++        return resourceGatewayShouldIntercept;
++    }
++
++    protected @Nullable WebResourceResponse interceptLonanoteResource(WebResourceRequest request) {
++        if (!LONANOTE_RESOURCE_SCHEME.equalsIgnoreCase(request.getUrl().getScheme())) {
++            return null;
++        }
++        Method handler = getResourceGatewayShouldIntercept();
++        if (handler == null) {
++            return null;
++        }
++        try {
++            Object response = handler.invoke(null, request);
++            return response instanceof WebResourceResponse ? (WebResourceResponse) response : null;
++        } catch (ReflectiveOperationException | RuntimeException ignored) {
++            return null;
++        }
++    }
+ 
+     public void setBasicAuthCredential(@Nullable RNCBasicAuthCredential credential) {
+         basicAuthCredential = credential;
+@@ -138,6 +172,12 @@ public class RNCWebViewClient extends WebViewClient {
+         return this.shouldOverrideUrlLoading(view, url);
+     }
+ 
++    @Override
++    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
++        WebResourceResponse response = interceptLonanoteResource(request);
++        return response != null ? response : super.shouldInterceptRequest(view, request);
++    }
++
+     @Override
+     public void onReceivedHttpAuthRequest(WebView view, HttpAuthHandler handler, String host, String realm) {
+         if (basicAuthCredential != null) {

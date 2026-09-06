@@ -1,19 +1,41 @@
-import { useStore } from "zustand";
+import { useCallback, useMemo } from "react";
 
-import { workspaceEditorStore } from "@/stores/workspace";
+import { documentRegistry } from "@/components/editor/controllers";
+import { editorStore } from "@/stores/editor";
 
 type OpenNoteEditorOptions = {
   duplicate?: boolean;
 };
 
 export function useWorkspaceEditorSession(workspaceId: string) {
-  const store = workspaceEditorStore.getStore(workspaceId);
-  const state = useStore(store);
+  const getDefaultEditorId = useCallback(() => {
+    const state = editorStore.getState();
+    for (const editorId of state.openEditorIds) {
+      const editor = state.editorsById[editorId];
+      const document = editor ? state.documentsById[editor.documentId] : null;
+      if (document?.ref.kind === "workspaceFile" && document.ref.workspaceId === workspaceId) {
+        return editorId;
+      }
+    }
+    return null;
+  }, [workspaceId]);
 
-  return {
-    ...state,
-    getDefaultEditorId: () => store.getState().getDefaultEditorId(),
-    openNoteEditor: (noteId: string, options?: OpenNoteEditorOptions) =>
-      store.getState().openNoteEditor(noteId, options),
-  };
+  const openNoteEditor = useCallback(
+    (noteId: string, options?: OpenNoteEditorOptions) => {
+      return documentRegistry.openEditor(
+        {
+          kind: "workspaceFile",
+          workspaceId,
+          filePath: noteId,
+        },
+        options,
+      ).editorId;
+    },
+    [workspaceId],
+  );
+
+  return useMemo(
+    () => ({ getDefaultEditorId, openNoteEditor }),
+    [getDefaultEditorId, openNoteEditor],
+  );
 }

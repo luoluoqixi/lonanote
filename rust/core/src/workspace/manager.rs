@@ -25,11 +25,16 @@ use crate::workspace::{
         WorkspaceCatalog, WorkspaceSessionStore, WORKSPACE_CATALOG_FILE_NAME,
         WORKSPACE_SESSION_FILE_NAME,
     },
+    resource::{
+        WorkspaceResourceGateway, WorkspaceResourceResponse, WorkspaceResourceScope,
+        WorkspaceResourceScopeRequest,
+    },
     runtime::{WorkspaceInstance, WorkspaceRuntime},
     storage::{
         copy_workspace_tree, load_local_setting, load_manifest, load_workspace_settings,
         save_local_setting, save_manifest, save_workspace_settings, StorageCapabilities,
-        StorageEntry, StorageEntryMetadata, WorkspaceStorageResolver, WriteOptions,
+        StorageEntry, StorageEntryMetadata, StorageReadOptions, StorageReadStream,
+        WorkspaceStorageResolver, WriteOptions,
     },
 };
 
@@ -47,6 +52,7 @@ pub struct WorkspaceManager {
     session: WorkspaceSessionStore,
     runtime: WorkspaceRuntime,
     storage_resolver: Arc<dyn WorkspaceStorageResolver>,
+    resource_gateway: WorkspaceResourceGateway,
     lifecycle_lock: RwLock<()>,
 }
 
@@ -91,6 +97,7 @@ impl WorkspaceManager {
             session,
             runtime: WorkspaceRuntime::new(),
             storage_resolver,
+            resource_gateway: WorkspaceResourceGateway::default(),
             lifecycle_lock: RwLock::new(()),
         }
     }
@@ -207,6 +214,7 @@ impl WorkspaceManager {
         });
         if let Some(workspace_id) = initial_workspace_id {
             self.runtime.remove(&workspace_id).await;
+            self.resource_gateway.revoke_workspace(&workspace_id).await;
             self.session.remove(&workspace_id).await?;
         }
         let removed_record = self
@@ -330,6 +338,7 @@ impl WorkspaceManager {
     pub async fn close_workspace(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.write().await;
         self.runtime.remove(id).await;
+        self.resource_gateway.revoke_workspace(id).await;
         Ok(())
     }
 
@@ -554,6 +563,42 @@ impl WorkspaceManager {
         self.get_open_instance(id).await?.read_bytes(path).await
     }
 
+    /// 为 Editor 资源 URL 申请可撤销的 opaque scope，不通过普通 command 暴露。
+    pub async fn acquire_resource_scope(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceResourceScope, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        let workspace = self.get_open_instance(id).await?;
+        Ok(self
+            .resource_gateway
+            .acquire_scope(*id, workspace.storage_session())
+            .await)
+    }
+
+    /// 为 Native resource adapter 打开资源；调用方必须持有 scope URL 的 capability。
+    pub async fn open_resource(
+        &self,
+        request: WorkspaceResourceScopeRequest,
+    ) -> WorkspaceResourceResponse {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.resource_gateway.open(request).await
+    }
+
+    /// 为资源 Gateway 打开只读字节流；不作为普通 command 暴露给 TypeScript。
+    pub async fn open_read(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+        options: StorageReadOptions,
+    ) -> Result<StorageReadStream, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.get_open_instance(id)
+            .await?
+            .open_read(path, options)
+            .await
+    }
+
     pub async fn read_text(
         &self,
         id: &WorkspaceId,
@@ -574,7 +619,9 @@ impl WorkspaceManager {
         self.get_open_instance(id)
             .await?
             .write_bytes(path, data, options)
-            .await
+            .await?;
+        self.resource_gateway.invalidate_workspace(id).await;
+        Ok(())
     }
 
     pub async fn write_text(
@@ -588,7 +635,9 @@ impl WorkspaceManager {
         self.get_open_instance(id)
             .await?
             .write_text(path, text, options)
-            .await
+            .await?;
+        self.resource_gateway.invalidate_workspace(id).await;
+        Ok(())
     }
 
     pub async fn create_directory(
@@ -600,7 +649,9 @@ impl WorkspaceManager {
         self.get_open_instance(id)
             .await?
             .create_directory(path)
-            .await
+            .await?;
+        self.resource_gateway.invalidate_workspace(id).await;
+        Ok(())
     }
 
     pub async fn rename(
@@ -610,7 +661,9 @@ impl WorkspaceManager {
         to: &WorkspaceRelativePath,
     ) -> Result<(), WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.read().await;
-        self.get_open_instance(id).await?.rename(from, to).await
+        self.get_open_instance(id).await?.rename(from, to).await?;
+        self.resource_gateway.invalidate_workspace(id).await;
+        Ok(())
     }
 
     pub async fn remove(
@@ -623,7 +676,9 @@ impl WorkspaceManager {
         self.get_open_instance(id)
             .await?
             .remove(path, recursive)
-            .await
+            .await?;
+        self.resource_gateway.invalidate_workspace(id).await;
+        Ok(())
     }
 
     pub async fn get_tree(

@@ -15,6 +15,11 @@ export interface SelectDialogOptions {
   defaultFileName?: string | null;
 }
 
+export interface SelectDialogResult {
+  path: string | null;
+  paths: string[] | null;
+}
+
 export const fs = {
   exists: async (path: string): Promise<boolean> => {
     return (await invoke("fs.exists", { path }))!;
@@ -66,8 +71,7 @@ export const fs = {
   },
   showSelectDialog: async (
     options: SelectDialogOptions,
-  ): Promise<string | string[] | null | undefined> => {
-    // TODO 原始接口为 async, 底层实现到时自动调用
-    return (await invoke("fs.show_select_dialog", options))!;
+  ): Promise<SelectDialogResult | undefined> => {
+    return await invoke("fs.show_select_dialog", options);
   },
 };

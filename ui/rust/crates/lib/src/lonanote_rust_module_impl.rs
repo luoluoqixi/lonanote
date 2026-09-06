@@ -237,7 +237,7 @@ fn init_native_logger(module_id: usize) -> Result<()> {
     }
 }
 
-fn ensure_init() -> Result<()> {
+pub(super) fn ensure_init() -> Result<()> {
     match INIT_RESULT.get() {
         Some(InitResult {
             error: Some(error), ..
@@ -247,7 +247,7 @@ fn ensure_init() -> Result<()> {
     }
 }
 
-fn runtime() -> Result<&'static Runtime> {
+pub(super) fn runtime() -> Result<&'static Runtime> {
     match RUNTIME_RESULT.get_or_init(|| {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()

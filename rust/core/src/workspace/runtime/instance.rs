@@ -13,7 +13,7 @@ use crate::workspace::{
     storage::{
         save_local_setting, save_manifest, save_workspace_settings, validate_local_setting,
         validate_workspace_settings, StorageCapabilities, StorageEntry, StorageEntryMetadata,
-        WorkspaceStorageSession, WriteOptions,
+        StorageReadOptions, StorageReadStream, WorkspaceStorageSession, WriteOptions,
     },
 };
 
@@ -106,6 +106,18 @@ impl WorkspaceInstance {
         path: &WorkspaceRelativePath,
     ) -> Result<Vec<u8>, WorkspaceError> {
         Ok(self.session.read(path).await?)
+    }
+
+    pub async fn open_read(
+        &self,
+        path: &WorkspaceRelativePath,
+        options: StorageReadOptions,
+    ) -> Result<StorageReadStream, WorkspaceError> {
+        Ok(self.session.open_read(path, options).await?)
+    }
+
+    pub(crate) fn storage_session(&self) -> Arc<WorkspaceStorageSession> {
+        Arc::clone(&self.session)
     }
 
     pub async fn read_text(&self, path: &WorkspaceRelativePath) -> Result<String, WorkspaceError> {

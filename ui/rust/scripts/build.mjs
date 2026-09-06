@@ -597,6 +597,37 @@ function syncIosXcframeworkArtifacts() {
   }
 }
 
+function syncAndroidPrebuiltArtifacts(androidTargets) {
+  for (const target of androidTargets) {
+    const abi = androidTargetToAbi.get(target);
+    if (!abi) {
+      throw new Error(`Unsupported Android target in artifact sync: ${target}`);
+    }
+    const source = path.join(
+      rustRoot,
+      "target",
+      target,
+      "release",
+      "liblonanoterustmodule.a",
+    );
+    if (!fs.existsSync(source)) {
+      throw new Error(`Expected Android static library not found: ${source}`);
+    }
+    const destination = path.join(
+      rustRoot,
+      "android",
+      "src",
+      "main",
+      "jni",
+      "libs",
+      abi,
+      "liblonanoterustmodule-prebuilt.a",
+    );
+    ensureDir(path.dirname(destination));
+    fs.copyFileSync(source, destination);
+  }
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     stdio: "inherit",
@@ -681,6 +712,7 @@ function buildAndroid(androidTargets) {
 
   run("bun", ["x", "craby", "build"], { env });
   normalizeGeneratedCxxHeaders();
+  syncAndroidPrebuiltArtifacts(androidTargets);
   run("bun", ["x", "tsdown"], { env });
 }
 

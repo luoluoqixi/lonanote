@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

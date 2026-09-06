@@ -20,11 +20,13 @@ target_include_directories(lonanote-rust-module-lib INTERFACE
 # Generated C++ source files by Craby
 add_library(cxx-lonanote-rust-module SHARED
   src/main/jni/OnLoad.cpp
+  src/main/jni/LonanoteResourceGateway.cpp
   src/main/jni/src/ffi.rs.cc
   ../cpp/CxxLonanoteRustModuleModule.cpp
 )
 target_include_directories(cxx-lonanote-rust-module PRIVATE
   ../cpp
+  ../include
 )
 
 target_link_libraries(cxx-lonanote-rust-module

@@ -5,6 +5,7 @@ pub mod storage;
 mod domain;
 mod manager;
 mod persistence;
+mod resource;
 mod runtime;
 
 use std::sync::OnceLock;
@@ -19,6 +20,7 @@ pub use manager::{
 pub use persistence::{
     WorkspaceCatalog, WorkspaceCatalogData, WorkspaceSessionData, WorkspaceSessionStore,
 };
+pub use resource::*;
 pub use runtime::{WorkspaceInstance, WorkspaceRuntime};
 pub use storage::*;
 

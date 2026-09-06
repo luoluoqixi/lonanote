@@ -38,6 +38,7 @@ import {
 } from '@codemirror/view';
 import { PurrMDConfig, PurrMDThemeConfig } from 'purrmd';
 
+import { findMarkdownAnchorLine } from "../resources/markdown_anchor";
 import { defaultDetectLanguage } from './detect_language';
 
 export interface LonaEditorConfig {
@@ -126,6 +127,13 @@ export interface LonaEditorSetValueOptions {
   scrollToTop?: boolean;
 }
 
+export interface LonaEditorPresentationOptions {
+  lineNumbers: boolean;
+  lineWrapping: boolean;
+  sourceMode: boolean;
+  theme: "light" | "dark";
+}
+
 type LonaEditorEventListeners = {
   [K in keyof LonaEditorEvent]?: LonaEditorEvent[K][];
 };
@@ -135,10 +143,21 @@ export class LonaEditor {
   defaultValue?: string;
   #root: Element | DocumentFragment | null = null;
   readonly #readOnlyEx: Compartment;
+  readonly #lineWrappingEx: Compartment;
+  readonly #lineNumbersEx: Compartment;
+  readonly #languageEx: Compartment;
   readonly #events: LonaEditorEventListeners;
+  #presentation: LonaEditorPresentationOptions | null = null;
+  #presentationBase: Pick<
+    LonaEditorConfig,
+    "filePath" | "detectLanguage" | "markdownConfig" | "markdownTheme"
+  > | null = null;
 
   constructor() {
     this.#readOnlyEx = new Compartment();
+    this.#lineWrappingEx = new Compartment();
+    this.#lineNumbersEx = new Compartment();
+    this.#languageEx = new Compartment();
     this.#events = {};
   }
 
@@ -205,46 +224,28 @@ export class LonaEditor {
     const updateListener = EditorView.updateListener.of((update) => {
       this.#onUpdate(update);
     });
-    const languages: Extension[] = [];
-    const pushLanguage = (lang: Extension | Extension[] | null) => {
-      if (Array.isArray(lang)) {
-        languages.push(...lang);
-      } else if (lang) {
-        languages.push(lang);
-      }
+    const resolvedTheme = typeof theme === "string" ? theme : theme?.mode || "light";
+    this.#presentation = {
+      lineNumbers: !disableAll && enableLineNumbers,
+      lineWrapping: !disableAll && enableLineWrapping,
+      sourceMode: markdownConfig?.formattingDisplayMode === "show",
+      theme: resolvedTheme === "dark" ? "dark" : "light",
     };
-
-    let resolveMode = 'light';
-    let resolveTheme = null;
-    if (typeof theme === 'string') {
-      resolveMode = theme;
-    } else if (theme) {
-      resolveMode = theme.mode;
-      resolveTheme = theme.theme;
-    }
-    pushLanguage(
-      detectLanguage
-        ? detectLanguage(filePath || '')
-        : defaultDetectLanguage(filePath || '', {
-            fileName: filePath || '',
-            theme: {
-              mode: resolveMode === 'none' ? 'base' : resolveMode === 'dark' ? 'dark' : 'light',
-              ...(markdownTheme || {}),
-            },
-            config: markdownConfig,
-          }),
-    );
+    this.#presentationBase = { filePath, detectLanguage, markdownConfig, markdownTheme };
 
     const state = EditorState.create({
       doc: defaultValue || this.defaultValue || '',
       extensions: [
-        this.#readOnlyEx.of(EditorView.editable.of(readOnly ? false : true)),
+        this.#readOnlyEx.of([
+          EditorState.readOnly.of(Boolean(readOnly)),
+          EditorView.editable.of(!readOnly),
+        ]),
         focusChangeListener,
-        // 自动换行
-        !disableAll && enableLineWrapping ? EditorView.lineWrapping : null,
+        this.#lineWrappingEx.of(
+          this.#presentation.lineWrapping ? EditorView.lineWrapping : [],
+        ),
         updateListener,
-        // 行号
-        !disableAll && enableLineNumbers ? lineNumbers() : null,
+        this.#lineNumbersEx.of(this.#presentation.lineNumbers ? lineNumbers() : []),
         // 用占位符替换不可打印字符
         !disableAll && enableHighlightSpecialChars ? highlightSpecialChars() : null,
         // 撤销历史
@@ -280,8 +281,7 @@ export class LonaEditor {
         // 折叠功能
         !disableAll && enableFoldGutter ? foldGutter() : null,
         ...(extensions || []),
-        ...languages,
-        resolveTheme,
+        this.#languageEx.of(this.#createLanguageExtensions()),
         keymap.of(
           [
             // 保存功能
@@ -324,6 +324,18 @@ export class LonaEditor {
     return this.#editor.state.doc.toString();
   };
 
+  /** 在当前 Markdown 文档中定位 GitHub 风格 heading fragment。 */
+  scrollToAnchor = (fragment: string): boolean => {
+    if (!this.#editor) return false;
+    const lineNumber = findMarkdownAnchorLine(this.#editor.state.doc.toString(), fragment);
+    if (lineNumber === null) return false;
+    const position = this.#editor.state.doc.line(lineNumber).from;
+    this.#editor.dispatch({
+      effects: EditorView.scrollIntoView(position, { y: "start", yMargin: 24 }),
+    });
+    return true;
+  };
+
   setValue = (content: string, { useHistory, scrollToTop = true }: LonaEditorSetValueOptions) => {
     try {
       if (!this.#editor) return;
@@ -350,10 +362,50 @@ export class LonaEditor {
   setReadonly = (readOnly: boolean) => {
     if (this.#editor && this.#readOnlyEx) {
       this.#editor.dispatch({
-        effects: this.#readOnlyEx.reconfigure(EditorView.editable.of(!readOnly)),
+        effects: this.#readOnlyEx.reconfigure([
+          EditorState.readOnly.of(readOnly),
+          EditorView.editable.of(!readOnly),
+        ]),
       });
     }
   };
+
+  updatePresentation = (options: LonaEditorPresentationOptions) => {
+    if (!this.#editor || !this.#presentation || !this.#presentationBase) return;
+    const previous = this.#presentation;
+    this.#presentation = options;
+    const effects = [];
+    if (previous.lineWrapping !== options.lineWrapping) {
+      effects.push(this.#lineWrappingEx.reconfigure(options.lineWrapping ? EditorView.lineWrapping : []));
+    }
+    if (previous.lineNumbers !== options.lineNumbers) {
+      effects.push(this.#lineNumbersEx.reconfigure(options.lineNumbers ? lineNumbers() : []));
+    }
+    if (previous.sourceMode !== options.sourceMode || previous.theme !== options.theme) {
+      effects.push(this.#languageEx.reconfigure(this.#createLanguageExtensions()));
+    }
+    if (effects.length > 0) this.#editor.dispatch({ effects });
+  };
+
+  #createLanguageExtensions(): Extension[] {
+    if (!this.#presentation || !this.#presentationBase) return [];
+    const { filePath, detectLanguage, markdownConfig, markdownTheme } = this.#presentationBase;
+    const resolvedMarkdownConfig = {
+      ...markdownConfig,
+      formattingDisplayMode: (this.#presentation.sourceMode ? "show" : "auto") as PurrMDConfig["formattingDisplayMode"],
+    };
+    const language = detectLanguage
+      ? detectLanguage(filePath || "")
+      : defaultDetectLanguage(filePath || "", {
+          fileName: filePath || "",
+          theme: {
+            mode: this.#presentation.theme === "dark" ? "dark" : "light",
+            ...(markdownTheme || {}),
+          },
+          config: resolvedMarkdownConfig,
+        });
+    return Array.isArray(language) ? language : language ? [language] : [];
+  }
 
   /// 获取焦点并设置光标到最后位置
   focus = (pos?: { x: number; y: number }) => {

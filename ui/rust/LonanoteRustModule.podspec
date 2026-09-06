@@ -14,11 +14,13 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/luoluoqixi/lonanote.git", :tag => "#{s.version}" }
 
   s.source_files = ["ios/**/*.{m,mm,cc,cpp}", "cpp/**/*.cpp"]
+  s.public_header_files = "include/LonanoteResourceGateway.h"
   s.vendored_frameworks = "ios/framework/liblonanoterustmodule.xcframework"
+  s.frameworks = "WebKit"
   s.pod_target_xcconfig = {
     "HEADER_SEARCH_PATHS" => [
       '"${PODS_TARGET_SRCROOT}/cpp"',
-      '"${PODS_TARGET_SRCROOT}/ios/include"',
+      '"${PODS_TARGET_SRCROOT}/include"',
     ].join(' '),
     "CLANG_CXX_LANGUAGE_STANDARD" => "c++20",
   }

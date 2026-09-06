@@ -1,4 +1,10 @@
-export type SupportedWorkspaceFileKind = "markdown" | "text" | "image" | "video" | "unsupported";
+export type SupportedWorkspaceFileKind =
+  | "markdown"
+  | "text"
+  | "image"
+  | "video"
+  | "pdf"
+  | "unsupported";
 
 export const MARKDOWN_FILE_EXTENSIONS = ["md", "markdown"] as const;
 
@@ -113,11 +119,14 @@ export const VIDEO_FILE_EXTENSIONS = [
   "mpg",
 ] as const;
 
+export const PDF_FILE_EXTENSIONS = ["pdf"] as const;
+
 const TEXT_FILE_NAMES = new Set(["dockerfile", "license", "makefile", "podfile", "readme"]);
 const markdownExtensionSet = new Set<string>(MARKDOWN_FILE_EXTENSIONS);
 const textExtensionSet = new Set<string>(TEXT_FILE_EXTENSIONS);
 const imageExtensionSet = new Set<string>(IMAGE_FILE_EXTENSIONS);
 const videoExtensionSet = new Set<string>(VIDEO_FILE_EXTENSIONS);
+const pdfExtensionSet = new Set<string>(PDF_FILE_EXTENSIONS);
 
 export function getFileName(path: string): string {
   return path.split("/").filter(Boolean).at(-1) ?? path;
@@ -160,6 +169,11 @@ export function isVideoFile(path: string): boolean {
   return extension !== null && videoExtensionSet.has(extension);
 }
 
+export function isPdfFile(path: string): boolean {
+  const extension = getFileExtension(path);
+  return extension !== null && pdfExtensionSet.has(extension);
+}
+
 export function detectWorkspaceFileKind(path: string): SupportedWorkspaceFileKind {
   if (isMarkdownFile(path)) {
     return "markdown";
@@ -169,6 +183,9 @@ export function detectWorkspaceFileKind(path: string): SupportedWorkspaceFileKin
   }
   if (isVideoFile(path)) {
     return "video";
+  }
+  if (isPdfFile(path)) {
+    return "pdf";
   }
   if (isTextFile(path)) {
     return "text";

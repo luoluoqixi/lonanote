@@ -1,9 +1,10 @@
 mod local;
 mod memory;
 
-use std::{fmt, path::Path, sync::Arc};
+use std::{fmt, path::Path, pin::Pin, sync::Arc};
 
 use async_trait::async_trait;
+use futures::{stream, Stream};
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -41,6 +42,52 @@ pub struct StorageEntryMetadata {
 pub struct StorageEntry {
     pub path: WorkspaceRelativePath,
     pub metadata: StorageEntryMetadata,
+}
+
+pub type StorageByteStream = Pin<Box<dyn Stream<Item = Result<Vec<u8>, StorageError>> + Send>>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageByteRange {
+    pub start: u64,
+    pub end_inclusive: u64,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct StorageReadOptions {
+    pub range: Option<StorageByteRange>,
+}
+
+pub struct StorageReadStream {
+    pub metadata: StorageEntryMetadata,
+    pub resolved_range: Option<StorageByteRange>,
+    pub body: StorageByteStream,
+}
+
+pub fn resolve_storage_range(
+    requested_range: Option<StorageByteRange>,
+    total_length: u64,
+) -> Result<Option<StorageByteRange>, StorageError> {
+    let Some(range) = requested_range else {
+        return Ok(None);
+    };
+    if range.end_inclusive < range.start {
+        return Err(StorageError::InvalidByteRange {
+            start: range.start,
+            end_inclusive: range.end_inclusive,
+        });
+    }
+    if range.start >= total_length {
+        return Err(StorageError::RangeNotSatisfiable {
+            start: range.start,
+            end_inclusive: range.end_inclusive,
+            total_length,
+        });
+    }
+    Ok(Some(StorageByteRange {
+        start: range.start,
+        end_inclusive: range.end_inclusive.min(total_length - 1),
+    }))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -119,6 +166,27 @@ pub trait WorkspaceStorage: Send + Sync {
         path: &WorkspaceRelativePath,
     ) -> Result<Vec<StorageEntry>, StorageError>;
     async fn read(&self, path: &WorkspaceRelativePath) -> Result<Vec<u8>, StorageError>;
+    async fn open_read(
+        &self,
+        path: &WorkspaceRelativePath,
+        options: StorageReadOptions,
+    ) -> Result<StorageReadStream, StorageError> {
+        let metadata = self.metadata(path).await?;
+        if metadata.kind == StorageEntryKind::Directory {
+            return Err(StorageError::IsDirectory { path: path.clone() });
+        }
+        let data = self.read(path).await?;
+        let resolved_range = resolve_storage_range(options.range, data.len() as u64)?;
+        let body = match resolved_range {
+            Some(range) => data[range.start as usize..=range.end_inclusive as usize].to_vec(),
+            None => data,
+        };
+        Ok(StorageReadStream {
+            metadata,
+            resolved_range,
+            body: Box::pin(stream::once(async move { Ok(body) })),
+        })
+    }
     async fn write(
         &self,
         path: &WorkspaceRelativePath,
@@ -192,6 +260,14 @@ impl WorkspaceStorageSession {
 
     pub async fn read(&self, path: &WorkspaceRelativePath) -> Result<Vec<u8>, StorageError> {
         self.storage.read(path).await
+    }
+
+    pub async fn open_read(
+        &self,
+        path: &WorkspaceRelativePath,
+        options: StorageReadOptions,
+    ) -> Result<StorageReadStream, StorageError> {
+        self.storage.open_read(path, options).await
     }
 
     pub async fn write(

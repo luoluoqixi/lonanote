@@ -11,11 +11,15 @@ import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { OpenInOtherAppButton, useOpenInOtherApp } from "./open_in_other_app";
 
 export function UnknownFileViewer() {
-  const workspaceId = useCurrentWorkspaceId();
-  const { path } = useLocalSearchParams<{
+  const currentWorkspaceId = useCurrentWorkspaceId();
+  const { path, workspaceId: rawWorkspaceId } = useLocalSearchParams<{
     path?: string | string[];
+    workspaceId?: string | string[];
   }>();
   const filePath = Array.isArray(path) ? path[0] : path;
+  const workspaceId = Array.isArray(rawWorkspaceId)
+    ? rawWorkspaceId[0]
+    : (rawWorkspaceId ?? currentWorkspaceId);
   const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
   const theme = useUiTheme();
   const accentColor = theme.primary as ComponentProps<typeof ExternalLink>["color"];

@@ -497,6 +497,14 @@ function WorkspaceExplorerForWorkspace({
         return;
       }
 
+      if (fileKind === "pdf") {
+        router.push({
+          pathname: "/pdf",
+          params: { path: entry.path, workspaceId },
+        } as Href);
+        return;
+      }
+
       router.push({
         pathname: "/unknown",
         params: { path: entry.path },

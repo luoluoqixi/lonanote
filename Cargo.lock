@@ -2530,6 +2530,7 @@ dependencies = [
  "anyhow",
  "cmdreg",
  "dark-light",
+ "futures",
  "log",
  "lonanote-core",
  "objc2 0.6.4",

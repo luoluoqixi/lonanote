@@ -100,6 +100,14 @@ pub enum StorageError {
     CannotModifyRoot,
     #[error("存储路径越过 Workspace 根目录: {path}")]
     OutsideWorkspace { path: WorkspaceRelativePath },
+    #[error("无效的字节范围: {start}-{end_inclusive}")]
+    InvalidByteRange { start: u64, end_inclusive: u64 },
+    #[error("字节范围不可满足: {start}-{end_inclusive}，文件长度为 {total_length}")]
+    RangeNotSatisfiable {
+        start: u64,
+        end_inclusive: u64,
+        total_length: u64,
+    },
     #[error("不支持的 Storage Provider: {provider_id}")]
     UnsupportedProvider { provider_id: StorageProviderId },
     #[error("Storage Provider {provider_id} 不支持 binding schema version: {schema_version}")]

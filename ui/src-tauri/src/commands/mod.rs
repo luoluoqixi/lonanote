@@ -1,5 +1,6 @@
 mod api;
 mod invoke;
+mod resource_protocol;
 
 use anyhow::{anyhow, Result};
 use api::system_api::*;
@@ -43,7 +44,7 @@ pub fn resolve_default_paths(app: &AppHandle) -> Result<lonanote_core::config::a
 }
 
 pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {
-    builder.invoke_handler(tauri::generate_handler![
+    resource_protocol::register_resource_protocol(builder).invoke_handler(tauri::generate_handler![
         invoke,
         invoke_async,
         get_command_len,

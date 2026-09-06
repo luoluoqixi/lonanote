@@ -12,6 +12,8 @@ mod lifecycle;
 mod persistence;
 #[path = "workspace/relocation.rs"]
 mod relocation;
+#[path = "workspace/resource.rs"]
+mod resource;
 #[path = "workspace/storage.rs"]
 mod storage;
 #[path = "workspace/support/mod.rs"]

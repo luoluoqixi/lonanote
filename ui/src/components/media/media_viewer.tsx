@@ -25,14 +25,16 @@ import {
   useUiTheme,
 } from "rn-ui-kit";
 
-import { workspace } from "@/api/commands/workspace";
+import { workspace, workspaceResource } from "@/api/commands/workspace";
 import {
   detectWorkspaceFileKind,
   getFileName,
+  isTauri,
   isWeb,
   os,
   resolveWorkspaceFileUrl,
 } from "@/api/common";
+import { appendWorkspaceResourceUrl } from "@/assets/editor/src/resources/resource_url";
 import { getMenuHeaderRightMenuProps } from "@/components/common/header_actions";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useMediaNavigation } from "@/hooks/media";
@@ -47,6 +49,7 @@ const MEDIA_INDICATOR_HEIGHT = 48;
 const MEDIA_CONTROLS_HEIGHT = 52;
 const MEDIA_INDICATOR_GAP = 14;
 const MEDIA_VIDEO_FRAME_SHIFT = 32;
+const TAURI_RESOURCE_ENDPOINT = "lonanote-resource://resource";
 
 type MediaViewerProps = {
   isActive: boolean;
@@ -368,16 +371,22 @@ export function MediaViewer() {
   const pagerRef = useRef<PagerView>(null);
   const headerHeight = useHeaderHeight();
   const router = useRouter();
-  const workspaceId = useCurrentWorkspaceId();
+  const currentWorkspaceId = useCurrentWorkspaceId();
   const insets = useSafeAreaInsets();
   const colorScheme = useUiColorScheme();
   const theme = useUiTheme();
   const appBackgroundColors = useAppBackgroundColors();
   const { mediaSequence } = useMediaNavigation();
-  const { mediaIndex: rawMediaIndex, path } = useLocalSearchParams<{
+  const {
+    mediaIndex: rawMediaIndex,
+    path,
+    workspaceId: rawWorkspaceId,
+  } = useLocalSearchParams<{
     mediaIndex?: string | string[];
     path?: string | string[];
+    workspaceId?: string | string[];
   }>();
+  const workspaceId = getFirstParamValue(rawWorkspaceId) ?? currentWorkspaceId;
   const fallbackPath = getFirstParamValue(path);
   const mediaPaths = useMemo(
     () => (fallbackPath ? getMediaPaths(fallbackPath, mediaSequence, workspaceId) : []),
@@ -400,16 +409,19 @@ export function MediaViewer() {
   const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
   const accentColor = theme.primary as ComponentProps<typeof ExternalLink>["color"];
   const menuItems = useMemo<DropdownItemData[]>(
-    () => [
-      {
-        disabled: isOpening,
-        icon: <ExternalLink color={accentColor} size={14} />,
-        iconProps: { ios: { name: "arrow.up.forward.app" } },
-        label: isOpening ? "正在打开…" : "在其他应用中打开",
-        onPress: openInOtherApp,
-        value: "open-in-other-app",
-      },
-    ],
+    () =>
+      isTauri()
+        ? []
+        : [
+            {
+              disabled: isOpening,
+              icon: <ExternalLink color={accentColor} size={14} />,
+              iconProps: { ios: { name: "arrow.up.forward.app" } },
+              label: isOpening ? "正在打开…" : "在其他应用中打开",
+              onPress: openInOtherApp,
+              value: "open-in-other-app",
+            },
+          ],
     [accentColor, isOpening, openInOtherApp],
   );
   const dismissTranslationY = useSharedValue(0);
@@ -481,13 +493,25 @@ export function MediaViewer() {
       try {
         setIsLoading(true);
         setError(null);
-        const workspaceSnapshot = await workspace.get(targetWorkspaceId);
-        const nextMediaUrls = Object.fromEntries(
-          mediaPaths.map((mediaPath) => [
-            mediaPath,
-            resolveWorkspaceFileUrl(workspaceSnapshot, mediaPath),
-          ]),
-        );
+        let nextMediaUrls: Record<string, string>;
+        if (isTauri()) {
+          const scope = await workspaceResource.acquireScope(targetWorkspaceId);
+          const endpoint = `${TAURI_RESOURCE_ENDPOINT}/${scope.scopeId}/${scope.generation}`;
+          const mediaUrlEntries = mediaPaths.map((mediaPath) => {
+            const url = appendWorkspaceResourceUrl(endpoint, mediaPath);
+            if (!url) throw new Error("媒体路径无效");
+            return [mediaPath, url];
+          });
+          nextMediaUrls = Object.fromEntries(mediaUrlEntries);
+        } else {
+          const workspaceSnapshot = await workspace.get(targetWorkspaceId);
+          nextMediaUrls = Object.fromEntries(
+            mediaPaths.map((mediaPath) => [
+              mediaPath,
+              resolveWorkspaceFileUrl(workspaceSnapshot, mediaPath),
+            ]),
+          );
+        }
 
         if (!isDisposed) {
           setMediaUrls(nextMediaUrls);
