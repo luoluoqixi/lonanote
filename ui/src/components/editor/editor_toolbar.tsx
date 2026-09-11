@@ -24,7 +24,10 @@ import type { DocumentModel, EditorViewSession } from "@/stores/editor";
 
 import {
   MOBILE_EDITOR_KEYBOARD_RESTORE_TIMEOUT_MS,
+  MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT,
   MOBILE_EDITOR_TOOLBAR_HEIGHT,
+  MOBILE_EDITOR_TOOLBAR_PADDING_HORIZONTAL,
+  MOBILE_EDITOR_TOOLBAR_PADDING_VERTICAL,
   MOBILE_EDITOR_TOOLBAR_PANEL_FALLBACK_HEIGHT,
 } from "./editor_layout";
 
@@ -85,7 +88,15 @@ function MobileToolbarRow({
   const theme = useUiTheme();
   return (
     <View
-      style={[styles.mobileToolbarRow, { paddingLeft: safeAreaLeft, paddingRight: safeAreaRight }]}
+      style={[
+        styles.mobileToolbarRow,
+        {
+          paddingLeft: safeAreaLeft,
+          paddingRight: safeAreaRight,
+          paddingTop: MOBILE_EDITOR_TOOLBAR_PADDING_VERTICAL,
+          paddingBottom: MOBILE_EDITOR_TOOLBAR_PADDING_VERTICAL,
+        },
+      ]}
     >
       <ScrollView
         contentContainerStyle={styles.mobileActionContent}
@@ -511,20 +522,27 @@ const styles = StyleSheet.create({
   desktopContent: { gap: 4, paddingHorizontal: 8, paddingVertical: 6 },
   keyboardHideChevron: { marginTop: -9 },
   keyboardHideIcon: { alignItems: "center", height: 28, justifyContent: "center" },
-  mobileActionContent: { alignItems: "center", paddingHorizontal: 2 },
+  mobileActionContent: {
+    alignItems: "center",
+    paddingHorizontal: MOBILE_EDITOR_TOOLBAR_PADDING_HORIZONTAL,
+  },
   mobileActionScroll: { flex: 1 },
   mobileToolbar: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    height: MOBILE_EDITOR_TOOLBAR_HEIGHT,
+    height: MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT,
     left: 0,
-    maxHeight: MOBILE_EDITOR_TOOLBAR_HEIGHT,
-    minHeight: MOBILE_EDITOR_TOOLBAR_HEIGHT,
+    maxHeight: MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT,
+    minHeight: MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT,
     overflow: "hidden",
     position: "absolute",
-    right: 0,
+    right: MOBILE_EDITOR_TOOLBAR_PADDING_HORIZONTAL,
     zIndex: 30,
   },
-  mobileToolbarRow: { alignItems: "center", flex: 1, flexDirection: "row" },
+  mobileToolbarRow: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+  },
   panel: { bottom: 0, left: 0, position: "absolute", right: 0, zIndex: 20 },
   panelButton: { width: "100%" },
   panelCell: { padding: 4, width: "50%" },
