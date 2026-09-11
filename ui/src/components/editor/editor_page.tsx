@@ -36,6 +36,7 @@ export function EditorPage() {
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [isSavingBeforeClose, setIsSavingBeforeClose] = useState(false);
   const [mobileToolbarOverlayHeight, setMobileToolbarOverlayHeight] = useState(0);
+  const [mobileInputMethodEnabled, setMobileInputMethodEnabled] = useState(true);
   const [closeSaveError, setCloseSaveError] = useState<string | null>(null);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
   const [dismissedConflictAt, setDismissedConflictAt] = useState<string | null>(null);
@@ -165,6 +166,7 @@ export function EditorPage() {
           <EditorWebView
             document={document}
             editor={view}
+            inputMethodEnabled={mobileInputMethodEnabled}
             mobileToolbarOverlayHeight={mobileToolbarOverlayHeight}
           />
         ) : (
@@ -180,6 +182,7 @@ export function EditorPage() {
       <EditorToolbar
         document={document}
         editor={view}
+        onMobileInputMethodEnabledChange={setMobileInputMethodEnabled}
         onMobileOverlayHeightChange={setMobileToolbarOverlayHeight}
       />
       <AlertDialog

@@ -2,15 +2,20 @@
 # - 增加 `scrollIndicatorInsets`，直接设置 WKWebView.scrollView 的原生滚动条 inset。
 # - 用于让透明 header、底部安全区和键盘遮挡区避让滚动条，不改变 HTML 内容布局。
 # - Fabric 与旧架构均透传该属性；原生 layout 后会重新应用，避免系统布局覆盖。
+#
+# react-native-webview 移动端输入法补丁说明：
+# - 增加 `inputMethodEnabled`，关闭时保留 WebView/HTML 编辑器焦点与选区，仅隐藏软键盘。
+# - iOS 通过自定义 inputView 切换，Android 通过 InputConnection 与 InputMethodManager 切换。
+# - Fabric 与旧架构均透传该属性，默认值为 true，不改变未使用该属性时的上游行为。
 
 diff --git a/src/WebViewTypes.ts b/src/WebViewTypes.ts
-index 4e7247f8..04efe4ae 100644
+index 4e7247f8..2a84f9ab 100644
 --- a/src/WebViewTypes.ts
 +++ b/src/WebViewTypes.ts
 @@ -438,6 +438,12 @@ export interface IOSWebViewProps extends WebViewSharedProps {
     */
    automaticallyAdjustsScrollIndicatorInsets?: boolean;
- 
+
 +  /**
 +   * 设置 iOS 原生滚动条的 inset，不会改变 WebView 内容的布局。
 +   * @platform ios
@@ -20,11 +25,36 @@ index 4e7247f8..04efe4ae 100644
    /**
     * This property specifies how the safe area insets are used to modify the
     * content area of the scroll view. The default value of this property is
+@@ -1172,6 +1178,15 @@ export interface AndroidWebViewProps extends WebViewSharedProps {
+ }
+
+ export interface WebViewSharedProps extends ViewProps {
++  /**
++   * Controls whether the focused WebView can present the system input method.
++   * Disabling it keeps the focused HTML element and selection intact.
++   * The default value is `true`.
++   * @platform android
++   * @platform ios
++   */
++  inputMethodEnabled?: boolean;
++
+   /**
+    * Loads static html or a uri (with optional headers) in the WebView.
+    */
 diff --git a/src/RNCWebViewNativeComponent.ts b/src/RNCWebViewNativeComponent.ts
-index ca3af151..040a6404 100644
+index ca3af151..2107b385 100644
 --- a/src/RNCWebViewNativeComponent.ts
 +++ b/src/RNCWebViewNativeComponent.ts
-@@ -179,6 +179,12 @@ export interface NativeProps extends ViewProps {
+@@ -131,6 +131,8 @@ type WebViewDownloadEvent = Readonly<{
+ // type MenuItem = Readonly<{label: string, key: string}>;
+
+ export interface NativeProps extends ViewProps {
++  inputMethodEnabled?: WithDefault<boolean, true>;
++
+   // Android only
+   allowFileAccess?: boolean;
+   allowsProtectedMedia?: boolean;
+@@ -179,6 +181,12 @@ export interface NativeProps extends ViewProps {
      bottom?: Double;
      right?: Double;
    }>;
@@ -38,7 +68,7 @@ index ca3af151..040a6404 100644
      'never' | 'automatic' | 'scrollableAxes' | 'always',
      'never'
 diff --git a/lib/WebViewTypes.d.ts b/lib/WebViewTypes.d.ts
-index f666e814..ba54945a 100644
+index f666e814..1ef3eb48 100644
 --- a/lib/WebViewTypes.d.ts
 +++ b/lib/WebViewTypes.d.ts
 @@ -316,6 +316,11 @@ export interface IOSWebViewProps extends WebViewSharedProps {
@@ -53,11 +83,34 @@ index f666e814..ba54945a 100644
      /**
       * This property specifies how the safe area insets are used to modify the
       * content area of the scroll view. The default value of this property is
+@@ -974,6 +979,14 @@ export interface AndroidWebViewProps extends WebViewSharedProps {
+     onLoadSubResourceError?: (event: WebViewErrorEvent) => void;
+ }
+ export interface WebViewSharedProps extends ViewProps {
++    /**
++     * Controls whether the focused WebView can present the system input method.
++     * Disabling it keeps the focused HTML element and selection intact.
++     * The default value is `true`.
++     * @platform android
++     * @platform ios
++     */
++    inputMethodEnabled?: boolean;
+     /**
+      * Loads static html or a uri (with optional headers) in the WebView.
+      */
 diff --git a/lib/RNCWebViewNativeComponent.d.ts b/lib/RNCWebViewNativeComponent.d.ts
-index 6b789f98..40e4ac3a 100644
+index 6b789f98..1fbd430c 100644
 --- a/lib/RNCWebViewNativeComponent.d.ts
 +++ b/lib/RNCWebViewNativeComponent.d.ts
-@@ -153,6 +153,12 @@ export interface NativeProps extends ViewProps {
+@@ -113,6 +113,7 @@ type WebViewDownloadEvent = Readonly<{
+     downloadUrl: string;
+ }>;
+ export interface NativeProps extends ViewProps {
++    inputMethodEnabled?: WithDefault<boolean, true>;
+     allowFileAccess?: boolean;
+     allowsProtectedMedia?: boolean;
+     allowsFullscreenVideo?: boolean;
+@@ -153,6 +154,12 @@ export interface NativeProps extends ViewProps {
          bottom?: Double;
          right?: Double;
      }>;
@@ -71,33 +124,83 @@ index 6b789f98..40e4ac3a 100644
      contentMode?: WithDefault<'recommended' | 'mobile' | 'desktop', 'recommended'>;
      dataDetectorTypes?: WithDefault<ReadonlyArray<'address' | 'link' | 'calendarEvent' | 'trackingNumber' | 'flightNumber' | 'lookupSuggestion' | 'phoneNumber' | 'all' | 'none'>, 'phoneNumber'>;
 diff --git a/apple/RNCWebViewImpl.h b/apple/RNCWebViewImpl.h
-index 1f637c1d..8548ec31 100644
+index 1f637c1d..ccd815cd 100644
 --- a/apple/RNCWebViewImpl.h
 +++ b/apple/RNCWebViewImpl.h
-@@ -86,6 +86,7 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
+@@ -86,7 +86,9 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
  @property (nonatomic, assign) BOOL bounces;
  @property (nonatomic, assign) BOOL mediaPlaybackRequiresUserAction;
  @property (nonatomic, assign) UIEdgeInsets contentInset;
 +@property (nonatomic, assign) UIEdgeInsets scrollIndicatorInsets;
  @property (nonatomic, assign) BOOL automaticallyAdjustContentInsets;
++@property (nonatomic, assign) BOOL inputMethodEnabled;
  @property (nonatomic, assign) BOOL keyboardDisplayRequiresUserAction;
  @property (nonatomic, assign) BOOL hideKeyboardAccessoryView;
+ @property (nonatomic, assign) BOOL removeIosKeyboardObserver;
 diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
-index 38904266..9f57ba79 100644
+index 38904266..94db4823 100644
 --- a/apple/RNCWebViewImpl.m
 +++ b/apple/RNCWebViewImpl.m
-@@ -175,6 +175,7 @@ - (instancetype)initWithFrame:(CGRect)frame
+@@ -52,10 +52,24 @@ @interface RNCWKWebView : WKWebView
+ #if !TARGET_OS_OSX
+ @property (nonatomic, copy) NSArray<NSDictionary *> * _Nullable menuItems;
+ @property (nonatomic, copy) NSArray<NSString *> * _Nullable suppressMenuItems;
++@property (nonatomic, assign) BOOL inputMethodEnabled;
+ #endif // !TARGET_OS_OSX
+ @end
+ @implementation RNCWKWebView
+ #if !TARGET_OS_OSX
++- (UIView *)inputView
++{
++  return self.inputMethodEnabled ? [super inputView] : [UIView new];
++}
++
++- (void)setInputMethodEnabled:(BOOL)inputMethodEnabled
++{
++  _inputMethodEnabled = inputMethodEnabled;
++  for (UIView *subview in self.scrollView.subviews) {
++    [subview reloadInputViews];
++  }
++}
++
+ - (NSString *)stringFromAction:(SEL) action {
+   NSString *sel = NSStringFromSelector(action);
+
+@@ -175,6 +189,8 @@ - (instancetype)initWithFrame:(CGRect)frame
      _automaticallyAdjustContentInsets = YES;
      _autoManageStatusBarEnabled = YES;
      _contentInset = UIEdgeInsetsZero;
 +    _scrollIndicatorInsets = UIEdgeInsetsZero;
++    _inputMethodEnabled = YES;
      _savedKeyboardDisplayRequiresUserAction = YES;
      _injectedJavaScript = nil;
      _injectedJavaScriptForMainFrameOnly = YES;
-@@ -578,6 +579,10 @@ - (void)didMoveToWindow
+@@ -423,6 +439,13 @@ - (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelPara
+ - (WKWebViewConfiguration *)setUpWkWebViewConfig
+ {
+   WKWebViewConfiguration *wkWebViewConfig = [WKWebViewConfiguration new];
++#if TARGET_OS_IOS
++  Class resourceHandlerClass = NSClassFromString(@"LonanoteResourceSchemeHandler");
++  if (resourceHandlerClass != Nil && [resourceHandlerClass conformsToProtocol:@protocol(WKURLSchemeHandler)]) {
++    id<WKURLSchemeHandler> resourceHandler = [[resourceHandlerClass alloc] init];
++    [wkWebViewConfig setURLSchemeHandler:resourceHandler forURLScheme:@"lonanote-resource"];
++  }
++#endif
+   WKPreferences *prefs = [[WKPreferences alloc]init];
+   BOOL _prefsUsed = NO;
+   if (!_javaScriptEnabled) {
+@@ -519,6 +542,7 @@ - (void)didMoveToWindow
+     _webView = [[RNCWKWebView alloc] initWithFrame:self.bounds configuration: wkWebViewConfig];
+     [self setBackgroundColor: _savedBackgroundColor];
+ #if !TARGET_OS_OSX
++    _webView.inputMethodEnabled = _inputMethodEnabled;
+     // Apply once at creation time. The prop is documented as non-reactive —
+     // toggling it after mount cannot restore the observers WKWebView registers internally
+     if (_removeIosKeyboardObserver) {
+@@ -578,6 +602,10 @@ - (void)didMoveToWindow
      }
  #endif
- 
+
 +#if !TARGET_OS_OSX
 +    _webView.scrollView.scrollIndicatorInsets = _scrollIndicatorInsets;
 +#endif
@@ -105,10 +208,10 @@ index 38904266..9f57ba79 100644
  #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130300 || \
      __IPHONE_OS_VERSION_MAX_ALLOWED >= 160400 || \
      __TV_OS_VERSION_MAX_ALLOWED >= 160400
-@@ -837,6 +842,16 @@ - (void)setContentInset:(UIEdgeInsets)contentInset
+@@ -837,6 +865,26 @@ - (void)setContentInset:(UIEdgeInsets)contentInset
  #endif // !TARGET_OS_OSX
  }
- 
+
 +- (void)setScrollIndicatorInsets:(UIEdgeInsets)scrollIndicatorInsets
 +{
 +  _scrollIndicatorInsets = scrollIndicatorInsets;
@@ -119,25 +222,42 @@ index 38904266..9f57ba79 100644
 +#endif // !TARGET_OS_OSX
 +}
 +
++- (void)setInputMethodEnabled:(BOOL)inputMethodEnabled
++{
++  _inputMethodEnabled = inputMethodEnabled;
++#if !TARGET_OS_OSX
++  if (_webView != nil) {
++    _webView.inputMethodEnabled = inputMethodEnabled;
++  }
++#endif // !TARGET_OS_OSX
++}
++
  - (void)refreshContentInset
  {
  #if !TARGET_OS_OSX
-@@ -1140,6 +1155,7 @@ - (void)layoutSubviews
+@@ -1140,5 +1188,6 @@ - (void)layoutSubviews
    _webView.frame = self.bounds;
  #if !TARGET_OS_OSX
    _webView.scrollView.contentInset = _contentInset;
 +  _webView.scrollView.scrollIndicatorInsets = _scrollIndicatorInsets;
  #endif // !TARGET_OS_OSX
  }
- 
 diff --git a/apple/RNCWebView.mm b/apple/RNCWebView.mm
-index 2be78778..fae292af 100644
+index 2be78778..729a499c 100644
 --- a/apple/RNCWebView.mm
 +++ b/apple/RNCWebView.mm
-@@ -382,6 +382,16 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
+@@ -307,6 +307,7 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
+     REMAP_WEBVIEW_PROP(automaticallyAdjustContentInsets)
+     REMAP_WEBVIEW_PROP(autoManageStatusBarEnabled)
+     REMAP_WEBVIEW_PROP(hideKeyboardAccessoryView)
++    REMAP_WEBVIEW_PROP(inputMethodEnabled)
+     REMAP_WEBVIEW_PROP(allowsBackForwardNavigationGestures)
+     REMAP_WEBVIEW_PROP(incognito)
+     REMAP_WEBVIEW_PROP(pagingEnabled)
+@@ -382,6 +383,16 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
          [_view setContentInset: edgesInsets];
      }
- 
+
 +    if (oldViewProps.scrollIndicatorInsets.top != newViewProps.scrollIndicatorInsets.top || oldViewProps.scrollIndicatorInsets.left != newViewProps.scrollIndicatorInsets.left || oldViewProps.scrollIndicatorInsets.right != newViewProps.scrollIndicatorInsets.right || oldViewProps.scrollIndicatorInsets.bottom != newViewProps.scrollIndicatorInsets.bottom) {
 +        UIEdgeInsets edgesInsets = {
 +            .top = newViewProps.scrollIndicatorInsets.top,
@@ -152,45 +272,52 @@ index 2be78778..fae292af 100644
          [_view setBasicAuthCredential: @{
              @"username": RCTNSStringFromString(newViewProps.basicAuthCredential.username),
 diff --git a/apple/RNCWebViewManager.mm b/apple/RNCWebViewManager.mm
-index a510ffd9..88dca4f4 100644
+index a510ffd9..b61109c4 100644
 --- a/apple/RNCWebViewManager.mm
 +++ b/apple/RNCWebViewManager.mm
-@@ -68,6 +68,7 @@ - (RNCView *)view
+@@ -68,6 +68,8 @@ - (RNCView *)view
  RCT_EXPORT_VIEW_PROPERTY(mediaPlaybackRequiresUserAction, BOOL)
  RCT_EXPORT_VIEW_PROPERTY(dataDetectorTypes, WKDataDetectorTypes)
  RCT_EXPORT_VIEW_PROPERTY(contentInset, UIEdgeInsets)
 +RCT_EXPORT_VIEW_PROPERTY(scrollIndicatorInsets, UIEdgeInsets)
++RCT_EXPORT_VIEW_PROPERTY(inputMethodEnabled, BOOL)
  RCT_EXPORT_VIEW_PROPERTY(automaticallyAdjustContentInsets, BOOL)
  RCT_EXPORT_VIEW_PROPERTY(autoManageStatusBarEnabled, BOOL)
  RCT_EXPORT_VIEW_PROPERTY(hideKeyboardAccessoryView, BOOL)
 diff --git a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
+index fa8efb88..a6ae6b26 100644
 --- a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
 +++ b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
-@@ -369,2 +369,5 @@
-     @Override
--    public void setContentInset(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
-+    public void setContentInset(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
+@@ -202,6 +202,12 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
+         mRNCWebViewManagerImpl.setJavaScriptEnabled(view, enabled);
+     }
+
++    @Override
++    @ReactProp(name = "inputMethodEnabled", defaultBoolean = true)
++    public void setInputMethodEnabled(RNCWebViewWrapper view, boolean value) {
++        mRNCWebViewManagerImpl.setInputMethodEnabled(view, value);
++    }
 +
+     @Override
+     @ReactProp(name = "lackPermissionToDownloadMessage")
+     public void setLackPermissionToDownloadMessage(RNCWebViewWrapper view, @Nullable String value) {
+@@ -369,6 +375,9 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
+     @Override
+     public void setContentInset(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
+
 +    @Override
 +    public void setScrollIndicatorInsets(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
-diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
-index 9f57ba79..b19ca4fb 100644
---- a/apple/RNCWebViewImpl.m
-+++ b/apple/RNCWebViewImpl.m
-@@ -424,6 +424,13 @@ - (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelPara
- - (WKWebViewConfiguration *)setUpWkWebViewConfig
- {
-   WKWebViewConfiguration *wkWebViewConfig = [WKWebViewConfiguration new];
-+#if TARGET_OS_IOS
-+  Class resourceHandlerClass = NSClassFromString(@"LonanoteResourceSchemeHandler");
-+  if (resourceHandlerClass != Nil && [resourceHandlerClass conformsToProtocol:@protocol(WKURLSchemeHandler)]) {
-+    id<WKURLSchemeHandler> resourceHandler = [[resourceHandlerClass alloc] init];
-+    [wkWebViewConfig setURLSchemeHandler:resourceHandler forURLScheme:@"lonanote-resource"];
-+  }
-+#endif
-   WKPreferences *prefs = [[WKPreferences alloc]init];
-   BOOL _prefsUsed = NO;
-   if (!_javaScriptEnabled) {
++
+     @Override
+     public void setContentInsetAdjustmentBehavior(RNCWebViewWrapper view, @Nullable String value) {}
+
+@@ -564,4 +573,4 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
+         mRNCWebViewManagerImpl.onDropViewInstance(view);
+         super.onDropViewInstance(view);
+     }
+-}
+\ No newline at end of file
++}
 diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java b/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java
 index 209b8552..4d48778d 100644
 --- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java
@@ -198,10 +325,10 @@ index 209b8552..4d48778d 100644
 @@ -32,6 +32,7 @@ import com.reactnativecommunity.webview.events.TopRenderProcessGoneEvent;
  import com.reactnativecommunity.webview.events.TopShouldStartLoadWithRequestEvent;
  import android.webkit.CookieManager;
- 
+
 +import java.lang.reflect.Method;
  import java.util.concurrent.atomic.AtomicReference;
- 
+
  public class RNCWebViewClient extends WebViewClient {
 @@ -41,6 +42,39 @@ public class RNCWebViewClient extends WebViewClient {
      protected boolean mLastLoadFailed = false;
@@ -240,13 +367,13 @@ index 209b8552..4d48778d 100644
 +            return null;
 +        }
 +    }
- 
+
      public void setBasicAuthCredential(@Nullable RNCBasicAuthCredential credential) {
          basicAuthCredential = credential;
 @@ -138,6 +172,12 @@ public class RNCWebViewClient extends WebViewClient {
          return this.shouldOverrideUrlLoading(view, url);
      }
- 
+
 +    @Override
 +    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 +        WebResourceResponse response = interceptLonanoteResource(request);
@@ -256,3 +383,102 @@ index 209b8552..4d48778d 100644
      @Override
      public void onReceivedHttpAuthRequest(WebView view, HttpAuthHandler handler, String host, String realm) {
          if (basicAuthCredential != null) {
+diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
+index 80c68034..416d1996 100644
+--- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
++++ b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
+@@ -9,6 +9,9 @@ import android.view.Menu;
+ import android.view.MenuItem;
+ import android.view.MotionEvent;
+ import android.view.View;
++import android.view.inputmethod.EditorInfo;
++import android.view.inputmethod.InputConnection;
++import android.view.inputmethod.InputMethodManager;
+ import android.webkit.JavascriptInterface;
+ import android.webkit.ValueCallback;
+ import android.webkit.WebChromeClient;
+@@ -77,6 +80,7 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+     private OnScrollDispatchHelper mOnScrollDispatchHelper;
+     protected boolean hasScrollEvent = false;
+     protected boolean nestedScrollEnabled = false;
++    protected boolean inputMethodEnabled = true;
+     protected ProgressChangedFilter progressChangedFilter;
+
+     /**
+@@ -107,6 +111,31 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+         this.nestedScrollEnabled = nestedScrollEnabled;
+     }
+
++    public void setInputMethodEnabled(boolean enabled) {
++        inputMethodEnabled = enabled;
++        InputMethodManager inputMethodManager =
++                (InputMethodManager) getContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
++        if (inputMethodManager == null) {
++            return;
++        }
++        inputMethodManager.restartInput(this);
++        if (!enabled) {
++            inputMethodManager.hideSoftInputFromWindow(getWindowToken(), 0);
++        } else if (hasFocus()) {
++            post(() -> inputMethodManager.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT));
++        }
++    }
++
++    @Override
++    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
++        return inputMethodEnabled ? super.onCreateInputConnection(outAttrs) : null;
++    }
++
++    @Override
++    public boolean onCheckIsTextEditor() {
++        return inputMethodEnabled && super.onCheckIsTextEditor();
++    }
++
+     @Override
+     public void onHostResume() {
+         // do nothing
+@@ -465,4 +494,4 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+             return waitingForCommandLoadUrl;
+         }
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt b/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
+index f83033b3..2e41ea94 100644
+--- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
++++ b/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
+@@ -547,6 +547,10 @@ class RNCWebViewManagerImpl(private val newArch: Boolean = false) {
+         view.settings.javaScriptEnabled = enabled
+     }
+
++    fun setInputMethodEnabled(viewWrapper: RNCWebViewWrapper, enabled: Boolean) {
++        viewWrapper.webView.setInputMethodEnabled(enabled)
++    }
++
+     fun setAllowFileAccess(viewWrapper: RNCWebViewWrapper, allowFileAccess: Boolean) {
+         val view = viewWrapper.webView
+         view.settings.allowFileAccess = allowFileAccess;
+diff --git a/android/src/oldarch/com/reactnativecommunity/webview/RNCWebViewManager.java b/android/src/oldarch/com/reactnativecommunity/webview/RNCWebViewManager.java
+index 974337f4..262bccf9 100644
+--- a/android/src/oldarch/com/reactnativecommunity/webview/RNCWebViewManager.java
++++ b/android/src/oldarch/com/reactnativecommunity/webview/RNCWebViewManager.java
+@@ -164,6 +164,11 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper> {
+         mRNCWebViewManagerImpl.setJavaScriptEnabled(view, enabled);
+     }
+
++    @ReactProp(name = "inputMethodEnabled", defaultBoolean = true)
++    public void setInputMethodEnabled(RNCWebViewWrapper view, boolean value) {
++        mRNCWebViewManagerImpl.setInputMethodEnabled(view, value);
++    }
++
+     @ReactProp(name = "lackPermissionToDownloadMessage")
+     public void setLackPermissionToDownloadMessage(RNCWebViewWrapper view, @Nullable String value) {
+         mRNCWebViewManagerImpl.setLackPermissionToDownloadMessage(value);
+@@ -332,4 +337,4 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper> {
+         mRNCWebViewManagerImpl.onDropViewInstance(view);
+         super.onDropViewInstance(view);
+     }
+-}
+\ No newline at end of file
++}

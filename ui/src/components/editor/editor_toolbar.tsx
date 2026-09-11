@@ -22,7 +22,11 @@ import type { EditorCommand } from "@/assets/editor/src/bridge/protocol";
 import { editorCommandCoordinator } from "@/components/editor/controllers";
 import type { DocumentModel, EditorViewSession } from "@/stores/editor";
 
-import { MOBILE_EDITOR_TOOLBAR_HEIGHT, MOBILE_EDITOR_TOOLBAR_PANEL_HEIGHT } from "./editor_layout";
+import {
+  MOBILE_EDITOR_KEYBOARD_RESTORE_TIMEOUT_MS,
+  MOBILE_EDITOR_TOOLBAR_HEIGHT,
+  MOBILE_EDITOR_TOOLBAR_PANEL_FALLBACK_HEIGHT,
+} from "./editor_layout";
 
 type ToolbarPanel = "insert" | "format";
 
@@ -57,21 +61,137 @@ function ToolbarIconButton({
   );
 }
 
+function MobileToolbarRow({
+  canRedo,
+  canUndo,
+  disabled,
+  executeCommand,
+  hideKeyboard,
+  selectedPanel,
+  togglePanel,
+}: {
+  canRedo: boolean;
+  canUndo: boolean;
+  disabled: boolean;
+  executeCommand: (command: EditorCommand) => void;
+  hideKeyboard: () => void;
+  selectedPanel: ToolbarPanel | null;
+  togglePanel: (panel: ToolbarPanel) => void;
+}) {
+  const theme = useUiTheme();
+  return (
+    <View style={styles.mobileToolbarRow}>
+      <ScrollView
+        contentContainerStyle={styles.mobileActionContent}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.mobileActionScroll}
+      >
+        <ToolbarIconButton
+          accessibilityLabel="插入内容"
+          disabled={disabled}
+          onPress={() => togglePanel("insert")}
+          selected={selectedPanel === "insert"}
+        >
+          <Plus color={theme.foreground} size={24} />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          accessibilityLabel="文本样式"
+          disabled={disabled}
+          onPress={() => togglePanel("format")}
+          selected={selectedPanel === "format"}
+        >
+          <Baseline color={theme.foreground} size={24} />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          accessibilityLabel="粗体"
+          disabled={disabled}
+          onPress={() => void executeCommand({ type: "mark.toggle", mark: "bold" })}
+        >
+          <Bold color={theme.foreground} size={23} />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          accessibilityLabel="斜体"
+          disabled={disabled}
+          onPress={() => void executeCommand({ type: "mark.toggle", mark: "italic" })}
+        >
+          <Italic color={theme.foreground} size={23} />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          accessibilityLabel="删除线"
+          disabled={disabled}
+          onPress={() => void executeCommand({ type: "mark.toggle", mark: "strikethrough" })}
+        >
+          <Strikethrough color={theme.foreground} size={22} />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          accessibilityLabel="高亮"
+          disabled={disabled}
+          onPress={() => void executeCommand({ type: "mark.toggle", mark: "highlight" })}
+        >
+          <Highlighter color={theme.foreground} size={22} />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          accessibilityLabel="行内代码"
+          disabled={disabled}
+          onPress={() => void executeCommand({ type: "mark.toggle", mark: "inlineCode" })}
+        >
+          <Code2 color={theme.foreground} size={22} />
+        </ToolbarIconButton>
+      </ScrollView>
+      <View style={styles.trailingActions}>
+        <ToolbarIconButton
+          accessibilityLabel="撤销"
+          disabled={disabled || !canUndo}
+          onPress={() => void executeCommand({ type: "history.undo" })}
+        >
+          <Undo2 color={theme.foreground} size={23} />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          accessibilityLabel="重做"
+          disabled={disabled || !canRedo}
+          onPress={() => void executeCommand({ type: "history.redo" })}
+        >
+          <Redo2 color={theme.foreground} size={23} />
+        </ToolbarIconButton>
+        <View style={[styles.trailingDivider, { backgroundColor: theme.border }]} />
+        <ToolbarIconButton accessibilityLabel="隐藏键盘" onPress={hideKeyboard}>
+          <View style={styles.keyboardHideIcon}>
+            <KeyboardIcon color={theme.foreground} size={24} />
+            <ChevronDown color={theme.foreground} size={15} style={styles.keyboardHideChevron} />
+          </View>
+        </ToolbarIconButton>
+      </View>
+    </View>
+  );
+}
+
 export function EditorToolbar({
   document,
   editor,
+  onMobileInputMethodEnabledChange,
   onMobileOverlayHeightChange,
 }: {
   document: DocumentModel;
   editor: EditorViewSession;
+  onMobileInputMethodEnabledChange?: (enabled: boolean) => void;
   onMobileOverlayHeightChange?: (height: number) => void;
 }) {
   const theme = useUiTheme();
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<ToolbarPanel | null>(null);
+  const [restoringPanel, setRestoringPanel] = useState<ToolbarPanel | null>(null);
+  const [lastKeyboardHeight, setLastKeyboardHeight] = useState(
+    () => Keyboard.metrics()?.height ?? 0,
+  );
+  const [isRestoringKeyboard, setIsRestoringKeyboard] = useState(false);
   const handleKeyboardPhaseChange = useCallback((phase: KeyboardVisibilityPhase) => {
     setKeyboardVisible(phase !== "hidden");
+    if (phase === "visible") {
+      setIsRestoringKeyboard(false);
+      setRestoringPanel(null);
+    }
   }, []);
   useKeyboardVisibility({ onPhaseChange: handleKeyboardPhaseChange });
 
@@ -80,9 +200,48 @@ export function EditorToolbar({
     editor.readOnly ||
     editor.previewMode ||
     document.editOwnerEditorId !== editor.editorId;
-  const panelHeight = activePanel === null ? 0 : MOBILE_EDITOR_TOOLBAR_PANEL_HEIGHT + insets.bottom;
+  const editorFocused = editor.editorState.focused;
+  const displayedPanel = activePanel ?? restoringPanel;
+  const replacementPanelHeight =
+    lastKeyboardHeight > 0
+      ? lastKeyboardHeight
+      : MOBILE_EDITOR_TOOLBAR_PANEL_FALLBACK_HEIGHT + insets.bottom;
+  const panelHeight = displayedPanel === null ? 0 : replacementPanelHeight;
   const contentOverlayHeight =
-    activePanel === null ? 0 : panelHeight + MOBILE_EDITOR_TOOLBAR_HEIGHT;
+    displayedPanel !== null || isRestoringKeyboard
+      ? replacementPanelHeight + MOBILE_EDITOR_TOOLBAR_HEIGHT
+      : 0;
+
+  useEffect(() => {
+    const updateLastKeyboardHeight = (height: number) => {
+      if (height > 0) setLastKeyboardHeight(height);
+    };
+    const willShowSubscription = Keyboard.addListener("keyboardWillShow", (event) => {
+      if (!isRestoringKeyboard) updateLastKeyboardHeight(event.endCoordinates.height);
+    });
+    const didShowSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
+      if (!isRestoringKeyboard) updateLastKeyboardHeight(event.endCoordinates.height);
+    });
+    const frameChangeSubscription = Keyboard.addListener("keyboardWillChangeFrame", (event) => {
+      if (activePanel === null && !isRestoringKeyboard) {
+        updateLastKeyboardHeight(event.endCoordinates.height);
+      }
+    });
+    return () => {
+      willShowSubscription.remove();
+      didShowSubscription.remove();
+      frameChangeSubscription.remove();
+    };
+  }, [activePanel, isRestoringKeyboard]);
+
+  useEffect(() => {
+    if (!isRestoringKeyboard) return;
+    const timeout = setTimeout(() => {
+      setIsRestoringKeyboard(false);
+      setRestoringPanel(null);
+    }, MOBILE_EDITOR_KEYBOARD_RESTORE_TIMEOUT_MS);
+    return () => clearTimeout(timeout);
+  }, [isRestoringKeyboard]);
 
   useEffect(() => {
     if (!isMobile()) return;
@@ -90,29 +249,50 @@ export function EditorToolbar({
     return () => onMobileOverlayHeightChange?.(0);
   }, [contentOverlayHeight, onMobileOverlayHeightChange]);
 
+  useEffect(() => {
+    if (!isMobile()) return;
+    onMobileInputMethodEnabledChange?.(activePanel === null);
+  }, [activePanel, onMobileInputMethodEnabledChange]);
+
+  useEffect(
+    () => () => onMobileInputMethodEnabledChange?.(true),
+    [onMobileInputMethodEnabledChange],
+  );
+
+  useEffect(() => {
+    if (editorFocused || (activePanel === null && restoringPanel === null)) return;
+    setActivePanel(null);
+    setRestoringPanel(null);
+    setIsRestoringKeyboard(false);
+  }, [activePanel, editorFocused, restoringPanel]);
+
   const executeCommand = useCallback(
     (command: EditorCommand) =>
       editorCommandCoordinator.execute(editor.editorId, command).catch(() => undefined),
     [editor.editorId],
   );
-  const focusEditor = useCallback(() => {
+  const restoreKeyboard = useCallback(() => {
+    setRestoringPanel(activePanel);
+    setIsRestoringKeyboard(true);
     setActivePanel(null);
-    void executeCommand({ type: "editor.focus" });
-  }, [executeCommand]);
+  }, [activePanel]);
   const hideKeyboard = useCallback(() => {
+    setIsRestoringKeyboard(false);
     setActivePanel(null);
+    setRestoringPanel(null);
     void executeCommand({ type: "editor.blur" }).finally(() => Keyboard.dismiss());
   }, [executeCommand]);
   const togglePanel = useCallback(
     (panel: ToolbarPanel) => {
       if (activePanel === panel) {
-        focusEditor();
+        restoreKeyboard();
         return;
       }
+      setIsRestoringKeyboard(false);
+      setRestoringPanel(null);
       setActivePanel(panel);
-      void executeCommand({ type: "editor.blur" }).finally(() => Keyboard.dismiss());
     },
-    [activePanel, executeCommand, focusEditor],
+    [activePanel, restoreKeyboard],
   );
 
   const desktopItems = [
@@ -139,7 +319,7 @@ export function EditorToolbar({
 
   const panelActions = useMemo(
     () =>
-      activePanel === "insert"
+      displayedPanel === "insert"
         ? [
             {
               command: { type: "block.set", block: "heading", level: 1 } as const,
@@ -189,7 +369,7 @@ export function EditorToolbar({
             { command: { type: "list.toggle", list: "task" } as const, label: "任务列表" },
             { command: { type: "block.set", block: "blockquote" } as const, label: "引用" },
           ],
-    [activePanel],
+    [displayedPanel],
   );
 
   if (!isMobile()) {
@@ -222,11 +402,13 @@ export function EditorToolbar({
     );
   }
 
-  if (!keyboardVisible && activePanel === null) return null;
+  if (!keyboardVisible && displayedPanel === null && !isRestoringKeyboard && !editorFocused) {
+    return null;
+  }
 
   return (
     <>
-      {activePanel === null ? null : (
+      {displayedPanel === null ? null : (
         <View style={[styles.panel, { backgroundColor: theme.background, height: panelHeight }]}>
           <ScrollView
             contentContainerStyle={styles.panelContent}
@@ -239,7 +421,7 @@ export function EditorToolbar({
                     disabled={disabled}
                     onPress={() => {
                       void executeCommand(command);
-                      if (activePanel === "insert") focusEditor();
+                      if (activePanel === "insert") restoreKeyboard();
                     }}
                     size="sm"
                     style={styles.panelButton}
@@ -253,102 +435,56 @@ export function EditorToolbar({
         </View>
       )}
       <GlassEffect
+        accessibilityElementsHidden={displayedPanel !== null}
         accessibilityLabel="编辑工具栏"
-        keyboardAvoidance={activePanel === null ? { subtractSafeAreaInset: false } : false}
+        importantForAccessibility={displayedPanel === null ? "auto" : "no-hide-descendants"}
+        keyboardAvoidance={{ subtractSafeAreaInset: false }}
         keyboardHiddenConfirmation={{ finalHeight: -MOBILE_EDITOR_TOOLBAR_HEIGHT }}
+        pointerEvents={displayedPanel === null ? "auto" : "none"}
         style={[
           styles.mobileToolbar,
-          { backgroundColor: theme.background, borderColor: theme.border, bottom: panelHeight },
+          {
+            backgroundColor: theme.background,
+            borderColor: theme.border,
+            bottom: 0,
+            opacity: displayedPanel === null ? 1 : 0,
+          },
         ]}
       >
-        <View style={styles.mobileToolbarRow}>
-          <ScrollView
-            contentContainerStyle={styles.mobileActionContent}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.mobileActionScroll}
-          >
-            <ToolbarIconButton
-              accessibilityLabel="插入内容"
-              disabled={disabled}
-              onPress={() => togglePanel("insert")}
-              selected={activePanel === "insert"}
-            >
-              <Plus color={theme.foreground} size={24} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              accessibilityLabel="文本样式"
-              disabled={disabled}
-              onPress={() => togglePanel("format")}
-              selected={activePanel === "format"}
-            >
-              <Baseline color={theme.foreground} size={24} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              accessibilityLabel="粗体"
-              disabled={disabled}
-              onPress={() => void executeCommand({ type: "mark.toggle", mark: "bold" })}
-            >
-              <Bold color={theme.foreground} size={23} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              accessibilityLabel="斜体"
-              disabled={disabled}
-              onPress={() => void executeCommand({ type: "mark.toggle", mark: "italic" })}
-            >
-              <Italic color={theme.foreground} size={23} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              accessibilityLabel="删除线"
-              disabled={disabled}
-              onPress={() => void executeCommand({ type: "mark.toggle", mark: "strikethrough" })}
-            >
-              <Strikethrough color={theme.foreground} size={22} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              accessibilityLabel="高亮"
-              disabled={disabled}
-              onPress={() => void executeCommand({ type: "mark.toggle", mark: "highlight" })}
-            >
-              <Highlighter color={theme.foreground} size={22} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              accessibilityLabel="行内代码"
-              disabled={disabled}
-              onPress={() => void executeCommand({ type: "mark.toggle", mark: "inlineCode" })}
-            >
-              <Code2 color={theme.foreground} size={22} />
-            </ToolbarIconButton>
-          </ScrollView>
-          <View style={styles.trailingActions}>
-            <ToolbarIconButton
-              accessibilityLabel="撤销"
-              disabled={disabled || !editor.editorState.canUndo}
-              onPress={() => void executeCommand({ type: "history.undo" })}
-            >
-              <Undo2 color={theme.foreground} size={23} />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              accessibilityLabel="重做"
-              disabled={disabled || !editor.editorState.canRedo}
-              onPress={() => void executeCommand({ type: "history.redo" })}
-            >
-              <Redo2 color={theme.foreground} size={23} />
-            </ToolbarIconButton>
-            <View style={[styles.trailingDivider, { backgroundColor: theme.border }]} />
-            <ToolbarIconButton accessibilityLabel="隐藏键盘" onPress={hideKeyboard}>
-              <View style={styles.keyboardHideIcon}>
-                <KeyboardIcon color={theme.foreground} size={24} />
-                <ChevronDown
-                  color={theme.foreground}
-                  size={15}
-                  style={styles.keyboardHideChevron}
-                />
-              </View>
-            </ToolbarIconButton>
-          </View>
-        </View>
+        <MobileToolbarRow
+          canRedo={editor.editorState.canRedo}
+          canUndo={editor.editorState.canUndo}
+          disabled={disabled}
+          executeCommand={executeCommand}
+          hideKeyboard={hideKeyboard}
+          selectedPanel={displayedPanel}
+          togglePanel={togglePanel}
+        />
       </GlassEffect>
+      {displayedPanel === null ? null : (
+        <GlassEffect
+          accessibilityLabel="编辑工具栏"
+          keyboardAvoidance={false}
+          style={[
+            styles.mobileToolbar,
+            {
+              backgroundColor: theme.background,
+              borderColor: theme.border,
+              bottom: panelHeight,
+            },
+          ]}
+        >
+          <MobileToolbarRow
+            canRedo={editor.editorState.canRedo}
+            canUndo={editor.editorState.canUndo}
+            disabled={disabled}
+            executeCommand={executeCommand}
+            hideKeyboard={hideKeyboard}
+            selectedPanel={displayedPanel}
+            togglePanel={togglePanel}
+          />
+        </GlassEffect>
+      )}
     </>
   );
 }
@@ -375,7 +511,7 @@ const styles = StyleSheet.create({
   panel: { bottom: 0, left: 0, position: "absolute", right: 0, zIndex: 20 },
   panelButton: { width: "100%" },
   panelCell: { padding: 4, width: "50%" },
-  panelContent: { paddingHorizontal: 8, paddingTop: 8 },
+  panelContent: { paddingBottom: 8, paddingHorizontal: 8, paddingTop: 8 },
   panelGrid: { flexDirection: "row", flexWrap: "wrap" },
   trailingActions: { alignItems: "center", flexDirection: "row" },
   trailingDivider: { height: 28, marginHorizontal: 2, width: StyleSheet.hairlineWidth },

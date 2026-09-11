@@ -29,6 +29,7 @@ import { onError, onHttpError, onLoad, onLoadEnd, onLoadStart } from "./editor_w
 type EditorWebViewProps = {
   document: DocumentModel;
   editor: EditorViewSession;
+  inputMethodEnabled?: boolean;
   mobileToolbarOverlayHeight?: number;
 };
 
@@ -56,12 +57,16 @@ function getContentBottomInset(
   mobileToolbarOverlayHeight: number,
 ): number {
   if (mobileToolbarOverlayHeight > 0) return mobileToolbarOverlayHeight;
-  if (os() === "ios") {
-    return keyboardHeight > 0
-      ? Math.max(safeAreaBottom, keyboardHeight + MOBILE_EDITOR_TOOLBAR_HEIGHT)
-      : safeAreaBottom;
-  }
   return Math.max(safeAreaBottom, keyboardHeight > 0 ? MOBILE_EDITOR_TOOLBAR_HEIGHT : 0);
+}
+
+function getScrollIndicatorBottomInset(
+  safeAreaBottom: number,
+  keyboardHeight: number,
+  mobileToolbarOverlayHeight: number,
+): number {
+  if (mobileToolbarOverlayHeight > 0) return mobileToolbarOverlayHeight;
+  return keyboardHeight > 0 ? keyboardHeight + MOBILE_EDITOR_TOOLBAR_HEIGHT : safeAreaBottom;
 }
 
 function getSemanticColors(theme: ReturnType<typeof useUiTheme>): EditorSemanticColors {
@@ -86,6 +91,7 @@ function RenderLoading() {
 export function EditorWebView({
   document,
   editor,
+  inputMethodEnabled = true,
   mobileToolbarOverlayHeight = 0,
 }: EditorWebViewProps) {
   const devMode = isDev();
@@ -334,7 +340,9 @@ export function EditorWebView({
       injectedJavaScriptBeforeContentLoaded={createBootstrapInjection(identity)}
       injectedJavaScriptObject={{ lonanoteEditorBridge: identity }}
       hideKeyboardAccessoryView={os() === "ios"}
+      inputMethodEnabled={inputMethodEnabled}
       javaScriptEnabled
+      keyboardDisplayRequiresUserAction={false}
       onContentProcessDidTerminate={restartSurface}
       onError={(event) => {
         onError(event);
@@ -356,7 +364,11 @@ export function EditorWebView({
       renderLoading={RenderLoading}
       scrollIndicatorInsets={{
         top: headerHeight,
-        bottom: Math.max(insets.bottom, keyboardHeight, mobileToolbarOverlayHeight),
+        bottom: getScrollIndicatorBottomInset(
+          insets.bottom,
+          keyboardHeight,
+          mobileToolbarOverlayHeight,
+        ),
       }}
       source={getSource(devMode)}
       style={styles.webView}
