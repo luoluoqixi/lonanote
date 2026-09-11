@@ -21,6 +21,7 @@ Pod::Spec.new do |s|
     "HEADER_SEARCH_PATHS" => [
       '"${PODS_TARGET_SRCROOT}/cpp"',
       '"${PODS_TARGET_SRCROOT}/include"',
+      '"${PODS_TARGET_SRCROOT}/ios/include"',
     ].join(' '),
     "CLANG_CXX_LANGUAGE_STANDARD" => "c++20",
   }
