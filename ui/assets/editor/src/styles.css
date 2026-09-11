@@ -33,10 +33,8 @@ body {
 #editor {
   width: 100%;
   min-height: calc(100vh - var(--lonanote-editor-content-bottom));
-  padding:
-    calc(var(--lonanote-editor-content-top) + 12px)
-    calc(var(--lonanote-editor-content-right) + 8px)
-    24px
+  padding: calc(var(--lonanote-editor-content-top) + 12px)
+    calc(var(--lonanote-editor-content-right) + 8px) 24px
     calc(var(--lonanote-editor-content-left) + 8px);
   overflow: visible;
   cursor: text;
@@ -68,7 +66,13 @@ body {
     100vh - var(--lonanote-editor-content-top) - var(--lonanote-editor-content-bottom) - 36px
   );
   padding: 0 10px;
-  font: 16px/1.65 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font:
+    16px/1.65 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
 }
 
 .cm-line {
@@ -78,4 +82,12 @@ body {
 .cm-focused .cm-selectionBackground,
 .cm-selectionBackground {
   background: rgba(74, 144, 226, 0.28) !important;
+}
+
+.cm-editor .cm-gutters {
+  background-color: transparent;
+}
+
+.cm-editor .cm-gutters.cm-gutters-before {
+  border-right-width: 0;
 }
