@@ -3,6 +3,15 @@
   --lonanote-editor-content-right: 0px;
   --lonanote-editor-content-bottom: 0px;
   --lonanote-editor-content-left: 0px;
+
+  --lonanote-editor-content-top-basic: 12px;
+  --lonanote-editor-content-right-basic: 12px;
+  --lonanote-editor-content-bottom-basic: 24px;
+  --lonanote-editor-content-left-basic: 12px;
+
+  --lonanote-cm-editor-content-padding-left: 18px;
+  --lonanote-cm-editor-content-padding-right: 20px;
+
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #202124;
@@ -33,9 +42,10 @@ body {
 #editor {
   width: 100%;
   min-height: calc(100vh - var(--lonanote-editor-content-bottom));
-  padding: calc(var(--lonanote-editor-content-top) + 12px)
-    calc(var(--lonanote-editor-content-right) + 8px) 24px
-    calc(var(--lonanote-editor-content-left) + 8px);
+  padding: calc(var(--lonanote-editor-content-top) + var(--lonanote-editor-content-top-basic))
+    calc(var(--lonanote-editor-content-right) + var(--lonanote-editor-content-right-basic))
+    var(--lonanote-editor-content-bottom-basic)
+    calc(var(--lonanote-editor-content-left) + var(--lonanote-editor-content-left-basic));
   overflow: visible;
   cursor: text;
 }
@@ -90,4 +100,9 @@ body {
 
 .cm-editor .cm-gutters.cm-gutters-before {
   border-right-width: 0;
+}
+
+.cm-editor .cm-scroller .cm-content .cm-line {
+  padding: 0 var(--lonanote-cm-editor-content-padding-right) 0
+    var(--lonanote-cm-editor-content-padding-left);
 }
