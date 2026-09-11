@@ -67,6 +67,8 @@ function MobileToolbarRow({
   disabled,
   executeCommand,
   hideKeyboard,
+  safeAreaLeft,
+  safeAreaRight,
   selectedPanel,
   togglePanel,
 }: {
@@ -75,12 +77,16 @@ function MobileToolbarRow({
   disabled: boolean;
   executeCommand: (command: EditorCommand) => void;
   hideKeyboard: () => void;
+  safeAreaLeft: number;
+  safeAreaRight: number;
   selectedPanel: ToolbarPanel | null;
   togglePanel: (panel: ToolbarPanel) => void;
 }) {
   const theme = useUiTheme();
   return (
-    <View style={styles.mobileToolbarRow}>
+    <View
+      style={[styles.mobileToolbarRow, { paddingLeft: safeAreaLeft, paddingRight: safeAreaRight }]}
+    >
       <ScrollView
         contentContainerStyle={styles.mobileActionContent}
         horizontal
@@ -411,8 +417,15 @@ export function EditorToolbar({
       {displayedPanel === null ? null : (
         <View style={[styles.panel, { backgroundColor: theme.background, height: panelHeight }]}>
           <ScrollView
-            contentContainerStyle={styles.panelContent}
-            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.panelContent,
+              {
+                paddingBottom: insets.bottom + 8,
+                paddingLeft: insets.left + 8,
+                paddingRight: insets.right + 8,
+              },
+            ]}
+            showsVerticalScrollIndicator={true}
           >
             <View style={styles.panelGrid}>
               {panelActions.map(({ command, label }) => (
@@ -457,6 +470,8 @@ export function EditorToolbar({
           disabled={disabled}
           executeCommand={executeCommand}
           hideKeyboard={hideKeyboard}
+          safeAreaLeft={insets.left}
+          safeAreaRight={insets.right}
           selectedPanel={displayedPanel}
           togglePanel={togglePanel}
         />
@@ -480,6 +495,8 @@ export function EditorToolbar({
             disabled={disabled}
             executeCommand={executeCommand}
             hideKeyboard={hideKeyboard}
+            safeAreaLeft={insets.left}
+            safeAreaRight={insets.right}
             selectedPanel={displayedPanel}
             togglePanel={togglePanel}
           />
@@ -511,7 +528,7 @@ const styles = StyleSheet.create({
   panel: { bottom: 0, left: 0, position: "absolute", right: 0, zIndex: 20 },
   panelButton: { width: "100%" },
   panelCell: { padding: 4, width: "50%" },
-  panelContent: { paddingBottom: 8, paddingHorizontal: 8, paddingTop: 8 },
+  panelContent: { paddingTop: 8 },
   panelGrid: { flexDirection: "row", flexWrap: "wrap" },
   trailingActions: { alignItems: "center", flexDirection: "row" },
   trailingDivider: { height: 28, marginHorizontal: 2, width: StyleSheet.hairlineWidth },
