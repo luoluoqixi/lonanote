@@ -87,6 +87,81 @@ function getBootstrap(): EditorBridgeBootstrap | null {
   }
 }
 
+function isStandaloneDevelopmentMode(): boolean {
+  return (
+    import.meta.env.DEV &&
+    window.parent === window &&
+    new URLSearchParams(window.location.search).get("standalone") === "1"
+  );
+}
+
+function createStandaloneInitializeRequest(): EditorBridgeRequest {
+  const darkMode = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  const colorScheme = darkMode ? "dark" : "light";
+  const colors = darkMode
+    ? {
+        background: "#111113",
+        foreground: "#f4f4f5",
+        primary: "#f472b6",
+        muted: "#27272a",
+        mutedForeground: "#a1a1aa",
+        border: "#3f3f46",
+      }
+    : {
+        background: "#ffffff",
+        foreground: "#18181b",
+        primary: "#db2777",
+        muted: "#f4f4f5",
+        mutedForeground: "#71717a",
+        border: "#e4e4e7",
+      };
+
+  return {
+    protocolVersion: EDITOR_BRIDGE_PROTOCOL_VERSION,
+    messageId: "standalone-initialize-message",
+    channelId: "standalone-channel",
+    generation: 1,
+    editorId: "standalone-editor",
+    documentId: "standalone-document",
+    kind: "request",
+    requestId: "standalone-initialize-request",
+    method: "host.initialize",
+    payload: {
+      runtime: {
+        revision: 1,
+        platform: "web",
+        colorScheme,
+        colors,
+        safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+        contentInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+        locale: navigator.language || "zh-CN",
+        pixelRatio: window.devicePixelRatio || 1,
+        fontScale: 1,
+        reducedMotion:
+          window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
+      },
+      document: {
+        text: "# Editor standalone 测试\n\n当前页面由开发模式自动初始化，可以直接编辑。",
+        revision: 1,
+        displayName: "standalone.md",
+        fileName: "standalone.md",
+        workspacePath: null,
+        readOnly: false,
+        inputEnabled: true,
+      },
+      preferences: {
+        lineNumbers: true,
+        lineWrapping: true,
+        sourceMode: false,
+      },
+      resources: {
+        available: false,
+        reason: "untitled",
+      },
+    } satisfies EditorInitializePayload,
+  };
+}
+
 function createMessageId(): string {
   const sequence = nextMessageSequence;
   nextMessageSequence += 1;
@@ -613,4 +688,6 @@ if (bootstrap) {
       commands: [],
     },
   });
+} else if (isStandaloneDevelopmentMode()) {
+  receiveMessage(JSON.stringify(createStandaloneInitializeRequest()));
 }
