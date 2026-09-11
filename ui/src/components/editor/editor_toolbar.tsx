@@ -472,7 +472,7 @@ export function EditorToolbar({
           hideKeyboard={hideKeyboard}
           safeAreaLeft={insets.left}
           safeAreaRight={insets.right}
-          selectedPanel={displayedPanel}
+          selectedPanel={activePanel}
           togglePanel={togglePanel}
         />
       </GlassEffect>
@@ -497,7 +497,7 @@ export function EditorToolbar({
             hideKeyboard={hideKeyboard}
             safeAreaLeft={insets.left}
             safeAreaRight={insets.right}
-            selectedPanel={displayedPanel}
+            selectedPanel={activePanel}
             togglePanel={togglePanel}
           />
         </GlassEffect>
