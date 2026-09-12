@@ -26,6 +26,7 @@ import {
   isEditorRuntimeUpdatePayload,
   parseEditorBridgeMessage,
 } from "./bridge/protocol";
+import { ANDROID_SELECTION_BOTTOM_OFFSET, EDITOR_MESSAGE_DEDUPLICATION_LIMIT } from "./consts";
 import { LonaEditor } from "./index";
 import {
   parseEditorResourceReference,
@@ -35,7 +36,6 @@ import { resolveEditorResourceUrl } from "./resources/resource_url";
 import "./styles.css";
 
 const root = document.getElementById("editor");
-const MESSAGE_DEDUPLICATION_LIMIT = 256;
 
 if (!root) {
   throw new Error("编辑器根节点不存在");
@@ -138,8 +138,7 @@ function createStandaloneInitializeRequest(): EditorBridgeRequest {
         locale: navigator.language || "zh-CN",
         pixelRatio: window.devicePixelRatio || 1,
         fontScale: 1,
-        reducedMotion:
-          window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
+        reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
       },
       document: {
         text: "# Editor standalone 测试\n\n当前页面由开发模式自动初始化，可以直接编辑。",
@@ -301,7 +300,11 @@ function revealSelectionInViewport(currentSession: SurfaceSession): void {
     key: currentSession,
     read: () => currentSession.editor.getSelectionScrollTop(currentSession.runtime.contentInsets),
     write: (scrollTop) => {
-      if (session === currentSession && currentSession.editor.editor.hasFocus && scrollTop !== null) {
+      if (
+        session === currentSession &&
+        currentSession.editor.editor.hasFocus &&
+        scrollTop !== null
+      ) {
         emitEvent("viewport.scrollRequested", { y: scrollTop });
       }
     },
@@ -370,7 +373,12 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
       // CodeMirror 会在点击、选区变化和输入时将光标保持在这些区域之外。
       EditorView.scrollMargins.of(() => {
         const insets = currentSession.runtime.contentInsets;
-        if (currentSession.runtime.platform !== "ios") return insets;
+        if (currentSession.runtime.platform !== "ios") {
+          return {
+            ...insets,
+            bottom: Math.max(insets.bottom + ANDROID_SELECTION_BOTTOM_OFFSET, 0),
+          };
+        }
         // iOS visualViewport 已扣除键盘，只补充剩余的 Toolbar / 面板遮挡。
         const overlap = Math.max(
           window.innerHeight - (window.visualViewport?.height ?? window.innerHeight),
@@ -384,7 +392,8 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
           !view.hasFocus ||
           options.y !== "nearest" ||
           range.head !== view.state.selection.main.head
-        ) return false;
+        )
+          return false;
         // 输入事务也走宿主 offset 通道，避免与原生校正同时滚动页面。
         revealSelectionInViewport(currentSession);
         return true;
@@ -724,7 +733,7 @@ function handleRequest(request: EditorBridgeRequest): void {
 function rememberMessage(messageId: string): boolean {
   if (receivedMessageIds.has(messageId)) return false;
   receivedMessageIds.add(messageId);
-  if (receivedMessageIds.size > MESSAGE_DEDUPLICATION_LIMIT) {
+  if (receivedMessageIds.size > EDITOR_MESSAGE_DEDUPLICATION_LIMIT) {
     const firstMessageId = receivedMessageIds.values().next().value;
     if (firstMessageId) receivedMessageIds.delete(firstMessageId);
   }

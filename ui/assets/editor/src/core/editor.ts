@@ -38,6 +38,7 @@ import {
 } from "@codemirror/view";
 import { PurrMDConfig, PurrMDThemeConfig } from "purrmd";
 
+import { IOS_SELECTION_BOTTOM_GAP } from "../consts";
 import { findMarkdownAnchorLine } from "../resources/markdown_anchor";
 import { defaultDetectLanguage } from "./detect_language";
 
@@ -361,7 +362,8 @@ export class LonaEditor {
     const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
     const keyboardOverlap = Math.max(window.innerHeight - viewportHeight, 0);
     // 给光标下沿保留少量间距，避免最后一行贴住移动端工具栏边缘。
-    const effectiveBottomInset = Math.max(insets.bottom - keyboardOverlap, 0) + 8;
+    const effectiveBottomInset =
+      Math.max(insets.bottom - keyboardOverlap, 0) + IOS_SELECTION_BOTTOM_GAP;
     const visibleBottom = Math.min(rootRect.bottom, viewportHeight - effectiveBottomInset);
     if (visibleBottom <= visibleTop) return null;
 
