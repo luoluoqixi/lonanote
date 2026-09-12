@@ -450,33 +450,22 @@ export class LonaEditor {
     return Array.isArray(language) ? language : language ? [language] : [];
   }
 
-  /// 获取焦点并设置光标到最后位置
+  /** 获取焦点；传入坐标时将光标定位到最近的文档位置。 */
   focus = (pos?: { x: number; y: number }) => {
     if (!this.#editor) throw new Error("Editor not initialized");
     const lastLine = this.#editor.state.doc.lines;
     const lastPos = this.#editor.state.doc.line(lastLine).to;
     let targetPos: number;
     if (pos) {
-      const found = this.#editor.posAtCoords(pos);
-      if (found !== null) {
-        targetPos = found;
-      } else {
-        const domRect = this.#editor.dom.getBoundingClientRect();
-        if (pos.y < domRect.top) {
-          targetPos = 0; // 在编辑器上方，光标放文档开头
-        } else if (pos.y > domRect.bottom) {
-          targetPos = lastPos; // 在编辑器下方，光标放文档末尾
-        } else {
-          targetPos = lastPos;
-        }
-      }
+      // false 会为未渲染的空白区域估算最近文档位置，而非退回首尾。
+      targetPos = this.#editor.posAtCoords(pos, false);
     } else {
       targetPos = lastPos;
     }
 
     this.#editor.dispatch({
       selection: { anchor: targetPos, head: targetPos },
-      effects: EditorView.scrollIntoView(targetPos, { y: "center" }),
+      effects: EditorView.scrollIntoView(targetPos, { y: pos ? "nearest" : "center" }),
     });
     this.#editor.focus();
   };

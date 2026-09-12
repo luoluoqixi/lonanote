@@ -485,13 +485,7 @@ export function EditorToolbar({
     );
   }
 
-  const keepToolbarForFocusedEditor = currentOs !== "android" && editorFocused;
-  if (
-    !keyboardVisible &&
-    displayedPanel === null &&
-    !isRestoringKeyboard &&
-    !keepToolbarForFocusedEditor
-  ) {
+  if (!keyboardVisible && displayedPanel === null && !isRestoringKeyboard) {
     return null;
   }
 

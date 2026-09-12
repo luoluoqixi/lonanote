@@ -47,6 +47,17 @@ bottomSafeArea.id = "editor-bottom-safe-area";
 bottomSafeArea.setAttribute("aria-hidden", "true");
 document.body.append(bottomSafeArea);
 
+/** 空白 body 区域点击时，将焦点交给距离触点最近的文档位置。 */
+document.body.addEventListener("click", (event) => {
+  if (
+    (event.target !== document.body && event.target !== getRoot()) ||
+    !session
+  ) {
+    return;
+  }
+  session.editor.focus({ x: event.clientX, y: event.clientY });
+});
+
 function getRoot(): HTMLElement {
   if (!root) {
     throw new Error("编辑器根节点不存在");
