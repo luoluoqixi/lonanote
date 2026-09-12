@@ -1,5 +1,6 @@
 import type {
   NativeStackHeaderBackProps,
+  NativeStackHeaderItemMenuAction,
   NativeStackNavigationOptions,
 } from "@react-navigation/native-stack";
 import { Stack, useRouter } from "expo-router";
@@ -164,8 +165,9 @@ function EditorMenuButton({
     <Dropdown
       items={menuItems}
       itemNativeHaptics
+      native={isAndroid ? false : undefined}
       nativeHaptics
-      nativeTrigger
+      nativeTrigger={false}
       trigger={({ open }) => (
         <Button
           aria-label="更多操作"
@@ -238,24 +240,39 @@ function EditorPreviewButton({
 }
 
 function toIosHeaderMenuItems(menuItems: DropdownItemData[]) {
-  return menuItems.flatMap((item) => {
-    if (item.separator || typeof item.label !== "string") return [];
-    const onPress = item.onPress ?? item.onSelect;
-    if (!onPress) return [];
+  const groups: NativeStackHeaderItemMenuAction[][] = [[]];
 
-    return [
-      {
-        disabled: item.disabled,
-        icon: item.iconProps?.ios
-          ? { type: "sfSymbol" as const, name: item.iconProps.ios.name }
-          : undefined,
-        label: item.label,
-        onPress,
-        state: item.selected ? ("on" as const) : undefined,
-        type: "action" as const,
-      },
-    ];
-  });
+  for (const item of menuItems) {
+    if (item.separator) {
+      if (groups.at(-1)?.length) groups.push([]);
+      continue;
+    }
+    if (typeof item.label !== "string") continue;
+    const onPress = item.onPress ?? item.onSelect;
+    if (!onPress) continue;
+
+    groups.at(-1)?.push({
+      disabled: item.disabled,
+      icon: item.iconProps?.ios
+        ? { type: "sfSymbol" as const, name: item.iconProps.ios.name }
+        : undefined,
+      label: item.label,
+      onPress,
+      state: item.selected ? "on" : undefined,
+      type: "action",
+    });
+  }
+
+  const nonEmptyGroups = groups.filter((group) => group.length > 0);
+  if (nonEmptyGroups.length <= 1) return nonEmptyGroups[0] ?? [];
+
+  // inline UIMenu 会作为独立 section 呈现，从而保留 Dropdown 的分割线语义。
+  return nonEmptyGroups.map((items) => ({
+    inline: true,
+    items,
+    label: "",
+    type: "submenu" as const,
+  }));
 }
 
 export function EditorHeader({
@@ -272,11 +289,23 @@ export function EditorHeader({
   const router = useRouter();
   const theme = useUiTheme();
   const isAndroid = os() === "android";
+  const usesNativeHeaderRightItems = isIos() && (!isIos16Plus() || isIos26Plus());
   const usesCustomBackButton = (isIos16Plus() && !isIos26Plus()) || isAndroid;
+  const usesCustomHeaderActions = (isIos() && isIos16Plus() && !isIos26Plus()) || isAndroid;
   const usesCustomHeaderTitle = isIos() || isAndroid;
   const renderCustomBackButton = ({ canGoBack }: NativeStackHeaderBackProps) =>
     canGoBack ? <EditorBackButton isAndroid={isAndroid} onPress={() => router.back()} /> : null;
-  const headerControlsOptions: NativeStackNavigationOptions = isIos()
+  const renderCustomHeaderActions = () => (
+    <View style={styles.headerActions}>
+      <EditorPreviewButton
+        isAndroid={isAndroid}
+        onPress={onTogglePreviewMode}
+        previewMode={previewMode}
+      />
+      <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />
+    </View>
+  );
+  const headerControlsOptions: NativeStackNavigationOptions = usesNativeHeaderRightItems
     ? {
         ...(usesCustomBackButton
           ? {
@@ -292,7 +321,7 @@ export function EditorHeader({
             label: "",
             onPress: onTogglePreviewMode,
             // iOS 26: 保留系统玻璃背景，但不与相邻菜单合并。
-            sharesBackground: !isIos26Plus(),
+            sharesBackground: isIos26Plus() ? false : undefined,
             tintColor: theme.primary,
             type: "button" as const,
           },
@@ -301,27 +330,18 @@ export function EditorHeader({
             icon: { type: "sfSymbol" as const, name: "ellipsis" },
             label: "",
             menu: { items: toIosHeaderMenuItems(menuItems) },
-            sharesBackground: !isIos26Plus(),
+            sharesBackground: isIos26Plus() ? false : undefined,
             tintColor: theme.primary,
             type: "menu" as const,
           },
         ]) as unknown as NonNullable<NativeStackNavigationOptions["unstable_headerRightItems"]>,
       }
-    : isAndroid
+    : usesCustomHeaderActions
       ? {
           headerBackButtonDisplayMode: "minimal",
           headerBackVisible: false,
           headerLeft: renderCustomBackButton,
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <EditorPreviewButton
-                isAndroid={isAndroid}
-                onPress={onTogglePreviewMode}
-                previewMode={previewMode}
-              />
-              <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />
-            </View>
-          ),
+          headerRight: renderCustomHeaderActions,
         }
       : getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
   const headerTitleOptions: NativeStackNavigationOptions = usesCustomHeaderTitle
