@@ -23,7 +23,7 @@ import { type DocumentModel, type EditorViewSession, editorStore } from "@/store
 
 import { getEditorDevUrl } from "./editor_dev_url";
 import { EDITOR_HTML, initEditorHtml } from "./editor_html.native";
-import { MOBILE_EDITOR_TOOLBAR_HEIGHT } from "./editor_layout";
+import { MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT } from "./editor_layout";
 import { onError, onHttpError, onLoad, onLoadEnd, onLoadStart } from "./editor_webview_event";
 
 type EditorWebViewProps = {
@@ -58,10 +58,14 @@ function getContentBottomInset(
   mobileToolbarOverlayHeight: number,
 ): number {
   if (mobileToolbarOverlayHeight > 0) return mobileToolbarOverlayHeight;
-  if (platform === "android" && keyboardHeight > 0) {
-    return keyboardHeight + safeAreaBottom + MOBILE_EDITOR_TOOLBAR_HEIGHT;
+  if (keyboardHeight > 0) {
+    return (
+      keyboardHeight +
+      (platform === "android" ? safeAreaBottom : 0) +
+      MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT
+    );
   }
-  return Math.max(safeAreaBottom, keyboardHeight > 0 ? MOBILE_EDITOR_TOOLBAR_HEIGHT : 0);
+  return safeAreaBottom;
 }
 
 function getScrollIndicatorBottomInset(
@@ -74,7 +78,7 @@ function getScrollIndicatorBottomInset(
   return keyboardHeight > 0
     ? keyboardHeight +
         (platform === "android" ? safeAreaBottom : 0) +
-        MOBILE_EDITOR_TOOLBAR_HEIGHT
+        MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT
     : safeAreaBottom;
 }
 
@@ -371,6 +375,7 @@ export function EditorWebView({
       onMessage={(event) => bridgeClient.handleSerializedMessage(event.nativeEvent.data)}
       onRenderProcessGone={restartSurface}
       originWhitelist={["*"]}
+      removeIosKeyboardObserver={os() === "ios"}
       renderLoading={RenderLoading}
       scrollIndicatorInsets={{
         top: headerHeight,

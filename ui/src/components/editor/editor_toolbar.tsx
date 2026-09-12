@@ -238,7 +238,7 @@ export function EditorToolbar({
   const panelHeight = displayedPanel === null ? 0 : replacementPanelHeight;
   const contentOverlayHeight =
     displayedPanel !== null || isRestoringKeyboard
-      ? replacementPanelHeight + MOBILE_EDITOR_TOOLBAR_HEIGHT
+      ? replacementPanelHeight + MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT
       : 0;
 
   useEffect(() => {
@@ -535,7 +535,7 @@ export function EditorToolbar({
         accessibilityLabel="编辑工具栏"
         importantForAccessibility={displayedPanel === null ? "auto" : "no-hide-descendants"}
         keyboardAvoidance={{ subtractSafeAreaInset: false }}
-        keyboardHiddenConfirmation={{ finalHeight: -MOBILE_EDITOR_TOOLBAR_HEIGHT }}
+        keyboardHiddenConfirmation={{ finalHeight: -MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT }}
         pointerEvents={displayedPanel === null ? "auto" : "none"}
         style={[
           styles.mobileToolbar,
