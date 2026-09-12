@@ -10,394 +10,65 @@
 #
 # react-native-webview iOS 键盘聚焦滚动补丁说明：
 # - EditorWebView 启用 `removeIosKeyboardObserver` 时，在键盘出现期间锁定 WKWebView 的滚动位置。
-# - 用于拦截 iOS 26 仍会触发的聚焦元素自动滚动，避免键盘动画末尾页面轻微跳动。
-# - `keyboardDidShow` 后延迟 250ms 解锁，`keyboardWillHide` 立即解锁；正常浏览滚动不受影响。
+# - 锁定期间允许 editor 通过 `setEditorContentOffset` 直接设置 offset；键盘收起后才解除锁定。
 
-diff --git a/src/WebViewTypes.ts b/src/WebViewTypes.ts
-index 4e7247f8..2a84f9ab 100644
---- a/src/WebViewTypes.ts
-+++ b/src/WebViewTypes.ts
-@@ -438,6 +438,12 @@ export interface IOSWebViewProps extends WebViewSharedProps {
-    */
-   automaticallyAdjustsScrollIndicatorInsets?: boolean;
+diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
+index 80c68034..416d1996 100644
+--- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
++++ b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
+@@ -9,6 +9,9 @@ import android.view.Menu;
+ import android.view.MenuItem;
+ import android.view.MotionEvent;
+ import android.view.View;
++import android.view.inputmethod.EditorInfo;
++import android.view.inputmethod.InputConnection;
++import android.view.inputmethod.InputMethodManager;
+ import android.webkit.JavascriptInterface;
+ import android.webkit.ValueCallback;
+ import android.webkit.WebChromeClient;
+@@ -77,6 +80,7 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+     private OnScrollDispatchHelper mOnScrollDispatchHelper;
+     protected boolean hasScrollEvent = false;
+     protected boolean nestedScrollEnabled = false;
++    protected boolean inputMethodEnabled = true;
+     protected ProgressChangedFilter progressChangedFilter;
 
-+  /**
-+   * 设置 iOS 原生滚动条的 inset，不会改变 WebView 内容的布局。
-+   * @platform ios
-+   */
-+  scrollIndicatorInsets?: ContentInsetProp;
-+
-   /**
-    * This property specifies how the safe area insets are used to modify the
-    * content area of the scroll view. The default value of this property is
-@@ -1172,6 +1178,15 @@ export interface AndroidWebViewProps extends WebViewSharedProps {
- }
-
- export interface WebViewSharedProps extends ViewProps {
-+  /**
-+   * Controls whether the focused WebView can present the system input method.
-+   * Disabling it keeps the focused HTML element and selection intact.
-+   * The default value is `true`.
-+   * @platform android
-+   * @platform ios
-+   */
-+  inputMethodEnabled?: boolean;
-+
-   /**
-    * Loads static html or a uri (with optional headers) in the WebView.
-    */
-diff --git a/src/RNCWebViewNativeComponent.ts b/src/RNCWebViewNativeComponent.ts
-index ca3af151..2107b385 100644
---- a/src/RNCWebViewNativeComponent.ts
-+++ b/src/RNCWebViewNativeComponent.ts
-@@ -131,6 +131,8 @@ type WebViewDownloadEvent = Readonly<{
- // type MenuItem = Readonly<{label: string, key: string}>;
-
- export interface NativeProps extends ViewProps {
-+  inputMethodEnabled?: WithDefault<boolean, true>;
-+
-   // Android only
-   allowFileAccess?: boolean;
-   allowsProtectedMedia?: boolean;
-@@ -179,6 +181,12 @@ export interface NativeProps extends ViewProps {
-     bottom?: Double;
-     right?: Double;
-   }>;
-+  scrollIndicatorInsets?: Readonly<{
-+    top?: Double;
-+    left?: Double;
-+    bottom?: Double;
-+    right?: Double;
-+  }>;
-   contentInsetAdjustmentBehavior?: WithDefault<
-     'never' | 'automatic' | 'scrollableAxes' | 'always',
-     'never'
-diff --git a/lib/WebViewTypes.d.ts b/lib/WebViewTypes.d.ts
-index f666e814..1ef3eb48 100644
---- a/lib/WebViewTypes.d.ts
-+++ b/lib/WebViewTypes.d.ts
-@@ -316,6 +316,11 @@ export interface IOSWebViewProps extends WebViewSharedProps {
-      * @platform ios
-      */
-     automaticallyAdjustsScrollIndicatorInsets?: boolean;
-+    /**
-+     * 设置 iOS 原生滚动条的 inset，不会改变 WebView 内容的布局。
-+     * @platform ios
-+     */
-+    scrollIndicatorInsets?: ContentInsetProp;
      /**
-      * This property specifies how the safe area insets are used to modify the
-      * content area of the scroll view. The default value of this property is
-@@ -974,6 +979,14 @@ export interface AndroidWebViewProps extends WebViewSharedProps {
-     onLoadSubResourceError?: (event: WebViewErrorEvent) => void;
- }
- export interface WebViewSharedProps extends ViewProps {
-+    /**
-+     * Controls whether the focused WebView can present the system input method.
-+     * Disabling it keeps the focused HTML element and selection intact.
-+     * The default value is `true`.
-+     * @platform android
-+     * @platform ios
-+     */
-+    inputMethodEnabled?: boolean;
-     /**
-      * Loads static html or a uri (with optional headers) in the WebView.
-      */
-diff --git a/lib/RNCWebViewNativeComponent.d.ts b/lib/RNCWebViewNativeComponent.d.ts
-index 6b789f98..1fbd430c 100644
---- a/lib/RNCWebViewNativeComponent.d.ts
-+++ b/lib/RNCWebViewNativeComponent.d.ts
-@@ -113,6 +113,7 @@ type WebViewDownloadEvent = Readonly<{
-     downloadUrl: string;
- }>;
- export interface NativeProps extends ViewProps {
-+    inputMethodEnabled?: WithDefault<boolean, true>;
-     allowFileAccess?: boolean;
-     allowsProtectedMedia?: boolean;
-     allowsFullscreenVideo?: boolean;
-@@ -153,6 +154,12 @@ export interface NativeProps extends ViewProps {
-         bottom?: Double;
-         right?: Double;
-     }>;
-+    scrollIndicatorInsets?: Readonly<{
-+        top?: Double;
-+        left?: Double;
-+        bottom?: Double;
-+        right?: Double;
-+    }>;
-     contentInsetAdjustmentBehavior?: WithDefault<'never' | 'automatic' | 'scrollableAxes' | 'always', 'never'>;
-     contentMode?: WithDefault<'recommended' | 'mobile' | 'desktop', 'recommended'>;
-     dataDetectorTypes?: WithDefault<ReadonlyArray<'address' | 'link' | 'calendarEvent' | 'trackingNumber' | 'flightNumber' | 'lookupSuggestion' | 'phoneNumber' | 'all' | 'none'>, 'phoneNumber'>;
-diff --git a/apple/RNCWebViewImpl.h b/apple/RNCWebViewImpl.h
-index 1f637c1d..ccd815cd 100644
---- a/apple/RNCWebViewImpl.h
-+++ b/apple/RNCWebViewImpl.h
-@@ -86,7 +86,9 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
- @property (nonatomic, assign) BOOL bounces;
- @property (nonatomic, assign) BOOL mediaPlaybackRequiresUserAction;
- @property (nonatomic, assign) UIEdgeInsets contentInset;
-+@property (nonatomic, assign) UIEdgeInsets scrollIndicatorInsets;
- @property (nonatomic, assign) BOOL automaticallyAdjustContentInsets;
-+@property (nonatomic, assign) BOOL inputMethodEnabled;
- @property (nonatomic, assign) BOOL keyboardDisplayRequiresUserAction;
- @property (nonatomic, assign) BOOL hideKeyboardAccessoryView;
- @property (nonatomic, assign) BOOL removeIosKeyboardObserver;
-diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
-index 38904266..a65f7650 100644
---- a/apple/RNCWebViewImpl.m
-+++ b/apple/RNCWebViewImpl.m
-@@ -52,10 +52,24 @@ @interface RNCWKWebView : WKWebView
- #if !TARGET_OS_OSX
- @property (nonatomic, copy) NSArray<NSDictionary *> * _Nullable menuItems;
- @property (nonatomic, copy) NSArray<NSString *> * _Nullable suppressMenuItems;
-+@property (nonatomic, assign) BOOL inputMethodEnabled;
- #endif // !TARGET_OS_OSX
- @end
- @implementation RNCWKWebView
- #if !TARGET_OS_OSX
-+- (UIView *)inputView
-+{
-+  return self.inputMethodEnabled ? [super inputView] : [UIView new];
-+}
-+
-+- (void)setInputMethodEnabled:(BOOL)inputMethodEnabled
-+{
-+  _inputMethodEnabled = inputMethodEnabled;
-+  for (UIView *subview in self.scrollView.subviews) {
-+    [subview reloadInputViews];
-+  }
-+}
-+
- - (NSString *)stringFromAction:(SEL) action {
-   NSString *sel = NSStringFromSelector(action);
-
-@@ -145,6 +159,12 @@ @implementation RNCWebViewImpl
-   UIStatusBarStyle _savedStatusBarStyle;
- #endif // !TARGET_OS_OSX
-   BOOL _savedStatusBarHidden;
-+#if TARGET_OS_IOS
-+  CGPoint _keyboardScrollOffset;
-+  BOOL _keyboardScrollLockEnabled;
-+  BOOL _restoringKeyboardScrollOffset;
-+  NSUInteger _keyboardScrollLockGeneration;
-+#endif // TARGET_OS_IOS
-
- #if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 /* __IPHONE_11_0 */
-   UIScrollViewContentInsetAdjustmentBehavior _savedContentInsetAdjustmentBehavior;
-@@ -175,6 +195,8 @@ - (instancetype)initWithFrame:(CGRect)frame
-     _automaticallyAdjustContentInsets = YES;
-     _autoManageStatusBarEnabled = YES;
-     _contentInset = UIEdgeInsetsZero;
-+    _scrollIndicatorInsets = UIEdgeInsetsZero;
-+    _inputMethodEnabled = YES;
-     _savedKeyboardDisplayRequiresUserAction = YES;
-     _injectedJavaScript = nil;
-     _injectedJavaScriptForMainFrameOnly = YES;
-@@ -227,6 +249,10 @@ - (instancetype)initWithFrame:(CGRect)frame
-      addObserver:self
-      selector:@selector(keyboardWillShow)
-      name:UIKeyboardWillShowNotification object:nil];
-+    [[NSNotificationCenter defaultCenter]
-+     addObserver:self
-+     selector:@selector(keyboardDidShow)
-+     name:UIKeyboardDidShowNotification object:nil];
-
-     // Workaround for StatusBar appearance bug for iOS 12
-     // https://github.com/react-native-webview/react-native-webview/issues/62
-@@ -423,6 +449,13 @@ - (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelPara
- - (WKWebViewConfiguration *)setUpWkWebViewConfig
- {
-   WKWebViewConfiguration *wkWebViewConfig = [WKWebViewConfiguration new];
-+#if TARGET_OS_IOS
-+  Class resourceHandlerClass = NSClassFromString(@"LonanoteResourceSchemeHandler");
-+  if (resourceHandlerClass != Nil && [resourceHandlerClass conformsToProtocol:@protocol(WKURLSchemeHandler)]) {
-+    id<WKURLSchemeHandler> resourceHandler = [[resourceHandlerClass alloc] init];
-+    [wkWebViewConfig setURLSchemeHandler:resourceHandler forURLScheme:@"lonanote-resource"];
-+  }
-+#endif
-   WKPreferences *prefs = [[WKPreferences alloc]init];
-   BOOL _prefsUsed = NO;
-   if (!_javaScriptEnabled) {
-@@ -519,6 +552,7 @@ - (void)didMoveToWindow
-     _webView = [[RNCWKWebView alloc] initWithFrame:self.bounds configuration: wkWebViewConfig];
-     [self setBackgroundColor: _savedBackgroundColor];
- #if !TARGET_OS_OSX
-+    _webView.inputMethodEnabled = _inputMethodEnabled;
-     // Apply once at creation time. The prop is documented as non-reactive —
-     // toggling it after mount cannot restore the observers WKWebView registers internally
-     if (_removeIosKeyboardObserver) {
-@@ -578,6 +612,10 @@ - (void)didMoveToWindow
-     }
- #endif
-
-+#if !TARGET_OS_OSX
-+    _webView.scrollView.scrollIndicatorInsets = _scrollIndicatorInsets;
-+#endif
-+
- #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130300 || \
-     __IPHONE_OS_VERSION_MAX_ALLOWED >= 160400 || \
-     __TV_OS_VERSION_MAX_ALLOWED >= 160400
-@@ -688,15 +726,35 @@ -(void)hideFullScreenVideoStatusBars
-
- -(void)keyboardWillHide
- {
-+  _keyboardScrollLockGeneration += 1;
-+  _keyboardScrollLockEnabled = NO;
-   keyboardTimer = [NSTimer scheduledTimerWithTimeInterval:0 target:self selector:@selector(keyboardDisplacementFix) userInfo:nil repeats:false];
-   [[NSRunLoop mainRunLoop] addTimer:keyboardTimer forMode:NSRunLoopCommonModes];
- }
- -(void)keyboardWillShow
- {
-+  if (_removeIosKeyboardObserver && _webView != nil) {
-+    _keyboardScrollLockGeneration += 1;
-+    _keyboardScrollOffset = _webView.scrollView.contentOffset;
-+    _keyboardScrollLockEnabled = YES;
-+  }
-   if (keyboardTimer != nil) {
-     [keyboardTimer invalidate];
-   }
- }
-+-(void)keyboardDidShow
-+{
-+  if (!_keyboardScrollLockEnabled) {
-+    return;
-+  }
-+
-+  NSUInteger generation = ++_keyboardScrollLockGeneration;
-+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-+    if (self->_keyboardScrollLockGeneration == generation) {
-+      self->_keyboardScrollLockEnabled = NO;
-+    }
-+  });
-+}
- -(void)keyboardDisplacementFix
- {
-   // Additional viewport checks to prevent unintentional scrolls
-@@ -837,6 +895,26 @@ - (void)setContentInset:(UIEdgeInsets)contentInset
- #endif // !TARGET_OS_OSX
- }
-
-+- (void)setScrollIndicatorInsets:(UIEdgeInsets)scrollIndicatorInsets
-+{
-+  _scrollIndicatorInsets = scrollIndicatorInsets;
-+#if !TARGET_OS_OSX
-+  if (_webView != nil) {
-+    _webView.scrollView.scrollIndicatorInsets = scrollIndicatorInsets;
-+  }
-+#endif // !TARGET_OS_OSX
-+}
-+
-+- (void)setInputMethodEnabled:(BOOL)inputMethodEnabled
-+{
-+  _inputMethodEnabled = inputMethodEnabled;
-+#if !TARGET_OS_OSX
-+  if (_webView != nil) {
-+    _webView.inputMethodEnabled = inputMethodEnabled;
-+  }
-+#endif // !TARGET_OS_OSX
-+}
-+
- - (void)refreshContentInset
- {
- #if !TARGET_OS_OSX
-@@ -1060,6 +1138,18 @@ - (void)setScrollEnabled:(BOOL)scrollEnabled
- // UIScrollViewDelegate method
- - (void)scrollViewDidScroll:(UIScrollView *)scrollView
- {
-+#if TARGET_OS_IOS
-+  // iOS 26 仍可能通过 WKWebView 内部路径滚动聚焦元素；键盘动画期间保持原偏移，避免页面轻微跳动。
-+  if (_keyboardScrollLockEnabled) {
-+    if (!_restoringKeyboardScrollOffset && !CGPointEqualToPoint(scrollView.contentOffset, _keyboardScrollOffset)) {
-+      _restoringKeyboardScrollOffset = YES;
-+      scrollView.contentOffset = _keyboardScrollOffset;
-+      _restoringKeyboardScrollOffset = NO;
-+    }
-+    return;
-+  }
-+#endif // TARGET_OS_IOS
-+
-   // Don't allow scrolling the scrollView.
-   if (!_scrollEnabled) {
-     scrollView.bounds = _webView.bounds;
-@@ -1140,5 +1230,6 @@ - (void)layoutSubviews
-   _webView.frame = self.bounds;
- #if !TARGET_OS_OSX
-   _webView.scrollView.contentInset = _contentInset;
-+  _webView.scrollView.scrollIndicatorInsets = _scrollIndicatorInsets;
- #endif // !TARGET_OS_OSX
- }
-diff --git a/apple/RNCWebView.mm b/apple/RNCWebView.mm
-index 2be78778..729a499c 100644
---- a/apple/RNCWebView.mm
-+++ b/apple/RNCWebView.mm
-@@ -307,6 +307,7 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
-     REMAP_WEBVIEW_PROP(automaticallyAdjustContentInsets)
-     REMAP_WEBVIEW_PROP(autoManageStatusBarEnabled)
-     REMAP_WEBVIEW_PROP(hideKeyboardAccessoryView)
-+    REMAP_WEBVIEW_PROP(inputMethodEnabled)
-     REMAP_WEBVIEW_PROP(allowsBackForwardNavigationGestures)
-     REMAP_WEBVIEW_PROP(incognito)
-     REMAP_WEBVIEW_PROP(pagingEnabled)
-@@ -382,6 +383,16 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
-         [_view setContentInset: edgesInsets];
+@@ -107,6 +111,31 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+         this.nestedScrollEnabled = nestedScrollEnabled;
      }
 
-+    if (oldViewProps.scrollIndicatorInsets.top != newViewProps.scrollIndicatorInsets.top || oldViewProps.scrollIndicatorInsets.left != newViewProps.scrollIndicatorInsets.left || oldViewProps.scrollIndicatorInsets.right != newViewProps.scrollIndicatorInsets.right || oldViewProps.scrollIndicatorInsets.bottom != newViewProps.scrollIndicatorInsets.bottom) {
-+        UIEdgeInsets edgesInsets = {
-+            .top = newViewProps.scrollIndicatorInsets.top,
-+            .left = newViewProps.scrollIndicatorInsets.left,
-+            .right = newViewProps.scrollIndicatorInsets.right,
-+            .bottom = newViewProps.scrollIndicatorInsets.bottom
-+        };
-+        [_view setScrollIndicatorInsets: edgesInsets];
++    public void setInputMethodEnabled(boolean enabled) {
++        inputMethodEnabled = enabled;
++        InputMethodManager inputMethodManager =
++                (InputMethodManager) getContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
++        if (inputMethodManager == null) {
++            return;
++        }
++        inputMethodManager.restartInput(this);
++        if (!enabled) {
++            inputMethodManager.hideSoftInputFromWindow(getWindowToken(), 0);
++        } else if (hasFocus()) {
++            post(() -> inputMethodManager.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT));
++        }
 +    }
 +
-     if (oldViewProps.basicAuthCredential.username != newViewProps.basicAuthCredential.username || oldViewProps.basicAuthCredential.password != newViewProps.basicAuthCredential.password) {
-         [_view setBasicAuthCredential: @{
-             @"username": RCTNSStringFromString(newViewProps.basicAuthCredential.username),
-diff --git a/apple/RNCWebViewManager.mm b/apple/RNCWebViewManager.mm
-index a510ffd9..b61109c4 100644
---- a/apple/RNCWebViewManager.mm
-+++ b/apple/RNCWebViewManager.mm
-@@ -68,6 +68,8 @@ - (RNCView *)view
- RCT_EXPORT_VIEW_PROPERTY(mediaPlaybackRequiresUserAction, BOOL)
- RCT_EXPORT_VIEW_PROPERTY(dataDetectorTypes, WKDataDetectorTypes)
- RCT_EXPORT_VIEW_PROPERTY(contentInset, UIEdgeInsets)
-+RCT_EXPORT_VIEW_PROPERTY(scrollIndicatorInsets, UIEdgeInsets)
-+RCT_EXPORT_VIEW_PROPERTY(inputMethodEnabled, BOOL)
- RCT_EXPORT_VIEW_PROPERTY(automaticallyAdjustContentInsets, BOOL)
- RCT_EXPORT_VIEW_PROPERTY(autoManageStatusBarEnabled, BOOL)
- RCT_EXPORT_VIEW_PROPERTY(hideKeyboardAccessoryView, BOOL)
-diff --git a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
-index fa8efb88..a6ae6b26 100644
---- a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
-+++ b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
-@@ -202,6 +202,12 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
-         mRNCWebViewManagerImpl.setJavaScriptEnabled(view, enabled);
-     }
-
 +    @Override
-+    @ReactProp(name = "inputMethodEnabled", defaultBoolean = true)
-+    public void setInputMethodEnabled(RNCWebViewWrapper view, boolean value) {
-+        mRNCWebViewManagerImpl.setInputMethodEnabled(view, value);
++    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
++        return inputMethodEnabled ? super.onCreateInputConnection(outAttrs) : null;
++    }
++
++    @Override
++    public boolean onCheckIsTextEditor() {
++        return inputMethodEnabled && super.onCheckIsTextEditor();
 +    }
 +
      @Override
-     @ReactProp(name = "lackPermissionToDownloadMessage")
-     public void setLackPermissionToDownloadMessage(RNCWebViewWrapper view, @Nullable String value) {
-@@ -369,6 +375,9 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
-     @Override
-     public void setContentInset(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
-
-+    @Override
-+    public void setScrollIndicatorInsets(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
-+
-     @Override
-     public void setContentInsetAdjustmentBehavior(RNCWebViewWrapper view, @Nullable String value) {}
-
-@@ -564,4 +573,4 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
-         mRNCWebViewManagerImpl.onDropViewInstance(view);
-         super.onDropViewInstance(view);
+     public void onHostResume() {
+         // do nothing
+@@ -465,4 +494,4 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+             return waitingForCommandLoadUrl;
+         }
      }
 -}
 \ No newline at end of file
@@ -467,72 +138,38 @@ index 209b8552..4d48778d 100644
      @Override
      public void onReceivedHttpAuthRequest(WebView view, HttpAuthHandler handler, String host, String realm) {
          if (basicAuthCredential != null) {
-diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
-index 80c68034..416d1996 100644
---- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
-+++ b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
-@@ -9,6 +9,9 @@ import android.view.Menu;
- import android.view.MenuItem;
- import android.view.MotionEvent;
- import android.view.View;
-+import android.view.inputmethod.EditorInfo;
-+import android.view.inputmethod.InputConnection;
-+import android.view.inputmethod.InputMethodManager;
- import android.webkit.JavascriptInterface;
- import android.webkit.ValueCallback;
- import android.webkit.WebChromeClient;
-@@ -77,6 +80,7 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
-     private OnScrollDispatchHelper mOnScrollDispatchHelper;
-     protected boolean hasScrollEvent = false;
-     protected boolean nestedScrollEnabled = false;
-+    protected boolean inputMethodEnabled = true;
-     protected ProgressChangedFilter progressChangedFilter;
-
-     /**
-@@ -107,6 +111,31 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
-         this.nestedScrollEnabled = nestedScrollEnabled;
-     }
-
-+    public void setInputMethodEnabled(boolean enabled) {
-+        inputMethodEnabled = enabled;
-+        InputMethodManager inputMethodManager =
-+                (InputMethodManager) getContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
-+        if (inputMethodManager == null) {
-+            return;
-+        }
-+        inputMethodManager.restartInput(this);
-+        if (!enabled) {
-+            inputMethodManager.hideSoftInputFromWindow(getWindowToken(), 0);
-+        } else if (hasFocus()) {
-+            post(() -> inputMethodManager.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT));
-+        }
-+    }
-+
-+    @Override
-+    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-+        return inputMethodEnabled ? super.onCreateInputConnection(outAttrs) : null;
-+    }
-+
-+    @Override
-+    public boolean onCheckIsTextEditor() {
-+        return inputMethodEnabled && super.onCheckIsTextEditor();
-+    }
-+
-     @Override
-     public void onHostResume() {
-         // do nothing
-@@ -465,4 +494,4 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
-             return waitingForCommandLoadUrl;
-         }
-     }
--}
-\ No newline at end of file
-+}
 diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt b/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
-index f83033b3..2e41ea94 100644
+index f83033b3..de8aefa9 100644
 --- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
 +++ b/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt
-@@ -547,6 +547,10 @@ class RNCWebViewManagerImpl(private val newArch: Boolean = false) {
+@@ -290,6 +290,8 @@ class RNCWebViewManagerImpl(private val newArch: Boolean = false) {
+     val COMMAND_INJECT_JAVASCRIPT = 6
+     val COMMAND_LOAD_URL = 7
+     val COMMAND_FOCUS = 8
++    val COMMAND_SET_EDITOR_CONTENT_OFFSET = 9
++    val COMMAND_SET_KEYBOARD_SCROLL_LOCK_ENABLED = 10
+
+     // android commands
+     val COMMAND_CLEAR_FORM_DATA = 1000
+@@ -309,6 +311,8 @@ class RNCWebViewManagerImpl(private val newArch: Boolean = false) {
+         .put("clearFormData", COMMAND_CLEAR_FORM_DATA)
+         .put("clearCache", COMMAND_CLEAR_CACHE)
+         .put("clearHistory", COMMAND_CLEAR_HISTORY)
++        .put("setEditorContentOffset", COMMAND_SET_EDITOR_CONTENT_OFFSET)
++        .put("setKeyboardScrollLockEnabled", COMMAND_SET_KEYBOARD_SCROLL_LOCK_ENABLED)
+         .build()
+     }
+
+@@ -345,6 +349,8 @@ class RNCWebViewManagerImpl(private val newArch: Boolean = false) {
+           webView.loadUrl(url)
+         }
+         "requestFocus" -> webView.requestFocus()
++        "setEditorContentOffset" -> Unit
++        "setKeyboardScrollLockEnabled" -> Unit
+         "clearFormData" -> webView.clearFormData()
+         "clearCache" -> {
+           val includeDiskFiles = args != null && args.getBoolean(0)
+@@ -547,6 +553,10 @@ class RNCWebViewManagerImpl(private val newArch: Boolean = false) {
          view.settings.javaScriptEnabled = enabled
      }
 
@@ -543,6 +180,40 @@ index f83033b3..2e41ea94 100644
      fun setAllowFileAccess(viewWrapper: RNCWebViewWrapper, allowFileAccess: Boolean) {
          val view = viewWrapper.webView
          view.settings.allowFileAccess = allowFileAccess;
+diff --git a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
+index fa8efb88..a6ae6b26 100644
+--- a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
++++ b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
+@@ -202,6 +202,12 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
+         mRNCWebViewManagerImpl.setJavaScriptEnabled(view, enabled);
+     }
+
++    @Override
++    @ReactProp(name = "inputMethodEnabled", defaultBoolean = true)
++    public void setInputMethodEnabled(RNCWebViewWrapper view, boolean value) {
++        mRNCWebViewManagerImpl.setInputMethodEnabled(view, value);
++    }
++
+     @Override
+     @ReactProp(name = "lackPermissionToDownloadMessage")
+     public void setLackPermissionToDownloadMessage(RNCWebViewWrapper view, @Nullable String value) {
+@@ -369,6 +375,9 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
+     @Override
+     public void setContentInset(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
+
++    @Override
++    public void setScrollIndicatorInsets(RNCWebViewWrapper view, @Nullable ReadableMap value) {}
++
+     @Override
+     public void setContentInsetAdjustmentBehavior(RNCWebViewWrapper view, @Nullable String value) {}
+
+@@ -564,4 +573,4 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
+         mRNCWebViewManagerImpl.onDropViewInstance(view);
+         super.onDropViewInstance(view);
+     }
+-}
+\ No newline at end of file
++}
 diff --git a/android/src/oldarch/com/reactnativecommunity/webview/RNCWebViewManager.java b/android/src/oldarch/com/reactnativecommunity/webview/RNCWebViewManager.java
 index 974337f4..262bccf9 100644
 --- a/android/src/oldarch/com/reactnativecommunity/webview/RNCWebViewManager.java
@@ -566,3 +237,549 @@ index 974337f4..262bccf9 100644
 -}
 \ No newline at end of file
 +}
+diff --git a/apple/RNCWebView.mm b/apple/RNCWebView.mm
+index 2be78778..9615e1c6 100644
+--- a/apple/RNCWebView.mm
++++ b/apple/RNCWebView.mm
+@@ -307,6 +307,7 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
+     REMAP_WEBVIEW_PROP(automaticallyAdjustContentInsets)
+     REMAP_WEBVIEW_PROP(autoManageStatusBarEnabled)
+     REMAP_WEBVIEW_PROP(hideKeyboardAccessoryView)
++    REMAP_WEBVIEW_PROP(inputMethodEnabled)
+     REMAP_WEBVIEW_PROP(allowsBackForwardNavigationGestures)
+     REMAP_WEBVIEW_PROP(incognito)
+     REMAP_WEBVIEW_PROP(pagingEnabled)
+@@ -382,6 +383,16 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
+         [_view setContentInset: edgesInsets];
+     }
+
++    if (oldViewProps.scrollIndicatorInsets.top != newViewProps.scrollIndicatorInsets.top || oldViewProps.scrollIndicatorInsets.left != newViewProps.scrollIndicatorInsets.left || oldViewProps.scrollIndicatorInsets.right != newViewProps.scrollIndicatorInsets.right || oldViewProps.scrollIndicatorInsets.bottom != newViewProps.scrollIndicatorInsets.bottom) {
++        UIEdgeInsets edgesInsets = {
++            .top = newViewProps.scrollIndicatorInsets.top,
++            .left = newViewProps.scrollIndicatorInsets.left,
++            .right = newViewProps.scrollIndicatorInsets.right,
++            .bottom = newViewProps.scrollIndicatorInsets.bottom
++        };
++        [_view setScrollIndicatorInsets: edgesInsets];
++    }
++
+     if (oldViewProps.basicAuthCredential.username != newViewProps.basicAuthCredential.username || oldViewProps.basicAuthCredential.password != newViewProps.basicAuthCredential.password) {
+         [_view setBasicAuthCredential: @{
+             @"username": RCTNSStringFromString(newViewProps.basicAuthCredential.username),
+@@ -521,6 +532,19 @@ - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &
+ }
+
+ - (void)handleCommand:(nonnull const NSString *)commandName args:(nonnull const NSArray *)args {
++    // 兼容已生成的 Fabric command helper：在 pod 尚未重新生成时也支持 editor 滚动命令。
++    if ([commandName isEqualToString:@"setEditorContentOffset"]) {
++        if ([args count] == 1 && [args[0] isKindOfClass:[NSNumber class]]) {
++            [_view setEditorContentOffset:(NSNumber *)args[0]];
++        }
++        return;
++    }
++    if ([commandName isEqualToString:@"setKeyboardScrollLockEnabled"]) {
++        if ([args count] == 1 && [args[0] isKindOfClass:[NSNumber class]]) {
++            [_view setKeyboardScrollLockEnabled:[args[0] boolValue]];
++        }
++        return;
++    }
+     RCTRNCWebViewHandleCommand(self, commandName, args);
+ }
+
+@@ -542,6 +566,14 @@ - (void)injectJavaScript:(nonnull NSString *)javascript {
+     [_view injectJavaScript:javascript];
+ }
+
++- (void)setEditorContentOffset:(nonnull NSNumber *)y {
++    [_view setEditorContentOffset:y];
++}
++
++- (void)setKeyboardScrollLockEnabled:(BOOL)enabled {
++    [_view setKeyboardScrollLockEnabled:enabled];
++}
++
+ - (void)loadUrl:(nonnull NSString *)url {
+     // android only
+ }
+diff --git a/apple/RNCWebViewImpl.h b/apple/RNCWebViewImpl.h
+index 1f637c1d..1297afcf 100644
+--- a/apple/RNCWebViewImpl.h
++++ b/apple/RNCWebViewImpl.h
+@@ -86,10 +86,14 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
+ @property (nonatomic, assign) BOOL bounces;
+ @property (nonatomic, assign) BOOL mediaPlaybackRequiresUserAction;
+ @property (nonatomic, assign) UIEdgeInsets contentInset;
++@property (nonatomic, assign) UIEdgeInsets scrollIndicatorInsets;
+ @property (nonatomic, assign) BOOL automaticallyAdjustContentInsets;
++@property (nonatomic, assign) BOOL inputMethodEnabled;
+ @property (nonatomic, assign) BOOL keyboardDisplayRequiresUserAction;
+ @property (nonatomic, assign) BOOL hideKeyboardAccessoryView;
+ @property (nonatomic, assign) BOOL removeIosKeyboardObserver;
++- (void)setEditorContentOffset:(NSNumber *)y;
++- (void)setKeyboardScrollLockEnabled:(BOOL)enabled;
+ @property (nonatomic, assign) BOOL allowsBackForwardNavigationGestures;
+ @property (nonatomic, assign) BOOL incognito;
+ @property (nonatomic, assign) BOOL useSharedProcessPool;
+diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
+index 38904266..b24986ce 100644
+--- a/apple/RNCWebViewImpl.m
++++ b/apple/RNCWebViewImpl.m
+@@ -16,6 +16,7 @@
+ #endif // !TARGET_OS_OSX
+
+ #import "objc/runtime.h"
++#import <math.h>
+
+ static NSTimer *keyboardTimer;
+ static NSString *const HistoryShimName = @"ReactNativeHistoryShim";
+@@ -52,10 +53,24 @@ @interface RNCWKWebView : WKWebView
+ #if !TARGET_OS_OSX
+ @property (nonatomic, copy) NSArray<NSDictionary *> * _Nullable menuItems;
+ @property (nonatomic, copy) NSArray<NSString *> * _Nullable suppressMenuItems;
++@property (nonatomic, assign) BOOL inputMethodEnabled;
+ #endif // !TARGET_OS_OSX
+ @end
+ @implementation RNCWKWebView
+ #if !TARGET_OS_OSX
++- (UIView *)inputView
++{
++  return self.inputMethodEnabled ? [super inputView] : [UIView new];
++}
++
++- (void)setInputMethodEnabled:(BOOL)inputMethodEnabled
++{
++  _inputMethodEnabled = inputMethodEnabled;
++  for (UIView *subview in self.scrollView.subviews) {
++    [subview reloadInputViews];
++  }
++}
++
+ - (NSString *)stringFromAction:(SEL) action {
+   NSString *sel = NSStringFromSelector(action);
+
+@@ -145,6 +160,12 @@ @implementation RNCWebViewImpl
+   UIStatusBarStyle _savedStatusBarStyle;
+ #endif // !TARGET_OS_OSX
+   BOOL _savedStatusBarHidden;
++#if TARGET_OS_IOS
++  CGPoint _keyboardScrollOffset;
++  BOOL _keyboardScrollLockEnabled;
++  BOOL _restoringKeyboardScrollOffset;
++  NSUInteger _keyboardScrollLockGeneration;
++#endif // TARGET_OS_IOS
+
+ #if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 /* __IPHONE_11_0 */
+   UIScrollViewContentInsetAdjustmentBehavior _savedContentInsetAdjustmentBehavior;
+@@ -175,6 +196,8 @@ - (instancetype)initWithFrame:(CGRect)frame
+     _automaticallyAdjustContentInsets = YES;
+     _autoManageStatusBarEnabled = YES;
+     _contentInset = UIEdgeInsetsZero;
++    _scrollIndicatorInsets = UIEdgeInsetsZero;
++    _inputMethodEnabled = YES;
+     _savedKeyboardDisplayRequiresUserAction = YES;
+     _injectedJavaScript = nil;
+     _injectedJavaScriptForMainFrameOnly = YES;
+@@ -227,6 +250,10 @@ - (instancetype)initWithFrame:(CGRect)frame
+      addObserver:self
+      selector:@selector(keyboardWillShow)
+      name:UIKeyboardWillShowNotification object:nil];
++    [[NSNotificationCenter defaultCenter]
++     addObserver:self
++     selector:@selector(keyboardDidHide)
++     name:UIKeyboardDidHideNotification object:nil];
+
+     // Workaround for StatusBar appearance bug for iOS 12
+     // https://github.com/react-native-webview/react-native-webview/issues/62
+@@ -423,6 +450,13 @@ - (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelPara
+ - (WKWebViewConfiguration *)setUpWkWebViewConfig
+ {
+   WKWebViewConfiguration *wkWebViewConfig = [WKWebViewConfiguration new];
++#if TARGET_OS_IOS
++  Class resourceHandlerClass = NSClassFromString(@"LonanoteResourceSchemeHandler");
++  if (resourceHandlerClass != Nil && [resourceHandlerClass conformsToProtocol:@protocol(WKURLSchemeHandler)]) {
++    id<WKURLSchemeHandler> resourceHandler = [[resourceHandlerClass alloc] init];
++    [wkWebViewConfig setURLSchemeHandler:resourceHandler forURLScheme:@"lonanote-resource"];
++  }
++#endif
+   WKPreferences *prefs = [[WKPreferences alloc]init];
+   BOOL _prefsUsed = NO;
+   if (!_javaScriptEnabled) {
+@@ -519,6 +553,7 @@ - (void)didMoveToWindow
+     _webView = [[RNCWKWebView alloc] initWithFrame:self.bounds configuration: wkWebViewConfig];
+     [self setBackgroundColor: _savedBackgroundColor];
+ #if !TARGET_OS_OSX
++    _webView.inputMethodEnabled = _inputMethodEnabled;
+     // Apply once at creation time. The prop is documented as non-reactive —
+     // toggling it after mount cannot restore the observers WKWebView registers internally
+     if (_removeIosKeyboardObserver) {
+@@ -578,6 +613,10 @@ - (void)didMoveToWindow
+     }
+ #endif
+
++#if !TARGET_OS_OSX
++    _webView.scrollView.scrollIndicatorInsets = _scrollIndicatorInsets;
++#endif
++
+ #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130300 || \
+     __IPHONE_OS_VERSION_MAX_ALLOWED >= 160400 || \
+     __TV_OS_VERSION_MAX_ALLOWED >= 160400
+@@ -688,15 +727,26 @@ -(void)hideFullScreenVideoStatusBars
+
+ -(void)keyboardWillHide
+ {
++  _keyboardScrollLockGeneration += 1;
+   keyboardTimer = [NSTimer scheduledTimerWithTimeInterval:0 target:self selector:@selector(keyboardDisplacementFix) userInfo:nil repeats:false];
+   [[NSRunLoop mainRunLoop] addTimer:keyboardTimer forMode:NSRunLoopCommonModes];
+ }
+ -(void)keyboardWillShow
+ {
++  if (_removeIosKeyboardObserver && _webView != nil) {
++    _keyboardScrollLockGeneration += 1;
++    _keyboardScrollOffset = _webView.scrollView.contentOffset;
++    _keyboardScrollLockEnabled = YES;
++  }
+   if (keyboardTimer != nil) {
+     [keyboardTimer invalidate];
+   }
+ }
++-(void)keyboardDidHide
++{
++  _keyboardScrollLockGeneration += 1;
++  _keyboardScrollLockEnabled = NO;
++}
+ -(void)keyboardDisplacementFix
+ {
+   // Additional viewport checks to prevent unintentional scrolls
+@@ -837,6 +887,26 @@ - (void)setContentInset:(UIEdgeInsets)contentInset
+ #endif // !TARGET_OS_OSX
+ }
+
++- (void)setScrollIndicatorInsets:(UIEdgeInsets)scrollIndicatorInsets
++{
++  _scrollIndicatorInsets = scrollIndicatorInsets;
++#if !TARGET_OS_OSX
++  if (_webView != nil) {
++    _webView.scrollView.scrollIndicatorInsets = scrollIndicatorInsets;
++  }
++#endif // !TARGET_OS_OSX
++}
++
++- (void)setInputMethodEnabled:(BOOL)inputMethodEnabled
++{
++  _inputMethodEnabled = inputMethodEnabled;
++#if !TARGET_OS_OSX
++  if (_webView != nil) {
++    _webView.inputMethodEnabled = inputMethodEnabled;
++  }
++#endif // !TARGET_OS_OSX
++}
++
+ - (void)refreshContentInset
+ {
+ #if !TARGET_OS_OSX
+@@ -1056,10 +1126,52 @@ - (void)setScrollEnabled:(BOOL)scrollEnabled
+ #endif // !TARGET_OS_OSX
+ }
+
++- (void)setEditorContentOffset:(NSNumber *)y
++{
++#if TARGET_OS_IOS
++  CGFloat offsetY = y.doubleValue;
++  if (_webView == nil || !isfinite(offsetY)) return;
++  CGPoint contentOffset = _webView.scrollView.contentOffset;
++  contentOffset.y = MAX(offsetY, -_webView.scrollView.adjustedContentInset.top);
++  _restoringKeyboardScrollOffset = YES;
++  [_webView.scrollView setContentOffset:contentOffset animated:NO];
++  _keyboardScrollOffset = contentOffset;
++  _restoringKeyboardScrollOffset = NO;
++#else
++  (void)y;
++#endif // TARGET_OS_IOS
++}
++
++- (void)setKeyboardScrollLockEnabled:(BOOL)enabled
++{
++#if TARGET_OS_IOS
++  if (!_removeIosKeyboardObserver || _webView == nil) return;
++  _keyboardScrollLockGeneration += 1;
++  if (enabled) {
++    _keyboardScrollOffset = _webView.scrollView.contentOffset;
++  }
++  _keyboardScrollLockEnabled = enabled;
++#else
++  (void)enabled;
++#endif // TARGET_OS_IOS
++}
++
+ #if !TARGET_OS_OSX
+ // UIScrollViewDelegate method
+ - (void)scrollViewDidScroll:(UIScrollView *)scrollView
+ {
++#if TARGET_OS_IOS
++  // iOS 26 仍可能通过 WKWebView 内部路径滚动聚焦元素；键盘动画期间保持原偏移，避免页面轻微跳动。
++  if (_keyboardScrollLockEnabled) {
++    if (!_restoringKeyboardScrollOffset && !CGPointEqualToPoint(scrollView.contentOffset, _keyboardScrollOffset)) {
++      _restoringKeyboardScrollOffset = YES;
++      scrollView.contentOffset = _keyboardScrollOffset;
++      _restoringKeyboardScrollOffset = NO;
++    }
++    return;
++  }
++#endif // TARGET_OS_IOS
++
+   // Don't allow scrolling the scrollView.
+   if (!_scrollEnabled) {
+     scrollView.bounds = _webView.bounds;
+@@ -1140,6 +1252,7 @@ - (void)layoutSubviews
+   _webView.frame = self.bounds;
+ #if !TARGET_OS_OSX
+   _webView.scrollView.contentInset = _contentInset;
++  _webView.scrollView.scrollIndicatorInsets = _scrollIndicatorInsets;
+ #endif // !TARGET_OS_OSX
+ }
+
+diff --git a/apple/RNCWebViewManager.mm b/apple/RNCWebViewManager.mm
+index a510ffd9..48eb0d26 100644
+--- a/apple/RNCWebViewManager.mm
++++ b/apple/RNCWebViewManager.mm
+@@ -68,6 +68,8 @@ - (RNCView *)view
+ RCT_EXPORT_VIEW_PROPERTY(mediaPlaybackRequiresUserAction, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(dataDetectorTypes, WKDataDetectorTypes)
+ RCT_EXPORT_VIEW_PROPERTY(contentInset, UIEdgeInsets)
++RCT_EXPORT_VIEW_PROPERTY(scrollIndicatorInsets, UIEdgeInsets)
++RCT_EXPORT_VIEW_PROPERTY(inputMethodEnabled, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(automaticallyAdjustContentInsets, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(autoManageStatusBarEnabled, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(hideKeyboardAccessoryView, BOOL)
+@@ -216,5 +218,7 @@ - (RNCView *)view
+ QUICK_RCT_EXPORT_COMMAND_METHOD_PARAMS(postMessage, message:(NSString *)message, message)
+ QUICK_RCT_EXPORT_COMMAND_METHOD_PARAMS(injectJavaScript, script:(NSString *)script, script)
+ QUICK_RCT_EXPORT_COMMAND_METHOD_PARAMS(clearCache, includeDiskFiles:(BOOL)includeDiskFiles, includeDiskFiles)
++QUICK_RCT_EXPORT_COMMAND_METHOD_PARAMS(setEditorContentOffset, y:(NSNumber *)y, y)
++QUICK_RCT_EXPORT_COMMAND_METHOD_PARAMS(setKeyboardScrollLockEnabled, enabled:(BOOL)enabled, enabled)
+
+ @end
+diff --git a/lib/RNCWebViewNativeComponent.d.ts b/lib/RNCWebViewNativeComponent.d.ts
+index 6b789f98..fa36427a 100644
+--- a/lib/RNCWebViewNativeComponent.d.ts
++++ b/lib/RNCWebViewNativeComponent.d.ts
+@@ -113,6 +113,7 @@ type WebViewDownloadEvent = Readonly<{
+     downloadUrl: string;
+ }>;
+ export interface NativeProps extends ViewProps {
++    inputMethodEnabled?: WithDefault<boolean, true>;
+     allowFileAccess?: boolean;
+     allowsProtectedMedia?: boolean;
+     allowsFullscreenVideo?: boolean;
+@@ -153,6 +154,12 @@ export interface NativeProps extends ViewProps {
+         bottom?: Double;
+         right?: Double;
+     }>;
++    scrollIndicatorInsets?: Readonly<{
++        top?: Double;
++        left?: Double;
++        bottom?: Double;
++        right?: Double;
++    }>;
+     contentInsetAdjustmentBehavior?: WithDefault<'never' | 'automatic' | 'scrollableAxes' | 'always', 'never'>;
+     contentMode?: WithDefault<'recommended' | 'mobile' | 'desktop', 'recommended'>;
+     dataDetectorTypes?: WithDefault<ReadonlyArray<'address' | 'link' | 'calendarEvent' | 'trackingNumber' | 'flightNumber' | 'lookupSuggestion' | 'phoneNumber' | 'all' | 'none'>, 'phoneNumber'>;
+@@ -240,6 +247,8 @@ export interface NativeCommands {
+     clearFormData: (viewRef: React.ElementRef<HostComponent<NativeProps>>) => void;
+     clearCache: (viewRef: React.ElementRef<HostComponent<NativeProps>>, includeDiskFiles: boolean) => void;
+     clearHistory: (viewRef: React.ElementRef<HostComponent<NativeProps>>) => void;
++    setEditorContentOffset: (viewRef: React.ElementRef<HostComponent<NativeProps>>, y: number) => void;
++    setKeyboardScrollLockEnabled: (viewRef: React.ElementRef<HostComponent<NativeProps>>, enabled: boolean) => void;
+ }
+ export declare const Commands: NativeCommands;
+ declare const _default: HostComponent<NativeProps>;
+diff --git a/lib/RNCWebViewNativeComponent.js b/lib/RNCWebViewNativeComponent.js
+index 82612101..81521817 100644
+--- a/lib/RNCWebViewNativeComponent.js
++++ b/lib/RNCWebViewNativeComponent.js
+@@ -1 +1 @@
+-var _interopRequireDefault=require("@babel/runtime/helpers/interopRequireDefault");Object.defineProperty(exports,"__esModule",{value:true});exports.default=exports.__INTERNAL_VIEW_CONFIG=exports.Commands=void 0;var _codegenNativeComponent=_interopRequireDefault(require("react-native/Libraries/Utilities/codegenNativeComponent"));var _codegenNativeCommands=_interopRequireDefault(require("react-native/Libraries/Utilities/codegenNativeCommands"));var NativeComponentRegistry=require('react-native/Libraries/NativeComponent/NativeComponentRegistry');var _require=require('react-native/Libraries/NativeComponent/ViewConfigIgnore'),ConditionallyIgnoredEventHandlers=_require.ConditionallyIgnoredEventHandlers;var _require2=require("react-native/Libraries/ReactNative/RendererProxy"),dispatchCommand=_require2.dispatchCommand;var nativeComponentName='RNCWebView';var __INTERNAL_VIEW_CONFIG=exports.__INTERNAL_VIEW_CONFIG={uiViewClassName:'RNCWebView',directEventTypes:{topContentSizeChange:{registrationName:'onContentSizeChange'},topRenderProcessGone:{registrationName:'onRenderProcessGone'},topContentProcessDidTerminate:{registrationName:'onContentProcessDidTerminate'},topCustomMenuSelection:{registrationName:'onCustomMenuSelection'},topFileDownload:{registrationName:'onFileDownload'},topLoadingError:{registrationName:'onLoadingError'},topLoadingSubResourceError:{registrationName:'onLoadingSubResourceError'},topLoadingFinish:{registrationName:'onLoadingFinish'},topLoadingProgress:{registrationName:'onLoadingProgress'},topLoadingStart:{registrationName:'onLoadingStart'},topHttpError:{registrationName:'onHttpError'},topMessage:{registrationName:'onMessage'},topOpenWindow:{registrationName:'onOpenWindow'},topScroll:{registrationName:'onScroll'},topShouldStartLoadWithRequest:{registrationName:'onShouldStartLoadWithRequest'}},validAttributes:Object.assign({allowFileAccess:true,allowsProtectedMedia:true,allowsFullscreenVideo:true,androidLayerType:true,cacheMode:true,domStorageEnabled:true,downloadingMessage:true,forceDarkOn:true,geolocationEnabled:true,lackPermissionToDownloadMessage:true,messagingModuleName:true,minimumFontSize:true,mixedContentMode:true,nestedScrollEnabled:true,overScrollMode:true,saveFormDataDisabled:true,scalesPageToFit:true,setBuiltInZoomControls:true,setDisplayZoomControls:true,setSupportMultipleWindows:true,textZoom:true,thirdPartyCookiesEnabled:true,hasOnScroll:true,allowingReadAccessToURL:true,allowsBackForwardNavigationGestures:true,allowsInlineMediaPlayback:true,allowsPictureInPictureMediaPlayback:true,allowsAirPlayForMediaPlayback:true,allowsLinkPreview:true,automaticallyAdjustContentInsets:true,autoManageStatusBarEnabled:true,bounces:true,contentInset:true,contentInsetAdjustmentBehavior:true,contentMode:true,dataDetectorTypes:true,decelerationRate:true,directionalLockEnabled:true,enableApplePay:true,hideKeyboardAccessoryView:true,keyboardDisplayRequiresUserAction:true,limitsNavigationsToAppBoundDomains:true,mediaCapturePermissionGrantType:true,pagingEnabled:true,pullToRefreshEnabled:true,refreshControlLightMode:true,removeIosKeyboardObserver:true,scrollEnabled:true,sharedCookiesEnabled:true,textInteractionEnabled:true,useSharedProcessPool:true,menuItems:true,suppressMenuItems:true,hasOnFileDownload:true,fraudulentWebsiteWarningEnabled:true,allowFileAccessFromFileURLs:true,allowUniversalAccessFromFileURLs:true,applicationNameForUserAgent:true,basicAuthCredential:true,cacheEnabled:true,incognito:true,injectedJavaScript:true,injectedJavaScriptBeforeContentLoaded:true,injectedJavaScriptForMainFrameOnly:true,injectedJavaScriptBeforeContentLoadedForMainFrameOnly:true,javaScriptCanOpenWindowsAutomatically:true,javaScriptEnabled:true,webviewDebuggingEnabled:true,mediaPlaybackRequiresUserAction:true,messagingEnabled:true,hasOnOpenWindowEvent:true,showsHorizontalScrollIndicator:true,showsVerticalScrollIndicator:true,indicatorStyle:true,newSource:true,userAgent:true,injectedJavaScriptObject:true,paymentRequestEnabled:true},ConditionallyIgnoredEventHandlers({onContentSizeChange:true,onRenderProcessGone:true,onContentProcessDidTerminate:true,onCustomMenuSelection:true,onFileDownload:true,onLoadingError:true,onLoadingSubResourceError:true,onLoadingFinish:true,onLoadingProgress:true,onLoadingStart:true,onHttpError:true,onMessage:true,onOpenWindow:true,onScroll:true,onShouldStartLoadWithRequest:true}))};var _default=exports.default=NativeComponentRegistry.get(nativeComponentName,function(){return __INTERNAL_VIEW_CONFIG;});var Commands=exports.Commands={goBack:function goBack(ref){dispatchCommand(ref,"goBack",[]);},goForward:function goForward(ref){dispatchCommand(ref,"goForward",[]);},reload:function reload(ref){dispatchCommand(ref,"reload",[]);},stopLoading:function stopLoading(ref){dispatchCommand(ref,"stopLoading",[]);},injectJavaScript:function injectJavaScript(ref,javascript){dispatchCommand(ref,"injectJavaScript",[javascript]);},requestFocus:function requestFocus(ref){dispatchCommand(ref,"requestFocus",[]);},postMessage:function postMessage(ref,data){dispatchCommand(ref,"postMessage",[data]);},loadUrl:function loadUrl(ref,url){dispatchCommand(ref,"loadUrl",[url]);},clearFormData:function clearFormData(ref){dispatchCommand(ref,"clearFormData",[]);},clearCache:function clearCache(ref,includeDiskFiles){dispatchCommand(ref,"clearCache",[includeDiskFiles]);},clearHistory:function clearHistory(ref){dispatchCommand(ref,"clearHistory",[]);}};
+\ No newline at end of file
++var _interopRequireDefault=require("@babel/runtime/helpers/interopRequireDefault");Object.defineProperty(exports,"__esModule",{value:true});exports.default=exports.__INTERNAL_VIEW_CONFIG=exports.Commands=void 0;var _codegenNativeComponent=_interopRequireDefault(require("react-native/Libraries/Utilities/codegenNativeComponent"));var _codegenNativeCommands=_interopRequireDefault(require("react-native/Libraries/Utilities/codegenNativeCommands"));var NativeComponentRegistry=require('react-native/Libraries/NativeComponent/NativeComponentRegistry');var _require=require('react-native/Libraries/NativeComponent/ViewConfigIgnore'),ConditionallyIgnoredEventHandlers=_require.ConditionallyIgnoredEventHandlers;var _require2=require("react-native/Libraries/ReactNative/RendererProxy"),dispatchCommand=_require2.dispatchCommand;var nativeComponentName='RNCWebView';var __INTERNAL_VIEW_CONFIG=exports.__INTERNAL_VIEW_CONFIG={uiViewClassName:'RNCWebView',directEventTypes:{topContentSizeChange:{registrationName:'onContentSizeChange'},topRenderProcessGone:{registrationName:'onRenderProcessGone'},topContentProcessDidTerminate:{registrationName:'onContentProcessDidTerminate'},topCustomMenuSelection:{registrationName:'onCustomMenuSelection'},topFileDownload:{registrationName:'onFileDownload'},topLoadingError:{registrationName:'onLoadingError'},topLoadingSubResourceError:{registrationName:'onLoadingSubResourceError'},topLoadingFinish:{registrationName:'onLoadingFinish'},topLoadingProgress:{registrationName:'onLoadingProgress'},topLoadingStart:{registrationName:'onLoadingStart'},topHttpError:{registrationName:'onHttpError'},topMessage:{registrationName:'onMessage'},topOpenWindow:{registrationName:'onOpenWindow'},topScroll:{registrationName:'onScroll'},topShouldStartLoadWithRequest:{registrationName:'onShouldStartLoadWithRequest'}},validAttributes:Object.assign({allowFileAccess:true,allowsProtectedMedia:true,allowsFullscreenVideo:true,androidLayerType:true,cacheMode:true,domStorageEnabled:true,downloadingMessage:true,forceDarkOn:true,geolocationEnabled:true,lackPermissionToDownloadMessage:true,messagingModuleName:true,minimumFontSize:true,mixedContentMode:true,nestedScrollEnabled:true,overScrollMode:true,saveFormDataDisabled:true,scalesPageToFit:true,setBuiltInZoomControls:true,setDisplayZoomControls:true,setSupportMultipleWindows:true,textZoom:true,thirdPartyCookiesEnabled:true,hasOnScroll:true,allowingReadAccessToURL:true,allowsBackForwardNavigationGestures:true,allowsInlineMediaPlayback:true,allowsPictureInPictureMediaPlayback:true,allowsAirPlayForMediaPlayback:true,allowsLinkPreview:true,automaticallyAdjustContentInsets:true,autoManageStatusBarEnabled:true,bounces:true,contentInset:true,contentInsetAdjustmentBehavior:true,contentMode:true,dataDetectorTypes:true,decelerationRate:true,directionalLockEnabled:true,enableApplePay:true,hideKeyboardAccessoryView:true,keyboardDisplayRequiresUserAction:true,limitsNavigationsToAppBoundDomains:true,mediaCapturePermissionGrantType:true,pagingEnabled:true,pullToRefreshEnabled:true,refreshControlLightMode:true,removeIosKeyboardObserver:true,scrollEnabled:true,sharedCookiesEnabled:true,textInteractionEnabled:true,useSharedProcessPool:true,menuItems:true,suppressMenuItems:true,hasOnFileDownload:true,fraudulentWebsiteWarningEnabled:true,allowFileAccessFromFileURLs:true,allowUniversalAccessFromFileURLs:true,applicationNameForUserAgent:true,basicAuthCredential:true,cacheEnabled:true,incognito:true,injectedJavaScript:true,injectedJavaScriptBeforeContentLoaded:true,injectedJavaScriptForMainFrameOnly:true,injectedJavaScriptBeforeContentLoadedForMainFrameOnly:true,javaScriptCanOpenWindowsAutomatically:true,javaScriptEnabled:true,webviewDebuggingEnabled:true,mediaPlaybackRequiresUserAction:true,messagingEnabled:true,hasOnOpenWindowEvent:true,showsHorizontalScrollIndicator:true,showsVerticalScrollIndicator:true,indicatorStyle:true,newSource:true,userAgent:true,injectedJavaScriptObject:true,paymentRequestEnabled:true},ConditionallyIgnoredEventHandlers({onContentSizeChange:true,onRenderProcessGone:true,onContentProcessDidTerminate:true,onCustomMenuSelection:true,onFileDownload:true,onLoadingError:true,onLoadingSubResourceError:true,onLoadingFinish:true,onLoadingProgress:true,onLoadingStart:true,onHttpError:true,onMessage:true,onOpenWindow:true,onScroll:true,onShouldStartLoadWithRequest:true}))};var _default=exports.default=NativeComponentRegistry.get(nativeComponentName,function(){return __INTERNAL_VIEW_CONFIG;});var Commands=exports.Commands={goBack:function goBack(ref){dispatchCommand(ref,"goBack",[]);},goForward:function goForward(ref){dispatchCommand(ref,"goForward",[]);},reload:function reload(ref){dispatchCommand(ref,"reload",[]);},stopLoading:function stopLoading(ref){dispatchCommand(ref,"stopLoading",[]);},injectJavaScript:function injectJavaScript(ref,javascript){dispatchCommand(ref,"injectJavaScript",[javascript]);},requestFocus:function requestFocus(ref){dispatchCommand(ref,"requestFocus",[]);},postMessage:function postMessage(ref,data){dispatchCommand(ref,"postMessage",[data]);},loadUrl:function loadUrl(ref,url){dispatchCommand(ref,"loadUrl",[url]);},clearFormData:function clearFormData(ref){dispatchCommand(ref,"clearFormData",[]);},clearCache:function clearCache(ref,includeDiskFiles){dispatchCommand(ref,"clearCache",[includeDiskFiles]);},clearHistory:function clearHistory(ref){dispatchCommand(ref,"clearHistory",[]);},setEditorContentOffset:function setEditorContentOffset(ref,y){dispatchCommand(ref,"setEditorContentOffset",[y]);},setKeyboardScrollLockEnabled:function setKeyboardScrollLockEnabled(ref,enabled){dispatchCommand(ref,"setKeyboardScrollLockEnabled",[enabled]);}};
+\ No newline at end of file
+diff --git a/lib/WebViewTypes.d.ts b/lib/WebViewTypes.d.ts
+index f666e814..48ff3924 100644
+--- a/lib/WebViewTypes.d.ts
++++ b/lib/WebViewTypes.d.ts
+@@ -1,7 +1,7 @@
+ import { ReactElement, Component, ComponentProps } from 'react';
+ import { NativeSyntheticEvent, ViewProps, StyleProp, ViewStyle, NativeMethodsMixin, UIManagerStatic, NativeScrollEvent } from 'react-native';
+ import type NativeWebViewComponent from './RNCWebViewNativeComponent';
+-type WebViewCommands = 'goForward' | 'goBack' | 'reload' | 'stopLoading' | 'postMessage' | 'injectJavaScript' | 'loadUrl' | 'requestFocus' | 'clearCache';
++type WebViewCommands = 'goForward' | 'goBack' | 'reload' | 'stopLoading' | 'postMessage' | 'injectJavaScript' | 'loadUrl' | 'requestFocus' | 'clearCache' | 'setEditorContentOffset';
+ type AndroidWebViewCommands = 'clearHistory' | 'clearFormData';
+ interface RNCWebViewUIManager<Commands extends string> extends UIManagerStatic {
+     getViewManagerConfig: (name: string) => {
+@@ -316,6 +316,11 @@ export interface IOSWebViewProps extends WebViewSharedProps {
+      * @platform ios
+      */
+     automaticallyAdjustsScrollIndicatorInsets?: boolean;
++    /**
++     * 设置 iOS 原生滚动条的 inset，不会改变 WebView 内容的布局。
++     * @platform ios
++     */
++    scrollIndicatorInsets?: ContentInsetProp;
+     /**
+      * This property specifies how the safe area insets are used to modify the
+      * content area of the scroll view. The default value of this property is
+@@ -974,6 +979,14 @@ export interface AndroidWebViewProps extends WebViewSharedProps {
+     onLoadSubResourceError?: (event: WebViewErrorEvent) => void;
+ }
+ export interface WebViewSharedProps extends ViewProps {
++    /**
++     * Controls whether the focused WebView can present the system input method.
++     * Disabling it keeps the focused HTML element and selection intact.
++     * The default value is `true`.
++     * @platform android
++     * @platform ios
++     */
++    inputMethodEnabled?: boolean;
+     /**
+      * Loads static html or a uri (with optional headers) in the WebView.
+      */
+diff --git a/src/RNCWebViewNativeComponent.ts b/src/RNCWebViewNativeComponent.ts
+index ca3af151..e90baa71 100644
+--- a/src/RNCWebViewNativeComponent.ts
++++ b/src/RNCWebViewNativeComponent.ts
+@@ -131,6 +131,8 @@ type WebViewDownloadEvent = Readonly<{
+ // type MenuItem = Readonly<{label: string, key: string}>;
+
+ export interface NativeProps extends ViewProps {
++  inputMethodEnabled?: WithDefault<boolean, true>;
++
+   // Android only
+   allowFileAccess?: boolean;
+   allowsProtectedMedia?: boolean;
+@@ -179,6 +181,12 @@ export interface NativeProps extends ViewProps {
+     bottom?: Double;
+     right?: Double;
+   }>;
++  scrollIndicatorInsets?: Readonly<{
++    top?: Double;
++    left?: Double;
++    bottom?: Double;
++    right?: Double;
++  }>;
+   contentInsetAdjustmentBehavior?: WithDefault<
+     'never' | 'automatic' | 'scrollableAxes' | 'always',
+     'never'
+@@ -292,6 +300,14 @@ export interface NativeCommands {
+     includeDiskFiles: boolean,
+   ) => void;
+   clearHistory: (viewRef: React.ElementRef<HostComponent<NativeProps>>) => void;
++  setEditorContentOffset: (
++    viewRef: React.ElementRef<HostComponent<NativeProps>>,
++    y: Double,
++  ) => void;
++  setKeyboardScrollLockEnabled: (
++    viewRef: React.ElementRef<HostComponent<NativeProps>>,
++    enabled: boolean,
++  ) => void;
+   // !Android Only
+ }
+
+@@ -308,6 +324,8 @@ export const Commands = codegenNativeCommands<NativeCommands>({
+     'clearFormData',
+     'clearCache',
+     'clearHistory',
++    'setEditorContentOffset',
++    'setKeyboardScrollLockEnabled',
+   ],
+ });
+
+diff --git a/src/WebView.android.tsx b/src/WebView.android.tsx
+index 15e9dee9..c3a29ef7 100644
+--- a/src/WebView.android.tsx
++++ b/src/WebView.android.tsx
+@@ -166,6 +166,10 @@ const WebViewComponent = forwardRef<unknown, AndroidWebViewProps>(
+         clearCache: (includeDiskFiles: boolean) =>
+           webViewRef.current && Commands.clearCache(webViewRef.current, includeDiskFiles),
+         clearHistory: () => webViewRef.current && Commands.clearHistory(webViewRef.current),
++        setEditorContentOffset: (y: number) =>
++          webViewRef.current && Commands.setEditorContentOffset(webViewRef.current, y),
++        setKeyboardScrollLockEnabled: (enabled: boolean) =>
++          webViewRef.current && Commands.setKeyboardScrollLockEnabled(webViewRef.current, enabled),
+       }),
+       [setViewState, webViewRef],
+     );
+diff --git a/src/WebView.ios.tsx b/src/WebView.ios.tsx
+index 970acb0f..df16059a 100644
+--- a/src/WebView.ios.tsx
++++ b/src/WebView.ios.tsx
+@@ -140,6 +140,10 @@ const WebViewComponent = forwardRef<unknown, IOSWebViewProps>(
+         requestFocus: () => webViewRef.current && Commands.requestFocus(webViewRef.current),
+         clearCache: (includeDiskFiles: boolean) =>
+           webViewRef.current && Commands.clearCache(webViewRef.current, includeDiskFiles),
++        setEditorContentOffset: (y: number) =>
++          webViewRef.current && Commands.setEditorContentOffset(webViewRef.current, y),
++        setKeyboardScrollLockEnabled: (enabled: boolean) =>
++          webViewRef.current && Commands.setKeyboardScrollLockEnabled(webViewRef.current, enabled),
+       }),
+       [setViewState, webViewRef],
+     );
+diff --git a/src/WebViewTypes.ts b/src/WebViewTypes.ts
+index 4e7247f8..a80c7598 100644
+--- a/src/WebViewTypes.ts
++++ b/src/WebViewTypes.ts
+@@ -20,7 +20,8 @@ type WebViewCommands =
+   | 'injectJavaScript'
+   | 'loadUrl'
+   | 'requestFocus'
+-  | 'clearCache';
++  | 'clearCache'
++  | 'setEditorContentOffset';
+
+ type AndroidWebViewCommands = 'clearHistory' | 'clearFormData';
+
+@@ -438,6 +439,12 @@ export interface IOSWebViewProps extends WebViewSharedProps {
+    */
+   automaticallyAdjustsScrollIndicatorInsets?: boolean;
+
++  /**
++   * 设置 iOS 原生滚动条的 inset，不会改变 WebView 内容的布局。
++   * @platform ios
++   */
++  scrollIndicatorInsets?: ContentInsetProp;
++
+   /**
+    * This property specifies how the safe area insets are used to modify the
+    * content area of the scroll view. The default value of this property is
+@@ -1172,6 +1179,15 @@ export interface AndroidWebViewProps extends WebViewSharedProps {
+ }
+
+ export interface WebViewSharedProps extends ViewProps {
++  /**
++   * Controls whether the focused WebView can present the system input method.
++   * Disabling it keeps the focused HTML element and selection intact.
++   * The default value is `true`.
++   * @platform android
++   * @platform ios
++   */
++  inputMethodEnabled?: boolean;
++
+   /**
+    * Loads static html or a uri (with optional headers) in the WebView.
+    */
+diff --git a/lib/WebView.ios.js b/lib/WebView.ios.js
+index 41f906fd..91643dca 100644
+--- a/lib/WebView.ios.js
++++ b/lib/WebView.ios.js
+@@ -1 +1 @@
+-var _interopRequireDefault=require("@babel/runtime/helpers/interopRequireDefault");Object.defineProperty(exports,"__esModule",{value:true});exports.default=void 0;var _asyncToGenerator2=_interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));var _defineProperty2=_interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));var _slicedToArray2=_interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));var _objectWithoutProperties2=_interopRequireDefault(require("@babel/runtime/helpers/objectWithoutProperties"));var _react=_interopRequireWildcard(require("react"));var _reactNative=require("react-native");var _invariant=_interopRequireDefault(require("invariant"));var _RNCWebViewNativeComponent=_interopRequireWildcard(require("./RNCWebViewNativeComponent"));var _NativeRNCWebViewModule=_interopRequireDefault(require("./NativeRNCWebViewModule"));var _WebViewShared=require("./WebViewShared");var _WebView=_interopRequireDefault(require("./WebView.styles"));var _jsxRuntime=require("react/jsx-runtime");var _excluded=["fraudulentWebsiteWarningEnabled","javaScriptEnabled","cacheEnabled","originWhitelist","useSharedProcessPool","textInteractionEnabled","injectedJavaScript","injectedJavaScriptBeforeContentLoaded","injectedJavaScriptForMainFrameOnly","injectedJavaScriptBeforeContentLoadedForMainFrameOnly","injectedJavaScriptObject","startInLoadingState","onNavigationStateChange","onLoadStart","onError","onLoad","onLoadEnd","onLoadProgress","onContentProcessDidTerminate","onFileDownload","onHttpError","onMessage","onOpenWindow","renderLoading","renderError","style","containerStyle","source","nativeConfig","allowsInlineMediaPlayback","allowsPictureInPictureMediaPlayback","allowsAirPlayForMediaPlayback","mediaPlaybackRequiresUserAction","dataDetectorTypes","incognito","decelerationRate","onShouldStartLoadWithRequest","removeIosKeyboardObserver"];var _this=this,_jsxFileName="/home/runner/work/react-native-webview/react-native-webview/src/WebView.ios.tsx";function _interopRequireWildcard(e,t){if("function"==typeof WeakMap)var r=new WeakMap(),n=new WeakMap();return(_interopRequireWildcard=function _interopRequireWildcard(e,t){if(!t&&e&&e.__esModule)return e;var o,i,f={__proto__:null,default:e};if(null===e||"object"!=typeof e&&"function"!=typeof e)return f;if(o=t?n:r){if(o.has(e))return o.get(e);o.set(e,f);}for(var _t in e)"default"!==_t&&{}.hasOwnProperty.call(e,_t)&&((i=(o=Object.defineProperty)&&Object.getOwnPropertyDescriptor(e,_t))&&(i.get||i.set)?o(f,_t,i):f[_t]=e[_t]);return f;})(e,t);}var resolveAssetSource=function resolveAssetSource(source){return _reactNative.Image.resolveAssetSource(source);};var processDecelerationRate=function processDecelerationRate(decelerationRate){var newDecelerationRate=decelerationRate;if(newDecelerationRate==='normal'){newDecelerationRate=0.998;}else if(newDecelerationRate==='fast'){newDecelerationRate=0.99;}return newDecelerationRate;};var useWarnIfChanges=function useWarnIfChanges(value,name){var ref=(0,_react.useRef)(value);if(ref.current!==value){console.warn(`Changes to property ${name} do nothing after the initial render.`);ref.current=value;}};var WebViewComponent=(0,_react.forwardRef)(function(_ref,ref){var _ref$fraudulentWebsit=_ref.fraudulentWebsiteWarningEnabled,fraudulentWebsiteWarningEnabled=_ref$fraudulentWebsit===void 0?true:_ref$fraudulentWebsit,_ref$javaScriptEnable=_ref.javaScriptEnabled,javaScriptEnabled=_ref$javaScriptEnable===void 0?true:_ref$javaScriptEnable,_ref$cacheEnabled=_ref.cacheEnabled,cacheEnabled=_ref$cacheEnabled===void 0?true:_ref$cacheEnabled,_ref$originWhitelist=_ref.originWhitelist,originWhitelist=_ref$originWhitelist===void 0?_WebViewShared.defaultOriginWhitelist:_ref$originWhitelist,_ref$useSharedProcess=_ref.useSharedProcessPool,useSharedProcessPool=_ref$useSharedProcess===void 0?true:_ref$useSharedProcess,_ref$textInteractionE=_ref.textInteractionEnabled,textInteractionEnabled=_ref$textInteractionE===void 0?true:_ref$textInteractionE,injectedJavaScript=_ref.injectedJavaScript,injectedJavaScriptBeforeContentLoaded=_ref.injectedJavaScriptBeforeContentLoaded,_ref$injectedJavaScri=_ref.injectedJavaScriptForMainFrameOnly,injectedJavaScriptForMainFrameOnly=_ref$injectedJavaScri===void 0?true:_ref$injectedJavaScri,_ref$injectedJavaScri2=_ref.injectedJavaScriptBeforeContentLoadedForMainFrameOnly,injectedJavaScriptBeforeContentLoadedForMainFrameOnly=_ref$injectedJavaScri2===void 0?true:_ref$injectedJavaScri2,injectedJavaScriptObject=_ref.injectedJavaScriptObject,startInLoadingState=_ref.startInLoadingState,onNavigationStateChange=_ref.onNavigationStateChange,onLoadStart=_ref.onLoadStart,onError=_ref.onError,onLoad=_ref.onLoad,onLoadEnd=_ref.onLoadEnd,onLoadProgress=_ref.onLoadProgress,onContentProcessDidTerminateProp=_ref.onContentProcessDidTerminate,onFileDownload=_ref.onFileDownload,onHttpErrorProp=_ref.onHttpError,onMessageProp=_ref.onMessage,onOpenWindowProp=_ref.onOpenWindow,renderLoading=_ref.renderLoading,renderError=_ref.renderError,style=_ref.style,containerStyle=_ref.containerStyle,source=_ref.source,nativeConfig=_ref.nativeConfig,allowsInlineMediaPlayback=_ref.allowsInlineMediaPlayback,_ref$allowsPictureInP=_ref.allowsPictureInPictureMediaPlayback,allowsPictureInPictureMediaPlayback=_ref$allowsPictureInP===void 0?true:_ref$allowsPictureInP,allowsAirPlayForMediaPlayback=_ref.allowsAirPlayForMediaPlayback,mediaPlaybackRequiresUserAction=_ref.mediaPlaybackRequiresUserAction,dataDetectorTypes=_ref.dataDetectorTypes,incognito=_ref.incognito,decelerationRateProp=_ref.decelerationRate,onShouldStartLoadWithRequestProp=_ref.onShouldStartLoadWithRequest,removeIosKeyboardObserver=_ref.removeIosKeyboardObserver,otherProps=(0,_objectWithoutProperties2.default)(_ref,_excluded);var webViewRef=(0,_react.useRef)(null);var onShouldStartLoadWithRequestCallback=(0,_react.useCallback)(function(shouldStart,_url){var lockIdentifier=arguments.length>2&&arguments[2]!==undefined?arguments[2]:0;_NativeRNCWebViewModule.default.shouldStartLoadWithLockIdentifier(shouldStart,lockIdentifier);},[]);var _useWebViewLogic=(0,_WebViewShared.useWebViewLogic)({onNavigationStateChange:onNavigationStateChange,onLoad:onLoad,onError:onError,onHttpErrorProp:onHttpErrorProp,onLoadEnd:onLoadEnd,onLoadProgress:onLoadProgress,onLoadStart:onLoadStart,onMessageProp:onMessageProp,onOpenWindowProp:onOpenWindowProp,startInLoadingState:startInLoadingState,originWhitelist:originWhitelist,onShouldStartLoadWithRequestProp:onShouldStartLoadWithRequestProp,onShouldStartLoadWithRequestCallback:onShouldStartLoadWithRequestCallback,onContentProcessDidTerminateProp:onContentProcessDidTerminateProp}),onLoadingStart=_useWebViewLogic.onLoadingStart,onShouldStartLoadWithRequest=_useWebViewLogic.onShouldStartLoadWithRequest,onMessage=_useWebViewLogic.onMessage,viewState=_useWebViewLogic.viewState,setViewState=_useWebViewLogic.setViewState,lastErrorEvent=_useWebViewLogic.lastErrorEvent,onHttpError=_useWebViewLogic.onHttpError,onLoadingError=_useWebViewLogic.onLoadingError,onLoadingFinish=_useWebViewLogic.onLoadingFinish,onLoadingProgress=_useWebViewLogic.onLoadingProgress,onOpenWindow=_useWebViewLogic.onOpenWindow,onContentProcessDidTerminate=_useWebViewLogic.onContentProcessDidTerminate;(0,_react.useImperativeHandle)(ref,function(){return{goForward:function goForward(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.goForward(webViewRef.current);},goBack:function goBack(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.goBack(webViewRef.current);},reload:function reload(){setViewState('LOADING');if(webViewRef.current){_RNCWebViewNativeComponent.Commands.reload(webViewRef.current);}},stopLoading:function stopLoading(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.stopLoading(webViewRef.current);},postMessage:function postMessage(data){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.postMessage(webViewRef.current,data);},injectJavaScript:function injectJavaScript(data){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.injectJavaScript(webViewRef.current,data);},requestFocus:function requestFocus(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.requestFocus(webViewRef.current);},clearCache:function clearCache(includeDiskFiles){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.clearCache(webViewRef.current,includeDiskFiles);}};},[setViewState,webViewRef]);useWarnIfChanges(allowsInlineMediaPlayback,'allowsInlineMediaPlayback');useWarnIfChanges(allowsPictureInPictureMediaPlayback,'allowsPictureInPictureMediaPlayback');useWarnIfChanges(allowsAirPlayForMediaPlayback,'allowsAirPlayForMediaPlayback');useWarnIfChanges(incognito,'incognito');useWarnIfChanges(mediaPlaybackRequiresUserAction,'mediaPlaybackRequiresUserAction');useWarnIfChanges(dataDetectorTypes,'dataDetectorTypes');useWarnIfChanges(removeIosKeyboardObserver,'removeIosKeyboardObserver');var otherView=null;if(viewState==='LOADING'){otherView=(renderLoading||_WebViewShared.defaultRenderLoading)();}else if(viewState==='ERROR'){var _lastErrorEvent$code,_lastErrorEvent$descr;(0,_invariant.default)(lastErrorEvent!=null,'lastErrorEvent expected to be non-null');otherView=(renderError||_WebViewShared.defaultRenderError)(lastErrorEvent==null?void 0:lastErrorEvent.domain,(_lastErrorEvent$code=lastErrorEvent==null?void 0:lastErrorEvent.code)!=null?_lastErrorEvent$code:0,(_lastErrorEvent$descr=lastErrorEvent==null?void 0:lastErrorEvent.description)!=null?_lastErrorEvent$descr:'');}var webViewStyles=[_WebView.default.container,_WebView.default.webView,style];var webViewContainerStyle=[_WebView.default.container,containerStyle];var decelerationRate=processDecelerationRate(decelerationRateProp);var NativeWebView=(nativeConfig==null?void 0:nativeConfig.component)||_RNCWebViewNativeComponent.default;var sourceResolved=resolveAssetSource(source);var newSource=typeof sourceResolved==='object'?Object.entries(sourceResolved).reduce(function(prev,_ref2){var _ref3=(0,_slicedToArray2.default)(_ref2,2),currKey=_ref3[0],currValue=_ref3[1];return Object.assign({},prev,(0,_defineProperty2.default)({},currKey,currKey==='headers'&&currValue&&typeof currValue==='object'?Object.entries(currValue).map(function(_ref4){var _ref5=(0,_slicedToArray2.default)(_ref4,2),key=_ref5[0],value=_ref5[1];return{name:key,value:value};}):currValue));},{}):sourceResolved;var webView=(0,_jsxRuntime.jsx)(NativeWebView,Object.assign({},otherProps,{fraudulentWebsiteWarningEnabled:fraudulentWebsiteWarningEnabled,javaScriptEnabled:javaScriptEnabled,cacheEnabled:cacheEnabled,useSharedProcessPool:useSharedProcessPool,textInteractionEnabled:textInteractionEnabled,decelerationRate:decelerationRate,messagingEnabled:typeof onMessageProp==='function',messagingModuleName:"",onLoadingError:onLoadingError,onLoadingFinish:onLoadingFinish,onLoadingProgress:onLoadingProgress,onFileDownload:onFileDownload,onLoadingStart:onLoadingStart,onHttpError:onHttpError,onMessage:onMessage,onOpenWindow:onOpenWindowProp&&onOpenWindow,hasOnOpenWindowEvent:onOpenWindowProp!==undefined,onShouldStartLoadWithRequest:onShouldStartLoadWithRequest,onContentProcessDidTerminate:onContentProcessDidTerminate,injectedJavaScript:injectedJavaScript,injectedJavaScriptBeforeContentLoaded:injectedJavaScriptBeforeContentLoaded,injectedJavaScriptForMainFrameOnly:injectedJavaScriptForMainFrameOnly,injectedJavaScriptBeforeContentLoadedForMainFrameOnly:injectedJavaScriptBeforeContentLoadedForMainFrameOnly,injectedJavaScriptObject:JSON.stringify(injectedJavaScriptObject),dataDetectorTypes:!dataDetectorTypes||Array.isArray(dataDetectorTypes)?dataDetectorTypes:[dataDetectorTypes],allowsAirPlayForMediaPlayback:allowsAirPlayForMediaPlayback,allowsInlineMediaPlayback:allowsInlineMediaPlayback,allowsPictureInPictureMediaPlayback:allowsPictureInPictureMediaPlayback,incognito:incognito,mediaPlaybackRequiresUserAction:mediaPlaybackRequiresUserAction,removeIosKeyboardObserver:removeIosKeyboardObserver,newSource:newSource,style:webViewStyles,hasOnFileDownload:!!onFileDownload,ref:webViewRef,source:sourceResolved},nativeConfig==null?void 0:nativeConfig.props),"webViewKey");return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:webViewContainerStyle,children:[webView,otherView]});});var isFileUploadSupported=function(){var _ref6=(0,_asyncToGenerator2.default)(function*(){return true;});return function isFileUploadSupported(){return _ref6.apply(this,arguments);};}();var WebView=Object.assign(WebViewComponent,{isFileUploadSupported:isFileUploadSupported});var _default=exports.default=WebView;
+\ No newline at end of file
++var _interopRequireDefault=require("@babel/runtime/helpers/interopRequireDefault");Object.defineProperty(exports,"__esModule",{value:true});exports.default=void 0;var _asyncToGenerator2=_interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));var _defineProperty2=_interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));var _slicedToArray2=_interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));var _objectWithoutProperties2=_interopRequireDefault(require("@babel/runtime/helpers/objectWithoutProperties"));var _react=_interopRequireWildcard(require("react"));var _reactNative=require("react-native");var _invariant=_interopRequireDefault(require("invariant"));var _RNCWebViewNativeComponent=_interopRequireWildcard(require("./RNCWebViewNativeComponent"));var _NativeRNCWebViewModule=_interopRequireDefault(require("./NativeRNCWebViewModule"));var _WebViewShared=require("./WebViewShared");var _WebView=_interopRequireDefault(require("./WebView.styles"));var _jsxRuntime=require("react/jsx-runtime");var _excluded=["fraudulentWebsiteWarningEnabled","javaScriptEnabled","cacheEnabled","originWhitelist","useSharedProcessPool","textInteractionEnabled","injectedJavaScript","injectedJavaScriptBeforeContentLoaded","injectedJavaScriptForMainFrameOnly","injectedJavaScriptBeforeContentLoadedForMainFrameOnly","injectedJavaScriptObject","startInLoadingState","onNavigationStateChange","onLoadStart","onError","onLoad","onLoadEnd","onLoadProgress","onContentProcessDidTerminate","onFileDownload","onHttpError","onMessage","onOpenWindow","renderLoading","renderError","style","containerStyle","source","nativeConfig","allowsInlineMediaPlayback","allowsPictureInPictureMediaPlayback","allowsAirPlayForMediaPlayback","mediaPlaybackRequiresUserAction","dataDetectorTypes","incognito","decelerationRate","onShouldStartLoadWithRequest","removeIosKeyboardObserver"];var _this=this,_jsxFileName="/home/runner/work/react-native-webview/react-native-webview/src/WebView.ios.tsx";function _interopRequireWildcard(e,t){if("function"==typeof WeakMap)var r=new WeakMap(),n=new WeakMap();return(_interopRequireWildcard=function _interopRequireWildcard(e,t){if(!t&&e&&e.__esModule)return e;var o,i,f={__proto__:null,default:e};if(null===e||"object"!=typeof e&&"function"!=typeof e)return f;if(o=t?n:r){if(o.has(e))return o.get(e);o.set(e,f);}for(var _t in e)"default"!==_t&&{}.hasOwnProperty.call(e,_t)&&((i=(o=Object.defineProperty)&&Object.getOwnPropertyDescriptor(e,_t))&&(i.get||i.set)?o(f,_t,i):f[_t]=e[_t]);return f;})(e,t);}var resolveAssetSource=function resolveAssetSource(source){return _reactNative.Image.resolveAssetSource(source);};var processDecelerationRate=function processDecelerationRate(decelerationRate){var newDecelerationRate=decelerationRate;if(newDecelerationRate==='normal'){newDecelerationRate=0.998;}else if(newDecelerationRate==='fast'){newDecelerationRate=0.99;}return newDecelerationRate;};var useWarnIfChanges=function useWarnIfChanges(value,name){var ref=(0,_react.useRef)(value);if(ref.current!==value){console.warn(`Changes to property ${name} do nothing after the initial render.`);ref.current=value;}};var WebViewComponent=(0,_react.forwardRef)(function(_ref,ref){var _ref$fraudulentWebsit=_ref.fraudulentWebsiteWarningEnabled,fraudulentWebsiteWarningEnabled=_ref$fraudulentWebsit===void 0?true:_ref$fraudulentWebsit,_ref$javaScriptEnable=_ref.javaScriptEnabled,javaScriptEnabled=_ref$javaScriptEnable===void 0?true:_ref$javaScriptEnable,_ref$cacheEnabled=_ref.cacheEnabled,cacheEnabled=_ref$cacheEnabled===void 0?true:_ref$cacheEnabled,_ref$originWhitelist=_ref.originWhitelist,originWhitelist=_ref$originWhitelist===void 0?_WebViewShared.defaultOriginWhitelist:_ref$originWhitelist,_ref$useSharedProcess=_ref.useSharedProcessPool,useSharedProcessPool=_ref$useSharedProcess===void 0?true:_ref$useSharedProcess,_ref$textInteractionE=_ref.textInteractionEnabled,textInteractionEnabled=_ref$textInteractionE===void 0?true:_ref$textInteractionE,injectedJavaScript=_ref.injectedJavaScript,injectedJavaScriptBeforeContentLoaded=_ref.injectedJavaScriptBeforeContentLoaded,_ref$injectedJavaScri=_ref.injectedJavaScriptForMainFrameOnly,injectedJavaScriptForMainFrameOnly=_ref$injectedJavaScri===void 0?true:_ref$injectedJavaScri,_ref$injectedJavaScri2=_ref.injectedJavaScriptBeforeContentLoadedForMainFrameOnly,injectedJavaScriptBeforeContentLoadedForMainFrameOnly=_ref$injectedJavaScri2===void 0?true:_ref$injectedJavaScri2,injectedJavaScriptObject=_ref.injectedJavaScriptObject,startInLoadingState=_ref.startInLoadingState,onNavigationStateChange=_ref.onNavigationStateChange,onLoadStart=_ref.onLoadStart,onError=_ref.onError,onLoad=_ref.onLoad,onLoadEnd=_ref.onLoadEnd,onLoadProgress=_ref.onLoadProgress,onContentProcessDidTerminateProp=_ref.onContentProcessDidTerminate,onFileDownload=_ref.onFileDownload,onHttpErrorProp=_ref.onHttpError,onMessageProp=_ref.onMessage,onOpenWindowProp=_ref.onOpenWindow,renderLoading=_ref.renderLoading,renderError=_ref.renderError,style=_ref.style,containerStyle=_ref.containerStyle,source=_ref.source,nativeConfig=_ref.nativeConfig,allowsInlineMediaPlayback=_ref.allowsInlineMediaPlayback,_ref$allowsPictureInP=_ref.allowsPictureInPictureMediaPlayback,allowsPictureInPictureMediaPlayback=_ref$allowsPictureInP===void 0?true:_ref$allowsPictureInP,allowsAirPlayForMediaPlayback=_ref.allowsAirPlayForMediaPlayback,mediaPlaybackRequiresUserAction=_ref.mediaPlaybackRequiresUserAction,dataDetectorTypes=_ref.dataDetectorTypes,incognito=_ref.incognito,decelerationRateProp=_ref.decelerationRate,onShouldStartLoadWithRequestProp=_ref.onShouldStartLoadWithRequest,removeIosKeyboardObserver=_ref.removeIosKeyboardObserver,otherProps=(0,_objectWithoutProperties2.default)(_ref,_excluded);var webViewRef=(0,_react.useRef)(null);var onShouldStartLoadWithRequestCallback=(0,_react.useCallback)(function(shouldStart,_url){var lockIdentifier=arguments.length>2&&arguments[2]!==undefined?arguments[2]:0;_NativeRNCWebViewModule.default.shouldStartLoadWithLockIdentifier(shouldStart,lockIdentifier);},[]);var _useWebViewLogic=(0,_WebViewShared.useWebViewLogic)({onNavigationStateChange:onNavigationStateChange,onLoad:onLoad,onError:onError,onHttpErrorProp:onHttpErrorProp,onLoadEnd:onLoadEnd,onLoadProgress:onLoadProgress,onLoadStart:onLoadStart,onMessageProp:onMessageProp,onOpenWindowProp:onOpenWindowProp,startInLoadingState:startInLoadingState,originWhitelist:originWhitelist,onShouldStartLoadWithRequestProp:onShouldStartLoadWithRequestProp,onShouldStartLoadWithRequestCallback:onShouldStartLoadWithRequestCallback,onContentProcessDidTerminateProp:onContentProcessDidTerminateProp}),onLoadingStart=_useWebViewLogic.onLoadingStart,onShouldStartLoadWithRequest=_useWebViewLogic.onShouldStartLoadWithRequest,onMessage=_useWebViewLogic.onMessage,viewState=_useWebViewLogic.viewState,setViewState=_useWebViewLogic.setViewState,lastErrorEvent=_useWebViewLogic.lastErrorEvent,onHttpError=_useWebViewLogic.onHttpError,onLoadingError=_useWebViewLogic.onLoadingError,onLoadingFinish=_useWebViewLogic.onLoadingFinish,onLoadingProgress=_useWebViewLogic.onLoadingProgress,onOpenWindow=_useWebViewLogic.onOpenWindow,onContentProcessDidTerminate=_useWebViewLogic.onContentProcessDidTerminate;(0,_react.useImperativeHandle)(ref,function(){return{goForward:function goForward(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.goForward(webViewRef.current);},goBack:function goBack(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.goBack(webViewRef.current);},reload:function reload(){setViewState('LOADING');if(webViewRef.current){_RNCWebViewNativeComponent.Commands.reload(webViewRef.current);}},stopLoading:function stopLoading(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.stopLoading(webViewRef.current);},postMessage:function postMessage(data){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.postMessage(webViewRef.current,data);},injectJavaScript:function injectJavaScript(data){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.injectJavaScript(webViewRef.current,data);},requestFocus:function requestFocus(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.requestFocus(webViewRef.current);},clearCache:function clearCache(includeDiskFiles){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.clearCache(webViewRef.current,includeDiskFiles);},setEditorContentOffset:function setEditorContentOffset(y){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.setEditorContentOffset(webViewRef.current,y);},setKeyboardScrollLockEnabled:function setKeyboardScrollLockEnabled(enabled){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.setKeyboardScrollLockEnabled(webViewRef.current,enabled);}};},[setViewState,webViewRef]);useWarnIfChanges(allowsInlineMediaPlayback,'allowsInlineMediaPlayback');useWarnIfChanges(allowsPictureInPictureMediaPlayback,'allowsPictureInPictureMediaPlayback');useWarnIfChanges(allowsAirPlayForMediaPlayback,'allowsAirPlayForMediaPlayback');useWarnIfChanges(incognito,'incognito');useWarnIfChanges(mediaPlaybackRequiresUserAction,'mediaPlaybackRequiresUserAction');useWarnIfChanges(dataDetectorTypes,'dataDetectorTypes');useWarnIfChanges(removeIosKeyboardObserver,'removeIosKeyboardObserver');var otherView=null;if(viewState==='LOADING'){otherView=(renderLoading||_WebViewShared.defaultRenderLoading)();}else if(viewState==='ERROR'){var _lastErrorEvent$code,_lastErrorEvent$descr;(0,_invariant.default)(lastErrorEvent!=null,'lastErrorEvent expected to be non-null');otherView=(renderError||_WebViewShared.defaultRenderError)(lastErrorEvent==null?void 0:lastErrorEvent.domain,(_lastErrorEvent$code=lastErrorEvent==null?void 0:lastErrorEvent.code)!=null?_lastErrorEvent$code:0,(_lastErrorEvent$descr=lastErrorEvent==null?void 0:lastErrorEvent.description)!=null?_lastErrorEvent$descr:'');}var webViewStyles=[_WebView.default.container,_WebView.default.webView,style];var webViewContainerStyle=[_WebView.default.container,containerStyle];var decelerationRate=processDecelerationRate(decelerationRateProp);var NativeWebView=(nativeConfig==null?void 0:nativeConfig.component)||_RNCWebViewNativeComponent.default;var sourceResolved=resolveAssetSource(source);var newSource=typeof sourceResolved==='object'?Object.entries(sourceResolved).reduce(function(prev,_ref2){var _ref3=(0,_slicedToArray2.default)(_ref2,2),currKey=_ref3[0],currValue=_ref3[1];return Object.assign({},prev,(0,_defineProperty2.default)({},currKey,currKey==='headers'&&currValue&&typeof currValue==='object'?Object.entries(currValue).map(function(_ref4){var _ref5=(0,_slicedToArray2.default)(_ref4,2),key=_ref5[0],value=_ref5[1];return{name:key,value:value};}):currValue));},{}):sourceResolved;var webView=(0,_jsxRuntime.jsx)(NativeWebView,Object.assign({},otherProps,{fraudulentWebsiteWarningEnabled:fraudulentWebsiteWarningEnabled,javaScriptEnabled:javaScriptEnabled,cacheEnabled:cacheEnabled,useSharedProcessPool:useSharedProcessPool,textInteractionEnabled:textInteractionEnabled,decelerationRate:decelerationRate,messagingEnabled:typeof onMessageProp==='function',messagingModuleName:"",onLoadingError:onLoadingError,onLoadingFinish:onLoadingFinish,onLoadingProgress:onLoadingProgress,onFileDownload:onFileDownload,onLoadingStart:onLoadingStart,onHttpError:onHttpError,onMessage:onMessage,onOpenWindow:onOpenWindowProp&&onOpenWindow,hasOnOpenWindowEvent:onOpenWindowProp!==undefined,onShouldStartLoadWithRequest:onShouldStartLoadWithRequest,onContentProcessDidTerminate:onContentProcessDidTerminate,injectedJavaScript:injectedJavaScript,injectedJavaScriptBeforeContentLoaded:injectedJavaScriptBeforeContentLoaded,injectedJavaScriptForMainFrameOnly:injectedJavaScriptForMainFrameOnly,injectedJavaScriptBeforeContentLoadedForMainFrameOnly:injectedJavaScriptBeforeContentLoadedForMainFrameOnly,injectedJavaScriptObject:JSON.stringify(injectedJavaScriptObject),dataDetectorTypes:!dataDetectorTypes||Array.isArray(dataDetectorTypes)?dataDetectorTypes:[dataDetectorTypes],allowsAirPlayForMediaPlayback:allowsAirPlayForMediaPlayback,allowsInlineMediaPlayback:allowsInlineMediaPlayback,allowsPictureInPictureMediaPlayback:allowsPictureInPictureMediaPlayback,incognito:incognito,mediaPlaybackRequiresUserAction:mediaPlaybackRequiresUserAction,removeIosKeyboardObserver:removeIosKeyboardObserver,newSource:newSource,style:webViewStyles,hasOnFileDownload:!!onFileDownload,ref:webViewRef,source:sourceResolved},nativeConfig==null?void 0:nativeConfig.props),"webViewKey");return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:webViewContainerStyle,children:[webView,otherView]});});var isFileUploadSupported=function(){var _ref6=(0,_asyncToGenerator2.default)(function*(){return true;});return function isFileUploadSupported(){return _ref6.apply(this,arguments);};}();var WebView=Object.assign(WebViewComponent,{isFileUploadSupported:isFileUploadSupported});var _default=exports.default=WebView;
+\ No newline at end of file
+diff --git a/lib/WebView.android.js b/lib/WebView.android.js
+index 323e7dd6..a77ba336 100644
+--- a/lib/WebView.android.js
++++ b/lib/WebView.android.js
+@@ -1 +1 @@
+-var _interopRequireDefault=require("@babel/runtime/helpers/interopRequireDefault");Object.defineProperty(exports,"__esModule",{value:true});exports.default=void 0;var _asyncToGenerator2=_interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));var _defineProperty2=_interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));var _slicedToArray2=_interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));var _objectWithoutProperties2=_interopRequireDefault(require("@babel/runtime/helpers/objectWithoutProperties"));var _react=_interopRequireWildcard(require("react"));var _reactNative=require("react-native");var _BatchedBridge=_interopRequireDefault(require("react-native/Libraries/BatchedBridge/BatchedBridge"));var _EventEmitter=_interopRequireDefault(require("react-native/Libraries/vendor/emitter/EventEmitter"));var _invariant=_interopRequireDefault(require("invariant"));var _RNCWebViewNativeComponent=_interopRequireWildcard(require("./RNCWebViewNativeComponent"));var _NativeRNCWebViewModule=_interopRequireDefault(require("./NativeRNCWebViewModule"));var _WebViewShared=require("./WebViewShared");var _WebView=_interopRequireDefault(require("./WebView.styles"));var _jsxRuntime=require("react/jsx-runtime");var _excluded=["overScrollMode","javaScriptEnabled","thirdPartyCookiesEnabled","scalesPageToFit","allowsFullscreenVideo","allowFileAccess","saveFormDataDisabled","cacheEnabled","androidLayerType","originWhitelist","setSupportMultipleWindows","setBuiltInZoomControls","setDisplayZoomControls","nestedScrollEnabled","startInLoadingState","onNavigationStateChange","onLoadStart","onError","onLoad","onLoadEnd","onLoadSubResourceError","onLoadProgress","onHttpError","onRenderProcessGone","onMessage","onOpenWindow","renderLoading","renderError","style","containerStyle","source","nativeConfig","onShouldStartLoadWithRequest","injectedJavaScriptObject"],_excluded2=["messagingModuleName"],_excluded3=["messagingModuleName"];var _require$registerCall,_this=this,_jsxFileName="/home/runner/work/react-native-webview/react-native-webview/src/WebView.android.tsx";function _interopRequireWildcard(e,t){if("function"==typeof WeakMap)var r=new WeakMap(),n=new WeakMap();return(_interopRequireWildcard=function _interopRequireWildcard(e,t){if(!t&&e&&e.__esModule)return e;var o,i,f={__proto__:null,default:e};if(null===e||"object"!=typeof e&&"function"!=typeof e)return f;if(o=t?n:r){if(o.has(e))return o.get(e);o.set(e,f);}for(var _t in e)"default"!==_t&&{}.hasOwnProperty.call(e,_t)&&((i=(o=Object.defineProperty)&&Object.getOwnPropertyDescriptor(e,_t))&&(i.get||i.set)?o(f,_t,i):f[_t]=e[_t]);return f;})(e,t);}var resolveAssetSource=function resolveAssetSource(source){return _reactNative.Image.resolveAssetSource(source);};var directEventEmitter=new _EventEmitter.default();var registerCallableModule=(_require$registerCall=require('react-native').registerCallableModule)!=null?_require$registerCall:_BatchedBridge.default.registerCallableModule.bind(_BatchedBridge.default);registerCallableModule('RNCWebViewMessagingModule',{onShouldStartLoadWithRequest:function onShouldStartLoadWithRequest(event){directEventEmitter.emit('onShouldStartLoadWithRequest',event);},onMessage:function onMessage(event){directEventEmitter.emit('onMessage',event);}});var uniqueRef=0;var WebViewComponent=(0,_react.forwardRef)(function(_ref,ref){var _ref$overScrollMode=_ref.overScrollMode,overScrollMode=_ref$overScrollMode===void 0?'always':_ref$overScrollMode,_ref$javaScriptEnable=_ref.javaScriptEnabled,javaScriptEnabled=_ref$javaScriptEnable===void 0?true:_ref$javaScriptEnable,_ref$thirdPartyCookie=_ref.thirdPartyCookiesEnabled,thirdPartyCookiesEnabled=_ref$thirdPartyCookie===void 0?true:_ref$thirdPartyCookie,_ref$scalesPageToFit=_ref.scalesPageToFit,scalesPageToFit=_ref$scalesPageToFit===void 0?true:_ref$scalesPageToFit,_ref$allowsFullscreen=_ref.allowsFullscreenVideo,allowsFullscreenVideo=_ref$allowsFullscreen===void 0?false:_ref$allowsFullscreen,_ref$allowFileAccess=_ref.allowFileAccess,allowFileAccess=_ref$allowFileAccess===void 0?false:_ref$allowFileAccess,_ref$saveFormDataDisa=_ref.saveFormDataDisabled,saveFormDataDisabled=_ref$saveFormDataDisa===void 0?false:_ref$saveFormDataDisa,_ref$cacheEnabled=_ref.cacheEnabled,cacheEnabled=_ref$cacheEnabled===void 0?true:_ref$cacheEnabled,_ref$androidLayerType=_ref.androidLayerType,androidLayerType=_ref$androidLayerType===void 0?'none':_ref$androidLayerType,_ref$originWhitelist=_ref.originWhitelist,originWhitelist=_ref$originWhitelist===void 0?_WebViewShared.defaultOriginWhitelist:_ref$originWhitelist,_ref$setSupportMultip=_ref.setSupportMultipleWindows,setSupportMultipleWindows=_ref$setSupportMultip===void 0?true:_ref$setSupportMultip,_ref$setBuiltInZoomCo=_ref.setBuiltInZoomControls,setBuiltInZoomControls=_ref$setBuiltInZoomCo===void 0?true:_ref$setBuiltInZoomCo,_ref$setDisplayZoomCo=_ref.setDisplayZoomControls,setDisplayZoomControls=_ref$setDisplayZoomCo===void 0?false:_ref$setDisplayZoomCo,_ref$nestedScrollEnab=_ref.nestedScrollEnabled,nestedScrollEnabled=_ref$nestedScrollEnab===void 0?false:_ref$nestedScrollEnab,startInLoadingState=_ref.startInLoadingState,onNavigationStateChange=_ref.onNavigationStateChange,onLoadStart=_ref.onLoadStart,onError=_ref.onError,onLoad=_ref.onLoad,onLoadEnd=_ref.onLoadEnd,onLoadSubResourceError=_ref.onLoadSubResourceError,onLoadProgress=_ref.onLoadProgress,onHttpErrorProp=_ref.onHttpError,onRenderProcessGoneProp=_ref.onRenderProcessGone,onMessageProp=_ref.onMessage,onOpenWindowProp=_ref.onOpenWindow,renderLoading=_ref.renderLoading,renderError=_ref.renderError,style=_ref.style,containerStyle=_ref.containerStyle,source=_ref.source,nativeConfig=_ref.nativeConfig,onShouldStartLoadWithRequestProp=_ref.onShouldStartLoadWithRequest,injectedJavaScriptObject=_ref.injectedJavaScriptObject,otherProps=(0,_objectWithoutProperties2.default)(_ref,_excluded);var messagingModuleName=(0,_react.useRef)(`WebViewMessageHandler${uniqueRef+=1}`).current;var webViewRef=(0,_react.useRef)(null);var onShouldStartLoadWithRequestCallback=(0,_react.useCallback)(function(shouldStart,url,lockIdentifier){if(lockIdentifier){_NativeRNCWebViewModule.default.shouldStartLoadWithLockIdentifier(shouldStart,lockIdentifier);}else if(shouldStart&&webViewRef.current){_RNCWebViewNativeComponent.Commands.loadUrl(webViewRef.current,url);}},[]);var _useWebViewLogic=(0,_WebViewShared.useWebViewLogic)({onNavigationStateChange:onNavigationStateChange,onLoad:onLoad,onError:onError,onHttpErrorProp:onHttpErrorProp,onLoadSubResourceError:onLoadSubResourceError,onLoadEnd:onLoadEnd,onLoadProgress:onLoadProgress,onLoadStart:onLoadStart,onRenderProcessGoneProp:onRenderProcessGoneProp,onMessageProp:onMessageProp,onOpenWindowProp:onOpenWindowProp,startInLoadingState:startInLoadingState,originWhitelist:originWhitelist,onShouldStartLoadWithRequestProp:onShouldStartLoadWithRequestProp,onShouldStartLoadWithRequestCallback:onShouldStartLoadWithRequestCallback}),onLoadingStart=_useWebViewLogic.onLoadingStart,onShouldStartLoadWithRequest=_useWebViewLogic.onShouldStartLoadWithRequest,onMessage=_useWebViewLogic.onMessage,viewState=_useWebViewLogic.viewState,setViewState=_useWebViewLogic.setViewState,lastErrorEvent=_useWebViewLogic.lastErrorEvent,onHttpError=_useWebViewLogic.onHttpError,onLoadingError=_useWebViewLogic.onLoadingError,onLoadingSubResourceError=_useWebViewLogic.onLoadingSubResourceError,onLoadingFinish=_useWebViewLogic.onLoadingFinish,onLoadingProgress=_useWebViewLogic.onLoadingProgress,onOpenWindow=_useWebViewLogic.onOpenWindow,onRenderProcessGone=_useWebViewLogic.onRenderProcessGone;(0,_react.useImperativeHandle)(ref,function(){return{goForward:function goForward(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.goForward(webViewRef.current);},goBack:function goBack(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.goBack(webViewRef.current);},reload:function reload(){setViewState('LOADING');if(webViewRef.current){_RNCWebViewNativeComponent.Commands.reload(webViewRef.current);}},stopLoading:function stopLoading(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.stopLoading(webViewRef.current);},postMessage:function postMessage(data){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.postMessage(webViewRef.current,data);},injectJavaScript:function injectJavaScript(data){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.injectJavaScript(webViewRef.current,data);},requestFocus:function requestFocus(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.requestFocus(webViewRef.current);},clearFormData:function clearFormData(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.clearFormData(webViewRef.current);},clearCache:function clearCache(includeDiskFiles){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.clearCache(webViewRef.current,includeDiskFiles);},clearHistory:function clearHistory(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.clearHistory(webViewRef.current);}};},[setViewState,webViewRef]);(0,_react.useEffect)(function(){var onShouldStartLoadWithRequestSubscription=directEventEmitter.addListener('onShouldStartLoadWithRequest',function(event){if(event.messagingModuleName===messagingModuleName){var _=event.messagingModuleName,rest=(0,_objectWithoutProperties2.default)(event,_excluded2);onShouldStartLoadWithRequest(rest);}});var onMessageSubscription=directEventEmitter.addListener('onMessage',function(event){if(event.messagingModuleName===messagingModuleName){var _=event.messagingModuleName,rest=(0,_objectWithoutProperties2.default)(event,_excluded3);onMessage(rest);}});return function(){onShouldStartLoadWithRequestSubscription.remove();onMessageSubscription.remove();};},[messagingModuleName,onMessage,onShouldStartLoadWithRequest]);var otherView;if(viewState==='LOADING'){otherView=(renderLoading||_WebViewShared.defaultRenderLoading)();}else if(viewState==='ERROR'){(0,_invariant.default)(lastErrorEvent!=null,'lastErrorEvent expected to be non-null');if(lastErrorEvent){otherView=(renderError||_WebViewShared.defaultRenderError)(lastErrorEvent.domain,lastErrorEvent.code,lastErrorEvent.description);}}var webViewStyles=[_WebView.default.container,_WebView.default.webView,style];var webViewContainerStyle=[_WebView.default.container,containerStyle];if(typeof source!=='number'&&source&&'method'in source){if(source.method==='POST'&&source.headers){console.warn('WebView: `source.headers` is not supported when using POST.');}else if(source.method==='GET'&&source.body){console.warn('WebView: `source.body` is not supported when using GET.');}}var NativeWebView=(nativeConfig==null?void 0:nativeConfig.component)||_RNCWebViewNativeComponent.default;var sourceResolved=resolveAssetSource(source);var newSource=typeof sourceResolved==='object'?Object.entries(sourceResolved).reduce(function(prev,_ref2){var _ref3=(0,_slicedToArray2.default)(_ref2,2),currKey=_ref3[0],currValue=_ref3[1];return Object.assign({},prev,(0,_defineProperty2.default)({},currKey,currKey==='headers'&&currValue&&typeof currValue==='object'?Object.entries(currValue).map(function(_ref4){var _ref5=(0,_slicedToArray2.default)(_ref4,2),key=_ref5[0],value=_ref5[1];return{name:key,value:value};}):currValue));},{}):sourceResolved;var webView=(0,_jsxRuntime.jsx)(NativeWebView,Object.assign({},otherProps,{messagingEnabled:typeof onMessageProp==='function',messagingModuleName:messagingModuleName,hasOnScroll:!!otherProps.onScroll,onLoadingError:onLoadingError,onLoadingSubResourceError:onLoadingSubResourceError,onLoadingFinish:onLoadingFinish,onLoadingProgress:onLoadingProgress,onLoadingStart:onLoadingStart,onHttpError:onHttpError,onRenderProcessGone:onRenderProcessGone,onMessage:onMessage,onOpenWindow:onOpenWindow,hasOnOpenWindowEvent:onOpenWindowProp!==undefined,onShouldStartLoadWithRequest:onShouldStartLoadWithRequest,ref:webViewRef,source:sourceResolved,newSource:newSource,style:webViewStyles,overScrollMode:overScrollMode,javaScriptEnabled:javaScriptEnabled,thirdPartyCookiesEnabled:thirdPartyCookiesEnabled,scalesPageToFit:scalesPageToFit,allowsFullscreenVideo:allowsFullscreenVideo,allowFileAccess:allowFileAccess,saveFormDataDisabled:saveFormDataDisabled,cacheEnabled:cacheEnabled,androidLayerType:androidLayerType,setSupportMultipleWindows:setSupportMultipleWindows,setBuiltInZoomControls:setBuiltInZoomControls,setDisplayZoomControls:setDisplayZoomControls,nestedScrollEnabled:nestedScrollEnabled,injectedJavaScriptObject:JSON.stringify(injectedJavaScriptObject)},nativeConfig==null?void 0:nativeConfig.props),"webViewKey");return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:webViewContainerStyle,children:[webView,otherView]});});var isFileUploadSupported=function(){var _ref6=(0,_asyncToGenerator2.default)(function*(){return true;});return function isFileUploadSupported(){return _ref6.apply(this,arguments);};}();var WebView=Object.assign(WebViewComponent,{isFileUploadSupported:isFileUploadSupported});var _default=exports.default=WebView;
+\ No newline at end of file
++var _interopRequireDefault=require("@babel/runtime/helpers/interopRequireDefault");Object.defineProperty(exports,"__esModule",{value:true});exports.default=void 0;var _asyncToGenerator2=_interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));var _defineProperty2=_interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));var _slicedToArray2=_interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));var _objectWithoutProperties2=_interopRequireDefault(require("@babel/runtime/helpers/objectWithoutProperties"));var _react=_interopRequireWildcard(require("react"));var _reactNative=require("react-native");var _BatchedBridge=_interopRequireDefault(require("react-native/Libraries/BatchedBridge/BatchedBridge"));var _EventEmitter=_interopRequireDefault(require("react-native/Libraries/vendor/emitter/EventEmitter"));var _invariant=_interopRequireDefault(require("invariant"));var _RNCWebViewNativeComponent=_interopRequireWildcard(require("./RNCWebViewNativeComponent"));var _NativeRNCWebViewModule=_interopRequireDefault(require("./NativeRNCWebViewModule"));var _WebViewShared=require("./WebViewShared");var _WebView=_interopRequireDefault(require("./WebView.styles"));var _jsxRuntime=require("react/jsx-runtime");var _excluded=["overScrollMode","javaScriptEnabled","thirdPartyCookiesEnabled","scalesPageToFit","allowsFullscreenVideo","allowFileAccess","saveFormDataDisabled","cacheEnabled","androidLayerType","originWhitelist","setSupportMultipleWindows","setBuiltInZoomControls","setDisplayZoomControls","nestedScrollEnabled","startInLoadingState","onNavigationStateChange","onLoadStart","onError","onLoad","onLoadEnd","onLoadSubResourceError","onLoadProgress","onHttpError","onRenderProcessGone","onMessage","onOpenWindow","renderLoading","renderError","style","containerStyle","source","nativeConfig","onShouldStartLoadWithRequest","injectedJavaScriptObject"],_excluded2=["messagingModuleName"],_excluded3=["messagingModuleName"];var _require$registerCall,_this=this,_jsxFileName="/home/runner/work/react-native-webview/react-native-webview/src/WebView.android.tsx";function _interopRequireWildcard(e,t){if("function"==typeof WeakMap)var r=new WeakMap(),n=new WeakMap();return(_interopRequireWildcard=function _interopRequireWildcard(e,t){if(!t&&e&&e.__esModule)return e;var o,i,f={__proto__:null,default:e};if(null===e||"object"!=typeof e&&"function"!=typeof e)return f;if(o=t?n:r){if(o.has(e))return o.get(e);o.set(e,f);}for(var _t in e)"default"!==_t&&{}.hasOwnProperty.call(e,_t)&&((i=(o=Object.defineProperty)&&Object.getOwnPropertyDescriptor(e,_t))&&(i.get||i.set)?o(f,_t,i):f[_t]=e[_t]);return f;})(e,t);}var resolveAssetSource=function resolveAssetSource(source){return _reactNative.Image.resolveAssetSource(source);};var directEventEmitter=new _EventEmitter.default();var registerCallableModule=(_require$registerCall=require('react-native').registerCallableModule)!=null?_require$registerCall:_BatchedBridge.default.registerCallableModule.bind(_BatchedBridge.default);registerCallableModule('RNCWebViewMessagingModule',{onShouldStartLoadWithRequest:function onShouldStartLoadWithRequest(event){directEventEmitter.emit('onShouldStartLoadWithRequest',event);},onMessage:function onMessage(event){directEventEmitter.emit('onMessage',event);}});var uniqueRef=0;var WebViewComponent=(0,_react.forwardRef)(function(_ref,ref){var _ref$overScrollMode=_ref.overScrollMode,overScrollMode=_ref$overScrollMode===void 0?'always':_ref$overScrollMode,_ref$javaScriptEnable=_ref.javaScriptEnabled,javaScriptEnabled=_ref$javaScriptEnable===void 0?true:_ref$javaScriptEnable,_ref$thirdPartyCookie=_ref.thirdPartyCookiesEnabled,thirdPartyCookiesEnabled=_ref$thirdPartyCookie===void 0?true:_ref$thirdPartyCookie,_ref$scalesPageToFit=_ref.scalesPageToFit,scalesPageToFit=_ref$scalesPageToFit===void 0?true:_ref$scalesPageToFit,_ref$allowsFullscreen=_ref.allowsFullscreenVideo,allowsFullscreenVideo=_ref$allowsFullscreen===void 0?false:_ref$allowsFullscreen,_ref$allowFileAccess=_ref.allowFileAccess,allowFileAccess=_ref$allowFileAccess===void 0?false:_ref$allowFileAccess,_ref$saveFormDataDisa=_ref.saveFormDataDisabled,saveFormDataDisabled=_ref$saveFormDataDisa===void 0?false:_ref$saveFormDataDisa,_ref$cacheEnabled=_ref.cacheEnabled,cacheEnabled=_ref$cacheEnabled===void 0?true:_ref$cacheEnabled,_ref$androidLayerType=_ref.androidLayerType,androidLayerType=_ref$androidLayerType===void 0?'none':_ref$androidLayerType,_ref$originWhitelist=_ref.originWhitelist,originWhitelist=_ref$originWhitelist===void 0?_WebViewShared.defaultOriginWhitelist:_ref$originWhitelist,_ref$setSupportMultip=_ref.setSupportMultipleWindows,setSupportMultipleWindows=_ref$setSupportMultip===void 0?true:_ref$setSupportMultip,_ref$setBuiltInZoomCo=_ref.setBuiltInZoomControls,setBuiltInZoomControls=_ref$setBuiltInZoomCo===void 0?true:_ref$setBuiltInZoomCo,_ref$setDisplayZoomCo=_ref.setDisplayZoomControls,setDisplayZoomControls=_ref$setDisplayZoomCo===void 0?false:_ref$setDisplayZoomCo,_ref$nestedScrollEnab=_ref.nestedScrollEnabled,nestedScrollEnabled=_ref$nestedScrollEnab===void 0?false:_ref$nestedScrollEnab,startInLoadingState=_ref.startInLoadingState,onNavigationStateChange=_ref.onNavigationStateChange,onLoadStart=_ref.onLoadStart,onError=_ref.onError,onLoad=_ref.onLoad,onLoadEnd=_ref.onLoadEnd,onLoadSubResourceError=_ref.onLoadSubResourceError,onLoadProgress=_ref.onLoadProgress,onHttpErrorProp=_ref.onHttpError,onRenderProcessGoneProp=_ref.onRenderProcessGone,onMessageProp=_ref.onMessage,onOpenWindowProp=_ref.onOpenWindow,renderLoading=_ref.renderLoading,renderError=_ref.renderError,style=_ref.style,containerStyle=_ref.containerStyle,source=_ref.source,nativeConfig=_ref.nativeConfig,onShouldStartLoadWithRequestProp=_ref.onShouldStartLoadWithRequest,injectedJavaScriptObject=_ref.injectedJavaScriptObject,otherProps=(0,_objectWithoutProperties2.default)(_ref,_excluded);var messagingModuleName=(0,_react.useRef)(`WebViewMessageHandler${uniqueRef+=1}`).current;var webViewRef=(0,_react.useRef)(null);var onShouldStartLoadWithRequestCallback=(0,_react.useCallback)(function(shouldStart,url,lockIdentifier){if(lockIdentifier){_NativeRNCWebViewModule.default.shouldStartLoadWithLockIdentifier(shouldStart,lockIdentifier);}else if(shouldStart&&webViewRef.current){_RNCWebViewNativeComponent.Commands.loadUrl(webViewRef.current,url);}},[]);var _useWebViewLogic=(0,_WebViewShared.useWebViewLogic)({onNavigationStateChange:onNavigationStateChange,onLoad:onLoad,onError:onError,onHttpErrorProp:onHttpErrorProp,onLoadSubResourceError:onLoadSubResourceError,onLoadEnd:onLoadEnd,onLoadProgress:onLoadProgress,onLoadStart:onLoadStart,onRenderProcessGoneProp:onRenderProcessGoneProp,onMessageProp:onMessageProp,onOpenWindowProp:onOpenWindowProp,startInLoadingState:startInLoadingState,originWhitelist:originWhitelist,onShouldStartLoadWithRequestProp:onShouldStartLoadWithRequestProp,onShouldStartLoadWithRequestCallback:onShouldStartLoadWithRequestCallback}),onLoadingStart=_useWebViewLogic.onLoadingStart,onShouldStartLoadWithRequest=_useWebViewLogic.onShouldStartLoadWithRequest,onMessage=_useWebViewLogic.onMessage,viewState=_useWebViewLogic.viewState,setViewState=_useWebViewLogic.setViewState,lastErrorEvent=_useWebViewLogic.lastErrorEvent,onHttpError=_useWebViewLogic.onHttpError,onLoadingError=_useWebViewLogic.onLoadingError,onLoadingSubResourceError=_useWebViewLogic.onLoadingSubResourceError,onLoadingFinish=_useWebViewLogic.onLoadingFinish,onLoadingProgress=_useWebViewLogic.onLoadingProgress,onOpenWindow=_useWebViewLogic.onOpenWindow,onRenderProcessGone=_useWebViewLogic.onRenderProcessGone;(0,_react.useImperativeHandle)(ref,function(){return{goForward:function goForward(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.goForward(webViewRef.current);},goBack:function goBack(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.goBack(webViewRef.current);},reload:function reload(){setViewState('LOADING');if(webViewRef.current){_RNCWebViewNativeComponent.Commands.reload(webViewRef.current);}},stopLoading:function stopLoading(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.stopLoading(webViewRef.current);},postMessage:function postMessage(data){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.postMessage(webViewRef.current,data);},injectJavaScript:function injectJavaScript(data){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.injectJavaScript(webViewRef.current,data);},requestFocus:function requestFocus(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.requestFocus(webViewRef.current);},clearFormData:function clearFormData(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.clearFormData(webViewRef.current);},clearCache:function clearCache(includeDiskFiles){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.clearCache(webViewRef.current,includeDiskFiles);},clearHistory:function clearHistory(){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.clearHistory(webViewRef.current);},setEditorContentOffset:function setEditorContentOffset(y){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.setEditorContentOffset(webViewRef.current,y);},setKeyboardScrollLockEnabled:function setKeyboardScrollLockEnabled(enabled){return webViewRef.current&&_RNCWebViewNativeComponent.Commands.setKeyboardScrollLockEnabled(webViewRef.current,enabled);}};},[setViewState,webViewRef]);(0,_react.useEffect)(function(){var onShouldStartLoadWithRequestSubscription=directEventEmitter.addListener('onShouldStartLoadWithRequest',function(event){if(event.messagingModuleName===messagingModuleName){var _=event.messagingModuleName,rest=(0,_objectWithoutProperties2.default)(event,_excluded2);onShouldStartLoadWithRequest(rest);}});var onMessageSubscription=directEventEmitter.addListener('onMessage',function(event){if(event.messagingModuleName===messagingModuleName){var _=event.messagingModuleName,rest=(0,_objectWithoutProperties2.default)(event,_excluded3);onMessage(rest);}});return function(){onShouldStartLoadWithRequestSubscription.remove();onMessageSubscription.remove();};},[messagingModuleName,onMessage,onShouldStartLoadWithRequest]);var otherView;if(viewState==='LOADING'){otherView=(renderLoading||_WebViewShared.defaultRenderLoading)();}else if(viewState==='ERROR'){(0,_invariant.default)(lastErrorEvent!=null,'lastErrorEvent expected to be non-null');if(lastErrorEvent){otherView=(renderError||_WebViewShared.defaultRenderError)(lastErrorEvent.domain,lastErrorEvent.code,lastErrorEvent.description);}}var webViewStyles=[_WebView.default.container,_WebView.default.webView,style];var webViewContainerStyle=[_WebView.default.container,containerStyle];if(typeof source!=='number'&&source&&'method'in source){if(source.method==='POST'&&source.headers){console.warn('WebView: `source.headers` is not supported when using POST.');}else if(source.method==='GET'&&source.body){console.warn('WebView: `source.body` is not supported when using GET.');}}var NativeWebView=(nativeConfig==null?void 0:nativeConfig.component)||_RNCWebViewNativeComponent.default;var sourceResolved=resolveAssetSource(source);var newSource=typeof sourceResolved==='object'?Object.entries(sourceResolved).reduce(function(prev,_ref2){var _ref3=(0,_slicedToArray2.default)(_ref2,2),currKey=_ref3[0],currValue=_ref3[1];return Object.assign({},prev,(0,_defineProperty2.default)({},currKey,currKey==='headers'&&currValue&&typeof currValue==='object'?Object.entries(currValue).map(function(_ref4){var _ref5=(0,_slicedToArray2.default)(_ref4,2),key=_ref5[0],value=_ref5[1];return{name:key,value:value};}):currValue));},{}):sourceResolved;var webView=(0,_jsxRuntime.jsx)(NativeWebView,Object.assign({},otherProps,{messagingEnabled:typeof onMessageProp==='function',messagingModuleName:messagingModuleName,hasOnScroll:!!otherProps.onScroll,onLoadingError:onLoadingError,onLoadingSubResourceError:onLoadingSubResourceError,onLoadingFinish:onLoadingFinish,onLoadingProgress:onLoadingProgress,onLoadingStart:onLoadingStart,onHttpError:onHttpError,onRenderProcessGone:onRenderProcessGone,onMessage:onMessage,onOpenWindow:onOpenWindow,hasOnOpenWindowEvent:onOpenWindowProp!==undefined,onShouldStartLoadWithRequest:onShouldStartLoadWithRequest,ref:webViewRef,source:sourceResolved,newSource:newSource,style:webViewStyles,overScrollMode:overScrollMode,javaScriptEnabled:javaScriptEnabled,thirdPartyCookiesEnabled:thirdPartyCookiesEnabled,scalesPageToFit:scalesPageToFit,allowsFullscreenVideo:allowsFullscreenVideo,allowFileAccess:allowFileAccess,saveFormDataDisabled:saveFormDataDisabled,cacheEnabled:cacheEnabled,androidLayerType:androidLayerType,setSupportMultipleWindows:setSupportMultipleWindows,setBuiltInZoomControls:setBuiltInZoomControls,setDisplayZoomControls:setDisplayZoomControls,nestedScrollEnabled:nestedScrollEnabled,injectedJavaScriptObject:JSON.stringify(injectedJavaScriptObject)},nativeConfig==null?void 0:nativeConfig.props),"webViewKey");return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:webViewContainerStyle,children:[webView,otherView]});});var isFileUploadSupported=function(){var _ref6=(0,_asyncToGenerator2.default)(function*(){return true;});return function isFileUploadSupported(){return _ref6.apply(this,arguments);};}();var WebView=Object.assign(WebViewComponent,{isFileUploadSupported:isFileUploadSupported});var _default=exports.default=WebView;
+\ No newline at end of file

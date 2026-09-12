@@ -36,8 +36,11 @@ type EditorWebViewProps = {
 };
 
 const MAX_SURFACE_RECOVERY_ATTEMPTS = 3;
-// iOS 的 WKWebView 键盘滚动锁会在 keyboardDidShow 后保留 250ms，再校正才能不被锁回原位。
-const IOS_KEYBOARD_SCROLL_LOCK_SETTLE_MS = 280;
+
+type EditorWebViewHandle = WebView<{}> & {
+  setEditorContentOffset?: (y: number) => void;
+  setKeyboardScrollLockEnabled?: (enabled: boolean) => void;
+};
 
 function getSource(devMode: boolean) {
   const editorDevUrl = devMode ? getEditorDevUrl() : null;
@@ -119,9 +122,8 @@ export function EditorWebView({
   const { settings } = useGlobalSettings();
   const onResourceActivated = useEditorResourceActivation(document);
   const resourceContext = useEditorResourceContext(document);
-  const webViewRef = useRef<WebView<{}>>(null);
+  const webViewRef = useRef<EditorWebViewHandle | null>(null);
   const bridgeClientRef = useRef<EditorBridgeClient | null>(null);
-  const revealSelectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recoveryAttemptsRef = useRef(0);
   const [inited, setInited] = useState<boolean>(false);
   const [hasLoadingError, setHasLoadingError] = useState(false);
@@ -132,26 +134,23 @@ export function EditorWebView({
   }, []);
   const handleKeyboardPhaseChange = useCallback(
     (phase: KeyboardVisibilityPhase) => {
-      if (revealSelectionTimerRef.current !== null) {
-        clearTimeout(revealSelectionTimerRef.current);
-        revealSelectionTimerRef.current = null;
+      if (phase === "visible") {
+        revealSelection();
+        webViewRef.current?.setKeyboardScrollLockEnabled?.(false);
+      } else if (phase === "hidden") {
+        webViewRef.current?.setKeyboardScrollLockEnabled?.(false);
       }
-      if (phase !== "visible") return;
-      if (os() === "ios") {
-        revealSelectionTimerRef.current = setTimeout(() => {
-          revealSelectionTimerRef.current = null;
-          revealSelection();
-        }, IOS_KEYBOARD_SCROLL_LOCK_SETTLE_MS);
-        return;
-      }
-      revealSelection();
     },
     [revealSelection],
   );
   const keyboard = useKeyboardAvoidance({ onPhaseChange: handleKeyboardPhaseChange });
-  const updateKeyboardHeight = useCallback((height: number) => {
-    setKeyboardHeight(Math.max(height, 0));
-  }, []);
+  const updateKeyboardHeight = useCallback(
+    (height: number) => {
+      setKeyboardHeight(Math.max(height, 0));
+      if (os() === "ios" && height > 0) revealSelection();
+    },
+    [revealSelection],
+  );
   useAnimatedReaction(
     () => keyboard.height.value,
     (height, previousHeight) => {
@@ -265,6 +264,9 @@ export function EditorWebView({
           editorStore.getState().setEditorStateSnapshot(editor.editorId, snapshot),
         onEditorFocusChanged: (focused) =>
           editorInputLeaseCoordinator.handleFocusChanged(editor.editorId, focused),
+        onViewportScrollRequested: ({ y }) => {
+          if (os() === "ios") webViewRef.current?.setEditorContentOffset?.(y);
+        },
         onSaveRequested: () => {
           void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
         },
@@ -339,15 +341,6 @@ export function EditorWebView({
       isActive = false;
     };
   }, [devMode]);
-
-  useEffect(
-    () => () => {
-      if (revealSelectionTimerRef.current !== null) {
-        clearTimeout(revealSelectionTimerRef.current);
-      }
-    },
-    [],
-  );
 
   if (hasLoadingError) {
     return (

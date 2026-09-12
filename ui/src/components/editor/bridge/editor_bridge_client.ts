@@ -15,6 +15,7 @@ import {
   type EditorResourceActivatedPayload,
   type EditorRuntimeUpdatePayload,
   type EditorStateSnapshot,
+  type EditorViewportScrollPayload,
   isEditorBridgeApplyResult,
   isEditorCommandResult,
   isEditorDocumentCapturePayload,
@@ -22,6 +23,7 @@ import {
   isEditorFocusChangedPayload,
   isEditorResourceActivatedPayload,
   isEditorStateSnapshot,
+  isEditorViewportScrollPayload,
   parseEditorBridgeMessage,
 } from "@/assets/editor/src/bridge/protocol";
 
@@ -33,6 +35,7 @@ type EditorBridgeClientOptions = {
   onEditorReady: () => void;
   onEditorStateChanged: (snapshot: EditorStateSnapshot) => void;
   onEditorFocusChanged: (focused: boolean) => void;
+  onViewportScrollRequested: (payload: EditorViewportScrollPayload) => void;
   onSaveRequested: () => void;
   onResourceActivated: (payload: EditorResourceActivatedPayload) => void;
   onFatal: (message: string) => void;
@@ -250,6 +253,14 @@ export class EditorBridgeClient {
         return;
       }
       this.#options.onFatal("editor.focusChanged payload 无效");
+      return;
+    }
+    if (event.event === "viewport.scrollRequested") {
+      if (isEditorViewportScrollPayload(event.payload)) {
+        this.#options.onViewportScrollRequested(event.payload);
+        return;
+      }
+      this.#options.onFatal("viewport.scrollRequested payload 无效");
       return;
     }
     if (event.event === "editor.saveRequested") {

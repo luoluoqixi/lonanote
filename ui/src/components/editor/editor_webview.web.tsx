@@ -145,6 +145,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
           editorStore.getState().setEditorStateSnapshot(editor.editorId, snapshot),
         onEditorFocusChanged: (focused) =>
           editorInputLeaseCoordinator.handleFocusChanged(editor.editorId, focused),
+        onViewportScrollRequested: () => undefined,
         onSaveRequested: () => {
           void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
         },

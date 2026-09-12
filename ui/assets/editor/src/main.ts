@@ -290,6 +290,16 @@ function applyPresentation(currentSession: SurfaceSession): void {
   });
 }
 
+function revealSelectionInViewport(currentSession: SurfaceSession): void {
+  if (!currentSession.editor.editor.hasFocus) return;
+  if (currentSession.runtime.platform !== "ios") {
+    currentSession.editor.scrollSelectionIntoView();
+    return;
+  }
+  const scrollTop = currentSession.editor.getSelectionScrollTop(currentSession.runtime.contentInsets);
+  if (scrollTop !== null) emitEvent("viewport.scrollRequested", { y: scrollTop });
+}
+
 function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializePayload): void {
   if (session) {
     const identity = session.identity;
@@ -384,6 +394,9 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     if (update.docChanged || update.selectionSet || update.focusChanged) {
       emitStateSnapshot(currentSession);
     }
+    if (update.docChanged || update.selectionSet) {
+      revealSelectionInViewport(currentSession);
+    }
   });
   editor.addListener("onSave", () => {
     emitEvent("editor.saveRequested", {});
@@ -464,7 +477,7 @@ function applyRuntimeUpdate(request: EditorBridgeRequest): void {
       previousInsets.bottom !== currentInsets.bottom ||
       previousInsets.left !== currentInsets.left)
   ) {
-    session.editor.scrollSelectionIntoView();
+    revealSelectionInViewport(session);
   }
   respond(request, { applied: true });
 }
@@ -535,7 +548,7 @@ function revealSelection(request: EditorBridgeRequest): void {
     });
     return;
   }
-  session.editor.scrollSelectionIntoView();
+  revealSelectionInViewport(session);
   respond(request, { applied: true });
 }
 

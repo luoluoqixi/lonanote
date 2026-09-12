@@ -134,6 +134,11 @@ export interface LonaEditorPresentationOptions {
   theme: "light" | "dark";
 }
 
+export type LonaEditorViewportInsets = {
+  top: number;
+  bottom: number;
+};
+
 type LonaEditorEventListeners = {
   [K in keyof LonaEditorEvent]?: LonaEditorEvent[K][];
 };
@@ -341,6 +346,31 @@ export class LonaEditor {
     this.#editor.dispatch({
       effects: EditorView.scrollIntoView(position, { x: "nearest", y: "nearest" }),
     });
+  };
+
+  /** 计算页面滚动根需要采用的纵向偏移，不直接触发 DOM 滚动。 */
+  getSelectionScrollTop = (insets: LonaEditorViewportInsets): number | null => {
+    if (!this.#editor || !this.#editor.hasFocus) return null;
+    const position = this.#editor.state.selection.main.head;
+    const cursor = this.#editor.coordsAtPos(position);
+    if (!cursor) return null;
+
+    const root = document.scrollingElement ?? document.documentElement;
+    const rootRect = root.getBoundingClientRect();
+    const visibleTop = Math.max(rootRect.top, insets.top, 0);
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const keyboardOverlap = Math.max(window.innerHeight - viewportHeight, 0);
+    // 给光标下沿保留少量间距，避免最后一行贴住移动端工具栏边缘。
+    const effectiveBottomInset = Math.max(insets.bottom - keyboardOverlap, 0) + 8;
+    const visibleBottom = Math.min(rootRect.bottom, viewportHeight - effectiveBottomInset);
+    if (visibleBottom <= visibleTop) return null;
+
+    let offset = 0;
+    if (cursor.top < visibleTop) offset = cursor.top - visibleTop;
+    else if (cursor.bottom > visibleBottom) offset = cursor.bottom - visibleBottom;
+    if (Math.abs(offset) < 0.5) return null;
+
+    return Math.max(root.scrollTop + offset, 0);
   };
 
   setValue = (content: string, { useHistory, scrollToTop = true }: LonaEditorSetValueOptions) => {
