@@ -14,6 +14,7 @@ import {
   type DropdownItemData,
   GlassEffect,
   isLiquidGlassAvailable,
+  triggerNativeHaptics,
   useUiTheme,
 } from "rn-ui-kit";
 
@@ -292,13 +293,17 @@ export function EditorHeader({
   const usesCustomBackButton = (isIos16Plus() && !isIos26Plus()) || isAndroid;
   const usesCustomHeaderActions = (isIos() && isIos16Plus() && !isIos26Plus()) || isAndroid;
   const usesCustomHeaderTitle = isIos() || isAndroid;
+  const handleTogglePreviewMode = () => {
+    triggerNativeHaptics(true);
+    onTogglePreviewMode();
+  };
   const renderCustomBackButton = ({ canGoBack }: NativeStackHeaderBackProps) =>
     canGoBack ? <EditorBackButton isAndroid={isAndroid} onPress={() => router.back()} /> : null;
   const renderCustomHeaderActions = () => (
     <View style={styles.headerActions}>
       <EditorPreviewButton
         isAndroid={isAndroid}
-        onPress={onTogglePreviewMode}
+        onPress={handleTogglePreviewMode}
         previewMode={previewMode}
       />
       <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />
@@ -318,7 +323,7 @@ export function EditorHeader({
             accessibilityLabel: previewMode ? "切换到编辑模式" : "切换到预览模式",
             icon: { type: "sfSymbol" as const, name: previewMode ? "pencil" : "eye" },
             label: "",
-            onPress: onTogglePreviewMode,
+            onPress: handleTogglePreviewMode,
             // iOS 26: 保留系统玻璃背景，但不与相邻菜单合并。
             sharesBackground: isIos26Plus() ? false : undefined,
             tintColor: theme.primary,
@@ -329,6 +334,7 @@ export function EditorHeader({
             icon: { type: "sfSymbol" as const, name: "ellipsis" },
             label: "",
             menu: { items: toIosHeaderMenuItems(menuItems) },
+            onOpen: () => triggerNativeHaptics(true),
             sharesBackground: isIos26Plus() ? false : undefined,
             tintColor: theme.primary,
             type: "menu" as const,

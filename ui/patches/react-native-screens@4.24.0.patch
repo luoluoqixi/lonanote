@@ -2,8 +2,9 @@
 # - iOS < 26：修正取消交互式返回时导航栏 UIVisualEffectView 子树错误的 position 动画；默认仅在透明、
 #   模糊、大标题目标页与导航栏高度不一致时自动介入，也支持 TS 显式开关。
 # - iOS 26：保持已有的系统返回指示图主题色修复。
+# - iOS 15+：在保留 UIBarButtonItem 原生菜单的前提下，为菜单展示提供一次 haptic 回调。
 diff --git a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
-index 22a5710c7b3cddfb28e045a4c090e7148c964bdc..0053dcf185f977fd8806e08b0aed8702ba1ff6ef 100644
+index 22a5710c..0053dcf1 100644
 --- a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
 +++ b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
 @@ -212,6 +212,12 @@ class ScreenStackHeaderConfigViewManager :
@@ -20,7 +21,7 @@ index 22a5710c7b3cddfb28e045a4c090e7148c964bdc..0053dcf185f977fd8806e08b0aed8702
          hashMapOf(
              HeaderAttachedEvent.EVENT_NAME to hashMapOf("registrationName" to "onAttached"),
 diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerDelegate.java b/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerDelegate.java
-index c5bc2301ade83f84bf665b916d0d67bdafa35461..6be70cd8dd34ad68f29cae9ab9469d0cfa320aa3 100644
+index c5bc2301..6be70cd8 100644
 --- a/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerDelegate.java
 +++ b/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerDelegate.java
 @@ -118,6 +118,9 @@ public class RNSScreenStackHeaderConfigManagerDelegate<T extends View, U extends
@@ -34,7 +35,7 @@ index c5bc2301ade83f84bf665b916d0d67bdafa35461..6be70cd8dd34ad68f29cae9ab9469d0c
          mViewManager.setUserInterfaceStyle(view, (String) value);
          break;
 diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerInterface.java b/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerInterface.java
-index b1e50ec2831b0c2e30461f310d4928354aaa24b4..c29f4625a24138bce6dfd2e5ec2b09a4dd30740b 100644
+index b1e50ec2..c29f4625 100644
 --- a/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerInterface.java
 +++ b/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerInterface.java
 @@ -46,5 +46,6 @@ public interface RNSScreenStackHeaderConfigManagerInterface<T extends View> exte
@@ -45,7 +46,7 @@ index b1e50ec2831b0c2e30461f310d4928354aaa24b4..c29f4625a24138bce6dfd2e5ec2b09a4
    void setUserInterfaceStyle(T view, @Nullable String value);
  }
 diff --git a/ios/RNSScreenStack.mm b/ios/RNSScreenStack.mm
-index effc07fc7473e1a63cce2d32c821df6bc7944ba1..74a602209402046fbfb58e1353f837c9ce8b95a8 100644
+index effc07fc..74a60220 100644
 --- a/ios/RNSScreenStack.mm
 +++ b/ios/RNSScreenStack.mm
 @@ -908,6 +908,9 @@ - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
@@ -79,7 +80,7 @@ index effc07fc7473e1a63cce2d32c821df6bc7944ba1..74a602209402046fbfb58e1353f837c9
      return YES;
    }
 diff --git a/ios/RNSScreenStackHeaderConfig.h b/ios/RNSScreenStackHeaderConfig.h
-index d5ea95f556a55ad2bd68626fc0f653c2d9bc24d4..7f4e89e3cc242e9b259659c0bdb598fa43292b6c 100644
+index d5ea95f5..7f4e89e3 100644
 --- a/ios/RNSScreenStackHeaderConfig.h
 +++ b/ios/RNSScreenStackHeaderConfig.h
 @@ -18,6 +18,12 @@
@@ -114,7 +115,7 @@ index d5ea95f556a55ad2bd68626fc0f653c2d9bc24d4..7f4e89e3cc242e9b259659c0bdb598fa
   * Returns true iff subview of given `type` is present.
   *
 diff --git a/ios/RNSScreenStackHeaderConfig.mm b/ios/RNSScreenStackHeaderConfig.mm
-index 7d8e49475a2b791a84ecb5e5db5db45bdab1db13..25d7bf1151ddce066588815c187f13bd1def13b0 100644
+index 7d8e4947..6e2253f3 100644
 --- a/ios/RNSScreenStackHeaderConfig.mm
 +++ b/ios/RNSScreenStackHeaderConfig.mm
 @@ -33,6 +33,7 @@
@@ -338,7 +339,29 @@ index 7d8e49475a2b791a84ecb5e5db5db45bdab1db13..25d7bf1151ddce066588815c187f13bd
            }
          }];
    } else {
-@@ -1197,6 +1373,8 @@ - (void)updateProps:(react::Props::Shared const &)props oldProps:(react::Props::
+@@ -892,6 +1068,21 @@ - (void)applySemanticContentAttributeIfNeededToNavCtrl:(UINavigationController *
+             if (self.onPressHeaderBarButtonMenuItem && menuId) {
+               self.onPressHeaderBarButtonMenuItem(@{@"menuId" : menuId});
+             }
++#endif
++          }
++          menuOpenAction:^(NSString *buttonId) {
++#if RCT_NEW_ARCH_ENABLED
++            auto eventEmitter = std::static_pointer_cast<const facebook::react::RNSScreenStackHeaderConfigEventEmitter>(
++                self->_eventEmitter);
++            if (eventEmitter && buttonId) {
++              eventEmitter->onPressHeaderBarButtonItem(
++                  facebook::react::RNSScreenStackHeaderConfigEventEmitter::OnPressHeaderBarButtonItem{
++                      .buttonId = std::string([buttonId UTF8String])});
++            }
++#else
++            if (self.onPressHeaderBarButtonItem && buttonId) {
++              self.onPressHeaderBarButtonItem(@{@"buttonId" : buttonId});
++            }
+ #endif
+           }
+ #if RCT_NEW_ARCH_ENABLED
+@@ -1197,6 +1388,8 @@ - (void)updateProps:(react::Props::Shared const &)props oldProps:(react::Props::
    }
  
    _synchronousShadowStateUpdatesEnabled = newScreenProps.synchronousShadowStateUpdatesEnabled;
@@ -347,7 +370,7 @@ index 7d8e49475a2b791a84ecb5e5db5db45bdab1db13..25d7bf1151ddce066588815c187f13bd
  
    _initialPropsSet = YES;
    _props = std::static_pointer_cast<react::RNSScreenStackHeaderConfigProps const>(props);
-@@ -1304,6 +1482,7 @@ - (RCTShadowView *)shadowView
+@@ -1304,6 +1497,7 @@ - (RCTShadowView *)shadowView
  RCT_EXPORT_VIEW_PROPERTY(headerRightBarButtonItems, NSArray)
  RCT_EXPORT_VIEW_PROPERTY(onPressHeaderBarButtonItem, RCTDirectEventBlock);
  RCT_EXPORT_VIEW_PROPERTY(onPressHeaderBarButtonMenuItem, RCTDirectEventBlock);
@@ -356,7 +379,7 @@ index 7d8e49475a2b791a84ecb5e5db5db45bdab1db13..25d7bf1151ddce066588815c187f13bd
  @end
  
 diff --git a/lib/commonjs/components/ScreenStackHeaderConfig.js b/lib/commonjs/components/ScreenStackHeaderConfig.js
-index e800f833fb81ccbe12be2af239f2799621f0ead5..d40c1deca0a1ec37eb7e111e7735091c1e0f75ed 100644
+index e800f833..f4714d74 100644
 --- a/lib/commonjs/components/ScreenStackHeaderConfig.js
 +++ b/lib/commonjs/components/ScreenStackHeaderConfig.js
 @@ -17,8 +17,10 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
@@ -371,7 +394,20 @@ index e800f833fb81ccbe12be2af239f2799621f0ead5..d40c1deca0a1ec37eb7e111e7735091c
    } = props;
    const preparedHeaderLeftBarButtonItems = headerLeftBarButtonItems && _utils.isHeaderBarButtonsAvailableForCurrentPlatform ? (0, _prepareHeaderBarButtonItems.prepareHeaderBarButtonItems)(headerLeftBarButtonItems, 'left') : undefined;
    const preparedHeaderRightBarButtonItems = headerRightBarButtonItems && _utils.isHeaderBarButtonsAvailableForCurrentPlatform ? (0, _prepareHeaderBarButtonItems.prepareHeaderBarButtonItems)(headerRightBarButtonItems, 'right') : undefined;
-@@ -62,7 +64,8 @@ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_
+@@ -26,9 +28,11 @@ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_
+ 
+   // Handle bar button item presses
+   const onPressHeaderBarButtonItem = hasHeaderBarButtonItems ? event => {
+-    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && 'buttonId' in item && item.buttonId === event.nativeEvent.buttonId);
++    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && ('buttonId' in item && item.buttonId === event.nativeEvent.buttonId || item.type === 'menu' && 'menuOpenId' in item && item.menuOpenId === event.nativeEvent.buttonId));
+     if (pressedItem && pressedItem.type === 'button' && pressedItem.onPress) {
+       pressedItem.onPress();
++    } else if (pressedItem && pressedItem.type === 'menu') {
++      pressedItem.onOpen?.();
+     }
+   } : undefined;
+ 
+@@ -62,7 +66,8 @@ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_
        }
      }
    } : undefined;
@@ -381,8 +417,15 @@ index e800f833fb81ccbe12be2af239f2799621f0ead5..d40c1deca0a1ec37eb7e111e7735091c
      userInterfaceStyle: props.experimental_userInterfaceStyle,
      headerLeftBarButtonItems: preparedHeaderLeftBarButtonItems,
      headerRightBarButtonItems: preparedHeaderRightBarButtonItems,
+@@ -148,4 +153,4 @@ const styles = _reactNative.StyleSheet.create({
+     alignItems: _reactNative.Platform.OS === 'ios' ? 'center' : undefined
+   }
+ });
+-//# sourceMappingURL=ScreenStackHeaderConfig.js.map
+\ No newline at end of file
++//# sourceMappingURL=ScreenStackHeaderConfig.js.map
 diff --git a/lib/module/components/ScreenStackHeaderConfig.js b/lib/module/components/ScreenStackHeaderConfig.js
-index 71cd007a9b5654e027924587bd0f19a004264bf6..3b408a7cafcd646ed57da08bc26cbd3904b1ca47 100644
+index 71cd007a..864458df 100644
 --- a/lib/module/components/ScreenStackHeaderConfig.js
 +++ b/lib/module/components/ScreenStackHeaderConfig.js
 @@ -13,8 +13,10 @@ import { isHeaderBarButtonsAvailableForCurrentPlatform } from '../utils';
@@ -397,7 +440,20 @@ index 71cd007a9b5654e027924587bd0f19a004264bf6..3b408a7cafcd646ed57da08bc26cbd39
    } = props;
    const preparedHeaderLeftBarButtonItems = headerLeftBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform ? prepareHeaderBarButtonItems(headerLeftBarButtonItems, 'left') : undefined;
    const preparedHeaderRightBarButtonItems = headerRightBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform ? prepareHeaderBarButtonItems(headerRightBarButtonItems, 'right') : undefined;
-@@ -58,7 +60,8 @@ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref
+@@ -22,9 +24,11 @@ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref
+ 
+   // Handle bar button item presses
+   const onPressHeaderBarButtonItem = hasHeaderBarButtonItems ? event => {
+-    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && 'buttonId' in item && item.buttonId === event.nativeEvent.buttonId);
++    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && ('buttonId' in item && item.buttonId === event.nativeEvent.buttonId || item.type === 'menu' && 'menuOpenId' in item && item.menuOpenId === event.nativeEvent.buttonId));
+     if (pressedItem && pressedItem.type === 'button' && pressedItem.onPress) {
+       pressedItem.onPress();
++    } else if (pressedItem && pressedItem.type === 'menu') {
++      pressedItem.onOpen?.();
+     }
+   } : undefined;
+ 
+@@ -58,7 +62,8 @@ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref
        }
      }
    } : undefined;
@@ -407,8 +463,15 @@ index 71cd007a9b5654e027924587bd0f19a004264bf6..3b408a7cafcd646ed57da08bc26cbd39
      userInterfaceStyle: props.experimental_userInterfaceStyle,
      headerLeftBarButtonItems: preparedHeaderLeftBarButtonItems,
      headerRightBarButtonItems: preparedHeaderRightBarButtonItems,
+@@ -139,4 +144,4 @@ const styles = StyleSheet.create({
+     alignItems: Platform.OS === 'ios' ? 'center' : undefined
+   }
+ });
+-//# sourceMappingURL=ScreenStackHeaderConfig.js.map
+\ No newline at end of file
++//# sourceMappingURL=ScreenStackHeaderConfig.js.map
 diff --git a/lib/typescript/fabric/ScreenStackHeaderConfigNativeComponent.d.ts b/lib/typescript/fabric/ScreenStackHeaderConfigNativeComponent.d.ts
-index 1e40b7044765ef44a4a3c7dd6243b3f2dbcdf496..a32fd4e70c5f1f769063fab57567f06bf2ffc69b 100644
+index 1e40b704..a32fd4e7 100644
 --- a/lib/typescript/fabric/ScreenStackHeaderConfigNativeComponent.d.ts
 +++ b/lib/typescript/fabric/ScreenStackHeaderConfigNativeComponent.d.ts
 @@ -47,6 +47,7 @@ export interface NativeProps extends ViewProps {
@@ -420,7 +483,7 @@ index 1e40b7044765ef44a4a3c7dd6243b3f2dbcdf496..a32fd4e70c5f1f769063fab57567f06b
  }
  declare const _default: import("react-native").HostComponent<NativeProps>;
 diff --git a/lib/typescript/types.d.ts b/lib/typescript/types.d.ts
-index 8ca5ccd68db026d60bd624c7eeb61525cf788d97..23090731eef2f01d8668ed65c5dc5e80bb5b8e1d 100644
+index 8ca5ccd6..a696f3bc 100644
 --- a/lib/typescript/types.d.ts
 +++ b/lib/typescript/types.d.ts
 @@ -554,6 +554,14 @@ export interface ScreenStackProps extends ViewProps, GestureProps {
@@ -438,8 +501,28 @@ index 8ca5ccd68db026d60bd624c7eeb61525cf788d97..23090731eef2f01d8668ed65c5dc5e80
      /**
       * Whether to show the back button with custom left side of the header.
       */
+@@ -1106,6 +1114,12 @@ export interface HeaderBarButtonItemSubmenu {
+ }
+ export interface HeaderBarButtonItemWithMenu extends SharedHeaderBarButtonItem {
+     type: 'menu';
++    /**
++     * Function to call when the system menu is presented.
++     *
++     * @platform ios
++     */
++    onOpen?: () => void;
+     menu: {
+         title?: string;
+         items: (HeaderBarButtonItemMenuAction | HeaderBarButtonItemSubmenu)[];
+@@ -1171,4 +1185,4 @@ export interface GestureProviderProps extends GestureProps {
+ }
+ export type * from './components/tabs';
+ export type * from './components/shared/types';
+-//# sourceMappingURL=types.d.ts.map
+\ No newline at end of file
++//# sourceMappingURL=types.d.ts.map
 diff --git a/src/components/ScreenStackHeaderConfig.tsx b/src/components/ScreenStackHeaderConfig.tsx
-index 6ca8ed747ac1427eb8e3348e5d0b321754744348..deb32fd82aa6c10af43c0e849db5935087a0e7c0 100644
+index 6ca8ed74..ff74e01d 100644
 --- a/src/components/ScreenStackHeaderConfig.tsx
 +++ b/src/components/ScreenStackHeaderConfig.tsx
 @@ -33,7 +33,12 @@ export const ScreenStackHeaderConfig = React.forwardRef<
@@ -456,7 +539,30 @@ index 6ca8ed747ac1427eb8e3348e5d0b321754744348..deb32fd82aa6c10af43c0e849db59350
  
    const preparedHeaderLeftBarButtonItems =
      headerLeftBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform
-@@ -111,7 +116,14 @@ export const ScreenStackHeaderConfig = React.forwardRef<
+@@ -57,8 +62,11 @@ export const ScreenStackHeaderConfig = React.forwardRef<
+         ].find(
+           item =>
+             item &&
+-            'buttonId' in item &&
+-            item.buttonId === event.nativeEvent.buttonId,
++            (('buttonId' in item &&
++              item.buttonId === event.nativeEvent.buttonId) ||
++              (item.type === 'menu' &&
++                'menuOpenId' in item &&
++                item.menuOpenId === event.nativeEvent.buttonId)),
+         );
+         if (
+           pressedItem &&
+@@ -66,6 +74,8 @@ export const ScreenStackHeaderConfig = React.forwardRef<
+           pressedItem.onPress
+         ) {
+           pressedItem.onPress();
++        } else if (pressedItem && pressedItem.type === 'menu') {
++          pressedItem.onOpen?.();
+         }
+       }
+     : undefined;
+@@ -111,7 +121,14 @@ export const ScreenStackHeaderConfig = React.forwardRef<
  
    return (
      <ScreenStackHeaderConfigNativeComponent
@@ -473,7 +579,7 @@ index 6ca8ed747ac1427eb8e3348e5d0b321754744348..deb32fd82aa6c10af43c0e849db59350
        headerLeftBarButtonItems={preparedHeaderLeftBarButtonItems}
        headerRightBarButtonItems={preparedHeaderRightBarButtonItems}
 diff --git a/src/fabric/ScreenStackHeaderConfigNativeComponent.ts b/src/fabric/ScreenStackHeaderConfigNativeComponent.ts
-index fcbb2683cb438fe433edc7b3261041c75776d479..48bda6051fec1b06d34ed31b81cb865cfe7e3ca1 100644
+index fcbb2683..48bda605 100644
 --- a/src/fabric/ScreenStackHeaderConfigNativeComponent.ts
 +++ b/src/fabric/ScreenStackHeaderConfigNativeComponent.ts
 @@ -77,6 +77,7 @@ export interface NativeProps extends ViewProps {
@@ -485,7 +591,7 @@ index fcbb2683cb438fe433edc7b3261041c75776d479..48bda6051fec1b06d34ed31b81cb865c
    // Experimental
    userInterfaceStyle?: CT.WithDefault<UserInterfaceStyle, 'unspecified'>;
 diff --git a/src/types.tsx b/src/types.tsx
-index a4798d993c11c4ffd4536d343cdbf28cb72b622a..b248176474f35193de5684931ef2a2e494aa6a35 100644
+index a4798d99..0a06ad08 100644
 --- a/src/types.tsx
 +++ b/src/types.tsx
 @@ -657,6 +657,14 @@ export interface ScreenStackProps extends ViewProps, GestureProps {
@@ -503,3 +609,180 @@ index a4798d993c11c4ffd4536d343cdbf28cb72b622a..b248176474f35193de5684931ef2a2e4
    /**
     * Whether to show the back button with custom left side of the header.
     */
+@@ -1227,6 +1235,12 @@ export interface HeaderBarButtonItemSubmenu {
+ 
+ export interface HeaderBarButtonItemWithMenu extends SharedHeaderBarButtonItem {
+   type: 'menu';
++  /**
++   * Function to call when the system menu is presented.
++   *
++   * @platform ios
++   */
++  onOpen?: () => void;
+   menu: {
+     title?: string;
+     items: (HeaderBarButtonItemMenuAction | HeaderBarButtonItemSubmenu)[];
+diff --git a/src/components/helpers/prepareHeaderBarButtonItems.ts b/src/components/helpers/prepareHeaderBarButtonItems.ts
+index bf43f2d8..d9771f53 100644
+--- a/src/components/helpers/prepareHeaderBarButtonItems.ts
++++ b/src/components/helpers/prepareHeaderBarButtonItems.ts
+@@ -93,9 +93,14 @@ export const prepareHeaderBarButtonItems = (
+       };
+     }
+     if (item.type === 'menu') {
++      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
+       return {
+         ...processedItem,
+-        menu: prepareMenu(item.menu, index, side),
++        menuOpenId,
++        menu: {
++          ...prepareMenu(item.menu, index, side),
++          menuOpenId,
++        },
+       };
+     }
+     return null;
+diff --git a/ios/RNSBarButtonItem.h b/ios/RNSBarButtonItem.h
+index ea5325ea..b2d1abc7 100644
+--- a/ios/RNSBarButtonItem.h
++++ b/ios/RNSBarButtonItem.h
+@@ -5,12 +5,14 @@
+ 
+ typedef void (^RNSBarButtonItemAction)(NSString *buttonId);
+ typedef void (^RNSBarButtonMenuItemAction)(NSString *menuId);
++typedef void (^RNSBarButtonMenuOpenAction)(NSString *buttonId);
+ 
+ @interface RNSBarButtonItem : UIBarButtonItem
+ 
+ - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
+                         action:(RNSBarButtonItemAction)action
+                     menuAction:(RNSBarButtonMenuItemAction)menuAction
++                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
+                    imageLoader:(RCTImageLoader *)imageLoader;
+ 
+ @end
+diff --git a/ios/RNSBarButtonItem.mm b/ios/RNSBarButtonItem.mm
+index 0eb1f09d..68867ddb 100644
+--- a/ios/RNSBarButtonItem.mm
++++ b/ios/RNSBarButtonItem.mm
+@@ -14,6 +14,7 @@ @implementation RNSBarButtonItem {
+ - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
+                         action:(RNSBarButtonItemAction)action
+                     menuAction:(RNSBarButtonMenuItemAction)menuAction
++                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
+                    imageLoader:(RCTImageLoader *)imageLoader
+ {
+   self = [super init];
+@@ -111,11 +112,15 @@ - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
+     self.accessibilityHint = dict[@"accessibilityHint"];
+   }
+ 
++  NSDictionary *menu = dict[@"menu"];
++
+ #if !TARGET_OS_TV || __TV_OS_VERSION_MAX_ALLOWED >= 170000
+   if (@available(tvOS 17.0, *)) {
+-    NSDictionary *menu = dict[@"menu"];
+     if (menu) {
+-      self.menu = [[self class] initUIMenuWithDict:menu menuAction:menuAction imageLoader:imageLoader];
++      self.menu = [[self class] initUIMenuWithDict:menu
++                                        menuAction:menuAction
++                                    menuOpenAction:menuOpenAction
++                                       imageLoader:imageLoader];
+     }
+   }
+ #endif
+@@ -163,6 +168,7 @@ + (void)resolveImageFromConfig:(NSDictionary *)dict
+ 
+ + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
+                     menuAction:(RNSBarButtonMenuItemAction)menuAction
++                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
+                    imageLoader:(RCTImageLoader *)imageLoader
+ {
+   NSArray *items = dict[@"items"];
+@@ -174,7 +180,10 @@ + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
+         UIAction *actionItem = [self createActionItemFromConfig:item menuAction:menuAction imageLoader:imageLoader];
+         [elements addObject:actionItem];
+       } else {
+-        UIMenu *childMenu = [self initUIMenuWithDict:item menuAction:menuAction imageLoader:imageLoader];
++        UIMenu *childMenu = [self initUIMenuWithDict:item
++                                           menuAction:menuAction
++                                      menuOpenAction:nil
++                                         imageLoader:imageLoader];
+         if (childMenu) {
+           [elements addObject:childMenu];
+         }
+@@ -188,6 +197,23 @@ + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
+                  image = img;
+                }];
+ 
++  NSString *menuOpenId = dict[@"menuOpenId"];
++  if (menuOpenId != nil && menuOpenAction != nil) {
++    if (@available(iOS 15.0, *)) {
++      NSArray<UIMenuElement *> *deferredElements = [elements copy];
++      UIDeferredMenuElement *deferredElement =
++          [UIDeferredMenuElement elementWithUncachedProvider:^(void (^completion)(NSArray<UIMenuElement *> *)) {
++            menuOpenAction(menuOpenId);
++            completion(deferredElements);
++          }];
++      return [UIMenu menuWithTitle:dict[@"title"]
++                              image:image
++                         identifier:nil
++                            options:RNSMakeUIMenuOptionsFromConfig(dict)
++                           children:@[ deferredElement ]];
++    }
++  }
++
+   return [UIMenu menuWithTitle:dict[@"title"]
+                          image:image
+                     identifier:nil
+diff --git a/lib/module/components/helpers/prepareHeaderBarButtonItems.js b/lib/module/components/helpers/prepareHeaderBarButtonItems.js
+index 52cf911d..f6146e9b 100644
+--- a/lib/module/components/helpers/prepareHeaderBarButtonItems.js
++++ b/lib/module/components/helpers/prepareHeaderBarButtonItems.js
+@@ -74,12 +74,17 @@ export const prepareHeaderBarButtonItems = (barButtonItems, side) => {
+       };
+     }
+     if (item.type === 'menu') {
++      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
+       return {
+         ...processedItem,
+-        menu: prepareMenu(item.menu, index, side)
++        menuOpenId,
++        menu: {
++          ...prepareMenu(item.menu, index, side),
++          menuOpenId
++        }
+       };
+     }
+     return null;
+   });
+ };
+-//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
+\ No newline at end of file
++//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
+diff --git a/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js b/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
+index 3abad100..afb33e6f 100644
+--- a/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
++++ b/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
+@@ -80,13 +80,18 @@ const prepareHeaderBarButtonItems = (barButtonItems, side) => {
+       };
+     }
+     if (item.type === 'menu') {
++      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
+       return {
+         ...processedItem,
+-        menu: prepareMenu(item.menu, index, side)
++        menuOpenId,
++        menu: {
++          ...prepareMenu(item.menu, index, side),
++          menuOpenId
++        }
+       };
+     }
+     return null;
+   });
+ };
+ exports.prepareHeaderBarButtonItems = prepareHeaderBarButtonItems;
+-//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
+\ No newline at end of file
++//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
