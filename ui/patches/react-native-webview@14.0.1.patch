@@ -7,6 +7,11 @@
 # - 增加 `inputMethodEnabled`，关闭时保留 WebView/HTML 编辑器焦点与选区，仅隐藏软键盘。
 # - iOS 通过自定义 inputView 切换，Android 通过 InputConnection 与 InputMethodManager 切换。
 # - Fabric 与旧架构均透传该属性，默认值为 true，不改变未使用该属性时的上游行为。
+#
+# react-native-webview iOS 键盘聚焦滚动补丁说明：
+# - EditorWebView 启用 `removeIosKeyboardObserver` 时，在键盘出现期间锁定 WKWebView 的滚动位置。
+# - 用于拦截 iOS 26 仍会触发的聚焦元素自动滚动，避免键盘动画末尾页面轻微跳动。
+# - `keyboardDidShow` 后延迟 250ms 解锁，`keyboardWillHide` 立即解锁；正常浏览滚动不受影响。
 
 diff --git a/src/WebViewTypes.ts b/src/WebViewTypes.ts
 index 4e7247f8..2a84f9ab 100644

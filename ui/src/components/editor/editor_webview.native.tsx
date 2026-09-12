@@ -356,7 +356,6 @@ export function EditorWebView({
       hideKeyboardAccessoryView={os() === "ios"}
       inputMethodEnabled={inputMethodEnabled}
       javaScriptEnabled
-      keyboardDisplayRequiresUserAction={false}
       onContentProcessDidTerminate={restartSurface}
       onError={(event) => {
         onError(event);
