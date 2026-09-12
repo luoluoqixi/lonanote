@@ -174,7 +174,9 @@ export function EditorPage() {
       .then(() => editorStore.getState().setEditorPreviewMode(view.editorId, true))
       .catch(() => undefined);
   }, [view]);
-  const sourceMode = view?.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode;
+  const sourceMode =
+    !view?.previewMode &&
+    (view?.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode);
   const toggleSourceMode = useCallback(() => {
     if (!view) return;
     editorStore.getState().setEditorPreferenceOverrides(view.editorId, {
@@ -229,6 +231,7 @@ export function EditorPage() {
         value: "preview-mode",
       },
       {
+        disabled: view.previewMode,
         icon: <FileText color={accentColor} size={14} />,
         iconProps: { ios: { name: "doc.plaintext" } },
         label: "源码模式",

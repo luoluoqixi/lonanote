@@ -94,7 +94,10 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
             editor.preferenceOverrides.lineNumbers ?? settings.editorDefaults.showLineNumber,
           lineWrapping:
             editor.preferenceOverrides.lineWrapping ?? !settings.editorDefaults.disableLineWrap,
-          sourceMode: editor.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode,
+          // 预览必须由所见即所得渲染器接管，不能沿用已缓存的源码模式偏好。
+          sourceMode:
+            !editor.previewMode &&
+            (editor.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode),
         },
         resourceContext.context,
       ),
