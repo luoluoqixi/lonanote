@@ -11,13 +11,13 @@ import {
   Strikethrough,
   Undo2,
 } from "lucide-react-native";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, useUiTheme } from "rn-ui-kit";
 import { GlassEffect, type KeyboardVisibilityPhase, useKeyboardVisibility } from "rn-ui-kit/core";
 
-import { isMobile } from "@/api/common/platform";
+import { isMobile, os } from "@/api/common/platform";
 import type { EditorCommand } from "@/assets/editor/src/bridge/protocol";
 import { editorCommandCoordinator } from "@/components/editor/controllers";
 import type { DocumentModel, EditorViewSession } from "@/stores/editor";
@@ -196,16 +196,28 @@ export function EditorToolbar({
 }) {
   const theme = useUiTheme();
   const insets = useSafeAreaInsets();
+  const currentOs = os();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<ToolbarPanel | null>(null);
   const [restoringPanel, setRestoringPanel] = useState<ToolbarPanel | null>(null);
-  const [lastKeyboardHeight, setLastKeyboardHeight] = useState(
-    () => Keyboard.metrics()?.height ?? 0,
+  const initialKeyboardHeight = Keyboard.metrics()?.height ?? 0;
+  const [lastKeyboardHeight, setLastKeyboardHeight] = useState(() =>
+    initialKeyboardHeight > 0 && currentOs === "android"
+      ? initialKeyboardHeight + insets.bottom
+      : initialKeyboardHeight,
   );
   const [isRestoringKeyboard, setIsRestoringKeyboard] = useState(false);
+  const activePanelRef = useRef<ToolbarPanel | null>(null);
+  const freezeKeyboardHeightRef = useRef(false);
+  const panelKeyboardHiddenRef = useRef(false);
+  const updateActivePanel = useCallback((panel: ToolbarPanel | null) => {
+    activePanelRef.current = panel;
+    setActivePanel(panel);
+  }, []);
   const handleKeyboardPhaseChange = useCallback((phase: KeyboardVisibilityPhase) => {
     setKeyboardVisible(phase !== "hidden");
     if (phase === "visible") {
+      freezeKeyboardHeightRef.current = false;
       setIsRestoringKeyboard(false);
       setRestoringPanel(null);
     }
@@ -230,32 +242,62 @@ export function EditorToolbar({
       : 0;
 
   useEffect(() => {
+    const normalizeKeyboardHeight = (height: number) =>
+      height > 0 && currentOs === "android" ? height + insets.bottom : height;
     const updateLastKeyboardHeight = (height: number) => {
-      if (height > 0) setLastKeyboardHeight(height);
+      if (!freezeKeyboardHeightRef.current && height > 0) {
+        setLastKeyboardHeight(normalizeKeyboardHeight(height));
+      }
+    };
+    const leavePanelForKeyboard = () => {
+      if (
+        currentOs !== "android" ||
+        activePanelRef.current === null ||
+        !panelKeyboardHiddenRef.current
+      ) {
+        return;
+      }
+      updateActivePanel(null);
+      setRestoringPanel(null);
+      setIsRestoringKeyboard(false);
+      freezeKeyboardHeightRef.current = false;
+      panelKeyboardHiddenRef.current = false;
+      onMobileInputMethodEnabledChange?.(true);
     };
     const willShowSubscription = Keyboard.addListener("keyboardWillShow", (event) => {
-      if (!isRestoringKeyboard) updateLastKeyboardHeight(event.endCoordinates.height);
+      leavePanelForKeyboard();
+      updateLastKeyboardHeight(event.endCoordinates.height);
     });
     const didShowSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
-      if (!isRestoringKeyboard) updateLastKeyboardHeight(event.endCoordinates.height);
+      leavePanelForKeyboard();
+      updateLastKeyboardHeight(event.endCoordinates.height);
     });
     const frameChangeSubscription = Keyboard.addListener("keyboardWillChangeFrame", (event) => {
-      if (activePanel === null && !isRestoringKeyboard) {
-        updateLastKeyboardHeight(event.endCoordinates.height);
+      updateLastKeyboardHeight(event.endCoordinates.height);
+    });
+    const didHideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      if (currentOs === "android") {
+        setKeyboardVisible(false);
+        if (activePanelRef.current !== null) {
+          panelKeyboardHiddenRef.current = true;
+        }
       }
     });
     return () => {
       willShowSubscription.remove();
       didShowSubscription.remove();
       frameChangeSubscription.remove();
+      didHideSubscription.remove();
     };
-  }, [activePanel, isRestoringKeyboard]);
+  }, [currentOs, insets.bottom, onMobileInputMethodEnabledChange, updateActivePanel]);
 
   useEffect(() => {
     if (!isRestoringKeyboard) return;
     const timeout = setTimeout(() => {
       setIsRestoringKeyboard(false);
       setRestoringPanel(null);
+      freezeKeyboardHeightRef.current = false;
+      panelKeyboardHiddenRef.current = false;
     }, MOBILE_EDITOR_KEYBOARD_RESTORE_TIMEOUT_MS);
     return () => clearTimeout(timeout);
   }, [isRestoringKeyboard]);
@@ -278,10 +320,12 @@ export function EditorToolbar({
 
   useEffect(() => {
     if (editorFocused || (activePanel === null && restoringPanel === null)) return;
-    setActivePanel(null);
+    updateActivePanel(null);
     setRestoringPanel(null);
     setIsRestoringKeyboard(false);
-  }, [activePanel, editorFocused, restoringPanel]);
+    freezeKeyboardHeightRef.current = false;
+    panelKeyboardHiddenRef.current = false;
+  }, [activePanel, editorFocused, restoringPanel, updateActivePanel]);
 
   const executeCommand = useCallback(
     (command: EditorCommand) =>
@@ -291,25 +335,47 @@ export function EditorToolbar({
   const restoreKeyboard = useCallback(() => {
     setRestoringPanel(activePanel);
     setIsRestoringKeyboard(true);
-    setActivePanel(null);
-  }, [activePanel]);
+    updateActivePanel(null);
+    panelKeyboardHiddenRef.current = false;
+  }, [activePanel, updateActivePanel]);
   const hideKeyboard = useCallback(() => {
     setIsRestoringKeyboard(false);
-    setActivePanel(null);
+    updateActivePanel(null);
     setRestoringPanel(null);
+    freezeKeyboardHeightRef.current = false;
+    panelKeyboardHiddenRef.current = false;
     void executeCommand({ type: "editor.blur" }).finally(() => Keyboard.dismiss());
-  }, [executeCommand]);
+  }, [executeCommand, updateActivePanel]);
   const togglePanel = useCallback(
     (panel: ToolbarPanel) => {
       if (activePanel === panel) {
         restoreKeyboard();
         return;
       }
+      const keyboardHeight = Keyboard.metrics()?.height ?? 0;
+      if (keyboardHeight > 0) {
+        setLastKeyboardHeight(
+          currentOs === "android" ? keyboardHeight + insets.bottom : keyboardHeight,
+        );
+      }
+      freezeKeyboardHeightRef.current = true;
+      panelKeyboardHiddenRef.current = currentOs === "android" && keyboardHeight <= 0;
+      if (currentOs === "android") {
+        onMobileInputMethodEnabledChange?.(false);
+        Keyboard.dismiss();
+      }
       setIsRestoringKeyboard(false);
       setRestoringPanel(null);
-      setActivePanel(panel);
+      updateActivePanel(panel);
     },
-    [activePanel, restoreKeyboard],
+    [
+      activePanel,
+      currentOs,
+      insets.bottom,
+      onMobileInputMethodEnabledChange,
+      restoreKeyboard,
+      updateActivePanel,
+    ],
   );
 
   const desktopItems = [
@@ -419,7 +485,13 @@ export function EditorToolbar({
     );
   }
 
-  if (!keyboardVisible && displayedPanel === null && !isRestoringKeyboard && !editorFocused) {
+  const keepToolbarForFocusedEditor = currentOs !== "android" && editorFocused;
+  if (
+    !keyboardVisible &&
+    displayedPanel === null &&
+    !isRestoringKeyboard &&
+    !keepToolbarForFocusedEditor
+  ) {
     return null;
   }
 
