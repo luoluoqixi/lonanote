@@ -138,7 +138,7 @@ index 1f637c1d..ccd815cd 100644
  @property (nonatomic, assign) BOOL hideKeyboardAccessoryView;
  @property (nonatomic, assign) BOOL removeIosKeyboardObserver;
 diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
-index 38904266..94db4823 100644
+index 38904266..a65f7650 100644
 --- a/apple/RNCWebViewImpl.m
 +++ b/apple/RNCWebViewImpl.m
 @@ -52,10 +52,24 @@ @interface RNCWKWebView : WKWebView
@@ -166,7 +166,20 @@ index 38904266..94db4823 100644
  - (NSString *)stringFromAction:(SEL) action {
    NSString *sel = NSStringFromSelector(action);
 
-@@ -175,6 +189,8 @@ - (instancetype)initWithFrame:(CGRect)frame
+@@ -145,6 +159,12 @@ @implementation RNCWebViewImpl
+   UIStatusBarStyle _savedStatusBarStyle;
+ #endif // !TARGET_OS_OSX
+   BOOL _savedStatusBarHidden;
++#if TARGET_OS_IOS
++  CGPoint _keyboardScrollOffset;
++  BOOL _keyboardScrollLockEnabled;
++  BOOL _restoringKeyboardScrollOffset;
++  NSUInteger _keyboardScrollLockGeneration;
++#endif // TARGET_OS_IOS
+
+ #if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 /* __IPHONE_11_0 */
+   UIScrollViewContentInsetAdjustmentBehavior _savedContentInsetAdjustmentBehavior;
+@@ -175,6 +195,8 @@ - (instancetype)initWithFrame:(CGRect)frame
      _automaticallyAdjustContentInsets = YES;
      _autoManageStatusBarEnabled = YES;
      _contentInset = UIEdgeInsetsZero;
@@ -175,7 +188,18 @@ index 38904266..94db4823 100644
      _savedKeyboardDisplayRequiresUserAction = YES;
      _injectedJavaScript = nil;
      _injectedJavaScriptForMainFrameOnly = YES;
-@@ -423,6 +439,13 @@ - (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelPara
+@@ -227,6 +249,10 @@ - (instancetype)initWithFrame:(CGRect)frame
+      addObserver:self
+      selector:@selector(keyboardWillShow)
+      name:UIKeyboardWillShowNotification object:nil];
++    [[NSNotificationCenter defaultCenter]
++     addObserver:self
++     selector:@selector(keyboardDidShow)
++     name:UIKeyboardDidShowNotification object:nil];
+
+     // Workaround for StatusBar appearance bug for iOS 12
+     // https://github.com/react-native-webview/react-native-webview/issues/62
+@@ -423,6 +449,13 @@ - (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelPara
  - (WKWebViewConfiguration *)setUpWkWebViewConfig
  {
    WKWebViewConfiguration *wkWebViewConfig = [WKWebViewConfiguration new];
@@ -189,7 +213,7 @@ index 38904266..94db4823 100644
    WKPreferences *prefs = [[WKPreferences alloc]init];
    BOOL _prefsUsed = NO;
    if (!_javaScriptEnabled) {
-@@ -519,6 +542,7 @@ - (void)didMoveToWindow
+@@ -519,6 +552,7 @@ - (void)didMoveToWindow
      _webView = [[RNCWKWebView alloc] initWithFrame:self.bounds configuration: wkWebViewConfig];
      [self setBackgroundColor: _savedBackgroundColor];
  #if !TARGET_OS_OSX
@@ -197,7 +221,7 @@ index 38904266..94db4823 100644
      // Apply once at creation time. The prop is documented as non-reactive —
      // toggling it after mount cannot restore the observers WKWebView registers internally
      if (_removeIosKeyboardObserver) {
-@@ -578,6 +602,10 @@ - (void)didMoveToWindow
+@@ -578,6 +612,10 @@ - (void)didMoveToWindow
      }
  #endif
 
@@ -208,7 +232,43 @@ index 38904266..94db4823 100644
  #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130300 || \
      __IPHONE_OS_VERSION_MAX_ALLOWED >= 160400 || \
      __TV_OS_VERSION_MAX_ALLOWED >= 160400
-@@ -837,6 +865,26 @@ - (void)setContentInset:(UIEdgeInsets)contentInset
+@@ -688,15 +726,35 @@ -(void)hideFullScreenVideoStatusBars
+
+ -(void)keyboardWillHide
+ {
++  _keyboardScrollLockGeneration += 1;
++  _keyboardScrollLockEnabled = NO;
+   keyboardTimer = [NSTimer scheduledTimerWithTimeInterval:0 target:self selector:@selector(keyboardDisplacementFix) userInfo:nil repeats:false];
+   [[NSRunLoop mainRunLoop] addTimer:keyboardTimer forMode:NSRunLoopCommonModes];
+ }
+ -(void)keyboardWillShow
+ {
++  if (_removeIosKeyboardObserver && _webView != nil) {
++    _keyboardScrollLockGeneration += 1;
++    _keyboardScrollOffset = _webView.scrollView.contentOffset;
++    _keyboardScrollLockEnabled = YES;
++  }
+   if (keyboardTimer != nil) {
+     [keyboardTimer invalidate];
+   }
+ }
++-(void)keyboardDidShow
++{
++  if (!_keyboardScrollLockEnabled) {
++    return;
++  }
++
++  NSUInteger generation = ++_keyboardScrollLockGeneration;
++  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
++    if (self->_keyboardScrollLockGeneration == generation) {
++      self->_keyboardScrollLockEnabled = NO;
++    }
++  });
++}
+ -(void)keyboardDisplacementFix
+ {
+   // Additional viewport checks to prevent unintentional scrolls
+@@ -837,6 +895,26 @@ - (void)setContentInset:(UIEdgeInsets)contentInset
  #endif // !TARGET_OS_OSX
  }
 
@@ -235,7 +295,26 @@ index 38904266..94db4823 100644
  - (void)refreshContentInset
  {
  #if !TARGET_OS_OSX
-@@ -1140,5 +1188,6 @@ - (void)layoutSubviews
+@@ -1060,6 +1138,18 @@ - (void)setScrollEnabled:(BOOL)scrollEnabled
+ // UIScrollViewDelegate method
+ - (void)scrollViewDidScroll:(UIScrollView *)scrollView
+ {
++#if TARGET_OS_IOS
++  // iOS 26 仍可能通过 WKWebView 内部路径滚动聚焦元素；键盘动画期间保持原偏移，避免页面轻微跳动。
++  if (_keyboardScrollLockEnabled) {
++    if (!_restoringKeyboardScrollOffset && !CGPointEqualToPoint(scrollView.contentOffset, _keyboardScrollOffset)) {
++      _restoringKeyboardScrollOffset = YES;
++      scrollView.contentOffset = _keyboardScrollOffset;
++      _restoringKeyboardScrollOffset = NO;
++    }
++    return;
++  }
++#endif // TARGET_OS_IOS
++
+   // Don't allow scrolling the scrollView.
+   if (!_scrollEnabled) {
+     scrollView.bounds = _webView.bounds;
+@@ -1140,5 +1230,6 @@ - (void)layoutSubviews
    _webView.frame = self.bounds;
  #if !TARGET_OS_OSX
    _webView.scrollView.contentInset = _contentInset;
