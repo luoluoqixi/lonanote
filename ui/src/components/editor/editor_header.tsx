@@ -165,7 +165,6 @@ function EditorMenuButton({
     <Dropdown
       items={menuItems}
       itemNativeHaptics
-      native={isAndroid ? false : undefined}
       nativeHaptics
       nativeTrigger={false}
       trigger={({ open }) => (

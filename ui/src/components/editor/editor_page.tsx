@@ -195,7 +195,7 @@ export function EditorPage() {
       {
         disabled: document.saveState === "saving",
         icon: <Save color={accentColor} size={14} />,
-        iconProps: { androidIconName: "ic_menu_save", ios: { name: "square.and.arrow.down" } },
+        iconProps: { ios: { name: "square.and.arrow.down" } },
         label: "保存",
         onPress: saveDocument,
         value: "save",
@@ -204,7 +204,7 @@ export function EditorPage() {
       {
         disabled: editingDisabled || !view.editorState.canUndo,
         icon: <Undo2 color={accentColor} size={14} />,
-        iconProps: { androidIconName: "ic_menu_revert", ios: { name: "arrow.uturn.backward" } },
+        iconProps: { ios: { name: "arrow.uturn.backward" } },
         label: "撤销",
         onPress: () => executeEditorCommand({ type: "history.undo" }),
         value: "undo",
@@ -212,7 +212,7 @@ export function EditorPage() {
       {
         disabled: editingDisabled || !view.editorState.canRedo,
         icon: <Redo2 color={accentColor} size={14} />,
-        iconProps: { androidIconName: "ic_menu_rotate", ios: { name: "arrow.uturn.forward" } },
+        iconProps: { ios: { name: "arrow.uturn.forward" } },
         label: "重做",
         onPress: () => executeEditorCommand({ type: "history.redo" }),
         value: "redo",
@@ -242,7 +242,7 @@ export function EditorPage() {
       { separator: true, value: "separator-settings" },
       {
         icon: <Settings color={accentColor} size={14} />,
-        iconProps: { androidIconName: "ic_menu_preferences", ios: { name: "gearshape" } },
+        iconProps: { ios: { name: "gearshape" } },
         label: "设置",
         onPress: () => router.push("/settings"),
         value: "settings",
