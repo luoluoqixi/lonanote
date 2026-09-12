@@ -404,8 +404,11 @@ const styles = StyleSheet.create({
   },
   headerMenuButtonAndroid: {
     marginLeft: 8,
+    // 为 Dropdown 的额外 trigger 容器预留裁剪缓冲，同时保持 headerSurface 的垂直视觉对齐。
+    marginVertical: 2,
   },
   headerActions: {
+    alignItems: "center",
     flexDirection: "row",
   },
   headerPreviewButton: {
