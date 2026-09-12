@@ -13,6 +13,7 @@ import {
 import {
   EMPTY_EDITOR_STATE_SNAPSHOT,
   type EditorBridgeState,
+  type EditorPreferences,
   type EditorStateSnapshot,
   type EditorViewSession,
 } from "./editor_view_types";
@@ -74,6 +75,11 @@ export type EditorStoreState = {
   ) => void;
   setDocumentEditOwner: (documentId: string, editorId: string | null) => void;
   setEditorBridgeState: (editorId: string, state: EditorBridgeState, generation?: number) => void;
+  setEditorPreferenceOverrides: (
+    editorId: string,
+    preferenceOverrides: Partial<EditorPreferences>,
+  ) => void;
+  setEditorPreviewMode: (editorId: string, previewMode: boolean) => void;
   setEditorStateSnapshot: (editorId: string, snapshot: EditorStateSnapshot) => void;
   setEditorPendingAnchor: (editorId: string, fragment: string | null) => void;
 };
@@ -398,6 +404,31 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
           bridgeState,
           bridgeGeneration: bridgeGeneration ?? editor.bridgeGeneration,
         },
+      },
+    });
+  },
+
+  setEditorPreferenceOverrides: (editorId, preferenceOverrides) => {
+    const editor = get().editorsById[editorId];
+    if (!editor) return;
+    set({
+      editorsById: {
+        ...get().editorsById,
+        [editorId]: {
+          ...editor,
+          preferenceOverrides: { ...editor.preferenceOverrides, ...preferenceOverrides },
+        },
+      },
+    });
+  },
+
+  setEditorPreviewMode: (editorId, previewMode) => {
+    const editor = get().editorsById[editorId];
+    if (!editor || editor.previewMode === previewMode) return;
+    set({
+      editorsById: {
+        ...get().editorsById,
+        [editorId]: { ...editor, previewMode },
       },
     });
   },

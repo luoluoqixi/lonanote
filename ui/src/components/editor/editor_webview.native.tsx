@@ -199,9 +199,11 @@ export function EditorWebView({
           reducedMotion: false,
         },
         {
-          lineNumbers: settings.editorDefaults.showLineNumber,
-          lineWrapping: !settings.editorDefaults.disableLineWrap,
-          sourceMode: settings.editorDefaults.sourceMode,
+          lineNumbers:
+            editor.preferenceOverrides.lineNumbers ?? settings.editorDefaults.showLineNumber,
+          lineWrapping:
+            editor.preferenceOverrides.lineWrapping ?? !settings.editorDefaults.disableLineWrap,
+          sourceMode: editor.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode,
         },
         resourceContext.context,
       ),
@@ -301,6 +303,7 @@ export function EditorWebView({
       editorInputLeaseCoordinator.registerProvider(editor.editorId, {
         applyDocumentRevision: (revision, text) =>
           bridgeClient.applyDocumentRevision(revision, text),
+        blur: () => bridgeClient.executeCommand({ type: "editor.blur" }).then(() => undefined),
         captureDocument: () => bridgeClient.captureDocument(),
         setInputEnabled: (enabled) => bridgeClient.setInputEnabled(enabled),
       }),

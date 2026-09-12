@@ -7,6 +7,7 @@ import { editorStore } from "@/stores/editor";
 type InputLeaseProvider = {
   captureDocument: () => Promise<EditorDocumentCapturePayload>;
   applyDocumentRevision: (revision: number, text: string) => Promise<EditorBridgeApplyResult>;
+  blur: () => Promise<void>;
   setInputEnabled: (enabled: boolean) => Promise<EditorBridgeApplyResult>;
 };
 
@@ -101,6 +102,29 @@ export const editorInputLeaseCoordinator = {
     const view = editorStore.getState().editorsById[editorId];
     if (!view) return Promise.resolve();
     return enqueueTransfer(view.documentId, () => transferInputLease(editorId));
+  },
+
+  releaseLease: (editorId: string): Promise<void> => {
+    const view = editorStore.getState().editorsById[editorId];
+    if (!view) return Promise.resolve();
+    return enqueueTransfer(view.documentId, async () => {
+      const state = editorStore.getState();
+      const currentView = state.editorsById[editorId];
+      const document = currentView ? state.documentsById[currentView.documentId] : null;
+      if (!currentView || !document || document.editOwnerEditorId !== editorId) return;
+
+      const provider = providersByEditorId.get(editorId);
+      if (provider && currentView.bridgeState === "ready") {
+        await provider.blur();
+        await provider.setInputEnabled(false);
+        await captureReleasedOwner(document.documentId, editorId);
+      }
+
+      const latestDocument = editorStore.getState().documentsById[document.documentId];
+      if (latestDocument?.editOwnerEditorId === editorId) {
+        editorStore.getState().setDocumentEditOwner(document.documentId, null);
+      }
+    });
   },
 
   handleSurfaceReady: (editorId: string): void => {

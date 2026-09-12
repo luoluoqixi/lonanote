@@ -3,7 +3,7 @@ import type {
   NativeStackNavigationOptions,
 } from "@react-navigation/native-stack";
 import { Stack, useRouter } from "expo-router";
-import { ChevronLeft, Ellipsis } from "lucide-react-native";
+import { ChevronLeft, Ellipsis, Eye, Pencil } from "lucide-react-native";
 import { VariableBlurView } from "native-ios-common";
 import { useState } from "react";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
@@ -194,28 +194,136 @@ function EditorMenuButton({
   );
 }
 
+function EditorPreviewButton({
+  isAndroid,
+  onPress,
+  previewMode,
+}: {
+  isAndroid: boolean;
+  onPress: () => void;
+  previewMode: boolean;
+}) {
+  const [pressed, setPressed] = useState(false);
+  const theme = useUiTheme();
+  const Icon = previewMode ? Pencil : Eye;
+  const label = previewMode ? "切换到编辑模式" : "切换到预览模式";
+
+  return (
+    <Button
+      aria-label={label}
+      buttonSize={{ height: 40, width: 40 }}
+      circular
+      hitSlop={6}
+      onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      size="sm"
+      style={[
+        styles.headerSurface,
+        getHeaderSurfaceShadowStyle(HEADER_SURFACE_SHADOW_LEVEL),
+        styles.headerPreviewButton,
+        isAndroid ? styles.headerPreviewButtonAndroid : null,
+        {
+          backgroundColor: withBackgroundOpacity(
+            pressed ? theme.accent : theme.muted,
+            HEADER_SURFACE_OPACITY,
+          ),
+        },
+      ]}
+      variant="icon"
+    >
+      <Icon color={theme.primary} opacity={pressed ? 0.6 : 1} size={22} strokeWidth={2.25} />
+    </Button>
+  );
+}
+
+function toIosHeaderMenuItems(menuItems: DropdownItemData[]) {
+  return menuItems.flatMap((item) => {
+    if (item.separator || typeof item.label !== "string") return [];
+    const onPress = item.onPress ?? item.onSelect;
+    if (!onPress) return [];
+
+    return [
+      {
+        disabled: item.disabled,
+        icon: item.iconProps?.ios
+          ? { type: "sfSymbol" as const, name: item.iconProps.ios.name }
+          : undefined,
+        label: item.label,
+        onPress,
+        state: item.selected ? ("on" as const) : undefined,
+        type: "action" as const,
+      },
+    ];
+  });
+}
+
 export function EditorHeader({
   menuItems,
+  onTogglePreviewMode,
+  previewMode,
   title,
 }: {
   menuItems: DropdownItemData[];
+  onTogglePreviewMode: () => void;
+  previewMode: boolean;
   title: string;
 }) {
   const router = useRouter();
   const theme = useUiTheme();
   const isAndroid = os() === "android";
-  const usesCustomHeaderControls = (isIos16Plus() && !isIos26Plus()) || isAndroid;
+  const usesCustomBackButton = (isIos16Plus() && !isIos26Plus()) || isAndroid;
   const usesCustomHeaderTitle = isIos() || isAndroid;
   const renderCustomBackButton = ({ canGoBack }: NativeStackHeaderBackProps) =>
     canGoBack ? <EditorBackButton isAndroid={isAndroid} onPress={() => router.back()} /> : null;
-  const headerControlsOptions: NativeStackNavigationOptions = usesCustomHeaderControls
+  const headerControlsOptions: NativeStackNavigationOptions = isIos()
     ? {
-        headerBackButtonDisplayMode: "minimal",
-        headerBackVisible: false,
-        headerLeft: renderCustomBackButton,
-        headerRight: () => <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />,
+        ...(usesCustomBackButton
+          ? {
+              headerBackButtonDisplayMode: "minimal" as const,
+              headerBackVisible: false,
+              headerLeft: renderCustomBackButton,
+            }
+          : {}),
+        unstable_headerRightItems: (() => [
+          {
+            accessibilityLabel: previewMode ? "切换到编辑模式" : "切换到预览模式",
+            icon: { type: "sfSymbol" as const, name: previewMode ? "pencil" : "eye" },
+            label: "",
+            onPress: onTogglePreviewMode,
+            // iOS 26: 保留系统玻璃背景，但不与相邻菜单合并。
+            sharesBackground: !isIos26Plus(),
+            tintColor: theme.primary,
+            type: "button" as const,
+          },
+          {
+            accessibilityLabel: "更多操作",
+            icon: { type: "sfSymbol" as const, name: "ellipsis" },
+            label: "",
+            menu: { items: toIosHeaderMenuItems(menuItems) },
+            sharesBackground: !isIos26Plus(),
+            tintColor: theme.primary,
+            type: "menu" as const,
+          },
+        ]) as unknown as NonNullable<NativeStackNavigationOptions["unstable_headerRightItems"]>,
       }
-    : getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
+    : isAndroid
+      ? {
+          headerBackButtonDisplayMode: "minimal",
+          headerBackVisible: false,
+          headerLeft: renderCustomBackButton,
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <EditorPreviewButton
+                isAndroid={isAndroid}
+                onPress={onTogglePreviewMode}
+                previewMode={previewMode}
+              />
+              <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />
+            </View>
+          ),
+        }
+      : getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
   const headerTitleOptions: NativeStackNavigationOptions = usesCustomHeaderTitle
     ? {
         headerTitle: ({ children }) => <EditorHeaderTitle>{children}</EditorHeaderTitle>,
@@ -270,6 +378,19 @@ const styles = StyleSheet.create({
     width: 40,
   },
   headerMenuButtonAndroid: {
+    marginLeft: 8,
+  },
+  headerActions: {
+    flexDirection: "row",
+  },
+  headerPreviewButton: {
+    alignItems: "center",
+    height: 40,
+    justifyContent: "center",
+    marginRight: 4,
+    width: 40,
+  },
+  headerPreviewButtonAndroid: {
     marginLeft: 8,
   },
   headerTitle: {

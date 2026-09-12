@@ -1,7 +1,16 @@
 import { useNavigation, usePreventRemove } from "@react-navigation/native";
 import type { NavigationAction } from "@react-navigation/routers";
-import { Redirect, useLocalSearchParams } from "expo-router";
-import { ExternalLink } from "lucide-react-native";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import {
+  ExternalLink,
+  Eye,
+  FileText,
+  Pencil,
+  Redo2,
+  Save,
+  Settings,
+  Undo2,
+} from "lucide-react-native";
 import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
@@ -10,6 +19,7 @@ import { AlertDialog } from "rn-ui-kit/core";
 import {
   documentConflictCoordinator,
   documentRegistry,
+  editorCommandCoordinator,
   editorInputLeaseCoordinator,
   saveCoordinator,
 } from "@/components/editor/controllers";
@@ -32,6 +42,7 @@ export function EditorPage() {
   const view = useEditorView(editorId ?? "");
   const document = useEditorDocument(view?.documentId ?? "");
   const navigation = useNavigation();
+  const router = useRouter();
   const { settings } = useGlobalSettings();
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [isSavingBeforeClose, setIsSavingBeforeClose] = useState(false);
@@ -140,9 +151,103 @@ export function EditorPage() {
     void editorInputLeaseCoordinator.requestLease(editorId).catch(() => undefined);
   }, [document?.documentId, editorId, view?.editorId]);
 
+  const saveDocument = useCallback(() => {
+    if (!documentId) return;
+    void saveCoordinator.flushDocument(documentId).catch(() => undefined);
+  }, [documentId]);
+  const executeEditorCommand = useCallback(
+    (command: Parameters<typeof editorCommandCoordinator.execute>[1]) => {
+      if (!editorId) return;
+      void editorCommandCoordinator.execute(editorId, command).catch(() => undefined);
+    },
+    [editorId],
+  );
+  const togglePreviewMode = useCallback(() => {
+    if (!view) return;
+    if (view.previewMode) {
+      editorStore.getState().setEditorPreviewMode(view.editorId, false);
+      void editorInputLeaseCoordinator.requestLease(view.editorId).catch(() => undefined);
+      return;
+    }
+    void editorInputLeaseCoordinator
+      .releaseLease(view.editorId)
+      .then(() => editorStore.getState().setEditorPreviewMode(view.editorId, true))
+      .catch(() => undefined);
+  }, [view]);
+  const sourceMode = view?.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode;
+  const toggleSourceMode = useCallback(() => {
+    if (!view) return;
+    editorStore.getState().setEditorPreferenceOverrides(view.editorId, {
+      sourceMode: !sourceMode,
+    });
+  }, [sourceMode, view]);
+
   const menuItems = useMemo<DropdownItemData[]>(() => {
-    if (!workspaceRef) return [];
-    return [
+    if (!view || !document) return [];
+    const editingDisabled =
+      view.bridgeState !== "ready" ||
+      view.readOnly ||
+      view.previewMode ||
+      document.editOwnerEditorId !== view.editorId;
+    const items: DropdownItemData[] = [
+      {
+        disabled: document.saveState === "saving",
+        icon: <Save color={accentColor} size={14} />,
+        iconProps: { androidIconName: "ic_menu_save", ios: { name: "square.and.arrow.down" } },
+        label: "保存",
+        onPress: saveDocument,
+        value: "save",
+      },
+      { separator: true, value: "separator-history" },
+      {
+        disabled: editingDisabled || !view.editorState.canUndo,
+        icon: <Undo2 color={accentColor} size={14} />,
+        iconProps: { androidIconName: "ic_menu_revert", ios: { name: "arrow.uturn.backward" } },
+        label: "撤销",
+        onPress: () => executeEditorCommand({ type: "history.undo" }),
+        value: "undo",
+      },
+      {
+        disabled: editingDisabled || !view.editorState.canRedo,
+        icon: <Redo2 color={accentColor} size={14} />,
+        iconProps: { androidIconName: "ic_menu_rotate", ios: { name: "arrow.uturn.forward" } },
+        label: "重做",
+        onPress: () => executeEditorCommand({ type: "history.redo" }),
+        value: "redo",
+      },
+      { separator: true, value: "separator-mode" },
+      {
+        disabled: view.bridgeState !== "ready",
+        icon: view.previewMode ? (
+          <Pencil color={accentColor} size={14} />
+        ) : (
+          <Eye color={accentColor} size={14} />
+        ),
+        iconProps: { ios: { name: view.previewMode ? "pencil" : "eye" } },
+        label: view.previewMode ? "编辑模式" : "预览模式",
+        onPress: togglePreviewMode,
+        value: "preview-mode",
+      },
+      {
+        icon: <FileText color={accentColor} size={14} />,
+        iconProps: { ios: { name: "doc.plaintext" } },
+        label: "源码模式",
+        onPress: toggleSourceMode,
+        selected: sourceMode,
+        value: "source-mode",
+      },
+      { separator: true, value: "separator-settings" },
+      {
+        icon: <Settings color={accentColor} size={14} />,
+        iconProps: { androidIconName: "ic_menu_preferences", ios: { name: "gearshape" } },
+        label: "设置",
+        onPress: () => router.push("/settings"),
+        value: "settings",
+      },
+    ];
+    if (!workspaceRef) return items;
+    items.push(
+      { separator: true, value: "separator-external-open" },
       {
         disabled: isOpening,
         icon: <ExternalLink color={accentColor} size={14} />,
@@ -151,8 +256,22 @@ export function EditorPage() {
         onPress: openInOtherApp,
         value: "open-in-other-app",
       },
-    ];
-  }, [accentColor, isOpening, openInOtherApp, workspaceRef]);
+    );
+    return items;
+  }, [
+    accentColor,
+    document,
+    executeEditorCommand,
+    isOpening,
+    openInOtherApp,
+    router,
+    saveDocument,
+    sourceMode,
+    togglePreviewMode,
+    toggleSourceMode,
+    view,
+    workspaceRef,
+  ]);
 
   if (!editorId || !view || !document) {
     return <Redirect href="/" />;
@@ -160,7 +279,12 @@ export function EditorPage() {
 
   return (
     <>
-      <EditorHeader menuItems={menuItems} title={document.title} />
+      <EditorHeader
+        menuItems={menuItems}
+        onTogglePreviewMode={togglePreviewMode}
+        previewMode={view.previewMode}
+        title={document.title}
+      />
       <View style={styles.container}>
         {document.loadState === "ready" ? (
           <EditorWebView
