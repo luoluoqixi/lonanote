@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     minHeight: MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT,
     overflow: "hidden",
     position: "absolute",
-    right: MOBILE_EDITOR_TOOLBAR_PADDING_HORIZONTAL,
+    right: 0,
     zIndex: 30,
   },
   mobileToolbarRow: {
@@ -620,6 +620,10 @@ const styles = StyleSheet.create({
   panelCell: { padding: 4, width: "50%" },
   panelContent: { paddingTop: 8 },
   panelGrid: { flexDirection: "row", flexWrap: "wrap" },
-  trailingActions: { alignItems: "center", flexDirection: "row" },
+  trailingActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    right: MOBILE_EDITOR_TOOLBAR_PADDING_HORIZONTAL,
+  },
   trailingDivider: { height: 28, marginHorizontal: 2, width: StyleSheet.hairlineWidth },
 });
