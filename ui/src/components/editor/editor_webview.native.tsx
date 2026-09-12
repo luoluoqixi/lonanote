@@ -396,6 +396,8 @@ export function EditorWebView({
           mobileToolbarOverlayHeight,
         ),
       }}
+      setBuiltInZoomControls={false}
+      setDisplayZoomControls={false}
       source={getSource(devMode)}
       style={styles.webView}
     />

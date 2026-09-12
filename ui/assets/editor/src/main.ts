@@ -296,8 +296,16 @@ function revealSelectionInViewport(currentSession: SurfaceSession): void {
     currentSession.editor.scrollSelectionIntoView();
     return;
   }
-  const scrollTop = currentSession.editor.getSelectionScrollTop(currentSession.runtime.contentInsets);
-  if (scrollTop !== null) emitEvent("viewport.scrollRequested", { y: scrollTop });
+  // 合并同一帧的输入与 inset 更新，等 CodeMirror 完成布局后再测量光标。
+  currentSession.editor.editor.requestMeasure({
+    key: currentSession,
+    read: () => currentSession.editor.getSelectionScrollTop(currentSession.runtime.contentInsets),
+    write: (scrollTop) => {
+      if (session === currentSession && currentSession.editor.editor.hasFocus && scrollTop !== null) {
+        emitEvent("viewport.scrollRequested", { y: scrollTop });
+      }
+    },
+  });
 }
 
 function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializePayload): void {
@@ -360,7 +368,27 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     extensions: [
       // 由宿主统一描述 header、键盘、工具栏和底部面板遮挡的区域。
       // CodeMirror 会在点击、选区变化和输入时将光标保持在这些区域之外。
-      EditorView.scrollMargins.of(() => currentSession.runtime.contentInsets),
+      EditorView.scrollMargins.of(() => {
+        const insets = currentSession.runtime.contentInsets;
+        if (currentSession.runtime.platform !== "ios") return insets;
+        // iOS visualViewport 已扣除键盘，只补充剩余的 Toolbar / 面板遮挡。
+        const overlap = Math.max(
+          window.innerHeight - (window.visualViewport?.height ?? window.innerHeight),
+          0,
+        );
+        return { ...insets, bottom: Math.max(insets.bottom - overlap, 0) };
+      }),
+      EditorView.scrollHandler.of((view, range, options) => {
+        if (
+          currentSession.runtime.platform !== "ios" ||
+          !view.hasFocus ||
+          options.y !== "nearest" ||
+          range.head !== view.state.selection.main.head
+        ) return false;
+        // 输入事务也走宿主 offset 通道，避免与原生校正同时滚动页面。
+        revealSelectionInViewport(currentSession);
+        return true;
+      }),
     ],
     extensionsConfig: {
       enableLineWrapping: payload.preferences.lineWrapping,
@@ -394,7 +422,7 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     if (update.docChanged || update.selectionSet || update.focusChanged) {
       emitStateSnapshot(currentSession);
     }
-    if (update.docChanged || update.selectionSet) {
+    if (currentSession.runtime.platform === "ios" && (update.docChanged || update.selectionSet)) {
       revealSelectionInViewport(currentSession);
     }
   });

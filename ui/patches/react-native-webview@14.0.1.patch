@@ -181,7 +181,7 @@ index f83033b3..de8aefa9 100644
          val view = viewWrapper.webView
          view.settings.allowFileAccess = allowFileAccess;
 diff --git a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
-index fa8efb88..a6ae6b26 100644
+index fa8efb88..09ea9631 100644
 --- a/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
 +++ b/android/src/newarch/com/reactnativecommunity/webview/RNCWebViewManager.java
 @@ -202,6 +202,12 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
@@ -207,7 +207,23 @@ index fa8efb88..a6ae6b26 100644
      @Override
      public void setContentInsetAdjustmentBehavior(RNCWebViewWrapper view, @Nullable String value) {}
 
-@@ -564,4 +573,4 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
+@@ -512,6 +521,15 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
+       view.getWebView().clearHistory();
+   }
+
++  // 这两个命令仅供 iOS 使用；Android 仍需实现共享 Codegen 生成的接口。
++  @Override
++  public void setEditorContentOffset(RNCWebViewWrapper view, double y) {
++  }
++
++  @Override
++  public void setKeyboardScrollLockEnabled(RNCWebViewWrapper view, boolean enabled) {
++  }
++
+   @Override
+     protected void addEventEmitters(@NonNull ThemedReactContext reactContext, RNCWebViewWrapper view) {
+         // Do not register default touch emitter and let WebView implementation handle touches
+@@ -564,4 +582,4 @@ public class RNCWebViewManager extends ViewGroupManager<RNCWebViewWrapper>
          mRNCWebViewManagerImpl.onDropViewInstance(view);
          super.onDropViewInstance(view);
      }
