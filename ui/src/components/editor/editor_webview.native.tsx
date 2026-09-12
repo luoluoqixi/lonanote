@@ -52,21 +52,30 @@ function getEditorPlatform(): EditorPlatform {
 }
 
 function getContentBottomInset(
+  platform: EditorPlatform,
   safeAreaBottom: number,
   keyboardHeight: number,
   mobileToolbarOverlayHeight: number,
 ): number {
   if (mobileToolbarOverlayHeight > 0) return mobileToolbarOverlayHeight;
+  if (platform === "android" && keyboardHeight > 0) {
+    return keyboardHeight + safeAreaBottom + MOBILE_EDITOR_TOOLBAR_HEIGHT;
+  }
   return Math.max(safeAreaBottom, keyboardHeight > 0 ? MOBILE_EDITOR_TOOLBAR_HEIGHT : 0);
 }
 
 function getScrollIndicatorBottomInset(
+  platform: EditorPlatform,
   safeAreaBottom: number,
   keyboardHeight: number,
   mobileToolbarOverlayHeight: number,
 ): number {
   if (mobileToolbarOverlayHeight > 0) return mobileToolbarOverlayHeight;
-  return keyboardHeight > 0 ? keyboardHeight + MOBILE_EDITOR_TOOLBAR_HEIGHT : safeAreaBottom;
+  return keyboardHeight > 0
+    ? keyboardHeight +
+        (platform === "android" ? safeAreaBottom : 0) +
+        MOBILE_EDITOR_TOOLBAR_HEIGHT
+    : safeAreaBottom;
 }
 
 function getSemanticColors(theme: ReturnType<typeof useUiTheme>): EditorSemanticColors {
@@ -136,6 +145,7 @@ export function EditorWebView({
             top: headerHeight,
             right: insets.right,
             bottom: getContentBottomInset(
+              getEditorPlatform(),
               insets.bottom,
               keyboardHeight,
               mobileToolbarOverlayHeight,
@@ -365,6 +375,7 @@ export function EditorWebView({
       scrollIndicatorInsets={{
         top: headerHeight,
         bottom: getScrollIndicatorBottomInset(
+          getEditorPlatform(),
           insets.bottom,
           keyboardHeight,
           mobileToolbarOverlayHeight,
