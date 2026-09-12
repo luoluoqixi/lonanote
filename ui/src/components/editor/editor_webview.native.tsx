@@ -1,9 +1,11 @@
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Keyboard, PixelRatio, StyleSheet, Text, View } from "react-native";
+import { runOnJS, useAnimatedReaction } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
 import { useUiColorScheme, useUiTheme } from "rn-ui-kit";
+import { type KeyboardVisibilityPhase, useKeyboardAvoidance } from "rn-ui-kit/core";
 
 import { isDev, os, systemLocale } from "@/api/common/platform";
 import type { EditorPlatform, EditorSemanticColors } from "@/assets/editor/src/bridge/protocol";
@@ -34,6 +36,8 @@ type EditorWebViewProps = {
 };
 
 const MAX_SURFACE_RECOVERY_ATTEMPTS = 3;
+// iOS 的 WKWebView 键盘滚动锁会在 keyboardDidShow 后保留 250ms，再校正才能不被锁回原位。
+const IOS_KEYBOARD_SCROLL_LOCK_SETTLE_MS = 280;
 
 function getSource(devMode: boolean) {
   const editorDevUrl = devMode ? getEditorDevUrl() : null;
@@ -117,11 +121,45 @@ export function EditorWebView({
   const resourceContext = useEditorResourceContext(document);
   const webViewRef = useRef<WebView<{}>>(null);
   const bridgeClientRef = useRef<EditorBridgeClient | null>(null);
+  const revealSelectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recoveryAttemptsRef = useRef(0);
   const [inited, setInited] = useState<boolean>(false);
   const [hasLoadingError, setHasLoadingError] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(() => Keyboard.metrics()?.height ?? 0);
   const [surfaceGeneration, setSurfaceGeneration] = useState(1);
+  const revealSelection = useCallback(() => {
+    bridgeClientRef.current?.revealSelection();
+  }, []);
+  const handleKeyboardPhaseChange = useCallback(
+    (phase: KeyboardVisibilityPhase) => {
+      if (revealSelectionTimerRef.current !== null) {
+        clearTimeout(revealSelectionTimerRef.current);
+        revealSelectionTimerRef.current = null;
+      }
+      if (phase !== "visible") return;
+      if (os() === "ios") {
+        revealSelectionTimerRef.current = setTimeout(() => {
+          revealSelectionTimerRef.current = null;
+          revealSelection();
+        }, IOS_KEYBOARD_SCROLL_LOCK_SETTLE_MS);
+        return;
+      }
+      revealSelection();
+    },
+    [revealSelection],
+  );
+  const keyboard = useKeyboardAvoidance({ onPhaseChange: handleKeyboardPhaseChange });
+  const updateKeyboardHeight = useCallback((height: number) => {
+    setKeyboardHeight(Math.max(height, 0));
+  }, []);
+  useAnimatedReaction(
+    () => keyboard.height.value,
+    (height, previousHeight) => {
+      if (previousHeight !== null && Math.abs(height - previousHeight) < 0.5) return;
+      runOnJS(updateKeyboardHeight)(height);
+    },
+    [updateKeyboardHeight],
+  );
   const restartSurface = useCallback(() => {
     if (recoveryAttemptsRef.current >= MAX_SURFACE_RECOVERY_ATTEMPTS) {
       setHasLoadingError(true);
@@ -302,34 +340,14 @@ export function EditorWebView({
     };
   }, [devMode]);
 
-  useEffect(() => {
-    const updateKeyboardHeight = (height: number) => setKeyboardHeight(height);
-    const currentKeyboardHeight = Keyboard.metrics()?.height;
-    if (currentKeyboardHeight != null) updateKeyboardHeight(currentKeyboardHeight);
-
-    const showSubscription = Keyboard.addListener("keyboardWillShow", (event) => {
-      updateKeyboardHeight(event.endCoordinates.height);
-    });
-    const didShowSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
-      updateKeyboardHeight(event.endCoordinates.height);
-    });
-    const frameChangeSubscription = Keyboard.addListener("keyboardWillChangeFrame", (event) => {
-      updateKeyboardHeight(event.endCoordinates.height);
-    });
-    const hideSubscription = Keyboard.addListener("keyboardWillHide", () =>
-      updateKeyboardHeight(0),
-    );
-    const didHideSubscription = Keyboard.addListener("keyboardDidHide", () =>
-      updateKeyboardHeight(0),
-    );
-    return () => {
-      showSubscription.remove();
-      didShowSubscription.remove();
-      frameChangeSubscription.remove();
-      hideSubscription.remove();
-      didHideSubscription.remove();
-    };
-  }, []);
+  useEffect(
+    () => () => {
+      if (revealSelectionTimerRef.current !== null) {
+        clearTimeout(revealSelectionTimerRef.current);
+      }
+    },
+    [],
+  );
 
   if (hasLoadingError) {
     return (

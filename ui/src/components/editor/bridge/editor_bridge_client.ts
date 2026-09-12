@@ -173,6 +173,11 @@ export class EditorBridgeClient {
     this.#sendRequest("preferences.update", preferences);
   }
 
+  revealSelection(): void {
+    if (!this.#surfaceReady || this.#disposed) return;
+    this.#sendRequest("editor.revealSelection", {});
+  }
+
   async captureDocument(): Promise<EditorDocumentCapturePayload> {
     if (!this.#surfaceReady || this.#disposed) {
       throw new Error("Editor surface 当前不可用于 capture");

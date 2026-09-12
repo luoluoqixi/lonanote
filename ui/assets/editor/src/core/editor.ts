@@ -334,6 +334,15 @@ export class LonaEditor {
     return true;
   };
 
+  /** 根据当前 scrollMargins，以最小位移让主光标回到有效可见区域。 */
+  scrollSelectionIntoView = () => {
+    if (!this.#editor) return;
+    const position = this.#editor.state.selection.main.head;
+    this.#editor.dispatch({
+      effects: EditorView.scrollIntoView(position, { x: "nearest", y: "nearest" }),
+    });
+  };
+
   setValue = (content: string, { useHistory, scrollToTop = true }: LonaEditorSetValueOptions) => {
     try {
       if (!this.#editor) return;

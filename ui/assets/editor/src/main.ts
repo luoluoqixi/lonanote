@@ -1,3 +1,4 @@
+import { EditorView } from "@codemirror/view";
 import { PurrMDFeatures, commands } from "purrmd";
 
 import {
@@ -346,6 +347,11 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     defaultValue: payload.document.text,
     filePath: payload.document.workspacePath ?? payload.document.fileName ?? undefined,
     readOnly: payload.document.readOnly || !payload.document.inputEnabled,
+    extensions: [
+      // 由宿主统一描述 header、键盘、工具栏和底部面板遮挡的区域。
+      // CodeMirror 会在点击、选区变化和输入时将光标保持在这些区域之外。
+      EditorView.scrollMargins.of(() => currentSession.runtime.contentInsets),
+    ],
     extensionsConfig: {
       enableLineWrapping: payload.preferences.lineWrapping,
       enableLineNumbers: payload.preferences.lineNumbers,
@@ -446,9 +452,20 @@ function applyRuntimeUpdate(request: EditorBridgeRequest): void {
     respond(request, { applied: false });
     return;
   }
+  const previousInsets = session.runtime.contentInsets;
   session.runtime = request.payload;
   applyRuntimeStyles(session.runtime);
   applyPresentation(session);
+  const currentInsets = session.runtime.contentInsets;
+  if (
+    session.editor.editor.hasFocus &&
+    (previousInsets.top !== currentInsets.top ||
+      previousInsets.right !== currentInsets.right ||
+      previousInsets.bottom !== currentInsets.bottom ||
+      previousInsets.left !== currentInsets.left)
+  ) {
+    session.editor.scrollSelectionIntoView();
+  }
   respond(request, { applied: true });
 }
 
@@ -506,6 +523,19 @@ function applyInputEnabled(request: EditorBridgeRequest): void {
   session.inputEnabled = request.payload.enabled;
   session.editor.setReadonly(session.documentReadOnly || !session.inputEnabled);
   emitStateSnapshot(session);
+  respond(request, { applied: true });
+}
+
+function revealSelection(request: EditorBridgeRequest): void {
+  if (!session) {
+    respond(request, undefined, {
+      code: "editor_not_initialized",
+      message: "Editor 尚未初始化",
+      retryable: true,
+    });
+    return;
+  }
+  session.editor.scrollSelectionIntoView();
   respond(request, { applied: true });
 }
 
@@ -612,6 +642,10 @@ function handleRequest(request: EditorBridgeRequest): void {
   }
   if (request.method === "editor.setInputEnabled") {
     applyInputEnabled(request);
+    return;
+  }
+  if (request.method === "editor.revealSelection") {
+    revealSelection(request);
     return;
   }
   if (request.method === "runtime.update") {
