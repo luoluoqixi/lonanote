@@ -49,6 +49,16 @@ document.body.append(bottomSafeArea);
 
 const TOUCH_CLICK_COORDINATE_MAX_AGE_MS = 1_000;
 let lastTouchEnd: { x: number; y: number; recordedAt: number } | null = null;
+let suppressNextEditorClickUntil = 0;
+
+function takeRecentTouchEnd() {
+  const touchEnd = lastTouchEnd;
+  lastTouchEnd = null;
+  return touchEnd !== null &&
+    performance.now() - touchEnd.recordedAt <= TOUCH_CLICK_COORDINATE_MAX_AGE_MS
+    ? touchEnd
+    : null;
+}
 
 document.body.addEventListener(
   "touchend",
@@ -66,20 +76,46 @@ document.body.addEventListener("touchcancel", () => {
   lastTouchEnd = null;
 });
 
+// iOS WKWebView 在隐藏 Markdown formatting 的 decoration 边界偶尔会把合成 mousedown 映射到文档起点。
+// 对普通文本触摸使用已记录的 touchend 坐标走安全定位；交互 widget 继续交给自身处理。
+document.body.addEventListener(
+  "mousedown",
+  (event) => {
+    if (
+      !session ||
+      session.runtime.platform !== "ios" ||
+      event.button !== 0 ||
+      event.detail > 1 ||
+      !(event.target instanceof Element)
+    )
+      return;
+    if (!getRoot().contains(event.target)) return;
+    if (!event.target.closest(".cm-line")) return;
+    if (event.target.closest('a, button, img, input, [contenteditable="false"], [role="button"]')) {
+      return;
+    }
+    const touchEnd = takeRecentTouchEnd();
+    if (!touchEnd) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressNextEditorClickUntil = performance.now() + TOUCH_CLICK_COORDINATE_MAX_AGE_MS;
+    session.editor.focus({ x: touchEnd.x, y: touchEnd.y });
+  },
+  { capture: true },
+);
+
 /** 空白 body 区域点击时，将焦点交给距离触点最近的文档位置。 */
 document.body.addEventListener("click", (event) => {
+  if (performance.now() <= suppressNextEditorClickUntil) {
+    suppressNextEditorClickUntil = 0;
+    return;
+  }
   if ((event.target !== document.body && event.target !== getRoot()) || !session) {
     return;
   }
-  const touchEnd = lastTouchEnd;
-  lastTouchEnd = null;
-  const usesRecentTouchCoordinates =
-    touchEnd !== null &&
-    performance.now() - touchEnd.recordedAt <= TOUCH_CLICK_COORDINATE_MAX_AGE_MS;
+  const touchEnd = takeRecentTouchEnd();
   session.editor.focus(
-    usesRecentTouchCoordinates
-      ? { x: touchEnd.x, y: touchEnd.y }
-      : { x: event.clientX, y: event.clientY },
+    touchEnd ? { x: touchEnd.x, y: touchEnd.y } : { x: event.clientX, y: event.clientY },
   );
 });
 
