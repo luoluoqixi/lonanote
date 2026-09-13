@@ -9,6 +9,7 @@ import {
   EditorBridgeClient,
   createEditorBridgeBootstrap,
   createEditorInitializePayload,
+  logEditorConsole,
 } from "@/components/editor/bridge";
 import {
   editorCommandCoordinator,
@@ -154,6 +155,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
           void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
         },
         onTaskToggled: () => undefined,
+        onConsole: logEditorConsole,
         onResourceActivated,
         onFatal: () => {
           editorStore.getState().setEditorBridgeState(editor.editorId, "failed");

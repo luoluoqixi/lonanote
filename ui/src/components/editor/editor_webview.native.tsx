@@ -13,6 +13,7 @@ import {
   EditorBridgeClient,
   createEditorBridgeBootstrap,
   createEditorInitializePayload,
+  logEditorConsole,
 } from "@/components/editor/bridge";
 import {
   editorCommandCoordinator,
@@ -289,6 +290,7 @@ export function EditorWebView({
           void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
         },
         onTaskToggled: () => triggerNativeHaptics(true),
+        onConsole: logEditorConsole,
         onResourceActivated,
         onFatal: () => {
           editorStore.getState().setEditorBridgeState(editor.editorId, "failed");

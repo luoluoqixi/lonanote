@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 import type { EditorRuntimeUpdatePayload } from "./protocol";
-import { isEditorRuntimeUpdatePayload, isEditorTaskToggledPayload } from "./protocol";
+import {
+  isEditorConsolePayload,
+  isEditorRuntimeUpdatePayload,
+  isEditorTaskToggledPayload,
+} from "./protocol";
 
 function createRuntime(): EditorRuntimeUpdatePayload {
   return {
@@ -78,5 +82,29 @@ describe("Editor task toggle payload 校验", () => {
     assert.equal(isEditorTaskToggledPayload({ checked: false }), true);
     assert.equal(isEditorTaskToggledPayload({ checked: "true" }), false);
     assert.equal(isEditorTaskToggledPayload({}), false);
+  });
+});
+
+describe("Editor console payload 校验", () => {
+  test("接受有效的 console 消息", () => {
+    assert.equal(
+      isEditorConsolePayload({
+        level: "error",
+        source: "window.error",
+        arguments: ["ReferenceError: example", "editor.ts:42:3"],
+      }),
+      true,
+    );
+  });
+
+  test("拒绝未知级别和非字符串参数", () => {
+    assert.equal(
+      isEditorConsolePayload({ level: "trace", source: "console", arguments: ["example"] }),
+      false,
+    );
+    assert.equal(
+      isEditorConsolePayload({ level: "log", source: "console", arguments: [{ value: 1 }] }),
+      false,
+    );
   });
 });

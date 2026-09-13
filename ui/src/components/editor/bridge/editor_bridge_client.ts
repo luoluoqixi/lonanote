@@ -8,6 +8,7 @@ import {
   type EditorBridgeResponse,
   type EditorCommand,
   type EditorCommandResult,
+  type EditorConsolePayload,
   type EditorDocumentCapturePayload,
   type EditorDocumentChangedPayload,
   type EditorInitializePayload,
@@ -18,6 +19,7 @@ import {
   type EditorViewportScrollPayload,
   isEditorBridgeApplyResult,
   isEditorCommandResult,
+  isEditorConsolePayload,
   isEditorDocumentCapturePayload,
   isEditorDocumentChangedPayload,
   isEditorFocusChangedPayload,
@@ -40,6 +42,7 @@ type EditorBridgeClientOptions = {
   onSaveRequested: () => void;
   onResourceActivated: (payload: EditorResourceActivatedPayload) => void;
   onTaskToggled: (checked: boolean) => void;
+  onConsole: (payload: EditorConsolePayload) => void;
   onFatal: (message: string) => void;
 };
 
@@ -283,6 +286,14 @@ export class EditorBridgeClient {
         return;
       }
       this.#options.onFatal("resource.activated payload 无效");
+      return;
+    }
+    if (event.event === "surface.console") {
+      if (isEditorConsolePayload(event.payload)) {
+        this.#options.onConsole(event.payload);
+      } else {
+        this.#options.onFatal("surface.console payload 无效");
+      }
       return;
     }
     if (event.event === "surface.fatal") {

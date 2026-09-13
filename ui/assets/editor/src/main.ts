@@ -9,6 +9,8 @@ import {
   type EditorBridgeMessage,
   type EditorBridgeRequest,
   type EditorCommand,
+  type EditorConsoleLevel,
+  type EditorConsolePayload,
   type EditorDocumentRevisionPayload,
   type EditorInitializePayload,
   type EditorInputEnabledPayload,
@@ -390,6 +392,85 @@ function emitEvent(event: string, payload: unknown): void {
   };
   sendMessage(message);
 }
+
+const editorConsoleLevels = ["debug", "info", "log", "warn", "error"] as const;
+const maxConsoleArguments = 20;
+const maxConsoleArgumentLength = 8_000;
+
+function serializeConsoleArgument(value: unknown): string {
+  let serialized: string;
+  if (typeof value === "string") {
+    serialized = value;
+  } else if (value instanceof Error) {
+    serialized = value.stack || `${value.name}: ${value.message}`;
+  } else {
+    try {
+      const seen = new WeakSet<object>();
+      serialized =
+        JSON.stringify(value, (_key, nestedValue: unknown) => {
+          if (typeof nestedValue === "bigint") return `${nestedValue}n`;
+          if (typeof nestedValue === "function")
+            return `[Function ${nestedValue.name || "anonymous"}]`;
+          if (typeof nestedValue === "symbol") return nestedValue.toString();
+          if (typeof nestedValue === "object" && nestedValue !== null) {
+            if (seen.has(nestedValue)) return "[Circular]";
+            seen.add(nestedValue);
+          }
+          return nestedValue;
+        }) ?? String(value);
+    } catch {
+      try {
+        serialized = String(value);
+      } catch {
+        serialized = "[Unserializable value]";
+      }
+    }
+  }
+  return serialized.length > maxConsoleArgumentLength
+    ? `${serialized.slice(0, maxConsoleArgumentLength)}…[truncated]`
+    : serialized;
+}
+
+function forwardEditorConsole(
+  level: EditorConsoleLevel,
+  source: EditorConsolePayload["source"],
+  args: readonly unknown[],
+): void {
+  try {
+    emitEvent("surface.console", {
+      level,
+      source,
+      arguments: args.slice(0, maxConsoleArguments).map(serializeConsoleArgument),
+    } satisfies EditorConsolePayload);
+  } catch {
+    // console 转发不能干扰 editor 自身执行。
+  }
+}
+
+function installEditorConsoleForwarding(): void {
+  if (window.__LONANOTE_EDITOR_CONSOLE_FORWARDING_INSTALLED__) return;
+  window.__LONANOTE_EDITOR_CONSOLE_FORWARDING_INSTALLED__ = true;
+
+  for (const level of editorConsoleLevels) {
+    const originalMethod = console[level].bind(console);
+    console[level] = (...args: unknown[]) => {
+      originalMethod(...args);
+      forwardEditorConsole(level, "console", args);
+    };
+  }
+
+  window.addEventListener("error", (event) => {
+    const location = event.filename
+      ? `${event.filename}:${event.lineno || 0}:${event.colno || 0}`
+      : "unknown source";
+    forwardEditorConsole("error", "window.error", [event.error ?? event.message, location]);
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    forwardEditorConsole("error", "unhandledrejection", [event.reason]);
+  });
+}
+
+installEditorConsoleForwarding();
 
 function respond(request: EditorBridgeRequest, result?: unknown, error?: EditorBridgeError): void {
   const message: EditorBridgeMessage = {

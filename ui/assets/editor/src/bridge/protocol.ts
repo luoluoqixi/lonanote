@@ -200,6 +200,14 @@ export type EditorTaskToggledPayload = {
   checked: boolean;
 };
 
+export type EditorConsoleLevel = "debug" | "info" | "log" | "warn" | "error";
+
+export type EditorConsolePayload = {
+  level: EditorConsoleLevel;
+  source: "console" | "window.error" | "unhandledrejection";
+  arguments: string[];
+};
+
 /** iOS 原生 WebView 在键盘滚动锁期间应采用的内容纵向偏移。 */
 export type EditorViewportScrollPayload = {
   y: number;
@@ -528,6 +536,22 @@ export function isEditorFocusChangedPayload(value: unknown): value is EditorFocu
 
 export function isEditorTaskToggledPayload(value: unknown): value is EditorTaskToggledPayload {
   return isRecord(value) && typeof value.checked === "boolean";
+}
+
+export function isEditorConsolePayload(value: unknown): value is EditorConsolePayload {
+  return (
+    isRecord(value) &&
+    (value.level === "debug" ||
+      value.level === "info" ||
+      value.level === "log" ||
+      value.level === "warn" ||
+      value.level === "error") &&
+    (value.source === "console" ||
+      value.source === "window.error" ||
+      value.source === "unhandledrejection") &&
+    Array.isArray(value.arguments) &&
+    value.arguments.every((argument) => typeof argument === "string")
+  );
 }
 
 export function isEditorViewportScrollPayload(
