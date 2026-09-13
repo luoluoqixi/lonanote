@@ -195,6 +195,10 @@ export type EditorFocusChangedPayload = {
   focused: boolean;
 };
 
+export type EditorTaskToggledPayload = {
+  checked: boolean;
+};
+
 /** iOS 原生 WebView 在键盘滚动锁期间应采用的内容纵向偏移。 */
 export type EditorViewportScrollPayload = {
   y: number;
@@ -518,6 +522,10 @@ export function isEditorInputEnabledPayload(value: unknown): value is EditorInpu
 
 export function isEditorFocusChangedPayload(value: unknown): value is EditorFocusChangedPayload {
   return isRecord(value) && typeof value.focused === "boolean";
+}
+
+export function isEditorTaskToggledPayload(value: unknown): value is EditorTaskToggledPayload {
+  return isRecord(value) && typeof value.checked === "boolean";
 }
 
 export function isEditorViewportScrollPayload(

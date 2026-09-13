@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 import type { EditorRuntimeUpdatePayload } from "./protocol";
-import { isEditorRuntimeUpdatePayload } from "./protocol";
+import { isEditorRuntimeUpdatePayload, isEditorTaskToggledPayload } from "./protocol";
 
 function createRuntime(): EditorRuntimeUpdatePayload {
   return {
@@ -68,5 +68,14 @@ describe("Editor runtime 主题颜色校验", () => {
       }),
       false,
     );
+  });
+});
+
+describe("Editor task toggle payload 校验", () => {
+  test("只接受 boolean checked 状态", () => {
+    assert.equal(isEditorTaskToggledPayload({ checked: true }), true);
+    assert.equal(isEditorTaskToggledPayload({ checked: false }), true);
+    assert.equal(isEditorTaskToggledPayload({ checked: "true" }), false);
+    assert.equal(isEditorTaskToggledPayload({}), false);
   });
 });

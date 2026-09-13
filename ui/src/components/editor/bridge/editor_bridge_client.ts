@@ -23,6 +23,7 @@ import {
   isEditorFocusChangedPayload,
   isEditorResourceActivatedPayload,
   isEditorStateSnapshot,
+  isEditorTaskToggledPayload,
   isEditorViewportScrollPayload,
   parseEditorBridgeMessage,
 } from "@/assets/editor/src/bridge/protocol";
@@ -38,6 +39,7 @@ type EditorBridgeClientOptions = {
   onViewportScrollRequested: (payload: EditorViewportScrollPayload) => void;
   onSaveRequested: () => void;
   onResourceActivated: (payload: EditorResourceActivatedPayload) => void;
+  onTaskToggled: (checked: boolean) => void;
   onFatal: (message: string) => void;
 };
 
@@ -265,6 +267,14 @@ export class EditorBridgeClient {
     }
     if (event.event === "editor.saveRequested") {
       this.#options.onSaveRequested();
+      return;
+    }
+    if (event.event === "task.toggled") {
+      if (isEditorTaskToggledPayload(event.payload)) {
+        this.#options.onTaskToggled(event.payload.checked);
+        return;
+      }
+      this.#options.onFatal("task.toggled payload 无效");
       return;
     }
     if (event.event === "resource.activated") {

@@ -498,6 +498,9 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
           proxyURL: (rawReference: string) =>
             resolveEditorResourceUrl(rawReference, currentSession.resources) ?? rawReference,
         },
+        [PurrMDFeatures.List]: {
+          onTaskItemChecked: (checked: boolean) => emitEvent("task.toggled", { checked }),
+        },
         [PurrMDFeatures.Link]: {
           clickToOpenInPreview: "click",
           clickToOpenInSource: "click",

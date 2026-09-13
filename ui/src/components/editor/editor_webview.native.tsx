@@ -4,7 +4,7 @@ import { ActivityIndicator, Keyboard, PixelRatio, StyleSheet, Text, View } from 
 import { runOnJS, useAnimatedReaction } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
-import { useUiColorScheme, useUiTheme } from "rn-ui-kit";
+import { triggerNativeHaptics, useUiColorScheme, useUiTheme } from "rn-ui-kit";
 import { type KeyboardVisibilityPhase, useKeyboardAvoidance } from "rn-ui-kit/core";
 
 import { isDev, os, systemLocale } from "@/api/common/platform";
@@ -281,6 +281,7 @@ export function EditorWebView({
         onSaveRequested: () => {
           void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
         },
+        onTaskToggled: () => triggerNativeHaptics(true),
         onResourceActivated,
         onFatal: () => {
           editorStore.getState().setEditorBridgeState(editor.editorId, "failed");

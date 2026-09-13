@@ -148,6 +148,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
         onSaveRequested: () => {
           void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
         },
+        onTaskToggled: () => undefined,
         onResourceActivated,
         onFatal: () => {
           editorStore.getState().setEditorBridgeState(editor.editorId, "failed");
