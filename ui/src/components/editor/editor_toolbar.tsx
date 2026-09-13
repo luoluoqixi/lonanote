@@ -49,6 +49,8 @@ type ToolbarPanel = "insert" | "format";
 
 const MOBILE_EDITOR_TOOLBAR_BUTTON_WIDTH = 42;
 const MOBILE_EDITOR_TOOLBAR_SURFACE_GAP = 8;
+const MOBILE_EDITOR_TOOLBAR_PANEL_CELL_PADDING = 4;
+const MOBILE_EDITOR_TOOLBAR_PANEL_CELL_BUTTON_W_OFFSET = 25;
 const TOOLBAR_SURFACE_FALLBACK_OPACITY = 0.8;
 const TOOLBAR_SURFACE_FALLBACK_SHADOW = "0 1px 3px rgba(0, 0, 0, 0.10)";
 
@@ -408,6 +410,7 @@ export function EditorToolbar({
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<ToolbarPanel | null>(null);
   const [restoringPanel, setRestoringPanel] = useState<ToolbarPanel | null>(null);
+  const [panelGridWidth, setPanelGridWidth] = useState(0);
   const initialKeyboardHeight = Keyboard.metrics()?.height ?? 0;
   const [lastKeyboardHeight, setLastKeyboardHeight] = useState(() =>
     initialKeyboardHeight > 0 && currentOs === "android"
@@ -461,6 +464,13 @@ export function EditorToolbar({
       ? lastKeyboardHeight
       : MOBILE_EDITOR_TOOLBAR_PANEL_FALLBACK_HEIGHT + insets.bottom;
   const panelHeight = displayedPanel === null ? 0 : replacementPanelHeight;
+  const btnWidth = Math.max(
+    panelGridWidth / 2 -
+      MOBILE_EDITOR_TOOLBAR_PANEL_CELL_BUTTON_W_OFFSET -
+      MOBILE_EDITOR_TOOLBAR_PANEL_CELL_PADDING * 2,
+    0,
+  );
+  const panelButtonWidth = btnWidth > 0 ? btnWidth : undefined;
   const panelFallbackStyle = !usesLiquidGlass
     ? {
         backgroundColor: withBackgroundOpacity(theme.muted, TOOLBAR_SURFACE_FALLBACK_OPACITY),
@@ -763,7 +773,15 @@ export function EditorToolbar({
             ]}
             showsVerticalScrollIndicator={true}
           >
-            <View style={styles.panelGrid}>
+            <View
+              onLayout={({ nativeEvent }) => {
+                const width = nativeEvent.layout.width;
+                setPanelGridWidth((currentWidth) =>
+                  currentWidth === width ? currentWidth : width,
+                );
+              }}
+              style={styles.panelGrid}
+            >
               {panelActions.map(({ command, label }) => (
                 <View key={label} style={styles.panelCell}>
                   <Button
@@ -773,10 +791,17 @@ export function EditorToolbar({
                       void executeCommand(command);
                       if (activePanel === "insert") restoreKeyboard();
                     }}
+                    buttonSize={
+                      usesLiquidGlass && panelButtonWidth != null
+                        ? { width: panelButtonWidth, height: 30 }
+                        : undefined
+                    }
                     size="sm"
                     style={styles.panelButton}
                     title={label}
-                    variant="outline"
+                    native={usesLiquidGlass}
+                    nativeButtonStyle={usesLiquidGlass ? "glass" : undefined}
+                    variant="secondary"
                   />
                 </View>
               ))}
@@ -910,7 +935,7 @@ const styles = StyleSheet.create({
   },
   panelBackground: StyleSheet.absoluteFillObject,
   panelButton: { width: "100%" },
-  panelCell: { padding: 4, width: "50%" },
+  panelCell: { padding: MOBILE_EDITOR_TOOLBAR_PANEL_CELL_PADDING, width: "50%" },
   panelContent: { paddingTop: 8 },
   panelGrid: { flexDirection: "row", flexWrap: "wrap" },
   trailingActions: {
