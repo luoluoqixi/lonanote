@@ -69,6 +69,8 @@ export type EditorSemanticColors = {
   border: string;
   codeBackground: string;
   codeText: string;
+  inlineCodeBackground: string;
+  inlineCodeText: string;
   formatting: string;
   link: string;
   quoteBorder: string;
@@ -245,6 +247,8 @@ const editorSemanticColorKeys = [
   "border",
   "codeBackground",
   "codeText",
+  "inlineCodeBackground",
+  "inlineCodeText",
   "formatting",
   "link",
   "quoteBorder",

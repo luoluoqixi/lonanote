@@ -124,6 +124,8 @@ export type LonaEditorThemeColors = {
   border: string;
   codeBackground: string;
   codeText: string;
+  inlineCodeBackground: string;
+  inlineCodeText: string;
   formatting: string;
   link: string;
   quoteBorder: string;
@@ -150,6 +152,8 @@ const lonaEditorThemeColorKeys = [
   "border",
   "codeBackground",
   "codeText",
+  "inlineCodeBackground",
+  "inlineCodeText",
   "formatting",
   "link",
   "quoteBorder",
@@ -536,9 +540,9 @@ export class LonaEditor {
           "--purrmd-formatting-color": colors.formatting,
           "--purrmd-code-block-bg-color": colors.codeBackground,
           "--purrmd-code-block-info-bg-color-hover": colors.selectionInactive,
-          "--purrmd-inline-code-bg-color": colors.codeBackground,
-          "--purrmd-inline-code-color": colors.codeText,
-          "--purrmd-formatting-inline-code-color": colors.formatting,
+          "--purrmd-inline-code-bg-color": colors.inlineCodeBackground,
+          "--purrmd-inline-code-color": colors.inlineCodeText,
+          "--purrmd-formatting-inline-code-color": colors.inlineCodeText,
           "--purrmd-highlight-bg-color": colors.highlightBackground,
           "--purrmd-formatting-blockquote-border-color": colors.quoteBorder,
           "--purrmd-horizontal-rule-color": colors.border,

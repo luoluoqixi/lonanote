@@ -24,6 +24,9 @@ export function resolveEditorSemanticColors(
     border: theme.border,
     codeBackground: theme.muted,
     codeText: theme.foreground,
+    // dark 下避免 primary container 形成大面积高饱和色块，保留主色文字作为强调。
+    inlineCodeBackground: colorScheme === "dark" ? theme.muted : theme.accent,
+    inlineCodeText: colorScheme === "dark" ? theme.primary : theme.accentForeground,
     formatting: theme.primary,
     link: theme.primary,
     quoteBorder: theme.primary,
