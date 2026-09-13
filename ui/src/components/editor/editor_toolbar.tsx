@@ -310,6 +310,8 @@ export function EditorToolbar({
     const didHideSubscription = Keyboard.addListener("keyboardDidHide", () => {
       setKeyboardVisible(false);
       if (currentOs === "ios") {
+        // 自定义面板接管键盘空间时仍需保留 WebView 焦点；否则会触发下方失焦清理并关闭面板。
+        if (activePanelRef.current !== null) return;
         // 系统键盘的收起不会让 WKWebView 自动 blur。保留焦点会让图片等 widget 的下一次点击只更新选区。
         void editorCommandCoordinator
           .execute(editor.editorId, { type: "editor.blur" })
