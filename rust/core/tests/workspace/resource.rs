@@ -146,19 +146,31 @@ async fn resource_gateway_scopes_streams_and_revokes_workspace_resources() {
         .write_bytes(&id, &image, b"changed", WriteOptions::default())
         .await
         .unwrap();
-    let expired_generation = manager
+    let previous_generation = manager
         .open_resource(resource_request(&scope, None, None))
         .await;
     assert!(matches!(
-        expired_generation,
+        previous_generation,
+        WorkspaceResourceResponse::Content(_)
+    ));
+    let refreshed_scope = manager.acquire_resource_scope(&id).await.unwrap();
+    assert_eq!(refreshed_scope.scope_id, scope.scope_id);
+    assert_ne!(refreshed_scope.generation, scope.generation);
+
+    let future_scope = WorkspaceResourceScope {
+        scope_id: refreshed_scope.scope_id.clone(),
+        generation: refreshed_scope.generation + 1,
+    };
+    let future_generation = manager
+        .open_resource(resource_request(&future_scope, None, None))
+        .await;
+    assert!(matches!(
+        future_generation,
         WorkspaceResourceResponse::Error {
             status: WorkspaceResourceStatus::Forbidden,
             ..
         }
     ));
-    let refreshed_scope = manager.acquire_resource_scope(&id).await.unwrap();
-    assert_eq!(refreshed_scope.scope_id, scope.scope_id);
-    assert_ne!(refreshed_scope.generation, scope.generation);
 
     manager.close_workspace(&id).await.unwrap();
     let revoked_scope = manager

@@ -1,5 +1,5 @@
 import { EditorView } from "@codemirror/view";
-import { PurrMDFeatures, commands } from "purrmd";
+import { PurrMDFeatures, commands, type ImageRetryContext } from "purrmd";
 
 import {
   EDITOR_BRIDGE_PROTOCOL_VERSION,
@@ -728,6 +728,14 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
             delayMs: 800,
             maxRetries: 1,
             retryOnScrollEnd: true,
+            getRetryUrl: (url: string, context: ImageRetryContext) => {
+              if (!url.startsWith("lonanote-resource://")) return url;
+              const fragmentIndex = url.indexOf("#");
+              const baseUrl = fragmentIndex >= 0 ? url.slice(0, fragmentIndex) : url;
+              const fragment = fragmentIndex >= 0 ? url.slice(fragmentIndex) : "";
+              const separator = baseUrl.includes("?") ? "&" : "?";
+              return `${baseUrl}${separator}__lonanote_retry=${context.retryCount}${fragment}`;
+            },
           },
           // PurrMD 图片 widget 自身只选择 Markdown 范围；Android 首次点击还需要在原始 mousedown 内获取输入焦点。
           onImageDown: () => {

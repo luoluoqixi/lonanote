@@ -157,7 +157,10 @@ impl WorkspaceResourceGateway {
             let Some(entry) = state.scopes.get(&request.scope_id) else {
                 return resource_error(WorkspaceResourceStatus::Forbidden, None);
             };
-            if entry.generation != request.generation {
+            // generation 用作资源缓存命名空间，而不是 Workspace 生命周期内的二次撤销令牌。
+            // 写入会推进当前 generation，但已经打开的 Editor 仍需继续使用此前取得的 scope；
+            // 真正的 capability 撤销由 close_workspace/revoke_workspace 删除 scope 完成。
+            if request.generation == 0 || request.generation > entry.generation {
                 return resource_error(WorkspaceResourceStatus::Forbidden, None);
             }
             (entry.workspace_id, Arc::clone(&entry.session))
