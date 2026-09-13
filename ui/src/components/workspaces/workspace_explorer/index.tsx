@@ -1,4 +1,4 @@
-import { type Href, Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { type Href, Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
@@ -147,6 +147,7 @@ function WorkspaceExplorerForWorkspace({
   const [isDeletingEntries, setIsDeletingEntries] = useState(false);
   const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
   const isCreatingEntryRef = useRef(false);
+  const hasFocusedRef = useRef(false);
   const requestIdRef = useRef(0);
   const sortSelectRef = useRef<SelectHandle>(null);
   const groupModeSelectRef = useRef<SelectHandle>(null);
@@ -188,13 +189,17 @@ function WorkspaceExplorerForWorkspace({
     [currentPath, workspaceId],
   );
 
-  useEffect(() => {
-    void loadEntries().catch(() => undefined);
+  useFocusEffect(
+    useCallback(() => {
+      const showLoading = !hasFocusedRef.current;
+      hasFocusedRef.current = true;
+      void loadEntries({ showLoading }).catch(() => undefined);
 
-    return () => {
-      requestIdRef.current += 1;
-    };
-  }, [loadEntries]);
+      return () => {
+        requestIdRef.current += 1;
+      };
+    }, [loadEntries]),
+  );
 
   const sortValue = preferences.workspaceExplorer.sortValue;
   const groupMode = preferences.workspaceExplorer.groupMode;
