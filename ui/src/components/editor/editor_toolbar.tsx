@@ -22,7 +22,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, useUiTheme } from "rn-ui-kit";
+import { Button, cn, useUiTheme } from "rn-ui-kit";
 import {
   GlassEffect,
   type KeyboardVisibilityPhase,
@@ -797,6 +797,7 @@ export function EditorToolbar({
                         : undefined
                     }
                     size="sm"
+                    className={cn(!usesLiquidGlass && "bg-accent/60")}
                     style={styles.panelButton}
                     title={label}
                     native={usesLiquidGlass}
