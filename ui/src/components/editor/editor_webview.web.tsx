@@ -25,7 +25,11 @@ import { resolveEditorSemanticColors } from "./theme/editor_theme";
 type EditorWebViewProps = {
   document: DocumentModel;
   editor: EditorViewSession;
-  onContentScroll?: (offsetY: number) => void;
+  onContentScroll?: (sample: {
+    contentHeight: number;
+    offsetY: number;
+    viewportHeight: number;
+  }) => void;
 };
 
 const MAX_SURFACE_RECOVERY_ATTEMPTS = 3;

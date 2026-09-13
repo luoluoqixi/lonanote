@@ -35,6 +35,7 @@ import { EditorWebView } from "./editor_webview";
 
 const EDITOR_HEADER_HIDE_VELOCITY_PX_PER_SECOND = 700;
 const EDITOR_HEADER_REVEAL_DELTA_PX = 0.5;
+const EDITOR_HEADER_BOTTOM_GUARD_PX = 24;
 
 function getRouteEditorId(editorId: string | string[] | undefined): string | null {
   return Array.isArray(editorId) ? (editorId[0] ?? null) : (editorId ?? null);
@@ -58,7 +59,11 @@ export function EditorPage() {
   const [dismissedConflictAt, setDismissedConflictAt] = useState<string | null>(null);
   const pendingRemovalActionRef = useRef<NavigationAction | null>(null);
   const allowNextRemovalRef = useRef(false);
-  const editorScrollSampleRef = useRef<{ offsetY: number; timestamp: number } | null>(null);
+  const editorScrollSampleRef = useRef<{
+    nearBottom: boolean;
+    offsetY: number;
+    timestamp: number;
+  } | null>(null);
   const workspaceRef = document?.ref.kind === "workspaceFile" ? document.ref : null;
   const { isOpening, openInOtherApp } = useOpenInOtherApp({
     filePath: workspaceRef?.filePath,
@@ -74,12 +79,19 @@ export function EditorPage() {
   const shouldFlushBeforeClose =
     settings.editorDefaults.autoSave || settings.editorDefaults.autoSaveOnFocusChange;
 
-  const handleEditorContentScroll = useCallback((offsetY: number) => {
+  const handleEditorContentScroll = useCallback(
+    ({ contentHeight, offsetY, viewportHeight }: {
+      contentHeight: number;
+      offsetY: number;
+      viewportHeight: number;
+    }) => {
     if (!isMobile()) return;
 
     const timestamp = Date.now();
     const previousSample = editorScrollSampleRef.current;
-    editorScrollSampleRef.current = { offsetY, timestamp };
+    const maxOffsetY = Math.max(0, contentHeight - viewportHeight);
+    const nearBottom = maxOffsetY - offsetY <= EDITOR_HEADER_BOTTOM_GUARD_PX;
+    editorScrollSampleRef.current = { nearBottom, offsetY, timestamp };
     if (offsetY <= 0) {
       setEditorHeaderHidden(false);
       return;
@@ -89,6 +101,7 @@ export function EditorPage() {
     const distance = offsetY - previousSample.offsetY;
     const elapsed = timestamp - previousSample.timestamp;
     if (distance < -EDITOR_HEADER_REVEAL_DELTA_PX) {
+      if (previousSample.nearBottom && nearBottom) return;
       setEditorHeaderHidden(false);
       return;
     }
@@ -98,7 +111,9 @@ export function EditorPage() {
     if (velocity >= EDITOR_HEADER_HIDE_VELOCITY_PX_PER_SECOND) {
       setEditorHeaderHidden(true);
     }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     editorScrollSampleRef.current = null;

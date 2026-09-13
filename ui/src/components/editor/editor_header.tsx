@@ -422,9 +422,9 @@ export function EditorHeader({
         headerStyle: {
           backgroundColor: "transparent",
         },
-        // 原生 header item 无法从 JS 驱动 opacity；iOS 15/26 保留系统控件，
-        // 在隐藏时整体隐藏导航 header，避免用自定义按钮替换它们。
-        headerShown: usesNativeHeaderRightItems ? !hidden : true,
+        // 原生 header item 无法从 JS 驱动 opacity，统一通过导航栈整体隐藏 header，
+        // 从而保留各系统版本原生按钮与 Liquid Glass 外观。
+        headerShown: !hidden,
         headerTransparent: true,
         statusBarHidden: isMobile() && hidden,
         title,
