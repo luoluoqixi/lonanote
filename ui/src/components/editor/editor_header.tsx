@@ -73,7 +73,7 @@ function withBackgroundOpacity(color: string, opacity: number): string {
 function EditorHeaderBackground() {
   if (!isIos() || isIos26Plus()) return null;
 
-  return <VariableBlurView blurRadius={80} style={styles.headerBlur} transitionHeight={200} />;
+  return <VariableBlurView blurRadius={24} style={styles.headerBlur} transitionHeight={100} />;
 }
 
 function EditorHeaderFade({
@@ -328,13 +328,11 @@ export function EditorHeader({
   const router = useRouter();
   const theme = useUiTheme();
   const isAndroid = os() === "android";
-  const usesAnimatedMobileControls = isMobile();
-  const usesNativeHeaderRightItems =
-    isIos() && (!isIos16Plus() || isIos26Plus()) && !usesAnimatedMobileControls;
-  const usesCustomBackButton =
-    usesAnimatedMobileControls || (isIos16Plus() && !isIos26Plus()) || isAndroid;
-  const usesCustomHeaderActions =
-    usesAnimatedMobileControls || (isIos() && isIos16Plus() && !isIos26Plus()) || isAndroid;
+  // iOS 15 依赖系统 UIBarButtonItem 处理返回和菜单，iOS 26 依赖系统 Liquid Glass。
+  // 这两类控件不能替换成 React Native 按钮，否则会改变系统交互和外观。
+  const usesNativeHeaderRightItems = isIos() && (!isIos16Plus() || isIos26Plus());
+  const usesCustomBackButton = (isIos16Plus() && !isIos26Plus()) || isAndroid;
+  const usesCustomHeaderActions = (isIos() && isIos16Plus() && !isIos26Plus()) || isAndroid;
   const usesCustomHeaderTitle = isIos() || isAndroid;
   const handleTogglePreviewMode = () => {
     triggerNativeHaptics(true);
@@ -424,6 +422,9 @@ export function EditorHeader({
         headerStyle: {
           backgroundColor: "transparent",
         },
+        // 原生 header item 无法从 JS 驱动 opacity；iOS 15/26 保留系统控件，
+        // 在隐藏时整体隐藏导航 header，避免用自定义按钮替换它们。
+        headerShown: usesNativeHeaderRightItems ? !hidden : true,
         headerTransparent: true,
         statusBarHidden: isMobile() && hidden,
         title,
