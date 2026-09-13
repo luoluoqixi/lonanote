@@ -26,6 +26,7 @@ function createRuntime(): EditorRuntimeUpdatePayload {
       inlineCodeBackground: "#27272a",
       inlineCodeText: "#c4b5fd",
       formatting: "#c4b5fd",
+      listMarker: "#b2a5e6",
       link: "#c4b5fd",
       quoteBorder: "#c4b5fd",
       highlightBackground: "#665200",

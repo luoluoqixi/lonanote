@@ -129,6 +129,7 @@ export type LonaEditorThemeColors = {
   inlineCodeBackground: string;
   inlineCodeText: string;
   formatting: string;
+  listMarker: string;
   link: string;
   quoteBorder: string;
   highlightBackground: string;
@@ -157,6 +158,7 @@ const lonaEditorThemeColorKeys = [
   "inlineCodeBackground",
   "inlineCodeText",
   "formatting",
+  "listMarker",
   "link",
   "quoteBorder",
   "highlightBackground",
@@ -545,7 +547,12 @@ export class LonaEditor {
           "--purrmd-inline-code-bg-color": colors.inlineCodeBackground,
           "--purrmd-inline-code-color": colors.inlineCodeText,
           "--purrmd-formatting-inline-code-color": colors.inlineCodeText,
+          "--purrmd-formatting-bullet-list-item-color": colors.listMarker,
+          "--purrmd-formatting-bullet-list-item-point-color": colors.listMarker,
+          "--purrmd-formatting-bullet-list-task-color": colors.listMarker,
+          "--purrmd-formatting-ordered-list-task-color": colors.listMarker,
           "--purrmd-highlight-bg-color": colors.highlightBackground,
+          "--purrmd-formatting-blockquote-color": colors.quoteBorder,
           "--purrmd-formatting-blockquote-border-color": colors.quoteBorder,
           "--purrmd-horizontal-rule-color": colors.border,
           "--purrmd-link-color": colors.link,
