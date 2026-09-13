@@ -47,18 +47,24 @@ function ToolbarIconButton({
   children,
   disabled,
   onPress,
-  selected = false,
+  selected,
 }: ToolbarIconButtonProps) {
   const theme = useUiTheme();
+  const isPanelToggle = selected !== undefined;
   return (
     <Button
       aria-label={accessibilityLabel}
+      aria-pressed={isPanelToggle ? selected : undefined}
       buttonSize={{ height: MOBILE_EDITOR_TOOLBAR_HEIGHT - 1, width: 42 }}
       disabled={disabled}
       nativeHaptics
       onPress={onPress}
       size="xs"
-      style={selected ? { backgroundColor: theme.muted } : undefined}
+      style={
+        isPanelToggle
+          ? ({ pressed }) => (selected || pressed ? { backgroundColor: theme.accent } : undefined)
+          : undefined
+      }
       variant="icon"
     >
       {children}
