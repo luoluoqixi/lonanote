@@ -6,8 +6,16 @@ import type {
 import { Stack, useRouter } from "expo-router";
 import { ChevronLeft, Ellipsis, Eye, Pencil } from "lucide-react-native";
 import { VariableBlurView } from "native-ios-common";
-import { useState } from "react";
-import { StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  type StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from "react-native";
 import {
   Button,
   Dropdown,
@@ -18,7 +26,7 @@ import {
   useUiTheme,
 } from "rn-ui-kit";
 
-import { isIos, isIos16Plus, isIos26Plus, os } from "@/api/common";
+import { isIos, isIos16Plus, isIos26Plus, isMobile, os } from "@/api/common";
 import { getMenuHeaderRightMenuProps } from "@/components/common/header_actions";
 
 const HEADER_SURFACE_OPACITY = 0.8;
@@ -65,7 +73,36 @@ function withBackgroundOpacity(color: string, opacity: number): string {
 function EditorHeaderBackground() {
   if (!isIos() || isIos26Plus()) return null;
 
-  return <VariableBlurView blurRadius={24} style={styles.headerBlur} transitionHeight={100} />;
+  return <VariableBlurView blurRadius={80} style={styles.headerBlur} transitionHeight={200} />;
+}
+
+function EditorHeaderFade({
+  children,
+  hidden,
+  style,
+}: {
+  children: ReactNode;
+  hidden: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const opacity = useRef(new Animated.Value(hidden ? 0 : 1)).current;
+
+  useEffect(() => {
+    const animation = Animated.timing(opacity, {
+      duration: hidden ? 140 : 180,
+      easing: hidden ? Easing.out(Easing.quad) : Easing.in(Easing.quad),
+      toValue: hidden ? 0 : 1,
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [hidden, opacity]);
+
+  return (
+    <Animated.View pointerEvents={hidden ? "none" : "auto"} style={[style, { opacity }]}>
+      {children}
+    </Animated.View>
+  );
 }
 
 function EditorBackButton({ isAndroid, onPress }: { isAndroid: boolean; onPress: () => void }) {
@@ -276,11 +313,13 @@ function toIosHeaderMenuItems(menuItems: DropdownItemData[]) {
 }
 
 export function EditorHeader({
+  hidden = false,
   menuItems,
   onTogglePreviewMode,
   previewMode,
   title,
 }: {
+  hidden?: boolean;
   menuItems: DropdownItemData[];
   onTogglePreviewMode: () => void;
   previewMode: boolean;
@@ -289,25 +328,35 @@ export function EditorHeader({
   const router = useRouter();
   const theme = useUiTheme();
   const isAndroid = os() === "android";
-  const usesNativeHeaderRightItems = isIos() && (!isIos16Plus() || isIos26Plus());
-  const usesCustomBackButton = (isIos16Plus() && !isIos26Plus()) || isAndroid;
-  const usesCustomHeaderActions = (isIos() && isIos16Plus() && !isIos26Plus()) || isAndroid;
+  const usesAnimatedMobileControls = isMobile();
+  const usesNativeHeaderRightItems =
+    isIos() && (!isIos16Plus() || isIos26Plus()) && !usesAnimatedMobileControls;
+  const usesCustomBackButton =
+    usesAnimatedMobileControls || (isIos16Plus() && !isIos26Plus()) || isAndroid;
+  const usesCustomHeaderActions =
+    usesAnimatedMobileControls || (isIos() && isIos16Plus() && !isIos26Plus()) || isAndroid;
   const usesCustomHeaderTitle = isIos() || isAndroid;
   const handleTogglePreviewMode = () => {
     triggerNativeHaptics(true);
     onTogglePreviewMode();
   };
   const renderCustomBackButton = ({ canGoBack }: NativeStackHeaderBackProps) =>
-    canGoBack ? <EditorBackButton isAndroid={isAndroid} onPress={() => router.back()} /> : null;
+    canGoBack ? (
+      <EditorHeaderFade hidden={hidden}>
+        <EditorBackButton isAndroid={isAndroid} onPress={() => router.back()} />
+      </EditorHeaderFade>
+    ) : null;
   const renderCustomHeaderActions = () => (
-    <View style={styles.headerActions}>
-      <EditorPreviewButton
-        isAndroid={isAndroid}
-        onPress={handleTogglePreviewMode}
-        previewMode={previewMode}
-      />
-      <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />
-    </View>
+    <EditorHeaderFade hidden={hidden}>
+      <View style={styles.headerActions}>
+        <EditorPreviewButton
+          isAndroid={isAndroid}
+          onPress={handleTogglePreviewMode}
+          previewMode={previewMode}
+        />
+        <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />
+      </View>
+    </EditorHeaderFade>
   );
   const headerControlsOptions: NativeStackNavigationOptions = usesNativeHeaderRightItems
     ? {
@@ -351,7 +400,11 @@ export function EditorHeader({
       : getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
   const headerTitleOptions: NativeStackNavigationOptions = usesCustomHeaderTitle
     ? {
-        headerTitle: ({ children }) => <EditorHeaderTitle>{children}</EditorHeaderTitle>,
+        headerTitle: ({ children }) => (
+          <EditorHeaderFade hidden={hidden}>
+            <EditorHeaderTitle>{children}</EditorHeaderTitle>
+          </EditorHeaderFade>
+        ),
         ...(isAndroid ? { headerTitleAlign: "center" as const } : {}),
       }
     : {};
@@ -372,6 +425,7 @@ export function EditorHeader({
           backgroundColor: "transparent",
         },
         headerTransparent: true,
+        statusBarHidden: isMobile() && hidden,
         title,
       }}
     />

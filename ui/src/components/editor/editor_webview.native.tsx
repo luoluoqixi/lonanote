@@ -34,6 +34,7 @@ type EditorWebViewProps = {
   editor: EditorViewSession;
   inputMethodEnabled?: boolean;
   mobileToolbarOverlayHeight?: number;
+  onContentScroll?: (offsetY: number) => void;
 };
 
 const MAX_SURFACE_RECOVERY_ATTEMPTS = 3;
@@ -116,6 +117,7 @@ export function EditorWebView({
   editor,
   inputMethodEnabled = true,
   mobileToolbarOverlayHeight = 0,
+  onContentScroll,
 }: EditorWebViewProps) {
   const devMode = isDev();
   const headerHeight = useHeaderHeight();
@@ -404,6 +406,7 @@ export function EditorWebView({
       }}
       onMessage={(event) => bridgeClient.handleSerializedMessage(event.nativeEvent.data)}
       onRenderProcessGone={restartSurface}
+      onScroll={(event) => onContentScroll?.(event.nativeEvent.contentOffset.y)}
       originWhitelist={["*"]}
       removeIosKeyboardObserver={os() === "ios"}
       renderLoading={() => <RenderLoading backgroundColor={editorColors.canvas} overlay />}

@@ -16,6 +16,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
 import { AlertDialog } from "rn-ui-kit/core";
 
+import { isMobile } from "@/api/common/platform";
 import {
   documentConflictCoordinator,
   documentRegistry,
@@ -31,6 +32,9 @@ import { editorStore, isDocumentDirty } from "@/stores/editor";
 import { EditorHeader } from "./editor_header";
 import { EditorToolbar } from "./editor_toolbar";
 import { EditorWebView } from "./editor_webview";
+
+const EDITOR_HEADER_HIDE_VELOCITY_PX_PER_SECOND = 700;
+const EDITOR_HEADER_REVEAL_DELTA_PX = 0.5;
 
 function getRouteEditorId(editorId: string | string[] | undefined): string | null {
   return Array.isArray(editorId) ? (editorId[0] ?? null) : (editorId ?? null);
@@ -48,11 +52,13 @@ export function EditorPage() {
   const [isSavingBeforeClose, setIsSavingBeforeClose] = useState(false);
   const [mobileToolbarOverlayHeight, setMobileToolbarOverlayHeight] = useState(0);
   const [mobileInputMethodEnabled, setMobileInputMethodEnabled] = useState(true);
+  const [editorHeaderHidden, setEditorHeaderHidden] = useState(false);
   const [closeSaveError, setCloseSaveError] = useState<string | null>(null);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
   const [dismissedConflictAt, setDismissedConflictAt] = useState<string | null>(null);
   const pendingRemovalActionRef = useRef<NavigationAction | null>(null);
   const allowNextRemovalRef = useRef(false);
+  const editorScrollSampleRef = useRef<{ offsetY: number; timestamp: number } | null>(null);
   const workspaceRef = document?.ref.kind === "workspaceFile" ? document.ref : null;
   const { isOpening, openInOtherApp } = useOpenInOtherApp({
     filePath: workspaceRef?.filePath,
@@ -67,6 +73,37 @@ export function EditorPage() {
     conflictDetectedAt !== null && dismissedConflictAt !== conflictDetectedAt;
   const shouldFlushBeforeClose =
     settings.editorDefaults.autoSave || settings.editorDefaults.autoSaveOnFocusChange;
+
+  const handleEditorContentScroll = useCallback((offsetY: number) => {
+    if (!isMobile()) return;
+
+    const timestamp = Date.now();
+    const previousSample = editorScrollSampleRef.current;
+    editorScrollSampleRef.current = { offsetY, timestamp };
+    if (offsetY <= 0) {
+      setEditorHeaderHidden(false);
+      return;
+    }
+    if (!previousSample) return;
+
+    const distance = offsetY - previousSample.offsetY;
+    const elapsed = timestamp - previousSample.timestamp;
+    if (distance < -EDITOR_HEADER_REVEAL_DELTA_PX) {
+      setEditorHeaderHidden(false);
+      return;
+    }
+    if (distance <= 0 || elapsed <= 0) return;
+
+    const velocity = (distance / elapsed) * 1_000;
+    if (velocity >= EDITOR_HEADER_HIDE_VELOCITY_PX_PER_SECOND) {
+      setEditorHeaderHidden(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    editorScrollSampleRef.current = null;
+    setEditorHeaderHidden(false);
+  }, [editorId]);
 
   const continueRemoval = useCallback(() => {
     const action = pendingRemovalActionRef.current;
@@ -283,6 +320,7 @@ export function EditorPage() {
   return (
     <>
       <EditorHeader
+        hidden={editorHeaderHidden}
         menuItems={menuItems}
         onTogglePreviewMode={togglePreviewMode}
         previewMode={view.previewMode}
@@ -295,6 +333,7 @@ export function EditorPage() {
             editor={view}
             inputMethodEnabled={mobileInputMethodEnabled}
             mobileToolbarOverlayHeight={mobileToolbarOverlayHeight}
+            onContentScroll={handleEditorContentScroll}
           />
         ) : (
           <View style={styles.statusContainer}>
