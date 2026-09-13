@@ -54,6 +54,7 @@ function ToolbarIconButton({
       aria-label={accessibilityLabel}
       buttonSize={{ height: MOBILE_EDITOR_TOOLBAR_HEIGHT - 1, width: 42 }}
       disabled={disabled}
+      nativeHaptics
       onPress={onPress}
       size="xs"
       style={selected ? { backgroundColor: theme.muted } : undefined}
@@ -473,6 +474,7 @@ export function EditorToolbar({
               aria-label={label}
               disabled={disabled || itemDisabled}
               key={label}
+              nativeHaptics
               onPress={() => void executeCommand(command)}
               size="xs"
               variant="icon"
@@ -509,6 +511,7 @@ export function EditorToolbar({
                 <View key={label} style={styles.panelCell}>
                   <Button
                     disabled={disabled}
+                    nativeHaptics
                     onPress={() => {
                       void executeCommand(command);
                       if (activePanel === "insert") restoreKeyboard();
