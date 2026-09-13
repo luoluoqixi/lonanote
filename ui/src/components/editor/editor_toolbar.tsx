@@ -203,6 +203,7 @@ function MobileScrollableToolbarSurface({
       <GlassEffect
         glassEffectStyle={usesLiquidGlass ? "regular" : "none"}
         pointerEvents="none"
+        isInteractive={usesLiquidGlass}
         style={[
           styles.mobileToolbarSurfaceBackground,
           { borderRadius: toolbarHeight / 2 },
@@ -749,6 +750,7 @@ export function EditorToolbar({
             glassEffectStyle={usesLiquidGlass ? "regular" : "none"}
             pointerEvents="none"
             style={[styles.panelBackground, panelFallbackStyle]}
+            isInteractive
           />
           <ScrollView
             contentContainerStyle={[
