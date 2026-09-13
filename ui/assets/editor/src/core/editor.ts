@@ -622,6 +622,19 @@ export class LonaEditor {
     return true;
   };
 
+  /** 在当前用户手势中获取原生输入焦点，但不修改 CodeMirror 选区。 */
+  focusInput = (): void => {
+    if (!this.#editor) throw new Error("Editor not initialized");
+    this.#editor.focus();
+  };
+
+  /** 在当前用户手势中重置原生输入焦点，但不修改 CodeMirror 选区。 */
+  restoreInputFocus = (): void => {
+    if (!this.#editor) throw new Error("Editor not initialized");
+    this.#editor.contentDOM.blur();
+    this.focusInput();
+  };
+
   /** 让 CodeMirror 释放原生输入焦点，以便宿主安全收起软键盘。 */
   blur = () => {
     this.#editor?.contentDOM.blur();

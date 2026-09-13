@@ -48,7 +48,9 @@ bottomSafeArea.setAttribute("aria-hidden", "true");
 document.body.append(bottomSafeArea);
 
 const TOUCH_CLICK_COORDINATE_MAX_AGE_MS = 1_000;
+const TOUCH_TAP_MAX_MOVEMENT_PX = 12;
 let lastTouchEnd: { x: number; y: number; recordedAt: number } | null = null;
+let activeTouch: { identifier: number; x: number; y: number; moved: boolean } | null = null;
 let suppressNextEditorClickUntil = 0;
 
 function takeRecentTouchEnd() {
@@ -60,20 +62,88 @@ function takeRecentTouchEnd() {
     : null;
 }
 
+function isPurrMdImageWidget(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    target.closest(".purrmd-cm-image-wrap, .purrmd-cm-image-link-wrap") !== null
+  );
+}
+
+document.body.addEventListener(
+  "touchstart",
+  (event) => {
+    if (session?.runtime.platform !== "ios") {
+      activeTouch = null;
+      lastTouchEnd = null;
+      return;
+    }
+    if (event.touches.length !== 1 || event.changedTouches.length !== 1) {
+      activeTouch = null;
+      return;
+    }
+    const touch = event.changedTouches[0];
+    activeTouch = {
+      identifier: touch.identifier,
+      x: touch.clientX,
+      y: touch.clientY,
+      moved: false,
+    };
+  },
+  { capture: true, passive: true },
+);
+document.body.addEventListener(
+  "touchmove",
+  (event) => {
+    if (session?.runtime.platform !== "ios") return;
+    if (!activeTouch) return;
+    const touch = Array.from(event.changedTouches).find(
+      (candidate) => candidate.identifier === activeTouch?.identifier,
+    );
+    if (!touch) return;
+    if (
+      Math.hypot(touch.clientX - activeTouch.x, touch.clientY - activeTouch.y) >
+      TOUCH_TAP_MAX_MOVEMENT_PX
+    ) {
+      activeTouch.moved = true;
+    }
+  },
+  { capture: true, passive: true },
+);
 document.body.addEventListener(
   "touchend",
   (event) => {
-    if (event.changedTouches.length !== 1) {
+    if (session?.runtime.platform !== "ios") {
+      activeTouch = null;
       lastTouchEnd = null;
       return;
     }
     const touch = event.changedTouches[0];
+    const isTap =
+      event.changedTouches.length === 1 &&
+      event.touches.length === 0 &&
+      activeTouch?.identifier === touch?.identifier &&
+      !activeTouch.moved;
+    activeTouch = null;
+    if (!isTap || !touch) {
+      lastTouchEnd = null;
+      return;
+    }
     lastTouchEnd = { x: touch.clientX, y: touch.clientY, recordedAt: performance.now() };
+    // iOS 不将合成 mousedown 稳定地视为可唤起软键盘的用户操作，因此图片需在原始 touchend 中重置焦点。
+    if (
+      session?.runtime.platform === "ios" &&
+      event.target instanceof Element &&
+      isPurrMdImageWidget(event.target) &&
+      getRoot().contains(event.target)
+    ) {
+      session.editor.restoreInputFocus();
+    }
   },
   { capture: true, passive: true },
 );
 document.body.addEventListener("touchcancel", () => {
   lastTouchEnd = null;
+  activeTouch = null;
 });
 
 // iOS WKWebView 在隐藏 Markdown formatting 的 decoration 边界偶尔会把合成 mousedown 映射到文档起点。
@@ -91,6 +161,14 @@ document.body.addEventListener(
       return;
     if (!getRoot().contains(event.target)) return;
     if (!event.target.closest(".cm-line")) return;
+    // 分割线由 PurrMD 自己的 mousedown handler 选择完整 Markdown 文本，不能提前截断。
+    if (event.target.closest(".purrmd-cm-horizontal-rule")) return;
+    if (isPurrMdImageWidget(event.target)) {
+      takeRecentTouchEnd();
+      // 保留 PurrMD 的 mousedown 传播以选择完整图片 Markdown，但禁止 iOS 先闪出原生图片选区。
+      event.preventDefault();
+      return;
+    }
     if (event.target.closest('a, button, img, input, [contenteditable="false"], [role="button"]')) {
       return;
     }
@@ -562,6 +640,10 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
         [PurrMDFeatures.Image]: {
           proxyURL: (rawReference: string) =>
             resolveEditorResourceUrl(rawReference, currentSession.resources) ?? rawReference,
+          // PurrMD 图片 widget 自身只选择 Markdown 范围；Android 首次点击还需要在原始 mousedown 内获取输入焦点。
+          onImageDown: () => {
+            if (currentSession.runtime.platform === "android") currentSession.editor.focusInput();
+          },
         },
         [PurrMDFeatures.List]: {
           onTaskItemChecked: (checked: boolean) => emitEvent("task.toggled", { checked }),

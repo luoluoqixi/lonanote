@@ -308,8 +308,15 @@ export function EditorToolbar({
       updateLastKeyboardHeight(event.endCoordinates.height);
     });
     const didHideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+      if (currentOs === "ios") {
+        // 系统键盘的收起不会让 WKWebView 自动 blur。保留焦点会让图片等 widget 的下一次点击只更新选区。
+        void editorCommandCoordinator
+          .execute(editor.editorId, { type: "editor.blur" })
+          .catch(() => undefined);
+        return;
+      }
       if (currentOs === "android") {
-        setKeyboardVisible(false);
         if (activePanelRef.current !== null) {
           panelKeyboardHiddenRef.current = true;
         }
@@ -321,7 +328,13 @@ export function EditorToolbar({
       frameChangeSubscription.remove();
       didHideSubscription.remove();
     };
-  }, [currentOs, insets.bottom, onMobileInputMethodEnabledChange, updateActivePanel]);
+  }, [
+    currentOs,
+    editor.editorId,
+    insets.bottom,
+    onMobileInputMethodEnabledChange,
+    updateActivePanel,
+  ]);
 
   useEffect(() => {
     if (!isRestoringKeyboard) return;
