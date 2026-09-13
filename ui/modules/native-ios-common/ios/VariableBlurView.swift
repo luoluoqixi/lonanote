@@ -21,6 +21,7 @@ public final class VariableBlurView: ExpoView {
   private var observerToken: (any NSObjectProtocol)?
 
   private var blurRadius: CGFloat = 32
+  private var isBlurEnabled = true
   private var transitionHeight: CGFloat = 100
   private var direction: VariableBlurDirection = .topToBottom
 
@@ -95,6 +96,14 @@ public final class VariableBlurView: ExpoView {
     updateMask()
   }
 
+  public func setEnabled(_ enabled: Bool) {
+    isBlurEnabled = enabled
+    effectView.isHidden = !enabled
+    if enabled {
+      updateBlurRadius()
+    }
+  }
+
   private func updateMask() {
     guard bounds.height > 0 else { return }
 
@@ -114,6 +123,7 @@ public final class VariableBlurView: ExpoView {
   }
 
   private func updateBlurRadius() {
+    guard isBlurEnabled else { return }
     guard let backgroundLayer = effectView.layer.sublayers?.first else { return }
 
     backgroundLayer.filters?.removeAll { String(describing: $0) != "gaussianBlur" }

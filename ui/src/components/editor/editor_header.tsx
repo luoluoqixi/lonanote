@@ -6,16 +6,8 @@ import type {
 import { Stack, useRouter } from "expo-router";
 import { ChevronLeft, Ellipsis, Eye, Pencil } from "lucide-react-native";
 import { VariableBlurView } from "native-ios-common";
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Easing,
-  type StyleProp,
-  StyleSheet,
-  Text,
-  View,
-  type ViewStyle,
-} from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 import {
   Button,
   Dropdown,
@@ -70,38 +62,16 @@ function withBackgroundOpacity(color: string, opacity: number): string {
   return rgb == null ? value : `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${opacity})`;
 }
 
-function EditorHeaderBackground() {
+function EditorHeaderBackground({ hidden }: { hidden: boolean }) {
   if (!isIos() || isIos26Plus()) return null;
 
-  return <VariableBlurView blurRadius={24} style={styles.headerBlur} transitionHeight={100} />;
-}
-
-function EditorHeaderFade({
-  children,
-  hidden,
-  style,
-}: {
-  children: ReactNode;
-  hidden: boolean;
-  style?: StyleProp<ViewStyle>;
-}) {
-  const opacity = useRef(new Animated.Value(hidden ? 0 : 1)).current;
-
-  useEffect(() => {
-    const animation = Animated.timing(opacity, {
-      duration: hidden ? 140 : 180,
-      easing: hidden ? Easing.out(Easing.quad) : Easing.in(Easing.quad),
-      toValue: hidden ? 0 : 1,
-      useNativeDriver: true,
-    });
-    animation.start();
-    return () => animation.stop();
-  }, [hidden, opacity]);
-
   return (
-    <Animated.View pointerEvents={hidden ? "none" : "auto"} style={[style, { opacity }]}>
-      {children}
-    </Animated.View>
+    <VariableBlurView
+      blurRadius={24}
+      enabled={!hidden}
+      style={styles.headerBlur}
+      transitionHeight={100}
+    />
   );
 }
 
@@ -334,18 +304,18 @@ export function EditorHeader({
   const usesCustomBackButton = (isIos16Plus() && !isIos26Plus()) || isAndroid;
   const usesCustomHeaderActions = (isIos() && isIos16Plus() && !isIos26Plus()) || isAndroid;
   const usesCustomHeaderTitle = isIos() || isAndroid;
-  const handleTogglePreviewMode = () => {
+  const handleTogglePreviewMode = useCallback(() => {
     triggerNativeHaptics(true);
     onTogglePreviewMode();
-  };
-  const renderCustomBackButton = ({ canGoBack }: NativeStackHeaderBackProps) =>
-    canGoBack ? (
-      <EditorHeaderFade hidden={hidden}>
-        <EditorBackButton isAndroid={isAndroid} onPress={() => router.back()} />
-      </EditorHeaderFade>
-    ) : null;
-  const renderCustomHeaderActions = () => (
-    <EditorHeaderFade hidden={hidden}>
+  }, [onTogglePreviewMode]);
+  // hidden 时仅更新 headerOpacity；其余回调必须保持引用稳定，避免 iOS 26 重建 titleView 后回退到默认标题。
+  const renderCustomBackButton = useCallback(
+    ({ canGoBack }: NativeStackHeaderBackProps) =>
+      canGoBack ? <EditorBackButton isAndroid={isAndroid} onPress={() => router.back()} /> : null,
+    [isAndroid, router],
+  );
+  const renderCustomHeaderActions = useCallback(
+    () => (
       <View style={styles.headerActions}>
         <EditorPreviewButton
           isAndroid={isAndroid}
@@ -354,10 +324,16 @@ export function EditorHeader({
         />
         <EditorMenuButton isAndroid={isAndroid} menuItems={menuItems} />
       </View>
-    </EditorHeaderFade>
+    ),
+    [handleTogglePreviewMode, isAndroid, menuItems, previewMode],
   );
-  const headerControlsOptions: NativeStackNavigationOptions = usesNativeHeaderRightItems
-    ? {
+  const renderCustomHeaderTitle = useCallback(
+    ({ children }: { children: string }) => <EditorHeaderTitle>{children}</EditorHeaderTitle>,
+    [],
+  );
+  const headerControlsOptions = useMemo<NativeStackNavigationOptions>(() => {
+    if (usesNativeHeaderRightItems) {
+      return {
         ...(usesCustomBackButton
           ? {
               headerBackButtonDisplayMode: "minimal" as const,
@@ -387,25 +363,43 @@ export function EditorHeader({
             type: "menu" as const,
           },
         ]) as unknown as NonNullable<NativeStackNavigationOptions["unstable_headerRightItems"]>,
-      }
-    : usesCustomHeaderActions
-      ? {
-          headerBackButtonDisplayMode: "minimal",
-          headerBackVisible: false,
-          headerLeft: renderCustomBackButton,
-          headerRight: renderCustomHeaderActions,
-        }
-      : getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
-  const headerTitleOptions: NativeStackNavigationOptions = usesCustomHeaderTitle
-    ? {
-        headerTitle: ({ children }) => (
-          <EditorHeaderFade hidden={hidden}>
-            <EditorHeaderTitle>{children}</EditorHeaderTitle>
-          </EditorHeaderFade>
-        ),
-        ...(isAndroid ? { headerTitleAlign: "center" as const } : {}),
-      }
-    : {};
+      };
+    }
+
+    if (usesCustomHeaderActions) {
+      return {
+        headerBackButtonDisplayMode: "minimal",
+        headerBackVisible: false,
+        headerLeft: renderCustomBackButton,
+        headerRight: renderCustomHeaderActions,
+      };
+    }
+
+    return getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
+  }, [
+    menuItems,
+    previewMode,
+    renderCustomBackButton,
+    renderCustomHeaderActions,
+    theme.primary,
+    usesCustomBackButton,
+    usesCustomHeaderActions,
+    usesNativeHeaderRightItems,
+  ]);
+  const headerTitleOptions = useMemo<NativeStackNavigationOptions>(
+    () =>
+      usesCustomHeaderTitle
+        ? {
+            headerTitle: renderCustomHeaderTitle,
+            ...(isAndroid ? { headerTitleAlign: "center" as const } : {}),
+          }
+        : {},
+    [isAndroid, renderCustomHeaderTitle, usesCustomHeaderTitle],
+  );
+  const renderHeaderBackground = useCallback(
+    () => <EditorHeaderBackground hidden={hidden} />,
+    [hidden],
+  );
 
   return (
     <Stack.Screen
@@ -413,7 +407,7 @@ export function EditorHeader({
         contentStyle: {
           backgroundColor: theme.background,
         },
-        headerBackground: EditorHeaderBackground,
+        ...(!isIos26Plus() ? { headerBackground: renderHeaderBackground } : {}),
         headerBlurEffect: "none",
         headerCancelledTransitionGeometryFixEnabled: false,
         ...headerControlsOptions,
@@ -422,9 +416,9 @@ export function EditorHeader({
         headerStyle: {
           backgroundColor: "transparent",
         },
-        // 原生 header item 无法从 JS 驱动 opacity，统一通过导航栈整体隐藏 header，
-        // 从而保留各系统版本原生按钮与 Liquid Glass 外观。
-        headerShown: !hidden,
+        // 保持原生导航栏挂载，仅改变其可见度，避免重建标题、Liquid Glass 或滚动 inset。
+        headerOpacity: hidden ? 0 : 1,
+        headerShown: true,
         headerTransparent: true,
         statusBarHidden: isMobile() && hidden,
         title,

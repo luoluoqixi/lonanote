@@ -18,6 +18,10 @@ public final class NativeIosCommonModule: Module {
       Prop("direction") { (view: VariableBlurView, direction: String?) in
         view.setDirection(direction)
       }
+
+      Prop("enabled") { (view: VariableBlurView, enabled: Bool) in
+        view.setEnabled(enabled)
+      }
     }
   }
 }

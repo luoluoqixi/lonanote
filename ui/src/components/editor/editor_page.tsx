@@ -80,37 +80,41 @@ export function EditorPage() {
     settings.editorDefaults.autoSave || settings.editorDefaults.autoSaveOnFocusChange;
 
   const handleEditorContentScroll = useCallback(
-    ({ contentHeight, offsetY, viewportHeight }: {
+    ({
+      contentHeight,
+      offsetY,
+      viewportHeight,
+    }: {
       contentHeight: number;
       offsetY: number;
       viewportHeight: number;
     }) => {
-    if (!isMobile()) return;
+      if (!isMobile()) return;
 
-    const timestamp = Date.now();
-    const previousSample = editorScrollSampleRef.current;
-    const maxOffsetY = Math.max(0, contentHeight - viewportHeight);
-    const nearBottom = maxOffsetY - offsetY <= EDITOR_HEADER_BOTTOM_GUARD_PX;
-    editorScrollSampleRef.current = { nearBottom, offsetY, timestamp };
-    if (offsetY <= 0) {
-      setEditorHeaderHidden(false);
-      return;
-    }
-    if (!previousSample) return;
+      const timestamp = Date.now();
+      const previousSample = editorScrollSampleRef.current;
+      const maxOffsetY = Math.max(0, contentHeight - viewportHeight);
+      const nearBottom = maxOffsetY - offsetY <= EDITOR_HEADER_BOTTOM_GUARD_PX;
+      editorScrollSampleRef.current = { nearBottom, offsetY, timestamp };
+      if (offsetY <= 0) {
+        setEditorHeaderHidden(false);
+        return;
+      }
+      if (!previousSample) return;
 
-    const distance = offsetY - previousSample.offsetY;
-    const elapsed = timestamp - previousSample.timestamp;
-    if (distance < -EDITOR_HEADER_REVEAL_DELTA_PX) {
-      if (previousSample.nearBottom && nearBottom) return;
-      setEditorHeaderHidden(false);
-      return;
-    }
-    if (distance <= 0 || elapsed <= 0) return;
+      const distance = offsetY - previousSample.offsetY;
+      const elapsed = timestamp - previousSample.timestamp;
+      if (distance < -EDITOR_HEADER_REVEAL_DELTA_PX) {
+        if (previousSample.nearBottom && nearBottom) return;
+        setEditorHeaderHidden(false);
+        return;
+      }
+      if (distance <= 0 || elapsed <= 0) return;
 
-    const velocity = (distance / elapsed) * 1_000;
-    if (velocity >= EDITOR_HEADER_HIDE_VELOCITY_PX_PER_SECOND) {
-      setEditorHeaderHidden(true);
-    }
+      const velocity = (distance / elapsed) * 1_000;
+      if (velocity >= EDITOR_HEADER_HIDE_VELOCITY_PX_PER_SECOND) {
+        setEditorHeaderHidden(true);
+      }
     },
     [],
   );

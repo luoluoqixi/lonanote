@@ -12,6 +12,7 @@ export type { VariableBlurDirection, VariableBlurViewProps } from "./types";
 const VariableBlurViewFallback: ComponentType<VariableBlurViewProps> = function VariableBlurView({
   blurRadius: _blurRadius,
   direction: _direction,
+  enabled: _enabled,
   transitionHeight: _transitionHeight,
   ...props
 }) {

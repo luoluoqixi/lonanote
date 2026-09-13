@@ -4,11 +4,65 @@
 #   模糊、大标题目标页与导航栏高度不一致时自动介入，也支持 TS 显式开关。
 # - iOS 26：保持已有的系统返回指示图主题色修复。
 # - iOS 15+：在保留 UIBarButtonItem 原生菜单的前提下，为菜单展示提供一次 haptic 回调。
+# - 新增 headerOpacity：保持原生 navigation bar / toolbar 挂载，仅以 alpha 动画隐藏，避免重建标题和滚动 inset。
+diff --git a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
+index 9a9cbf31..5219a2db 100644
+--- a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
++++ b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
+@@ -43,6 +43,7 @@ class ScreenStackHeaderConfig(
+     private var backgroundColor: Int? = null
+     private var isBackButtonHidden = false
+     private var isShadowHidden = false
++    private var headerOpacity = 1f
+     private var isDestroyed = false
+     private var backButtonInCustomView = false
+     private var tintColor = 0
+@@ -225,9 +226,13 @@ class ScreenStackHeaderConfig(
+         }
+ 
+         if (toolbar.parent == null) {
+-            screenFragment?.setToolbar(toolbar)
++          screenFragment?.setToolbar(toolbar)
+         }
+ 
++        toolbar.animate().cancel()
++        toolbar.animate().alpha(headerOpacity).setDuration(180).start()
++        toolbar.isEnabled = headerOpacity > 0.01f
++
+         activity.setSupportActionBar(toolbar)
+         // non-null toolbar is set in the line above and it is used here
+         val actionBar = requireNotNull(activity.supportActionBar)
+@@ -406,6 +411,10 @@ class ScreenStackHeaderConfig(
+         isShadowHidden = hideShadow
+     }
+ 
++    fun setHeaderOpacity(headerOpacity: Float) {
++        this.headerOpacity = headerOpacity.coerceIn(0f, 1f)
++    }
++
+     fun setHideBackButton(hideBackButton: Boolean) {
+         isBackButtonHidden = hideBackButton
+     }
 diff --git a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
-index 22a5710c..0053dcf1 100644
+index 22a5710c..804e7f10 100644
 --- a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
 +++ b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
-@@ -212,6 +212,12 @@ class ScreenStackHeaderConfigViewManager :
+@@ -149,6 +149,14 @@ class ScreenStackHeaderConfigViewManager :
+         config.setHideShadow(hideShadow)
+     }
+ 
++    @ReactProp(name = "headerOpacity")
++    override fun setHeaderOpacity(
++        config: ScreenStackHeaderConfig,
++        headerOpacity: Float,
++    ) {
++        config.setHeaderOpacity(headerOpacity)
++    }
++
+     @ReactProp(name = "hideBackButton")
+     override fun setHideBackButton(
+         config: ScreenStackHeaderConfig,
+@@ -212,6 +220,12 @@ class ScreenStackHeaderConfigViewManager :
          value: Boolean,
      ) = Unit
  
@@ -22,10 +76,20 @@ index 22a5710c..0053dcf1 100644
          hashMapOf(
              HeaderAttachedEvent.EVENT_NAME to hashMapOf("registrationName" to "onAttached"),
 diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerDelegate.java b/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerDelegate.java
-index c5bc2301..6be70cd8 100644
+index c5bc2301..6c4e4848 100644
 --- a/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerDelegate.java
 +++ b/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerDelegate.java
-@@ -118,6 +118,9 @@ public class RNSScreenStackHeaderConfigManagerDelegate<T extends View, U extends
+@@ -52,6 +52,9 @@ public class RNSScreenStackHeaderConfigManagerDelegate<T extends View, U extends
+       case "hideShadow":
+         mViewManager.setHideShadow(view, value == null ? false : (boolean) value);
+         break;
++      case "headerOpacity":
++        mViewManager.setHeaderOpacity(view, value == null ? 1f : ((Double) value).floatValue());
++        break;
+       case "largeTitle":
+         mViewManager.setLargeTitle(view, value == null ? false : (boolean) value);
+         break;
+@@ -118,6 +121,9 @@ public class RNSScreenStackHeaderConfigManagerDelegate<T extends View, U extends
        case "synchronousShadowStateUpdatesEnabled":
          mViewManager.setSynchronousShadowStateUpdatesEnabled(view, value == null ? false : (boolean) value);
          break;
@@ -36,52 +100,111 @@ index c5bc2301..6be70cd8 100644
          mViewManager.setUserInterfaceStyle(view, (String) value);
          break;
 diff --git a/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerInterface.java b/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerInterface.java
-index b1e50ec2..c29f4625 100644
+index b1e50ec2..eb9d3764 100644
 --- a/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerInterface.java
 +++ b/android/src/paper/java/com/facebook/react/viewmanagers/RNSScreenStackHeaderConfigManagerInterface.java
-@@ -46,5 +46,6 @@ public interface RNSScreenStackHeaderConfigManagerInterface<T extends View> exte
+@@ -24,6 +24,7 @@ public interface RNSScreenStackHeaderConfigManagerInterface<T extends View> exte
+   void setDirection(T view, @Nullable String value);
+   void setHidden(T view, boolean value);
+   void setHideShadow(T view, boolean value);
++  void setHeaderOpacity(T view, float value);
+   void setLargeTitle(T view, boolean value);
+   void setLargeTitleFontFamily(T view, @Nullable String value);
+   void setLargeTitleFontSize(T view, int value);
+@@ -46,5 +47,6 @@ public interface RNSScreenStackHeaderConfigManagerInterface<T extends View> exte
    void setHeaderLeftBarButtonItems(T view, @Nullable ReadableArray value);
    void setHeaderRightBarButtonItems(T view, @Nullable ReadableArray value);
    void setSynchronousShadowStateUpdatesEnabled(T view, boolean value);
 +  void setCancelledTransitionHeaderGeometryFixMode(T view, int value);
    void setUserInterfaceStyle(T view, @Nullable String value);
  }
-diff --git a/ios/RNSScreenStack.mm b/ios/RNSScreenStack.mm
-index effc07fc..74a60220 100644
---- a/ios/RNSScreenStack.mm
-+++ b/ios/RNSScreenStack.mm
-@@ -908,6 +908,9 @@ - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+diff --git a/ios/RNSBarButtonItem.h b/ios/RNSBarButtonItem.h
+index ea5325ea..b2d1abc7 100644
+--- a/ios/RNSBarButtonItem.h
++++ b/ios/RNSBarButtonItem.h
+@@ -5,12 +5,14 @@
  
-     if ([self isInGestureResponseDistance:gestureRecognizer topScreen:topScreen]) {
-       _isFullWidthSwipingWithPanGesture = YES;
-+      [RNSScreenStackHeaderConfig
-+          prepareCancelledTransitionHeaderGeometryFixForNavigationBar:_controller.navigationBar
-+                                                           withConfig:topScreen.findHeaderConfig];
-       [self cancelTouchesInParent];
-       return YES;
+ typedef void (^RNSBarButtonItemAction)(NSString *buttonId);
+ typedef void (^RNSBarButtonMenuItemAction)(NSString *menuId);
++typedef void (^RNSBarButtonMenuOpenAction)(NSString *buttonId);
+ 
+ @interface RNSBarButtonItem : UIBarButtonItem
+ 
+ - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
+                         action:(RNSBarButtonItemAction)action
+                     menuAction:(RNSBarButtonMenuItemAction)menuAction
++                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
+                    imageLoader:(RCTImageLoader *)imageLoader;
+ 
+ @end
+diff --git a/ios/RNSBarButtonItem.mm b/ios/RNSBarButtonItem.mm
+index 0eb1f09d..6aeb32b3 100644
+--- a/ios/RNSBarButtonItem.mm
++++ b/ios/RNSBarButtonItem.mm
+@@ -14,6 +14,7 @@ @implementation RNSBarButtonItem {
+ - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
+                         action:(RNSBarButtonItemAction)action
+                     menuAction:(RNSBarButtonMenuItemAction)menuAction
++                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
+                    imageLoader:(RCTImageLoader *)imageLoader
+ {
+   self = [super init];
+@@ -115,7 +116,10 @@ - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
+   if (@available(tvOS 17.0, *)) {
+     NSDictionary *menu = dict[@"menu"];
+     if (menu) {
+-      self.menu = [[self class] initUIMenuWithDict:menu menuAction:menuAction imageLoader:imageLoader];
++      self.menu = [[self class] initUIMenuWithDict:menu
++                                        menuAction:menuAction
++                                    menuOpenAction:menuOpenAction
++                                       imageLoader:imageLoader];
      }
-@@ -927,6 +930,9 @@ - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
-           (!isRTL && isSlideFromLeft && edges == UIRectEdgeRight) ||
-           (isRTL && isSlideFromLeft && edges == UIRectEdgeLeft) || (!isRTL && edges == UIRectEdgeLeft);
-       if (isCorrectEdge) {
-+        [RNSScreenStackHeaderConfig
-+            prepareCancelledTransitionHeaderGeometryFixForNavigationBar:_controller.navigationBar
-+                                                             withConfig:topScreen.findHeaderConfig];
-         [self cancelTouchesInParent];
-         return YES;
-       }
-@@ -947,6 +953,9 @@ - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
- #endif // check for iOS >= 26
- 
-     // _UIParallaxTransitionPanGestureRecognizer (other...)
-+    [RNSScreenStackHeaderConfig
-+        prepareCancelledTransitionHeaderGeometryFixForNavigationBar:_controller.navigationBar
-+                                                         withConfig:topScreen.findHeaderConfig];
-     [self cancelTouchesInParent];
-     return YES;
    }
+ #endif
+@@ -163,6 +167,7 @@ + (void)resolveImageFromConfig:(NSDictionary *)dict
+ 
+ + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
+                     menuAction:(RNSBarButtonMenuItemAction)menuAction
++                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
+                    imageLoader:(RCTImageLoader *)imageLoader
+ {
+   NSArray *items = dict[@"items"];
+@@ -174,7 +179,10 @@ + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
+         UIAction *actionItem = [self createActionItemFromConfig:item menuAction:menuAction imageLoader:imageLoader];
+         [elements addObject:actionItem];
+       } else {
+-        UIMenu *childMenu = [self initUIMenuWithDict:item menuAction:menuAction imageLoader:imageLoader];
++        UIMenu *childMenu = [self initUIMenuWithDict:item
++                                           menuAction:menuAction
++                                      menuOpenAction:nil
++                                         imageLoader:imageLoader];
+         if (childMenu) {
+           [elements addObject:childMenu];
+         }
+@@ -188,6 +196,21 @@ + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
+                  image = img;
+                }];
+ 
++  NSString *menuOpenId = dict[@"menuOpenId"];
++  if (menuOpenId != nil && menuOpenAction != nil && @available(iOS 15.0, *)) {
++    NSArray<UIMenuElement *> *deferredElements = [elements copy];
++    UIDeferredMenuElement *deferredElement =
++        [UIDeferredMenuElement elementWithUncachedProvider:^(void (^completion)(NSArray<UIMenuElement *> *)) {
++          menuOpenAction(menuOpenId);
++          completion(deferredElements);
++        }];
++    return [UIMenu menuWithTitle:dict[@"title"]
++                            image:image
++                       identifier:nil
++                          options:RNSMakeUIMenuOptionsFromConfig(dict)
++                         children:@[ deferredElement ]];
++  }
++
+   return [UIMenu menuWithTitle:dict[@"title"]
+                          image:image
+                     identifier:nil
 diff --git a/ios/RNSScreenStackHeaderConfig.h b/ios/RNSScreenStackHeaderConfig.h
-index d5ea95f5..7f4e89e3 100644
+index d5ea95f5..71aaa82c 100644
 --- a/ios/RNSScreenStackHeaderConfig.h
 +++ b/ios/RNSScreenStackHeaderConfig.h
 @@ -18,6 +18,12 @@
@@ -97,7 +220,15 @@ index d5ea95f5..7f4e89e3 100644
  @interface RNSScreenStackHeaderConfig :
  #ifdef RCT_NEW_ARCH_ENABLED
      RCTViewComponentView
-@@ -68,6 +74,7 @@ NS_ASSUME_NONNULL_BEGIN
+@@ -56,6 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
+ @property (nonatomic) BOOL hideBackButton;
+ @property (nonatomic) BOOL disableBackButtonMenu;
+ @property (nonatomic) BOOL hideShadow;
++@property (nonatomic) CGFloat headerOpacity;
+ @property (nonatomic) BOOL translucent;
+ @property (nonatomic) BOOL backButtonInCustomView;
+ @property (nonatomic) UISemanticContentAttribute direction;
+@@ -68,6 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
  @property (nonatomic) RCTDirectEventBlock onPressHeaderBarButtonMenuItem;
  #endif
  @property (nonatomic, readwrite) BOOL synchronousShadowStateUpdatesEnabled;
@@ -105,7 +236,7 @@ index d5ea95f5..7f4e89e3 100644
  
  NS_ASSUME_NONNULL_END
  
-@@ -75,6 +82,9 @@ NS_ASSUME_NONNULL_END
+@@ -75,6 +83,9 @@ NS_ASSUME_NONNULL_END
                        animated:(BOOL)animated
                      withConfig:(nonnull RNSScreenStackHeaderConfig *)config;
  
@@ -116,7 +247,7 @@ index d5ea95f5..7f4e89e3 100644
   * Returns true iff subview of given `type` is present.
   *
 diff --git a/ios/RNSScreenStackHeaderConfig.mm b/ios/RNSScreenStackHeaderConfig.mm
-index 7d8e4947..6e2253f3 100644
+index 7d8e4947..b5bfa5a3 100644
 --- a/ios/RNSScreenStackHeaderConfig.mm
 +++ b/ios/RNSScreenStackHeaderConfig.mm
 @@ -33,6 +33,7 @@
@@ -236,7 +367,15 @@ index 7d8e4947..6e2253f3 100644
  
  #if !defined(RCT_NEW_ARCH_ENABLED)
  // Some RN private method hacking below. Couldn't figure out better way to access image data
-@@ -435,6 +538,27 @@ + (void)willShowViewController:(UIViewController *)vc
+@@ -133,6 +236,7 @@ - (instancetype)initWithBridge:(RCTBridge *)bridge
+ - (void)initProps
+ {
+   self.hidden = YES;
++  _headerOpacity = 1.0;
+   _reactSubviews = [NSMutableArray new];
+   _backTitleVisible = YES;
+   _blurEffect = RNSBlurEffectStyleNone;
+@@ -435,6 +539,27 @@ + (void)willShowViewController:(UIViewController *)vc
    }
  }
  
@@ -264,7 +403,7 @@ index 7d8e4947..6e2253f3 100644
  + (UINavigationBarAppearance *)buildAppearance:(UIViewController *)vc withConfig:(RNSScreenStackHeaderConfig *)config
  {
    UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
-@@ -536,6 +660,18 @@ + (UINavigationBarAppearance *)buildAppearance:(UIViewController *)vc withConfig
+@@ -536,6 +661,18 @@ + (UINavigationBarAppearance *)buildAppearance:(UIViewController *)vc withConfig
    UIImage *backButtonImage = [config loadBackButtonImageInViewController:vc];
    if (backButtonImage) {
      [appearance setBackIndicatorImage:backButtonImage transitionMaskImage:backButtonImage];
@@ -283,7 +422,22 @@ index 7d8e4947..6e2253f3 100644
    } else if (appearance.backIndicatorImage) {
      [appearance setBackIndicatorImage:nil transitionMaskImage:nil];
    }
-@@ -737,7 +873,42 @@ + (void)updateViewController:(UIViewController *)vc
+@@ -584,6 +721,14 @@ + (void)updateViewController:(UIViewController *)vc
+   }
+ 
+   navctr.navigationBar.overrideUserInterfaceStyle = config.userInterfaceStyle;
++  navctr.navigationBar.userInteractionEnabled = config.headerOpacity > 0.01;
++  [UIView animateWithDuration:0.18
++                   delay:0
++                 options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionCurveEaseInOut
++              animations:^{
++                navctr.navigationBar.alpha = config.headerOpacity;
++              }
++              completion:nil];
+ 
+ #if !TARGET_OS_TV
+   [config configureBackItem:prevItem withPrevVC:prevVC];
+@@ -737,7 +882,42 @@ + (void)updateViewController:(UIViewController *)vc
      // the transition animation block does not get triggered. This is ok, because with both of those
      // types of transitions there is no "shared" navigation bar that needs to be updated in an animated
      // way.
@@ -327,7 +481,7 @@ index 7d8e4947..6e2253f3 100644
          animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> _Nonnull context) {
            [self setAnimatedConfig:vc withConfig:config];
          }
-@@ -751,7 +922,12 @@ + (void)updateViewController:(UIViewController *)vc
+@@ -751,7 +931,12 @@ + (void)updateViewController:(UIViewController *)vc
                  break;
                }
              }
@@ -340,7 +494,7 @@ index 7d8e4947..6e2253f3 100644
            }
          }];
    } else {
-@@ -892,6 +1068,21 @@ - (void)applySemanticContentAttributeIfNeededToNavCtrl:(UINavigationController *
+@@ -892,6 +1077,21 @@ - (void)applySemanticContentAttributeIfNeededToNavCtrl:(UINavigationController *
              if (self.onPressHeaderBarButtonMenuItem && menuId) {
                self.onPressHeaderBarButtonMenuItem(@{@"menuId" : menuId});
              }
@@ -362,7 +516,15 @@ index 7d8e4947..6e2253f3 100644
  #endif
            }
  #if RCT_NEW_ARCH_ENABLED
-@@ -1197,6 +1388,8 @@ - (void)updateProps:(react::Props::Shared const &)props oldProps:(react::Props::
+@@ -1125,6 +1325,7 @@ - (void)updateProps:(react::Props::Shared const &)props oldProps:(react::Props::
+   _titleFontWeight = RCTNSStringFromStringNilIfEmpty(newScreenProps.titleFontWeight);
+   _titleFontSize = [self getFontSizePropValue:newScreenProps.titleFontSize];
+   _hideShadow = newScreenProps.hideShadow;
++  _headerOpacity = newScreenProps.headerOpacity;
+ 
+   _largeTitle = newScreenProps.largeTitle;
+   if (newScreenProps.largeTitleFontFamily != oldScreenProps.largeTitleFontFamily) {
+@@ -1197,6 +1398,8 @@ - (void)updateProps:(react::Props::Shared const &)props oldProps:(react::Props::
    }
  
    _synchronousShadowStateUpdatesEnabled = newScreenProps.synchronousShadowStateUpdatesEnabled;
@@ -371,7 +533,15 @@ index 7d8e4947..6e2253f3 100644
  
    _initialPropsSet = YES;
    _props = std::static_pointer_cast<react::RNSScreenStackHeaderConfigProps const>(props);
-@@ -1304,6 +1497,7 @@ - (RCTShadowView *)shadowView
+@@ -1294,6 +1497,7 @@ - (RCTShadowView *)shadowView
+ RCT_EXPORT_VIEW_PROPERTY(largeTitleHideShadow, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(hideBackButton, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(hideShadow, BOOL)
++RCT_EXPORT_VIEW_PROPERTY(headerOpacity, CGFloat)
+ RCT_EXPORT_VIEW_PROPERTY(backButtonInCustomView, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(disableBackButtonMenu, BOOL)
+ RCT_EXPORT_VIEW_PROPERTY(backButtonDisplayMode, UINavigationItemBackButtonDisplayMode)
+@@ -1304,6 +1508,7 @@ - (RCTShadowView *)shadowView
  RCT_EXPORT_VIEW_PROPERTY(headerRightBarButtonItems, NSArray)
  RCT_EXPORT_VIEW_PROPERTY(onPressHeaderBarButtonItem, RCTDirectEventBlock);
  RCT_EXPORT_VIEW_PROPERTY(onPressHeaderBarButtonMenuItem, RCTDirectEventBlock);
@@ -379,103 +549,19 @@ index 7d8e4947..6e2253f3 100644
  
  @end
  
-diff --git a/lib/commonjs/components/ScreenStackHeaderConfig.js b/lib/commonjs/components/ScreenStackHeaderConfig.js
-index e800f833..f4714d74 100644
---- a/lib/commonjs/components/ScreenStackHeaderConfig.js
-+++ b/lib/commonjs/components/ScreenStackHeaderConfig.js
-@@ -17,8 +17,10 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
- const ScreenStackHeaderSubview = exports.ScreenStackHeaderSubview = _ScreenStackHeaderSubviewNativeComponent.default;
- const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_react.default.forwardRef((props, ref) => {
-   const {
-+    cancelledTransitionHeaderGeometryFixEnabled,
-     headerLeftBarButtonItems,
--    headerRightBarButtonItems
-+    headerRightBarButtonItems,
-+    ...rest
-   } = props;
-   const preparedHeaderLeftBarButtonItems = headerLeftBarButtonItems && _utils.isHeaderBarButtonsAvailableForCurrentPlatform ? (0, _prepareHeaderBarButtonItems.prepareHeaderBarButtonItems)(headerLeftBarButtonItems, 'left') : undefined;
-   const preparedHeaderRightBarButtonItems = headerRightBarButtonItems && _utils.isHeaderBarButtonsAvailableForCurrentPlatform ? (0, _prepareHeaderBarButtonItems.prepareHeaderBarButtonItems)(headerRightBarButtonItems, 'right') : undefined;
-@@ -26,9 +28,11 @@ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_
- 
-   // Handle bar button item presses
-   const onPressHeaderBarButtonItem = hasHeaderBarButtonItems ? event => {
--    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && 'buttonId' in item && item.buttonId === event.nativeEvent.buttonId);
-+    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && ('buttonId' in item && item.buttonId === event.nativeEvent.buttonId || item.type === 'menu' && 'menuOpenId' in item && item.menuOpenId === event.nativeEvent.buttonId));
-     if (pressedItem && pressedItem.type === 'button' && pressedItem.onPress) {
-       pressedItem.onPress();
-+    } else if (pressedItem && pressedItem.type === 'menu') {
-+      pressedItem.onOpen?.();
-     }
-   } : undefined;
- 
-@@ -62,7 +66,8 @@ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_
-       }
-     }
-   } : undefined;
--  return /*#__PURE__*/_react.default.createElement(_ScreenStackHeaderConfigNativeComponent.default, _extends({}, props, {
-+  return /*#__PURE__*/_react.default.createElement(_ScreenStackHeaderConfigNativeComponent.default, _extends({}, rest, {
-+    cancelledTransitionHeaderGeometryFixMode: cancelledTransitionHeaderGeometryFixEnabled == null ? 0 : cancelledTransitionHeaderGeometryFixEnabled ? 1 : 2,
-     userInterfaceStyle: props.experimental_userInterfaceStyle,
-     headerLeftBarButtonItems: preparedHeaderLeftBarButtonItems,
-     headerRightBarButtonItems: preparedHeaderRightBarButtonItems,
-@@ -148,4 +153,4 @@ const styles = _reactNative.StyleSheet.create({
-     alignItems: _reactNative.Platform.OS === 'ios' ? 'center' : undefined
-   }
- });
--//# sourceMappingURL=ScreenStackHeaderConfig.js.map
-\ No newline at end of file
-+//# sourceMappingURL=ScreenStackHeaderConfig.js.map
-diff --git a/lib/module/components/ScreenStackHeaderConfig.js b/lib/module/components/ScreenStackHeaderConfig.js
-index 71cd007a..864458df 100644
---- a/lib/module/components/ScreenStackHeaderConfig.js
-+++ b/lib/module/components/ScreenStackHeaderConfig.js
-@@ -13,8 +13,10 @@ import { isHeaderBarButtonsAvailableForCurrentPlatform } from '../utils';
- export const ScreenStackHeaderSubview = ScreenStackHeaderSubviewNativeComponent;
- export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref) => {
-   const {
-+    cancelledTransitionHeaderGeometryFixEnabled,
-     headerLeftBarButtonItems,
--    headerRightBarButtonItems
-+    headerRightBarButtonItems,
-+    ...rest
-   } = props;
-   const preparedHeaderLeftBarButtonItems = headerLeftBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform ? prepareHeaderBarButtonItems(headerLeftBarButtonItems, 'left') : undefined;
-   const preparedHeaderRightBarButtonItems = headerRightBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform ? prepareHeaderBarButtonItems(headerRightBarButtonItems, 'right') : undefined;
-@@ -22,9 +24,11 @@ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref
- 
-   // Handle bar button item presses
-   const onPressHeaderBarButtonItem = hasHeaderBarButtonItems ? event => {
--    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && 'buttonId' in item && item.buttonId === event.nativeEvent.buttonId);
-+    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && ('buttonId' in item && item.buttonId === event.nativeEvent.buttonId || item.type === 'menu' && 'menuOpenId' in item && item.menuOpenId === event.nativeEvent.buttonId));
-     if (pressedItem && pressedItem.type === 'button' && pressedItem.onPress) {
-       pressedItem.onPress();
-+    } else if (pressedItem && pressedItem.type === 'menu') {
-+      pressedItem.onOpen?.();
-     }
-   } : undefined;
- 
-@@ -58,7 +62,8 @@ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref
-       }
-     }
-   } : undefined;
--  return /*#__PURE__*/React.createElement(ScreenStackHeaderConfigNativeComponent, _extends({}, props, {
-+  return /*#__PURE__*/React.createElement(ScreenStackHeaderConfigNativeComponent, _extends({}, rest, {
-+    cancelledTransitionHeaderGeometryFixMode: cancelledTransitionHeaderGeometryFixEnabled == null ? 0 : cancelledTransitionHeaderGeometryFixEnabled ? 1 : 2,
-     userInterfaceStyle: props.experimental_userInterfaceStyle,
-     headerLeftBarButtonItems: preparedHeaderLeftBarButtonItems,
-     headerRightBarButtonItems: preparedHeaderRightBarButtonItems,
-@@ -139,4 +144,4 @@ const styles = StyleSheet.create({
-     alignItems: Platform.OS === 'ios' ? 'center' : undefined
-   }
- });
--//# sourceMappingURL=ScreenStackHeaderConfig.js.map
-\ No newline at end of file
-+//# sourceMappingURL=ScreenStackHeaderConfig.js.map
 diff --git a/lib/typescript/fabric/ScreenStackHeaderConfigNativeComponent.d.ts b/lib/typescript/fabric/ScreenStackHeaderConfigNativeComponent.d.ts
-index 1e40b704..a32fd4e7 100644
+index 1e40b704..d83a6af8 100644
 --- a/lib/typescript/fabric/ScreenStackHeaderConfigNativeComponent.d.ts
 +++ b/lib/typescript/fabric/ScreenStackHeaderConfigNativeComponent.d.ts
-@@ -47,6 +47,7 @@ export interface NativeProps extends ViewProps {
+@@ -22,6 +22,7 @@ export interface NativeProps extends ViewProps {
+     color?: ColorValue;
+     direction?: CT.WithDefault<DirectionType, 'ltr'>;
+     hidden?: boolean;
++    headerOpacity?: CT.WithDefault<CT.Float, 1.0>;
+     hideShadow?: boolean;
+     largeTitle?: boolean;
+     largeTitleFontFamily?: string;
+@@ -47,8 +48,9 @@ export interface NativeProps extends ViewProps {
      onPressHeaderBarButtonItem?: CT.DirectEventHandler<OnPressHeaderBarButtonItemEvent>;
      onPressHeaderBarButtonMenuItem?: CT.DirectEventHandler<OnPressHeaderBarButtonMenuItemEvent>;
      synchronousShadowStateUpdatesEnabled?: CT.WithDefault<boolean, false>;
@@ -483,14 +569,24 @@ index 1e40b704..a32fd4e7 100644
      userInterfaceStyle?: CT.WithDefault<UserInterfaceStyle, 'unspecified'>;
  }
  declare const _default: import("react-native").HostComponent<NativeProps>;
+ export default _default;
+-//# sourceMappingURL=ScreenStackHeaderConfigNativeComponent.d.ts.map
+\ No newline at end of file
++//# sourceMappingURL=ScreenStackHeaderConfigNativeComponent.d.ts.map
 diff --git a/lib/typescript/types.d.ts b/lib/typescript/types.d.ts
-index 8ca5ccd6..a696f3bc 100644
+index 8ca5ccd6..69b9a2c6 100644
 --- a/lib/typescript/types.d.ts
 +++ b/lib/typescript/types.d.ts
-@@ -554,6 +554,14 @@ export interface ScreenStackProps extends ViewProps, GestureProps {
+@@ -554,6 +554,20 @@ export interface ScreenStackProps extends ViewProps, GestureProps {
      ref?: React.MutableRefObject<React.Ref<View>>;
  }
  export interface ScreenStackHeaderConfigProps extends ViewProps {
++    /**
++     * Controls header visibility without removing the native navigation bar or toolbar.
++     *
++     * @platform ios android
++     */
++    headerOpacity?: number;
 +    /**
 +     * Controls the iOS workaround for stale navigation bar background geometry after
 +     * cancelling an interactive transition. By default, it is enabled automatically
@@ -502,7 +598,7 @@ index 8ca5ccd6..a696f3bc 100644
      /**
       * Whether to show the back button with custom left side of the header.
       */
-@@ -1106,6 +1114,12 @@ export interface HeaderBarButtonItemSubmenu {
+@@ -1106,6 +1120,12 @@ export interface HeaderBarButtonItemSubmenu {
  }
  export interface HeaderBarButtonItemWithMenu extends SharedHeaderBarButtonItem {
      type: 'menu';
@@ -515,75 +611,26 @@ index 8ca5ccd6..a696f3bc 100644
      menu: {
          title?: string;
          items: (HeaderBarButtonItemMenuAction | HeaderBarButtonItemSubmenu)[];
-@@ -1171,4 +1185,4 @@ export interface GestureProviderProps extends GestureProps {
+@@ -1171,4 +1191,4 @@ export interface GestureProviderProps extends GestureProps {
  }
  export type * from './components/tabs';
  export type * from './components/shared/types';
 -//# sourceMappingURL=types.d.ts.map
 \ No newline at end of file
 +//# sourceMappingURL=types.d.ts.map
-diff --git a/src/components/ScreenStackHeaderConfig.tsx b/src/components/ScreenStackHeaderConfig.tsx
-index 6ca8ed74..ff74e01d 100644
---- a/src/components/ScreenStackHeaderConfig.tsx
-+++ b/src/components/ScreenStackHeaderConfig.tsx
-@@ -33,7 +33,12 @@ export const ScreenStackHeaderConfig = React.forwardRef<
-   View,
-   ScreenStackHeaderConfigProps
- >((props, ref) => {
--  const { headerLeftBarButtonItems, headerRightBarButtonItems } = props;
-+  const {
-+    cancelledTransitionHeaderGeometryFixEnabled,
-+    headerLeftBarButtonItems,
-+    headerRightBarButtonItems,
-+    ...rest
-+  } = props;
- 
-   const preparedHeaderLeftBarButtonItems =
-     headerLeftBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform
-@@ -57,8 +62,11 @@ export const ScreenStackHeaderConfig = React.forwardRef<
-         ].find(
-           item =>
-             item &&
--            'buttonId' in item &&
--            item.buttonId === event.nativeEvent.buttonId,
-+            (('buttonId' in item &&
-+              item.buttonId === event.nativeEvent.buttonId) ||
-+              (item.type === 'menu' &&
-+                'menuOpenId' in item &&
-+                item.menuOpenId === event.nativeEvent.buttonId)),
-         );
-         if (
-           pressedItem &&
-@@ -66,6 +74,8 @@ export const ScreenStackHeaderConfig = React.forwardRef<
-           pressedItem.onPress
-         ) {
-           pressedItem.onPress();
-+        } else if (pressedItem && pressedItem.type === 'menu') {
-+          pressedItem.onOpen?.();
-         }
-       }
-     : undefined;
-@@ -111,7 +121,14 @@ export const ScreenStackHeaderConfig = React.forwardRef<
- 
-   return (
-     <ScreenStackHeaderConfigNativeComponent
--      {...props}
-+      {...rest}
-+      cancelledTransitionHeaderGeometryFixMode={
-+        cancelledTransitionHeaderGeometryFixEnabled == null
-+          ? 0
-+          : cancelledTransitionHeaderGeometryFixEnabled
-+            ? 1
-+            : 2
-+      }
-       userInterfaceStyle={props.experimental_userInterfaceStyle}
-       headerLeftBarButtonItems={preparedHeaderLeftBarButtonItems}
-       headerRightBarButtonItems={preparedHeaderRightBarButtonItems}
 diff --git a/src/fabric/ScreenStackHeaderConfigNativeComponent.ts b/src/fabric/ScreenStackHeaderConfigNativeComponent.ts
-index fcbb2683..48bda605 100644
+index fcbb2683..a8cf28ce 100644
 --- a/src/fabric/ScreenStackHeaderConfigNativeComponent.ts
 +++ b/src/fabric/ScreenStackHeaderConfigNativeComponent.ts
-@@ -77,6 +77,7 @@ export interface NativeProps extends ViewProps {
+@@ -51,6 +51,7 @@ export interface NativeProps extends ViewProps {
+   color?: ColorValue;
+   direction?: CT.WithDefault<DirectionType, 'ltr'>;
+   hidden?: boolean;
++  headerOpacity?: CT.WithDefault<CT.Float, 1.0>;
+   hideShadow?: boolean;
+   largeTitle?: boolean;
+   largeTitleFontFamily?: string;
+@@ -77,6 +78,7 @@ export interface NativeProps extends ViewProps {
    onPressHeaderBarButtonItem?: CT.DirectEventHandler<OnPressHeaderBarButtonItemEvent>;
    onPressHeaderBarButtonMenuItem?: CT.DirectEventHandler<OnPressHeaderBarButtonMenuItemEvent>;
    synchronousShadowStateUpdatesEnabled?: CT.WithDefault<boolean, false>;
@@ -592,13 +639,19 @@ index fcbb2683..48bda605 100644
    // Experimental
    userInterfaceStyle?: CT.WithDefault<UserInterfaceStyle, 'unspecified'>;
 diff --git a/src/types.tsx b/src/types.tsx
-index a4798d99..0a06ad08 100644
+index a4798d99..cce7ff1e 100644
 --- a/src/types.tsx
 +++ b/src/types.tsx
-@@ -657,6 +657,14 @@ export interface ScreenStackProps extends ViewProps, GestureProps {
+@@ -657,6 +657,20 @@ export interface ScreenStackProps extends ViewProps, GestureProps {
  }
  
  export interface ScreenStackHeaderConfigProps extends ViewProps {
++  /**
++   * Controls header visibility without removing the native navigation bar or toolbar.
++   *
++   * @platform ios android
++   */
++  headerOpacity?: number;
 +  /**
 +   * Controls the iOS workaround for stale navigation bar background geometry after
 +   * cancelling an interactive transition. By default, it is enabled automatically
@@ -610,7 +663,7 @@ index a4798d99..0a06ad08 100644
    /**
     * Whether to show the back button with custom left side of the header.
     */
-@@ -1227,6 +1235,12 @@ export interface HeaderBarButtonItemSubmenu {
+@@ -1227,6 +1241,12 @@ export interface HeaderBarButtonItemSubmenu {
  
  export interface HeaderBarButtonItemWithMenu extends SharedHeaderBarButtonItem {
    type: 'menu';
@@ -623,184 +676,3 @@ index a4798d99..0a06ad08 100644
    menu: {
      title?: string;
      items: (HeaderBarButtonItemMenuAction | HeaderBarButtonItemSubmenu)[];
-diff --git a/src/components/helpers/prepareHeaderBarButtonItems.ts b/src/components/helpers/prepareHeaderBarButtonItems.ts
-index bf43f2d8..d9771f53 100644
---- a/src/components/helpers/prepareHeaderBarButtonItems.ts
-+++ b/src/components/helpers/prepareHeaderBarButtonItems.ts
-@@ -93,9 +93,14 @@ export const prepareHeaderBarButtonItems = (
-       };
-     }
-     if (item.type === 'menu') {
-+      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
-       return {
-         ...processedItem,
--        menu: prepareMenu(item.menu, index, side),
-+        menuOpenId,
-+        menu: {
-+          ...prepareMenu(item.menu, index, side),
-+          menuOpenId,
-+        },
-       };
-     }
-     return null;
-diff --git a/ios/RNSBarButtonItem.h b/ios/RNSBarButtonItem.h
-index ea5325ea..b2d1abc7 100644
---- a/ios/RNSBarButtonItem.h
-+++ b/ios/RNSBarButtonItem.h
-@@ -5,12 +5,14 @@
- 
- typedef void (^RNSBarButtonItemAction)(NSString *buttonId);
- typedef void (^RNSBarButtonMenuItemAction)(NSString *menuId);
-+typedef void (^RNSBarButtonMenuOpenAction)(NSString *buttonId);
- 
- @interface RNSBarButtonItem : UIBarButtonItem
- 
- - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
-                         action:(RNSBarButtonItemAction)action
-                     menuAction:(RNSBarButtonMenuItemAction)menuAction
-+                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
-                    imageLoader:(RCTImageLoader *)imageLoader;
- 
- @end
-diff --git a/ios/RNSBarButtonItem.mm b/ios/RNSBarButtonItem.mm
-index 0eb1f09d..68867ddb 100644
---- a/ios/RNSBarButtonItem.mm
-+++ b/ios/RNSBarButtonItem.mm
-@@ -14,6 +14,7 @@ @implementation RNSBarButtonItem {
- - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
-                         action:(RNSBarButtonItemAction)action
-                     menuAction:(RNSBarButtonMenuItemAction)menuAction
-+                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
-                    imageLoader:(RCTImageLoader *)imageLoader
- {
-   self = [super init];
-@@ -111,11 +112,15 @@ - (instancetype)initWithConfig:(NSDictionary<NSString *, id> *)dict
-     self.accessibilityHint = dict[@"accessibilityHint"];
-   }
- 
-+  NSDictionary *menu = dict[@"menu"];
-+
- #if !TARGET_OS_TV || __TV_OS_VERSION_MAX_ALLOWED >= 170000
-   if (@available(tvOS 17.0, *)) {
--    NSDictionary *menu = dict[@"menu"];
-     if (menu) {
--      self.menu = [[self class] initUIMenuWithDict:menu menuAction:menuAction imageLoader:imageLoader];
-+      self.menu = [[self class] initUIMenuWithDict:menu
-+                                        menuAction:menuAction
-+                                    menuOpenAction:menuOpenAction
-+                                       imageLoader:imageLoader];
-     }
-   }
- #endif
-@@ -163,6 +168,7 @@ + (void)resolveImageFromConfig:(NSDictionary *)dict
- 
- + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
-                     menuAction:(RNSBarButtonMenuItemAction)menuAction
-+                menuOpenAction:(RNSBarButtonMenuOpenAction)menuOpenAction
-                    imageLoader:(RCTImageLoader *)imageLoader
- {
-   NSArray *items = dict[@"items"];
-@@ -174,7 +180,10 @@ + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
-         UIAction *actionItem = [self createActionItemFromConfig:item menuAction:menuAction imageLoader:imageLoader];
-         [elements addObject:actionItem];
-       } else {
--        UIMenu *childMenu = [self initUIMenuWithDict:item menuAction:menuAction imageLoader:imageLoader];
-+        UIMenu *childMenu = [self initUIMenuWithDict:item
-+                                           menuAction:menuAction
-+                                      menuOpenAction:nil
-+                                         imageLoader:imageLoader];
-         if (childMenu) {
-           [elements addObject:childMenu];
-         }
-@@ -188,6 +197,23 @@ + (UIMenu *)initUIMenuWithDict:(NSDictionary<NSString *, id> *)dict
-                  image = img;
-                }];
- 
-+  NSString *menuOpenId = dict[@"menuOpenId"];
-+  if (menuOpenId != nil && menuOpenAction != nil) {
-+    if (@available(iOS 15.0, *)) {
-+      NSArray<UIMenuElement *> *deferredElements = [elements copy];
-+      UIDeferredMenuElement *deferredElement =
-+          [UIDeferredMenuElement elementWithUncachedProvider:^(void (^completion)(NSArray<UIMenuElement *> *)) {
-+            menuOpenAction(menuOpenId);
-+            completion(deferredElements);
-+          }];
-+      return [UIMenu menuWithTitle:dict[@"title"]
-+                              image:image
-+                         identifier:nil
-+                            options:RNSMakeUIMenuOptionsFromConfig(dict)
-+                           children:@[ deferredElement ]];
-+    }
-+  }
-+
-   return [UIMenu menuWithTitle:dict[@"title"]
-                          image:image
-                     identifier:nil
-diff --git a/lib/module/components/helpers/prepareHeaderBarButtonItems.js b/lib/module/components/helpers/prepareHeaderBarButtonItems.js
-index 52cf911d..f6146e9b 100644
---- a/lib/module/components/helpers/prepareHeaderBarButtonItems.js
-+++ b/lib/module/components/helpers/prepareHeaderBarButtonItems.js
-@@ -74,12 +74,17 @@ export const prepareHeaderBarButtonItems = (barButtonItems, side) => {
-       };
-     }
-     if (item.type === 'menu') {
-+      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
-       return {
-         ...processedItem,
--        menu: prepareMenu(item.menu, index, side)
-+        menuOpenId,
-+        menu: {
-+          ...prepareMenu(item.menu, index, side),
-+          menuOpenId
-+        }
-       };
-     }
-     return null;
-   });
- };
--//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
-\ No newline at end of file
-+//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
-diff --git a/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js b/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
-index 3abad100..afb33e6f 100644
---- a/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
-+++ b/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
-@@ -80,13 +80,18 @@ const prepareHeaderBarButtonItems = (barButtonItems, side) => {
-       };
-     }
-     if (item.type === 'menu') {
-+      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
-       return {
-         ...processedItem,
--        menu: prepareMenu(item.menu, index, side)
-+        menuOpenId,
-+        menu: {
-+          ...prepareMenu(item.menu, index, side),
-+          menuOpenId
-+        }
-       };
-     }
-     return null;
-   });
- };
- exports.prepareHeaderBarButtonItems = prepareHeaderBarButtonItems;
--//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
-\ No newline at end of file
-+//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
-diff --git a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubview.kt b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubview.kt
-index 0004273f..88c421ff 100644
---- a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubview.kt
-+++ b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubview.kt
-@@ -8,6 +8,12 @@ import com.facebook.react.bridge.ReactContext
- class ScreenStackHeaderSubview(
-     context: ReactContext?,
- ) : FabricEnabledHeaderSubviewViewGroup(context) {
-+    init {
-+        // Header 的自定义子视图可以绘制按钮的外部阴影，不应在自身边界裁剪。
-+        clipChildren = false
-+        clipToPadding = false
-+    }
-+
-     private var reactWidth = 0
-     private var reactHeight = 0
- 

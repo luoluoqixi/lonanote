@@ -1,6 +1,8 @@
 # @react-navigation/native-stack 补丁：
 # - 暴露 headerCancelledTransitionGeometryFixEnabled，并将该三态选项传递给
 #   react-native-screens：未传为自动，true 为强制启用，false 为显式禁用。
+# - 新增 headerOpacity，将 navigation options 透传到 react-native-screens；保持原生
+#   navigation bar / toolbar 挂载，仅以 alpha 动画隐藏，避免标题和滚动 inset 重建。
 diff --git a/lib/module/views/useHeaderConfigProps.js b/lib/module/views/useHeaderConfigProps.js
 index a56cb12fc83995973fad7d9e851d6fdbaf999a17..8fa9a6cb8bcddd9fbbfa0e5c1cc701e9b97dbb8a 100644
 --- a/lib/module/views/useHeaderConfigProps.js
@@ -82,3 +84,77 @@ index a7e3004318753aa0757b038da1e7fbc8663a7f02..39acad4804f99f23c48916cc26b2cbe0
      backTitle: headerBackTitle,
      backTitleVisible: isBackButtonDisplayModeAvailable
        ? undefined
+diff --git a/lib/module/views/useHeaderConfigProps.js b/lib/module/views/useHeaderConfigProps.js
+index 1c35fca2..377ec5d3 100644
+--- a/lib/module/views/useHeaderConfigProps.js
++++ b/lib/module/views/useHeaderConfigProps.js
+@@ -146,6 +146,7 @@ export function useHeaderConfigProps({
+   headerLeft,
+   headerRight,
+   headerShown,
++  headerOpacity,
+   headerStyle,
+   headerBlurEffect,
+   headerTintColor,
+@@ -349,6 +350,7 @@ export function useHeaderConfigProps({
+     direction,
+     disableBackButtonMenu: headerBackButtonMenuEnabled === false,
+     hidden: headerShown === false,
++    headerOpacity,
+     hideBackButton: headerBackVisible === false,
+     hideShadow: headerShadowVisible === false || headerBackground != null || headerTransparent && headerShadowVisible !== true,
+     largeTitle: headerLargeTitleEnabled,
+diff --git a/lib/typescript/src/types.d.ts b/lib/typescript/src/types.d.ts
+index 7085fe31..ba748056 100644
+--- a/lib/typescript/src/types.d.ts
++++ b/lib/typescript/src/types.d.ts
+@@ -235,6 +235,12 @@ export type NativeStackNavigationOptions = {
+      * Setting this to `false` hides the header.
+      */
+     headerShown?: boolean;
++    /**
++     * Controls header visibility without unmounting the native navigation bar.
++     *
++     * @platform ios android
++     */
++    headerOpacity?: number;
+     /**
+      * Style object for header. Supported properties:
+      * - backgroundColor
+diff --git a/src/types.tsx b/src/types.tsx
+index bfc80609..4aece053 100644
+--- a/src/types.tsx
++++ b/src/types.tsx
+@@ -279,6 +279,12 @@ export type NativeStackNavigationOptions = {
+    * Setting this to `false` hides the header.
+    */
+   headerShown?: boolean;
++  /**
++   * Controls header visibility without unmounting the native navigation bar.
++   *
++   * @platform ios android
++   */
++  headerOpacity?: number;
+   /**
+    * Style object for header. Supported properties:
+    * - backgroundColor
+diff --git a/src/views/useHeaderConfigProps.tsx b/src/views/useHeaderConfigProps.tsx
+index 39acad48..4e7a93a8 100644
+--- a/src/views/useHeaderConfigProps.tsx
++++ b/src/views/useHeaderConfigProps.tsx
+@@ -207,6 +207,7 @@ export function useHeaderConfigProps({
+   headerLeft,
+   headerRight,
+   headerShown,
++  headerOpacity,
+   headerStyle,
+   headerBlurEffect,
+   headerTintColor,
+@@ -513,6 +514,7 @@ export function useHeaderConfigProps({
+     direction,
+     disableBackButtonMenu: headerBackButtonMenuEnabled === false,
+     hidden: headerShown === false,
++    headerOpacity,
+     hideBackButton: headerBackVisible === false,
+     hideShadow:
+       headerShadowVisible === false ||
