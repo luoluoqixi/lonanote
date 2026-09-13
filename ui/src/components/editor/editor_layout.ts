@@ -7,6 +7,9 @@ export const MOBILE_EDITOR_TOOLBAR_HEIGHT = 42;
 /** iOS 26+ Liquid Glass 工具栏高度。 */
 export const MOBILE_EDITOR_LIQUID_GLASS_TOOLBAR_HEIGHT = 46;
 
+/** iOS 26+ Liquid Glass 按钮的按压透明度。 */
+export const MOBILE_EDITOR_LIQUID_GLASS_PRESS_OPTICY = 0.88;
+
 export function getMobileEditorToolbarHeight(isIos26OrLater: boolean): number {
   return isIos26OrLater ? MOBILE_EDITOR_LIQUID_GLASS_TOOLBAR_HEIGHT : MOBILE_EDITOR_TOOLBAR_HEIGHT;
 }

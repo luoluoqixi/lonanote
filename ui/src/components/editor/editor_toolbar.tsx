@@ -37,6 +37,7 @@ import type { DocumentModel, EditorViewSession } from "@/stores/editor";
 
 import {
   MOBILE_EDITOR_KEYBOARD_RESTORE_TIMEOUT_MS,
+  MOBILE_EDITOR_LIQUID_GLASS_PRESS_OPTICY,
   MOBILE_EDITOR_TOOLBAR_HEIGHT,
   MOBILE_EDITOR_TOOLBAR_PADDING_VERTICAL,
   MOBILE_EDITOR_TOOLBAR_PANEL_FALLBACK_HEIGHT,
@@ -82,6 +83,8 @@ type ToolbarIconButtonProps = {
   onPress: () => void;
   simple?: boolean;
   selected?: boolean;
+  suppressPressedBackground?: boolean;
+  trackPressedState?: boolean;
   usesLiquidGlass?: boolean;
 };
 
@@ -92,6 +95,8 @@ function ToolbarIconButton({
   onPress,
   simple = false,
   selected,
+  suppressPressedBackground = false,
+  trackPressedState = false,
   usesLiquidGlass = false,
 }: ToolbarIconButtonProps) {
   const theme = useUiTheme();
@@ -109,20 +114,22 @@ function ToolbarIconButton({
       disabled={disabled}
       nativeHaptics
       onPress={onPress}
-      onPressIn={simple ? () => setPressed(true) : undefined}
-      onPressOut={simple ? () => setPressed(false) : undefined}
+      onPressIn={simple || trackPressedState ? () => setPressed(true) : undefined}
+      onPressOut={simple || trackPressedState ? () => setPressed(false) : undefined}
       size="xs"
       style={
         isPanelToggle
           ? ({ pressed }) => (selected || pressed ? { backgroundColor: theme.accent } : undefined)
-          : simple
-            ? ({ pressed }) => ({
-                backgroundColor:
-                  usesLiquidGlass || !pressed
-                    ? "transparent"
-                    : withBackgroundOpacity(theme.accent, TOOLBAR_SURFACE_FALLBACK_OPACITY),
-              })
-            : undefined
+          : suppressPressedBackground
+            ? { backgroundColor: "transparent" }
+            : simple
+              ? ({ pressed }) => ({
+                  backgroundColor:
+                    usesLiquidGlass || !pressed
+                      ? "transparent"
+                      : withBackgroundOpacity(theme.accent, TOOLBAR_SURFACE_FALLBACK_OPACITY),
+                })
+              : undefined
       }
       variant="icon"
     >
@@ -318,15 +325,31 @@ function MobileToolbarRow({
             accessibilityLabel="撤销"
             disabled={disabled || !canUndo}
             onPress={() => void executeCommand({ type: "history.undo" })}
+            suppressPressedBackground={usesLiquidGlass}
+            trackPressedState={usesLiquidGlass}
           >
-            <Undo2 color={theme.foreground} size={23} />
+            {(pressed) => (
+              <Undo2
+                color={theme.foreground}
+                opacity={pressed ? MOBILE_EDITOR_LIQUID_GLASS_PRESS_OPTICY : 1}
+                size={23}
+              />
+            )}
           </ToolbarIconButton>
           <ToolbarIconButton
             accessibilityLabel="重做"
             disabled={disabled || !canRedo}
             onPress={() => void executeCommand({ type: "history.redo" })}
+            suppressPressedBackground={usesLiquidGlass}
+            trackPressedState={usesLiquidGlass}
           >
-            <Redo2 color={theme.foreground} size={23} />
+            {(pressed) => (
+              <Redo2
+                color={theme.foreground}
+                opacity={pressed ? MOBILE_EDITOR_LIQUID_GLASS_PRESS_OPTICY : 1}
+                size={23}
+              />
+            )}
           </ToolbarIconButton>
         </MobileToolbarSurface>
         <MobileToolbarSurface
