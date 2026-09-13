@@ -1,3 +1,4 @@
+import { useIsFocused } from "@react-navigation/native";
 import {
   Baseline,
   Bold,
@@ -197,6 +198,7 @@ export function EditorToolbar({
 }) {
   const theme = useUiTheme();
   const insets = useSafeAreaInsets();
+  const isScreenFocused = useIsFocused();
   const currentOs = os();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<ToolbarPanel | null>(null);
@@ -210,12 +212,18 @@ export function EditorToolbar({
   const [isRestoringKeyboard, setIsRestoringKeyboard] = useState(false);
   const activePanelRef = useRef<ToolbarPanel | null>(null);
   const freezeKeyboardHeightRef = useRef(false);
+  const isScreenFocusedRef = useRef(isScreenFocused);
   const panelKeyboardHiddenRef = useRef(false);
+  isScreenFocusedRef.current = isScreenFocused;
   const updateActivePanel = useCallback((panel: ToolbarPanel | null) => {
     activePanelRef.current = panel;
     setActivePanel(panel);
   }, []);
   const handleKeyboardPhaseChange = useCallback((phase: KeyboardVisibilityPhase) => {
+    if (!isScreenFocusedRef.current) {
+      setKeyboardVisible(false);
+      return;
+    }
     setKeyboardVisible(phase !== "hidden");
     if (phase === "visible") {
       freezeKeyboardHeightRef.current = false;
@@ -224,6 +232,17 @@ export function EditorToolbar({
     }
   }, []);
   useKeyboardVisibility({ onPhaseChange: handleKeyboardPhaseChange });
+
+  useEffect(() => {
+    if (isScreenFocused || !isMobile()) return;
+
+    setKeyboardVisible(false);
+    updateActivePanel(null);
+    setRestoringPanel(null);
+    setIsRestoringKeyboard(false);
+    freezeKeyboardHeightRef.current = false;
+    panelKeyboardHiddenRef.current = false;
+  }, [isScreenFocused, updateActivePanel]);
 
   const disabled =
     editor.bridgeState !== "ready" ||
@@ -265,13 +284,19 @@ export function EditorToolbar({
       panelKeyboardHiddenRef.current = false;
       onMobileInputMethodEnabledChange?.(true);
     };
-    const willShowSubscription = Keyboard.addListener("keyboardWillShow", (event) => {
+    const handleKeyboardShow = (height: number) => {
+      if (isScreenFocusedRef.current) {
+        // iOS 页面转场后 keyboard phase 可能仍停留在 visible，需用原生事件重新同步显示状态。
+        setKeyboardVisible(true);
+      }
       leavePanelForKeyboard();
-      updateLastKeyboardHeight(event.endCoordinates.height);
+      updateLastKeyboardHeight(height);
+    };
+    const willShowSubscription = Keyboard.addListener("keyboardWillShow", (event) => {
+      handleKeyboardShow(event.endCoordinates.height);
     });
     const didShowSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
-      leavePanelForKeyboard();
-      updateLastKeyboardHeight(event.endCoordinates.height);
+      handleKeyboardShow(event.endCoordinates.height);
     });
     const frameChangeSubscription = Keyboard.addListener("keyboardWillChangeFrame", (event) => {
       updateLastKeyboardHeight(event.endCoordinates.height);
