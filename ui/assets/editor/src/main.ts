@@ -96,10 +96,11 @@ document.body.addEventListener(
     }
     const touchEnd = takeRecentTouchEnd();
     if (!touchEnd) return;
+    // 无法可靠定位时不吞掉原生手势，否则空白/装饰间隙点击会失去输入焦点，iOS 不会弹出软键盘。
+    if (!session.editor.focus({ x: touchEnd.x, y: touchEnd.y })) return;
     event.preventDefault();
     event.stopPropagation();
     suppressNextEditorClickUntil = performance.now() + TOUCH_CLICK_COORDINATE_MAX_AGE_MS;
-    session.editor.focus({ x: touchEnd.x, y: touchEnd.y });
   },
   { capture: true },
 );
