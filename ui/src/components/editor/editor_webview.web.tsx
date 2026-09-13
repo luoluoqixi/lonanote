@@ -4,7 +4,7 @@ import { useUiColorScheme, useUiTheme } from "rn-ui-kit";
 
 import { isDev, os } from "@/api/common/platform";
 import editorHtml from "@/assets/editor/dist/index.html";
-import type { EditorPlatform, EditorSemanticColors } from "@/assets/editor/src/bridge/protocol";
+import type { EditorPlatform } from "@/assets/editor/src/bridge/protocol";
 import {
   EditorBridgeClient,
   createEditorBridgeBootstrap,
@@ -20,6 +20,7 @@ import { useGlobalSettings } from "@/hooks/settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
 import { getEditorDevUrl } from "./editor_dev_url";
+import { resolveEditorSemanticColors } from "./theme/editor_theme";
 
 type EditorWebViewProps = {
   document: DocumentModel;
@@ -43,17 +44,6 @@ function getEditorPlatform(): EditorPlatform {
   return "web";
 }
 
-function getSemanticColors(theme: ReturnType<typeof useUiTheme>): EditorSemanticColors {
-  return {
-    background: theme.background,
-    foreground: theme.foreground,
-    primary: theme.primary,
-    muted: theme.muted,
-    mutedForeground: theme.mutedForeground,
-    border: theme.border,
-  };
-}
-
 export function EditorWebView({ document, editor }: EditorWebViewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const bridgeClientRef = useRef<EditorBridgeClient | null>(null);
@@ -66,6 +56,10 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
   }, []);
   const theme = useUiTheme();
   const colorScheme = useUiColorScheme();
+  const editorColors = useMemo(
+    () => resolveEditorSemanticColors(theme, colorScheme),
+    [colorScheme, theme],
+  );
   const { settings } = useGlobalSettings();
   const onResourceActivated = useEditorResourceActivation(document);
   const resourceContext = useEditorResourceContext(document);
@@ -81,7 +75,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
         {
           platform: getEditorPlatform(),
           colorScheme,
-          colors: getSemanticColors(theme),
+          colors: editorColors,
           safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
           contentInsets: { top: 0, right: 0, bottom: 0, left: 0 },
           locale: navigator.language || "en",
@@ -101,7 +95,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
         },
         resourceContext.context,
       ),
-    [colorScheme, document, editor, resourceContext.context, settings, theme],
+    [colorScheme, document, editor, editorColors, resourceContext.context, settings],
   );
   const initializePayloadRef = useRef(initializePayload);
   initializePayloadRef.current = initializePayload;
@@ -217,9 +211,9 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
   }, [bridgeClient, initializePayload.preferences, initializePayload.runtime]);
 
   const source = isDev() ? (getEditorDevUrl() ?? editorHtml) : editorHtml;
-  if (resourceContext.isLoading) {
-    return <div aria-label="编辑器资源加载中" style={iframeStyle} />;
-  }
+  const resolvedIframeStyle = { ...iframeStyle, backgroundColor: editorColors.canvas };
+  if (resourceContext.isLoading)
+    return <div aria-label="编辑器资源加载中" style={resolvedIframeStyle} />;
   return (
     <iframe
       aria-label="编辑器"
@@ -231,7 +225,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
       }}
       ref={iframeRef}
       src={source}
-      style={iframeStyle}
+      style={resolvedIframeStyle}
       title="编辑器"
     />
   );

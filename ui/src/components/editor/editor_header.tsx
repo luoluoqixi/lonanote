@@ -359,6 +359,9 @@ export function EditorHeader({
   return (
     <Stack.Screen
       options={{
+        contentStyle: {
+          backgroundColor: theme.background,
+        },
         headerBackground: EditorHeaderBackground,
         headerBlurEffect: "none",
         headerCancelledTransitionGeometryFixEnabled: false,

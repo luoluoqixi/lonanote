@@ -56,12 +56,29 @@ export type EditorInsets = {
 };
 
 export type EditorSemanticColors = {
-  background: string;
-  foreground: string;
-  primary: string;
-  muted: string;
-  mutedForeground: string;
+  canvas: string;
+  text: string;
+  textMuted: string;
+  accent: string;
+  accentForeground: string;
+  caret: string;
+  selection: string;
+  selectionInactive: string;
+  gutterText: string;
+  gutterActiveText: string;
   border: string;
+  codeBackground: string;
+  codeText: string;
+  formatting: string;
+  link: string;
+  quoteBorder: string;
+  highlightBackground: string;
+  checkboxBackground: string;
+  checkboxBorder: string;
+  checkboxChecked: string;
+  checkboxCheckmark: string;
+  scrollbarThumb: string;
+  scrollbarThumbActive: string;
 };
 
 export type EditorPreferences = {
@@ -214,6 +231,36 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
+const editorSemanticColorKeys = [
+  "canvas",
+  "text",
+  "textMuted",
+  "accent",
+  "accentForeground",
+  "caret",
+  "selection",
+  "selectionInactive",
+  "gutterText",
+  "gutterActiveText",
+  "border",
+  "codeBackground",
+  "codeText",
+  "formatting",
+  "link",
+  "quoteBorder",
+  "highlightBackground",
+  "checkboxBackground",
+  "checkboxBorder",
+  "checkboxChecked",
+  "checkboxCheckmark",
+  "scrollbarThumb",
+  "scrollbarThumbActive",
+] as const satisfies readonly (keyof EditorSemanticColors)[];
+
+function isEditorSemanticColors(value: unknown): value is EditorSemanticColors {
+  return isRecord(value) && editorSemanticColorKeys.every((key) => isNonEmptyString(value[key]));
+}
+
 function hasOwn(value: UnknownRecord, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
@@ -317,7 +364,7 @@ export function isEditorInitializePayload(value: unknown): value is EditorInitia
     Number.isSafeInteger(runtime.revision) &&
     isNonEmptyString(runtime.platform) &&
     (runtime.colorScheme === "light" || runtime.colorScheme === "dark") &&
-    isRecord(runtime.colors) &&
+    isEditorSemanticColors(runtime.colors) &&
     isRecord(runtime.safeAreaInsets) &&
     isRecord(runtime.contentInsets) &&
     isNonEmptyString(runtime.locale) &&
@@ -346,7 +393,7 @@ export function isEditorRuntimeUpdatePayload(value: unknown): value is EditorRun
     Number.isSafeInteger(value.revision) &&
     isNonEmptyString(value.platform) &&
     (value.colorScheme === "light" || value.colorScheme === "dark") &&
-    isRecord(value.colors) &&
+    isEditorSemanticColors(value.colors) &&
     isRecord(value.safeAreaInsets) &&
     isRecord(value.contentInsets) &&
     isNonEmptyString(value.locale) &&

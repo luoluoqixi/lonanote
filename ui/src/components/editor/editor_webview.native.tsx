@@ -8,7 +8,7 @@ import { useUiColorScheme, useUiTheme } from "rn-ui-kit";
 import { type KeyboardVisibilityPhase, useKeyboardAvoidance } from "rn-ui-kit/core";
 
 import { isDev, os, systemLocale } from "@/api/common/platform";
-import type { EditorPlatform, EditorSemanticColors } from "@/assets/editor/src/bridge/protocol";
+import type { EditorPlatform } from "@/assets/editor/src/bridge/protocol";
 import {
   EditorBridgeClient,
   createEditorBridgeBootstrap,
@@ -27,6 +27,7 @@ import { getEditorDevUrl } from "./editor_dev_url";
 import { EDITOR_HTML, initEditorHtml } from "./editor_html.native";
 import { MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT } from "./editor_layout";
 import { onError, onHttpError, onLoad, onLoadEnd, onLoadStart } from "./editor_webview_event";
+import { resolveEditorSemanticColors } from "./theme/editor_theme";
 
 type EditorWebViewProps = {
   document: DocumentModel;
@@ -49,8 +50,12 @@ function getSource(devMode: boolean) {
 
 function createBootstrapInjection(
   identity: ReturnType<typeof createEditorBridgeBootstrap>,
+  canvas: string,
+  text: string,
+  colorScheme: "light" | "dark",
 ): string {
-  return `window.__LONANOTE_EDITOR_BRIDGE_BOOTSTRAP__=${JSON.stringify(identity)};true;`;
+  const bootstrap = JSON.stringify({ canvas, colorScheme, identity, text });
+  return `(function(){var bootstrap=${bootstrap};window.__LONANOTE_EDITOR_BRIDGE_BOOTSTRAP__=bootstrap.identity;var root=document.documentElement;if(root){root.style.setProperty("--lonanote-editor-canvas",bootstrap.canvas);root.style.setProperty("--lonanote-editor-text",bootstrap.text);root.style.colorScheme=bootstrap.colorScheme;root.style.backgroundColor=bootstrap.canvas;root.style.color=bootstrap.text;}})();true;`;
 }
 
 function getEditorPlatform(): EditorPlatform {
@@ -89,20 +94,17 @@ function getScrollIndicatorBottomInset(
     : safeAreaBottom;
 }
 
-function getSemanticColors(theme: ReturnType<typeof useUiTheme>): EditorSemanticColors {
-  return {
-    background: theme.background,
-    foreground: theme.foreground,
-    primary: theme.primary,
-    muted: theme.muted,
-    mutedForeground: theme.mutedForeground,
-    border: theme.border,
-  };
-}
-
-function RenderLoading() {
+function RenderLoading({
+  backgroundColor,
+  overlay = false,
+}: {
+  backgroundColor: string;
+  overlay?: boolean;
+}) {
   return (
-    <View style={styles.statusContainer}>
+    <View
+      style={[styles.statusContainer, overlay ? styles.loadingOverlay : null, { backgroundColor }]}
+    >
       <ActivityIndicator />
     </View>
   );
@@ -119,6 +121,10 @@ export function EditorWebView({
   const insets = useSafeAreaInsets();
   const theme = useUiTheme();
   const colorScheme = useUiColorScheme();
+  const editorColors = useMemo(
+    () => resolveEditorSemanticColors(theme, colorScheme),
+    [colorScheme, theme],
+  );
   const { settings } = useGlobalSettings();
   const onResourceActivated = useEditorResourceActivation(document);
   const resourceContext = useEditorResourceContext(document);
@@ -180,7 +186,7 @@ export function EditorWebView({
         {
           platform: getEditorPlatform(),
           colorScheme,
-          colors: getSemanticColors(theme),
+          colors: editorColors,
           safeAreaInsets: insets,
           contentInsets: {
             top: headerHeight,
@@ -220,7 +226,7 @@ export function EditorWebView({
       mobileToolbarOverlayHeight,
       resourceContext.context,
       settings,
-      theme,
+      editorColors,
     ],
   );
   const initializePayloadRef = useRef(initializePayload);
@@ -350,17 +356,17 @@ export function EditorWebView({
 
   if (hasLoadingError) {
     return (
-      <View style={styles.statusContainer}>
-        <Text style={styles.statusText}>编辑器资源加载失败</Text>
+      <View style={[styles.statusContainer, { backgroundColor: editorColors.canvas }]}>
+        <Text style={{ color: editorColors.textMuted }}>编辑器资源加载失败</Text>
       </View>
     );
   }
 
   if (resourceContext.isLoading) {
-    return <RenderLoading />;
+    return <RenderLoading backgroundColor={editorColors.canvas} />;
   }
   if (!inited) {
-    return <RenderLoading />;
+    return <RenderLoading backgroundColor={editorColors.canvas} />;
   }
 
   return (
@@ -368,10 +374,16 @@ export function EditorWebView({
       key={identity.channelId}
       ref={webViewRef}
       decelerationRate={0.998}
-      injectedJavaScriptBeforeContentLoaded={createBootstrapInjection(identity)}
+      injectedJavaScriptBeforeContentLoaded={createBootstrapInjection(
+        identity,
+        editorColors.canvas,
+        editorColors.text,
+        colorScheme,
+      )}
       injectedJavaScriptObject={{ lonanoteEditorBridge: identity }}
       hideKeyboardAccessoryView={os() === "ios"}
       inputMethodEnabled={inputMethodEnabled}
+      indicatorStyle={colorScheme === "dark" ? "white" : "black"}
       javaScriptEnabled
       onContentProcessDidTerminate={restartSurface}
       onError={(event) => {
@@ -392,7 +404,7 @@ export function EditorWebView({
       onRenderProcessGone={restartSurface}
       originWhitelist={["*"]}
       removeIosKeyboardObserver={os() === "ios"}
-      renderLoading={RenderLoading}
+      renderLoading={() => <RenderLoading backgroundColor={editorColors.canvas} overlay />}
       scrollIndicatorInsets={{
         top: headerHeight,
         bottom: getScrollIndicatorBottomInset(
@@ -405,19 +417,21 @@ export function EditorWebView({
       setBuiltInZoomControls={false}
       setDisplayZoomControls={false}
       source={getSource(devMode)}
-      style={styles.webView}
+      startInLoadingState
+      containerStyle={{ backgroundColor: editorColors.canvas }}
+      style={[styles.webView, { backgroundColor: editorColors.canvas }]}
     />
   );
 }
 
 const styles = StyleSheet.create({
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
   statusContainer: {
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
-  },
-  statusText: {
-    color: "#6f7177",
   },
   webView: {
     flex: 1,

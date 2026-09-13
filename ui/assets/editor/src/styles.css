@@ -12,10 +12,21 @@
   --lonanote-cm-editor-content-padding-left: 18px;
   --lonanote-cm-editor-content-padding-right: 20px;
 
+  --lonanote-editor-canvas: #ffffff;
+  --lonanote-editor-text: #202124;
+  --lonanote-editor-text-muted: #71717a;
+  --lonanote-editor-accent: #2563eb;
+  --lonanote-editor-selection: #dbeafe;
+  --lonanote-editor-selection-inactive: #f4f4f5;
+  --lonanote-editor-gutter-text: #71717a;
+  --lonanote-editor-border: #e4e4e7;
+  --lonanote-editor-scrollbar-thumb: #e4e4e7;
+  --lonanote-editor-scrollbar-thumb-active: #71717a;
+
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #202124;
-  background: #ffffff;
+  color: var(--lonanote-editor-text);
+  background: var(--lonanote-editor-canvas);
 }
 
 * {
@@ -36,7 +47,8 @@ html {
 
 body {
   overflow: visible;
-  background: transparent;
+  color: var(--lonanote-editor-text);
+  background: var(--lonanote-editor-canvas);
 }
 
 #editor {
@@ -48,6 +60,8 @@ body {
     calc(var(--lonanote-editor-content-left) + var(--lonanote-editor-content-left-basic));
   overflow: visible;
   cursor: text;
+  color: var(--lonanote-editor-text);
+  background: var(--lonanote-editor-canvas);
 }
 
 #editor-bottom-safe-area {
@@ -91,11 +105,22 @@ body {
 
 .cm-focused .cm-selectionBackground,
 .cm-selectionBackground {
-  background: rgba(74, 144, 226, 0.28) !important;
+  background: var(--lonanote-editor-selection) !important;
 }
 
 .cm-editor .cm-gutters {
-  background-color: transparent;
+  color: var(--lonanote-editor-gutter-text);
+  background-color: var(--lonanote-editor-canvas);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--lonanote-editor-scrollbar-thumb);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background: var(--lonanote-editor-scrollbar-thumb-active);
 }
 
 .cm-editor .cm-gutters.cm-gutters-before {

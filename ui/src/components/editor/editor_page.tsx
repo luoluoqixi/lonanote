@@ -288,7 +288,7 @@ export function EditorPage() {
         previewMode={view.previewMode}
         title={document.title}
       />
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         {document.loadState === "ready" ? (
           <EditorWebView
             document={document}
@@ -299,7 +299,9 @@ export function EditorPage() {
         ) : (
           <View style={styles.statusContainer}>
             {document.loadState === "error" ? (
-              <Text style={styles.statusText}>{document.loadError ?? "读取文档失败"}</Text>
+              <Text style={[styles.statusText, { color: theme.mutedForeground }]}>
+                {document.loadError ?? "读取文档失败"}
+              </Text>
             ) : (
               <ActivityIndicator />
             )}
@@ -362,6 +364,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   statusText: {
-    color: "#6f7177",
+    textAlign: "center",
   },
 });

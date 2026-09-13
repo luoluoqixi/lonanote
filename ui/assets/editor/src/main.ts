@@ -49,10 +49,7 @@ document.body.append(bottomSafeArea);
 
 /** 空白 body 区域点击时，将焦点交给距离触点最近的文档位置。 */
 document.body.addEventListener("click", (event) => {
-  if (
-    (event.target !== document.body && event.target !== getRoot()) ||
-    !session
-  ) {
+  if ((event.target !== document.body && event.target !== getRoot()) || !session) {
     return;
   }
   session.editor.focus({ x: event.clientX, y: event.clientY });
@@ -108,24 +105,62 @@ function isStandaloneDevelopmentMode(): boolean {
 }
 
 function createStandaloneInitializeRequest(): EditorBridgeRequest {
-  const darkMode = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  const requestedTheme = new URLSearchParams(window.location.search).get("theme");
+  const darkMode =
+    requestedTheme === "dark" ||
+    (requestedTheme !== "light" &&
+      (window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false));
   const colorScheme = darkMode ? "dark" : "light";
   const colors = darkMode
     ? {
-        background: "#111113",
-        foreground: "#f4f4f5",
-        primary: "#f472b6",
-        muted: "#27272a",
-        mutedForeground: "#a1a1aa",
+        canvas: "#111113",
+        text: "#f4f4f5",
+        textMuted: "#a1a1aa",
+        accent: "#c4b5fd",
+        accentForeground: "#000000",
+        caret: "#c4b5fd",
+        selection: "#4c3f70",
+        selectionInactive: "#27272a",
+        gutterText: "#a1a1aa",
+        gutterActiveText: "#f4f4f5",
         border: "#3f3f46",
+        codeBackground: "#27272a",
+        codeText: "#f4f4f5",
+        formatting: "#c4b5fd",
+        link: "#c4b5fd",
+        quoteBorder: "#c4b5fd",
+        highlightBackground: "#665200",
+        checkboxBackground: "#111113",
+        checkboxBorder: "#c4b5fd",
+        checkboxChecked: "#c4b5fd",
+        checkboxCheckmark: "#000000",
+        scrollbarThumb: "#3f3f46",
+        scrollbarThumbActive: "#a1a1aa",
       }
     : {
-        background: "#ffffff",
-        foreground: "#18181b",
-        primary: "#db2777",
-        muted: "#f4f4f5",
-        mutedForeground: "#71717a",
+        canvas: "#ffffff",
+        text: "#18181b",
+        textMuted: "#71717a",
+        accent: "#7c3aed",
+        accentForeground: "#ffffff",
+        caret: "#7c3aed",
+        selection: "#ede9fe",
+        selectionInactive: "#f4f4f5",
+        gutterText: "#71717a",
+        gutterActiveText: "#18181b",
         border: "#e4e4e7",
+        codeBackground: "#f4f4f5",
+        codeText: "#18181b",
+        formatting: "#7c3aed",
+        link: "#7c3aed",
+        quoteBorder: "#7c3aed",
+        highlightBackground: "#fff0a3",
+        checkboxBackground: "#ffffff",
+        checkboxBorder: "#7c3aed",
+        checkboxChecked: "#7c3aed",
+        checkboxCheckmark: "#ffffff",
+        scrollbarThumb: "#e4e4e7",
+        scrollbarThumbActive: "#71717a",
       };
 
   return {
@@ -274,9 +309,41 @@ function flushPendingDocumentChange(currentSession: SurfaceSession): void {
 
 function applyRuntimeStyles(runtime: EditorRuntimeUpdatePayload): void {
   const editorRoot = getRoot();
-  editorRoot.style.setProperty("--lonanote-editor-background", runtime.colors.background);
-  editorRoot.style.setProperty("--lonanote-editor-foreground", runtime.colors.foreground);
-  editorRoot.style.setProperty("--lonanote-editor-primary", runtime.colors.primary);
+  const colors = runtime.colors;
+  const variableTarget = document.documentElement.style;
+  const colorVariables = {
+    "--lonanote-editor-canvas": colors.canvas,
+    "--lonanote-editor-text": colors.text,
+    "--lonanote-editor-text-muted": colors.textMuted,
+    "--lonanote-editor-accent": colors.accent,
+    "--lonanote-editor-accent-foreground": colors.accentForeground,
+    "--lonanote-editor-caret": colors.caret,
+    "--lonanote-editor-selection": colors.selection,
+    "--lonanote-editor-selection-inactive": colors.selectionInactive,
+    "--lonanote-editor-gutter-text": colors.gutterText,
+    "--lonanote-editor-gutter-active-text": colors.gutterActiveText,
+    "--lonanote-editor-border": colors.border,
+    "--lonanote-editor-code-background": colors.codeBackground,
+    "--lonanote-editor-code-text": colors.codeText,
+    "--lonanote-editor-formatting": colors.formatting,
+    "--lonanote-editor-link": colors.link,
+    "--lonanote-editor-quote-border": colors.quoteBorder,
+    "--lonanote-editor-highlight-background": colors.highlightBackground,
+    "--lonanote-editor-checkbox-background": colors.checkboxBackground,
+    "--lonanote-editor-checkbox-border": colors.checkboxBorder,
+    "--lonanote-editor-checkbox-checked": colors.checkboxChecked,
+    "--lonanote-editor-checkbox-checkmark": colors.checkboxCheckmark,
+    "--lonanote-editor-scrollbar-thumb": colors.scrollbarThumb,
+    "--lonanote-editor-scrollbar-thumb-active": colors.scrollbarThumbActive,
+  };
+  for (const [name, value] of Object.entries(colorVariables)) {
+    variableTarget.setProperty(name, value);
+  }
+  document.documentElement.style.colorScheme = runtime.colorScheme;
+  document.documentElement.style.backgroundColor = colors.canvas;
+  document.body.style.backgroundColor = colors.canvas;
+  editorRoot.style.backgroundColor = colors.canvas;
+  editorRoot.style.color = colors.text;
   editorRoot.style.setProperty("--lonanote-editor-content-top", `${runtime.contentInsets.top}px`);
   editorRoot.style.setProperty(
     "--lonanote-editor-content-right",
@@ -297,6 +364,7 @@ function applyPresentation(currentSession: SurfaceSession): void {
     lineWrapping: currentSession.preferences.lineWrapping,
     sourceMode: currentSession.preferences.sourceMode,
     theme: currentSession.runtime.colorScheme,
+    themeColors: currentSession.runtime.colors,
   });
 }
 
@@ -415,6 +483,7 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
       enableLineNumbers: payload.preferences.lineNumbers,
     },
     theme: payload.runtime.colorScheme,
+    themeColors: payload.runtime.colors,
     markdownConfig: {
       formattingDisplayMode: payload.preferences.sourceMode ? "show" : "auto",
       defaultSlashMenu: { show: false },

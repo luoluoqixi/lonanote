@@ -107,6 +107,63 @@ export interface LonaEditorConfig {
   detectLanguage?: (filePath: string) => LanguageSupport[] | LanguageSupport | null;
   markdownConfig?: PurrMDConfig;
   markdownTheme?: PurrMDThemeConfig;
+  themeColors?: LonaEditorThemeColors;
+}
+
+export type LonaEditorThemeColors = {
+  canvas: string;
+  text: string;
+  textMuted: string;
+  accent: string;
+  accentForeground: string;
+  caret: string;
+  selection: string;
+  selectionInactive: string;
+  gutterText: string;
+  gutterActiveText: string;
+  border: string;
+  codeBackground: string;
+  codeText: string;
+  formatting: string;
+  link: string;
+  quoteBorder: string;
+  highlightBackground: string;
+  checkboxBackground: string;
+  checkboxBorder: string;
+  checkboxChecked: string;
+  checkboxCheckmark: string;
+  scrollbarThumb: string;
+  scrollbarThumbActive: string;
+};
+
+const lonaEditorThemeColorKeys = [
+  "canvas",
+  "text",
+  "textMuted",
+  "accent",
+  "accentForeground",
+  "caret",
+  "selection",
+  "selectionInactive",
+  "gutterText",
+  "gutterActiveText",
+  "border",
+  "codeBackground",
+  "codeText",
+  "formatting",
+  "link",
+  "quoteBorder",
+  "highlightBackground",
+  "checkboxBackground",
+  "checkboxBorder",
+  "checkboxChecked",
+  "checkboxCheckmark",
+  "scrollbarThumb",
+  "scrollbarThumbActive",
+] as const satisfies readonly (keyof LonaEditorThemeColors)[];
+
+function areThemeColorsEqual(left: LonaEditorThemeColors, right: LonaEditorThemeColors): boolean {
+  return lonaEditorThemeColorKeys.every((key) => left[key] === right[key]);
 }
 
 export interface LonaEditorStatusInfo {
@@ -133,6 +190,7 @@ export interface LonaEditorPresentationOptions {
   lineWrapping: boolean;
   sourceMode: boolean;
   theme: "light" | "dark";
+  themeColors: LonaEditorThemeColors;
 }
 
 export type LonaEditorViewportInsets = {
@@ -152,6 +210,7 @@ export class LonaEditor {
   readonly #lineWrappingEx: Compartment;
   readonly #lineNumbersEx: Compartment;
   readonly #languageEx: Compartment;
+  readonly #themeEx: Compartment;
   readonly #events: LonaEditorEventListeners;
   #presentation: LonaEditorPresentationOptions | null = null;
   #presentationBase: Pick<
@@ -164,6 +223,7 @@ export class LonaEditor {
     this.#lineWrappingEx = new Compartment();
     this.#lineNumbersEx = new Compartment();
     this.#languageEx = new Compartment();
+    this.#themeEx = new Compartment();
     this.#events = {};
   }
 
@@ -188,6 +248,7 @@ export class LonaEditor {
     theme,
     markdownConfig,
     markdownTheme,
+    themeColors,
   }: LonaEditorConfig) => {
     const {
       disableAll = false,
@@ -231,11 +292,13 @@ export class LonaEditor {
       this.#onUpdate(update);
     });
     const resolvedTheme = typeof theme === "string" ? theme : theme?.mode || "light";
+    if (!themeColors) throw new Error("Editor theme colors are required");
     this.#presentation = {
       lineNumbers: !disableAll && enableLineNumbers,
       lineWrapping: !disableAll && enableLineWrapping,
       sourceMode: markdownConfig?.formattingDisplayMode === "show",
       theme: resolvedTheme === "dark" ? "dark" : "light",
+      themeColors,
     };
     this.#presentationBase = { filePath, detectLanguage, markdownConfig, markdownTheme };
 
@@ -286,6 +349,8 @@ export class LonaEditor {
         !disableAll && enableFoldGutter ? foldGutter() : null,
         ...(extensions || []),
         this.#languageEx.of(this.#createLanguageExtensions()),
+        // 放在 Markdown extension 之后，以最终语义颜色覆盖 PurrMD 默认变量。
+        this.#themeEx.of(this.#createThemeExtension()),
         keymap.of(
           [
             // 保存功能
@@ -422,9 +487,13 @@ export class LonaEditor {
     if (previous.lineNumbers !== options.lineNumbers) {
       effects.push(this.#lineNumbersEx.reconfigure(options.lineNumbers ? lineNumbers() : []));
     }
-    if (previous.sourceMode !== options.sourceMode || previous.theme !== options.theme) {
+    const themeChanged =
+      previous.theme !== options.theme ||
+      !areThemeColorsEqual(previous.themeColors, options.themeColors);
+    if (previous.sourceMode !== options.sourceMode || themeChanged) {
       effects.push(this.#languageEx.reconfigure(this.#createLanguageExtensions()));
     }
+    if (themeChanged) effects.push(this.#themeEx.reconfigure(this.#createThemeExtension()));
     if (effects.length > 0) this.#editor.dispatch({ effects });
   };
 
@@ -444,10 +513,74 @@ export class LonaEditor {
           theme: {
             mode: this.#presentation.theme === "dark" ? "dark" : "light",
             ...(markdownTheme || {}),
+            primaryColor: this.#presentation.themeColors.accent,
+            formattingColor: this.#presentation.themeColors.formatting,
           },
           config: resolvedMarkdownConfig,
         });
     return Array.isArray(language) ? language : language ? [language] : [];
+  }
+
+  #createThemeExtension(): Extension {
+    if (!this.#presentation) return [];
+    const colors = this.#presentation.themeColors;
+    return EditorView.theme(
+      {
+        "&": {
+          backgroundColor: `${colors.canvas} !important`,
+          color: `${colors.text} !important`,
+        },
+        ".cm-content": {
+          caretColor: colors.caret,
+          "--purrmd-primary-color": colors.accent,
+          "--purrmd-formatting-color": colors.formatting,
+          "--purrmd-code-block-bg-color": colors.codeBackground,
+          "--purrmd-code-block-info-bg-color-hover": colors.selectionInactive,
+          "--purrmd-inline-code-bg-color": colors.codeBackground,
+          "--purrmd-inline-code-color": colors.codeText,
+          "--purrmd-formatting-inline-code-color": colors.formatting,
+          "--purrmd-highlight-bg-color": colors.highlightBackground,
+          "--purrmd-formatting-blockquote-border-color": colors.quoteBorder,
+          "--purrmd-horizontal-rule-color": colors.border,
+          "--purrmd-link-color": colors.link,
+          "--purrmd-link-url-color": colors.link,
+          "--purrmd-link-title-color": colors.link,
+          "--purrmd-formatting-link-color": colors.formatting,
+          "--purrmd-checkbox-color": colors.checkboxBackground,
+          "--purrmd-checkbox-border-color": colors.checkboxBorder,
+          "--purrmd-checkbox-checked-color": colors.checkboxChecked,
+          "--purrmd-checkbox-checked-border-color": colors.checkboxChecked,
+          "--purrmd-image-fallback-bg-color": colors.codeBackground,
+          "--purrmd-image-fallback-color": colors.textMuted,
+        },
+        ".cm-cursor, .cm-dropCursor": {
+          borderLeftColor: colors.caret,
+        },
+        "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": {
+          backgroundColor: `${colors.selection} !important`,
+        },
+        "&:not(.cm-focused) .cm-selectionBackground": {
+          backgroundColor: `${colors.selectionInactive} !important`,
+        },
+        ".cm-content ::selection": {
+          backgroundColor: colors.selection,
+        },
+        ".cm-gutters": {
+          backgroundColor: colors.canvas,
+          borderColor: colors.border,
+          color: colors.gutterText,
+        },
+        ".cm-activeLineGutter": {
+          backgroundColor: "transparent",
+          color: colors.gutterActiveText,
+        },
+        // PurrMD 0.1.5 的 checkmark 仍固定为白色；待其公开变量后删除兼容覆盖。
+        ".purrmd-cm-formatting-checkbox:checked::after": {
+          backgroundColor: colors.checkboxCheckmark,
+        },
+      },
+      { dark: this.#presentation.theme === "dark" },
+    );
   }
 
   /** 获取焦点；传入坐标时将光标定位到最近的文档位置。 */
