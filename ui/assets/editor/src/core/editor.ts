@@ -42,6 +42,8 @@ import { IOS_SELECTION_BOTTOM_GAP } from "../consts";
 import { findMarkdownAnchorLine } from "../resources/markdown_anchor";
 import { defaultDetectLanguage } from "./detect_language";
 
+const COORDINATE_FOCUS_MAX_VERTICAL_DISTANCE = 72;
+
 export interface LonaEditorConfig {
   /** root */
   root: Element | DocumentFragment;
@@ -587,15 +589,27 @@ export class LonaEditor {
     );
   }
 
-  /** 获取焦点；传入坐标时将光标定位到最近的文档位置。 */
-  focus = (pos?: { x: number; y: number }) => {
+  /** 获取焦点；传入坐标时仅在能可靠映射到附近文档位置时移动光标。 */
+  focus = (pos?: { x: number; y: number }): boolean => {
     if (!this.#editor) throw new Error("Editor not initialized");
     const lastLine = this.#editor.state.doc.lines;
     const lastPos = this.#editor.state.doc.line(lastLine).to;
     let targetPos: number;
     if (pos) {
-      // false 会为未渲染的空白区域估算最近文档位置，而非退回首尾。
-      targetPos = this.#editor.posAtCoords(pos, false);
+      const contentRect = this.#editor.contentDOM.getBoundingClientRect();
+      if (contentRect.width < 2) return false;
+      // PurrMD 的块级装饰和缩进区域可能落在 contentDOM 横向范围外，先夹到正文边缘。
+      const boundedPos = {
+        x: Math.max(contentRect.left + 1, Math.min(pos.x, contentRect.right - 1)),
+        y: pos.y,
+      };
+      targetPos = this.#editor.posAtCoords(boundedPos, false);
+      const cursor = this.#editor.coordsAtPos(targetPos);
+      if (!cursor) return false;
+      const verticalDistance =
+        pos.y < cursor.top ? cursor.top - pos.y : pos.y > cursor.bottom ? pos.y - cursor.bottom : 0;
+      // WKWebView 偶发把装饰区点击估算到文档起点；拒绝与实际触点明显不相邻的结果。
+      if (verticalDistance > COORDINATE_FOCUS_MAX_VERTICAL_DISTANCE) return false;
     } else {
       targetPos = lastPos;
     }
@@ -605,6 +619,7 @@ export class LonaEditor {
       effects: EditorView.scrollIntoView(targetPos, { y: pos ? "nearest" : "center" }),
     });
     this.#editor.focus();
+    return true;
   };
 
   /** 让 CodeMirror 释放原生输入焦点，以便宿主安全收起软键盘。 */
