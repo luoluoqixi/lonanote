@@ -47,12 +47,40 @@ bottomSafeArea.id = "editor-bottom-safe-area";
 bottomSafeArea.setAttribute("aria-hidden", "true");
 document.body.append(bottomSafeArea);
 
+const TOUCH_CLICK_COORDINATE_MAX_AGE_MS = 1_000;
+let lastTouchEnd: { x: number; y: number; recordedAt: number } | null = null;
+
+document.body.addEventListener(
+  "touchend",
+  (event) => {
+    if (event.changedTouches.length !== 1) {
+      lastTouchEnd = null;
+      return;
+    }
+    const touch = event.changedTouches[0];
+    lastTouchEnd = { x: touch.clientX, y: touch.clientY, recordedAt: performance.now() };
+  },
+  { capture: true, passive: true },
+);
+document.body.addEventListener("touchcancel", () => {
+  lastTouchEnd = null;
+});
+
 /** 空白 body 区域点击时，将焦点交给距离触点最近的文档位置。 */
 document.body.addEventListener("click", (event) => {
   if ((event.target !== document.body && event.target !== getRoot()) || !session) {
     return;
   }
-  session.editor.focus({ x: event.clientX, y: event.clientY });
+  const touchEnd = lastTouchEnd;
+  lastTouchEnd = null;
+  const usesRecentTouchCoordinates =
+    touchEnd !== null &&
+    performance.now() - touchEnd.recordedAt <= TOUCH_CLICK_COORDINATE_MAX_AGE_MS;
+  session.editor.focus(
+    usesRecentTouchCoordinates
+      ? { x: touchEnd.x, y: touchEnd.y }
+      : { x: event.clientX, y: event.clientY },
+  );
 });
 
 function getRoot(): HTMLElement {
