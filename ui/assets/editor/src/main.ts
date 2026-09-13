@@ -131,15 +131,6 @@ document.body.addEventListener(
       return;
     }
     lastTouchEnd = { x: touch.clientX, y: touch.clientY, recordedAt: performance.now() };
-    // iOS 不将合成 mousedown 稳定地视为可唤起软键盘的用户操作，因此图片需在原始 touchend 中重置焦点。
-    if (
-      session?.runtime.platform === "ios" &&
-      event.target instanceof Element &&
-      isPurrMdImageWidget(event.target) &&
-      getRoot().contains(event.target)
-    ) {
-      session.editor.restoreInputFocus();
-    }
   },
   { capture: true, passive: true },
 );
@@ -740,6 +731,15 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
           // PurrMD 图片 widget 自身只选择 Markdown 范围；Android 首次点击还需要在原始 mousedown 内获取输入焦点。
           onImageDown: () => {
             if (currentSession.runtime.platform === "android") currentSession.editor.focusInput();
+          },
+          // 必须先由 PurrMD 在原始 touchend 中同步切换图片选区，再恢复输入焦点。
+          // 否则 iOS 会按旧图片选区执行 viewport reveal，使本次点击目标在合成 mousedown 前滚出视口。
+          onImageTouchEnd: () => {
+            if (currentSession.runtime.platform === "ios") {
+              currentSession.editor.restoreInputFocus();
+            } else if (currentSession.runtime.platform === "android") {
+              currentSession.editor.focusInput();
+            }
           },
         },
         [PurrMDFeatures.List]: {
