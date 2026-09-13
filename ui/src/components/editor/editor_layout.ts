@@ -1,15 +1,19 @@
 /** 工具栏 Padding Vertical */
-export const MOBILE_EDITOR_TOOLBAR_PADDING_VERTICAL = 2;
-
-/** 工具栏 Padding Horizontal */
-export const MOBILE_EDITOR_TOOLBAR_PADDING_HORIZONTAL = 10;
+export const MOBILE_EDITOR_TOOLBAR_PADDING_VERTICAL = 3;
 
 /** 工具栏高度。 */
-export const MOBILE_EDITOR_TOOLBAR_HEIGHT = 40;
+export const MOBILE_EDITOR_TOOLBAR_HEIGHT = 42;
 
-/** 工具栏容器高度。 */
-export const MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT =
-  MOBILE_EDITOR_TOOLBAR_HEIGHT + MOBILE_EDITOR_TOOLBAR_PADDING_VERTICAL * 2;
+/** iOS 26+ Liquid Glass 工具栏高度。 */
+export const MOBILE_EDITOR_LIQUID_GLASS_TOOLBAR_HEIGHT = 46;
+
+export function getMobileEditorToolbarHeight(isIos26OrLater: boolean): number {
+  return isIos26OrLater ? MOBILE_EDITOR_LIQUID_GLASS_TOOLBAR_HEIGHT : MOBILE_EDITOR_TOOLBAR_HEIGHT;
+}
+
+export function getMobileEditorToolbarContainerHeight(isIos26OrLater: boolean): number {
+  return getMobileEditorToolbarHeight(isIos26OrLater) + MOBILE_EDITOR_TOOLBAR_PADDING_VERTICAL * 2;
+}
 
 /** 尚未测得软键盘高度时，移动端工具栏面板使用的回退高度。 */
 export const MOBILE_EDITOR_TOOLBAR_PANEL_FALLBACK_HEIGHT = 320;

@@ -7,7 +7,7 @@ import WebView from "react-native-webview";
 import { triggerNativeHaptics, useUiColorScheme, useUiTheme } from "rn-ui-kit";
 import { type KeyboardVisibilityPhase, useKeyboardAvoidance } from "rn-ui-kit/core";
 
-import { isDev, os, systemLocale } from "@/api/common/platform";
+import { isDev, isIos26Plus, os, systemLocale } from "@/api/common/platform";
 import type { EditorPlatform } from "@/assets/editor/src/bridge/protocol";
 import {
   EditorBridgeClient,
@@ -25,7 +25,7 @@ import { type DocumentModel, type EditorViewSession, editorStore } from "@/store
 
 import { getEditorDevUrl } from "./editor_dev_url";
 import { EDITOR_HTML, initEditorHtml } from "./editor_html.native";
-import { MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT } from "./editor_layout";
+import { getMobileEditorToolbarContainerHeight } from "./editor_layout";
 import { onError, onHttpError, onLoad, onLoadEnd, onLoadStart } from "./editor_webview_event";
 import { resolveEditorSemanticColors } from "./theme/editor_theme";
 
@@ -37,6 +37,7 @@ type EditorWebViewProps = {
 };
 
 const MAX_SURFACE_RECOVERY_ATTEMPTS = 3;
+const MOBILE_EDITOR_TOOLBAR_CONTAINER_HEIGHT = getMobileEditorToolbarContainerHeight(isIos26Plus());
 
 type EditorWebViewHandle = WebView<{}> & {
   setEditorContentOffset?: (y: number) => void;
