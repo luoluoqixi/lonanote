@@ -643,6 +643,11 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
         [PurrMDFeatures.Image]: {
           proxyURL: (rawReference: string) =>
             resolveEditorResourceUrl(rawReference, currentSession.resources) ?? rawReference,
+          loadRetry: {
+            delayMs: 800,
+            maxRetries: 1,
+            retryOnScrollEnd: true,
+          },
           // PurrMD 图片 widget 自身只选择 Markdown 范围；Android 首次点击还需要在原始 mousedown 内获取输入焦点。
           onImageDown: () => {
             if (currentSession.runtime.platform === "android") currentSession.editor.focusInput();
