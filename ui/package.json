@@ -142,6 +142,7 @@
     "expo-modules-core@55.0.25": "patches/expo-modules-core@55.0.25.patch",
     "metro-file-map@0.83.6": "patches/metro-file-map@0.83.6.patch",
     "metro@0.83.6": "patches/metro@0.83.6.patch",
+    "react-native-ios-context-menu@3.2.1": "patches/react-native-ios-context-menu@3.2.1.patch",
     "react-native-ios-utilities@5.2.0": "patches/react-native-ios-utilities@5.2.0.patch",
     "react-native-reanimated@4.3.0": "patches/react-native-reanimated@4.3.0.patch",
     "react-native-screens@4.24.0": "patches/react-native-screens@4.24.0.patch",

@@ -10,6 +10,7 @@ import {
 
 const IS_DEV = process.env.APP_MODE === "development";
 const ENABLE_REACT_COMPILER = true;
+const IOS_DEPLOYMENT_TARGET = "15.1";
 
 console.log(
   `Running in ${process.env.APP_MODE === "development" ? "development" : "production"} mode`,
@@ -59,8 +60,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ios: {
           // react-native 补丁包含原生 Fabric 代码，必须从源码构建才能进入最终 App。
           buildReactNativeFromSource: true,
+          deploymentTarget: IOS_DEPLOYMENT_TARGET,
         },
       },
+    ],
+    [
+      "./tools/prebuild/with_ios_pods_deployment_target.cjs",
+      { deploymentTarget: IOS_DEPLOYMENT_TARGET },
     ],
     "./tools/prebuild/with_android_sdk_versions.cjs",
     "./tools/prebuild/with_android_gradle_memory.cjs",
