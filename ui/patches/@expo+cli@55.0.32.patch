@@ -1,3 +1,8 @@
+# @expo/cli 55.0.32 补丁说明：
+# - 兼容 Xcode 27 将 Simulator 能力迁移到 DeviceHub 后的设备识别、启动和激活流程。
+# - 支持 DeviceHub 的 bundle id、AppleScript 检测以及 devices:// URL fallback。
+# - 完整序列化设备配对信息，便于定位 iOS 真机连接问题。
+
 diff --git a/build/src/run/ios/appleDevice/client/LockdowndClient.js b/build/src/run/ios/appleDevice/client/LockdowndClient.js
 index 4005594..a5eef1c 100644
 --- a/build/src/run/ios/appleDevice/client/LockdowndClient.js

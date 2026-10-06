@@ -68,6 +68,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "./tools/prebuild/with_ios_pods_deployment_target.cjs",
       { deploymentTarget: IOS_DEPLOYMENT_TARGET },
     ],
+    "./tools/prebuild/with_ios_scene_lifecycle.cjs",
     "./tools/prebuild/with_android_sdk_versions.cjs",
     "./tools/prebuild/with_android_gradle_memory.cjs",
     [

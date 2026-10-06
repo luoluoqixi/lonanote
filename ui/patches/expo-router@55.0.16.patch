@@ -1,0 +1,22 @@
+# expo-router 55.0.16 补丁说明：
+# - 修复 iOS 15 deployment target 下编译 `UIMenuElement.subtitle` 的可用性错误。
+# - 仅在 iOS 16 及以上设置 action subtitle，iOS 15 保留无 subtitle 行为。
+# - 保留 iOS 15 支持；修改后需要重新安装 patched dependency 并重新构建 iOS。
+
+diff --git a/ios/LinkPreview/LinkPreviewNativeActionView.swift b/ios/LinkPreview/LinkPreviewNativeActionView.swift
+index 3884b784..476eb5ae 100644
+--- a/ios/LinkPreview/LinkPreviewNativeActionView.swift
++++ b/ios/LinkPreview/LinkPreviewNativeActionView.swift
+@@ -137,8 +137,10 @@ class LinkPreviewNativeActionView: RouterViewWithLogger, LinkPreviewMenuUpdatabl
+     baseUiAction.attributes = attributes
+     baseUiAction.state = isOn == true ? .on : .off
+ 
+-    if let subtitle = subtitle {
+-      baseUiAction.subtitle = subtitle
++    if #available(iOS 16.0, *) {
++      if let subtitle = subtitle {
++        baseUiAction.subtitle = subtitle
++      }
+     }
+     if let label = discoverabilityLabel {
+       baseUiAction.discoverabilityTitle = label

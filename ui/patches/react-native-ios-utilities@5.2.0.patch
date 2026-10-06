@@ -1,3 +1,8 @@
+# react-native-ios-utilities 5.2.0 补丁说明：
+# - 避免直接引用 RCTRootContentView 类型，兼容 RN 0.83 新架构的模块化编译。
+# - 使用运行时类名查找和 RCTView 类型回退，避免头文件或类型不可用导致 iOS 编译失败。
+# - 保持最近 React content view 的查找语义。
+
 diff --git a/ios/Sources/Extensions+Helpers/RCTView+Helpers.swift b/ios/Sources/Extensions+Helpers/RCTView+Helpers.swift
 index 09be306..a93de40 100644
 --- a/ios/Sources/Extensions+Helpers/RCTView+Helpers.swift

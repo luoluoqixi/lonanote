@@ -1,3 +1,8 @@
+# react-native-ios-context-menu 3.2.1 补丁说明：
+# - 将 action subtitle 的可用性检查从 iOS 15 调整到 iOS 16。
+# - 避免 Xcode 27 / iOS 27 SDK 在 iOS 15 deployment target 下编译失败。
+# - iOS 15 不设置 subtitle，其他菜单行为保持不变。
+
 diff --git a/ios/RNIContextMenu/RNIMenuActionItem.swift b/ios/RNIContextMenu/RNIMenuActionItem.swift
 index 63fae48..3e4ad9b 100644
 --- a/ios/RNIContextMenu/RNIMenuActionItem.swift
