@@ -77,6 +77,7 @@ export interface WorkspaceListItem {
   displayName: string;
   createdAt: UnixSeconds | null;
   lastOpenedAt: UnixSeconds | null;
+  modifiedAt: UnixSeconds | null;
   storage: WorkspaceStorageView;
   storageKind: WorkspaceStorageKind;
   availability: WorkspaceAvailability;

@@ -10,6 +10,8 @@ mod files;
 mod lifecycle;
 #[path = "workspace/managed_scan.rs"]
 mod managed_scan;
+#[path = "workspace/modified_at.rs"]
+mod modified_at;
 #[path = "workspace/persistence.rs"]
 mod persistence;
 #[path = "workspace/relocation.rs"]

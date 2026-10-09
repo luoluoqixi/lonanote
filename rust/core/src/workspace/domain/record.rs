@@ -12,6 +12,9 @@ pub struct WorkspaceCachedSummary {
     /// 最近一次成功打开时间，供未打开的 Workspace 列表展示。
     #[serde(default)]
     pub last_opened_at: Option<u64>,
+    /// 最近一次成功修改时间；旧 Catalog 缺失时可从文件夹 metadata 补齐。
+    #[serde(default)]
+    pub modified_at: Option<u64>,
     pub last_validated_at: Option<u64>,
 }
 

@@ -118,13 +118,32 @@ impl WorkspaceManager {
         let _lifecycle = self.lifecycle_lock.read().await;
         let records = self.catalog.list().await;
         let mut items = Vec::with_capacity(records.len());
-        for record in records {
+        for mut record in records {
+            // 缺缓存时仅查询根目录 metadata，不递归扫描、不校验 Manifest、不打开 Runtime。
+            if record.cached_summary.modified_at.is_none() {
+                if let Ok(session) = self.storage_resolver.open(&record.storage_binding).await {
+                    if let Some(timestamp) = folder_modified_at(session.as_ref()).await {
+                        record.cached_summary.modified_at = match self
+                            .catalog
+                            .update_modified_at(&record.id, timestamp, true)
+                            .await
+                        {
+                            Ok(value) => value,
+                            Err(error) => {
+                                log::warn!("缓存 Workspace 修改时间失败: {error}");
+                                Some(timestamp)
+                            }
+                        };
+                    }
+                }
+            }
             let is_open = self.runtime.contains(&record.id).await;
             items.push(WorkspaceListItem {
                 id: record.id,
                 display_name: record.cached_summary.display_name,
                 created_at: record.cached_summary.created_at,
                 last_opened_at: record.cached_summary.last_opened_at,
+                modified_at: record.cached_summary.modified_at,
                 storage: WorkspaceStorageView::from(&record.storage_binding),
                 storage_kind: if record.storage_binding.is_managed() {
                     WorkspaceStorageKindView::Managed
@@ -407,6 +426,7 @@ impl WorkspaceManager {
                 &manifest,
                 now_timestamp(),
                 record.cached_summary.last_opened_at,
+                record.cached_summary.modified_at,
             ),
         };
         self.catalog.replace_workspace_id(id, replacement).await?;
@@ -545,7 +565,17 @@ impl WorkspaceManager {
         self.catalog
             .update_summary(
                 id,
-                summary_from_manifest(&manifest, now_timestamp(), previous_summary.last_opened_at),
+                summary_from_manifest(
+                    &manifest,
+                    now_timestamp(),
+                    previous_summary.last_opened_at,
+                    Some(
+                        previous_summary
+                            .modified_at
+                            .unwrap_or_default()
+                            .max(now_timestamp()),
+                    ),
+                ),
             )
             .await?;
         Ok(workspace.snapshot().await)
@@ -566,7 +596,9 @@ impl WorkspaceManager {
     ) -> Result<WorkspaceSettings, WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.read().await;
         let workspace = self.get_open_instance(id).await?;
-        workspace.set_settings(settings).await
+        let settings = workspace.set_settings(settings).await?;
+        self.cache_modification(id).await;
+        Ok(settings)
     }
 
     pub async fn reset_settings(
@@ -703,6 +735,7 @@ impl WorkspaceManager {
             .write_bytes(path, data, options)
             .await?;
         self.resource_gateway.invalidate_workspace(id).await;
+        self.cache_modification(id).await;
         Ok(())
     }
 
@@ -719,6 +752,7 @@ impl WorkspaceManager {
             .write_text(path, text, options)
             .await?;
         self.resource_gateway.invalidate_workspace(id).await;
+        self.cache_modification(id).await;
         Ok(())
     }
 
@@ -733,6 +767,7 @@ impl WorkspaceManager {
             .create_directory(path)
             .await?;
         self.resource_gateway.invalidate_workspace(id).await;
+        self.cache_modification(id).await;
         Ok(())
     }
 
@@ -745,6 +780,7 @@ impl WorkspaceManager {
         let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.rename(from, to).await?;
         self.resource_gateway.invalidate_workspace(id).await;
+        self.cache_modification(id).await;
         Ok(())
     }
 
@@ -760,6 +796,7 @@ impl WorkspaceManager {
             .remove(path, recursive)
             .await?;
         self.resource_gateway.invalidate_workspace(id).await;
+        self.cache_modification(id).await;
         Ok(())
     }
 
@@ -788,6 +825,17 @@ impl WorkspaceManager {
     pub async fn refresh_index(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.refresh_index().await
+    }
+
+    async fn cache_modification(&self, id: &WorkspaceId) {
+        // 内容已保存成功，不能因列表缓存写入失败向编辑器报告保存失败。
+        if let Err(error) = self
+            .catalog
+            .update_modified_at(id, now_timestamp(), false)
+            .await
+        {
+            log::warn!("缓存 Workspace 修改时间失败: {error}");
+        }
     }
 
     async fn get_open_instance(
@@ -828,6 +876,11 @@ impl WorkspaceManager {
         }
         let settings = load_workspace_settings(session.as_ref()).await?;
         let local_setting = load_local_setting(session.as_ref()).await?;
+        // 必须在 mark_opened 写本机设置之前获取兜底，打开本身不算修改。
+        let modified_at = match record.cached_summary.modified_at {
+            Some(timestamp) => Some(timestamp),
+            None => folder_modified_at(session.as_ref()).await,
+        };
         let workspace = Arc::new(
             WorkspaceInstance::new(
                 record.storage_binding,
@@ -846,7 +899,10 @@ impl WorkspaceManager {
         }
         if let Err(error) = self
             .catalog
-            .update_summary(id, summary_from_manifest(&manifest, now, Some(now)))
+            .update_summary(
+                id,
+                summary_from_manifest(&manifest, now, Some(now), modified_at),
+            )
             .await
         {
             self.runtime.remove(id).await;
@@ -939,7 +995,7 @@ fn record_from_manifest(
     WorkspaceRecord {
         id: manifest.id,
         storage_binding,
-        cached_summary: summary_from_manifest(manifest, validated_at, None),
+        cached_summary: summary_from_manifest(manifest, validated_at, None, None),
     }
 }
 
@@ -947,13 +1003,23 @@ fn summary_from_manifest(
     manifest: &WorkspaceManifest,
     validated_at: u64,
     last_opened_at: Option<u64>,
+    modified_at: Option<u64>,
 ) -> WorkspaceCachedSummary {
     WorkspaceCachedSummary {
         display_name: manifest.display_name.clone(),
         created_at: Some(manifest.created_at),
         last_opened_at,
+        modified_at,
         last_validated_at: Some(validated_at),
     }
+}
+
+async fn folder_modified_at(session: &super::storage::WorkspaceStorageSession) -> Option<u64> {
+    session
+        .metadata(&WorkspaceRelativePath::root())
+        .await
+        .ok()
+        .and_then(|metadata| metadata.modified_at)
 }
 
 fn validate_display_name(display_name: &str) -> Result<(), WorkspaceError> {

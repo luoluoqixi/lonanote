@@ -93,6 +93,11 @@ export function WorkspaceDetailsSheet({
             </NativeListSection>
             <NativeListSection title="时间">
               <WorkspaceDetailsListItem
+                copyId="workspace-modified-at"
+                title="修改时间"
+                value={formatDate(workspaceItem.modifiedAt)}
+              />
+              <WorkspaceDetailsListItem
                 copyId="workspace-created-at"
                 title="创建时间"
                 value={formatDate(workspaceItem.createdAt)}

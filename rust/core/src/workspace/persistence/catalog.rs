@@ -189,7 +189,7 @@ impl WorkspaceCatalog {
 
     pub async fn add_or_validate_same_binding(
         &self,
-        record: WorkspaceRecord,
+        mut record: WorkspaceRecord,
     ) -> Result<WorkspaceRecord, WorkspaceError> {
         self.update(move |data| {
             if let Some(existing) = data.workspaces.get(&record.id) {
@@ -197,6 +197,8 @@ impl WorkspaceCatalog {
                     .storage_binding
                     .same_resource(&record.storage_binding)
                 {
+                    record.cached_summary.modified_at = existing.cached_summary.modified_at;
+                    record.cached_summary.last_opened_at = existing.cached_summary.last_opened_at;
                     data.workspaces.insert(record.id, record.clone());
                     return Ok(record);
                 }
@@ -352,6 +354,35 @@ impl WorkspaceCatalog {
         .await
     }
 
+    /// 只更新修改时间，避免并发保存覆盖其他摘要字段；同一秒内不重复写盘。
+    pub(crate) async fn update_modified_at(
+        &self,
+        id: &WorkspaceId,
+        timestamp: u64,
+        only_if_missing: bool,
+    ) -> Result<Option<u64>, WorkspaceError> {
+        let _mutation = self.mutation_lock.lock().await;
+        let previous = self.get(id).await?.cached_summary.modified_at;
+        if previous.is_some_and(|previous| only_if_missing || previous >= timestamp) {
+            return Ok(previous);
+        }
+        let mut next = self.state.read().await.clone();
+        let record = next
+            .workspaces
+            .get_mut(id)
+            .ok_or(WorkspaceError::NotFoundWorkspace(*id))?;
+        record.cached_summary.modified_at = Some(timestamp);
+        write_json_atomically(
+            &self.file_path,
+            &next,
+            "Workspace Catalog",
+            catalog_error,
+            WorkspaceCatalogData::validate,
+        )?;
+        *self.state.write().await = next;
+        Ok(Some(timestamp))
+    }
+
     async fn update<F, T>(&self, update: F) -> Result<T, WorkspaceError>
     where
         F: FnOnce(&mut WorkspaceCatalogData) -> Result<T, WorkspaceError>,
@@ -374,4 +405,68 @@ impl WorkspaceCatalog {
 
 fn catalog_error(message: String) -> WorkspaceError {
     WorkspaceError::Catalog(message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::workspace::domain::WorkspaceStorageBindingRequest;
+    use serde_json::json;
+
+    #[tokio::test]
+    async fn modification_cache_is_monotonic_and_fallback_never_overwrites_it() {
+        let temp = tempfile::TempDir::new().unwrap();
+        let catalog = WorkspaceCatalog::load(temp.path().join("catalog.json"))
+            .await
+            .unwrap();
+        let binding: WorkspaceStorageBindingRequest = serde_json::from_value(json!({
+            "kind": "managed", "providerId": "app-local", "providerSchemaVersion": 1,
+            "directoryName": "Notes"
+        }))
+        .unwrap();
+        let record = WorkspaceRecord {
+            id: WorkspaceId::new(),
+            storage_binding: binding.resolve(
+                crate::workspace::domain::StorageResourceIdentity::parse("test:notes").unwrap(),
+            ),
+            cached_summary: WorkspaceCachedSummary {
+                display_name: "Notes".into(),
+                created_at: Some(1),
+                last_opened_at: Some(2),
+                modified_at: None,
+                last_validated_at: Some(3),
+            },
+        };
+        let id = record.id;
+        catalog.add(record).await.unwrap();
+        assert_eq!(
+            catalog.update_modified_at(&id, 50, true).await.unwrap(),
+            Some(50)
+        );
+        let (first, second) = tokio::join!(
+            catalog.update_modified_at(&id, 100, false),
+            catalog.update_modified_at(&id, 200, false)
+        );
+        first.unwrap();
+        second.unwrap();
+        let backup = std::fs::read(catalog.file_path().with_extension("json.bak")).unwrap();
+        for (timestamp, fallback) in [(200, false), (100, false), (300, true)] {
+            assert_eq!(
+                catalog
+                    .update_modified_at(&id, timestamp, fallback)
+                    .await
+                    .unwrap(),
+                Some(200)
+            );
+        }
+        // no-op 不重写文件，否则 backup 会被当前值覆盖。
+        assert_eq!(
+            std::fs::read(catalog.file_path().with_extension("json.bak")).unwrap(),
+            backup
+        );
+        let summary = catalog.get(&id).await.unwrap().cached_summary;
+        assert_eq!(summary.modified_at, Some(200));
+        assert_eq!(summary.display_name, "Notes");
+        assert_eq!(summary.last_opened_at, Some(2));
+    }
 }

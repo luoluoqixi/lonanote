@@ -20,6 +20,8 @@ export type WorkspaceExplorerSortSetting =
   | "createTimeRev";
 export type WorkspaceSelectGroupModeSetting = "date" | "storage" | "none";
 export type WorkspaceSelectSortSetting =
+  | "modified-at-desc"
+  | "modified-at-asc"
   | "last-opened-desc"
   | "last-opened-asc"
   | "created-at-desc"
@@ -102,7 +104,7 @@ export function createDefaultUiPreferences(): UiPreferences {
     },
     workspaceSelect: {
       groupMode: "date",
-      sortValue: "last-opened-desc",
+      sortValue: "modified-at-desc",
     },
     window: {
       lastWindowState: null,
@@ -159,14 +161,16 @@ function normalizeWorkspaceExplorerGroupMode(value: unknown): WorkspaceExplorerG
 }
 
 function normalizeWorkspaceSelectSortValue(value: unknown): WorkspaceSelectSortSetting {
-  return value === "last-opened-desc" ||
+  return value === "modified-at-desc" ||
+    value === "modified-at-asc" ||
+    value === "last-opened-desc" ||
     value === "last-opened-asc" ||
     value === "created-at-desc" ||
     value === "created-at-asc" ||
     value === "title-asc" ||
     value === "title-desc"
     ? value
-    : "last-opened-desc";
+    : "modified-at-desc";
 }
 
 function normalizeWorkspaceSelectGroupMode(value: unknown): WorkspaceSelectGroupModeSetting {

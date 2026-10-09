@@ -34,6 +34,7 @@ fn managed_flow() {
             .expect("创建的 Workspace 必须出现在列表中");
         assert!(listed["createdAt"].as_u64().is_some());
         assert!(listed["lastOpenedAt"].as_u64().is_some());
+        assert!(listed["modifiedAt"].as_u64().is_some());
 
         let renamed: Value = invoke_json(
             "workspace.update_display_name",

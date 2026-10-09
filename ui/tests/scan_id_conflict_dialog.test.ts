@@ -3,7 +3,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import type { ScanWorkspaceIdConflict } from "../src/api/commands/workspace/types";
 
 const confirm = mock(async (_options: unknown): Promise<string | null> => "keep-a");
-mock.module("rn-ui-kit", () => ({ confirmNative: confirm }));
+mock.module("rn-ui-kit", () => ({ confirmNative: confirm, Select: () => null }));
 
 const { chooseScanIdConflictKeeper } =
   await import("../src/components/workspaces/workspace_select/scan_id_conflict_dialog");

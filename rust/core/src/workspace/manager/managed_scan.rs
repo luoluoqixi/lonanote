@@ -268,9 +268,9 @@ impl WorkspaceManager {
                     }
                 };
             }
-            let registered = plan
-                .registered_record
-                .as_ref()
+            let registered = catalog
+                .workspaces
+                .get(&plan.workspace_id)
                 .filter(|record| same_folder(&record.storage_binding, &candidate.storage_binding));
             if registered.is_some() {
                 registered_new_id = manifest.id;
@@ -282,6 +282,7 @@ impl WorkspaceManager {
                     &manifest,
                     now_timestamp(),
                     registered.and_then(|record| record.cached_summary.last_opened_at),
+                    registered.and_then(|record| record.cached_summary.modified_at),
                 ),
             });
         }

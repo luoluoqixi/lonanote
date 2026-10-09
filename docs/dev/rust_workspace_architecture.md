@@ -290,6 +290,10 @@ Catalog 主文件、backup 和 App Session 通过原子临时文件写入；Unix
 
 缓存摘要允许应用在不打开所有 Workspace 的情况下列出工作区。Manifest 仍是名称和创建时间的最终权威；每次成功打开会刷新摘要。
 
+列表摘要还保存 `lastOpenedAt` 和 `modifiedAt`（Unix 秒）。`modifiedAt` 在文件写入、建目录、重命名、删除、修改工作区名称或 Settings 成功后更新；读取、打开、最近文件记录、ID 修复和 Index refresh 不更新已有修改时间。Catalog 只局部更新修改时间，保证并发更新不覆盖其他摘要字段，同一秒内不重复写盘。文件已保存成功后，修改时间缓存写入失败仅记 warning，不将保存误报为失败。
+
+旧 Catalog 或扫描恢复的工作区没有修改时间缓存时，列表仅查询 Provider 根文件夹 metadata 并缓存 `modified_at`，不递归扫描、不打开 Runtime、不校验 Manifest；打开时也在写本机状态前补齐。查询失败或 Provider 不支持时间则返回 `null`。根目录时间只是兜底估算，不能精确反映子文件或应用外修改；卸载后仅还原文件夹也无法恢复已丢失的 Catalog 精确缓存。UI 默认按最近修改降序，未知时间置底，仍保留已有显式排序偏好。
+
 ### 4.6 App Session：应用级会话
 
 位置：`<app data>/workspace-session.json`
