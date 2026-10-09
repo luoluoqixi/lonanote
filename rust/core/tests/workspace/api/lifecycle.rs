@@ -1,6 +1,9 @@
 use lonanote_core::{
     config::system_locale::system_locale,
-    workspace::{workspace_manager, WorkspaceId, WorkspaceManifest, WorkspaceSnapshot},
+    workspace::{
+        workspace_manager, ResolveScanWorkspaceIdConflictResult, ScanManagedWorkspacesResult,
+        WorkspaceId, WorkspaceManifest, WorkspaceSnapshot,
+    },
 };
 use serde_json::{json, Value};
 
@@ -139,6 +142,71 @@ fn diagnosed_open_and_id_resolution_flow() {
         .await;
         assert_eq!(repaired.id, actual_id);
         close_and_remove(actual_id).await;
+    });
+}
+
+#[test]
+fn scan_id_conflict_resolution_flow() {
+    let (app, _guard) = locked_app();
+    run(async {
+        let first = create_managed("API Duplicate First").await;
+        let second = create_managed("API Duplicate Second").await;
+        invoke_unit("workspace.close", workspace_args(first.id)).await;
+        invoke_unit("workspace.close", workspace_args(second.id)).await;
+        let _: Value = invoke_json(
+            "workspace.remove",
+            json!({"workspaceId": second.id, "deleteFiles": false}),
+        )
+        .await;
+        let first_path = app
+            .managed_workspace_root(&first)
+            .join(".lonanote/manifest.json");
+        let second_path = app
+            .managed_workspace_root(&second)
+            .join(".lonanote/manifest.json");
+        let mut manifest: WorkspaceManifest =
+            serde_json::from_slice(&std::fs::read(&second_path).unwrap()).unwrap();
+        manifest.id = first.id;
+        std::fs::write(&second_path, serde_json::to_vec_pretty(&manifest).unwrap()).unwrap();
+        let scan: ScanManagedWorkspacesResult =
+            invoke_json("workspace.scan_managed", json!({})).await;
+        let conflict = scan
+            .id_conflicts
+            .iter()
+            .find(|group| group.workspace_id == first.id)
+            .unwrap();
+        assert_eq!(conflict.candidates.len(), 2);
+        assert!(conflict.candidates[0].is_registered);
+        let encoded = serde_json::to_value(conflict).unwrap().to_string();
+        assert!(!encoded.contains("resourceRef"));
+        assert!(!encoded.contains("resourceIdentity"));
+        invoke_unit(
+            "workspace.discard_scan_id_conflict",
+            json!({"conflictId": conflict.conflict_id}),
+        )
+        .await;
+        let scan: ScanManagedWorkspacesResult =
+            invoke_json("workspace.scan_managed", json!({})).await;
+        let conflict = scan
+            .id_conflicts
+            .iter()
+            .find(|group| group.workspace_id == first.id)
+            .unwrap();
+        let resolved: ResolveScanWorkspaceIdConflictResult = invoke_json(
+            "workspace.resolve_scan_id_conflict",
+            json!({"conflictId": conflict.conflict_id, "keepCandidateIndex": 1}),
+        )
+        .await;
+        assert_eq!(resolved.registered_count, 1);
+        assert_eq!(resolved.regenerated_count, 1);
+        let rekeyed: WorkspaceManifest =
+            serde_json::from_slice(&std::fs::read(&first_path).unwrap()).unwrap();
+        assert_ne!(rekeyed.id, first.id);
+        let keeper: WorkspaceManifest =
+            serde_json::from_slice(&std::fs::read(&second_path).unwrap()).unwrap();
+        assert_eq!(keeper.id, first.id);
+        remove_closed(rekeyed.id).await;
+        remove_closed(first.id).await;
     });
 }
 

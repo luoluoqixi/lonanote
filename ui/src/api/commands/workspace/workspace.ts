@@ -5,6 +5,7 @@ import type {
   OpenWorkspaceResult,
   RelocateWorkspaceResult,
   RemoveWorkspaceResult,
+  ResolveScanWorkspaceIdConflictResult,
   ScanManagedWorkspacesResult,
   StorageProviderId,
   WorkspaceId,
@@ -32,6 +33,20 @@ export const workspace = {
 
   scanManaged: (): Promise<ScanManagedWorkspacesResult> => {
     return invokeWorkspaceResult("workspace.scan_managed");
+  },
+
+  resolveScanIdConflict: (
+    conflictId: string,
+    keepCandidateIndex: number,
+  ): Promise<ResolveScanWorkspaceIdConflictResult> => {
+    return invokeWorkspaceResult("workspace.resolve_scan_id_conflict", {
+      conflictId,
+      keepCandidateIndex,
+    });
+  },
+
+  discardScanIdConflict: (conflictId: string): Promise<void> => {
+    return invokeWorkspaceUnit("workspace.discard_scan_id_conflict", { conflictId });
   },
 
   get: (workspaceId: WorkspaceId): Promise<WorkspaceSnapshot> => {

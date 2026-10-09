@@ -477,9 +477,19 @@ attach 只注册，不自动打开。缺失 `settings.local.json` 不妨碍 atta
 ### 8.3.1 扫描 Managed Workspace
 
 用户可从工作区页面显式调用 `scan_managed`。Manager 枚举所有 Managed Provider 的直属
-工作区目录，验证 Manifest 与 Settings 后，仅把尚未注册且 Binding 未被占用的 Workspace
-加入 Catalog。已注册 ID、ID 不匹配的既有 Binding、无效目录都只计数并跳过；扫描不修改
-任何 Workspace 文件，也不承担修复职责。
+工作区目录，验证 Manifest 与 Settings 后，先按 Manifest ID 收集所有合法文件夹，再注册
+无冲突的新 Workspace。同 ID、同文件夹只计为已注册；同 ID、不同文件夹返回冲突组，
+包括 Catalog 中已注册的拥有者，默认先展示已注册工作区。ID 不匹配的既有 Binding 与
+无效目录仍跳过。
+
+前端用 NativeDialog 逐对比较：每次展示 A/B 的名称、位置与注册状态，由用户选择保留
+原 ID 的工作区，或跳过整组。N 个文件夹共 N-1 次比较，选择过程不写文件。完成后提交
+`resolve_scan_id_conflict(conflictId, keepCandidateIndex)`；Rust 根据本次扫描的临时凭据重新
+校验整组，再为其余文件夹生成新 ID、写 Manifest，并一次原子 Catalog 写入更新/新增
+所有记录，同步已注册工作区的 Session 与 `initialWorkspaceId`。需要换 ID 的工作区必须
+已关闭。写入或 Catalog 提交失败会尝试恢复已改写的 Manifest/Session。
+
+`discard_scan_id_conflict` 只释放凭据，不改文件或记录；重新扫描会使上一轮凭据失效。
 
 ### 8.4 打开
 
@@ -559,7 +569,7 @@ Catalog Binding 是最终提交点。当前 relocate 成功后保留源目录，
 
 当前 Workspace 相关 command 分为：
 
-- 生命周期：`list`、`list_storage_provider_ids`、`list_managed_storage_provider_ids`、`scan_managed`、`get`、`is_open`、`create_managed`、`create_external`、`attach`、`open`、`open_with_diagnostics`、`resolve_id_mismatch`、`close`、`remove`、`relocate`；
+- 生命周期：`list`、`list_storage_provider_ids`、`list_managed_storage_provider_ids`、`scan_managed`、`resolve_scan_id_conflict`、`discard_scan_id_conflict`、`get`、`is_open`、`create_managed`、`create_external`、`attach`、`open`、`open_with_diagnostics`、`resolve_id_mismatch`、`close`、`remove`、`relocate`；
 - 元数据与设置：`update_display_name`、`get_settings`、`set_settings`；
 - 本机恢复：`get_last_workspace_id`、`get_local_setting`、`set_last_open_file`；
 - Storage 能力和文件操作：`capabilities`、`exists`、`metadata`、`list`、读写、建目录、重命名、删除；

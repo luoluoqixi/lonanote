@@ -1,5 +1,5 @@
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     path::PathBuf,
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
@@ -12,12 +12,12 @@ use crate::config::system_locale::system_locale;
 use crate::workspace::{
     domain::{
         AttachWorkspaceResult, OpenWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
-        ScanManagedWorkspacesResult, StorageCleanupStatus, StorageProviderId,
-        WorkspaceAvailability, WorkspaceCachedSummary, WorkspaceDirectoryName, WorkspaceId,
-        WorkspaceIdMismatchResolution, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceManifest,
-        WorkspaceRecord, WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot,
-        WorkspaceStorageBinding, WorkspaceStorageBindingRequest, WorkspaceStorageKindView,
-        WorkspaceStorageLocation, WorkspaceStorageTarget, WorkspaceStorageView,
+        StorageCleanupStatus, StorageProviderId, WorkspaceAvailability, WorkspaceCachedSummary,
+        WorkspaceDirectoryName, WorkspaceId, WorkspaceIdMismatchResolution, WorkspaceListItem,
+        WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath,
+        WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
+        WorkspaceStorageBindingRequest, WorkspaceStorageKindView, WorkspaceStorageLocation,
+        WorkspaceStorageTarget, WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
     file_tree::{FileNode, FileTree},
@@ -47,6 +47,8 @@ const DEFAULT_GIT_IGNORE: &str = include_str!("../../assets/default_gitignore.tx
 pub const INITIAL_WORKSPACE_DISPLAY_NAME_CN: &str = "我的笔记";
 pub const INITIAL_WORKSPACE_DISPLAY_NAME_EN: &str = "My Notes";
 
+mod managed_scan;
+
 pub struct WorkspaceManager {
     catalog: WorkspaceCatalog,
     session: WorkspaceSessionStore,
@@ -54,6 +56,7 @@ pub struct WorkspaceManager {
     storage_resolver: Arc<dyn WorkspaceStorageResolver>,
     resource_gateway: WorkspaceResourceGateway,
     lifecycle_lock: RwLock<()>,
+    scan_conflicts: RwLock<HashMap<String, managed_scan::PendingScanConflict>>,
 }
 
 impl std::fmt::Debug for WorkspaceManager {
@@ -99,6 +102,7 @@ impl WorkspaceManager {
             storage_resolver,
             resource_gateway: WorkspaceResourceGateway::default(),
             lifecycle_lock: RwLock::new(()),
+            scan_conflicts: RwLock::new(HashMap::new()),
         }
     }
 
@@ -136,70 +140,6 @@ impl WorkspaceManager {
         }
         items.sort_by(|left, right| left.display_name.cmp(&right.display_name));
         items
-    }
-
-    /// 扫描所有 Managed Provider，只注册 Catalog 尚未记录的合法 Workspace。
-    ///
-    /// 已注册 ID、已占用 Binding、无效 Manifest/Settings 都只计数并跳过；扫描不会
-    /// 修复或改写任何已有 Workspace。
-    pub async fn scan_managed_workspaces(
-        &self,
-    ) -> Result<ScanManagedWorkspacesResult, WorkspaceError> {
-        let _lifecycle = self.lifecycle_lock.write().await;
-        let mut result = ScanManagedWorkspacesResult::default();
-        let mut catalog = self.catalog.snapshot().await;
-
-        for provider_id in self.storage_resolver.managed_provider_ids() {
-            let requests = self
-                .storage_resolver
-                .list_managed_workspace_bindings(&provider_id)
-                .await?;
-            for request in requests {
-                result.scanned_count += 1;
-                let binding = match self.resolve_binding(request).await {
-                    Ok(binding) => binding,
-                    Err(_) => {
-                        result.invalid_count += 1;
-                        continue;
-                    }
-                };
-                let session = match self.storage_resolver.open(&binding).await {
-                    Ok(session) => session,
-                    Err(_) => {
-                        result.invalid_count += 1;
-                        continue;
-                    }
-                };
-                let manifest = match load_manifest(session.as_ref()).await {
-                    Ok(Some(manifest)) => manifest,
-                    Ok(None) | Err(_) => {
-                        result.invalid_count += 1;
-                        continue;
-                    }
-                };
-                if load_workspace_settings(session.as_ref()).await.is_err() {
-                    result.invalid_count += 1;
-                    continue;
-                }
-                if catalog.workspaces.contains_key(&manifest.id) {
-                    result.already_registered_count += 1;
-                    continue;
-                }
-                if catalog.workspaces.values().any(|record| {
-                    record.storage_binding.same_resource(&binding)
-                        || record.storage_binding.same_reference(&binding)
-                }) {
-                    result.binding_conflict_count += 1;
-                    continue;
-                }
-
-                let record = record_from_manifest(binding, &manifest, now_timestamp());
-                self.catalog.add(record.clone()).await?;
-                catalog.workspaces.insert(record.id, record);
-                result.registered_count += 1;
-            }
-        }
-        Ok(result)
     }
 
     pub async fn get_workspace(

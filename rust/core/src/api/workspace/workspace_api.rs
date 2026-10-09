@@ -2,9 +2,10 @@ use cmdreg::command;
 
 use crate::workspace::{
     workspace_manager, AttachWorkspaceResult, OpenWorkspaceResult, RelocateWorkspaceResult,
-    RemoveWorkspaceResult, ScanManagedWorkspacesResult, StorageProviderId, WorkspaceId,
-    WorkspaceIdMismatchResolution, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceRelativePath,
-    WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBindingRequest, WorkspaceStorageTarget,
+    RemoveWorkspaceResult, ResolveScanWorkspaceIdConflictResult, ScanManagedWorkspacesResult,
+    StorageProviderId, WorkspaceId, WorkspaceIdMismatchResolution, WorkspaceListItem,
+    WorkspaceLocalSetting, WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot,
+    WorkspaceStorageBindingRequest, WorkspaceStorageTarget,
 };
 
 #[command("workspace")]
@@ -25,6 +26,23 @@ async fn list_managed_storage_provider_ids() -> Vec<StorageProviderId> {
 #[command("workspace")]
 async fn scan_managed() -> anyhow::Result<ScanManagedWorkspacesResult> {
     Ok(workspace_manager().scan_managed_workspaces().await?)
+}
+
+#[command("workspace")]
+async fn resolve_scan_id_conflict(
+    conflict_id: String,
+    keep_candidate_index: u32,
+) -> anyhow::Result<ResolveScanWorkspaceIdConflictResult> {
+    Ok(workspace_manager()
+        .resolve_scan_id_conflict(&conflict_id, keep_candidate_index)
+        .await?)
+}
+
+#[command("workspace")]
+async fn discard_scan_id_conflict(conflict_id: String) {
+    workspace_manager()
+        .discard_scan_id_conflict(&conflict_id)
+        .await;
 }
 
 #[command("workspace")]

@@ -8,6 +8,8 @@ mod domain;
 mod files;
 #[path = "workspace/lifecycle.rs"]
 mod lifecycle;
+#[path = "workspace/managed_scan.rs"]
+mod managed_scan;
 #[path = "workspace/persistence.rs"]
 mod persistence;
 #[path = "workspace/relocation.rs"]

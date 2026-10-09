@@ -154,6 +154,8 @@ impl StorageError {
 
 #[derive(Debug, Error)]
 pub enum WorkspaceError {
+    #[error("扫描冲突处理失败: {0}")]
+    ScanConflict(String),
     #[error("Workspace 不存在: {0}")]
     NotFoundWorkspace(WorkspaceId),
     #[error("Workspace 已打开: {0}")]

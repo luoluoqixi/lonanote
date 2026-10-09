@@ -15,6 +15,7 @@ import { useWorkspaceNavigation, useWorkspaceSession } from "@/hooks/workspace";
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
+import { chooseScanIdConflictKeeper } from "./scan_id_conflict_dialog";
 import { WorkspaceDetailsSheet } from "./workspace_details_sheet";
 import { type WorkspaceGroupMode, WorkspaceGroupModeSelect } from "./workspace_group";
 import { WorkspaceSelectHeader } from "./workspace_select_header";
@@ -72,6 +73,7 @@ export function WorkspaceSelect() {
   const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>([]);
   const [isOpeningWorkspace, setIsOpeningWorkspace] = useState(false);
   const [isScanningWorkspaces, setIsScanningWorkspaces] = useState(false);
+  const scanInProgressRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isCreateWorkspaceSheetOpen, setIsCreateWorkspaceSheetOpen] = useState(false);
@@ -128,31 +130,69 @@ export function WorkspaceSelect() {
   );
 
   const scanWorkspaces = useCallback(async () => {
-    if (isScanningWorkspaces) {
+    if (
+      scanInProgressRef.current ||
+      isOpeningWorkspace ||
+      isDeletingWorkspace ||
+      isUpdatingWorkspace ||
+      isCreatingWorkspace
+    ) {
       return;
     }
 
+    scanInProgressRef.current = true;
     setIsScanningWorkspaces(true);
     try {
       const result = await workspace.scanManaged();
-      await refreshWorkspaces();
-      if (result.registeredCount > 0) {
-        toast.success(`已新增 ${result.registeredCount} 个工作区`);
-        return;
+      let registeredCount = result.registeredCount;
+      let regeneratedCount = 0;
+      let skippedGroups = 0;
+      for (const conflict of result.idConflicts) {
+        try {
+          const keepIndex = await chooseScanIdConflictKeeper(conflict);
+          if (keepIndex === null) {
+            skippedGroups += 1;
+            continue;
+          }
+          const resolved = await workspace.resolveScanIdConflict(conflict.conflictId, keepIndex);
+          registeredCount += resolved.registeredCount;
+          regeneratedCount += resolved.regeneratedCount;
+        } catch (error) {
+          skippedGroups += 1;
+          console.error("[workspace-select] resolve scan ID conflict failed", error);
+          toast.error(getErrorMessage(error, "处理重复 Workspace ID 失败"));
+        } finally {
+          await workspace.discardScanIdConflict(conflict.conflictId);
+        }
       }
       const problemCount = result.bindingConflictCount + result.invalidCount;
-      if (problemCount > 0) {
-        toast.warning(`未发现可新增的工作区，已跳过 ${problemCount} 个异常目录`);
+      const messages = [
+        registeredCount > 0 ? `已新增 ${registeredCount} 个工作区` : "未发现新的工作区",
+      ];
+      if (regeneratedCount > 0) messages.push(`已更新 ${regeneratedCount} 个重复 ID`);
+      if (skippedGroups > 0) messages.push(`已跳过 ${skippedGroups} 组重复 ID`);
+      if (problemCount > 0) messages.push(`已跳过 ${problemCount} 个异常目录`);
+      if (problemCount > 0 || skippedGroups > 0) {
+        toast.warning(messages.join("，"));
       } else {
-        toast.success("未发现新的工作区");
+        toast.success(messages.join("，"));
       }
     } catch (error) {
       console.error("[workspace-select] scan managed workspaces failed", error);
       toast.error(getErrorMessage(error, "扫描工作区失败"));
     } finally {
+      await refreshWorkspaces();
+      scanInProgressRef.current = false;
       setIsScanningWorkspaces(false);
     }
-  }, [isScanningWorkspaces, refreshWorkspaces, toast]);
+  }, [
+    isOpeningWorkspace,
+    isDeletingWorkspace,
+    isUpdatingWorkspace,
+    isCreatingWorkspace,
+    refreshWorkspaces,
+    toast,
+  ]);
 
   const loadManagedStorageProviders = useCallback(async () => {
     const requestId = ++storageProviderRequestIdRef.current;
@@ -186,6 +226,7 @@ export function WorkspaceSelect() {
   }, []);
 
   const openCreateWorkspaceSheet = useCallback(() => {
+    if (scanInProgressRef.current) return;
     setDisplayName(getDefaultNewNoteName());
     setStorageProviderIds([]);
     setStorageProviderId(null);
@@ -195,7 +236,7 @@ export function WorkspaceSelect() {
   }, [loadManagedStorageProviders]);
 
   const createWorkspace = useCallback(async () => {
-    if (isCreatingWorkspace) {
+    if (isCreatingWorkspace || scanInProgressRef.current) {
       return;
     }
 
@@ -232,6 +273,7 @@ export function WorkspaceSelect() {
   ]);
 
   const openEditWorkspaceSheet = useCallback((workspaceItem: WorkspaceListItem) => {
+    if (scanInProgressRef.current) return;
     setEditingWorkspace(workspaceItem);
     setEditedWorkspaceName(workspaceItem.displayName);
     setIsEditWorkspaceSheetOpen(true);
@@ -247,7 +289,7 @@ export function WorkspaceSelect() {
   }, []);
 
   const updateWorkspace = useCallback(async () => {
-    if (!editingWorkspace || isUpdatingWorkspace) {
+    if (!editingWorkspace || isUpdatingWorkspace || scanInProgressRef.current) {
       return;
     }
 
@@ -300,7 +342,7 @@ export function WorkspaceSelect() {
 
   const deleteWorkspaces = useCallback(
     async (workspaceItems: WorkspaceListItem[]) => {
-      if (isDeletingWorkspace || workspaceItems.length === 0) {
+      if (isDeletingWorkspace || scanInProgressRef.current || workspaceItems.length === 0) {
         return;
       }
 
@@ -316,7 +358,7 @@ export function WorkspaceSelect() {
         title: "警告",
       });
 
-      if (result !== "delete") {
+      if (result !== "delete" || scanInProgressRef.current) {
         return;
       }
 
@@ -440,6 +482,7 @@ export function WorkspaceSelect() {
   const handleWorkspacePress = useCallback(
     async (workspaceId: string) => {
       if (
+        scanInProgressRef.current ||
         isOpeningWorkspace ||
         isScanningWorkspaces ||
         isDeletingWorkspace ||

@@ -251,6 +251,73 @@ impl WorkspaceCatalog {
         .await
     }
 
+    /// 一次原子 Catalog 写入提交整组冲突，不留下重复 ID 或半组记录。
+    pub(crate) async fn apply_scan_id_conflict(
+        &self,
+        original_id: WorkspaceId,
+        expected_record: Option<WorkspaceRecord>,
+        replacements: Vec<WorkspaceRecord>,
+    ) -> Result<(), WorkspaceError> {
+        self.update(move |data| {
+            if data
+                .workspaces
+                .get(&original_id)
+                .map(|record| &record.storage_binding)
+                != expected_record
+                    .as_ref()
+                    .map(|record| &record.storage_binding)
+            {
+                return Err(WorkspaceError::ScanConflict(
+                    "工作区记录已变化，请重新扫描".into(),
+                ));
+            }
+            let mut new_ids = std::collections::HashSet::new();
+            for replacement in &replacements {
+                if !new_ids.insert(replacement.id)
+                    || (replacement.id != original_id
+                        && data.workspaces.contains_key(&replacement.id))
+                {
+                    return Err(WorkspaceError::AlreadyRegistered(replacement.id));
+                }
+                if data.workspaces.values().any(|existing| {
+                    existing.id != original_id
+                        && (existing
+                            .storage_binding
+                            .same_resource(&replacement.storage_binding)
+                            || existing
+                                .storage_binding
+                                .same_reference(&replacement.storage_binding))
+                }) {
+                    return Err(WorkspaceError::ScanConflict(
+                        "文件夹已被其他工作区注册，请重新扫描".into(),
+                    ));
+                }
+            }
+            if let Some(existing) = expected_record {
+                let rekeyed = replacements
+                    .iter()
+                    .find(|record| {
+                        record
+                            .storage_binding
+                            .same_resource(&existing.storage_binding)
+                            || record
+                                .storage_binding
+                                .same_reference(&existing.storage_binding)
+                    })
+                    .ok_or_else(|| WorkspaceError::ScanConflict("冲突组缺少已注册工作区".into()))?;
+                if data.initial_workspace_id == Some(original_id) {
+                    data.initial_workspace_id = Some(rekeyed.id);
+                }
+                data.workspaces.remove(&original_id);
+            }
+            for replacement in replacements {
+                data.workspaces.insert(replacement.id, replacement);
+            }
+            Ok(())
+        })
+        .await
+    }
+
     pub async fn update_binding(
         &self,
         id: &WorkspaceId,

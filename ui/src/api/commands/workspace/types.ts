@@ -100,6 +100,25 @@ export interface ScanManagedWorkspacesResult {
   alreadyRegisteredCount: number;
   bindingConflictCount: number;
   invalidCount: number;
+  idConflicts: ScanWorkspaceIdConflict[];
+}
+
+export interface ScanWorkspaceConflictCandidate {
+  displayName: string;
+  locationLabel: string;
+  isRegistered: boolean;
+  isOpen: boolean;
+}
+
+export interface ScanWorkspaceIdConflict {
+  conflictId: string;
+  workspaceId: WorkspaceId;
+  candidates: ScanWorkspaceConflictCandidate[];
+}
+
+export interface ResolveScanWorkspaceIdConflictResult {
+  registeredCount: number;
+  regeneratedCount: number;
 }
 
 export type ManagedWorkspaceStorageBindingRequest = {

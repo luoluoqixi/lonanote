@@ -63,6 +63,7 @@ export function WorkspaceSelectHeader({
           ios: { name: "folder.badge.plus" },
         },
         label: "创建工作区",
+        disabled: isScanningWorkspaces,
         onPress: onCreateWorkspace,
         value: "create-workspace",
       },

@@ -117,7 +117,7 @@ pub enum OpenWorkspaceResult {
     },
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanManagedWorkspacesResult {
     pub scanned_count: u32,
@@ -125,6 +125,33 @@ pub struct ScanManagedWorkspacesResult {
     pub already_registered_count: u32,
     pub binding_conflict_count: u32,
     pub invalid_count: u32,
+    pub id_conflicts: Vec<ScanWorkspaceIdConflict>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScanWorkspaceIdConflict {
+    /// 本次扫描生成的临时凭据，不接受前端提供任意 StorageBinding。
+    pub conflict_id: String,
+    pub workspace_id: WorkspaceId,
+    pub candidates: Vec<ScanWorkspaceConflictCandidate>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScanWorkspaceConflictCandidate {
+    pub display_name: String,
+    /// 仅供展示，不能作为后续命令的文件访问参数。
+    pub location_label: String,
+    pub is_registered: bool,
+    pub is_open: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolveScanWorkspaceIdConflictResult {
+    pub registered_count: u32,
+    pub regenerated_count: u32,
 }
 
 impl From<&WorkspaceRecord> for AttachWorkspaceResult {
