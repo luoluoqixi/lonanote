@@ -22,6 +22,7 @@ async fn instance(storage: Arc<ControlledStorage>, name: &str) -> Arc<WorkspaceI
             WorkspaceManifest::new(id, name.into(), 1),
             WorkspaceSettings::default(),
             WorkspaceLocalSetting::default(),
+            lonanote_core::workspace::WorkspaceState::default(),
         )
         .await
         .unwrap(),
@@ -65,7 +66,10 @@ async fn serializes_same_instance() {
     storage.release_first_write();
     first.await.unwrap().unwrap();
     second.await.unwrap().unwrap();
-    assert_eq!(storage.entered(), 2);
+    assert!(
+        (3..=4).contains(&storage.entered()),
+        "两次内容写入及按秒合并的 State 写入"
+    );
     assert_eq!(workspace.read_text(&note).await.unwrap(), "second");
 }
 

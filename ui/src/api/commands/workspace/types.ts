@@ -42,6 +42,19 @@ export interface WorkspaceLocalSetting {
   lastOpenFile: WorkspaceRelativePath | null;
 }
 
+/** 可随工作区同步的业务状态；时间使用 Unix 秒。 */
+export interface WorkspaceState {
+  schemaVersion: number;
+  modifiedAt: UnixSeconds | null;
+  [field: string]: JsonValue;
+}
+
+export interface WorkspaceStateStatus {
+  state: WorkspaceState;
+  savePending: boolean;
+  lastSaveError: string | null;
+}
+
 export type WorkspaceAvailability =
   | "unknown"
   | "available"

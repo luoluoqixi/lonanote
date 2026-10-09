@@ -18,6 +18,8 @@ mod persistence;
 mod relocation;
 #[path = "workspace/resource.rs"]
 mod resource;
+#[path = "workspace/state.rs"]
+mod state;
 #[path = "workspace/storage.rs"]
 mod storage;
 #[path = "workspace/support/mod.rs"]

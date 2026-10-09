@@ -5,7 +5,7 @@ use crate::workspace::{
     RemoveWorkspaceResult, ResolveScanWorkspaceIdConflictResult, ScanManagedWorkspacesResult,
     StorageProviderId, WorkspaceId, WorkspaceIdMismatchResolution, WorkspaceListItem,
     WorkspaceLocalSetting, WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot,
-    WorkspaceStorageBindingRequest, WorkspaceStorageTarget,
+    WorkspaceStateStatus, WorkspaceStorageBindingRequest, WorkspaceStorageTarget,
 };
 
 #[command("workspace")]
@@ -170,6 +170,21 @@ async fn get_last_workspace_id() -> Option<WorkspaceId> {
 #[command("workspace")]
 async fn get_local_setting(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceLocalSetting> {
     Ok(workspace_manager().get_local_setting(&workspace_id).await?)
+}
+
+#[command("workspace")]
+async fn get_state(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceStateStatus> {
+    Ok(workspace_manager().get_state(&workspace_id).await?)
+}
+
+#[command("workspace")]
+async fn reload_state(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceStateStatus> {
+    Ok(workspace_manager().reload_state(&workspace_id).await?)
+}
+
+#[command("workspace")]
+async fn flush_state(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceStateStatus> {
+    Ok(workspace_manager().flush_state(&workspace_id).await?)
 }
 
 #[command("workspace")]

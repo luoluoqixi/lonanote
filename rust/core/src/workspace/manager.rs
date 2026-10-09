@@ -15,9 +15,9 @@ use crate::workspace::{
         StorageCleanupStatus, StorageProviderId, WorkspaceAvailability, WorkspaceCachedSummary,
         WorkspaceDirectoryName, WorkspaceId, WorkspaceIdMismatchResolution, WorkspaceListItem,
         WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath,
-        WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
-        WorkspaceStorageBindingRequest, WorkspaceStorageKindView, WorkspaceStorageLocation,
-        WorkspaceStorageTarget, WorkspaceStorageView,
+        WorkspaceSettings, WorkspaceSnapshot, WorkspaceState, WorkspaceStateStatus,
+        WorkspaceStorageBinding, WorkspaceStorageBindingRequest, WorkspaceStorageKindView,
+        WorkspaceStorageLocation, WorkspaceStorageTarget, WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
     file_tree::{FileNode, FileTree},
@@ -32,9 +32,9 @@ use crate::workspace::{
     runtime::{WorkspaceInstance, WorkspaceRuntime},
     storage::{
         copy_workspace_tree, load_local_setting, load_manifest, load_workspace_settings,
-        save_local_setting, save_manifest, save_workspace_settings, StorageCapabilities,
-        StorageEntry, StorageEntryMetadata, StorageReadOptions, StorageReadStream,
-        WorkspaceStorageResolver, WriteOptions,
+        load_workspace_state, save_local_setting, save_manifest, save_workspace_settings,
+        save_workspace_state, StorageCapabilities, StorageEntry, StorageEntryMetadata,
+        StorageReadOptions, StorageReadStream, WorkspaceStorageResolver, WriteOptions,
     },
 };
 
@@ -119,13 +119,17 @@ impl WorkspaceManager {
         let records = self.catalog.list().await;
         let mut items = Vec::with_capacity(records.len());
         for mut record in records {
-            // 缺缓存时仅查询根目录 metadata，不递归扫描、不校验 Manifest、不打开 Runtime。
-            if record.cached_summary.modified_at.is_none() {
+            let open_instance = self.runtime.get(&record.id).await;
+            let is_open = open_instance.is_some();
+            if let Some(instance) = open_instance {
+                record.cached_summary.modified_at = instance.state_status().await.state.modified_at;
+            } else if record.cached_summary.modified_at.is_none() {
+                // 缺摘要时读取 State；只有 State 缺失才使用根目录时间，不写工作区文件。
                 if let Ok(session) = self.storage_resolver.open(&record.storage_binding).await {
-                    if let Some(timestamp) = folder_modified_at(session.as_ref()).await {
+                    if let Ok(Some(timestamp)) = read_modified_at(session.as_ref(), None).await {
                         record.cached_summary.modified_at = match self
                             .catalog
-                            .update_modified_at(&record.id, timestamp, true)
+                            .cache_missing_modified_at(&record.id, timestamp)
                             .await
                         {
                             Ok(value) => value,
@@ -137,7 +141,6 @@ impl WorkspaceManager {
                     }
                 }
             }
-            let is_open = self.runtime.contains(&record.id).await;
             items.push(WorkspaceListItem {
                 id: record.id,
                 display_name: record.cached_summary.display_name,
@@ -345,7 +348,16 @@ impl WorkspaceManager {
             .await?
             .ok_or(WorkspaceError::ManifestNotFound)?;
         load_workspace_settings(session.as_ref()).await?;
-        let record = record_from_manifest(binding, &manifest, now_timestamp());
+        let mut record = record_from_manifest(binding.clone(), &manifest, now_timestamp());
+        let existing_modified_at = self
+            .catalog
+            .get(&manifest.id)
+            .await
+            .ok()
+            .filter(|record| record.storage_binding.same_resource(&binding))
+            .and_then(|record| record.cached_summary.modified_at);
+        record.cached_summary.modified_at =
+            read_modified_at(session.as_ref(), existing_modified_at).await?;
         let record = self.catalog.add_or_validate_same_binding(record).await?;
         Ok(AttachWorkspaceResult::from(&record))
     }
@@ -398,6 +410,7 @@ impl WorkspaceManager {
             .ok_or(WorkspaceError::ManifestNotFound)?;
         load_workspace_settings(session.as_ref()).await?;
         load_local_setting(session.as_ref()).await?;
+        load_workspace_state(session.as_ref()).await?;
         if manifest.id == *id {
             return self.open_workspace_locked(id).await;
         }
@@ -439,6 +452,10 @@ impl WorkspaceManager {
 
     pub async fn close_workspace(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.write().await;
+        if let Some(workspace) = self.runtime.get(id).await {
+            workspace.flush_state().await?;
+            self.cache_modification(id).await;
+        }
         self.runtime.remove(id).await;
         self.resource_gateway.revoke_workspace(id).await;
         Ok(())
@@ -541,6 +558,7 @@ impl WorkspaceManager {
             });
         }
         load_workspace_settings(target_session.as_ref()).await?;
+        load_workspace_state(target_session.as_ref()).await?;
         self.catalog
             .update_binding(id, target_binding.clone())
             .await?;
@@ -562,6 +580,7 @@ impl WorkspaceManager {
         let workspace = self.get_open_instance(id).await?;
         let manifest = workspace.update_display_name(display_name).await?;
         let previous_summary = self.catalog.get(id).await?.cached_summary;
+        let state = workspace.state_status().await;
         self.catalog
             .update_summary(
                 id,
@@ -569,12 +588,11 @@ impl WorkspaceManager {
                     &manifest,
                     now_timestamp(),
                     previous_summary.last_opened_at,
-                    Some(
-                        previous_summary
-                            .modified_at
-                            .unwrap_or_default()
-                            .max(now_timestamp()),
-                    ),
+                    if state.save_pending {
+                        previous_summary.modified_at
+                    } else {
+                        state.state.modified_at
+                    },
                 ),
             )
             .await?;
@@ -619,6 +637,34 @@ impl WorkspaceManager {
     ) -> Result<WorkspaceLocalSetting, WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.read().await;
         Ok(self.get_open_instance(id).await?.local_setting().await)
+    }
+
+    pub async fn get_state(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceStateStatus, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        Ok(self.get_open_instance(id).await?.state_status().await)
+    }
+
+    pub async fn reload_state(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceStateStatus, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.get_open_instance(id).await?.reload_state().await?;
+        self.cache_modification(id).await;
+        Ok(self.get_open_instance(id).await?.state_status().await)
+    }
+
+    pub async fn flush_state(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<WorkspaceStateStatus, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.get_open_instance(id).await?.flush_state().await?;
+        self.cache_modification(id).await;
+        Ok(self.get_open_instance(id).await?.state_status().await)
     }
 
     pub async fn set_last_open_file(
@@ -828,10 +874,18 @@ impl WorkspaceManager {
     }
 
     async fn cache_modification(&self, id: &WorkspaceId) {
-        // 内容已保存成功，不能因列表缓存写入失败向编辑器报告保存失败。
+        let Ok(workspace) = self.get_open_instance(id).await else {
+            return;
+        };
+        let _mutation = workspace.lock_mutation().await;
+        let status = workspace.state_status().await;
+        // 待写状态不发布到持久摘要；内容保存成功不能因缓存失败向编辑器报告失败。
+        if status.save_pending {
+            return;
+        }
         if let Err(error) = self
             .catalog
-            .update_modified_at(id, now_timestamp(), false)
+            .project_modified_at(id, status.state.modified_at)
             .await
         {
             log::warn!("缓存 Workspace 修改时间失败: {error}");
@@ -861,6 +915,8 @@ impl WorkspaceManager {
         id: &WorkspaceId,
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
         if let Some(workspace) = self.runtime.get(id).await {
+            workspace.reload_state().await?;
+            self.cache_modification(id).await;
             return Ok(workspace.snapshot().await);
         }
         let record = self.catalog.get(id).await?;
@@ -876,11 +932,22 @@ impl WorkspaceManager {
         }
         let settings = load_workspace_settings(session.as_ref()).await?;
         let local_setting = load_local_setting(session.as_ref()).await?;
-        // 必须在 mark_opened 写本机设置之前获取兜底，打开本身不算修改。
-        let modified_at = match record.cached_summary.modified_at {
-            Some(timestamp) => Some(timestamp),
-            None => folder_modified_at(session.as_ref()).await,
+        // 已存在的 State（包括 null）是权威；缺文件才初始化，打开本身不算修改。
+        let state = match load_workspace_state(session.as_ref()).await? {
+            Some(state) => state,
+            None => {
+                let state = WorkspaceState {
+                    modified_at: match record.cached_summary.modified_at {
+                        Some(timestamp) => Some(timestamp),
+                        None => folder_modified_at(session.as_ref()).await,
+                    },
+                    ..WorkspaceState::default()
+                };
+                save_workspace_state(session.as_ref(), &state).await?;
+                state
+            }
         };
+        let modified_at = state.modified_at;
         let workspace = Arc::new(
             WorkspaceInstance::new(
                 record.storage_binding,
@@ -888,6 +955,7 @@ impl WorkspaceManager {
                 manifest.clone(),
                 settings,
                 local_setting,
+                state,
             )
             .await?,
         );
@@ -976,6 +1044,14 @@ async fn initialize_workspace(
         }
     }
     // Manifest 是 Workspace 初始化完成的提交标记，必须最后写入。
+    save_workspace_state(
+        session,
+        &WorkspaceState {
+            modified_at: Some(manifest.created_at),
+            ..WorkspaceState::default()
+        },
+    )
+    .await?;
     save_manifest(session, manifest).await?;
     Ok(())
 }
@@ -1020,6 +1096,19 @@ async fn folder_modified_at(session: &super::storage::WorkspaceStorageSession) -
         .await
         .ok()
         .and_then(|metadata| metadata.modified_at)
+}
+
+async fn read_modified_at(
+    session: &super::storage::WorkspaceStorageSession,
+    cached: Option<u64>,
+) -> Result<Option<u64>, WorkspaceError> {
+    Ok(match load_workspace_state(session).await? {
+        Some(state) => state.modified_at,
+        None => match cached {
+            Some(timestamp) => Some(timestamp),
+            None => folder_modified_at(session).await,
+        },
+    })
 }
 
 fn validate_display_name(display_name: &str) -> Result<(), WorkspaceError> {

@@ -1,13 +1,27 @@
 use crate::support::{
     external_binding, path, provider, test_record, WorkspaceTestApp, MANAGED_PROVIDER,
 };
-use lonanote_core::workspace::{WorkspaceCatalog, WorkspaceId, WorkspaceManager, WriteOptions};
+use lonanote_core::workspace::{
+    save_workspace_state, WorkspaceCatalog, WorkspaceId, WorkspaceManager, WorkspaceState,
+    WorkspaceStorageResolver, WriteOptions,
+};
 
 async fn seed_modified_at(app: &WorkspaceTestApp, id: WorkspaceId, timestamp: u64) {
     let catalog = WorkspaceCatalog::load(app.data_dir.join("workspace-catalog.json"))
         .await
         .unwrap();
-    let mut summary = catalog.get(&id).await.unwrap().cached_summary;
+    let record = catalog.get(&id).await.unwrap();
+    let session = app.resolver.open(&record.storage_binding).await.unwrap();
+    save_workspace_state(
+        session.as_ref(),
+        &WorkspaceState {
+            modified_at: Some(timestamp),
+            ..WorkspaceState::default()
+        },
+    )
+    .await
+    .unwrap();
+    let mut summary = record.cached_summary;
     summary.modified_at = Some(timestamp);
     catalog.update_summary(&id, summary).await.unwrap();
 }
@@ -86,6 +100,13 @@ async fn successful_mutations_cache_modified_at_across_restart() {
         }
         let timestamp = modified_at(&manager, created.id).await.unwrap();
         assert!(timestamp > 1, "修改入口 {operation} 必须更新缓存");
+        let state = manager.get_state(&created.id).await.unwrap();
+        assert_eq!(state.state.modified_at, Some(timestamp));
+        assert!(!state.save_pending);
+        let state_json: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join(".lonanote/state.json")).unwrap())
+                .unwrap();
+        assert_eq!(state_json["modifiedAt"], timestamp);
         drop(manager);
         let restarted = app.start().await;
         assert_eq!(modified_at(&restarted, created.id).await, Some(timestamp));
@@ -146,6 +167,11 @@ async fn restored_folder_uses_folder_time_and_caches_it_without_opening() {
         .unwrap();
     manager.close_workspace(&created.id).await.unwrap();
     manager.remove_workspace(&created.id, false).await.unwrap();
+    std::fs::remove_file(
+        app.managed_workspace_root(&created)
+            .join(".lonanote/state.json"),
+    )
+    .unwrap();
     manager.scan_managed_workspaces().await.unwrap();
     let expected = std::fs::metadata(app.managed_workspace_root(&created))
         .unwrap()

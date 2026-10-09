@@ -1,18 +1,22 @@
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::{Mutex, MutexGuard, RwLock};
 
 use crate::workspace::{
     domain::{
         WorkspaceId, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRelativePath,
-        WorkspaceRuntimeStatus, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBinding,
-        WorkspaceStorageView,
+        WorkspaceRuntimeStatus, WorkspaceSettings, WorkspaceSnapshot, WorkspaceState,
+        WorkspaceStateStatus, WorkspaceStorageBinding, WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
     file_tree::{FileNode, FileTree},
     storage::{
-        save_local_setting, save_manifest, save_workspace_settings, validate_local_setting,
-        validate_workspace_settings, StorageCapabilities, StorageEntry, StorageEntryMetadata,
+        load_workspace_state, save_local_setting, save_manifest, save_workspace_settings,
+        save_workspace_state, validate_local_setting, validate_workspace_settings,
+        validate_workspace_state, StorageCapabilities, StorageEntry, StorageEntryMetadata,
         StorageReadOptions, StorageReadStream, WorkspaceStorageSession, WriteOptions,
     },
 };
@@ -27,6 +31,7 @@ pub struct WorkspaceInstance {
     manifest: RwLock<WorkspaceManifest>,
     settings: RwLock<WorkspaceSettings>,
     local_setting: RwLock<WorkspaceLocalSetting>,
+    state: RwLock<WorkspaceStateStatus>,
     mutation_lock: Mutex<()>,
     index: WorkspaceIndex,
 }
@@ -38,10 +43,12 @@ impl WorkspaceInstance {
         manifest: WorkspaceManifest,
         settings: WorkspaceSettings,
         local_setting: WorkspaceLocalSetting,
+        state: WorkspaceState,
     ) -> Result<Self, WorkspaceError> {
         manifest.validate()?;
         validate_workspace_settings(&settings)?;
         validate_local_setting(&local_setting)?;
+        validate_workspace_state(&state)?;
         let native_root = session.native_root_path().map(ToOwned::to_owned);
         Ok(Self {
             id: manifest.id,
@@ -50,6 +57,11 @@ impl WorkspaceInstance {
             manifest: RwLock::new(manifest),
             settings: RwLock::new(settings),
             local_setting: RwLock::new(local_setting),
+            state: RwLock::new(WorkspaceStateStatus {
+                state,
+                save_pending: false,
+                last_save_error: None,
+            }),
             mutation_lock: Mutex::new(()),
             index: WorkspaceIndex::new(native_root),
         })
@@ -77,6 +89,82 @@ impl WorkspaceInstance {
 
     pub async fn local_setting(&self) -> WorkspaceLocalSetting {
         self.local_setting.read().await.clone()
+    }
+
+    pub async fn state_status(&self) -> WorkspaceStateStatus {
+        self.state.read().await.clone()
+    }
+
+    /// Manager 投影摘要时串行读取状态并提交 Catalog，避免旧读覆盖重载后的值。
+    pub(crate) async fn lock_mutation(&self) -> MutexGuard<'_, ()> {
+        self.mutation_lock.lock().await
+    }
+
+    pub async fn flush_state(&self) -> Result<WorkspaceStateStatus, WorkspaceError> {
+        let _mutation = self.mutation_lock.lock().await;
+        self.flush_state_locked().await?;
+        Ok(self.state_status().await)
+    }
+
+    pub async fn reload_state(&self) -> Result<WorkspaceStateStatus, WorkspaceError> {
+        let _mutation = self.mutation_lock.lock().await;
+        let current = self.state_status().await;
+        if current.save_pending {
+            return Err(WorkspaceError::StateSavePending(
+                current.last_save_error.unwrap_or_default(),
+            ));
+        }
+        let state = load_workspace_state(self.session.as_ref())
+            .await?
+            .ok_or_else(|| {
+                WorkspaceError::InvalidState("state.json 不存在，请重新打开工作区以初始化".into())
+            })?;
+        let status = WorkspaceStateStatus {
+            state,
+            save_pending: false,
+            last_save_error: None,
+        };
+        *self.state.write().await = status.clone();
+        Ok(status)
+    }
+
+    async fn mark_modified_locked(&self) {
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        {
+            let mut status = self.state.write().await;
+            let next = status.state.modified_at.unwrap_or_default().max(timestamp);
+            if status.state.modified_at != Some(next) {
+                status.state.modified_at = Some(next);
+                status.save_pending = true;
+            }
+        }
+        // 主文件已经提交；状态失败单独记录，并在下次修改、flush 或 close 时重试。
+        if let Err(error) = self.flush_state_locked().await {
+            log::warn!("Workspace {} 状态保存失败，内容已保存: {error}", self.id);
+        }
+    }
+
+    async fn flush_state_locked(&self) -> Result<(), WorkspaceError> {
+        let current = self.state_status().await;
+        if !current.save_pending {
+            return Ok(());
+        }
+        match save_workspace_state(self.session.as_ref(), &current.state).await {
+            Ok(()) => {
+                let mut status = self.state.write().await;
+                status.save_pending = false;
+                status.last_save_error = None;
+                Ok(())
+            }
+            Err(error) => {
+                let message = error.to_string();
+                self.state.write().await.last_save_error = Some(message.clone());
+                Err(WorkspaceError::StateSavePending(message))
+            }
+        }
     }
 
     pub async fn capabilities(&self) -> Result<StorageCapabilities, WorkspaceError> {
@@ -134,6 +222,7 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.write(path, data, options).await?;
+        self.mark_modified_locked().await;
         self.index.invalidate().await;
         Ok(())
     }
@@ -154,6 +243,7 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.create_dir_all(path).await?;
+        self.mark_modified_locked().await;
         self.index.invalidate().await;
         Ok(())
     }
@@ -167,6 +257,7 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(to)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.rename(from, to).await?;
+        self.mark_modified_locked().await;
         self.index.invalidate().await;
         Ok(())
     }
@@ -179,6 +270,7 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.remove(path, recursive).await?;
+        self.mark_modified_locked().await;
         self.index.invalidate().await;
         Ok(())
     }
@@ -193,6 +285,7 @@ impl WorkspaceInstance {
         next.validate()?;
         save_manifest(self.session.as_ref(), &next).await?;
         *self.manifest.write().await = next.clone();
+        self.mark_modified_locked().await;
         Ok(next)
     }
 
@@ -203,6 +296,7 @@ impl WorkspaceInstance {
         let _mutation = self.mutation_lock.lock().await;
         save_workspace_settings(self.session.as_ref(), &settings).await?;
         *self.settings.write().await = settings.clone();
+        self.mark_modified_locked().await;
         self.index.invalidate().await;
         Ok(settings)
     }

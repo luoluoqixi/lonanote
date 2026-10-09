@@ -10,10 +10,10 @@ use serde::{Deserialize, Serialize};
 use super::{
     domain::{
         StorageProviderId, StorageResourceIdentity, WorkspaceDirectoryName, WorkspaceLocalSetting,
-        WorkspaceManifest, WorkspaceRelativePath, WorkspaceSettings, WorkspaceStorageBinding,
-        WorkspaceStorageBindingRequest, WORKSPACE_LOCAL_SETTING_PATH,
+        WorkspaceManifest, WorkspaceRelativePath, WorkspaceSettings, WorkspaceState,
+        WorkspaceStorageBinding, WorkspaceStorageBindingRequest, WORKSPACE_LOCAL_SETTING_PATH,
         WORKSPACE_LOCAL_SETTING_SCHEMA_VERSION, WORKSPACE_MANIFEST_PATH, WORKSPACE_SETTINGS_PATH,
-        WORKSPACE_SETTINGS_SCHEMA_VERSION,
+        WORKSPACE_SETTINGS_SCHEMA_VERSION, WORKSPACE_STATE_PATH, WORKSPACE_STATE_SCHEMA_VERSION,
     },
     error::{StorageError, WorkspaceError},
 };
@@ -417,6 +417,49 @@ pub async fn save_workspace_settings(
     session
         .write(&path, &data, WriteOptions::atomic_replace())
         .await?;
+    Ok(())
+}
+
+pub async fn load_workspace_state(
+    session: &WorkspaceStorageSession,
+) -> Result<Option<WorkspaceState>, WorkspaceError> {
+    let path = WorkspaceRelativePath::parse(WORKSPACE_STATE_PATH)?;
+    if !session.exists(&path).await? {
+        return Ok(None);
+    }
+    let bytes = session.read(&path).await?;
+    let state = serde_json::from_slice::<WorkspaceState>(&bytes)
+        .map_err(|error| WorkspaceError::InvalidState(error.to_string()))?;
+    validate_workspace_state(&state)?;
+    Ok(Some(state))
+}
+
+pub async fn save_workspace_state(
+    session: &WorkspaceStorageSession,
+    state: &WorkspaceState,
+) -> Result<(), WorkspaceError> {
+    validate_workspace_state(state)?;
+    let path = WorkspaceRelativePath::parse(WORKSPACE_STATE_PATH)?;
+    let bytes = serde_json::to_vec_pretty(state)
+        .map_err(|error| WorkspaceError::InvalidState(error.to_string()))?;
+    session
+        .write(&path, &bytes, WriteOptions::atomic_replace())
+        .await?;
+    Ok(())
+}
+
+pub(crate) fn validate_workspace_state(state: &WorkspaceState) -> Result<(), WorkspaceError> {
+    if state.schema_version != WORKSPACE_STATE_SCHEMA_VERSION {
+        return Err(WorkspaceError::InvalidState(format!(
+            "不支持的 schema: {}",
+            state.schema_version
+        )));
+    }
+    if state.extra.contains_key("schemaVersion") || state.extra.contains_key("modifiedAt") {
+        return Err(WorkspaceError::InvalidState(
+            "扩展状态不能覆盖保留字段".into(),
+        ));
+    }
     Ok(())
 }
 

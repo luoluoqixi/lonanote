@@ -290,9 +290,19 @@ Catalog 主文件、backup 和 App Session 通过原子临时文件写入；Unix
 
 缓存摘要允许应用在不打开所有 Workspace 的情况下列出工作区。Manifest 仍是名称和创建时间的最终权威；每次成功打开会刷新摘要。
 
-列表摘要还保存 `lastOpenedAt` 和 `modifiedAt`（Unix 秒）。`modifiedAt` 在文件写入、建目录、重命名、删除、修改工作区名称或 Settings 成功后更新；读取、打开、最近文件记录、ID 修复和 Index refresh 不更新已有修改时间。Catalog 只局部更新修改时间，保证并发更新不覆盖其他摘要字段，同一秒内不重复写盘。文件已保存成功后，修改时间缓存写入失败仅记 warning，不将保存误报为失败。
+列表摘要还保存 `lastOpenedAt` 和 `modifiedAt`（Unix 秒）。`modifiedAt` 是 `.lonanote/state.json` 的投影，不是另一份权威来源。未打开的工作区使用 Catalog，已打开的列表使用 Instance State；成功打开、重复 open 和显式 `workspace.reload_state` 会以 State 刷新摘要，包括更早的时间或 `null`，不能使用 `max(State, Catalog)` 合并。
 
-旧 Catalog 或扫描恢复的工作区没有修改时间缓存时，列表仅查询 Provider 根文件夹 metadata 并缓存 `modified_at`，不递归扫描、不打开 Runtime、不校验 Manifest；打开时也在写本机状态前补齐。查询失败或 Provider 不支持时间则返回 `null`。根目录时间只是兜底估算，不能精确反映子文件或应用外修改；卸载后仅还原文件夹也无法恢复已丢失的 Catalog 精确缓存。UI 默认按最近修改降序，未知时间置底，仍保留已有显式排序偏好。
+没有摘要缓存时，列表读取已有 State，只有文件缺失才使用 Provider 根文件夹 metadata 兜底，不写工作区文件。扫描新工作区和 attach 也读取 State；备份工作区文件夹中的 State 可以恢复修改时间。旧工作区缺少 State 时，在成功打开流程中按 Catalog 修改时间、根文件夹时间、`null` 的顺序初始化。根目录时间只是估算，不能精确反映子文件或应用外修改。UI 默认按最近修改降序，未知时间置底，仍保留已有显式排序偏好。
+
+### Workspace State：可同步业务状态
+
+位置：`<workspace root>/.lonanote/state.json`，不加入默认 `.gitignore`。第一版只保存 `schemaVersion: 1` 和可为空的 `modifiedAt`，创建时间继续由 Manifest 保存。独立的 `WorkspaceState`、Storage load/save/校验与 Instance 内存状态便于后续扩展；同版本未知字段通过 `serde(flatten)` 保留，不支持的版本或损坏 JSON 返回错误，不当作缺文件覆盖。
+
+文件写入、建目录、重命名、删除、修改工作区名称或 Settings 成功后，在 Instance mutation lock 内更新 State 并通过 Storage 原子写入，再由 Manager 投影 Catalog。读取、打开、最近文件记录、ID 修复、Index refresh 和 State 文件本身的保存不更新时间；同一秒状态未变化时不重复写盘。
+
+内容文件与 State 不是跨文件事务。内容已经保存而 State 写入失败时，不误报内容保存失败，而保留内存待写状态和独立 `lastSaveError`；后续修改、`workspace.flush_state` 或 close 会重试。`workspace.get_state` 返回 `{ state, savePending, lastSaveError }`，异常可由上层单独展示；未持久化 State 不投影到 Catalog。close 重试失败保留 Runtime，reload 在有待写状态时拒绝覆盖。强制终止进程仍可能丢失尚未写入的状态；不保证跨进程并发写入。
+
+未来同步完成后需要显式调用 `workspace.reload_state`，当前没有文件 watcher 或自动跨设备合并。重载本身不更新时间；保存失败时不得直接重载丢弃本机待写状态。时间戳只用于显示排序，不作为未来同步冲突判定的唯一依据。
 
 ### 4.6 App Session：应用级会话
 

@@ -313,6 +313,7 @@ async fn instance_rejects_invalid_settings() {
         WorkspaceManifest::new(id, "Invalid Settings".into(), 1),
         settings,
         WorkspaceLocalSetting::default(),
+        lonanote_core::workspace::WorkspaceState::default(),
     )
     .await
     .unwrap_err();
@@ -334,6 +335,7 @@ async fn instance_rejects_invalid_local_setting() {
         WorkspaceManifest::new(id, "Invalid Local Setting".into(), 1),
         WorkspaceSettings::default(),
         local_setting,
+        lonanote_core::workspace::WorkspaceState::default(),
     )
     .await
     .unwrap_err();

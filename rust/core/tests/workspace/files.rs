@@ -151,6 +151,7 @@ async fn rejects_index_without_native_path() {
         WorkspaceManifest::new(id, "Memory".into(), 1),
         WorkspaceSettings::default(),
         WorkspaceLocalSetting::default(),
+        lonanote_core::workspace::WorkspaceState::default(),
     )
     .await
     .unwrap();

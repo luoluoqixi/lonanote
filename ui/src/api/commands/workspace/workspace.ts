@@ -15,6 +15,7 @@ import type {
   WorkspaceRelativePath,
   WorkspaceSettings,
   WorkspaceSnapshot,
+  WorkspaceStateStatus,
   WorkspaceStorageTarget,
 } from "./types";
 
@@ -137,6 +138,18 @@ export const workspace = {
 
   getLocalSetting: (workspaceId: WorkspaceId): Promise<WorkspaceLocalSetting> => {
     return invokeWorkspaceResult("workspace.get_local_setting", { workspaceId });
+  },
+
+  getState: (workspaceId: WorkspaceId): Promise<WorkspaceStateStatus> => {
+    return invokeWorkspaceResult("workspace.get_state", { workspaceId });
+  },
+
+  reloadState: (workspaceId: WorkspaceId): Promise<WorkspaceStateStatus> => {
+    return invokeWorkspaceResult("workspace.reload_state", { workspaceId });
+  },
+
+  flushState: (workspaceId: WorkspaceId): Promise<WorkspaceStateStatus> => {
+    return invokeWorkspaceResult("workspace.flush_state", { workspaceId });
   },
 
   setLastOpenFile: (

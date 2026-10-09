@@ -239,3 +239,26 @@ fn system_get_system_locale_flow() {
         assert_eq!(locale, system_locale());
     });
 }
+
+#[test]
+fn workspace_state_api_flow() {
+    let (app, _guard) = locked_app();
+    run(async {
+        let created = create_managed("API State").await;
+        let status: Value = invoke_json("workspace.get_state", workspace_args(created.id)).await;
+        assert_eq!(status["state"]["schemaVersion"], 1);
+        assert_eq!(status["savePending"], false);
+        std::fs::write(
+            app.managed_workspace_root(&created)
+                .join(".lonanote/state.json"),
+            r#"{"schemaVersion":1,"modifiedAt":1}"#,
+        )
+        .unwrap();
+        let reloaded: Value =
+            invoke_json("workspace.reload_state", workspace_args(created.id)).await;
+        assert_eq!(reloaded["state"]["modifiedAt"], 1);
+        let flushed: Value = invoke_json("workspace.flush_state", workspace_args(created.id)).await;
+        assert_eq!(flushed, reloaded);
+        close_and_remove(created.id).await;
+    });
+}

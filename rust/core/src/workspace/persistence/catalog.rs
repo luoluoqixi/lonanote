@@ -197,7 +197,6 @@ impl WorkspaceCatalog {
                     .storage_binding
                     .same_resource(&record.storage_binding)
                 {
-                    record.cached_summary.modified_at = existing.cached_summary.modified_at;
                     record.cached_summary.last_opened_at = existing.cached_summary.last_opened_at;
                     data.workspaces.insert(record.id, record.clone());
                     return Ok(record);
@@ -354,16 +353,15 @@ impl WorkspaceCatalog {
         .await
     }
 
-    /// 只更新修改时间，避免并发保存覆盖其他摘要字段；同一秒内不重复写盘。
-    pub(crate) async fn update_modified_at(
+    /// 列表仅补齐缺失缓存，不覆盖已存在的摘要值。
+    pub(crate) async fn cache_missing_modified_at(
         &self,
         id: &WorkspaceId,
         timestamp: u64,
-        only_if_missing: bool,
     ) -> Result<Option<u64>, WorkspaceError> {
         let _mutation = self.mutation_lock.lock().await;
         let previous = self.get(id).await?.cached_summary.modified_at;
-        if previous.is_some_and(|previous| only_if_missing || previous >= timestamp) {
+        if previous.is_some() {
             return Ok(previous);
         }
         let mut next = self.state.read().await.clone();
@@ -381,6 +379,33 @@ impl WorkspaceCatalog {
         )?;
         *self.state.write().await = next;
         Ok(Some(timestamp))
+    }
+
+    /// State 的权威投影允许时间变小或变为未知，不能采用单调 max 合并。
+    pub(crate) async fn project_modified_at(
+        &self,
+        id: &WorkspaceId,
+        modified_at: Option<u64>,
+    ) -> Result<(), WorkspaceError> {
+        let _mutation = self.mutation_lock.lock().await;
+        if self.get(id).await?.cached_summary.modified_at == modified_at {
+            return Ok(());
+        }
+        let mut next = self.state.read().await.clone();
+        next.workspaces
+            .get_mut(id)
+            .expect("已检查工作区存在")
+            .cached_summary
+            .modified_at = modified_at;
+        write_json_atomically(
+            &self.file_path,
+            &next,
+            "Workspace Catalog",
+            catalog_error,
+            WorkspaceCatalogData::validate,
+        )?;
+        *self.state.write().await = next;
+        Ok(())
     }
 
     async fn update<F, T>(&self, update: F) -> Result<T, WorkspaceError>
@@ -414,7 +439,7 @@ mod tests {
     use serde_json::json;
 
     #[tokio::test]
-    async fn modification_cache_is_monotonic_and_fallback_never_overwrites_it() {
+    async fn state_projection_allows_older_and_unknown_time_and_fallback_does_not_overwrite() {
         let temp = tempfile::TempDir::new().unwrap();
         let catalog = WorkspaceCatalog::load(temp.path().join("catalog.json"))
             .await
@@ -440,20 +465,16 @@ mod tests {
         let id = record.id;
         catalog.add(record).await.unwrap();
         assert_eq!(
-            catalog.update_modified_at(&id, 50, true).await.unwrap(),
+            catalog.cache_missing_modified_at(&id, 50).await.unwrap(),
             Some(50)
         );
-        let (first, second) = tokio::join!(
-            catalog.update_modified_at(&id, 100, false),
-            catalog.update_modified_at(&id, 200, false)
-        );
-        first.unwrap();
-        second.unwrap();
+        catalog.project_modified_at(&id, Some(200)).await.unwrap();
         let backup = std::fs::read(catalog.file_path().with_extension("json.bak")).unwrap();
-        for (timestamp, fallback) in [(200, false), (100, false), (300, true)] {
+        catalog.project_modified_at(&id, Some(200)).await.unwrap();
+        for timestamp in [200, 100, 300] {
             assert_eq!(
                 catalog
-                    .update_modified_at(&id, timestamp, fallback)
+                    .cache_missing_modified_at(&id, timestamp)
                     .await
                     .unwrap(),
                 Some(200)
@@ -468,5 +489,15 @@ mod tests {
         assert_eq!(summary.modified_at, Some(200));
         assert_eq!(summary.display_name, "Notes");
         assert_eq!(summary.last_opened_at, Some(2));
+        catalog.project_modified_at(&id, Some(1)).await.unwrap();
+        assert_eq!(
+            catalog.get(&id).await.unwrap().cached_summary.modified_at,
+            Some(1)
+        );
+        catalog.project_modified_at(&id, None).await.unwrap();
+        assert_eq!(
+            catalog.get(&id).await.unwrap().cached_summary.modified_at,
+            None
+        );
     }
 }

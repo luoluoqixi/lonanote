@@ -2,7 +2,9 @@ use std::collections::{BTreeMap, HashSet};
 
 use uuid::Uuid;
 
-use super::{now_timestamp, record_from_manifest, summary_from_manifest, WorkspaceManager};
+use super::{
+    now_timestamp, read_modified_at, record_from_manifest, summary_from_manifest, WorkspaceManager,
+};
 use crate::workspace::{
     load_local_setting, load_manifest, load_workspace_settings, save_manifest,
     ResolveScanWorkspaceIdConflictResult, ScanManagedWorkspacesResult,
@@ -66,11 +68,12 @@ impl WorkspaceManager {
                         .await?
                         .ok_or(WorkspaceError::ManifestNotFound)?;
                     load_workspace_settings(session.as_ref()).await?;
+                    let mut record =
+                        record_from_manifest(binding.clone(), &manifest, now_timestamp());
+                    record.cached_summary.modified_at =
+                        read_modified_at(session.as_ref(), None).await?;
                     let label = location_label(&binding, Some(session.as_ref()));
-                    Ok::<_, WorkspaceError>((
-                        record_from_manifest(binding, &manifest, now_timestamp()),
-                        label,
-                    ))
+                    Ok::<_, WorkspaceError>((record, label))
                 }
                 .await;
                 let (mut record, label) = match candidate {
@@ -245,6 +248,7 @@ impl WorkspaceManager {
             }
             load_workspace_settings(session.as_ref()).await?;
             load_local_setting(session.as_ref()).await?;
+            crate::workspace::load_workspace_state(session.as_ref()).await?;
             if index != keep_index && !session.capabilities().await?.can_write {
                 return Err(WorkspaceError::ScanConflict(
                     "需要更换 ID 的工作区文件夹不可写".into(),
@@ -282,7 +286,11 @@ impl WorkspaceManager {
                     &manifest,
                     now_timestamp(),
                     registered.and_then(|record| record.cached_summary.last_opened_at),
-                    registered.and_then(|record| record.cached_summary.modified_at),
+                    read_modified_at(
+                        sessions[index].as_ref(),
+                        registered.and_then(|record| record.cached_summary.modified_at),
+                    )
+                    .await?,
                 ),
             });
         }
