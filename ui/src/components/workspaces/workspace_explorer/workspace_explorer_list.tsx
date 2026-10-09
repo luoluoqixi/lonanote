@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   NativeList,
   NativeListCustomItem,
-  NativeListItem,
   NativeListNavigationItem,
   NativeListSection,
   Text,
@@ -190,11 +189,7 @@ function WorkspaceExplorerEntryItem({
     titleFontSize: 16,
   };
 
-  if (isDirectory) {
-    return <NativeListNavigationItem {...sharedProps} onPress={onPress} />;
-  }
-
-  return <NativeListItem {...sharedProps} onPress={onPress} />;
+  return <NativeListNavigationItem {...sharedProps} chevron={isDirectory} onPress={onPress} />;
 }
 
 export function WorkspaceExplorerList({
