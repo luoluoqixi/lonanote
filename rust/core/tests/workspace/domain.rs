@@ -1,8 +1,8 @@
 use crate::support::{path, provider, MANAGED_PROVIDER};
 use lonanote_core::workspace::{
     StorageProviderId, StorageResourceIdentity, StorageResourceRef, WorkspaceDirectoryName,
-    WorkspaceId, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRelativePath,
-    WorkspaceSessionData, WorkspaceSettings, WorkspaceStorageBinding,
+    WorkspaceId, WorkspaceIdMismatchResolution, WorkspaceLocalSetting, WorkspaceManifest,
+    WorkspaceRelativePath, WorkspaceSessionData, WorkspaceSettings, WorkspaceStorageBinding,
     WorkspaceStorageBindingRequest, WorkspaceStorageLocation,
 };
 use serde_json::json;
@@ -226,6 +226,15 @@ fn public_json_contract() {
     assert!(manifest_json.get("settings").is_none());
     assert!(manifest_json.get("storageBinding").is_none());
     assert!(!manifest_json.to_string().contains("resourceRef"));
+
+    assert_eq!(
+        serde_json::to_value(WorkspaceIdMismatchResolution::UseManifestId).unwrap(),
+        "useManifestId"
+    );
+    assert_eq!(
+        serde_json::to_value(WorkspaceIdMismatchResolution::GenerateNewId).unwrap(),
+        "generateNewId"
+    );
 }
 
 #[test]

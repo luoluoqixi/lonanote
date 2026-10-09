@@ -11,13 +11,13 @@ use tokio::sync::RwLock;
 use crate::config::system_locale::system_locale;
 use crate::workspace::{
     domain::{
-        AttachWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
-        StorageCleanupStatus, StorageProviderId, WorkspaceAvailability, WorkspaceCachedSummary,
-        WorkspaceDirectoryName, WorkspaceId, WorkspaceListItem, WorkspaceLocalSetting,
-        WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath, WorkspaceSettings,
-        WorkspaceSnapshot, WorkspaceStorageBinding, WorkspaceStorageBindingRequest,
-        WorkspaceStorageKindView, WorkspaceStorageLocation, WorkspaceStorageTarget,
-        WorkspaceStorageView,
+        AttachWorkspaceResult, OpenWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
+        ScanManagedWorkspacesResult, StorageCleanupStatus, StorageProviderId,
+        WorkspaceAvailability, WorkspaceCachedSummary, WorkspaceDirectoryName, WorkspaceId,
+        WorkspaceIdMismatchResolution, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceManifest,
+        WorkspaceRecord, WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot,
+        WorkspaceStorageBinding, WorkspaceStorageBindingRequest, WorkspaceStorageKindView,
+        WorkspaceStorageLocation, WorkspaceStorageTarget, WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
     file_tree::{FileNode, FileTree},
@@ -136,6 +136,70 @@ impl WorkspaceManager {
         }
         items.sort_by(|left, right| left.display_name.cmp(&right.display_name));
         items
+    }
+
+    /// 扫描所有 Managed Provider，只注册 Catalog 尚未记录的合法 Workspace。
+    ///
+    /// 已注册 ID、已占用 Binding、无效 Manifest/Settings 都只计数并跳过；扫描不会
+    /// 修复或改写任何已有 Workspace。
+    pub async fn scan_managed_workspaces(
+        &self,
+    ) -> Result<ScanManagedWorkspacesResult, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.write().await;
+        let mut result = ScanManagedWorkspacesResult::default();
+        let mut catalog = self.catalog.snapshot().await;
+
+        for provider_id in self.storage_resolver.managed_provider_ids() {
+            let requests = self
+                .storage_resolver
+                .list_managed_workspace_bindings(&provider_id)
+                .await?;
+            for request in requests {
+                result.scanned_count += 1;
+                let binding = match self.resolve_binding(request).await {
+                    Ok(binding) => binding,
+                    Err(_) => {
+                        result.invalid_count += 1;
+                        continue;
+                    }
+                };
+                let session = match self.storage_resolver.open(&binding).await {
+                    Ok(session) => session,
+                    Err(_) => {
+                        result.invalid_count += 1;
+                        continue;
+                    }
+                };
+                let manifest = match load_manifest(session.as_ref()).await {
+                    Ok(Some(manifest)) => manifest,
+                    Ok(None) | Err(_) => {
+                        result.invalid_count += 1;
+                        continue;
+                    }
+                };
+                if load_workspace_settings(session.as_ref()).await.is_err() {
+                    result.invalid_count += 1;
+                    continue;
+                }
+                if catalog.workspaces.contains_key(&manifest.id) {
+                    result.already_registered_count += 1;
+                    continue;
+                }
+                if catalog.workspaces.values().any(|record| {
+                    record.storage_binding.same_resource(&binding)
+                        || record.storage_binding.same_reference(&binding)
+                }) {
+                    result.binding_conflict_count += 1;
+                    continue;
+                }
+
+                let record = record_from_manifest(binding, &manifest, now_timestamp());
+                self.catalog.add(record.clone()).await?;
+                catalog.workspaces.insert(record.id, record);
+                result.registered_count += 1;
+            }
+        }
+        Ok(result)
     }
 
     pub async fn get_workspace(
@@ -333,6 +397,84 @@ impl WorkspaceManager {
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.write().await;
         self.open_workspace_locked(id).await
+    }
+
+    pub async fn open_workspace_with_diagnostics(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<OpenWorkspaceResult, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.write().await;
+        match self.open_workspace_locked(id).await {
+            Ok(workspace) => Ok(OpenWorkspaceResult::Opened {
+                workspace: Box::new(workspace),
+            }),
+            Err(WorkspaceError::Storage(StorageError::NotFound { path })) if path.is_root() => {
+                Ok(OpenWorkspaceResult::DirectoryMissing { workspace_id: *id })
+            }
+            Err(WorkspaceError::WorkspaceIdMismatch { expected, actual }) => {
+                let manifest_id_registered = self.catalog.get(&actual).await.is_ok();
+                Ok(OpenWorkspaceResult::IdMismatch {
+                    expected_id: expected,
+                    actual_id: actual,
+                    manifest_id_registered,
+                })
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    pub async fn resolve_workspace_id_mismatch(
+        &self,
+        id: &WorkspaceId,
+        resolution: WorkspaceIdMismatchResolution,
+    ) -> Result<WorkspaceSnapshot, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.write().await;
+        if self.runtime.contains(id).await {
+            return Err(WorkspaceError::CannotModifyOpenWorkspace(*id));
+        }
+        let record = self.catalog.get(id).await?;
+        let session = self.storage_resolver.open(&record.storage_binding).await?;
+        let mut manifest = load_manifest(session.as_ref())
+            .await?
+            .ok_or(WorkspaceError::ManifestNotFound)?;
+        load_workspace_settings(session.as_ref()).await?;
+        load_local_setting(session.as_ref()).await?;
+        if manifest.id == *id {
+            return self.open_workspace_locked(id).await;
+        }
+
+        let replacement_id = match resolution {
+            WorkspaceIdMismatchResolution::UseManifestId => manifest.id,
+            WorkspaceIdMismatchResolution::GenerateNewId => {
+                let generated_id = loop {
+                    let candidate = WorkspaceId::new();
+                    match self.catalog.get(&candidate).await {
+                        Ok(_) => continue,
+                        Err(WorkspaceError::NotFoundWorkspace(_)) => break candidate,
+                        Err(error) => return Err(error),
+                    }
+                };
+                manifest.id = generated_id;
+                // 先写 Manifest：若后续 Catalog 持久化失败，仍可再次通过 ID 不匹配流程恢复。
+                save_manifest(session.as_ref(), &manifest).await?;
+                generated_id
+            }
+        };
+        let replacement = WorkspaceRecord {
+            id: replacement_id,
+            storage_binding: record.storage_binding,
+            cached_summary: summary_from_manifest(
+                &manifest,
+                now_timestamp(),
+                record.cached_summary.last_opened_at,
+            ),
+        };
+        self.catalog.replace_workspace_id(id, replacement).await?;
+        self.session
+            .replace_workspace_id(id, replacement_id)
+            .await?;
+        self.resource_gateway.revoke_workspace(id).await;
+        self.open_workspace_locked(&replacement_id).await
     }
 
     pub async fn close_workspace(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {

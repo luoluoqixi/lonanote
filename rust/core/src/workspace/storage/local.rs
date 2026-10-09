@@ -575,6 +575,62 @@ impl WorkspaceStorageResolver for LocalFsResolver {
         provider_ids
     }
 
+    async fn list_managed_workspace_bindings(
+        &self,
+        provider_id: &StorageProviderId,
+    ) -> Result<Vec<WorkspaceStorageBindingRequest>, StorageError> {
+        let provider_root = self.managed_roots.get(provider_id).ok_or_else(|| {
+            StorageError::UnsupportedProvider {
+                provider_id: provider_id.clone(),
+            }
+        })?;
+        let workspaces_root = provider_root.join("workspaces");
+        if !workspaces_root.exists() {
+            return Ok(Vec::new());
+        }
+        let metadata = tokio::fs::symlink_metadata(&workspaces_root)
+            .await
+            .map_err(|error| map_root_io("scan_managed_metadata", error))?;
+        if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            return Err(StorageError::NotDirectory {
+                path: WorkspaceRelativePath::root(),
+            });
+        }
+
+        let mut reader = tokio::fs::read_dir(&workspaces_root)
+            .await
+            .map_err(|error| map_root_io("scan_managed_read_dir", error))?;
+        let mut directory_names = Vec::new();
+        while let Some(entry) = reader
+            .next_entry()
+            .await
+            .map_err(|error| map_root_io("scan_managed_next_entry", error))?
+        {
+            let file_type = entry
+                .file_type()
+                .await
+                .map_err(|error| map_root_io("scan_managed_file_type", error))?;
+            if file_type.is_symlink() || !file_type.is_dir() {
+                continue;
+            }
+            let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
+                continue;
+            };
+            if let Ok(directory_name) = WorkspaceDirectoryName::parse(name) {
+                directory_names.push(directory_name);
+            }
+        }
+        directory_names.sort();
+        Ok(directory_names
+            .into_iter()
+            .map(|directory_name| WorkspaceStorageBindingRequest {
+                provider_id: provider_id.clone(),
+                provider_schema_version: LOCAL_FS_PROVIDER_SCHEMA_VERSION,
+                location: WorkspaceStorageLocation::Managed { directory_name },
+            })
+            .collect())
+    }
+
     async fn resolve_identity(
         &self,
         request: &WorkspaceStorageBindingRequest,

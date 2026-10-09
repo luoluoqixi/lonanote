@@ -82,6 +82,26 @@ export interface WorkspaceListItem {
   availability: WorkspaceAvailability;
 }
 
+export type WorkspaceIdMismatchResolution = "useManifestId" | "generateNewId";
+
+export type OpenWorkspaceResult =
+  | { status: "opened"; workspace: WorkspaceSnapshot }
+  | { status: "directoryMissing"; workspaceId: WorkspaceId }
+  | {
+      status: "idMismatch";
+      expectedId: WorkspaceId;
+      actualId: WorkspaceId;
+      manifestIdRegistered: boolean;
+    };
+
+export interface ScanManagedWorkspacesResult {
+  scannedCount: number;
+  registeredCount: number;
+  alreadyRegisteredCount: number;
+  bindingConflictCount: number;
+  invalidCount: number;
+}
+
 export type ManagedWorkspaceStorageBindingRequest = {
   kind: "managed";
   providerId: StorageProviderId;

@@ -24,6 +24,7 @@ type WorkspaceSelectListProps = {
   isDeletingWorkspace: boolean;
   isLoading: boolean;
   isOpeningWorkspace: boolean;
+  isScanningWorkspaces: boolean;
   isUpdatingWorkspace: boolean;
   isWorkspaceSelectionMode: boolean;
   onCreateWorkspace: () => void;
@@ -54,6 +55,7 @@ export function WorkspaceSelectList({
   isDeletingWorkspace,
   isLoading,
   isOpeningWorkspace,
+  isScanningWorkspaces,
   isUpdatingWorkspace,
   isWorkspaceSelectionMode,
   onCreateWorkspace,
@@ -80,7 +82,8 @@ export function WorkspaceSelectList({
         ? "暂无工作区"
         : null;
   const showCreateWorkspaceButton = !isLoading && !hasError;
-  const isInteractionDisabled = isOpeningWorkspace || isDeletingWorkspace || isUpdatingWorkspace;
+  const isInteractionDisabled =
+    isOpeningWorkspace || isScanningWorkspaces || isDeletingWorkspace || isUpdatingWorkspace;
   const sections = groupWorkspaces(workspaces, groupMode, sortValue);
 
   return (

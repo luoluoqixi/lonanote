@@ -218,6 +218,39 @@ impl WorkspaceCatalog {
         .await
     }
 
+    /// 将一个已注册 Workspace 原子地改用 Manifest 中的 ID。
+    pub async fn replace_workspace_id(
+        &self,
+        old_id: &WorkspaceId,
+        replacement: WorkspaceRecord,
+    ) -> Result<WorkspaceRecord, WorkspaceError> {
+        let old_id = *old_id;
+        self.update(move |data| {
+            if old_id != replacement.id && data.workspaces.contains_key(&replacement.id) {
+                return Err(WorkspaceError::AlreadyRegistered(replacement.id));
+            }
+            let old_record = data
+                .workspaces
+                .get(&old_id)
+                .ok_or(WorkspaceError::NotFoundWorkspace(old_id))?;
+            if !old_record
+                .storage_binding
+                .same_resource(&replacement.storage_binding)
+            {
+                return Err(WorkspaceError::Catalog(
+                    "Workspace ID 修复不能同时更换 StorageBinding".to_string(),
+                ));
+            }
+            data.workspaces.remove(&old_id);
+            if data.initial_workspace_id == Some(old_id) {
+                data.initial_workspace_id = Some(replacement.id);
+            }
+            data.workspaces.insert(replacement.id, replacement.clone());
+            Ok(replacement)
+        })
+        .await
+    }
+
     pub async fn update_binding(
         &self,
         id: &WorkspaceId,

@@ -474,6 +474,13 @@ Managed 创建遇到同名目录时依次尝试 `name`、`name-2`、`name-3`。
 
 attach 只注册，不自动打开。缺失 `settings.local.json` 不妨碍 attach。
 
+### 8.3.1 扫描 Managed Workspace
+
+用户可从工作区页面显式调用 `scan_managed`。Manager 枚举所有 Managed Provider 的直属
+工作区目录，验证 Manifest 与 Settings 后，仅把尚未注册且 Binding 未被占用的 Workspace
+加入 Catalog。已注册 ID、ID 不匹配的既有 Binding、无效目录都只计数并跳过；扫描不修改
+任何 Workspace 文件，也不承担修复职责。
+
 ### 8.4 打开
 
 ```mermaid
@@ -501,6 +508,11 @@ sequenceDiagram
 任何后续提交失败都会把刚插入的 Runtime Instance 移除，使调用方不会看到半打开状态。
 
 重复打开同一个 ID 是幂等的：若 Runtime 已存在，直接返回 snapshot。
+
+工作区选择页使用 `open_with_diagnostics` 区分根目录不存在与 Manifest ID 不匹配。Manifest
+ID 未被占用时，用户可以确认以 Manifest ID 重键 Catalog；若 Manifest ID 已被其他工作区
+占用，用户可以为当前文件夹生成新 ID。`resolve_id_mismatch` 会同步 Manifest、Catalog、App
+Session 与 `initialWorkspaceId`，然后重新打开。
 
 ### 8.5 Settings 与 LocalSetting
 
@@ -547,7 +559,7 @@ Catalog Binding 是最终提交点。当前 relocate 成功后保留源目录，
 
 当前 Workspace 相关 command 分为：
 
-- 生命周期：`list`、`list_storage_provider_ids`、`list_managed_storage_provider_ids`、`get`、`is_open`、`create_managed`、`create_external`、`attach`、`open`、`close`、`remove`、`relocate`；
+- 生命周期：`list`、`list_storage_provider_ids`、`list_managed_storage_provider_ids`、`scan_managed`、`get`、`is_open`、`create_managed`、`create_external`、`attach`、`open`、`open_with_diagnostics`、`resolve_id_mismatch`、`close`、`remove`、`relocate`；
 - 元数据与设置：`update_display_name`、`get_settings`、`set_settings`；
 - 本机恢复：`get_last_workspace_id`、`get_local_setting`、`set_last_open_file`；
 - Storage 能力和文件操作：`capabilities`、`exists`、`metadata`、`list`、读写、建目录、重命名、删除；

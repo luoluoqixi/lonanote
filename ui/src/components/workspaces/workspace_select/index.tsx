@@ -4,13 +4,14 @@ import { type SelectHandle, confirmNative } from "rn-ui-kit";
 import {
   type StorageProviderId,
   type WorkspaceListItem,
+  type WorkspaceSnapshot,
   workspace,
 } from "@/api/commands/workspace";
 import { isSystemLocaleCN, os } from "@/api/common";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
-import { useWorkspaceNavigation, useWorkspaceSession, useWorkspaceState } from "@/hooks/workspace";
+import { useWorkspaceNavigation, useWorkspaceSession } from "@/hooks/workspace";
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
@@ -52,7 +53,6 @@ export function WorkspaceSelect() {
   const { toast } = useToast();
   const { resetToWorkspace } = useWorkspaceNavigation();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
-  const { open: openWorkspace } = useWorkspaceState(null);
   const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const workspaceSortValue = preferences.workspaceSelect.sortValue;
@@ -71,6 +71,7 @@ export function WorkspaceSelect() {
   const [isWorkspaceSelectionMode, setIsWorkspaceSelectionMode] = useState(false);
   const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>([]);
   const [isOpeningWorkspace, setIsOpeningWorkspace] = useState(false);
+  const [isScanningWorkspaces, setIsScanningWorkspaces] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isCreateWorkspaceSheetOpen, setIsCreateWorkspaceSheetOpen] = useState(false);
@@ -125,6 +126,33 @@ export function WorkspaceSelect() {
     () => refreshWorkspaces(MIN_PULL_TO_REFRESH_DURATION_MS),
     [refreshWorkspaces],
   );
+
+  const scanWorkspaces = useCallback(async () => {
+    if (isScanningWorkspaces) {
+      return;
+    }
+
+    setIsScanningWorkspaces(true);
+    try {
+      const result = await workspace.scanManaged();
+      await refreshWorkspaces();
+      if (result.registeredCount > 0) {
+        toast.success(`已新增 ${result.registeredCount} 个工作区`);
+        return;
+      }
+      const problemCount = result.bindingConflictCount + result.invalidCount;
+      if (problemCount > 0) {
+        toast.warning(`未发现可新增的工作区，已跳过 ${problemCount} 个异常目录`);
+      } else {
+        toast.success("未发现新的工作区");
+      }
+    } catch (error) {
+      console.error("[workspace-select] scan managed workspaces failed", error);
+      toast.error(getErrorMessage(error, "扫描工作区失败"));
+    } finally {
+      setIsScanningWorkspaces(false);
+    }
+  }, [isScanningWorkspaces, refreshWorkspaces, toast]);
 
   const loadManagedStorageProviders = useCallback(async () => {
     const requestId = ++storageProviderRequestIdRef.current;
@@ -411,7 +439,12 @@ export function WorkspaceSelect() {
 
   const handleWorkspacePress = useCallback(
     async (workspaceId: string) => {
-      if (isOpeningWorkspace || isDeletingWorkspace || isUpdatingWorkspace) {
+      if (
+        isOpeningWorkspace ||
+        isScanningWorkspaces ||
+        isDeletingWorkspace ||
+        isUpdatingWorkspace
+      ) {
         return;
       }
 
@@ -424,10 +457,60 @@ export function WorkspaceSelect() {
           setCurrentWorkspaceId(null);
         }
 
-        await openWorkspace(workspaceId);
-        setCurrentWorkspaceId(workspaceId);
-        resetToWorkspace();
-        didResetNavigation = true;
+        const enterWorkspace = (openedWorkspace: WorkspaceSnapshot) => {
+          setCurrentWorkspaceId(openedWorkspace.id);
+          resetToWorkspace();
+          didResetNavigation = true;
+        };
+        const openResult = await workspace.openWithDiagnostics(workspaceId);
+        if (openResult.status === "opened") {
+          enterWorkspace(openResult.workspace);
+          return;
+        }
+        if (openResult.status === "directoryMissing") {
+          const result = await confirmNative({
+            buttons: [
+              { key: "cancel", style: "cancel", text: "取消" },
+              { key: "delete", style: "destructive", text: "删除记录" },
+            ],
+            message:
+              "无法找到此工作区的文件夹。是否从工作区列表中删除这条记录？此操作不会删除任何文件。",
+            title: "工作区文件夹不存在",
+          });
+          if (result === "delete") {
+            await workspace.remove(workspaceId, false);
+            await refreshWorkspaces();
+            toast.success("已删除工作区记录");
+          }
+          return;
+        }
+
+        const resolution = openResult.manifestIdRegistered
+          ? await confirmNative({
+              buttons: [
+                { key: "cancel", style: "cancel", text: "取消" },
+                { key: "generate-new-id", text: "生成新 ID" },
+              ],
+              message: `当前记录的 ID：${openResult.expectedId}\n文件夹中的 ID：${openResult.actualId}\n\n文件夹中的 ID 已被另一个工作区使用。是否为此文件夹生成新的 ID 并继续进入？`,
+              title: "Workspace ID 已存在",
+            })
+          : await confirmNative({
+              buttons: [
+                { key: "cancel", style: "cancel", text: "取消" },
+                { key: "update-id", text: "更新 ID" },
+              ],
+              message: `当前记录的 ID：${openResult.expectedId}\n文件夹中的 ID：${openResult.actualId}\n\n是否使用文件夹中的 ID 更新工作区记录并继续进入？`,
+              title: "Workspace ID 不匹配",
+            });
+        if (resolution !== "update-id" && resolution !== "generate-new-id") {
+          return;
+        }
+        const openedWorkspace = await workspace.resolveIdMismatch(
+          workspaceId,
+          resolution === "generate-new-id" ? "generateNewId" : "useManifestId",
+        );
+        await refreshWorkspaces();
+        enterWorkspace(openedWorkspace);
       } catch (error) {
         console.error("[workspace-select] open workspace failed", error);
         toast.error(getErrorMessage(error, "打开工作区失败"));
@@ -441,8 +524,9 @@ export function WorkspaceSelect() {
       currentWorkspaceId,
       isDeletingWorkspace,
       isOpeningWorkspace,
+      isScanningWorkspaces,
       isUpdatingWorkspace,
-      openWorkspace,
+      refreshWorkspaces,
       resetToWorkspace,
       setCurrentWorkspaceId,
       toast,
@@ -486,6 +570,7 @@ export function WorkspaceSelect() {
         areAllWorkspacesSelected={areAllWorkspacesSelected}
         canSelectWorkspaces={workspaces.length > 0}
         isGroupModeDisabled={isGroupModeDisabled}
+        isScanningWorkspaces={isScanningWorkspaces}
         isWorkspaceSelectionMode={isWorkspaceSelectionMode}
         onCreateWorkspace={openCreateWorkspaceSheet}
         onFinishWorkspaceSelection={finishWorkspaceSelection}
@@ -495,6 +580,9 @@ export function WorkspaceSelect() {
           }
         }}
         onOpenWorkspaceSort={() => workspaceSortSelectRef.current?.open()}
+        onScanWorkspaces={() => {
+          void scanWorkspaces();
+        }}
         onToggleSelectAllWorkspaces={toggleSelectAllWorkspaces}
         onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
       />
@@ -504,6 +592,7 @@ export function WorkspaceSelect() {
         isDeletingWorkspace={isDeletingWorkspace}
         isLoading={isLoading}
         isOpeningWorkspace={isOpeningWorkspace}
+        isScanningWorkspaces={isScanningWorkspaces}
         isUpdatingWorkspace={isUpdatingWorkspace}
         isWorkspaceSelectionMode={isWorkspaceSelectionMode}
         onCreateWorkspace={openCreateWorkspaceSheet}

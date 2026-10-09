@@ -329,6 +329,19 @@ pub trait WorkspaceStorageResolver: Send + Sync {
     /// 实现应返回按 ID 排序且不重复的结果。
     fn managed_provider_ids(&self) -> Vec<StorageProviderId>;
 
+    /// 枚举 Provider 受管理根目录下已有的 Workspace 目录。
+    ///
+    /// 该操作只把直属目录转换为未解析 Binding，不读取或修改 Workspace 内容。默认
+    /// 实现用于不支持 Managed 扫描的测试或授权型 Provider。
+    async fn list_managed_workspace_bindings(
+        &self,
+        _provider_id: &StorageProviderId,
+    ) -> Result<Vec<WorkspaceStorageBindingRequest>, StorageError> {
+        Err(StorageError::UnsupportedOperation {
+            operation: "list_managed_workspace_bindings",
+        })
+    }
+
     /// 解析底层资源的稳定身份。返回值用于资源比较，不用于重新打开资源。
     async fn resolve_identity(
         &self,

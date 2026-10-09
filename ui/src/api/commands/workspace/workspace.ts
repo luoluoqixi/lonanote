@@ -2,10 +2,13 @@ import { invokeWorkspaceResult, invokeWorkspaceUnit } from "./invoke_workspace";
 import type {
   AttachWorkspaceResult,
   ExternalWorkspaceStorageBindingRequest,
+  OpenWorkspaceResult,
   RelocateWorkspaceResult,
   RemoveWorkspaceResult,
+  ScanManagedWorkspacesResult,
   StorageProviderId,
   WorkspaceId,
+  WorkspaceIdMismatchResolution,
   WorkspaceListItem,
   WorkspaceLocalSetting,
   WorkspaceRelativePath,
@@ -25,6 +28,10 @@ export const workspace = {
 
   listManagedStorageProviderIds: (): Promise<StorageProviderId[]> => {
     return invokeWorkspaceResult("workspace.list_managed_storage_provider_ids");
+  },
+
+  scanManaged: (): Promise<ScanManagedWorkspacesResult> => {
+    return invokeWorkspaceResult("workspace.scan_managed");
   },
 
   get: (workspaceId: WorkspaceId): Promise<WorkspaceSnapshot> => {
@@ -55,6 +62,17 @@ export const workspace = {
 
   open: (workspaceId: WorkspaceId): Promise<WorkspaceSnapshot> => {
     return invokeWorkspaceResult("workspace.open", { workspaceId });
+  },
+
+  openWithDiagnostics: (workspaceId: WorkspaceId): Promise<OpenWorkspaceResult> => {
+    return invokeWorkspaceResult("workspace.open_with_diagnostics", { workspaceId });
+  },
+
+  resolveIdMismatch: (
+    workspaceId: WorkspaceId,
+    resolution: WorkspaceIdMismatchResolution,
+  ): Promise<WorkspaceSnapshot> => {
+    return invokeWorkspaceResult("workspace.resolve_id_mismatch", { workspaceId, resolution });
   },
 
   close: (workspaceId: WorkspaceId): Promise<void> => {

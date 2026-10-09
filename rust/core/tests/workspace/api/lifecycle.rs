@@ -1,6 +1,6 @@
 use lonanote_core::{
     config::system_locale::system_locale,
-    workspace::{workspace_manager, WorkspaceSnapshot},
+    workspace::{workspace_manager, WorkspaceId, WorkspaceManifest, WorkspaceSnapshot},
 };
 use serde_json::{json, Value};
 
@@ -81,6 +81,64 @@ fn external_attach_flow() {
         assert!(!attached.to_string().contains("resourceRef"));
         assert!(!attached.to_string().contains("resourceIdentity"));
         remove_closed(created.id).await;
+    });
+}
+
+#[test]
+fn managed_scan_flow() {
+    let (_app, _guard) = locked_app();
+    run(async {
+        let created = create_managed("API Scan").await;
+        invoke_unit("workspace.close", workspace_args(created.id)).await;
+        let _: Value = invoke_json(
+            "workspace.remove",
+            json!({"workspaceId": created.id, "deleteFiles": false}),
+        )
+        .await;
+
+        let result: Value = invoke_json("workspace.scan_managed", json!({})).await;
+        assert_eq!(result["registeredCount"], 1);
+        assert_eq!(result["bindingConflictCount"], 0);
+        remove_closed(created.id).await;
+    });
+}
+
+#[test]
+fn diagnosed_open_and_id_resolution_flow() {
+    let (app, _guard) = locked_app();
+    run(async {
+        let created = create_managed("API ID Repair").await;
+        invoke_unit("workspace.close", workspace_args(created.id)).await;
+        let manifest_path = app
+            .managed_workspace_root(&created)
+            .join(".lonanote/manifest.json");
+        let mut manifest: WorkspaceManifest =
+            serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+        let actual_id = WorkspaceId::new();
+        manifest.id = actual_id;
+        std::fs::write(
+            &manifest_path,
+            serde_json::to_vec_pretty(&manifest).unwrap(),
+        )
+        .unwrap();
+
+        let diagnostic: Value = invoke_json(
+            "workspace.open_with_diagnostics",
+            workspace_args(created.id),
+        )
+        .await;
+        assert_eq!(diagnostic["status"], "idMismatch");
+        assert_eq!(diagnostic["expectedId"], created.id.to_string());
+        assert_eq!(diagnostic["actualId"], actual_id.to_string());
+        assert_eq!(diagnostic["manifestIdRegistered"], false);
+
+        let repaired: WorkspaceSnapshot = invoke_json(
+            "workspace.resolve_id_mismatch",
+            json!({"workspaceId": created.id, "resolution": "useManifestId"}),
+        )
+        .await;
+        assert_eq!(repaired.id, actual_id);
+        close_and_remove(actual_id).await;
     });
 }
 

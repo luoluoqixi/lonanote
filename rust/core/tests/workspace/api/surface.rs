@@ -66,12 +66,15 @@ fn expected_keys() -> BTreeSet<String> {
         "workspace.list_managed_storage_provider_ids",
         "workspace.list_storage_provider_ids",
         "workspace.open",
+        "workspace.open_with_diagnostics",
         "workspace.relocate",
         "workspace.remove",
+        "workspace.resolve_id_mismatch",
         "workspace.reset_settings",
         "workspace.resource.acquire_scope",
         "workspace.set_last_open_file",
         "workspace.set_settings",
+        "workspace.scan_managed",
         "workspace.update_display_name",
     ]
     .into_iter()

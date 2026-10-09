@@ -29,6 +29,12 @@ impl ApiTestApp {
         std::fs::create_dir_all(&path).unwrap();
         path
     }
+
+    pub(super) fn managed_workspace_root(&self, snapshot: &WorkspaceSnapshot) -> PathBuf {
+        self.root
+            .join("managed/workspaces")
+            .join(snapshot.storage.directory_name.as_ref().unwrap().as_str())
+    }
 }
 
 pub(super) fn locked_app() -> (&'static ApiTestApp, MutexGuard<'static, ()>) {

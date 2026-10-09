@@ -4,8 +4,8 @@ use crate::support::{
     external_binding, path, provider, WorkspaceTestApp, EXTERNAL_PROVIDER, MANAGED_PROVIDER,
 };
 use lonanote_core::workspace::{
-    StorageCleanupStatus, WorkspaceError, WorkspaceId, WorkspaceManifest,
-    INITIAL_WORKSPACE_DISPLAY_NAME_EN,
+    OpenWorkspaceResult, StorageCleanupStatus, WorkspaceError, WorkspaceId,
+    WorkspaceIdMismatchResolution, WorkspaceManifest, INITIAL_WORKSPACE_DISPLAY_NAME_EN,
 };
 use tokio::sync::Barrier;
 
@@ -237,6 +237,58 @@ async fn resolves_name_collision() {
     assert_eq!(second.storage.directory_name.unwrap().as_str(), "Notes-2");
 }
 
+#[tokio::test]
+async fn scans_only_new_valid_managed_workspaces() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let created = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "Recovered".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&created.id).await.unwrap();
+    manager.remove_workspace(&created.id, false).await.unwrap();
+    std::fs::create_dir_all(app.managed_root.join("workspaces/Invalid")).unwrap();
+
+    let first_scan = manager.scan_managed_workspaces().await.unwrap();
+    assert_eq!(first_scan.scanned_count, 2);
+    assert_eq!(first_scan.registered_count, 1);
+    assert_eq!(first_scan.invalid_count, 1);
+    assert_eq!(manager.list_workspaces().await[0].id, created.id);
+
+    let second_scan = manager.scan_managed_workspaces().await.unwrap();
+    assert_eq!(second_scan.registered_count, 0);
+    assert_eq!(second_scan.already_registered_count, 1);
+    assert_eq!(second_scan.invalid_count, 1);
+}
+
+#[tokio::test]
+async fn scan_skips_registered_binding_with_mismatched_id() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let created = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "Mismatch Scan".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&created.id).await.unwrap();
+    let manifest_path = app
+        .managed_workspace_root(&created)
+        .join(".lonanote/manifest.json");
+    let mut manifest: WorkspaceManifest =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    manifest.id = WorkspaceId::new();
+    std::fs::write(
+        &manifest_path,
+        serde_json::to_vec_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+
+    let result = manager.scan_managed_workspaces().await.unwrap();
+
+    assert_eq!(result.registered_count, 0);
+    assert_eq!(result.binding_conflict_count, 1);
+    assert_eq!(manager.list_workspaces().await[0].id, created.id);
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn concurrent_open_is_idempotent() {
     let app = WorkspaceTestApp::new();
@@ -388,6 +440,185 @@ async fn retries_failed_open() {
         manager.open_workspace(&created.id).await.unwrap().id,
         created.id
     );
+}
+
+#[tokio::test]
+async fn diagnoses_missing_workspace_directory() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let created = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "Missing".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&created.id).await.unwrap();
+    std::fs::remove_dir_all(app.managed_workspace_root(&created)).unwrap();
+
+    assert_eq!(
+        manager
+            .open_workspace_with_diagnostics(&created.id)
+            .await
+            .unwrap(),
+        OpenWorkspaceResult::DirectoryMissing {
+            workspace_id: created.id
+        }
+    );
+    let removed = manager.remove_workspace(&created.id, false).await.unwrap();
+    assert_eq!(removed.file_cleanup, StorageCleanupStatus::Retained);
+}
+
+#[tokio::test]
+async fn repairs_mismatched_id_using_manifest_id() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let created = manager
+        .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+        .await
+        .unwrap()
+        .expect("创建首次默认 Workspace");
+    manager.close_workspace(&created.id).await.unwrap();
+    let manifest_path = app
+        .managed_workspace_root(&created)
+        .join(".lonanote/manifest.json");
+    let mut manifest: WorkspaceManifest =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    let manifest_id = WorkspaceId::new();
+    manifest.id = manifest_id;
+    std::fs::write(
+        &manifest_path,
+        serde_json::to_vec_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        manager
+            .open_workspace_with_diagnostics(&created.id)
+            .await
+            .unwrap(),
+        OpenWorkspaceResult::IdMismatch {
+            expected_id: created.id,
+            actual_id: manifest_id,
+            manifest_id_registered: false,
+        }
+    );
+    let opened = manager
+        .resolve_workspace_id_mismatch(&created.id, WorkspaceIdMismatchResolution::UseManifestId)
+        .await
+        .unwrap();
+
+    assert_eq!(opened.id, manifest_id);
+    assert_eq!(manager.get_last_workspace_id().await, Some(manifest_id));
+    assert_eq!(manager.list_workspaces().await[0].id, manifest_id);
+    let catalog: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(app.data_dir.join("workspace-catalog.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(catalog["initialWorkspaceId"], manifest_id.to_string());
+    assert!(matches!(
+        manager.get_workspace(&created.id).await.unwrap_err(),
+        WorkspaceError::NotOpen(id) if id == created.id
+    ));
+}
+
+#[tokio::test]
+async fn refuses_manifest_id_that_is_already_registered() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let first = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "First".into())
+        .await
+        .unwrap();
+    let second = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "Second".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&first.id).await.unwrap();
+    manager.close_workspace(&second.id).await.unwrap();
+    let manifest_path = app
+        .managed_workspace_root(&first)
+        .join(".lonanote/manifest.json");
+    let mut manifest: WorkspaceManifest =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    manifest.id = second.id;
+    std::fs::write(
+        &manifest_path,
+        serde_json::to_vec_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        manager
+            .open_workspace_with_diagnostics(&first.id)
+            .await
+            .unwrap(),
+        OpenWorkspaceResult::IdMismatch {
+            expected_id: first.id,
+            actual_id: second.id,
+            manifest_id_registered: true,
+        }
+    );
+    assert!(matches!(
+        manager
+            .resolve_workspace_id_mismatch(
+                &first.id,
+                WorkspaceIdMismatchResolution::UseManifestId,
+            )
+            .await
+            .unwrap_err(),
+        WorkspaceError::AlreadyRegistered(id) if id == second.id
+    ));
+}
+
+#[tokio::test]
+async fn generates_new_id_when_manifest_id_is_already_registered() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let first = manager
+        .create_initial_workspace_if_needed(provider(MANAGED_PROVIDER))
+        .await
+        .unwrap()
+        .expect("创建首次默认 Workspace");
+    let second = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "Second".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&first.id).await.unwrap();
+    manager.close_workspace(&second.id).await.unwrap();
+    let manifest_path = app
+        .managed_workspace_root(&first)
+        .join(".lonanote/manifest.json");
+    let mut manifest: WorkspaceManifest =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    manifest.id = second.id;
+    std::fs::write(
+        &manifest_path,
+        serde_json::to_vec_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+
+    let opened = manager
+        .resolve_workspace_id_mismatch(&first.id, WorkspaceIdMismatchResolution::GenerateNewId)
+        .await
+        .unwrap();
+
+    assert_ne!(opened.id, first.id);
+    assert_ne!(opened.id, second.id);
+    assert_eq!(app.read_manifest(&first).id, opened.id);
+    assert_eq!(manager.get_last_workspace_id().await, Some(opened.id));
+    let workspace_ids = manager
+        .list_workspaces()
+        .await
+        .into_iter()
+        .map(|workspace| workspace.id)
+        .collect::<std::collections::HashSet<_>>();
+    assert_eq!(
+        workspace_ids,
+        std::collections::HashSet::from([opened.id, second.id])
+    );
+    let catalog: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(app.data_dir.join("workspace-catalog.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(catalog["initialWorkspaceId"], opened.id.to_string());
 }
 
 #[tokio::test]

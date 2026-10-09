@@ -90,6 +90,43 @@ pub struct AttachWorkspaceResult {
     pub storage: WorkspaceStorageView,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WorkspaceIdMismatchResolution {
+    UseManifestId,
+    GenerateNewId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(
+    tag = "status",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub enum OpenWorkspaceResult {
+    Opened {
+        workspace: Box<WorkspaceSnapshot>,
+    },
+    DirectoryMissing {
+        workspace_id: WorkspaceId,
+    },
+    IdMismatch {
+        expected_id: WorkspaceId,
+        actual_id: WorkspaceId,
+        manifest_id_registered: bool,
+    },
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScanManagedWorkspacesResult {
+    pub scanned_count: u32,
+    pub registered_count: u32,
+    pub already_registered_count: u32,
+    pub binding_conflict_count: u32,
+    pub invalid_count: u32,
+}
+
 impl From<&WorkspaceRecord> for AttachWorkspaceResult {
     fn from(record: &WorkspaceRecord) -> Self {
         Self {

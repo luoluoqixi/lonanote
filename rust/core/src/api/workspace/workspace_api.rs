@@ -1,10 +1,10 @@
 use cmdreg::command;
 
 use crate::workspace::{
-    workspace_manager, AttachWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
-    StorageProviderId, WorkspaceId, WorkspaceListItem, WorkspaceLocalSetting,
-    WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBindingRequest,
-    WorkspaceStorageTarget,
+    workspace_manager, AttachWorkspaceResult, OpenWorkspaceResult, RelocateWorkspaceResult,
+    RemoveWorkspaceResult, ScanManagedWorkspacesResult, StorageProviderId, WorkspaceId,
+    WorkspaceIdMismatchResolution, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceRelativePath,
+    WorkspaceSettings, WorkspaceSnapshot, WorkspaceStorageBindingRequest, WorkspaceStorageTarget,
 };
 
 #[command("workspace")]
@@ -20,6 +20,11 @@ async fn list_storage_provider_ids() -> Vec<StorageProviderId> {
 #[command("workspace")]
 async fn list_managed_storage_provider_ids() -> Vec<StorageProviderId> {
     workspace_manager().managed_storage_provider_ids()
+}
+
+#[command("workspace")]
+async fn scan_managed() -> anyhow::Result<ScanManagedWorkspacesResult> {
+    Ok(workspace_manager().scan_managed_workspaces().await?)
 }
 
 #[command("workspace")]
@@ -60,6 +65,23 @@ async fn attach(binding: WorkspaceStorageBindingRequest) -> anyhow::Result<Attac
 #[command("workspace")]
 async fn open(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceSnapshot> {
     Ok(workspace_manager().open_workspace(&workspace_id).await?)
+}
+
+#[command("workspace")]
+async fn open_with_diagnostics(workspace_id: WorkspaceId) -> anyhow::Result<OpenWorkspaceResult> {
+    Ok(workspace_manager()
+        .open_workspace_with_diagnostics(&workspace_id)
+        .await?)
+}
+
+#[command("workspace")]
+async fn resolve_id_mismatch(
+    workspace_id: WorkspaceId,
+    resolution: WorkspaceIdMismatchResolution,
+) -> anyhow::Result<WorkspaceSnapshot> {
+    Ok(workspace_manager()
+        .resolve_workspace_id_mismatch(&workspace_id, resolution)
+        .await?)
 }
 
 #[command("workspace")]

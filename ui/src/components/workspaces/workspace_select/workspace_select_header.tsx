@@ -1,5 +1,12 @@
 import { Stack, router } from "expo-router";
-import { ArrowDownUp, CalendarDays, CircleCheck, FolderPlus, Settings } from "lucide-react-native";
+import {
+  ArrowDownUp,
+  CalendarDays,
+  CircleCheck,
+  FolderPlus,
+  Search,
+  Settings,
+} from "lucide-react-native";
 import { type ComponentProps, useMemo } from "react";
 import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
 
@@ -9,11 +16,13 @@ type WorkspaceSelectHeaderProps = {
   areAllWorkspacesSelected: boolean;
   canSelectWorkspaces: boolean;
   isGroupModeDisabled: boolean;
+  isScanningWorkspaces: boolean;
   isWorkspaceSelectionMode: boolean;
   onCreateWorkspace: () => void;
   onFinishWorkspaceSelection: () => void;
   onOpenWorkspaceGroupMode: () => void;
   onOpenWorkspaceSort: () => void;
+  onScanWorkspaces: () => void;
   onToggleSelectAllWorkspaces: () => void;
   onToggleWorkspaceSelectionMode: () => void;
 };
@@ -22,11 +31,13 @@ export function WorkspaceSelectHeader({
   areAllWorkspacesSelected,
   canSelectWorkspaces,
   isGroupModeDisabled,
+  isScanningWorkspaces,
   isWorkspaceSelectionMode,
   onCreateWorkspace,
   onFinishWorkspaceSelection,
   onOpenWorkspaceGroupMode,
   onOpenWorkspaceSort,
+  onScanWorkspaces,
   onToggleSelectAllWorkspaces,
   onToggleWorkspaceSelectionMode,
 }: WorkspaceSelectHeaderProps) {
@@ -54,6 +65,16 @@ export function WorkspaceSelectHeader({
         label: "创建工作区",
         onPress: onCreateWorkspace,
         value: "create-workspace",
+      },
+      {
+        disabled: isScanningWorkspaces,
+        icon: <Search color={accentColor} size={14} />,
+        iconProps: {
+          ios: { name: "magnifyingglass" },
+        },
+        label: isScanningWorkspaces ? "正在扫描工作区…" : "扫描工作区",
+        onPress: onScanWorkspaces,
+        value: "scan-workspaces",
       },
       {
         separator: true,
@@ -101,9 +122,11 @@ export function WorkspaceSelectHeader({
       accentColor,
       canSelectWorkspaces,
       isGroupModeDisabled,
+      isScanningWorkspaces,
       onCreateWorkspace,
       onOpenWorkspaceGroupMode,
       onOpenWorkspaceSort,
+      onScanWorkspaces,
       onToggleWorkspaceSelectionMode,
     ],
   );

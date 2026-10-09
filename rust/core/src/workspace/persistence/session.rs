@@ -98,6 +98,23 @@ impl WorkspaceSessionStore {
         .await
     }
 
+    pub async fn replace_workspace_id(
+        &self,
+        old_id: &WorkspaceId,
+        new_id: WorkspaceId,
+    ) -> Result<(), WorkspaceError> {
+        let old_id = *old_id;
+        if self.last_workspace_id().await != Some(old_id) {
+            return Ok(());
+        }
+        self.update(move |data| {
+            if data.last_workspace_id == Some(old_id) {
+                data.last_workspace_id = Some(new_id);
+            }
+        })
+        .await
+    }
+
     pub async fn reconcile(
         &self,
         valid_workspace_ids: &std::collections::HashSet<WorkspaceId>,
