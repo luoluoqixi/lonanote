@@ -44,14 +44,14 @@ export const documentConflictCoordinator = {
     const externalFingerprint = toFingerprint(metadata);
     if (isSameFingerprint(document.savedFingerprint, externalFingerprint)) return "unchanged";
 
-    if (isDocumentDirty(document)) {
-      editorStore.getState().setDocumentConflict(documentId, externalFingerprint);
-      return "conflict";
-    }
-
     const external = await readExternalDocument(documentId);
     const latestDocument = editorStore.getState().documentsById[documentId];
     if (!external || !latestDocument) return "unchanged";
+    // metadata 变化不一定代表内容变化，先与最后成功保存的文本核对。
+    if (external.text === latestDocument.savedText) {
+      editorStore.getState().clearDocumentConflict(documentId, external.fingerprint);
+      return "unchanged";
+    }
     if (isDocumentDirty(latestDocument)) {
       editorStore.getState().setDocumentConflict(documentId, external.fingerprint);
       return "conflict";

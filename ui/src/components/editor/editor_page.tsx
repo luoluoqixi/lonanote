@@ -13,8 +13,7 @@ import {
 } from "lucide-react-native";
 import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
-import { AlertDialog } from "rn-ui-kit/core";
+import { type DropdownItemData, confirmNative, useUiTheme } from "rn-ui-kit";
 
 import { isMobile } from "@/api/common/platform";
 import {
@@ -57,6 +56,9 @@ export function EditorPage() {
   const [closeSaveError, setCloseSaveError] = useState<string | null>(null);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
   const [dismissedConflictAt, setDismissedConflictAt] = useState<string | null>(null);
+  const [isNativeDialogOpen, setIsNativeDialogOpen] = useState(false);
+  const nativeDialogInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
   const pendingRemovalActionRef = useRef<NavigationAction | null>(null);
   const allowNextRemovalRef = useRef(false);
   const editorScrollSampleRef = useRef<{
@@ -181,11 +183,104 @@ export function EditorPage() {
     }
   }, [documentId]);
 
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      !documentId ||
+      isSavingBeforeClose ||
+      isResolvingConflict ||
+      nativeDialogInFlightRef.current ||
+      (!isConflictDialogOpen && !closeDialogOpen)
+    ) {
+      return;
+    }
+
+    // 冲突与关闭失败可能同时出现，每次只展示一个 NativeDialog，优先处理冲突。
+    nativeDialogInFlightRef.current = true;
+    setIsNativeDialogOpen(true);
+    const showDialog = async () => {
+      try {
+        if (isConflictDialogOpen) {
+          const result = await confirmNative({
+            title: "检测到外部修改",
+            message: "磁盘中的文件已在外部修改。自动保存已暂停。",
+            buttons: [
+              { key: "cancel", text: "稍后处理", style: "cancel" },
+              { key: "keep-local", text: "保留本地" },
+              { key: "load-external", text: "加载外部版本", style: "destructive" },
+            ],
+          });
+          if (!mountedRef.current) return;
+          setDismissedConflictAt(conflictDetectedAt);
+          setCloseDialogOpen(false);
+          setCloseSaveError(null);
+          if (result === "keep-local") {
+            await keepLocalConflict();
+          } else if (result === "load-external") {
+            await loadExternalConflict();
+          } else {
+            pendingRemovalActionRef.current = null;
+            return;
+          }
+          if (mountedRef.current && pendingRemovalActionRef.current) await saveBeforeClose();
+          return;
+        }
+
+        const result = await confirmNative({
+          title: closeSaveError ? "无法保存文档" : "保存更改？",
+          message: closeSaveError ?? "此文档包含尚未保存的更改。",
+          buttons: [
+            { key: "cancel", text: "取消", style: "cancel" },
+            { key: "save", text: closeSaveError ? "重试保存" : "保存" },
+            { key: "discard", text: "丢弃更改", style: "destructive" },
+          ],
+        });
+        if (!mountedRef.current) return;
+        setCloseDialogOpen(false);
+        if (result === "save") {
+          await saveBeforeClose();
+        } else if (result === "discard") {
+          discardBeforeClose();
+        } else {
+          pendingRemovalActionRef.current = null;
+        }
+      } catch (error) {
+        if (!mountedRef.current) return;
+        setCloseSaveError(error instanceof Error ? error.message : "保存文档失败");
+        setCloseDialogOpen(true);
+      } finally {
+        nativeDialogInFlightRef.current = false;
+        if (mountedRef.current) setIsNativeDialogOpen(false);
+      }
+    };
+    void showDialog();
+  }, [
+    closeDialogOpen,
+    closeSaveError,
+    conflictDetectedAt,
+    discardBeforeClose,
+    documentId,
+    isConflictDialogOpen,
+    isNativeDialogOpen,
+    isResolvingConflict,
+    isSavingBeforeClose,
+    keepLocalConflict,
+    loadExternalConflict,
+    saveBeforeClose,
+  ]);
+
   usePreventRemove(isDirty, ({ data }) => {
     if (allowNextRemovalRef.current) {
       allowNextRemovalRef.current = false;
       return;
     }
+    if (isSavingBeforeClose || isResolvingConflict || nativeDialogInFlightRef.current) return;
     pendingRemovalActionRef.current = data.action;
     if (shouldFlushBeforeClose) {
       void saveBeforeClose();
@@ -371,42 +466,6 @@ export function EditorPage() {
         editor={view}
         onMobileInputMethodEnabledChange={setMobileInputMethodEnabled}
         onMobileOverlayHeightChange={setMobileToolbarOverlayHeight}
-      />
-      <AlertDialog
-        actionLabel={closeSaveError ? "重试保存" : "保存"}
-        actionProps={{ disabled: isSavingBeforeClose, onPress: () => void saveBeforeClose() }}
-        cancelLabel="取消"
-        cancelProps={{ disabled: isSavingBeforeClose }}
-        description={closeSaveError ?? "此文档包含尚未保存的更改。"}
-        destructiveLabel="丢弃更改"
-        destructiveProps={{ disabled: isSavingBeforeClose, onPress: discardBeforeClose }}
-        dismissOnBackPress={!isSavingBeforeClose}
-        dismissOnOverlayPress={!isSavingBeforeClose}
-        onOpenChange={setCloseDialogOpen}
-        open={closeDialogOpen}
-        title={closeSaveError ? "无法保存文档" : "保存更改？"}
-      />
-      <AlertDialog
-        actionLabel="保留本地"
-        actionProps={{
-          disabled: isResolvingConflict,
-          onPress: () => void keepLocalConflict().catch(() => undefined),
-        }}
-        cancelLabel="稍后处理"
-        cancelProps={{ disabled: isResolvingConflict }}
-        description="磁盘中的文件已在外部修改。自动保存已暂停。"
-        destructiveLabel="加载外部版本"
-        destructiveProps={{
-          disabled: isResolvingConflict,
-          onPress: () => void loadExternalConflict().catch(() => undefined),
-        }}
-        dismissOnBackPress={!isResolvingConflict}
-        dismissOnOverlayPress={!isResolvingConflict}
-        onOpenChange={(open) => {
-          if (!open && conflictDetectedAt) setDismissedConflictAt(conflictDetectedAt);
-        }}
-        open={isConflictDialogOpen}
-        title="检测到外部修改"
       />
     </>
   );

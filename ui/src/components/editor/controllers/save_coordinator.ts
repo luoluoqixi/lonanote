@@ -81,7 +81,8 @@ async function writeLatestSnapshot(documentId: string): Promise<void> {
   await documentConflictCoordinator.checkForExternalChange(documentId);
   document = editorStore.getState().documentsById[documentId];
   if (!document || !isDocumentDirty(document)) return;
-  if (document.saveState === "conflict") {
+  if (document.conflict) {
+    clearAutoSaveTimer(getEntry(documentId));
     throw new Error("文档存在外部修改冲突，无法保存");
   }
   if (document.ref.kind === "untitled") {
@@ -128,18 +129,13 @@ async function flushDocument(documentId: string): Promise<void> {
   const entry = getEntry(documentId);
   clearAutoSaveTimer(entry);
 
-  if (entry.inFlight) {
-    await entry.inFlight.catch(() => undefined);
-  }
-
-  await captureLatestDraft(documentId);
-
-  const document = editorStore.getState().documentsById[documentId];
-  if (!document || !isDocumentDirty(document)) {
-    return;
-  }
-
-  const task = writeLatestSnapshot(documentId);
+  // 在任何 await 前登记队列，capture、冲突检测和写入必须按文档串行执行。
+  const task = (entry.inFlight ?? Promise.resolve())
+    .catch(() => undefined)
+    .then(async () => {
+      await captureLatestDraft(documentId);
+      await writeLatestSnapshot(documentId);
+    });
   entry.inFlight = task;
   try {
     await task;
@@ -176,7 +172,7 @@ export const saveCoordinator = {
   scheduleAutoSave: (documentId: string): void => {
     const document = editorStore.getState().documentsById[documentId];
     const settings = settingsStore.getSettings().editorDefaults;
-    if (!document || !isDocumentDirty(document) || !settings.autoSave) return;
+    if (!document || !isDocumentDirty(document) || document.conflict || !settings.autoSave) return;
 
     const entry = getEntry(documentId);
     clearAutoSaveTimer(entry);
