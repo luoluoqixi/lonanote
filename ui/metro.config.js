@@ -44,6 +44,13 @@ if (!rnUiKitRoot.startsWith(`${__dirname}${path.sep}`)) {
   config.watchFolders = [...config.watchFolders, rnUiKitRoot];
 }
 
+// bun link 的真实目标可能位于工程外，Metro 必须扫描该目录才能解析包导出。
+// 切回 Git / registry 依赖后目标位于 node_modules，不额外添加观察目录。
+const expoUiRoot = path.dirname(require.resolve("@luoluoqixi/expo-ui-55/package.json"));
+if (!expoUiRoot.startsWith(`${__dirname}${path.sep}`)) {
+  config.watchFolders = [...new Set([...config.watchFolders, expoUiRoot])];
+}
+
 // Expo createFileMap-fork 使用 @expo/metro-file-map，不读取 watcher.watchBlockList；
 // 通过全局变量让 @expo/metro-file-map patch 在 watch 阶段使用更宽的忽略规则。
 globalThis.__LONANOTE_METRO_WATCH_IGNORE__ = watchBlockList;

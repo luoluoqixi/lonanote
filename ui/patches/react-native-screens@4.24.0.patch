@@ -5,6 +5,8 @@
 # - iOS 26：保持已有的系统返回指示图主题色修复。
 # - iOS 15+：在保留 UIBarButtonItem 原生菜单的前提下，为菜单展示提供一次 haptic 回调。
 # - 新增 headerOpacity：保持原生 navigation bar / toolbar 挂载，仅以 alpha 动画隐藏，避免重建标题和滚动 inset。
+# - 保留返回手势初始化与 JS 三态转换，确保大标题修复的自动、强制和禁用模式完整生效。
+# - TS、ESM、CommonJS 同步生成 menuOpenId 并分发 onOpen，完成原生菜单打开回调链路。
 diff --git a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
 index 9a9cbf31..5219a2db 100644
 --- a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
@@ -676,3 +678,274 @@ index a4798d99..cce7ff1e 100644
    menu: {
      title?: string;
      items: (HeaderBarButtonItemMenuAction | HeaderBarButtonItemSubmenu)[];
+diff --git a/ios/RNSScreenStack.mm b/ios/RNSScreenStack.mm
+index effc07f..74a6022 100644
+--- a/ios/RNSScreenStack.mm
++++ b/ios/RNSScreenStack.mm
+@@ -908,6 +908,9 @@ - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+ 
+     if ([self isInGestureResponseDistance:gestureRecognizer topScreen:topScreen]) {
+       _isFullWidthSwipingWithPanGesture = YES;
++      [RNSScreenStackHeaderConfig
++          prepareCancelledTransitionHeaderGeometryFixForNavigationBar:_controller.navigationBar
++                                                           withConfig:topScreen.findHeaderConfig];
+       [self cancelTouchesInParent];
+       return YES;
+     }
+@@ -927,6 +930,9 @@ - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+           (!isRTL && isSlideFromLeft && edges == UIRectEdgeRight) ||
+           (isRTL && isSlideFromLeft && edges == UIRectEdgeLeft) || (!isRTL && edges == UIRectEdgeLeft);
+       if (isCorrectEdge) {
++        [RNSScreenStackHeaderConfig
++            prepareCancelledTransitionHeaderGeometryFixForNavigationBar:_controller.navigationBar
++                                                             withConfig:topScreen.findHeaderConfig];
+         [self cancelTouchesInParent];
+         return YES;
+       }
+@@ -947,6 +953,9 @@ - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+ #endif // check for iOS >= 26
+ 
+     // _UIParallaxTransitionPanGestureRecognizer (other...)
++    [RNSScreenStackHeaderConfig
++        prepareCancelledTransitionHeaderGeometryFixForNavigationBar:_controller.navigationBar
++                                                         withConfig:topScreen.findHeaderConfig];
+     [self cancelTouchesInParent];
+     return YES;
+   }
+diff --git a/src/components/ScreenStackHeaderConfig.tsx b/src/components/ScreenStackHeaderConfig.tsx
+index 6ca8ed7..ff74e01 100644
+--- a/src/components/ScreenStackHeaderConfig.tsx
++++ b/src/components/ScreenStackHeaderConfig.tsx
+@@ -33,7 +33,12 @@ export const ScreenStackHeaderConfig = React.forwardRef<
+   View,
+   ScreenStackHeaderConfigProps
+ >((props, ref) => {
+-  const { headerLeftBarButtonItems, headerRightBarButtonItems } = props;
++  const {
++    cancelledTransitionHeaderGeometryFixEnabled,
++    headerLeftBarButtonItems,
++    headerRightBarButtonItems,
++    ...rest
++  } = props;
+ 
+   const preparedHeaderLeftBarButtonItems =
+     headerLeftBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform
+@@ -57,8 +62,11 @@ export const ScreenStackHeaderConfig = React.forwardRef<
+         ].find(
+           item =>
+             item &&
+-            'buttonId' in item &&
+-            item.buttonId === event.nativeEvent.buttonId,
++            (('buttonId' in item &&
++              item.buttonId === event.nativeEvent.buttonId) ||
++              (item.type === 'menu' &&
++                'menuOpenId' in item &&
++                item.menuOpenId === event.nativeEvent.buttonId)),
+         );
+         if (
+           pressedItem &&
+@@ -66,6 +74,8 @@ export const ScreenStackHeaderConfig = React.forwardRef<
+           pressedItem.onPress
+         ) {
+           pressedItem.onPress();
++        } else if (pressedItem && pressedItem.type === 'menu') {
++          pressedItem.onOpen?.();
+         }
+       }
+     : undefined;
+@@ -111,7 +121,14 @@ export const ScreenStackHeaderConfig = React.forwardRef<
+ 
+   return (
+     <ScreenStackHeaderConfigNativeComponent
+-      {...props}
++      {...rest}
++      cancelledTransitionHeaderGeometryFixMode={
++        cancelledTransitionHeaderGeometryFixEnabled == null
++          ? 0
++          : cancelledTransitionHeaderGeometryFixEnabled
++            ? 1
++            : 2
++      }
+       userInterfaceStyle={props.experimental_userInterfaceStyle}
+       headerLeftBarButtonItems={preparedHeaderLeftBarButtonItems}
+       headerRightBarButtonItems={preparedHeaderRightBarButtonItems}
+diff --git a/src/components/helpers/prepareHeaderBarButtonItems.ts b/src/components/helpers/prepareHeaderBarButtonItems.ts
+index bf43f2d..d9771f5 100644
+--- a/src/components/helpers/prepareHeaderBarButtonItems.ts
++++ b/src/components/helpers/prepareHeaderBarButtonItems.ts
+@@ -93,9 +93,14 @@ export const prepareHeaderBarButtonItems = (
+       };
+     }
+     if (item.type === 'menu') {
++      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
+       return {
+         ...processedItem,
+-        menu: prepareMenu(item.menu, index, side),
++        menuOpenId,
++        menu: {
++          ...prepareMenu(item.menu, index, side),
++          menuOpenId,
++        },
+       };
+     }
+     return null;
+diff --git a/lib/module/components/ScreenStackHeaderConfig.js b/lib/module/components/ScreenStackHeaderConfig.js
+index 71cd007..864458d 100644
+--- a/lib/module/components/ScreenStackHeaderConfig.js
++++ b/lib/module/components/ScreenStackHeaderConfig.js
+@@ -13,8 +13,10 @@ import { isHeaderBarButtonsAvailableForCurrentPlatform } from '../utils';
+ export const ScreenStackHeaderSubview = ScreenStackHeaderSubviewNativeComponent;
+ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref) => {
+   const {
++    cancelledTransitionHeaderGeometryFixEnabled,
+     headerLeftBarButtonItems,
+-    headerRightBarButtonItems
++    headerRightBarButtonItems,
++    ...rest
+   } = props;
+   const preparedHeaderLeftBarButtonItems = headerLeftBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform ? prepareHeaderBarButtonItems(headerLeftBarButtonItems, 'left') : undefined;
+   const preparedHeaderRightBarButtonItems = headerRightBarButtonItems && isHeaderBarButtonsAvailableForCurrentPlatform ? prepareHeaderBarButtonItems(headerRightBarButtonItems, 'right') : undefined;
+@@ -22,9 +24,11 @@ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref
+ 
+   // Handle bar button item presses
+   const onPressHeaderBarButtonItem = hasHeaderBarButtonItems ? event => {
+-    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && 'buttonId' in item && item.buttonId === event.nativeEvent.buttonId);
++    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && ('buttonId' in item && item.buttonId === event.nativeEvent.buttonId || item.type === 'menu' && 'menuOpenId' in item && item.menuOpenId === event.nativeEvent.buttonId));
+     if (pressedItem && pressedItem.type === 'button' && pressedItem.onPress) {
+       pressedItem.onPress();
++    } else if (pressedItem && pressedItem.type === 'menu') {
++      pressedItem.onOpen?.();
+     }
+   } : undefined;
+ 
+@@ -58,7 +62,8 @@ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref
+       }
+     }
+   } : undefined;
+-  return /*#__PURE__*/React.createElement(ScreenStackHeaderConfigNativeComponent, _extends({}, props, {
++  return /*#__PURE__*/React.createElement(ScreenStackHeaderConfigNativeComponent, _extends({}, rest, {
++    cancelledTransitionHeaderGeometryFixMode: cancelledTransitionHeaderGeometryFixEnabled == null ? 0 : cancelledTransitionHeaderGeometryFixEnabled ? 1 : 2,
+     userInterfaceStyle: props.experimental_userInterfaceStyle,
+     headerLeftBarButtonItems: preparedHeaderLeftBarButtonItems,
+     headerRightBarButtonItems: preparedHeaderRightBarButtonItems,
+@@ -139,4 +144,4 @@ const styles = StyleSheet.create({
+     alignItems: Platform.OS === 'ios' ? 'center' : undefined
+   }
+ });
+-//# sourceMappingURL=ScreenStackHeaderConfig.js.map
+\ No newline at end of file
++//# sourceMappingURL=ScreenStackHeaderConfig.js.map
+diff --git a/lib/commonjs/components/ScreenStackHeaderConfig.js b/lib/commonjs/components/ScreenStackHeaderConfig.js
+index e800f83..f4714d7 100644
+--- a/lib/commonjs/components/ScreenStackHeaderConfig.js
++++ b/lib/commonjs/components/ScreenStackHeaderConfig.js
+@@ -17,8 +17,10 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
+ const ScreenStackHeaderSubview = exports.ScreenStackHeaderSubview = _ScreenStackHeaderSubviewNativeComponent.default;
+ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_react.default.forwardRef((props, ref) => {
+   const {
++    cancelledTransitionHeaderGeometryFixEnabled,
+     headerLeftBarButtonItems,
+-    headerRightBarButtonItems
++    headerRightBarButtonItems,
++    ...rest
+   } = props;
+   const preparedHeaderLeftBarButtonItems = headerLeftBarButtonItems && _utils.isHeaderBarButtonsAvailableForCurrentPlatform ? (0, _prepareHeaderBarButtonItems.prepareHeaderBarButtonItems)(headerLeftBarButtonItems, 'left') : undefined;
+   const preparedHeaderRightBarButtonItems = headerRightBarButtonItems && _utils.isHeaderBarButtonsAvailableForCurrentPlatform ? (0, _prepareHeaderBarButtonItems.prepareHeaderBarButtonItems)(headerRightBarButtonItems, 'right') : undefined;
+@@ -26,9 +28,11 @@ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_
+ 
+   // Handle bar button item presses
+   const onPressHeaderBarButtonItem = hasHeaderBarButtonItems ? event => {
+-    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && 'buttonId' in item && item.buttonId === event.nativeEvent.buttonId);
++    const pressedItem = [...(preparedHeaderLeftBarButtonItems ?? []), ...(preparedHeaderRightBarButtonItems ?? [])].find(item => item && ('buttonId' in item && item.buttonId === event.nativeEvent.buttonId || item.type === 'menu' && 'menuOpenId' in item && item.menuOpenId === event.nativeEvent.buttonId));
+     if (pressedItem && pressedItem.type === 'button' && pressedItem.onPress) {
+       pressedItem.onPress();
++    } else if (pressedItem && pressedItem.type === 'menu') {
++      pressedItem.onOpen?.();
+     }
+   } : undefined;
+ 
+@@ -62,7 +66,8 @@ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_
+       }
+     }
+   } : undefined;
+-  return /*#__PURE__*/_react.default.createElement(_ScreenStackHeaderConfigNativeComponent.default, _extends({}, props, {
++  return /*#__PURE__*/_react.default.createElement(_ScreenStackHeaderConfigNativeComponent.default, _extends({}, rest, {
++    cancelledTransitionHeaderGeometryFixMode: cancelledTransitionHeaderGeometryFixEnabled == null ? 0 : cancelledTransitionHeaderGeometryFixEnabled ? 1 : 2,
+     userInterfaceStyle: props.experimental_userInterfaceStyle,
+     headerLeftBarButtonItems: preparedHeaderLeftBarButtonItems,
+     headerRightBarButtonItems: preparedHeaderRightBarButtonItems,
+@@ -148,4 +153,4 @@ const styles = _reactNative.StyleSheet.create({
+     alignItems: _reactNative.Platform.OS === 'ios' ? 'center' : undefined
+   }
+ });
+-//# sourceMappingURL=ScreenStackHeaderConfig.js.map
+\ No newline at end of file
++//# sourceMappingURL=ScreenStackHeaderConfig.js.map
+diff --git a/lib/module/components/helpers/prepareHeaderBarButtonItems.js b/lib/module/components/helpers/prepareHeaderBarButtonItems.js
+index 52cf911..f6146e9 100644
+--- a/lib/module/components/helpers/prepareHeaderBarButtonItems.js
++++ b/lib/module/components/helpers/prepareHeaderBarButtonItems.js
+@@ -74,12 +74,17 @@ export const prepareHeaderBarButtonItems = (barButtonItems, side) => {
+       };
+     }
+     if (item.type === 'menu') {
++      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
+       return {
+         ...processedItem,
+-        menu: prepareMenu(item.menu, index, side)
++        menuOpenId,
++        menu: {
++          ...prepareMenu(item.menu, index, side),
++          menuOpenId
++        }
+       };
+     }
+     return null;
+   });
+ };
+-//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
+\ No newline at end of file
++//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
+diff --git a/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js b/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
+index 3abad10..afb33e6 100644
+--- a/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
++++ b/lib/commonjs/components/helpers/prepareHeaderBarButtonItems.js
+@@ -80,13 +80,18 @@ const prepareHeaderBarButtonItems = (barButtonItems, side) => {
+       };
+     }
+     if (item.type === 'menu') {
++      const menuOpenId = item.onOpen ? `${index}-${side}` : undefined;
+       return {
+         ...processedItem,
+-        menu: prepareMenu(item.menu, index, side)
++        menuOpenId,
++        menu: {
++          ...prepareMenu(item.menu, index, side),
++          menuOpenId
++        }
+       };
+     }
+     return null;
+   });
+ };
+ exports.prepareHeaderBarButtonItems = prepareHeaderBarButtonItems;
+-//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
+\ No newline at end of file
++//# sourceMappingURL=prepareHeaderBarButtonItems.js.map
+diff --git a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubview.kt b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubview.kt
+index 0004273..88c421f 100644
+--- a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubview.kt
++++ b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubview.kt
+@@ -8,6 +8,12 @@ import com.facebook.react.bridge.ReactContext
+ class ScreenStackHeaderSubview(
+     context: ReactContext?,
+ ) : FabricEnabledHeaderSubviewViewGroup(context) {
++    init {
++        // Header 的自定义子视图可以绘制按钮的外部阴影，不应在自身边界裁剪。
++        clipChildren = false
++        clipToPadding = false
++    }
++
+     private var reactWidth = 0
+     private var reactHeight = 0
+ 
