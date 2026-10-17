@@ -147,6 +147,8 @@ export function WorkspaceSelectList({
                 subtitle={getWorkspaceSubtitle(workspaceItem, sortValue)}
                 title={workspaceItem.displayName}
                 titleFontSize={16}
+                iosNavigationSelection={false}
+                basicNavigationSelection={false}
               />
             ))}
           </NativeListSection>
