@@ -2,7 +2,7 @@ import { type Href, Redirect, useFocusEffect, useLocalSearchParams, useRouter } 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
-import { type FileNode, workspace, workspaceFile, workspaceIndex } from "@/api/commands/workspace";
+import { type WorkspaceIndexEntry, workspace } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
 import { useMediaNavigation } from "@/hooks/media";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
@@ -11,10 +11,13 @@ import { useToast } from "@/hooks/ui";
 import {
   useCurrentWorkspaceId,
   useWorkspaceEditorSession,
+  useWorkspaceExplorer,
   useWorkspaceNavigation,
   useWorkspaceSession,
   useWorkspaceState,
 } from "@/hooks/workspace";
+import { useWorkspaceFileActions } from "@/hooks/workspace/use_workspace_file_actions";
+import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
 import {
   type CreateWorkspaceEntryKind,
@@ -33,6 +36,7 @@ import {
   sortWorkspaceExplorerEntries,
 } from "./workspace_explorer_sort";
 import { useWorkspaceExplorerToolbar } from "./workspace_explorer_toolbar_host";
+import { WorkspaceTreeHost } from "./workspace_tree_host";
 
 export type WorkspaceExplorerMode = "directory" | "tree";
 
@@ -40,6 +44,8 @@ type LoadEntriesOptions = {
   minimumDurationMs?: number;
   showLoading?: boolean;
 };
+
+const EMPTY_ENTRIES: WorkspaceIndexEntry[] = [];
 
 const DEFAULT_WORKSPACE_EXPLORER_MODE: WorkspaceExplorerMode = "directory";
 
@@ -57,7 +63,11 @@ function joinWorkspacePath(parentPath: string, name: string): string {
   return parentPath ? `${parentPath}/${name}` : name;
 }
 
-function getAvailableEntryName(entries: FileNode[], baseName: string, extension = ""): string {
+function getAvailableEntryName(
+  entries: WorkspaceIndexEntry[],
+  baseName: string,
+  extension = "",
+): string {
   const names = new Set(entries.map((entry) => getFileName(entry.path).toLocaleLowerCase()));
   let sequence = 1;
   let candidate = `${baseName}${extension}`;
@@ -105,14 +115,33 @@ export function WorkspaceExplorer() {
       key={workspaceId}
       mode={DEFAULT_WORKSPACE_EXPLORER_MODE}
       workspaceId={workspaceId}
+      currentPath={undefined}
     />
   );
 }
 
-function WorkspaceExplorerForWorkspace({
+export function WorkspaceExplorerForWorkspace(props: {
+  mode: WorkspaceExplorerMode;
+  workspaceId: string;
+  currentPath?: string;
+  onSelectWorkspace?: () => void;
+}) {
+  return props.mode === "tree" ? (
+    <WorkspaceTreeHost
+      workspaceId={props.workspaceId}
+      onSelectWorkspace={props.onSelectWorkspace}
+    />
+  ) : (
+    <DirectoryExplorerForWorkspace {...props} />
+  );
+}
+
+function DirectoryExplorerForWorkspace({
   mode,
   workspaceId,
+  currentPath: suppliedPath,
 }: {
+  currentPath?: string;
   mode: WorkspaceExplorerMode;
   workspaceId: string;
 }) {
@@ -121,34 +150,38 @@ function WorkspaceExplorerForWorkspace({
     path?: string | string[];
   }>();
   const { toast } = useToast();
+  const fileActions = useWorkspaceFileActions();
   const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
   const { resetToWorkspaceSelect } = useWorkspaceNavigation();
   const { clearCurrentWorkspaceId } = useWorkspaceSession();
   const { setMediaSequence } = useMediaNavigation();
   const { openNoteEditor } = useWorkspaceEditorSession(workspaceId);
   const { state: workspaceState } = useWorkspaceState(workspaceId);
-  const currentPath = (Array.isArray(path) ? path[0] : path) ?? "";
-  const [entries, setEntries] = useState<FileNode[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedEntryPaths, setSelectedEntryPaths] = useState<string[]>([]);
+  const currentPath = suppliedPath ?? (Array.isArray(path) ? path[0] : path) ?? "";
+  const explorer = useWorkspaceExplorer({ workspaceId, mode, currentPath });
+  const directory = explorer.directories[currentPath];
+  const entries = directory?.snapshot?.entries ?? EMPTY_ENTRIES;
+  const isLoading = directory?.loading ?? true;
+  const hasError = Boolean(directory?.error);
+  const isSelectionMode = explorer.selectionMode;
+  const selectedEntryPaths = explorer.selectedPaths;
+  const setSelectedEntryPaths = explorer.setSelection;
+  const setIsSelectionMode = explorer.setSelectionMode;
   const [isGroupModeSelectOpen, setIsGroupModeSelectOpen] = useState(false);
   const [createEntryKind, setCreateEntryKind] = useState<CreateWorkspaceEntryKind>("note");
   const [createEntryName, setCreateEntryName] = useState("");
   const [isCreateEntrySheetOpen, setIsCreateEntrySheetOpen] = useState(false);
   const [isCreatingEntry, setIsCreatingEntry] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<FileNode | null>(null);
+  const [editingEntry, setEditingEntry] = useState<WorkspaceIndexEntry | null>(null);
   const [editedEntryName, setEditedEntryName] = useState("");
   const [isRenameEntrySheetOpen, setIsRenameEntrySheetOpen] = useState(false);
-  const [detailsEntry, setDetailsEntry] = useState<FileNode | null>(null);
+  const [detailsEntry, setDetailsEntry] = useState<WorkspaceIndexEntry | null>(null);
   const [isEntryDetailsSheetOpen, setIsEntryDetailsSheetOpen] = useState(false);
   const [isRenamingEntry, setIsRenamingEntry] = useState(false);
   const [isDeletingEntries, setIsDeletingEntries] = useState(false);
   const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
   const isCreatingEntryRef = useRef(false);
   const hasFocusedRef = useRef(false);
-  const requestIdRef = useRef(0);
   const sortSelectRef = useRef<SelectHandle>(null);
   const groupModeSelectRef = useRef<SelectHandle>(null);
   const currentOs = os();
@@ -156,48 +189,21 @@ function WorkspaceExplorerForWorkspace({
   const tracksNavigationBarScrollEdge = usesNativeIosHeader || currentOs === "android";
 
   const loadEntries = useCallback(
-    async ({
-      minimumDurationMs = 0,
-      showLoading = minimumDurationMs === 0,
-    }: LoadEntriesOptions = {}) => {
-      const requestId = ++requestIdRef.current;
+    async ({ minimumDurationMs = 0 }: LoadEntriesOptions = {}) => {
       const startedAt = Date.now();
-      if (showLoading) {
-        setIsLoading(true);
-      }
-
       try {
-        const node = await workspaceIndex.getNode(workspaceId, currentPath, false);
-        await waitForMinimumDuration(startedAt, minimumDurationMs);
-        if (requestId === requestIdRef.current) {
-          setEntries(node.children ?? []);
-          setHasError(false);
-        }
-      } catch (error) {
-        await waitForMinimumDuration(startedAt, minimumDurationMs);
-        if (requestId === requestIdRef.current) {
-          console.error("[workspace-explorer] load entries failed", error);
-          setHasError(true);
-        }
-        throw error;
+        await explorer.reload();
       } finally {
-        if (requestId === requestIdRef.current) {
-          setIsLoading(false);
-        }
+        await waitForMinimumDuration(startedAt, minimumDurationMs);
       }
     },
-    [currentPath, workspaceId],
+    [explorer.reload],
   );
 
   useFocusEffect(
     useCallback(() => {
-      const showLoading = !hasFocusedRef.current;
+      if (hasFocusedRef.current) void loadEntries({ showLoading: false }).catch(() => undefined);
       hasFocusedRef.current = true;
-      void loadEntries({ showLoading }).catch(() => undefined);
-
-      return () => {
-        requestIdRef.current += 1;
-      };
     }, [loadEntries]),
   );
 
@@ -272,25 +278,18 @@ function WorkspaceExplorerForWorkspace({
       setIsCreatingEntry(true);
 
       try {
-        if (await workspaceFile.exists(workspaceId, entryPath)) {
-          toast.error(`“${normalizedName}”已存在`);
-          return;
-        }
-
-        if (entryKind === "note") {
-          await workspaceFile.writeText(workspaceId, entryPath, "", {
-            createParent: false,
-            overwrite: false,
-          });
-        } else {
-          await workspaceFile.createDirectory(workspaceId, entryPath);
-        }
+        const result = await fileActions.createEntry({
+          workspaceId,
+          parentPath: currentPath,
+          name: normalizedName,
+          kind: entryKind,
+        });
+        if (!result.succeededPaths.length) return;
 
         setIsCreateEntrySheetOpen(false);
         const successMessage = entryKind === "note" ? "笔记已创建" : "文件夹已创建";
 
         if (openAfterCreate) {
-          void loadEntries({ showLoading: false }).catch(() => undefined);
           toast.success(successMessage);
 
           if (entryKind === "note") {
@@ -309,7 +308,6 @@ function WorkspaceExplorerForWorkspace({
           return;
         }
 
-        await loadEntries();
         toast.success(successMessage);
       } catch (error) {
         console.error("[workspace-explorer] create entry failed", error);
@@ -321,7 +319,7 @@ function WorkspaceExplorerForWorkspace({
         setIsCreatingEntry(false);
       }
     },
-    [currentPath, loadEntries, openNoteEditor, router, toast, workspaceId],
+    [currentPath, fileActions, openNoteEditor, router, toast, workspaceId],
   );
 
   const createEntry = useCallback(async () => {
@@ -343,7 +341,7 @@ function WorkspaceExplorerForWorkspace({
     [createWorkspaceEntry, entries],
   );
 
-  const openRenameEntrySheet = useCallback((entry: FileNode) => {
+  const openRenameEntrySheet = useCallback((entry: WorkspaceIndexEntry) => {
     setEditingEntry(entry);
     setEditedEntryName(getFileName(entry.path));
     setIsRenameEntrySheetOpen(true);
@@ -380,16 +378,15 @@ function WorkspaceExplorerForWorkspace({
     setIsRenamingEntry(true);
 
     try {
-      if (await workspaceFile.exists(workspaceId, nextPath)) {
-        toast.error(`“${nextName}”已存在`);
-        return;
-      }
-
-      await workspaceFile.rename(workspaceId, editingEntry.path, nextPath);
+      const result = await fileActions.renameEntry({
+        workspaceId,
+        path: editingEntry.path,
+        nextPath,
+      });
+      if (!result.succeededPaths.length) return;
       handleRenameEntrySheetOpenChange(false);
       setSelectedEntryPaths([]);
       setIsSelectionMode(false);
-      await loadEntries();
       toast.success("名称已更新");
     } catch (error) {
       console.error("[workspace-explorer] rename entry failed", error);
@@ -402,13 +399,13 @@ function WorkspaceExplorerForWorkspace({
     editingEntry,
     handleRenameEntrySheetOpenChange,
     isRenamingEntry,
-    loadEntries,
+    fileActions,
     toast,
     workspaceId,
   ]);
 
   const deleteEntries = useCallback(
-    async (targetEntries: FileNode[]) => {
+    async (targetEntries: WorkspaceIndexEntry[]) => {
       if (targetEntries.length === 0 || isDeletingEntries) {
         return;
       }
@@ -430,21 +427,16 @@ function WorkspaceExplorerForWorkspace({
       }
 
       setIsDeletingEntries(true);
-      let deletedCount = 0;
 
       try {
-        for (const entry of targetEntries) {
-          try {
-            await workspaceFile.remove(workspaceId, entry.path, entry.fileType === "directory");
-            deletedCount += 1;
-          } catch (error) {
-            console.error(`[workspace-explorer] delete entry ${entry.path} failed`, error);
-          }
-        }
-
+        const result = await fileActions.deleteEntries({
+          workspaceId,
+          paths: targetEntries.map((entry) => entry.path),
+        });
+        if (result.cancelled) return;
+        const deletedCount = result.succeededPaths.length;
         setSelectedEntryPaths([]);
         setIsSelectionMode(false);
-        await loadEntries();
 
         if (deletedCount === targetEntries.length) {
           toast.success(isSingleEntry ? "项目已删除" : `已删除 ${deletedCount} 个项目`);
@@ -459,11 +451,11 @@ function WorkspaceExplorerForWorkspace({
         setIsDeletingEntries(false);
       }
     },
-    [isDeletingEntries, loadEntries, toast, workspaceId],
+    [isDeletingEntries, fileActions, toast, workspaceId, setSelectedEntryPaths, setIsSelectionMode],
   );
 
   const openEntry = useCallback(
-    (entry: FileNode) => {
+    (entry: WorkspaceIndexEntry) => {
       if (entry.fileType === "directory") {
         router.push({
           pathname: "/workspace",
@@ -575,6 +567,7 @@ function WorkspaceExplorerForWorkspace({
 
     try {
       await workspace.close(workspaceId);
+      workspaceExplorerStore.getState().resetWorkspace(workspaceId);
       resetToWorkspaceSelect();
       // 先完成 stack reset，再清理会触发 Redirect 的 workspace session，避免两个
       // 导航动作同时作用于 native-stack 的 header 转场。
@@ -638,7 +631,7 @@ function WorkspaceExplorerForWorkspace({
           setSelectedEntryPaths(areAllEntriesSelected ? [] : entries.map((entry) => entry.path));
         }}
         onToggleSelectionMode={() => {
-          setIsSelectionMode((currentValue) => !currentValue);
+          setIsSelectionMode(!isSelectionMode);
           setSelectedEntryPaths([]);
         }}
         title={title}

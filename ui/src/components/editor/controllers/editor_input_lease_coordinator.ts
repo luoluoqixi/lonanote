@@ -11,6 +11,8 @@ type InputLeaseProvider = {
   setInputEnabled: (enabled: boolean) => Promise<EditorBridgeApplyResult>;
 };
 
+const suspended = new Map<string, number>();
+
 const providersByEditorId = new Map<string, InputLeaseProvider>();
 const transferTasksByDocumentId = new Map<string, Promise<void>>();
 
@@ -49,7 +51,7 @@ async function captureReleasedOwner(documentId: string, editorId: string): Promi
 async function transferInputLease(editorId: string): Promise<void> {
   const state = editorStore.getState();
   const targetView = state.editorsById[editorId];
-  if (!targetView || !isViewEditable(editorId)) return;
+  if (!targetView || !isViewEditable(editorId) || suspended.has(targetView.documentId)) return;
 
   const document = state.documentsById[targetView.documentId];
   const targetProvider = providersByEditorId.get(editorId);
@@ -72,6 +74,7 @@ async function transferInputLease(editorId: string): Promise<void> {
   if (!latestDocument || !latestTargetView || !isViewEditable(editorId)) return;
 
   await targetProvider.applyDocumentRevision(latestDocument.draftRevision, latestDocument.draft);
+  if (suspended.has(latestDocument.documentId)) return;
   editorStore.getState().setDocumentEditOwner(latestDocument.documentId, editorId);
   try {
     await targetProvider.setInputEnabled(true);
@@ -82,6 +85,41 @@ async function transferInputLease(editorId: string): Promise<void> {
 }
 
 export const editorInputLeaseCoordinator = {
+  suspendDocuments: async (documentIds: string[]): Promise<() => Promise<void>> => {
+    for (const id of documentIds) suspended.set(id, (suspended.get(id) ?? 0) + 1);
+    const resume = async () => {
+      for (const id of documentIds) {
+        const count = (suspended.get(id) ?? 1) - 1;
+        if (count) suspended.set(id, count);
+        else suspended.delete(id);
+      }
+      const state = editorStore.getState();
+      // 已销毁的 view 不再保留 bridge provider，也不能重新获取输入权。
+      for (const id of providersByEditorId.keys())
+        if (!state.editorsById[id]) providersByEditorId.delete(id);
+      if (state.activeEditorId)
+        await editorInputLeaseCoordinator
+          .requestLease(state.activeEditorId)
+          .catch((error) => console.warn("恢复 Editor 输入失败", error));
+    };
+    try {
+      await Promise.all(
+        documentIds.map((id) =>
+          enqueueTransfer(id, async () => {
+            const document = editorStore.getState().documentsById[id];
+            for (const editorId of document?.attachedEditorIds ?? []) {
+              const provider = providersByEditorId.get(editorId);
+              if (provider) await provider.setInputEnabled(false);
+            }
+          }),
+        ),
+      );
+      return resume;
+    } catch (error) {
+      await resume();
+      throw error;
+    }
+  },
   registerProvider: (editorId: string, provider: InputLeaseProvider): (() => void) => {
     providersByEditorId.set(editorId, provider);
     editorInputLeaseCoordinator.handleSurfaceReady(editorId);

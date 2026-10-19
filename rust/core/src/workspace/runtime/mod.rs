@@ -3,6 +3,8 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
 
 mod index;
+mod index_ignore;
+mod index_sort;
 mod instance;
 
 pub use instance::WorkspaceInstance;

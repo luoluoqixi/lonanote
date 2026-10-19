@@ -19,3 +19,6 @@ pub use record::*;
 pub use relative_path::*;
 pub use settings::*;
 pub use state::*;
+
+mod index;
+pub use index::*;

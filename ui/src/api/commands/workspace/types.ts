@@ -215,20 +215,17 @@ export interface StorageCapabilities {
 
 export type FileType = "file" | "directory";
 
-export interface FileNode {
+export interface WorkspaceIndexEntry {
   path: WorkspaceRelativePath;
   fileType: FileType;
   lastModifiedTime: UnixSeconds | null;
   createTime: UnixSeconds | null;
   size: number | null;
-  fileCount: number;
-  dirCount: number;
-  /** `null` 表示没有返回 children，可能是未递归展开，也可能是空目录。 */
-  children: FileNode[] | null;
 }
 
-export interface FileTree {
-  root: FileNode | null;
+export interface WorkspaceDirectorySnapshot {
+  path: WorkspaceRelativePath;
+  entries: WorkspaceIndexEntry[];
 }
 
 export interface WriteWorkspaceFileOptions {

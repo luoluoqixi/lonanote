@@ -16,7 +16,7 @@
 - Tauri 桌面目录与 Android/iOS 应用沙盒目录的 Local FS 接入；
 - 用于 contract test 的内存 Storage；
 - Workspace 创建、挂载、打开、关闭、移除与迁移；
-- Workspace 文件操作、Settings、LocalSetting 和 File Tree Index；
+- Workspace 文件操作、Settings、LocalSetting 和 按层目录 Index；
 - 面向上层调用的 cmdreg command API；
 - 与当前 cmdreg 契约对齐的 TypeScript `workspace`、`workspaceFile`、`workspaceIndex` wrapper。
 
@@ -69,6 +69,7 @@ rust/core/src/workspace/
 │   ├── relative_path.rs     # 安全相对路径与 EntryName
 │   ├── binding.rs           # Managed / External Binding
 │   ├── manifest.rs          # manifest.json 模型
+│   ├── index.rs             # 单层目录快照与条目 DTO
 │   ├── settings.rs          # settings.json 模型
 │   ├── local_setting.rs     # settings.local.json 模型
 │   ├── record.rs            # Catalog record 与缓存摘要
@@ -84,8 +85,9 @@ rust/core/src/workspace/
 ├── runtime/
 │   ├── mod.rs               # 已打开 Instance 的 Arc 表
 │   ├── instance.rs          # 单 Workspace 行为与修改锁
-│   └── index.rs             # File Tree 缓存和失效
-└── file_tree/               # native-path File Tree
+│   ├── index.rs             # 单层缓存与 generation 失效
+│   ├── index_ignore.rs      # Storage 规则读取与纯 matcher
+│   └── index_sort.rs        # 条目基础排序
 
 rust/core/src/api/workspace/
 ├── workspace_api.rs         # 生命周期、Settings、LocalSetting、App Session
@@ -331,12 +333,13 @@ HashMap<WorkspaceId, Arc<WorkspaceInstance>>
 
 Runtime 不持久化。关闭 Workspace 是从 map 移除 `Arc`，已经获得 Instance 的进行中操作仍可安全完成。
 
-`WorkspaceIndex` 是 File Tree 派生缓存：
+`WorkspaceIndex` 是 Storage 驱动的逐目录派生缓存：
 
-- 首次查询时构建；
-- 文件写入、创建目录、重命名、删除后失效；
-- 后续查询重新构建；
-- `refresh_index` 可显式强制刷新。
+- `get_directory(path, reload)` 只枚举指定目录的一层，不扫描未请求子树；根路径为 `""`。
+- DTO 为 `WorkspaceDirectorySnapshot { path, entries }`；entry 的 metadata 可为 null，没有递归 children。
+- 目录读取与 ignore 文件读取全部经 StorageSession；根 `.lonanote` 隐藏，根至当前层的 `.gitignore` 与 custom ignore 共同过滤，隐藏祖先不能通过直接查询绕过。
+- 文件 mutation 成功后失效相关父链与子树；Settings / ignore 修改全失效。逐目录锁与 generation 检查防止旧结果发布，持续变动超出重试上限时返回 `IndexChanged`。
+- `refresh_index` 只失效缓存，前端 Explorer 再按可见目录链显式重读。
 
 ### 4.8 权威来源速查
 
@@ -349,7 +352,7 @@ Runtime 不持久化。关闭 Workspace 是从 map 移除 `Arc`，已经获得 I
 | 未打开时列表显示什么 | Catalog cached summary |
 | 整个应用最后打开哪个 Workspace | App Session |
 | Workspace 当前是否打开 | Runtime |
-| 当前 File Tree 缓存 | Index，可重建 |
+| 当前目录快照缓存 | Index，可重建 |
 
 ## 5. Storage 抽象
 
@@ -402,7 +405,7 @@ identity 不负责自动追踪目录移动。应用内显式 `relocate_workspace
 
 `WorkspaceStorage` 暴露 `StorageCapabilities`，上层应根据能力判断功能，而不是根据 provider 名称猜测。
 
-File Tree 目前仍依赖 native root path。因此普通文件系统支持 Index，内存或未来无法提供本机路径的 Storage 会明确返回 unsupported，而不是伪造路径。
+Index 不依赖 native root path，Local / Memory 使用相同 StorageSession 目录查询契约。可选 native path 仅供具备相应平台能力的功能使用。
 
 ## 6. WorkspaceInstance
 
@@ -411,7 +414,7 @@ File Tree 目前仍依赖 native root path。因此普通文件系统支持 Inde
 - Storage Binding；
 - `Arc<WorkspaceStorageSession>`；
 - Manifest、Settings、LocalSetting 的内存快照；
-- File Tree Index；
+- 按层目录 Index；
 - 单 Instance mutation lock。
 
 三个 JSON 模型分别持有和保存，避免修改 Settings 时重写 Manifest，或修改最近文件时重写可同步设置。
@@ -587,7 +590,7 @@ Catalog Binding 是最终提交点。当前 relocate 成功后保留源目录，
 - 元数据与设置：`update_display_name`、`get_settings`、`set_settings`；
 - 本机恢复：`get_last_workspace_id`、`get_local_setting`、`set_last_open_file`；
 - Storage 能力和文件操作：`capabilities`、`exists`、`metadata`、`list`、读写、建目录、重命名、删除；
-- Index：`get_tree`、`get_node`、`refresh`。
+- Index：`get_directory`、`refresh`；旧 `get_tree` / `get_node` 已删除。
 
 所有 API 都通过全局安装的 `WorkspaceManager`。未安装 Manager、ID/路径反序列化失败和业务错误会由 cmdreg 统一返回。
 
@@ -681,7 +684,7 @@ Manifest、Settings、LocalSetting 通过 Storage contract 原子写入。Instan
 - LocalSetting 放在 Workspace 内，但默认由 Git 忽略。
 - App Session 放在应用数据目录，不随 Workspace 移动或同步。
 - 首次默认 Workspace 使用 `app-local`；Catalog 的 `initialWorkspaceCopied` 保证用户删除后不再自动重建。
-- File Tree 仍要求 native root path。
+- Index 按 Storage 逐层查询；SAF / bookmark / iCloud Provider 仍未实现。
 - Tauri、Android/iOS Local FS 与 TypeScript command wrapper 已接入；SAF、bookmark、iCloud 等授权 Provider 尚未实现。
 
 ## 14. 推荐阅读顺序

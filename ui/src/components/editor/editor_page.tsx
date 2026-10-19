@@ -294,7 +294,7 @@ export function EditorPage() {
     if (document) {
       void documentRegistry.ensureDocumentLoaded(document.documentId).catch(() => undefined);
     }
-  }, [document?.documentId]);
+  }, [document?.documentId, document?.identityRevision]);
 
   useEffect(() => {
     if (!editorId || !view || !document) return;

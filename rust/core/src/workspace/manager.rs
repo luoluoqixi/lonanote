@@ -20,7 +20,6 @@ use crate::workspace::{
         WorkspaceStorageLocation, WorkspaceStorageTarget, WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
-    file_tree::{FileNode, FileTree},
     persistence::{
         WorkspaceCatalog, WorkspaceSessionStore, WORKSPACE_CATALOG_FILE_NAME,
         WORKSPACE_SESSION_FILE_NAME,
@@ -36,6 +35,7 @@ use crate::workspace::{
         save_workspace_state, StorageCapabilities, StorageEntry, StorageEntryMetadata,
         StorageReadOptions, StorageReadStream, WorkspaceStorageResolver, WriteOptions,
     },
+    WorkspaceDirectorySnapshot,
 };
 
 #[derive(Embed)]
@@ -846,25 +846,16 @@ impl WorkspaceManager {
         Ok(())
     }
 
-    pub async fn get_tree(
-        &self,
-        id: &WorkspaceId,
-        recursive: bool,
-    ) -> Result<FileTree, WorkspaceError> {
-        let _lifecycle = self.lifecycle_lock.read().await;
-        self.get_open_instance(id).await?.get_tree(recursive).await
-    }
-
-    pub async fn get_node(
+    pub async fn get_directory(
         &self,
         id: &WorkspaceId,
         path: &WorkspaceRelativePath,
-        recursive: bool,
-    ) -> Result<FileNode, WorkspaceError> {
+        reload: bool,
+    ) -> Result<WorkspaceDirectorySnapshot, WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id)
             .await?
-            .get_node(path, recursive)
+            .get_directory(path, reload)
             .await
     }
 

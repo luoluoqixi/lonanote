@@ -5,10 +5,14 @@ import type { EditorDocumentCapturePayload } from "@/assets/editor/src/bridge/pr
 import { documentConflictCoordinator } from "@/components/editor/controllers/document_conflict_coordinator";
 import { editorStore, isDocumentDirty } from "@/stores/editor";
 import { settingsStore } from "@/stores/settings";
+import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
+
+import { editorInputLeaseCoordinator } from "./editor_input_lease_coordinator";
 
 type SaveEntry = {
   autoSaveTimer: ReturnType<typeof setTimeout> | null;
   inFlight: Promise<void> | null;
+  barriers: number;
 };
 
 type CaptureProvider = () => Promise<EditorDocumentCapturePayload>;
@@ -19,7 +23,7 @@ const captureProvidersByDocumentId = new Map<string, Map<string, CaptureProvider
 function getEntry(documentId: string): SaveEntry {
   let entry = entries.get(documentId);
   if (!entry) {
-    entry = { autoSaveTimer: null, inFlight: null };
+    entry = { autoSaveTimer: null, inFlight: null, barriers: 0 };
     entries.set(documentId, entry);
   }
   return entry;
@@ -51,13 +55,16 @@ function getCaptureProvider(documentId: string): CaptureProvider | null {
   return providers.values().next().value ?? null;
 }
 
-async function captureLatestDraft(documentId: string): Promise<void> {
+async function captureLatestDraft(documentId: string, strict = false): Promise<void> {
+  if (!editorStore.getState().documentsById[documentId]) return;
   const captureProvider = getCaptureProvider(documentId);
   if (!captureProvider) return;
 
   try {
     const capture = await captureProvider();
     const document = editorStore.getState().documentsById[documentId];
+    if (strict && document && capture.revision !== document.draftRevision)
+      throw new Error("文档 capture 版本已变化，请重试");
     if (
       !document ||
       capture.revision !== document.draftRevision ||
@@ -67,6 +74,7 @@ async function captureLatestDraft(documentId: string): Promise<void> {
     }
     editorStore.getState().setDocumentDraft(documentId, capture.text);
   } catch (error) {
+    if (strict) throw error;
     console.warn("[editor-save] document.capture failed; saving the RN draft instead", error);
   }
 }
@@ -113,6 +121,11 @@ async function writeLatestSnapshot(documentId: string): Promise<void> {
         size: metadata?.size ?? null,
         modifiedAt: metadata?.modifiedAt ?? null,
       });
+      // 文件已保存；投影刷新失败由 Explorer 展示，不能把成功写入标记为保存失败。
+      await workspaceExplorerStore
+        .getState()
+        .invalidatePaths(document.ref.workspaceId, [document.ref.filePath])
+        .catch((error) => console.warn("[editor-save] 文件已保存，刷新 Explorer 失败", error));
       return;
     }
 
@@ -146,7 +159,62 @@ async function flushDocument(documentId: string): Promise<void> {
   }
 }
 
+export interface DocumentMutationContext {
+  capture(): Promise<void>;
+  save(): Promise<void>;
+}
+
+async function withDocumentMutation<T>(
+  documentIds: string[],
+  operation: (context: DocumentMutationContext) => Promise<T>,
+): Promise<T> {
+  const ids = [...new Set(documentIds)].sort();
+  const locked = ids.map((id) => ({ id, entry: getEntry(id) }));
+  const previous = locked.map(({ entry }) => entry.inFlight ?? Promise.resolve());
+  // 同步登记所有文档的屏障；重叠集合按登记顺序等待，不持有部分锁再申请其余锁。
+  for (const { entry } of locked) {
+    entry.barriers++;
+    clearAutoSaveTimer(entry);
+  }
+  const task = Promise.all(previous.map((p) => p.catch(() => undefined))).then(async () => {
+    const resume = await editorInputLeaseCoordinator.suspendDocuments(ids);
+    try {
+      return await operation({
+        capture: async () => {
+          for (const id of ids) await captureLatestDraft(id, true);
+        },
+        save: async () => {
+          for (const id of ids) await writeLatestSnapshot(id);
+        },
+      });
+    } finally {
+      await resume();
+    }
+  });
+  const barrier = task.then(
+    () => undefined,
+    () => undefined,
+  );
+  for (const { entry } of locked) entry.inFlight = barrier;
+  try {
+    return await task;
+  } finally {
+    for (const { id, entry } of locked) {
+      entry.barriers--;
+      if (entry.inFlight === barrier) entry.inFlight = null;
+      if (!editorStore.getState().documentsById[id]) {
+        clearAutoSaveTimer(entry);
+        captureProvidersByDocumentId.delete(id);
+        if (!entry.inFlight && !entry.barriers) entries.delete(id);
+      } else if (!entry.barriers) {
+        saveCoordinator.scheduleAutoSave(id);
+      }
+    }
+  }
+}
+
 export const saveCoordinator = {
+  withDocumentMutation,
   registerCaptureProvider: (
     documentId: string,
     editorId: string,
@@ -176,6 +244,7 @@ export const saveCoordinator = {
 
     const entry = getEntry(documentId);
     clearAutoSaveTimer(entry);
+    if (entry.barriers > 0) return;
     editorStore.getState().setDocumentSaveState(documentId, "scheduled");
     const delayMs = Math.max(100, settings.autoSaveIntervalSeconds * 1000);
     entry.autoSaveTimer = setTimeout(() => {

@@ -1,7 +1,8 @@
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 
-import { type WorkspaceSnapshot, workspace, workspaceIndex } from "@/api/commands/workspace";
+import { type WorkspaceSnapshot, workspace } from "@/api/commands/workspace";
 import { workspaceSessionStore } from "@/stores/workspace";
+import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
 import { useCurrentWorkspaceId } from "./use_workspace_session";
 
@@ -17,13 +18,11 @@ export interface UseWorkspaceStateResult {
   isRefreshing: boolean;
   isOpening: boolean;
   isClosing: boolean;
-  isRefreshingIndex: boolean;
   isBusy: boolean;
   clearError: () => void;
   refresh: (workspaceId?: string) => Promise<WorkspaceSnapshot | null>;
   open: (workspaceId: string) => Promise<WorkspaceSnapshot>;
   close: (workspaceId?: string) => Promise<void>;
-  refreshIndex: (workspaceId?: string) => Promise<WorkspaceSnapshot | null>;
 }
 
 export function useWorkspaceState(workspaceId: string | null): UseWorkspaceStateResult {
@@ -33,7 +32,6 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [isRefreshingIndex, setIsRefreshingIndex] = useState(false);
   const requestIdRef = useRef(0);
 
   const clearError = useEffectEvent(() => {
@@ -120,6 +118,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
 
     try {
       await workspace.close(targetWorkspaceId);
+      workspaceExplorerStore.getState().resetWorkspace(targetWorkspaceId);
 
       if (workspaceSessionStore.getCurrentWorkspaceId() === targetWorkspaceId) {
         workspaceSessionStore.clearCurrentWorkspaceId();
@@ -135,41 +134,6 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     }
   });
 
-  const refreshIndex = useEffectEvent(async (nextWorkspaceId?: string) => {
-    const targetWorkspaceId = nextWorkspaceId ?? workspaceId;
-
-    if (!targetWorkspaceId) {
-      commitState(null);
-      commitError(null);
-      return null;
-    }
-
-    const requestId = ++requestIdRef.current;
-    setIsRefreshingIndex(true);
-    commitError(null);
-
-    try {
-      await workspaceIndex.refresh(targetWorkspaceId);
-      const nextState = await workspace.get(targetWorkspaceId);
-
-      if (requestId === requestIdRef.current) {
-        commitState(nextState);
-      }
-
-      return nextState;
-    } catch (nextError) {
-      if (requestId === requestIdRef.current) {
-        commitError(toErrorMessage(nextError));
-      }
-
-      throw nextError;
-    } finally {
-      if (requestId === requestIdRef.current) {
-        setIsRefreshingIndex(false);
-      }
-    }
-  });
-
   useEffect(() => {
     if (!workspaceId) {
       requestIdRef.current += 1;
@@ -177,7 +141,6 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
       setIsRefreshing(false);
       setIsOpening(false);
       setIsClosing(false);
-      setIsRefreshingIndex(false);
       clearError();
       commitState(null);
       return;
@@ -215,13 +178,11 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     isRefreshing,
     isOpening,
     isClosing,
-    isRefreshingIndex,
-    isBusy: isLoading || isRefreshing || isOpening || isClosing || isRefreshingIndex,
+    isBusy: isLoading || isRefreshing || isOpening || isClosing,
     clearError,
     refresh,
     open,
     close,
-    refreshIndex,
   };
 }
 

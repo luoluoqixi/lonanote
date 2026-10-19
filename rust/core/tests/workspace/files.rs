@@ -1,11 +1,5 @@
-use std::sync::Arc;
-
 use crate::support::{path, provider, WorkspaceTestApp, MANAGED_PROVIDER};
-use lonanote_core::workspace::{
-    MemoryStorage, StorageError, WorkspaceError, WorkspaceId, WorkspaceInstance,
-    WorkspaceLocalSetting, WorkspaceManifest, WorkspaceSettings, WorkspaceStorage,
-    WorkspaceStorageSession, WriteOptions,
-};
+use lonanote_core::workspace::{StorageError, WorkspaceError, WorkspaceSettings, WriteOptions};
 
 #[tokio::test]
 async fn file_crud_flow() {
@@ -103,12 +97,9 @@ async fn index_refresh_flow() {
         .write_text(&id, &path("a.md"), "a", WriteOptions::default())
         .await
         .unwrap();
-    let first = manager.get_tree(&id, true).await.unwrap();
+    let first = manager.get_directory(&id, &path(""), true).await.unwrap();
     let first_names = first
-        .root
-        .unwrap()
-        .children
-        .unwrap()
+        .entries
         .into_iter()
         .map(|node| node.path.to_string())
         .collect::<Vec<_>>();
@@ -124,42 +115,20 @@ async fn index_refresh_flow() {
         .unwrap();
     manager.refresh_index(&id).await.unwrap();
 
-    let tree = manager.get_tree(&id, true).await.unwrap();
+    let tree = manager.get_directory(&id, &path(""), true).await.unwrap();
     let names = tree
-        .root
-        .unwrap()
-        .children
-        .unwrap()
+        .entries
         .into_iter()
         .map(|node| node.path.to_string())
         .collect::<Vec<_>>();
     assert_eq!(names.first().map(String::as_str), Some("assets"));
     assert!(!names.iter().any(|name| name == "ignored.md"));
 
-    let node = manager.get_node(&id, &path("assets"), true).await.unwrap();
+    let node = manager
+        .get_directory(&id, &path("assets"), true)
+        .await
+        .unwrap();
     assert_eq!(node.path.as_str(), "assets");
-}
-
-#[tokio::test]
-async fn rejects_index_without_native_path() {
-    let storage: Arc<dyn WorkspaceStorage> = Arc::new(MemoryStorage::new());
-    let session = Arc::new(WorkspaceStorageSession::new(storage));
-    let id = WorkspaceId::new();
-    let instance = WorkspaceInstance::new(
-        crate::support::resolved_external_binding("/virtual/workspace"),
-        session,
-        WorkspaceManifest::new(id, "Memory".into(), 1),
-        WorkspaceSettings::default(),
-        WorkspaceLocalSetting::default(),
-        lonanote_core::workspace::WorkspaceState::default(),
-    )
-    .await
-    .unwrap();
-
-    assert!(matches!(
-        instance.get_tree(true).await.unwrap_err(),
-        WorkspaceError::FileTreeUnavailable
-    ));
 }
 
 #[test]

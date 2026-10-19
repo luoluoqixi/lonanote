@@ -4,6 +4,7 @@ import { workspace } from "@/api/commands/workspace";
 import { useToast } from "@/hooks/ui";
 import { settingsStore } from "@/stores/settings";
 import { workspaceSessionStore } from "@/stores/workspace";
+import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
 type WorkspaceStartupState = {
   autoOpenedWorkspaceId: string | null;
@@ -22,6 +23,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 async function initializeWorkspace(): Promise<WorkspaceStartupResult> {
+  let openingWorkspaceId: string | null = null;
   try {
     const globalSettings = await settingsStore.load();
     if (!globalSettings.app.autoOpenLastWorkspace) {
@@ -33,10 +35,12 @@ async function initializeWorkspace(): Promise<WorkspaceStartupResult> {
       return { autoOpenedWorkspaceId: null, errorMessage: null };
     }
 
+    openingWorkspaceId = lastWorkspaceId;
     await workspace.open(lastWorkspaceId);
     workspaceSessionStore.setCurrentWorkspaceId(lastWorkspaceId);
     return { autoOpenedWorkspaceId: lastWorkspaceId, errorMessage: null };
   } catch (error) {
+    if (openingWorkspaceId) workspaceExplorerStore.getState().resetWorkspace(openingWorkspaceId);
     console.error("[workspace-startup] auto open last workspace failed", error);
     workspaceSessionStore.clearCurrentWorkspaceId();
     return { autoOpenedWorkspaceId: null, errorMessage: getErrorMessage(error) };

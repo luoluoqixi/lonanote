@@ -25,6 +25,11 @@ mock.module("@/stores/settings", () => ({
   },
 }));
 
+const invalidatePaths = mock(async (_id: string, _paths: string[]) => {});
+mock.module("@/stores/workspace/workspace_explorer_runtime", () => ({
+  workspaceExplorerStore: { getState: () => ({ invalidatePaths }) },
+}));
+
 const { editorStore, isDocumentDirty } = await import("../src/stores/editor");
 const { saveCoordinator } = await import("../src/components/editor/controllers/save_coordinator");
 const { documentConflictCoordinator } =
@@ -67,6 +72,8 @@ beforeEach(() => {
     editorsById: {},
     activeEditorId: null,
   });
+  invalidatePaths.mockReset();
+  invalidatePaths.mockImplementation(async () => {});
   diskText = "原始内容";
   modifiedAt = 1;
   metadata.mockReset();
@@ -228,4 +235,130 @@ test("读取外部内容期间出现本地编辑时，保留 draft 并报告冲�
   expect(await documentConflictCoordinator.checkForExternalChange(documentId)).toBe("conflict");
   expect(editorStore.getState().documentsById[documentId].draft).toBe("读取期间的本地编辑");
   expect(writeText).not.toHaveBeenCalled();
+});
+
+test("mutation 等待已经开始的保存，内部 save 不等待自身，之后 flush 只写新路径", async () => {
+  const { documentId } = openDocument();
+  const started = deferred<void>();
+  const release = deferred<void>();
+  writeText.mockImplementationOnce(async (_w, _p, text) => {
+    started.resolve();
+    await release.promise;
+    diskText = text;
+    modifiedAt++;
+  });
+  const saving = saveCoordinator.flushDocument(documentId);
+  await started.promise;
+  let renamed = false;
+  const mutation = saveCoordinator.withDocumentMutation([documentId], async (context) => {
+    await context.capture();
+    await context.save();
+    editorStore.getState().renameWorkspacePath("workspace", "note.md", "new.md");
+    renamed = true;
+  });
+  const queued = saveCoordinator.flushDocument(documentId);
+  await Promise.resolve();
+  expect(renamed).toBe(false);
+  release.resolve();
+  await Promise.all([saving, mutation, queued]);
+  editorStore.getState().setDocumentDraft(documentId, "改名后编辑");
+  await saveCoordinator.flushDocument(documentId);
+  expect(editorStore.getState().documentsById[documentId].ref).toEqual({
+    kind: "workspaceFile",
+    workspaceId: "workspace",
+    filePath: "new.md",
+  });
+  expect(writeText.mock.calls.at(-1)?.[1]).toBe("new.md");
+});
+
+test("delete 屏障之后排队的 flush 不重建删除路径", async () => {
+  const { documentId } = openDocument();
+  const mutation = saveCoordinator.withDocumentMutation([documentId], async () => {
+    editorStore.getState().removeWorkspacePaths("workspace", ["note.md"]);
+  });
+  const flush = saveCoordinator.flushDocument(documentId);
+  await Promise.all([mutation, flush]);
+  expect(writeText).not.toHaveBeenCalled();
+  expect(editorStore.getState().documentsById[documentId]).toBeUndefined();
+});
+
+test("mutation 严格 capture 失败时不执行文件操作", async () => {
+  const { documentId, editorId } = openDocument();
+  let mutated = false;
+  const unregister = saveCoordinator.registerCaptureProvider(documentId, editorId, async () => {
+    throw new Error("capture failed");
+  });
+  try {
+    await expect(
+      saveCoordinator.withDocumentMutation([documentId], async (context) => {
+        await context.capture();
+        mutated = true;
+      }),
+    ).rejects.toThrow("capture failed");
+    expect(mutated).toBe(false);
+  } finally {
+    unregister();
+  }
+});
+
+test("改名后冲突读取晚返回不覆盖新身份与 draft", async () => {
+  const { documentId } = openDocument();
+  editorStore.getState().discardDocumentDraft(documentId);
+  modifiedAt++;
+  const started = deferred<void>();
+  const external = deferred<string>();
+  readText.mockImplementationOnce(async () => {
+    started.resolve();
+    return external.promise;
+  });
+  const check = documentConflictCoordinator.checkForExternalChange(documentId);
+  await started.promise;
+  editorStore.getState().renameWorkspacePath("workspace", "note.md", "new.md");
+  editorStore.getState().setDocumentDraft(documentId, "改名后的 draft");
+  external.resolve("旧路径外部内容");
+  await check;
+  expect(editorStore.getState().documentsById[documentId].draft).toBe("改名后的 draft");
+  expect(editorStore.getState().documentsById[documentId].conflict).toBeNull();
+});
+
+test("文档加载晚返回不发布旧身份；删除 dirty 无 view 文档及多个 views", async () => {
+  const { documentRegistry } =
+    await import("../src/components/editor/controllers/document_registry");
+  const old = deferred<string>();
+  readText.mockImplementationOnce(() => old.promise);
+  const opened = editorStore
+    .getState()
+    .openEditor({ kind: "workspaceFile", workspaceId: "workspace", filePath: "old/a.md" });
+  const load = documentRegistry.ensureDocumentLoaded(opened.documentId);
+  editorStore.getState().renameWorkspacePath("workspace", "old", "new");
+  editorStore.getState().setDocumentDraft(opened.documentId, "新身份 draft");
+  old.resolve("旧读取");
+  await load;
+  expect(editorStore.getState().documentsById[opened.documentId].draft).toBe("新身份 draft");
+  const duplicate = editorStore
+    .getState()
+    .openEditor(
+      { kind: "workspaceFile", workspaceId: "workspace", filePath: "new/a.md" },
+      { duplicate: true },
+    );
+  expect(duplicate.documentId).toBe(opened.documentId);
+  editorStore.getState().removeWorkspacePaths("workspace", ["new"]);
+  expect(editorStore.getState().openEditorIds).toEqual([]);
+  expect(editorStore.getState().documentIds).toEqual([]);
+  const dirty = openDocument();
+  editorStore.getState().closeEditor(dirty.editorId);
+  expect(editorStore.getState().documentsById[dirty.documentId]).toBeDefined();
+  editorStore.getState().removeWorkspacePaths("workspace", ["note.md"]);
+  expect(editorStore.getState().documentsById[dirty.documentId]).toBeUndefined();
+});
+
+test("保存 .gitignore 后刷新共享 Explorer，刷新失败不回退文件保存成功", async () => {
+  const { documentId } = openDocument();
+  editorStore.getState().renameWorkspacePath("workspace", "note.md", ".gitignore");
+  invalidatePaths.mockRejectedValueOnce(new Error("刷新失败"));
+  await saveCoordinator.flushDocument(documentId);
+  expect(invalidatePaths).toHaveBeenCalledWith("workspace", [".gitignore"]);
+  expect(diskText).toBe("本地编辑");
+  expect(isDocumentDirty(editorStore.getState().documentsById[documentId])).toBe(false);
+  expect(editorStore.getState().documentsById[documentId].saveState).toBe("idle");
 });

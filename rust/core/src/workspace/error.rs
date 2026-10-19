@@ -203,8 +203,10 @@ pub enum WorkspaceError {
     ExpectedExternalBinding,
     #[error("目标 StorageBinding 已经是当前 StorageBinding")]
     SameStorageBinding,
-    #[error("File Tree 在当前 Storage Provider 上不可用")]
-    FileTreeUnavailable,
+    #[error("目录在读取期间发生变化，请重试")]
+    IndexChanged,
+    #[error("索引路径已被忽略规则隐藏: {path}")]
+    IndexPathHidden { path: WorkspaceRelativePath },
     #[error(transparent)]
     Storage(#[from] StorageError),
     #[error(transparent)]

@@ -36,7 +36,9 @@ export default function MainLayout() {
     return null;
   }
 
-  if (layoutMode === "desktop") {
+  const isFileViewer =
+    pathname.startsWith("/media/") || pathname === "/pdf" || pathname === "/unknown";
+  if (layoutMode === "desktop" && !isFileViewer) {
     return <DesktopAppShell />;
   }
 

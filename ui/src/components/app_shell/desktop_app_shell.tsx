@@ -3,6 +3,8 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  Button,
+  NativeSheetStack,
   SplitLayout,
   type SplitLayoutHandle,
   SplitLayoutPriority,
@@ -16,7 +18,10 @@ import { DesktopEditorStatusBar } from "@/components/editor/desktop/desktop_edit
 import { DesktopSettingsDialog } from "@/components/settings/desktop/settings_dialog";
 import { type SettingsPageId, getSettingsPage } from "@/components/settings/settings_config";
 import { TitleBar } from "@/components/window/titlebar";
+import { WorkspaceExplorerForWorkspace } from "@/components/workspaces/workspace_explorer";
+import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select";
 import { useAppBackgroundColors } from "@/hooks/settings";
+import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 const DEBUG_HREF = "/debug" as Href;
 const LAYOUT_STORAGE_KEY = "lonanote.wideScreenHome.layout";
@@ -203,11 +208,33 @@ function ActivityButton({ accessibilityLabel, active, label, onPress }: Activity
 }
 
 function SidePanel() {
+  const workspaceId = useCurrentWorkspaceId();
+  const [selectOpen, setSelectOpen] = useState(false);
   return (
-    <View style={styles.fullHeight}>
-      <View style={styles.sidePanelHeader}>
-        <Text className="text-2xl font-semibold">资源面板</Text>
-      </View>
+    <View style={[styles.fullHeight, { minHeight: 0, minWidth: 0 }]}>
+      {workspaceId ? (
+        <WorkspaceExplorerForWorkspace
+          key={workspaceId}
+          workspaceId={workspaceId}
+          mode="tree"
+          onSelectWorkspace={() => setSelectOpen(true)}
+        />
+      ) : (
+        <View style={styles.sidePanelHeader}>
+          <Text className="text-muted-foreground">尚未打开工作区</Text>
+          <Button onPress={() => setSelectOpen(true)}>选择或创建工作区</Button>
+        </View>
+      )}
+      <NativeSheetStack
+        name="desktop-workspace-select"
+        open={selectOpen}
+        onOpenChange={setSelectOpen}
+        sheetProps={{ snapPoints: ["85%"] }}
+      >
+        <NativeSheetStack.Screen name="index" options={{ title: "选择工作区" }}>
+          {() => <WorkspaceSelectContent embedded onWorkspaceOpened={() => setSelectOpen(false)} />}
+        </NativeSheetStack.Screen>
+      </NativeSheetStack>
     </View>
   );
 }
@@ -258,9 +285,8 @@ const styles = StyleSheet.create({
   },
   sidePanelHeader: {
     alignItems: "center",
-    flexDirection: "row",
-    height: 36,
-    paddingHorizontal: 8,
+    gap: 12,
+    padding: 12,
   },
   spacer: {
     flex: 1,

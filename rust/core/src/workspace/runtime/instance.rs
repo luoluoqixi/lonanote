@@ -12,13 +12,13 @@ use crate::workspace::{
         WorkspaceStateStatus, WorkspaceStorageBinding, WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
-    file_tree::{FileNode, FileTree},
     storage::{
         load_workspace_state, save_local_setting, save_manifest, save_workspace_settings,
         save_workspace_state, validate_local_setting, validate_workspace_settings,
         validate_workspace_state, StorageCapabilities, StorageEntry, StorageEntryMetadata,
         StorageReadOptions, StorageReadStream, WorkspaceStorageSession, WriteOptions,
     },
+    WorkspaceDirectorySnapshot,
 };
 
 use super::index::WorkspaceIndex;
@@ -49,11 +49,10 @@ impl WorkspaceInstance {
         validate_workspace_settings(&settings)?;
         validate_local_setting(&local_setting)?;
         validate_workspace_state(&state)?;
-        let native_root = session.native_root_path().map(ToOwned::to_owned);
         Ok(Self {
             id: manifest.id,
             storage_binding,
-            session,
+            session: session.clone(),
             manifest: RwLock::new(manifest),
             settings: RwLock::new(settings),
             local_setting: RwLock::new(local_setting),
@@ -63,7 +62,7 @@ impl WorkspaceInstance {
                 last_save_error: None,
             }),
             mutation_lock: Mutex::new(()),
-            index: WorkspaceIndex::new(native_root),
+            index: WorkspaceIndex::new(session),
         })
     }
 
@@ -222,8 +221,8 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.write(path, data, options).await?;
+        self.index.invalidate_paths(&[path.clone()]).await;
         self.mark_modified_locked().await;
-        self.index.invalidate().await;
         Ok(())
     }
 
@@ -243,8 +242,8 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.create_dir_all(path).await?;
+        self.index.invalidate_paths(&[path.clone()]).await;
         self.mark_modified_locked().await;
-        self.index.invalidate().await;
         Ok(())
     }
 
@@ -257,8 +256,10 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(to)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.rename(from, to).await?;
+        self.index
+            .invalidate_paths(&[from.clone(), to.clone()])
+            .await;
         self.mark_modified_locked().await;
-        self.index.invalidate().await;
         Ok(())
     }
 
@@ -270,8 +271,8 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.remove(path, recursive).await?;
+        self.index.invalidate_paths(&[path.clone()]).await;
         self.mark_modified_locked().await;
-        self.index.invalidate().await;
         Ok(())
     }
 
@@ -295,9 +296,12 @@ impl WorkspaceInstance {
     ) -> Result<WorkspaceSettings, WorkspaceError> {
         let _mutation = self.mutation_lock.lock().await;
         save_workspace_settings(self.session.as_ref(), &settings).await?;
-        *self.settings.write().await = settings.clone();
+        {
+            let mut current = self.settings.write().await;
+            self.index.invalidate().await;
+            *current = settings.clone();
+        }
         self.mark_modified_locked().await;
-        self.index.invalidate().await;
         Ok(settings)
     }
 
@@ -322,23 +326,23 @@ impl WorkspaceInstance {
         Ok(next)
     }
 
-    pub async fn get_tree(&self, recursive: bool) -> Result<FileTree, WorkspaceError> {
-        let settings = self.settings().await;
-        self.index.get_tree(&settings, recursive).await
-    }
-
-    pub async fn get_node(
+    pub async fn get_directory(
         &self,
         path: &WorkspaceRelativePath,
-        recursive: bool,
-    ) -> Result<FileNode, WorkspaceError> {
-        let settings = self.settings().await;
-        self.index.get_node(path, &settings, recursive).await
+        reload: bool,
+    ) -> Result<WorkspaceDirectorySnapshot, WorkspaceError> {
+        for _ in 0..3 {
+            let settings = self.settings.read().await;
+            match self.index.get_directory(path, &settings, reload).await {
+                Err(WorkspaceError::IndexChanged) => continue,
+                result => return result,
+            }
+        }
+        Err(WorkspaceError::IndexChanged)
     }
-
     pub async fn refresh_index(&self) -> Result<(), WorkspaceError> {
-        let settings = self.settings().await;
-        self.index.refresh(&settings).await
+        self.index.invalidate().await;
+        Ok(())
     }
 }
 

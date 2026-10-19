@@ -104,18 +104,13 @@ async fn assert_file_queries(id: WorkspaceId) {
 }
 
 async fn assert_index_queries(id: WorkspaceId) {
-    let tree: Value = invoke_json(
-        "workspace.index.get_tree",
-        json!({"workspaceId": id, "recursive": true}),
-    )
-    .await;
-    assert!(tree["root"].is_object());
-
     let node: Value = invoke_json(
-        "workspace.index.get_node",
-        json!({"workspaceId": id, "path": "notes", "recursive": true}),
+        "workspace.index.get_directory",
+        json!({"workspaceId":id,"path":"notes","reload":true}),
     )
     .await;
     assert_eq!(node["path"], "notes");
+    assert_eq!(node["entries"][0]["path"], "notes/renamed.md");
+    assert!(node["entries"][0].get("fileCount").is_none());
     invoke_unit("workspace.index.refresh", workspace_args(id)).await;
 }

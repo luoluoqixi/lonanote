@@ -411,7 +411,7 @@ export function EditorToolbar({
   const [activePanel, setActivePanel] = useState<ToolbarPanel | null>(null);
   const [restoringPanel, setRestoringPanel] = useState<ToolbarPanel | null>(null);
   const [panelGridWidth, setPanelGridWidth] = useState(0);
-  const initialKeyboardHeight = Keyboard.metrics()?.height ?? 0;
+  const initialKeyboardHeight = Keyboard.metrics?.()?.height ?? 0;
   const [lastKeyboardHeight, setLastKeyboardHeight] = useState(() =>
     initialKeyboardHeight > 0 && currentOs === "android"
       ? initialKeyboardHeight + insets.bottom
@@ -614,7 +614,7 @@ export function EditorToolbar({
         restoreKeyboard();
         return;
       }
-      const keyboardHeight = Keyboard.metrics()?.height ?? 0;
+      const keyboardHeight = Keyboard.metrics?.()?.height ?? 0;
       if (keyboardHeight > 0) {
         setLastKeyboardHeight(
           currentOs === "android" ? keyboardHeight + insets.bottom : keyboardHeight,

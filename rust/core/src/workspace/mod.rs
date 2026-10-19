@@ -1,5 +1,4 @@
 pub mod error;
-pub mod file_tree;
 pub mod storage;
 
 mod domain;

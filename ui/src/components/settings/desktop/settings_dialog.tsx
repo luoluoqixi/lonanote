@@ -59,7 +59,6 @@ export function DesktopSettingsDialog({
     ? selectedPage.id
     : (selectedPage?.parentId ?? desktopPages[0]?.id ?? "global");
   const SelectedPageComponent = selectedPage?.Component;
-  const isNestedSheetOpen = isDebugSheetOpen || isGmSheetOpen;
 
   return (
     <>
@@ -69,33 +68,34 @@ export function DesktopSettingsDialog({
         title="设置"
         trigger={trigger}
         contentProps={{ style: { height: DIALOG_HEIGHT, width: DIALOG_WIDTH } }}
-      >
-        <View style={styles.root}>
-          <Tabs
-            aria-label="设置页面导航"
-            onValueChange={(nextValue) => setSelectedPageId(nextValue as SettingsPageId)}
-            orientation="vertical"
-            style={styles.tabs}
-            value={selectedTabId}
-          >
-            <Tabs.List aria-label="设置页面导航" style={styles.list}>
-              {desktopPages.map((page) => (
-                <Tabs.Trigger key={page.id} value={page.id}>
-                  {page.title}
-                </Tabs.Trigger>
-              ))}
-            </Tabs.List>
-            <View style={styles.content}>
-              {SelectedPageComponent ? (
-                <SelectedPageComponent
-                  onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
-                  onOpenGmSheet={() => setIsGmSheetOpen(true)}
-                />
-              ) : null}
-            </View>
-          </Tabs>
-        </View>
-      </Dialog>
+        content={
+          <View style={styles.root}>
+            <Tabs
+              aria-label="设置页面导航"
+              onValueChange={(nextValue) => setSelectedPageId(nextValue as SettingsPageId)}
+              orientation="vertical"
+              style={styles.tabs}
+              value={selectedTabId}
+            >
+              <Tabs.List aria-label="设置页面导航" style={styles.list}>
+                {desktopPages.map((page) => (
+                  <Tabs.Trigger key={page.id} value={page.id}>
+                    {page.title}
+                  </Tabs.Trigger>
+                ))}
+              </Tabs.List>
+              <View style={styles.content}>
+                {SelectedPageComponent ? (
+                  <SelectedPageComponent
+                    onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
+                    onOpenGmSheet={() => setIsGmSheetOpen(true)}
+                  />
+                ) : null}
+              </View>
+            </Tabs>
+          </View>
+        }
+      />
 
       {isWeb() ? (
         <>

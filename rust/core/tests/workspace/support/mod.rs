@@ -10,3 +10,5 @@ pub use workspace_test_app::{
     external_binding, path, provider, resolved_external_binding, test_record, WorkspaceTestApp,
     EXTERNAL_PROVIDER, MANAGED_PROVIDER,
 };
+
+pub mod index_storage;

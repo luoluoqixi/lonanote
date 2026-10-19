@@ -1,112 +1,106 @@
-use std::path::PathBuf;
-
-use tokio::sync::RwLock;
-
+use super::{index_ignore::IndexIgnore, index_sort};
 use crate::workspace::{
-    domain::{WorkspaceRelativePath, WorkspaceSettings},
-    error::WorkspaceError,
-    file_tree::{FileNode, FileTree},
+    FileType, StorageEntryKind, StorageError, WorkspaceDirectorySnapshot, WorkspaceError,
+    WorkspaceIndexEntry, WorkspaceRelativePath, WorkspaceSettings, WorkspaceStorageSession,
 };
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+};
+use tokio::sync::{Mutex, RwLock};
 
 #[derive(Debug)]
 pub struct WorkspaceIndex {
-    native_root: Option<PathBuf>,
-    cached_tree: RwLock<Option<FileTree>>,
+    session: Arc<WorkspaceStorageSession>,
+    cache: RwLock<HashMap<WorkspaceRelativePath, WorkspaceDirectorySnapshot>>,
+    locks: Mutex<HashMap<WorkspaceRelativePath, Arc<Mutex<()>>>>,
+    generation: AtomicU64,
 }
-
 impl WorkspaceIndex {
-    pub fn new(native_root: Option<PathBuf>) -> Self {
+    pub fn new(session: Arc<WorkspaceStorageSession>) -> Self {
         Self {
-            native_root,
-            cached_tree: RwLock::new(None),
+            session,
+            cache: RwLock::new(HashMap::new()),
+            locks: Mutex::new(HashMap::new()),
+            generation: AtomicU64::new(0),
         }
     }
-
-    pub async fn get_tree(
-        &self,
-        settings: &WorkspaceSettings,
-        recursive: bool,
-    ) -> Result<FileTree, WorkspaceError> {
-        if recursive {
-            if let Some(tree) = self.cached_tree.read().await.clone() {
-                return Ok(tree);
-            }
-        }
-        let tree = self.build_tree(settings, recursive)?;
-        if recursive {
-            *self.cached_tree.write().await = Some(tree.clone());
-        }
-        Ok(tree)
-    }
-
-    pub async fn get_node(
+    pub async fn get_directory(
         &self,
         path: &WorkspaceRelativePath,
         settings: &WorkspaceSettings,
-        recursive: bool,
-    ) -> Result<FileNode, WorkspaceError> {
-        let root = self
-            .native_root
-            .as_ref()
-            .ok_or(WorkspaceError::FileTreeUnavailable)?;
-        let tree = FileTree::new(root);
-        let path = (!path.is_root()).then(|| path.as_str().to_string());
-        let mut node = tree
-            .get_node(
-                path.as_ref(),
-                settings.follow_gitignore,
-                settings.custom_ignore.clone(),
-                recursive,
-            )
-            .map_err(WorkspaceError::InvalidManifest)?;
-        if let Some(prefix) = path.as_deref() {
-            prefix_node_paths(&mut node, prefix);
+        reload: bool,
+    ) -> Result<WorkspaceDirectorySnapshot, WorkspaceError> {
+        let lock = self
+            .locks
+            .lock()
+            .await
+            .entry(path.clone())
+            .or_default()
+            .clone();
+        let _directory = lock.lock().await;
+        if !reload {
+            if let Some(cached) = self.cache.read().await.get(path).cloned() {
+                return Ok(cached);
+            }
         }
-        Ok(node)
+        let generation = self.generation.load(Ordering::SeqCst);
+        let ignores = IndexIgnore::load(&self.session, path, settings).await?;
+        if self.session.metadata(path).await?.kind != StorageEntryKind::Directory {
+            return Err(StorageError::NotDirectory { path: path.clone() }.into());
+        }
+        let mut entries = Vec::new();
+        for entry in self.session.list_dir(path).await? {
+            let is_dir = entry.metadata.kind == StorageEntryKind::Directory;
+            if ignores.hidden(&entry.path, is_dir) {
+                continue;
+            }
+            entries.push(WorkspaceIndexEntry {
+                path: entry.path,
+                file_type: if is_dir {
+                    FileType::Directory
+                } else {
+                    FileType::File
+                },
+                last_modified_time: entry.metadata.modified_at,
+                create_time: entry.metadata.created_at,
+                size: entry.metadata.size,
+            });
+        }
+        entries.sort_by(index_sort::compare);
+        let snapshot = WorkspaceDirectorySnapshot {
+            path: path.clone(),
+            entries,
+        };
+        let mut cache = self.cache.write().await;
+        if generation != self.generation.load(Ordering::SeqCst) {
+            return Err(WorkspaceError::IndexChanged);
+        }
+        cache.insert(path.clone(), snapshot.clone());
+        Ok(snapshot)
     }
-
-    pub async fn refresh(&self, settings: &WorkspaceSettings) -> Result<(), WorkspaceError> {
-        let tree = self.build_tree(settings, true)?;
-        *self.cached_tree.write().await = Some(tree);
-        Ok(())
-    }
-
     pub async fn invalidate(&self) {
-        *self.cached_tree.write().await = None;
+        let mut cache = self.cache.write().await;
+        self.generation.fetch_add(1, Ordering::SeqCst);
+        cache.clear();
     }
-
-    fn build_tree(
-        &self,
-        settings: &WorkspaceSettings,
-        recursive: bool,
-    ) -> Result<FileTree, WorkspaceError> {
-        let root = self
-            .native_root
-            .as_ref()
-            .ok_or(WorkspaceError::FileTreeUnavailable)?;
-        let mut tree = FileTree::new(root);
-        tree.update_tree(
-            settings.follow_gitignore,
-            settings.custom_ignore.clone(),
-            recursive,
-        )
-        .map_err(WorkspaceError::InvalidManifest)?;
-        Ok(tree)
-    }
-}
-
-/// 旧 FileTree 以查询目标作为临时 root，会让返回路径从空字符串重新开始。
-/// WorkspaceIndex 在边界处恢复为 Workspace-relative path，避免该过渡细节泄漏给 API。
-fn prefix_node_paths(node: &mut FileNode, prefix: &str) {
-    let current = node.path.as_str();
-    node.path = relative_path::RelativePathBuf::from(if current.is_empty() {
-        prefix.to_string()
-    } else {
-        format!("{prefix}/{current}")
-    });
-    if let Some(children) = node.children.as_mut() {
-        for child in children {
-            prefix_node_paths(child, prefix);
+    pub async fn invalidate_paths(&self, paths: &[WorkspaceRelativePath]) {
+        if paths
+            .iter()
+            .any(|p| p.file_name().is_some_and(|n| n.as_str() == ".gitignore"))
+        {
+            self.invalidate().await;
+            return;
         }
+        let mut cache = self.cache.write().await;
+        self.generation.fetch_add(1, Ordering::SeqCst);
+        cache.retain(|key, _| {
+            !paths
+                .iter()
+                .any(|p| key.starts_with(p) || p.starts_with(key))
+        });
     }
 }

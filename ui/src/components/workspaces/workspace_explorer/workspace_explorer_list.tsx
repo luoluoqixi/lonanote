@@ -20,7 +20,7 @@ import {
   useUiTheme,
 } from "rn-ui-kit";
 
-import type { FileNode } from "@/api/commands/workspace";
+import type { WorkspaceIndexEntry } from "@/api/commands/workspace";
 import {
   detectWorkspaceFileKind,
   formatUnixSecondsRelativeDate,
@@ -39,23 +39,23 @@ import {
 } from "./workspace_explorer_sort";
 
 export type WorkspaceExplorerSection = {
-  entries: FileNode[];
+  entries: WorkspaceIndexEntry[];
   id: string;
   title?: string;
 };
 
 type WorkspaceExplorerListProps = {
-  entries: FileNode[];
+  entries: WorkspaceIndexEntry[];
   foldersFirst: boolean;
   groupMode: WorkspaceExplorerGroupMode;
   hasError: boolean;
   isLoading: boolean;
   isSelectionMode: boolean;
   isUpdating: boolean;
-  onDeleteEntry: (entry: FileNode) => void;
-  onEditEntry: (entry: FileNode) => void;
-  onEntryDetails: (entry: FileNode) => void;
-  onEntryPress: (entry: FileNode) => void;
+  onDeleteEntry: (entry: WorkspaceIndexEntry) => void;
+  onEditEntry: (entry: WorkspaceIndexEntry) => void;
+  onEntryDetails: (entry: WorkspaceIndexEntry) => void;
+  onEntryPress: (entry: WorkspaceIndexEntry) => void;
   onRefresh: () => Promise<void>;
   onSelectedEntryPathsChange: (selectedIds: Array<string | number>) => void;
   selectedEntryPaths: string[];
@@ -65,7 +65,7 @@ type WorkspaceExplorerListProps = {
   usesNativeIosHeader: boolean;
 };
 
-function getEntryTitle(entry: FileNode): string {
+function getEntryTitle(entry: WorkspaceIndexEntry): string {
   const name = getFileName(entry.path);
   return entry.fileType === "file" && isMarkdownFile(name)
     ? name.slice(0, name.lastIndexOf("."))
@@ -78,7 +78,7 @@ function getUnsupportedFileSfSymbol(): "doc.fill" | "doc.questionmark.fill" {
 }
 
 export function groupWorkspaceExplorerEntries(
-  entries: FileNode[],
+  entries: WorkspaceIndexEntry[],
   foldersFirst: boolean,
   groupMode: WorkspaceExplorerGroupMode,
   sortValue: WorkspaceExplorerSortValue,
@@ -117,7 +117,7 @@ function WorkspaceExplorerEntryItem({
   onPress,
   sortValue,
 }: {
-  entry: FileNode;
+  entry: WorkspaceIndexEntry;
   isUpdating: boolean;
   onDelete: () => void;
   onDetails: () => void;

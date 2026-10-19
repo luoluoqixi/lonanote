@@ -7,13 +7,13 @@ import {
   useAppBackgroundColors,
 } from "rn-ui-kit";
 
-import type { FileNode } from "@/api/commands/workspace";
+import type { WorkspaceIndexEntry } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime, getFileName } from "@/api/common";
 
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
 type WorkspaceEntryDetailsSheetProps = {
-  entry: FileNode | null;
+  entry: WorkspaceIndexEntry | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 };

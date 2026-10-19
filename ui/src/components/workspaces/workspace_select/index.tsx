@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type SelectHandle, confirmNative } from "rn-ui-kit";
+import { View } from "react-native";
+import { Button, type SelectHandle, Text, confirmNative } from "rn-ui-kit";
 
 import {
   type StorageProviderId,
@@ -12,6 +13,7 @@ import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
 import { useWorkspaceNavigation, useWorkspaceSession } from "@/hooks/workspace";
+import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
@@ -51,8 +53,18 @@ async function waitForMinimumDuration(startedAt: number, minimumDurationMs: numb
 
 export function WorkspaceSelect() {
   useAndroidDoubleBackToExit();
-  const { toast } = useToast();
   const { resetToWorkspace } = useWorkspaceNavigation();
+  return <WorkspaceSelectContent onWorkspaceOpened={resetToWorkspace} />;
+}
+
+export function WorkspaceSelectContent({
+  embedded = false,
+  onWorkspaceOpened,
+}: {
+  embedded?: boolean;
+  onWorkspaceOpened: () => void;
+}) {
+  const { toast } = useToast();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
@@ -95,8 +107,9 @@ export function WorkspaceSelect() {
   const requestIdRef = useRef(0);
   const storageProviderRequestIdRef = useRef(0);
   const currentOs = os();
-  const usesNativeIosHeader = currentOs === "ios";
-  const tracksNavigationBarScrollEdge = usesNativeIosHeader || currentOs === "android";
+  const usesNativeIosHeader = !embedded && currentOs === "ios";
+  const tracksNavigationBarScrollEdge =
+    !embedded && (usesNativeIosHeader || currentOs === "android");
 
   const refreshWorkspaces = useCallback(async (minimumDurationMs = 0) => {
     const requestId = ++requestIdRef.current;
@@ -323,6 +336,7 @@ export function WorkspaceSelect() {
       if (openedForUpdate && currentWorkspaceId !== editingWorkspace.id) {
         try {
           await workspace.close(editingWorkspace.id);
+          workspaceExplorerStore.getState().resetWorkspace(editingWorkspace.id);
         } catch (error) {
           console.error("[workspace-select] close workspace after update failed", error);
         }
@@ -372,6 +386,7 @@ export function WorkspaceSelect() {
         for (const workspaceItem of workspaceItems) {
           try {
             await workspace.close(workspaceItem.id);
+            workspaceExplorerStore.getState().resetWorkspace(workspaceItem.id);
             const removedWorkspace = await workspace.remove(workspaceItem.id, true);
             removedWorkspaceIds.push(workspaceItem.id);
 
@@ -497,12 +512,13 @@ export function WorkspaceSelect() {
       try {
         if (currentWorkspaceId && currentWorkspaceId !== workspaceId) {
           await workspace.close(currentWorkspaceId);
+          workspaceExplorerStore.getState().resetWorkspace(currentWorkspaceId);
           setCurrentWorkspaceId(null);
         }
 
         const enterWorkspace = (openedWorkspace: WorkspaceSnapshot) => {
           setCurrentWorkspaceId(openedWorkspace.id);
-          resetToWorkspace();
+          onWorkspaceOpened();
           didResetNavigation = true;
         };
         const openResult = await workspace.openWithDiagnostics(workspaceId);
@@ -570,7 +586,7 @@ export function WorkspaceSelect() {
       isScanningWorkspaces,
       isUpdatingWorkspace,
       refreshWorkspaces,
-      resetToWorkspace,
+      onWorkspaceOpened,
       setCurrentWorkspaceId,
       toast,
     ],
@@ -609,26 +625,50 @@ export function WorkspaceSelect() {
 
   return (
     <>
-      <WorkspaceSelectHeader
-        areAllWorkspacesSelected={areAllWorkspacesSelected}
-        canSelectWorkspaces={workspaces.length > 0}
-        isGroupModeDisabled={isGroupModeDisabled}
-        isScanningWorkspaces={isScanningWorkspaces}
-        isWorkspaceSelectionMode={isWorkspaceSelectionMode}
-        onCreateWorkspace={openCreateWorkspaceSheet}
-        onFinishWorkspaceSelection={finishWorkspaceSelection}
-        onOpenWorkspaceGroupMode={() => {
-          if (!isGroupModeDisabled) {
-            workspaceGroupModeSelectRef.current?.open();
-          }
-        }}
-        onOpenWorkspaceSort={() => workspaceSortSelectRef.current?.open()}
-        onScanWorkspaces={() => {
-          void scanWorkspaces();
-        }}
-        onToggleSelectAllWorkspaces={toggleSelectAllWorkspaces}
-        onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
-      />
+      {embedded ? (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 8,
+            alignItems: "center",
+            flexWrap: "wrap",
+            padding: 8,
+          }}
+        >
+          <Text className="text-foreground font-semibold">工作区</Text>
+          <Button onPress={openCreateWorkspaceSheet}>创建</Button>
+          <Button onPress={() => workspaceSortSelectRef.current?.open()}>排序</Button>
+          <Button
+            onPress={() => {
+              void scanWorkspaces();
+            }}
+            disabled={isScanningWorkspaces}
+          >
+            扫描
+          </Button>
+        </View>
+      ) : (
+        <WorkspaceSelectHeader
+          areAllWorkspacesSelected={areAllWorkspacesSelected}
+          canSelectWorkspaces={workspaces.length > 0}
+          isGroupModeDisabled={isGroupModeDisabled}
+          isScanningWorkspaces={isScanningWorkspaces}
+          isWorkspaceSelectionMode={isWorkspaceSelectionMode}
+          onCreateWorkspace={openCreateWorkspaceSheet}
+          onFinishWorkspaceSelection={finishWorkspaceSelection}
+          onOpenWorkspaceGroupMode={() => {
+            if (!isGroupModeDisabled) {
+              workspaceGroupModeSelectRef.current?.open();
+            }
+          }}
+          onOpenWorkspaceSort={() => workspaceSortSelectRef.current?.open()}
+          onScanWorkspaces={() => {
+            void scanWorkspaces();
+          }}
+          onToggleSelectAllWorkspaces={toggleSelectAllWorkspaces}
+          onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
+        />
+      )}
       <WorkspaceSelectList
         groupMode={effectiveGroupMode}
         hasError={hasError}

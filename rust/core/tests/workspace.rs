@@ -24,3 +24,6 @@ mod state;
 mod storage;
 #[path = "workspace/support/mod.rs"]
 mod support;
+
+#[path = "workspace/index.rs"]
+mod index;

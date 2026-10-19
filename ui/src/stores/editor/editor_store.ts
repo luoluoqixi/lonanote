@@ -41,6 +41,10 @@ export type EditorStoreState = {
   activeEditorId: string | null;
   openEditor: (ref: EditorDocumentRef, options?: OpenEditorOptions) => OpenEditorResult;
   closeEditor: (editorId: string) => void;
+  reserveWorkspacePaths: (workspaceId: string, paths: string[]) => () => void;
+  assertWorkspaceRename: (workspaceId: string, from: string, to: string) => void;
+  renameWorkspacePath: (workspaceId: string, from: string, to: string) => void;
+  removeWorkspacePaths: (workspaceId: string, paths: string[]) => void;
   setActiveEditor: (editorId: string | null) => void;
   setDocumentLoadState: (
     documentId: string,
@@ -84,6 +88,8 @@ export type EditorStoreState = {
   setEditorPendingAnchor: (editorId: string, fragment: string | null) => void;
 };
 
+const pathReservations = new Map<symbol, { workspaceId: string; paths: string[] }>();
+const within = (path: string, parent: string) => path === parent || path.startsWith(`${parent}/`);
 let nextRuntimeSequence = 1;
 
 function createRuntimeId(prefix: string): string {
@@ -106,6 +112,7 @@ function createDocument(
   return {
     documentId,
     documentKey,
+    identityRevision: 0,
     ref,
     title: getEditorDocumentTitle(ref),
     loadState: ref.kind === "untitled" ? "ready" : "idle",
@@ -197,6 +204,15 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
       }
     }
 
+    if (normalizedRef.kind === "workspaceFile") {
+      for (const reservation of pathReservations.values()) {
+        if (
+          reservation.workspaceId === normalizedRef.workspaceId &&
+          reservation.paths.some((path) => within(normalizedRef.filePath, path))
+        )
+          throw new Error("此路径正在执行文件操作，请稍后重试");
+      }
+    }
     const editorId = createRuntimeId("editor");
     const view = createView(documentId, editorId, options);
     const nextDocument = {
@@ -262,6 +278,111 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
       documentIds: nextDocumentIds,
       documentsById: nextDocumentsById,
       documentIdByKey: nextDocumentIdByKey,
+    });
+  },
+
+  reserveWorkspacePaths: (workspaceId, paths) => {
+    for (const reservation of pathReservations.values()) {
+      if (
+        reservation.workspaceId === workspaceId &&
+        reservation.paths.some((a) => paths.some((b) => within(a, b) || within(b, a)))
+      )
+        throw new Error("相关路径已有文件操作正在进行");
+    }
+    const key = Symbol();
+    pathReservations.set(key, { workspaceId, paths });
+    return () => {
+      pathReservations.delete(key);
+    };
+  },
+
+  assertWorkspaceRename: (workspaceId, from, to) => {
+    const state = get();
+    const affected = Object.values(state.documentsById).filter(
+      (d) =>
+        d.ref.kind === "workspaceFile" &&
+        d.ref.workspaceId === workspaceId &&
+        (d.ref.filePath === from || d.ref.filePath.startsWith(`${from}/`)),
+    );
+    const ids = new Set(affected.map((d) => d.documentId));
+    for (const document of affected) {
+      if (document.ref.kind !== "workspaceFile") continue;
+      const key = getEditorDocumentKey({
+        ...document.ref,
+        filePath: to + document.ref.filePath.slice(from.length),
+      });
+      const other = state.documentIdByKey[key];
+      if (other && !ids.has(other)) throw new Error("目标路径已有打开的文档");
+    }
+  },
+
+  renameWorkspacePath: (workspaceId, from, to) => {
+    get().assertWorkspaceRename(workspaceId, from, to);
+    const state = get();
+    const documentsById = { ...state.documentsById };
+    const documentIdByKey = { ...state.documentIdByKey };
+    for (const document of Object.values(state.documentsById)) {
+      if (
+        document.ref.kind !== "workspaceFile" ||
+        document.ref.workspaceId !== workspaceId ||
+        !(document.ref.filePath === from || document.ref.filePath.startsWith(`${from}/`))
+      )
+        continue;
+      const ref = normalizeEditorDocumentRef({
+        ...document.ref,
+        filePath: to + document.ref.filePath.slice(from.length),
+      });
+      if (ref.kind !== "workspaceFile") continue;
+      const key = getEditorDocumentKey(ref);
+      delete documentIdByKey[document.documentKey];
+      documentIdByKey[key] = document.documentId;
+      documentsById[document.documentId] = {
+        ...document,
+        ref,
+        documentKey: key,
+        title: getEditorDocumentTitle(ref),
+        identityRevision: document.identityRevision + 1,
+        loadState: document.loadState === "loading" ? "idle" : document.loadState,
+      };
+    }
+    set({ documentsById, documentIdByKey });
+  },
+
+  removeWorkspacePaths: (workspaceId, paths) => {
+    const state = get();
+    const removed = new Set(
+      Object.values(state.documentsById)
+        .filter(
+          (d) =>
+            d.ref.kind === "workspaceFile" &&
+            d.ref.workspaceId === workspaceId &&
+            paths.some(
+              (p) =>
+                d.ref.kind === "workspaceFile" &&
+                (d.ref.filePath === p || d.ref.filePath.startsWith(`${p}/`)),
+            ),
+        )
+        .map((d) => d.documentId),
+    );
+    const documentsById = Object.fromEntries(
+      Object.entries(state.documentsById).filter(([id]) => !removed.has(id)),
+    );
+    const editorsById = Object.fromEntries(
+      Object.entries(state.editorsById).filter(([, editor]) => !removed.has(editor.documentId)),
+    );
+    const openEditorIds = state.openEditorIds.filter((id) => Boolean(editorsById[id]));
+    set({
+      documentsById,
+      documentIds: state.documentIds.filter((id) => !removed.has(id)),
+      documentIdByKey: Object.fromEntries(
+        Object.entries(state.documentIdByKey).filter(([, id]) => !removed.has(id)),
+      ),
+      editorsById,
+      openEditorIds,
+      activeEditorId:
+        state.activeEditorId && editorsById[state.activeEditorId]
+          ? state.activeEditorId
+          : (openEditorIds.at(-1) ?? null),
     });
   },
 

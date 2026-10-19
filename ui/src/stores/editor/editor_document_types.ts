@@ -30,6 +30,7 @@ export type DocumentSaveState = "idle" | "scheduled" | "saving" | "error" | "con
 export type DocumentModel = {
   documentId: string;
   documentKey: string;
+  identityRevision: number;
   ref: EditorDocumentRef;
   title: string;
   loadState: DocumentLoadState;

@@ -56,7 +56,7 @@ export function DesktopEditorArea() {
     if (!activeEditor || !activeDocument) return;
     void documentRegistry.ensureDocumentLoaded(activeDocument.documentId).catch(() => undefined);
     void editorInputLeaseCoordinator.requestLease(activeEditor.editorId).catch(() => undefined);
-  }, [activeDocument?.documentId, activeEditor?.editorId]);
+  }, [activeDocument?.documentId, activeDocument?.identityRevision, activeEditor?.editorId]);
 
   const closeImmediately = useCallback(
     (editorId: string) => {

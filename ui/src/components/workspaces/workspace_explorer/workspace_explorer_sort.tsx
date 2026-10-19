@@ -1,6 +1,6 @@
 import { Select, type SelectHandle, type SelectItemGroupData } from "rn-ui-kit";
 
-import type { FileNode } from "@/api/commands/workspace";
+import type { WorkspaceIndexEntry } from "@/api/commands/workspace";
 import { compareNames, getFileName, isMarkdownFile } from "@/api/common";
 import type { WorkspaceExplorerGroupModeSetting, WorkspaceExplorerSortSetting } from "@/stores/ui";
 
@@ -60,7 +60,7 @@ function isWorkspaceExplorerGroupMode(value: string | null): value is WorkspaceE
   return value === "date" || value === "none";
 }
 
-function getWorkspaceExplorerSortName(entry: FileNode): string {
+function getWorkspaceExplorerSortName(entry: WorkspaceIndexEntry): string {
   const fileName = getFileName(entry.path);
   return entry.fileType === "file" && isMarkdownFile(fileName)
     ? fileName.slice(0, fileName.lastIndexOf("."))
@@ -84,7 +84,7 @@ function compareNullableTimestamp(
 }
 
 export function getWorkspaceExplorerEntryTimestamp(
-  entry: FileNode,
+  entry: WorkspaceIndexEntry,
   sortValue: WorkspaceExplorerSortValue,
 ): number | null {
   return sortValue === "createTime" || sortValue === "createTimeRev"
@@ -93,10 +93,10 @@ export function getWorkspaceExplorerEntryTimestamp(
 }
 
 export function sortWorkspaceExplorerEntries(
-  entries: FileNode[],
+  entries: WorkspaceIndexEntry[],
   sortValue: WorkspaceExplorerSortValue,
   foldersFirst = true,
-): FileNode[] {
+): WorkspaceIndexEntry[] {
   return [...entries].sort((left, right) => {
     if (foldersFirst && left.fileType !== right.fileType) {
       return left.fileType === "directory" ? -1 : 1;
