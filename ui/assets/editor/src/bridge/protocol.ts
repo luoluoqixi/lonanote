@@ -133,6 +133,8 @@ export type EditorRuntimeUpdatePayload = EditorInitializePayload["runtime"];
 export type EditorPreferencesUpdatePayload = EditorPreferences;
 
 export type EditorCommand =
+  | { type: "selection.selectAll" }
+  | { type: "selection.replace"; text: string }
   | { type: "history.undo" }
   | { type: "history.redo" }
   | { type: "editor.focus" }
@@ -150,6 +152,22 @@ export type EditorCommand =
   | { type: "insert.image" }
   | { type: "insert.codeBlock" }
   | { type: "insert.table" };
+
+export type EditorMenuSnapshot = {
+  revision: number;
+  selectionVersion: number;
+  from: number;
+  to: number;
+};
+export type EditorContextMenuPayload = EditorMenuSnapshot & {
+  x: number;
+  y: number;
+  text: string;
+  activeMarks: string[];
+  canUndo: boolean;
+  canRedo: boolean;
+};
+export type EditorContextCommandPayload = { snapshot: EditorMenuSnapshot; command: EditorCommand };
 
 export type EditorCommandResult = {
   applied: boolean;
@@ -457,12 +475,14 @@ export function isEditorStateSnapshot(value: unknown): value is EditorStateSnaps
 export function isEditorCommand(value: unknown): value is EditorCommand {
   if (!isRecord(value) || typeof value.type !== "string") return false;
   if (
+    value.type === "selection.selectAll" ||
     value.type === "history.undo" ||
     value.type === "history.redo" ||
     value.type === "editor.focus" ||
     value.type === "editor.blur"
   )
     return true;
+  if (value.type === "selection.replace") return typeof value.text === "string";
   if (value.type === "navigation.scrollToAnchor") return isNonEmptyString(value.fragment);
   if (value.type === "mark.toggle")
     return (
@@ -580,4 +600,38 @@ export function isEditorResourceActivatedPayload(
 
 export function isEditorBridgeApplyResult(value: unknown): value is EditorBridgeApplyResult {
   return isRecord(value) && typeof value.applied === "boolean";
+}
+
+function isEditorMenuSnapshot(value: unknown): value is EditorMenuSnapshot & UnknownRecord {
+  return (
+    isRecord(value) &&
+    [value.revision, value.selectionVersion, value.from, value.to].every(
+      (n) => typeof n === "number" && Number.isSafeInteger(n) && n >= 0,
+    ) &&
+    (value.to as number) >= (value.from as number)
+  );
+}
+export function isEditorContextMenuPayload(value: unknown): value is EditorContextMenuPayload {
+  return (
+    isRecord(value) &&
+    isEditorMenuSnapshot(value) &&
+    typeof value.x === "number" &&
+    Number.isFinite(value.x) &&
+    typeof value.y === "number" &&
+    Number.isFinite(value.y) &&
+    typeof value.text === "string" &&
+    Array.isArray(value.activeMarks) &&
+    value.activeMarks.every(
+      (mark) =>
+        typeof mark === "string" &&
+        ["bold", "italic", "strikethrough", "highlight", "inlineCode"].includes(mark),
+    ) &&
+    typeof value.canUndo === "boolean" &&
+    typeof value.canRedo === "boolean"
+  );
+}
+export function isEditorContextCommandPayload(
+  value: unknown,
+): value is EditorContextCommandPayload {
+  return isRecord(value) && isEditorMenuSnapshot(value.snapshot) && isEditorCommand(value.command);
 }

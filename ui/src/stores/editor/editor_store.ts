@@ -32,11 +32,27 @@ export type OpenEditorResult = {
   reusedView: boolean;
 };
 
+export type WorkspaceViewerSession = {
+  kind: "viewer";
+  viewerId: string;
+  viewerKind: "image" | "video" | "pdf" | "unknown";
+  ref: Extract<EditorDocumentRef, { kind: "workspaceFile" }>;
+  title: string;
+  identityRevision: number;
+};
+
 export type EditorStoreState = {
   documentIds: string[];
   documentsById: Record<string, DocumentModel>;
   documentIdByKey: Record<string, string>;
+  /** 文本和只读查看器共用标签顺序、活动 ID；查看器不进入 documentsById。 */
   openEditorIds: string[];
+  viewersById: Record<string, WorkspaceViewerSession>;
+  closeWorkspaceViewers: (workspaceId: string) => void;
+  openViewer: (
+    ref: WorkspaceViewerSession["ref"],
+    kind: WorkspaceViewerSession["viewerKind"],
+  ) => string;
   editorsById: Record<string, EditorViewSession>;
   activeEditorId: string | null;
   openEditor: (ref: EditorDocumentRef, options?: OpenEditorOptions) => OpenEditorResult;
@@ -170,8 +186,51 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
   documentsById: {},
   documentIdByKey: {},
   openEditorIds: [],
+  viewersById: {},
   editorsById: {},
   activeEditorId: null,
+
+  closeWorkspaceViewers: (workspaceId) => {
+    for (const viewer of Object.values(get().viewersById))
+      if (viewer.ref.workspaceId === workspaceId) get().closeEditor(viewer.viewerId);
+  },
+
+  openViewer: (ref, viewerKind) => {
+    const normalized = normalizeEditorDocumentRef(ref);
+    if (normalized.kind !== "workspaceFile") throw new Error("查看器仅支持工作区文件");
+    for (const reservation of pathReservations.values()) {
+      if (
+        reservation.workspaceId === normalized.workspaceId &&
+        reservation.paths.some((p) => within(normalized.filePath, p))
+      )
+        throw new Error("此路径正在执行文件操作，请稍后重试");
+    }
+    const state = get();
+    const existing = Object.values(state.viewersById).find(
+      (v) => getEditorDocumentKey(v.ref) === getEditorDocumentKey(normalized),
+    );
+    if (existing) {
+      set({ activeEditorId: existing.viewerId });
+      return existing.viewerId;
+    }
+    const viewerId = createRuntimeId("viewer");
+    set({
+      viewersById: {
+        ...state.viewersById,
+        [viewerId]: {
+          kind: "viewer",
+          viewerId,
+          viewerKind,
+          ref: normalized,
+          title: getEditorDocumentTitle(normalized),
+          identityRevision: 0,
+        },
+      },
+      openEditorIds: [...state.openEditorIds, viewerId],
+      activeEditorId: viewerId,
+    });
+    return viewerId;
+  },
 
   openEditor: (ref, options = {}) => {
     const normalizedRef = normalizeEditorDocumentRef(ref);
@@ -243,7 +302,19 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
   closeEditor: (editorId) => {
     const state = get();
     const editor = state.editorsById[editorId];
-    if (!editor) return;
+    if (!editor) {
+      if (!state.viewersById[editorId]) return;
+      const viewersById = { ...state.viewersById };
+      delete viewersById[editorId];
+      const openEditorIds = state.openEditorIds.filter((id) => id !== editorId);
+      set({
+        viewersById,
+        openEditorIds,
+        activeEditorId:
+          state.activeEditorId === editorId ? (openEditorIds.at(-1) ?? null) : state.activeEditorId,
+      });
+      return;
+    }
     const document = state.documentsById[editor.documentId];
     const nextEditorsById = { ...state.editorsById };
     delete nextEditorsById[editorId];
@@ -345,7 +416,23 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
         loadState: document.loadState === "loading" ? "idle" : document.loadState,
       };
     }
-    set({ documentsById, documentIdByKey });
+    const viewersById = Object.fromEntries(
+      Object.entries(state.viewersById).map(([id, viewer]) => {
+        if (viewer.ref.workspaceId !== workspaceId || !within(viewer.ref.filePath, from))
+          return [id, viewer];
+        const ref = { ...viewer.ref, filePath: to + viewer.ref.filePath.slice(from.length) };
+        return [
+          id,
+          {
+            ...viewer,
+            ref,
+            title: getEditorDocumentTitle(ref),
+            identityRevision: viewer.identityRevision + 1,
+          },
+        ];
+      }),
+    );
+    set({ documentsById, documentIdByKey, viewersById });
   },
 
   removeWorkspacePaths: (workspaceId, paths) => {
@@ -370,7 +457,16 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
     const editorsById = Object.fromEntries(
       Object.entries(state.editorsById).filter(([, editor]) => !removed.has(editor.documentId)),
     );
-    const openEditorIds = state.openEditorIds.filter((id) => Boolean(editorsById[id]));
+    const viewersById = Object.fromEntries(
+      Object.entries(state.viewersById).filter(
+        ([, viewer]) =>
+          viewer.ref.workspaceId !== workspaceId ||
+          !paths.some((p) => within(viewer.ref.filePath, p)),
+      ),
+    );
+    const openEditorIds = state.openEditorIds.filter((id) =>
+      Boolean(editorsById[id] || viewersById[id]),
+    );
     set({
       documentsById,
       documentIds: state.documentIds.filter((id) => !removed.has(id)),
@@ -378,16 +474,18 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
         Object.entries(state.documentIdByKey).filter(([, id]) => !removed.has(id)),
       ),
       editorsById,
+      viewersById,
       openEditorIds,
       activeEditorId:
-        state.activeEditorId && editorsById[state.activeEditorId]
+        state.activeEditorId &&
+        (editorsById[state.activeEditorId] || viewersById[state.activeEditorId])
           ? state.activeEditorId
           : (openEditorIds.at(-1) ?? null),
     });
   },
 
   setActiveEditor: (editorId) => {
-    if (editorId !== null && !get().editorsById[editorId]) return;
+    if (editorId !== null && !get().editorsById[editorId] && !get().viewersById[editorId]) return;
     set({ activeEditorId: editorId });
   },
 

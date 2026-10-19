@@ -4,6 +4,7 @@ import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
 import { type WorkspaceIndexEntry, workspace } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
+import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { useMediaNavigation } from "@/hooks/media";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
@@ -567,6 +568,7 @@ function DirectoryExplorerForWorkspace({
 
     try {
       await workspace.close(workspaceId);
+      closeWorkspaceViewerSessions(workspaceId);
       workspaceExplorerStore.getState().resetWorkspace(workspaceId);
       resetToWorkspaceSelect();
       // 先完成 stack reset，再清理会触发 Redirect 的 workspace session，避免两个

@@ -9,6 +9,7 @@ import {
   workspace,
 } from "@/api/commands/workspace";
 import { isSystemLocaleCN, os } from "@/api/common";
+import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
@@ -336,6 +337,7 @@ export function WorkspaceSelectContent({
       if (openedForUpdate && currentWorkspaceId !== editingWorkspace.id) {
         try {
           await workspace.close(editingWorkspace.id);
+          closeWorkspaceViewerSessions(editingWorkspace.id);
           workspaceExplorerStore.getState().resetWorkspace(editingWorkspace.id);
         } catch (error) {
           console.error("[workspace-select] close workspace after update failed", error);
@@ -386,6 +388,7 @@ export function WorkspaceSelectContent({
         for (const workspaceItem of workspaceItems) {
           try {
             await workspace.close(workspaceItem.id);
+            closeWorkspaceViewerSessions(workspaceItem.id);
             workspaceExplorerStore.getState().resetWorkspace(workspaceItem.id);
             const removedWorkspace = await workspace.remove(workspaceItem.id, true);
             removedWorkspaceIds.push(workspaceItem.id);
@@ -512,6 +515,7 @@ export function WorkspaceSelectContent({
       try {
         if (currentWorkspaceId && currentWorkspaceId !== workspaceId) {
           await workspace.close(currentWorkspaceId);
+          closeWorkspaceViewerSessions(currentWorkspaceId);
           workspaceExplorerStore.getState().resetWorkspace(currentWorkspaceId);
           setCurrentWorkspaceId(null);
         }

@@ -6,6 +6,16 @@ use crate::workspace::{
 };
 
 #[command("workspace.file")]
+async fn native_path(
+    workspace_id: WorkspaceId,
+    path: WorkspaceRelativePath,
+) -> anyhow::Result<Option<String>> {
+    Ok(workspace_manager()
+        .native_path(&workspace_id, &path)
+        .await?)
+}
+
+#[command("workspace.file")]
 async fn capabilities(workspace_id: WorkspaceId) -> anyhow::Result<StorageCapabilities> {
     Ok(workspace_manager().capabilities(&workspace_id).await?)
 }

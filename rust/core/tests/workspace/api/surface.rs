@@ -48,6 +48,7 @@ fn expected_keys() -> BTreeSet<String> {
         "workspace.file.exists",
         "workspace.file.list",
         "workspace.file.metadata",
+        "workspace.file.native_path",
         "workspace.file.read_bytes",
         "workspace.file.read_text",
         "workspace.file.remove",

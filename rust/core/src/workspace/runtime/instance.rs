@@ -207,6 +207,20 @@ impl WorkspaceInstance {
         Arc::clone(&self.session)
     }
 
+    /// 只返回当前已打开 Provider 提供的真实本机路径；metadata 沿用 Provider 的路径校验。
+    pub async fn native_path(
+        &self,
+        path: &WorkspaceRelativePath,
+    ) -> Result<Option<String>, WorkspaceError> {
+        let Some(root) = self.session.native_root_path() else {
+            return Ok(None);
+        };
+        self.session.metadata(path).await?;
+        Ok(Some(
+            root.join(path.as_str()).to_string_lossy().into_owned(),
+        ))
+    }
+
     pub async fn read_text(&self, path: &WorkspaceRelativePath) -> Result<String, WorkspaceError> {
         String::from_utf8(self.read_bytes(path).await?)
             .map_err(|error| WorkspaceError::Utf8(error.to_string()))

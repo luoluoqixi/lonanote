@@ -28,3 +28,10 @@ export function getStandardAppBackgroundColors(
 ): AppBackgroundColors {
   return STANDARD_IOS_BACKGROUND_COLORS.false![colorScheme];
 }
+
+export const WORKBENCH_BACKGROUND_COLORS: AppBackgroundColorsConfig = {
+  false: {
+    light: { screen: "#F3F3F3", sheet: "#F3F3F3", card: "#FFFFFF", header: "#F3F3F3" },
+    dark: { screen: "#252526", sheet: "#252526", card: "#1E1E1E", header: "#252526" },
+  },
+};

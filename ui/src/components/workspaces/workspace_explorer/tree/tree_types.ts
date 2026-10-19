@@ -20,7 +20,7 @@ export type WorkspaceTreeRow =
     };
 export type TreeSelectionMode = "replace" | "toggle" | "range";
 export type TreeInputIntent =
-  | { type: "moveFocus"; delta: number; selection: TreeSelectionMode }
+  | { type: "moveFocus"; delta: number }
   | { type: "expand" | "collapse" | "activate" }
   | { type: "select"; selection: TreeSelectionMode };
 export type TreeHandle = {

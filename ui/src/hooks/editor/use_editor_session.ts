@@ -6,6 +6,10 @@ export function useEditorSession() {
   const state = useStore(editorStore);
 
   return {
+    viewersById: state.viewersById,
+    getDocument: (id: string) => editorStore.getState().documentsById[id],
+    closeWorkspaceViewers: state.closeWorkspaceViewers,
+    openViewer: state.openViewer,
     activeEditorId: state.activeEditorId,
     editorsById: state.editorsById,
     openEditorIds: state.openEditorIds,

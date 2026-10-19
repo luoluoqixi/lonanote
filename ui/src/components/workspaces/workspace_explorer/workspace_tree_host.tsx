@@ -1,14 +1,30 @@
 import { type Href, useRouter } from "expo-router";
+import {
+  ArrowDownWideNarrow,
+  ChevronsDownUp,
+  Copy,
+  FilePlus2,
+  FolderOpen,
+  FolderPlus,
+  Pencil,
+  RefreshCw,
+  Trash2,
+} from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Button, Dropdown, type SelectHandle, confirmNative } from "rn-ui-kit";
+import { StyleSheet, Text, View } from "react-native";
+import { Button, type SelectHandle, Tooltip, confirmNative, useUiTheme } from "rn-ui-kit";
 
+import { fs } from "@/api/commands/fs";
+import { clipboard } from "@/api/commands/system/clipboard";
 import {
   type StorageCapabilities,
   type WorkspaceIndexEntry,
   workspaceFile,
 } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, getFileName } from "@/api/common";
+import { isDesktop } from "@/api/common/platform";
+import { useEditorSession } from "@/hooks/editor";
+import { useLayoutMode } from "@/hooks/layout";
 import { useMediaNavigation } from "@/hooks/media";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
@@ -42,12 +58,23 @@ const noCapabilities = {
 
 export function WorkspaceTreeHost({
   workspaceId,
-  onSelectWorkspace,
 }: {
   workspaceId: string;
   onSelectWorkspace?: () => void;
 }) {
   const router = useRouter();
+  const theme = useUiTheme();
+  const { layoutMode } = useLayoutMode();
+  const { activeEditorId, editorsById, documentsById, viewersById, openViewer } =
+    useEditorSession();
+  const activeRef = activeEditorId
+    ? (viewersById[activeEditorId]?.ref ??
+      documentsById[editorsById[activeEditorId]?.documentId]?.ref)
+    : null;
+  const activePath =
+    activeRef?.kind === "workspaceFile" && activeRef.workspaceId === workspaceId
+      ? activeRef.filePath
+      : null;
   const { toast } = useToast();
   const explorer = useWorkspaceExplorer({ workspaceId, mode: "tree" });
   const fileActions = useWorkspaceFileActions();
@@ -55,6 +82,22 @@ export function WorkspaceTreeHost({
   const { preferences, updateAndSave } = useUiPreferences();
   const { openNoteEditor } = useWorkspaceEditorSession(workspaceId);
   const { setMediaSequence } = useMediaNavigation();
+  const [nativePathAvailable, setNativePathAvailable] = useState(false);
+  useEffect(() => {
+    let current = true;
+    if (isDesktop())
+      void workspaceFile
+        .nativePath(workspaceId, "")
+        .then((path) => {
+          if (current) setNativePathAvailable(Boolean(path));
+        })
+        .catch(() => {
+          if (current) setNativePathAvailable(false);
+        });
+    return () => {
+      current = false;
+    };
+  }, [workspaceId, explorer.epoch]);
   const [capabilities, setCapabilities] =
     useState<Pick<StorageCapabilities, keyof typeof noCapabilities>>(noCapabilities);
   const [create, setCreate] = useState<{
@@ -142,6 +185,13 @@ export function WorkspaceTreeHost({
         openNoteEditor(row.path);
         return;
       }
+      if (layoutMode === "desktop") {
+        openViewer(
+          { kind: "workspaceFile", workspaceId, filePath: row.path },
+          kind === "image" || kind === "video" || kind === "pdf" ? kind : "unknown",
+        );
+        return;
+      }
       if (kind === "image" || kind === "video") {
         const paths = rows
           .filter(
@@ -166,6 +216,8 @@ export function WorkspaceTreeHost({
       } as Href);
     },
     [
+      layoutMode,
+      openViewer,
       explorer.setExpanded,
       explorer.expandedPaths,
       openNoteEditor,
@@ -218,6 +270,8 @@ export function WorkspaceTreeHost({
         targetDirectory:
           entry?.fileType === "directory" ? path : path.split("/").slice(0, -1).join("/"),
         capabilities,
+        desktop: isDesktop(),
+        nativePathAvailable,
         actions: {
           isCurrent: (id, epoch, paths) =>
             workspaceExplorerStore.getState().workspaces[id]?.epoch === epoch &&
@@ -248,10 +302,49 @@ export function WorkspaceTreeHost({
             explorer.setSelection(paths, path, path);
           },
           refresh,
+          reveal: (p) => {
+            void workspaceFile
+              .nativePath(workspaceId, p)
+              .then((nativePath) => {
+                if (nativePath) return fs.showInFolder(nativePath);
+              })
+              .catch((error) => toast.error("无法显示文件", { description: String(error) }));
+          },
+          copyPath: (p, absolute) => {
+            void (absolute ? workspaceFile.nativePath(workspaceId, p) : Promise.resolve(p))
+              .then((value) => {
+                if (value) return clipboard.writeText(value);
+              })
+              .catch((error) => toast.error("复制路径失败", { description: String(error) }));
+          },
         },
+      }).map((item) => {
+        const Icon = new Map<string, typeof FilePlus2>([
+          ["create-note", FilePlus2],
+          ["create-directory", FolderPlus],
+          ["reveal", FolderOpen],
+          ["copy-absolute", Copy],
+          ["copy-relative", Copy],
+          ["rename", Pencil],
+          ["delete", Trash2],
+        ]).get(item.value);
+        return Icon
+          ? {
+              ...item,
+              icon: (
+                <Icon
+                  size={14}
+                  color={item.destructive ? theme.destructive : theme.mutedForeground}
+                />
+              ),
+            }
+          : item;
       });
     },
     [
+      theme,
+      nativePathAvailable,
+      toast,
       nodeFor,
       explorer.epoch,
       explorer.selectedPaths,
@@ -301,42 +394,40 @@ export function WorkspaceTreeHost({
   }
   return (
     <View style={styles.root}>
-      <Pressable onPress={onSelectWorkspace} accessibilityLabel="切换工作区" style={styles.heading}>
-        <Text className="text-foreground font-semibold" numberOfLines={1}>
-          {workspaceState?.displayName ?? "工作区"}
+      <View style={[styles.header, { borderBottomColor: theme.border }]}>
+        <Text style={styles.heading} className="text-foreground font-semibold" numberOfLines={1}>
+          {workspaceState?.displayName ?? "资源浏览器"}
         </Text>
-      </Pressable>
-      <View style={styles.toolbar}>
-        <Dropdown
-          triggerLabel="新建"
-          items={[
-            {
-              value: "note",
-              label: "笔记",
-              disabled: !capabilities.canWrite,
-              onSelect: () => openCreate("", "note"),
-            },
-            {
-              value: "directory",
-              label: "文件夹",
-              disabled: !capabilities.canCreateDirectory,
-              onSelect: () => openCreate("", "directory"),
-            },
-          ]}
-        />
-        <Dropdown
-          triggerLabel="更多"
-          items={[
-            { value: "refresh", label: "刷新", onSelect: refresh },
-            { value: "sort", label: "排序", onSelect: () => sort.current?.open() },
-            { value: "collapse", label: "全部折叠", onSelect: explorer.collapseAll },
-            {
-              value: "selection",
-              label: explorer.selectionMode ? "完成选择" : "多选",
-              onSelect: () => explorer.setSelectionMode(!explorer.selectionMode),
-            },
-          ]}
-        />
+        <View style={styles.headerActions}>
+          {(
+            [
+              ["排序", ArrowDownWideNarrow, () => sort.current?.open(), false],
+              ["新建笔记", FilePlus2, () => openCreate("", "note"), !capabilities.canWrite],
+              [
+                "新建文件夹",
+                FolderPlus,
+                () => openCreate("", "directory"),
+                !capabilities.canCreateDirectory,
+              ],
+              ["刷新", RefreshCw, refresh, false],
+              ["全部折叠", ChevronsDownUp, explorer.collapseAll, false],
+            ] as const
+          ).map(([label, Icon, onPress, disabled]) => (
+            <Tooltip key={label} content={label}>
+              <Button
+                aria-label={label}
+                variant="icon"
+                size="xs"
+                buttonSize={{ width: 24, height: 28 }}
+                style={{ minWidth: 24, minHeight: 28, padding: 0 }}
+                disabled={disabled}
+                onPress={onPress}
+              >
+                <Icon size={15} strokeWidth={1.6} color={theme.mutedForeground} />
+              </Button>
+            </Tooltip>
+          ))}
+        </View>
       </View>
       {explorer.selectionMode ? (
         <View style={styles.toolbar}>
@@ -359,6 +450,7 @@ export function WorkspaceTreeHost({
         expandedPaths={explorer.expandedPaths}
         selectedPaths={explorer.selectedPaths}
         focusedPath={explorer.focusedPath}
+        activePath={activePath}
         selectionMode={explorer.selectionMode}
         onSelect={select}
         onFocus={onFocus}
@@ -424,6 +516,15 @@ export function WorkspaceTreeHost({
 }
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, minWidth: 0 },
-  heading: { padding: 10 },
+  header: {
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
+  },
+  heading: { flexGrow: 1, flexShrink: 1, minWidth: 64, fontSize: 12, paddingVertical: 8 },
+  headerActions: { flexDirection: "row", alignItems: "center", marginLeft: "auto" },
   toolbar: { flexDirection: "row", gap: 4, alignItems: "center", padding: 4, flexWrap: "wrap" },
 });

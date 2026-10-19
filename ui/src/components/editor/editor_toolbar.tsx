@@ -30,6 +30,7 @@ import {
   useKeyboardVisibility,
 } from "rn-ui-kit/core";
 
+import { isDesktop } from "@/api/common/platform";
 import { isIos26Plus, isMobile, os } from "@/api/common/platform";
 import type { EditorCommand } from "@/assets/editor/src/bridge/protocol";
 import { editorCommandCoordinator } from "@/components/editor/controllers";
@@ -388,7 +389,7 @@ function MobileToolbarRow({
   );
 }
 
-export function EditorToolbar({
+function EditorToolbarContent({
   document,
   editor,
   onMobileInputMethodEnabledChange,
@@ -946,3 +947,8 @@ const styles = StyleSheet.create({
     marginLeft: MOBILE_EDITOR_TOOLBAR_SURFACE_GAP,
   },
 });
+
+export function EditorToolbar(props: Parameters<typeof EditorToolbarContent>[0]) {
+  if (isDesktop()) return null;
+  return <EditorToolbarContent {...props} />;
+}

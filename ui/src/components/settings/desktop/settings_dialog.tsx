@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Dialog, NativeSheetStack, Tabs } from "rn-ui-kit";
 import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
@@ -16,15 +16,15 @@ type DesktopSettingsDialogProps = {
   trigger?: ReactNode;
 };
 
-const DIALOG_WIDTH = isWeb() ? "80%" : "90%";
-const DIALOG_HEIGHT = isWeb() ? "80%" : "82%";
-
 export function DesktopSettingsDialog({
   initialPageId = "global",
   isOpen,
   onOpenChange,
   trigger,
 }: DesktopSettingsDialogProps) {
+  const { width, height } = useWindowDimensions();
+  const dialogWidth = Math.max(280, Math.min(960, width - 48));
+  const dialogHeight = Math.max(240, Math.min(720, height - 64));
   const { preferences } = useUiPreferences();
   const [isDebugSheetOpen, setIsDebugSheetOpen] = useState(false);
   const [isGmSheetOpen, setIsGmSheetOpen] = useState(false);
@@ -67,7 +67,14 @@ export function DesktopSettingsDialog({
         open={isOpen}
         title="设置"
         trigger={trigger}
-        contentProps={{ style: { height: DIALOG_HEIGHT, width: DIALOG_WIDTH } }}
+        contentProps={{
+          style: {
+            height: dialogHeight,
+            width: dialogWidth,
+            maxWidth: dialogWidth,
+            maxHeight: dialogHeight,
+          },
+        }}
         content={
           <View style={styles.root}>
             <Tabs
@@ -77,13 +84,18 @@ export function DesktopSettingsDialog({
               style={styles.tabs}
               value={selectedTabId}
             >
-              <Tabs.List aria-label="设置页面导航" style={styles.list}>
-                {desktopPages.map((page) => (
-                  <Tabs.Trigger key={page.id} value={page.id}>
-                    {page.title}
-                  </Tabs.Trigger>
-                ))}
-              </Tabs.List>
+              <ScrollView
+                style={styles.navigation}
+                contentContainerStyle={styles.navigationContent}
+              >
+                <Tabs.List aria-label="设置页面导航" style={styles.list}>
+                  {desktopPages.map((page) => (
+                    <Tabs.Trigger key={page.id} value={page.id} style={styles.navigationItem}>
+                      {page.title}
+                    </Tabs.Trigger>
+                  ))}
+                </Tabs.List>
+              </ScrollView>
               <View style={styles.content}>
                 {SelectedPageComponent ? (
                   <SelectedPageComponent
@@ -128,14 +140,33 @@ export function DesktopSettingsDialog({
 const styles = StyleSheet.create({
   content: {
     flex: 1,
+    minWidth: 0,
     minHeight: 0,
     overflow: "hidden",
   },
   list: {
     alignSelf: "stretch",
+    alignItems: "stretch",
+    justifyContent: "flex-start",
+    height: "auto",
     flexDirection: "column",
     gap: 4,
-    width: 140,
+    width: "100%",
+  },
+  navigation: {
+    width: 160,
+    flexGrow: 0,
+    flexShrink: 0,
+    minHeight: 0,
+  },
+  navigationContent: {
+    paddingBottom: 4,
+  },
+  navigationItem: {
+    height: 36,
+    flexShrink: 0,
+    justifyContent: "flex-start",
+    paddingHorizontal: 12,
   },
   root: {
     flex: 1,

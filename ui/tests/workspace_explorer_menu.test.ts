@@ -50,3 +50,59 @@ test("菜单固定业务路径、禁用能力与 destructive；旧会话和已�
   items.find((i) => i.value === "open")?.onSelect?.();
   expect(opened).toEqual(["A"]);
 });
+
+test("PC 菜单按 Provider 能力提供路径动作，冻结多选目标且不提供移动端更多项", () => {
+  let current = true;
+  const copied: unknown[] = [];
+  const removed: unknown[] = [];
+  const actions = {
+    isCurrent: () => current,
+    open: () => {},
+    create: () => {},
+    rename: () => {},
+    details: () => {},
+    select: () => {},
+    refresh: () => {},
+    remove: (paths: string[]) => {
+      removed.push(paths);
+    },
+    copyPath: (path: string, absolute: boolean) => {
+      copied.push([path, absolute]);
+    },
+  };
+  const options = {
+    workspaceId: "w",
+    epoch: 1,
+    targetPaths: ["note.md"],
+    targetDirectory: "",
+    capabilities: {
+      canRead: true,
+      canWrite: true,
+      canCreateDirectory: true,
+      canDelete: true,
+      canRename: true,
+    },
+    actions,
+    desktop: true,
+  };
+  const virtual = createWorkspaceExplorerMenu(options);
+  expect(virtual.some((item) => item.value === "reveal" || item.value === "copy-absolute")).toBe(
+    false,
+  );
+  expect(virtual.some((item) => item.value === "select" || item.value === "details")).toBe(false);
+  virtual.find((item) => item.value === "copy-relative")?.onSelect?.();
+  expect(copied).toEqual([["note.md", false]]);
+  const targets = ["one.md", "two.md"];
+  const native = createWorkspaceExplorerMenu({
+    ...options,
+    targetPaths: targets,
+    nativePathAvailable: true,
+  });
+  targets[0] = "new.md";
+  expect(native.find((item) => item.value === "copy-absolute")?.disabled).toBe(true);
+  native.find((item) => item.value === "delete")?.onSelect?.();
+  expect(removed).toEqual([["one.md", "two.md"]]);
+  current = false;
+  native.find((item) => item.value === "delete")?.onSelect?.();
+  expect(removed).toHaveLength(1);
+});

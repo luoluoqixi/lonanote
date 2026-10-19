@@ -1,4 +1,5 @@
-import { type Href, usePathname, useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
+import { Folder, LibraryBig, type LucideIcon, Search, Settings } from "lucide-react-native";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,6 +10,7 @@ import {
   type SplitLayoutHandle,
   SplitLayoutPriority,
   Text,
+  Tooltip,
   useUiTheme,
 } from "rn-ui-kit";
 
@@ -21,9 +23,9 @@ import { TitleBar } from "@/components/window/titlebar";
 import { WorkspaceExplorerForWorkspace } from "@/components/workspaces/workspace_explorer";
 import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select";
 import { useAppBackgroundColors } from "@/hooks/settings";
+import { useWorkbenchDragGuard } from "@/hooks/ui/use_workbench_drag_guard";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
-const DEBUG_HREF = "/debug" as Href;
 const LAYOUT_STORAGE_KEY = "lonanote.wideScreenHome.layout";
 const DEFAULT_LAYOUT_STATE = {
   sizes: [],
@@ -44,9 +46,14 @@ export function DesktopAppShell() {
   const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(DEFAULT_LAYOUT_STATE.visible[1] ?? true);
-  const [showAssistSidebar, setShowAssistSidebar] = useState(
-    DEFAULT_LAYOUT_STATE.visible[3] ?? false,
-  );
+  const [panel, setPanel] = useState<"explorer" | "search">("explorer");
+  const [selectOpen, setSelectOpen] = useState(false);
+  const dragGuard = useWorkbenchDragGuard();
+  const theme = useUiTheme();
+  const togglePanel = (next: "explorer" | "search") => {
+    contentLayoutRef.current?.setVisible(1, panel === next ? !showSidebar : true);
+    setPanel(next);
+  };
 
   useEffect(() => {
     setIsSettingsOpen(pathname.startsWith("/settings"));
@@ -71,17 +78,14 @@ export function DesktopAppShell() {
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
             <SplitLayout
               ref={contentLayoutRef}
+              {...dragGuard}
               mobileHandleOffset={-2}
               mobileHandlePositions={{ 1: "right", 2: "left" }}
               onStateChange={(state) => {
                 const nextShowSidebar = state.visible[1] ?? true;
-                const nextShowAssistSidebar = state.visible[3] ?? false;
 
                 setShowSidebar((previous) =>
                   previous === nextShowSidebar ? previous : nextShowSidebar,
-                );
-                setShowAssistSidebar((previous) =>
-                  previous === nextShowAssistSidebar ? previous : nextShowAssistSidebar,
                 );
               }}
               proportionalLayout={false}
@@ -91,13 +95,10 @@ export function DesktopAppShell() {
             >
               <SplitLayout.Pane maxSize={48} minSize={48} visible>
                 <ActivityBar
-                  onOpenDebug={() => router.push(DEBUG_HREF)}
-                  onToggleAssistSidebar={() => {
-                    contentLayoutRef.current?.setVisible(3, !showAssistSidebar);
-                  }}
-                  onToggleSidebar={() => {
-                    contentLayoutRef.current?.setVisible(1, !showSidebar);
-                  }}
+                  onExplorer={() => togglePanel("explorer")}
+                  onSearch={() => togglePanel("search")}
+                  onWorkspace={() => setSelectOpen(true)}
+                  activePanel={showSidebar ? panel : null}
                   settingsDialog={
                     <DesktopSettingsDialog
                       initialPageId={getSettingsPageId(pathname)}
@@ -107,14 +108,12 @@ export function DesktopAppShell() {
                         <ActivityButton
                           accessibilityLabel="设置"
                           active={false}
-                          label="⚙"
+                          icon={Settings}
                           onPress={() => setIsSettingsOpen(true)}
                         />
                       }
                     />
                   }
-                  showAssistSidebar={showAssistSidebar}
-                  showSidebar={showSidebar}
                 />
               </SplitLayout.Pane>
               <SplitLayout.Pane
@@ -123,7 +122,16 @@ export function DesktopAppShell() {
                 priority={SplitLayoutPriority.Low}
                 snap
               >
-                <SidePanel />
+                <View style={[styles.fullHeight, { backgroundColor: theme.muted }]}>
+                  {panel === "explorer" ? (
+                    <SidePanel onSelectWorkspace={() => setSelectOpen(true)} />
+                  ) : (
+                    <View style={styles.sidePanelHeader}>
+                      <Text className="font-semibold">搜索</Text>
+                      <Text className="text-muted-foreground">搜索工作区中的笔记</Text>
+                    </View>
+                  )}
+                </View>
               </SplitLayout.Pane>
               <SplitLayout.Pane minSize={20} priority={SplitLayoutPriority.High}>
                 <EditorArea />
@@ -143,88 +151,6 @@ export function DesktopAppShell() {
           </SplitLayout.Pane>
         </SplitLayout>
       </View>
-    </SafeAreaView>
-  );
-}
-
-type ActivityBarProps = {
-  onOpenDebug: () => void;
-  onToggleAssistSidebar: () => void;
-  onToggleSidebar: () => void;
-  settingsDialog: ReactNode;
-  showAssistSidebar: boolean;
-  showSidebar: boolean;
-};
-
-function ActivityBar({
-  onOpenDebug,
-  onToggleAssistSidebar,
-  onToggleSidebar,
-  settingsDialog,
-  showAssistSidebar,
-  showSidebar,
-}: ActivityBarProps) {
-  return (
-    <View style={styles.activityBar}>
-      <ActivityButton
-        accessibilityLabel="切换资源面板"
-        active={showSidebar}
-        label="⌘"
-        onPress={onToggleSidebar}
-      />
-      <ActivityButton accessibilityLabel="调试" active={false} label="⚒" onPress={onOpenDebug} />
-      <ActivityButton accessibilityLabel="搜索" active={false} label="⌕" onPress={() => {}} />
-      <View style={styles.spacer} />
-      <ActivityButton
-        accessibilityLabel="切换辅助面板"
-        active={showAssistSidebar}
-        label="☷"
-        onPress={onToggleAssistSidebar}
-      />
-      {settingsDialog}
-    </View>
-  );
-}
-
-type ActivityButtonProps = {
-  accessibilityLabel: string;
-  active: boolean;
-  label: string;
-  onPress: () => void;
-};
-
-function ActivityButton({ accessibilityLabel, active, label, onPress }: ActivityButtonProps) {
-  const theme = useUiTheme();
-
-  return (
-    <Pressable
-      accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
-      style={[styles.activityButton, active ? { backgroundColor: theme.muted } : null]}
-    >
-      <Text className={active ? "text-foreground text-4xl" : "text-primary text-4xl"}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function SidePanel() {
-  const workspaceId = useCurrentWorkspaceId();
-  const [selectOpen, setSelectOpen] = useState(false);
-  return (
-    <View style={[styles.fullHeight, { minHeight: 0, minWidth: 0 }]}>
-      {workspaceId ? (
-        <WorkspaceExplorerForWorkspace
-          key={workspaceId}
-          workspaceId={workspaceId}
-          mode="tree"
-          onSelectWorkspace={() => setSelectOpen(true)}
-        />
-      ) : (
-        <View style={styles.sidePanelHeader}>
-          <Text className="text-muted-foreground">尚未打开工作区</Text>
-          <Button onPress={() => setSelectOpen(true)}>选择或创建工作区</Button>
-        </View>
-      )}
       <NativeSheetStack
         name="desktop-workspace-select"
         open={selectOpen}
@@ -235,6 +161,102 @@ function SidePanel() {
           {() => <WorkspaceSelectContent embedded onWorkspaceOpened={() => setSelectOpen(false)} />}
         </NativeSheetStack.Screen>
       </NativeSheetStack>
+    </SafeAreaView>
+  );
+}
+
+type ActivityBarProps = {
+  onExplorer: () => void;
+  onSearch: () => void;
+  onWorkspace: () => void;
+  activePanel: "explorer" | "search" | null;
+  settingsDialog: ReactNode;
+};
+
+function ActivityBar({
+  onExplorer,
+  onSearch,
+  onWorkspace,
+  activePanel,
+  settingsDialog,
+}: ActivityBarProps) {
+  const theme = useUiTheme();
+  return (
+    <View
+      style={[
+        styles.activityBar,
+        {
+          backgroundColor: theme.muted,
+          borderRightColor: theme.border,
+          borderRightWidth: StyleSheet.hairlineWidth,
+        },
+      ]}
+    >
+      <ActivityButton
+        accessibilityLabel="资源浏览器"
+        active={activePanel === "explorer"}
+        icon={Folder}
+        onPress={onExplorer}
+      />
+      <ActivityButton
+        accessibilityLabel="搜索"
+        active={activePanel === "search"}
+        icon={Search}
+        onPress={onSearch}
+      />
+      <View style={styles.spacer} />
+      <ActivityButton
+        accessibilityLabel="选择工作区"
+        active={false}
+        icon={LibraryBig}
+        onPress={onWorkspace}
+      />
+      {settingsDialog}
+    </View>
+  );
+}
+
+type ActivityButtonProps = {
+  accessibilityLabel: string;
+  active: boolean;
+  icon: LucideIcon;
+  onPress: () => void;
+};
+function ActivityButton({ accessibilityLabel, active, icon: Icon, onPress }: ActivityButtonProps) {
+  const theme = useUiTheme();
+  return (
+    <Tooltip content={accessibilityLabel} contentProps={{ side: "right" }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        onPress={onPress}
+        style={[
+          styles.activityButton,
+          { borderLeftWidth: 2, borderLeftColor: active ? theme.primary : "transparent" },
+        ]}
+      >
+        <Icon
+          size={22}
+          strokeWidth={1.6}
+          color={active ? theme.foreground : theme.mutedForeground}
+        />
+      </Pressable>
+    </Tooltip>
+  );
+}
+
+function SidePanel({ onSelectWorkspace }: { onSelectWorkspace: () => void }) {
+  const workspaceId = useCurrentWorkspaceId();
+  return (
+    <View style={[styles.fullHeight, { minHeight: 0, minWidth: 0 }]}>
+      {workspaceId ? (
+        <WorkspaceExplorerForWorkspace key={workspaceId} workspaceId={workspaceId} mode="tree" />
+      ) : (
+        <View style={styles.sidePanelHeader}>
+          <Text className="text-muted-foreground">尚未打开工作区</Text>
+          <Button onPress={onSelectWorkspace}>选择或创建工作区</Button>
+        </View>
+      )}
     </View>
   );
 }
@@ -271,7 +293,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     marginBottom: 4,
-    width: 40,
+    width: 48,
   },
   assistPanel: {
     height: "100%",

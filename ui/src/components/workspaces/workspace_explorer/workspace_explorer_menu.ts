@@ -11,6 +11,8 @@ type MenuActions = {
   details(path: string): void;
   select(paths: string[]): void;
   refresh(): void;
+  reveal?(path: string): void;
+  copyPath?(path: string, absolute: boolean): void;
 };
 export function createWorkspaceExplorerMenu({
   workspaceId,
@@ -19,6 +21,8 @@ export function createWorkspaceExplorerMenu({
   targetDirectory,
   capabilities,
   actions,
+  desktop = false,
+  nativePathAvailable = false,
 }: {
   workspaceId: string;
   epoch: number;
@@ -29,6 +33,8 @@ export function createWorkspaceExplorerMenu({
     "canRead" | "canWrite" | "canCreateDirectory" | "canDelete" | "canRename"
   >;
   actions: MenuActions;
+  desktop?: boolean;
+  nativePathAvailable?: boolean;
 }): ContextMenuItemData[] {
   const targets = [...targetPaths];
   const single = targets.length === 1;
@@ -37,6 +43,71 @@ export function createWorkspaceExplorerMenu({
     () => {
       if (enabled && actions.isCurrent(workspaceId, epoch, targets)) action();
     };
+  if (desktop)
+    return [
+      {
+        value: "create-note",
+        label: "新建笔记",
+        disabled: !capabilities.canWrite,
+        onSelect: guarded(
+          () => actions.create(targetDirectory!, "note"),
+          targetDirectory !== null && capabilities.canWrite,
+        ),
+      },
+      {
+        value: "create-directory",
+        label: "新建文件夹",
+        disabled: !capabilities.canCreateDirectory,
+        onSelect: guarded(
+          () => actions.create(targetDirectory!, "directory"),
+          targetDirectory !== null && capabilities.canCreateDirectory,
+        ),
+      },
+      { value: "separator-create", separator: true },
+      ...(nativePathAvailable
+        ? [
+            {
+              value: "reveal",
+              label: "在文件管理器中显示",
+              disabled: !single,
+              onSelect: guarded(() => actions.reveal?.(targets[0]), single),
+            },
+          ]
+        : []),
+      ...(nativePathAvailable
+        ? [
+            {
+              value: "copy-absolute",
+              label: "复制绝对路径",
+              disabled: !single,
+              onSelect: guarded(() => actions.copyPath?.(targets[0], true), single),
+            },
+          ]
+        : []),
+      {
+        value: "copy-relative",
+        label: "复制相对路径",
+        disabled: !single,
+        onSelect: guarded(() => actions.copyPath?.(targets[0], false), single),
+      },
+      { value: "separator-path", separator: true },
+      {
+        value: "rename",
+        label: "重命名",
+        disabled: !single || !capabilities.canRename,
+        onSelect: guarded(() => actions.rename(targets[0]), single && capabilities.canRename),
+      },
+      {
+        value: "delete",
+        label: "删除",
+        destructive: true,
+        disabled: !targets.length || !capabilities.canDelete,
+        onSelect: guarded(
+          () => actions.remove([...targets]),
+          targets.length > 0 && capabilities.canDelete,
+        ),
+      },
+    ];
   return [
     {
       value: "open",

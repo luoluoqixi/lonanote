@@ -9,8 +9,8 @@ test("键盘箭头、Enter、修饰键与输入隔离", () => {
   expect(treeKeyboardIntent({ key: "ArrowDown", shiftKey: true })).toEqual({
     type: "moveFocus",
     delta: 1,
-    selection: "range",
   });
+  expect(treeKeyboardIntent({ key: " " })).toEqual({ type: "activate" });
   expect(treeKeyboardIntent({ key: "ArrowRight" })).toEqual({ type: "expand" });
   expect(treeKeyboardIntent({ key: "ArrowLeft" })).toEqual({ type: "collapse" });
   expect(treeKeyboardIntent({ key: "Enter" })).toEqual({ type: "activate" });

@@ -17,9 +17,9 @@ export function treeKeyboardIntent({
   const selection = shiftKey ? "range" : ctrlKey || metaKey ? "toggle" : "replace";
   switch (key) {
     case "ArrowDown":
-      return { type: "moveFocus", delta: 1, selection };
+      return { type: "moveFocus", delta: 1 };
     case "ArrowUp":
-      return { type: "moveFocus", delta: -1, selection };
+      return { type: "moveFocus", delta: -1 };
     case "ArrowRight":
       return { type: "expand" };
     case "ArrowLeft":
@@ -27,7 +27,7 @@ export function treeKeyboardIntent({
     case "Enter":
       return { type: "activate" };
     case " ":
-      return { type: "select", selection };
+      return ctrlKey || metaKey || shiftKey ? { type: "select", selection } : { type: "activate" };
     default:
       return null;
   }

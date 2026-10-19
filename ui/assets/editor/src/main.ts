@@ -1,5 +1,5 @@
 import { EditorView } from "@codemirror/view";
-import { PurrMDFeatures, commands, type ImageRetryContext } from "purrmd";
+import { type ImageRetryContext, PurrMDFeatures, commands } from "purrmd";
 
 import {
   EDITOR_BRIDGE_PROTOCOL_VERSION,
@@ -21,6 +21,7 @@ import {
   type EditorStateSnapshot,
   isEditorBridgeBootstrap,
   isEditorCommand,
+  isEditorContextCommandPayload,
   isEditorDocumentRevisionPayload,
   isEditorInitializePayload,
   isEditorInputEnabledPayload,
@@ -203,6 +204,7 @@ type SurfaceSession = {
   editor: LonaEditor;
   documentRevision: number;
   localSequence: number;
+  selectionVersion: number;
   suppressDocumentChange: boolean;
   pendingDocumentChange: boolean;
   stateRevision: number;
@@ -490,7 +492,15 @@ function getStateSnapshot(currentSession: SurfaceSession): EditorStateSnapshot {
     canUndo: currentSession.editor.canUndo(),
     canRedo: currentSession.editor.canRedo(),
     selectionEmpty: selection.empty,
-    activeMarks: [],
+    activeMarks: Object.entries({
+      bold: commands.isStrong(state),
+      italic: commands.isItalic(state),
+      strikethrough: commands.isStrikethrough(state),
+      highlight: commands.isHighlight(state),
+      inlineCode: commands.isInlineCode(state),
+    })
+      .filter(([, active]) => active)
+      .map(([mark]) => mark),
     block: { type: "paragraph" },
     list: "none",
     row: status.rowIndex,
@@ -654,6 +664,7 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     editor,
     documentRevision: payload.document.revision,
     localSequence: 0,
+    selectionVersion: 0,
     suppressDocumentChange: false,
     pendingDocumentChange: false,
     stateRevision: 0,
@@ -665,6 +676,23 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     documentWorkspacePath: payload.document.workspacePath,
   };
   session = currentSession;
+
+  const emitContextMenu = (event: MouseEvent, view: EditorView) => {
+    flushPendingDocumentChange(currentSession);
+    const selection = view.state.selection.main;
+    emitEvent("editor.contextMenu", {
+      revision: currentSession.documentRevision,
+      selectionVersion: currentSession.selectionVersion,
+      from: selection.from,
+      to: selection.to,
+      text: view.state.sliceDoc(selection.from, selection.to),
+      activeMarks: getStateSnapshot(currentSession).activeMarks,
+      x: event.clientX,
+      y: event.clientY,
+      canUndo: currentSession.editor.canUndo(),
+      canRedo: currentSession.editor.canRedo(),
+    });
+  };
 
   editor.create({
     root: getRoot(),
@@ -688,6 +716,19 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
           0,
         );
         return { ...insets, bottom: Math.max(insets.bottom - overlap, 0) };
+      }),
+      EditorView.domEventHandlers({
+        contextmenu: (event, view) => {
+          if (!["macos", "windows", "linux"].includes(currentSession.runtime.platform))
+            return false;
+          event.preventDefault();
+          // WebKit 的 DOM selectionchange 晚于 contextmenu；下一帧再冻结选区，
+          // 让 CodeMirror 先接收本次右键的原生选区变化。
+          requestAnimationFrame(() => {
+            if (session === currentSession) emitContextMenu(event, view);
+          });
+          return true;
+        },
       }),
       EditorView.scrollHandler.of((view, range, options) => {
         if (
@@ -758,6 +799,7 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
   });
   applyRuntimeStyles(payload.runtime);
   editor.addListener("onUpdate", (_editor, update) => {
+    if (update.docChanged || update.selectionSet) currentSession.selectionVersion += 1;
     if (update.docChanged) {
       scheduleDocumentChanged(currentSession);
     }
@@ -936,11 +978,20 @@ function executeCommand(request: EditorBridgeRequest): void {
     command.type !== "editor.focus" &&
     command.type !== "editor.blur" &&
     command.type !== "navigation.scrollToAnchor" &&
+    command.type !== "selection.selectAll" &&
     (session.documentReadOnly || !session.inputEnabled)
   ) {
     const snapshot = getStateSnapshot(session);
     respond(request, { applied: false, stateRevision: snapshot.revision });
     return;
+  }
+  if (command.type === "selection.selectAll") {
+    const view = session.editor.editor;
+    view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+  }
+  if (command.type === "selection.replace") {
+    const view = session.editor.editor;
+    view.dispatch(view.state.replaceSelection(command.text));
   }
   if (command.type === "history.undo") session.editor.undo();
   if (command.type === "history.redo") session.editor.redo();
@@ -1037,6 +1088,26 @@ function handleRequest(request: EditorBridgeRequest): void {
   }
   if (request.method === "preferences.update") {
     applyPreferencesUpdate(request);
+    return;
+  }
+  if (request.method === "editor.executeContextCommand") {
+    if (!session || !isEditorContextCommandPayload(request.payload)) {
+      respond(request, { applied: false, stateRevision: session?.stateRevision ?? 0 });
+      return;
+    }
+    flushPendingDocumentChange(session);
+    const { snapshot, command } = request.payload;
+    const selection = session.editor.editor.state.selection.main;
+    if (
+      snapshot.revision !== session.documentRevision ||
+      snapshot.selectionVersion !== session.selectionVersion ||
+      snapshot.from !== selection.from ||
+      snapshot.to !== selection.to
+    ) {
+      respond(request, { applied: false, stateRevision: session.stateRevision });
+      return;
+    }
+    executeCommand({ ...request, payload: command });
     return;
   }
   if (request.method === "editor.executeCommand") {

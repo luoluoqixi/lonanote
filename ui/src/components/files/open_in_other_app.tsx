@@ -2,8 +2,8 @@ import { useCallback, useState } from "react";
 import { Button } from "rn-ui-kit";
 
 import { openExternalFile } from "@/api/commands/utils";
-import { workspace } from "@/api/commands/workspace";
-import { getFileMimeType, resolveWorkspaceFileUrl } from "@/api/common";
+import { workspace, workspaceFile } from "@/api/commands/workspace";
+import { getFileMimeType, isDesktop, resolveWorkspaceFileUrl } from "@/api/common";
 import { useToast } from "@/hooks/ui";
 
 type UseOpenInOtherAppOptions = {
@@ -23,8 +23,10 @@ export function useOpenInOtherApp({ filePath, workspaceId }: UseOpenInOtherAppOp
     setIsOpening(true);
 
     try {
-      const workspaceSnapshot = await workspace.get(workspaceId);
-      const fileUrl = resolveWorkspaceFileUrl(workspaceSnapshot, filePath);
+      const fileUrl = isDesktop()
+        ? await workspaceFile.nativePath(workspaceId, filePath)
+        : resolveWorkspaceFileUrl(await workspace.get(workspaceId), filePath);
+      if (!fileUrl) throw new Error("当前工作区不支持在其他应用中打开");
       await openExternalFile(fileUrl, getFileMimeType(filePath));
     } catch (error) {
       console.error("[open-in-other-app] failed", error);

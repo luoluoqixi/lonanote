@@ -1,6 +1,6 @@
 import { FilePlus2, FolderOpen, X } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { AlertDialog, Button, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
@@ -12,6 +12,7 @@ import {
 } from "@/components/editor/controllers";
 import { EditorToolbar } from "@/components/editor/editor_toolbar";
 import { EditorWebView } from "@/components/editor/editor_webview";
+import { WorkspaceFilePreview } from "@/components/files/workspace_file_preview";
 import { useEditorSession } from "@/hooks/editor";
 import { isDocumentDirty } from "@/stores/editor";
 
@@ -20,27 +21,46 @@ export function DesktopEditorArea() {
   const {
     activeEditorId,
     closeEditor,
+    getDocument,
     discardDocumentDraft,
     documentsById,
     editorsById,
     openEditorIds,
+    viewersById,
     setActiveEditor,
   } = useEditorSession();
   const [closeTargetEditorId, setCloseTargetEditorId] = useState<string | null>(null);
   const [isSavingBeforeClose, setIsSavingBeforeClose] = useState(false);
   const [closeSaveError, setCloseSaveError] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const tabBounds = useRef(new Map<string, { x: number; width: number }>());
+  const scrollPosition = useRef(0);
+  const viewportWidth = useRef(0);
+  const revealTab = useCallback((id: string | null) => {
+    const bounds = id ? tabBounds.current.get(id) : null;
+    if (!bounds) return;
+    const left = scrollPosition.current;
+    const width = viewportWidth.current;
+    if (bounds.x < left) scrollRef.current?.scrollTo({ x: bounds.x, animated: true });
+    else if (bounds.x + bounds.width > left + width)
+      scrollRef.current?.scrollTo({ x: bounds.x + bounds.width - width, animated: true });
+  }, []);
+  useEffect(() => revealTab(activeEditorId), [activeEditorId, revealTab]);
+  const activeViewer = activeEditorId ? viewersById[activeEditorId] : null;
   const activeEditor = activeEditorId ? editorsById[activeEditorId] : null;
   const activeDocument = activeEditor ? documentsById[activeEditor.documentId] : null;
   const closeTarget = closeTargetEditorId ? editorsById[closeTargetEditorId] : null;
   const closeTargetDocument = closeTarget ? documentsById[closeTarget.documentId] : null;
   const tabs = useMemo(
     () =>
-      openEditorIds.flatMap((editorId) => {
-        const editor = editorsById[editorId];
+      openEditorIds.flatMap((id) => {
+        const viewer = viewersById[id];
+        if (viewer) return [{ id, title: viewer.title, dirty: false }];
+        const editor = editorsById[id];
         const document = editor ? documentsById[editor.documentId] : null;
-        return editor && document ? [{ editor, document }] : [];
+        return document ? [{ id, title: document.title, dirty: isDocumentDirty(document) }] : [];
       }),
-    [documentsById, editorsById, openEditorIds],
+    [openEditorIds, viewersById, editorsById, documentsById],
   );
   const canOpenLooseFile = isDesktop();
 
@@ -71,6 +91,10 @@ export function DesktopEditorArea() {
     (editorId: string) => {
       const editor = editorsById[editorId];
       const document = editor ? documentsById[editor.documentId] : null;
+      if (viewersById[editorId]) {
+        closeImmediately(editorId);
+        return;
+      }
       if (!editor || !document) return;
       if (isDocumentDirty(document) && document.attachedEditorIds.length === 1) {
         setCloseSaveError(null);
@@ -79,7 +103,7 @@ export function DesktopEditorArea() {
       }
       closeImmediately(editorId);
     },
-    [closeImmediately, documentsById, editorsById],
+    [closeImmediately, documentsById, editorsById, viewersById],
   );
 
   const saveBeforeClose = useCallback(async () => {
@@ -88,7 +112,7 @@ export function DesktopEditorArea() {
     setCloseSaveError(null);
     try {
       await saveCoordinator.flushDocument(closeTargetDocument.documentId);
-      const latestDocument = documentsById[closeTargetDocument.documentId];
+      const latestDocument = getDocument(closeTargetDocument.documentId);
       if (!latestDocument || isDocumentDirty(latestDocument)) {
         throw new Error("保存期间出现新的编辑，请再次保存后关闭");
       }
@@ -98,7 +122,7 @@ export function DesktopEditorArea() {
     } finally {
       setIsSavingBeforeClose(false);
     }
-  }, [closeImmediately, closeTarget, closeTargetDocument, documentsById]);
+  }, [closeImmediately, closeTarget, closeTargetDocument, getDocument]);
 
   const discardBeforeClose = useCallback(() => {
     if (!closeTarget || !closeTargetDocument) return;
@@ -125,77 +149,116 @@ export function DesktopEditorArea() {
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       <View style={[styles.tabs, { borderBottomColor: theme.border }]}>
-        <View style={styles.tabList}>
-          {tabs.map(({ document, editor }) => {
-            const active = editor.editorId === activeEditorId;
-            const dirty = isDocumentDirty(document);
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabList}
+          contentContainerStyle={{ alignItems: "stretch" }}
+          onLayout={(event) => {
+            viewportWidth.current = event.nativeEvent.layout.width;
+            revealTab(activeEditorId);
+          }}
+          onScroll={(event) => {
+            scrollPosition.current = event.nativeEvent.contentOffset.x;
+          }}
+          scrollEventThrottle={16}
+        >
+          {tabs.map(({ id, title, dirty }) => {
+            const active = id === activeEditorId;
             return (
               <Pressable
+                key={id}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
-                key={editor.editorId}
-                onPress={() => activateEditor(editor.editorId)}
-                style={[styles.tab, active ? { backgroundColor: theme.muted } : null]}
+                onPress={() => activateEditor(id)}
+                onLayout={(event) => {
+                  tabBounds.current.set(id, event.nativeEvent.layout);
+                  if (active) revealTab(id);
+                }}
+                style={[
+                  styles.tab,
+                  {
+                    backgroundColor: active ? theme.background : theme.muted,
+                    borderTopColor: active ? theme.primary : "transparent",
+                    borderRightColor: theme.border,
+                  },
+                ]}
               >
-                <Text numberOfLines={1} style={[styles.tabLabel, { color: theme.foreground }]}>
-                  {document.title}
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.tabLabel,
+                    { color: active ? theme.foreground : theme.mutedForeground },
+                  ]}
+                >
+                  {title}
                 </Text>
                 {dirty ? (
-                  <View style={[styles.dirtyIndicator, { backgroundColor: theme.primary }]} />
+                  <View style={[styles.dirtyIndicator, { backgroundColor: theme.foreground }]} />
                 ) : null}
-                <Button
-                  aria-label={`关闭 ${document.title}`}
-                  buttonSize={{ height: 24, width: 24 }}
-                  onPress={() => requestClose(editor.editorId)}
-                  size="xs"
-                  variant="icon"
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`关闭 ${title}`}
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    requestClose(id);
+                  }}
+                  style={styles.closeTab}
                 >
                   <X color={theme.mutedForeground} size={14} />
-                </Button>
+                </Pressable>
               </Pressable>
             );
           })}
-        </View>
-        <Button
-          aria-label="打开文件"
-          buttonSize={{ height: 32, width: 32 }}
-          disabled={!canOpenLooseFile}
-          onPress={() => void openLooseFile()}
-          size="xs"
-          variant="icon"
-        >
-          <FolderOpen color={theme.foreground} size={17} />
-        </Button>
-        <Button
-          aria-label="新建文档"
-          buttonSize={{ height: 32, width: 32 }}
-          onPress={() => documentRegistry.openEditor({ kind: "untitled" })}
-          size="xs"
-          variant="icon"
-        >
-          <FilePlus2 color={theme.foreground} size={17} />
-        </Button>
+        </ScrollView>
       </View>
-      {activeEditor && activeDocument ? (
-        <View style={styles.editorSurface}>
-          {activeDocument.loadState === "ready" ? (
-            <EditorWebView document={activeDocument} editor={activeEditor} />
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={{ color: theme.mutedForeground }}>
-                {activeDocument.loadState === "error"
-                  ? (activeDocument.loadError ?? "读取文档失败")
-                  : "正在打开文档"}
-              </Text>
-            </View>
-          )}
-          <EditorToolbar document={activeDocument} editor={activeEditor} />
-        </View>
-      ) : (
+      {openEditorIds.map((id) => {
+        const view = editorsById[id];
+        const document = view ? documentsById[view.documentId] : null;
+        if (!view || !document) return null;
+        return (
+          <View
+            key={id}
+            style={[styles.editorSurface, { display: activeEditorId === id ? "flex" : "none" }]}
+          >
+            {document.loadState === "ready" ? (
+              <EditorWebView document={document} editor={view} />
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={{ color: theme.mutedForeground }}>
+                  {document.loadState === "error"
+                    ? (document.loadError ?? "读取文档失败")
+                    : "正在打开文档"}
+                </Text>
+              </View>
+            )}
+            {!isDesktop() && activeEditorId === id ? (
+              <EditorToolbar document={document} editor={view} />
+            ) : null}
+          </View>
+        );
+      })}
+      {activeViewer ? (
+        <WorkspaceFilePreview
+          key={`${activeViewer.viewerId}:${activeViewer.identityRevision}`}
+          viewer={activeViewer}
+        />
+      ) : !activeEditor ? (
         <View style={styles.emptyState}>
           <Text style={{ color: theme.mutedForeground }}>尚未打开文档</Text>
+          <Button variant="ghost" onPress={() => documentRegistry.openEditor({ kind: "untitled" })}>
+            <FilePlus2 size={16} color={theme.mutedForeground} />
+            新建笔记
+          </Button>
+          {canOpenLooseFile ? (
+            <Button variant="ghost" onPress={() => void openLooseFile()}>
+              <FolderOpen size={16} color={theme.mutedForeground} />
+              打开文件
+            </Button>
+          ) : null}
         </View>
-      )}
+      ) : null}
       <AlertDialog
         actionLabel={closeSaveError ? "重试保存" : "保存"}
         actionProps={{ disabled: isSavingBeforeClose, onPress: () => void saveBeforeClose() }}
@@ -240,16 +303,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     height: 36,
-    maxWidth: 240,
+    maxWidth: 220,
+    borderTopWidth: 2,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    flexShrink: 0,
     minWidth: 112,
     paddingLeft: 10,
   },
+  closeTab: { width: 26, height: 30, alignItems: "center", justifyContent: "center" },
   tabLabel: {
     flex: 1,
     fontSize: 13,
   },
   tabList: {
-    alignItems: "stretch",
     flex: 1,
     flexDirection: "row",
     minWidth: 0,
@@ -260,6 +326,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     height: 37,
-    paddingHorizontal: 4,
   },
 });

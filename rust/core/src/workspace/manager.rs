@@ -759,6 +759,15 @@ impl WorkspaceManager {
             .await
     }
 
+    pub async fn native_path(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+    ) -> Result<Option<String>, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.get_open_instance(id).await?.native_path(path).await
+    }
+
     pub async fn read_text(
         &self,
         id: &WorkspaceId,

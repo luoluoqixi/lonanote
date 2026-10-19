@@ -249,3 +249,13 @@ async fn close_waits_for_active_operation() {
     close.await.unwrap().unwrap();
     assert!(!manager.is_workspace_open(&id).await);
 }
+
+#[tokio::test]
+async fn virtual_provider_does_not_expose_a_native_path() {
+    let workspace = instance(Arc::new(ControlledStorage::active()), "Virtual Path").await;
+    workspace
+        .write_text(&path("note.md"), "virtual", WriteOptions::default())
+        .await
+        .unwrap();
+    assert_eq!(workspace.native_path(&path("note.md")).await.unwrap(), None);
+}

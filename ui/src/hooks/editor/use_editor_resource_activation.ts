@@ -52,6 +52,17 @@ export function useEditorResourceActivation(document: DocumentModel) {
       if (matchesWorkspaceActivation(workspaceFilePath, payload)) {
         if (!workspaceId) return;
         const fileKind = detectWorkspaceFileKind(payload.resolved.path);
+        if (layoutMode === "desktop" && fileKind !== "markdown" && fileKind !== "text") {
+          editorStore
+            .getState()
+            .openViewer(
+              { kind: "workspaceFile", workspaceId, filePath: payload.resolved.path },
+              fileKind === "image" || fileKind === "video" || fileKind === "pdf"
+                ? fileKind
+                : "unknown",
+            );
+          return;
+        }
         if (fileKind === "image" || fileKind === "video") {
           setMediaSequence({
             mediaPaths: [payload.resolved.path],

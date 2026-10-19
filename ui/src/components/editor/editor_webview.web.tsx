@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useUiColorScheme, useUiTheme } from "rn-ui-kit";
+import { useToast, useUiColorScheme, useUiTheme } from "rn-ui-kit";
 
-import { isDev, os } from "@/api/common/platform";
+import { isDesktop, isDev, os } from "@/api/common/platform";
 import editorHtml from "@/assets/editor/dist/index.html";
 import type { EditorPlatform } from "@/assets/editor/src/bridge/protocol";
 import {
@@ -20,6 +20,7 @@ import { useEditorResourceActivation, useEditorResourceContext } from "@/hooks/e
 import { useGlobalSettings } from "@/hooks/settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
+import { registerEditorMenuInvalidation } from "./controllers/editor_menu_lifecycle";
 import { getEditorDevUrl } from "./editor_dev_url";
 import { resolveEditorSemanticColors } from "./theme/editor_theme";
 
@@ -51,8 +52,12 @@ function getEditorPlatform(): EditorPlatform {
 }
 
 export function EditorWebView({ document, editor }: EditorWebViewProps) {
+  const { toast } = useToast();
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const bridgeClientRef = useRef<EditorBridgeClient | null>(null);
+  const menuSequenceRef = useRef(0);
   const recoveryAttemptsRef = useRef(0);
   const [surfaceGeneration, setSurfaceGeneration] = useState(1);
   const restartSurface = useCallback(() => {
@@ -157,6 +162,64 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
         onTaskToggled: () => undefined,
         onConsole: logEditorConsole,
         onResourceActivated,
+        onContextMenu: (payload) => {
+          if (!isDesktop()) return;
+          const client = bridgeClientRef.current;
+          const rect = iframeRef.current?.getBoundingClientRect();
+          const initial = editorStore.getState();
+          const target = initial.documentsById[document.documentId];
+          const view = initial.editorsById[editor.editorId];
+          if (!client || !rect || !target || !view) return;
+          const identityRevision = target.identityRevision;
+          const sequence = ++menuSequenceRef.current;
+          const isCurrent = () => {
+            const state = editorStore.getState();
+            const current = state.documentsById[document.documentId];
+            return (
+              sequence === menuSequenceRef.current &&
+              bridgeClientRef.current === client &&
+              state.activeEditorId === editor.editorId &&
+              state.editorsById[editor.editorId]?.documentId === document.documentId &&
+              current?.identityRevision === identityRevision &&
+              current.draftRevision === payload.revision
+            );
+          };
+          const editable =
+            !view.readOnly && !view.previewMode && target.editOwnerEditorId === editor.editorId;
+          void import("./desktop/editor_native_menu")
+            .then(({ showEditorNativeMenu }) =>
+              showEditorNativeMenu({
+                payload,
+                x: rect.left + payload.x,
+                y: rect.top + payload.y,
+                editable,
+                isCurrent,
+                execute: async (command) => {
+                  if (!isCurrent()) return;
+                  const state = editorStore.getState();
+                  const currentView = state.editorsById[editor.editorId];
+                  const currentDocument = state.documentsById[document.documentId];
+                  if (
+                    command.type !== "selection.selectAll" &&
+                    (currentView?.readOnly ||
+                      currentView?.previewMode ||
+                      currentDocument?.editOwnerEditorId !== editor.editorId)
+                  )
+                    return;
+                  const result = await client.executeContextCommand(payload, command);
+                  return result;
+                },
+                onError: (error) => {
+                  console.warn("编辑器菜单操作失败", error);
+                  toastRef.current.error("菜单操作失败");
+                },
+              }),
+            )
+            .catch((error) => {
+              console.warn("无法打开编辑器菜单", error);
+              toastRef.current.error("无法打开编辑器菜单");
+            });
+        },
         onFatal: () => {
           editorStore.getState().setEditorBridgeState(editor.editorId, "failed");
           restartSurface();
@@ -165,6 +228,14 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
     [document.documentId, editor.editorId, identity, onResourceActivated, restartSurface],
   );
   bridgeClientRef.current = bridgeClient;
+
+  useEffect(
+    () =>
+      registerEditorMenuInvalidation(editor.editorId, () => {
+        menuSequenceRef.current += 1;
+      }),
+    [editor.editorId],
+  );
 
   useEffect(() => {
     const receiveMessage = (event: MessageEvent) => {
@@ -176,6 +247,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
     editorStore.getState().setEditorBridgeState(editor.editorId, "loading", identity.generation);
     return () => {
       window.removeEventListener("message", receiveMessage);
+      menuSequenceRef.current += 1;
       bridgeClient.dispose();
       editorStore.getState().setEditorBridgeState(editor.editorId, "detached");
     };

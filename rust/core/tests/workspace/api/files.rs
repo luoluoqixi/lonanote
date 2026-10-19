@@ -74,6 +74,14 @@ async fn assert_file_queries(id: WorkspaceId) {
     )
     .await;
     assert!(exists);
+    let native_path: Option<String> = invoke_json(
+        "workspace.file.native_path",
+        json!({"workspaceId": id, "path": "notes/today.md"}),
+    )
+    .await;
+    let native_path = native_path.expect("Local Provider 应返回本机路径");
+    assert!(std::path::Path::new(&native_path).is_absolute());
+    assert!(native_path.ends_with("notes/today.md"));
 
     let metadata: Value = invoke_json(
         "workspace.file.metadata",

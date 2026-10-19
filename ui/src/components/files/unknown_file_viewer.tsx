@@ -51,13 +51,26 @@ export function UnknownFileViewer() {
           title,
         }}
       />
-      <View style={styles.container}>
-        <Text className="text-muted-foreground text-base">无法预览此文件</Text>
-        <View style={styles.openButton}>
-          <OpenInOtherAppButton isOpening={isOpening} onOpenInOtherApp={openInOtherApp} />
-        </View>
-      </View>
+      <UnknownFileContent filePath={filePath} workspaceId={workspaceId} />
     </>
+  );
+}
+
+export function UnknownFileContent({
+  filePath,
+  workspaceId,
+}: {
+  filePath: string;
+  workspaceId: string;
+}) {
+  const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
+  return (
+    <View style={styles.container}>
+      <Text className="text-muted-foreground text-base">无法预览此文件</Text>
+      <View style={styles.openButton}>
+        <OpenInOtherAppButton isOpening={isOpening} onOpenInOtherApp={openInOtherApp} />
+      </View>
+    </View>
   );
 }
 

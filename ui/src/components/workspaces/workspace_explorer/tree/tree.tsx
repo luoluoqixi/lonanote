@@ -16,7 +16,7 @@ import type {
   WorkspaceTreeRow,
 } from "./tree_types";
 
-const ROW_HEIGHT = isWeb() ? 32 : 44;
+const ROW_HEIGHT = isWeb() ? 30 : 44;
 const rowId = (path: string) => `workspace-tree-${encodeURIComponent(path)}`;
 type Props = {
   ref?: Ref<TreeHandle>;
@@ -25,6 +25,7 @@ type Props = {
   expandedPaths: string[];
   selectedPaths: string[];
   focusedPath: string | null;
+  activePath?: string | null;
   selectionMode: boolean;
   onSelect(path: string, mode: TreeSelectionMode): void;
   onFocus(path: string | null): void;
@@ -40,6 +41,8 @@ function TreeNode({
   expanded,
   selected,
   focused,
+  active,
+  onFocus,
   selectionMode,
   onSelect,
   onActivate,
@@ -50,6 +53,8 @@ function TreeNode({
   expanded: boolean;
   selected: boolean;
   focused: boolean;
+  active: boolean;
+  onFocus: Props["onFocus"];
   selectionMode: boolean;
   onSelect: Props["onSelect"];
   onActivate: Props["onActivate"];
@@ -66,10 +71,12 @@ function TreeNode({
     <View style={styles.rowShell}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <ContextMenu
+          contentSize={isWeb() ? "sm" : "default"}
           triggerProps={{ style: { width: "100%", height: ROW_HEIGHT } }}
           items={frozenItems.current ?? currentMenuItems}
           onOpenWillChange={(open) => {
             if (open) {
+              onFocus(row.path);
               frozenItems.current = currentMenuItems;
               suppressPress.current = true;
             }
@@ -106,7 +113,11 @@ function TreeNode({
                 styles.row,
                 {
                   paddingLeft: 8 + row.depth * 16,
-                  backgroundColor: selected ? theme.muted : "transparent",
+                  backgroundColor: active
+                    ? theme.accent
+                    : selected
+                      ? theme.secondary
+                      : "transparent",
                   borderColor: focused ? theme.primary : "transparent",
                 },
               ]}
@@ -135,18 +146,24 @@ function TreeNode({
               <Text numberOfLines={1} style={[styles.label, { color: theme.foreground }]}>
                 {row.path.split("/").at(-1)}
               </Text>
+              {!isWeb() ? (
+                <Dropdown
+                  items={frozenItems.current ?? currentMenuItems}
+                  trigger={
+                    <Pressable
+                      accessibilityLabel={`${row.path} 更多操作`}
+                      style={styles.more}
+                      onPress={(event) => event.stopPropagation()}
+                    >
+                      <MoreHorizontal size={16} color={theme.mutedForeground} />
+                    </Pressable>
+                  }
+                />
+              ) : null}
             </Pressable>
           }
         />
       </View>
-      <Dropdown
-        items={frozenItems.current ?? currentMenuItems}
-        trigger={
-          <Pressable accessibilityLabel={`${row.path} 更多操作`} style={styles.more}>
-            <MoreHorizontal size={16} color={theme.mutedForeground} />
-          </Pressable>
-        }
-      />
     </View>
   );
 }
@@ -218,7 +235,7 @@ export function WorkspaceTree(props: Props) {
     if (!row) return;
     if (intent.type === "moveFocus") {
       const target = nodes[Math.max(0, Math.min(nodes.length - 1, index + intent.delta))];
-      props.onSelect(target.path, intent.selection);
+      props.onFocus(target.path);
       return;
     }
     if (intent.type === "select") {
@@ -226,6 +243,7 @@ export function WorkspaceTree(props: Props) {
       return;
     }
     if (intent.type === "activate") {
+      props.onSelect(row.path, "replace");
       props.onActivate(row);
       return;
     }
@@ -251,6 +269,7 @@ export function WorkspaceTree(props: Props) {
           props.expandedPaths,
           props.selectedPaths,
           focusedPath,
+          props.activePath,
           props.selectionMode,
           epoch,
         ]}
@@ -266,6 +285,8 @@ export function WorkspaceTree(props: Props) {
               expanded={props.expandedPaths.includes(item.path)}
               selected={props.selectedPaths.includes(item.path)}
               focused={focusedPath === item.path}
+              active={props.activePath === item.path}
+              onFocus={props.onFocus}
               selectionMode={props.selectionMode}
               onSelect={props.onSelect}
               onActivate={props.onActivate}
@@ -297,7 +318,8 @@ const styles = StyleSheet.create({
   rowShell: { height: ROW_HEIGHT, flexDirection: "row", alignItems: "center" },
   row: {
     height: ROW_HEIGHT,
-    flex: 1,
+    flexShrink: 0,
+    width: "100%",
     minWidth: 0,
     flexDirection: "row",
     alignItems: "center",
@@ -305,7 +327,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   label: { flex: 1, fontSize: 13 },
-  chevronSpace: { width: 14 },
+  chevronSpace: { width: 20 },
   more: { width: 28, height: ROW_HEIGHT, alignItems: "center", justifyContent: "center" },
   status: { height: ROW_HEIGHT, justifyContent: "center" },
 });

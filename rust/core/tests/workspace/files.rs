@@ -139,3 +139,27 @@ fn default_index_ignores_metadata() {
         .lines()
         .any(|line| line == ".lonanote"));
 }
+
+#[cfg(unix)]
+#[tokio::test]
+async fn native_path_keeps_provider_symlink_guard_and_open_session_requirement() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let workspace = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "Native Path Guard".into())
+        .await
+        .unwrap();
+    let outside = app.external_dir("outside-native-path");
+    std::fs::write(outside.join("secret.md"), "outside").unwrap();
+    std::os::unix::fs::symlink(
+        &outside,
+        app.managed_workspace_root(&workspace).join("escape"),
+    )
+    .unwrap();
+    assert!(manager
+        .native_path(&workspace.id, &path("escape/secret.md"))
+        .await
+        .is_err());
+    manager.close_workspace(&workspace.id).await.unwrap();
+    assert!(manager.native_path(&workspace.id, &path("")).await.is_err());
+}

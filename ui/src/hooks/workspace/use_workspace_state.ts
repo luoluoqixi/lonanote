@@ -1,6 +1,7 @@
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { type WorkspaceSnapshot, workspace } from "@/api/commands/workspace";
+import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { workspaceSessionStore } from "@/stores/workspace";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
@@ -118,6 +119,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
 
     try {
       await workspace.close(targetWorkspaceId);
+      closeWorkspaceViewerSessions(targetWorkspaceId);
       workspaceExplorerStore.getState().resetWorkspace(targetWorkspaceId);
 
       if (workspaceSessionStore.getCurrentWorkspaceId() === targetWorkspaceId) {

@@ -9,9 +9,11 @@ import {
   type EditorCommand,
   type EditorCommandResult,
   type EditorConsolePayload,
+  type EditorContextMenuPayload,
   type EditorDocumentCapturePayload,
   type EditorDocumentChangedPayload,
   type EditorInitializePayload,
+  type EditorMenuSnapshot,
   type EditorPreferencesUpdatePayload,
   type EditorResourceActivatedPayload,
   type EditorRuntimeUpdatePayload,
@@ -20,6 +22,7 @@ import {
   isEditorBridgeApplyResult,
   isEditorCommandResult,
   isEditorConsolePayload,
+  isEditorContextMenuPayload,
   isEditorDocumentCapturePayload,
   isEditorDocumentChangedPayload,
   isEditorFocusChangedPayload,
@@ -41,6 +44,7 @@ type EditorBridgeClientOptions = {
   onViewportScrollRequested: (payload: EditorViewportScrollPayload) => void;
   onSaveRequested: () => void;
   onResourceActivated: (payload: EditorResourceActivatedPayload) => void;
+  onContextMenu?: (payload: EditorContextMenuPayload) => void;
   onTaskToggled: (checked: boolean) => void;
   onConsole: (payload: EditorConsolePayload) => void;
   onFatal: (message: string) => void;
@@ -164,6 +168,20 @@ export class EditorBridgeClient {
     return result;
   }
 
+  async executeContextCommand(
+    snapshot: EditorMenuSnapshot,
+    command: EditorCommand,
+  ): Promise<EditorCommandResult> {
+    if (!this.#surfaceReady || this.#disposed) throw new Error("Editor surface 当前不可执行菜单");
+    const result = await this.#sendRequestWithResponse(
+      "editor.executeContextCommand",
+      { snapshot, command },
+      CAPTURE_TIMEOUT_MS,
+    );
+    if (!isEditorCommandResult(result)) throw new Error("菜单命令返回无效结果");
+    return result;
+  }
+
   syncRuntime(runtime: EditorRuntimeUpdatePayload): void {
     if (!this.#surfaceReady || this.#disposed) return;
     const runtimeKey = this.#getRuntimeKey(runtime);
@@ -278,6 +296,10 @@ export class EditorBridgeClient {
         return;
       }
       this.#options.onFatal("task.toggled payload 无效");
+      return;
+    }
+    if (event.event === "editor.contextMenu") {
+      if (isEditorContextMenuPayload(event.payload)) this.#options.onContextMenu?.(event.payload);
       return;
     }
     if (event.event === "resource.activated") {

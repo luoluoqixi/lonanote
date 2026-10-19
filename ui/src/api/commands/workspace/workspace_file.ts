@@ -17,6 +17,8 @@ function writeOptions(options?: WriteWorkspaceFileOptions) {
 }
 
 export const workspaceFile = {
+  nativePath: (workspaceId: WorkspaceId, path: WorkspaceRelativePath): Promise<string | null> =>
+    invokeWorkspaceResult("workspace.file.native_path", { workspaceId, path }),
   capabilities: (workspaceId: WorkspaceId): Promise<StorageCapabilities> => {
     return invokeWorkspaceResult("workspace.file.capabilities", { workspaceId });
   },
