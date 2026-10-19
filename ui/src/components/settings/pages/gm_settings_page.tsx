@@ -15,8 +15,10 @@ import { useToast } from "@/hooks/ui";
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
+import { useSettingsPresentation } from "../use_settings_presentation";
 
 export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: SettingsPageProps = {}) {
+  const presentation = useSettingsPresentation();
   const { toast } = useToast();
   const theme = useUiTheme();
   const [isResettingInitialWorkspace, setIsResettingInitialWorkspace] = useState(false);
@@ -104,22 +106,29 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
   };
 
   return (
-    <SettingsList
-      style={{ flex: 1 }}
-      tracksNavigationBarScrollEdge={tracksScrollEdgeHeader}
-    >
-      <NativeListSection title="Runtime">
+    <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksScrollEdgeHeader}>
+      <NativeListSection {...presentation.section} title="Runtime">
         <NativeListButtonItem
+          {...presentation.item}
           disabled={isGettingSystemLocale}
           onPress={getSystemLocale}
           title={isGettingSystemLocale ? "正在获取系统语言…" : "获取当前系统语言"}
         />
-        <NativeListButtonItem onPress={getSystemLocaleSync} title={"同步获取当前系统语言"} />
-        <NativeListButtonItem onPress={isSystemLocaleCNPress} title={"系统语言是否是CN"} />
+        <NativeListButtonItem
+          {...presentation.item}
+          onPress={getSystemLocaleSync}
+          title={"同步获取当前系统语言"}
+        />
+        <NativeListButtonItem
+          {...presentation.item}
+          onPress={isSystemLocaleCNPress}
+          title={"系统语言是否是CN"}
+        />
       </NativeListSection>
 
-      <NativeListSection title="Workspace">
+      <NativeListSection {...presentation.section} title="Workspace">
         <NativeListButtonItem
+          {...presentation.item}
           disabled={isResettingInitialWorkspace}
           onPress={resetInitialWorkspace}
           btnTint={redColor}

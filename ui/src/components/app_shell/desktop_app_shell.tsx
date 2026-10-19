@@ -22,7 +22,6 @@ import { type SettingsPageId, getSettingsPage } from "@/components/settings/sett
 import { TitleBar } from "@/components/window/titlebar";
 import { WorkspaceExplorerForWorkspace } from "@/components/workspaces/workspace_explorer";
 import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select";
-import { useAppBackgroundColors } from "@/hooks/settings";
 import { useWorkbenchDragGuard } from "@/hooks/ui/use_workbench_drag_guard";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
@@ -42,7 +41,6 @@ export function DesktopAppShell() {
   const router = useRouter();
   const pathname = usePathname();
   const desktop = isDesktop();
-  const appBackgroundColors = useAppBackgroundColors();
   const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(DEFAULT_LAYOUT_STATE.visible[1] ?? true);
@@ -68,12 +66,9 @@ export function DesktopAppShell() {
   };
 
   return (
-    <SafeAreaView
-      edges={["top"]}
-      style={[styles.safeArea, { backgroundColor: appBackgroundColors.screen }]}
-    >
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {desktop ? <TitleBar /> : null}
-      <View style={[styles.workspace, { backgroundColor: appBackgroundColors.screen }]}>
+      <View style={[styles.workspace, { backgroundColor: theme.background }]}>
         <SplitLayout vertical>
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
             <SplitLayout
@@ -122,13 +117,17 @@ export function DesktopAppShell() {
                 priority={SplitLayoutPriority.Low}
                 snap
               >
-                <View style={[styles.fullHeight, { backgroundColor: theme.muted }]}>
+                <View style={[styles.fullHeight, { backgroundColor: theme.background }]}>
                   {panel === "explorer" ? (
                     <SidePanel onSelectWorkspace={() => setSelectOpen(true)} />
                   ) : (
                     <View style={styles.sidePanelHeader}>
-                      <Text className="font-semibold">搜索</Text>
-                      <Text className="text-muted-foreground">搜索工作区中的笔记</Text>
+                      <Text style={{ fontSize: 13 }} className="font-semibold">
+                        搜索
+                      </Text>
+                      <Text style={{ fontSize: 12 }} className="text-muted-foreground">
+                        搜索工作区中的笔记
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -186,7 +185,7 @@ function ActivityBar({
       style={[
         styles.activityBar,
         {
-          backgroundColor: theme.muted,
+          backgroundColor: theme.background,
           borderRightColor: theme.border,
           borderRightWidth: StyleSheet.hairlineWidth,
         },
@@ -224,21 +223,28 @@ type ActivityButtonProps = {
 };
 function ActivityButton({ accessibilityLabel, active, icon: Icon, onPress }: ActivityButtonProps) {
   const theme = useUiTheme();
+  const [hovered, setHovered] = useState(false);
   return (
     <Tooltip content={accessibilityLabel} contentProps={{ side: "right" }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         onPress={onPress}
+        onHoverIn={() => setHovered(true)}
+        onHoverOut={() => setHovered(false)}
         style={[
           styles.activityButton,
-          { borderLeftWidth: 2, borderLeftColor: active ? theme.primary : "transparent" },
+          {
+            backgroundColor: hovered ? theme.muted : "transparent",
+            borderLeftWidth: 2,
+            borderLeftColor: active ? theme.primary : "transparent",
+          },
         ]}
       >
         <Icon
           size={22}
           strokeWidth={1.6}
-          color={active ? theme.foreground : theme.mutedForeground}
+          color={active || hovered ? theme.foreground : theme.mutedForeground}
         />
       </Pressable>
     </Tooltip>
@@ -253,8 +259,12 @@ function SidePanel({ onSelectWorkspace }: { onSelectWorkspace: () => void }) {
         <WorkspaceExplorerForWorkspace key={workspaceId} workspaceId={workspaceId} mode="tree" />
       ) : (
         <View style={styles.sidePanelHeader}>
-          <Text className="text-muted-foreground">尚未打开工作区</Text>
-          <Button onPress={onSelectWorkspace}>选择或创建工作区</Button>
+          <Text style={{ fontSize: 13 }} className="text-muted-foreground">
+            尚未打开工作区
+          </Text>
+          <Button size="sm" onPress={onSelectWorkspace}>
+            选择或创建工作区
+          </Button>
         </View>
       )}
     </View>
@@ -268,7 +278,9 @@ function EditorArea() {
 function AssistPanel() {
   return (
     <View style={styles.assistPanel}>
-      <Text className="text-2xl font-semibold">辅助面板</Text>
+      <Text style={{ fontSize: 13 }} className="font-semibold">
+        辅助面板
+      </Text>
     </View>
   );
 }

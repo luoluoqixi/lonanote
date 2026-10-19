@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View } from "react-native";
-import { Button, type SelectHandle, Text, confirmNative } from "rn-ui-kit";
+import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
 import {
   type StorageProviderId,
@@ -20,11 +19,16 @@ import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
 import { chooseScanIdConflictKeeper } from "./scan_id_conflict_dialog";
 import { WorkspaceDetailsSheet } from "./workspace_details_sheet";
-import { type WorkspaceGroupMode, WorkspaceGroupModeSelect } from "./workspace_group";
+import {
+  WORKSPACE_GROUP_MODE_GROUPS,
+  type WorkspaceGroupMode,
+  WorkspaceGroupModeSelect,
+} from "./workspace_group";
 import { WorkspaceSelectHeader } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
 import { WorkspaceSelectionToolbar } from "./workspace_selection_toolbar";
 import {
+  WORKSPACE_SORT_ITEM_GROUPS,
   WorkspaceSortSelect,
   type WorkspaceSortValue,
   isWorkspaceTitleSortValue,
@@ -629,51 +633,59 @@ export function WorkspaceSelectContent({
 
   return (
     <>
-      {embedded ? (
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 8,
-            alignItems: "center",
-            flexWrap: "wrap",
-            padding: 8,
-          }}
-        >
-          <Text className="text-foreground font-semibold">工作区</Text>
-          <Button onPress={openCreateWorkspaceSheet}>创建</Button>
-          <Button onPress={() => workspaceSortSelectRef.current?.open()}>排序</Button>
-          <Button
-            onPress={() => {
-              void scanWorkspaces();
-            }}
-            disabled={isScanningWorkspaces}
-          >
-            扫描
-          </Button>
-        </View>
-      ) : (
-        <WorkspaceSelectHeader
-          areAllWorkspacesSelected={areAllWorkspacesSelected}
-          canSelectWorkspaces={workspaces.length > 0}
-          isGroupModeDisabled={isGroupModeDisabled}
-          isScanningWorkspaces={isScanningWorkspaces}
-          isWorkspaceSelectionMode={isWorkspaceSelectionMode}
-          onCreateWorkspace={openCreateWorkspaceSheet}
-          onFinishWorkspaceSelection={finishWorkspaceSelection}
-          onOpenWorkspaceGroupMode={() => {
-            if (!isGroupModeDisabled) {
-              workspaceGroupModeSelectRef.current?.open();
-            }
-          }}
-          onOpenWorkspaceSort={() => workspaceSortSelectRef.current?.open()}
-          onScanWorkspaces={() => {
-            void scanWorkspaces();
-          }}
-          onToggleSelectAllWorkspaces={toggleSelectAllWorkspaces}
-          onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
-        />
-      )}
+      <WorkspaceSelectHeader
+        embedded={embedded}
+        sortMenuItems={
+          embedded
+            ? WORKSPACE_SORT_ITEM_GROUPS.flatMap((group) =>
+                group.items.map((item) => ({
+                  value: item.value,
+                  label: item.label,
+                  checkbox: true,
+                  selected: item.value === workspaceSortValue,
+                  onPress: () => {
+                    void changeWorkspaceSortValue(item.value as WorkspaceSortValue);
+                  },
+                })),
+              )
+            : undefined
+        }
+        groupMenuItems={
+          embedded
+            ? WORKSPACE_GROUP_MODE_GROUPS.flatMap((group) =>
+                group.items.map((item) => ({
+                  value: item.value,
+                  label: item.label,
+                  checkbox: true,
+                  selected: item.value === effectiveGroupMode,
+                  onPress: () => {
+                    void changeWorkspaceGroupMode(item.value as WorkspaceGroupMode);
+                  },
+                })),
+              )
+            : undefined
+        }
+        areAllWorkspacesSelected={areAllWorkspacesSelected}
+        canSelectWorkspaces={workspaces.length > 0}
+        isGroupModeDisabled={isGroupModeDisabled}
+        isScanningWorkspaces={isScanningWorkspaces}
+        isWorkspaceSelectionMode={isWorkspaceSelectionMode}
+        onCreateWorkspace={openCreateWorkspaceSheet}
+        onFinishWorkspaceSelection={finishWorkspaceSelection}
+        onOpenWorkspaceGroupMode={() => {
+          if (!isGroupModeDisabled) {
+            workspaceGroupModeSelectRef.current?.open();
+          }
+        }}
+        onOpenWorkspaceSort={() => workspaceSortSelectRef.current?.open()}
+        onScanWorkspaces={() => {
+          void scanWorkspaces();
+        }}
+        onToggleSelectAllWorkspaces={toggleSelectAllWorkspaces}
+        onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
+      />
       <WorkspaceSelectList
+        embedded={embedded}
         groupMode={effectiveGroupMode}
         hasError={hasError}
         isDeletingWorkspace={isDeletingWorkspace}

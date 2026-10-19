@@ -12,6 +12,7 @@ import type { DesktopWindowState } from "@/stores/ui";
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
+import { useSettingsPresentation } from "../use_settings_presentation";
 
 function runSettingsAction(scope: string, action: Promise<unknown>) {
   void action.catch((error) => {
@@ -38,16 +39,16 @@ function formatWindowStateSummary(windowState: DesktopWindowState | null): strin
 export function WindowSettingsPage({
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
+  const presentation = useSettingsPresentation();
   const { preferences, updateAndSave } = useUiPreferences();
 
   return (
-    <SettingsList
-      style={{ flex: 1 }}
-      tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
-    >
-      <NativeListSection title="启动行为">
+    <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
+      <NativeListSection {...presentation.section} title="启动行为">
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: preferences.window.restoreWindowState,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -66,14 +67,17 @@ export function WindowSettingsPage({
         />
       </NativeListSection>
 
-      <NativeListSection>
-        <NativeListCustomItem>
+      <NativeListSection {...presentation.section}>
+        <NativeListCustomItem {...presentation.item}>
           <View style={styles.row}>
             <View style={styles.rowText}>
-              <Text className="text-base font-medium">
+              <Text className="font-medium" style={{ fontSize: presentation.compact ? 13 : 16 }}>
                 最近保存的窗口状态
               </Text>
-              <Text className="text-sm text-foreground/60" style={{ userSelect: "text" }}>
+              <Text
+                className="text-sm text-foreground/60"
+                style={{ userSelect: "text", fontSize: presentation.compact ? 12 : 14 }}
+              >
                 {formatWindowStateSummary(preferences.window.lastWindowState)}
               </Text>
             </View>

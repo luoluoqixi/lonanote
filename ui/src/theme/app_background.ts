@@ -31,7 +31,7 @@ export function getStandardAppBackgroundColors(
 
 export const WORKBENCH_BACKGROUND_COLORS: AppBackgroundColorsConfig = {
   false: {
-    light: { screen: "#F3F3F3", sheet: "#F3F3F3", card: "#FFFFFF", header: "#F3F3F3" },
-    dark: { screen: "#252526", sheet: "#252526", card: "#1E1E1E", header: "#252526" },
+    light: { screen: "#FFFFFF", sheet: "#FFFFFF", card: "#F6F6F7", header: "#FFFFFF" },
+    dark: { screen: "#1E1E1E", sheet: "#1E1E1E", card: "#252526", header: "#1E1E1E" },
   },
 };

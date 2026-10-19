@@ -8,7 +8,7 @@ type WorkspaceSortField = "modified-at" | "last-opened" | "created-at" | "title"
 export type WorkspaceSortDirection = "ascending" | "descending";
 export type WorkspaceSortValue = WorkspaceSelectSortSetting;
 
-const WORKSPACE_SORT_ITEM_GROUPS: SelectItemGroupData[] = [
+export const WORKSPACE_SORT_ITEM_GROUPS = [
   {
     items: [
       { label: "最近修改（默认）", value: "modified-at-desc" },
@@ -37,7 +37,7 @@ const WORKSPACE_SORT_ITEM_GROUPS: SelectItemGroupData[] = [
     ],
     key: "title",
   },
-];
+] satisfies SelectItemGroupData[];
 
 type WorkspaceSortSelectProps = {
   onOpenChange: (open: boolean) => void;

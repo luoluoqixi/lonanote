@@ -1,4 +1,4 @@
-﻿import {
+import {
   NativeListItem,
   NativeListSection,
   NativeListSelectItem,
@@ -11,6 +11,7 @@ import { useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
+import { useSettingsPresentation } from "../use_settings_presentation";
 
 /* eslint-disable quote-props */
 
@@ -43,6 +44,7 @@ function updateSettingsSection<K extends keyof GlobalSettings>(
 export function GlobalSettingsPage({
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
+  const presentation = useSettingsPresentation();
   const {
     error: globalSettingsError,
     isLoading: isGlobalSettingsLoading,
@@ -56,17 +58,20 @@ export function GlobalSettingsPage({
   return (
     <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
       {isLoading || error ? (
-        <NativeListSection title="状态">
+        <NativeListSection {...presentation.section} title="状态">
           <NativeListItem
+            {...presentation.item}
             title={error ? "设置加载失败" : "正在加载设置"}
             value={error ?? undefined}
           />
         </NativeListSection>
       ) : null}
 
-      <NativeListSection title="应用行为">
+      <NativeListSection {...presentation.section} title="应用行为">
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: settings.app.autoCheckUpdate,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -83,7 +88,9 @@ export function GlobalSettingsPage({
           title="自动检查更新"
         />
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: settings.app.autoOpenLastWorkspace,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -101,9 +108,11 @@ export function GlobalSettingsPage({
         />
       </NativeListSection>
 
-      <NativeListSection title="UI">
+      <NativeListSection {...presentation.section} title="UI">
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: uiPreferences.preferences.workspaceExplorer.foldersFirst,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -121,7 +130,9 @@ export function GlobalSettingsPage({
           title="文件夹置顶"
         />
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: uiPreferences.preferences.workspaceExplorer.showFloatingToolbar,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -140,9 +151,11 @@ export function GlobalSettingsPage({
         />
       </NativeListSection>
 
-      <NativeListSection title="编辑器">
+      <NativeListSection {...presentation.section} title="编辑器">
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: settings.editorDefaults.autoSaveOnFocusChange,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -159,7 +172,9 @@ export function GlobalSettingsPage({
           title="失焦时自动保存"
         />
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: settings.editorDefaults.showLineNumber,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -176,7 +191,9 @@ export function GlobalSettingsPage({
           title="显示行号"
         />
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: settings.editorDefaults.disableLineWrap,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -193,7 +210,9 @@ export function GlobalSettingsPage({
           title="禁用自动换行"
         />
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: settings.editorDefaults.sourceMode,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -210,7 +229,9 @@ export function GlobalSettingsPage({
           title="源码模式"
         />
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: settings.editorDefaults.autoSave,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -227,7 +248,9 @@ export function GlobalSettingsPage({
           title="自动保存"
         />
         <NativeListSelectItem
+          {...presentation.item}
           selectProps={{
+            ...presentation.select,
             "aria-label": "自动保存间隔",
             onValueChange: (nextValue) => {
               if (nextValue == null) return;

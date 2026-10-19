@@ -1,4 +1,4 @@
-﻿/* eslint-disable quote-props */
+/* eslint-disable quote-props */
 import {
   BrightnessSlider,
   HueSlider,
@@ -25,6 +25,7 @@ import {
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
+import { useSettingsPresentation } from "../use_settings_presentation";
 
 function runSettingsAction(scope: string, action: Promise<unknown>) {
   void action.catch((error) => {
@@ -36,6 +37,7 @@ export function AppearanceSettingsPage({
   onLayoutModeChange,
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
+  const presentation = useSettingsPresentation();
   const colorSchemeSettings = useColorSchemeSettings();
   const { layoutMode, setLayoutMode } = useLayoutMode();
   const uiPreferences = useUiPreferences();
@@ -72,17 +74,20 @@ export function AppearanceSettingsPage({
   return (
     <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
       {isLoading || error ? (
-        <NativeListSection title="状态">
+        <NativeListSection {...presentation.section} title="状态">
           <NativeListItem
+            {...presentation.item}
             title={error ? "外观设置加载失败" : "正在加载外观设置"}
             value={error ?? undefined}
           />
         </NativeListSection>
       ) : null}
 
-      <NativeListSection title="主题">
+      <NativeListSection {...presentation.section} title="主题">
         <NativeListSelectItem
+          {...presentation.item}
           selectProps={{
+            ...presentation.select,
             "aria-label": "主题",
             onValueChange: (nextValue: string | null) => {
               if (nextValue == null) return;
@@ -105,6 +110,7 @@ export function AppearanceSettingsPage({
         />
         {isCustomAccentColor(currentAccentColor) ? (
           <NativeListColorPickerItem
+            {...presentation.item}
             color={customAccentColor}
             colorPickerProps={{
               adaptSpectrum: true,
@@ -143,7 +149,9 @@ export function AppearanceSettingsPage({
           />
         ) : null}
         <NativeListSelectItem
+          {...presentation.item}
           selectProps={{
+            ...presentation.select,
             "aria-label": "主题模式",
             onValueChange: (nextValue: string | null) => {
               if (nextValue == null) return;
@@ -159,7 +167,9 @@ export function AppearanceSettingsPage({
           title="主题模式"
         />
         <NativeListSwitchItem
+          {...presentation.item}
           switchProps={{
+            ...presentation.switch,
             checked: uiPreferences.preferences.appearance.backgroundFollowsTheme,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
@@ -178,9 +188,11 @@ export function AppearanceSettingsPage({
         />
       </NativeListSection>
 
-      <NativeListSection title="界面布局">
+      <NativeListSection {...presentation.section} title="界面布局">
         <NativeListSelectItem
+          {...presentation.item}
           selectProps={{
+            ...presentation.select,
             "aria-label": "界面布局",
             onValueChange: (nextValue: string | null) => {
               if (nextValue !== "desktop" && nextValue !== "mobile") return;

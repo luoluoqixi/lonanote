@@ -18,7 +18,7 @@ export type WorkspaceSelectSection = {
   workspaces: WorkspaceListItem[];
 };
 
-const WORKSPACE_GROUP_MODE_GROUPS: SelectItemGroupData[] = [
+export const WORKSPACE_GROUP_MODE_GROUPS = [
   {
     key: "group-mode",
     items: [
@@ -27,7 +27,7 @@ const WORKSPACE_GROUP_MODE_GROUPS: SelectItemGroupData[] = [
       { label: "不分组", value: "none" },
     ],
   },
-];
+] satisfies SelectItemGroupData[];
 
 function isWorkspaceGroupMode(value: string | null): value is WorkspaceGroupMode {
   return value === "date" || value === "storage" || value === "none";

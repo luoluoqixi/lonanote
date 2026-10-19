@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { useUiTheme } from "rn-ui-kit";
 
 import { isWeb, os } from "@/api/common";
 import { TITLE_HEIGHT, getAppTitle } from "@/config";
@@ -19,6 +20,7 @@ const TitleLeft = () => {
 };
 
 const TitleCenter = () => {
+  const theme = useUiTheme();
   const [title, setTitle] = useState("");
 
   useEffect(() => {
@@ -30,7 +32,7 @@ const TitleCenter = () => {
   }, []);
   return (
     <View {...tauriDragRegionProps} style={styles.titleCenter}>
-      <Text {...tauriDragRegionProps} style={styles.titleText}>
+      <Text {...tauriDragRegionProps} style={[styles.titleText, { color: theme.foreground }]}>
         {title}
       </Text>
     </View>
@@ -58,13 +60,21 @@ const TitleBar = () => {
   const platform = os();
   const isMac = platform === "macos";
   const separatorColor = useSeparatorColor();
+  const theme = useUiTheme();
 
   return (
     <>
       <TitleBarDragOverlay />
       <View
         {...tauriDragRegionProps}
-        style={[styles.titlebar, { borderBottomColor: separatorColor, height: TITLE_HEIGHT }]}
+        style={[
+          styles.titlebar,
+          {
+            backgroundColor: theme.background,
+            borderBottomColor: separatorColor,
+            height: TITLE_HEIGHT,
+          },
+        ]}
       >
         <TitleLeft />
         <TitleCenter />
@@ -127,7 +137,6 @@ const styles = StyleSheet.create({
   },
   titleText: {
     alignContent: "center",
-    color: "color-mix(in srgb, var(--foreground) 85%, transparent)",
     fontSize: 14,
     fontWeight: "500",
     height: "100%",

@@ -6,6 +6,7 @@ import { useUiPreferences } from "@/hooks/settings";
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
+import { useSettingsPresentation } from "../use_settings_presentation";
 
 function runSettingsAction(scope: string, action: Promise<unknown>) {
   void action.catch((error) => {
@@ -18,6 +19,7 @@ export function DeveloperSettingsPage({
   onOpenGmSheet,
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
+  const presentation = useSettingsPresentation();
   const router = useRouter();
   const { preferences, updateAndSave } = useUiPreferences();
 
@@ -27,9 +29,11 @@ export function DeveloperSettingsPage({
         style={{ flex: 1 }}
         tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
       >
-        <NativeListSection title="设置">
+        <NativeListSection {...presentation.section} title="设置">
           <NativeListSwitchItem
+            {...presentation.item}
             switchProps={{
+              ...presentation.switch,
               checked: preferences.developer.optionsEnabled,
               onCheckedChange: (nextValue) => {
                 runSettingsAction(
@@ -48,8 +52,9 @@ export function DeveloperSettingsPage({
           />
         </NativeListSection>
 
-        <NativeListSection title="调试">
+        <NativeListSection {...presentation.section} title="调试">
           <NativeListNavigationItem
+            {...presentation.item}
             onPress={() => {
               if (isWeb() && onOpenDebugSheet != null) {
                 onOpenDebugSheet();
@@ -61,6 +66,7 @@ export function DeveloperSettingsPage({
             title="UI 组件调试"
           />
           <NativeListNavigationItem
+            {...presentation.item}
             onPress={() => {
               if (isWeb() && onOpenGmSheet != null) {
                 onOpenGmSheet();

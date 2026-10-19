@@ -12,7 +12,7 @@ import {
 } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Button, type SelectHandle, Tooltip, confirmNative, useUiTheme } from "rn-ui-kit";
+import { Button, Dropdown, type SelectHandle, Tooltip, confirmNative, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
@@ -22,7 +22,7 @@ import {
   workspaceFile,
 } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, getFileName } from "@/api/common";
-import { isDesktop } from "@/api/common/platform";
+import { isDesktop, isWeb } from "@/api/common/platform";
 import { useEditorSession } from "@/hooks/editor";
 import { useLayoutMode } from "@/hooks/layout";
 import { useMediaNavigation } from "@/hooks/media";
@@ -44,7 +44,9 @@ import type { TreeHandle, TreeSelectionMode, WorkspaceTreeNodeRow } from "./tree
 import { WorkspaceEntryDetailsSheet } from "./workspace_entry_details_sheet";
 import { createWorkspaceExplorerMenu } from "./workspace_explorer_menu";
 import {
+  WORKSPACE_EXPLORER_SORT_GROUPS,
   WorkspaceExplorerSortSelect,
+  isWorkspaceExplorerSortValue,
   sortWorkspaceExplorerEntries,
 } from "./workspace_explorer_sort";
 
@@ -392,6 +394,13 @@ export function WorkspaceTreeHost({
       setBusy(false);
     }
   }
+  const changeSort = (value: string) => {
+    if (!isWorkspaceExplorerSortValue(value)) return;
+    void updateAndSave((p) => ({
+      ...p,
+      workspaceExplorer: { ...p.workspaceExplorer, sortValue: value },
+    })).catch(() => toast.error("保存排序失败"));
+  };
   return (
     <View style={styles.root}>
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
@@ -399,6 +408,32 @@ export function WorkspaceTreeHost({
           {workspaceState?.displayName ?? "资源浏览器"}
         </Text>
         <View style={styles.headerActions}>
+          {isWeb() ? (
+            <Dropdown
+              contentSize="sm"
+              contentProps={{ align: "end" }}
+              items={WORKSPACE_EXPLORER_SORT_GROUPS.flatMap((group) =>
+                group.items.map((item) => ({
+                  value: item.value,
+                  label: item.label,
+                  checkbox: true,
+                  selected: item.value === preferences.workspaceExplorer.sortValue,
+                  onPress: () => changeSort(item.value),
+                })),
+              )}
+              trigger={
+                <Button
+                  aria-label="排序"
+                  variant="icon"
+                  size="xs"
+                  buttonSize={{ width: 24, height: 28 }}
+                  style={{ minWidth: 24, minHeight: 28, padding: 0 }}
+                >
+                  <ArrowDownWideNarrow size={15} strokeWidth={1.6} color={theme.mutedForeground} />
+                </Button>
+              }
+            />
+          ) : null}
           {(
             [
               ["排序", ArrowDownWideNarrow, () => sort.current?.open(), false],
@@ -412,21 +447,23 @@ export function WorkspaceTreeHost({
               ["刷新", RefreshCw, refresh, false],
               ["全部折叠", ChevronsDownUp, explorer.collapseAll, false],
             ] as const
-          ).map(([label, Icon, onPress, disabled]) => (
-            <Tooltip key={label} content={label}>
-              <Button
-                aria-label={label}
-                variant="icon"
-                size="xs"
-                buttonSize={{ width: 24, height: 28 }}
-                style={{ minWidth: 24, minHeight: 28, padding: 0 }}
-                disabled={disabled}
-                onPress={onPress}
-              >
-                <Icon size={15} strokeWidth={1.6} color={theme.mutedForeground} />
-              </Button>
-            </Tooltip>
-          ))}
+          )
+            .filter(([label]) => !isWeb() || label !== "排序")
+            .map(([label, Icon, onPress, disabled]) => (
+              <Tooltip key={label} content={label}>
+                <Button
+                  aria-label={label}
+                  variant="icon"
+                  size="xs"
+                  buttonSize={{ width: 24, height: 28 }}
+                  style={{ minWidth: 24, minHeight: 28, padding: 0 }}
+                  disabled={disabled}
+                  onPress={onPress}
+                >
+                  <Icon size={15} strokeWidth={1.6} color={theme.mutedForeground} />
+                </Button>
+              </Tooltip>
+            ))}
         </View>
       </View>
       {explorer.selectionMode ? (
@@ -472,12 +509,7 @@ export function WorkspaceTreeHost({
       <WorkspaceExplorerSortSelect
         selectRef={sort}
         value={preferences.workspaceExplorer.sortValue}
-        onValueChange={(value) => {
-          void updateAndSave((p) => ({
-            ...p,
-            workspaceExplorer: { ...p.workspaceExplorer, sortValue: value },
-          })).catch(() => toast.error("保存排序失败"));
-        }}
+        onValueChange={changeSort}
       />
       <CreateWorkspaceEntrySheet
         open={Boolean(create && create.epoch === explorer.epoch)}

@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, FileText, Folder, MoreHorizontal } from "lucide-react-native";
-import { type Ref, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View, VirtualizedList } from "react-native";
 import { ContextMenu, type ContextMenuItemData, Dropdown, Spinner, useUiTheme } from "rn-ui-kit";
 
@@ -62,6 +62,7 @@ function TreeNode({
   menuItems: Props["menuItems"];
 }) {
   const theme = useUiTheme();
+  const [hovered, setHovered] = useState(false);
   const suppressPress = useRef(false);
   const frozenItems = useRef<ContextMenuItemData[] | null>(null);
   const currentMenuItems = menuItems(row.path);
@@ -90,6 +91,8 @@ function TreeNode({
               nativeID={rowId(row.path)}
               accessibilityLabel={row.entry.path.split("/").at(-1)}
               accessibilityState={{ selected, ...(folder ? { expanded } : {}) }}
+              onHoverIn={() => setHovered(true)}
+              onHoverOut={() => setHovered(false)}
               onPressIn={() => {
                 suppressPress.current = false;
               }}
@@ -117,7 +120,9 @@ function TreeNode({
                     ? theme.accent
                     : selected
                       ? theme.secondary
-                      : "transparent",
+                      : hovered
+                        ? theme.muted
+                        : "transparent",
                   borderColor: focused ? theme.primary : "transparent",
                 },
               ]}

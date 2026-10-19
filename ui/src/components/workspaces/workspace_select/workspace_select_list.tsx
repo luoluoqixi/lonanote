@@ -13,12 +13,14 @@ import {
 } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
-import { isAndroid } from "@/api/common";
+import { isAndroid, isWeb } from "@/api/common";
+import { useLayoutMode } from "@/hooks/layout";
 
 import { type WorkspaceGroupMode, groupWorkspaces } from "./workspace_group";
 import { type WorkspaceSortValue, getWorkspaceSubtitle } from "./workspace_sort";
 
 type WorkspaceSelectListProps = {
+  embedded?: boolean;
   hasError: boolean;
   groupMode: WorkspaceGroupMode;
   isDeletingWorkspace: boolean;
@@ -50,6 +52,7 @@ function WorkspaceSelectStatus({ message }: { message: string }) {
 }
 
 export function WorkspaceSelectList({
+  embedded = false,
   hasError,
   groupMode,
   isDeletingWorkspace,
@@ -72,6 +75,9 @@ export function WorkspaceSelectList({
   workspaces,
 }: WorkspaceSelectListProps) {
   const theme = useUiTheme();
+  const { layoutMode } = useLayoutMode();
+  const desktop = layoutMode === "desktop";
+  const compact = desktop && isWeb();
   const insets = useSafeAreaInsets();
   const accentColor = theme.primary as ComponentProps<typeof Folder>["color"];
   const statusMessage = isLoading
@@ -81,13 +87,25 @@ export function WorkspaceSelectList({
       : workspaces.length === 0
         ? "暂无工作区"
         : null;
-  const showCreateWorkspaceButton = !isLoading && !hasError;
+  const showCreateWorkspaceButton = !embedded && !isLoading && !hasError;
   const isInteractionDisabled =
     isOpeningWorkspace || isScanningWorkspaces || isDeletingWorkspace || isUpdatingWorkspace;
   const sections = groupWorkspaces(workspaces, groupMode, sortValue);
 
   return (
     <NativeList
+      backgroundColor={desktop ? theme.background : undefined}
+      listStyleOptions={
+        desktop
+          ? {
+              rowBackgroundColor: theme.muted,
+              showBorder: true,
+              borderColor: theme.border,
+              sectionShadow: false,
+              borderRadius: 6,
+            }
+          : undefined
+      }
       automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
       basicScrollViewProps={
         isAndroid()
@@ -111,7 +129,12 @@ export function WorkspaceSelectList({
         </NativeListSection>
       ) : (
         sections.map((section) => (
-          <NativeListSection key={section.id} title={section.title} disabledStyle={false}>
+          <NativeListSection
+            key={section.id}
+            title={section.title}
+            titleFontSize={compact ? 12 : undefined}
+            disabledStyle={false}
+          >
             {section.workspaces.map((workspaceItem) => (
               <NativeListNavigationItem
                 contextMenuProps={{
@@ -136,17 +159,19 @@ export function WorkspaceSelectList({
                   ],
                 }}
                 disabled={isInteractionDisabled}
-                icon={<Folder color={accentColor} fill={theme.primary} size={24} />}
+                icon={<Folder color={accentColor} fill={theme.primary} size={compact ? 20 : 24} />}
                 iconColor={theme.primary}
-                iconSize={24}
-                iconSlotWidth={30}
+                iconSize={compact ? 20 : 24}
+                iconSlotWidth={compact ? 26 : 30}
                 key={workspaceItem.id}
                 nativeScrollId={workspaceItem.id}
                 onPress={() => onWorkspacePress(workspaceItem.id)}
                 sfSymbol="folder.fill"
                 subtitle={getWorkspaceSubtitle(workspaceItem, sortValue)}
                 title={workspaceItem.displayName}
-                titleFontSize={16}
+                titleFontSize={compact ? 13 : 16}
+                subtitleFontSize={compact ? 12 : undefined}
+                paddingVertical={compact ? 8 : undefined}
                 iosNavigationSelection={false}
                 basicNavigationSelection={false}
               />

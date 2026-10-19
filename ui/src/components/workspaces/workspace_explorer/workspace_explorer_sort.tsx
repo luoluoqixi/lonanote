@@ -7,7 +7,7 @@ import type { WorkspaceExplorerGroupModeSetting, WorkspaceExplorerSortSetting } 
 export type WorkspaceExplorerSortValue = WorkspaceExplorerSortSetting;
 export type WorkspaceExplorerGroupMode = WorkspaceExplorerGroupModeSetting;
 
-const WORKSPACE_EXPLORER_SORT_GROUPS: SelectItemGroupData[] = [
+export const WORKSPACE_EXPLORER_SORT_GROUPS = [
   {
     key: "modified-at",
     items: [
@@ -29,7 +29,7 @@ const WORKSPACE_EXPLORER_SORT_GROUPS: SelectItemGroupData[] = [
       { label: "名称：Z–A", value: "nameRev" },
     ],
   },
-];
+] satisfies SelectItemGroupData[];
 
 const WORKSPACE_EXPLORER_GROUP_MODE_GROUPS: SelectItemGroupData[] = [
   {
@@ -41,7 +41,9 @@ const WORKSPACE_EXPLORER_GROUP_MODE_GROUPS: SelectItemGroupData[] = [
   },
 ];
 
-function isWorkspaceExplorerSortValue(value: string | null): value is WorkspaceExplorerSortValue {
+export function isWorkspaceExplorerSortValue(
+  value: string | null,
+): value is WorkspaceExplorerSortValue {
   return (
     value === "name" ||
     value === "nameRev" ||

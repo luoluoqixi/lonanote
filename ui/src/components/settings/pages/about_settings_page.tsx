@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/ui";
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
+import { useSettingsPresentation } from "../use_settings_presentation";
 
 const DEVELOPER_OPTIONS_TAP_COUNT = 10;
 const DEVELOPER_OPTIONS_ENABLED_TOAST_COOLDOWN_MS = 10_000;
@@ -16,6 +17,7 @@ const GITHUB_REPOSITORY_URL = "https://github.com/luoluoqixi/lonanote";
 export function AboutSettingsPage({
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
+  const presentation = useSettingsPresentation();
   const versionPressCountRef = useRef(0);
   const unlockPendingRef = useRef(false);
   const enabledToastShownAtRef = useRef(0);
@@ -72,13 +74,24 @@ export function AboutSettingsPage({
 
   return (
     <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
-      <NativeListSection title="应用信息">
-        <NativeListItem title="名称" value={getAppHomeTitle()} onPress={() => {}} />
-        <NativeListItem onPress={handleVersionPress} title="版本号" value={`v${getVersion()}`} />
+      <NativeListSection {...presentation.section} title="应用信息">
+        <NativeListItem
+          {...presentation.item}
+          title="名称"
+          value={getAppHomeTitle()}
+          onPress={() => {}}
+        />
+        <NativeListItem
+          {...presentation.item}
+          onPress={handleVersionPress}
+          title="版本号"
+          value={`v${getVersion()}`}
+        />
       </NativeListSection>
 
-      <NativeListSection title="相关链接">
+      <NativeListSection {...presentation.section} title="相关链接">
         <NativeListItem
+          {...presentation.item}
           onPress={() => {
             void openExternalUrl(GITHUB_REPOSITORY_URL).catch((error) => {
               console.error("[about] open GitHub failed", error);

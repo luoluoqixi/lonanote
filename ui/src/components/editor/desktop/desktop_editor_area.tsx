@@ -1,10 +1,10 @@
-import { FilePlus2, FolderOpen, X } from "lucide-react-native";
+import { FilePlus2, FolderOpen } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { AlertDialog, Button, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
-import { isDesktop } from "@/api/common/platform";
+import { isDesktop, isWeb } from "@/api/common/platform";
 import {
   documentRegistry,
   editorInputLeaseCoordinator,
@@ -15,6 +15,9 @@ import { EditorWebView } from "@/components/editor/editor_webview";
 import { WorkspaceFilePreview } from "@/components/files/workspace_file_preview";
 import { useEditorSession } from "@/hooks/editor";
 import { isDocumentDirty } from "@/stores/editor";
+
+import { DesktopEditorTab } from "./desktop_editor_tab";
+import { getEditorTabScrollTarget } from "./editor_tab_scroll";
 
 export function DesktopEditorArea() {
   const theme = useUiTheme();
@@ -36,16 +39,44 @@ export function DesktopEditorArea() {
   const tabBounds = useRef(new Map<string, { x: number; width: number }>());
   const scrollPosition = useRef(0);
   const viewportWidth = useRef(0);
-  const revealTab = useCallback((id: string | null) => {
-    const bounds = id ? tabBounds.current.get(id) : null;
-    if (!bounds) return;
-    const left = scrollPosition.current;
-    const width = viewportWidth.current;
-    if (bounds.x < left) scrollRef.current?.scrollTo({ x: bounds.x, animated: true });
-    else if (bounds.x + bounds.width > left + width)
-      scrollRef.current?.scrollTo({ x: bounds.x + bounds.width - width, animated: true });
+  const tabNodes = useRef(new Map<string, View>());
+  const activeTabId = useRef(activeEditorId);
+  activeTabId.current = activeEditorId;
+  const revealFrame = useRef<number | null>(null);
+  const revealActiveTab = useCallback(() => {
+    if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current);
+    revealFrame.current = requestAnimationFrame(() => {
+      revealFrame.current = null;
+      const id = activeTabId.current;
+      if (!id) return;
+      let bounds = tabBounds.current.get(id);
+      let left = scrollPosition.current;
+      let width = viewportWidth.current;
+      if (isWeb()) {
+        // Web 的布局与 scroll 事件异步到达；直接使用同一帧的实际几何数据。
+        const viewport = scrollRef.current?.getScrollableNode() as HTMLElement | undefined;
+        const tab = tabNodes.current.get(id) as unknown as HTMLElement | undefined;
+        if (!viewport || !tab) return;
+        const tabRect = tab.getBoundingClientRect();
+        const viewportRect = viewport.getBoundingClientRect();
+        left = viewport.scrollLeft;
+        width = viewport.clientWidth;
+        bounds = { x: left + tabRect.left - viewportRect.left, width: tabRect.width };
+      }
+      if (!bounds) return;
+      const target = getEditorTabScrollTarget(bounds, left, width);
+      if (target !== null) {
+        scrollPosition.current = target;
+        scrollRef.current?.scrollTo({ x: target, animated: false });
+      }
+    });
   }, []);
-  useEffect(() => revealTab(activeEditorId), [activeEditorId, revealTab]);
+  useEffect(() => {
+    revealActiveTab();
+    return () => {
+      if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current);
+    };
+  }, [activeEditorId, revealActiveTab]);
   const activeViewer = activeEditorId ? viewersById[activeEditorId] : null;
   const activeEditor = activeEditorId ? editorsById[activeEditorId] : null;
   const activeDocument = activeEditor ? documentsById[activeEditor.documentId] : null;
@@ -157,60 +188,31 @@ export function DesktopEditorArea() {
           contentContainerStyle={{ alignItems: "stretch" }}
           onLayout={(event) => {
             viewportWidth.current = event.nativeEvent.layout.width;
-            revealTab(activeEditorId);
+            revealActiveTab();
           }}
           onScroll={(event) => {
             scrollPosition.current = event.nativeEvent.contentOffset.x;
           }}
           scrollEventThrottle={16}
         >
-          {tabs.map(({ id, title, dirty }) => {
-            const active = id === activeEditorId;
-            return (
-              <Pressable
-                key={id}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                onPress={() => activateEditor(id)}
-                onLayout={(event) => {
-                  tabBounds.current.set(id, event.nativeEvent.layout);
-                  if (active) revealTab(id);
-                }}
-                style={[
-                  styles.tab,
-                  {
-                    backgroundColor: active ? theme.background : theme.muted,
-                    borderTopColor: active ? theme.primary : "transparent",
-                    borderRightColor: theme.border,
-                  },
-                ]}
-              >
-                <Text
-                  numberOfLines={1}
-                  style={[
-                    styles.tabLabel,
-                    { color: active ? theme.foreground : theme.mutedForeground },
-                  ]}
-                >
-                  {title}
-                </Text>
-                {dirty ? (
-                  <View style={[styles.dirtyIndicator, { backgroundColor: theme.foreground }]} />
-                ) : null}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`关闭 ${title}`}
-                  onPress={(event) => {
-                    event.stopPropagation();
-                    requestClose(id);
-                  }}
-                  style={styles.closeTab}
-                >
-                  <X color={theme.mutedForeground} size={14} />
-                </Pressable>
-              </Pressable>
-            );
-          })}
+          {tabs.map(({ id, title, dirty }) => (
+            <DesktopEditorTab
+              key={id}
+              active={id === activeEditorId}
+              dirty={dirty}
+              title={title}
+              onActivate={() => activateEditor(id)}
+              onClose={() => requestClose(id)}
+              viewRef={(node) => {
+                if (node) tabNodes.current.set(id, node);
+                else tabNodes.current.delete(id);
+              }}
+              onLayout={(event) => {
+                tabBounds.current.set(id, event.nativeEvent.layout);
+                revealActiveTab();
+              }}
+            />
+          ))}
         </ScrollView>
       </View>
       {openEditorIds.map((id) => {
@@ -226,7 +228,7 @@ export function DesktopEditorArea() {
               <EditorWebView document={document} editor={view} />
             ) : (
               <View style={styles.emptyState}>
-                <Text style={{ color: theme.mutedForeground }}>
+                <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>
                   {document.loadState === "error"
                     ? (document.loadError ?? "读取文档失败")
                     : "正在打开文档"}
@@ -246,13 +248,17 @@ export function DesktopEditorArea() {
         />
       ) : !activeEditor ? (
         <View style={styles.emptyState}>
-          <Text style={{ color: theme.mutedForeground }}>尚未打开文档</Text>
-          <Button variant="ghost" onPress={() => documentRegistry.openEditor({ kind: "untitled" })}>
+          <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>尚未打开文档</Text>
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={() => documentRegistry.openEditor({ kind: "untitled" })}
+          >
             <FilePlus2 size={16} color={theme.mutedForeground} />
             新建笔记
           </Button>
           {canOpenLooseFile ? (
-            <Button variant="ghost" onPress={() => void openLooseFile()}>
+            <Button size="sm" variant="ghost" onPress={() => void openLooseFile()}>
               <FolderOpen size={16} color={theme.mutedForeground} />
               打开文件
             </Button>
@@ -280,11 +286,6 @@ export function DesktopEditorArea() {
 }
 
 const styles = StyleSheet.create({
-  dirtyIndicator: {
-    borderRadius: 3,
-    height: 6,
-    width: 6,
-  },
   editorSurface: {
     flex: 1,
     minHeight: 0,
@@ -297,23 +298,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     minHeight: 0,
-  },
-  tab: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 6,
-    height: 36,
-    maxWidth: 220,
-    borderTopWidth: 2,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    flexShrink: 0,
-    minWidth: 112,
-    paddingLeft: 10,
-  },
-  closeTab: { width: 26, height: 30, alignItems: "center", justifyContent: "center" },
-  tabLabel: {
-    flex: 1,
-    fontSize: 13,
   },
   tabList: {
     flex: 1,

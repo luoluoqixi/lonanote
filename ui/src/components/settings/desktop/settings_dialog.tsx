@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { Dialog, NativeSheetStack, Tabs } from "rn-ui-kit";
+import { Dialog, NativeSheetStack, Tabs, Text, useUiTheme } from "rn-ui-kit";
 import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
 import { isWeb } from "@/api/common";
@@ -23,8 +23,9 @@ export function DesktopSettingsDialog({
   trigger,
 }: DesktopSettingsDialogProps) {
   const { width, height } = useWindowDimensions();
-  const dialogWidth = Math.max(280, Math.min(960, width - 48));
-  const dialogHeight = Math.max(240, Math.min(720, height - 64));
+  const theme = useUiTheme();
+  const dialogWidth = Math.min(880, width * 0.88);
+  const dialogHeight = Math.min(640, height * 0.8);
   const { preferences } = useUiPreferences();
   const [isDebugSheetOpen, setIsDebugSheetOpen] = useState(false);
   const [isGmSheetOpen, setIsGmSheetOpen] = useState(false);
@@ -66,6 +67,7 @@ export function DesktopSettingsDialog({
         onOpenChange={onOpenChange}
         open={isOpen}
         title="设置"
+        titleProps={{ style: { fontSize: 16 } }}
         trigger={trigger}
         contentProps={{
           style: {
@@ -73,6 +75,8 @@ export function DesktopSettingsDialog({
             width: dialogWidth,
             maxWidth: dialogWidth,
             maxHeight: dialogHeight,
+            padding: 16,
+            backgroundColor: theme.background,
           },
         }}
         content={
@@ -81,17 +85,28 @@ export function DesktopSettingsDialog({
               aria-label="设置页面导航"
               onValueChange={(nextValue) => setSelectedPageId(nextValue as SettingsPageId)}
               orientation="vertical"
+              size="sm"
               style={styles.tabs}
               value={selectedTabId}
             >
               <ScrollView
-                style={styles.navigation}
+                style={[styles.navigation, { width: width < 720 ? 116 : 144 }]}
                 contentContainerStyle={styles.navigationContent}
               >
-                <Tabs.List aria-label="设置页面导航" style={styles.list}>
+                <Tabs.List
+                  aria-label="设置页面导航"
+                  style={{ ...styles.list, backgroundColor: theme.background }}
+                >
                   {desktopPages.map((page) => (
-                    <Tabs.Trigger key={page.id} value={page.id} style={styles.navigationItem}>
-                      {page.title}
+                    <Tabs.Trigger
+                      key={page.id}
+                      value={page.id}
+                      style={{
+                        ...styles.navigationItem,
+                        backgroundColor: selectedTabId === page.id ? theme.muted : theme.background,
+                      }}
+                    >
+                      <Text style={{ fontSize: 13 }}>{page.title}</Text>
                     </Tabs.Trigger>
                   ))}
                 </Tabs.List>

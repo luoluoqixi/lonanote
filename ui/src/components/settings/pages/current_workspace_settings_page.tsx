@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 import { SettingsList } from "../settings_list";
+import { useSettingsPresentation } from "../use_settings_presentation";
 
 const HISTORY_SNAPSHOT_COUNT_OPTIONS: SelectOption[] = [
   { label: "不保留", value: "0" },
@@ -55,6 +56,7 @@ function areSettingsEqual(
 export function CurrentWorkspaceSettingsPage({
   tracksNavigationBarScrollEdge = false,
 }: CurrentWorkspaceSettingsPageProps) {
+  const presentation = useSettingsPresentation();
   const workspaceId = useCurrentWorkspaceId();
   const activeWorkspaceIdRef = useRef(workspaceId);
   const loadRequestIdRef = useRef(0);
@@ -291,8 +293,9 @@ export function CurrentWorkspaceSettingsPage({
       tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
     >
       {isLoading || error ? (
-        <NativeListSection title="状态">
+        <NativeListSection {...presentation.section} title="状态">
           <NativeListItem
+            {...presentation.item}
             title={error ? "工作区设置加载或保存失败" : "正在加载工作区设置"}
             value={error ?? undefined}
           />
@@ -301,10 +304,12 @@ export function CurrentWorkspaceSettingsPage({
 
       {settings ? (
         <>
-          <NativeListSection title="文件浏览">
+          <NativeListSection {...presentation.section} title="文件浏览">
             <NativeListSwitchItem
+              {...presentation.item}
               disabled={isEditingDisabled}
               switchProps={{
+                ...presentation.switch,
                 checked: settings.followGitignore,
                 onCheckedChange: (nextValue) => {
                   updateSettings((currentSettings) => ({
@@ -317,11 +322,17 @@ export function CurrentWorkspaceSettingsPage({
             />
           </NativeListSection>
 
-          <NativeListSection footer="每行一条忽略规则。" title="自定义忽略规则">
+          <NativeListSection
+            {...presentation.section}
+            footer="每行一条忽略规则。"
+            title="自定义忽略规则"
+          >
             <NativeListTextAreaItem
+              {...presentation.item}
               contextMenuProps={createResetContextMenu("customIgnore")}
               disabled={isEditingDisabled}
               textAreaProps={{
+                style: presentation.compact ? { fontSize: 13 } : undefined,
                 onChangeText: (nextValue) => {
                   updateSettings((currentSettings) => ({
                     ...currentSettings,
@@ -334,11 +345,13 @@ export function CurrentWorkspaceSettingsPage({
             />
           </NativeListSection>
 
-          <NativeListSection title="上传">
+          <NativeListSection {...presentation.section} title="上传">
             <NativeListInputItem
+              {...presentation.item}
               contextMenuProps={createResetContextMenu("uploadImagePath")}
               disabled={isEditingDisabled}
               inputProps={{
+                style: presentation.compact ? { fontSize: 13 } : undefined,
                 autoCapitalize: "none",
                 onChangeText: (nextValue) => {
                   updateSettings((currentSettings) => ({
@@ -354,9 +367,11 @@ export function CurrentWorkspaceSettingsPage({
               title="图片目录"
             />
             <NativeListInputItem
+              {...presentation.item}
               contextMenuProps={createResetContextMenu("uploadAttachmentPath")}
               disabled={isEditingDisabled}
               inputProps={{
+                style: presentation.compact ? { fontSize: 13 } : undefined,
                 autoCapitalize: "none",
                 onChangeText: (nextValue) => {
                   updateSettings((currentSettings) => ({
@@ -373,10 +388,16 @@ export function CurrentWorkspaceSettingsPage({
             />
           </NativeListSection>
 
-          <NativeListSection footer="超过数量的历史快照会被清理。" title="历史记录">
+          <NativeListSection
+            {...presentation.section}
+            footer="超过数量的历史快照会被清理。"
+            title="历史记录"
+          >
             <NativeListSelectItem
+              {...presentation.item}
               disabled={isEditingDisabled}
               selectProps={{
+                ...presentation.select,
                 "aria-label": "保留历史快照",
                 onValueChange: (nextValue) => {
                   if (nextValue == null) {
@@ -401,13 +422,15 @@ export function CurrentWorkspaceSettingsPage({
             />
           </NativeListSection>
 
-          <NativeListSection>
+          <NativeListSection {...presentation.section}>
             <NativeListButtonItem
+              {...presentation.item}
               disabled={isEditingDisabled}
               onPress={saveSettings}
               title={isSaving ? "正在保存…" : "保存更改"}
             />
             <NativeListButtonItem
+              {...presentation.item}
               btnTint={destructiveColor}
               disabled={isEditingDisabled}
               onPress={() => {

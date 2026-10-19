@@ -3,16 +3,21 @@ import {
   ArrowDownUp,
   CalendarDays,
   CircleCheck,
+  Ellipsis,
   FolderPlus,
   Search,
   Settings,
 } from "lucide-react-native";
 import { type ComponentProps, useMemo } from "react";
-import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
+import { View } from "react-native";
+import { Button, Dropdown, type DropdownItemData, Text, useUiTheme } from "rn-ui-kit";
 
 import { getSelectionHeaderRightMenuProps } from "@/components/common/header_actions";
 
 type WorkspaceSelectHeaderProps = {
+  embedded?: boolean;
+  sortMenuItems?: DropdownItemData[];
+  groupMenuItems?: DropdownItemData[];
   areAllWorkspacesSelected: boolean;
   canSelectWorkspaces: boolean;
   isGroupModeDisabled: boolean;
@@ -28,6 +33,9 @@ type WorkspaceSelectHeaderProps = {
 };
 
 export function WorkspaceSelectHeader({
+  embedded = false,
+  sortMenuItems,
+  groupMenuItems,
   areAllWorkspacesSelected,
   canSelectWorkspaces,
   isGroupModeDisabled,
@@ -88,7 +96,8 @@ export function WorkspaceSelectHeader({
           ios: { name: "arrow.up.arrow.down" },
         },
         label: "排序方式",
-        onPress: onOpenWorkspaceSort,
+        onPress: sortMenuItems ? undefined : onOpenWorkspaceSort,
+        subMenu: sortMenuItems,
         value: "sort-workspaces",
       },
       {
@@ -99,7 +108,8 @@ export function WorkspaceSelectHeader({
           ios: { name: "calendar" },
         },
         label: "分组方式",
-        onPress: onOpenWorkspaceGroupMode,
+        onPress: groupMenuItems ? undefined : onOpenWorkspaceGroupMode,
+        subMenu: groupMenuItems,
         value: "group-workspaces",
       },
       {
@@ -121,6 +131,8 @@ export function WorkspaceSelectHeader({
     ],
     [
       accentColor,
+      sortMenuItems,
+      groupMenuItems,
       canSelectWorkspaces,
       isGroupModeDisabled,
       isScanningWorkspaces,
@@ -131,6 +143,49 @@ export function WorkspaceSelectHeader({
       onToggleWorkspaceSelectionMode,
     ],
   );
+
+  if (embedded) {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          gap: 8,
+          backgroundColor: theme.background,
+        }}
+      >
+        <Text style={{ fontSize: 14, fontWeight: "600", flex: 1 }}>工作区</Text>
+        {isWorkspaceSelectionMode ? (
+          <>
+            <Button size="sm" variant="ghost" onPress={onToggleSelectAllWorkspaces}>
+              {areAllWorkspacesSelected ? "取消全选" : "全选"}
+            </Button>
+            <Button size="sm" variant="ghost" onPress={onFinishWorkspaceSelection}>
+              完成
+            </Button>
+          </>
+        ) : (
+          <Dropdown
+            contentSize="sm"
+            contentProps={{ align: "end" }}
+            items={menuItems}
+            trigger={
+              <Button
+                size="xs"
+                variant="ghost"
+                accessibilityLabel="工作区操作"
+                style={{ width: 30, height: 30 }}
+              >
+                <Ellipsis size={18} color={theme.foreground} />
+              </Button>
+            }
+          />
+        )}
+      </View>
+    );
+  }
 
   return (
     <Stack.Screen
