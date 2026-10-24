@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Platform, StyleSheet, TextInput } from "react-native";
+import { StyleSheet, type TextInput } from "react-native";
 import {
   NativeList,
   NativeListButtonItem,
@@ -10,7 +10,14 @@ import {
   useAppBackgroundColors,
 } from "rn-ui-kit";
 
+import { isWeb } from "@/api/common";
+
+import { getCreateEntrySelectionEnd } from "./create_workspace_entry_input";
 import { scheduleAfterAnimationFrames } from "./schedule_after_animation_frames";
+
+type WebTextInput = TextInput & {
+  setSelectionRange?: (start: number, end: number) => void;
+};
 
 export type CreateWorkspaceEntryKind = "directory" | "note";
 
@@ -49,13 +56,15 @@ export function CreateWorkspaceEntrySheet({
   };
 
   const handleDidPresent = () => {
-    if (Platform.OS !== "web") {
+    if (!isWeb()) {
       return;
     }
     cancelScheduledFocus();
     cancelScheduledFocusRef.current = scheduleAfterAnimationFrames(() => {
       cancelScheduledFocusRef.current = null;
-      inputRef.current?.focus();
+      const input = inputRef.current as WebTextInput | null;
+      input?.focus();
+      input?.setSelectionRange?.(0, getCreateEntrySelectionEnd(name, isNote));
     }, 2);
   };
 
