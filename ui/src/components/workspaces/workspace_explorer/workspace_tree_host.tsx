@@ -411,7 +411,7 @@ export function WorkspaceTreeHost({
           {isWeb() ? (
             <Dropdown
               contentSize="sm"
-              contentProps={{ align: "start", side: "right", sideOffset: 4 }}
+              contentProps={{ align: "start" }}
               items={WORKSPACE_EXPLORER_SORT_GROUPS.flatMap((group) =>
                 group.items.map((item) => ({
                   value: item.value,
