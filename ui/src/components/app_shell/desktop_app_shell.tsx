@@ -24,6 +24,7 @@ import { WorkspaceExplorerForWorkspace } from "@/components/workspaces/workspace
 import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select";
 import { useWorkbenchDragGuard } from "@/hooks/ui/use_workbench_drag_guard";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
+import { useRevealWorkspacePath } from "@/hooks/workspace/use_reveal_workspace_path";
 
 const LAYOUT_STORAGE_KEY = "lonanote.wideScreenHome.layout";
 const DEFAULT_LAYOUT_STATE = {
@@ -48,6 +49,12 @@ export function DesktopAppShell() {
   const [selectOpen, setSelectOpen] = useState(false);
   const dragGuard = useWorkbenchDragGuard();
   const theme = useUiTheme();
+  const revealPath = useRevealWorkspacePath();
+  const revealInExplorer = async (workspaceId: string, path: string) => {
+    setPanel("explorer");
+    contentLayoutRef.current?.setVisible(1, true);
+    await revealPath(workspaceId, path);
+  };
   const togglePanel = (next: "explorer" | "search") => {
     contentLayoutRef.current?.setVisible(1, panel === next ? !showSidebar : true);
     setPanel(next);
@@ -133,7 +140,7 @@ export function DesktopAppShell() {
                 </View>
               </SplitLayout.Pane>
               <SplitLayout.Pane minSize={20} priority={SplitLayoutPriority.High}>
-                <EditorArea />
+                <DesktopEditorArea onRevealInExplorer={revealInExplorer} />
               </SplitLayout.Pane>
               <SplitLayout.Pane
                 minSize={170}
@@ -269,10 +276,6 @@ function SidePanel({ onSelectWorkspace }: { onSelectWorkspace: () => void }) {
       )}
     </View>
   );
-}
-
-function EditorArea() {
-  return <DesktopEditorArea />;
 }
 
 function AssistPanel() {

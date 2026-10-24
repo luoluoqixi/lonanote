@@ -161,7 +161,7 @@ async function flushDocument(documentId: string): Promise<void> {
 
 export interface DocumentMutationContext {
   capture(): Promise<void>;
-  save(): Promise<void>;
+  save(documentIds?: readonly string[]): Promise<void>;
 }
 
 async function withDocumentMutation<T>(
@@ -183,8 +183,10 @@ async function withDocumentMutation<T>(
         capture: async () => {
           for (const id of ids) await captureLatestDraft(id, true);
         },
-        save: async () => {
-          for (const id of ids) await writeLatestSnapshot(id);
+        save: async (selectedIds = ids) => {
+          if (selectedIds.some((id) => !ids.includes(id)))
+            throw new Error("只能保存当前 mutation 屏障内的文档");
+          for (const id of new Set(selectedIds)) await writeLatestSnapshot(id);
         },
       });
     } finally {

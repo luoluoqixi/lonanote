@@ -362,3 +362,31 @@ test("保存 .gitignore 后刷新共享 Explorer，刷新失败不回退文件�
   expect(isDocumentDirty(editorStore.getState().documentsById[documentId])).toBe(false);
   expect(editorStore.getState().documentsById[documentId].saveState).toBe("idle");
 });
+
+test("mutation 只保存指定的关闭文档，保留共享视图的未保存草稿", async () => {
+  const first = openDocument();
+  const second = editorStore
+    .getState()
+    .openEditor({ kind: "workspaceFile", workspaceId: "workspace", filePath: "second.md" });
+  editorStore
+    .getState()
+    .setDocumentPersistedSnapshot(second.documentId, diskText, {
+      size: diskText.length,
+      modifiedAt,
+    });
+  editorStore.getState().setDocumentLoadState(second.documentId, "ready");
+  editorStore.getState().setDocumentDraft(second.documentId, "共享视图草稿");
+  try {
+    await saveCoordinator.withDocumentMutation(
+      [first.documentId, second.documentId],
+      async (context) => {
+        await context.save([first.documentId]);
+      },
+    );
+    expect(writeText.mock.calls.map((call) => call[1])).toEqual(["note.md"]);
+    expect(isDocumentDirty(editorStore.getState().documentsById[second.documentId])).toBe(true);
+  } finally {
+    saveCoordinator.cancelAutoSave(first.documentId);
+    saveCoordinator.cancelAutoSave(second.documentId);
+  }
+});

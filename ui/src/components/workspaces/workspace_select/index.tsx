@@ -9,6 +9,7 @@ import {
 } from "@/api/commands/workspace";
 import { isSystemLocaleCN, os } from "@/api/common";
 import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
+import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
@@ -70,6 +71,7 @@ export function WorkspaceSelectContent({
   onWorkspaceOpened: () => void;
 }) {
   const { toast } = useToast();
+  const { closeWorkspace, withWorkspaceClose } = useEditorCloseActions();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
@@ -270,11 +272,28 @@ export function WorkspaceSelectContent({
 
     setIsCreatingWorkspace(true);
     try {
-      const createdWorkspace = await workspace.createManaged(storageProviderId, nextDisplayName);
-      setCurrentWorkspaceId(createdWorkspace.id);
+      let createdWorkspace: WorkspaceSnapshot | null = null;
+      const create = async () => {
+        createdWorkspace = await workspace.createManaged(storageProviderId, nextDisplayName);
+        if (currentWorkspaceId) {
+          try {
+            await workspace.close(currentWorkspaceId);
+          } catch (error) {
+            await workspace.close(createdWorkspace.id).catch(() => undefined);
+            throw error;
+          }
+        }
+      };
+      const completed = currentWorkspaceId
+        ? await withWorkspaceClose(currentWorkspaceId, create)
+        : (await create(), true);
+      if (!completed || !createdWorkspace) return;
+      if (currentWorkspaceId) workspaceExplorerStore.getState().resetWorkspace(currentWorkspaceId);
+      const created = createdWorkspace as WorkspaceSnapshot;
+      setCurrentWorkspaceId(created.id);
       setIsCreateWorkspaceSheetOpen(false);
       void refreshWorkspaces();
-      toast.success(`已创建工作区“${createdWorkspace.displayName}”`);
+      toast.success(`已创建工作区“${created.displayName}”`);
     } catch (error) {
       console.error("[workspace-select] create workspace failed", error);
       toast.error(getErrorMessage(error, "创建工作区失败"));
@@ -282,6 +301,8 @@ export function WorkspaceSelectContent({
       setIsCreatingWorkspace(false);
     }
   }, [
+    currentWorkspaceId,
+    withWorkspaceClose,
     displayName,
     isCreatingWorkspace,
     refreshWorkspaces,
@@ -391,8 +412,7 @@ export function WorkspaceSelectContent({
       try {
         for (const workspaceItem of workspaceItems) {
           try {
-            await workspace.close(workspaceItem.id);
-            closeWorkspaceViewerSessions(workspaceItem.id);
+            if (!(await closeWorkspace(workspaceItem.id))) break;
             workspaceExplorerStore.getState().resetWorkspace(workspaceItem.id);
             const removedWorkspace = await workspace.remove(workspaceItem.id, true);
             removedWorkspaceIds.push(workspaceItem.id);
@@ -442,7 +462,14 @@ export function WorkspaceSelectContent({
         setIsDeletingWorkspace(false);
       }
     },
-    [currentWorkspaceId, isDeletingWorkspace, refreshWorkspaces, setCurrentWorkspaceId, toast],
+    [
+      currentWorkspaceId,
+      closeWorkspace,
+      isDeletingWorkspace,
+      refreshWorkspaces,
+      setCurrentWorkspaceId,
+      toast,
+    ],
   );
 
   const sortedWorkspaces = useMemo(
@@ -517,67 +544,84 @@ export function WorkspaceSelectContent({
       let didResetNavigation = false;
 
       try {
-        if (currentWorkspaceId && currentWorkspaceId !== workspaceId) {
-          await workspace.close(currentWorkspaceId);
-          closeWorkspaceViewerSessions(currentWorkspaceId);
-          workspaceExplorerStore.getState().resetWorkspace(currentWorkspaceId);
-          setCurrentWorkspaceId(null);
-        }
-
-        const enterWorkspace = (openedWorkspace: WorkspaceSnapshot) => {
-          setCurrentWorkspaceId(openedWorkspace.id);
+        if (currentWorkspaceId === workspaceId) {
           onWorkspaceOpened();
           didResetNavigation = true;
-        };
-        const openResult = await workspace.openWithDiagnostics(workspaceId);
-        if (openResult.status === "opened") {
-          enterWorkspace(openResult.workspace);
           return;
         }
-        if (openResult.status === "directoryMissing") {
-          const result = await confirmNative({
-            buttons: [
-              { key: "cancel", style: "cancel", text: "取消" },
-              { key: "delete", style: "destructive", text: "删除记录" },
-            ],
-            message:
-              "无法找到此工作区的文件夹。是否从工作区列表中删除这条记录？此操作不会删除任何文件。",
-            title: "工作区文件夹不存在",
-          });
-          if (result === "delete") {
-            await workspace.remove(workspaceId, false);
-            await refreshWorkspaces();
-            toast.success("已删除工作区记录");
+        const openTarget = async (): Promise<WorkspaceSnapshot | null> => {
+          const openResult = await workspace.openWithDiagnostics(workspaceId);
+          if (openResult.status === "opened") {
+            return openResult.workspace;
           }
-          return;
-        }
-
-        const resolution = openResult.manifestIdRegistered
-          ? await confirmNative({
+          if (openResult.status === "directoryMissing") {
+            const result = await confirmNative({
               buttons: [
                 { key: "cancel", style: "cancel", text: "取消" },
-                { key: "generate-new-id", text: "生成新 ID" },
+                { key: "delete", style: "destructive", text: "删除记录" },
               ],
-              message: `当前记录的 ID：${openResult.expectedId}\n文件夹中的 ID：${openResult.actualId}\n\n文件夹中的 ID 已被另一个工作区使用。是否为此文件夹生成新的 ID 并继续进入？`,
-              title: "Workspace ID 已存在",
-            })
-          : await confirmNative({
-              buttons: [
-                { key: "cancel", style: "cancel", text: "取消" },
-                { key: "update-id", text: "更新 ID" },
-              ],
-              message: `当前记录的 ID：${openResult.expectedId}\n文件夹中的 ID：${openResult.actualId}\n\n是否使用文件夹中的 ID 更新工作区记录并继续进入？`,
-              title: "Workspace ID 不匹配",
+              message:
+                "无法找到此工作区的文件夹。是否从工作区列表中删除这条记录？此操作不会删除任何文件。",
+              title: "工作区文件夹不存在",
             });
-        if (resolution !== "update-id" && resolution !== "generate-new-id") {
-          return;
-        }
-        const openedWorkspace = await workspace.resolveIdMismatch(
-          workspaceId,
-          resolution === "generate-new-id" ? "generateNewId" : "useManifestId",
-        );
-        await refreshWorkspaces();
-        enterWorkspace(openedWorkspace);
+            if (result === "delete") {
+              await workspace.remove(workspaceId, false);
+              await refreshWorkspaces();
+              toast.success("已删除工作区记录");
+            }
+            return null;
+          }
+
+          const resolution = openResult.manifestIdRegistered
+            ? await confirmNative({
+                buttons: [
+                  { key: "cancel", style: "cancel", text: "取消" },
+                  { key: "generate-new-id", text: "生成新 ID" },
+                ],
+                message: `当前记录的 ID：${openResult.expectedId}\n文件夹中的 ID：${openResult.actualId}\n\n文件夹中的 ID 已被另一个工作区使用。是否为此文件夹生成新的 ID 并继续进入？`,
+                title: "Workspace ID 已存在",
+              })
+            : await confirmNative({
+                buttons: [
+                  { key: "cancel", style: "cancel", text: "取消" },
+                  { key: "update-id", text: "更新 ID" },
+                ],
+                message: `当前记录的 ID：${openResult.expectedId}\n文件夹中的 ID：${openResult.actualId}\n\n是否使用文件夹中的 ID 更新工作区记录并继续进入？`,
+                title: "Workspace ID 不匹配",
+              });
+          if (resolution !== "update-id" && resolution !== "generate-new-id") {
+            return null;
+          }
+          const openedWorkspace = await workspace.resolveIdMismatch(
+            workspaceId,
+            resolution === "generate-new-id" ? "generateNewId" : "useManifestId",
+          );
+          await refreshWorkspaces();
+          return openedWorkspace;
+        };
+        let opened: WorkspaceSnapshot | null = null;
+        const enter = async () => {
+          opened = await openTarget();
+          if (!opened) return false;
+          if (currentWorkspaceId) {
+            try {
+              await workspace.close(currentWorkspaceId);
+            } catch (error) {
+              await workspace.close(opened.id).catch(() => undefined);
+              throw error;
+            }
+          }
+          return true;
+        };
+        const completed = currentWorkspaceId
+          ? await withWorkspaceClose(currentWorkspaceId, enter)
+          : await enter();
+        if (!completed || !opened) return;
+        if (currentWorkspaceId)
+          workspaceExplorerStore.getState().resetWorkspace(currentWorkspaceId);
+        setCurrentWorkspaceId((opened as WorkspaceSnapshot).id);
+        onWorkspaceOpened();
+        didResetNavigation = true;
       } catch (error) {
         console.error("[workspace-select] open workspace failed", error);
         toast.error(getErrorMessage(error, "打开工作区失败"));
@@ -589,6 +633,7 @@ export function WorkspaceSelectContent({
     },
     [
       currentWorkspaceId,
+      withWorkspaceClose,
       isDeletingWorkspace,
       isOpeningWorkspace,
       isScanningWorkspaces,

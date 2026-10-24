@@ -2,9 +2,9 @@ import { type Href, Redirect, useFocusEffect, useLocalSearchParams, useRouter } 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
-import { type WorkspaceIndexEntry, workspace } from "@/api/commands/workspace";
+import { type WorkspaceIndexEntry } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
-import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
+import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useMediaNavigation } from "@/hooks/media";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
@@ -559,6 +559,7 @@ function DirectoryExplorerForWorkspace({
     [isGroupModeDisabled, toast, updateUiPreferencesAndSave],
   );
 
+  const { closeWorkspace } = useEditorCloseActions();
   const switchWorkspace = useCallback(async () => {
     if (isSwitchingWorkspace) {
       return;
@@ -567,8 +568,10 @@ function DirectoryExplorerForWorkspace({
     setIsSwitchingWorkspace(true);
 
     try {
-      await workspace.close(workspaceId);
-      closeWorkspaceViewerSessions(workspaceId);
+      if (!(await closeWorkspace(workspaceId))) {
+        setIsSwitchingWorkspace(false);
+        return;
+      }
       workspaceExplorerStore.getState().resetWorkspace(workspaceId);
       resetToWorkspaceSelect();
       // 先完成 stack reset，再清理会触发 Redirect 的 workspace session，避免两个
@@ -579,7 +582,14 @@ function DirectoryExplorerForWorkspace({
       toast.error(getErrorMessage(error, "关闭当前工作区失败"));
       setIsSwitchingWorkspace(false);
     }
-  }, [clearCurrentWorkspaceId, isSwitchingWorkspace, resetToWorkspaceSelect, toast, workspaceId]);
+  }, [
+    clearCurrentWorkspaceId,
+    closeWorkspace,
+    isSwitchingWorkspace,
+    resetToWorkspaceSelect,
+    toast,
+    workspaceId,
+  ]);
 
   const finishSelection = useCallback(() => {
     setIsSelectionMode(false);

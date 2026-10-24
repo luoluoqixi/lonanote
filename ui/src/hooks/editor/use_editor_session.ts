@@ -6,6 +6,7 @@ export function useEditorSession() {
   const state = useStore(editorStore);
 
   return {
+    getSnapshot: editorStore.getState,
     viewersById: state.viewersById,
     getDocument: (id: string) => editorStore.getState().documentsById[id],
     closeWorkspaceViewers: state.closeWorkspaceViewers,

@@ -1,7 +1,7 @@
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { type WorkspaceSnapshot, workspace } from "@/api/commands/workspace";
-import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
+import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { workspaceSessionStore } from "@/stores/workspace";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
@@ -27,6 +27,7 @@ export interface UseWorkspaceStateResult {
 }
 
 export function useWorkspaceState(workspaceId: string | null): UseWorkspaceStateResult {
+  const { closeWorkspace, withWorkspaceClose } = useEditorCloseActions();
   const [state, setState] = useState<WorkspaceSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(workspaceId));
@@ -93,7 +94,25 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     commitError(null);
 
     try {
-      const nextState = await workspace.open(nextWorkspaceId);
+      let nextState: WorkspaceSnapshot | null = null;
+      const current = workspaceSessionStore.getCurrentWorkspaceId();
+      const enter = async () => {
+        nextState = await workspace.open(nextWorkspaceId);
+        if (current && current !== nextWorkspaceId) {
+          try {
+            await workspace.close(current);
+          } catch (error) {
+            await workspace.close(nextWorkspaceId).catch(() => undefined);
+            throw error;
+          }
+          workspaceExplorerStore.getState().resetWorkspace(current);
+        }
+      };
+      const completed =
+        current && current !== nextWorkspaceId
+          ? await withWorkspaceClose(current, enter)
+          : (await enter(), true);
+      if (!completed || !nextState) throw new Error("已取消切换工作区");
       workspaceSessionStore.setCurrentWorkspaceId(nextWorkspaceId);
       commitState(nextState);
       return nextState;
@@ -118,8 +137,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     commitError(null);
 
     try {
-      await workspace.close(targetWorkspaceId);
-      closeWorkspaceViewerSessions(targetWorkspaceId);
+      if (!(await closeWorkspace(targetWorkspaceId))) return;
       workspaceExplorerStore.getState().resetWorkspace(targetWorkspaceId);
 
       if (workspaceSessionStore.getCurrentWorkspaceId() === targetWorkspaceId) {
