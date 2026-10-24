@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { isDocumentDirty } from "@/stores/editor";
 
+import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
 import { EditorTabInput } from "./editor_tab_input";
 import {
@@ -270,64 +271,81 @@ export function DesktopEditorArea({
           ))}
         </ScrollView>
       </View>
-      {openEditorIds.map((id) => {
-        const view = editorsById[id];
-        const document = view ? documentsById[view.documentId] : null;
-        if (!view || !document) return null;
-        return (
+      <View style={styles.viewport}>
+        {openEditorIds.map((id) => {
+          const view = editorsById[id];
+          const document = view ? documentsById[view.documentId] : null;
+          if (!view || !document) return null;
+          return (
+            <DesktopEditorSurface
+              key={id}
+              active={activeEditorId === id}
+              backgroundColor={theme.background}
+            >
+              {document.loadState === "ready" ? (
+                <EditorWebView active={activeEditorId === id} document={document} editor={view} />
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>
+                    {document.loadState === "error"
+                      ? (document.loadError ?? "读取文档失败")
+                      : "正在打开文档"}
+                  </Text>
+                </View>
+              )}
+              {!isDesktop() && activeEditorId === id ? (
+                <EditorToolbar document={document} editor={view} />
+              ) : null}
+            </DesktopEditorSurface>
+          );
+        })}
+        {activeViewer ? (
+          <View style={[styles.foregroundSurface, { backgroundColor: theme.background }]}>
+            <WorkspaceFilePreview
+              key={`${activeViewer.viewerId}:${activeViewer.identityRevision}`}
+              viewer={activeViewer}
+            />
+          </View>
+        ) : !activeEditor ? (
           <View
-            key={id}
-            style={[styles.editorSurface, { display: activeEditorId === id ? "flex" : "none" }]}
+            style={[
+              styles.emptyState,
+              styles.foregroundSurface,
+              { backgroundColor: theme.background },
+            ]}
           >
-            {document.loadState === "ready" ? (
-              <EditorWebView document={document} editor={view} />
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>
-                  {document.loadState === "error"
-                    ? (document.loadError ?? "读取文档失败")
-                    : "正在打开文档"}
-                </Text>
-              </View>
-            )}
-            {!isDesktop() && activeEditorId === id ? (
-              <EditorToolbar document={document} editor={view} />
+            <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>尚未打开文档</Text>
+            <Button
+              size="sm"
+              variant="ghost"
+              onPress={() => documentRegistry.openEditor({ kind: "untitled" })}
+            >
+              <FilePlus2 size={16} color={theme.mutedForeground} />
+              新建笔记
+            </Button>
+            {canOpenLooseFile ? (
+              <Button size="sm" variant="ghost" onPress={() => void openLooseFile()}>
+                <FolderOpen size={16} color={theme.mutedForeground} />
+                打开文件
+              </Button>
             ) : null}
           </View>
-        );
-      })}
-      {activeViewer ? (
-        <WorkspaceFilePreview
-          key={`${activeViewer.viewerId}:${activeViewer.identityRevision}`}
-          viewer={activeViewer}
-        />
-      ) : !activeEditor ? (
-        <View style={styles.emptyState}>
-          <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>尚未打开文档</Text>
-          <Button
-            size="sm"
-            variant="ghost"
-            onPress={() => documentRegistry.openEditor({ kind: "untitled" })}
-          >
-            <FilePlus2 size={16} color={theme.mutedForeground} />
-            新建笔记
-          </Button>
-          {canOpenLooseFile ? (
-            <Button size="sm" variant="ghost" onPress={() => void openLooseFile()}>
-              <FolderOpen size={16} color={theme.mutedForeground} />
-              打开文件
-            </Button>
-          ) : null}
-        </View>
-      ) : null}
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  editorSurface: {
+  viewport: {
     flex: 1,
     minHeight: 0,
+    overflow: "hidden",
+  },
+  foregroundSurface: {
+    flex: 1,
+    minHeight: 0,
+    zIndex: 1,
   },
   emptyState: {
     alignItems: "center",

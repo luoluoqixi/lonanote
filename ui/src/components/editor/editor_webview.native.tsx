@@ -31,6 +31,7 @@ import { onError, onHttpError, onLoad, onLoadEnd, onLoadStart } from "./editor_w
 import { resolveEditorSemanticColors } from "./theme/editor_theme";
 
 type EditorWebViewProps = {
+  active?: boolean;
   document: DocumentModel;
   editor: EditorViewSession;
   inputMethodEnabled?: boolean;

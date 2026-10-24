@@ -25,6 +25,7 @@ import { getEditorDevUrl } from "./editor_dev_url";
 import { resolveEditorSemanticColors } from "./theme/editor_theme";
 
 type EditorWebViewProps = {
+  active?: boolean;
   document: DocumentModel;
   editor: EditorViewSession;
   onContentScroll?: (sample: {
@@ -51,7 +52,7 @@ function getEditorPlatform(): EditorPlatform {
   return "web";
 }
 
-export function EditorWebView({ document, editor }: EditorWebViewProps) {
+export function EditorWebView({ active = true, document, editor }: EditorWebViewProps) {
   const { toast } = useToast();
   const toastRef = useRef(toast);
   toastRef.current = toast;
@@ -297,6 +298,7 @@ export function EditorWebView({ document, editor }: EditorWebViewProps) {
   return (
     <iframe
       aria-label="编辑器"
+      tabIndex={active ? 0 : -1}
       key={identity.channelId}
       onError={restartSurface}
       onLoad={() => {
