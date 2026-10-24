@@ -1,6 +1,6 @@
 import { getScrollbarMetrics, scrollTopFromThumb } from "./desktop_scrollbar_geometry";
 
-/** 桌面 iframe 使用 DOM 滚动条，避开 WKWebView 多 iframe 的原生 overlay 绘制丢失。 */
+/** 为需要自定义滚动条的桌面平台提供 DOM 滚动条。 */
 export function createDesktopScrollbar(editorRoot: HTMLElement) {
   const track = document.createElement("div");
   track.className = "desktop-scrollbar";

@@ -542,7 +542,8 @@ function flushPendingDocumentChange(currentSession: SurfaceSession): void {
 
 function applyRuntimeStyles(runtime: EditorRuntimeUpdatePayload): void {
   const editorRoot = getRoot();
-  desktopScrollbar.setEnabled(["macos", "windows", "linux"].includes(runtime.platform));
+  document.documentElement.dataset.platform = runtime.platform;
+  desktopScrollbar.setEnabled(["windows", "linux"].includes(runtime.platform));
   const colors = runtime.colors;
   const variableTarget = document.documentElement.style;
   const colorVariables = {

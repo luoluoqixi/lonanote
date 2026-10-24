@@ -64,6 +64,20 @@ body {
   background: var(--lonanote-editor-canvas);
 }
 
+/* WKWebView 的 iframe 文档滚动条在页签隐藏后可能停止绘制，改由普通元素承载原生滚动。 */
+html[data-platform="macos"],
+html[data-platform="macos"] body {
+  height: 100%;
+  overflow: hidden;
+}
+
+html[data-platform="macos"] #editor {
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 #editor-bottom-safe-area {
   width: 100%;
   height: 0;
@@ -113,13 +127,16 @@ body {
   background-color: var(--lonanote-editor-canvas);
 }
 
-::-webkit-scrollbar-thumb {
+html:not([data-platform="macos"])::-webkit-scrollbar-thumb,
+html:not([data-platform="macos"]) ::-webkit-scrollbar-thumb {
   background: var(--lonanote-editor-scrollbar-thumb);
   border-radius: 999px;
 }
 
-::-webkit-scrollbar-thumb:hover,
-::-webkit-scrollbar-thumb:active {
+html:not([data-platform="macos"])::-webkit-scrollbar-thumb:hover,
+html:not([data-platform="macos"])::-webkit-scrollbar-thumb:active,
+html:not([data-platform="macos"]) ::-webkit-scrollbar-thumb:hover,
+html:not([data-platform="macos"]) ::-webkit-scrollbar-thumb:active {
   background: var(--lonanote-editor-scrollbar-thumb-active);
 }
 
@@ -132,7 +149,7 @@ body {
     var(--lonanote-cm-editor-content-padding-left);
 }
 
-/* 桌面使用独立绘制的滚动条；移动 WebView 保留系统滚动与键盘交互。 */
+/* Windows、Linux 使用独立绘制的滚动条；macOS 和移动 WebView 保留原生滚动条。 */
 html.desktop-scrollbar-enabled {
   scrollbar-width: none;
 }
