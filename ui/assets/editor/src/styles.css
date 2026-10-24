@@ -131,3 +131,49 @@ body {
   padding: 0 var(--lonanote-cm-editor-content-padding-right) 0
     var(--lonanote-cm-editor-content-padding-left);
 }
+
+/* 桌面使用独立绘制的滚动条；移动 WebView 保留系统滚动与键盘交互。 */
+html.desktop-scrollbar-enabled {
+  scrollbar-width: none;
+}
+
+html.desktop-scrollbar-enabled::-webkit-scrollbar {
+  display: none;
+  width: 0;
+}
+
+.desktop-scrollbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: 20;
+  touch-action: none;
+  user-select: none;
+}
+
+.desktop-scrollbar[hidden] {
+  display: none;
+}
+
+.desktop-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  width: 6px;
+  border-radius: 999px;
+  background: var(--lonanote-editor-scrollbar-thumb-active);
+  opacity: 0.55;
+}
+
+.desktop-scrollbar:hover .desktop-scrollbar-thumb,
+.desktop-scrollbar.dragging .desktop-scrollbar-thumb,
+.desktop-scrollbar:focus-visible .desktop-scrollbar-thumb {
+  opacity: 1;
+}
+
+.desktop-scrollbar:focus-visible {
+  outline: 1px solid var(--lonanote-editor-accent);
+  outline-offset: -1px;
+}

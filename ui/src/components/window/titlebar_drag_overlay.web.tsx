@@ -44,6 +44,8 @@ function TitleBarDragOverlay() {
     <div
       aria-hidden="true"
       data-tauri-drag-region=""
+      // Radix 在 document 的 pointerdown 上判定外部点击；Tauri 的 mousedown 继续正常冒泡。
+      onPointerDown={(event) => event.stopPropagation()}
       style={{ ...dragOverlayStyle, height: TITLE_HEIGHT, right: reservedRight }}
     />,
     document.body,

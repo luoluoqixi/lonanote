@@ -30,6 +30,7 @@ import {
   parseEditorBridgeMessage,
 } from "./bridge/protocol";
 import { ANDROID_SELECTION_BOTTOM_OFFSET, EDITOR_MESSAGE_DEDUPLICATION_LIMIT } from "./consts";
+import { createDesktopScrollbar } from "./desktop_scrollbar";
 import { LonaEditor } from "./index";
 import {
   parseEditorResourceReference,
@@ -49,6 +50,7 @@ const bottomSafeArea = document.createElement("div");
 bottomSafeArea.id = "editor-bottom-safe-area";
 bottomSafeArea.setAttribute("aria-hidden", "true");
 document.body.append(bottomSafeArea);
+const desktopScrollbar = createDesktopScrollbar(root);
 
 const TOUCH_CLICK_COORDINATE_MAX_AGE_MS = 1_000;
 const TOUCH_TAP_MAX_MOVEMENT_PX = 12;
@@ -540,6 +542,7 @@ function flushPendingDocumentChange(currentSession: SurfaceSession): void {
 
 function applyRuntimeStyles(runtime: EditorRuntimeUpdatePayload): void {
   const editorRoot = getRoot();
+  desktopScrollbar.setEnabled(["macos", "windows", "linux"].includes(runtime.platform));
   const colors = runtime.colors;
   const variableTarget = document.documentElement.style;
   const colorVariables = {

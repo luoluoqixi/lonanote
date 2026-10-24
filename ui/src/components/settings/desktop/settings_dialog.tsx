@@ -120,34 +120,33 @@ export function DesktopSettingsDialog({
                 ) : null}
               </View>
             </Tabs>
+            {isWeb() ? (
+              <>
+                <RnUiKitDebugPanel
+                  panelSheetProps={{
+                    snapPoints: ["60%"],
+                  }}
+                  onOpenChange={setIsDebugSheetOpen}
+                  open={isDebugSheetOpen}
+                  sheetMode
+                />
+                <NativeSheetStack
+                  name="lonanote-gm-settings-sheet"
+                  onOpenChange={setIsGmSheetOpen}
+                  open={isGmSheetOpen}
+                  overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
+                  sheetProps={{ snapPoints: ["60%"] }}
+                  screenOptions={{ headerShadowVisible: false }}
+                >
+                  <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>
+                    {() => <GmSettingsPage />}
+                  </NativeSheetStack.Screen>
+                </NativeSheetStack>
+              </>
+            ) : null}
           </View>
         }
       />
-
-      {isWeb() ? (
-        <>
-          <RnUiKitDebugPanel
-            panelSheetProps={{
-              snapPoints: ["60%"],
-            }}
-            onOpenChange={setIsDebugSheetOpen}
-            open={isDebugSheetOpen}
-            sheetMode
-          />
-          <NativeSheetStack
-            name="lonanote-gm-settings-sheet"
-            onOpenChange={setIsGmSheetOpen}
-            open={isGmSheetOpen}
-            overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
-            sheetProps={{ snapPoints: ["60%"] }}
-            screenOptions={{ headerShadowVisible: false }}
-          >
-            <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>
-              {() => <GmSettingsPage />}
-            </NativeSheetStack.Screen>
-          </NativeSheetStack>
-        </>
-      ) : null}
     </>
   );
 }

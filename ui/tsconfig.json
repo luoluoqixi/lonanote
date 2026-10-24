@@ -3,6 +3,8 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
+      // 与 Metro 一致，bun link 时也使用应用内已打补丁的 Navigation 类型。
+      "@react-navigation/native-stack": ["./node_modules/@react-navigation/native-stack"],
       "@/*": [
         "./src/*"
       ],

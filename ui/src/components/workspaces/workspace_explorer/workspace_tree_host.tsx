@@ -552,11 +552,10 @@ const styles = StyleSheet.create({
     minHeight: 36,
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 8,
   },
-  heading: { flexGrow: 1, flexShrink: 1, minWidth: 64, fontSize: 12, paddingVertical: 8 },
-  headerActions: { flexDirection: "row", alignItems: "center", marginLeft: "auto" },
+  heading: { flex: 1, minWidth: 0, fontSize: 12, paddingVertical: 8 },
+  headerActions: { flexDirection: "row", alignItems: "center", flexShrink: 0 },
   toolbar: { flexDirection: "row", gap: 4, alignItems: "center", padding: 4, flexWrap: "wrap" },
 });

@@ -158,6 +158,8 @@ export function WorkspaceSelectList({
                     },
                   ],
                 }}
+                hoverBackgroundColor={desktop ? theme.secondary : undefined}
+                pressBackgroundColor={desktop ? theme.accent : undefined}
                 disabled={isInteractionDisabled}
                 icon={<Folder color={accentColor} fill={theme.primary} size={compact ? 20 : 24} />}
                 iconColor={theme.primary}

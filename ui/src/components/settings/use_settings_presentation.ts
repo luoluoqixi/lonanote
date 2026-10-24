@@ -1,3 +1,4 @@
+import { useUiTheme } from "rn-ui-kit";
 import type {
   NativeListItemBaseProps,
   NativeListSectionProps,
@@ -11,12 +12,15 @@ import { useLayoutMode } from "@/hooks/layout";
 /** 桌面设置使用紧凑排版；Native 保持系统控件和触控尺寸。 */
 export function useSettingsPresentation() {
   const { layoutMode } = useLayoutMode();
+  const theme = useUiTheme();
   const compact = isWeb() && layoutMode === "desktop";
   return {
     desktop: layoutMode === "desktop",
     compact,
     item: compact
       ? ({
+          hoverBackgroundColor: theme.secondary,
+          pressBackgroundColor: theme.accent,
           titleFontSize: 13,
           subtitleFontSize: 12,
           valueFontSize: 13,
