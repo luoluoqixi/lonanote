@@ -37,7 +37,7 @@ fn run_cmd(cmd: &Cmd, inherit_stdio: bool) -> anyhow::Result<std::process::Child
 
     let args = cmd.args.as_deref().unwrap_or(EMPTY_ARGS);
 
-    info!("run cmd: {} {}, on {}", command, args.join(" "), &run_dir);
+    info!("run cmd: {} {}, on {}", command, args.join(" "), run_dir);
     if cmd.which_cargo_install.unwrap_or(false) {
         cargo::run_cargo_bin_with_mode(command, run_dir, args, inherit_stdio)
     } else if inherit_stdio {

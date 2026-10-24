@@ -11,10 +11,8 @@ anyhow = { workspace = true }
 chrono = { workspace = true }
 fern = { workspace = true }
 log = { workspace = true }
-libc = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 encoding_rs = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
 ctrlc = { workspace = true }
 kill_tree = { workspace = true }
 colored = { workspace = true }
