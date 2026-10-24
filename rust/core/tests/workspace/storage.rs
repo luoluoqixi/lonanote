@@ -130,7 +130,6 @@ async fn local_open_read_honors_range_contract() {
 #[tokio::test]
 async fn local_atomic_write_and_symlink_guard() {
     let root = TempDir::new().unwrap();
-    // let outside = TempDir::new().unwrap();
     let storage = LocalPathStorage::open(root.path()).unwrap();
     let note = path("note.md");
     storage
@@ -147,6 +146,7 @@ async fn local_atomic_write_and_symlink_guard() {
     {
         use std::os::unix::fs::symlink;
 
+        let outside = TempDir::new().unwrap();
         std::fs::write(outside.path().join("secret.md"), "secret").unwrap();
         symlink(outside.path(), root.path().join("escape")).unwrap();
         let escaped = path("escape/secret.md");
