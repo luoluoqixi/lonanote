@@ -2,12 +2,16 @@ import { type Href, Redirect, Stack, useLocalSearchParams, useRouter } from "exp
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 
 import { workspaceResource } from "@/api/commands/workspace";
-import { detectWorkspaceFileKind, getFileName, isTauri } from "@/api/common";
+import {
+  createWorkspaceResourceEndpoint,
+  detectWorkspaceFileKind,
+  getFileName,
+  isTauri,
+  os,
+} from "@/api/common";
 import { appendWorkspaceResourceUrl } from "@/assets/editor/src/resources/resource_url";
 import { useMediaNavigation } from "@/hooks/media";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
-
-const TAURI_RESOURCE_ENDPOINT = "lonanote-resource://resource";
 
 const containerStyle: CSSProperties = {
   alignItems: "center",
@@ -127,7 +131,7 @@ export function MediaViewer() {
     void workspaceResource
       .acquireScope(workspaceId)
       .then((scope) => {
-        const endpoint = `${TAURI_RESOURCE_ENDPOINT}/${scope.scopeId}/${scope.generation}`;
+        const endpoint = createWorkspaceResourceEndpoint(scope, os());
         const nextUrls = Object.fromEntries(
           mediaPaths.map((mediaPath) => {
             const url = appendWorkspaceResourceUrl(endpoint, mediaPath);

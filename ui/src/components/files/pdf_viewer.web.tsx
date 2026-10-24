@@ -4,10 +4,8 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Text } from "rn-ui-kit";
 
 import { workspaceResource } from "@/api/commands/workspace";
-import { getFileName, isTauri } from "@/api/common";
+import { createWorkspaceResourceEndpoint, getFileName, isTauri, os } from "@/api/common";
 import { appendWorkspaceResourceUrl } from "@/assets/editor/src/resources/resource_url";
-
-const TAURI_RESOURCE_ENDPOINT = "lonanote-resource://resource";
 
 const iframeStyle: CSSProperties = {
   border: 0,
@@ -37,7 +35,7 @@ export function PdfViewer() {
     void workspaceResource
       .acquireScope(targetWorkspaceId)
       .then((scope) => {
-        const endpoint = `${TAURI_RESOURCE_ENDPOINT}/${scope.scopeId}/${scope.generation}`;
+        const endpoint = createWorkspaceResourceEndpoint(scope, os());
         const nextUrl = appendWorkspaceResourceUrl(endpoint, filePath);
         if (!nextUrl) throw new Error("PDF 路径无效");
         if (!disposed) setPdfUrl(nextUrl);

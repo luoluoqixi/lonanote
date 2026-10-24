@@ -17,7 +17,7 @@ use tauri::{
 
 pub const RESOURCE_SCHEME: &str = "lonanote-resource";
 const RESOURCE_HOST: &str = "resource";
-const WINDOWS_RESOURCE_HOST: &str = "lonanote-resource.localhost";
+const WINDOWS_REVERTED_RESOURCE_HOST: &str = "localhost";
 // Tauri URI protocol responder 要求完整响应体，限制单次 Range 以约束原生侧缓冲。
 const MAX_RESOURCE_RANGE_BYTES: u64 = 1024 * 1024;
 
@@ -73,7 +73,7 @@ fn parse_resource_request(
 
     match request.uri().host() {
         Some(RESOURCE_HOST) => {}
-        Some(WINDOWS_RESOURCE_HOST) => {
+        Some(WINDOWS_REVERTED_RESOURCE_HOST) => {
             if segments.first() != Some(&RESOURCE_HOST) {
                 return Err(WorkspaceResourceStatus::BadRequest);
             }
@@ -292,6 +292,21 @@ mod tests {
                 end_inclusive: 128 + MAX_RESOURCE_RANGE_BYTES - 1,
             })
         );
+    }
+
+    #[test]
+    fn parses_windows_webview2_reverted_scope_url() {
+        let request = Request::builder()
+            .uri(
+                "lonanote-resource://localhost/resource/83f8b9b6-b57d-4b06-becd-545309321211/7/assets/a%20b.png",
+            )
+            .body(Vec::new())
+            .unwrap();
+
+        let parsed = parse_resource_request(&request).unwrap();
+        assert_eq!(parsed.scope_id, "83f8b9b6-b57d-4b06-becd-545309321211");
+        assert_eq!(parsed.generation, 7);
+        assert_eq!(parsed.path.as_str(), "assets/a b.png");
     }
 
     #[test]

@@ -27,6 +27,7 @@ import {
 
 import { workspace, workspaceResource } from "@/api/commands/workspace";
 import {
+  createWorkspaceResourceEndpoint,
   detectWorkspaceFileKind,
   getFileName,
   isTauri,
@@ -49,8 +50,6 @@ const MEDIA_INDICATOR_HEIGHT = 48;
 const MEDIA_CONTROLS_HEIGHT = 52;
 const MEDIA_INDICATOR_GAP = 14;
 const MEDIA_VIDEO_FRAME_SHIFT = 32;
-const TAURI_RESOURCE_ENDPOINT = "lonanote-resource://resource";
-
 type MediaViewerProps = {
   isActive: boolean;
   isMuted: boolean;
@@ -496,7 +495,7 @@ export function MediaViewer() {
         let nextMediaUrls: Record<string, string>;
         if (isTauri()) {
           const scope = await workspaceResource.acquireScope(targetWorkspaceId);
-          const endpoint = `${TAURI_RESOURCE_ENDPOINT}/${scope.scopeId}/${scope.generation}`;
+          const endpoint = createWorkspaceResourceEndpoint(scope, os());
           const mediaUrlEntries = mediaPaths.map((mediaPath) => {
             const url = appendWorkspaceResourceUrl(endpoint, mediaPath);
             if (!url) throw new Error("媒体路径无效");

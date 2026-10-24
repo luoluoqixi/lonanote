@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { workspaceResource } from "@/api/commands/workspace";
 import { isTauri, os } from "@/api/common/platform";
+import { createWorkspaceResourceEndpoint } from "@/api/common/workspace_resource_endpoint";
 import type { EditorResourceContext } from "@/assets/editor/src/bridge/protocol";
 import { createUnavailableEditorResourceContext } from "@/components/editor/bridge";
 import type { DocumentModel } from "@/stores/editor";
-
-const TAURI_RESOURCE_ENDPOINT = "lonanote-resource://resource";
 
 type ResourceContextState = {
   workspaceId: string;
@@ -57,7 +56,7 @@ export function useEditorResourceContext(document: DocumentModel): {
             available: true,
             scopeId: scope.scopeId,
             generation: scope.generation,
-            endpoint: `${TAURI_RESOURCE_ENDPOINT}/${scope.scopeId}/${scope.generation}`,
+            endpoint: createWorkspaceResourceEndpoint(scope, currentOs),
             documentPath: workspaceRef.filePath,
           },
         });
@@ -68,15 +67,20 @@ export function useEditorResourceContext(document: DocumentModel): {
     return () => {
       active = false;
     };
-  }, [supportsNativeResourceProtocol, workspaceRef?.filePath, workspaceRef?.workspaceId]);
+  }, [
+    currentOs,
+    supportsNativeResourceProtocol,
+    workspaceRef?.filePath,
+    workspaceRef?.workspaceId,
+  ]);
 
   return {
     context: matchingState?.context ?? unavailableContext,
     isLoading: Boolean(
-      workspaceRef
-        && supportsNativeResourceProtocol
-        && !matchingState
-        && failedResourceKey !== resourceKey,
+      workspaceRef &&
+      supportsNativeResourceProtocol &&
+      !matchingState &&
+      failedResourceKey !== resourceKey,
     ),
   };
 }

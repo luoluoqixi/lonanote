@@ -18,6 +18,18 @@ export function appendWorkspaceResourceUrl(endpoint: string, path: string): stri
   return `${endpoint.replace(/\/+$/, "")}/${encodedPath}`;
 }
 
+export function createEditorResourceRetryUrl(url: string, retryCount: number): string {
+  const isWorkspaceResource =
+    url.startsWith("lonanote-resource://") ||
+    url.startsWith("http://lonanote-resource.localhost/");
+  if (!isWorkspaceResource) return url;
+  const fragmentIndex = url.indexOf("#");
+  const baseUrl = fragmentIndex >= 0 ? url.slice(0, fragmentIndex) : url;
+  const fragment = fragmentIndex >= 0 ? url.slice(fragmentIndex) : "";
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${separator}__lonanote_retry=${retryCount}${fragment}`;
+}
+
 /** 将 Markdown 本地引用改写为不暴露 Provider 信息的资源 URL。 */
 export function resolveEditorResourceUrl(
   rawReference: string,

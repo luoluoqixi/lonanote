@@ -3,7 +3,11 @@ import { describe, test } from "node:test";
 
 import { isEditorResourceActivatedPayload } from "../bridge/protocol";
 import { parseEditorResourceReference, resolveEditorResourceReference } from "./resource_reference";
-import { appendWorkspaceResourceUrl, resolveEditorResourceUrl } from "./resource_url";
+import {
+  appendWorkspaceResourceUrl,
+  createEditorResourceRetryUrl,
+  resolveEditorResourceUrl,
+} from "./resource_url";
 
 const resourceContext = {
   available: true as const,
@@ -121,6 +125,16 @@ describe("Editor resource URL", () => {
         reason: "providerUnavailable",
       }),
       "https://example.com/image.png",
+    );
+  });
+
+  test("Windows Workspace resource 重试附加缓存破坏参数并保留 fragment", () => {
+    assert.equal(
+      createEditorResourceRetryUrl(
+        "http://lonanote-resource.localhost/resource/scope/7/assets/image.png#preview",
+        2,
+      ),
+      "http://lonanote-resource.localhost/resource/scope/7/assets/image.png?__lonanote_retry=2#preview",
     );
   });
 });

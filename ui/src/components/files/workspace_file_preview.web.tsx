@@ -3,7 +3,8 @@ import { ActivityIndicator, View } from "react-native";
 import { Button, Text, useUiTheme } from "rn-ui-kit";
 
 import { workspaceResource } from "@/api/commands/workspace";
-import { isTauri } from "@/api/common/platform";
+import { isTauri, os } from "@/api/common/platform";
+import { createWorkspaceResourceEndpoint } from "@/api/common/workspace_resource_endpoint";
 import { appendWorkspaceResourceUrl } from "@/assets/editor/src/resources/resource_url";
 import type { WorkspaceViewerSession } from "@/stores/editor/editor_store";
 
@@ -24,10 +25,8 @@ export function WorkspaceFilePreview({ viewer }: { viewer: WorkspaceViewerSessio
     void workspaceResource
       .acquireScope(viewer.ref.workspaceId)
       .then((scope) => {
-        const url = appendWorkspaceResourceUrl(
-          `lonanote-resource://resource/${scope.scopeId}/${scope.generation}`,
-          viewer.ref.filePath,
-        );
+        const endpoint = createWorkspaceResourceEndpoint(scope, os());
+        const url = appendWorkspaceResourceUrl(endpoint, viewer.ref.filePath);
         if (!url) throw new Error("文件路径无效");
         if (current) setResource({ key, url });
       })
