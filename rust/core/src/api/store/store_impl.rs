@@ -37,7 +37,7 @@ impl Store {
             data: HashMap::new(),
         };
         result.reload().unwrap_or_else(|err| {
-            log::error!("init store [{}] error: {}", &result.file_name, err);
+            log::error!("init store [{}] error: {}", result.file_name, err);
         });
         result
     }

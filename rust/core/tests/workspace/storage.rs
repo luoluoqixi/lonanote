@@ -130,7 +130,7 @@ async fn local_open_read_honors_range_contract() {
 #[tokio::test]
 async fn local_atomic_write_and_symlink_guard() {
     let root = TempDir::new().unwrap();
-    let outside = TempDir::new().unwrap();
+    // let outside = TempDir::new().unwrap();
     let storage = LocalPathStorage::open(root.path()).unwrap();
     let note = path("note.md");
     storage

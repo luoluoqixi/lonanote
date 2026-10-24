@@ -235,7 +235,9 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.write(path, data, options).await?;
-        self.index.invalidate_paths(&[path.clone()]).await;
+        self.index
+            .invalidate_paths(std::slice::from_ref(path))
+            .await;
         self.mark_modified_locked().await;
         Ok(())
     }
@@ -256,7 +258,9 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.create_dir_all(path).await?;
-        self.index.invalidate_paths(&[path.clone()]).await;
+        self.index
+            .invalidate_paths(std::slice::from_ref(path))
+            .await;
         self.mark_modified_locked().await;
         Ok(())
     }
@@ -285,7 +289,9 @@ impl WorkspaceInstance {
         ensure_user_mutation_path(path)?;
         let _mutation = self.mutation_lock.lock().await;
         self.session.remove(path, recursive).await?;
-        self.index.invalidate_paths(&[path.clone()]).await;
+        self.index
+            .invalidate_paths(std::slice::from_ref(path))
+            .await;
         self.mark_modified_locked().await;
         Ok(())
     }

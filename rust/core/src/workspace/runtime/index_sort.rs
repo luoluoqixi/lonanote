@@ -28,7 +28,7 @@ mod tests {
     }
     #[test]
     fn directories_recent_then_natural_name_unknown_last() {
-        let mut entries = vec![
+        let mut entries = [
             entry("missing.md", FileType::File, None),
             entry("n10.md", FileType::File, Some(10)),
             entry("n2.md", FileType::File, Some(10)),
