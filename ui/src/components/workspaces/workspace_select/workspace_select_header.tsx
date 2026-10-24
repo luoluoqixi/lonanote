@@ -14,6 +14,8 @@ import { Button, Dropdown, type DropdownItemData, Text, useUiTheme } from "rn-ui
 
 import { getSelectionHeaderRightMenuProps } from "@/components/common/header_actions";
 
+import { getWorkspaceSelectSettingsMenuItems } from "./workspace_select_menu";
+
 type WorkspaceSelectHeaderProps = {
   embedded?: boolean;
   sortMenuItems?: DropdownItemData[];
@@ -112,25 +114,25 @@ export function WorkspaceSelectHeader({
         subMenu: groupMenuItems,
         value: "group-workspaces",
       },
-      {
-        separator: true,
-        value: "separator-02",
-      },
-      {
-        icon: <Settings color={accentColor} size={14} />,
-        iconProps: {
-          androidIconName: "ic_workspace_settings",
-          ios: { name: "gearshape" },
+      ...getWorkspaceSelectSettingsMenuItems({
+        embedded,
+        settingsItem: {
+          icon: <Settings color={accentColor} size={14} />,
+          iconProps: {
+            androidIconName: "ic_workspace_settings",
+            ios: { name: "gearshape" },
+          },
+          label: "设置",
+          onPress: () => {
+            router.push("/settings");
+          },
+          value: "settings",
         },
-        label: "设置",
-        onPress: () => {
-          router.push("/settings");
-        },
-        value: "settings",
-      },
+      }),
     ],
     [
       accentColor,
+      embedded,
       sortMenuItems,
       groupMenuItems,
       canSelectWorkspaces,
