@@ -99,7 +99,7 @@ export function WorkspaceSelectList({
         desktop
           ? {
               rowBackgroundColor: theme.muted,
-              showBorder: true,
+              showBorder: false,
               borderColor: theme.border,
               sectionShadow: false,
               borderRadius: 6,
