@@ -1,7 +1,7 @@
 import { FilePlus2, FolderOpen } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Button, useUiTheme } from "rn-ui-kit";
+import { Button, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
@@ -286,11 +286,18 @@ export function DesktopEditorArea({
                 <EditorWebView active={activeEditorId === id} document={document} editor={view} />
               ) : (
                 <View style={styles.emptyState}>
-                  <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>
-                    {document.loadState === "error"
-                      ? (document.loadError ?? "读取文档失败")
-                      : "正在打开文档"}
-                  </Text>
+                  {document.loadState === "error" ? (
+                    <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>
+                      {document.loadError ?? "读取文档失败"}
+                    </Text>
+                  ) : (
+                    <View style={styles.loadingStatus}>
+                      <Spinner size="sm" />
+                      <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>
+                        正在打开文档
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
               {!isDesktop() && activeEditorId === id ? (
@@ -351,6 +358,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
+  },
+  loadingStatus: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
   },
   root: {
     flex: 1,

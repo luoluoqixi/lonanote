@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { Dialog, NativeSheetStack, Tabs, Text, useUiTheme } from "rn-ui-kit";
+import { Dialog, NativeSheetStack, Tabs, Text, cn, useUiTheme } from "rn-ui-kit";
 import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
 import { isWeb } from "@/api/common";
@@ -101,10 +101,15 @@ export function DesktopSettingsDialog({
                     <Tabs.Trigger
                       key={page.id}
                       value={page.id}
+                      className={cn(
+                        "hover:bg-accent",
+                        selectedTabId === page.id && "bg-accent text-accent-foreground",
+                        selectedTabId !== page.id && "hover:opacity-80",
+                      )}
                       style={{
                         ...styles.navigationItem,
-                        backgroundColor:
-                          selectedTabId === page.id ? theme.accent : theme.background,
+                        // backgroundColor:
+                        //   selectedTabId === page.id ? theme.accent : theme.background,
                         // borderBottomWidth: selectedTabId === page.id ? 2 : 0,
                         // borderBottomColor: theme.accent,
                       }}
