@@ -119,9 +119,9 @@ function TreeNode({
                   backgroundColor: active
                     ? theme.accent
                     : selected
-                      ? theme.secondary
+                      ? theme.accent03
                       : hovered
-                        ? theme.muted
+                        ? theme.accent03
                         : "transparent",
                   borderColor: focused ? theme.primary : "transparent",
                 },

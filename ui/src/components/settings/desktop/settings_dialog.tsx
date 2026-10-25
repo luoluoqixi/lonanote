@@ -102,9 +102,8 @@ export function DesktopSettingsDialog({
                       key={page.id}
                       value={page.id}
                       className={cn(
-                        "hover:bg-accent",
                         selectedTabId === page.id && "bg-accent text-accent-foreground",
-                        selectedTabId !== page.id && "hover:opacity-80",
+                        selectedTabId !== page.id && "hover:bg-accent03",
                       )}
                       style={{
                         ...styles.navigationItem,
