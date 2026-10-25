@@ -103,10 +103,8 @@ export function CreateWorkspaceEntrySheet({
       onOpenChange={handleOpenChange}
       dialogSize={{ width: 520, height: 320 }}
       dialogContentProps={{
-        onOpenAutoFocus: (event) => {
-          event.preventDefault();
-          handleDidPresent();
-        },
+        // 先保留 Dialog 的同步聚焦，避免背景被 aria-hidden 时焦点仍留在工具栏按钮上。
+        onOpenAutoFocus: handleDidPresent,
       }}
       sheetProps={{
         onDidPresent: handleDidPresent,
