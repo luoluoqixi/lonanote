@@ -1,16 +1,9 @@
-import { StyleSheet, useWindowDimensions } from "react-native";
-import {
-  Dialog,
-  NativeList,
-  NativeListSection,
-  NativeSheetStack,
-  getNativeStackScrollEdgeHeaderOptions,
-  useAppBackgroundColors,
-} from "rn-ui-kit";
+import { StyleSheet } from "react-native";
+import { NativeList, NativeListSection } from "rn-ui-kit";
 
 import type { WorkspaceIndexEntry } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime, getFileName } from "@/api/common";
-import { useLayoutMode } from "@/hooks/layout";
+import { AdaptiveModal } from "@/components/common/adaptive_modal";
 
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
@@ -31,14 +24,6 @@ export function WorkspaceEntryDetailsSheet({
   open,
   rootName,
 }: WorkspaceEntryDetailsSheetProps) {
-  const { layoutMode } = useLayoutMode();
-  const { width, height } = useWindowDimensions();
-  const appBackgroundColors = useAppBackgroundColors();
-  const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
-    headerBackgroundColor: appBackgroundColors.header,
-    screenBackgroundColor: appBackgroundColors.sheet,
-  });
-
   if (!entry) {
     return null;
   }
@@ -80,44 +65,20 @@ export function WorkspaceEntryDetailsSheet({
     </NativeList>
   );
 
-  if (layoutMode === "desktop") {
-    return (
-      <Dialog
-        open={open}
-        onOpenChange={onOpenChange}
-        title={isDirectory ? "文件夹详情" : "文件详情"}
-        content={content}
-        contentProps={{
-          style: {
-            width: Math.min(600, width * 0.9),
-            maxWidth: width * 0.9,
-            height: Math.min(480, height * 0.8),
-            padding: 16,
-            backgroundColor: appBackgroundColors.sheet,
-          },
-        }}
-      />
-    );
-  }
-
   return (
-    <NativeSheetStack
-      initialRouteName="entry-details"
+    <AdaptiveModal
       name="workspace-entry-details-sheet"
-      onOpenChange={onOpenChange}
+      screenName="entry-details"
+      title={isDirectory ? "文件夹详情" : "文件详情"}
       open={open}
+      onOpenChange={onOpenChange}
+      dialogSize={{ width: 600, height: 480 }}
       sheetProps={{
         snapPoints: ["58%"],
       }}
-      screenOptions={nativeHeaderOptions}
     >
-      <NativeSheetStack.Screen
-        name="entry-details"
-        options={{ title: isDirectory ? "文件夹详情" : "文件详情" }}
-      >
-        {() => content}
-      </NativeSheetStack.Screen>
-    </NativeSheetStack>
+      {content}
+    </AdaptiveModal>
   );
 }
 

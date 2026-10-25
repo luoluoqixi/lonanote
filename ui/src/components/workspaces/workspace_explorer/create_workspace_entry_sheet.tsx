@@ -1,18 +1,14 @@
 import { useEffect, useRef } from "react";
-import { StyleSheet, type TextInput, useWindowDimensions } from "react-native";
+import { StyleSheet, type TextInput } from "react-native";
 import {
-  Dialog,
   NativeList,
   NativeListButtonItem,
   NativeListInputItem,
   NativeListSection,
-  NativeSheetStack,
-  getNativeStackScrollEdgeHeaderOptions,
-  useAppBackgroundColors,
 } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common";
-import { useLayoutMode } from "@/hooks/layout";
+import { AdaptiveModal } from "@/components/common/adaptive_modal";
 
 import { getCreateEntrySelectionEnd } from "./create_workspace_entry_input";
 import { scheduleAfterAnimationFrames } from "./schedule_after_animation_frames";
@@ -42,17 +38,10 @@ export function CreateWorkspaceEntrySheet({
   onSubmit,
   open,
 }: CreateWorkspaceEntrySheetProps) {
-  const { layoutMode } = useLayoutMode();
-  const { width, height } = useWindowDimensions();
-  const appBackgroundColors = useAppBackgroundColors();
   const inputRef = useRef<TextInput>(null);
   const cancelScheduledFocusRef = useRef<(() => void) | null>(null);
   const isNote = entryKind === "note";
   const title = isNote ? "创建笔记" : "创建文件夹";
-  const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
-    headerBackgroundColor: appBackgroundColors.header,
-    screenBackgroundColor: appBackgroundColors.sheet,
-  });
 
   const cancelScheduledFocus = () => {
     cancelScheduledFocusRef.current?.();
@@ -105,46 +94,27 @@ export function CreateWorkspaceEntrySheet({
     </NativeList>
   );
 
-  if (layoutMode === "desktop") {
-    return (
-      <Dialog
-        open={open}
-        onOpenChange={handleOpenChange}
-        title={title}
-        content={content}
-        contentProps={{
-          onOpenAutoFocus: (event) => {
-            event.preventDefault();
-            handleDidPresent();
-          },
-          style: {
-            width: Math.min(520, width * 0.9),
-            maxWidth: width * 0.9,
-            height: Math.min(320, height * 0.8),
-            padding: 16,
-            backgroundColor: appBackgroundColors.sheet,
-          },
-        }}
-      />
-    );
-  }
-
   return (
-    <NativeSheetStack
-      initialRouteName="create-entry"
+    <AdaptiveModal
       name="create-workspace-entry-sheet"
-      onOpenChange={handleOpenChange}
+      screenName="create-entry"
+      title={title}
       open={open}
+      onOpenChange={handleOpenChange}
+      dialogSize={{ width: 520, height: 320 }}
+      dialogContentProps={{
+        onOpenAutoFocus: (event) => {
+          event.preventDefault();
+          handleDidPresent();
+        },
+      }}
       sheetProps={{
         onDidPresent: handleDidPresent,
         snapPoints: ["62%"],
       }}
-      screenOptions={nativeHeaderOptions}
     >
-      <NativeSheetStack.Screen name="create-entry" options={{ title }}>
-        {() => content}
-      </NativeSheetStack.Screen>
-    </NativeSheetStack>
+      {content}
+    </AdaptiveModal>
   );
 }
 

@@ -1,20 +1,17 @@
-import { StyleSheet, useWindowDimensions } from "react-native";
+import { StyleSheet } from "react-native";
 import {
-  Dialog,
   NativeList,
   NativeListButtonItem,
   NativeListCustomItem,
   NativeListInputItem,
   NativeListSection,
   NativeListSelectItem,
-  NativeSheetStack,
   Text,
-  getNativeStackScrollEdgeHeaderOptions,
-  useAppBackgroundColors,
 } from "rn-ui-kit";
 
 import type { StorageProviderId } from "@/api/commands/workspace";
 import { isIos } from "@/api/common";
+import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { useLayoutMode } from "@/hooks/layout";
 
 const CREATE_WORKSPACE_SNAP_POINTS = ["88%" as const];
@@ -145,14 +142,6 @@ export function CreateWorkspaceSheet({
   storageProviderIds,
   storageProviderId,
 }: CreateWorkspaceSheetProps) {
-  const { layoutMode } = useLayoutMode();
-  const { width, height } = useWindowDimensions();
-  const appBackgroundColors = useAppBackgroundColors();
-  const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
-    headerBackgroundColor: appBackgroundColors.header,
-    screenBackgroundColor: appBackgroundColors.sheet,
-  });
-
   const content = (
     <CreateWorkspaceSheetContent
       displayName={displayName}
@@ -167,41 +156,20 @@ export function CreateWorkspaceSheet({
     />
   );
 
-  if (layoutMode === "desktop") {
-    return (
-      <Dialog
-        open={open}
-        onOpenChange={onOpenChange}
-        title="创建工作区"
-        content={content}
-        contentProps={{
-          style: {
-            width: Math.min(560, width * 0.9),
-            maxWidth: width * 0.9,
-            height: Math.min(400, height * 0.8),
-            padding: 16,
-            backgroundColor: appBackgroundColors.sheet,
-          },
-        }}
-      />
-    );
-  }
-
   return (
-    <NativeSheetStack
-      initialRouteName="create-workspace"
+    <AdaptiveModal
       name="create-workspace-sheet"
-      onOpenChange={onOpenChange}
+      screenName="create-workspace"
+      title="创建工作区"
       open={open}
+      onOpenChange={onOpenChange}
+      dialogSize={{ width: 560, height: 400 }}
       sheetProps={{
         snapPoints: CREATE_WORKSPACE_SNAP_POINTS,
       }}
-      screenOptions={nativeHeaderOptions}
     >
-      <NativeSheetStack.Screen name="create-workspace" options={{ title: "创建工作区" }}>
-        {() => content}
-      </NativeSheetStack.Screen>
-    </NativeSheetStack>
+      {content}
+    </AdaptiveModal>
   );
 }
 

@@ -1,11 +1,10 @@
 import { usePathname, useRouter } from "expo-router";
 import { Folder, LibraryBig, type LucideIcon, Search, Settings } from "lucide-react-native";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Button,
-  Dialog,
   SplitLayout,
   type SplitLayoutHandle,
   SplitLayoutPriority,
@@ -15,6 +14,7 @@ import {
 } from "rn-ui-kit";
 
 import { isDesktop, rnUiKitStorageAdapter } from "@/api/common";
+import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { DesktopEditorArea } from "@/components/editor/desktop/desktop_editor_area";
 import { DesktopEditorStatusBar } from "@/components/editor/desktop/desktop_editor_status_bar";
 import { DesktopSettingsDialog } from "@/components/settings/desktop/settings_dialog";
@@ -39,7 +39,6 @@ function getSettingsPageId(pathname: string): SettingsPageId {
 }
 
 export function DesktopAppShell() {
-  const { width, height } = useWindowDimensions();
   const router = useRouter();
   const pathname = usePathname();
   const desktop = isDesktop();
@@ -158,25 +157,19 @@ export function DesktopAppShell() {
           </SplitLayout.Pane>
         </SplitLayout>
       </View>
-      <Dialog
+      <AdaptiveModal
+        name="desktop-workspace-select"
         open={selectOpen}
         onOpenChange={setSelectOpen}
         title="选择工作区"
-        contentProps={{
-          style: {
-            width: Math.min(720, width * 0.9),
-            maxWidth: width * 0.9,
-            height: Math.min(600, height * 0.8),
-            padding: 16,
-            backgroundColor: theme.background,
-          },
-        }}
-        content={
-          <View style={{ flex: 1, minHeight: 0 }}>
-            <WorkspaceSelectContent embedded onWorkspaceOpened={() => setSelectOpen(false)} />
-          </View>
-        }
-      />
+        dialogSize={{ width: 720, height: 600 }}
+        dialogContentProps={{ style: { backgroundColor: theme.background } }}
+        sheetProps={{ snapPoints: ["85%"] }}
+      >
+        <View style={{ flex: 1, minHeight: 0 }}>
+          <WorkspaceSelectContent embedded onWorkspaceOpened={() => setSelectOpen(false)} />
+        </View>
+      </AdaptiveModal>
     </SafeAreaView>
   );
 }

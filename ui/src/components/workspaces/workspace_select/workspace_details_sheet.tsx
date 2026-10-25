@@ -1,16 +1,9 @@
-import { StyleSheet, useWindowDimensions } from "react-native";
-import {
-  Dialog,
-  NativeList,
-  NativeListSection,
-  NativeSheetStack,
-  getNativeStackScrollEdgeHeaderOptions,
-  useAppBackgroundColors,
-} from "rn-ui-kit";
+import { StyleSheet } from "react-native";
+import { NativeList, NativeListSection } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime } from "@/api/common";
-import { useLayoutMode } from "@/hooks/layout";
+import { AdaptiveModal } from "@/components/common/adaptive_modal";
 
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
@@ -35,13 +28,6 @@ export function WorkspaceDetailsSheet({
   open,
   workspaceItem,
 }: WorkspaceDetailsSheetProps) {
-  const { layoutMode } = useLayoutMode();
-  const { width, height } = useWindowDimensions();
-  const appBackgroundColors = useAppBackgroundColors();
-  const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
-    headerBackgroundColor: appBackgroundColors.header,
-    screenBackgroundColor: appBackgroundColors.sheet,
-  });
   const storage = workspaceItem?.storage;
   const storageKind = storage?.kind ?? workspaceItem?.storageKind;
   const storageKindLabel = storageKind === "managed" ? "应用内存储" : "外部存储";
@@ -103,41 +89,20 @@ export function WorkspaceDetailsSheet({
     </NativeList>
   );
 
-  if (layoutMode === "desktop") {
-    return (
-      <Dialog
-        open={open}
-        onOpenChange={onOpenChange}
-        title="工作区详情"
-        content={content}
-        contentProps={{
-          style: {
-            width: Math.min(640, width * 0.9),
-            maxWidth: width * 0.9,
-            height: Math.min(600, height * 0.8),
-            padding: 16,
-            backgroundColor: appBackgroundColors.sheet,
-          },
-        }}
-      />
-    );
-  }
-
   return (
-    <NativeSheetStack
-      initialRouteName="workspace-details"
+    <AdaptiveModal
       name="workspace-details-sheet"
-      onOpenChange={onOpenChange}
+      screenName="workspace-details"
+      title="工作区详情"
       open={open}
+      onOpenChange={onOpenChange}
+      dialogSize={{ width: 640, height: 600 }}
       sheetProps={{
         snapPoints: WORKSPACE_DETAILS_SNAP_POINTS,
       }}
-      screenOptions={nativeHeaderOptions}
     >
-      <NativeSheetStack.Screen name="workspace-details" options={{ title: "工作区详情" }}>
-        {() => content}
-      </NativeSheetStack.Screen>
-    </NativeSheetStack>
+      {content}
+    </AdaptiveModal>
   );
 }
 

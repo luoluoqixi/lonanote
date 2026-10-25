@@ -1,16 +1,13 @@
-import { StyleSheet, useWindowDimensions } from "react-native";
+import { StyleSheet } from "react-native";
 import {
-  Dialog,
   NativeList,
   NativeListButtonItem,
   NativeListInputItem,
   NativeListSection,
-  NativeSheetStack,
-  getNativeStackScrollEdgeHeaderOptions,
-  useAppBackgroundColors,
 } from "rn-ui-kit";
 
 import { isIos } from "@/api/common";
+import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { useLayoutMode } from "@/hooks/layout";
 
 const EDIT_WORKSPACE_SNAP_POINTS = ["50%" as const];
@@ -33,12 +30,6 @@ export function EditWorkspaceSheet({
   open,
 }: EditWorkspaceSheetProps) {
   const { layoutMode } = useLayoutMode();
-  const { width, height } = useWindowDimensions();
-  const appBackgroundColors = useAppBackgroundColors();
-  const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
-    headerBackgroundColor: appBackgroundColors.header,
-    screenBackgroundColor: appBackgroundColors.sheet,
-  });
   const usesNativeIosScrollEdgeHeader = isIos() && layoutMode !== "desktop";
   const canSubmit = displayName.trim().length > 0 && !isUpdating;
 
@@ -72,41 +63,20 @@ export function EditWorkspaceSheet({
     </NativeList>
   );
 
-  if (layoutMode === "desktop") {
-    return (
-      <Dialog
-        open={open}
-        onOpenChange={onOpenChange}
-        title="编辑工作区"
-        content={content}
-        contentProps={{
-          style: {
-            width: Math.min(520, width * 0.9),
-            maxWidth: width * 0.9,
-            height: Math.min(320, height * 0.8),
-            padding: 16,
-            backgroundColor: appBackgroundColors.sheet,
-          },
-        }}
-      />
-    );
-  }
-
   return (
-    <NativeSheetStack
-      initialRouteName="edit-workspace"
+    <AdaptiveModal
       name="edit-workspace-sheet"
-      onOpenChange={onOpenChange}
+      screenName="edit-workspace"
+      title="编辑工作区"
       open={open}
+      onOpenChange={onOpenChange}
+      dialogSize={{ width: 520, height: 320 }}
       sheetProps={{
         snapPoints: EDIT_WORKSPACE_SNAP_POINTS,
       }}
-      screenOptions={nativeHeaderOptions}
     >
-      <NativeSheetStack.Screen name="edit-workspace" options={{ title: "编辑工作区" }}>
-        {() => content}
-      </NativeSheetStack.Screen>
-    </NativeSheetStack>
+      {content}
+    </AdaptiveModal>
   );
 }
 
