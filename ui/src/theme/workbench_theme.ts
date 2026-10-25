@@ -1,6 +1,6 @@
 import type { UiThemeConfig } from "rn-ui-kit";
 
-/** 工作台的结构颜色保持中性，用户主题色继续用于动作与焦点。 */
+/** 工作台的结构颜色保持中性，动作、焦点和交互高亮保留用户主题色。 */
 export function composeWorkbenchTheme(
   base: UiThemeConfig,
   backgroundFollowsTheme: boolean,
@@ -22,8 +22,6 @@ export function composeWorkbenchTheme(
       secondaryForeground: "#303030",
       border: "#E5E5E5",
       input: "#D6D6D6",
-      accent: "#E8E8E8",
-      accentForeground: "#303030",
     },
     dark: {
       ...base.dark,
@@ -40,8 +38,6 @@ export function composeWorkbenchTheme(
       secondaryForeground: "#D4D4D4",
       border: "#383838",
       input: "#484848",
-      accent: "#37373D",
-      accentForeground: "#FFFFFF",
     },
   };
 }
