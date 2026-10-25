@@ -2537,7 +2537,6 @@ dependencies = [
  "objc2-app-kit",
  "serde",
  "serde_json",
- "specta",
  "sys-locale",
  "tauri",
  "tauri-build",
@@ -4243,15 +4242,6 @@ dependencies = [
  "gobject-sys",
  "libc",
  "system-deps",
-]
-
-[[package]]
-name = "specta"
-version = "2.0.0-rc.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f320c7dd82008b6958f43f6257c95319c407d1c17ade43686e50ea520c28bb26"
-dependencies = [
- "rustc_version",
 ]
 
 [[package]]

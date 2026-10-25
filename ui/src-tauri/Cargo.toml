@@ -43,7 +43,6 @@ tauri = { workspace = true, features = [
   "protocol-asset",
   "devtools",
 ] }
-specta = { workspace = true }
 tauri-plugin-clipboard-manager = { workspace = true }
 tauri-plugin-log = { workspace = true }
 tauri-plugin-fs = { workspace = true }
