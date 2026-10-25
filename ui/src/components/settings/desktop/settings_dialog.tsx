@@ -108,10 +108,8 @@ export function DesktopSettingsDialog({
                       )}
                       style={{
                         ...styles.navigationItem,
-                        // backgroundColor:
-                        //   selectedTabId === page.id ? theme.accent : theme.background,
-                        // borderBottomWidth: selectedTabId === page.id ? 2 : 0,
-                        // borderBottomColor: theme.accent,
+                        borderBottomWidth: selectedTabId === page.id ? 2 : 0,
+                        borderBottomColor: theme.primary,
                       }}
                     >
                       <Text style={{ fontSize: 13 }}>{page.title}</Text>

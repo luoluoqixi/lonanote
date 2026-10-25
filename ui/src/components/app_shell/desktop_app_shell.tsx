@@ -245,7 +245,7 @@ function ActivityButton({ accessibilityLabel, active, icon: Icon, onPress }: Act
         style={[
           styles.activityButton,
           {
-            backgroundColor: hovered ? theme.muted : "transparent",
+            backgroundColor: hovered ? theme.accent : "transparent",
             borderLeftWidth: 2,
             borderLeftColor: active ? theme.primary : "transparent",
           },
