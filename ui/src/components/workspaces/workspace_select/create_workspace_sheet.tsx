@@ -1,5 +1,6 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, useWindowDimensions } from "react-native";
 import {
+  Dialog,
   NativeList,
   NativeListButtonItem,
   NativeListCustomItem,
@@ -14,6 +15,7 @@ import {
 
 import type { StorageProviderId } from "@/api/commands/workspace";
 import { isIos } from "@/api/common";
+import { useLayoutMode } from "@/hooks/layout";
 
 const CREATE_WORKSPACE_SNAP_POINTS = ["88%" as const];
 
@@ -66,7 +68,8 @@ function CreateWorkspaceSheetContent({
   storageProviderIds,
   storageProviderId,
 }: CreateWorkspaceSheetContentProps) {
-  const usesNativeIosScrollEdgeHeader = isIos();
+  const { layoutMode } = useLayoutMode();
+  const usesNativeIosScrollEdgeHeader = isIos() && layoutMode !== "desktop";
   const canSubmit =
     displayName.trim().length > 0 &&
     storageProviderId !== null &&
@@ -142,11 +145,47 @@ export function CreateWorkspaceSheet({
   storageProviderIds,
   storageProviderId,
 }: CreateWorkspaceSheetProps) {
+  const { layoutMode } = useLayoutMode();
+  const { width, height } = useWindowDimensions();
   const appBackgroundColors = useAppBackgroundColors();
   const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
     headerBackgroundColor: appBackgroundColors.header,
     screenBackgroundColor: appBackgroundColors.sheet,
   });
+
+  const content = (
+    <CreateWorkspaceSheetContent
+      displayName={displayName}
+      isCreating={isCreating}
+      isLoadingStorageProviders={isLoadingStorageProviders}
+      onDisplayNameChange={onDisplayNameChange}
+      onStorageProviderChange={onStorageProviderChange}
+      onSubmit={onSubmit}
+      storageProviderError={storageProviderError}
+      storageProviderIds={storageProviderIds}
+      storageProviderId={storageProviderId}
+    />
+  );
+
+  if (layoutMode === "desktop") {
+    return (
+      <Dialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title="创建工作区"
+        content={content}
+        contentProps={{
+          style: {
+            width: Math.min(560, width * 0.9),
+            maxWidth: width * 0.9,
+            height: Math.min(400, height * 0.8),
+            padding: 16,
+            backgroundColor: appBackgroundColors.sheet,
+          },
+        }}
+      />
+    );
+  }
 
   return (
     <NativeSheetStack
@@ -160,19 +199,7 @@ export function CreateWorkspaceSheet({
       screenOptions={nativeHeaderOptions}
     >
       <NativeSheetStack.Screen name="create-workspace" options={{ title: "创建工作区" }}>
-        {() => (
-          <CreateWorkspaceSheetContent
-            displayName={displayName}
-            isCreating={isCreating}
-            isLoadingStorageProviders={isLoadingStorageProviders}
-            onDisplayNameChange={onDisplayNameChange}
-            onStorageProviderChange={onStorageProviderChange}
-            onSubmit={onSubmit}
-            storageProviderError={storageProviderError}
-            storageProviderIds={storageProviderIds}
-            storageProviderId={storageProviderId}
-          />
-        )}
+        {() => content}
       </NativeSheetStack.Screen>
     </NativeSheetStack>
   );
@@ -181,5 +208,6 @@ export function CreateWorkspaceSheet({
 const styles = StyleSheet.create({
   list: {
     flex: 1,
+    minHeight: 0,
   },
 });

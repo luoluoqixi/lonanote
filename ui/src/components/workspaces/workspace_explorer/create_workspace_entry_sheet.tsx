@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
-import { StyleSheet, type TextInput } from "react-native";
+import { StyleSheet, type TextInput, useWindowDimensions } from "react-native";
 import {
+  Dialog,
   NativeList,
   NativeListButtonItem,
   NativeListInputItem,
@@ -11,6 +12,7 @@ import {
 } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common";
+import { useLayoutMode } from "@/hooks/layout";
 
 import { getCreateEntrySelectionEnd } from "./create_workspace_entry_input";
 import { scheduleAfterAnimationFrames } from "./schedule_after_animation_frames";
@@ -40,6 +42,8 @@ export function CreateWorkspaceEntrySheet({
   onSubmit,
   open,
 }: CreateWorkspaceEntrySheetProps) {
+  const { layoutMode } = useLayoutMode();
+  const { width, height } = useWindowDimensions();
   const appBackgroundColors = useAppBackgroundColors();
   const inputRef = useRef<TextInput>(null);
   const cancelScheduledFocusRef = useRef<(() => void) | null>(null);
@@ -77,6 +81,54 @@ export function CreateWorkspaceEntrySheet({
 
   useEffect(() => cancelScheduledFocus, []);
 
+  const content = (
+    <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
+      <NativeListSection title="名称">
+        <NativeListInputItem
+          inputProps={{
+            onChangeText: onNameChange,
+            onSubmitEditing: onSubmit,
+            placeholder: isNote ? "未命名笔记" : "新建文件夹",
+            ref: inputRef,
+            returnKeyType: "done",
+            value: name,
+          }}
+        />
+      </NativeListSection>
+      <NativeListSection>
+        <NativeListButtonItem
+          disabled={name.trim().length === 0 || isCreating}
+          onPress={onSubmit}
+          title={isCreating ? "正在创建…" : title}
+        />
+      </NativeListSection>
+    </NativeList>
+  );
+
+  if (layoutMode === "desktop") {
+    return (
+      <Dialog
+        open={open}
+        onOpenChange={handleOpenChange}
+        title={title}
+        content={content}
+        contentProps={{
+          onOpenAutoFocus: (event) => {
+            event.preventDefault();
+            handleDidPresent();
+          },
+          style: {
+            width: Math.min(520, width * 0.9),
+            maxWidth: width * 0.9,
+            height: Math.min(320, height * 0.8),
+            padding: 16,
+            backgroundColor: appBackgroundColors.sheet,
+          },
+        }}
+      />
+    );
+  }
+
   return (
     <NativeSheetStack
       initialRouteName="create-entry"
@@ -90,29 +142,7 @@ export function CreateWorkspaceEntrySheet({
       screenOptions={nativeHeaderOptions}
     >
       <NativeSheetStack.Screen name="create-entry" options={{ title }}>
-        {() => (
-          <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
-            <NativeListSection title="名称">
-              <NativeListInputItem
-                inputProps={{
-                  onChangeText: onNameChange,
-                  onSubmitEditing: onSubmit,
-                  placeholder: isNote ? "未命名笔记" : "新建文件夹",
-                  ref: inputRef,
-                  returnKeyType: "done",
-                  value: name,
-                }}
-              />
-            </NativeListSection>
-            <NativeListSection>
-              <NativeListButtonItem
-                disabled={name.trim().length === 0 || isCreating}
-                onPress={onSubmit}
-                title={isCreating ? "正在创建…" : title}
-              />
-            </NativeListSection>
-          </NativeList>
-        )}
+        {() => content}
       </NativeSheetStack.Screen>
     </NativeSheetStack>
   );
@@ -121,5 +151,6 @@ export function CreateWorkspaceEntrySheet({
 const styles = StyleSheet.create({
   list: {
     flex: 1,
+    minHeight: 0,
   },
 });

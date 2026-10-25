@@ -1,5 +1,6 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, useWindowDimensions } from "react-native";
 import {
+  Dialog,
   NativeList,
   NativeListSection,
   NativeSheetStack,
@@ -9,6 +10,7 @@ import {
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime } from "@/api/common";
+import { useLayoutMode } from "@/hooks/layout";
 
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
@@ -33,6 +35,8 @@ export function WorkspaceDetailsSheet({
   open,
   workspaceItem,
 }: WorkspaceDetailsSheetProps) {
+  const { layoutMode } = useLayoutMode();
+  const { width, height } = useWindowDimensions();
   const appBackgroundColors = useAppBackgroundColors();
   const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
     headerBackgroundColor: appBackgroundColors.header,
@@ -48,6 +52,77 @@ export function WorkspaceDetailsSheet({
     return null;
   }
 
+  const content = (
+    <NativeList style={styles.list} tracksNavigationBarScrollEdge>
+      <NativeListSection title="基本信息">
+        <WorkspaceDetailsListItem
+          copyId="workspace-display-name"
+          title="工作区名称"
+          value={workspaceItem.displayName}
+        />
+        <WorkspaceDetailsListItem
+          copyId="workspace-storage-kind"
+          title="存储位置"
+          value={storageKindLabel}
+        />
+        <WorkspaceDetailsListItem
+          copyId="workspace-storage-provider"
+          title="存储 Provider"
+          value={formatValue(storage?.providerId)}
+        />
+        <WorkspaceDetailsListItem
+          copyId="workspace-local-directory-path"
+          title="本地文件夹路径"
+          value={localDirectoryPath}
+          valueFontSize={14}
+        />
+        <WorkspaceDetailsListItem
+          copyId="workspace-id"
+          title="Workspace ID"
+          value={workspaceItem.id}
+          valueFontSize={14}
+        />
+      </NativeListSection>
+      <NativeListSection title="时间">
+        <WorkspaceDetailsListItem
+          copyId="workspace-modified-at"
+          title="修改时间"
+          value={formatDate(workspaceItem.modifiedAt)}
+        />
+        <WorkspaceDetailsListItem
+          copyId="workspace-created-at"
+          title="创建时间"
+          value={formatDate(workspaceItem.createdAt)}
+        />
+        <WorkspaceDetailsListItem
+          copyId="workspace-last-opened-at"
+          title="上次打开时间"
+          value={formatDate(workspaceItem.lastOpenedAt)}
+        />
+      </NativeListSection>
+    </NativeList>
+  );
+
+  if (layoutMode === "desktop") {
+    return (
+      <Dialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title="工作区详情"
+        content={content}
+        contentProps={{
+          style: {
+            width: Math.min(640, width * 0.9),
+            maxWidth: width * 0.9,
+            height: Math.min(600, height * 0.8),
+            padding: 16,
+            backgroundColor: appBackgroundColors.sheet,
+          },
+        }}
+      />
+    );
+  }
+
   return (
     <NativeSheetStack
       initialRouteName="workspace-details"
@@ -60,56 +135,7 @@ export function WorkspaceDetailsSheet({
       screenOptions={nativeHeaderOptions}
     >
       <NativeSheetStack.Screen name="workspace-details" options={{ title: "工作区详情" }}>
-        {() => (
-          <NativeList style={styles.list} tracksNavigationBarScrollEdge>
-            <NativeListSection title="基本信息">
-              <WorkspaceDetailsListItem
-                copyId="workspace-display-name"
-                title="工作区名称"
-                value={workspaceItem.displayName}
-              />
-              <WorkspaceDetailsListItem
-                copyId="workspace-storage-kind"
-                title="存储位置"
-                value={storageKindLabel}
-              />
-              <WorkspaceDetailsListItem
-                copyId="workspace-storage-provider"
-                title="存储 Provider"
-                value={formatValue(storage?.providerId)}
-              />
-              <WorkspaceDetailsListItem
-                copyId="workspace-local-directory-path"
-                title="本地文件夹路径"
-                value={localDirectoryPath}
-                valueFontSize={14}
-              />
-              <WorkspaceDetailsListItem
-                copyId="workspace-id"
-                title="Workspace ID"
-                value={workspaceItem.id}
-                valueFontSize={14}
-              />
-            </NativeListSection>
-            <NativeListSection title="时间">
-              <WorkspaceDetailsListItem
-                copyId="workspace-modified-at"
-                title="修改时间"
-                value={formatDate(workspaceItem.modifiedAt)}
-              />
-              <WorkspaceDetailsListItem
-                copyId="workspace-created-at"
-                title="创建时间"
-                value={formatDate(workspaceItem.createdAt)}
-              />
-              <WorkspaceDetailsListItem
-                copyId="workspace-last-opened-at"
-                title="上次打开时间"
-                value={formatDate(workspaceItem.lastOpenedAt)}
-              />
-            </NativeListSection>
-          </NativeList>
-        )}
+        {() => content}
       </NativeSheetStack.Screen>
     </NativeSheetStack>
   );
@@ -118,5 +144,6 @@ export function WorkspaceDetailsSheet({
 const styles = StyleSheet.create({
   list: {
     flex: 1,
+    minHeight: 0,
   },
 });
