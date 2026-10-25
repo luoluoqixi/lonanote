@@ -4,10 +4,9 @@ import {
   NativeListButtonItem,
   NativeListInputItem,
   NativeListSection,
-  NativeSheetStack,
-  getNativeStackScrollEdgeHeaderOptions,
-  useAppBackgroundColors,
 } from "rn-ui-kit";
+
+import { AdaptiveModal } from "@/components/common/adaptive_modal";
 
 type RenameWorkspaceEntrySheetProps = {
   isRenaming: boolean;
@@ -26,53 +25,47 @@ export function RenameWorkspaceEntrySheet({
   onSubmit,
   open,
 }: RenameWorkspaceEntrySheetProps) {
-  const appBackgroundColors = useAppBackgroundColors();
-  const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
-    headerBackgroundColor: appBackgroundColors.header,
-    screenBackgroundColor: appBackgroundColors.sheet,
-  });
+  const content = (
+    <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
+      <NativeListSection title="文件名">
+        <NativeListInputItem
+          inputProps={{
+            autoFocus: true,
+            onChangeText: onNameChange,
+            onSubmitEditing: onSubmit,
+            returnKeyType: "done",
+            value: name,
+          }}
+        />
+      </NativeListSection>
+      <NativeListSection>
+        <NativeListButtonItem
+          disabled={name.trim().length === 0 || isRenaming}
+          onPress={onSubmit}
+          title={isRenaming ? "正在保存…" : "保存"}
+        />
+      </NativeListSection>
+    </NativeList>
+  );
 
   return (
-    <NativeSheetStack
-      initialRouteName="rename-entry"
+    <AdaptiveModal
       name="rename-workspace-entry-sheet"
+      screenName="rename-entry"
+      title="编辑名称"
       onOpenChange={onOpenChange}
       open={open}
-      sheetProps={{
-        snapPoints: ["62%"],
-      }}
-      screenOptions={nativeHeaderOptions}
+      dialogSize={{ width: 520, height: 320 }}
+      sheetProps={{ snapPoints: ["62%"] }}
     >
-      <NativeSheetStack.Screen name="rename-entry" options={{ title: "编辑名称" }}>
-        {() => (
-          <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
-            <NativeListSection title="文件名">
-              <NativeListInputItem
-                inputProps={{
-                  autoFocus: true,
-                  onChangeText: onNameChange,
-                  onSubmitEditing: onSubmit,
-                  returnKeyType: "done",
-                  value: name,
-                }}
-              />
-            </NativeListSection>
-            <NativeListSection>
-              <NativeListButtonItem
-                disabled={name.trim().length === 0 || isRenaming}
-                onPress={onSubmit}
-                title={isRenaming ? "正在保存…" : "保存"}
-              />
-            </NativeListSection>
-          </NativeList>
-        )}
-      </NativeSheetStack.Screen>
-    </NativeSheetStack>
+      {content}
+    </AdaptiveModal>
   );
 }
 
 const styles = StyleSheet.create({
   list: {
     flex: 1,
+    minHeight: 0,
   },
 });
