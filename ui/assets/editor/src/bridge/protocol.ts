@@ -137,7 +137,7 @@ export type EditorCommand =
   | { type: "selection.replace"; text: string }
   | { type: "history.undo" }
   | { type: "history.redo" }
-  | { type: "editor.focus" }
+  | { type: "editor.focus"; preserveSelection?: boolean }
   | { type: "editor.blur" }
   | { type: "navigation.scrollToAnchor"; fragment: string }
   | { type: "mark.toggle"; mark: "bold" | "italic" | "strikethrough" | "highlight" | "inlineCode" }
@@ -474,11 +474,12 @@ export function isEditorStateSnapshot(value: unknown): value is EditorStateSnaps
 
 export function isEditorCommand(value: unknown): value is EditorCommand {
   if (!isRecord(value) || typeof value.type !== "string") return false;
+  if (value.type === "editor.focus")
+    return value.preserveSelection === undefined || typeof value.preserveSelection === "boolean";
   if (
     value.type === "selection.selectAll" ||
     value.type === "history.undo" ||
     value.type === "history.redo" ||
-    value.type === "editor.focus" ||
     value.type === "editor.blur"
   )
     return true;

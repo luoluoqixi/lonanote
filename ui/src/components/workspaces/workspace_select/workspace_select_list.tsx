@@ -13,7 +13,7 @@ import {
 } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
-import { isAndroid, isWeb } from "@/api/common";
+import { isAndroid, isDesktop, isWeb } from "@/api/common";
 import { useLayoutMode } from "@/hooks/layout";
 
 import { type WorkspaceGroupMode, groupWorkspaces } from "./workspace_group";
@@ -138,27 +138,31 @@ export function WorkspaceSelectList({
           >
             {section.workspaces.map((workspaceItem) => (
               <NativeListNavigationItem
-                contextMenuProps={{
-                  items: [
-                    {
-                      icon: <Info color={accentColor} size={14} />,
-                      label: "查看详情",
-                      onSelect: () => onWorkspaceDetails(workspaceItem),
-                      value: `details-workspace-${workspaceItem.id}`,
-                    },
-                    {
-                      label: "编辑工作区",
-                      onSelect: () => onEditWorkspace(workspaceItem),
-                      value: `edit-workspace-${workspaceItem.id}`,
-                    },
-                    {
-                      destructive: true,
-                      label: "删除工作区",
-                      onSelect: () => onDeleteWorkspace(workspaceItem),
-                      value: `delete-workspace-${workspaceItem.id}`,
-                    },
-                  ],
-                }}
+                contextMenuProps={
+                  desktop && !isDesktop()
+                    ? false
+                    : {
+                        items: [
+                          {
+                            icon: <Info color={accentColor} size={14} />,
+                            label: "查看详情",
+                            onSelect: () => onWorkspaceDetails(workspaceItem),
+                            value: `details-workspace-${workspaceItem.id}`,
+                          },
+                          {
+                            label: "编辑工作区",
+                            onSelect: () => onEditWorkspace(workspaceItem),
+                            value: `edit-workspace-${workspaceItem.id}`,
+                          },
+                          {
+                            destructive: true,
+                            label: "删除工作区",
+                            onSelect: () => onDeleteWorkspace(workspaceItem),
+                            value: `delete-workspace-${workspaceItem.id}`,
+                          },
+                        ],
+                      }
+                }
                 hoverBackgroundColor={desktop ? theme.secondary : undefined}
                 pressBackgroundColor={desktop ? theme.accent : undefined}
                 disabled={isInteractionDisabled}

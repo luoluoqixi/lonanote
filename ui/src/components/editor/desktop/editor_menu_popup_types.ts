@@ -6,7 +6,7 @@ export type EditorMenuRequest = {
   y: number;
   items: DropdownItemData[];
   isCurrent(): boolean;
-  restoreFocus?(): void;
+  restoreFocus?(): void | Promise<void>;
 };
 export type EditorMenuPopupProps = {
   request: EditorMenuRequest | null;

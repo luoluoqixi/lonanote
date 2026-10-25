@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Dropdown, createNativeMenuItems, useMenuConfig } from "rn-ui-kit";
 
+import { editorPredefinedItem } from "@/api/common/tauri_menu_items";
+
 import type { EditorMenuPopupProps } from "./editor_menu_popup_types";
 
 /** 编辑器菜单在宿主窗口渲染，避免被 iframe 或标签栏的滚动容器裁切。 */
@@ -16,13 +18,21 @@ export function EditorMenuPopup({ request, onDismiss }: EditorMenuPopupProps) {
     interactedOutside.current = false;
     if (native && config.showNativeMenu) {
       let cancelled = false;
-      void config
-        .showNativeMenu({
+      void (async () => {
+        // 系统剪贴板动作发送给当前输入控件，弹出菜单前先归还 iframe 输入焦点。
+        await request.restoreFocus?.();
+        if (cancelled || !request.isCurrent()) return;
+        await config.showNativeMenu?.({
           x: request.x,
           y: request.y,
-          items: createNativeMenuItems(request.items),
+          items: createNativeMenuItems(request.items).map((item, index) => ({
+            ...item,
+            predefined: editorPredefinedItem(request.items[index].value),
+          })),
           isCurrent: () => !cancelled && request.isCurrent(),
-        })
+        });
+        if (!cancelled && request.isCurrent()) await request.restoreFocus?.();
+      })()
         .catch((error) => config.onNativeMenuError?.(error))
         .finally(() => {
           if (!cancelled) dismissRef.current();

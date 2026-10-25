@@ -198,7 +198,10 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
             y: rect.top + payload.y,
             isCurrent,
             restoreFocus: () => {
-              void client.executeCommand({ type: "editor.focus" }).catch(() => undefined);
+              return client
+                .executeCommand({ type: "editor.focus", preserveSelection: true })
+                .then(() => undefined)
+                .catch(() => undefined);
             },
             items: createEditorMenuItems({
               payload,
@@ -222,7 +225,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
                   bridgeClientRef.current === client &&
                   editorStore.getState().activeEditorId === editor.editorId
                 )
-                  await client.executeCommand({ type: "editor.focus" });
+                  await client.executeCommand({ type: "editor.focus", preserveSelection: true });
                 return result;
               },
               onError: (error) => {

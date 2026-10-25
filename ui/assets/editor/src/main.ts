@@ -30,16 +30,14 @@ import {
   parseEditorBridgeMessage,
 } from "./bridge/protocol";
 import { ANDROID_SELECTION_BOTTOM_OFFSET, EDITOR_MESSAGE_DEDUPLICATION_LIMIT } from "./consts";
+import { applyEditorFocusCommand } from "./core/focus_command";
 import { createDesktopScrollbar } from "./desktop_scrollbar";
 import { LonaEditor } from "./index";
 import {
   parseEditorResourceReference,
   resolveEditorResourceReference,
 } from "./resources/resource_reference";
-import {
-  createEditorResourceRetryUrl,
-  resolveEditorResourceUrl,
-} from "./resources/resource_url";
+import { createEditorResourceRetryUrl, resolveEditorResourceUrl } from "./resources/resource_url";
 import "./styles.css";
 
 const root = document.getElementById("editor");
@@ -996,7 +994,7 @@ function executeCommand(request: EditorBridgeRequest): void {
   }
   if (command.type === "history.undo") session.editor.undo();
   if (command.type === "history.redo") session.editor.redo();
-  if (command.type === "editor.focus") session.editor.focus();
+  if (command.type === "editor.focus") applyEditorFocusCommand(session.editor, command);
   if (command.type === "editor.blur") session.editor.blur();
   if (command.type === "navigation.scrollToAnchor") session.editor.scrollToAnchor(command.fragment);
   if (command.type === "mark.toggle") {

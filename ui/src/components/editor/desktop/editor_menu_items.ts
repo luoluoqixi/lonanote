@@ -21,7 +21,7 @@ export function createEditorMenuItems({
   onError(error: unknown): void;
 }): DropdownItemData[] {
   const item = (text: string, action: EditorMenuAction, enabled = editable): DropdownItemData => ({
-    value: text,
+    value: typeof action === "string" ? action : text,
     textValue: text,
     disabled: !enabled,
     ...(typeof action === "object" && action.type === "mark.toggle"
