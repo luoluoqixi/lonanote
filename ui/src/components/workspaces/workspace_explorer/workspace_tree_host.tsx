@@ -3,16 +3,26 @@ import {
   ArrowDownWideNarrow,
   ChevronsDownUp,
   Copy,
+  FileInput,
   FilePlus2,
   FolderOpen,
   FolderPlus,
+  Info,
   Pencil,
   RefreshCw,
   Trash2,
 } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Button, Dropdown, type SelectHandle, Tooltip, confirmNative, useUiTheme } from "rn-ui-kit";
+import {
+  Button,
+  ContextMenu,
+  Dropdown,
+  type SelectHandle,
+  Tooltip,
+  confirmNative,
+  useUiTheme,
+} from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
@@ -111,6 +121,13 @@ export function WorkspaceTreeHost({
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [details, setDetails] = useState<WorkspaceIndexEntry | null>(null);
+  const detailsRequest = useRef(0);
+  useEffect(() => {
+    setDetails(null);
+    return () => {
+      detailsRequest.current += 1;
+    };
+  }, [workspaceId, explorer.epoch]);
   const tree = useRef<TreeHandle>(null);
   const sort = useRef<SelectHandle>(null);
   useEffect(() => {
@@ -264,20 +281,23 @@ export function WorkspaceTreeHost({
   const menuItems = useCallback(
     (path: string) => {
       const entry = nodeFor(path);
-      const targets = explorer.selectedPaths.includes(path) ? explorer.selectedPaths : [path];
+      const targets =
+        path !== "" && explorer.selectedPaths.includes(path) ? explorer.selectedPaths : [path];
       return createWorkspaceExplorerMenu({
         workspaceId,
         epoch: explorer.epoch,
         targetPaths: targets,
         targetDirectory:
-          entry?.fileType === "directory" ? path : path.split("/").slice(0, -1).join("/"),
+          path === "" || entry?.fileType === "directory"
+            ? path
+            : path.split("/").slice(0, -1).join("/"),
         capabilities,
         desktop: isDesktop(),
         nativePathAvailable,
         actions: {
           isCurrent: (id, epoch, paths) =>
             workspaceExplorerStore.getState().workspaces[id]?.epoch === epoch &&
-            paths.every((p) => Boolean(nodeFor(p))),
+            paths.every((p) => p === "" || Boolean(nodeFor(p))),
           open: (p) => {
             const e = nodeFor(p);
             if (e)
@@ -298,7 +318,34 @@ export function WorkspaceTreeHost({
           remove: (paths) => {
             void remove(paths);
           },
-          details: (p) => setDetails(nodeFor(p) ?? null),
+          details: (p) => {
+            const request = ++detailsRequest.current;
+            if (p !== "") {
+              setDetails(nodeFor(p) ?? null);
+              return;
+            }
+            void workspaceFile
+              .metadata(workspaceId, p)
+              .then((metadata) => {
+                if (
+                  request !== detailsRequest.current ||
+                  workspaceExplorerStore.getState().workspaces[workspaceId]?.epoch !==
+                    explorer.epoch
+                )
+                  return;
+                setDetails({
+                  path: p,
+                  fileType: "directory",
+                  size: metadata.size,
+                  createTime: metadata.createdAt,
+                  lastModifiedTime: metadata.modifiedAt,
+                });
+              })
+              .catch((error) => {
+                if (request === detailsRequest.current)
+                  toast.error("无法读取详情", { description: String(error) });
+              });
+          },
           select: (paths) => {
             explorer.setSelectionMode(true);
             explorer.setSelection(paths, path, path);
@@ -313,7 +360,7 @@ export function WorkspaceTreeHost({
               .catch((error) => toast.error("无法显示文件", { description: String(error) }));
           },
           copyPath: (p, absolute) => {
-            void (absolute ? workspaceFile.nativePath(workspaceId, p) : Promise.resolve(p))
+            void (absolute ? workspaceFile.nativePath(workspaceId, p) : Promise.resolve(p || "."))
               .then((value) => {
                 if (value) return clipboard.writeText(value);
               })
@@ -322,6 +369,8 @@ export function WorkspaceTreeHost({
         },
       }).map((item) => {
         const Icon = new Map<string, typeof FilePlus2>([
+          ["open", FileInput],
+          ["details", Info],
           ["create-note", FilePlus2],
           ["create-directory", FolderPlus],
           ["reveal", FolderOpen],
@@ -401,6 +450,36 @@ export function WorkspaceTreeHost({
       workspaceExplorer: { ...p.workspaceExplorer, sortValue: value },
     })).catch(() => toast.error("保存排序失败"));
   };
+  const treeContent = (
+    <View style={styles.root}>
+      <WorkspaceTree
+        ref={tree}
+        epoch={explorer.epoch}
+        rows={rows}
+        expandedPaths={explorer.expandedPaths}
+        selectedPaths={explorer.selectedPaths}
+        focusedPath={explorer.focusedPath}
+        activePath={activePath}
+        selectionMode={explorer.selectionMode}
+        onSelect={select}
+        onFocus={onFocus}
+        onExpandedChange={explorer.setExpanded}
+        onCollapseAll={explorer.collapseAll}
+        onActivate={activate}
+        onRetry={(p) => {
+          void workspaceExplorerStore
+            .getState()
+            .loadDirectory(workspaceId, p, { reload: true })
+            .catch(() => undefined);
+        }}
+        menuItems={menuItems}
+      />
+      {explorer.directories[""]?.snapshot?.entries.length === 0 &&
+      !explorer.directories[""]?.loading ? (
+        <Text className="text-muted-foreground px-3 py-2">工作区为空</Text>
+      ) : null}
+    </View>
+  );
   return (
     <View style={styles.root}>
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
@@ -480,32 +559,17 @@ export function WorkspaceTreeHost({
           <Button onPress={() => explorer.setSelectionMode(false)}>完成</Button>
         </View>
       ) : null}
-      <WorkspaceTree
-        ref={tree}
-        epoch={explorer.epoch}
-        rows={rows}
-        expandedPaths={explorer.expandedPaths}
-        selectedPaths={explorer.selectedPaths}
-        focusedPath={explorer.focusedPath}
-        activePath={activePath}
-        selectionMode={explorer.selectionMode}
-        onSelect={select}
-        onFocus={onFocus}
-        onExpandedChange={explorer.setExpanded}
-        onCollapseAll={explorer.collapseAll}
-        onActivate={activate}
-        onRetry={(p) => {
-          void workspaceExplorerStore
-            .getState()
-            .loadDirectory(workspaceId, p, { reload: true })
-            .catch(() => undefined);
-        }}
-        menuItems={menuItems}
-      />
-      {explorer.directories[""]?.snapshot?.entries.length === 0 &&
-      !explorer.directories[""]?.loading ? (
-        <Text className="text-muted-foreground px-3 py-2">工作区为空</Text>
-      ) : null}
+      {isDesktop() ? (
+        <ContextMenu
+          style={styles.root}
+          contentSize="sm"
+          items={menuItems("")}
+          triggerProps={{ style: styles.root }}
+          trigger={treeContent}
+        />
+      ) : (
+        treeContent
+      )}
       <WorkspaceExplorerSortSelect
         selectRef={sort}
         value={preferences.workspaceExplorer.sortValue}
@@ -539,8 +603,12 @@ export function WorkspaceTreeHost({
       <WorkspaceEntryDetailsSheet
         open={Boolean(details)}
         entry={details}
+        rootName={workspaceState?.displayName}
         onOpenChange={(open) => {
-          if (!open) setDetails(null);
+          if (!open) {
+            detailsRequest.current += 1;
+            setDetails(null);
+          }
         }}
       />
     </View>

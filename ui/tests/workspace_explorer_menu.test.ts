@@ -89,7 +89,8 @@ test("PC 菜单按 Provider 能力提供路径动作，冻结多选目标且不�
   expect(virtual.some((item) => item.value === "reveal" || item.value === "copy-absolute")).toBe(
     false,
   );
-  expect(virtual.some((item) => item.value === "select" || item.value === "details")).toBe(false);
+  expect(virtual.some((item) => item.value === "select")).toBe(false);
+  expect(virtual.find((item) => item.value === "details")?.disabled).toBe(false);
   virtual.find((item) => item.value === "copy-relative")?.onSelect?.();
   expect(copied).toEqual([["note.md", false]]);
   const targets = ["one.md", "two.md"];
@@ -105,4 +106,73 @@ test("PC 菜单按 Provider 能力提供路径动作，冻结多选目标且不�
   current = false;
   native.find((item) => item.value === "delete")?.onSelect?.();
   expect(removed).toHaveLength(1);
+});
+
+test("桌面文件只提供打开，文件夹和根目录在自身创建，详情固定右键目标", () => {
+  const calls: unknown[] = [];
+  let current = true;
+  const options = {
+    workspaceId: "w",
+    epoch: 1,
+    desktop: true,
+    nativePathAvailable: true,
+    capabilities: {
+      canRead: true,
+      canWrite: true,
+      canCreateDirectory: true,
+      canDelete: true,
+      canRename: true,
+    },
+    actions: {
+      isCurrent: () => current,
+      open: (path: string) => {
+        calls.push(["open", path]);
+      },
+      create: (path: string, kind: string) => {
+        calls.push([kind, path]);
+      },
+      details: (path: string) => {
+        calls.push(["details", path]);
+      },
+      rename: () => {},
+      remove: () => {},
+      select: () => {},
+      refresh: () => {},
+    },
+  };
+  const file = createWorkspaceExplorerMenu({
+    ...options,
+    targetPaths: ["docs/a.md"],
+    targetDirectory: "docs",
+  });
+  expect(file.some((item) => item.value.startsWith("create-"))).toBe(false);
+  file.find((item) => item.value === "open")?.onSelect?.();
+  file.find((item) => item.value === "details")?.onSelect?.();
+  expect(calls).toEqual([
+    ["open", "docs/a.md"],
+    ["details", "docs/a.md"],
+  ]);
+
+  for (const path of ["docs", ""]) {
+    const folder = createWorkspaceExplorerMenu({
+      ...options,
+      targetPaths: [path],
+      targetDirectory: path,
+    });
+    expect(folder.some((item) => item.value === "open")).toBe(false);
+    folder.find((item) => item.value === "create-note")?.onSelect?.();
+    folder.find((item) => item.value === "create-directory")?.onSelect?.();
+    folder.find((item) => item.value === "details")?.onSelect?.();
+    expect(calls.slice(-3)).toEqual([
+      ["note", path],
+      ["directory", path],
+      ["details", path],
+    ]);
+    expect(folder.some((item) => item.value === "rename")).toBe(path !== "");
+    expect(folder.some((item) => item.value === "delete")).toBe(path !== "");
+  }
+  current = false;
+  const count = calls.length;
+  file.find((item) => item.value === "details")?.onSelect?.();
+  expect(calls).toHaveLength(count);
 });

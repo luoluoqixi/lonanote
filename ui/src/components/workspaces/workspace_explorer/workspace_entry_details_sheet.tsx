@@ -16,6 +16,7 @@ type WorkspaceEntryDetailsSheetProps = {
   entry: WorkspaceIndexEntry | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  rootName?: string;
 };
 
 function formatDate(value: number | null | undefined): string {
@@ -26,6 +27,7 @@ export function WorkspaceEntryDetailsSheet({
   entry,
   onOpenChange,
   open,
+  rootName,
 }: WorkspaceEntryDetailsSheetProps) {
   const appBackgroundColors = useAppBackgroundColors();
   const nativeHeaderOptions = getNativeStackScrollEdgeHeaderOptions({
@@ -60,7 +62,7 @@ export function WorkspaceEntryDetailsSheet({
               <WorkspaceDetailsListItem
                 copyId="entry-name"
                 title="名称"
-                value={getFileName(entry.path)}
+                value={entry.path === "" ? (rootName ?? "根目录") : getFileName(entry.path)}
               />
               <WorkspaceDetailsListItem
                 copyId="entry-type"
@@ -70,7 +72,7 @@ export function WorkspaceEntryDetailsSheet({
               <WorkspaceDetailsListItem
                 copyId="entry-path"
                 title="路径"
-                value={entry.path}
+                value={entry.path || "."}
                 valueFontSize={14}
               />
             </NativeListSection>

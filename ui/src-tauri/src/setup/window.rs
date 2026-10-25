@@ -177,6 +177,11 @@ fn apply_startup_window_preferences<'a, R: Runtime, M: Manager<R>>(
     startup_preferences: &utils::win::StartupWindowPreferences,
     builder_window_state: Option<&BuilderStartupWindowState>,
 ) -> WebviewWindowBuilder<'a, R, M> {
+    // 在冒泡阶段取消 WebView 默认菜单，保留应用菜单与编辑器的事件处理。
+    // 覆盖所有 frame，避免编辑器 iframe 的空白区域仍弹出浏览器菜单。
+    let builder = builder.initialization_script_for_all_frames(
+        "window.addEventListener('contextmenu', (event) => event.preventDefault());",
+    );
     let builder = if let Some(background_color) = startup_preferences.background_color {
         builder.background_color(background_color)
     } else {

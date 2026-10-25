@@ -38,6 +38,8 @@ export function createWorkspaceExplorerMenu({
 }): ContextMenuItemData[] {
   const targets = [...targetPaths];
   const single = targets.length === 1;
+  const directory = single && targets[0] === targetDirectory;
+  const root = single && targets[0] === "";
   const guarded =
     (action: () => void, enabled = true) =>
     () => {
@@ -45,25 +47,36 @@ export function createWorkspaceExplorerMenu({
     };
   if (desktop)
     return [
-      {
-        value: "create-note",
-        label: "新建笔记",
-        disabled: !capabilities.canWrite,
-        onSelect: guarded(
-          () => actions.create(targetDirectory!, "note"),
-          targetDirectory !== null && capabilities.canWrite,
-        ),
-      },
-      {
-        value: "create-directory",
-        label: "新建文件夹",
-        disabled: !capabilities.canCreateDirectory,
-        onSelect: guarded(
-          () => actions.create(targetDirectory!, "directory"),
-          targetDirectory !== null && capabilities.canCreateDirectory,
-        ),
-      },
-      { value: "separator-create", separator: true },
+      ...(directory
+        ? [
+            {
+              value: "create-note",
+              label: "新建笔记",
+              disabled: !capabilities.canWrite,
+              onSelect: guarded(
+                () => actions.create(targetDirectory!, "note"),
+                targetDirectory !== null && capabilities.canWrite,
+              ),
+            },
+            {
+              value: "create-directory",
+              label: "新建文件夹",
+              disabled: !capabilities.canCreateDirectory,
+              onSelect: guarded(
+                () => actions.create(targetDirectory!, "directory"),
+                targetDirectory !== null && capabilities.canCreateDirectory,
+              ),
+            },
+          ]
+        : [
+            {
+              value: "open",
+              label: "打开",
+              disabled: !single || !capabilities.canRead,
+              onSelect: guarded(() => actions.open(targets[0]), single && capabilities.canRead),
+            },
+          ]),
+      { value: "separator-primary", separator: true },
       ...(nativePathAvailable
         ? [
             {
@@ -72,6 +85,7 @@ export function createWorkspaceExplorerMenu({
               disabled: !single,
               onSelect: guarded(() => actions.reveal?.(targets[0]), single),
             },
+            { value: "separator-reveal", separator: true },
           ]
         : []),
       ...(nativePathAvailable
@@ -91,21 +105,31 @@ export function createWorkspaceExplorerMenu({
         onSelect: guarded(() => actions.copyPath?.(targets[0], false), single),
       },
       { value: "separator-path", separator: true },
+      ...(root
+        ? []
+        : [
+            {
+              value: "rename",
+              label: "重命名",
+              disabled: !single || !capabilities.canRename,
+              onSelect: guarded(() => actions.rename(targets[0]), single && capabilities.canRename),
+            },
+            {
+              value: "delete",
+              label: "删除",
+              destructive: true,
+              disabled: !targets.length || !capabilities.canDelete,
+              onSelect: guarded(
+                () => actions.remove([...targets]),
+                targets.length > 0 && capabilities.canDelete,
+              ),
+            },
+          ]),
       {
-        value: "rename",
-        label: "重命名",
-        disabled: !single || !capabilities.canRename,
-        onSelect: guarded(() => actions.rename(targets[0]), single && capabilities.canRename),
-      },
-      {
-        value: "delete",
-        label: "删除",
-        destructive: true,
-        disabled: !targets.length || !capabilities.canDelete,
-        onSelect: guarded(
-          () => actions.remove([...targets]),
-          targets.length > 0 && capabilities.canDelete,
-        ),
+        value: "details",
+        label: "查看详情",
+        disabled: !single,
+        onSelect: guarded(() => actions.details(targets[0]), single),
       },
     ];
   return [
