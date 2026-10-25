@@ -1,37 +1,35 @@
-import { LogicalPosition } from "@tauri-apps/api/dpi";
-import { Menu, type MenuOptions } from "@tauri-apps/api/menu";
+import type { DropdownItemData } from "rn-ui-kit";
 
-import { clipboard } from "@/api/commands/system/clipboard";
 import type { EditorCommand, EditorContextMenuPayload } from "@/assets/editor/src/bridge/protocol";
 
 import { type EditorMenuAction, executeEditorMenuAction } from "./editor_menu_actions";
 
-/** 只在 Web Tauri surface 中动态加载，iframe 不接触 Tauri API。 */
-export async function showEditorNativeMenu({
+/** 保留右键时的选区快照，菜单操作继续经过事务校验。 */
+export function createEditorMenuItems({
   payload,
-  x,
-  y,
+  clipboard,
   editable,
   isCurrent,
   execute,
   onError,
 }: {
   payload: EditorContextMenuPayload;
-  x: number;
-  y: number;
+  clipboard: { readText(): Promise<string>; writeText(text: string): Promise<void> };
   editable: boolean;
   isCurrent(): boolean;
   execute(command: EditorCommand): Promise<unknown>;
   onError(error: unknown): void;
-}) {
-  const item = (text: string, action: EditorMenuAction, enabled = editable) => ({
-    text,
-    enabled,
+}): DropdownItemData[] {
+  const item = (text: string, action: EditorMenuAction, enabled = editable): DropdownItemData => ({
+    value: text,
+    textValue: text,
+    disabled: !enabled,
     ...(typeof action === "object" && action.type === "mark.toggle"
-      ? { checked: payload.activeMarks.includes(action.mark) }
+      ? { selected: payload.activeMarks.includes(action.mark) }
       : {}),
-    action: () => {
-      void executeEditorMenuAction(action, {
+    onSelect: async () => {
+      if (!enabled) return;
+      await executeEditorMenuAction(action, {
         text: payload.text,
         isCurrent,
         execute,
@@ -39,12 +37,14 @@ export async function showEditorNativeMenu({
       }).catch(onError);
     },
   });
-  const separator = { item: "Separator" as const };
-  const items: NonNullable<MenuOptions["items"]> = [
+  const separator = { value: "separator", separator: true };
+  return [
     {
-      text: "文本格式",
-      enabled: editable,
-      items: [
+      value: "文本格式",
+      textValue: "文本格式",
+      disabled: !editable,
+      subMenuTitle: false,
+      subMenu: [
         item("加粗", { type: "mark.toggle", mark: "bold" }),
         item("斜体", { type: "mark.toggle", mark: "italic" }),
         item("删除线", { type: "mark.toggle", mark: "strikethrough" }),
@@ -53,9 +53,11 @@ export async function showEditorNativeMenu({
       ],
     },
     {
-      text: "段落",
-      enabled: editable,
-      items: [
+      value: "段落",
+      textValue: "段落",
+      disabled: !editable,
+      subMenuTitle: false,
+      subMenu: [
         item("正文", { type: "block.set", block: "paragraph" }),
         ...([1, 2, 3, 4, 5, 6] as const).map((level) =>
           item(`标题 ${level}`, { type: "block.set", block: "heading", level }),
@@ -64,18 +66,22 @@ export async function showEditorNativeMenu({
       ],
     },
     {
-      text: "列表",
-      enabled: editable,
-      items: [
+      value: "列表",
+      textValue: "列表",
+      disabled: !editable,
+      subMenuTitle: false,
+      subMenu: [
         item("无序列表", { type: "list.toggle", list: "unordered" }),
         item("有序列表", { type: "list.toggle", list: "ordered" }),
         item("任务列表", { type: "list.toggle", list: "task" }),
       ],
     },
     {
-      text: "插入",
-      enabled: editable,
-      items: [
+      value: "插入",
+      textValue: "插入",
+      disabled: !editable,
+      subMenuTitle: false,
+      subMenu: [
         item("链接", { type: "insert.link" }),
         item("图片", { type: "insert.image" }),
         item("代码块", { type: "insert.codeBlock" }),
@@ -92,10 +98,4 @@ export async function showEditorNativeMenu({
     item("撤销", { type: "history.undo" }, editable && payload.canUndo),
     item("重做", { type: "history.redo" }, editable && payload.canRedo),
   ];
-  const menu = await Menu.new({ items });
-  try {
-    if (isCurrent()) await menu.popup(new LogicalPosition(x, y));
-  } finally {
-    await menu.close().catch(() => undefined);
-  }
 }

@@ -1,4 +1,4 @@
-import { RootProvider, resolveGeneratedAccentTheme } from "rn-ui-kit";
+import { MenuProvider, RootProvider, resolveGeneratedAccentTheme } from "rn-ui-kit";
 
 import { useUiPreferences } from "@/hooks/settings";
 import { accentThemeNames } from "@/theme/accent_themes";
@@ -31,7 +31,11 @@ export function AppProvider({ children }: AppProviderProps) {
           : undefined
       }
     >
-      {children}
+      <MenuProvider
+        value={{ native: preferences.shell.layoutMode === "desktop" ? false : undefined }}
+      >
+        {children}
+      </MenuProvider>
     </RootProvider>
   );
 }

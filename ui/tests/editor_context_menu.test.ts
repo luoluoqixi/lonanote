@@ -100,3 +100,56 @@ test("菜单快照拒绝伪造的格式状态", () => {
     }),
   ).toBe(false);
 });
+
+test("菜单项保留格式勾选、只读限制，并拒绝失效目标", async () => {
+  const { createEditorMenuItems } =
+    await import("../src/components/editor/desktop/editor_menu_items");
+  let current = true;
+  const commands: unknown[] = [];
+  const copied: string[] = [];
+  const items = createEditorMenuItems({
+    payload: {
+      revision: 1,
+      selectionVersion: 0,
+      from: 0,
+      to: 2,
+      text: "选区",
+      x: 0,
+      y: 0,
+      activeMarks: ["bold"],
+      canUndo: true,
+      canRedo: false,
+    },
+    editable: false,
+    isCurrent: () => current,
+    execute: async (command) => {
+      commands.push(command);
+    },
+    clipboard: {
+      readText: async () => "粘贴",
+      writeText: async (text) => {
+        copied.push(text);
+      },
+    },
+    onError: (error) => {
+      throw error;
+    },
+  });
+  const find = (label: string) => items.find((item) => item.textValue === label)!;
+  expect(find("文本格式").disabled).toBe(true);
+  expect(find("文本格式").subMenu?.find((item) => item.textValue === "加粗")?.selected).toBe(true);
+  expect(find("剪切").disabled).toBe(true);
+  expect(find("复制").disabled).toBe(false);
+  expect(find("全选").disabled).toBe(false);
+  expect(find("撤销").disabled).toBe(true);
+  expect(find("重做").disabled).toBe(true);
+  await find("剪切").onSelect?.();
+  expect(commands).toEqual([]);
+  await find("复制").onSelect?.();
+  expect(copied).toEqual(["选区"]);
+  current = false;
+  await find("复制").onSelect?.();
+  await find("全选").onSelect?.();
+  expect(copied).toEqual(["选区"]);
+  expect(commands).toEqual([]);
+});

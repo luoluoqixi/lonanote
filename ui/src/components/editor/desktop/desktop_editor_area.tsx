@@ -1,5 +1,5 @@
 import { FilePlus2, FolderOpen } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, Spinner, useUiTheme } from "rn-ui-kit";
 
@@ -19,12 +19,15 @@ import { isDocumentDirty } from "@/stores/editor";
 
 import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
+import { EditorMenuPopup } from "./editor_menu_popup";
+import type { EditorMenuRequest } from "./editor_menu_popup_types";
 import { EditorTabInput } from "./editor_tab_input";
 import {
   type EditorTabCloseAction,
   getEditorTabCloseTargets,
   getEditorTabRef,
 } from "./editor_tab_menu_actions";
+import type { EditorTabMenuItem } from "./editor_tab_menu_items";
 import { getEditorTabScrollTarget } from "./editor_tab_scroll";
 
 export function DesktopEditorArea({
@@ -33,6 +36,8 @@ export function DesktopEditorArea({
   onRevealInExplorer?: (workspaceId: string, path: string) => Promise<void>;
 }) {
   const theme = useUiTheme();
+  const [tabMenu, setTabMenu] = useState<EditorMenuRequest | null>(null);
+  const menuSequence = useRef(0);
   const {
     activeEditorId,
     getSnapshot,
@@ -134,11 +139,13 @@ export function DesktopEditorArea({
   const openTabMenu = useCallback(
     async (id: string, x: number, y: number) => {
       if (!isDesktop()) return;
+      const sequence = ++menuSequence.current;
       const initial = getSnapshot();
       const ref = getEditorTabRef(id, initial);
       if (!ref) return;
       const identity = JSON.stringify(ref);
       const isCurrent = () =>
+        sequence === menuSequence.current &&
         getSnapshot().openEditorIds.includes(id) &&
         JSON.stringify(getEditorTabRef(id, getSnapshot())) === identity;
       const nativePath =
@@ -148,60 +155,71 @@ export function DesktopEditorArea({
             ? await workspaceFile.nativePath(ref.workspaceId, ref.filePath).catch(() => null)
             : null;
       if (!isCurrent()) return;
-      const { showEditorTabNativeMenu } = await import("./editor_tab_native_menu");
-      await showEditorTabNativeMenu({
+      const items: EditorTabMenuItem[] = [
+        { action: "close", text: "关闭", enabled: true },
+        { action: "closeOthers", text: "关闭其他", enabled: initial.openEditorIds.length > 1 },
+        {
+          action: "closeRight",
+          text: "关闭右侧标签页",
+          enabled: getEditorTabCloseTargets("closeRight", id, initial).length > 0,
+        },
+        {
+          action: "closeSaved",
+          text: "关闭已保存",
+          enabled: getEditorTabCloseTargets("closeSaved", id, initial).length > 0,
+        },
+        { action: "closeAll", text: "全部关闭", enabled: true },
+        { action: "copyPath", text: "复制路径", enabled: !!nativePath, separatorBefore: true },
+        { action: "copyRelativePath", text: "复制相对路径", enabled: ref.kind !== "untitled" },
+        {
+          action: "revealFile",
+          text: "在文件管理器中显示",
+          enabled: !!nativePath,
+          separatorBefore: true,
+        },
+        {
+          action: "revealExplorer",
+          text: "在资源管理器视图中显示",
+          enabled:
+            ref.kind === "workspaceFile" &&
+            ref.workspaceId === currentWorkspaceId &&
+            !!onRevealInExplorer,
+        },
+      ];
+      const execute = async (action: EditorTabMenuItem["action"]) => {
+        if (action === "copyPath") {
+          if (nativePath) await clipboard.writeText(nativePath);
+        } else if (action === "copyRelativePath") {
+          if (ref.kind !== "untitled")
+            await clipboard.writeText(
+              ref.kind === "workspaceFile" ? ref.filePath : ref.absolutePath,
+            );
+        } else if (action === "revealFile") {
+          if (nativePath) await fs.showInFolder(nativePath);
+        } else if (action === "revealExplorer") {
+          if (ref.kind === "workspaceFile" && ref.workspaceId === currentWorkspaceId)
+            await onRevealInExplorer?.(ref.workspaceId, ref.filePath);
+        } else {
+          await requestClose(id, action);
+        }
+      };
+      setTabMenu({
+        sequence,
         x,
         y,
         isCurrent,
-        onError: reportError,
-        items: [
-          { action: "close", text: "关闭", enabled: true },
-          { action: "closeOthers", text: "关闭其他", enabled: initial.openEditorIds.length > 1 },
+        restoreFocus: () => tabNodes.current.get(id)?.focus(),
+        items: items.flatMap((item) => [
+          ...(item.separatorBefore ? [{ value: `separator-${item.action}`, separator: true }] : []),
           {
-            action: "closeRight",
-            text: "关闭右侧标签页",
-            enabled: getEditorTabCloseTargets("closeRight", id, initial).length > 0,
+            value: item.action,
+            textValue: item.text,
+            disabled: !item.enabled,
+            onSelect: () => {
+              if (isCurrent() && item.enabled) void execute(item.action).catch(reportError);
+            },
           },
-          {
-            action: "closeSaved",
-            text: "关闭已保存",
-            enabled: getEditorTabCloseTargets("closeSaved", id, initial).length > 0,
-          },
-          { action: "closeAll", text: "全部关闭", enabled: true },
-          { action: "copyPath", text: "复制路径", enabled: !!nativePath, separatorBefore: true },
-          { action: "copyRelativePath", text: "复制相对路径", enabled: ref.kind !== "untitled" },
-          {
-            action: "revealFile",
-            text: "在文件管理器中显示",
-            enabled: !!nativePath,
-            separatorBefore: true,
-          },
-          {
-            action: "revealExplorer",
-            text: "在资源管理器视图中显示",
-            enabled:
-              ref.kind === "workspaceFile" &&
-              ref.workspaceId === currentWorkspaceId &&
-              !!onRevealInExplorer,
-          },
-        ],
-        execute: async (action) => {
-          if (action === "copyPath") {
-            if (nativePath) await clipboard.writeText(nativePath);
-          } else if (action === "copyRelativePath") {
-            if (ref.kind !== "untitled")
-              await clipboard.writeText(
-                ref.kind === "workspaceFile" ? ref.filePath : ref.absolutePath,
-              );
-          } else if (action === "revealFile") {
-            if (nativePath) await fs.showInFolder(nativePath);
-          } else if (action === "revealExplorer") {
-            if (ref.kind === "workspaceFile" && ref.workspaceId === currentWorkspaceId)
-              await onRevealInExplorer?.(ref.workspaceId, ref.filePath);
-          } else {
-            await requestClose(id, action);
-          }
-        },
+        ]),
       });
     },
     [currentWorkspaceId, getSnapshot, onRevealInExplorer, reportError, requestClose],
@@ -224,6 +242,7 @@ export function DesktopEditorArea({
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
+      <EditorMenuPopup request={tabMenu} onDismiss={() => setTabMenu(null)} />
       <View style={[styles.tabs, { borderBottomColor: theme.border }]}>
         <ScrollView
           ref={scrollRef}

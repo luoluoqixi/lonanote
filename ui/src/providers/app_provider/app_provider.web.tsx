@@ -1,6 +1,9 @@
-import { useEffect } from "react";
-import { RootProvider, resolveGeneratedAccentTheme } from "rn-ui-kit";
+import { useEffect, useMemo } from "react";
+import { MenuProvider, RootProvider, resolveGeneratedAccentTheme } from "rn-ui-kit";
 
+import { resolveDesktopContextMenuNative } from "@/api/common/desktop_menu_policy";
+import { isTauri, os } from "@/api/common/platform";
+import { showTauriContextMenu } from "@/api/common/tauri_context_menu.web";
 import {
   useColorSchemeSettings,
   useDesktopAccentColor,
@@ -21,6 +24,18 @@ import type { AppProviderProps } from "./types";
 export function AppProvider({ children }: AppProviderProps) {
   const { isLoaded, preferredColorScheme, preferences, resolvedColorScheme } =
     useColorSchemeSettings();
+
+  const nativeMenus = resolveDesktopContextMenuNative(preferences.shell.layoutMode, os());
+  const menuConfig = useMemo(
+    () => ({
+      native: nativeMenus,
+      webContentMaxHeight:
+        preferences.shell.layoutMode === "desktop" ? "calc(100vh - 24px)" : undefined,
+      showNativeMenu: nativeMenus && isTauri() ? showTauriContextMenu : undefined,
+      onNativeMenuError: (error: unknown) => console.warn("无法打开原生菜单", error),
+    }),
+    [nativeMenus, preferences.shell.layoutMode],
+  );
 
   useDesktopAccentColor();
   useDesktopWindowBackground(preferredColorScheme, resolvedColorScheme, isLoaded);
@@ -49,7 +64,7 @@ export function AppProvider({ children }: AppProviderProps) {
           : undefined
       }
     >
-      {children}
+      <MenuProvider value={menuConfig}>{children}</MenuProvider>
     </RootProvider>
   );
 }

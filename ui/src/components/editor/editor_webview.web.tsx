@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToast, useUiColorScheme, useUiTheme } from "rn-ui-kit";
 
+import { clipboard } from "@/api/commands/system/clipboard";
 import { isDesktop, isDev, os } from "@/api/common/platform";
 import editorHtml from "@/assets/editor/dist/index.html";
 import type { EditorPlatform } from "@/assets/editor/src/bridge/protocol";
@@ -21,6 +22,9 @@ import { useGlobalSettings } from "@/hooks/settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
 import { registerEditorMenuInvalidation } from "./controllers/editor_menu_lifecycle";
+import { createEditorMenuItems } from "./desktop/editor_menu_items";
+import { EditorMenuPopup } from "./desktop/editor_menu_popup";
+import type { EditorMenuRequest } from "./desktop/editor_menu_popup_types";
 import { getEditorDevUrl } from "./editor_dev_url";
 import { resolveEditorSemanticColors } from "./theme/editor_theme";
 
@@ -59,6 +63,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const bridgeClientRef = useRef<EditorBridgeClient | null>(null);
   const menuSequenceRef = useRef(0);
+  const [menuRequest, setMenuRequest] = useState<EditorMenuRequest | null>(null);
   const recoveryAttemptsRef = useRef(0);
   const [surfaceGeneration, setSurfaceGeneration] = useState(1);
   const restartSurface = useCallback(() => {
@@ -187,39 +192,45 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
           };
           const editable =
             !view.readOnly && !view.previewMode && target.editOwnerEditorId === editor.editorId;
-          void import("./desktop/editor_native_menu")
-            .then(({ showEditorNativeMenu }) =>
-              showEditorNativeMenu({
-                payload,
-                x: rect.left + payload.x,
-                y: rect.top + payload.y,
-                editable,
-                isCurrent,
-                execute: async (command) => {
-                  if (!isCurrent()) return;
-                  const state = editorStore.getState();
-                  const currentView = state.editorsById[editor.editorId];
-                  const currentDocument = state.documentsById[document.documentId];
-                  if (
-                    command.type !== "selection.selectAll" &&
-                    (currentView?.readOnly ||
-                      currentView?.previewMode ||
-                      currentDocument?.editOwnerEditorId !== editor.editorId)
-                  )
-                    return;
-                  const result = await client.executeContextCommand(payload, command);
-                  return result;
-                },
-                onError: (error) => {
-                  console.warn("编辑器菜单操作失败", error);
-                  toastRef.current.error("菜单操作失败");
-                },
-              }),
-            )
-            .catch((error) => {
-              console.warn("无法打开编辑器菜单", error);
-              toastRef.current.error("无法打开编辑器菜单");
-            });
+          setMenuRequest({
+            sequence,
+            x: rect.left + payload.x,
+            y: rect.top + payload.y,
+            isCurrent,
+            restoreFocus: () => {
+              void client.executeCommand({ type: "editor.focus" }).catch(() => undefined);
+            },
+            items: createEditorMenuItems({
+              payload,
+              editable,
+              isCurrent,
+              clipboard,
+              execute: async (command) => {
+                if (!isCurrent()) return;
+                const state = editorStore.getState();
+                const currentView = state.editorsById[editor.editorId];
+                const currentDocument = state.documentsById[document.documentId];
+                if (
+                  command.type !== "selection.selectAll" &&
+                  (currentView?.readOnly ||
+                    currentView?.previewMode ||
+                    currentDocument?.editOwnerEditorId !== editor.editorId)
+                )
+                  return;
+                const result = await client.executeContextCommand(payload, command);
+                if (
+                  bridgeClientRef.current === client &&
+                  editorStore.getState().activeEditorId === editor.editorId
+                )
+                  await client.executeCommand({ type: "editor.focus" });
+                return result;
+              },
+              onError: (error) => {
+                console.warn("编辑器菜单操作失败", error);
+                toastRef.current.error("菜单操作失败");
+              },
+            }),
+          });
         },
         onFatal: () => {
           editorStore.getState().setEditorBridgeState(editor.editorId, "failed");
@@ -234,6 +245,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
     () =>
       registerEditorMenuInvalidation(editor.editorId, () => {
         menuSequenceRef.current += 1;
+        setMenuRequest(null);
       }),
     [editor.editorId],
   );
@@ -291,24 +303,31 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
     bridgeClient.syncPreferences(initializePayload.preferences);
   }, [bridgeClient, initializePayload.preferences, initializePayload.runtime]);
 
+  useEffect(() => {
+    setMenuRequest(null);
+  }, [active, bridgeClient, document.draftRevision, document.identityRevision]);
+
   const source = isDev() ? (getEditorDevUrl() ?? editorHtml) : editorHtml;
   const resolvedIframeStyle = { ...iframeStyle, backgroundColor: editorColors.canvas };
   if (resourceContext.isLoading)
     return <div aria-label="编辑器资源加载中" style={resolvedIframeStyle} />;
   return (
-    <iframe
-      aria-label="编辑器"
-      tabIndex={active ? 0 : -1}
-      key={identity.channelId}
-      onError={restartSurface}
-      onLoad={() => {
-        editorStore.getState().setEditorBridgeState(editor.editorId, "handshaking");
-        bridgeClient.initializeSurface();
-      }}
-      ref={iframeRef}
-      src={source}
-      style={resolvedIframeStyle}
-      title="编辑器"
-    />
+    <>
+      <iframe
+        aria-label="编辑器"
+        tabIndex={active ? 0 : -1}
+        key={identity.channelId}
+        onError={restartSurface}
+        onLoad={() => {
+          editorStore.getState().setEditorBridgeState(editor.editorId, "handshaking");
+          bridgeClient.initializeSurface();
+        }}
+        ref={iframeRef}
+        src={source}
+        style={resolvedIframeStyle}
+        title="编辑器"
+      />
+      <EditorMenuPopup request={menuRequest} onDismiss={() => setMenuRequest(null)} />
+    </>
   );
 }

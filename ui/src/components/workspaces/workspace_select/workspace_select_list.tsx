@@ -94,6 +94,7 @@ export function WorkspaceSelectList({
 
   return (
     <NativeList
+      native={desktop ? false : undefined}
       backgroundColor={desktop ? theme.background : undefined}
       listStyleOptions={
         desktop
