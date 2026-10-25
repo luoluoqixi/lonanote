@@ -165,6 +165,11 @@ function TreeNode({
                   }
                 />
               ) : null}
+              {folder && row.isLoading ? (
+                <View style={styles.spinnerInset}>
+                  <Spinner size="sm" />
+                </View>
+              ) : null}
             </Pressable>
           }
         />
@@ -333,6 +338,7 @@ const styles = StyleSheet.create({
   },
   label: { flex: 1, fontSize: 13 },
   chevronSpace: { width: 20 },
+  spinnerInset: { marginRight: 8 },
   more: { width: 28, height: ROW_HEIGHT, alignItems: "center", justifyContent: "center" },
   status: { height: ROW_HEIGHT, justifyContent: "center" },
 });

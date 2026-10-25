@@ -7,6 +7,7 @@ export type WorkspaceTreeNodeRow = {
   parentPath: string;
   depth: number;
   entry: WorkspaceIndexEntry;
+  isLoading: boolean;
 };
 export type WorkspaceTreeRow =
   | WorkspaceTreeNodeRow

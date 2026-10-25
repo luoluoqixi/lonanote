@@ -20,10 +20,15 @@ export function flattenVisibleRows(
         parentPath: path,
         depth,
         entry,
+        isLoading:
+          entry.fileType === "directory" &&
+          expanded.has(entry.path) &&
+          !directories[entry.path]?.error &&
+          (directories[entry.path]?.loading || !directories[entry.path]?.snapshot),
       });
       if (entry.fileType === "directory" && expanded.has(entry.path)) visit(entry.path, depth + 1);
     }
-    if (directory?.error || directory?.loading || !directory?.snapshot) {
+    if (directory?.error || (path === "" && (directory?.loading || !directory?.snapshot))) {
       const kind = directory?.error ? "error" : "loading";
       rows.push({
         kind,

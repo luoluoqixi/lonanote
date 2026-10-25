@@ -42,9 +42,32 @@ test("仅展开链扁平化，层级稳定，不修改缓存；未加载与空�
   ]);
   expect(directories[""].snapshot?.entries[0].path).toBe("B");
   const unloaded = flattenVisibleRows({ "": directories[""] }, ["A"], byName);
-  expect(unloaded[1].kind).toBe("loading");
+  expect(unloaded.map((row) => row.path)).toEqual(["A", "B"]);
+  expect(unloaded[0]).toMatchObject({ isLoading: true });
   const empty = flattenVisibleRows({ "": directories[""], A: directory("A", []) }, ["A"], byName);
   expect(empty.map((r) => r.path)).toEqual(["A", "B"]);
+  const loadingRoot = { ...directory("", []), snapshot: null, loading: true };
+  expect(flattenVisibleRows({ "": loadingRoot }, [], byName).map((row) => row.kind)).toEqual([
+    "loading",
+  ]);
+});
+test("展开中的目录把加载状态附在目录行，不追加子项后的状态行", () => {
+  const loadingDirectory = {
+    ...directory("A", [entry("A/a.md", "file")]),
+    loading: true,
+  };
+  const rows = flattenVisibleRows(
+    { "": directories[""], A: loadingDirectory },
+    ["A"],
+    byName,
+  );
+
+  expect(rows.map((row) => [row.path, row.kind])).toEqual([
+    ["A", "node"],
+    ["A/a.md", "node"],
+    ["B", "node"],
+  ]);
+  expect(rows[0]).toMatchObject({ isLoading: true });
 });
 test("状态行不参与选择，range 仅含可见节点，失效 anchor 回退目标", () => {
   const rows = flattenVisibleRows({ "": directories[""] }, ["A"], byName);

@@ -308,6 +308,7 @@ export function WorkspaceTreeHost({
                 parentPath: p.split("/").slice(0, -1).join("/"),
                 depth: 0,
                 entry: e,
+                isLoading: false,
               });
           },
           create: openCreate,
