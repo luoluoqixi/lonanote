@@ -1,11 +1,12 @@
 use cmdreg::command;
 
 use crate::workspace::{
-    workspace_manager, AttachWorkspaceResult, OpenWorkspaceResult, RelocateWorkspaceResult,
-    RemoveWorkspaceResult, ResolveScanWorkspaceIdConflictResult, ScanManagedWorkspacesResult,
-    StorageProviderId, WorkspaceId, WorkspaceIdMismatchResolution, WorkspaceListItem,
-    WorkspaceLocalSetting, WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot,
-    WorkspaceStateStatus, WorkspaceStorageBindingRequest, WorkspaceStorageTarget,
+    workspace_manager, AttachWorkspaceResult, EnsureExternalWorkspaceResult, OpenWorkspaceResult,
+    RelocateWorkspaceResult, RemoveWorkspaceResult, ResolveScanWorkspaceIdConflictResult,
+    ScanManagedWorkspacesResult, StorageProviderId, WorkspaceError, WorkspaceId,
+    WorkspaceIdMismatchResolution, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceRelativePath,
+    WorkspaceSettings, WorkspaceSnapshot, WorkspaceStateStatus, WorkspaceStorageBindingRequest,
+    WorkspaceStorageTarget,
 };
 
 #[command("workspace")]
@@ -84,9 +85,26 @@ async fn create_external(
 async fn ensure_external(
     binding: WorkspaceStorageBindingRequest,
     display_name: String,
+) -> anyhow::Result<EnsureExternalWorkspaceResult> {
+    match workspace_manager()
+        .ensure_external_workspace(binding, display_name)
+        .await
+    {
+        Ok(workspace) => Ok(EnsureExternalWorkspaceResult::Ready { workspace }),
+        Err(WorkspaceError::DuplicateWorkspaceId(workspace_id)) => {
+            Ok(EnsureExternalWorkspaceResult::IdConflict { workspace_id })
+        }
+        Err(error) => Err(error.into()),
+    }
+}
+
+#[command("workspace")]
+async fn resolve_external_id_conflict(
+    binding: WorkspaceStorageBindingRequest,
+    expected_id: WorkspaceId,
 ) -> anyhow::Result<AttachWorkspaceResult> {
     Ok(workspace_manager()
-        .ensure_external_workspace(binding, display_name)
+        .resolve_external_id_conflict(binding, expected_id)
         .await?)
 }
 

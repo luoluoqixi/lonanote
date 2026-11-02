@@ -15,6 +15,55 @@ use super::fixture::{
 };
 
 #[test]
+fn external_folder_conflict_returns_diagnostics_and_imports_only_the_copy() {
+    let (app, _guard) = locked_app();
+    run(async {
+        let original = create_managed("API Original").await;
+        let source = app.managed_workspace_root(&original);
+        let copied = app.external_dir("api-conflicting-copy");
+        std::fs::create_dir_all(copied.join(".lonanote")).unwrap();
+        for name in ["manifest.json", "settings.json", "settings.local.json"] {
+            std::fs::copy(
+                source.join(".lonanote").join(name),
+                copied.join(".lonanote").join(name),
+            )
+            .unwrap();
+        }
+        let result: Value = invoke_json(
+            "workspace.ensure_external",
+            json!({
+                "binding": external_binding_json(&copied), "displayName": "副本"
+            }),
+        )
+        .await;
+        assert_eq!(
+            result,
+            json!({"status": "idConflict", "workspaceId": original.id})
+        );
+        let imported: Value = invoke_json(
+            "workspace.resolve_external_id_conflict",
+            json!({
+                "binding": external_binding_json(&copied), "expectedId": original.id
+            }),
+        )
+        .await;
+        assert_ne!(imported["id"], original.id.to_string());
+        let ready: Value = invoke_json(
+            "workspace.ensure_external",
+            json!({
+                "binding": external_binding_json(&copied), "displayName": "副本"
+            }),
+        )
+        .await;
+        assert_eq!(ready["status"], "ready");
+        assert_eq!(ready["workspace"]["id"], imported["id"]);
+        let imported_id: WorkspaceId = serde_json::from_value(imported["id"].clone()).unwrap();
+        remove_closed(imported_id).await;
+        close_and_remove(original.id).await;
+    });
+}
+
+#[test]
 fn managed_flow() {
     let (_app, _guard) = locked_app();
     run(async {

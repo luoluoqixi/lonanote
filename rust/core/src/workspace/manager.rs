@@ -362,6 +362,65 @@ impl WorkspaceManager {
         self.attach_workspace_locked(request).await
     }
 
+    /// 只为尚未登记的所选目录生成 ID，不允许修改冲突的已注册工作区。
+    pub async fn resolve_external_id_conflict(
+        &self,
+        request: WorkspaceStorageBindingRequest,
+        expected_id: WorkspaceId,
+    ) -> Result<AttachWorkspaceResult, WorkspaceError> {
+        if request.is_managed() {
+            return Err(WorkspaceError::ExpectedExternalBinding);
+        }
+        let _lifecycle = self.lifecycle_lock.write().await;
+        let binding = self.resolve_binding(request).await?;
+        let records = self.catalog.list().await;
+        if records.iter().any(|record| {
+            self.storage_resolver
+                .same_resource(&record.storage_binding, &binding)
+        }) {
+            return Err(WorkspaceError::ExternalImportConflict(
+                "所选文件夹已经注册，请重新打开".into(),
+            ));
+        }
+        if !records.iter().any(|record| record.id == expected_id) {
+            return Err(WorkspaceError::ExternalImportConflict(
+                "冲突工作区记录已变化，请重新打开文件夹".into(),
+            ));
+        }
+        let session = self.storage_resolver.open(&binding).await?;
+        let original = load_manifest(session.as_ref())
+            .await?
+            .ok_or(WorkspaceError::ManifestNotFound)?;
+        if original.id != expected_id {
+            return Err(WorkspaceError::ExternalImportConflict(
+                "文件夹中的 ID 已变化，请重新打开文件夹".into(),
+            ));
+        }
+        load_workspace_settings(session.as_ref()).await?;
+        load_local_setting(session.as_ref()).await?;
+        load_workspace_state(session.as_ref()).await?;
+        if !session.capabilities().await?.can_write {
+            return Err(WorkspaceError::ExternalImportConflict(
+                "所选文件夹不可写，无法生成新 ID".into(),
+            ));
+        }
+        let mut manifest = original.clone();
+        manifest.id = loop {
+            let id = WorkspaceId::new();
+            if !records.iter().any(|record| record.id == id) {
+                break id;
+            }
+        };
+        let mut record = record_from_manifest(binding, &manifest, now_timestamp());
+        record.cached_summary.modified_at = read_modified_at(session.as_ref(), None).await?;
+        save_manifest(session.as_ref(), &manifest).await?;
+        if let Err(error) = self.catalog.add(record.clone()).await {
+            save_manifest(session.as_ref(), &original).await?;
+            return Err(error);
+        }
+        Ok(AttachWorkspaceResult::from(&record))
+    }
+
     pub async fn attach_workspace(
         &self,
         request: WorkspaceStorageBindingRequest,

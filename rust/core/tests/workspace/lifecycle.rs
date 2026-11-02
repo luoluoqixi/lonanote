@@ -10,6 +10,66 @@ use lonanote_core::workspace::{
 use tokio::sync::Barrier;
 
 #[tokio::test]
+async fn external_conflict_only_rekeys_selected_copy_and_rejects_stale_confirmation() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let original = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "原工作区".into())
+        .await
+        .unwrap();
+    let source = app.managed_workspace_root(&original);
+    let copied = app.external_dir("copied");
+    std::fs::create_dir_all(copied.join(".lonanote")).unwrap();
+    for name in ["manifest.json", "settings.json", "settings.local.json"] {
+        std::fs::copy(
+            source.join(".lonanote").join(name),
+            copied.join(".lonanote").join(name),
+        )
+        .unwrap();
+    }
+    std::fs::write(copied.join("note.md"), "保留笔记内容").unwrap();
+    let manifest_path = copied.join(".lonanote/manifest.json");
+    let before = std::fs::read(&manifest_path).unwrap();
+    assert!(
+        matches!(manager.ensure_external_workspace(external_binding(&copied), "副本".into()).await,
+        Err(WorkspaceError::DuplicateWorkspaceId(id)) if id == original.id)
+    );
+    // 未确认时不修改文件、不登记副本。
+    assert_eq!(std::fs::read(&manifest_path).unwrap(), before);
+    assert_eq!(manager.list_workspaces().await.len(), 1);
+    assert!(manager
+        .resolve_external_id_conflict(external_binding(&copied), WorkspaceId::new())
+        .await
+        .is_err());
+    assert_eq!(std::fs::read(&manifest_path).unwrap(), before);
+    let imported = manager
+        .resolve_external_id_conflict(external_binding(&copied), original.id)
+        .await
+        .unwrap();
+    assert_ne!(imported.id, original.id);
+    assert_eq!(app.read_manifest(&original).id, original.id);
+    assert!(manager.is_workspace_open(&original.id).await);
+    assert!(!manager.is_workspace_open(&imported.id).await);
+    assert_eq!(manager.list_workspaces().await.len(), 2);
+    assert_eq!(
+        std::fs::read_to_string(copied.join("note.md")).unwrap(),
+        "保留笔记内容"
+    );
+    let imported_manifest = std::fs::read(&manifest_path).unwrap();
+    assert!(manager
+        .resolve_external_id_conflict(external_binding(&copied), original.id)
+        .await
+        .is_err());
+    assert_eq!(std::fs::read(&manifest_path).unwrap(), imported_manifest);
+    // 不能借冲突处理命令改写原工作区。
+    assert!(manager
+        .resolve_external_id_conflict(external_binding(&source), original.id)
+        .await
+        .is_err());
+    assert_eq!(app.read_manifest(&original).id, original.id);
+}
+
+#[tokio::test]
 async fn ensure_external_reuses_registration_and_attaches_existing_manifest() {
     let app = WorkspaceTestApp::new();
     let manager = app.start().await;

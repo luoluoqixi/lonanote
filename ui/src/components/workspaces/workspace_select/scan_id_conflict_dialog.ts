@@ -43,6 +43,18 @@ function describeCandidate(name: string, candidate: ScanWorkspaceConflictCandida
 }
 
 /** 整组只记录最终保留者；任何一步跳过或关闭弹窗都不提交文件修改。 */
+export async function confirmExternalIdRegeneration(folderPath: string): Promise<boolean> {
+  const result = await confirmNative({
+    title: "工作区 ID 重复",
+    message: `所选文件夹与已有工作区使用相同的 ID：\n${folderPath}\n\n是否为此文件夹生成新 ID 并导入？已有工作区的 ID 保持不变。`,
+    buttons: [
+      { key: "cancel", style: "cancel", text: "取消导入" },
+      { key: "generate", text: "生成新 ID 并导入" },
+    ],
+  });
+  return result === "generate";
+}
+
 export async function chooseScanIdConflictKeeper(
   conflict: ScanWorkspaceIdConflict,
 ): Promise<number | null> {

@@ -3,6 +3,7 @@ import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import {
+  type ExternalWorkspaceStorageBindingRequest,
   type StorageProviderId,
   type WorkspaceListItem,
   type WorkspaceSnapshot,
@@ -20,7 +21,10 @@ import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_ru
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
-import { chooseScanIdConflictKeeper } from "./scan_id_conflict_dialog";
+import {
+  chooseScanIdConflictKeeper,
+  confirmExternalIdRegeneration,
+} from "./scan_id_conflict_dialog";
 import { WorkspaceDetailsSheet } from "./workspace_details_sheet";
 import {
   WORKSPACE_GROUP_MODE_GROUPS,
@@ -671,15 +675,23 @@ export function WorkspaceSelectContent({
       const selected = await fs.showSelectDialog({ type: "openFolder", title: "打开文件夹" });
       if (!selected?.path) return;
       folderPath = selected.path;
-      const target = await workspace.ensureExternal(
-        {
-          kind: "external",
-          providerId: "desktop-folder",
-          providerSchemaVersion: 1,
-          resourceRef: selected.path,
-        },
+      const binding: ExternalWorkspaceStorageBindingRequest = {
+        kind: "external",
+        providerId: "desktop-folder",
+        providerSchemaVersion: 1,
+        resourceRef: selected.path,
+      };
+      const result = await workspace.ensureExternal(
+        binding,
         getFileName(selected.path.replace(/\\/g, "/")),
       );
+      if (result.status === "idConflict" && !(await confirmExternalIdRegeneration(selected.path))) {
+        return;
+      }
+      const target =
+        result.status === "ready"
+          ? result.workspace
+          : await workspace.resolveExternalIdConflict(binding, result.workspaceId);
       await refreshWorkspaces();
       openingFolderRef.current = false;
       await handleWorkspacePress(target.id);

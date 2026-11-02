@@ -5,7 +5,7 @@ import type { ScanWorkspaceIdConflict } from "../src/api/commands/workspace/type
 const confirm = mock(async (_options: unknown): Promise<string | null> => "keep-a");
 mock.module("rn-ui-kit", () => ({ confirmNative: confirm, Select: () => null }));
 
-const { chooseScanIdConflictKeeper } =
+const { chooseScanIdConflictKeeper, confirmExternalIdRegeneration } =
   await import("../src/components/workspaces/workspace_select/scan_id_conflict_dialog");
 
 function group(count: number): ScanWorkspaceIdConflict {
@@ -24,6 +24,23 @@ function group(count: number): ScanWorkspaceIdConflict {
 beforeEach(() => {
   confirm.mockReset();
   confirm.mockImplementation(async () => "keep-a");
+});
+
+test("打开文件夹冲突仅允许为所选目录生成新 ID 或取消导入", async () => {
+  confirm.mockResolvedValueOnce("generate");
+  expect(await confirmExternalIdRegeneration("C:\\notes\\副本")).toBe(true);
+  expect(confirm.mock.calls[0][0]).toMatchObject({
+    title: "工作区 ID 重复",
+    message: expect.stringContaining("C:\\notes\\副本"),
+    buttons: [
+      { key: "cancel", style: "cancel", text: "取消导入" },
+      { key: "generate", text: "生成新 ID 并导入" },
+    ],
+  });
+  confirm.mockResolvedValueOnce("cancel");
+  expect(await confirmExternalIdRegeneration("副本")).toBe(false);
+  confirm.mockResolvedValueOnce(null);
+  expect(await confirmExternalIdRegeneration("副本")).toBe(false);
 });
 
 test("10 个重复文件夹仅逐对比较，每次三个固定按钮，最终可选择最后一个保留者", async () => {

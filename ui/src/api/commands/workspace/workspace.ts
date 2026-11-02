@@ -1,6 +1,7 @@
 import { invokeWorkspaceResult, invokeWorkspaceUnit } from "./invoke_workspace";
 import type {
   AttachWorkspaceResult,
+  EnsureExternalWorkspaceResult,
   ExternalWorkspaceStorageBindingRequest,
   OpenWorkspaceResult,
   RelocateWorkspaceResult,
@@ -79,8 +80,15 @@ export const workspace = {
   ensureExternal: (
     binding: ExternalWorkspaceStorageBindingRequest,
     displayName: string,
-  ): Promise<AttachWorkspaceResult> => {
+  ): Promise<EnsureExternalWorkspaceResult> => {
     return invokeWorkspaceResult("workspace.ensure_external", { binding, displayName });
+  },
+
+  resolveExternalIdConflict: (
+    binding: ExternalWorkspaceStorageBindingRequest,
+    expectedId: WorkspaceId,
+  ): Promise<AttachWorkspaceResult> => {
+    return invokeWorkspaceResult("workspace.resolve_external_id_conflict", { binding, expectedId });
   },
 
   attach: (binding: ExternalWorkspaceStorageBindingRequest): Promise<AttachWorkspaceResult> => {

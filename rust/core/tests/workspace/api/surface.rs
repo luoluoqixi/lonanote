@@ -44,6 +44,7 @@ fn expected_keys() -> BTreeSet<String> {
         "workspace.create_managed",
         "workspace.discard_scan_id_conflict",
         "workspace.ensure_external",
+        "workspace.resolve_external_id_conflict",
         "workspace.file.capabilities",
         "workspace.file.create_directory",
         "workspace.file.exists",

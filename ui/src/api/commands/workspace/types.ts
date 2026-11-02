@@ -159,6 +159,10 @@ export interface AttachWorkspaceResult {
   storage: WorkspaceStorageView;
 }
 
+export type EnsureExternalWorkspaceResult =
+  | { status: "ready"; workspace: AttachWorkspaceResult }
+  | { status: "idConflict"; workspaceId: WorkspaceId };
+
 export type WorkspaceStorageTarget =
   | {
       kind: "managed";

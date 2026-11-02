@@ -118,6 +118,17 @@ pub enum OpenWorkspaceResult {
     },
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(
+    tag = "status",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub enum EnsureExternalWorkspaceResult {
+    Ready { workspace: AttachWorkspaceResult },
+    IdConflict { workspace_id: WorkspaceId },
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanManagedWorkspacesResult {
