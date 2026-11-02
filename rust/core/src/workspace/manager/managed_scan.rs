@@ -21,10 +21,6 @@ pub(super) struct PendingScanConflict {
     reserved_ids: HashSet<WorkspaceId>,
 }
 
-fn same_folder(left: &WorkspaceStorageBinding, right: &WorkspaceStorageBinding) -> bool {
-    left.same_resource(right) || left.same_reference(right)
-}
-
 fn location_label(
     binding: &WorkspaceStorageBinding,
     session: Option<&WorkspaceStorageSession>,
@@ -43,6 +39,15 @@ fn location_label(
 }
 
 impl WorkspaceManager {
+    fn same_scan_folder(
+        &self,
+        left: &WorkspaceStorageBinding,
+        right: &WorkspaceStorageBinding,
+    ) -> bool {
+        // 同一物理目录可能分别经 Managed 与 External Provider 登记，交由 Resolver 跨 Provider 比较。
+        self.storage_resolver.same_resource(left, right) || left.same_reference(right)
+    }
+
     /// 先收集全部合法目录再按 ID 分组；重复组只有用户完成选择后才会修改。
     pub async fn scan_managed_workspaces(
         &self,
@@ -84,7 +89,7 @@ impl WorkspaceManager {
                     }
                 };
                 if let Some(existing) = catalog.workspaces.values().find(|existing| {
-                    same_folder(&existing.storage_binding, &record.storage_binding)
+                    self.same_scan_folder(&existing.storage_binding, &record.storage_binding)
                 }) {
                     if existing.id != record.id {
                         result.binding_conflict_count += 1;
@@ -96,7 +101,7 @@ impl WorkspaceManager {
                 }
                 let group = groups.entry(record.id).or_default();
                 if !group.iter().any(|(existing, _)| {
-                    same_folder(&existing.storage_binding, &record.storage_binding)
+                    self.same_scan_folder(&existing.storage_binding, &record.storage_binding)
                 }) {
                     group.push((record, label));
                 }
@@ -113,7 +118,7 @@ impl WorkspaceManager {
             // Catalog 中的拥有者可能来自其他 Provider，也必须参与本组选择。
             if let Some(existing) = &registered_record {
                 if !candidates.iter().any(|(record, _)| {
-                    same_folder(&existing.storage_binding, &record.storage_binding)
+                    self.same_scan_folder(&existing.storage_binding, &record.storage_binding)
                 }) {
                     let session = self
                         .storage_resolver
@@ -127,7 +132,7 @@ impl WorkspaceManager {
             candidates.sort_by(|(left, left_label), (right, right_label)| {
                 let is_registered = |record: &WorkspaceRecord| {
                     registered_record.as_ref().is_some_and(|existing| {
-                        same_folder(&existing.storage_binding, &record.storage_binding)
+                        self.same_scan_folder(&existing.storage_binding, &record.storage_binding)
                     })
                 };
                 is_registered(right)
@@ -146,7 +151,7 @@ impl WorkspaceManager {
             let mut views = Vec::with_capacity(candidates.len());
             for (record, label) in &candidates {
                 let is_registered = registered_record.as_ref().is_some_and(|existing| {
-                    same_folder(&existing.storage_binding, &record.storage_binding)
+                    self.same_scan_folder(&existing.storage_binding, &record.storage_binding)
                 });
                 views.push(ScanWorkspaceConflictCandidate {
                     display_name: record.cached_summary.display_name.clone(),
@@ -218,7 +223,7 @@ impl WorkspaceManager {
         // 全组预检完成之前不写入；前端等待选择时目录或 Runtime 可能已变化。
         for (index, candidate) in plan.candidates.iter().enumerate() {
             if catalog.workspaces.values().any(|record| {
-                same_folder(&record.storage_binding, &candidate.storage_binding)
+                self.same_scan_folder(&record.storage_binding, &candidate.storage_binding)
                     && record.id != plan.workspace_id
             }) {
                 return Err(WorkspaceError::ScanConflict(
@@ -226,7 +231,7 @@ impl WorkspaceManager {
                 ));
             }
             let registered = plan.registered_record.as_ref().is_some_and(|record| {
-                same_folder(&record.storage_binding, &candidate.storage_binding)
+                self.same_scan_folder(&record.storage_binding, &candidate.storage_binding)
             });
             if registered && index != keep_index && self.runtime.contains(&plan.workspace_id).await
             {
@@ -272,10 +277,9 @@ impl WorkspaceManager {
                     }
                 };
             }
-            let registered = catalog
-                .workspaces
-                .get(&plan.workspace_id)
-                .filter(|record| same_folder(&record.storage_binding, &candidate.storage_binding));
+            let registered = catalog.workspaces.get(&plan.workspace_id).filter(|record| {
+                self.same_scan_folder(&record.storage_binding, &candidate.storage_binding)
+            });
             if registered.is_some() {
                 registered_new_id = manifest.id;
             }

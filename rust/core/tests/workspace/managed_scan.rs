@@ -49,6 +49,85 @@ async fn duplicate_group(
 }
 
 #[tokio::test]
+async fn scan_recognizes_external_import_inside_managed_root_as_same_folder() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let snapshots = duplicate_group(&app, &manager, 2, true).await;
+    let copied_root = app.managed_workspace_root(&snapshots[1]);
+    let imported = manager
+        .resolve_external_id_conflict(external_binding(&copied_root), snapshots[0].id)
+        .await
+        .unwrap();
+    manager.open_workspace(&imported.id).await.unwrap();
+    let manifest_before = std::fs::read(copied_root.join(".lonanote/manifest.json")).unwrap();
+    let scan = manager.scan_managed_workspaces().await.unwrap();
+    assert!(
+        scan.id_conflicts.is_empty(),
+        "同一目录不应被当成两个冲突候选：{scan:?}"
+    );
+    assert_eq!(scan.already_registered_count, 2);
+    assert_eq!(scan.registered_count, 0);
+    assert_eq!(scan.binding_conflict_count, 0);
+    assert_eq!(manager.list_workspaces().await.len(), 2);
+    assert_eq!(
+        std::fs::read(copied_root.join(".lonanote/manifest.json")).unwrap(),
+        manifest_before
+    );
+    let restarted = app.start().await;
+    let again = restarted.scan_managed_workspaces().await.unwrap();
+    assert!(again.id_conflicts.is_empty());
+    assert_eq!(again.already_registered_count, 2);
+
+    // 再出现真正的另一个副本时仍应报告冲突，并且同一目录只占一个候选。
+    let third = restarted
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "真正的副本".into())
+        .await
+        .unwrap();
+    restarted.close_workspace(&third.id).await.unwrap();
+    restarted.remove_workspace(&third.id, false).await.unwrap();
+    let mut manifest = app.read_manifest(&third);
+    manifest.id = imported.id;
+    std::fs::write(
+        app.managed_workspace_root(&third)
+            .join(".lonanote/manifest.json"),
+        serde_json::to_vec_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+    let real_conflict = restarted.scan_managed_workspaces().await.unwrap();
+    assert_eq!(real_conflict.id_conflicts.len(), 1);
+    let group = &real_conflict.id_conflicts[0];
+    assert_eq!(group.candidates.len(), 2);
+    assert_eq!(
+        group
+            .candidates
+            .iter()
+            .filter(|candidate| candidate.is_registered)
+            .count(),
+        1
+    );
+    let keep = group
+        .candidates
+        .iter()
+        .position(|candidate| candidate.is_registered)
+        .unwrap();
+    restarted
+        .resolve_scan_id_conflict(&group.conflict_id, keep as u32)
+        .await
+        .unwrap();
+    assert_ne!(app.read_manifest(&third).id, imported.id);
+    assert_eq!(
+        std::fs::read(copied_root.join(".lonanote/manifest.json")).unwrap(),
+        manifest_before
+    );
+    assert!(restarted
+        .scan_managed_workspaces()
+        .await
+        .unwrap()
+        .id_conflicts
+        .is_empty());
+}
+
+#[tokio::test]
 async fn collects_ten_duplicates_before_registering_and_skip_changes_nothing() {
     let app = WorkspaceTestApp::new();
     let manager = app.start().await;
