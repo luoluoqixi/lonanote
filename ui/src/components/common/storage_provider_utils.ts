@@ -20,6 +20,8 @@ export function getStorageProviderLabel(providerId: StorageProviderId | null | u
         default:
           return "app-local";
       }
+    case "desktop-folder":
+      return "自定义文件夹";
     case "desktop-documents":
       switch (platform) {
         case "ios":

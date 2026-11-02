@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 import { NativeList, NativeListSection } from "rn-ui-kit";
 
-import type { WorkspaceListItem } from "@/api/commands/workspace";
-import { formatUnixSecondsFullDateTime } from "@/api/common";
+import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
+import { formatUnixSecondsFullDateTime, isDesktop } from "@/api/common";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { getStorageProviderLabel } from "@/components/common/storage_provider_utils";
 
@@ -30,10 +31,35 @@ export function WorkspaceDetailsSheet({
   workspaceItem,
 }: WorkspaceDetailsSheetProps) {
   const storage = workspaceItem?.storage;
+  const [rootPath, setRootPath] = useState<{ id: string; value: string } | null>(null);
+  const workspaceId = workspaceItem?.id;
+  useEffect(() => {
+    if (!open || !workspaceId || !isDesktop()) return;
+    let disposed = false;
+    setRootPath(null);
+    void workspace
+      .nativeRootPath(workspaceId)
+      .then((path) => {
+        if (!disposed) setRootPath({ id: workspaceId, value: path ?? "不提供本地路径" });
+      })
+      .catch((error) => {
+        if (!disposed)
+          setRootPath({
+            id: workspaceId,
+            value: error instanceof Error ? error.message : "读取路径失败",
+          });
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [open, workspaceId]);
   const storageKind = storage?.kind ?? workspaceItem?.storageKind;
   const storageKindLabel = storageKind === "managed" ? "应用内存储" : "外部存储";
-  const localDirectoryPath =
-    storage?.directoryName ?? (storageKind === "external" ? "外部存储不提供本地路径" : "未知");
+  const localDirectoryPath = isDesktop()
+    ? rootPath && rootPath.id === workspaceId
+      ? rootPath.value
+      : "正在读取…"
+    : (storage?.directoryName ?? (storageKind === "external" ? "外部存储不提供本地路径" : "未知"));
 
   if (!workspaceItem) {
     return null;
@@ -60,6 +86,7 @@ export function WorkspaceDetailsSheet({
         <WorkspaceDetailsListItem
           copyId="workspace-local-directory-path"
           title="本地文件夹路径"
+          copyLabel="复制路径"
           value={localDirectoryPath}
           valueFontSize={14}
         />

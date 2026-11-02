@@ -10,6 +10,111 @@ use lonanote_core::workspace::{
 use tokio::sync::Barrier;
 
 #[tokio::test]
+async fn ensure_external_reuses_registration_and_attaches_existing_manifest() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let root = app.external_dir("opened-folder");
+    std::fs::write(root.join("note.md"), "已有笔记").unwrap();
+    let first = manager
+        .ensure_external_workspace(external_binding(&root), "文件夹".into())
+        .await
+        .unwrap();
+    let again = manager
+        .ensure_external_workspace(external_binding(&root), "不应改名".into())
+        .await
+        .unwrap();
+    assert_eq!(first.id, again.id);
+    assert_eq!(again.display_name, "文件夹");
+    assert_eq!(manager.list_workspaces().await.len(), 1);
+    assert!(!manager.is_workspace_open(&first.id).await);
+    assert_eq!(
+        std::fs::read_to_string(root.join("note.md")).unwrap(),
+        "已有笔记"
+    );
+    manager.remove_workspace(&first.id, false).await.unwrap();
+    let attached = manager
+        .ensure_external_workspace(external_binding(&root), "保留原名".into())
+        .await
+        .unwrap();
+    assert_eq!(attached.id, first.id);
+    assert_eq!(attached.display_name, "文件夹");
+}
+
+#[tokio::test]
+async fn ensure_external_serializes_creation_and_preserves_invalid_manifest() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let root = app.external_dir("concurrent-folder");
+    let (a, b) = tokio::join!(
+        manager.ensure_external_workspace(external_binding(&root), "文件夹".into()),
+        manager.ensure_external_workspace(external_binding(&root), "文件夹".into()),
+    );
+    assert_eq!(a.unwrap().id, b.unwrap().id);
+    assert_eq!(manager.list_workspaces().await.len(), 1);
+    let invalid = app.external_dir("invalid-folder");
+    std::fs::create_dir(invalid.join(".lonanote")).unwrap();
+    let manifest_path = invalid.join(".lonanote/manifest.json");
+    std::fs::write(&manifest_path, "invalid manifest").unwrap();
+    assert!(manager
+        .ensure_external_workspace(external_binding(&invalid), "文件夹".into())
+        .await
+        .is_err());
+    assert_eq!(
+        std::fs::read_to_string(manifest_path).unwrap(),
+        "invalid manifest"
+    );
+    assert_eq!(manager.list_workspaces().await.len(), 1);
+}
+
+#[tokio::test]
+async fn ensure_external_reuses_managed_directory_registration() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let created = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "Managed".into())
+        .await
+        .unwrap();
+    let root = app.managed_workspace_root(&created);
+    let found = manager
+        .ensure_external_workspace(external_binding(&root), "不能重复创建".into())
+        .await
+        .unwrap();
+    assert_eq!(created.id, found.id);
+    assert_eq!(found.storage.provider_id, provider(MANAGED_PROVIDER));
+    assert_eq!(manager.list_workspaces().await.len(), 1);
+}
+
+#[tokio::test]
+async fn native_root_path_works_for_closed_managed_and_external_workspaces() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let managed = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "路径测试".into())
+        .await
+        .unwrap();
+    let root = app.external_dir("中文 空格");
+    let external = manager
+        .create_external_workspace(external_binding(&root), "外部目录".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&managed.id).await.unwrap();
+    manager.close_workspace(&external.id).await.unwrap();
+    let last = manager.get_last_workspace_id().await;
+    for (id, expected) in [
+        (managed.id, app.managed_workspace_root(&managed)),
+        (external.id, root),
+    ] {
+        let actual = manager.native_root_path(&id).await.unwrap().unwrap();
+        assert_eq!(
+            std::fs::canonicalize(actual).unwrap(),
+            std::fs::canonicalize(expected).unwrap()
+        );
+        assert!(!manager.is_workspace_open(&id).await);
+    }
+    assert_eq!(manager.get_last_workspace_id().await, last);
+}
+
+#[tokio::test]
 async fn lists_storage_providers() {
     let app = WorkspaceTestApp::new();
     let manager = app.start().await;

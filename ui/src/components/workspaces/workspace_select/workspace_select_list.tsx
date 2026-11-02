@@ -33,6 +33,7 @@ type WorkspaceSelectListProps = {
   onDeleteWorkspace: (workspaceItem: WorkspaceListItem) => void;
   onEditWorkspace: (workspaceItem: WorkspaceListItem) => void;
   onWorkspaceDetails: (workspaceItem: WorkspaceListItem) => void;
+  onRevealWorkspace: (workspaceItem: WorkspaceListItem) => void;
   onRefresh: () => Promise<void>;
   onSelectedWorkspaceIdsChange: (selectedIds: Array<string | number>) => void;
   onWorkspacePress: (workspaceId: string) => void;
@@ -65,6 +66,7 @@ export function WorkspaceSelectList({
   onDeleteWorkspace,
   onEditWorkspace,
   onWorkspaceDetails,
+  onRevealWorkspace,
   onRefresh,
   onSelectedWorkspaceIdsChange,
   onWorkspacePress,
@@ -142,6 +144,7 @@ export function WorkspaceSelectList({
                   desktop && !isDesktop()
                     ? false
                     : {
+                        native: isDesktop() ? false : undefined,
                         items: [
                           {
                             icon: <Info color={accentColor} size={14} />,
@@ -154,6 +157,15 @@ export function WorkspaceSelectList({
                             onSelect: () => onEditWorkspace(workspaceItem),
                             value: `edit-workspace-${workspaceItem.id}`,
                           },
+                          ...(isDesktop()
+                            ? [
+                                {
+                                  label: "打开所在文件夹",
+                                  onSelect: () => onRevealWorkspace(workspaceItem),
+                                  value: `reveal-workspace-${workspaceItem.id}`,
+                                },
+                              ]
+                            : []),
                           {
                             destructive: true,
                             label: "删除工作区",

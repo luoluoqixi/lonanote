@@ -54,6 +54,10 @@ export const workspace = {
     return invokeWorkspaceResult("workspace.get", { workspaceId });
   },
 
+  nativeRootPath: (workspaceId: WorkspaceId): Promise<string | null> => {
+    return invokeWorkspaceResult("workspace.native_root_path", { workspaceId });
+  },
+
   isOpen: (workspaceId: WorkspaceId): Promise<boolean> => {
     return invokeWorkspaceResult("workspace.is_open", { workspaceId });
   },
@@ -70,6 +74,13 @@ export const workspace = {
     displayName: string,
   ): Promise<WorkspaceSnapshot> => {
     return invokeWorkspaceResult("workspace.create_external", { binding, displayName });
+  },
+
+  ensureExternal: (
+    binding: ExternalWorkspaceStorageBindingRequest,
+    displayName: string,
+  ): Promise<AttachWorkspaceResult> => {
+    return invokeWorkspaceResult("workspace.ensure_external", { binding, displayName });
   },
 
   attach: (binding: ExternalWorkspaceStorageBindingRequest): Promise<AttachWorkspaceResult> => {

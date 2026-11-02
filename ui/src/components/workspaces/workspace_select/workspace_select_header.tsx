@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CircleCheck,
   Ellipsis,
+  FolderOpen,
   FolderPlus,
   Search,
   Settings,
@@ -26,6 +27,8 @@ type WorkspaceSelectHeaderProps = {
   isScanningWorkspaces: boolean;
   isWorkspaceSelectionMode: boolean;
   onCreateWorkspace: () => void;
+  onOpenFolder?: () => void;
+  isOpeningFolder?: boolean;
   onFinishWorkspaceSelection: () => void;
   onOpenWorkspaceGroupMode: () => void;
   onOpenWorkspaceSort: () => void;
@@ -44,6 +47,8 @@ export function WorkspaceSelectHeader({
   isScanningWorkspaces,
   isWorkspaceSelectionMode,
   onCreateWorkspace,
+  onOpenFolder,
+  isOpeningFolder = false,
   onFinishWorkspaceSelection,
   onOpenWorkspaceGroupMode,
   onOpenWorkspaceSort,
@@ -73,12 +78,23 @@ export function WorkspaceSelectHeader({
           ios: { name: "folder.badge.plus" },
         },
         label: "创建工作区",
-        disabled: isScanningWorkspaces,
+        disabled: isScanningWorkspaces || isOpeningFolder,
         onPress: onCreateWorkspace,
         value: "create-workspace",
       },
+      ...(onOpenFolder
+        ? [
+            {
+              icon: <FolderOpen color={accentColor} size={14} />,
+              label: isOpeningFolder ? "正在打开文件夹…" : "打开文件夹",
+              disabled: isScanningWorkspaces || isOpeningFolder,
+              onPress: onOpenFolder,
+              value: "open-folder",
+            },
+          ]
+        : []),
       {
-        disabled: isScanningWorkspaces,
+        disabled: isScanningWorkspaces || isOpeningFolder,
         icon: <Search color={accentColor} size={14} />,
         iconProps: {
           ios: { name: "magnifyingglass" },
@@ -139,6 +155,8 @@ export function WorkspaceSelectHeader({
       isGroupModeDisabled,
       isScanningWorkspaces,
       onCreateWorkspace,
+      onOpenFolder,
+      isOpeningFolder,
       onOpenWorkspaceGroupMode,
       onOpenWorkspaceSort,
       onScanWorkspaces,

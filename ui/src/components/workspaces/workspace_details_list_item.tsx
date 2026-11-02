@@ -1,6 +1,8 @@
-import { NativeListItem } from "rn-ui-kit";
+import { StyleSheet, View } from "react-native";
+import { NativeListItem, Text } from "rn-ui-kit";
 
 import { clipboard } from "@/api/commands/system";
+import { isDesktop } from "@/api/common/platform";
 import { useToast } from "@/hooks/ui";
 
 type WorkspaceDetailsListItemProps = {
@@ -8,6 +10,7 @@ type WorkspaceDetailsListItemProps = {
   title: string;
   value: string;
   valueFontSize?: number;
+  copyLabel?: string;
 };
 
 export function WorkspaceDetailsListItem({
@@ -15,15 +18,17 @@ export function WorkspaceDetailsListItem({
   title,
   value,
   valueFontSize,
+  copyLabel = "复制",
 }: WorkspaceDetailsListItemProps) {
   const { toast } = useToast();
 
   return (
     <NativeListItem
       contextMenuProps={{
+        native: isDesktop() ? false : undefined,
         items: [
           {
-            label: "复制",
+            label: copyLabel,
             onSelect: () => {
               void clipboard
                 .writeText(value)
@@ -40,8 +45,30 @@ export function WorkspaceDetailsListItem({
         ],
       }}
       title={title}
-      value={value}
+      value={isDesktop() ? undefined : value}
+      trailing={
+        isDesktop() ? (
+          <View style={styles.value}>
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              className="text-muted-foreground"
+              style={{ fontSize: valueFontSize ?? 15, textAlign: "right" }}
+            >
+              {value}
+            </Text>
+          </View>
+        ) : undefined
+      }
       valueFontSize={valueFontSize}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  value: {
+    maxWidth: "65%",
+    minWidth: 0,
+    flexShrink: 1,
+  },
+});

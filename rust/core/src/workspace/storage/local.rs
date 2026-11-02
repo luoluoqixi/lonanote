@@ -556,6 +556,23 @@ impl LocalFsResolver {
 
 #[async_trait]
 impl WorkspaceStorageResolver for LocalFsResolver {
+    fn same_resource(&self, a: &WorkspaceStorageBinding, b: &WorkspaceStorageBinding) -> bool {
+        // 本地文件夹可同时由 Managed 和 External Provider 定位，使用当前定位重新比较。
+        let identity = |binding: &WorkspaceStorageBinding| {
+            self.resolve_root(
+                &binding.provider_id,
+                binding.provider_schema_version,
+                &binding.location,
+            )
+            .and_then(|root| self.identity_for_root(&root))
+            .ok()
+        };
+        match (identity(a), identity(b)) {
+            (Some(a), Some(b)) => a == b,
+            _ => false,
+        }
+    }
+
     fn provider_ids(&self) -> Vec<StorageProviderId> {
         let mut provider_ids = self
             .managed_roots

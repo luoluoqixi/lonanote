@@ -51,6 +51,11 @@ async fn get(workspace_id: WorkspaceId) -> anyhow::Result<WorkspaceSnapshot> {
 }
 
 #[command("workspace")]
+async fn native_root_path(workspace_id: WorkspaceId) -> anyhow::Result<Option<String>> {
+    Ok(workspace_manager().native_root_path(&workspace_id).await?)
+}
+
+#[command("workspace")]
 async fn is_open(workspace_id: WorkspaceId) -> bool {
     workspace_manager().is_workspace_open(&workspace_id).await
 }
@@ -72,6 +77,16 @@ async fn create_external(
 ) -> anyhow::Result<WorkspaceSnapshot> {
     Ok(workspace_manager()
         .create_external_workspace(binding, display_name)
+        .await?)
+}
+
+#[command("workspace")]
+async fn ensure_external(
+    binding: WorkspaceStorageBindingRequest,
+    display_name: String,
+) -> anyhow::Result<AttachWorkspaceResult> {
+    Ok(workspace_manager()
+        .ensure_external_workspace(binding, display_name)
         .await?)
 }
 

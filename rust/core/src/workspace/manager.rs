@@ -334,14 +334,49 @@ impl WorkspaceManager {
         self.open_workspace_locked(&manifest.id).await
     }
 
+    /// 登记外部目录：优先复用已有 Binding，已有 Manifest 时接入，否则初始化。
+    /// 不打开 Runtime，调用方可先完成当前工作区的关闭确认。
+    pub async fn ensure_external_workspace(
+        &self,
+        request: WorkspaceStorageBindingRequest,
+        display_name: String,
+    ) -> Result<AttachWorkspaceResult, WorkspaceError> {
+        if request.is_managed() {
+            return Err(WorkspaceError::ExpectedExternalBinding);
+        }
+        let _lifecycle = self.lifecycle_lock.write().await;
+        let binding = self.resolve_binding(request.clone()).await?;
+        if let Some(record) = self.catalog.list().await.into_iter().find(|record| {
+            self.storage_resolver
+                .same_resource(&record.storage_binding, &binding)
+        }) {
+            return Ok(AttachWorkspaceResult::from(&record));
+        }
+        let session = self.storage_resolver.open(&binding).await?;
+        if !manifest_exists(session.as_ref()).await? {
+            validate_display_name(&display_name)?;
+            let manifest =
+                WorkspaceManifest::new(WorkspaceId::new(), display_name, now_timestamp());
+            initialize_workspace(session.as_ref(), &manifest, false).await?;
+        }
+        self.attach_workspace_locked(request).await
+    }
+
     pub async fn attach_workspace(
+        &self,
+        request: WorkspaceStorageBindingRequest,
+    ) -> Result<AttachWorkspaceResult, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.write().await;
+        self.attach_workspace_locked(request).await
+    }
+
+    async fn attach_workspace_locked(
         &self,
         request: WorkspaceStorageBindingRequest,
     ) -> Result<AttachWorkspaceResult, WorkspaceError> {
         if request.is_managed() {
             return Err(WorkspaceError::ExpectedExternalBinding);
         }
-        let _lifecycle = self.lifecycle_lock.write().await;
         let binding = self.resolve_binding(request).await?;
         let session = self.storage_resolver.open(&binding).await?;
         let manifest = load_manifest(session.as_ref())
@@ -766,6 +801,19 @@ impl WorkspaceManager {
     ) -> Result<Option<String>, WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.read().await;
         self.get_open_instance(id).await?.native_path(path).await
+    }
+
+    /// 查询已登记工作区的本地根目录，不打开 Runtime、不修改当前会话。
+    pub async fn native_root_path(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<Option<String>, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        let record = self.catalog.get(id).await?;
+        let session = self.storage_resolver.open(&record.storage_binding).await?;
+        Ok(session
+            .native_root_path()
+            .map(|path| dunce::simplified(path).to_string_lossy().into_owned()))
     }
 
     pub async fn read_text(

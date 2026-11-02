@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
+import { fs } from "@/api/commands/fs";
 import {
   type StorageProviderId,
   type WorkspaceListItem,
   type WorkspaceSnapshot,
   workspace,
 } from "@/api/commands/workspace";
-import { isSystemLocaleCN, os } from "@/api/common";
+import { getFileName, isDesktop, isSystemLocaleCN, os } from "@/api/common";
+import { getErrorMessage } from "@/api/common/error_message";
 import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
@@ -40,10 +42,6 @@ const MIN_PULL_TO_REFRESH_DURATION_MS = 500;
 
 function getDefaultNewNoteName() {
   return isSystemLocaleCN() ? "我的笔记" : "My Notes";
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
 }
 
 async function waitForMinimumDuration(startedAt: number, minimumDurationMs: number) {
@@ -91,6 +89,8 @@ export function WorkspaceSelectContent({
   const [isWorkspaceSelectionMode, setIsWorkspaceSelectionMode] = useState(false);
   const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>([]);
   const [isOpeningWorkspace, setIsOpeningWorkspace] = useState(false);
+  const [isOpeningFolder, setIsOpeningFolder] = useState(false);
+  const openingFolderRef = useRef(false);
   const [isScanningWorkspaces, setIsScanningWorkspaces] = useState(false);
   const scanInProgressRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -152,6 +152,7 @@ export function WorkspaceSelectContent({
   const scanWorkspaces = useCallback(async () => {
     if (
       scanInProgressRef.current ||
+      openingFolderRef.current ||
       isOpeningWorkspace ||
       isDeletingWorkspace ||
       isUpdatingWorkspace ||
@@ -246,7 +247,7 @@ export function WorkspaceSelectContent({
   }, []);
 
   const openCreateWorkspaceSheet = useCallback(() => {
-    if (scanInProgressRef.current) return;
+    if (scanInProgressRef.current || openingFolderRef.current) return;
     setDisplayName(getDefaultNewNoteName());
     setStorageProviderIds([]);
     setStorageProviderId(null);
@@ -256,7 +257,7 @@ export function WorkspaceSelectContent({
   }, [loadManagedStorageProviders]);
 
   const createWorkspace = useCallback(async () => {
-    if (isCreatingWorkspace || scanInProgressRef.current) {
+    if (isCreatingWorkspace || scanInProgressRef.current || openingFolderRef.current) {
       return;
     }
 
@@ -532,6 +533,7 @@ export function WorkspaceSelectContent({
     async (workspaceId: string) => {
       if (
         scanInProgressRef.current ||
+        openingFolderRef.current ||
         isOpeningWorkspace ||
         isScanningWorkspaces ||
         isDeletingWorkspace ||
@@ -623,8 +625,8 @@ export function WorkspaceSelectContent({
         onWorkspaceOpened();
         didResetNavigation = true;
       } catch (error) {
-        console.error("[workspace-select] open workspace failed", error);
-        toast.error(getErrorMessage(error, "打开工作区失败"));
+        console.error("[workspace-select] 打开工作区失败", { workspaceId, error });
+        toast.error(`打开工作区失败：${getErrorMessage(error, "未知错误")}`);
       } finally {
         if (!didResetNavigation) {
           setIsOpeningWorkspace(false);
@@ -651,6 +653,53 @@ export function WorkspaceSelectContent({
     },
     [],
   );
+  const openFolder = useCallback(async () => {
+    if (
+      !isDesktop() ||
+      openingFolderRef.current ||
+      scanInProgressRef.current ||
+      isOpeningWorkspace ||
+      isCreatingWorkspace ||
+      isDeletingWorkspace ||
+      isUpdatingWorkspace
+    )
+      return;
+    openingFolderRef.current = true;
+    setIsOpeningFolder(true);
+    let folderPath: string | null = null;
+    try {
+      const selected = await fs.showSelectDialog({ type: "openFolder", title: "打开文件夹" });
+      if (!selected?.path) return;
+      folderPath = selected.path;
+      const target = await workspace.ensureExternal(
+        {
+          kind: "external",
+          providerId: "desktop-folder",
+          providerSchemaVersion: 1,
+          resourceRef: selected.path,
+        },
+        getFileName(selected.path.replace(/\\/g, "/")),
+      );
+      await refreshWorkspaces();
+      openingFolderRef.current = false;
+      await handleWorkspacePress(target.id);
+    } catch (error) {
+      console.error("[workspace-select] 打开文件夹失败", { folderPath, error });
+      toast.error(`打开文件夹失败：${getErrorMessage(error, "未知错误")}`);
+    } finally {
+      openingFolderRef.current = false;
+      setIsOpeningFolder(false);
+    }
+  }, [
+    handleWorkspacePress,
+    isOpeningWorkspace,
+    isCreatingWorkspace,
+    isDeletingWorkspace,
+    isUpdatingWorkspace,
+    refreshWorkspaces,
+    toast,
+  ]);
+
   const areAllWorkspacesSelected =
     workspaces.length > 0 &&
     workspaces.every((workspaceItem) => selectedWorkspaceIds.includes(workspaceItem.id));
@@ -679,6 +728,8 @@ export function WorkspaceSelectContent({
   return (
     <>
       <WorkspaceSelectHeader
+        onOpenFolder={isDesktop() ? () => void openFolder() : undefined}
+        isOpeningFolder={isOpeningFolder || isOpeningWorkspace}
         embedded={embedded}
         sortMenuItems={
           embedded
@@ -730,6 +781,21 @@ export function WorkspaceSelectContent({
         onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
       />
       <WorkspaceSelectList
+        onRevealWorkspace={(item) => {
+          void workspace
+            .nativeRootPath(item.id)
+            .then(async (path) => {
+              if (!path) throw new Error("此工作区不提供本地文件夹路径");
+              await fs.showInFolder(path);
+            })
+            .catch((error) => {
+              console.error("[workspace-select] 打开所在文件夹失败", {
+                workspaceId: item.id,
+                error,
+              });
+              toast.error(`打开所在文件夹失败：${getErrorMessage(error, "未知错误")}`);
+            });
+        }}
         embedded={embedded}
         groupMode={effectiveGroupMode}
         hasError={hasError}

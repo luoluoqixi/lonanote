@@ -316,6 +316,11 @@ impl fmt::Debug for WorkspaceStorageSession {
 
 #[async_trait]
 pub trait WorkspaceStorageResolver: Send + Sync {
+    /// 判断已登记目录与新选择的目录是否相同；默认保持 Provider 访问范围隔离。
+    fn same_resource(&self, a: &WorkspaceStorageBinding, b: &WorkspaceStorageBinding) -> bool {
+        a.same_resource(b)
+    }
+
     /// 返回当前平台已经注册的 Provider ID。
     ///
     /// 列表只描述 Provider 能力是否存在，不代表某个具体资源已经获得授权。

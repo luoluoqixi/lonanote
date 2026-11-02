@@ -1,11 +1,12 @@
 import { FilePlus2, FolderOpen } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
 import { workspaceFile, workspaceIndex } from "@/api/commands/workspace";
+import { createAsyncSubscription } from "@/api/common/async_subscription";
 import { isDesktop, isWeb } from "@/api/common/platform";
 import { getAvailableEntryName } from "@/api/common/utils/workspace_entry_name";
 import { documentRegistry, editorInputLeaseCoordinator } from "@/components/editor/controllers";
@@ -266,41 +267,46 @@ export function DesktopEditorArea({
     documentRegistry.openEditor({ kind: "looseFile", absolutePath });
   }, []);
 
+  const reportDropError = useEffectEvent((error: unknown) => reportError(error));
+
   useEffect(() => {
     if (!isDesktop()) return;
     let disposed = false;
-    let unlisten: (() => void) | undefined;
-    void import("@tauri-apps/api/webview")
-      .then(async ({ getCurrentWebview }) => {
-        const release = await getCurrentWebview().onDragDropEvent(({ payload }) => {
-          if (disposed || payload.type !== "drop") return;
-          const area = editorAreaRef.current as unknown as HTMLElement | null;
-          if (!area) return;
-          const paths = getEditorDroppedFiles(
-            payload.paths,
-            payload.position,
-            area.getBoundingClientRect(),
-            window.devicePixelRatio || 1,
-          );
-          for (const path of paths) {
-            try {
-              openLooseFilePath(path);
-            } catch (error) {
-              reportError(error);
+    const cleanup = createAsyncSubscription(
+      async () => {
+        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        // 只监听实际落下事件，直接保留可等待的 unlisten，避免组合 API 丢弃清理 Promise。
+        return getCurrentWebview().listen<{ paths: string[]; position: { x: number; y: number } }>(
+          "tauri://drag-drop",
+          ({ payload }) => {
+            if (disposed) return;
+            const area = editorAreaRef.current as unknown as HTMLElement | null;
+            if (!area) return;
+            const paths = getEditorDroppedFiles(
+              payload.paths,
+              payload.position,
+              area.getBoundingClientRect(),
+              window.devicePixelRatio || 1,
+            );
+            for (const path of paths) {
+              try {
+                openLooseFilePath(path);
+              } catch (error) {
+                reportDropError(error);
+              }
             }
-          }
-        });
-        if (disposed) release();
-        else unlisten = release;
-      })
-      .catch((error) => {
-        if (!disposed) reportError(error);
-      });
+          },
+        );
+      },
+      (error) => {
+        console.warn("[editor] 文件拖放监听操作失败", error);
+      },
+    );
     return () => {
       disposed = true;
-      unlisten?.();
+      cleanup();
     };
-  }, [openLooseFilePath, reportError]);
+  }, [openLooseFilePath]);
 
   const openLooseFile = useCallback(async () => {
     try {
