@@ -2559,6 +2559,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "cmdreg",
+ "dunce",
  "encoding_rs",
  "fern",
  "fork",

@@ -81,7 +81,16 @@ async fn assert_file_queries(id: WorkspaceId) {
     .await;
     let native_path = native_path.expect("Local Provider 应返回本机路径");
     assert!(std::path::Path::new(&native_path).is_absolute());
-    assert!(native_path.ends_with("notes/today.md"));
+    assert!(std::path::Path::new(&native_path).ends_with("notes/today.md"));
+    #[cfg(windows)]
+    assert!(
+        !native_path.starts_with(r"\\?\"),
+        "返回前端的普通 Windows 路径不应携带扩展路径前缀: {native_path}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&native_path).unwrap(),
+        "from command"
+    );
 
     let metadata: Value = invoke_json(
         "workspace.file.metadata",

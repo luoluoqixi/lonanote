@@ -363,7 +363,10 @@ export function WorkspaceTreeHost({
           copyPath: (p, absolute) => {
             void (absolute ? workspaceFile.nativePath(workspaceId, p) : Promise.resolve(p || "."))
               .then((value) => {
-                if (value) return clipboard.writeText(value);
+                if (value) {
+                  toast.success(`${value}`);
+                  return clipboard.writeText(value);
+                }
               })
               .catch((error) => toast.error("复制路径失败", { description: String(error) }));
           },

@@ -10,7 +10,7 @@ import {
 } from "rn-ui-kit";
 
 import type { StorageProviderId } from "@/api/commands/workspace";
-import { isIos } from "@/api/common";
+import { isIos, os } from "@/api/common";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { useLayoutMode } from "@/hooks/layout";
 
@@ -44,11 +44,32 @@ type CreateWorkspaceSheetContentProps = Pick<
 >;
 
 function getStorageProviderLabel(providerId: StorageProviderId): string {
+  const platform = os();
   switch (providerId) {
     case "app-local":
-      return isIos() ? "我的iPhone" : "应用内部存储";
+      switch (platform) {
+        case "android":
+          return "应用内部存储";
+        case "ios":
+          return "我的iPhone";
+        case "windows":
+          return "应用数据目录";
+        case "macos":
+          return "应用数据目录";
+        case "linux":
+          return "应用数据目录";
+        default:
+          return "app-local";
+      }
     case "desktop-documents":
-      return "文稿";
+      switch (platform) {
+        case "ios":
+          return "文稿";
+        case "windows":
+          return "文档";
+        default:
+          return "Documents";
+      }
     default:
       return providerId;
   }

@@ -216,8 +216,12 @@ impl WorkspaceInstance {
             return Ok(None);
         };
         self.session.metadata(path).await?;
+        // 对外优先返回兼容普通程序的路径；特殊文件名、长路径等仍保留必要的扩展前缀。
+        let native_path = root.join(path.as_str());
         Ok(Some(
-            root.join(path.as_str()).to_string_lossy().into_owned(),
+            dunce::simplified(&native_path)
+                .to_string_lossy()
+                .into_owned(),
         ))
     }
 
