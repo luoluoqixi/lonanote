@@ -82,6 +82,8 @@ export function WindowSettingsPage({
               </Text>
             </View>
             <Button
+              size="sm"
+              variant="link"
               onPress={() => {
                 runSettingsAction(
                   "clear saved window state",
@@ -94,7 +96,6 @@ export function WindowSettingsPage({
                   })),
                 );
               }}
-              variant="outline"
             >
               清除
             </Button>

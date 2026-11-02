@@ -33,6 +33,10 @@ function runSettingsAction(scope: string, action: Promise<unknown>) {
   });
 }
 
+function supportSwitchUIMode() {
+  return false;
+}
+
 export function AppearanceSettingsPage({
   onLayoutModeChange,
   tracksNavigationBarScrollEdge = false,
@@ -188,30 +192,32 @@ export function AppearanceSettingsPage({
         />
       </NativeListSection>
 
-      <NativeListSection {...presentation.section} title="界面布局">
-        <NativeListSelectItem
-          {...presentation.item}
-          selectProps={{
-            ...presentation.select,
-            "aria-label": "界面布局",
-            onValueChange: (nextValue: string | null) => {
-              if (nextValue !== "desktop" && nextValue !== "mobile") return;
+      {supportSwitchUIMode() && (
+        <NativeListSection {...presentation.section} title="界面布局">
+          <NativeListSelectItem
+            {...presentation.item}
+            selectProps={{
+              ...presentation.select,
+              "aria-label": "界面布局",
+              onValueChange: (nextValue: string | null) => {
+                if (nextValue !== "desktop" && nextValue !== "mobile") return;
 
-              const nextLayoutMode = nextValue as AppLayoutMode;
-              runSettingsAction(
-                "set layout mode",
-                setLayoutMode(nextLayoutMode).then(() => {
-                  onLayoutModeChange?.(nextLayoutMode);
-                }),
-              );
-            },
-            options: layoutModeOptions,
-            placeholder: "选择界面布局",
-            value: layoutMode,
-          }}
-          title="布局模式"
-        />
-      </NativeListSection>
+                const nextLayoutMode = nextValue as AppLayoutMode;
+                runSettingsAction(
+                  "set layout mode",
+                  setLayoutMode(nextLayoutMode).then(() => {
+                    onLayoutModeChange?.(nextLayoutMode);
+                  }),
+                );
+              },
+              options: layoutModeOptions,
+              placeholder: "选择界面布局",
+              value: layoutMode,
+            }}
+            title="布局模式"
+          />
+        </NativeListSection>
+      )}
     </SettingsList>
   );
 }

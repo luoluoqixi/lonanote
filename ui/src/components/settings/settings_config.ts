@@ -4,6 +4,7 @@ import type { AppLayoutMode } from "@/stores/ui";
 
 import { AboutSettingsPage } from "./pages/about_settings_page";
 import { AppearanceSettingsPage } from "./pages/appearance_settings_page";
+import { CurrentWorkspaceSettingsPage } from "./pages/current_workspace_settings_page";
 import { DeveloperSettingsPage } from "./pages/developer_settings_page";
 import { GlobalSettingsPage } from "./pages/global_settings_page";
 import { GmSettingsPage } from "./pages/gm_settings_page";
@@ -17,7 +18,8 @@ export type SettingsPageId =
   | "gm"
   | "global"
   | "language"
-  | "window";
+  | "window"
+  | "workspace";
 export type MobileSettingsSectionId = "general" | "workspace" | "more";
 
 export type SettingsPageProps = {
@@ -36,6 +38,7 @@ export type SettingsPageConfig = {
   mobileSection?: MobileSettingsSectionId;
   parentId?: SettingsPageId;
   requiresDeveloperOptions?: boolean;
+  requiresWorkspace?: boolean;
   title: string;
 };
 
@@ -55,6 +58,13 @@ export const settingsPages: SettingsPageConfig[] = [
     id: "global",
     mobileSection: "general",
     title: "全局设置",
+  },
+  {
+    Component: CurrentWorkspaceSettingsPage,
+    desktopTab: true,
+    id: "workspace",
+    requiresWorkspace: true,
+    title: "工作区设置",
   },
   {
     Component: AppearanceSettingsPage,

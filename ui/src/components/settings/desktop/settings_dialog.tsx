@@ -5,6 +5,7 @@ import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
 import { isWeb } from "@/api/common";
 import { useUiPreferences } from "@/hooks/settings";
+import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 import { GmSettingsPage } from "../pages/gm_settings_page";
 import { type SettingsPageId, getSettingsPage, settingsPages } from "../settings_config";
@@ -27,6 +28,7 @@ export function DesktopSettingsDialog({
   const dialogWidth = Math.min(880, width * 0.88);
   const dialogHeight = Math.min(640, height * 0.8);
   const { preferences } = useUiPreferences();
+  const currentWorkspaceId = useCurrentWorkspaceId();
   const [isDebugSheetOpen, setIsDebugSheetOpen] = useState(false);
   const [isGmSheetOpen, setIsGmSheetOpen] = useState(false);
   const [selectedPageId, setSelectedPageId] = useState<SettingsPageId>(initialPageId);
@@ -35,11 +37,12 @@ export function DesktopSettingsDialog({
       settingsPages.filter(
         (page) =>
           page.desktopTab &&
+          (!page.requiresWorkspace || Boolean(currentWorkspaceId)) &&
           (!page.requiresDeveloperOptions ||
             preferences.developer.optionsEnabled ||
             page.id === selectedPageId),
       ),
-    [preferences.developer.optionsEnabled, selectedPageId],
+    [currentWorkspaceId, preferences.developer.optionsEnabled, selectedPageId],
   );
 
   useEffect(() => {
@@ -48,9 +51,16 @@ export function DesktopSettingsDialog({
     }
   }, [initialPageId]);
 
+  useEffect(() => {
+    if (!currentWorkspaceId && getSettingsPage(selectedPageId)?.requiresWorkspace) {
+      setSelectedPageId("global");
+    }
+  }, [currentWorkspaceId, selectedPageId]);
+
   const selectedPageConfig = getSettingsPage(selectedPageId);
   const selectedPage =
     selectedPageConfig &&
+    (!selectedPageConfig.requiresWorkspace || Boolean(currentWorkspaceId)) &&
     (!selectedPageConfig.requiresDeveloperOptions ||
       preferences.developer.optionsEnabled ||
       selectedPageConfig.id === "developer")

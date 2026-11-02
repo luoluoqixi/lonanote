@@ -2,12 +2,14 @@ import { Redirect, Stack, useLocalSearchParams, useRouter } from "expo-router";
 
 import { os } from "@/api/common";
 import { useUiPreferences } from "@/hooks/settings";
+import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 import { getSettingsPage } from "../settings_config";
 
 export function MobileSettingsPage() {
   const router = useRouter();
   const { preferences } = useUiPreferences();
+  const currentWorkspaceId = useCurrentWorkspaceId();
   const { page } = useLocalSearchParams<{ page?: string | string[] }>();
   const pageId = Array.isArray(page) ? page[0] : page;
   const pageConfig = getSettingsPage(pageId);
@@ -16,6 +18,7 @@ export function MobileSettingsPage() {
 
   if (
     !pageConfig ||
+    (pageConfig.requiresWorkspace && !currentWorkspaceId) ||
     (pageConfig.requiresDeveloperOptions &&
       !preferences.developer.optionsEnabled &&
       pageConfig.id !== "developer")
