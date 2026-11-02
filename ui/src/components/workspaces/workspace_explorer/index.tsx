@@ -4,6 +4,7 @@ import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
 import { type WorkspaceIndexEntry } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
+import { getAvailableEntryName } from "@/api/common/utils/workspace_entry_name";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useMediaNavigation } from "@/hooks/media";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
@@ -62,23 +63,6 @@ function getParentPath(path: string): string {
 
 function joinWorkspacePath(parentPath: string, name: string): string {
   return parentPath ? `${parentPath}/${name}` : name;
-}
-
-function getAvailableEntryName(
-  entries: WorkspaceIndexEntry[],
-  baseName: string,
-  extension = "",
-): string {
-  const names = new Set(entries.map((entry) => getFileName(entry.path).toLocaleLowerCase()));
-  let sequence = 1;
-  let candidate = `${baseName}${extension}`;
-
-  while (names.has(candidate.toLocaleLowerCase())) {
-    sequence += 1;
-    candidate = `${baseName} ${sequence}${extension}`;
-  }
-
-  return candidate;
 }
 
 function validateEntryName(name: string): string | null {

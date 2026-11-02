@@ -5,8 +5,9 @@ import { Button, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
-import { workspaceFile } from "@/api/commands/workspace";
+import { workspaceFile, workspaceIndex } from "@/api/commands/workspace";
 import { isDesktop, isWeb } from "@/api/common/platform";
+import { getAvailableEntryName } from "@/api/common/utils/workspace_entry_name";
 import { documentRegistry, editorInputLeaseCoordinator } from "@/components/editor/controllers";
 import { EditorToolbar } from "@/components/editor/editor_toolbar";
 import { EditorWebView } from "@/components/editor/editor_webview";
@@ -15,6 +16,7 @@ import { useEditorSession } from "@/hooks/editor";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
+import { useWorkspaceFileActions } from "@/hooks/workspace/use_workspace_file_actions";
 import { isDocumentDirty } from "@/stores/editor";
 
 import { DesktopEditorActions } from "./desktop_editor_actions";
@@ -52,6 +54,9 @@ export function DesktopEditorArea({
   const { closeEditors } = useEditorCloseActions();
   const { toast } = useToast();
   const currentWorkspaceId = useCurrentWorkspaceId();
+  const fileActions = useWorkspaceFileActions();
+  const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const isCreatingNoteRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const tabBounds = useRef(new Map<string, { x: number; width: number }>());
   const scrollPosition = useRef(0);
@@ -227,6 +232,34 @@ export function DesktopEditorArea({
     [currentWorkspaceId, getSnapshot, onRevealInExplorer, reportError, requestClose],
   );
 
+  const createNote = useCallback(async () => {
+    if (!currentWorkspaceId || isCreatingNoteRef.current) return;
+    isCreatingNoteRef.current = true;
+    setIsCreatingNote(true);
+    try {
+      const { entries } = await workspaceIndex.getDirectory(currentWorkspaceId, "");
+      const name = getAvailableEntryName(entries, "未命名笔记", ".md");
+      const result = await fileActions.createEntry({
+        workspaceId: currentWorkspaceId,
+        parentPath: "",
+        name,
+        kind: "note",
+      });
+      const filePath = result.succeededPaths[0];
+      if (!filePath) return;
+      documentRegistry.openEditor({
+        kind: "workspaceFile",
+        workspaceId: currentWorkspaceId,
+        filePath,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "创建笔记失败");
+    } finally {
+      isCreatingNoteRef.current = false;
+      setIsCreatingNote(false);
+    }
+  }, [currentWorkspaceId, fileActions, toast]);
+
   const openLooseFile = useCallback(async () => {
     try {
       const result = await fs.showSelectDialog({
@@ -356,7 +389,8 @@ export function DesktopEditorArea({
             <Button
               size="sm"
               variant="ghost"
-              onPress={() => documentRegistry.openEditor({ kind: "untitled" })}
+              disabled={!currentWorkspaceId || isCreatingNote}
+              onPress={() => void createNote()}
             >
               <FilePlus2 size={16} color={theme.mutedForeground} />
               新建笔记
