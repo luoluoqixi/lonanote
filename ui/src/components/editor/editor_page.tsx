@@ -23,6 +23,7 @@ import {
   editorInputLeaseCoordinator,
   saveCoordinator,
 } from "@/components/editor/controllers";
+import { toggleEditorPreviewMode } from "@/components/editor/controllers/editor_preview_mode";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useEditorDocument, useEditorView } from "@/hooks/editor";
 import { useGlobalSettings } from "@/hooks/settings";
@@ -315,15 +316,7 @@ export function EditorPage() {
   );
   const togglePreviewMode = useCallback(() => {
     if (!view) return;
-    if (view.previewMode) {
-      editorStore.getState().setEditorPreviewMode(view.editorId, false);
-      void editorInputLeaseCoordinator.requestLease(view.editorId).catch(() => undefined);
-      return;
-    }
-    void editorInputLeaseCoordinator
-      .releaseLease(view.editorId)
-      .then(() => editorStore.getState().setEditorPreviewMode(view.editorId, true))
-      .catch(() => undefined);
+    void toggleEditorPreviewMode(view.editorId).catch(() => undefined);
   }, [view]);
   const sourceMode =
     !view?.previewMode &&

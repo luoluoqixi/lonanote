@@ -21,5 +21,6 @@ export function useEditorSession() {
     discardDocumentDraft: (documentId: string) =>
       editorStore.getState().discardDocumentDraft(documentId),
     setActiveEditor: (editorId: string | null) => editorStore.getState().setActiveEditor(editorId),
+    setEditorPreferenceOverrides: state.setEditorPreferenceOverrides,
   };
 }

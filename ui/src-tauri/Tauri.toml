@@ -48,3 +48,7 @@ height = 576
 [app.security]
 # csp = "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost"
 assetProtocol = { scope = ["**/*"], enable = true }
+
+[plugins.shell]
+# 允许通过默认应用打开 URL 和绝对文件路径。
+open = '^(https?://|mailto:|tel:|[A-Za-z]:[/\\]|/|\\\\).+'

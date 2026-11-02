@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { isDocumentDirty } from "@/stores/editor";
 
+import { DesktopEditorActions } from "./desktop_editor_actions";
 import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
 import { EditorMenuPopup } from "./editor_menu_popup";
@@ -289,6 +290,13 @@ export function DesktopEditorArea({
             </EditorTabInput>
           ))}
         </ScrollView>
+        {activeEditorId ? (
+          <DesktopEditorActions
+            key={activeEditorId}
+            editorId={activeEditorId}
+            onRevealInExplorer={onRevealInExplorer}
+          />
+        ) : null}
       </View>
       <View style={styles.viewport}>
         {openEditorIds.map((id) => {
