@@ -501,16 +501,20 @@ export function WorkspaceTreeHost({
                   onPress: () => changeSort(item.value),
                 })),
               )}
-              trigger={
-                <Button
-                  aria-label="排序"
-                  variant="icon"
-                  size="xs"
-                  buttonSize={{ width: 24, height: 28 }}
-                  style={{ minWidth: 24, minHeight: 28, padding: 0 }}
-                >
-                  <ArrowDownWideNarrow size={15} strokeWidth={1.6} color={theme.mutedForeground} />
-                </Button>
+              nativeTrigger
+              nativeTriggerIcon="none"
+              nativeTriggerContainerStyle={{
+                padding: 0,
+                paddingHorizontal: 0,
+                gap: 0,
+              }}
+              nativeTriggerProps={{
+                accessibilityLabel: "工作区操作",
+                size: "2xs",
+                style: { width: 24, height: 28, padding: 0 },
+              }}
+              triggerLabel={
+                <ArrowDownWideNarrow size={15} strokeWidth={1.6} color={theme.mutedForeground} />
               }
             />
           ) : null}

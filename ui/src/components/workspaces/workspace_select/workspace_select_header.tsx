@@ -173,16 +173,21 @@ export function WorkspaceSelectHeader({
             contentSize="sm"
             contentProps={{ align: "end" }}
             items={menuItems}
-            trigger={
-              <Button
-                size="xs"
-                variant="ghost"
-                accessibilityLabel="工作区操作"
-                style={{ width: 30, height: 30 }}
-              >
-                <Ellipsis size={18} color={theme.foreground} />
-              </Button>
-            }
+            nativeTrigger
+            nativeTriggerIcon="none"
+            nativeTriggerContainerStyle={{
+              padding: 0,
+              gap: 0,
+              // paddingHorizontal: 16,
+            }}
+            nativeTriggerProps={{
+              accessibilityLabel: "工作区操作",
+              style: {
+                borderRadius: 14,
+              },
+              size: "xs",
+            }}
+            triggerLabel={<Ellipsis size={18} color={theme.foreground} />}
           />
         )}
       </View>

@@ -148,7 +148,7 @@ export function getWorkspaceSubtitle(
 export function WorkspaceSortSelect({
   onOpenChange,
   onValueChange,
-  open,
+  // open,
   selectRef,
   value,
 }: WorkspaceSortSelectProps) {
