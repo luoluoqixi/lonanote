@@ -10,8 +10,9 @@ import {
 } from "rn-ui-kit";
 
 import type { StorageProviderId } from "@/api/commands/workspace";
-import { isIos, os } from "@/api/common";
+import { isIos } from "@/api/common";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
+import { getStorageProviderLabel } from "@/components/common/storage_provider_utils";
 import { useLayoutMode } from "@/hooks/layout";
 
 const CREATE_WORKSPACE_SNAP_POINTS = ["88%" as const];
@@ -42,38 +43,6 @@ type CreateWorkspaceSheetContentProps = Pick<
   | "storageProviderId"
   | "storageProviderIds"
 >;
-
-function getStorageProviderLabel(providerId: StorageProviderId): string {
-  const platform = os();
-  switch (providerId) {
-    case "app-local":
-      switch (platform) {
-        case "android":
-          return "应用内部存储";
-        case "ios":
-          return "我的iPhone";
-        case "windows":
-          return "应用数据目录";
-        case "macos":
-          return "应用数据目录";
-        case "linux":
-          return "应用数据目录";
-        default:
-          return "app-local";
-      }
-    case "desktop-documents":
-      switch (platform) {
-        case "ios":
-          return "文稿";
-        case "windows":
-          return "文档";
-        default:
-          return "Documents";
-      }
-    default:
-      return providerId;
-  }
-}
 
 function CreateWorkspaceSheetContent({
   displayName,

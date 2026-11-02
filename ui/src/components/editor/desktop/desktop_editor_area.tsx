@@ -22,6 +22,7 @@ import { isDocumentDirty } from "@/stores/editor";
 import { DesktopEditorActions } from "./desktop_editor_actions";
 import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
+import { EDITOR_FILE_EXTENSIONS, getEditorDroppedFiles } from "./editor_file_drop";
 import { EditorMenuPopup } from "./editor_menu_popup";
 import type { EditorMenuRequest } from "./editor_menu_popup_types";
 import { EditorTabInput } from "./editor_tab_input";
@@ -57,6 +58,7 @@ export function DesktopEditorArea({
   const fileActions = useWorkspaceFileActions();
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const isCreatingNoteRef = useRef(false);
+  const editorAreaRef = useRef<View>(null);
   const scrollRef = useRef<ScrollView>(null);
   const tabBounds = useRef(new Map<string, { x: number; width: number }>());
   const scrollPosition = useRef(0);
@@ -260,23 +262,63 @@ export function DesktopEditorArea({
     }
   }, [currentWorkspaceId, fileActions, toast]);
 
+  const openLooseFilePath = useCallback((absolutePath: string) => {
+    documentRegistry.openEditor({ kind: "looseFile", absolutePath });
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop()) return;
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void import("@tauri-apps/api/webview")
+      .then(async ({ getCurrentWebview }) => {
+        const release = await getCurrentWebview().onDragDropEvent(({ payload }) => {
+          if (disposed || payload.type !== "drop") return;
+          const area = editorAreaRef.current as unknown as HTMLElement | null;
+          if (!area) return;
+          const paths = getEditorDroppedFiles(
+            payload.paths,
+            payload.position,
+            area.getBoundingClientRect(),
+            window.devicePixelRatio || 1,
+          );
+          for (const path of paths) {
+            try {
+              openLooseFilePath(path);
+            } catch (error) {
+              reportError(error);
+            }
+          }
+        });
+        if (disposed) release();
+        else unlisten = release;
+      })
+      .catch((error) => {
+        if (!disposed) reportError(error);
+      });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [openLooseFilePath, reportError]);
+
   const openLooseFile = useCallback(async () => {
     try {
       const result = await fs.showSelectDialog({
         type: "openFile",
         title: "打开 Markdown 文件",
-        filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdx", "txt"] }],
+        filters: [{ name: "Markdown", extensions: EDITOR_FILE_EXTENSIONS }],
       });
       if (result?.path) {
-        documentRegistry.openEditor({ kind: "looseFile", absolutePath: result.path });
+        openLooseFilePath(result.path);
       }
     } catch (error) {
       console.warn("[editor] 打开 loose file 失败", error);
     }
-  }, []);
+  }, [openLooseFilePath]);
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.background }]}>
+    <View ref={editorAreaRef} style={[styles.root, { backgroundColor: theme.background }]}>
       <EditorMenuPopup request={tabMenu} onDismiss={() => setTabMenu(null)} />
       <View style={[styles.tabs, { borderBottomColor: theme.border }]}>
         <View style={styles.tabScroller}>

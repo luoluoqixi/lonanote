@@ -4,6 +4,7 @@ import { NativeList, NativeListSection } from "rn-ui-kit";
 import type { WorkspaceListItem } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime } from "@/api/common";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
+import { getStorageProviderLabel } from "@/components/common/storage_provider_utils";
 
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
@@ -54,7 +55,7 @@ export function WorkspaceDetailsSheet({
         <WorkspaceDetailsListItem
           copyId="workspace-storage-provider"
           title="存储 Provider"
-          value={formatValue(storage?.providerId)}
+          value={`${getStorageProviderLabel(storage?.providerId)} (${formatValue(storage?.providerId)})`}
         />
         <WorkspaceDetailsListItem
           copyId="workspace-local-directory-path"
