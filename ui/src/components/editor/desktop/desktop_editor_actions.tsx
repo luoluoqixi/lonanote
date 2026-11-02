@@ -155,6 +155,7 @@ export function DesktopEditorActions({
             value: "source-mode",
             label: "源码模式",
             icon: icon(FileText),
+            selectionIndicatorPosition: "right",
             selected: !view.previewMode && sourceMode,
             disabled: !ready || view.previewMode,
             onPress: () =>

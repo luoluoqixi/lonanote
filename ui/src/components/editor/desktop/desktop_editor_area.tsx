@@ -30,6 +30,7 @@ import {
 } from "./editor_tab_menu_actions";
 import type { EditorTabMenuItem } from "./editor_tab_menu_items";
 import { getEditorTabScrollTarget } from "./editor_tab_scroll";
+import { EditorTabScrollFeedback } from "./editor_tab_scroll_feedback";
 
 export function DesktopEditorArea({
   onRevealInExplorer,
@@ -245,51 +246,54 @@ export function DesktopEditorArea({
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       <EditorMenuPopup request={tabMenu} onDismiss={() => setTabMenu(null)} />
       <View style={[styles.tabs, { borderBottomColor: theme.border }]}>
-        <ScrollView
-          ref={scrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tabList}
-          contentContainerStyle={{ alignItems: "stretch" }}
-          onLayout={(event) => {
-            viewportWidth.current = event.nativeEvent.layout.width;
-            revealActiveTab();
-          }}
-          onScroll={(event) => {
-            scrollPosition.current = event.nativeEvent.contentOffset.x;
-          }}
-          scrollEventThrottle={16}
-        >
-          {tabs.map(({ id, title, dirty }) => (
-            <EditorTabInput
-              key={id}
-              onMenu={(x, y) => {
-                void openTabMenu(id, x, y).catch(reportError);
-              }}
-            >
-              <DesktopEditorTab
-                active={id === activeEditorId}
-                dirty={dirty}
-                title={title}
-                onActivate={() => activateEditor(id)}
-                onClose={() => {
-                  void requestClose(id).catch(reportError);
+        <View style={styles.tabScroller}>
+          <ScrollView
+            ref={scrollRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabList}
+            contentContainerStyle={{ alignItems: "stretch" }}
+            onLayout={(event) => {
+              viewportWidth.current = event.nativeEvent.layout.width;
+              revealActiveTab();
+            }}
+            onScroll={(event) => {
+              scrollPosition.current = event.nativeEvent.contentOffset.x;
+            }}
+            scrollEventThrottle={16}
+          >
+            {tabs.map(({ id, title, dirty }) => (
+              <EditorTabInput
+                key={id}
+                onMenu={(x, y) => {
+                  void openTabMenu(id, x, y).catch(reportError);
                 }}
-                viewRef={(node) => {
-                  if (node) tabNodes.current.set(id, node);
-                  else {
-                    tabNodes.current.delete(id);
-                    tabBounds.current.delete(id);
-                  }
-                }}
-                onLayout={(event) => {
-                  tabBounds.current.set(id, event.nativeEvent.layout);
-                  revealActiveTab();
-                }}
-              />
-            </EditorTabInput>
-          ))}
-        </ScrollView>
+              >
+                <DesktopEditorTab
+                  active={id === activeEditorId}
+                  dirty={dirty}
+                  title={title}
+                  onActivate={() => activateEditor(id)}
+                  onClose={() => {
+                    void requestClose(id).catch(reportError);
+                  }}
+                  viewRef={(node) => {
+                    if (node) tabNodes.current.set(id, node);
+                    else {
+                      tabNodes.current.delete(id);
+                      tabBounds.current.delete(id);
+                    }
+                  }}
+                  onLayout={(event) => {
+                    tabBounds.current.set(id, event.nativeEvent.layout);
+                    revealActiveTab();
+                  }}
+                />
+              </EditorTabInput>
+            ))}
+          </ScrollView>
+          <EditorTabScrollFeedback scrollRef={scrollRef} />
+        </View>
         {activeEditorId ? (
           <DesktopEditorActions
             key={activeEditorId}
@@ -399,6 +403,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     minWidth: 0,
+  },
+  tabScroller: {
+    flex: 1,
+    minWidth: 0,
+    height: 36,
+    position: "relative",
     overflow: "hidden",
   },
   tabs: {

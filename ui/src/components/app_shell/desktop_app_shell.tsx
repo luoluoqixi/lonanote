@@ -142,14 +142,14 @@ export function DesktopAppShell() {
               <SplitLayout.Pane minSize={20} priority={SplitLayoutPriority.High}>
                 <DesktopEditorArea onRevealInExplorer={revealInExplorer} />
               </SplitLayout.Pane>
-              <SplitLayout.Pane
+              {/* <SplitLayout.Pane
                 minSize={170}
                 preferredSize={240}
                 priority={SplitLayoutPriority.Low}
                 snap
               >
                 <AssistPanel />
-              </SplitLayout.Pane>
+              </SplitLayout.Pane> */}
             </SplitLayout>
           </SplitLayout.Pane>
           <SplitLayout.Pane maxSize={24} minSize={24}>
@@ -281,15 +281,15 @@ function SidePanel({ onSelectWorkspace }: { onSelectWorkspace: () => void }) {
   );
 }
 
-function AssistPanel() {
-  return (
-    <View style={styles.assistPanel}>
-      <Text style={{ fontSize: 13 }} className="font-semibold">
-        辅助面板
-      </Text>
-    </View>
-  );
-}
+// function AssistPanel() {
+//   return (
+//     <View style={styles.assistPanel}>
+//       <Text style={{ fontSize: 13 }} className="font-semibold">
+//         辅助面板
+//       </Text>
+//     </View>
+//   );
+// }
 
 function StatusBar() {
   return (
