@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 export function DesktopEditorSurface({
   active,
@@ -11,7 +11,15 @@ export function DesktopEditorSurface({
   children: ReactNode;
 }) {
   return (
-    <View style={{ flex: 1, minHeight: 0, backgroundColor, display: active ? "flex" : "none" }}>
+    <View
+      pointerEvents={active ? "auto" : "none"}
+      accessibilityElementsHidden={!active}
+      importantForAccessibility={active ? "auto" : "no-hide-descendants"}
+      style={[
+        StyleSheet.absoluteFillObject,
+        { flex: 1, minHeight: 0, backgroundColor, zIndex: active ? 1 : 0 },
+      ]}
+    >
       {children}
     </View>
   );
