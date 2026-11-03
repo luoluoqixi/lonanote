@@ -16,7 +16,7 @@ import {
 
 import { type WorkspaceSettings, workspace } from "@/api/commands/workspace";
 import { useToast } from "@/hooks/ui";
-import { useCurrentWorkspaceId } from "@/hooks/workspace";
+import { useCurrentWorkspaceId, useWorkspaceState } from "@/hooks/workspace";
 
 import { SettingsList } from "../settings_list";
 import { useSettingsPresentation } from "../use_settings_presentation";
@@ -58,6 +58,7 @@ export function CurrentWorkspaceSettingsPage({
 }: CurrentWorkspaceSettingsPageProps) {
   const presentation = useSettingsPresentation();
   const workspaceId = useCurrentWorkspaceId();
+  const { state: currentWorkspace } = useWorkspaceState(presentation.desktop ? workspaceId : null);
   const activeWorkspaceIdRef = useRef(workspaceId);
   const loadRequestIdRef = useRef(0);
   const saveRequestIdRef = useRef(0);
@@ -292,6 +293,16 @@ export function CurrentWorkspaceSettingsPage({
       style={{ flex: 1 }}
       tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
     >
+      {presentation.desktop && workspaceId ? (
+        <NativeListSection {...presentation.section}>
+          <NativeListItem
+            {...presentation.item}
+            title={`当前工作区：${currentWorkspace?.id === workspaceId ? currentWorkspace.displayName : "加载中…"}`}
+            subtitle="以下设置仅作用于此工作区。"
+          />
+        </NativeListSection>
+      ) : null}
+
       {isLoading || error ? (
         <NativeListSection {...presentation.section} title="状态">
           <NativeListItem
