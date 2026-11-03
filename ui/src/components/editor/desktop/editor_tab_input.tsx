@@ -1,6 +1,6 @@
 import { type ReactElement, useEffect, useState } from "react";
 import { View } from "react-native";
-import { ContextMenu, type ContextMenuItemData } from "rn-ui-kit";
+import { ContextMenu, type ContextMenuItemData, Tooltip } from "rn-ui-kit";
 
 import { workspaceFile } from "@/api/commands/workspace";
 import { useLayoutMode } from "@/hooks/layout";
@@ -12,10 +12,12 @@ export function EditorTabInput({
   children,
   documentRef,
   getItems,
+  suppressTooltip = false,
 }: {
   children: ReactElement;
   documentRef: EditorDocumentRef | null;
   getItems: (nativePath: string | null) => ContextMenuItemData[];
+  suppressTooltip?: boolean;
 }) {
   const { layoutMode } = useLayoutMode();
   const revision = useWorkspaceResourceRevision(
@@ -46,20 +48,46 @@ export function EditorTabInput({
       : resolved?.ref === documentRef && resolved?.revision === revision
         ? resolved.path
         : null;
+  const tooltipPath =
+    nativePath ?? (documentRef?.kind === "workspaceFile" ? documentRef.filePath : null);
+  const canShowTooltip =
+    layoutMode === "desktop" && !!tooltipPath && !suppressTooltip && frozenItems === null;
   return (
-    <View style={{ flexShrink: 0, height: 36 }}>
-      <ContextMenu
-        native={layoutMode === "desktop" ? false : undefined}
-        contentSize={layoutMode === "desktop" ? "sm" : "default"}
-        items={frozenItems ?? getItems(nativePath)}
-        onOpenWillChange={(open) => {
-          if (open) setFrozenItems(getItems(nativePath));
-        }}
-        onOpenChange={(open) => {
-          if (!open) setFrozenItems(null);
-        }}
-        trigger={children}
-      />
-    </View>
+    <Tooltip
+      content={tooltipPath ?? ""}
+      size="xs"
+      disableHoverableContent
+      triggerProps={{
+        disabled: !canShowTooltip,
+        // 路径提示只响应悬浮，避免右键菜单关闭后恢复标签焦点时重新打开。
+        onFocus: (event) => event.preventDefault(),
+      }}
+      contentProps={{
+        side: "bottom",
+        align: "start",
+        pointerEvents: "none",
+        style: {
+          maxWidth: 640,
+          display: canShowTooltip ? "flex" : "none",
+          cursor: "auto",
+        },
+      }}
+    >
+      {/* 容器只承载悬浮事件；覆盖 Tooltip 注入的 button role，避免嵌套关闭按钮。 */}
+      <View role="presentation" style={{ flexShrink: 0, height: 36 }}>
+        <ContextMenu
+          native={layoutMode === "desktop" ? false : undefined}
+          contentSize={layoutMode === "desktop" ? "sm" : "default"}
+          items={frozenItems ?? getItems(nativePath)}
+          onOpenWillChange={(open) => {
+            if (open) setFrozenItems(getItems(nativePath));
+          }}
+          onOpenChange={(open) => {
+            if (!open) setFrozenItems(null);
+          }}
+          trigger={children}
+        />
+      </View>
+    </Tooltip>
   );
 }

@@ -360,6 +360,7 @@ export function DesktopEditorArea({
                 <EditorTabInput
                   documentRef={getEditorTabRef(id, getSnapshot())}
                   getItems={(nativePath) => getTabMenuItems(id, nativePath)}
+                  suppressTooltip={tabDrag.preview !== null}
                 >
                   <DesktopEditorTab
                     active={id === activeEditorId}
