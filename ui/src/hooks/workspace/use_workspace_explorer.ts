@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useStore } from "zustand";
 
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
@@ -13,6 +13,23 @@ const emptyWorkspace: ExplorerWorkspace = {
   rangeAnchorPath: null,
   selectionMode: false,
 };
+
+/** 在执行操作时读取最新选择，不注册文件树或触发目录加载。 */
+export function useWorkspaceExplorerSelectedEntries() {
+  return useCallback((workspaceId: string) => {
+    const explorer = workspaceExplorerStore.getState().workspaces[workspaceId];
+    if (!explorer) return [];
+    const entries = new Map(
+      Object.values(explorer.directories).flatMap((directory) =>
+        (directory.snapshot?.entries ?? []).map((entry) => [entry.path, entry] as const),
+      ),
+    );
+    return explorer.selectedPaths.flatMap((path) => {
+      const entry = entries.get(path);
+      return entry ? [entry] : [];
+    });
+  }, []);
+}
 
 export function useWorkspaceExplorer({
   workspaceId,

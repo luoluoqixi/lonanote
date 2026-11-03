@@ -5,10 +5,10 @@ import { Button, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
-import { workspaceIndex } from "@/api/commands/workspace";
+import { workspaceFile } from "@/api/commands/workspace";
 import { createAsyncSubscription } from "@/api/common/async_subscription";
 import { isDesktop, isWeb } from "@/api/common/platform";
-import { getAvailableEntryName } from "@/api/common/utils/workspace_entry_name";
+import { getDefaultWorkspaceEntryName } from "@/api/common/utils/workspace_entry_name";
 import { documentRegistry, editorInputLeaseCoordinator } from "@/components/editor/controllers";
 import { EditorToolbar } from "@/components/editor/editor_toolbar";
 import { EditorWebView } from "@/components/editor/editor_webview";
@@ -16,7 +16,7 @@ import { WorkspaceFilePreview } from "@/components/files/workspace_file_preview"
 import { useEditorSession } from "@/hooks/editor";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useToast } from "@/hooks/ui";
-import { useCurrentWorkspaceId } from "@/hooks/workspace";
+import { useCurrentWorkspaceId, useWorkspaceExplorerSelectedEntries } from "@/hooks/workspace";
 import { useWorkspaceFileActions } from "@/hooks/workspace/use_workspace_file_actions";
 import { isDocumentDirty } from "@/stores/editor";
 
@@ -24,6 +24,7 @@ import { DesktopEditorActions } from "./desktop_editor_actions";
 import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
 import { EDITOR_FILE_EXTENSIONS, getEditorDroppedFiles } from "./editor_file_drop";
+import { getEditorNoteCreateParent } from "./editor_note_creation";
 import { EditorTabBlankInput } from "./editor_tab_blank_input";
 import { EditorTabDragInput } from "./editor_tab_drag_input";
 import { EditorTabInput } from "./editor_tab_input";
@@ -56,6 +57,7 @@ export function DesktopEditorArea({
   const { closeEditors } = useEditorCloseActions();
   const { toast } = useToast();
   const currentWorkspaceId = useCurrentWorkspaceId();
+  const getSelectedEntries = useWorkspaceExplorerSelectedEntries();
   const fileActions = useWorkspaceFileActions();
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const isCreatingNoteRef = useRef(false);
@@ -230,11 +232,20 @@ export function DesktopEditorArea({
     isCreatingNoteRef.current = true;
     setIsCreatingNote(true);
     try {
-      const { entries } = await workspaceIndex.getDirectory(currentWorkspaceId, "");
-      const name = getAvailableEntryName(entries, "未命名笔记", ".md");
+      const snapshot = getSnapshot();
+      const ref = snapshot.activeEditorId
+        ? getEditorTabRef(snapshot.activeEditorId, snapshot)
+        : null;
+      const parentPath = getEditorNoteCreateParent(
+        ref,
+        currentWorkspaceId,
+        getSelectedEntries(currentWorkspaceId),
+      );
+      const entries = await workspaceFile.list(currentWorkspaceId, parentPath);
+      const name = getDefaultWorkspaceEntryName(entries, "note");
       const result = await fileActions.createEntry({
         workspaceId: currentWorkspaceId,
-        parentPath: "",
+        parentPath,
         name,
         kind: "note",
       });
@@ -251,7 +262,7 @@ export function DesktopEditorArea({
       isCreatingNoteRef.current = false;
       setIsCreatingNote(false);
     }
-  }, [currentWorkspaceId, fileActions, toast]);
+  }, [currentWorkspaceId, fileActions, getSelectedEntries, getSnapshot, toast]);
 
   const openLooseFilePath = useCallback((absolutePath: string) => {
     documentRegistry.openEditor({ kind: "looseFile", absolutePath });
