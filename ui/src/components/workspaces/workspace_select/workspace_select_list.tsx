@@ -21,8 +21,9 @@ import {
 } from "rn-ui-kit";
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
-import { isAndroid, isDesktop, isWeb } from "@/api/common";
+import { isAndroid, isDesktop } from "@/api/common";
 import { useLayoutMode } from "@/hooks/layout";
+import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 
 import { type WorkspaceGroupMode, groupWorkspaces } from "./workspace_group";
 import { type WorkspaceSortValue, getWorkspaceSubtitle } from "./workspace_sort";
@@ -90,8 +91,9 @@ export function WorkspaceSelectList({
 }: WorkspaceSelectListProps) {
   const theme = useUiTheme();
   const { layoutMode } = useLayoutMode();
+  const currentWorkspaceId = useCurrentWorkspaceId();
   const desktop = layoutMode === "desktop";
-  const compact = desktop && isWeb();
+  const compact = desktop;
   const insets = useSafeAreaInsets();
   const accentColor = theme.primary as ComponentProps<typeof Folder>["color"];
   const statusMessage = isLoading
@@ -152,57 +154,53 @@ export function WorkspaceSelectList({
           >
             {section.workspaces.map((workspaceItem) => (
               <NativeListNavigationItem
-                contextMenuProps={
-                  desktop && !isDesktop()
-                    ? false
-                    : {
-                        native: isDesktop() ? false : undefined,
-                        contentSize: desktop ? "sm" : undefined,
-                        items: [
+                contextMenuProps={{
+                  native: desktop ? false : undefined,
+                  contentSize: desktop ? "sm" : undefined,
+                  items: [
+                    {
+                      icon: <Info color={accentColor} size={14} />,
+                      label: "查看详情",
+                      onSelect: () => onWorkspaceDetails(workspaceItem),
+                      value: `details-workspace-${workspaceItem.id}`,
+                    },
+                    {
+                      icon: <Pencil color={accentColor} size={14} />,
+                      label: "编辑工作区",
+                      onSelect: () => onEditWorkspace(workspaceItem),
+                      value: `edit-workspace-${workspaceItem.id}`,
+                    },
+                    {
+                      icon: <FolderInput color={accentColor} size={14} />,
+                      label: "更改存储位置…",
+                      onSelect: () => onRelocateWorkspace(workspaceItem),
+                      value: `relocate-workspace-${workspaceItem.id}`,
+                    },
+                    {
+                      icon: <FolderSearch color={accentColor} size={14} />,
+                      label: "重新定位工作区…",
+                      onSelect: () => onRebindWorkspace(workspaceItem),
+                      value: `rebind-workspace-${workspaceItem.id}`,
+                    },
+                    ...(isDesktop()
+                      ? [
                           {
-                            icon: <Info color={accentColor} size={14} />,
-                            label: "查看详情",
-                            onSelect: () => onWorkspaceDetails(workspaceItem),
-                            value: `details-workspace-${workspaceItem.id}`,
+                            icon: <FolderOpen color={accentColor} size={14} />,
+                            label: "打开所在文件夹",
+                            onSelect: () => onRevealWorkspace(workspaceItem),
+                            value: `reveal-workspace-${workspaceItem.id}`,
                           },
-                          {
-                            icon: <Pencil color={accentColor} size={14} />,
-                            label: "编辑工作区",
-                            onSelect: () => onEditWorkspace(workspaceItem),
-                            value: `edit-workspace-${workspaceItem.id}`,
-                          },
-                          {
-                            icon: <FolderInput color={accentColor} size={14} />,
-                            label: "更改存储位置…",
-                            onSelect: () => onRelocateWorkspace(workspaceItem),
-                            value: `relocate-workspace-${workspaceItem.id}`,
-                          },
-                          {
-                            icon: <FolderSearch color={accentColor} size={14} />,
-                            label: "重新定位工作区…",
-                            onSelect: () => onRebindWorkspace(workspaceItem),
-                            value: `rebind-workspace-${workspaceItem.id}`,
-                          },
-                          ...(isDesktop()
-                            ? [
-                                {
-                                  icon: <FolderOpen color={accentColor} size={14} />,
-                                  label: "打开所在文件夹",
-                                  onSelect: () => onRevealWorkspace(workspaceItem),
-                                  value: `reveal-workspace-${workspaceItem.id}`,
-                                },
-                              ]
-                            : []),
-                          {
-                            destructive: true,
-                            icon: <Trash2 color={theme.destructive} size={14} />,
-                            label: "删除工作区",
-                            onSelect: () => onDeleteWorkspace(workspaceItem),
-                            value: `delete-workspace-${workspaceItem.id}`,
-                          },
-                        ].map((item) => ({ ...item, disabled: isInteractionDisabled })),
-                      }
-                }
+                        ]
+                      : []),
+                    {
+                      destructive: true,
+                      icon: <Trash2 color={theme.destructive} size={14} />,
+                      label: "删除工作区",
+                      onSelect: () => onDeleteWorkspace(workspaceItem),
+                      value: `delete-workspace-${workspaceItem.id}`,
+                    },
+                  ].map((item) => ({ ...item, disabled: isInteractionDisabled })),
+                }}
                 hoverBackgroundColor={desktop ? theme.secondary : undefined}
                 pressBackgroundColor={desktop ? theme.accent : undefined}
                 disabled={isInteractionDisabled}
@@ -216,6 +214,9 @@ export function WorkspaceSelectList({
                 sfSymbol="folder.fill"
                 subtitle={getWorkspaceSubtitle(workspaceItem, sortValue)}
                 title={workspaceItem.displayName}
+                value={desktop && workspaceItem.id === currentWorkspaceId ? "已打开" : undefined}
+                valueFontSize={compact ? 12 : 14}
+                valueColor={theme.mutedForeground}
                 titleFontSize={compact ? 13 : 16}
                 subtitleFontSize={compact ? 12 : undefined}
                 paddingVertical={compact ? 8 : undefined}

@@ -13,12 +13,13 @@ export function SettingsList({
   tracksNavigationBarScrollEdge = false,
   ...props
 }: NativeListRootProps) {
-  const usesNativeIosScrollEdgeHeader = os() === "ios" && tracksNavigationBarScrollEdge;
   const { desktop } = useSettingsPresentation();
+  const usesNativeIosScrollEdgeHeader = !desktop && os() === "ios" && tracksNavigationBarScrollEdge;
   const theme = useUiTheme();
 
   return (
     <NativeList
+      native={desktop ? false : undefined}
       backgroundColor={desktop ? theme.background : undefined}
       listStyleOptions={
         desktop

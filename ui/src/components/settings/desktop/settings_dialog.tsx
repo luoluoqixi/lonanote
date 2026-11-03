@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native"
 import { Dialog, NativeSheetStack, Tabs, Text, cn, useUiTheme } from "rn-ui-kit";
 import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
-import { isWeb } from "@/api/common";
 import { useUiPreferences } from "@/hooks/settings";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
@@ -135,30 +134,26 @@ export function DesktopSettingsDialog({
                 ) : null}
               </View>
             </Tabs>
-            {isWeb() ? (
-              <>
-                <RnUiKitDebugPanel
-                  panelSheetProps={{
-                    snapPoints: ["60%"],
-                  }}
-                  onOpenChange={setIsDebugSheetOpen}
-                  open={isDebugSheetOpen}
-                  sheetMode
-                />
-                <NativeSheetStack
-                  name="lonanote-gm-settings-sheet"
-                  onOpenChange={setIsGmSheetOpen}
-                  open={isGmSheetOpen}
-                  overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
-                  sheetProps={{ snapPoints: ["60%"] }}
-                  screenOptions={{ headerShadowVisible: false }}
-                >
-                  <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>
-                    {() => <GmSettingsPage />}
-                  </NativeSheetStack.Screen>
-                </NativeSheetStack>
-              </>
-            ) : null}
+            <RnUiKitDebugPanel
+              panelSheetProps={{
+                snapPoints: ["60%"],
+              }}
+              onOpenChange={setIsDebugSheetOpen}
+              open={isDebugSheetOpen}
+              sheetMode
+            />
+            <NativeSheetStack
+              name="lonanote-gm-settings-sheet"
+              onOpenChange={setIsGmSheetOpen}
+              open={isGmSheetOpen}
+              overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
+              sheetProps={{ snapPoints: ["60%"] }}
+              screenOptions={{ headerShadowVisible: false }}
+            >
+              <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>
+                {() => <GmSettingsPage />}
+              </NativeSheetStack.Screen>
+            </NativeSheetStack>
           </View>
         }
       />

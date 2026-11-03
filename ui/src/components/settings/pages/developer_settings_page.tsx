@@ -1,7 +1,6 @@
 import { type Href, useRouter } from "expo-router";
 import { NativeListNavigationItem, NativeListSection, NativeListSwitchItem } from "rn-ui-kit";
 
-import { isWeb } from "@/api/common/platform";
 import { useUiPreferences } from "@/hooks/settings";
 
 import type { SettingsPageProps } from "../settings_config";
@@ -56,7 +55,7 @@ export function DeveloperSettingsPage({
           <NativeListNavigationItem
             {...presentation.item}
             onPress={() => {
-              if (isWeb() && onOpenDebugSheet != null) {
+              if (onOpenDebugSheet != null) {
                 onOpenDebugSheet();
                 return;
               }
@@ -68,7 +67,7 @@ export function DeveloperSettingsPage({
           <NativeListNavigationItem
             {...presentation.item}
             onPress={() => {
-              if (isWeb() && onOpenGmSheet != null) {
+              if (onOpenGmSheet != null) {
                 onOpenGmSheet();
                 return;
               }

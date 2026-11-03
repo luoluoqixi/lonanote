@@ -12,6 +12,7 @@ import { getFileName, isDesktop, isSystemLocaleCN, os } from "@/api/common";
 import { getErrorMessage } from "@/api/common/error_message";
 import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
+import { useLayoutMode } from "@/hooks/layout";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
@@ -34,6 +35,7 @@ import {
   WorkspaceGroupModeSelect,
 } from "./workspace_group";
 import { WorkspaceLocationSheet } from "./workspace_location_sheet";
+import { resolveWorkspacePressAction } from "./workspace_press_action";
 import { WorkspaceSelectHeader } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
 import { WorkspaceSelectionToolbar } from "./workspace_selection_toolbar";
@@ -76,6 +78,8 @@ export function WorkspaceSelectContent({
   onWorkspaceOpened: () => void;
 }) {
   const { toast } = useToast();
+  const { layoutMode } = useLayoutMode();
+  const desktop = layoutMode === "desktop";
   const { closeWorkspace, withWorkspaceClose } = useEditorCloseActions();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
@@ -123,9 +127,9 @@ export function WorkspaceSelectContent({
   const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
   const requestIdRef = useRef(0);
   const currentOs = os();
-  const usesNativeIosHeader = !embedded && currentOs === "ios";
+  const usesNativeIosHeader = !desktop && !embedded && currentOs === "ios";
   const tracksNavigationBarScrollEdge =
-    !embedded && (usesNativeIosHeader || currentOs === "android");
+    !desktop && !embedded && (usesNativeIosHeader || currentOs === "android");
 
   const refreshWorkspaces = useCallback(async (minimumDurationMs = 0) => {
     const requestId = ++requestIdRef.current;
@@ -582,11 +586,17 @@ export function WorkspaceSelectContent({
         return;
       }
 
+      const action = resolveWorkspacePressAction(layoutMode, currentWorkspaceId, workspaceId);
+      if (action === "notifyAlreadyOpen") {
+        toast.info("工作区已打开");
+        return;
+      }
+
       setIsOpeningWorkspace(true);
       let didResetNavigation = false;
 
       try {
-        if (currentWorkspaceId === workspaceId) {
+        if (action === "returnToWorkspace") {
           onWorkspaceOpened();
           didResetNavigation = true;
           return;
@@ -681,6 +691,7 @@ export function WorkspaceSelectContent({
     [
       currentWorkspaceId,
       withWorkspaceClose,
+      layoutMode,
       isDeletingWorkspace,
       isOpeningWorkspace,
       isScanningWorkspaces,
@@ -844,7 +855,7 @@ export function WorkspaceSelectContent({
           void scanWorkspaces();
         }}
         onRefreshWorkspaces={
-          isDesktop()
+          desktop
             ? () => {
                 void handleMenuRefresh();
               }

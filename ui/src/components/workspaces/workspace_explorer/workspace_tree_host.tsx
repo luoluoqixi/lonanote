@@ -32,7 +32,7 @@ import {
   workspaceFile,
 } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, getFileName } from "@/api/common";
-import { isDesktop, isWeb } from "@/api/common/platform";
+import { isDesktop } from "@/api/common/platform";
 import { useEditorSession } from "@/hooks/editor";
 import { useLayoutMode } from "@/hooks/layout";
 import { useMediaNavigation } from "@/hooks/media";
@@ -77,6 +77,7 @@ export function WorkspaceTreeHost({
   const router = useRouter();
   const theme = useUiTheme();
   const { layoutMode } = useLayoutMode();
+  const desktop = layoutMode === "desktop";
   const { activeEditorId, editorsById, documentsById, viewersById, openViewer } =
     useEditorSession();
   const activeRef = activeEditorId
@@ -292,7 +293,7 @@ export function WorkspaceTreeHost({
             ? path
             : path.split("/").slice(0, -1).join("/"),
         capabilities,
-        desktop: isDesktop(),
+        desktop,
         nativePathAvailable,
         actions: {
           isCurrent: (id, epoch, paths) =>
@@ -398,6 +399,7 @@ export function WorkspaceTreeHost({
     },
     [
       theme,
+      desktop,
       nativePathAvailable,
       toast,
       nodeFor,
@@ -491,7 +493,7 @@ export function WorkspaceTreeHost({
           {workspaceState?.displayName ?? "资源浏览器"}
         </Text>
         <View style={styles.headerActions}>
-          {isWeb() ? (
+          {desktop ? (
             <Dropdown
               contentSize="sm"
               contentProps={{ align: "start" }}
@@ -535,7 +537,7 @@ export function WorkspaceTreeHost({
               ["全部折叠", ChevronsDownUp, explorer.collapseAll, false],
             ] as const
           )
-            .filter(([label]) => !isWeb() || label !== "排序")
+            .filter(([label]) => !desktop || label !== "排序")
             .map(([label, Icon, onPress, disabled]) => (
               <Tooltip key={label} content={label}>
                 <Button
@@ -567,8 +569,9 @@ export function WorkspaceTreeHost({
           <Button onPress={() => explorer.setSelectionMode(false)}>完成</Button>
         </View>
       ) : null}
-      {isDesktop() ? (
+      {desktop ? (
         <ContextMenu
+          native={false}
           style={styles.root}
           contentSize="sm"
           items={menuItems("")}

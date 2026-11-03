@@ -10,7 +10,7 @@ import {
 
 import { system } from "@/api";
 import { gm } from "@/api/commands/gm";
-import { isSystemLocaleCN, isWeb, systemLocale } from "@/api/common/platform";
+import { isSystemLocaleCN, systemLocale } from "@/api/common/platform";
 import { useToast } from "@/hooks/ui";
 
 import type { SettingsPageProps } from "../settings_config";
@@ -26,8 +26,8 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
 
   const redColor = toSwiftUIHexColor(theme.destructive) ?? theme.destructive;
 
-  // 桌面端 GM Sheet 使用 JS Stack；需要由页面级列表驱动 Header 的 scroll-edge 背景。
-  const tracksScrollEdgeHeader = isWeb() || tracksNavigationBarScrollEdge;
+  // 桌面 UI 的 GM Sheet 由页面级列表驱动 Header 的 scroll-edge 背景。
+  const tracksScrollEdgeHeader = presentation.desktop || tracksNavigationBarScrollEdge;
 
   const resetInitialWorkspace = async () => {
     if (isResettingInitialWorkspace) {

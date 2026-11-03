@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View, VirtualizedList } from "react-native
 import { ContextMenu, type ContextMenuItemData, Dropdown, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common/platform";
+import { useLayoutMode } from "@/hooks/layout";
 
 import { TreeInput } from "./tree_input";
 import { createTreeScrollCoordinator } from "./tree_input_intent";
@@ -16,7 +17,6 @@ import type {
   WorkspaceTreeRow,
 } from "./tree_types";
 
-const ROW_HEIGHT = isWeb() ? 30 : 44;
 const rowId = (path: string) => `workspace-tree-${encodeURIComponent(path)}`;
 type Props = {
   ref?: Ref<TreeHandle>;
@@ -37,6 +37,8 @@ type Props = {
 };
 
 function TreeNode({
+  desktop,
+  rowHeight,
   row,
   expanded,
   selected,
@@ -49,6 +51,8 @@ function TreeNode({
   onExpandedChange,
   menuItems,
 }: {
+  desktop: boolean;
+  rowHeight: number;
   row: WorkspaceTreeNodeRow;
   expanded: boolean;
   selected: boolean;
@@ -69,11 +73,12 @@ function TreeNode({
   const folder = row.entry.fileType === "directory";
   const Chevron = expanded ? ChevronDown : ChevronRight;
   return (
-    <View style={styles.rowShell}>
+    <View style={[styles.rowShell, { height: rowHeight }]}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <ContextMenu
-          contentSize={isWeb() ? "sm" : "default"}
-          triggerProps={{ style: { width: "100%", height: ROW_HEIGHT } }}
+          native={desktop ? false : undefined}
+          contentSize={desktop ? "sm" : "default"}
+          triggerProps={{ style: { width: "100%", height: rowHeight } }}
           items={frozenItems.current ?? currentMenuItems}
           onOpenWillChange={(open) => {
             if (open) {
@@ -115,6 +120,7 @@ function TreeNode({
               style={[
                 styles.row,
                 {
+                  height: rowHeight,
                   paddingLeft: 8 + row.depth * 16,
                   backgroundColor: active
                     ? theme.accent
@@ -136,7 +142,7 @@ function TreeNode({
                     event.stopPropagation();
                     void onExpandedChange(row.path, !expanded).catch(() => undefined);
                   }}
-                  style={{ width: 20, height: ROW_HEIGHT - 4, justifyContent: "center" }}
+                  style={{ width: 20, height: rowHeight - 4, justifyContent: "center" }}
                 >
                   <Chevron size={14} color={theme.mutedForeground} />
                 </Pressable>
@@ -151,13 +157,13 @@ function TreeNode({
               <Text numberOfLines={1} style={[styles.label, { color: theme.foreground }]}>
                 {row.path.split("/").at(-1)}
               </Text>
-              {!isWeb() ? (
+              {!desktop ? (
                 <Dropdown
                   items={frozenItems.current ?? currentMenuItems}
                   trigger={
                     <Pressable
                       accessibilityLabel={`${row.path} 更多操作`}
-                      style={styles.more}
+                      style={[styles.more, { height: rowHeight }]}
                       onPress={(event) => event.stopPropagation()}
                     >
                       <MoreHorizontal size={16} color={theme.mutedForeground} />
@@ -179,6 +185,9 @@ function TreeNode({
 }
 
 export function WorkspaceTree(props: Props) {
+  const { layoutMode } = useLayoutMode();
+  const desktop = layoutMode === "desktop";
+  const rowHeight = desktop ? 30 : 44;
   const { rows, focusedPath, epoch } = props;
   const list = useRef<VirtualizedList<WorkspaceTreeRow>>(null);
   const latest = useRef(props);
@@ -207,7 +216,7 @@ export function WorkspaceTree(props: Props) {
   }, [rows, focusedPath, props.onFocus]);
   useEffect(() => {
     if (focusedPath) scroll.request(focusedPath, epoch);
-  }, [focusedPath, epoch, scroll]);
+  }, [focusedPath, epoch, scroll, rowHeight]);
   useEffect(() => {
     if (focusedPath) {
       scroll.update(
@@ -269,6 +278,7 @@ export function WorkspaceTree(props: Props) {
   return (
     <TreeInput activeDescendant={focusedPath ? rowId(focusedPath) : undefined} onIntent={onIntent}>
       <VirtualizedList
+        key={layoutMode}
         ref={list}
         data={rows}
         getItem={(data, index) => data[index]}
@@ -283,7 +293,7 @@ export function WorkspaceTree(props: Props) {
           props.selectionMode,
           epoch,
         ]}
-        getItemLayout={(_, index) => ({ length: ROW_HEIGHT, offset: ROW_HEIGHT * index, index })}
+        getItemLayout={(_, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
         onScrollToIndexFailed={() => {
           if (retryTimer.current) clearTimeout(retryTimer.current);
           retryTimer.current = setTimeout(() => scroll.retry(), 40);
@@ -291,6 +301,8 @@ export function WorkspaceTree(props: Props) {
         renderItem={({ item }) =>
           item.kind === "node" ? (
             <TreeNode
+              desktop={desktop}
+              rowHeight={rowHeight}
               row={item}
               expanded={props.expandedPaths.includes(item.path)}
               selected={props.selectedPaths.includes(item.path)}
@@ -307,7 +319,7 @@ export function WorkspaceTree(props: Props) {
             <Pressable
               accessibilityRole="button"
               onPress={() => props.onRetry(item.path)}
-              style={[styles.status, { paddingLeft: 12 + item.depth * 16 }]}
+              style={[styles.status, { height: rowHeight, paddingLeft: 12 + item.depth * 16 }]}
             >
               {item.kind === "loading" ? (
                 <Spinner size="sm" />
@@ -325,9 +337,8 @@ export function WorkspaceTree(props: Props) {
 }
 const styles = StyleSheet.create({
   list: { flex: 1, minHeight: 0 },
-  rowShell: { height: ROW_HEIGHT, flexDirection: "row", alignItems: "center" },
+  rowShell: { flexDirection: "row", alignItems: "center" },
   row: {
-    height: ROW_HEIGHT,
     flexShrink: 0,
     width: "100%",
     minWidth: 0,
@@ -339,6 +350,6 @@ const styles = StyleSheet.create({
   label: { flex: 1, fontSize: 13 },
   chevronSpace: { width: 20 },
   spinnerInset: { marginRight: 8 },
-  more: { width: 28, height: ROW_HEIGHT, alignItems: "center", justifyContent: "center" },
-  status: { height: ROW_HEIGHT, justifyContent: "center" },
+  more: { width: 28, alignItems: "center", justifyContent: "center" },
+  status: { justifyContent: "center" },
 });

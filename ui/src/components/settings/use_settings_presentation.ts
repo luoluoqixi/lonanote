@@ -6,14 +6,13 @@ import type {
   SwitchProps,
 } from "rn-ui-kit";
 
-import { isWeb } from "@/api/common";
 import { useLayoutMode } from "@/hooks/layout";
 
-/** 桌面设置使用紧凑排版；Native 保持系统控件和触控尺寸。 */
+/** 桌面 UI 设置使用紧凑排版，移动 UI 保持触控尺寸。 */
 export function useSettingsPresentation() {
   const { layoutMode } = useLayoutMode();
   const theme = useUiTheme();
-  const compact = isWeb() && layoutMode === "desktop";
+  const compact = layoutMode === "desktop";
   return {
     desktop: layoutMode === "desktop",
     compact,

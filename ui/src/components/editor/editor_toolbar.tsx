@@ -30,10 +30,10 @@ import {
   useKeyboardVisibility,
 } from "rn-ui-kit/core";
 
-import { isDesktop } from "@/api/common/platform";
 import { isIos26Plus, isMobile, os } from "@/api/common/platform";
 import type { EditorCommand } from "@/assets/editor/src/bridge/protocol";
 import { editorCommandCoordinator } from "@/components/editor/controllers";
+import { useLayoutMode } from "@/hooks/layout";
 import type { DocumentModel, EditorViewSession } from "@/stores/editor";
 
 import {
@@ -949,6 +949,7 @@ const styles = StyleSheet.create({
 });
 
 export function EditorToolbar(props: Parameters<typeof EditorToolbarContent>[0]) {
-  if (isDesktop()) return null;
+  const { layoutMode } = useLayoutMode();
+  if (layoutMode === "desktop") return null;
   return <EditorToolbarContent {...props} />;
 }

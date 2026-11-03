@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { NativeListItem, Text } from "rn-ui-kit";
 
 import { clipboard } from "@/api/commands/system";
-import { isDesktop } from "@/api/common/platform";
+import { useLayoutMode } from "@/hooks/layout";
 import { useToast } from "@/hooks/ui";
 
 type WorkspaceDetailsListItemProps = {
@@ -21,11 +21,14 @@ export function WorkspaceDetailsListItem({
   copyLabel = "复制",
 }: WorkspaceDetailsListItemProps) {
   const { toast } = useToast();
+  const { layoutMode } = useLayoutMode();
+  const desktop = layoutMode === "desktop";
 
   return (
     <NativeListItem
       contextMenuProps={{
-        native: isDesktop() ? false : undefined,
+        native: desktop ? false : undefined,
+        contentSize: desktop ? "sm" : undefined,
         items: [
           {
             label: copyLabel,
@@ -45,9 +48,9 @@ export function WorkspaceDetailsListItem({
         ],
       }}
       title={title}
-      value={isDesktop() ? undefined : value}
+      value={desktop ? undefined : value}
       trailing={
-        isDesktop() ? (
+        desktop ? (
           <View style={styles.value}>
             <Text
               numberOfLines={1}
