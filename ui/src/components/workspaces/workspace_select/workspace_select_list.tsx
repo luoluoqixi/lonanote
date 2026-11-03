@@ -157,6 +157,7 @@ export function WorkspaceSelectList({
                     ? false
                     : {
                         native: isDesktop() ? false : undefined,
+                        contentSize: desktop ? "sm" : undefined,
                         items: [
                           {
                             icon: <Info color={accentColor} size={14} />,
