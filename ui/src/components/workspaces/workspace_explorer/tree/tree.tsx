@@ -1,13 +1,13 @@
 import { ChevronDown, ChevronRight, FileText, Folder, MoreHorizontal } from "lucide-react-native";
 import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View, VirtualizedList } from "react-native";
+import { Pressable, type ScrollView, StyleSheet, Text, View, VirtualizedList } from "react-native";
 import { ContextMenu, type ContextMenuItemData, Dropdown, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common/platform";
 import { useLayoutMode } from "@/hooks/layout";
 
 import { TreeInput } from "./tree_input";
-import { createTreeScrollCoordinator } from "./tree_input_intent";
+import { createTreeScrollCoordinator, getTreeScrollOffset } from "./tree_input_intent";
 import { resolveTreeFocus } from "./tree_model";
 import type {
   TreeHandle,
@@ -193,20 +193,38 @@ export function WorkspaceTree(props: Props) {
   const latest = useRef(props);
   latest.current = props;
   const previousRows = useRef(rows);
+  const pointerFocusedPath = useRef<string | null>(null);
+  const viewport = useRef({ offset: 0, height: 0, rowHeight });
+  viewport.current.rowHeight = rowHeight;
   const scroll = useMemo(
     () =>
-      createTreeScrollCoordinator((index) =>
-        list.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 }),
-      ),
+      createTreeScrollCoordinator((index) => {
+        const metrics = viewport.current;
+        if (isWeb()) {
+          // Web scroll 事件可能滞后一帧，直接读取当前视口，避免重复或过量滚动。
+          const scrollView = list.current?.getScrollRef() as ScrollView | null;
+          const node = scrollView?.getScrollableNode() as HTMLElement | undefined;
+          if (node) {
+            metrics.offset = node.scrollTop;
+            metrics.height = node.clientHeight;
+          }
+        }
+        const offset = getTreeScrollOffset(
+          index,
+          metrics.rowHeight,
+          metrics.offset,
+          metrics.height,
+        );
+        if (offset === null) return;
+        metrics.offset = offset;
+        list.current?.scrollToOffset({ offset, animated: false });
+      }),
     [],
   );
-  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     scroll.cancel();
-    if (retryTimer.current) clearTimeout(retryTimer.current);
     return () => {
       scroll.cancel();
-      if (retryTimer.current) clearTimeout(retryTimer.current);
     };
   }, [epoch, scroll]);
   useEffect(() => {
@@ -215,6 +233,12 @@ export function WorkspaceTree(props: Props) {
     if (next !== focusedPath) props.onFocus(next);
   }, [rows, focusedPath, props.onFocus]);
   useEffect(() => {
+    const fromPointer = pointerFocusedPath.current === focusedPath;
+    pointerFocusedPath.current = null;
+    if (fromPointer) {
+      scroll.cancel();
+      return;
+    }
     if (focusedPath) scroll.request(focusedPath, epoch);
   }, [focusedPath, epoch, scroll, rowHeight]);
   useEffect(() => {
@@ -294,10 +318,15 @@ export function WorkspaceTree(props: Props) {
           epoch,
         ]}
         getItemLayout={(_, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
-        onScrollToIndexFailed={() => {
-          if (retryTimer.current) clearTimeout(retryTimer.current);
-          retryTimer.current = setTimeout(() => scroll.retry(), 40);
+        onLayout={(event) => {
+          viewport.current.height = event.nativeEvent.layout.height;
+          scroll.retry();
         }}
+        onScroll={(event) => {
+          viewport.current.offset = event.nativeEvent.contentOffset.y;
+          viewport.current.height = event.nativeEvent.layoutMeasurement.height;
+        }}
+        scrollEventThrottle={16}
         renderItem={({ item }) =>
           item.kind === "node" ? (
             <TreeNode
@@ -308,9 +337,17 @@ export function WorkspaceTree(props: Props) {
               selected={props.selectedPaths.includes(item.path)}
               focused={focusedPath === item.path}
               active={props.activePath === item.path}
-              onFocus={props.onFocus}
+              onFocus={(path) => {
+                pointerFocusedPath.current = path;
+                scroll.cancel();
+                props.onFocus(path);
+              }}
               selectionMode={props.selectionMode}
-              onSelect={props.onSelect}
+              onSelect={(path, mode) => {
+                pointerFocusedPath.current = path;
+                scroll.cancel();
+                props.onSelect(path, mode);
+              }}
               onActivate={props.onActivate}
               onExpandedChange={props.onExpandedChange}
               menuItems={props.menuItems}

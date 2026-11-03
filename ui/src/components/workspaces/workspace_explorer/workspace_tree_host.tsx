@@ -14,7 +14,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
   Button,
@@ -132,6 +132,25 @@ export function WorkspaceTreeHost({
     };
   }, [workspaceId, explorer.epoch]);
   const tree = useRef<TreeHandle>(null);
+  const treeActivatedEditor = useRef<{ id: string; path: string } | null>(null);
+  const syncActivePath = useEffectEvent((path: string) => {
+    const source = treeActivatedEditor.current;
+    treeActivatedEditor.current = null;
+    // 从文件树打开时已完成选择，不再反向定位或重新读取目录。
+    if (source?.id === activeEditorId && source.path === path) return;
+    const visible = rows.some((row) => row.kind === "node" && row.path === path);
+    if (visible) {
+      explorer.setSelection([path], path, path);
+      tree.current?.scrollToNode(path);
+    } else {
+      void explorer.revealPath(path).catch(() => undefined);
+    }
+  });
+  useEffect(() => {
+    if (desktop && activePath) syncActivePath(activePath);
+    else treeActivatedEditor.current = null;
+    // 只跟随活动文件变化，不因键盘浏览或目录刷新而抢回文件树焦点。
+  }, [desktop, activeEditorId, activePath, workspaceId]);
   const sort = useRef<SelectHandle>(null);
   useEffect(() => {
     let current = true;
@@ -204,14 +223,15 @@ export function WorkspaceTreeHost({
       }
       const kind = detectWorkspaceFileKind(row.path);
       if (kind === "markdown" || kind === "text") {
-        openNoteEditor(row.path);
+        treeActivatedEditor.current = { id: openNoteEditor(row.path), path: row.path };
         return;
       }
       if (layoutMode === "desktop") {
-        openViewer(
+        const id = openViewer(
           { kind: "workspaceFile", workspaceId, filePath: row.path },
           kind === "image" || kind === "video" || kind === "pdf" ? kind : "unknown",
         );
+        treeActivatedEditor.current = { id, path: row.path };
         return;
       }
       if (kind === "image" || kind === "video") {

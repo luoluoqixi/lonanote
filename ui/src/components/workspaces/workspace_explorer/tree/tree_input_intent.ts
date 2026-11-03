@@ -1,5 +1,20 @@
 import type { TreeInputIntent } from "./tree_types";
 
+/** 仅滚动到条目完整可见的位置，已经可见时不改变用户的滚动位置。 */
+export function getTreeScrollOffset(
+  index: number,
+  rowHeight: number,
+  offset: number,
+  height: number,
+) {
+  if (height <= 0 || rowHeight <= 0 || index < 0) return null;
+  const top = index * rowHeight;
+  const bottom = top + rowHeight;
+  if (top < offset) return top;
+  if (bottom > offset + height) return Math.max(0, bottom - height);
+  return null;
+}
+
 export function treeKeyboardIntent({
   key,
   shiftKey,

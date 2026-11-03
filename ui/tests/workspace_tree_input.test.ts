@@ -2,8 +2,20 @@ import { expect, test } from "bun:test";
 
 import {
   createTreeScrollCoordinator,
+  getTreeScrollOffset,
   treeKeyboardIntent,
 } from "../src/components/workspaces/workspace_explorer/tree/tree_input_intent";
+
+test("文件树仅为视口外或未完整显示的条目滚动，不将选中项居中", () => {
+  expect(getTreeScrollOffset(5, 30, 90, 180)).toBeNull();
+  expect(getTreeScrollOffset(3, 30, 90, 180)).toBeNull();
+  expect(getTreeScrollOffset(8, 30, 90, 180)).toBeNull();
+  expect(getTreeScrollOffset(2, 30, 90, 180)).toBe(60);
+  expect(getTreeScrollOffset(9, 30, 90, 180)).toBe(120);
+  expect(getTreeScrollOffset(3, 30, 95, 180)).toBe(90);
+  expect(getTreeScrollOffset(8, 30, 90, 175)).toBe(95);
+  expect(getTreeScrollOffset(8, 30, 90, 0)).toBeNull();
+});
 
 test("键盘箭头、Enter、修饰键与输入隔离", () => {
   expect(treeKeyboardIntent({ key: "ArrowDown", shiftKey: true })).toEqual({
