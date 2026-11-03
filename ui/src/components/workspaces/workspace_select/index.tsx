@@ -19,6 +19,7 @@ import { useWorkspaceNavigation, useWorkspaceSession } from "@/hooks/workspace";
 import { useWorkspaceLocation } from "@/hooks/workspace/use_workspace_location";
 import { useWorkspaceStorageTarget } from "@/hooks/workspace/use_workspace_storage_target";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
+import { workspaceStateRevisionStore } from "@/stores/workspace/workspace_state_revision_store";
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
@@ -378,6 +379,7 @@ export function WorkspaceSelectContent({
         editingWorkspace.id,
         nextDisplayName,
       );
+      workspaceStateRevisionStore.getState().invalidate(editingWorkspace.id);
       handleEditWorkspaceSheetOpenChange(false);
       await refreshWorkspaces();
       toast.success(`已更新工作区“${updatedWorkspace.displayName}”`);

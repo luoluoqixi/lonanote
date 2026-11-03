@@ -1,9 +1,11 @@
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
+import { useStore } from "zustand";
 
 import { type WorkspaceSnapshot, workspace } from "@/api/commands/workspace";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { workspaceSessionStore } from "@/stores/workspace";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
+import { workspaceStateRevisionStore } from "@/stores/workspace/workspace_state_revision_store";
 
 import { useCurrentWorkspaceId } from "./use_workspace_session";
 
@@ -27,6 +29,9 @@ export interface UseWorkspaceStateResult {
 }
 
 export function useWorkspaceState(workspaceId: string | null): UseWorkspaceStateResult {
+  const revision = useStore(workspaceStateRevisionStore, (state) =>
+    workspaceId ? (state.revisions[workspaceId] ?? 0) : 0,
+  );
   const { closeWorkspace, withWorkspaceClose } = useEditorCloseActions();
   const [state, setState] = useState<WorkspaceSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +57,13 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     startTransition(() => {
       setError(nextError);
     });
+  });
+
+  const prepareLoad = useEffectEvent((targetWorkspaceId: string) => {
+    // 同 ID 元信息刷新期间保留标题；切换工作区时才清空旧快照。
+    setIsLoading(state?.id !== targetWorkspaceId);
+    setIsRefreshing(state?.id === targetWorkspaceId);
+    if (state?.id !== targetWorkspaceId) commitState(null);
   });
 
   const refresh = useEffectEvent(async (nextWorkspaceId?: string) => {
@@ -167,9 +179,8 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
     }
 
     const requestId = ++requestIdRef.current;
-    setIsLoading(true);
+    prepareLoad(workspaceId);
     commitError(null);
-    commitState(null);
 
     void workspace
       .get(workspaceId)
@@ -186,9 +197,10 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
       .finally(() => {
         if (requestId === requestIdRef.current) {
           setIsLoading(false);
+          setIsRefreshing(false);
         }
       });
-  }, [workspaceId]);
+  }, [workspaceId, revision]);
 
   return {
     workspaceId,
