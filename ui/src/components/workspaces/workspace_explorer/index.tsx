@@ -2,9 +2,12 @@ import { type Href, Redirect, useFocusEffect, useLocalSearchParams, useRouter } 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
-import { type WorkspaceIndexEntry } from "@/api/commands/workspace";
+import { type WorkspaceIndexEntry, workspaceFile } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
-import { getAvailableEntryName } from "@/api/common/utils/workspace_entry_name";
+import {
+  getDefaultWorkspaceEntryName,
+  getWorkspaceEntryCreateParent,
+} from "@/api/common/utils/workspace_entry_name";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useMediaNavigation } from "@/hooks/media";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
@@ -155,6 +158,14 @@ function DirectoryExplorerForWorkspace({
   const [isGroupModeSelectOpen, setIsGroupModeSelectOpen] = useState(false);
   const [createEntryKind, setCreateEntryKind] = useState<CreateWorkspaceEntryKind>("note");
   const [createEntryName, setCreateEntryName] = useState("");
+  const [createEntryParent, setCreateEntryParent] = useState(currentPath);
+  const createRequest = useRef(0);
+  useEffect(
+    () => () => {
+      createRequest.current += 1;
+    },
+    [workspaceId, currentPath, explorer.epoch],
+  );
   const [isCreateEntrySheetOpen, setIsCreateEntrySheetOpen] = useState(false);
   const [isCreatingEntry, setIsCreatingEntry] = useState(false);
   const [editingEntry, setEditingEntry] = useState<WorkspaceIndexEntry | null>(null);
@@ -221,18 +232,29 @@ function DirectoryExplorerForWorkspace({
     [entries, selectedEntryPaths],
   );
   const isUpdatingEntries = isCreatingEntry || isRenamingEntry || isDeletingEntries;
+  const targetCreateParent = getWorkspaceEntryCreateParent(
+    selectedEntries.length === 1 ? selectedEntries[0] : undefined,
+    currentPath,
+  );
 
   const openCreateEntrySheet = useCallback(
     (entryKind: CreateWorkspaceEntryKind) => {
-      setCreateEntryKind(entryKind);
-      setCreateEntryName(
-        entryKind === "note"
-          ? getAvailableEntryName(entries, "未命名笔记", ".md")
-          : getAvailableEntryName(entries, "新建文件夹"),
-      );
-      setIsCreateEntrySheetOpen(true);
+      const request = ++createRequest.current;
+      void workspaceFile
+        .list(workspaceId, targetCreateParent)
+        .then((entries) => {
+          if (request !== createRequest.current) return;
+          setCreateEntryKind(entryKind);
+          setCreateEntryParent(targetCreateParent);
+          setCreateEntryName(getDefaultWorkspaceEntryName(entries, entryKind));
+          setIsCreateEntrySheetOpen(true);
+        })
+        .catch((error) => {
+          if (request === createRequest.current)
+            toast.error(getErrorMessage(error, "无法读取目标文件夹"));
+        });
     },
-    [entries],
+    [targetCreateParent, workspaceId, toast],
   );
 
   const createWorkspaceEntry = useCallback(
@@ -240,10 +262,12 @@ function DirectoryExplorerForWorkspace({
       entryKind,
       name,
       openAfterCreate,
+      parentPath,
     }: {
       entryKind: CreateWorkspaceEntryKind;
       name: string;
       openAfterCreate: boolean;
+      parentPath: string;
     }) => {
       if (isCreatingEntryRef.current) {
         return;
@@ -258,14 +282,14 @@ function DirectoryExplorerForWorkspace({
 
       const normalizedName =
         entryKind === "note" ? ensureNewNoteFileExtension(trimmedName) : trimmedName;
-      const entryPath = joinWorkspacePath(currentPath, normalizedName);
+      const entryPath = joinWorkspacePath(parentPath, normalizedName);
       isCreatingEntryRef.current = true;
       setIsCreatingEntry(true);
 
       try {
         const result = await fileActions.createEntry({
           workspaceId,
-          parentPath: currentPath,
+          parentPath,
           name: normalizedName,
           kind: entryKind,
         });
@@ -304,7 +328,7 @@ function DirectoryExplorerForWorkspace({
         setIsCreatingEntry(false);
       }
     },
-    [currentPath, fileActions, openNoteEditor, router, toast, workspaceId],
+    [fileActions, openNoteEditor, router, toast, workspaceId],
   );
 
   const createEntry = useCallback(async () => {
@@ -312,18 +336,30 @@ function DirectoryExplorerForWorkspace({
       entryKind: createEntryKind,
       name: createEntryName,
       openAfterCreate: false,
+      parentPath: createEntryParent,
     });
-  }, [createEntryKind, createEntryName, createWorkspaceEntry]);
+  }, [createEntryKind, createEntryName, createEntryParent, createWorkspaceEntry]);
 
   const quickCreateEntry = useCallback(
     (entryKind: CreateWorkspaceEntryKind) => {
-      const name =
-        entryKind === "note"
-          ? getAvailableEntryName(entries, "未命名笔记", ".md")
-          : getAvailableEntryName(entries, "新建文件夹");
-      void createWorkspaceEntry({ entryKind, name, openAfterCreate: true });
+      const request = ++createRequest.current;
+      void workspaceFile
+        .list(workspaceId, targetCreateParent)
+        .then((entries) => {
+          if (request !== createRequest.current) return;
+          return createWorkspaceEntry({
+            entryKind,
+            name: getDefaultWorkspaceEntryName(entries, entryKind),
+            parentPath: targetCreateParent,
+            openAfterCreate: true,
+          });
+        })
+        .catch((error) => {
+          if (request === createRequest.current)
+            toast.error(getErrorMessage(error, "无法读取目标文件夹"));
+        });
     },
-    [createWorkspaceEntry, entries],
+    [createWorkspaceEntry, targetCreateParent, workspaceId, toast],
   );
 
   const openRenameEntrySheet = useCallback((entry: WorkspaceIndexEntry) => {
@@ -676,6 +712,7 @@ function DirectoryExplorerForWorkspace({
         value={effectiveGroupMode}
       />
       <CreateWorkspaceEntrySheet
+        parentPath={createEntryParent}
         entryKind={createEntryKind}
         isCreating={isCreatingEntry}
         name={createEntryName}

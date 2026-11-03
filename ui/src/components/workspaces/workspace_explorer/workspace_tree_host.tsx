@@ -37,6 +37,10 @@ import {
 } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, getFileMimeType, getFileName } from "@/api/common";
 import { isDesktop } from "@/api/common/platform";
+import {
+  getDefaultWorkspaceEntryName,
+  getWorkspaceEntryCreateParent,
+} from "@/api/common/utils/workspace_entry_name";
 import { useEditorSession } from "@/hooks/editor";
 import { useLayoutMode } from "@/hooks/layout";
 import { useMediaNavigation } from "@/hooks/media";
@@ -124,6 +128,13 @@ export function WorkspaceTreeHost({
   } | null>(null);
   const [rename, setRename] = useState<{ path: string; epoch: number } | null>(null);
   const [name, setName] = useState("");
+  const createRequest = useRef(0);
+  useEffect(
+    () => () => {
+      createRequest.current += 1;
+    },
+    [workspaceId, explorer.epoch],
+  );
   const [busy, setBusy] = useState(false);
   const [details, setDetails] = useState<WorkspaceIndexEntry | null>(null);
   const detailsRequest = useRef(0);
@@ -298,10 +309,32 @@ export function WorkspaceTreeHost({
   );
   const openCreate = useCallback(
     (parent: string, kind: "note" | "directory") => {
-      setName(kind === "note" ? "未命名笔记.md" : "新建文件夹");
-      setCreate({ parent, kind, epoch: explorer.epoch });
+      const request = ++createRequest.current;
+      const epoch = explorer.epoch;
+      void workspaceFile
+        .list(workspaceId, parent)
+        .then((entries) => {
+          if (
+            request !== createRequest.current ||
+            workspaceExplorerStore.getState().workspaces[workspaceId]?.epoch !== epoch
+          )
+            return;
+          setName(getDefaultWorkspaceEntryName(entries, kind));
+          setCreate({ parent, kind, epoch });
+        })
+        .catch((error) => {
+          if (request === createRequest.current)
+            toast.error("无法读取目标文件夹", { description: String(error) });
+        });
     },
-    [explorer.epoch],
+    [explorer.epoch, workspaceId, toast],
+  );
+  const createParent = getWorkspaceEntryCreateParent(
+    nodeFor(
+      explorer.selectedPaths.includes(explorer.focusedPath ?? "")
+        ? explorer.focusedPath!
+        : (explorer.selectedPaths[0] ?? ""),
+    ),
   );
   const menuItems = useCallback(
     (path: string) => {
@@ -574,11 +607,16 @@ export function WorkspaceTreeHost({
           {(
             [
               ["排序", ArrowDownWideNarrow, () => sort.current?.open(), false],
-              ["新建笔记", FilePlus2, () => openCreate("", "note"), !capabilities.canWrite],
+              [
+                "新建笔记",
+                FilePlus2,
+                () => openCreate(createParent, "note"),
+                !capabilities.canWrite,
+              ],
               [
                 "新建文件夹",
                 FolderPlus,
-                () => openCreate("", "directory"),
+                () => openCreate(createParent, "directory"),
                 !capabilities.canCreateDirectory,
               ],
               ["刷新", RefreshCw, refresh, false],
@@ -640,6 +678,7 @@ export function WorkspaceTreeHost({
           if (!open) setCreate(null);
         }}
         entryKind={create?.kind ?? "note"}
+        parentPath={create?.parent ?? ""}
         name={name}
         onNameChange={setName}
         isCreating={busy}

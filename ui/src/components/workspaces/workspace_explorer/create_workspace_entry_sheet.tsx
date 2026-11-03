@@ -23,6 +23,7 @@ type CreateWorkspaceEntrySheetProps = {
   entryKind: CreateWorkspaceEntryKind;
   isCreating: boolean;
   name: string;
+  parentPath: string;
   onNameChange: (name: string) => void;
   onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
@@ -33,6 +34,7 @@ export function CreateWorkspaceEntrySheet({
   entryKind,
   isCreating,
   name,
+  parentPath,
   onNameChange,
   onOpenChange,
   onSubmit,
@@ -98,7 +100,7 @@ export function CreateWorkspaceEntrySheet({
     <AdaptiveModal
       name="create-workspace-entry-sheet"
       screenName="create-entry"
-      title={title}
+      title={`${title} · ${parentPath || "/"}`}
       open={open}
       onOpenChange={handleOpenChange}
       dialogSize={{ width: 520, height: 320 }}
