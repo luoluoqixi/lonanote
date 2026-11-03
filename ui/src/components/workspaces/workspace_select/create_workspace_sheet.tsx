@@ -11,8 +11,8 @@ import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { useLayoutMode } from "@/hooks/layout";
 
 import {
-  WorkspaceStorageFields,
   type WorkspaceStorageTargetForm,
+  renderWorkspaceStorageFields,
 } from "./workspace_storage_fields";
 
 type CreateWorkspaceSheetProps = {
@@ -75,7 +75,7 @@ export function CreateWorkspaceSheet({
               value: displayName,
             }}
           />
-          <WorkspaceStorageFields target={target} disabled={isCreating} />
+          {renderWorkspaceStorageFields({ target, disabled: isCreating })}
         </NativeListSection>
         <NativeListSection>
           <NativeListButtonItem

@@ -1,12 +1,15 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 
+import { fs } from "@/api/commands/fs";
 import {
   type WorkspaceListItem,
   type WorkspaceStorageBindingRequest,
   workspace,
 } from "@/api/commands/workspace";
 import { getErrorMessage } from "@/api/common/error_message";
+import { isDesktop } from "@/api/common/platform";
 import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
+import { isCurrentWorkspaceLocation } from "@/components/workspaces/workspace_select/workspace_location_target";
 import { changeWorkspaceStorage } from "@/components/workspaces/workspace_select/workspace_storage_change";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useToast } from "@/hooks/ui";
@@ -32,7 +35,11 @@ export function useWorkspaceLocation({
   const [mode, setMode] = useState<WorkspaceLocationMode>("relocate");
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentPath, setCurrentPath] = useState<{ id: string; value: string } | null>(null);
+  const [currentPath, setCurrentPath] = useState<{
+    id: string;
+    path: string | null;
+    value: string;
+  } | null>(null);
   const { withWorkspaceClose } = useEditorCloseActions();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { toast } = useToast();
@@ -45,12 +52,14 @@ export function useWorkspaceLocation({
     void workspace
       .nativeRootPath(item.id)
       .then((path) => {
-        if (!disposed) setCurrentPath({ id: item.id, value: path ?? "此存储位置不提供本地路径" });
+        if (!disposed)
+          setCurrentPath({ id: item.id, path, value: path ?? "此存储位置不提供本地路径" });
       })
       .catch(() => {
         if (!disposed)
           setCurrentPath({
             id: item.id,
+            path: null,
             value: "无法读取当前位置，文件夹可能已移动或暂时不可访问",
           });
       });
@@ -63,6 +72,7 @@ export function useWorkspaceLocation({
     (nextItem: WorkspaceListItem, nextMode: WorkspaceLocationMode) => {
       if (busyRef.current || latestBlockedRef.current()) return;
       setItem(nextItem);
+      setCurrentPath(null);
       setMode(nextMode);
       setError(null);
       void target.load(nextItem.storage.providerId, nextItem.storage.directoryName ?? "");
@@ -77,9 +87,29 @@ export function useWorkspaceLocation({
     [busyRef, target.isChoosing],
   );
 
+  const isSameLocation =
+    item !== null &&
+    isCurrentWorkspaceLocation(
+      item.storage,
+      currentPath?.id === item.id ? currentPath.path : null,
+      target,
+    );
+
+  const nativePath = currentPath?.id === item?.id ? currentPath?.path : null;
+  const canRevealCurrentFolder = isDesktop() && !!nativePath && !isWorking;
+  const revealCurrentFolder = useCallback(async () => {
+    if (!isDesktop() || !nativePath || busyRef.current) return;
+    try {
+      await fs.showInFolder(nativePath);
+    } catch (error) {
+      toast.error(`打开所在文件夹失败：${getErrorMessage(error, "未知错误")}`);
+    }
+  }, [nativePath, busyRef, toast]);
+
   const submit = useCallback(async () => {
     if (
       !item ||
+      isSameLocation ||
       busyRef.current ||
       latestBlockedRef.current() ||
       target.isLoading ||
@@ -165,6 +195,7 @@ export function useWorkspaceLocation({
     }
   }, [
     item,
+    isSameLocation,
     busyRef,
     target,
     mode,
@@ -180,7 +211,10 @@ export function useWorkspaceLocation({
     mode,
     target,
     isWorking,
+    isSameLocation,
     error,
+    canRevealCurrentFolder,
+    revealCurrentFolder,
     open,
     onOpenChange,
     submit,
