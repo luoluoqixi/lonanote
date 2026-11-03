@@ -5,6 +5,7 @@ import type { StorageCapabilities } from "@/api/commands/workspace/types";
 type MenuActions = {
   isCurrent(id: string, epoch: number, paths: string[]): boolean;
   open(path: string): void;
+  openExternal?(path: string): void;
   create(parent: string, kind: "note" | "directory"): void;
   rename(path: string): void;
   remove(paths: string[]): void;
@@ -91,6 +92,19 @@ export function createWorkspaceExplorerMenu({
               disabled: !single || !capabilities.canRead,
               onSelect: guarded(() => actions.open(targets[0]), single && capabilities.canRead),
             },
+            ...(nativePathAvailable && actions.openExternal
+              ? [
+                  {
+                    value: "open-external",
+                    label: "在其他应用中打开",
+                    disabled: !single || !capabilities.canRead,
+                    onSelect: guarded(
+                      () => actions.openExternal?.(targets[0]),
+                      single && capabilities.canRead,
+                    ),
+                  },
+                ]
+              : []),
           ]),
       { value: "separator-primary", separator: true },
       ...(nativePathAvailable

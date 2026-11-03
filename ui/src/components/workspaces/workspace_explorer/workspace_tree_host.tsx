@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ChevronsDownUp,
   Copy,
+  ExternalLink,
   FileInput,
   FilePlus2,
   FolderOpen,
@@ -28,12 +29,13 @@ import {
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
+import { openExternalFile } from "@/api/commands/utils";
 import {
   type StorageCapabilities,
   type WorkspaceIndexEntry,
   workspaceFile,
 } from "@/api/commands/workspace";
-import { detectWorkspaceFileKind, getFileName } from "@/api/common";
+import { detectWorkspaceFileKind, getFileMimeType, getFileName } from "@/api/common";
 import { isDesktop } from "@/api/common/platform";
 import { useEditorSession } from "@/hooks/editor";
 import { useLayoutMode } from "@/hooks/layout";
@@ -336,6 +338,16 @@ export function WorkspaceTreeHost({
               });
           },
           create: openCreate,
+          openExternal: (p) => {
+            void workspaceFile
+              .nativePath(workspaceId, p)
+              .then((nativePath) => {
+                if (nativePath) return openExternalFile(nativePath, getFileMimeType(nativePath));
+              })
+              .catch((error) =>
+                toast.error("无法在其他应用中打开", { description: String(error) }),
+              );
+          },
           setExpanded: (path, expanded) => {
             void explorer.setExpanded(path, expanded).catch((error) =>
               toast.error(expanded ? "展开文件夹失败" : "折叠文件夹失败", {
@@ -405,6 +417,7 @@ export function WorkspaceTreeHost({
       }).map((item) => {
         const Icon = new Map<string, typeof FilePlus2>([
           ["open", FileInput],
+          ["open-external", ExternalLink],
           ["expand", ChevronRight],
           ["collapse", ChevronDown],
           ["details", Info],

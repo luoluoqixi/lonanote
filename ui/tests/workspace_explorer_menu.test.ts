@@ -2,6 +2,67 @@ import { expect, test } from "bun:test";
 
 import { createWorkspaceExplorerMenu } from "../src/components/workspaces/workspace_explorer/workspace_explorer_menu";
 
+test("在其他应用中打开仅用于桌面本机文件，并校验多选、权限和会话", () => {
+  let current = true;
+  const opened: string[] = [];
+  const options = {
+    workspaceId: "w",
+    epoch: 1,
+    desktop: true,
+    nativePathAvailable: true,
+    targetPaths: ["docs/a.pdf"],
+    targetDirectory: "docs",
+    capabilities: {
+      canRead: true,
+      canWrite: true,
+      canCreateDirectory: true,
+      canDelete: true,
+      canRename: true,
+    },
+    actions: {
+      isCurrent: () => current,
+      open: () => {},
+      create: () => {},
+      rename: () => {},
+      remove: () => {},
+      details: () => {},
+      select: () => {},
+      refresh: () => {},
+      openExternal: (path: string) => {
+        opened.push(path);
+      },
+    },
+  };
+  const find = (extra = {}) =>
+    createWorkspaceExplorerMenu({ ...options, ...extra }).find(
+      (item) => item.value === "open-external",
+    );
+  const item = find();
+  expect(item?.label).toBe("在其他应用中打开");
+  item?.onSelect?.();
+  expect(opened).toEqual(["docs/a.pdf"]);
+  current = false;
+  item?.onSelect?.();
+  expect(opened).toHaveLength(1);
+  for (const extra of [
+    { desktop: false },
+    { nativePathAvailable: false },
+    { targetPaths: ["docs"] },
+    { targetPaths: [""], targetDirectory: "" },
+  ])
+    expect(find(extra)).toBeUndefined();
+  current = true;
+  for (const extra of [
+    { targetPaths: ["docs/a.pdf", "docs/b.pdf"] },
+    { capabilities: { ...options.capabilities, canRead: false } },
+  ]) {
+    const disabled = find(extra);
+    expect(disabled?.disabled).toBe(true);
+    disabled?.onSelect?.();
+  }
+  expect(opened).toHaveLength(1);
+});
+
 test("桌面文件夹菜单按展开状态提供动作，文件、根目录、多选和移动模式不提供", () => {
   const calls: unknown[] = [];
   let current = true;
