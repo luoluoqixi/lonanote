@@ -295,7 +295,9 @@ export function DesktopEditorArea({
 
   return (
     <View ref={editorAreaRef} style={[styles.root, { backgroundColor: theme.background }]}>
-      <View style={[styles.tabs, { borderBottomColor: theme.border }]}>
+      <View
+        style={[styles.tabs, { borderBottomColor: tabs.length > 0 ? theme.border : "transparent" }]}
+      >
         <View style={styles.tabScroller}>
           <ScrollView
             ref={scrollRef}
@@ -406,6 +408,14 @@ export function DesktopEditorArea({
               { backgroundColor: theme.background },
             ]}
           >
+            {tabs.length === 0 ? (
+              <EditorTabBlankInput
+                key={currentWorkspaceId ?? "no-workspace"}
+                area="editor"
+                disabled={!currentWorkspaceId || isCreatingNote}
+                onCreateNote={() => void createNote()}
+              />
+            ) : null}
             <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>尚未打开文档</Text>
             <Button
               size="sm"
