@@ -235,7 +235,7 @@ function ActivityButton({ accessibilityLabel, active, icon: Icon, onPress }: Act
   const theme = useUiTheme();
   const [hovered, setHovered] = useState(false);
   return (
-    <Tooltip content={accessibilityLabel} contentProps={{ side: "right" }}>
+    <Tooltip content={accessibilityLabel} contentProps={{ side: "right" }} openOnFocus={false}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}

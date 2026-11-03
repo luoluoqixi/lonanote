@@ -22,6 +22,7 @@ export function FilePathTooltip({
       content={path ?? ""}
       size="xs"
       disableHoverableContent
+      openOnFocus={false}
       onOpenChange={(open) => {
         openRef.current = open;
       }}
@@ -45,8 +46,6 @@ export function FilePathTooltip({
             });
           }
         },
-        // 右键菜单关闭后恢复焦点不能重新打开提示。
-        onFocus: (event) => event.preventDefault(),
       }}
       contentProps={{
         side: "bottom",
