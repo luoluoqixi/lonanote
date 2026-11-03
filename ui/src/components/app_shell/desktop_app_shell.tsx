@@ -26,6 +26,8 @@ import { useWorkbenchDragGuard } from "@/hooks/ui/use_workbench_drag_guard";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { useRevealWorkspacePath } from "@/hooks/workspace/use_reveal_workspace_path";
 
+import { DesktopSidePanel } from "./desktop_side_panel";
+
 const LAYOUT_STORAGE_KEY = "lonanote.wideScreenHome.layout";
 const DEFAULT_LAYOUT_STATE = {
   sizes: [],
@@ -125,9 +127,10 @@ export function DesktopAppShell() {
                 snap
               >
                 <View style={[styles.fullHeight, { backgroundColor: theme.background }]}>
-                  {panel === "explorer" ? (
+                  <DesktopSidePanel active={showSidebar && panel === "explorer"}>
                     <SidePanel onSelectWorkspace={() => setSelectOpen(true)} />
-                  ) : (
+                  </DesktopSidePanel>
+                  <DesktopSidePanel active={showSidebar && panel === "search"}>
                     <View style={styles.sidePanelHeader}>
                       <Text style={{ fontSize: 13 }} className="font-semibold">
                         搜索
@@ -136,7 +139,7 @@ export function DesktopAppShell() {
                         搜索工作区中的笔记
                       </Text>
                     </View>
-                  )}
+                  </DesktopSidePanel>
                 </View>
               </SplitLayout.Pane>
               <SplitLayout.Pane minSize={20} priority={SplitLayoutPriority.High}>
