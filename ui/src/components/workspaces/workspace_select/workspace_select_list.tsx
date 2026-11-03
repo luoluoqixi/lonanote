@@ -1,4 +1,4 @@
-import { Folder, Info } from "lucide-react-native";
+import { Folder, FolderOpen, Info, Pencil, Trash2 } from "lucide-react-native";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -153,6 +153,7 @@ export function WorkspaceSelectList({
                             value: `details-workspace-${workspaceItem.id}`,
                           },
                           {
+                            icon: <Pencil color={accentColor} size={14} />,
                             label: "编辑工作区",
                             onSelect: () => onEditWorkspace(workspaceItem),
                             value: `edit-workspace-${workspaceItem.id}`,
@@ -160,6 +161,7 @@ export function WorkspaceSelectList({
                           ...(isDesktop()
                             ? [
                                 {
+                                  icon: <FolderOpen color={accentColor} size={14} />,
                                   label: "打开所在文件夹",
                                   onSelect: () => onRevealWorkspace(workspaceItem),
                                   value: `reveal-workspace-${workspaceItem.id}`,
@@ -168,6 +170,7 @@ export function WorkspaceSelectList({
                             : []),
                           {
                             destructive: true,
+                            icon: <Trash2 color={theme.destructive} size={14} />,
                             label: "删除工作区",
                             onSelect: () => onDeleteWorkspace(workspaceItem),
                             value: `delete-workspace-${workspaceItem.id}`,

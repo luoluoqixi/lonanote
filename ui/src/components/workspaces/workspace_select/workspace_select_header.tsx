@@ -6,6 +6,7 @@ import {
   Ellipsis,
   FolderOpen,
   FolderPlus,
+  RefreshCw,
   Search,
   Settings,
 } from "lucide-react-native";
@@ -25,6 +26,7 @@ type WorkspaceSelectHeaderProps = {
   canSelectWorkspaces: boolean;
   isGroupModeDisabled: boolean;
   isScanningWorkspaces: boolean;
+  isRefreshingWorkspaces: boolean;
   isWorkspaceSelectionMode: boolean;
   onCreateWorkspace: () => void;
   onOpenFolder?: () => void;
@@ -33,6 +35,7 @@ type WorkspaceSelectHeaderProps = {
   onOpenWorkspaceGroupMode: () => void;
   onOpenWorkspaceSort: () => void;
   onScanWorkspaces: () => void;
+  onRefreshWorkspaces?: () => void;
   onToggleSelectAllWorkspaces: () => void;
   onToggleWorkspaceSelectionMode: () => void;
 };
@@ -45,6 +48,7 @@ export function WorkspaceSelectHeader({
   canSelectWorkspaces,
   isGroupModeDisabled,
   isScanningWorkspaces,
+  isRefreshingWorkspaces,
   isWorkspaceSelectionMode,
   onCreateWorkspace,
   onOpenFolder,
@@ -53,6 +57,7 @@ export function WorkspaceSelectHeader({
   onOpenWorkspaceGroupMode,
   onOpenWorkspaceSort,
   onScanWorkspaces,
+  onRefreshWorkspaces,
   onToggleSelectAllWorkspaces,
   onToggleWorkspaceSelectionMode,
 }: WorkspaceSelectHeaderProps) {
@@ -103,6 +108,17 @@ export function WorkspaceSelectHeader({
         onPress: onScanWorkspaces,
         value: "scan-workspaces",
       },
+      ...(onRefreshWorkspaces
+        ? [
+            {
+              disabled: isRefreshingWorkspaces || isScanningWorkspaces || isOpeningFolder,
+              icon: <RefreshCw color={accentColor} size={14} />,
+              label: isRefreshingWorkspaces ? "正在刷新…" : "刷新",
+              onPress: onRefreshWorkspaces,
+              value: "refresh-workspaces",
+            },
+          ]
+        : []),
       {
         separator: true,
         value: "separator-01",
@@ -154,12 +170,14 @@ export function WorkspaceSelectHeader({
       canSelectWorkspaces,
       isGroupModeDisabled,
       isScanningWorkspaces,
+      isRefreshingWorkspaces,
       onCreateWorkspace,
       onOpenFolder,
       isOpeningFolder,
       onOpenWorkspaceGroupMode,
       onOpenWorkspaceSort,
       onScanWorkspaces,
+      onRefreshWorkspaces,
       onToggleWorkspaceSelectionMode,
     ],
   );

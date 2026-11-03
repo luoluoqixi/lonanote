@@ -98,6 +98,7 @@ export function WorkspaceSelectContent({
   const [isScanningWorkspaces, setIsScanningWorkspaces] = useState(false);
   const scanInProgressRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshingWorkspaces, setIsRefreshingWorkspaces] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isCreateWorkspaceSheetOpen, setIsCreateWorkspaceSheetOpen] = useState(false);
   const workspaceSortSelectRef = useRef<SelectHandle>(null);
@@ -152,6 +153,17 @@ export function WorkspaceSelectContent({
     () => refreshWorkspaces(MIN_PULL_TO_REFRESH_DURATION_MS),
     [refreshWorkspaces],
   );
+
+  const handleMenuRefresh = useCallback(async () => {
+    if (isRefreshingWorkspaces) return;
+
+    setIsRefreshingWorkspaces(true);
+    try {
+      await refreshWorkspaces();
+    } finally {
+      setIsRefreshingWorkspaces(false);
+    }
+  }, [isRefreshingWorkspaces, refreshWorkspaces]);
 
   const scanWorkspaces = useCallback(async () => {
     if (
@@ -777,6 +789,7 @@ export function WorkspaceSelectContent({
         canSelectWorkspaces={workspaces.length > 0}
         isGroupModeDisabled={isGroupModeDisabled}
         isScanningWorkspaces={isScanningWorkspaces}
+        isRefreshingWorkspaces={isRefreshingWorkspaces}
         isWorkspaceSelectionMode={isWorkspaceSelectionMode}
         onCreateWorkspace={openCreateWorkspaceSheet}
         onFinishWorkspaceSelection={finishWorkspaceSelection}
@@ -789,6 +802,13 @@ export function WorkspaceSelectContent({
         onScanWorkspaces={() => {
           void scanWorkspaces();
         }}
+        onRefreshWorkspaces={
+          isDesktop()
+            ? () => {
+                void handleMenuRefresh();
+              }
+            : undefined
+        }
         onToggleSelectAllWorkspaces={toggleSelectAllWorkspaces}
         onToggleWorkspaceSelectionMode={toggleWorkspaceSelectionMode}
       />
