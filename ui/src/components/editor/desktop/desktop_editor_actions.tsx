@@ -171,8 +171,10 @@ export function DesktopEditorActions({
       },
     );
   }
+  if (items.length > 0) {
+    items.push({ value: "separator-file", separator: true });
+  }
   items.push(
-    { value: "separator-file", separator: true },
     {
       value: "reveal-explorer",
       label: "在资源管理器中显示",
