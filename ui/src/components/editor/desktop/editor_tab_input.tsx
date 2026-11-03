@@ -1,5 +1,5 @@
 import { type ReactElement, useEffect, useState } from "react";
-import { type LayoutChangeEvent, View } from "react-native";
+import { View } from "react-native";
 import { ContextMenu, type ContextMenuItemData } from "rn-ui-kit";
 
 import { workspaceFile } from "@/api/commands/workspace";
@@ -12,14 +12,10 @@ export function EditorTabInput({
   children,
   documentRef,
   getItems,
-  onLayout,
-  viewRef,
 }: {
   children: ReactElement;
   documentRef: EditorDocumentRef | null;
   getItems: (nativePath: string | null) => ContextMenuItemData[];
-  onLayout: (event: LayoutChangeEvent) => void;
-  viewRef: (node: View | null) => void;
 }) {
   const { layoutMode } = useLayoutMode();
   const revision = useWorkspaceResourceRevision(
@@ -51,7 +47,7 @@ export function EditorTabInput({
         ? resolved.path
         : null;
   return (
-    <View ref={viewRef} onLayout={onLayout} style={{ flexShrink: 0, height: 36 }}>
+    <View style={{ flexShrink: 0, height: 36 }}>
       <ContextMenu
         native={layoutMode === "desktop" ? false : undefined}
         contentSize={layoutMode === "desktop" ? "sm" : "default"}

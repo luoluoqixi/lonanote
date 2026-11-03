@@ -14,6 +14,7 @@ export function useEditorSession() {
     activeEditorId: state.activeEditorId,
     editorsById: state.editorsById,
     openEditorIds: state.openEditorIds,
+    moveEditor: state.moveEditor,
     documentsById: state.documentsById,
     openEditor: (ref: EditorDocumentRef, options?: Parameters<typeof state.openEditor>[1]) =>
       editorStore.getState().openEditor(ref, options),

@@ -47,6 +47,7 @@ export type EditorStoreState = {
   documentIdByKey: Record<string, string>;
   /** 文本和只读查看器共用标签顺序、活动 ID；查看器不进入 documentsById。 */
   openEditorIds: string[];
+  moveEditor: (editorId: string, beforeId: string | null) => void;
   viewersById: Record<string, WorkspaceViewerSession>;
   closeWorkspaceViewers: (workspaceId: string) => void;
   openViewer: (
@@ -482,6 +483,15 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
           ? state.activeEditorId
           : (openEditorIds.at(-1) ?? null),
     });
+  },
+
+  moveEditor: (editorId, beforeId) => {
+    const order = get().openEditorIds;
+    if (!order.includes(editorId) || beforeId === editorId) return;
+    if (beforeId !== null && !order.includes(beforeId)) return;
+    const next = order.filter((id) => id !== editorId);
+    next.splice(beforeId === null ? next.length : next.indexOf(beforeId), 0, editorId);
+    if (next.some((id, index) => id !== order[index])) set({ openEditorIds: next });
   },
 
   setActiveEditor: (editorId) => {

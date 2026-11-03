@@ -25,6 +25,7 @@ import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
 import { EDITOR_FILE_EXTENSIONS, getEditorDroppedFiles } from "./editor_file_drop";
 import { EditorTabBlankInput } from "./editor_tab_blank_input";
+import { EditorTabDragInput } from "./editor_tab_drag_input";
 import { EditorTabInput } from "./editor_tab_input";
 import {
   type EditorTabCloseAction,
@@ -34,6 +35,7 @@ import {
 import { type EditorTabMenuItem, toEditorTabContextMenuItems } from "./editor_tab_menu_items";
 import { getEditorTabScrollTarget } from "./editor_tab_scroll";
 import { EditorTabScrollFeedback } from "./editor_tab_scroll_feedback";
+import { useEditorTabDrag } from "./use_editor_tab_drag";
 
 export function DesktopEditorArea({
   onRevealInExplorer,
@@ -49,6 +51,7 @@ export function DesktopEditorArea({
     openEditorIds,
     viewersById,
     setActiveEditor,
+    moveEditor,
   } = useEditorSession();
   const { closeEditors } = useEditorCloseActions();
   const { toast } = useToast();
@@ -61,7 +64,24 @@ export function DesktopEditorArea({
   const tabBounds = useRef(new Map<string, { x: number; width: number }>());
   const scrollPosition = useRef(0);
   const viewportWidth = useRef(0);
+  const tabViewportRef = useRef<View>(null);
+  const tabContentWidth = useRef(0);
   const tabNodes = useRef(new Map<string, View>());
+  const tabDrag = useEditorTabDrag({
+    ids: openEditorIds,
+    bounds: tabBounds,
+    viewportRef: tabViewportRef,
+    scrollRef,
+    scrollPosition,
+    contentWidth: tabContentWidth,
+    tabNodes,
+    moveEditor,
+  });
+  useEffect(() => {
+    for (const id of tabBounds.current.keys()) {
+      if (!openEditorIds.includes(id)) tabBounds.current.delete(id);
+    }
+  }, [openEditorIds]);
   const activeTabId = useRef(activeEditorId);
   activeTabId.current = activeEditorId;
   const revealFrame = useRef<number | null>(null);
@@ -298,10 +318,14 @@ export function DesktopEditorArea({
       <View
         style={[styles.tabs, { borderBottomColor: tabs.length > 0 ? theme.border : "transparent" }]}
       >
-        <View style={styles.tabScroller}>
+        <View ref={tabViewportRef} style={styles.tabScroller}>
           <ScrollView
             ref={scrollRef}
             horizontal
+            scrollEnabled={!tabDrag.preview}
+            onContentSizeChange={(width) => {
+              tabContentWidth.current = width;
+            }}
             showsHorizontalScrollIndicator={false}
             style={styles.tabList}
             contentContainerStyle={{ alignItems: "stretch", flexGrow: 1 }}
@@ -315,32 +339,42 @@ export function DesktopEditorArea({
             scrollEventThrottle={16}
           >
             {tabs.map(({ id, title, dirty }) => (
-              <EditorTabInput
+              <EditorTabDragInput
                 key={id}
-                documentRef={getEditorTabRef(id, getSnapshot())}
-                getItems={(nativePath) => getTabMenuItems(id, nativePath)}
+                enabled={tabs.length > 1}
+                dragging={tabDrag.preview?.id === id}
+                onStart={(x, y) => tabDrag.start(id, title, x, y)}
+                onMove={tabDrag.move}
+                onFinish={tabDrag.finish}
                 viewRef={(node) => {
                   if (node) tabNodes.current.set(id, node);
                   else {
                     tabNodes.current.delete(id);
-                    tabBounds.current.delete(id);
                   }
                 }}
                 onLayout={(event) => {
                   tabBounds.current.set(id, event.nativeEvent.layout);
-                  revealActiveTab();
+                  if (!tabDrag.isSuppressingPress()) revealActiveTab();
                 }}
               >
-                <DesktopEditorTab
-                  active={id === activeEditorId}
-                  dirty={dirty}
-                  title={title}
-                  onActivate={() => activateEditor(id)}
-                  onClose={() => {
-                    void requestClose(id).catch(reportError);
-                  }}
-                />
-              </EditorTabInput>
+                <EditorTabInput
+                  documentRef={getEditorTabRef(id, getSnapshot())}
+                  getItems={(nativePath) => getTabMenuItems(id, nativePath)}
+                >
+                  <DesktopEditorTab
+                    active={id === activeEditorId}
+                    dirty={dirty}
+                    title={title}
+                    onActivate={() => {
+                      if (!tabDrag.isSuppressingPress()) activateEditor(id);
+                    }}
+                    onClose={() => {
+                      if (tabDrag.isSuppressingPress()) return;
+                      void requestClose(id).catch(reportError);
+                    }}
+                  />
+                </EditorTabInput>
+              </EditorTabDragInput>
             ))}
             <EditorTabBlankInput
               key={currentWorkspaceId ?? "no-workspace"}
@@ -348,6 +382,40 @@ export function DesktopEditorArea({
               onCreateNote={() => void createNote()}
             />
           </ScrollView>
+          {tabDrag.preview ? (
+            <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+              <View
+                style={{
+                  position: "absolute",
+                  top: 2,
+                  bottom: 2,
+                  left: tabDrag.preview.marker,
+                  width: 2,
+                  backgroundColor: theme.primary,
+                }}
+              />
+              <View
+                style={{
+                  position: "absolute",
+                  left: tabDrag.preview.left,
+                  top: 3,
+                  height: 30,
+                  maxWidth: 220,
+                  paddingHorizontal: 10,
+                  justifyContent: "center",
+                  backgroundColor: theme.secondary,
+                  borderColor: theme.border,
+                  borderWidth: 1,
+                  borderRadius: 4,
+                  opacity: 0.9,
+                }}
+              >
+                <Text numberOfLines={1} style={{ fontSize: 13, color: theme.foreground }}>
+                  {tabDrag.preview.title}
+                </Text>
+              </View>
+            </View>
+          ) : null}
           <EditorTabScrollFeedback scrollRef={scrollRef} />
         </View>
         {activeEditorId ? (
@@ -359,7 +427,8 @@ export function DesktopEditorArea({
         ) : null}
       </View>
       <View style={styles.viewport}>
-        {openEditorIds.map((id) => {
+        {/* 编辑器挂载顺序与标签排序分离，避免移动 iframe 导致内容重新加载。 */}
+        {Object.keys(editorsById).map((id) => {
           const view = editorsById[id];
           const document = view ? documentsById[view.documentId] : null;
           if (!view || !document) return null;
