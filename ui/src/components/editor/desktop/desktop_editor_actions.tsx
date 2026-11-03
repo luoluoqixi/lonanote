@@ -20,7 +20,7 @@ import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
 import { openExternalFile } from "@/api/commands/utils";
 import { workspaceFile } from "@/api/commands/workspace";
-import { getFileMimeType, isDesktop } from "@/api/common";
+import { getFileMimeType, isDesktop, isMarkdownFile } from "@/api/common";
 import { editorCommandCoordinator, saveCoordinator } from "@/components/editor/controllers";
 import { toggleEditorPreviewMode } from "@/components/editor/controllers/editor_preview_mode";
 import { useEditorSession } from "@/hooks/editor";
@@ -49,6 +49,10 @@ export function DesktopEditorActions({
   const view = editorsById[editorId];
   const document = view ? documentsById[view.documentId] : null;
   const ref = getEditorTabRef(editorId, getSnapshot());
+  const supportsMarkdownModes =
+    ref?.kind === "untitled" ||
+    (ref?.kind === "workspaceFile" && isMarkdownFile(ref.filePath)) ||
+    (ref?.kind === "looseFile" && isMarkdownFile(ref.absolutePath));
   const identity = JSON.stringify(ref);
   const latestIdentity = useRef(identity);
   latestIdentity.current = identity;
@@ -143,26 +147,30 @@ export function DesktopEditorActions({
             onPress: () =>
               run(() => editorCommandCoordinator.execute(editorId, { type: "history.redo" })),
           },
-          { value: "separator-mode", separator: true },
-          {
-            value: "preview-mode",
-            label: previewMode ? "编辑模式" : "预览模式",
-            icon: icon(previewMode ? Pencil : Eye),
-            disabled: !ready,
-            onPress: togglePreview,
-          },
-          {
-            value: "source-mode",
-            label: "源码模式",
-            icon: icon(FileText),
-            selectionIndicatorPosition: "right",
-            selected: !view.previewMode && sourceMode,
-            disabled: !ready || view.previewMode,
-            onPress: () =>
-              run(() => setEditorPreferenceOverrides(editorId, { sourceMode: !sourceMode })),
-          },
         ]
       : [];
+  if (view && document && supportsMarkdownModes) {
+    items.push(
+      { value: "separator-mode", separator: true },
+      {
+        value: "preview-mode",
+        label: previewMode ? "编辑模式" : "预览模式",
+        icon: icon(previewMode ? Pencil : Eye),
+        disabled: !ready,
+        onPress: togglePreview,
+      },
+      {
+        value: "source-mode",
+        label: "源码模式",
+        icon: icon(FileText),
+        selectionIndicatorPosition: "right",
+        selected: !view.previewMode && sourceMode,
+        disabled: !ready || view.previewMode,
+        onPress: () =>
+          run(() => setEditorPreferenceOverrides(editorId, { sourceMode: !sourceMode })),
+      },
+    );
+  }
   items.push(
     { value: "separator-file", separator: true },
     {
@@ -236,7 +244,7 @@ export function DesktopEditorActions({
   const PreviewIcon = previewMode ? Pencil : Eye;
   return (
     <View style={styles.actions}>
-      {view && (ready || pendingPreviewMode !== null) ? (
+      {supportsMarkdownModes && view && (ready || pendingPreviewMode !== null) ? (
         <Tooltip content={label}>
           <Button
             aria-label={label}
