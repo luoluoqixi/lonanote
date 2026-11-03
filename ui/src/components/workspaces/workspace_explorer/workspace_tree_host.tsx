@@ -493,6 +493,7 @@ export function WorkspaceTreeHost({
   const treeContent = (
     <View style={styles.root}>
       <WorkspaceTree
+        workspaceId={workspaceId}
         ref={tree}
         epoch={explorer.epoch}
         rows={rows}

@@ -1,8 +1,9 @@
 import { type ReactElement, useEffect, useState } from "react";
 import { View } from "react-native";
-import { ContextMenu, type ContextMenuItemData, Tooltip } from "rn-ui-kit";
+import { ContextMenu, type ContextMenuItemData } from "rn-ui-kit";
 
 import { workspaceFile } from "@/api/commands/workspace";
+import { FilePathTooltip } from "@/components/files/file_path_tooltip";
 import { useLayoutMode } from "@/hooks/layout";
 import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 import type { EditorDocumentRef } from "@/stores/editor";
@@ -53,26 +54,7 @@ export function EditorTabInput({
   const canShowTooltip =
     layoutMode === "desktop" && !!tooltipPath && !suppressTooltip && frozenItems === null;
   return (
-    <Tooltip
-      content={tooltipPath ?? ""}
-      size="xs"
-      disableHoverableContent
-      triggerProps={{
-        disabled: !canShowTooltip,
-        // 路径提示只响应悬浮，避免右键菜单关闭后恢复标签焦点时重新打开。
-        onFocus: (event) => event.preventDefault(),
-      }}
-      contentProps={{
-        side: "bottom",
-        align: "start",
-        pointerEvents: "none",
-        style: {
-          maxWidth: 640,
-          display: canShowTooltip ? "flex" : "none",
-          cursor: "auto",
-        },
-      }}
-    >
+    <FilePathTooltip path={tooltipPath} disabled={!canShowTooltip}>
       {/* 容器只承载悬浮事件；覆盖 Tooltip 注入的 button role，避免嵌套关闭按钮。 */}
       <View role="presentation" style={{ flexShrink: 0, height: 36 }}>
         <ContextMenu
@@ -88,6 +70,6 @@ export function EditorTabInput({
           trigger={children}
         />
       </View>
-    </Tooltip>
+    </FilePathTooltip>
   );
 }
