@@ -2,6 +2,66 @@ import { expect, test } from "bun:test";
 
 import { createWorkspaceExplorerMenu } from "../src/components/workspaces/workspace_explorer/workspace_explorer_menu";
 
+test("桌面文件夹菜单按展开状态提供动作，文件、根目录、多选和移动模式不提供", () => {
+  const calls: unknown[] = [];
+  let current = true;
+  const options = {
+    workspaceId: "w",
+    epoch: 1,
+    desktop: true,
+    targetPaths: ["docs"],
+    targetDirectory: "docs",
+    expanded: false,
+    capabilities: {
+      canRead: true,
+      canWrite: true,
+      canCreateDirectory: true,
+      canDelete: true,
+      canRename: true,
+    },
+    actions: {
+      isCurrent: () => current,
+      open: () => {},
+      create: () => {},
+      rename: () => {},
+      remove: () => {},
+      details: () => {},
+      select: () => {},
+      refresh: () => {},
+      setExpanded: (path: string, expanded: boolean) => {
+        calls.push([path, expanded]);
+      },
+    },
+  };
+  const expand = createWorkspaceExplorerMenu(options).find((item) => item.value === "expand");
+  expect(expand?.label).toBe("展开");
+  expand?.onSelect?.();
+  const collapse = createWorkspaceExplorerMenu({ ...options, expanded: true }).find(
+    (item) => item.value === "collapse",
+  );
+  expect(collapse?.label).toBe("折叠");
+  collapse?.onSelect?.();
+  expect(calls).toEqual([
+    ["docs", true],
+    ["docs", false],
+  ]);
+  current = false;
+  expand?.onSelect?.();
+  expect(calls).toHaveLength(2);
+  for (const extra of [
+    { targetPaths: ["docs/a.md"] },
+    { targetPaths: [""], targetDirectory: "" },
+    { targetPaths: ["docs", "other"] },
+    { desktop: false },
+  ]) {
+    expect(
+      createWorkspaceExplorerMenu({ ...options, ...extra }).some(
+        (item) => item.value === "expand" || item.value === "collapse",
+      ),
+    ).toBe(false);
+  }
+});
+
 test("菜单固定业务路径、禁用能力与 destructive；旧会话和已删节点不执行", () => {
   let epoch = 1;
   const existing = new Set(["A", "B"]);

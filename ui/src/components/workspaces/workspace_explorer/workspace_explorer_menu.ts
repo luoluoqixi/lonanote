@@ -11,6 +11,7 @@ type MenuActions = {
   details(path: string): void;
   select(paths: string[]): void;
   refresh(): void;
+  setExpanded?(path: string, expanded: boolean): void;
   reveal?(path: string): void;
   copyPath?(path: string, absolute: boolean): void;
 };
@@ -23,6 +24,7 @@ export function createWorkspaceExplorerMenu({
   actions,
   desktop = false,
   nativePathAvailable = false,
+  expanded = false,
 }: {
   workspaceId: string;
   epoch: number;
@@ -35,6 +37,7 @@ export function createWorkspaceExplorerMenu({
   actions: MenuActions;
   desktop?: boolean;
   nativePathAvailable?: boolean;
+  expanded?: boolean;
 }): ContextMenuItemData[] {
   const targets = [...targetPaths];
   const single = targets.length === 1;
@@ -47,6 +50,19 @@ export function createWorkspaceExplorerMenu({
     };
   if (desktop)
     return [
+      ...(directory && !root && actions.setExpanded
+        ? [
+            {
+              value: expanded ? "collapse" : "expand",
+              label: expanded ? "折叠" : "展开",
+              disabled: !capabilities.canRead,
+              onSelect: guarded(
+                () => actions.setExpanded?.(targets[0], !expanded),
+                capabilities.canRead,
+              ),
+            },
+          ]
+        : []),
       ...(directory
         ? [
             {

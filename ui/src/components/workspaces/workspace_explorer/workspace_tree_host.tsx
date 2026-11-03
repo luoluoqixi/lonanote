@@ -1,6 +1,8 @@
 import { type Href, useRouter } from "expo-router";
 import {
   ArrowDownWideNarrow,
+  ChevronDown,
+  ChevronRight,
   ChevronsDownUp,
   Copy,
   FileInput,
@@ -295,6 +297,7 @@ export function WorkspaceTreeHost({
         capabilities,
         desktop,
         nativePathAvailable,
+        expanded: explorer.expandedPaths.includes(path),
         actions: {
           isCurrent: (id, epoch, paths) =>
             workspaceExplorerStore.getState().workspaces[id]?.epoch === epoch &&
@@ -313,6 +316,13 @@ export function WorkspaceTreeHost({
               });
           },
           create: openCreate,
+          setExpanded: (path, expanded) => {
+            void explorer.setExpanded(path, expanded).catch((error) =>
+              toast.error(expanded ? "展开文件夹失败" : "折叠文件夹失败", {
+                description: String(error),
+              }),
+            );
+          },
           rename: (p) => {
             setName(getFileName(p));
             setRename({ path: p, epoch: explorer.epoch });
@@ -375,6 +385,8 @@ export function WorkspaceTreeHost({
       }).map((item) => {
         const Icon = new Map<string, typeof FilePlus2>([
           ["open", FileInput],
+          ["expand", ChevronRight],
+          ["collapse", ChevronDown],
           ["details", Info],
           ["create-note", FilePlus2],
           ["create-directory", FolderPlus],
@@ -404,6 +416,8 @@ export function WorkspaceTreeHost({
       toast,
       nodeFor,
       explorer.epoch,
+      explorer.expandedPaths,
+      explorer.setExpanded,
       explorer.selectedPaths,
       explorer.setSelectionMode,
       explorer.setSelection,

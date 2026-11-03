@@ -5,7 +5,7 @@ import { Button, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
-import { workspaceFile, workspaceIndex } from "@/api/commands/workspace";
+import { workspaceIndex } from "@/api/commands/workspace";
 import { createAsyncSubscription } from "@/api/common/async_subscription";
 import { isDesktop, isWeb } from "@/api/common/platform";
 import { getAvailableEntryName } from "@/api/common/utils/workspace_entry_name";
@@ -24,15 +24,14 @@ import { DesktopEditorActions } from "./desktop_editor_actions";
 import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
 import { EDITOR_FILE_EXTENSIONS, getEditorDroppedFiles } from "./editor_file_drop";
-import { EditorMenuPopup } from "./editor_menu_popup";
-import type { EditorMenuRequest } from "./editor_menu_popup_types";
+import { EditorTabBlankInput } from "./editor_tab_blank_input";
 import { EditorTabInput } from "./editor_tab_input";
 import {
   type EditorTabCloseAction,
   getEditorTabCloseTargets,
   getEditorTabRef,
 } from "./editor_tab_menu_actions";
-import type { EditorTabMenuItem } from "./editor_tab_menu_items";
+import { type EditorTabMenuItem, toEditorTabContextMenuItems } from "./editor_tab_menu_items";
 import { getEditorTabScrollTarget } from "./editor_tab_scroll";
 import { EditorTabScrollFeedback } from "./editor_tab_scroll_feedback";
 
@@ -42,8 +41,6 @@ export function DesktopEditorArea({
   onRevealInExplorer?: (workspaceId: string, path: string) => Promise<void>;
 }) {
   const theme = useUiTheme();
-  const [tabMenu, setTabMenu] = useState<EditorMenuRequest | null>(null);
-  const menuSequence = useRef(0);
   const {
     activeEditorId,
     getSnapshot,
@@ -146,25 +143,15 @@ export function DesktopEditorArea({
     [closeEditors, getSnapshot],
   );
 
-  const openTabMenu = useCallback(
-    async (id: string, x: number, y: number) => {
-      if (!isDesktop()) return;
-      const sequence = ++menuSequence.current;
+  const getTabMenuItems = useCallback(
+    (id: string, nativePath: string | null) => {
       const initial = getSnapshot();
       const ref = getEditorTabRef(id, initial);
-      if (!ref) return;
+      if (!ref) return [];
       const identity = JSON.stringify(ref);
       const isCurrent = () =>
-        sequence === menuSequence.current &&
         getSnapshot().openEditorIds.includes(id) &&
         JSON.stringify(getEditorTabRef(id, getSnapshot())) === identity;
-      const nativePath =
-        ref.kind === "looseFile"
-          ? ref.absolutePath
-          : ref.kind === "workspaceFile"
-            ? await workspaceFile.nativePath(ref.workspaceId, ref.filePath).catch(() => null)
-            : null;
-      if (!isCurrent()) return;
       const items: EditorTabMenuItem[] = [
         { action: "close", text: "关闭", enabled: true },
         { action: "closeOthers", text: "关闭其他", enabled: initial.openEditorIds.length > 1 },
@@ -184,7 +171,7 @@ export function DesktopEditorArea({
         {
           action: "revealFile",
           text: "在文件管理器中显示",
-          enabled: !!nativePath,
+          enabled: !!nativePath && isDesktop(),
           separatorBefore: true,
         },
         {
@@ -213,24 +200,7 @@ export function DesktopEditorArea({
           await requestClose(id, action);
         }
       };
-      setTabMenu({
-        sequence,
-        x,
-        y,
-        isCurrent,
-        restoreFocus: () => tabNodes.current.get(id)?.focus(),
-        items: items.flatMap((item) => [
-          ...(item.separatorBefore ? [{ value: `separator-${item.action}`, separator: true }] : []),
-          {
-            value: item.action,
-            textValue: item.text,
-            disabled: !item.enabled,
-            onSelect: () => {
-              if (isCurrent() && item.enabled) void execute(item.action).catch(reportError);
-            },
-          },
-        ]),
-      });
+      return toEditorTabContextMenuItems(items, isCurrent, execute, reportError);
     },
     [currentWorkspaceId, getSnapshot, onRevealInExplorer, reportError, requestClose],
   );
@@ -325,7 +295,6 @@ export function DesktopEditorArea({
 
   return (
     <View ref={editorAreaRef} style={[styles.root, { backgroundColor: theme.background }]}>
-      <EditorMenuPopup request={tabMenu} onDismiss={() => setTabMenu(null)} />
       <View style={[styles.tabs, { borderBottomColor: theme.border }]}>
         <View style={styles.tabScroller}>
           <ScrollView
@@ -333,7 +302,7 @@ export function DesktopEditorArea({
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.tabList}
-            contentContainerStyle={{ alignItems: "stretch" }}
+            contentContainerStyle={{ alignItems: "stretch", flexGrow: 1 }}
             onLayout={(event) => {
               viewportWidth.current = event.nativeEvent.layout.width;
               revealActiveTab();
@@ -346,8 +315,18 @@ export function DesktopEditorArea({
             {tabs.map(({ id, title, dirty }) => (
               <EditorTabInput
                 key={id}
-                onMenu={(x, y) => {
-                  void openTabMenu(id, x, y).catch(reportError);
+                documentRef={getEditorTabRef(id, getSnapshot())}
+                getItems={(nativePath) => getTabMenuItems(id, nativePath)}
+                viewRef={(node) => {
+                  if (node) tabNodes.current.set(id, node);
+                  else {
+                    tabNodes.current.delete(id);
+                    tabBounds.current.delete(id);
+                  }
+                }}
+                onLayout={(event) => {
+                  tabBounds.current.set(id, event.nativeEvent.layout);
+                  revealActiveTab();
                 }}
               >
                 <DesktopEditorTab
@@ -358,20 +337,14 @@ export function DesktopEditorArea({
                   onClose={() => {
                     void requestClose(id).catch(reportError);
                   }}
-                  viewRef={(node) => {
-                    if (node) tabNodes.current.set(id, node);
-                    else {
-                      tabNodes.current.delete(id);
-                      tabBounds.current.delete(id);
-                    }
-                  }}
-                  onLayout={(event) => {
-                    tabBounds.current.set(id, event.nativeEvent.layout);
-                    revealActiveTab();
-                  }}
                 />
               </EditorTabInput>
             ))}
+            <EditorTabBlankInput
+              key={currentWorkspaceId ?? "no-workspace"}
+              disabled={!currentWorkspaceId || isCreatingNote}
+              onCreateNote={() => void createNote()}
+            />
           </ScrollView>
           <EditorTabScrollFeedback scrollRef={scrollRef} />
         </View>

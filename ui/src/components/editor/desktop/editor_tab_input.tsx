@@ -1,10 +1,69 @@
-import type { ReactNode } from "react";
+import { type ReactElement, useEffect, useState } from "react";
+import { type LayoutChangeEvent, View } from "react-native";
+import { ContextMenu, type ContextMenuItemData } from "rn-ui-kit";
 
+import { workspaceFile } from "@/api/commands/workspace";
+import { useLayoutMode } from "@/hooks/layout";
+import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
+import type { EditorDocumentRef } from "@/stores/editor";
+
+/** 路径提前解析；打开时冻结菜单，避免异步结果改变正在操作的菜单。 */
 export function EditorTabInput({
   children,
+  documentRef,
+  getItems,
+  onLayout,
+  viewRef,
 }: {
-  children: ReactNode;
-  onMenu(x: number, y: number): void;
+  children: ReactElement;
+  documentRef: EditorDocumentRef | null;
+  getItems: (nativePath: string | null) => ContextMenuItemData[];
+  onLayout: (event: LayoutChangeEvent) => void;
+  viewRef: (node: View | null) => void;
 }) {
-  return <>{children}</>;
+  const { layoutMode } = useLayoutMode();
+  const revision = useWorkspaceResourceRevision(
+    documentRef?.kind === "workspaceFile" ? documentRef.workspaceId : null,
+  );
+  const [resolved, setResolved] = useState<{
+    ref: EditorDocumentRef;
+    revision: number;
+    path: string | null;
+  } | null>(null);
+  const [frozenItems, setFrozenItems] = useState<ContextMenuItemData[] | null>(null);
+  useEffect(() => {
+    if (documentRef?.kind !== "workspaceFile") return;
+    let disposed = false;
+    void workspaceFile
+      .nativePath(documentRef.workspaceId, documentRef.filePath)
+      .catch(() => null)
+      .then((path) => {
+        if (!disposed) setResolved({ ref: documentRef, revision, path });
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [documentRef, revision]);
+  const nativePath =
+    documentRef?.kind === "looseFile"
+      ? documentRef.absolutePath
+      : resolved?.ref === documentRef && resolved?.revision === revision
+        ? resolved.path
+        : null;
+  return (
+    <View ref={viewRef} onLayout={onLayout} style={{ flexShrink: 0, height: 36 }}>
+      <ContextMenu
+        native={layoutMode === "desktop" ? false : undefined}
+        contentSize={layoutMode === "desktop" ? "sm" : "default"}
+        items={frozenItems ?? getItems(nativePath)}
+        onOpenWillChange={(open) => {
+          if (open) setFrozenItems(getItems(nativePath));
+        }}
+        onOpenChange={(open) => {
+          if (!open) setFrozenItems(null);
+        }}
+        trigger={children}
+      />
+    </View>
+  );
 }
