@@ -556,6 +556,50 @@ impl LocalFsResolver {
 
 #[async_trait]
 impl WorkspaceStorageResolver for LocalFsResolver {
+    async fn validate_relocation(
+        &self,
+        source: &WorkspaceStorageBinding,
+        target: &WorkspaceStorageBinding,
+    ) -> Result<(), StorageError> {
+        fn canonical_target(path: &Path) -> Result<PathBuf, StorageError> {
+            if path.exists() {
+                return std::fs::canonicalize(path)
+                    .map_err(|error| map_root_io("relocate_canonicalize", error));
+            }
+            let parent = path
+                .parent()
+                .ok_or_else(|| StorageError::io("relocate_target", "目标缺少父目录"))?;
+            Ok(canonical_target(parent)?.join(
+                path.file_name()
+                    .ok_or_else(|| StorageError::io("relocate_target", "目标目录名无效"))?,
+            ))
+        }
+        let root = |binding: &WorkspaceStorageBinding| {
+            self.resolve_root(
+                &binding.provider_id,
+                binding.provider_schema_version,
+                &binding.location,
+            )
+        };
+        let normalize = |path: PathBuf| {
+            #[cfg(any(windows, target_os = "macos"))]
+            {
+                PathBuf::from(path.to_string_lossy().to_lowercase())
+            }
+            #[cfg(not(any(windows, target_os = "macos")))]
+            {
+                path
+            }
+        };
+        let source = normalize(canonical_target(&root(source)?)?);
+        let target = normalize(canonical_target(&root(target)?)?);
+        if source.starts_with(&target) || target.starts_with(&source) {
+            return Err(StorageError::UnsupportedOperation {
+                operation: "relocate_overlapping_roots",
+            });
+        }
+        Ok(())
+    }
     fn same_resource(&self, a: &WorkspaceStorageBinding, b: &WorkspaceStorageBinding) -> bool {
         // 本地文件夹可同时由 Managed 和 External Provider 定位，使用当前定位重新比较。
         let identity = |binding: &WorkspaceStorageBinding| {
@@ -695,7 +739,11 @@ impl WorkspaceStorageResolver for LocalFsResolver {
                 path: WorkspaceRelativePath::root(),
             });
         }
-        std::fs::create_dir_all(&root).map_err(|error| map_root_io("create_managed", error))?;
+        if let Some(parent) = root.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| map_root_io("create_managed_parent", error))?;
+        }
+        std::fs::create_dir(&root).map_err(|error| map_root_io("create_managed", error))?;
         let storage = LocalPathStorage::open(root)?;
         let binding = request.resolve(self.identity_for_root(storage.root_path())?);
         Ok((

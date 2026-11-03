@@ -6,6 +6,7 @@ import { Text } from "rn-ui-kit";
 import { workspaceResource } from "@/api/commands/workspace";
 import { createWorkspaceResourceEndpoint, getFileName, isTauri, os } from "@/api/common";
 import { appendWorkspaceResourceUrl } from "@/assets/editor/src/resources/resource_url";
+import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 
 const iframeStyle: CSSProperties = {
   border: 0,
@@ -26,12 +27,15 @@ export function PdfViewer() {
   }>();
   const filePath = getFirstParamValue(path);
   const targetWorkspaceId = getFirstParamValue(workspaceId);
+  const revision = useWorkspaceResourceRevision(targetWorkspaceId);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!filePath || !targetWorkspaceId || !isTauri()) return;
     let disposed = false;
+    setPdfUrl(null);
+    setError(null);
     void workspaceResource
       .acquireScope(targetWorkspaceId)
       .then((scope) => {
@@ -48,7 +52,7 @@ export function PdfViewer() {
     return () => {
       disposed = true;
     };
-  }, [filePath, targetWorkspaceId]);
+  }, [filePath, targetWorkspaceId, revision]);
 
   if (!filePath || !targetWorkspaceId) return <Redirect href={"/" as Href} />;
 

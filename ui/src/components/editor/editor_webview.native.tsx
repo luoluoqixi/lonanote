@@ -183,8 +183,14 @@ export function EditorWebView({
     setSurfaceGeneration((generation) => generation + 1);
   }, []);
   const identity = useMemo(
-    () => createEditorBridgeBootstrap(editor.editorId, document.documentId, surfaceGeneration),
-    [document.documentId, editor.editorId, surfaceGeneration],
+    () =>
+      createEditorBridgeBootstrap(
+        editor.editorId,
+        document.documentId,
+        surfaceGeneration,
+        resourceContext.revision,
+      ),
+    [document.documentId, editor.editorId, surfaceGeneration, resourceContext.revision],
   );
 
   const initializePayload = useMemo(

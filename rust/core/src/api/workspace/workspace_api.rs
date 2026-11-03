@@ -6,7 +6,7 @@ use crate::workspace::{
     ScanManagedWorkspacesResult, StorageProviderId, WorkspaceError, WorkspaceId,
     WorkspaceIdMismatchResolution, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceRelativePath,
     WorkspaceSettings, WorkspaceSnapshot, WorkspaceStateStatus, WorkspaceStorageBindingRequest,
-    WorkspaceStorageTarget,
+    WorkspaceStorageTarget, WorkspaceStorageView,
 };
 
 #[command("workspace")]
@@ -157,6 +157,16 @@ async fn relocate(
 ) -> anyhow::Result<RelocateWorkspaceResult> {
     Ok(workspace_manager()
         .relocate_workspace(&workspace_id, target)
+        .await?)
+}
+
+#[command("workspace")]
+async fn rebind(
+    workspace_id: WorkspaceId,
+    binding: WorkspaceStorageBindingRequest,
+) -> anyhow::Result<WorkspaceStorageView> {
+    Ok(workspace_manager()
+        .rebind_workspace(&workspace_id, binding)
         .await?)
 }
 

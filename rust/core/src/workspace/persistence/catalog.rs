@@ -17,6 +17,18 @@ use super::json_file::{load_json_with_backup, write_json_atomically};
 
 pub const WORKSPACE_CATALOG_FILE_NAME: &str = "workspace-catalog.json";
 
+/// 与 Catalog 同文件持久化，绑定提交状态以 Catalog 当前值为准。
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PendingRelocation {
+    pub workspace_id: WorkspaceId,
+    pub source: WorkspaceStorageBinding,
+    pub target: WorkspaceStorageBinding,
+    /// 已提交但无法安全清理的旧目录仅隔离，不再自动删除，也不阻塞后续迁移。
+    #[serde(default)]
+    pub cleanup_abandoned: bool,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceCatalogData {
@@ -33,6 +45,8 @@ pub struct WorkspaceCatalogData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub initial_workspace_id: Option<WorkspaceId>,
     pub workspaces: HashMap<WorkspaceId, WorkspaceRecord>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) pending_relocations: Vec<PendingRelocation>,
 }
 
 impl Default for WorkspaceCatalogData {
@@ -42,6 +56,7 @@ impl Default for WorkspaceCatalogData {
             initial_workspace_copied: false,
             initial_workspace_id: None,
             workspaces: HashMap::new(),
+            pending_relocations: Vec::new(),
         }
     }
 }
@@ -212,9 +227,14 @@ impl WorkspaceCatalog {
     pub async fn remove(&self, id: &WorkspaceId) -> Result<WorkspaceRecord, WorkspaceError> {
         let id = *id;
         self.update(move |data| {
-            data.workspaces
+            let record = data
+                .workspaces
                 .remove(&id)
-                .ok_or(WorkspaceError::NotFoundWorkspace(id))
+                .ok_or(WorkspaceError::NotFoundWorkspace(id))?;
+            // 注销并不授权删除历史迁移两端目录；与 record 同次原子写入撤销恢复任务。
+            data.pending_relocations
+                .retain(|pending| pending.workspace_id != id);
+            Ok(record)
         })
         .await
     }
@@ -336,6 +356,61 @@ impl WorkspaceCatalog {
         .await
     }
 
+    pub(crate) async fn begin_relocation(
+        &self,
+        pending: PendingRelocation,
+    ) -> Result<(), WorkspaceError> {
+        self.update(move |data| {
+            if data
+                .pending_relocations
+                .iter()
+                .any(|entry| entry.workspace_id == pending.workspace_id && !entry.cleanup_abandoned)
+            {
+                return Err(WorkspaceError::Relocation(
+                    "存在尚未恢复的迁移，请重启应用后重试".into(),
+                ));
+            }
+            data.pending_relocations.push(pending);
+            Ok(())
+        })
+        .await
+    }
+
+    pub(crate) async fn finish_relocation(
+        &self,
+        pending: &PendingRelocation,
+    ) -> Result<(), WorkspaceError> {
+        let pending = pending.clone();
+        self.update(move |data| {
+            data.pending_relocations.retain(|entry| {
+                entry.workspace_id != pending.workspace_id
+                    || entry.source != pending.source
+                    || entry.target != pending.target
+            });
+            Ok(())
+        })
+        .await
+    }
+
+    pub(crate) async fn abandon_source_cleanup(
+        &self,
+        pending: &PendingRelocation,
+    ) -> Result<(), WorkspaceError> {
+        let pending = pending.clone();
+        self.update(move |data| {
+            for entry in &mut data.pending_relocations {
+                if entry.workspace_id == pending.workspace_id
+                    && entry.source == pending.source
+                    && entry.target == pending.target
+                {
+                    entry.cleanup_abandoned = true;
+                }
+            }
+            Ok(())
+        })
+        .await
+    }
+
     pub async fn update_summary(
         &self,
         id: &WorkspaceId,
@@ -347,6 +422,25 @@ impl WorkspaceCatalog {
                 .workspaces
                 .get_mut(&id)
                 .ok_or(WorkspaceError::NotFoundWorkspace(id))?;
+            record.cached_summary = summary;
+            Ok(())
+        })
+        .await
+    }
+
+    pub(crate) async fn update_binding_with_summary(
+        &self,
+        id: &WorkspaceId,
+        binding: WorkspaceStorageBinding,
+        summary: WorkspaceCachedSummary,
+    ) -> Result<(), WorkspaceError> {
+        let id = *id;
+        self.update(move |data| {
+            let record = data
+                .workspaces
+                .get_mut(&id)
+                .ok_or(WorkspaceError::NotFoundWorkspace(id))?;
+            record.storage_binding = binding;
             record.cached_summary = summary;
             Ok(())
         })

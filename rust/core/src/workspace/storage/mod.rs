@@ -316,6 +316,19 @@ impl fmt::Debug for WorkspaceStorageSession {
 
 #[async_trait]
 pub trait WorkspaceStorageResolver: Send + Sync {
+    /// 根目录迁移前验证资源范围；Provider 必须拒绝互相包含的目标。
+    async fn validate_relocation(
+        &self,
+        source: &WorkspaceStorageBinding,
+        target: &WorkspaceStorageBinding,
+    ) -> Result<(), StorageError> {
+        if self.same_resource(source, target) {
+            return Err(StorageError::UnsupportedOperation {
+                operation: "relocate_same_resource",
+            });
+        }
+        Ok(())
+    }
     /// 判断已登记目录与新选择的目录是否相同；默认保持 Provider 访问范围隔离。
     fn same_resource(&self, a: &WorkspaceStorageBinding, b: &WorkspaceStorageBinding) -> bool {
         a.same_resource(b)
@@ -553,7 +566,7 @@ pub async fn copy_workspace_tree(
                             WriteOptions {
                                 overwrite: false,
                                 create_parent: true,
-                                atomic: false,
+                                atomic: true,
                             },
                         )
                         .await?;

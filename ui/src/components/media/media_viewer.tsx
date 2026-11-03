@@ -41,6 +41,7 @@ import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useMediaNavigation } from "@/hooks/media";
 import { useAppBackgroundColors } from "@/hooks/settings";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
+import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 
 export type WorkspaceMediaKind = "image" | "video";
 
@@ -386,6 +387,7 @@ export function MediaViewer() {
     workspaceId?: string | string[];
   }>();
   const workspaceId = getFirstParamValue(rawWorkspaceId) ?? currentWorkspaceId;
+  const revision = useWorkspaceResourceRevision(workspaceId);
   const fallbackPath = getFirstParamValue(path);
   const mediaPaths = useMemo(
     () => (fallbackPath ? getMediaPaths(fallbackPath, mediaSequence, workspaceId) : []),
@@ -531,7 +533,7 @@ export function MediaViewer() {
     return () => {
       isDisposed = true;
     };
-  }, [mediaPaths, workspaceId]);
+  }, [mediaPaths, workspaceId, revision]);
 
   const selectPage = useCallback(
     (nextIndex: number) => {

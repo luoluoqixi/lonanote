@@ -17,7 +17,9 @@ import type {
   WorkspaceSettings,
   WorkspaceSnapshot,
   WorkspaceStateStatus,
+  WorkspaceStorageBindingRequest,
   WorkspaceStorageTarget,
+  WorkspaceStorageView,
 } from "./types";
 
 export const workspace = {
@@ -123,6 +125,13 @@ export const workspace = {
     target: WorkspaceStorageTarget,
   ): Promise<RelocateWorkspaceResult> => {
     return invokeWorkspaceResult("workspace.relocate", { workspaceId, target });
+  },
+
+  rebind: (
+    workspaceId: WorkspaceId,
+    binding: WorkspaceStorageBindingRequest,
+  ): Promise<WorkspaceStorageView> => {
+    return invokeWorkspaceResult("workspace.rebind", { workspaceId, binding });
   },
 
   updateDisplayName: (

@@ -1,4 +1,12 @@
-import { Folder, FolderOpen, Info, Pencil, Trash2 } from "lucide-react-native";
+import {
+  Folder,
+  FolderInput,
+  FolderOpen,
+  FolderSearch,
+  Info,
+  Pencil,
+  Trash2,
+} from "lucide-react-native";
 import { type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,6 +40,8 @@ type WorkspaceSelectListProps = {
   onCreateWorkspace: () => void;
   onDeleteWorkspace: (workspaceItem: WorkspaceListItem) => void;
   onEditWorkspace: (workspaceItem: WorkspaceListItem) => void;
+  onRelocateWorkspace: (workspaceItem: WorkspaceListItem) => void;
+  onRebindWorkspace: (workspaceItem: WorkspaceListItem) => void;
   onWorkspaceDetails: (workspaceItem: WorkspaceListItem) => void;
   onRevealWorkspace: (workspaceItem: WorkspaceListItem) => void;
   onRefresh: () => Promise<void>;
@@ -65,6 +75,8 @@ export function WorkspaceSelectList({
   onCreateWorkspace,
   onDeleteWorkspace,
   onEditWorkspace,
+  onRelocateWorkspace,
+  onRebindWorkspace,
   onWorkspaceDetails,
   onRevealWorkspace,
   onRefresh,
@@ -158,6 +170,18 @@ export function WorkspaceSelectList({
                             onSelect: () => onEditWorkspace(workspaceItem),
                             value: `edit-workspace-${workspaceItem.id}`,
                           },
+                          {
+                            icon: <FolderInput color={accentColor} size={14} />,
+                            label: "更改存储位置…",
+                            onSelect: () => onRelocateWorkspace(workspaceItem),
+                            value: `relocate-workspace-${workspaceItem.id}`,
+                          },
+                          {
+                            icon: <FolderSearch color={accentColor} size={14} />,
+                            label: "重新定位工作区…",
+                            onSelect: () => onRebindWorkspace(workspaceItem),
+                            value: `rebind-workspace-${workspaceItem.id}`,
+                          },
                           ...(isDesktop()
                             ? [
                                 {
@@ -175,7 +199,7 @@ export function WorkspaceSelectList({
                             onSelect: () => onDeleteWorkspace(workspaceItem),
                             value: `delete-workspace-${workspaceItem.id}`,
                           },
-                        ],
+                        ].map((item) => ({ ...item, disabled: isInteractionDisabled })),
                       }
                 }
                 hoverBackgroundColor={desktop ? theme.secondary : undefined}

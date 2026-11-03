@@ -40,6 +40,25 @@ function fixture() {
   return { store, actions: store.getState(), calls, content };
 }
 
+test("同 ID 重新打开立即重载目录，并保留 host 以继续响应文件修改", async () => {
+  const { store, actions, content, calls } = fixture();
+  const release = actions.registerHost("w", "tree", "");
+  await actions.loadDirectory("w", "", { reload: true });
+  const oldEpoch = store.getState().workspaces.w.epoch;
+  content[""] = [entry("moved.md", "file")];
+  await actions.restartWorkspace("w");
+  expect(store.getState().workspaces.w.epoch).not.toBe(oldEpoch);
+  expect(store.getState().workspaces.w.directories[""].snapshot?.entries[0].path).toBe("moved.md");
+  calls.length = 0;
+  content[""] = [entry("renamed.md", "file")];
+  await actions.invalidatePaths("w", ["renamed.md"]);
+  expect(calls).toEqual([""]);
+  expect(store.getState().workspaces.w.directories[""].snapshot?.entries[0].path).toBe(
+    "renamed.md",
+  );
+  release();
+});
+
 test("初始化只枚举根，展开重读当前层，收起无读取", async () => {
   const { actions, calls } = fixture();
   await actions.loadDirectory("w", "", { reload: true });

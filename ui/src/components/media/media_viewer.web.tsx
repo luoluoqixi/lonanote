@@ -12,6 +12,7 @@ import {
 import { appendWorkspaceResourceUrl } from "@/assets/editor/src/resources/resource_url";
 import { useMediaNavigation } from "@/hooks/media";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
+import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 
 const containerStyle: CSSProperties = {
   alignItems: "center",
@@ -104,6 +105,7 @@ export function MediaViewer() {
     workspaceId?: string | string[];
   }>();
   const workspaceId = getFirstParamValue(rawWorkspaceId) ?? currentWorkspaceId;
+  const revision = useWorkspaceResourceRevision(workspaceId);
   const fallbackPath = getFirstParamValue(path);
   const mediaPaths = useMemo(
     () => (fallbackPath ? getMediaPaths(fallbackPath, mediaSequence, workspaceId) : []),
@@ -128,6 +130,8 @@ export function MediaViewer() {
   useEffect(() => {
     if (!workspaceId || mediaPaths.length === 0 || !isTauri()) return;
     let disposed = false;
+    setMediaUrls({});
+    setError(null);
     void workspaceResource
       .acquireScope(workspaceId)
       .then((scope) => {
@@ -149,7 +153,7 @@ export function MediaViewer() {
     return () => {
       disposed = true;
     };
-  }, [mediaPaths, workspaceId]);
+  }, [mediaPaths, workspaceId, revision]);
 
   const selectMedia = useCallback(
     (nextIndex: number) => {

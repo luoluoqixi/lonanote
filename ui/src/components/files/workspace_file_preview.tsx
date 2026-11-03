@@ -8,6 +8,7 @@ import { Button, Text } from "rn-ui-kit";
 
 import { workspace } from "@/api/commands/workspace";
 import { resolveWorkspaceFileUrl } from "@/api/common";
+import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 import type { WorkspaceViewerSession } from "@/stores/editor/editor_store";
 
 import { UnknownFileContent } from "./unknown_file_viewer";
@@ -22,11 +23,12 @@ function VideoContent({ uri, onError }: { uri: string; onError(message: string):
 }
 
 export function WorkspaceFilePreview({ viewer }: { viewer: WorkspaceViewerSession }) {
+  const revision = useWorkspaceResourceRevision(viewer.ref.workspaceId);
   const [resource, setResource] = useState<{ key: string; uri?: string; error?: string } | null>(
     null,
   );
   const [retry, setRetry] = useState(0);
-  const key = `${viewer.ref.workspaceId}:${viewer.ref.filePath}:${viewer.identityRevision}`;
+  const key = `${viewer.ref.workspaceId}:${viewer.ref.filePath}:${viewer.identityRevision}:${revision}`;
   useEffect(() => {
     if (viewer.viewerKind !== "image" && viewer.viewerKind !== "video") return;
     let current = true;

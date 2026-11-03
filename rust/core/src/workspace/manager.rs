@@ -48,6 +48,7 @@ pub const INITIAL_WORKSPACE_DISPLAY_NAME_CN: &str = "我的笔记";
 pub const INITIAL_WORKSPACE_DISPLAY_NAME_EN: &str = "My Notes";
 
 mod managed_scan;
+mod relocation;
 
 pub struct WorkspaceManager {
     catalog: WorkspaceCatalog,
@@ -585,82 +586,6 @@ impl WorkspaceManager {
             workspace_id: removed_record.id,
             storage: removed_storage,
             file_cleanup,
-        })
-    }
-
-    pub async fn relocate_workspace(
-        &self,
-        id: &WorkspaceId,
-        target: WorkspaceStorageTarget,
-    ) -> Result<RelocateWorkspaceResult, WorkspaceError> {
-        let _lifecycle = self.lifecycle_lock.write().await;
-        if self.runtime.contains(id).await {
-            return Err(WorkspaceError::CannotModifyOpenWorkspace(*id));
-        }
-        let source_record = self.catalog.get(id).await?;
-        let source_session = self
-            .storage_resolver
-            .open(&source_record.storage_binding)
-            .await?;
-        let (target_binding, target_session) = match target {
-            WorkspaceStorageTarget::Managed {
-                provider_id,
-                preferred_directory_name,
-            } => {
-                if source_record.storage_binding.provider_id == provider_id
-                    && matches!(
-                        &source_record.storage_binding.location,
-                        WorkspaceStorageLocation::Managed { directory_name }
-                            if directory_name == &preferred_directory_name
-                    )
-                {
-                    return Err(WorkspaceError::SameStorageBinding);
-                }
-                let (binding, session) = self
-                    .storage_resolver
-                    .create_managed(&provider_id, &preferred_directory_name)
-                    .await?;
-                (binding, session)
-            }
-            WorkspaceStorageTarget::External { binding: request } => {
-                if request.is_managed() {
-                    return Err(WorkspaceError::ExpectedExternalBinding);
-                }
-                let binding = self.resolve_binding(request).await?;
-                if binding.same_resource(&source_record.storage_binding) {
-                    return Err(WorkspaceError::SameStorageBinding);
-                }
-                let session = self.storage_resolver.open(&binding).await?;
-                if !session
-                    .list_dir(&WorkspaceRelativePath::root())
-                    .await?
-                    .is_empty()
-                {
-                    return Err(WorkspaceError::TargetNotEmpty);
-                }
-                (binding, session)
-            }
-        };
-        copy_workspace_tree(source_session.as_ref(), target_session.as_ref()).await?;
-        let target_manifest = load_manifest(target_session.as_ref())
-            .await?
-            .ok_or(WorkspaceError::ManifestNotFound)?;
-        if target_manifest.id != *id {
-            return Err(WorkspaceError::WorkspaceIdMismatch {
-                expected: *id,
-                actual: target_manifest.id,
-            });
-        }
-        load_workspace_settings(target_session.as_ref()).await?;
-        load_workspace_state(target_session.as_ref()).await?;
-        self.catalog
-            .update_binding(id, target_binding.clone())
-            .await?;
-        Ok(RelocateWorkspaceResult {
-            workspace_id: *id,
-            source_storage: WorkspaceStorageView::from(&source_record.storage_binding),
-            target_storage: WorkspaceStorageView::from(&target_binding),
-            source_cleanup: StorageCleanupStatus::Retained,
         })
     }
 

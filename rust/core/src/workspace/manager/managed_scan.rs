@@ -53,6 +53,7 @@ impl WorkspaceManager {
         &self,
     ) -> Result<ScanManagedWorkspacesResult, WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.write().await;
+        self.recover_relocations().await;
         // 新扫描使旧凭据失效，避免跨扫描复用过期文件夹列表。
         self.scan_conflicts.write().await.clear();
         let catalog = self.catalog.snapshot().await;
@@ -68,6 +69,15 @@ impl WorkspaceManager {
                 result.scanned_count += 1;
                 let candidate = async {
                     let binding = self.resolve_binding(request).await?;
+                    if catalog.pending_relocations.iter().any(|pending| {
+                        self.same_scan_folder(&pending.source, &binding)
+                            || (!pending.cleanup_abandoned
+                                && self.same_scan_folder(&pending.target, &binding))
+                    }) {
+                        return Err(WorkspaceError::Relocation(
+                            "目录有尚未恢复的迁移，已跳过扫描".into(),
+                        ));
+                    }
                     let session = self.storage_resolver.open(&binding).await?;
                     let manifest = load_manifest(session.as_ref())
                         .await?

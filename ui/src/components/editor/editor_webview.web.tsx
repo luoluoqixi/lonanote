@@ -81,8 +81,14 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
   const onResourceActivated = useEditorResourceActivation(document);
   const resourceContext = useEditorResourceContext(document);
   const identity = useMemo(
-    () => createEditorBridgeBootstrap(editor.editorId, document.documentId, surfaceGeneration),
-    [document.documentId, editor.editorId, surfaceGeneration],
+    () =>
+      createEditorBridgeBootstrap(
+        editor.editorId,
+        document.documentId,
+        surfaceGeneration,
+        resourceContext.revision,
+      ),
+    [document.documentId, editor.editorId, surfaceGeneration, resourceContext.revision],
   );
   const initializePayload = useMemo(
     () =>

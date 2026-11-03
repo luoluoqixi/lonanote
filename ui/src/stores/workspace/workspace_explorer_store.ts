@@ -38,6 +38,7 @@ export type WorkspaceExplorerState = {
   refreshVisible: (id: string, mode: ExplorerMode, path: string) => Promise<void>;
   invalidatePaths: (id: string, paths: string[]) => Promise<void>;
   resetWorkspace: (id: string) => void;
+  restartWorkspace: (id: string) => Promise<void>;
   collapseAll: (id: string) => void;
   revealPath: (id: string, path: string) => Promise<void>;
   setSelection: (
@@ -334,6 +335,24 @@ export function createWorkspaceExplorerStore(api: IndexApi) {
           ),
         ];
         await Promise.all(visible.map((p) => get().loadDirectory(id, p, { reload: true })));
+      },
+      restartWorkspace: async (id) => {
+        const active = [...(hosts.get(id)?.values() ?? [])];
+        const workspaces = { ...get().workspaces };
+        delete workspaces[id];
+        refreshVersions.set(id, ++sequence);
+        revealVersions.set(id, ++sequence);
+        for (const key of pending.keys()) if (key.startsWith(`${id}:`)) pending.delete(key);
+        set({ workspaces });
+        ensure(id);
+        // 保留已挂载 host；后续文件 mutation 仍需刷新这些消费者。
+        await Promise.all(
+          active.map((host) =>
+            host.mode === "tree"
+              ? get().refreshVisible(id, host.mode, host.path)
+              : get().loadDirectory(id, host.path, { reload: true }),
+          ),
+        );
       },
       resetWorkspace: (id) => {
         const workspaces = { ...get().workspaces };

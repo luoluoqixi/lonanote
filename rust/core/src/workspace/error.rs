@@ -154,6 +154,8 @@ impl StorageError {
 
 #[derive(Debug, Error)]
 pub enum WorkspaceError {
+    #[error("工作区迁移失败: {0}")]
+    Relocation(String),
     #[error("文件夹导入冲突处理失败: {0}")]
     ExternalImportConflict(String),
     #[error("扫描冲突处理失败: {0}")]

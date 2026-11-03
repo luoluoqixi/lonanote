@@ -70,11 +70,12 @@ export function createEditorBridgeBootstrap(
   editorId: string,
   documentId: string,
   generation = 1,
+  resourceRevision = 0,
 ): EditorBridgeBootstrap {
   const randomId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${nextMessageSequence}`;
   return {
     channelId: `editor-${randomId}`,
-    generation,
+    generation: generation + resourceRevision,
     editorId,
     documentId,
   };

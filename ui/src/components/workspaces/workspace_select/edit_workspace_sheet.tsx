@@ -18,6 +18,8 @@ type EditWorkspaceSheetProps = {
   onDisplayNameChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
+  onRelocate: () => void;
+  onRebind: () => void;
   open: boolean;
 };
 
@@ -27,6 +29,8 @@ export function EditWorkspaceSheet({
   onDisplayNameChange,
   onOpenChange,
   onSubmit,
+  onRelocate,
+  onRebind,
   open,
 }: EditWorkspaceSheetProps) {
   const { layoutMode } = useLayoutMode();
@@ -53,6 +57,10 @@ export function EditWorkspaceSheet({
           }}
         />
       </NativeListSection>
+      <NativeListSection title="文件夹">
+        <NativeListButtonItem disabled={isUpdating} title="更改存储位置…" onPress={onRelocate} />
+        <NativeListButtonItem disabled={isUpdating} title="重新定位工作区…" onPress={onRebind} />
+      </NativeListSection>
       <NativeListSection>
         <NativeListButtonItem
           disabled={!canSubmit}
@@ -70,7 +78,7 @@ export function EditWorkspaceSheet({
       title="编辑工作区"
       open={open}
       onOpenChange={onOpenChange}
-      dialogSize={{ width: 520, height: 320 }}
+      dialogSize={{ width: 520, height: 460 }}
       sheetProps={{
         snapPoints: EDIT_WORKSPACE_SNAP_POINTS,
       }}

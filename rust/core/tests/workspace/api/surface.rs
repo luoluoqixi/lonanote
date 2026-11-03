@@ -75,6 +75,7 @@ fn expected_keys() -> BTreeSet<String> {
         "workspace.open",
         "workspace.open_with_diagnostics",
         "workspace.relocate",
+        "workspace.rebind",
         "workspace.remove",
         "workspace.resolve_id_mismatch",
         "workspace.resolve_scan_id_conflict",

@@ -6,19 +6,21 @@ import { workspaceResource } from "@/api/commands/workspace";
 import { isTauri, os } from "@/api/common/platform";
 import { createWorkspaceResourceEndpoint } from "@/api/common/workspace_resource_endpoint";
 import { appendWorkspaceResourceUrl } from "@/assets/editor/src/resources/resource_url";
+import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 import type { WorkspaceViewerSession } from "@/stores/editor/editor_store";
 
 import { UnknownFileContent } from "./unknown_file_viewer";
 
 /** 只读内容组件不读取路由，也不注册全局键盘事件。 */
 export function WorkspaceFilePreview({ viewer }: { viewer: WorkspaceViewerSession }) {
+  const revision = useWorkspaceResourceRevision(viewer.ref.workspaceId);
   const theme = useUiTheme();
   const [resource, setResource] = useState<{ key: string; url?: string; error?: string } | null>(
     null,
   );
   const video = useRef<HTMLVideoElement>(null);
   const [retry, setRetry] = useState(0);
-  const key = `${viewer.ref.workspaceId}:${viewer.ref.filePath}:${viewer.identityRevision}`;
+  const key = `${viewer.ref.workspaceId}:${viewer.ref.filePath}:${viewer.identityRevision}:${revision}`;
   useEffect(() => {
     if (viewer.viewerKind === "unknown" || !isTauri()) return;
     let current = true;

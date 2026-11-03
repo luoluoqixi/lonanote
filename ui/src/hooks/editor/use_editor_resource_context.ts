@@ -5,11 +5,13 @@ import { isTauri, os } from "@/api/common/platform";
 import { createWorkspaceResourceEndpoint } from "@/api/common/workspace_resource_endpoint";
 import type { EditorResourceContext } from "@/assets/editor/src/bridge/protocol";
 import { createUnavailableEditorResourceContext } from "@/components/editor/bridge";
+import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 import type { DocumentModel } from "@/stores/editor";
 
 type ResourceContextState = {
   workspaceId: string;
   documentPath: string;
+  revision: number;
   context: Extract<EditorResourceContext, { available: true }>;
 };
 
@@ -17,8 +19,10 @@ type ResourceContextState = {
 export function useEditorResourceContext(document: DocumentModel): {
   context: EditorResourceContext;
   isLoading: boolean;
+  revision: number;
 } {
   const workspaceRef = document.ref.kind === "workspaceFile" ? document.ref : null;
+  const revision = useWorkspaceResourceRevision(workspaceRef?.workspaceId);
   const currentOs = os();
   const supportsNativeResourceProtocol =
     isTauri() || currentOs === "ios" || currentOs === "android";
@@ -31,10 +35,13 @@ export function useEditorResourceContext(document: DocumentModel): {
   const matchingState =
     workspaceRef &&
     state?.workspaceId === workspaceRef.workspaceId &&
+    state.revision === revision &&
     state.documentPath === workspaceRef.filePath
       ? state
       : null;
-  const resourceKey = workspaceRef ? `${workspaceRef.workspaceId}:${workspaceRef.filePath}` : null;
+  const resourceKey = workspaceRef
+    ? `${workspaceRef.workspaceId}:${workspaceRef.filePath}:${revision}`
+    : null;
 
   useEffect(() => {
     if (!workspaceRef || !supportsNativeResourceProtocol) {
@@ -52,6 +59,7 @@ export function useEditorResourceContext(document: DocumentModel): {
         setState({
           workspaceId: workspaceRef.workspaceId,
           documentPath: workspaceRef.filePath,
+          revision,
           context: {
             available: true,
             scopeId: scope.scopeId,
@@ -69,12 +77,14 @@ export function useEditorResourceContext(document: DocumentModel): {
     };
   }, [
     currentOs,
+    revision,
     supportsNativeResourceProtocol,
     workspaceRef?.filePath,
     workspaceRef?.workspaceId,
   ]);
 
   return {
+    revision,
     context: matchingState?.context ?? unavailableContext,
     isLoading: Boolean(
       workspaceRef &&
