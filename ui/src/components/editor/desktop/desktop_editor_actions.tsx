@@ -247,7 +247,7 @@ export function DesktopEditorActions({
   return (
     <View style={styles.actions}>
       {supportsMarkdownModes && view && (ready || pendingPreviewMode !== null) ? (
-        <Tooltip content={label}>
+        <Tooltip content={label} openOnFocus={false}>
           <Button
             aria-label={label}
             variant="ghost"

@@ -587,7 +587,7 @@ export function WorkspaceTreeHost({
           )
             .filter(([label]) => !desktop || label !== "排序")
             .map(([label, Icon, onPress, disabled]) => (
-              <Tooltip key={label} content={label}>
+              <Tooltip key={label} content={label} openOnFocus={false}>
                 <Button
                   aria-label={label}
                   variant="icon"

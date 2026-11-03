@@ -64,6 +64,7 @@ export function WorkspaceLocationSheet({
             <Text className="shrink text-base font-semibold">{item?.displayName}</Text>
             <Tooltip
               content={hint}
+              openOnFocus={false}
               openOnPress
               contentProps={{ side: "bottom", align: "start", style: { maxWidth: 280 } }}
             >
@@ -90,7 +91,7 @@ export function WorkspaceLocationSheet({
             }
             value={
               isDesktop() ? (
-                <Tooltip content="在文件管理器中显示">
+                <Tooltip content="在文件管理器中显示" openOnFocus={false}>
                   <Button
                     aria-label="在文件管理器中显示"
                     variant="ghost"
