@@ -1,5 +1,5 @@
 import { Folder, LibraryBig, type LucideIcon, Search, Settings } from "lucide-react-native";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -13,6 +13,7 @@ import {
 } from "rn-ui-kit";
 
 import { rnUiKitStorageAdapter } from "@/api/common";
+import { DEFAULT_DESKTOP_LAYOUT, DESKTOP_LAYOUT_STORAGE_KEY } from "@/api/common/desktop_layout";
 import { useAppMenuContext } from "@/components/app_menu/app_menu_host";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { DesktopEditorArea } from "@/components/editor/desktop/desktop_editor_area";
@@ -20,23 +21,31 @@ import { DesktopEditorStatusBar } from "@/components/editor/desktop/desktop_edit
 import { TitleBar } from "@/components/window/titlebar";
 import { WorkspaceExplorerForWorkspace } from "@/components/workspaces/workspace_explorer";
 import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select";
+import { useDesktopLayoutResetRevision } from "@/hooks/settings/use_desktop_layout_reset";
 import { useWorkbenchDragGuard } from "@/hooks/ui/use_workbench_drag_guard";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { useRevealWorkspacePath } from "@/hooks/workspace/use_reveal_workspace_path";
 
 import { DesktopSidePanel } from "./desktop_side_panel";
 
-const LAYOUT_STORAGE_KEY = "lonanote.wideScreenHome.layout";
-const DEFAULT_LAYOUT_STATE = {
-  sizes: [],
-  visible: [true, true, true, false],
-};
+const LAYOUT_STORAGE_KEY = DESKTOP_LAYOUT_STORAGE_KEY;
+const DEFAULT_LAYOUT_STATE = DEFAULT_DESKTOP_LAYOUT;
 
 export function DesktopAppShell() {
   const { openSettings } = useAppMenuContext();
   const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
+  const outerLayoutRef = useRef<SplitLayoutHandle | null>(null);
+  const resetRevision = useDesktopLayoutResetRevision();
+  const lastResetRevision = useRef(resetRevision);
   const [showSidebar, setShowSidebar] = useState(DEFAULT_LAYOUT_STATE.visible[1] ?? true);
   const [panel, setPanel] = useState<"explorer" | "search">("explorer");
+  useEffect(() => {
+    if (lastResetRevision.current === resetRevision) return;
+    lastResetRevision.current = resetRevision;
+    outerLayoutRef.current?.reset();
+    contentLayoutRef.current?.reset();
+    setPanel("explorer");
+  }, [resetRevision]);
   const [selectOpen, setSelectOpen] = useState(false);
   const dragGuard = useWorkbenchDragGuard();
   const theme = useUiTheme();
@@ -55,7 +64,7 @@ export function DesktopAppShell() {
     <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <TitleBar />
       <View style={[styles.workspace, { backgroundColor: theme.background }]}>
-        <SplitLayout vertical>
+        <SplitLayout ref={outerLayoutRef} vertical>
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
             <SplitLayout
               ref={contentLayoutRef}

@@ -144,6 +144,7 @@ export function useAppMenu() {
         item("放大", "zoomIn", view.canZoomIn, `${mod}++`),
         item("缩小", "zoomOut", view.canZoomOut, `${mod}+-`),
         item("实际大小", "zoomReset", desktop, `${mod}+0`),
+        item("重置布局", "resetLayout", desktop || layoutMode === "desktop"),
         sep,
         item("切换全屏", "toggleFullscreen", view.fullscreenReady, "F11"),
       ],
@@ -165,6 +166,9 @@ export function useAppMenu() {
           break;
         case "zoomReset":
           await view.resetZoom();
+          break;
+        case "resetLayout":
+          await view.resetLayout();
           break;
         case "toggleFullscreen":
           await view.toggleFullscreen();

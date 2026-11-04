@@ -4,6 +4,7 @@ export type AppMenuActionId =
   | "zoomIn"
   | "zoomOut"
   | "zoomReset"
+  | "resetLayout"
   | "toggleFullscreen"
   | "newFile"
   | "newFolder"

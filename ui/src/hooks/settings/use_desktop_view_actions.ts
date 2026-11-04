@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { useStore } from "zustand";
 
+import { DEFAULT_DESKTOP_LAYOUT, DESKTOP_LAYOUT_STORAGE_KEY } from "@/api/common/desktop_layout";
 import { isDesktop } from "@/api/common/platform";
+import { rnUiKitStorageAdapter } from "@/api/common/rn_ui_kit_storage";
 import {
   MAX_WINDOW_ZOOM,
   MIN_WINDOW_ZOOM,
@@ -11,6 +13,7 @@ import {
 import { desktopViewState } from "@/stores/ui/desktop_view_state";
 
 import { createFullscreenActions } from "./desktop_fullscreen_actions";
+import { resetDesktopWindowSize } from "./desktop_layout_reset";
 import { useUiPreferences } from "./use_ui_preferences";
 
 const currentWindow = async () => (await import("@tauri-apps/api/window")).getCurrentWindow();
@@ -73,6 +76,24 @@ export function useDesktopViewActions() {
     zoomIn: () => changeZoom(1),
     zoomOut: () => changeZoom(-1),
     resetZoom: () => changeZoom(0),
+    resetLayout: async () => {
+      if (supported) {
+        const window = await currentWindow();
+        const { LogicalSize, PhysicalPosition } = await import("@tauri-apps/api/dpi");
+        await resetDesktopWindowSize({
+          getPosition: () => window.outerPosition(),
+          exitFullscreen: () => fullscreenActions.set(false),
+          unmaximize: () => window.unmaximize(),
+          setSize: ({ width, height }) => window.setSize(new LogicalSize(width, height)),
+          setPosition: ({ x, y }) => window.setPosition(new PhysicalPosition(x, y)),
+        });
+      }
+      await rnUiKitStorageAdapter.setItem(DESKTOP_LAYOUT_STORAGE_KEY, DEFAULT_DESKTOP_LAYOUT);
+      await rnUiKitStorageAdapter.save?.();
+      desktopViewState.setState((state) => ({
+        layoutResetRevision: state.layoutResetRevision + 1,
+      }));
+    },
     toggleFullscreen: async () => {
       if (supported) await fullscreenActions.toggle();
     },
