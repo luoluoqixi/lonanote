@@ -3,12 +3,11 @@ import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import {
-  type ExternalWorkspaceStorageBindingRequest,
   type WorkspaceListItem,
   type WorkspaceSnapshot,
   workspace,
 } from "@/api/commands/workspace";
-import { getFileName, isDesktop, isSystemLocaleCN, os } from "@/api/common";
+import { isDesktop, isSystemLocaleCN, os } from "@/api/common";
 import { getErrorMessage } from "@/api/common/error_message";
 import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
@@ -17,17 +16,16 @@ import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
 import { useWorkspaceNavigation, useWorkspaceSession } from "@/hooks/workspace";
+import { useWorkspaceCatalogRevision } from "@/hooks/workspace/use_workspace_catalog_revision";
 import { useWorkspaceLocation } from "@/hooks/workspace/use_workspace_location";
+import { useWorkspaceOpenActions } from "@/hooks/workspace/use_workspace_open_actions";
 import { useWorkspaceStorageTarget } from "@/hooks/workspace/use_workspace_storage_target";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 import { workspaceStateRevisionStore } from "@/stores/workspace/workspace_state_revision_store";
 
 import { CreateWorkspaceSheet } from "./create_workspace_sheet";
 import { EditWorkspaceSheet } from "./edit_workspace_sheet";
-import {
-  chooseScanIdConflictKeeper,
-  confirmExternalIdRegeneration,
-} from "./scan_id_conflict_dialog";
+import { chooseScanIdConflictKeeper } from "./scan_id_conflict_dialog";
 import { WorkspaceDetailsSheet } from "./workspace_details_sheet";
 import {
   WORKSPACE_GROUP_MODE_GROUPS,
@@ -35,7 +33,6 @@ import {
   WorkspaceGroupModeSelect,
 } from "./workspace_group";
 import { WorkspaceLocationSheet } from "./workspace_location_sheet";
-import { resolveWorkspacePressAction } from "./workspace_press_action";
 import { WorkspaceSelectHeader } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
 import { WorkspaceSelectionToolbar } from "./workspace_selection_toolbar";
@@ -83,6 +80,7 @@ export function WorkspaceSelectContent({
   const { closeWorkspace, withWorkspaceClose } = useEditorCloseActions();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
+  const { invalidateCatalog } = useWorkspaceCatalogRevision();
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const workspaceSortValue = preferences.workspaceSelect.sortValue;
   const workspaceGroupMode = preferences.workspaceSelect.groupMode;
@@ -131,31 +129,35 @@ export function WorkspaceSelectContent({
   const tracksNavigationBarScrollEdge =
     !desktop && !embedded && (usesNativeIosHeader || currentOs === "android");
 
-  const refreshWorkspaces = useCallback(async (minimumDurationMs = 0) => {
-    const requestId = ++requestIdRef.current;
-    const startedAt = Date.now();
+  const refreshWorkspaces = useCallback(
+    async (minimumDurationMs = 0) => {
+      const requestId = ++requestIdRef.current;
+      const startedAt = Date.now();
 
-    try {
-      const records = await workspace.list();
-      await waitForMinimumDuration(startedAt, minimumDurationMs);
+      try {
+        const records = await workspace.list();
+        await waitForMinimumDuration(startedAt, minimumDurationMs);
 
-      if (requestId === requestIdRef.current) {
-        setWorkspaces(records);
-        setHasError(false);
-      }
-    } catch (nextError: unknown) {
-      await waitForMinimumDuration(startedAt, minimumDurationMs);
+        if (requestId === requestIdRef.current) {
+          setWorkspaces(records);
+          invalidateCatalog();
+          setHasError(false);
+        }
+      } catch (nextError: unknown) {
+        await waitForMinimumDuration(startedAt, minimumDurationMs);
 
-      if (requestId === requestIdRef.current) {
-        console.error("[workspace-select] load workspaces failed", nextError);
-        setHasError(true);
+        if (requestId === requestIdRef.current) {
+          console.error("[workspace-select] load workspaces failed", nextError);
+          setHasError(true);
+        }
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setIsLoading(false);
+        }
       }
-    } finally {
-      if (requestId === requestIdRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
+    },
+    [invalidateCatalog],
+  );
 
   const location = useWorkspaceLocation({
     busyRef: locationBusyRef,
@@ -571,138 +573,30 @@ export function WorkspaceSelectContent({
     [isGroupModeDisabled, toast, updateUiPreferencesAndSave],
   );
 
-  const handleWorkspacePress = useCallback(
-    async (workspaceId: string) => {
-      if (
-        scanInProgressRef.current ||
-        locationBusyRef.current ||
-        creatingRef.current ||
-        openingFolderRef.current ||
-        isOpeningWorkspace ||
-        isScanningWorkspaces ||
-        isDeletingWorkspace ||
-        isUpdatingWorkspace
-      ) {
-        return;
-      }
-
-      const action = resolveWorkspacePressAction(layoutMode, currentWorkspaceId, workspaceId);
-      if (action === "notifyAlreadyOpen") {
-        toast.info("工作区已打开");
-        return;
-      }
-
-      setIsOpeningWorkspace(true);
-      let didResetNavigation = false;
-
-      try {
-        if (action === "returnToWorkspace") {
-          onWorkspaceOpened();
-          didResetNavigation = true;
-          return;
-        }
-        const openTarget = async (): Promise<WorkspaceSnapshot | null> => {
-          const openResult = await workspace.openWithDiagnostics(workspaceId);
-          if (openResult.status === "opened") {
-            return openResult.workspace;
-          }
-          if (openResult.status === "directoryMissing") {
-            const result = await confirmNative({
-              buttons: [
-                { key: "cancel", style: "cancel", text: "取消" },
-                { key: "locate", text: "重新定位" },
-                { key: "delete", style: "destructive", text: "删除记录" },
-              ],
-              message:
-                "无法找到此工作区的文件夹。如果已移动文件夹，可以重新定位；删除记录不会删除任何文件。",
-              title: "工作区文件夹不存在",
-            });
-            if (result === "locate") {
-              const missing = workspaces.find((item) => item.id === workspaceId);
-              if (missing) setPendingRebindWorkspace(missing);
-            }
-            if (result === "delete") {
-              await workspace.remove(workspaceId, false);
-              await refreshWorkspaces();
-              toast.success("已删除工作区记录");
-            }
-            return null;
-          }
-
-          const resolution = openResult.manifestIdRegistered
-            ? await confirmNative({
-                buttons: [
-                  { key: "cancel", style: "cancel", text: "取消" },
-                  { key: "generate-new-id", text: "生成新 ID" },
-                ],
-                message: `当前记录的 ID：${openResult.expectedId}\n文件夹中的 ID：${openResult.actualId}\n\n文件夹中的 ID 已被另一个工作区使用。是否为此文件夹生成新的 ID 并继续进入？`,
-                title: "Workspace ID 已存在",
-              })
-            : await confirmNative({
-                buttons: [
-                  { key: "cancel", style: "cancel", text: "取消" },
-                  { key: "update-id", text: "更新 ID" },
-                ],
-                message: `当前记录的 ID：${openResult.expectedId}\n文件夹中的 ID：${openResult.actualId}\n\n是否使用文件夹中的 ID 更新工作区记录并继续进入？`,
-                title: "Workspace ID 不匹配",
-              });
-          if (resolution !== "update-id" && resolution !== "generate-new-id") {
-            return null;
-          }
-          const openedWorkspace = await workspace.resolveIdMismatch(
-            workspaceId,
-            resolution === "generate-new-id" ? "generateNewId" : "useManifestId",
-          );
-          await refreshWorkspaces();
-          return openedWorkspace;
-        };
-        let opened: WorkspaceSnapshot | null = null;
-        const enter = async () => {
-          opened = await openTarget();
-          if (!opened) return false;
-          if (currentWorkspaceId) {
-            try {
-              await workspace.close(currentWorkspaceId);
-            } catch (error) {
-              await workspace.close(opened.id).catch(() => undefined);
-              throw error;
-            }
-          }
-          return true;
-        };
-        const completed = currentWorkspaceId
-          ? await withWorkspaceClose(currentWorkspaceId, enter)
-          : await enter();
-        if (!completed || !opened) return;
-        if (currentWorkspaceId)
-          workspaceExplorerStore.getState().resetWorkspace(currentWorkspaceId);
-        setCurrentWorkspaceId((opened as WorkspaceSnapshot).id);
-        onWorkspaceOpened();
-        didResetNavigation = true;
-      } catch (error) {
-        console.error("[workspace-select] 打开工作区失败", { workspaceId, error });
-        toast.error(`打开工作区失败：${getErrorMessage(error, "未知错误")}`);
-      } finally {
-        if (!didResetNavigation) {
-          setIsOpeningWorkspace(false);
-        }
-      }
-    },
-    [
-      currentWorkspaceId,
-      withWorkspaceClose,
-      layoutMode,
-      isDeletingWorkspace,
-      isOpeningWorkspace,
-      isScanningWorkspaces,
-      isUpdatingWorkspace,
-      refreshWorkspaces,
-      onWorkspaceOpened,
-      setCurrentWorkspaceId,
-      toast,
-      workspaces,
-    ],
-  );
+  const sharedOpen = useWorkspaceOpenActions({
+    onOpened: onWorkspaceOpened,
+    onChanged: refreshWorkspaces,
+    onMissing: setPendingRebindWorkspace,
+  });
+  const handleWorkspacePress = async (workspaceId: string) => {
+    if (
+      scanInProgressRef.current ||
+      locationBusyRef.current ||
+      creatingRef.current ||
+      openingFolderRef.current ||
+      isOpeningWorkspace ||
+      isScanningWorkspaces ||
+      isDeletingWorkspace ||
+      isUpdatingWorkspace
+    )
+      return;
+    setIsOpeningWorkspace(true);
+    try {
+      await sharedOpen.openWorkspace(workspaceId);
+    } finally {
+      setIsOpeningWorkspace(false);
+    }
+  };
 
   const handleSelectedWorkspaceIdsChange = useCallback(
     (nextSelectedIds: Array<string | number>) => {
@@ -710,9 +604,8 @@ export function WorkspaceSelectContent({
     },
     [],
   );
-  const openFolder = useCallback(async () => {
+  const openFolder = async () => {
     if (
-      !isDesktop() ||
       openingFolderRef.current ||
       locationBusyRef.current ||
       creatingRef.current ||
@@ -725,47 +618,13 @@ export function WorkspaceSelectContent({
       return;
     openingFolderRef.current = true;
     setIsOpeningFolder(true);
-    let folderPath: string | null = null;
     try {
-      const selected = await fs.showSelectDialog({ type: "openFolder", title: "打开文件夹" });
-      if (!selected?.path) return;
-      folderPath = selected.path;
-      const binding: ExternalWorkspaceStorageBindingRequest = {
-        kind: "external",
-        providerId: "desktop-folder",
-        providerSchemaVersion: 1,
-        resourceRef: selected.path,
-      };
-      const result = await workspace.ensureExternal(
-        binding,
-        getFileName(selected.path.replace(/\\/g, "/")),
-      );
-      if (result.status === "idConflict" && !(await confirmExternalIdRegeneration(selected.path))) {
-        return;
-      }
-      const target =
-        result.status === "ready"
-          ? result.workspace
-          : await workspace.resolveExternalIdConflict(binding, result.workspaceId);
-      await refreshWorkspaces();
-      openingFolderRef.current = false;
-      await handleWorkspacePress(target.id);
-    } catch (error) {
-      console.error("[workspace-select] 打开文件夹失败", { folderPath, error });
-      toast.error(`打开文件夹失败：${getErrorMessage(error, "未知错误")}`);
+      await sharedOpen.openFolder();
     } finally {
       openingFolderRef.current = false;
       setIsOpeningFolder(false);
     }
-  }, [
-    handleWorkspacePress,
-    isOpeningWorkspace,
-    isCreatingWorkspace,
-    isDeletingWorkspace,
-    isUpdatingWorkspace,
-    refreshWorkspaces,
-    toast,
-  ]);
+  };
 
   const areAllWorkspacesSelected =
     workspaces.length > 0 &&

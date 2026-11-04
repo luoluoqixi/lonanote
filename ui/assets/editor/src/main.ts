@@ -973,6 +973,29 @@ function executeCommand(request: EditorBridgeRequest): void {
     return;
   }
   const command: EditorCommand = request.payload;
+  if (command.type === "selection.capture") {
+    flushPendingDocumentChange(session);
+    const view = session.editor.editor;
+    const selection = view.state.selection.main;
+    respond(request, {
+      applied: true,
+      stateRevision: session.stateRevision,
+      selection: {
+        revision: session.documentRevision,
+        selectionVersion: session.selectionVersion,
+        from: selection.from,
+        to: selection.to,
+        text: view.state.sliceDoc(selection.from, selection.to),
+        activeMarks: getStateSnapshot(session).activeMarks,
+        x: 0,
+        y: 0,
+        canUndo: session.editor.canUndo(),
+        canRedo: session.editor.canRedo(),
+      },
+    });
+    return;
+  }
+
   if (
     command.type !== "editor.focus" &&
     command.type !== "editor.blur" &&

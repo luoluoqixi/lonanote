@@ -2,6 +2,7 @@ import { type Href, useGlobalSearchParams, usePathname, useRouter } from "expo-r
 import { useEffect, useRef } from "react";
 
 import { detectWorkspaceFileKind } from "@/api/common";
+import { AppMenuHost } from "@/components/app_menu/app_menu_host";
 import { DesktopAppShell } from "@/components/app_shell/desktop_app_shell";
 import { MobileAppStack } from "@/components/app_shell/mobile_app_stack";
 import { useEditorSession } from "@/hooks/editor";
@@ -60,9 +61,7 @@ export default function MainLayout() {
     return null;
   }
 
-  if (layoutMode === "desktop") {
-    return <DesktopAppShell />;
-  }
-
-  return <MobileAppStack />;
+  return (
+    <AppMenuHost>{layoutMode === "desktop" ? <DesktopAppShell /> : <MobileAppStack />}</AppMenuHost>
+  );
 }

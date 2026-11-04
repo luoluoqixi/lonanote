@@ -297,8 +297,10 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
 
   useEffect(
     () =>
-      editorCommandCoordinator.registerProvider(editor.editorId, (command) =>
-        bridgeClient.executeCommand(command),
+      editorCommandCoordinator.registerProvider(editor.editorId, (command, snapshot) =>
+        snapshot
+          ? bridgeClient.executeContextCommand(snapshot, command)
+          : bridgeClient.executeCommand(command),
       ),
     [bridgeClient, editor.editorId],
   );

@@ -1,6 +1,18 @@
 import { expect, test } from "bun:test";
 
-import { getEditorNoteCreateParent } from "../src/components/editor/desktop/editor_note_creation";
+import {
+  getEditorNoteCreateParent,
+  getQuickCreateParent,
+} from "../src/components/editor/desktop/editor_note_creation";
+
+test("菜单新建文件夹遵循 Explorer 选中文件的父目录，不跟随其他活动文件", () => {
+  const ref = { kind: "workspaceFile", workspaceId: "w", filePath: "a/note.md" } as const;
+  expect(
+    getQuickCreateParent("directory", ref, "w", [{ path: "b/note.md", fileType: "file" }]),
+  ).toBe("b");
+  expect(getQuickCreateParent("directory", ref, "w", [], "current")).toBe("current");
+  expect(getQuickCreateParent("note", ref, "w", [])).toBe("a");
+});
 
 test("选中的第一个文件夹优先于活动文件，混合选择跳过文件", () => {
   const ref = { kind: "workspaceFile", workspaceId: "w", filePath: "notes/a.md" } as const;

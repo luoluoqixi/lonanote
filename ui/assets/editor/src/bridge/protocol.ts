@@ -133,6 +133,7 @@ export type EditorRuntimeUpdatePayload = EditorInitializePayload["runtime"];
 export type EditorPreferencesUpdatePayload = EditorPreferences;
 
 export type EditorCommand =
+  | { type: "selection.capture" }
   | { type: "selection.selectAll" }
   | { type: "selection.replace"; text: string }
   | { type: "history.undo" }
@@ -172,6 +173,7 @@ export type EditorContextCommandPayload = { snapshot: EditorMenuSnapshot; comman
 export type EditorCommandResult = {
   applied: boolean;
   stateRevision: number;
+  selection?: EditorContextMenuPayload;
 };
 
 export type EditorSurfaceCapabilities = {
@@ -477,6 +479,7 @@ export function isEditorCommand(value: unknown): value is EditorCommand {
   if (value.type === "editor.focus")
     return value.preserveSelection === undefined || typeof value.preserveSelection === "boolean";
   if (
+    value.type === "selection.capture" ||
     value.type === "selection.selectAll" ||
     value.type === "history.undo" ||
     value.type === "history.redo" ||
@@ -520,7 +523,8 @@ export function isEditorCommandResult(value: unknown): value is EditorCommandRes
   return (
     isRecord(value) &&
     typeof value.applied === "boolean" &&
-    Number.isSafeInteger(value.stateRevision)
+    Number.isSafeInteger(value.stateRevision) &&
+    (value.selection === undefined || isEditorContextMenuPayload(value.selection))
   );
 }
 

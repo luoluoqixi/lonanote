@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { useUiTheme } from "rn-ui-kit";
 
-import { isWeb, os } from "@/api/common";
+import { isDesktop, os } from "@/api/common/platform";
+import { useAppMenuContext } from "@/components/app_menu/app_menu_host";
+import { AppMenubar } from "@/components/app_menu/app_menubar";
 import { TITLE_HEIGHT, getAppTitle } from "@/config";
 import { useSeparatorColor } from "@/hooks/ui/use_separator_color";
 
@@ -10,138 +12,87 @@ import { tauriDragRegionProps } from "./tauri_drag_region";
 import { TitleBarDragOverlay } from "./titlebar_drag_overlay";
 import { WindowControls } from "./window_controls";
 
-const TitleLeft = () => {
-  const platform = os();
-  const isMac = platform === "macos";
-  const isWin = platform === "windows" || platform === "linux";
-  return (
-    <View style={[styles.titleSide, isMac && styles.titleLeftMac, isWin && styles.titleLeftWin]} />
-  );
-};
-
-const TitleCenter = () => {
+export function TitleBar() {
   const theme = useUiTheme();
-  const [title, setTitle] = useState("");
-
-  useEffect(() => {
-    const title = getAppTitle();
-    setTitle(title);
-    if (isWeb()) {
-      document.title = title;
-    }
-  }, []);
-  return (
-    <View {...tauriDragRegionProps} style={styles.titleCenter}>
-      <Text {...tauriDragRegionProps} style={[styles.titleText, { color: theme.foreground }]}>
-        {title}
-      </Text>
-    </View>
-  );
-};
-
-const TitleRight = () => {
-  const platform = os();
-  const isMac = platform === "macos";
-  const isWin = platform === "windows" || platform === "linux";
-
-  return (
-    <View
-      style={[
-        styles.titleSide,
-        styles.titleRight,
-        isMac && styles.titleRightMac,
-        isWin && styles.titleRightWin,
-      ]}
-    />
-  );
-};
-
-const TitleBar = () => {
-  const platform = os();
-  const isMac = platform === "macos";
   const separatorColor = useSeparatorColor();
-  const theme = useUiTheme();
-
+  const { presentation } = useAppMenuContext();
+  const desktop = isDesktop();
+  const mac = desktop && os() === "macos";
+  const [barWidth, setBarWidth] = useState(1024);
+  const [leftWidth, setLeftWidth] = useState(mac ? 80 : 280);
+  if (!presentation.visible) return null;
   return (
     <>
-      <TitleBarDragOverlay />
+      {desktop ? <TitleBarDragOverlay reservedLeft={mac ? 0 : leftWidth} /> : null}
       <View
-        {...tauriDragRegionProps}
+        onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
         style={[
-          styles.titlebar,
+          styles.bar,
           {
             backgroundColor: theme.background,
             borderBottomColor: separatorColor,
-            height: TITLE_HEIGHT,
+            height: desktop ? TITLE_HEIGHT : 44,
+            paddingLeft: mac ? 80 : 8,
+            paddingRight: desktop && !mac ? 138 : 8,
           },
         ]}
       >
-        <TitleLeft />
-        <TitleCenter />
-        <TitleRight />
-        {!isMac && <WindowControls />}
+        {!presentation.native ? (
+          <View
+            onLayout={(event) => setLeftWidth(event.nativeEvent.layout.width + 8)}
+            style={styles.left}
+          >
+            {presentation.icon ? (
+              <Image
+                source={require("../../../assets/images/favicon.png")}
+                resizeMode="contain"
+                style={styles.icon}
+                accessibilityLabel="LonaNote"
+              />
+            ) : null}
+            <AppMenubar compact={barWidth < (desktop ? 520 : 310)} />
+          </View>
+        ) : null}
+        <View {...(desktop ? tauriDragRegionProps : {})} style={styles.title}>
+          <Text
+            {...(desktop ? tauriDragRegionProps : {})}
+            numberOfLines={1}
+            style={{ color: theme.foreground, fontSize: 14, fontWeight: "500" }}
+          >
+            {getAppTitle()}
+          </Text>
+        </View>
+        {desktop && !mac ? <WindowControls /> : null}
       </View>
     </>
   );
-};
-
-export { TitleBar };
+}
 
 const styles = StyleSheet.create({
-  dragRegion: {
-    WebkitAppRegion: "drag",
-    appRegion: "drag",
-    pointerEvents: "auto",
-  } as never,
-  titlebar: {
-    WebkitAppRegion: "drag",
-    appRegion: "drag",
-    backgroundColor: "var(--background)",
-    borderBottomWidth: 1,
+  bar: {
     flexDirection: "row",
-    pointerEvents: "auto",
+    alignItems: "center",
+    borderBottomWidth: StyleSheet.hairlineWidth,
     position: "relative",
-    userSelect: "none" as never,
     width: "100%",
-    zIndex: 999999,
-  } as never,
-  titleCenter: {
+    flexShrink: 0,
+    zIndex: 100,
+  },
+  left: {
+    flexDirection: "row",
     alignItems: "center",
-    display: "flex",
+    flexShrink: 1,
+    maxWidth: "75%",
+    gap: 8,
     height: "100%",
-    left: "50%",
-    position: "absolute",
-    transform: [{ translateX: "-50%" as never }],
   },
-  titleLeftMac: {
-    marginLeft: 80,
-  },
-  titleLeftWin: {
-    marginLeft: 0,
-  },
-  titleRight: {
-    marginLeft: "auto",
-    marginRight: 0,
-  },
-  titleRightMac: {
-    marginRight: 0,
-  },
-  titleRightWin: {
-    marginRight: 46 * 3,
-  },
-  titleSide: {
+  icon: { width: 20, height: 20 },
+  title: {
+    flex: 1,
+    minWidth: 0,
     alignItems: "center",
-    color: "var(--foreground)",
-    display: "flex",
+    justifyContent: "center",
     height: "100%",
-  },
-  titleText: {
-    alignContent: "center",
-    fontSize: 14,
-    fontWeight: "500",
-    height: "100%",
-    includeFontPadding: false,
-    textAlign: "center",
-    textAlignVertical: "center",
+    paddingHorizontal: 8,
   },
 });

@@ -9,6 +9,7 @@ import {
   getWorkspaceEntryCreateParent,
 } from "@/api/common/utils/workspace_entry_name";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
+import { useEditorFileActions } from "@/hooks/editor/use_editor_file_actions";
 import { useMediaNavigation } from "@/hooks/media";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
 import { useUiPreferences } from "@/hooks/settings";
@@ -340,27 +341,10 @@ function DirectoryExplorerForWorkspace({
     });
   }, [createEntryKind, createEntryName, createEntryParent, createWorkspaceEntry]);
 
-  const quickCreateEntry = useCallback(
-    (entryKind: CreateWorkspaceEntryKind) => {
-      const request = ++createRequest.current;
-      void workspaceFile
-        .list(workspaceId, targetCreateParent)
-        .then((entries) => {
-          if (request !== createRequest.current) return;
-          return createWorkspaceEntry({
-            entryKind,
-            name: getDefaultWorkspaceEntryName(entries, entryKind),
-            parentPath: targetCreateParent,
-            openAfterCreate: true,
-          });
-        })
-        .catch((error) => {
-          if (request === createRequest.current)
-            toast.error(getErrorMessage(error, "无法读取目标文件夹"));
-        });
-    },
-    [createWorkspaceEntry, targetCreateParent, workspaceId, toast],
-  );
+  const { quickCreate } = useEditorFileActions();
+  const quickCreateEntry = (kind: CreateWorkspaceEntryKind) => {
+    void quickCreate(kind, { workspaceId, parentPath: targetCreateParent, navigate: true });
+  };
 
   const openRenameEntrySheet = useCallback((entry: WorkspaceIndexEntry) => {
     setEditingEntry(entry);

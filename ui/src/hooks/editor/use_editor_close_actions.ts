@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { confirmNative } from "rn-ui-kit";
 
+import { exitDesktopApp } from "@/api/commands/win/app_exit";
 import { workspace } from "@/api/commands/workspace";
 import {
   type EditorCloseTargets,
@@ -8,6 +9,7 @@ import {
   getWorkspaceCloseTargets,
 } from "@/components/editor/controllers/editor_close_actions";
 import { saveCoordinator } from "@/components/editor/controllers/save_coordinator";
+import { editorStore } from "@/stores/editor";
 
 const actions = createEditorCloseActions({
   saveCoordinator,
@@ -32,6 +34,21 @@ const actions = createEditorCloseActions({
 export function useEditorCloseActions() {
   return useMemo(
     () => ({
+      requestAppExit: async () => {
+        const state = editorStore.getState();
+        const ids = [...state.openEditorIds];
+        const documentIds = Object.keys(state.documentsById);
+        const completed = await actions.close({ editorIds: ids, documentIds }, async () => {
+          const latest = editorStore.getState();
+          if (
+            latest.openEditorIds.some((id) => !ids.includes(id)) ||
+            Object.keys(latest.documentsById).some((id) => !documentIds.includes(id))
+          )
+            throw new Error("确认期间打开了新的文档，请重试");
+          await exitDesktopApp();
+        });
+        return completed;
+      },
       closeEditors: (editorIds: string[], options?: Pick<EditorCloseTargets, "savedOnly">) =>
         actions.close({ editorIds, ...options }),
       closeWorkspace: (workspaceId: string) =>

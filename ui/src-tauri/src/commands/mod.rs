@@ -59,6 +59,7 @@ pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {
         invoke_callback,
         read_clipboard_text,
         write_clipboard_text,
+        exit_app,
     ])
 }
 

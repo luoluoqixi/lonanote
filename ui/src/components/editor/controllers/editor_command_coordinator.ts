@@ -1,7 +1,14 @@
-import type { EditorCommand, EditorCommandResult } from "@/assets/editor/src/bridge/protocol";
+import type {
+  EditorCommand,
+  EditorCommandResult,
+  EditorMenuSnapshot,
+} from "@/assets/editor/src/bridge/protocol";
 import { editorStore } from "@/stores/editor";
 
-type CommandProvider = (command: EditorCommand) => Promise<EditorCommandResult>;
+type CommandProvider = (
+  command: EditorCommand,
+  snapshot?: EditorMenuSnapshot,
+) => Promise<EditorCommandResult>;
 
 const providers = new Map<string, CommandProvider>();
 
@@ -12,11 +19,21 @@ export const editorCommandCoordinator = {
       if (providers.get(editorId) === provider) providers.delete(editorId);
     };
   },
-  execute: async (editorId: string, command: EditorCommand): Promise<EditorCommandResult> => {
+  execute: async (
+    editorId: string,
+    command: EditorCommand,
+    snapshot?: EditorMenuSnapshot,
+  ): Promise<EditorCommandResult> => {
     const state = editorStore.getState();
     const view = state.editorsById[editorId];
     const document = view ? state.documentsById[view.documentId] : null;
-    const isNavigationCommand = command.type === "navigation.scrollToAnchor";
+    const isNavigationCommand = [
+      "navigation.scrollToAnchor",
+      "selection.selectAll",
+      "selection.capture",
+      "editor.focus",
+      "editor.blur",
+    ].includes(command.type);
     if (
       !view ||
       !document ||
@@ -27,6 +44,6 @@ export const editorCommandCoordinator = {
     }
     const provider = providers.get(editorId);
     if (!provider) throw new Error("Editor surface 当前不可执行命令");
-    return provider(command);
+    return provider(command, snapshot);
   },
 };

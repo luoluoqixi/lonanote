@@ -1,6 +1,5 @@
-import { usePathname, useRouter } from "expo-router";
 import { Folder, LibraryBig, type LucideIcon, Search, Settings } from "lucide-react-native";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -13,12 +12,11 @@ import {
   useUiTheme,
 } from "rn-ui-kit";
 
-import { isDesktop, rnUiKitStorageAdapter } from "@/api/common";
+import { rnUiKitStorageAdapter } from "@/api/common";
+import { useAppMenuContext } from "@/components/app_menu/app_menu_host";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { DesktopEditorArea } from "@/components/editor/desktop/desktop_editor_area";
 import { DesktopEditorStatusBar } from "@/components/editor/desktop/desktop_editor_status_bar";
-import { DesktopSettingsDialog } from "@/components/settings/desktop/settings_dialog";
-import { type SettingsPageId, getSettingsPage } from "@/components/settings/settings_config";
 import { TitleBar } from "@/components/window/titlebar";
 import { WorkspaceExplorerForWorkspace } from "@/components/workspaces/workspace_explorer";
 import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select";
@@ -34,18 +32,9 @@ const DEFAULT_LAYOUT_STATE = {
   visible: [true, true, true, false],
 };
 
-function getSettingsPageId(pathname: string): SettingsPageId {
-  const pageId = pathname.split("/")[2];
-  const page = getSettingsPage(pageId);
-  return page?.desktopTab || page?.parentId ? page.id : "global";
-}
-
 export function DesktopAppShell() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const desktop = isDesktop();
+  const { openSettings } = useAppMenuContext();
   const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(DEFAULT_LAYOUT_STATE.visible[1] ?? true);
   const [panel, setPanel] = useState<"explorer" | "search">("explorer");
   const [selectOpen, setSelectOpen] = useState(false);
@@ -62,21 +51,9 @@ export function DesktopAppShell() {
     setPanel(next);
   };
 
-  useEffect(() => {
-    setIsSettingsOpen(pathname.startsWith("/settings"));
-  }, [pathname]);
-
-  const handleSettingsOpenChange = (nextIsOpen: boolean) => {
-    setIsSettingsOpen(nextIsOpen);
-
-    if (!nextIsOpen && pathname.startsWith("/settings")) {
-      router.replace("/");
-    }
-  };
-
   return (
     <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      {desktop ? <TitleBar /> : null}
+      <TitleBar />
       <View style={[styles.workspace, { backgroundColor: theme.background }]}>
         <SplitLayout vertical>
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
@@ -104,18 +81,11 @@ export function DesktopAppShell() {
                   onWorkspace={() => setSelectOpen(true)}
                   activePanel={showSidebar ? panel : null}
                   settingsDialog={
-                    <DesktopSettingsDialog
-                      initialPageId={getSettingsPageId(pathname)}
-                      isOpen={isSettingsOpen}
-                      onOpenChange={handleSettingsOpenChange}
-                      trigger={
-                        <ActivityButton
-                          accessibilityLabel="设置"
-                          active={false}
-                          icon={Settings}
-                          onPress={() => setIsSettingsOpen(true)}
-                        />
-                      }
+                    <ActivityButton
+                      accessibilityLabel="设置"
+                      active={false}
+                      icon={Settings}
+                      onPress={() => openSettings("global")}
                     />
                   }
                 />

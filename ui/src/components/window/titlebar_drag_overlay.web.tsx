@@ -25,7 +25,7 @@ const dragOverlayStyle: DragOverlayStyle = {
   zIndex: TITLEBAR_DRAG_OVERLAY_Z_INDEX,
 };
 
-function TitleBarDragOverlay() {
+function TitleBarDragOverlay({ reservedLeft = 0 }: { reservedLeft?: number }) {
   const [mounted, setMounted] = useState(false);
   const desktop = isDesktop();
   const platform = os();
@@ -46,7 +46,12 @@ function TitleBarDragOverlay() {
       data-tauri-drag-region=""
       // Radix 在 document 的 pointerdown 上判定外部点击；Tauri 的 mousedown 继续正常冒泡。
       onPointerDown={(event) => event.stopPropagation()}
-      style={{ ...dragOverlayStyle, height: TITLE_HEIGHT, right: reservedRight }}
+      style={{
+        ...dragOverlayStyle,
+        height: TITLE_HEIGHT,
+        right: reservedRight,
+        left: reservedLeft,
+      }}
     />,
     document.body,
   );

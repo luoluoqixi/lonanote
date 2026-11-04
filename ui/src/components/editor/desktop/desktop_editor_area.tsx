@@ -1,30 +1,27 @@
 import { FilePlus2, FolderOpen } from "lucide-react-native";
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
-import { workspaceFile } from "@/api/commands/workspace";
 import { createAsyncSubscription } from "@/api/common/async_subscription";
 import { isDesktop, isWeb } from "@/api/common/platform";
-import { getDefaultWorkspaceEntryName } from "@/api/common/utils/workspace_entry_name";
 import { documentRegistry, editorInputLeaseCoordinator } from "@/components/editor/controllers";
 import { EditorToolbar } from "@/components/editor/editor_toolbar";
 import { EditorWebView } from "@/components/editor/editor_webview";
 import { WorkspaceFilePreview } from "@/components/files/workspace_file_preview";
 import { useEditorSession } from "@/hooks/editor";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
+import { useEditorFileActions } from "@/hooks/editor/use_editor_file_actions";
 import { useToast } from "@/hooks/ui";
-import { useCurrentWorkspaceId, useWorkspaceExplorerSelectedEntries } from "@/hooks/workspace";
-import { useWorkspaceFileActions } from "@/hooks/workspace/use_workspace_file_actions";
+import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { isDocumentDirty } from "@/stores/editor";
 
 import { DesktopEditorActions } from "./desktop_editor_actions";
 import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
-import { EDITOR_FILE_EXTENSIONS, getEditorDroppedFiles } from "./editor_file_drop";
-import { getEditorNoteCreateParent } from "./editor_note_creation";
+import { getEditorDroppedFiles } from "./editor_file_drop";
 import { EditorTabBlankInput } from "./editor_tab_blank_input";
 import { EditorTabDragInput } from "./editor_tab_drag_input";
 import { EditorTabInput } from "./editor_tab_input";
@@ -57,10 +54,7 @@ export function DesktopEditorArea({
   const { closeEditors } = useEditorCloseActions();
   const { toast } = useToast();
   const currentWorkspaceId = useCurrentWorkspaceId();
-  const getSelectedEntries = useWorkspaceExplorerSelectedEntries();
-  const fileActions = useWorkspaceFileActions();
-  const [isCreatingNote, setIsCreatingNote] = useState(false);
-  const isCreatingNoteRef = useRef(false);
+  const { createNote, openLooseFile, busy: isCreatingNote } = useEditorFileActions();
   const editorAreaRef = useRef<View>(null);
   const scrollRef = useRef<ScrollView>(null);
   const tabBounds = useRef(new Map<string, { x: number; width: number }>());
@@ -227,43 +221,6 @@ export function DesktopEditorArea({
     [currentWorkspaceId, getSnapshot, onRevealInExplorer, reportError, requestClose],
   );
 
-  const createNote = useCallback(async () => {
-    if (!currentWorkspaceId || isCreatingNoteRef.current) return;
-    isCreatingNoteRef.current = true;
-    setIsCreatingNote(true);
-    try {
-      const snapshot = getSnapshot();
-      const ref = snapshot.activeEditorId
-        ? getEditorTabRef(snapshot.activeEditorId, snapshot)
-        : null;
-      const parentPath = getEditorNoteCreateParent(
-        ref,
-        currentWorkspaceId,
-        getSelectedEntries(currentWorkspaceId),
-      );
-      const entries = await workspaceFile.list(currentWorkspaceId, parentPath);
-      const name = getDefaultWorkspaceEntryName(entries, "note");
-      const result = await fileActions.createEntry({
-        workspaceId: currentWorkspaceId,
-        parentPath,
-        name,
-        kind: "note",
-      });
-      const filePath = result.succeededPaths[0];
-      if (!filePath) return;
-      documentRegistry.openEditor({
-        kind: "workspaceFile",
-        workspaceId: currentWorkspaceId,
-        filePath,
-      });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "创建笔记失败");
-    } finally {
-      isCreatingNoteRef.current = false;
-      setIsCreatingNote(false);
-    }
-  }, [currentWorkspaceId, fileActions, getSelectedEntries, getSnapshot, toast]);
-
   const openLooseFilePath = useCallback((absolutePath: string) => {
     documentRegistry.openEditor({ kind: "looseFile", absolutePath });
   }, []);
@@ -307,21 +264,6 @@ export function DesktopEditorArea({
       disposed = true;
       cleanup();
     };
-  }, [openLooseFilePath]);
-
-  const openLooseFile = useCallback(async () => {
-    try {
-      const result = await fs.showSelectDialog({
-        type: "openFile",
-        title: "打开 Markdown 文件",
-        filters: [{ name: "Markdown", extensions: EDITOR_FILE_EXTENSIONS }],
-      });
-      if (result?.path) {
-        openLooseFilePath(result.path);
-      }
-    } catch (error) {
-      console.warn("[editor] 打开 loose file 失败", error);
-    }
   }, [openLooseFilePath]);
 
   return (

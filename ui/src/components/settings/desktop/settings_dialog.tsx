@@ -45,10 +45,10 @@ export function DesktopSettingsDialog({
   );
 
   useEffect(() => {
-    if (getSettingsPage(initialPageId)) {
+    if (isOpen && getSettingsPage(initialPageId)) {
       setSelectedPageId(initialPageId);
     }
-  }, [initialPageId]);
+  }, [initialPageId, isOpen]);
 
   useEffect(() => {
     if (!currentWorkspaceId && getSettingsPage(selectedPageId)?.requiresWorkspace) {
