@@ -43,12 +43,16 @@ export function TitleBar() {
             style={styles.left}
           >
             {presentation.icon ? (
-              <Image
-                source={require("../../../assets/images/favicon.png")}
-                resizeMode="contain"
-                style={styles.icon}
-                accessibilityLabel="LonaNote"
-              />
+              <View {...tauriDragRegionProps} style={styles.iconDragRegion}>
+                <View pointerEvents="none">
+                  <Image
+                    source={require("../../../assets/images/favicon.png")}
+                    resizeMode="contain"
+                    style={styles.icon}
+                    accessibilityLabel="LonaNote"
+                  />
+                </View>
+              </View>
             ) : null}
             <AppMenubar compact={barWidth < (desktop ? 520 : 310)} />
           </View>
@@ -87,6 +91,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   icon: { width: 20, height: 20 },
+  iconDragRegion: { height: "100%", justifyContent: "center" },
   title: {
     flex: 1,
     minWidth: 0,
