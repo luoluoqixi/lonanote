@@ -12,6 +12,8 @@ import { tauriDragRegionProps } from "./tauri_drag_region";
 import { TitleBarDragOverlay } from "./titlebar_drag_overlay";
 import { WindowControls } from "./window_controls";
 
+const TITLE_RESERVED_WIDTH = 200;
+
 export function TitleBar() {
   const theme = useUiTheme();
   const separatorColor = useSeparatorColor();
@@ -20,6 +22,13 @@ export function TitleBar() {
   const mac = desktop && os() === "macos";
   const [barWidth, setBarWidth] = useState(1024);
   const [leftWidth, setLeftWidth] = useState(mac ? 80 : 280);
+  const [expandedLeftWidth, setExpandedLeftWidth] = useState(280);
+  const compact =
+    barWidth < Math.max(desktop ? 520 : 310, expandedLeftWidth * 2 + TITLE_RESERVED_WIDTH);
+  const titleInset = Math.max(
+    presentation.native ? (mac ? 80 : 8) : leftWidth,
+    desktop && !mac ? 138 : 8,
+  );
   if (!presentation.visible) return null;
   return (
     <>
@@ -37,9 +46,31 @@ export function TitleBar() {
           },
         ]}
       >
+        <View
+          {...(desktop ? tauriDragRegionProps : {})}
+          style={[styles.title, { left: titleInset, right: titleInset }]}
+          pointerEvents="none"
+        >
+          <Text
+            numberOfLines={1}
+            style={{
+              color: theme.foreground,
+              fontSize: 14,
+              fontWeight: "500",
+              maxWidth: "100%",
+              textAlign: "center",
+            }}
+          >
+            {getAppTitle()}
+          </Text>
+        </View>
         {!presentation.native ? (
           <View
-            onLayout={(event) => setLeftWidth(event.nativeEvent.layout.width + 8)}
+            onLayout={(event) => {
+              const width = event.nativeEvent.layout.width + 8;
+              setLeftWidth(width);
+              if (!compact) setExpandedLeftWidth(width);
+            }}
             style={styles.left}
           >
             {presentation.icon ? (
@@ -54,18 +85,9 @@ export function TitleBar() {
                 </View>
               </View>
             ) : null}
-            <AppMenubar compact={barWidth < (desktop ? 520 : 310)} />
+            <AppMenubar compact={compact} />
           </View>
         ) : null}
-        <View {...(desktop ? tauriDragRegionProps : {})} style={styles.title}>
-          <Text
-            {...(desktop ? tauriDragRegionProps : {})}
-            numberOfLines={1}
-            style={{ color: theme.foreground, fontSize: 14, fontWeight: "500" }}
-          >
-            {getAppTitle()}
-          </Text>
-        </View>
         {desktop && !mac ? <WindowControls /> : null}
       </View>
     </>
@@ -85,15 +107,14 @@ const styles = StyleSheet.create({
   left: {
     flexDirection: "row",
     alignItems: "center",
-    flexShrink: 1,
-    maxWidth: "75%",
+    flexShrink: 0,
     gap: 8,
     height: "100%",
   },
   icon: { width: 20, height: 20 },
   iconDragRegion: { height: "100%", justifyContent: "center" },
   title: {
-    flex: 1,
+    position: "absolute",
     minWidth: 0,
     alignItems: "center",
     justifyContent: "center",

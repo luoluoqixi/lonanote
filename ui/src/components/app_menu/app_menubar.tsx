@@ -75,7 +75,7 @@ export function AppMenubar({ compact }: { compact: boolean }) {
         ? ({ dataSet: { appMenubar: "true" }, onPointerDownCapture: capture } as object)
         : {})}
       onTouchStart={capture}
-      style={{ minWidth: 64, maxWidth: 360, flexShrink: 1 }}
+      style={{ minWidth: 64, maxWidth: 360, flexShrink: 1, height: "100%" }}
     >
       <Menubar
         value={value}
@@ -87,7 +87,15 @@ export function AppMenubar({ compact }: { compact: boolean }) {
         }}
         size="sm"
         contentSize="sm"
-        style={{ borderWidth: 0, backgroundColor: "transparent", padding: 0, gap: 0 }}
+        className="rounded-none border-0 shadow-none"
+        style={{
+          height: "100%",
+          borderWidth: 0,
+          borderRadius: 0,
+          backgroundColor: "transparent",
+          padding: 0,
+          gap: 0,
+        }}
       >
         {visible.map((group) => (
           <Menubar.Menu key={group.id} value={group.id}>
