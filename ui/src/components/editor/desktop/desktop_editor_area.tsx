@@ -1,5 +1,5 @@
 import { FilePlus2, FolderOpen } from "lucide-react-native";
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, Spinner, useUiTheme } from "rn-ui-kit";
 
@@ -11,6 +11,7 @@ import { documentRegistry, editorInputLeaseCoordinator } from "@/components/edit
 import { EditorToolbar } from "@/components/editor/editor_toolbar";
 import { EditorWebView } from "@/components/editor/editor_webview";
 import { WorkspaceFilePreview } from "@/components/files/workspace_file_preview";
+import { RecentWorkspaces } from "@/components/workspaces/recent_workspaces";
 import { useEditorSession } from "@/hooks/editor";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useEditorFileActions } from "@/hooks/editor/use_editor_file_actions";
@@ -35,12 +36,16 @@ import { getEditorTabScrollTarget } from "./editor_tab_scroll";
 import { EditorTabScrollFeedback } from "./editor_tab_scroll_feedback";
 import { useEditorTabDrag } from "./use_editor_tab_drag";
 
+// 以编辑区的逻辑宽度判断；优先缩短路径，足够窄时才切换为上下布局。
+const WELCOME_STACK_WIDTH = 480;
+
 export function DesktopEditorArea({
   onRevealInExplorer,
 }: {
   onRevealInExplorer?: (workspaceId: string, path: string) => Promise<void>;
 }) {
   const theme = useUiTheme();
+  const [emptyWidth, setEmptyWidth] = useState(0);
   const {
     activeEditorId,
     getSnapshot,
@@ -439,22 +444,45 @@ export function DesktopEditorArea({
                 onCreateNote={() => void createNote()}
               />
             ) : null}
-            <Text style={{ color: theme.mutedForeground, fontSize: 13 }}>尚未打开文档</Text>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={!currentWorkspaceId || isCreatingNote}
-              onPress={() => void createNote()}
+            <ScrollView
+              style={{ width: "100%" }}
+              contentContainerStyle={styles.welcomeScroll}
+              onLayout={(event) => setEmptyWidth(event.nativeEvent.layout.width)}
             >
-              <FilePlus2 size={16} color={theme.mutedForeground} />
-              新建笔记
-            </Button>
-            {canOpenLooseFile ? (
-              <Button size="sm" variant="ghost" onPress={() => void openLooseFile()}>
-                <FolderOpen size={16} color={theme.mutedForeground} />
-                打开文件
-              </Button>
-            ) : null}
+              <View
+                style={[
+                  styles.welcome,
+                  { flexDirection: emptyWidth >= WELCOME_STACK_WIDTH ? "row" : "column" },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.welcomeActions,
+                    currentWorkspaceId || openEditorIds.length > 0 ? { alignSelf: "center" } : null,
+                  ]}
+                >
+                  <Text style={{ color: theme.mutedForeground, fontSize: 13, alignSelf: "center" }}>
+                    尚未打开文档
+                  </Text>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!currentWorkspaceId || isCreatingNote}
+                    onPress={() => void createNote()}
+                  >
+                    <FilePlus2 size={16} color={theme.mutedForeground} />
+                    新建笔记
+                  </Button>
+                  {canOpenLooseFile ? (
+                    <Button size="sm" variant="ghost" onPress={() => void openLooseFile()}>
+                      <FolderOpen size={16} color={theme.mutedForeground} />
+                      打开文件
+                    </Button>
+                  ) : null}
+                </View>
+                {!currentWorkspaceId && openEditorIds.length === 0 ? <RecentWorkspaces /> : null}
+              </View>
+            </ScrollView>
           </View>
         ) : null}
       </View>
@@ -463,6 +491,24 @@ export function DesktopEditorArea({
 }
 
 const styles = StyleSheet.create({
+  welcomeScroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  welcome: {
+    width: "100%",
+    maxWidth: 900,
+    justifyContent: "center",
+    alignItems: "stretch",
+    gap: 24,
+  },
+  welcomeActions: {
+    alignItems: "flex-start",
+    gap: 8,
+    flexShrink: 0,
+  },
   viewport: {
     flex: 1,
     minHeight: 0,
