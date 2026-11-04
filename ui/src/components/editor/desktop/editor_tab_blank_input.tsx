@@ -1,6 +1,8 @@
 import { useRef } from "react";
 import { Pressable, StyleSheet } from "react-native";
 
+import { isWeb } from "@/api/common/platform";
+
 import { createEditorTabBlankPressDetector } from "./editor_tab_blank_press";
 
 export function EditorTabBlankInput({
@@ -16,7 +18,9 @@ export function EditorTabBlankInput({
   return (
     <Pressable
       accessible={false}
+      focusable={false}
       disabled={disabled}
+      className={isWeb() ? "outline-none" : undefined}
       style={[area === "editor" ? styles.editor : styles.tabs, styles.cursor]}
       onPress={(event) => {
         event.stopPropagation();

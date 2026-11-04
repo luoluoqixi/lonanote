@@ -1,6 +1,7 @@
 import { EditorView } from "@codemirror/view";
 import { type ImageRetryContext, PurrMDFeatures, commands } from "purrmd";
 
+import { installEditorAppMenuKeys } from "./bridge/app_menu_key";
 import {
   EDITOR_BRIDGE_PROTOCOL_VERSION,
   type EditorBridgeBootstrap,
@@ -388,6 +389,14 @@ function emitEvent(event: string, payload: unknown): void {
   };
   sendMessage(message);
 }
+
+installEditorAppMenuKeys(
+  window,
+  () => session?.runtime.platform ?? "web",
+  (payload) => {
+    emitEvent("appMenu.key", payload);
+  },
+);
 
 const editorConsoleLevels = ["debug", "info", "log", "warn", "error"] as const;
 const maxConsoleArguments = 20;

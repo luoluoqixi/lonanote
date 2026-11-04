@@ -43,6 +43,7 @@ const MAX_SURFACE_RECOVERY_ATTEMPTS = 3;
 
 const iframeStyle: CSSProperties = {
   border: 0,
+  outline: "none",
   display: "block",
   height: "100%",
   width: "100%",
@@ -168,6 +169,15 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
         onEditorFocusChanged: (focused) =>
           editorInputLeaseCoordinator.handleFocusChanged(editor.editorId, focused),
         onViewportScrollRequested: () => undefined,
+        onAppMenuKey: (payload) => {
+          if (
+            !isDesktop() ||
+            !["windows", "linux"].includes(os()) ||
+            editorStore.getState().activeEditorId !== editor.editorId
+          )
+            return;
+          window.dispatchEvent(new KeyboardEvent(payload.type, { ...payload, cancelable: true }));
+        },
         onSaveRequested: () => {
           void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
         },

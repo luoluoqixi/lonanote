@@ -1,3 +1,4 @@
+import { type EditorAppMenuKey, isEditorAppMenuKey } from "@/assets/editor/src/bridge/app_menu_key";
 import {
   EDITOR_BRIDGE_PROTOCOL_VERSION,
   type EditorBridgeApplyResult,
@@ -43,6 +44,7 @@ type EditorBridgeClientOptions = {
   onEditorFocusChanged: (focused: boolean) => void;
   onViewportScrollRequested: (payload: EditorViewportScrollPayload) => void;
   onSaveRequested: () => void;
+  onAppMenuKey?: (payload: EditorAppMenuKey) => void;
   onResourceActivated: (payload: EditorResourceActivatedPayload) => void;
   onContextMenu?: (payload: EditorContextMenuPayload) => void;
   onTaskToggled: (checked: boolean) => void;
@@ -269,6 +271,10 @@ export class EditorBridgeClient {
       } else {
         this.#options.onFatal("editor.stateChanged payload 无效");
       }
+      return;
+    }
+    if (event.event === "appMenu.key") {
+      if (isEditorAppMenuKey(event.payload)) this.#options.onAppMenuKey?.(event.payload);
       return;
     }
     if (event.event === "editor.focusChanged") {
