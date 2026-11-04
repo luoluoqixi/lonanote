@@ -60,7 +60,12 @@ export function NativeAppMenu({ menu }: { menu: ReturnType<typeof useAppMenu> })
                   await MenuItem.new({
                     text: node.title,
                     enabled: node.enabled,
-                    accelerator: node.shortcut,
+                    accelerator:
+                      node.action === "zoomIn"
+                        ? "Cmd+Plus"
+                        : node.action === "zoomOut"
+                          ? "Cmd+Minus"
+                          : node.shortcut,
                     action: () => {
                       void latest.current.execute(node.action);
                     },

@@ -8,6 +8,7 @@ import { useAppSaveActions } from "@/hooks/editor/use_app_save_actions";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useEditorFileActions } from "@/hooks/editor/use_editor_file_actions";
 import { useLayoutMode } from "@/hooks/layout";
+import { useDesktopViewActions } from "@/hooks/settings/use_desktop_view_actions";
 import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { useWorkspaceCatalogRevision } from "@/hooks/workspace/use_workspace_catalog_revision";
@@ -22,6 +23,7 @@ import {
   resolveAppMenuPresentation,
 } from "./app_menu_model";
 import { openAppSettings } from "./app_settings_actions";
+import { useAppViewShortcuts } from "./use_app_view_shortcuts";
 
 export function useAppMenu() {
   const { layoutMode } = useLayoutMode();
@@ -44,6 +46,7 @@ export function useAppMenu() {
   const files = useEditorFileActions();
   const saves = useAppSaveActions();
   const edits = useAppEditActions();
+  const view = useDesktopViewActions();
   const { requestAppExit } = useEditorCloseActions();
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const alive = useRef(true);
@@ -134,6 +137,17 @@ export function useAppMenu() {
       title: "选择",
       items: [item("全选", "selectAll", edits.enabled.selectAll, `${mod}+A`)],
     },
+    {
+      id: "view",
+      title: "视图",
+      items: [
+        item("放大", "zoomIn", view.canZoomIn, `${mod}++`),
+        item("缩小", "zoomOut", view.canZoomOut, `${mod}+-`),
+        item("实际大小", "zoomReset", desktop, `${mod}+0`),
+        sep,
+        item("切换全屏", "toggleFullscreen", view.fullscreenReady, "F11"),
+      ],
+    },
     { id: "help", title: "帮助", items: [item("关于", "about")] },
   ];
   const execute = async (action: AppMenuActionId) => {
@@ -143,6 +157,18 @@ export function useAppMenu() {
         return;
       }
       switch (action) {
+        case "zoomIn":
+          await view.zoomIn();
+          break;
+        case "zoomOut":
+          await view.zoomOut();
+          break;
+        case "zoomReset":
+          await view.resetZoom();
+          break;
+        case "toggleFullscreen":
+          await view.toggleFullscreen();
+          break;
         case "newFile":
           await files.createNote();
           break;
@@ -185,6 +211,7 @@ export function useAppMenu() {
       toast.error(error instanceof Error ? error.message : "菜单操作失败");
     }
   };
+  useAppViewShortcuts(execute);
   return {
     groups,
     settings,

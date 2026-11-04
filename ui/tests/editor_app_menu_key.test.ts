@@ -26,6 +26,16 @@ test("iframe 转发 Alt 按下和释放及助记键，拦截菜单键而保留�
   expect(sent.every(isEditorAppMenuKey)).toBe(true);
   expect(key("keydown", "c", { ctrlKey: true })).toBe(false);
   expect(key("keydown", "f", { altKey: true, ctrlKey: true })).toBe(false);
+  expect(key("keydown", "+", { ctrlKey: true })).toBe(true);
+  expect(key("keydown", "-", { ctrlKey: true })).toBe(true);
+  expect(key("keydown", "0", { ctrlKey: true })).toBe(true);
+  expect(key("keydown", "F11")).toBe(true);
+  expect(sent.slice(-4).map((event) => (event as { key: string }).key)).toEqual([
+    "+",
+    "-",
+    "0",
+    "F11",
+  ]);
   cleanup();
 });
 

@@ -1,6 +1,10 @@
 import type { EditorStoreState } from "@/stores/editor";
 
 export type AppMenuActionId =
+  | "zoomIn"
+  | "zoomOut"
+  | "zoomReset"
+  | "toggleFullscreen"
   | "newFile"
   | "newFolder"
   | "newWindow"

@@ -2,6 +2,7 @@ export const appMenuMnemonics: Record<string, string> = {
   file: "F",
   edit: "E",
   selection: "S",
+  view: "V",
   help: "H",
 };
 

@@ -1,5 +1,6 @@
-﻿import { store } from "@/api/commands/store";
+import { store } from "@/api/commands/store";
 import { isDesktop } from "@/api/common";
+import { clampWindowZoom } from "@/api/common/window_zoom";
 import {
   type AccentThemeName,
   defaultAccentThemeName,
@@ -142,7 +143,7 @@ function normalizeZoomFactor(value: unknown): number {
     return 1;
   }
 
-  return Math.min(2, Math.max(0.75, Number(value.toFixed(2))));
+  return clampWindowZoom(value);
 }
 
 function normalizeWorkspaceExplorerSortValue(value: unknown): WorkspaceExplorerSortSetting {

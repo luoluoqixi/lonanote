@@ -1,3 +1,5 @@
+import { getViewShortcutAction } from "./view_shortcuts";
+
 export type EditorAppMenuKey = {
   type: "keydown" | "keyup";
   key: string;
@@ -30,14 +32,22 @@ export function installEditorAppMenuKeys(
   send: (key: EditorAppMenuKey) => void,
 ) {
   const handle = (event: KeyboardEvent) => {
-    if (!["windows", "linux"].includes(platform()) || (!event.altKey && event.key !== "Alt"))
+    const viewAction = event.type === "keydown" ? getViewShortcutAction(event, platform()) : null;
+    if (
+      !["windows", "linux"].includes(platform()) ||
+      (!event.altKey && event.key !== "Alt" && !viewAction)
+    )
       return;
     if (
       !event.ctrlKey &&
       !event.metaKey &&
       !event.isComposing &&
-      (event.key === "Alt" || ["f", "e", "s", "h"].includes(event.key.toLowerCase()))
+      (event.key === "Alt" || ["f", "e", "s", "v", "h"].includes(event.key.toLowerCase()))
     ) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (viewAction) {
       event.preventDefault();
       event.stopPropagation();
     }
