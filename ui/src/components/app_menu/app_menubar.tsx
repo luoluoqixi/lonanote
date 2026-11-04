@@ -80,6 +80,7 @@ export function AppMenubar({ compact }: { compact: boolean }) {
       <Menubar
         value={value}
         onValueChange={(next) => {
+          if (next) keyboard.onMenuOpen();
           setValue(next ?? "");
           if (next) handingOffFocus.current = false;
           if (next) void refresh().catch(() => undefined);
@@ -119,6 +120,7 @@ export function AppMenubar({ compact }: { compact: boolean }) {
               </Text>
             </Menubar.Trigger>
             <Menubar.Content
+              sideOffset={0}
               onCloseAutoFocus={(event) => {
                 if (handingOffFocus.current || keyboard.restoreFocusOnClose())
                   event.preventDefault();

@@ -2,9 +2,26 @@ import { expect, test } from "bun:test";
 import { Window } from "happy-dom";
 
 import {
+  createAppMenuFocusRestoration,
   installAppMenuKeyboard,
   restoreAppMenuFocus,
 } from "../src/components/app_menu/app_menu_keyboard.web";
+
+test("退出 Alt 的焦点恢复只生效一次，重新打开后 hover 切换不会恢复旧焦点", () => {
+  let restores = 0;
+  const focus = createAppMenuFocusRestoration(() => {
+    restores++;
+  });
+  focus.arm();
+  expect(focus.consume()).toBe(true);
+  expect(focus.consume()).toBe(false);
+  expect(restores).toBe(1);
+  // 未展开菜单便退出 Alt 时没有 close 回调；下次鼠标打开必须清理遗留请求。
+  focus.arm();
+  focus.clear();
+  expect(focus.consume()).toBe(false);
+  expect(restores).toBe(1);
+});
 
 test("再次按 Alt 或 Escape 都退出并恢复焦点，原焦点不可聚焦时仍移除菜单焦点", () => {
   const win = new Window();

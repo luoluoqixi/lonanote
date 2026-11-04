@@ -4,6 +4,7 @@ export function useAppMenuKeyboard(_options: { compact: boolean; capture(): void
   return {
     showHints: false,
     focusedId: null,
+    onMenuOpen: () => {},
     restoreFocusOnClose: () => false,
     mnemonics: {} as Record<string, string>,
   };

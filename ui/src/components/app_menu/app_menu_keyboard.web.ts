@@ -5,6 +5,25 @@ export const appMenuMnemonics: Record<string, string> = {
   help: "H",
 };
 
+/** 仅处理本次键盘退出；不能把旧恢复请求带进下次鼠标打开或 hover 切换。 */
+export function createAppMenuFocusRestoration(restore: () => void) {
+  let pending = false;
+  return {
+    arm: () => {
+      pending = true;
+    },
+    clear: () => {
+      pending = false;
+    },
+    consume: () => {
+      if (!pending) return false;
+      pending = false;
+      restore();
+      return true;
+    },
+  };
+}
+
 /** body 或已移除的原目标可能无法聚焦，仍须移除菜单自身的焦点。 */
 export function restoreAppMenuFocus(doc: Document, previous: HTMLElement | null) {
   const focused = doc.activeElement as HTMLElement | null;

@@ -4,6 +4,7 @@ import { isDesktop, os } from "@/api/common/platform";
 
 import {
   appMenuMnemonics,
+  createAppMenuFocusRestoration,
   installAppMenuKeyboard,
   restoreAppMenuFocus,
 } from "./app_menu_keyboard.web";
@@ -13,8 +14,8 @@ export function useAppMenuKeyboard(options: { compact: boolean; capture(): void;
   latest.current = options;
   const [showHints, setShowHints] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
-  const exiting = useRef(false);
   const restore = useRef<() => void>(() => {});
+  const restoration = useRef(createAppMenuFocusRestoration(() => restore.current()));
   const enabled = isDesktop() && ["windows", "linux"].includes(os());
   useEffect(() => {
     if (!enabled) return;
@@ -43,13 +44,13 @@ export function useAppMenuKeyboard(options: { compact: boolean; capture(): void;
           document.querySelector("[role=dialog]:not([data-state=closed]), [role=alertdialog]"),
         ),
       focus: () => {
-        exiting.current = false;
+        restoration.current.clear();
         capture();
         trigger()?.focus();
         focusChanged();
       },
       open: (id) => {
-        exiting.current = false;
+        restoration.current.clear();
         capture();
         const element = trigger(id);
         element?.focus();
@@ -60,8 +61,9 @@ export function useAppMenuKeyboard(options: { compact: boolean; capture(): void;
       },
       reset: (reason) => {
         setFocusedId(null);
+        restoration.current.clear();
         if (reason === "pointer") return;
-        exiting.current = true;
+        if (reason === "keyboard") restoration.current.arm();
         latest.current.close();
         if (reason === "keyboard") restore.current();
       },
@@ -76,11 +78,8 @@ export function useAppMenuKeyboard(options: { compact: boolean; capture(): void;
   return {
     showHints,
     focusedId,
-    restoreFocusOnClose: () => {
-      if (!exiting.current) return false;
-      restore.current();
-      return true;
-    },
+    onMenuOpen: () => restoration.current.clear(),
+    restoreFocusOnClose: () => restoration.current.consume(),
     mnemonics: enabled ? appMenuMnemonics : ({} as Record<string, string>),
   };
 }
