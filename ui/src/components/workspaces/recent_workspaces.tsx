@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Dropdown, Text, useUiTheme } from "rn-ui-kit";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
@@ -14,6 +14,7 @@ const RECENT_WORKSPACE_LIMIT = 10;
 
 export function RecentWorkspaces() {
   const theme = useUiTheme();
+  const { width } = useWindowDimensions();
   const { revision } = useWorkspaceCatalogRevision();
   const [items, setItems] = useState<WorkspaceListItem[]>([]);
   const [paths, setPaths] = useState<Record<string, string | null>>({});
@@ -115,24 +116,57 @@ export function RecentWorkspaces() {
       {items.length > RECENT_WORKSPACE_LIMIT ? (
         <View style={{ alignSelf: "flex-start" }}>
           <Dropdown
+            native={false}
             disabled={disabled}
             triggerLabel="更多…"
             nativeTrigger
             nativeTriggerIcon="none"
+            nativeTriggerContainerStyle={{
+              paddingHorizontal: 10,
+              paddingVertical: 0,
+            }}
             nativeTriggerProps={{
               accessibilityLabel: "查看全部最近工作区",
-              size: "sm",
+              size: "xs",
+              style: {
+                outline: "none",
+                height: 34,
+              },
             }}
             nativeTriggerLabelProps={{ style: { color: theme.primary } }}
-            contentSize="sm"
-            contentProps={{ align: "start" }}
-            items={items.map((item) => ({
-              value: item.id,
-              label: paths[item.id] ? `${item.displayName}  ${paths[item.id]}` : item.displayName,
-              disabled,
-              onPress: () => void openWorkspace(item.id),
-            }))}
-          />
+            contentSize="xs"
+          >
+            <Dropdown.Content align="start" style={{ width: Math.min(520, width - 24) }}>
+              {items.map((item) => (
+                <Dropdown.Item
+                  key={item.id}
+                  disabled={disabled}
+                  textValue={item.displayName}
+                  accessibilityLabel={`${item.displayName} ${paths[item.id] ?? ""}`}
+                  style={styles.menuRow}
+                  onPress={() => void openWorkspace(item.id)}
+                >
+                  <View style={styles.menuCell}>
+                    <FilePathTooltip path={paths[item.id] ?? null} disabled={disabled}>
+                      <View role="presentation" style={styles.menuContent}>
+                        <Text numberOfLines={1} style={styles.menuName}>
+                          {item.displayName}
+                        </Text>
+                        <Text
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                          style={styles.menuPath}
+                          className="text-muted-foreground"
+                        >
+                          {paths[item.id] ?? "路径不可用"}
+                        </Text>
+                      </View>
+                    </FilePathTooltip>
+                  </View>
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Content>
+          </Dropdown>
         </View>
       ) : null}
       <WorkspaceLocationSheet location={location} />
@@ -154,5 +188,10 @@ const styles = StyleSheet.create({
   },
   name: { fontSize: 13, flexShrink: 0, maxWidth: "60%" },
   path: { fontSize: 12, flex: 1, minWidth: 0 },
+  menuRow: { height: 26, gap: 10, paddingVertical: 0, minWidth: 0, overflow: "hidden" },
+  menuCell: { flex: 1, minWidth: 0 },
+  menuContent: { width: "100%", minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
+  menuName: { fontSize: 13, flexShrink: 0, maxWidth: "55%" },
+  menuPath: { fontSize: 11, flex: 1, minWidth: 0 },
   error: { alignItems: "flex-start", paddingHorizontal: 8 },
 });
