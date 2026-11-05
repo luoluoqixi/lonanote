@@ -9,12 +9,12 @@ import type { useAppMenu } from "./use_app_menu";
 export function NativeAppMenu({ menu }: { menu: ReturnType<typeof useAppMenu> }) {
   const latest = useRef(menu);
   latest.current = menu;
-  const lifecycle = useRef(createMenuLifecycle());
+  const lifecycle = useRef(createMenuLifecycle(serializeTauriMenuOperation));
   const definition = JSON.stringify(menu.groups);
   useEffect(() => {
     const manager = lifecycle.current;
-    void serializeTauriMenuOperation(() =>
-      manager.replace(async () => {
+    void manager
+      .replace(async () => {
         const { Menu, Submenu, MenuItem, PredefinedMenuItem } =
           await import("@tauri-apps/api/menu");
         const resources: { close(): Promise<void> }[] = [];
@@ -148,15 +148,13 @@ export function NativeAppMenu({ menu }: { menu: ReturnType<typeof useAppMenu> })
           for (const resource of resources.reverse()) await resource.close().catch(() => undefined);
           throw error;
         }
-      }),
-    ).catch((error) => console.error("创建原生菜单失败", error));
+      })
+      .catch((error) => console.error("创建原生菜单失败", error));
   }, [definition]);
   useEffect(() => {
     const manager = lifecycle.current;
     return () => {
-      void serializeTauriMenuOperation(() => manager.dispose()).catch((error) =>
-        console.error("关闭原生菜单失败", error),
-      );
+      void manager.dispose().catch((error) => console.error("关闭原生菜单失败", error));
     };
   }, []);
   return null;
