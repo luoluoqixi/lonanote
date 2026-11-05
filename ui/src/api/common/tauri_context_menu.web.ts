@@ -3,6 +3,7 @@ import type { NativeMenuRequest } from "rn-ui-kit";
 
 import { os } from "./platform";
 import { createTauriMenuOptions } from "./tauri_menu_items";
+import { serializeTauriMenuOperation } from "./tauri_menu_operations";
 import { resolveTauriMenuPosition } from "./tauri_menu_position";
 
 /** Tauri 只负责系统菜单资源；菜单数据和平台策略由调用方决定。 */
@@ -12,12 +13,14 @@ export async function showTauriContextMenu({
   y,
   isCurrent = () => true,
 }: NativeMenuRequest): Promise<void> {
-  if (!isCurrent()) return;
-  const menu = await Menu.new({ items: createTauriMenuOptions(items, isCurrent) });
-  try {
-    if (isCurrent())
-      await menu.popup(resolveTauriMenuPosition(x, y, os(), window.devicePixelRatio));
-  } finally {
-    await menu.close().catch(() => undefined);
-  }
+  return serializeTauriMenuOperation(async () => {
+    if (!isCurrent()) return;
+    const menu = await Menu.new({ items: createTauriMenuOptions(items, isCurrent) });
+    try {
+      if (isCurrent())
+        await menu.popup(resolveTauriMenuPosition(x, y, os(), window.devicePixelRatio));
+    } finally {
+      await menu.close().catch(() => undefined);
+    }
+  });
 }
