@@ -2,7 +2,7 @@ import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
-import { isDesktop, isTauri, os } from "@/api/common/platform";
+import { isDesktop, isDev, isMobile, isTauri, os } from "@/api/common/platform";
 import { useAppEditActions } from "@/hooks/editor/use_app_edit_actions";
 import { useAppSaveActions } from "@/hooks/editor/use_app_save_actions";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
@@ -20,9 +20,11 @@ import {
   type AppMenuGroup,
   type AppMenuNode,
   getRecentWorkspaces,
+  getViewMenuNodes,
   resolveAppMenuPresentation,
 } from "./app_menu_model";
 import { openAppSettings } from "./app_settings_actions";
+import { reloadAppWindow } from "./app_window_reload";
 import { useAppViewShortcuts } from "./use_app_view_shortcuts";
 
 export function useAppMenu() {
@@ -140,14 +142,15 @@ export function useAppMenu() {
     {
       id: "view",
       title: "视图",
-      items: [
-        item("放大", "zoomIn", view.canZoomIn, `${mod}++`),
-        item("缩小", "zoomOut", view.canZoomOut, `${mod}+-`),
-        item("实际大小", "zoomReset", desktop, `${mod}+0`),
-        item("重置布局", "resetLayout", desktop || layoutMode === "desktop"),
-        sep,
-        item("切换全屏", "toggleFullscreen", view.fullscreenReady, "F11"),
-      ],
+      items: getViewMenuNodes({
+        desktop,
+        layoutMode,
+        canZoomIn: view.canZoomIn,
+        canZoomOut: view.canZoomOut,
+        modifier: mod,
+        fullscreenReady: view.fullscreenReady,
+        development: isDev(),
+      }),
     },
     { id: "help", title: "帮助", items: [item("关于", "about")] },
   ];
@@ -172,6 +175,15 @@ export function useAppMenu() {
           break;
         case "toggleFullscreen":
           await view.toggleFullscreen();
+          break;
+        case "refreshWindow":
+          reloadAppWindow(
+            isMobile(),
+            () => window.location.reload(),
+            () => {
+              void import("react-native").then(({ DevSettings }) => DevSettings.reload());
+            },
+          );
           break;
         case "newFile":
           await files.createNote();

@@ -4,6 +4,7 @@ import {
   getActiveSaveableDocumentId,
   getRecentWorkspaces,
   getSaveableDocumentIds,
+  getViewMenuNodes,
   resolveAppMenuPresentation,
 } from "../src/components/app_menu/app_menu_model";
 import { editorStore } from "../src/stores/editor";
@@ -29,6 +30,36 @@ test("菜单与图标分别按布局、真实平台判断", () => {
     });
     expect(resolveAppMenuPresentation(platform, false, "mobile").visible).toBe(false);
   }
+});
+
+test("刷新窗口只在开发模式加入视图菜单，且位于全屏动作之后", () => {
+  const developmentItems = getViewMenuNodes({
+    desktop: true,
+    layoutMode: "desktop",
+    canZoomIn: true,
+    canZoomOut: true,
+    modifier: "Ctrl",
+    fullscreenReady: true,
+    development: true,
+  });
+  const productionItems = getViewMenuNodes({
+    desktop: true,
+    layoutMode: "desktop",
+    canZoomIn: true,
+    canZoomOut: true,
+    modifier: "Ctrl",
+    fullscreenReady: true,
+    development: false,
+  });
+
+  expect(developmentItems.at(-1)).toMatchObject({
+    type: "item",
+    title: "刷新窗口",
+    action: "refreshWindow",
+    enabled: true,
+  });
+  expect(productionItems.some((node) => node.type === "item" && node.action === "refreshWindow"))
+    .toBe(false);
 });
 
 test("最近工作区过滤未打开记录并稳定排序，不按名称去重", () => {

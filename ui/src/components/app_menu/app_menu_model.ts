@@ -6,6 +6,7 @@ export type AppMenuActionId =
   | "zoomReset"
   | "resetLayout"
   | "toggleFullscreen"
+  | "refreshWindow"
   | "newFile"
   | "newFolder"
   | "newWindow"
@@ -28,6 +29,35 @@ export type AppMenuNode =
   | { type: "item"; title: string; action: AppMenuActionId; enabled: boolean; shortcut?: string }
   | { type: "submenu"; title: string; items: AppMenuNode[] };
 export type AppMenuGroup = { id: string; title: string; items: AppMenuNode[] };
+
+export function getViewMenuNodes(options: {
+  desktop: boolean;
+  layoutMode: "desktop" | "mobile";
+  canZoomIn: boolean;
+  canZoomOut: boolean;
+  modifier: "Ctrl" | "Cmd";
+  fullscreenReady: boolean;
+  development: boolean;
+}): AppMenuNode[] {
+  const { desktop, layoutMode, canZoomIn, canZoomOut, modifier, fullscreenReady, development } =
+    options;
+  const item = (
+    title: string,
+    action: AppMenuActionId,
+    enabled = true,
+    shortcut?: string,
+  ): AppMenuNode => ({ type: "item", title, action, enabled, shortcut });
+  const items: AppMenuNode[] = [
+    item("放大", "zoomIn", canZoomIn, `${modifier}++`),
+    item("缩小", "zoomOut", canZoomOut, `${modifier}+-`),
+    item("实际大小", "zoomReset", desktop, `${modifier}+0`),
+    item("重置布局", "resetLayout", desktop || layoutMode === "desktop"),
+    { type: "separator" },
+    item("切换全屏", "toggleFullscreen", fullscreenReady, "F11"),
+  ];
+  if (development) items.push(item("刷新窗口", "refreshWindow"));
+  return items;
+}
 
 export function resolveAppMenuPresentation(
   platform: string,
