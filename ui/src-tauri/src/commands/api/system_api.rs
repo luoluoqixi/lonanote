@@ -3,12 +3,11 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use crate::APP_HANDLE;
 
 #[tauri::command]
-pub(crate) fn exit_app() -> Result<(), String> {
+pub(crate) async fn exit_app() -> Result<bool, String> {
     let app = APP_HANDLE
         .get()
         .ok_or_else(|| "Tauri app handle 尚未初始化".to_string())?;
-    app.exit(0);
-    Ok(())
+    crate::setup::window_close::request_close(app.clone(), None).await
 }
 
 #[tauri::command]

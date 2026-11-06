@@ -1,6 +1,7 @@
 import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { multiWindow } from "@/api/commands/win/multi_window";
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
 import { isDesktop, isDev, isMobile, isTauri, os } from "@/api/common/platform";
 import { useAppEditActions } from "@/hooks/editor/use_app_edit_actions";
@@ -92,7 +93,7 @@ export function useAppMenu() {
       items: [
         item("新建文件", "newFile", Boolean(currentWorkspaceId && !files.busy)),
         item("新建文件夹", "newFolder", Boolean(currentWorkspaceId && !files.busy)),
-        ...(desktop ? [item("新建窗口", "newWindow")] : []),
+        ...(desktop ? [item("新建窗口", "newWindow", true, `${mod}+Shift+N`)] : []),
         sep,
         item("打开文件", "openFile", desktop),
         item("打开文件夹", "openFolder", desktop && !opening.busy),
@@ -192,6 +193,7 @@ export function useAppMenu() {
           await files.createDirectory();
           break;
         case "newWindow":
+          await multiWindow.createWindow();
           break;
         case "openFile":
           await files.openLooseFile();

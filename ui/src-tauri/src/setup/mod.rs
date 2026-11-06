@@ -1,2 +1,10 @@
+pub(crate) mod app_menu;
+pub mod config_events;
+pub(crate) mod file_ownership;
 pub mod log;
 pub mod window;
+pub(crate) mod window_close;
+pub(crate) mod window_geometry;
+pub(crate) mod window_runtime;
+pub(crate) mod window_sessions;
+pub(crate) mod workspace_access;

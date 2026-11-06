@@ -9,6 +9,7 @@ import {
 } from "@/api/commands/workspace";
 import { isDesktop, isSystemLocaleCN, os } from "@/api/common";
 import { getErrorMessage } from "@/api/common/error_message";
+import { isTauri } from "@/api/common/platform";
 import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useLayoutMode } from "@/hooks/layout";
@@ -301,7 +302,7 @@ export function WorkspaceSelectContent({
         createdWorkspace = createTarget.isManaged
           ? await workspace.createManaged(createTarget.providerId!, nextDisplayName)
           : await workspace.createExternal(createTarget.externalBinding!, nextDisplayName);
-        if (currentWorkspaceId) {
+        if (currentWorkspaceId && !isTauri()) {
           try {
             await workspace.close(currentWorkspaceId);
           } catch (error) {

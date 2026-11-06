@@ -1,216 +1,148 @@
 use anyhow::{Context, Result};
-use tauri::utils::config::WindowConfig;
-use tauri::{App, Manager, Runtime, WebviewWindow, WebviewWindowBuilder};
+#[cfg(not(target_os = "windows"))]
+use tauri::Manager;
+use tauri::{App, WebviewWindow, WebviewWindowBuilder};
 #[cfg(not(target_os = "windows"))]
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
-use crate::commands;
 use crate::utils;
 
-#[derive(Debug, Clone)]
-struct BuilderStartupWindowState {
-    height: f64,
-    is_fullscreen: bool,
-    is_maximized: bool,
-    width: f64,
-    x: f64,
-    y: f64,
-}
-
 pub fn init_main_window(app: &App) -> Result<WebviewWindow> {
-    let app_handle = app.handle().clone();
-    commands::init_commands(&app_handle)?;
-
-    let startup_preferences = utils::win::resolve_startup_window_preferences();
-    let window = create_main_window(app, &startup_preferences)?;
-    init_window(&window, &startup_preferences)?;
-
-    Ok(window)
+    let handle = app.handle();
+    migrate_window_preferences(handle)?;
+    create_workspace_window(handle, crate::MAIN_WINDOW_NAME, None)
 }
 
-fn create_main_window(
-    app: &App,
-    startup_preferences: &utils::win::StartupWindowPreferences,
+pub fn create_workspace_window(
+    app: &tauri::AppHandle,
+    label: &str,
+    monitor: Option<tauri::Monitor>,
 ) -> Result<WebviewWindow> {
-    if let Some(window) = app.get_webview_window(crate::MAIN_WINDOW_NAME) {
-        return Ok(window);
-    }
-
-    log::info!(
-        "create main window for {} {}",
-        crate::APP_NAME,
-        crate::APP_VERSION
+    let _gate = super::window_close::WINDOW_LIFECYCLE_GATE
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    anyhow::ensure!(
+        !super::window_close::CLOSE_ACTIVE.load(std::sync::atomic::Ordering::SeqCst),
+        "正在确认窗口关闭，请稍后重试"
     );
-
-    let window_config = get_window_config(app, crate::MAIN_WINDOW_NAME)?.clone();
-    let builder_window_state = resolve_builder_window_state(app, startup_preferences);
-
-    #[cfg(target_os = "macos")]
-    {
-        create_macos_main_window(
-            app,
-            &window_config,
-            startup_preferences,
-            builder_window_state.as_ref(),
-        )
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        create_windows_main_window(
-            app,
-            &window_config,
-            startup_preferences,
-            builder_window_state.as_ref(),
-        )
-    }
-
-    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
-    {
-        create_unix_main_window(
-            app,
-            &window_config,
-            startup_preferences,
-            builder_window_state.as_ref(),
-        )
-    }
-}
-
-fn get_window_config<'a>(app: &'a App, label: &str) -> Result<&'a WindowConfig> {
-    app.config()
+    let mut config = app
+        .config()
         .app
         .windows
         .iter()
-        .find(|config| config.label == label)
-        .with_context(|| format!("window config not found for label: {label}"))
-}
-
-#[cfg(target_os = "macos")]
-fn create_macos_main_window(
-    app: &App,
-    window_config: &WindowConfig,
-    startup_preferences: &utils::win::StartupWindowPreferences,
-    builder_window_state: Option<&BuilderStartupWindowState>,
-) -> Result<WebviewWindow> {
-    apply_startup_window_preferences(
-        WebviewWindowBuilder::from_config(app, window_config)
-            .context("create macOS main window builder error")?
-            .title(crate::APP_TITLE.as_str())
-            .visible(false),
-        startup_preferences,
-        builder_window_state,
-    )
-    .build()
-    .context("build macOS main window error")
-}
-
-#[cfg(target_os = "windows")]
-fn create_windows_main_window(
-    app: &App,
-    window_config: &WindowConfig,
-    startup_preferences: &utils::win::StartupWindowPreferences,
-    builder_window_state: Option<&BuilderStartupWindowState>,
-) -> Result<WebviewWindow> {
-    apply_startup_window_preferences(
-        WebviewWindowBuilder::from_config(app, window_config)
-            .context("create Windows main window builder error")?
-            .title(crate::APP_TITLE.as_str())
-            .visible(false),
-        startup_preferences,
-        builder_window_state,
-    )
-    .build()
-    .context("build Windows main window error")
-}
-
-#[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
-fn create_unix_main_window(
-    app: &App,
-    window_config: &WindowConfig,
-    startup_preferences: &utils::win::StartupWindowPreferences,
-    builder_window_state: Option<&BuilderStartupWindowState>,
-) -> Result<WebviewWindow> {
-    apply_startup_window_preferences(
-        WebviewWindowBuilder::from_config(app, window_config)
-            .context("create desktop main window builder error")?
-            .title(crate::APP_TITLE.as_str())
-            .visible(false),
-        startup_preferences,
-        builder_window_state,
-    )
-    .build()
-    .context("build desktop main window error")
-}
-
-fn resolve_builder_window_state(
-    app: &App,
-    startup_preferences: &utils::win::StartupWindowPreferences,
-) -> Option<BuilderStartupWindowState> {
-    let window_state = startup_preferences.window_state.as_ref()?;
-    let scale_factor = resolve_startup_window_scale_factor(app, window_state.x, window_state.y);
-
-    Some(BuilderStartupWindowState {
-        height: window_state.height as f64 / scale_factor,
-        is_fullscreen: window_state.is_fullscreen,
-        is_maximized: window_state.is_maximized,
-        width: window_state.width as f64 / scale_factor,
-        x: window_state.x as f64 / scale_factor,
-        y: window_state.y as f64 / scale_factor,
-    })
-}
-
-fn resolve_startup_window_scale_factor(app: &App, x: i32, y: i32) -> f64 {
-    let monitor = app
-        .monitor_from_point(x as f64, y as f64)
-        .ok()
-        .flatten()
-        .or_else(|| app.primary_monitor().ok().flatten());
-
-    match monitor {
-        Some(monitor) if monitor.scale_factor() > 0.0 => monitor.scale_factor(),
-        _ => 1.0,
+        .find(|config| config.label == crate::MAIN_WINDOW_NAME)
+        .context("找不到工作台窗口模板")?
+        .clone();
+    config.label = label.to_string();
+    config.maximized = false;
+    config.fullscreen = false;
+    let preferences = utils::win::resolve_startup_window_preferences();
+    let mut builder = WebviewWindowBuilder::from_config(app, &config)?
+        .title(crate::APP_TITLE.as_str())
+        .visible(false)
+        .initialization_script_for_all_frames(
+            "window.addEventListener('contextmenu', (event) => event.preventDefault());",
+        );
+    if let Some(background) = preferences.background_color {
+        builder = builder.background_color(background);
     }
-}
-
-fn apply_startup_window_preferences<'a, R: Runtime, M: Manager<R>>(
-    builder: WebviewWindowBuilder<'a, R, M>,
-    startup_preferences: &utils::win::StartupWindowPreferences,
-    builder_window_state: Option<&BuilderStartupWindowState>,
-) -> WebviewWindowBuilder<'a, R, M> {
-    // 在冒泡阶段取消 WebView 默认菜单，保留应用菜单与编辑器的事件处理。
-    // 覆盖所有 frame，避免编辑器 iframe 的空白区域仍弹出浏览器菜单。
-    let builder = builder.initialization_script_for_all_frames(
-        "window.addEventListener('contextmenu', (event) => event.preventDefault());",
+    let monitor = monitor.or_else(|| app.primary_monitor().ok().flatten());
+    let mut physical_position = None;
+    if let Some(monitor) = monitor {
+        let area = monitor.work_area();
+        let geometry = super::window_geometry::resolve_geometry(
+            preferences.window_size,
+            super::window_geometry::WorkArea {
+                x: area.position.x as f64,
+                y: area.position.y as f64,
+                width: area.size.width as f64,
+                height: area.size.height as f64,
+                scale: monitor.scale_factor(),
+            },
+        );
+        builder = builder
+            .inner_size(geometry.width, geometry.height)
+            .position(geometry.x, geometry.y);
+        physical_position = Some(tauri::PhysicalPosition::new(
+            geometry.x * monitor.scale_factor(),
+            geometry.y * monitor.scale_factor(),
+        ));
+    } else {
+        let size = preferences
+            .window_size
+            .unwrap_or(super::window_geometry::WindowSize {
+                width: 1024.0,
+                height: 576.0,
+            });
+        builder = builder.inner_size(size.width, size.height).center();
+    }
+    let sessions = &super::window_runtime::WINDOW_SESSIONS;
+    sessions.register_window_with_cause(
+        label,
+        if label == crate::MAIN_WINDOW_NAME {
+            super::window_sessions::WindowStartCause::InitialLaunch
+        } else {
+            super::window_sessions::WindowStartCause::NewWindow
+        },
     );
-    let builder = if let Some(background_color) = startup_preferences.background_color {
-        builder.background_color(background_color)
-    } else {
-        builder
+    let window = match builder.build() {
+        Ok(window) => window,
+        Err(error) => {
+            sessions.release_window(label);
+            return Err(error).context("创建工作台窗口失败");
+        }
     };
-
-    let Some(window_state) = builder_window_state else {
-        return builder;
-    };
-
-    let builder = if !window_state.is_maximized && !window_state.is_fullscreen {
-        builder
-            .inner_size(window_state.width, window_state.height)
-            .position(window_state.x, window_state.y)
-    } else {
-        builder
-    };
-
-    let builder = if window_state.is_maximized {
-        builder.maximized(true)
-    } else {
-        builder
-    };
-
-    if window_state.is_fullscreen {
-        builder.fullscreen(true)
-    } else {
-        builder
+    // 显示器原点使用全局物理坐标，避免混合 DPI 下 builder 的逻辑坐标换算偏移。
+    if let Some(position) = physical_position {
+        if let Err(error) = window.set_position(position) {
+            let _ = window.destroy();
+            sessions.release_window(label);
+            return Err(error).context("窗口居中失败");
+        }
     }
+    let cleanup_label = label.to_string();
+    let close_app = app.clone();
+    window.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::Focused(true)) {
+            super::app_menu::activate(&close_app, &cleanup_label);
+        }
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            log::info!("native window close requested: window={cleanup_label}");
+            api.prevent_close();
+            let app = close_app.clone();
+            let label = cleanup_label.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(error) = super::window_close::request_close(app, Some(label)).await {
+                    log::error!("关闭窗口失败：{error}");
+                }
+            });
+        }
+        if matches!(event, tauri::WindowEvent::Destroyed) {
+            super::window_close::cleanup_window(&cleanup_label);
+            super::app_menu::release(&close_app, &cleanup_label);
+            crate::commands::window_workspace_api::cleanup_window(cleanup_label.clone());
+        }
+    });
+    if let Err(error) = init_window(&window, &preferences) {
+        let _ = window.destroy();
+        return Err(error);
+    }
+    Ok(window)
+}
+
+fn migrate_window_preferences(app: &tauri::AppHandle) -> Result<()> {
+    let values = lonanote_core::api::store::common_all()?;
+    let old = values.get("ui.window.lastState");
+    let monitor = old
+        .and_then(|value| Some((value.get("x")?.as_f64()?, value.get("y")?.as_f64()?)))
+        .and_then(|(x, y)| app.monitor_from_point(x, y).ok().flatten())
+        .or_else(|| app.primary_monitor().ok().flatten());
+    let scale = monitor.map(|monitor| monitor.scale_factor()).unwrap_or(1.0);
+    let (set, remove) = super::window_geometry::geometry_migration(&values, scale);
+    if !set.is_empty() || !remove.is_empty() {
+        lonanote_core::api::store::common_patch_and_save(set, remove)?;
+    }
+    Ok(())
 }
 
 fn init_window(
@@ -225,7 +157,9 @@ fn init_window(
     }
 
     #[cfg(not(target_os = "windows"))]
-    register_devtools_listener(window);
+    if window.label() == crate::MAIN_WINDOW_NAME {
+        register_devtools_listener(window);
+    }
 
     #[cfg(debug_assertions)]
     window.open_devtools();
@@ -264,7 +198,7 @@ fn register_window_theme_listener(window: &WebviewWindow) {
 
 #[cfg(not(target_os = "windows"))]
 fn register_devtools_listener(window: &WebviewWindow) {
-    let label = window.label().to_string();
+    let app = window.app_handle().clone();
     window
         .global_shortcut()
         .on_shortcut("CommandOrControl+Shift+I", move |_, _, event| {
@@ -272,7 +206,11 @@ fn register_devtools_listener(window: &WebviewWindow) {
                 return;
             }
 
-            if let Some(window) = utils::win::get_window(&label) {
+            if let Some(window) = app
+                .webview_windows()
+                .into_values()
+                .find(|window| window.is_focused().unwrap_or(false))
+            {
                 if window.is_devtools_open() {
                     window.close_devtools();
                 } else {

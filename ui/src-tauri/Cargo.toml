@@ -33,6 +33,8 @@ tokio = { workspace = true }
 futures = { workspace = true }
 dark-light = { workspace = true }
 sys-locale = { workspace = true }
+uuid = { workspace = true }
+same-file = "1.0"
 
 lonanote-core = { path = "../../rust/core" }
 cmdreg = { workspace = true }

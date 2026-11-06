@@ -1,4 +1,5 @@
 import { fs } from "@/api/commands/fs";
+import { claimDocumentFile } from "@/api/commands/win/file_ownership";
 import { workspaceFile } from "@/api/commands/workspace";
 import { isDesktop } from "@/api/common/platform";
 import type { EditorDocumentCapturePayload } from "@/assets/editor/src/bridge/protocol";
@@ -112,6 +113,7 @@ async function writeLatestSnapshot(documentId: string): Promise<void> {
   editorStore.getState().setDocumentSaveState(documentId, "saving");
 
   try {
+    await claimDocumentFile(document);
     if (document.ref.kind === "workspaceFile") {
       await workspaceFile.writeText(document.ref.workspaceId, document.ref.filePath, snapshot.text);
       const metadata = await workspaceFile
@@ -261,3 +263,27 @@ export const saveCoordinator = {
     clearAutoSaveTimer(getEntry(documentId));
   },
 };
+
+settingsStore.subscribe((state, previousState) => {
+  const autoSaveChanged =
+    state.settings.editorDefaults.autoSave !== previousState.settings.editorDefaults.autoSave;
+  const intervalChanged =
+    state.settings.editorDefaults.autoSaveIntervalSeconds !==
+    previousState.settings.editorDefaults.autoSaveIntervalSeconds;
+  if (!autoSaveChanged && !intervalChanged) return;
+
+  if (!state.settings.editorDefaults.autoSave) {
+    for (const [documentId, entry] of entries) {
+      clearAutoSaveTimer(entry);
+      const document = editorStore.getState().documentsById[documentId];
+      if (document?.saveState === "scheduled") {
+        editorStore.getState().setDocumentSaveState(documentId, "idle");
+      }
+    }
+    return;
+  }
+
+  for (const documentId of Object.keys(editorStore.getState().documentsById)) {
+    saveCoordinator.scheduleAutoSave(documentId);
+  }
+});

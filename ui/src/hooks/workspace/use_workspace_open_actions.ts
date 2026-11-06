@@ -8,7 +8,7 @@ import {
   type WorkspaceSnapshot,
   workspace,
 } from "@/api/commands/workspace";
-import { getFileName, isDesktop } from "@/api/common";
+import { getFileName, isDesktop, isTauri } from "@/api/common";
 import { createSingleFlight } from "@/components/app_menu/app_menu_actions";
 import { confirmExternalIdRegeneration } from "@/components/workspaces/workspace_select/scan_id_conflict_dialog";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
@@ -100,7 +100,7 @@ export function useWorkspaceOpenActions(
     const enter = async () => {
       opened = await openTarget();
       if (!opened) return false;
-      if (currentWorkspaceId) {
+      if (currentWorkspaceId && !isTauri()) {
         try {
           await workspace.close(currentWorkspaceId);
         } catch (error) {

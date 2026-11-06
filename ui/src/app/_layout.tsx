@@ -16,18 +16,31 @@ import { getAppHomeTitle, getAppName, getVersion, initConfig } from "@/config";
 import { AppProvider } from "@/providers/app_provider";
 import { useAppBackgroundColors, useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
+import { initializeConfigSyncController } from "@/api/common/config_sync_controller";
+import { useDesktopWindowLifecycle } from "@/hooks/editor/use_desktop_window_lifecycle";
 
 applyThemeBootstrap();
 initializeRustRuntime();
 
 export default function RootLayout() {
   useEffect(() => {
+    let disposed = false;
+    let disposeConfigSync: (() => void) | undefined;
     const initialize = async () => {
+      disposeConfigSync = await initializeConfigSyncController();
+      if (disposed) {
+        disposeConfigSync();
+        return;
+      }
       await initConfig();
       console.log(`inited, ${getAppName()} - ${getVersion()}, ${os()}.`);
     };
 
-    void initialize();
+    void initialize().catch((error) => console.error("[startup] 初始化失败", error));
+    return () => {
+      disposed = true;
+      disposeConfigSync?.();
+    };
   }, []);
 
   return (
@@ -38,6 +51,7 @@ export default function RootLayout() {
 }
 
 function RootNavigation() {
+  useDesktopWindowLifecycle();
   const colorScheme = useResolvedeColorScheme();
   const appBackgroundColors = useAppBackgroundColors();
   const rootBackgroundColor = appBackgroundColors.screen;

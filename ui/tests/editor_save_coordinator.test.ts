@@ -17,10 +17,12 @@ mock.module("@/api/commands/workspace", () => ({
 mock.module("@/api/commands/fs", () => ({ fs: {} }));
 mock.module("@/api/common/platform", () => ({
   isDesktop: () => true,
+  isTauri: () => false,
   isSystemLocaleCN: () => true,
 }));
 mock.module("@/stores/settings", () => ({
   settingsStore: {
+    subscribe: () => () => {},
     getSettings: () => ({ editorDefaults: { autoSave: true, autoSaveIntervalSeconds: 0.1 } }),
   },
 }));

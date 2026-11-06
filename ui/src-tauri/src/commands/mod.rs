@@ -1,9 +1,16 @@
 mod api;
+mod file_ownership_api;
 mod invoke;
 mod resource_protocol;
+mod window_api;
+pub(crate) mod window_callbacks;
+pub(crate) mod window_workspace_api;
 
+use crate::setup::app_menu::*;
+use crate::setup::window_close::*;
 use anyhow::{anyhow, Result};
 use api::system_api::*;
+use file_ownership_api::*;
 use invoke::*;
 use lonanote_core::workspace::{
     install_workspace_manager, LocalFsResolver, StorageProviderId, WorkspaceManager,
@@ -11,7 +18,9 @@ use lonanote_core::workspace::{
 };
 use std::{path::PathBuf, sync::Arc};
 use sys_locale::get_locale;
-use tauri::{AppHandle, Builder, Manager, Runtime};
+use tauri::{AppHandle, Builder, Manager};
+use window_api::*;
+use window_callbacks::*;
 
 const APP_LOCAL_PROVIDER_ID: &str = "app-local";
 const DESKTOP_DOCUMENTS_PROVIDER_ID: &str = "desktop-documents";
@@ -43,7 +52,7 @@ pub fn resolve_default_paths(app: &AppHandle) -> Result<lonanote_core::config::a
     ))
 }
 
-pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {
+pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
     resource_protocol::register_resource_protocol(builder).invoke_handler(tauri::generate_handler![
         invoke,
         invoke_async,
@@ -57,9 +66,17 @@ pub fn reg_commands<R: Runtime>(builder: Builder<R>) -> Builder<R> {
         get_callback_keys,
         get_callback_len,
         invoke_callback,
+        resolve_callback,
         read_clipboard_text,
         write_clipboard_text,
         exit_app,
+        create_workspace_window,
+        get_window_bootstrap,
+        request_window_close,
+        respond_window_close,
+        update_window_menu,
+        claim_document_file,
+        release_document_file,
     ])
 }
 

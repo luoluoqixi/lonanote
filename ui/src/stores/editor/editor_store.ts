@@ -1,5 +1,7 @@
 import { createStore } from "zustand/vanilla";
 
+import { assertWindowCanOpen } from "@/api/common/window_close_preparation";
+
 import {
   type DocumentLoadState,
   type DocumentModel,
@@ -197,6 +199,7 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
   },
 
   openViewer: (ref, viewerKind) => {
+    assertWindowCanOpen();
     const normalized = normalizeEditorDocumentRef(ref);
     if (normalized.kind !== "workspaceFile") throw new Error("查看器仅支持工作区文件");
     for (const reservation of pathReservations.values()) {
@@ -234,6 +237,7 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
   },
 
   openEditor: (ref, options = {}) => {
+    assertWindowCanOpen();
     const normalizedRef = normalizeEditorDocumentRef(ref);
     const documentKey =
       normalizedRef.kind === "untitled"

@@ -6,10 +6,7 @@ use serde_json::Value;
 use tauri::{
     command,
     ipc::{InvokeBody, Request, Response},
-    Emitter, Listener,
 };
-
-use crate::{APP_HANDLE, MAIN_WINDOW_NAME};
 
 pub fn parse_invoke_result(res: CommandResult) -> Result<Response, String> {
     match res {
@@ -67,11 +64,37 @@ pub fn get_command_len() -> Result<usize, String> {
 }
 
 #[command]
-pub async fn invoke_async(request: Request<'_>) -> Result<Response, String> {
+pub async fn invoke_async(
+    window: tauri::WebviewWindow,
+    request: Request<'_>,
+) -> Result<Response, String> {
     match parse_invoke_args(&request) {
         Ok((key, args)) => {
-            let res = invoke_command_async(key.as_str(), args).await;
-            parse_invoke_result(res)
+            if key.starts_with("workspace.") {
+                let data = match request.body() {
+                    InvokeBody::Json(body) => body
+                        .get("args")
+                        .and_then(Value::as_str)
+                        .and_then(|args| serde_json::from_str::<Value>(args).ok())
+                        .unwrap_or(Value::Null),
+                    _ => Value::Null,
+                };
+                let res = super::window_callbacks::CALLING_WINDOW
+                    .scope(
+                        window.label().to_string(),
+                        super::window_workspace_api::invoke_workspace(&window, &key, args, &data),
+                    )
+                    .await?;
+                parse_invoke_result(Ok(res))
+            } else {
+                let res = super::window_callbacks::CALLING_WINDOW
+                    .scope(
+                        window.label().to_string(),
+                        invoke_command_async(key.as_str(), args),
+                    )
+                    .await;
+                parse_invoke_result(res)
+            }
         }
         Err(err) => Err(err.to_string()),
     }
@@ -86,59 +109,5 @@ pub fn get_command_async_keys() -> Result<Vec<String>, String> {
 #[command]
 pub fn get_command_async_len() -> Result<usize, String> {
     let res = lonanote_core::get_command_async_len();
-    res.map_err(|e| e.to_string())
-}
-
-#[command]
-pub fn reg_callback_function(key: String) -> Result<(), String> {
-    let handle = APP_HANDLE.get().ok_or("app handle is None".to_string())?;
-    let k = key.clone();
-    let wrapped_fn =
-        move |args: Option<String>| -> lonanote_core::CommandHandlerValueCallbackResult {
-            let cb_result_event = format!("callback_result:{}:return", key.as_str());
-            let res = handle.emit_to(MAIN_WINDOW_NAME, key.as_str(), args);
-            Box::pin(async move {
-                res?;
-                let (tx, rx) = tokio::sync::oneshot::channel();
-                handle.once(cb_result_event, move |e| {
-                    let _ = tx.send(e.payload().to_string());
-                });
-                let payload = rx.await?;
-                let res = serde_json::from_str::<Option<String>>(&payload)?;
-                Ok(res)
-            })
-        };
-    lonanote_core::reg_command_callback(k, Box::new(wrapped_fn)).map_err(|err| err.to_string())?;
-
-    Ok(())
-}
-
-#[command]
-pub fn unreg_callback_function(key: String) -> Result<(), String> {
-    lonanote_core::unreg_command_callback(&key).map_err(|err| err.to_string())?;
-    Ok(())
-}
-
-#[command]
-pub fn clear_callback_function() -> Result<(), String> {
-    lonanote_core::clear_command_callback().map_err(|err| err.to_string())?;
-    Ok(())
-}
-
-#[command]
-pub fn get_callback_keys() -> Result<Vec<String>, String> {
-    let res = lonanote_core::get_command_callback_keys();
-    res.map_err(|e| e.to_string())
-}
-
-#[command]
-pub fn get_callback_len() -> Result<usize, String> {
-    let res = lonanote_core::get_command_callback_len();
-    res.map_err(|e| e.to_string())
-}
-
-#[command]
-pub async fn invoke_callback(key: String, args: Option<String>) -> Result<Option<String>, String> {
-    let res = lonanote_core::invoke_command_callback(key, args).await;
     res.map_err(|e| e.to_string())
 }

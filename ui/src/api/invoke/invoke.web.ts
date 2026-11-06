@@ -68,20 +68,42 @@ export async function regCallbackFunction(
 ): Promise<() => void> {
   const invoke = await getInvoke();
   const appWebview = await getAppWebview();
-  const unlisten = await appWebview.listen<string>(key, async (e) => {
-    const preload = e.payload;
-    const cbResultEvent = `callback_result:${key}:return`;
-    const res = await callback(preload);
-    appWebview.emit(cbResultEvent, res);
-  });
+  const unlisten = await appWebview.listen<{ requestId: string; key: string; args: string | null }>(
+    "lonanote://callback-request",
+    async (event) => {
+      if (event.payload.key !== key) return;
+      const { requestId, args } = event.payload;
+      try {
+        const result = await callback(args);
+        await invoke("resolve_callback", { requestId, key, result: result ?? null, error: null });
+      } catch (error) {
+        await invoke("resolve_callback", {
+          requestId,
+          key,
+          result: null,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
   state.listenMap = state.listenMap || {};
+  state.listenMap[key]?.();
   state.listenMap[key] = unlisten;
-  await invoke("reg_callback_function", { key });
-  return unlisten;
+  try {
+    await invoke("reg_callback_function", { key });
+  } catch (error) {
+    unlisten();
+    if (state.listenMap[key] === unlisten) delete state.listenMap[key];
+    throw error;
+  }
+  return () => {
+    void unregCallbackFunction(key, unlisten);
+  };
 }
 
-export async function unregCallbackFunction(key: string) {
+export async function unregCallbackFunction(key: string, expectedListener?: () => void) {
   const invoke = await getInvoke();
+  if (expectedListener && state.listenMap?.[key] !== expectedListener) return;
   if (state.listenMap && state.listenMap[key]) {
     state.listenMap[key]();
     state.listenMap[key] = undefined;

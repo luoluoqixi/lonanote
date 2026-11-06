@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
+import { multiWindow } from "@/api/commands/win/multi_window";
 import { workspace } from "@/api/commands/workspace";
+import { waitForConfigSyncReady } from "@/api/common/config_sync_controller";
 import { useToast } from "@/hooks/ui";
 import { settingsStore } from "@/stores/settings";
 import { workspaceSessionStore } from "@/stores/workspace";
@@ -25,6 +27,10 @@ function getErrorMessage(error: unknown): string {
 async function initializeWorkspace(): Promise<WorkspaceStartupResult> {
   let openingWorkspaceId: string | null = null;
   try {
+    await waitForConfigSyncReady();
+    if ((await multiWindow.getBootstrap()) === "newWindow") {
+      return { autoOpenedWorkspaceId: null, errorMessage: null };
+    }
     const globalSettings = await settingsStore.load();
     if (!globalSettings.app.autoOpenLastWorkspace) {
       return { autoOpenedWorkspaceId: null, errorMessage: null };

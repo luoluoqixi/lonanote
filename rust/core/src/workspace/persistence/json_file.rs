@@ -85,6 +85,16 @@ where
     write_bytes_atomically(path, &bytes, label, error_factory)
 }
 
+pub(crate) fn write_json_bytes_atomically(
+    path: &Path,
+    bytes: &[u8],
+    label: &str,
+) -> Result<(), WorkspaceError> {
+    write_bytes_atomically(path, bytes, label, |message| {
+        WorkspaceError::Catalog(message)
+    })
+}
+
 fn read_json<T>(
     path: &Path,
     label: &str,

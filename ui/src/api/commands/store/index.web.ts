@@ -1,3 +1,4 @@
+import { createCommonStoreSync } from "@/api/common/common_store_sync";
 import { isInvokeAvailable } from "@/api/invoke";
 
 import { store as asyncStore } from "./store";
@@ -49,76 +50,17 @@ const commonStoreCache = createStoreCache({
   save: saveCommonStoreRecord,
 });
 
-let requestedMirrorRevision = 0;
-let completedMirrorRevision = 0;
-let pendingMirror: { revision: number; snapshot: StoreRecord } | null = null;
-let mirrorInFlight: Promise<void> | null = null;
-const mirrorWaiters = new Map<number, Array<() => void>>();
+const commonStoreSync = createCommonStoreSync({
+  cache: commonStoreCache,
+  isRemote: isInvokeAvailable,
+  patchRemote: asyncStore.commonPatchAndSave,
+  persistCommitted: saveCommonStoreRecord,
+});
 
-async function mirrorStoreSnapshot(storeKey: string, snapshot: StoreRecord): Promise<void> {
-  await asyncStore.clear(storeKey);
-  const entries = Object.entries(snapshot);
-  await Promise.all(entries.map(([key, value]) => asyncStore.set(storeKey, key, value)));
-  await asyncStore.save(storeKey);
-}
-
-function resolveMirrorWaiters(): void {
-  for (const [revision, waiters] of mirrorWaiters.entries()) {
-    if (revision > completedMirrorRevision) {
-      continue;
-    }
-
-    mirrorWaiters.delete(revision);
-    waiters.forEach((resolve) => resolve());
-  }
-}
-
-function ensureMirrorLoop(storeKey: string): void {
-  if (mirrorInFlight) {
-    return;
-  }
-
-  mirrorInFlight = (async () => {
-    while (pendingMirror) {
-      const nextMirror = pendingMirror;
-      pendingMirror = null;
-
-      try {
-        await mirrorStoreSnapshot(storeKey, nextMirror.snapshot);
-      } catch (error) {
-        console.error("[store] failed to mirror async mutation", error);
-      } finally {
-        completedMirrorRevision = Math.max(completedMirrorRevision, nextMirror.revision);
-        resolveMirrorWaiters();
-      }
-    }
-  })().finally(() => {
-    mirrorInFlight = null;
-    if (pendingMirror) {
-      ensureMirrorLoop(storeKey);
-    }
+function scheduleCommonFlush(): void {
+  void commonStoreSync.flush().catch((error) => {
+    console.error("[store] failed to flush CommonStore patch", error);
   });
-}
-
-function scheduleAsyncMirror(storeKey: string, snapshot: StoreRecord): Promise<void> {
-  if (!isInvokeAvailable()) {
-    return Promise.resolve();
-  }
-
-  const revision = ++requestedMirrorRevision;
-  pendingMirror = {
-    revision,
-    snapshot,
-  };
-
-  const promise = new Promise<void>((resolve) => {
-    const waiters = mirrorWaiters.get(revision) ?? [];
-    waiters.push(resolve);
-    mirrorWaiters.set(revision, waiters);
-  });
-
-  ensureMirrorLoop(storeKey);
-  return promise;
 }
 
 function getCache(storeKey: string) {
@@ -127,6 +69,17 @@ function getCache(storeKey: string) {
 }
 
 export const store: UnifiedStore = {
+  commonSnapshot: async () => {
+    const snapshot = isInvokeAvailable()
+      ? await asyncStore.commonSnapshot()
+      : commonStoreSync.getSnapshot();
+    commonStoreSync.applySnapshot(snapshot);
+    return snapshot;
+  },
+  applyCommonSnapshot: (snapshot) => {
+    commonStoreSync.applySnapshot(snapshot);
+  },
+  flushCommonStore: () => commonStoreSync.flush(),
   filePath: async (storeKey) => {
     return storeKey === STORE_COMMON_KEY && isInvokeAvailable()
       ? await asyncStore.filePath(storeKey)
@@ -144,39 +97,43 @@ export const store: UnifiedStore = {
     return getCache(storeKey).fileName();
   },
   reload: async (storeKey) => {
-    getCache(storeKey).reload();
+    if (storeKey === STORE_COMMON_KEY && isInvokeAvailable()) {
+      commonStoreSync.applySnapshot(await asyncStore.commonSnapshot());
+      return;
+    }
+    store.reloadSync(storeKey);
   },
   reloadSync: (storeKey) => {
-    getCache(storeKey).reload();
+    const cache = getCache(storeKey);
+    cache.reload();
+    commonStoreSync.applyCommitted(cache.all());
   },
   save: async (storeKey) => {
-    const cache = getCache(storeKey);
-    cache.save();
-    await scheduleAsyncMirror(storeKey, cache.all());
+    ensureCommonStoreKey(storeKey);
+    await commonStoreSync.flush();
   },
   saveSync: (storeKey) => {
-    const cache = getCache(storeKey);
-    cache.save();
-    void scheduleAsyncMirror(storeKey, cache.all());
+    ensureCommonStoreKey(storeKey);
+    scheduleCommonFlush();
   },
   clear: async (storeKey) => {
-    const cache = getCache(storeKey);
-    cache.clear();
-    cache.save();
-    await scheduleAsyncMirror(storeKey, cache.all());
+    ensureCommonStoreKey(storeKey);
+    commonStoreSync.clear();
+    await commonStoreSync.flush();
   },
   clearSync: (storeKey) => {
-    getCache(storeKey).clear();
+    ensureCommonStoreKey(storeKey);
+    commonStoreSync.clear();
   },
   delete: async (storeKey, key) => {
-    const cache = getCache(storeKey);
-    const deleted = cache.delete(key);
-    cache.save();
-    await scheduleAsyncMirror(storeKey, cache.all());
+    ensureCommonStoreKey(storeKey);
+    const deleted = commonStoreSync.remove(key);
+    await commonStoreSync.flush();
     return deleted;
   },
   deleteSync: (storeKey, key) => {
-    return getCache(storeKey).delete(key);
+    ensureCommonStoreKey(storeKey);
+    return commonStoreSync.remove(key);
   },
   has: async (storeKey, key) => {
     return getCache(storeKey).has(key);
@@ -191,13 +148,13 @@ export const store: UnifiedStore = {
     return getCache(storeKey).get<T>(key);
   },
   set: async (storeKey, key, val) => {
-    const cache = getCache(storeKey);
-    cache.set(key, val);
-    cache.save();
-    await scheduleAsyncMirror(storeKey, cache.all());
+    ensureCommonStoreKey(storeKey);
+    commonStoreSync.set(key, val);
+    await commonStoreSync.flush();
   },
   setSync: (storeKey, key, val) => {
-    getCache(storeKey).set(key, val);
+    ensureCommonStoreKey(storeKey);
+    commonStoreSync.set(key, val);
   },
   keys: async (storeKey) => {
     return getCache(storeKey).keys();

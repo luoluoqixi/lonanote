@@ -1,5 +1,5 @@
 mod catalog;
-mod json_file;
+pub(crate) mod json_file;
 mod session;
 
 pub(crate) use catalog::PendingRelocation;

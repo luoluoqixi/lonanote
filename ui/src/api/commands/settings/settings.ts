@@ -1,6 +1,6 @@
 import { invoke } from "@/api/invoke";
 
-interface SettingsPayload {
+export interface SettingsPayload {
   firstSetup: boolean;
   autoCheckUpdate: boolean;
   autoOpenLastWorkspace: boolean;
@@ -30,6 +30,14 @@ export interface GlobalSettings {
   };
 }
 
+export interface GlobalSettingsSnapshot {
+  runtimeId: string;
+  revision: number;
+  values: GlobalSettings;
+}
+
+export interface SettingsPatchPayload extends Partial<SettingsPayload> {}
+
 export function createDefaultGlobalSettings(): GlobalSettings {
   return {
     system: {
@@ -50,7 +58,9 @@ export function createDefaultGlobalSettings(): GlobalSettings {
   };
 }
 
-function fromSettingsPayload(payload: Partial<SettingsPayload> | null | undefined): GlobalSettings {
+export function fromSettingsPayload(
+  payload: Partial<SettingsPayload> | null | undefined,
+): GlobalSettings {
   const defaults = createDefaultGlobalSettings();
 
   return {
@@ -74,7 +84,7 @@ function fromSettingsPayload(payload: Partial<SettingsPayload> | null | undefine
   };
 }
 
-function toSettingsPayload(settings: GlobalSettings): SettingsPayload {
+export function toSettingsPayload(settings: GlobalSettings): SettingsPayload {
   return {
     firstSetup: settings.system.firstSetup,
     autoCheckUpdate: settings.app.autoCheckUpdate,
@@ -88,18 +98,53 @@ function toSettingsPayload(settings: GlobalSettings): SettingsPayload {
   };
 }
 
+export function diffSettings(previous: GlobalSettings, next: GlobalSettings): SettingsPatchPayload {
+  const oldPayload = toSettingsPayload(previous);
+  const nextPayload = toSettingsPayload(next);
+  const patch: SettingsPatchPayload = {};
+  for (const key of Object.keys(nextPayload) as Array<keyof SettingsPayload>) {
+    if (!Object.is(oldPayload[key], nextPayload[key])) {
+      patch[key] = nextPayload[key] as never;
+    }
+  }
+  return patch;
+}
+
 export const settings = {
   getSettings: async (): Promise<GlobalSettings> => {
     const payload = (await invoke("settings.get_settings")) as SettingsPayload | null;
     return fromSettingsPayload(payload);
+  },
+  snapshot: async (): Promise<GlobalSettingsSnapshot> => {
+    const snapshot = (await invoke("settings.snapshot")) as {
+      runtimeId: string;
+      revision: number;
+      values: SettingsPayload;
+    };
+    return {
+      ...snapshot,
+      values: fromSettingsPayload(snapshot.values),
+    };
+  },
+  patchAndSave: async (patch: SettingsPatchPayload): Promise<GlobalSettingsSnapshot> => {
+    const snapshot = (await invoke("settings.patch_and_save", { ...patch })) as {
+      runtimeId: string;
+      revision: number;
+      values: SettingsPayload;
+    };
+    return {
+      ...snapshot,
+      values: fromSettingsPayload(snapshot.values),
+    };
   },
   setSettings: async (globalSettings: GlobalSettings): Promise<GlobalSettings> => {
     await invoke("settings.set_settings", toSettingsPayload(globalSettings));
     return globalSettings;
   },
   setSettingsAndSave: async (globalSettings: GlobalSettings): Promise<GlobalSettings> => {
-    await invoke("settings.set_settings_and_save", toSettingsPayload(globalSettings));
-    return globalSettings;
+    const current = await settings.getSettings();
+    const snapshot = await settings.patchAndSave(diffSettings(current, globalSettings));
+    return snapshot.values;
   },
   saveSettings: async (): Promise<void> => {
     return (await invoke("settings.save_settings"))!;

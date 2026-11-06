@@ -1,4 +1,10 @@
 import { fs } from "@/api/commands/fs";
+import {
+  claimDocumentFile,
+  documentLeaseId,
+  releaseDocumentFile,
+  releaseDocumentOwnership,
+} from "@/api/commands/win/file_ownership";
 import { workspaceFile } from "@/api/commands/workspace";
 import { isDesktop } from "@/api/common/platform";
 import {
@@ -69,6 +75,11 @@ async function loadDocument(documentId: string): Promise<void> {
     document.identityRevision;
   editorStore.getState().setDocumentLoadState(documentId, "loading");
   try {
+    await claimDocumentFile(document);
+    if (!current()) {
+      await releaseDocumentFile(documentLeaseId(document));
+      return;
+    }
     if (document.ref.kind === "workspaceFile") {
       await loadWorkspaceFile(documentId);
       if (current()) editorStore.getState().setDocumentLoadState(documentId, "ready");
@@ -78,6 +89,7 @@ async function loadDocument(documentId: string): Promise<void> {
     await loadLooseFile(documentId);
     if (current()) editorStore.getState().setDocumentLoadState(documentId, "ready");
   } catch (error) {
+    await releaseDocumentFile(documentLeaseId(document));
     if (!current()) return;
     const message = getErrorMessage(error, "读取文档失败");
     editorStore.getState().setDocumentLoadState(documentId, "error", message);
@@ -108,3 +120,37 @@ export const documentRegistry = {
     return task;
   },
 };
+
+editorStore.subscribe((state, previous) => {
+  for (const document of Object.values(previous.documentsById)) {
+    const next = state.documentsById[document.documentId];
+    if (!next) {
+      void releaseDocumentOwnership(document.documentId).catch((error) =>
+        console.warn("释放文件占用失败", error),
+      );
+    } else if (next.identityRevision !== document.identityRevision) {
+      // 旧物理身份保持占用，直至新身份登记成功；rename 不应制造可写空档。
+      void claimDocumentFile(next)
+        .then(async () => {
+          const current = editorStore.getState().documentsById[next.documentId];
+          if (!current || current.identityRevision !== next.identityRevision) {
+            await releaseDocumentFile(documentLeaseId(next));
+          }
+          await releaseDocumentFile(documentLeaseId(document));
+        })
+        .catch((error) => {
+          const current = editorStore.getState().documentsById[next.documentId];
+          if (!current || current.identityRevision !== next.identityRevision) return;
+          // 无法取得新身份时保留旧占用，阻止其他窗口抢占仍在编辑的物理文件。
+          console.warn("更新文件占用失败", error);
+          editorStore
+            .getState()
+            .setDocumentLoadState(
+              next.documentId,
+              "error",
+              getErrorMessage(error, "更新文件占用失败"),
+            );
+        });
+    }
+  }
+});

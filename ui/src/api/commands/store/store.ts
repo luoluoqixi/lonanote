@@ -1,3 +1,4 @@
+import type { CommonStorePatch, CommonStoreSnapshot } from "@/api/common/common_store_sync";
 import { invoke } from "@/api/invoke";
 
 const invokeStore = <T = unknown>(command: string, args?: Record<string, unknown>) => {
@@ -94,5 +95,14 @@ export const store = {
   },
   commonAll: async <T = unknown>(): Promise<Record<string, T>> => {
     return (await invokeStore("common_all"))!;
+  },
+  commonSnapshot: async (): Promise<CommonStoreSnapshot> => {
+    return (await invokeStore("common_snapshot"))!;
+  },
+  commonPatchAndSave: async (patch: CommonStorePatch): Promise<CommonStoreSnapshot> => {
+    return (await invokeStore("common_patch_and_save", {
+      set: patch.set,
+      remove: patch.remove,
+    }))!;
   },
 };

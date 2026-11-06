@@ -1,5 +1,6 @@
 import { store } from "@/api/commands/store";
 import { isDesktop } from "@/api/common";
+import type { CommonStoreSnapshot } from "@/api/common/common_store_sync";
 import { clampWindowZoom } from "@/api/common/window_zoom";
 import {
   type AccentThemeName,
@@ -30,13 +31,9 @@ export type WorkspaceSelectSortSetting =
   | "title-asc"
   | "title-desc";
 
-export interface DesktopWindowState {
+export interface DesktopWindowSize {
   height: number;
-  isFullscreen: boolean;
-  isMaximized: boolean;
   width: number;
-  x: number;
-  y: number;
 }
 
 export interface UiPreferences {
@@ -63,8 +60,8 @@ export interface UiPreferences {
     sortValue: WorkspaceSelectSortSetting;
   };
   window: {
-    lastWindowState: DesktopWindowState | null;
-    restoreWindowState: boolean;
+    lastSize: DesktopWindowSize | null;
+    rememberSize: boolean;
   };
 }
 
@@ -80,8 +77,8 @@ const UI_WORKSPACE_EXPLORER_SHOW_FLOATING_TOOLBAR_KEY = "ui.workspaceExplorer.sh
 const UI_WORKSPACE_EXPLORER_SORT_VALUE_KEY = "ui.workspaceExplorer.sortValue";
 const UI_WORKSPACE_SELECT_GROUP_MODE_KEY = "ui.workspaceSelect.groupMode";
 const UI_WORKSPACE_SELECT_SORT_VALUE_KEY = "ui.workspaceSelect.sortValue";
-const UI_WINDOW_LAST_STATE_KEY = "ui.window.lastState";
-const UI_RESTORE_WINDOW_STATE_KEY = "ui.window.restoreWindowState";
+const UI_WINDOW_LAST_SIZE_KEY = "ui.window.lastSize";
+const UI_REMEMBER_WINDOW_SIZE_KEY = "ui.window.rememberSize";
 
 export function createDefaultUiPreferences(): UiPreferences {
   return {
@@ -108,8 +105,8 @@ export function createDefaultUiPreferences(): UiPreferences {
       sortValue: "modified-at-desc",
     },
     window: {
-      lastWindowState: null,
-      restoreWindowState: true,
+      lastSize: null,
+      rememberSize: true,
     },
   };
 }
@@ -178,32 +175,19 @@ function normalizeWorkspaceSelectGroupMode(value: unknown): WorkspaceSelectGroup
   return value === "storage" || value === "none" ? value : "date";
 }
 
-function normalizeDesktopWindowState(value: unknown): DesktopWindowState | null {
-  if (value == null || typeof value !== "object") {
-    return null;
-  }
-
-  const candidate = value as Partial<DesktopWindowState>;
-
+function normalizeDesktopWindowSize(value: unknown): DesktopWindowSize | null {
+  if (value == null || typeof value !== "object") return null;
+  const candidate = value as Partial<DesktopWindowSize>;
   if (
     typeof candidate.width !== "number" ||
     typeof candidate.height !== "number" ||
-    typeof candidate.x !== "number" ||
-    typeof candidate.y !== "number" ||
-    typeof candidate.isMaximized !== "boolean" ||
-    typeof candidate.isFullscreen !== "boolean"
-  ) {
+    !Number.isFinite(candidate.width) ||
+    !Number.isFinite(candidate.height) ||
+    candidate.width <= 0 ||
+    candidate.height <= 0
+  )
     return null;
-  }
-
-  return {
-    height: candidate.height,
-    isFullscreen: candidate.isFullscreen,
-    isMaximized: candidate.isMaximized,
-    width: candidate.width,
-    x: candidate.x,
-    y: candidate.y,
-  };
+  return { width: candidate.width, height: candidate.height };
 }
 
 function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
@@ -236,8 +220,8 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
       sortValue: normalizeWorkspaceSelectSortValue(preferences.workspaceSelect?.sortValue),
     },
     window: {
-      lastWindowState: normalizeDesktopWindowState(preferences.window.lastWindowState),
-      restoreWindowState: Boolean(preferences.window.restoreWindowState),
+      lastSize: normalizeDesktopWindowSize(preferences.window.lastSize),
+      rememberSize: Boolean(preferences.window.rememberSize),
     },
   };
 }
@@ -249,8 +233,8 @@ function readUiPreferencesFromStore(): UiPreferences {
   const themeMode = store.commonGetSync<unknown>(UI_THEME_MODE_KEY);
   const zoomFactor = store.commonGetSync<unknown>(UI_ZOOM_FACTOR_KEY);
   const developerOptionsEnabled = store.commonGetSync<unknown>(UI_DEVELOPER_OPTIONS_ENABLED_KEY);
-  const restoreWindowState = store.commonGetSync<unknown>(UI_RESTORE_WINDOW_STATE_KEY);
-  const lastWindowState = store.commonGetSync<unknown>(UI_WINDOW_LAST_STATE_KEY);
+  const rememberSize = store.commonGetSync<unknown>(UI_REMEMBER_WINDOW_SIZE_KEY);
+  const lastSize = store.commonGetSync<unknown>(UI_WINDOW_LAST_SIZE_KEY);
   const layoutMode = store.commonGetSync<unknown>(UI_LAYOUT_MODE_KEY);
   const workspaceExplorerFoldersFirst = store.commonGetSync<unknown>(
     UI_WORKSPACE_EXPLORER_FOLDERS_FIRST_KEY,
@@ -307,62 +291,40 @@ function readUiPreferencesFromStore(): UiPreferences {
       ),
     },
     window: {
-      lastWindowState: normalizeDesktopWindowState(lastWindowState),
-      restoreWindowState:
-        typeof restoreWindowState === "boolean"
-          ? restoreWindowState
-          : defaults.window.restoreWindowState,
+      lastSize: normalizeDesktopWindowSize(lastSize),
+      rememberSize: typeof rememberSize === "boolean" ? rememberSize : defaults.window.rememberSize,
     },
   };
 }
 
-function applyUiPreferencesToStore(preferences: UiPreferences): UiPreferences {
-  const normalizedPreferences = normalizeUiPreferences(preferences);
-
-  store.commonSetSync(UI_LAYOUT_MODE_KEY, normalizedPreferences.shell.layoutMode);
-  store.commonSetSync(UI_ACCENT_COLOR_KEY, normalizedPreferences.appearance.accentColor);
-  store.commonSetSync(
-    UI_BACKGROUND_FOLLOWS_THEME_KEY,
-    normalizedPreferences.appearance.backgroundFollowsTheme,
-  );
-  store.commonSetSync(UI_THEME_MODE_KEY, normalizedPreferences.appearance.themeMode);
-  store.commonSetSync(UI_ZOOM_FACTOR_KEY, normalizedPreferences.appearance.zoomFactor);
-  store.commonSetSync(
-    UI_DEVELOPER_OPTIONS_ENABLED_KEY,
-    normalizedPreferences.developer.optionsEnabled,
-  );
-  store.commonSetSync(
-    UI_WORKSPACE_EXPLORER_FOLDERS_FIRST_KEY,
-    normalizedPreferences.workspaceExplorer.foldersFirst,
-  );
-  store.commonSetSync(
-    UI_WORKSPACE_EXPLORER_GROUP_MODE_KEY,
-    normalizedPreferences.workspaceExplorer.groupMode,
-  );
-  store.commonSetSync(
-    UI_WORKSPACE_EXPLORER_SHOW_FLOATING_TOOLBAR_KEY,
-    normalizedPreferences.workspaceExplorer.showFloatingToolbar,
-  );
-  store.commonSetSync(
-    UI_WORKSPACE_EXPLORER_SORT_VALUE_KEY,
-    normalizedPreferences.workspaceExplorer.sortValue,
-  );
-  store.commonSetSync(
-    UI_WORKSPACE_SELECT_GROUP_MODE_KEY,
-    normalizedPreferences.workspaceSelect.groupMode,
-  );
-  store.commonSetSync(
-    UI_WORKSPACE_SELECT_SORT_VALUE_KEY,
-    normalizedPreferences.workspaceSelect.sortValue,
-  );
-  store.commonSetSync(UI_RESTORE_WINDOW_STATE_KEY, normalizedPreferences.window.restoreWindowState);
-  store.commonSetSync(UI_WINDOW_LAST_STATE_KEY, normalizedPreferences.window.lastWindowState);
-
-  return normalizedPreferences;
+function toStoreEntries(preferences: UiPreferences): Array<[string, unknown]> {
+  return [
+    [UI_LAYOUT_MODE_KEY, preferences.shell.layoutMode],
+    [UI_ACCENT_COLOR_KEY, preferences.appearance.accentColor],
+    [UI_BACKGROUND_FOLLOWS_THEME_KEY, preferences.appearance.backgroundFollowsTheme],
+    [UI_THEME_MODE_KEY, preferences.appearance.themeMode],
+    [UI_ZOOM_FACTOR_KEY, preferences.appearance.zoomFactor],
+    [UI_DEVELOPER_OPTIONS_ENABLED_KEY, preferences.developer.optionsEnabled],
+    [UI_WORKSPACE_EXPLORER_FOLDERS_FIRST_KEY, preferences.workspaceExplorer.foldersFirst],
+    [UI_WORKSPACE_EXPLORER_GROUP_MODE_KEY, preferences.workspaceExplorer.groupMode],
+    [
+      UI_WORKSPACE_EXPLORER_SHOW_FLOATING_TOOLBAR_KEY,
+      preferences.workspaceExplorer.showFloatingToolbar,
+    ],
+    [UI_WORKSPACE_EXPLORER_SORT_VALUE_KEY, preferences.workspaceExplorer.sortValue],
+    [UI_WORKSPACE_SELECT_GROUP_MODE_KEY, preferences.workspaceSelect.groupMode],
+    [UI_WORKSPACE_SELECT_SORT_VALUE_KEY, preferences.workspaceSelect.sortValue],
+    [UI_REMEMBER_WINDOW_SIZE_KEY, preferences.window.rememberSize],
+    [UI_WINDOW_LAST_SIZE_KEY, preferences.window.lastSize],
+  ];
 }
 
 export const uiPreferences = {
   getPreferences: (): UiPreferences => {
+    return readUiPreferencesFromStore();
+  },
+  applyCommonStoreSnapshot: (snapshot: CommonStoreSnapshot): UiPreferences => {
+    store.applyCommonSnapshot(snapshot);
     return readUiPreferencesFromStore();
   },
   reloadPreferences: (): UiPreferences => {
@@ -370,13 +332,20 @@ export const uiPreferences = {
     return readUiPreferencesFromStore();
   },
   savePreferences: async (preferences: UiPreferences): Promise<UiPreferences> => {
-    const normalizedPreferences = applyUiPreferencesToStore(preferences);
+    const normalizedPreferences = normalizeUiPreferences(preferences);
+    const currentEntries = new Map(toStoreEntries(readUiPreferencesFromStore()));
+    for (const [key, value] of toStoreEntries(normalizedPreferences)) {
+      if (JSON.stringify(currentEntries.get(key)) !== JSON.stringify(value)) {
+        store.commonSetSync(key, value);
+      }
+    }
     await store.commonSave();
-    return normalizedPreferences;
+    // 等待写盘期间可能已经收到其他窗口的新版本，不能用提交前的整份设置回退投影。
+    return readUiPreferencesFromStore();
   },
-  saveDesktopWindowState: async (windowState: DesktopWindowState | null): Promise<void> => {
-    const normalizedWindowState = normalizeDesktopWindowState(windowState);
-    store.commonSetSync(UI_WINDOW_LAST_STATE_KEY, normalizedWindowState);
+  saveDesktopWindowSize: async (windowState: DesktopWindowSize | null): Promise<void> => {
+    const normalizedWindowState = normalizeDesktopWindowSize(windowState);
+    store.commonSetSync(UI_WINDOW_LAST_SIZE_KEY, normalizedWindowState);
     await store.commonSave();
   },
 };

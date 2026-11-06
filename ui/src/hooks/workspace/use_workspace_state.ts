@@ -2,6 +2,7 @@ import { startTransition, useEffect, useEffectEvent, useRef, useState } from "re
 import { useStore } from "zustand";
 
 import { type WorkspaceSnapshot, workspace } from "@/api/commands/workspace";
+import { isTauri } from "@/api/common/platform";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { workspaceSessionStore } from "@/stores/workspace";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
@@ -112,7 +113,7 @@ export function useWorkspaceState(workspaceId: string | null): UseWorkspaceState
         nextState = await workspace.open(nextWorkspaceId);
         if (current && current !== nextWorkspaceId) {
           try {
-            await workspace.close(current);
+            if (!isTauri()) await workspace.close(current);
           } catch (error) {
             await workspace.close(nextWorkspaceId).catch(() => undefined);
             throw error;

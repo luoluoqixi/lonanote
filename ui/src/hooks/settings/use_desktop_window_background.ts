@@ -30,7 +30,8 @@ export function useDesktopWindowBackground(
     }
 
     try {
-      const applied = await win.setBgColor(nextColor);
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      const applied = await win.setWindowBgColor(getCurrentWindow().label, nextColor);
       // console.log(
       //   `[appearance] applied desktop window background color ${nextColor} for theme ${nextColorScheme}`,
       //   { applied },

@@ -1,6 +1,8 @@
 import { createStore } from "zustand/vanilla";
 
-import { type DesktopWindowState, type UiPreferences, uiPreferences } from "./ui_preferences";
+import type { CommonStoreSnapshot } from "@/api/common/common_store_sync";
+
+import { type DesktopWindowSize, type UiPreferences, uiPreferences } from "./ui_preferences";
 
 type UiPreferencesUpdater = UiPreferences | ((current: UiPreferences) => UiPreferences);
 
@@ -104,12 +106,16 @@ export const uiPreferencesStore = {
   setPreferences: (nextPreferences: UiPreferences): void => {
     uiPreferencesStoreApi.getState().setPreferences(nextPreferences);
   },
-  setDesktopWindowState: (nextWindowState: DesktopWindowState | null): void => {
+  applyCommonStoreSnapshot: (snapshot: CommonStoreSnapshot): void => {
+    const nextPreferences = uiPreferences.applyCommonStoreSnapshot(snapshot);
+    uiPreferencesStoreApi.getState().setLoadedPreferences(nextPreferences);
+  },
+  setDesktopWindowSize: (nextWindowState: DesktopWindowSize | null): void => {
     uiPreferencesStoreApi.getState().patchPreferences((currentPreferences) => ({
       ...currentPreferences,
       window: {
         ...currentPreferences.window,
-        lastWindowState: nextWindowState,
+        lastSize: nextWindowState,
       },
     }));
   },
@@ -152,7 +158,6 @@ export const uiPreferencesStore = {
     }
   },
   updateAndSave: async (updater: UiPreferencesUpdater): Promise<UiPreferences> => {
-    const previousPreferences = uiPreferencesStoreApi.getState().preferences;
     const nextPreferences = uiPreferencesStoreApi.getState().patchPreferences(updater);
     uiPreferencesStoreApi.getState().setError(null);
 
@@ -161,7 +166,7 @@ export const uiPreferencesStore = {
       uiPreferencesStoreApi.getState().setLoadedPreferences(savedPreferences);
       return savedPreferences;
     } catch (error) {
-      uiPreferencesStoreApi.getState().setPreferences(previousPreferences);
+      uiPreferencesStoreApi.getState().setPreferences(uiPreferences.getPreferences());
       uiPreferencesStoreApi.getState().setError(toErrorMessage(error));
       throw error;
     }

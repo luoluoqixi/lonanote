@@ -3,7 +3,7 @@ pub mod storage;
 
 mod domain;
 mod manager;
-mod persistence;
+pub(crate) mod persistence;
 mod resource;
 mod runtime;
 

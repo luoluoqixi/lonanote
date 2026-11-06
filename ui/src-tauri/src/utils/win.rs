@@ -1,29 +1,19 @@
-use serde::Deserialize;
 use std::str::FromStr;
 use tauri::utils::config::Color;
 use tauri::{Manager, Theme, WebviewWindow};
 
 const UI_THEME_MODE_KEY: &str = "ui.appearance.themeMode";
-const UI_RESTORE_WINDOW_STATE_KEY: &str = "ui.window.restoreWindowState";
-const UI_WINDOW_LAST_STATE_KEY: &str = "ui.window.lastState";
+const UI_REMEMBER_WINDOW_SIZE_KEY: &str = "ui.window.rememberSize";
+const UI_WINDOW_LAST_SIZE_KEY: &str = "ui.window.lastSize";
 const LIGHT_WINDOW_BACKGROUND_RGBA: (u8, u8, u8, u8) = (245, 245, 245, 255);
 const DARK_WINDOW_BACKGROUND_RGBA: (u8, u8, u8, u8) = (24, 24, 27, 255);
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StartupWindowState {
-    pub height: u32,
-    pub is_fullscreen: bool,
-    pub is_maximized: bool,
-    pub width: u32,
-    pub x: i32,
-    pub y: i32,
-}
+use crate::setup::window_geometry::WindowSize;
 
 #[derive(Debug, Clone, Default)]
 pub struct StartupWindowPreferences {
     pub background_color: Option<Color>,
-    pub window_state: Option<StartupWindowState>,
+    pub window_size: Option<WindowSize>,
 }
 
 impl StartupWindowPreferences {
@@ -52,7 +42,7 @@ pub fn get_main_window() -> Option<tauri::WebviewWindow> {
 pub fn resolve_startup_window_preferences() -> StartupWindowPreferences {
     StartupWindowPreferences {
         background_color: resolve_startup_window_background_color(),
-        window_state: resolve_startup_window_state(),
+        window_size: resolve_startup_window_size(),
     }
 }
 
@@ -60,23 +50,15 @@ pub fn apply_preferred_window_background(win: &WebviewWindow) -> anyhow::Result<
     set_win_bg_rgba(win, resolve_preferred_window_background(win))
 }
 
-fn resolve_startup_window_state() -> Option<StartupWindowState> {
-    if !should_restore_window_state() {
+fn resolve_startup_window_size() -> Option<WindowSize> {
+    if !should_remember_window_size() {
         return None;
     }
-
-    let window_state = read_preferred_window_state()?;
-
-    if window_state.width == 0 || window_state.height == 0 {
-        log::warn!(
-            "ignore invalid startup window size: {}x{}",
-            window_state.width,
-            window_state.height
-        );
-        return None;
-    }
-
-    Some(window_state)
+    lonanote_core::api::store::common_get(UI_WINDOW_LAST_SIZE_KEY.to_string())
+        .ok()
+        .flatten()
+        .and_then(|value| serde_json::from_value::<WindowSize>(value).ok())
+        .filter(|size| size.is_valid())
 }
 
 fn resolve_startup_window_background_color() -> Option<Color> {
@@ -136,36 +118,12 @@ fn resolve_window_background_rgba_from_theme(theme: Theme) -> (u8, u8, u8, u8) {
     }
 }
 
-fn should_restore_window_state() -> bool {
-    match lonanote_core::api::store::common_get(UI_RESTORE_WINDOW_STATE_KEY.to_string()) {
-        Ok(Some(serde_json::Value::Bool(enabled))) => enabled,
-        Ok(Some(value)) => {
-            log::warn!("ignore non-boolean restoreWindowState: {}", value);
-            true
-        }
-        Ok(None) => true,
-        Err(err) => {
-            log::debug!("read restoreWindowState from store api error: {}", err);
-            true
-        }
-    }
-}
-
-fn read_preferred_window_state() -> Option<StartupWindowState> {
-    match lonanote_core::api::store::common_get(UI_WINDOW_LAST_STATE_KEY.to_string()) {
-        Ok(Some(value)) => match serde_json::from_value::<StartupWindowState>(value) {
-            Ok(window_state) => Some(window_state),
-            Err(err) => {
-                log::warn!("parse startup window state error: {}", err);
-                None
-            }
-        },
-        Ok(None) => None,
-        Err(err) => {
-            log::debug!("read startup window state from store api error: {}", err);
-            None
-        }
-    }
+fn should_remember_window_size() -> bool {
+    lonanote_core::api::store::common_get(UI_REMEMBER_WINDOW_SIZE_KEY.to_string())
+        .ok()
+        .flatten()
+        .and_then(|value| value.as_bool())
+        .unwrap_or(true)
 }
 
 fn read_preferred_theme_mode() -> Option<String> {

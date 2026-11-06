@@ -5,6 +5,7 @@ import { groupItemsByDate } from "../src/api/common/utils/date_group_utils";
 import { compareNames } from "../src/api/common/utils/name_sort_utils";
 
 const preferences = new Map<string, unknown>();
+let onSave = async () => {};
 mock.module("../src/api/common/platform", () => ({ isSystemLocaleCN: () => true }));
 const { formatUnixSecondsRelativeDate } = await import("../src/api/common/utils/date_utils");
 mock.module("rn-ui-kit", () => ({ Select: () => null, confirmNative: async () => null }));
@@ -22,7 +23,7 @@ mock.module("@/api/commands/store", () => ({
   store: {
     commonGetSync: (key: string) => preferences.get(key),
     commonSetSync: (key: string, value: unknown) => preferences.set(key, value),
-    commonSave: async () => {},
+    commonSave: () => onSave(),
   },
 }));
 
@@ -61,6 +62,22 @@ test("修改时间排序支持两个方向，未知始终置底，同时间按�
     "unknown",
   ]);
   expect(items[0].id).toBe("unknown");
+});
+
+test("保存等待期间收到远端设置时返回最新投影", async () => {
+  preferences.clear();
+  const next = uiPreferences.getPreferences();
+  next.workspaceSelect.sortValue = "created-at-desc";
+  onSave = async () => {
+    preferences.set("ui.appearance.themeMode", "dark");
+  };
+  try {
+    const saved = await uiPreferences.savePreferences(next);
+    expect(saved.appearance.themeMode).toBe("dark");
+    expect(saved.workspaceSelect.sortValue).toBe("created-at-desc");
+  } finally {
+    onSave = async () => {};
+  }
 });
 
 test("修改排序的副标题和日期分组均使用修改时间", () => {

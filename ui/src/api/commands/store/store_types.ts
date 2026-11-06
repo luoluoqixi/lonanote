@@ -1,4 +1,9 @@
 export interface UnifiedStore {
+  commonSnapshot: () => Promise<import("@/api/common/common_store_sync").CommonStoreSnapshot>;
+  applyCommonSnapshot: (
+    snapshot: import("@/api/common/common_store_sync").CommonStoreSnapshot,
+  ) => void;
+  flushCommonStore: () => Promise<void>;
   filePath: (storeKey: string) => Promise<string | undefined>;
   filePathSync: (storeKey: string) => string | undefined;
   fileName: (storeKey: string) => Promise<string | undefined>;

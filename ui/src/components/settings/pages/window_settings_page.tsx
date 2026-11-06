@@ -9,7 +9,7 @@ import {
 
 import { useUiPreferences } from "@/hooks/settings";
 import { useDesktopViewActions } from "@/hooks/settings/use_desktop_view_actions";
-import type { DesktopWindowState } from "@/stores/ui";
+import type { DesktopWindowSize } from "@/stores/ui";
 
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
@@ -21,20 +21,12 @@ function runSettingsAction(scope: string, action: Promise<unknown>) {
   });
 }
 
-function formatWindowStateSummary(windowState: DesktopWindowState | null): string {
+function formatWindowStateSummary(windowState: DesktopWindowSize | null): string {
   if (!windowState) {
     return "暂无记录";
   }
 
-  const flags = [
-    windowState.isFullscreen ? "全屏" : null,
-    windowState.isMaximized ? "最大化" : null,
-  ]
-    .filter(Boolean)
-    .join(" / ");
-  const summary = `${windowState.width}x${windowState.height} @ ${windowState.x}, ${windowState.y}`;
-
-  return flags ? `${summary} (${flags})` : summary;
+  return `${Math.round(windowState.width)} × ${Math.round(windowState.height)}`;
 }
 
 export function WindowSettingsPage({
@@ -105,21 +97,21 @@ export function WindowSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: preferences.window.restoreWindowState,
+            checked: preferences.window.rememberSize,
             onCheckedChange: (nextValue) => {
               runSettingsAction(
-                "toggle restore window state",
+                "切换窗口尺寸记忆",
                 updateAndSave((currentPreferences) => ({
                   ...currentPreferences,
                   window: {
                     ...currentPreferences.window,
-                    restoreWindowState: nextValue,
+                    rememberSize: nextValue,
                   },
                 })),
               );
             },
           }}
-          title="恢复上次窗口状态"
+          title="记住窗口尺寸"
         />
       </NativeListSection>
 
@@ -128,13 +120,13 @@ export function WindowSettingsPage({
           <View style={styles.row}>
             <View style={styles.rowText}>
               <Text className="font-medium" style={{ fontSize: presentation.compact ? 13 : 16 }}>
-                最近保存的窗口状态
+                最近保存的窗口尺寸
               </Text>
               <Text
                 className="text-sm text-foreground/60"
                 style={{ userSelect: "text", fontSize: presentation.compact ? 12 : 14 }}
               >
-                {formatWindowStateSummary(preferences.window.lastWindowState)}
+                {formatWindowStateSummary(preferences.window.lastSize)}
               </Text>
             </View>
             <Button
@@ -142,12 +134,12 @@ export function WindowSettingsPage({
               variant="link"
               onPress={() => {
                 runSettingsAction(
-                  "clear saved window state",
+                  "清除保存的窗口尺寸",
                   updateAndSave((currentPreferences) => ({
                     ...currentPreferences,
                     window: {
                       ...currentPreferences.window,
-                      lastWindowState: null,
+                      lastSize: null,
                     },
                   })),
                 );

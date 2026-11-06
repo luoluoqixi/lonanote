@@ -1,105 +1,81 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import { isDesktop, isTauri } from "@/api/common";
-import { uiPreferencesStore } from "@/stores/ui";
-import { uiPreferences } from "@/stores/ui";
+import {
+  createWindowSizeRecorder,
+  registerWindowSizeFlusher,
+} from "@/api/common/window_size_recorder";
+import { uiPreferences, uiPreferencesStore } from "@/stores/ui";
 
 import { useUiPreferences } from "./use_ui_preferences";
 
-const WINDOW_STATE_SAVE_DEBOUNCE_MS = 240;
-
-async function captureCurrentWindowState() {
-  const appWindow = getCurrentWindow();
-  const [innerSize, outerPosition, isFullscreen, isMaximized] = await Promise.all([
-    appWindow.innerSize(),
-    appWindow.outerPosition(),
-    appWindow.isFullscreen(),
-    appWindow.isMaximized(),
-  ]);
-
-  return {
-    height: innerSize.height,
-    isFullscreen,
-    isMaximized,
-    width: innerSize.width,
-    x: outerPosition.x,
-    y: outerPosition.y,
-  };
-}
-
-// Persist desktop window geometry into store so shell state stays outside business settings.
+/** 窗口位置由系统管理；仅采集用户调整后的普通逻辑尺寸。 */
 export function useDesktopWindowState() {
   const { isLoaded } = useUiPreferences();
-  const saveTimeoutRef = useRef<number | undefined>(undefined);
-
   useEffect(() => {
-    if (!isLoaded || !isTauri() || !isDesktop()) {
-      return;
-    }
-
+    if (!isLoaded || !isTauri() || !isDesktop()) return;
     const appWindow = getCurrentWindow();
     let cancelled = false;
-    let unlistenResized: (() => void) | undefined;
-    let unlistenMoved: (() => void) | undefined;
-
-    const schedulePersistWindowState = () => {
-      if (saveTimeoutRef.current !== undefined) {
-        window.clearTimeout(saveTimeoutRef.current);
-      }
-
-      saveTimeoutRef.current = window.setTimeout(() => {
-        saveTimeoutRef.current = undefined;
-        void (async () => {
-          try {
-            const nextWindowState = await captureCurrentWindowState();
-
-            if (cancelled) {
-              return;
-            }
-
-            uiPreferencesStore.patchPreferences((currentPreferences) => ({
-              ...currentPreferences,
-              window: {
-                ...currentPreferences.window,
-                lastWindowState: nextWindowState,
-              },
-            }));
-
-            await uiPreferences.saveDesktopWindowState(nextWindowState);
-          } catch (error) {
-            console.error("[window-state] failed to persist window state", error);
-          }
-        })();
-      }, WINDOW_STATE_SAVE_DEBOUNCE_MS);
-    };
-
-    const initializeWindowState = async () => {
-      try {
-        schedulePersistWindowState();
-        [unlistenResized, unlistenMoved] = await Promise.all([
-          appWindow.onResized(() => {
-            schedulePersistWindowState();
-          }),
-          appWindow.onMoved(() => {
-            schedulePersistWindowState();
-          }),
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let unlisten: (() => void) | undefined;
+    let unsubscribe: (() => void) | undefined;
+    let unregisterFlush: (() => void) | undefined;
+    let sampleRevision = 0;
+    const initialize = async () => {
+      const [size, scale] = await Promise.all([appWindow.innerSize(), appWindow.scaleFactor()]);
+      if (cancelled) return;
+      const recorder = createWindowSizeRecorder(size.toLogical(scale), async (next) => {
+        await uiPreferences.saveDesktopWindowSize(next);
+      });
+      const sample = async () => {
+        const revision = ++sampleRevision;
+        const [size, scale, maximized, fullscreen, minimized] = await Promise.all([
+          appWindow.innerSize(),
+          appWindow.scaleFactor(),
+          appWindow.isMaximized(),
+          appWindow.isFullscreen(),
+          appWindow.isMinimized(),
         ]);
-      } catch (error) {
-        console.error("[window-state] failed to initialize desktop window state", error);
-      }
+        if (cancelled || revision !== sampleRevision) return;
+        if (!uiPreferencesStore.getPreferences().window.rememberSize) {
+          recorder.disable();
+          return;
+        }
+        if (recorder.record(size.toLogical(scale), !maximized && !fullscreen && !minimized)) {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            void recorder
+              .flush()
+              .catch((error) => console.error("[window-size] 保存窗口尺寸失败", error));
+          }, 240);
+        }
+      };
+      unregisterFlush = registerWindowSizeFlusher(async () => {
+        clearTimeout(timer);
+        await sample();
+        clearTimeout(timer);
+        await recorder.flush();
+      });
+      unsubscribe = uiPreferencesStore.subscribe((state) => {
+        if (!state.preferences.window.rememberSize) {
+          clearTimeout(timer);
+          recorder.disable();
+        }
+      });
+      const stop = await appWindow.onResized(() => {
+        void sample().catch((error) => console.error("[window-size] 读取窗口尺寸失败", error));
+      });
+      if (cancelled) stop();
+      else unlisten = stop;
     };
-
-    void initializeWindowState();
-
+    void initialize().catch((error) => console.error("[window-size] 初始化失败", error));
     return () => {
       cancelled = true;
-      if (saveTimeoutRef.current !== undefined) {
-        window.clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = undefined;
-      }
-      unlistenResized?.();
-      unlistenMoved?.();
+      clearTimeout(timer);
+      unlisten?.();
+      unsubscribe?.();
+      unregisterFlush?.();
     };
   }, [isLoaded]);
 }

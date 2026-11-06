@@ -13,6 +13,7 @@ export interface StoreCache {
   reload: () => void;
   save: () => void;
   clear: () => void;
+  replace: (data: StoreRecord) => void;
   delete: (key: string) => boolean;
   has: (key: string) => boolean;
   get: <T = unknown>(key: string) => T | undefined;
@@ -59,6 +60,9 @@ export function createStoreCache(backend: StoreSyncBackend): StoreCache {
     },
     clear: () => {
       data = {};
+    },
+    replace: (nextData) => {
+      data = normalizeStoreRecord(nextData);
     },
     delete: (key) => {
       if (!Object.prototype.hasOwnProperty.call(data, key)) {
