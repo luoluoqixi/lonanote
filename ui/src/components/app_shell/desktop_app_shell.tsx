@@ -145,7 +145,7 @@ export function DesktopAppShell() {
         name="desktop-workspace-select"
         open={selectOpen}
         onOpenChange={setSelectOpen}
-        title="选择工作区"
+        // title="选择工作区"
         dialogSize={{ width: 720, height: 600 }}
         dialogContentProps={{ style: { backgroundColor: theme.background } }}
         sheetProps={{ snapPoints: ["85%"] }}

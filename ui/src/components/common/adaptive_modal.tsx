@@ -22,7 +22,7 @@ export type AdaptiveModalProps = {
   /** 传入时替换默认的 Sheet 导航栏配置。 */
   screenOptions?: SheetStackProps["screenOptions"];
   sheetProps?: SheetStackProps["sheetProps"];
-  title: string;
+  title?: string;
 };
 
 /** 根据应用布局模式展示单页弹层：桌面使用 Dialog，移动布局使用 NativeSheetStack。 */
