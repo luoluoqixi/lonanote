@@ -5,5 +5,5 @@ export function getWorkspaceOpenLabel(
   currentWorkspaceId: string | null,
 ): string | undefined {
   if (!workspace.isOpen) return undefined;
-  return workspace.id === currentWorkspaceId ? "已打开(当前)" : "已打开";
+  return workspace.id === currentWorkspaceId ? "已打开(当前窗口)" : "已打开";
 }

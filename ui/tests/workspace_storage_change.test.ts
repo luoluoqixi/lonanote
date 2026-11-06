@@ -43,6 +43,19 @@ test("取消保存不会关闭或迁移工作区", async () => {
   expect(events).toEqual(["save-barrier"]);
 });
 
+test("桌面在保存屏障内执行一次原子变更，不调用分离的关闭和重开", async () => {
+  const { events, deps, change } = setup();
+  const result = await changeWorkspaceStorage("id", change, {
+    ...deps,
+    atomicChange: async () => {
+      events.push("atomic");
+      return { wasOpen: true, reopened: true, reopenError: null, sourceCleanup: null };
+    },
+  });
+  expect(result.completed).toBe(true);
+  expect(events).toEqual(["save-barrier", "atomic", "discard-editors"]);
+});
+
 test("在保存屏障内关闭、迁移并重开，然后才销毁旧编辑器", async () => {
   const { events, deps, change } = setup();
   expect(await changeWorkspaceStorage("id", change, deps)).toMatchObject({
@@ -139,4 +152,36 @@ test("失败恢复同 ID Core 后发布资源版本，让保留的 Markdown 和�
   ).rejects.toThrow("迁移失败");
   expect(acquired).toEqual([`scope-${before + 1}`]);
   release();
+});
+
+test("桌面原子变更失败仍失效资源版本，保存屏障保留编辑器", async () => {
+  const { events, deps, change } = setup();
+  await expect(
+    changeWorkspaceStorage("id", change, {
+      ...deps,
+      atomicChange: async () => {
+        events.push("atomic");
+        throw new Error("迁移失败");
+      },
+      sessionChanged: () => {
+        events.push("invalidate");
+      },
+    }),
+  ).rejects.toThrow("迁移失败");
+  expect(events).toEqual(["save-barrier", "atomic", "invalidate"]);
+});
+
+test("桌面取消保存不提交原子变更也不失效资源", async () => {
+  const { events, deps, change } = setup({ cancel: true });
+  const result = await changeWorkspaceStorage("id", change, {
+    ...deps,
+    atomicChange: async () => {
+      throw new Error("不应调用");
+    },
+    sessionChanged: () => {
+      throw new Error("不应调用");
+    },
+  });
+  expect(result.completed).toBe(false);
+  expect(events).toEqual(["save-barrier"]);
 });

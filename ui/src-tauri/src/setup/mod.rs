@@ -8,3 +8,4 @@ pub(crate) mod window_geometry;
 pub(crate) mod window_runtime;
 pub(crate) mod window_sessions;
 pub(crate) mod workspace_access;
+pub(crate) mod workspace_storage_transaction;

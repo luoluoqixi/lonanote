@@ -1,13 +1,14 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import { fs } from "@/api/commands/fs";
+import { multiWindow } from "@/api/commands/win/multi_window";
 import {
   type WorkspaceListItem,
   type WorkspaceStorageBindingRequest,
   workspace,
 } from "@/api/commands/workspace";
 import { getErrorMessage } from "@/api/common/error_message";
-import { isDesktop } from "@/api/common/platform";
+import { isDesktop, isTauri } from "@/api/common/platform";
 import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { isCurrentWorkspaceLocation } from "@/components/workspaces/workspace_select/workspace_location_target";
 import { changeWorkspaceStorage } from "@/components/workspaces/workspace_select/workspace_storage_change";
@@ -71,13 +72,19 @@ export function useWorkspaceLocation({
   const open = useCallback(
     (nextItem: WorkspaceListItem, nextMode: WorkspaceLocationMode) => {
       if (busyRef.current || latestBlockedRef.current()) return;
-      setItem(nextItem);
-      setCurrentPath(null);
-      setMode(nextMode);
-      setError(null);
-      void target.load(nextItem.storage.providerId, nextItem.storage.directoryName ?? "");
+      void multiWindow
+        .assertWorkspaceEditable(nextItem.id)
+        .then(() => {
+          if (busyRef.current || latestBlockedRef.current()) return;
+          setItem(nextItem);
+          setCurrentPath(null);
+          setMode(nextMode);
+          setError(null);
+          void target.load(nextItem.storage.providerId, nextItem.storage.directoryName ?? "");
+        })
+        .catch((error) => toast.warning(getErrorMessage(error, "无法编辑该工作区")));
     },
-    [busyRef, target.load],
+    [busyRef, target.load, toast],
   );
 
   const onOpenChange = useCallback(
@@ -150,6 +157,26 @@ export function useWorkspaceLocation({
           return relocated.sourceCleanup;
         },
         {
+          atomicChange:
+            isTauri() && isDesktop()
+              ? () =>
+                  multiWindow.changeStorage(
+                    item.id,
+                    mode === "rebind"
+                      ? { mode, binding }
+                      : {
+                          mode,
+                          target:
+                            binding.kind === "managed"
+                              ? {
+                                  kind: "managed",
+                                  providerId,
+                                  preferredDirectoryName: directoryName,
+                                }
+                              : { kind: "external", binding },
+                        },
+                  )
+              : undefined,
           isOpen: workspace.isOpen,
           close: workspace.close,
           open: workspace.open,
@@ -159,11 +186,16 @@ export function useWorkspaceLocation({
       );
       if (!result.completed) return;
       closeWorkspaceViewerSessions(item.id);
-      const projectionWarning = await workspaceExplorerStore
-        .getState()
-        .restartWorkspace(item.id)
-        .then(() => null)
-        .catch((error) => getErrorMessage(error, "文件列表刷新失败"));
+      let projectionWarning: string | null = null;
+      if (currentWorkspaceId === item.id && result.reopened) {
+        projectionWarning = await workspaceExplorerStore
+          .getState()
+          .restartWorkspace(item.id)
+          .then(() => null)
+          .catch((error) => getErrorMessage(error, "文件列表刷新失败"));
+      } else {
+        workspaceExplorerStore.getState().resetWorkspace(item.id);
+      }
       if (currentWorkspaceId === item.id && result.wasOpen && !result.reopened) {
         setCurrentWorkspaceId(null);
       }
@@ -183,7 +215,16 @@ export function useWorkspaceLocation({
       if (warnings.length) toast.warning(`${success}，${warnings.join("；")}`);
       else toast.success(success);
     } catch (nextError) {
-      if (currentWorkspaceId === item.id && !(await workspace.isOpen(item.id).catch(() => false))) {
+      const stillOwned =
+        currentWorkspaceId === item.id &&
+        (isTauri() && isDesktop()
+          ? await multiWindow
+              .getCurrentWorkspaceId()
+              .then((id) => id === item.id)
+              .catch(() => undefined)
+          : await workspace.isOpen(item.id).catch(() => undefined));
+      // 查询失败时保留草稿，只有权威状态确认失去归属才清理本窗口。
+      if (currentWorkspaceId === item.id && stillOwned === false) {
         setCurrentWorkspaceId(null);
         closeWorkspaceViewerSessions(item.id);
         workspaceExplorerStore.getState().resetWorkspace(item.id);

@@ -27,3 +27,12 @@ mod support;
 
 #[path = "workspace/index.rs"]
 mod index;
+
+#[path = "workspace/desktop_storage.rs"]
+mod desktop_storage;
+#[path = "../../../ui/src-tauri/src/setup/window_sessions.rs"]
+mod window_sessions;
+#[path = "../../../ui/src-tauri/src/setup/workspace_access.rs"]
+mod workspace_access;
+#[path = "../../../ui/src-tauri/src/setup/workspace_storage_transaction.rs"]
+mod workspace_storage_transaction;

@@ -45,6 +45,9 @@ mod tests {
         for key in [
             "workspace.close",
             "workspace.remove",
+            "workspace.update_display_name",
+            "workspace.relocate",
+            "workspace.rebind",
             "workspace.file.read_text",
             "workspace.index.refresh",
         ] {

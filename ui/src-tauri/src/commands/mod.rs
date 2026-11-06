@@ -5,6 +5,7 @@ mod resource_protocol;
 mod window_api;
 pub(crate) mod window_callbacks;
 pub(crate) mod window_workspace_api;
+mod workspace_storage_api;
 
 use crate::setup::app_menu::*;
 use crate::setup::window_close::*;
@@ -21,6 +22,7 @@ use sys_locale::get_locale;
 use tauri::{AppHandle, Builder, Manager};
 use window_api::*;
 use window_callbacks::*;
+use workspace_storage_api::*;
 
 const APP_LOCAL_PROVIDER_ID: &str = "app-local";
 const DESKTOP_DOCUMENTS_PROVIDER_ID: &str = "desktop-documents";
@@ -72,6 +74,9 @@ pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         exit_app,
         create_workspace_window,
         get_window_bootstrap,
+        get_window_workspace,
+        assert_workspace_editable,
+        change_workspace_storage,
         request_window_close,
         respond_window_close,
         update_window_menu,

@@ -19,6 +19,14 @@ pub async fn create_workspace_window(window: WebviewWindow) -> Result<String, St
 }
 
 #[tauri::command]
+pub async fn get_window_workspace(
+    window: WebviewWindow,
+) -> Option<lonanote_core::workspace::WorkspaceId> {
+    let _guard = super::window_workspace_api::WORKSPACE_GATE.read().await;
+    WINDOW_SESSIONS.current_workspace(window.label())
+}
+
+#[tauri::command]
 pub async fn get_window_bootstrap(window: WebviewWindow) -> Result<WindowBootstrap, String> {
     let _guard = super::window_workspace_api::WORKSPACE_GATE.write().await;
     let bootstrap = WINDOW_SESSIONS

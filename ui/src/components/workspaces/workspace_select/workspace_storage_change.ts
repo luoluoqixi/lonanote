@@ -1,6 +1,8 @@
+import type { StorageChangeResult } from "@/api/commands/win/multi_window";
 import type { StorageCleanupStatus } from "@/api/commands/workspace";
 
 type StorageChangeDependencies = {
+  atomicChange?: () => Promise<StorageChangeResult>;
   isOpen: (id: string) => Promise<boolean>;
   close: (id: string) => Promise<void>;
   open: (id: string) => Promise<unknown>;
@@ -20,6 +22,22 @@ export async function changeWorkspaceStorage(
   reopenError: string | null;
   sourceCleanup: StorageCleanupStatus | null;
 }> {
+  if (deps.atomicChange) {
+    let result: StorageChangeResult = {
+      wasOpen: false,
+      reopened: false,
+      reopenError: null,
+      sourceCleanup: null,
+    };
+    const completed = await deps.withClose(workspaceId, async () => {
+      try {
+        result = await deps.atomicChange!();
+      } finally {
+        deps.sessionChanged?.(workspaceId);
+      }
+    });
+    return { completed, ...result };
+  }
   const wasOpen = await deps.isOpen(workspaceId);
   let reopened = false;
   let reopenError: string | null = null;

@@ -25,6 +25,7 @@ import { isAndroid, isDesktop } from "@/api/common";
 import { useLayoutMode } from "@/hooks/layout";
 import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 
+import { canEditWorkspace } from "./workspace_edit_permission";
 import { type WorkspaceGroupMode, groupWorkspaces } from "./workspace_group";
 import { getWorkspaceOpenLabel } from "./workspace_open_label";
 import { type WorkspaceSortValue, getWorkspaceSubtitle } from "./workspace_sort";
@@ -168,18 +169,21 @@ export function WorkspaceSelectList({
                     {
                       icon: <Pencil color={accentColor} size={14} />,
                       label: "编辑工作区",
+                      disabled: !canEditWorkspace(workspaceItem, currentWorkspaceId),
                       onSelect: () => onEditWorkspace(workspaceItem),
                       value: `edit-workspace-${workspaceItem.id}`,
                     },
                     {
                       icon: <FolderInput color={accentColor} size={14} />,
                       label: "更改存储位置…",
+                      disabled: !canEditWorkspace(workspaceItem, currentWorkspaceId),
                       onSelect: () => onRelocateWorkspace(workspaceItem),
                       value: `relocate-workspace-${workspaceItem.id}`,
                     },
                     {
                       icon: <FolderSearch color={accentColor} size={14} />,
                       label: "重新定位工作区…",
+                      disabled: !canEditWorkspace(workspaceItem, currentWorkspaceId),
                       onSelect: () => onRebindWorkspace(workspaceItem),
                       value: `rebind-workspace-${workspaceItem.id}`,
                     },
@@ -200,7 +204,10 @@ export function WorkspaceSelectList({
                       onSelect: () => onDeleteWorkspace(workspaceItem),
                       value: `delete-workspace-${workspaceItem.id}`,
                     },
-                  ].map((item) => ({ ...item, disabled: isInteractionDisabled })),
+                  ].map((item) => ({
+                    ...item,
+                    disabled: isInteractionDisabled || ("disabled" in item && item.disabled),
+                  })),
                 }}
                 hoverBackgroundColor={desktop ? theme.secondary : undefined}
                 pressBackgroundColor={desktop ? theme.accent : undefined}

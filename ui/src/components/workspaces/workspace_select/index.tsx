@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle, confirmNative } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
+import { multiWindow } from "@/api/commands/win/multi_window";
 import {
   type WorkspaceListItem,
   type WorkspaceSnapshot,
@@ -340,12 +341,21 @@ export function WorkspaceSelectContent({
     toast,
   ]);
 
-  const openEditWorkspaceSheet = useCallback((workspaceItem: WorkspaceListItem) => {
-    if (scanInProgressRef.current || locationBusyRef.current || creatingRef.current) return;
-    setEditingWorkspace(workspaceItem);
-    setEditedWorkspaceName(workspaceItem.displayName);
-    setIsEditWorkspaceSheetOpen(true);
-  }, []);
+  const openEditWorkspaceSheet = useCallback(
+    (workspaceItem: WorkspaceListItem) => {
+      if (scanInProgressRef.current || locationBusyRef.current || creatingRef.current) return;
+      void multiWindow
+        .assertWorkspaceEditable(workspaceItem.id)
+        .then(() => {
+          if (scanInProgressRef.current || locationBusyRef.current || creatingRef.current) return;
+          setEditingWorkspace(workspaceItem);
+          setEditedWorkspaceName(workspaceItem.displayName);
+          setIsEditWorkspaceSheetOpen(true);
+        })
+        .catch((error) => toast.warning(getErrorMessage(error, "无法编辑该工作区")));
+    },
+    [toast],
+  );
 
   const handleEditWorkspaceSheetOpenChange = useCallback((open: boolean) => {
     setIsEditWorkspaceSheetOpen(open);
