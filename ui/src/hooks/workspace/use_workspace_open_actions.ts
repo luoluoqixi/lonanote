@@ -11,6 +11,7 @@ import {
 import { getFileName, isDesktop, isTauri } from "@/api/common";
 import { createSingleFlight } from "@/components/app_menu/app_menu_actions";
 import { confirmExternalIdRegeneration } from "@/components/workspaces/workspace_select/scan_id_conflict_dialog";
+import { notifyWorkspaceOpenError } from "@/components/workspaces/workspace_select/workspace_open_feedback";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useToast } from "@/hooks/ui";
 import { useWorkspaceSession } from "@/hooks/workspace/use_workspace_session";
@@ -125,7 +126,7 @@ export function useWorkspaceOpenActions(
       try {
         await operation();
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "打开工作区失败");
+        notifyWorkspaceOpenError(error, toast);
       } finally {
         setBusy(false);
       }
