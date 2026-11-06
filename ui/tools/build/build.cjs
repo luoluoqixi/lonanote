@@ -46,7 +46,8 @@ function startDevProcesses(appCommand) {
     cwd: editorRoot,
     env: process.env,
     shell: true,
-    stdio: "inherit",
+    // 编辑器服务不接收键盘输入，终端交互交给 Expo。
+    stdio: ["ignore", "inherit", "inherit"],
   });
   const appProcess = spawn(appCommand, {
     cwd: projectRoot,
