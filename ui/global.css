@@ -5,3 +5,9 @@
 @source "./src";
 @source "./node_modules/rn-ui-kit/src";
 @source "./node_modules/rn-ui-kit/dist";
+
+/* 拖拽期间统一箭头，避免子项 Pressable 的 pointer 光标覆盖手势容器。 */
+html[data-workspace-tree-dragging],
+html[data-workspace-tree-dragging] * {
+  cursor: default !important;
+}

@@ -31,6 +31,7 @@ import {
   parseEditorBridgeMessage,
 } from "./bridge/protocol";
 import { ANDROID_SELECTION_BOTTOM_OFFSET, EDITOR_MESSAGE_DEDUPLICATION_LIMIT } from "./consts";
+import { installDesktopBackgroundFocus } from "./core/background_focus";
 import { applyEditorFocusCommand } from "./core/focus_command";
 import { createDesktopScrollbar } from "./desktop_scrollbar";
 import { LonaEditor } from "./index";
@@ -222,6 +223,7 @@ type SurfaceSession = {
 
 let bootstrap = getBootstrap();
 let session: SurfaceSession | null = null;
+installDesktopBackgroundFocus(getRoot(), () => session);
 let nextMessageSequence = 1;
 const receivedMessageIds = new Set<string>();
 

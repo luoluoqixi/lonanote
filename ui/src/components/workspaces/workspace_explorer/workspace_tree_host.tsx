@@ -79,6 +79,8 @@ const noCapabilities = {
   canCreateDirectory: false,
   canDelete: false,
   canRename: false,
+  canMoveEntry: false,
+  canCopyEntry: false,
 };
 
 export function WorkspaceTreeHost({
@@ -557,6 +559,15 @@ export function WorkspaceTreeHost({
       <WorkspaceTree
         workspaceId={workspaceId}
         cutPaths={transfers.cutPaths}
+        canOpenFiles={capabilities.canRead}
+        onMovePaths={
+          capabilities.canRead &&
+          capabilities.canWrite &&
+          capabilities.canDelete &&
+          capabilities.canMoveEntry
+            ? transfers.move
+            : undefined
+        }
         ref={tree}
         epoch={explorer.epoch}
         rows={rows}

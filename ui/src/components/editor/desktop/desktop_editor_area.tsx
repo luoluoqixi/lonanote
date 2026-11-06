@@ -274,7 +274,11 @@ export function DesktopEditorArea({
   }, [openLooseFilePath]);
 
   return (
-    <View ref={editorAreaRef} style={[styles.root, { backgroundColor: theme.background }]}>
+    <View
+      nativeID="desktop-editor-area"
+      ref={editorAreaRef}
+      style={[styles.root, { backgroundColor: theme.background }]}
+    >
       <View
         style={[styles.tabs, { borderBottomColor: tabs.length > 0 ? theme.border : "transparent" }]}
       >

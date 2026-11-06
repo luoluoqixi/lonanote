@@ -96,6 +96,11 @@ export function useWorkspaceTransfers(workspaceId: string) {
         toast.warning("文件操作已成功，刷新失败", { description: result.refreshError });
     };
     return {
+      move: (paths: string[], directory: string) =>
+        run(async () => {
+          const sources = await snapshot(paths);
+          await execute(sources, directory, "move");
+        }),
       record: (paths: string[], mode: "cut" | "copy") => {
         const request = ++recordRequest;
         run(async () => {

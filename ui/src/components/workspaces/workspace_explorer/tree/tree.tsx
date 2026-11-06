@@ -16,6 +16,9 @@ import { FilePathTooltip } from "@/components/files/file_path_tooltip";
 import { useLayoutMode } from "@/hooks/layout";
 import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 
+import { TreeDragInput } from "./tree_drag_input";
+import { isTreeDropRegion } from "./tree_drag_model";
+import { TreeDragPreview } from "./tree_drag_preview";
 import { TreeInput } from "./tree_input";
 import { createTreeScrollCoordinator, getTreeScrollOffset } from "./tree_input_intent";
 import { resolveTreeFocus } from "./tree_model";
@@ -26,6 +29,7 @@ import type {
   WorkspaceTreeNodeRow,
   WorkspaceTreeRow,
 } from "./tree_types";
+import { useTreeDrag } from "./use_tree_drag";
 
 const rowId = (path: string) => `workspace-tree-${encodeURIComponent(path)}`;
 type Props = {
@@ -39,6 +43,8 @@ type Props = {
   focusedPath: string | null;
   activePath?: string | null;
   selectionMode: boolean;
+  canOpenFiles?: boolean;
+  onMovePaths?(paths: string[], directory: string): void;
   onSelect(path: string, mode: TreeSelectionMode): void;
   onFocus(path: string | null): void;
   onExpandedChange(path: string, expanded: boolean): Promise<void>;
@@ -59,6 +65,10 @@ function TreeNode({
   focused,
   active,
   cut,
+  dragging,
+  dragActive,
+  dropTarget,
+  isSuppressingPress,
   onFocus,
   selectionMode,
   onSelect,
@@ -76,6 +86,10 @@ function TreeNode({
   focused: boolean;
   active: boolean;
   cut: boolean;
+  dragging: boolean;
+  dragActive: boolean;
+  dropTarget: boolean;
+  isSuppressingPress(): boolean;
   onFocus: Props["onFocus"];
   selectionMode: boolean;
   onSelect: Props["onSelect"];
@@ -119,9 +133,15 @@ function TreeNode({
   return (
     <FilePathTooltip
       path={(pathIsCurrent ? resolvedPath.nativePath : null) ?? row.path}
-      disabled={!desktop || menuOpen}
+      disabled={!desktop || menuOpen || dragActive}
     >
-      <View role="presentation" style={[styles.rowShell, { height: rowHeight }]}>
+      <View
+        role="presentation"
+        style={[
+          styles.rowShell,
+          { height: rowHeight, backgroundColor: dropTarget ? theme.accent06 : "transparent" },
+        ]}
+      >
         <View style={{ flex: 1, minWidth: 0 }}>
           <ContextMenu
             native={desktop ? false : undefined}
@@ -152,7 +172,7 @@ function TreeNode({
                   suppressPress.current = false;
                 }}
                 onPress={(event) => {
-                  if (suppressPress.current) return;
+                  if (suppressPress.current || isSuppressingPress()) return;
                   const modifiers = event.nativeEvent as unknown as {
                     shiftKey?: boolean;
                     ctrlKey?: boolean;
@@ -171,16 +191,18 @@ function TreeNode({
                   styles.row,
                   {
                     height: rowHeight,
-                    opacity: cut ? 0.45 : 1,
+                    opacity: cut || dragging ? 0.45 : 1,
                     paddingLeft: 8 + row.depth * 16,
-                    backgroundColor: active
-                      ? theme.accent
-                      : selected
-                        ? theme.accent03
-                        : hovered
+                    backgroundColor: dropTarget
+                      ? theme.accent06
+                      : active
+                        ? theme.accent
+                        : selected
                           ? theme.accent03
-                          : "transparent",
-                    borderColor: focused ? theme.primary : "transparent",
+                          : hovered && !dragActive
+                            ? theme.accent03
+                            : "transparent",
+                    borderColor: !dropTarget && focused ? theme.primary : "transparent",
                   },
                 ]}
               >
@@ -191,6 +213,7 @@ function TreeNode({
                     hitSlop={6}
                     onPress={(event) => {
                       event.stopPropagation();
+                      if (isSuppressingPress()) return;
                       void onExpandedChange(row.path, !expanded).catch(() => undefined);
                     }}
                     style={{ width: 20, height: rowHeight - 4, justifyContent: "center" }}
@@ -278,6 +301,46 @@ export function WorkspaceTree(props: Props) {
       }),
     [],
   );
+  const drag = useTreeDrag({
+    workspaceId: props.workspaceId,
+    epoch,
+    enabled: desktop && Boolean(props.onMovePaths || props.canOpenFiles),
+    rows,
+    selectedPaths: props.selectedPaths,
+    expandedPaths: props.expandedPaths,
+    rowHeight,
+    getOffset: () => {
+      if (isWeb()) {
+        const scrollView = list.current?.getScrollRef() as ScrollView | null;
+        const node = scrollView?.getScrollableNode() as HTMLElement | undefined;
+        if (node) viewport.current.offset = node.scrollTop;
+      }
+      return viewport.current.offset;
+    },
+    scrollTo: (offset) => {
+      viewport.current.offset = offset;
+      list.current?.scrollToOffset({ offset, animated: false });
+    },
+    select: (path) => {
+      pointerFocusedPath.current = path;
+      scroll.cancel();
+      props.onSelect(path, "replace");
+    },
+    expand: (path) => props.onExpandedChange(path, true),
+    move: props.onMovePaths,
+    open: props.canOpenFiles
+      ? (paths) => {
+          for (const path of paths) {
+            const row = rows.find(
+              (row): row is WorkspaceTreeNodeRow =>
+                row.kind === "node" && row.path === path && row.entry.fileType === "file",
+            );
+            if (row) props.onActivate(row);
+          }
+        }
+      : undefined,
+  });
+  const theme = useUiTheme();
   useEffect(() => {
     scroll.cancel();
     return () => {
@@ -357,81 +420,153 @@ export function WorkspaceTree(props: Props) {
     else if (row.parentPath) props.onFocus(row.parentPath);
   }
   return (
-    <TreeInput activeDescendant={focusedPath ? rowId(focusedPath) : undefined} onIntent={onIntent}>
-      <VirtualizedList
-        key={layoutMode}
-        ref={list}
-        data={rows}
-        getItem={(data, index) => data[index]}
-        getItemCount={(data) => data.length}
-        keyExtractor={(row) => row.key}
-        style={styles.list}
-        extraData={[
-          props.expandedPaths,
-          props.selectedPaths,
-          focusedPath,
-          props.activePath,
-          props.selectionMode,
-          epoch,
-        ]}
-        getItemLayout={(_, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
-        onLayout={(event) => {
-          viewport.current.height = event.nativeEvent.layout.height;
-          scroll.retry();
-        }}
-        onScroll={(event) => {
-          viewport.current.offset = event.nativeEvent.contentOffset.y;
-          viewport.current.height = event.nativeEvent.layoutMeasurement.height;
-        }}
-        scrollEventThrottle={16}
-        renderItem={({ item }) =>
-          item.kind === "node" ? (
-            <TreeNode
-              cut={(props.cutPaths ?? []).some(
-                (p) => item.path === p || item.path.startsWith(`${p}/`),
-              )}
-              workspaceId={props.workspaceId}
-              resourceRevision={resourceRevision}
-              desktop={desktop}
-              rowHeight={rowHeight}
-              row={item}
-              expanded={props.expandedPaths.includes(item.path)}
-              selected={props.selectedPaths.includes(item.path)}
-              focused={focusedPath === item.path}
-              active={props.activePath === item.path}
-              onFocus={(path) => {
-                pointerFocusedPath.current = path;
-                scroll.cancel();
-                props.onFocus(path);
-              }}
-              selectionMode={props.selectionMode}
-              onSelect={(path, mode) => {
-                pointerFocusedPath.current = path;
-                scroll.cancel();
-                props.onSelect(path, mode);
-              }}
-              onActivate={props.onActivate}
-              onExpandedChange={props.onExpandedChange}
-              menuItems={props.menuItems}
-            />
-          ) : (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => props.onRetry(item.path)}
-              style={[styles.status, { height: rowHeight, paddingLeft: 12 + item.depth * 16 }]}
-            >
-              {item.kind === "loading" ? (
-                <Spinner size="sm" />
-              ) : (
-                <Text className="text-destructive" numberOfLines={1}>
-                  读取失败，点击重试
-                </Text>
-              )}
-            </Pressable>
-          )
-        }
-      />
-    </TreeInput>
+    <TreeDragInput
+      enabled={desktop && Boolean(props.onMovePaths || props.canOpenFiles)}
+      viewRef={drag.viewRef}
+      onLayout={(event) => drag.onLayout(event.nativeEvent.layout.height)}
+      onStart={drag.start}
+      onMove={drag.move}
+      onFinish={drag.finish}
+    >
+      <TreeInput
+        activeDescendant={focusedPath ? rowId(focusedPath) : undefined}
+        onIntent={onIntent}
+      >
+        <VirtualizedList
+          key={layoutMode}
+          ref={list}
+          data={rows}
+          getItem={(data, index) => data[index]}
+          getItemCount={(data) => data.length}
+          keyExtractor={(row) => row.key}
+          style={[
+            styles.list,
+            {
+              backgroundColor:
+                drag.preview?.target?.directory === "" ? theme.accent06 : "transparent",
+            },
+          ]}
+          extraData={[
+            props.expandedPaths,
+            props.selectedPaths,
+            focusedPath,
+            props.activePath,
+            props.selectionMode,
+            drag.preview,
+            epoch,
+          ]}
+          getItemLayout={(_, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
+          onLayout={(event) => {
+            viewport.current.height = event.nativeEvent.layout.height;
+            scroll.retry();
+          }}
+          onScroll={(event) => {
+            viewport.current.offset = event.nativeEvent.contentOffset.y;
+            viewport.current.height = event.nativeEvent.layoutMeasurement.height;
+          }}
+          scrollEventThrottle={16}
+          renderItem={({ item }) =>
+            item.kind === "node" ? (
+              <TreeNode
+                cut={(props.cutPaths ?? []).some(
+                  (p) => item.path === p || item.path.startsWith(`${p}/`),
+                )}
+                dragging={
+                  drag.preview?.sources.some(
+                    (p) => item.path === p || item.path.startsWith(`${p}/`),
+                  ) ?? false
+                }
+                dragActive={Boolean(drag.preview)}
+                dropTarget={isTreeDropRegion(item.path, drag.preview?.target)}
+                isSuppressingPress={drag.isSuppressingPress}
+                workspaceId={props.workspaceId}
+                resourceRevision={resourceRevision}
+                desktop={desktop}
+                rowHeight={rowHeight}
+                row={item}
+                expanded={props.expandedPaths.includes(item.path)}
+                selected={props.selectedPaths.includes(item.path)}
+                focused={focusedPath === item.path}
+                active={props.activePath === item.path}
+                onFocus={(path) => {
+                  pointerFocusedPath.current = path;
+                  scroll.cancel();
+                  props.onFocus(path);
+                }}
+                selectionMode={props.selectionMode}
+                onSelect={(path, mode) => {
+                  pointerFocusedPath.current = path;
+                  scroll.cancel();
+                  props.onSelect(path, mode);
+                }}
+                onActivate={props.onActivate}
+                onExpandedChange={props.onExpandedChange}
+                menuItems={props.menuItems}
+              />
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => props.onRetry(item.path)}
+                style={[
+                  styles.status,
+                  {
+                    height: rowHeight,
+                    paddingLeft: 12 + item.depth * 16,
+                    backgroundColor: isTreeDropRegion(item.path, drag.preview?.target)
+                      ? theme.accent06
+                      : "transparent",
+                  },
+                ]}
+              >
+                {item.kind === "loading" ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Text className="text-destructive" numberOfLines={1}>
+                    读取失败，点击重试
+                  </Text>
+                )}
+              </Pressable>
+            )
+          }
+        />
+      </TreeInput>
+      {drag.preview ? (
+        <TreeDragPreview
+          pointer={drag.pointer}
+          sources={drag.preview.sources}
+          folder={rows.some(
+            (row) =>
+              row.kind === "node" &&
+              row.path === drag.preview?.sources[0] &&
+              row.entry.fileType === "directory",
+          )}
+        />
+      ) : null}
+      {drag.preview ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: 6,
+            right: 6,
+            bottom: 6,
+            padding: 8,
+            borderWidth: 1,
+            borderRadius: 4,
+            borderColor: theme.primary,
+            backgroundColor: theme.background,
+          }}
+        >
+          <Text numberOfLines={2} style={{ fontSize: 12, color: theme.foreground }}>
+            {drag.preview.openPaths.length
+              ? `打开 ${drag.preview.openPaths.length} 个文件`
+              : drag.preview.target
+                ? `移动 ${drag.preview.target.paths.length} 个项目到 /${drag.preview.target.directory}`
+                : "无法放置到此处"}
+          </Text>
+        </View>
+      ) : null}
+    </TreeDragInput>
   );
 }
 const styles = StyleSheet.create({

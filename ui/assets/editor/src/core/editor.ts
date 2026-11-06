@@ -597,7 +597,10 @@ export class LonaEditor {
   }
 
   /** 获取焦点；传入坐标时仅在能可靠映射到附近文档位置时移动光标。 */
-  focus = (pos?: { x: number; y: number }): boolean => {
+  focus = (
+    pos?: { x: number; y: number },
+    options?: { allowDocumentEnd?: boolean },
+  ): boolean => {
     if (!this.#editor) throw new Error("Editor not initialized");
     const lastLine = this.#editor.state.doc.lines;
     const lastPos = this.#editor.state.doc.line(lastLine).to;
@@ -610,13 +613,16 @@ export class LonaEditor {
         x: Math.max(contentRect.left + 1, Math.min(pos.x, contentRect.right - 1)),
         y: pos.y,
       };
-      targetPos = this.#editor.posAtCoords(boundedPos, false);
+      const endCursor = options?.allowDocumentEnd ? this.#editor.coordsAtPos(lastPos) : null;
+      // 仅显式确认的桌面背景点击可以落到文末；移动触点继续接受距离校验。
+      const isBelowDocument = endCursor !== null && pos.y > endCursor.bottom;
+      targetPos = isBelowDocument ? lastPos : this.#editor.posAtCoords(boundedPos, false);
       const cursor = this.#editor.coordsAtPos(targetPos);
       if (!cursor) return false;
       const verticalDistance =
         pos.y < cursor.top ? cursor.top - pos.y : pos.y > cursor.bottom ? pos.y - cursor.bottom : 0;
       // WKWebView 偶发把装饰区点击估算到文档起点；拒绝与实际触点明显不相邻的结果。
-      if (verticalDistance > COORDINATE_FOCUS_MAX_VERTICAL_DISTANCE) return false;
+      if (!isBelowDocument && verticalDistance > COORDINATE_FOCUS_MAX_VERTICAL_DISTANCE) return false;
     } else {
       targetPos = lastPos;
     }
