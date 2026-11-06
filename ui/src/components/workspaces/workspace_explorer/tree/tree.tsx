@@ -1,4 +1,11 @@
-import { ChevronDown, ChevronRight, FileText, Folder, MoreHorizontal } from "lucide-react-native";
+import {
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Folder,
+  FolderOpen,
+  MoreHorizontal,
+} from "lucide-react-native";
 import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Pressable, type ScrollView, StyleSheet, Text, View, VirtualizedList } from "react-native";
 import { ContextMenu, type ContextMenuItemData, Dropdown, Spinner, useUiTheme } from "rn-ui-kit";
@@ -23,6 +30,7 @@ import type {
 const rowId = (path: string) => `workspace-tree-${encodeURIComponent(path)}`;
 type Props = {
   workspaceId: string;
+  cutPaths?: string[];
   ref?: Ref<TreeHandle>;
   epoch: number;
   rows: WorkspaceTreeRow[];
@@ -50,6 +58,7 @@ function TreeNode({
   selected,
   focused,
   active,
+  cut,
   onFocus,
   selectionMode,
   onSelect,
@@ -66,6 +75,7 @@ function TreeNode({
   selected: boolean;
   focused: boolean;
   active: boolean;
+  cut: boolean;
   onFocus: Props["onFocus"];
   selectionMode: boolean;
   onSelect: Props["onSelect"];
@@ -161,6 +171,7 @@ function TreeNode({
                   styles.row,
                   {
                     height: rowHeight,
+                    opacity: cut ? 0.45 : 1,
                     paddingLeft: 8 + row.depth * 16,
                     backgroundColor: active
                       ? theme.accent
@@ -190,7 +201,11 @@ function TreeNode({
                   <View style={styles.chevronSpace} />
                 )}
                 {folder ? (
-                  <Folder size={16} color={theme.mutedForeground} />
+                  expanded ? (
+                    <FolderOpen size={16} color={theme.mutedForeground} />
+                  ) : (
+                    <Folder size={16} color={theme.mutedForeground} />
+                  )
                 ) : (
                   <FileText size={16} color={theme.mutedForeground} />
                 )}
@@ -372,6 +387,9 @@ export function WorkspaceTree(props: Props) {
         renderItem={({ item }) =>
           item.kind === "node" ? (
             <TreeNode
+              cut={(props.cutPaths ?? []).some(
+                (p) => item.path === p || item.path.startsWith(`${p}/`),
+              )}
               workspaceId={props.workspaceId}
               resourceRevision={resourceRevision}
               desktop={desktop}

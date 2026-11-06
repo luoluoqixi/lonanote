@@ -297,3 +297,54 @@ test("桌面文件只提供打开，文件夹和根目录在自身创建，详�
   file.find((item) => item.value === "details")?.onSelect?.();
   expect(calls).toHaveLength(count);
 });
+
+test("转移菜单支持多选来源，根不能复制，多选不能粘贴，移动布局不显示", () => {
+  const calls: string[][] = [];
+  const options = {
+    workspaceId: "w",
+    epoch: 1,
+    desktop: true,
+    targetPaths: ["a", "b"],
+    targetDirectory: "",
+    canPaste: true,
+    capabilities: {
+      canRead: true,
+      canWrite: true,
+      canCreateDirectory: true,
+      canDelete: true,
+      canRename: true,
+      canCopyEntry: true,
+      canMoveEntry: true,
+    },
+    actions: {
+      isCurrent: () => true,
+      open: () => {},
+      create: () => {},
+      rename: () => {},
+      remove: () => {},
+      details: () => {},
+      select: () => {},
+      refresh: () => {},
+      transfer: (paths: string[]) => {
+        calls.push(paths);
+      },
+      recordClipboard: () => {},
+      paste: (path: string) => {
+        calls.push([path]);
+      },
+    },
+  };
+  const menu = createWorkspaceExplorerMenu(options);
+  menu.find((item) => item.value === "move-to")?.onSelect?.();
+  expect(calls).toEqual([["a", "b"]]);
+  expect(menu.find((item) => item.value === "paste")?.disabled).toBe(true);
+  const root = createWorkspaceExplorerMenu({ ...options, targetPaths: [""] });
+  expect(root.find((item) => item.value === "copy")?.disabled).toBe(true);
+  root.find((item) => item.value === "paste")?.onSelect?.();
+  expect(calls[1]).toEqual([""]);
+  expect(
+    createWorkspaceExplorerMenu({ ...options, desktop: false }).some(
+      (item) => item.value === "move-to",
+    ),
+  ).toBe(false);
+});

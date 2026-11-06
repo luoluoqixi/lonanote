@@ -13,12 +13,12 @@ export function createSingleFlight() {
 
 export async function saveDocuments(
   ids: readonly string[],
-  save: (id: string) => Promise<void>,
+  save: (id: string) => Promise<void | "saved" | "cancelled">,
 ): Promise<string[]> {
   const errors: string[] = [];
   for (const id of new Set(ids)) {
     try {
-      await save(id);
+      if ((await save(id)) === "cancelled") break;
     } catch (error) {
       errors.push(`${id}：${error instanceof Error ? error.message : String(error)}`);
     }

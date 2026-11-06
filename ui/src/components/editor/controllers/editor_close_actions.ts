@@ -71,7 +71,8 @@ export function createEditorCloseActions(deps: {
           const decision = dirty.length ? await deps.confirmDirty(dirty) : "discard";
           if (decision === "cancel") return false;
           if (decision === "save") {
-            await context.save(finalDocuments().map((d) => d.documentId));
+            if ((await context.save(finalDocuments().map((d) => d.documentId))) === "cancelled")
+              return false;
             if (finalDocuments().some(isDocumentDirty))
               throw new Error("保存期间出现新的编辑，请重试");
           }

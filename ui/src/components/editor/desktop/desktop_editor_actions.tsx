@@ -22,6 +22,7 @@ import { openExternalFile } from "@/api/commands/utils";
 import { workspaceFile } from "@/api/commands/workspace";
 import { getFileMimeType, isDesktop, isMarkdownFile } from "@/api/common";
 import { editorCommandCoordinator, saveCoordinator } from "@/components/editor/controllers";
+import { getDocumentSaveCapabilities } from "@/components/editor/controllers/document_save_capabilities";
 import { toggleEditorPreviewMode } from "@/components/editor/controllers/editor_preview_mode";
 import { useEditorSession } from "@/hooks/editor";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
@@ -127,9 +128,22 @@ export function DesktopEditorActions({
             value: "save",
             label: "保存",
             icon: icon(Save),
-            disabled: !ready || document.saveState === "saving",
+            disabled:
+              !ready ||
+              !getDocumentSaveCapabilities(document, view, isDesktop() ? "tauri" : "native")
+                .canSave ||
+              document.saveState === "saving",
             onPress: () => run(() => saveCoordinator.flushDocument(document.documentId)),
           },
+          ...(document.ref.kind === "untitled"
+            ? [
+                {
+                  value: "auto-save-unavailable",
+                  label: "自动保存不可用 · 选择保存位置后启用",
+                  disabled: true,
+                },
+              ]
+            : []),
           { value: "separator-history", separator: true },
           {
             value: "undo",

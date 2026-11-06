@@ -20,7 +20,7 @@ export function useAppSaveActions() {
     const activeId = getActiveSaveableDocumentId(state, isDesktop());
     const failures = await saveDocuments(
       all ? allowed : allowed.filter((id) => id === activeId),
-      saveCoordinator.flushDocument,
+      saveCoordinator.requestSaveDocument,
     );
     if (failures.length) toast.error("保存失败", { description: failures.join("\n") });
   };

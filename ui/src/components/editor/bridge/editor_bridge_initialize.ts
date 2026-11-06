@@ -36,7 +36,7 @@ export function createEditorInitializePayload(
   resources: EditorResourceContext,
 ): EditorInitializePayload {
   const workspacePath = document.ref.kind === "workspaceFile" ? document.ref.filePath : null;
-  const fileName = document.ref.kind === "untitled" ? null : document.title;
+  const fileName = document.ref.kind === "untitled" ? `${document.title}.md` : document.title;
 
   return {
     runtime: {

@@ -15,6 +15,9 @@ type MenuActions = {
   setExpanded?(path: string, expanded: boolean): void;
   reveal?(path: string): void;
   copyPath?(path: string, absolute: boolean): void;
+  transfer?(paths: string[], operation: "move" | "copy"): void;
+  recordClipboard?(paths: string[], mode: "cut" | "copy"): void;
+  paste?(directory: string): void;
 };
 export function createWorkspaceExplorerMenu({
   workspaceId,
@@ -26,6 +29,7 @@ export function createWorkspaceExplorerMenu({
   desktop = false,
   nativePathAvailable = false,
   expanded = false,
+  canPaste = false,
 }: {
   workspaceId: string;
   epoch: number;
@@ -33,17 +37,30 @@ export function createWorkspaceExplorerMenu({
   targetDirectory: string | null;
   capabilities: Pick<
     StorageCapabilities,
-    "canRead" | "canWrite" | "canCreateDirectory" | "canDelete" | "canRename"
+    | "canRead"
+    | "canWrite"
+    | "canCreateDirectory"
+    | "canDelete"
+    | "canRename"
+    | "canCopyEntry"
+    | "canMoveEntry"
   >;
   actions: MenuActions;
   desktop?: boolean;
   nativePathAvailable?: boolean;
   expanded?: boolean;
+  canPaste?: boolean;
 }): ContextMenuItemData[] {
   const targets = [...targetPaths];
   const single = targets.length === 1;
   const directory = single && targets[0] === targetDirectory;
   const root = single && targets[0] === "";
+  const canMove =
+    capabilities.canRead &&
+    capabilities.canWrite &&
+    capabilities.canDelete &&
+    !!capabilities.canMoveEntry;
+  const canCopy = capabilities.canRead && capabilities.canWrite && !!capabilities.canCopyEntry;
   const guarded =
     (action: () => void, enabled = true) =>
     () => {
@@ -107,6 +124,47 @@ export function createWorkspaceExplorerMenu({
               : []),
           ]),
       { value: "separator-primary", separator: true },
+      ...(actions.transfer
+        ? [
+            {
+              value: "move-to",
+              label: "移动到…",
+              disabled: root || !targets.length || !canMove,
+              onSelect: guarded(() => actions.transfer?.(targets, "move"), !root && canMove),
+            },
+            {
+              value: "copy-to",
+              label: "复制到…",
+              disabled: root || !targets.length || !canCopy,
+              onSelect: guarded(() => actions.transfer?.(targets, "copy"), !root && canCopy),
+            },
+            {
+              value: "cut",
+              label: "剪切",
+              disabled: root || !targets.length || !canMove,
+              onSelect: guarded(() => actions.recordClipboard?.(targets, "cut"), !root && canMove),
+            },
+            {
+              value: "copy",
+              label: "复制",
+              disabled: root || !targets.length || !capabilities.canRead,
+              onSelect: guarded(
+                () => actions.recordClipboard?.(targets, "copy"),
+                !root && capabilities.canRead,
+              ),
+            },
+            {
+              value: "paste",
+              label: "粘贴",
+              disabled: !single || !canPaste || !capabilities.canWrite,
+              onSelect: guarded(
+                () => actions.paste?.(targetDirectory ?? ""),
+                single && canPaste && capabilities.canWrite,
+              ),
+            },
+            { value: "separator-transfer", separator: true },
+          ]
+        : []),
       ...(nativePathAvailable
         ? [
             {

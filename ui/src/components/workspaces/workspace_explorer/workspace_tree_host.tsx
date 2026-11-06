@@ -4,15 +4,19 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronsDownUp,
+  ClipboardPaste,
   Copy,
   ExternalLink,
   FileInput,
   FilePlus2,
+  Files,
+  FolderInput,
   FolderOpen,
   FolderPlus,
   Info,
   Pencil,
   RefreshCw,
+  Scissors,
   Trash2,
 } from "lucide-react-native";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
@@ -52,6 +56,7 @@ import {
   useWorkspaceState,
 } from "@/hooks/workspace";
 import { useWorkspaceFileActions } from "@/hooks/workspace/use_workspace_file_actions";
+import { useWorkspaceTransfers } from "@/hooks/workspace/use_workspace_transfers";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
 import { CreateWorkspaceEntrySheet } from "./create_workspace_entry_sheet";
@@ -99,6 +104,7 @@ export function WorkspaceTreeHost({
   const { toast } = useToast();
   const explorer = useWorkspaceExplorer({ workspaceId, mode: "tree" });
   const fileActions = useWorkspaceFileActions();
+  const transfers = useWorkspaceTransfers(workspaceId);
   const { state: workspaceState } = useWorkspaceState(workspaceId);
   const { preferences, updateAndSave } = useUiPreferences();
   const { openNoteEditor } = useWorkspaceEditorSession(workspaceId);
@@ -351,9 +357,13 @@ export function WorkspaceTreeHost({
             : path.split("/").slice(0, -1).join("/"),
         capabilities,
         desktop,
+        canPaste: transfers.canPaste,
         nativePathAvailable,
         expanded: explorer.expandedPaths.includes(path),
         actions: {
+          transfer: transfers.choose,
+          recordClipboard: transfers.record,
+          paste: transfers.paste,
           isCurrent: (id, epoch, paths) =>
             workspaceExplorerStore.getState().workspaces[id]?.epoch === epoch &&
             paths.every((p) => p === "" || Boolean(nodeFor(p))),
@@ -457,6 +467,11 @@ export function WorkspaceTreeHost({
           ["create-note", FilePlus2],
           ["create-directory", FolderPlus],
           ["reveal", FolderOpen],
+          ["move-to", FolderInput],
+          ["copy-to", Files],
+          ["cut", Scissors],
+          ["copy", Copy],
+          ["paste", ClipboardPaste],
           ["copy-absolute", Copy],
           ["copy-relative", Copy],
           ["rename", Pencil],
@@ -477,6 +492,7 @@ export function WorkspaceTreeHost({
     },
     [
       theme,
+      transfers,
       desktop,
       nativePathAvailable,
       toast,
@@ -540,6 +556,7 @@ export function WorkspaceTreeHost({
     <View style={styles.root}>
       <WorkspaceTree
         workspaceId={workspaceId}
+        cutPaths={transfers.cutPaths}
         ref={tree}
         epoch={explorer.epoch}
         rows={rows}

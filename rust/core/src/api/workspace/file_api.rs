@@ -1,4 +1,28 @@
+use crate::workspace::{
+    TransferConflictPolicy, TransferEntryResult, TransferOperation, TransferSource,
+};
 use cmdreg::command;
+
+#[command("workspace.file")]
+async fn transfer(
+    workspace_id: WorkspaceId,
+    sources: Vec<TransferSource>,
+    destination_directory: WorkspaceRelativePath,
+    operation: TransferOperation,
+    conflict_policy: TransferConflictPolicy,
+    protected_paths: Option<Vec<WorkspaceRelativePath>>,
+) -> anyhow::Result<Vec<TransferEntryResult>> {
+    Ok(workspace_manager()
+        .transfer_entries_protected(
+            &workspace_id,
+            sources,
+            destination_directory,
+            operation,
+            conflict_policy,
+            protected_paths.unwrap_or_default(),
+        )
+        .await?)
+}
 
 use crate::workspace::{
     workspace_manager, StorageCapabilities, StorageEntry, StorageEntryMetadata, WorkspaceId,

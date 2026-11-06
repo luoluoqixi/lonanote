@@ -29,6 +29,93 @@ async fn local_contract() {
     assert_storage_contract(&LocalPathStorage::open(root.path()).unwrap()).await;
 }
 
+async fn assert_safe_transfers(storage: &dyn WorkspaceStorage) {
+    storage.create_dir_all(&path("source/empty")).await.unwrap();
+    storage
+        .write(
+            &path("source/binary.bin"),
+            &[0, 255, 3],
+            WriteOptions::default(),
+        )
+        .await
+        .unwrap();
+    let source_identity = storage
+        .metadata(&path("source/binary.bin"))
+        .await
+        .unwrap()
+        .identity;
+    assert!(source_identity.is_some());
+    storage
+        .write(
+            &path("source/binary.bin"),
+            &[0, 255, 3],
+            WriteOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        storage
+            .metadata(&path("source/binary.bin"))
+            .await
+            .unwrap()
+            .identity,
+        source_identity
+    );
+    storage
+        .copy_entry_staged(&path("source"), &path("copy"))
+        .await
+        .unwrap();
+    assert_eq!(
+        storage.read(&path("copy/binary.bin")).await.unwrap(),
+        [0, 255, 3]
+    );
+    assert!(storage.exists(&path("copy/empty")).await.unwrap());
+    assert_ne!(
+        storage
+            .metadata(&path("copy/binary.bin"))
+            .await
+            .unwrap()
+            .identity,
+        source_identity
+    );
+    assert!(storage
+        .copy_entry_staged(&path("source"), &path("copy"))
+        .await
+        .is_err());
+    assert!(storage
+        .rename_no_replace(&path("source"), &path("copy"))
+        .await
+        .is_err());
+    assert!(storage.exists(&path("source/binary.bin")).await.unwrap());
+    storage
+        .rename_no_replace(&path("source"), &path("moved"))
+        .await
+        .unwrap();
+    assert!(!storage.exists(&path("source")).await.unwrap());
+    assert_eq!(
+        storage
+            .metadata(&path("moved/binary.bin"))
+            .await
+            .unwrap()
+            .identity,
+        source_identity
+    );
+    assert!(storage
+        .copy_entry_staged(&path("moved"), &path("moved/child"))
+        .await
+        .is_err());
+}
+
+#[tokio::test]
+async fn safe_transfer_memory_contract() {
+    assert_safe_transfers(&MemoryStorage::new()).await;
+}
+#[tokio::test]
+async fn safe_transfer_local_contract() {
+    let root = TempDir::new().unwrap();
+    assert_safe_transfers(&LocalPathStorage::open(root.path()).unwrap()).await;
+}
+
 async fn read_stream(storage: &dyn WorkspaceStorage, options: StorageReadOptions) -> Vec<u8> {
     let stream = storage
         .open_read(&path("bytes.bin"), options)

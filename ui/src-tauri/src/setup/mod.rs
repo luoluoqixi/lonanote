@@ -1,5 +1,6 @@
 pub(crate) mod app_menu;
 pub mod config_events;
+pub(crate) mod document_save_paths;
 pub(crate) mod file_ownership;
 pub mod log;
 pub mod window;

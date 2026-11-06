@@ -4,7 +4,7 @@ import { ActivityIndicator, Keyboard, PixelRatio, StyleSheet, Text, View } from 
 import { runOnJS, useAnimatedReaction } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
-import { triggerNativeHaptics, useUiColorScheme, useUiTheme } from "rn-ui-kit";
+import { triggerNativeHaptics, useToast, useUiColorScheme, useUiTheme } from "rn-ui-kit";
 import { type KeyboardVisibilityPhase, useKeyboardAvoidance } from "rn-ui-kit/core";
 
 import { isDev, isIos26Plus, os, systemLocale } from "@/api/common/platform";
@@ -125,6 +125,9 @@ export function EditorWebView({
   mobileToolbarOverlayHeight = 0,
   onContentScroll,
 }: EditorWebViewProps) {
+  const { toast } = useToast();
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
   const devMode = isDev();
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -294,7 +297,11 @@ export function EditorWebView({
           if (os() === "ios") webViewRef.current?.setEditorContentOffset?.(y);
         },
         onSaveRequested: () => {
-          void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
+          void saveCoordinator
+            .requestSaveDocument(document.documentId)
+            .catch((error) =>
+              toastRef.current.error(error instanceof Error ? error.message : "保存文档失败"),
+            );
         },
         onTaskToggled: () => triggerNativeHaptics(true),
         onConsole: logEditorConsole,

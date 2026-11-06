@@ -49,6 +49,7 @@ pub const INITIAL_WORKSPACE_DISPLAY_NAME_EN: &str = "My Notes";
 
 mod managed_scan;
 mod relocation;
+mod transfers;
 
 pub struct WorkspaceManager {
     catalog: WorkspaceCatalog,

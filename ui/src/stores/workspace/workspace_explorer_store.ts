@@ -37,6 +37,7 @@ export type WorkspaceExplorerState = {
   setExpanded: (id: string, path: string, expanded: boolean) => Promise<void>;
   refreshVisible: (id: string, mode: ExplorerMode, path: string) => Promise<void>;
   invalidatePaths: (id: string, paths: string[]) => Promise<void>;
+  remapPath: (id: string, from: string, to: string) => void;
   resetWorkspace: (id: string) => void;
   restartWorkspace: (id: string) => Promise<void>;
   collapseAll: (id: string) => void;
@@ -120,6 +121,26 @@ export function createWorkspaceExplorerStore(api: IndexApi) {
     }
     return {
       workspaces: {},
+      remapPath: (id, from, to) => {
+        const w = ensure(id);
+        const map = (p: string) => (isPathWithin(p, from) ? to + p.slice(from.length) : p);
+        const ancestors: string[] = [];
+        let parent = parentWorkspacePath(to);
+        while (parent) {
+          ancestors.push(parent);
+          parent = parentWorkspacePath(parent);
+        }
+        update(id, w.epoch, (current) => ({
+          ...current,
+          directories: Object.fromEntries(
+            Object.entries(current.directories).filter(([p]) => !isPathWithin(p, from)),
+          ),
+          expandedPaths: [...new Set([...current.expandedPaths.map(map), ...ancestors])],
+          selectedPaths: current.selectedPaths.map(map),
+          focusedPath: current.focusedPath === null ? null : map(current.focusedPath),
+          rangeAnchorPath: current.rangeAnchorPath === null ? null : map(current.rangeAnchorPath),
+        }));
+      },
       loadDirectory: (id, path, { reload }) => {
         const w = ensure(id);
         const epoch = w.epoch;

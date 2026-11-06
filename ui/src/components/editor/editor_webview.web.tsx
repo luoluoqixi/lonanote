@@ -179,7 +179,11 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
           window.dispatchEvent(new KeyboardEvent(payload.type, { ...payload, cancelable: true }));
         },
         onSaveRequested: () => {
-          void saveCoordinator.flushDocument(document.documentId).catch(() => undefined);
+          void saveCoordinator
+            .requestSaveDocument(document.documentId)
+            .catch((error) =>
+              toastRef.current.error(error instanceof Error ? error.message : "保存文档失败"),
+            );
         },
         onTaskToggled: () => undefined,
         onConsole: logEditorConsole,

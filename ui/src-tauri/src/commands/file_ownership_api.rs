@@ -9,10 +9,10 @@ use std::{
 };
 use tauri::{Emitter, Manager, WebviewWindow};
 
-static FILES: LazyLock<Mutex<FileOwnership>> =
+pub(super) static FILES: LazyLock<Mutex<FileOwnership>> =
     LazyLock::new(|| Mutex::new(FileOwnership::default()));
 
-#[derive(serde::Deserialize)]
+#[derive(Clone, serde::Deserialize, serde::Serialize)]
 #[serde(
     tag = "kind",
     rename_all = "camelCase",
@@ -55,7 +55,13 @@ pub async fn claim_document_file(
                     .ok_or("当前 Storage Provider 未提供本地文件路径")?,
             )
         }
-        FileReference::LooseFile { absolute_path } => PathBuf::from(absolute_path),
+        FileReference::LooseFile { absolute_path } => {
+            let path = PathBuf::from(absolute_path)
+                .canonicalize()
+                .map_err(|e| e.to_string())?;
+            super::document_save_api::classify_target(window.label(), &path).await?;
+            path
+        }
     };
     if !path.is_absolute() {
         return Err("文件路径必须是绝对路径".to_string());
@@ -108,8 +114,49 @@ pub async fn release_document_file(
 }
 
 pub fn release_window(label: &str) {
+    super::document_save_api::release_window(label);
     FILES
         .lock()
         .unwrap_or_else(|error| error.into_inner())
         .release_window(label);
+}
+
+pub async fn assert_transfer_access(
+    window: &str,
+    id: WorkspaceId,
+    data: &serde_json::Value,
+) -> Result<(), String> {
+    let sources: Vec<lonanote_core::workspace::TransferSource> =
+        serde_json::from_value(data.get("sources").cloned().ok_or("缺少来源")?)
+            .map_err(|e| e.to_string())?;
+    let mut roots = Vec::new();
+    let mut overwrite_roots = Vec::new();
+    if let Some(root) = workspace_manager()
+        .native_root_path(&id)
+        .await
+        .map_err(|e| e.to_string())?
+    {
+        let destination: lonanote_core::workspace::WorkspaceRelativePath = serde_json::from_value(
+            data.get("destinationDirectory")
+                .cloned()
+                .ok_or("缺少目标目录")?,
+        )
+        .map_err(|e| e.to_string())?;
+        for source in sources {
+            roots.push(PathBuf::from(&root).join(source.path.as_str()));
+            if data.get("conflictPolicy").and_then(|v| v.as_str()) == Some("overwrite") {
+                if let Some(name) = source.path.file_name() {
+                    let target = destination.join_name(&name);
+                    if target != source.path {
+                        overwrite_roots.push(PathBuf::from(&root).join(target.as_str()));
+                    }
+                }
+            }
+        }
+    }
+    super::document_save_api::assert_no_pending_targets(&roots)?;
+    super::document_save_api::assert_no_pending_targets(&overwrite_roots)?;
+    let files = FILES.lock().unwrap_or_else(|e| e.into_inner());
+    files.assert_transfer_access(window, &roots)?;
+    files.assert_overwrite_access(&overwrite_roots)
 }

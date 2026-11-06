@@ -286,3 +286,18 @@ test("祖先收起后，迟到展开结果不能恢复读取隐藏后代", async
   expect(calls).toEqual(["A/B"]);
   expect(store.getState().workspaces.w.expandedPaths).toContain("A/B/C");
 });
+
+test("移动目录迁移选中、展开、焦点和范围锚点", async () => {
+  const { store, actions } = fixture();
+  await actions.loadDirectory("w", "", { reload: true });
+  await actions.setExpanded("w", "A", true);
+  actions.setSelection("w", ["A/sub"], "A/sub", "A/sub");
+  actions.remapPath("w", "A", "B/A");
+  const state = store.getState().workspaces.w;
+  expect(state.expandedPaths).toContain("B/A");
+  expect(state.expandedPaths).toContain("B");
+  expect(state.selectedPaths).toEqual(["B/A/sub"]);
+  expect(state.focusedPath).toBe("B/A/sub");
+  expect(state.rangeAnchorPath).toBe("B/A/sub");
+  expect(state.directories.A).toBeUndefined();
+});

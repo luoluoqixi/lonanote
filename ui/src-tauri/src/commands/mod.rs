@@ -1,7 +1,9 @@
 mod file_dialog_api;
 use file_dialog_api::*;
 mod api;
+mod document_save_api;
 mod file_ownership_api;
+use document_save_api::*;
 mod invoke;
 mod resource_protocol;
 mod window_api;
@@ -85,6 +87,9 @@ pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         update_window_menu,
         claim_document_file,
         release_document_file,
+        prepare_document_save_target,
+        commit_document_save_target,
+        abort_document_save_target,
     ])
 }
 

@@ -653,6 +653,7 @@ function DirectoryExplorerForWorkspace({
         title={title}
       />
       <WorkspaceExplorerList
+        workspaceId={workspaceId}
         entries={sortedEntries}
         foldersFirst={preferences.workspaceExplorer.foldersFirst}
         groupMode={effectiveGroupMode}
@@ -660,6 +661,9 @@ function DirectoryExplorerForWorkspace({
         isLoading={isLoading}
         isSelectionMode={isSelectionMode}
         isUpdating={isUpdatingEntries}
+        onDeleteEntries={(items) => {
+          void deleteEntries(items);
+        }}
         onDeleteEntry={(entry) => {
           void deleteEntries([entry]);
         }}

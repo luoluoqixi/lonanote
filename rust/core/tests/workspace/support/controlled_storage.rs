@@ -43,7 +43,8 @@ impl ControlledStorage {
     }
 
     pub fn release_first_write(&self) {
-        self.release.notify_waiters();
+        // 仅有一个等待者；notify_one 会保留提前到达的许可，避免测试偶发挂起。
+        self.release.notify_one();
     }
 
     pub fn pause_next_write(&self) {

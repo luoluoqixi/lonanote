@@ -23,12 +23,74 @@ use crate::workspace::domain::{
 
 const LOCAL_FS_PROVIDER_SCHEMA_VERSION: u32 = 1;
 
+fn validate_tree(source: &Path) -> std::io::Result<()> {
+    let metadata = std::fs::symlink_metadata(source)?;
+    if metadata.file_type().is_symlink() || (!metadata.is_file() && !metadata.is_dir()) {
+        return Err(std::io::Error::other("不能转移符号链接或特殊文件"));
+    }
+    if metadata.is_dir() {
+        for child in std::fs::read_dir(source)? {
+            validate_tree(&child?.path())?;
+        }
+    }
+    Ok(())
+}
+
+fn copy_tree(source: &Path, target: &Path) -> std::io::Result<()> {
+    let metadata = std::fs::symlink_metadata(source)?;
+    if metadata.file_type().is_symlink() || (!metadata.is_file() && !metadata.is_dir()) {
+        return Err(std::io::Error::other("不能复制符号链接或特殊文件"));
+    }
+    if metadata.is_dir() {
+        std::fs::create_dir(target)?;
+        for child in std::fs::read_dir(source)? {
+            let child = child?;
+            copy_tree(&child.path(), &target.join(child.file_name()))?;
+        }
+    } else {
+        let mut input = std::fs::File::open(source)?;
+        let mut output = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(target)?;
+        std::io::copy(&mut input, &mut output)?;
+        output.sync_all()?;
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 pub struct LocalPathStorage {
     root: PathBuf,
 }
 
 impl LocalPathStorage {
+    fn transfer_paths(
+        &self,
+        from: &WorkspaceRelativePath,
+        to: &WorkspaceRelativePath,
+    ) -> Result<(PathBuf, PathBuf), StorageError> {
+        if from.is_root() || to.is_root() {
+            return Err(StorageError::CannotModifyRoot);
+        }
+        let source = self.checked_existing(from)?;
+        self.ensure_parent(to, false)?;
+        let target = self.checked_for_creation(to)?;
+        let source_actual = source
+            .canonicalize()
+            .map_err(|e| map_path_io(from, "resolve_transfer", e))?;
+        let parent_actual = target
+            .parent()
+            .ok_or(StorageError::CannotModifyRoot)?
+            .canonicalize()
+            .map_err(|e| map_path_io(to, "resolve_transfer", e))?;
+        if parent_actual.starts_with(&source_actual) || to.starts_with(from) {
+            return Err(StorageError::UnsupportedOperation {
+                operation: "transfer_directory_into_itself",
+            });
+        }
+        Ok((source, target))
+    }
     pub fn open(root: impl AsRef<Path>) -> Result<Self, StorageError> {
         let root_input = root.as_ref();
         let input_metadata = std::fs::symlink_metadata(root_input)
@@ -218,6 +280,107 @@ impl LocalPathStorage {
 
 #[async_trait]
 impl WorkspaceStorage for LocalPathStorage {
+    async fn validate_overwrite(
+        &self,
+        target: &WorkspaceRelativePath,
+        protected: &[WorkspaceRelativePath],
+    ) -> Result<(), StorageError> {
+        let target_native = self.checked_existing(target)?;
+        let target_id = entry_identity(&target_native)
+            .map_err(|e| map_path_io(target, "overwrite_identity", e))?;
+        let ancestor_ids = |native: &Path,
+                            relative: &WorkspaceRelativePath|
+         -> Result<Vec<String>, StorageError> {
+            let mut ids = Vec::new();
+            for ancestor in native.ancestors() {
+                match entry_identity(ancestor) {
+                    Ok(id) => ids.push(id),
+                    Err(error) if error.kind() == ErrorKind::NotFound => {}
+                    Err(error) => return Err(map_path_io(relative, "overwrite_ancestor", error)),
+                }
+                if ancestor == self.root {
+                    break;
+                }
+            }
+            Ok(ids)
+        };
+        let target_ancestors = ancestor_ids(&target_native, target)?;
+        for path in protected {
+            let native = self.checked_for_creation(path)?;
+            // 比较真实祖先身份，覆盖 Windows/macOS 大小写与其他别名情况，不能仅比较字符串前缀。
+            let protected_ancestors = ancestor_ids(&native, path)?;
+            let target_contains_protected = protected_ancestors.contains(&target_id);
+            let protected_contains_target = match entry_identity(&native) {
+                Ok(id) => target_ancestors.contains(&id),
+                Err(error) if error.kind() == ErrorKind::NotFound => false,
+                Err(error) => return Err(map_path_io(path, "overwrite_identity", error)),
+            };
+            if target_contains_protected || protected_contains_target {
+                return Err(StorageError::io(
+                    "overwrite_protected",
+                    "目标与来源或已打开路径的实际位置重叠，不能覆盖",
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    async fn rename_no_replace(
+        &self,
+        from: &WorkspaceRelativePath,
+        to: &WorkspaceRelativePath,
+    ) -> Result<(), StorageError> {
+        let (source, target) = self.transfer_paths(from, to)?;
+        let from = from.clone();
+        let to = to.clone();
+        tokio::task::spawn_blocking(move || {
+            validate_tree(&source).map_err(|e| map_path_io(&from, "validate_move", e))?;
+            super::no_replace::rename_no_replace(&source, &target)
+                .map_err(|e| map_path_io(&to, "rename_no_replace", e))
+        })
+        .await
+        .map_err(|_| StorageError::UnsupportedOperation {
+            operation: "move_worker_failed",
+        })?
+    }
+    async fn copy_entry_staged(
+        &self,
+        from: &WorkspaceRelativePath,
+        to: &WorkspaceRelativePath,
+    ) -> Result<(), StorageError> {
+        let (source, target) = self.transfer_paths(from, to)?;
+        let staging = target
+            .parent()
+            .ok_or(StorageError::CannotModifyRoot)?
+            .join(format!(".lonanote-transfer-{}", uuid::Uuid::new_v4()));
+        let to = to.clone();
+        tokio::task::spawn_blocking(move || {
+            let operation = copy_tree(&source, &staging)
+                .and_then(|()| super::no_replace::rename_no_replace(&staging, &target));
+            if let Err(error) = operation {
+                let cleanup = if staging.is_dir() {
+                    std::fs::remove_dir_all(&staging)
+                } else {
+                    std::fs::remove_file(&staging)
+                };
+                if let Err(cleanup) = cleanup {
+                    if cleanup.kind() != ErrorKind::NotFound {
+                        return Err(map_path_io(
+                            &to,
+                            "copy_cleanup",
+                            std::io::Error::other(format!("{error}; 清理失败: {cleanup}")),
+                        ));
+                    }
+                }
+                return Err(map_path_io(&to, "copy_entry_staged", error));
+            }
+            Ok(())
+        })
+        .await
+        .map_err(|_| StorageError::UnsupportedOperation {
+            operation: "copy_worker_failed",
+        })?
+    }
     async fn capabilities(&self) -> Result<StorageCapabilities, StorageError> {
         Ok(StorageCapabilities::local_file_system())
     }
@@ -235,10 +398,13 @@ impl WorkspaceStorage for LocalPathStorage {
         path: &WorkspaceRelativePath,
     ) -> Result<StorageEntryMetadata, StorageError> {
         let native = self.checked_existing(path)?;
-        let metadata = tokio::fs::metadata(native)
+        let metadata = tokio::fs::metadata(&native)
             .await
             .map_err(|error| map_path_io(path, "metadata", error))?;
-        Ok(metadata_to_entry(&metadata))
+        let mut result = metadata_to_entry(&metadata);
+        result.identity =
+            Some(entry_identity(&native).map_err(|e| map_path_io(path, "entry_identity", e))?);
+        Ok(result)
     }
 
     async fn list_dir(
@@ -787,6 +953,7 @@ fn metadata_to_entry(metadata: &std::fs::Metadata) -> StorageEntryMetadata {
         StorageEntryKind::File
     };
     StorageEntryMetadata {
+        identity: None,
         kind,
         size: (kind == StorageEntryKind::File).then_some(metadata.len()),
         created_at: metadata
@@ -830,4 +997,50 @@ fn map_root_io(operation: &'static str, error: std::io::Error) -> StorageError {
         },
         _ => StorageError::io(operation, error),
     }
+}
+
+// 内容修改不会改变文件身份。
+#[cfg(unix)]
+fn entry_identity(path: &Path) -> std::io::Result<String> {
+    use std::os::unix::fs::MetadataExt;
+    let m = std::fs::metadata(path)?;
+    Ok(format!("{}:{}:{:?}", m.dev(), m.ino(), m.created().ok()))
+}
+#[cfg(windows)]
+fn entry_identity(path: &Path) -> std::io::Result<String> {
+    use std::os::windows::{fs::OpenOptionsExt, io::AsRawHandle};
+    #[repr(C)]
+    #[derive(Default)]
+    struct Info {
+        attributes: u32,
+        creation: [u32; 2],
+        access: [u32; 2],
+        write: [u32; 2],
+        volume: u32,
+        size_high: u32,
+        size_low: u32,
+        links: u32,
+        index_high: u32,
+        index_low: u32,
+    }
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetFileInformationByHandle(handle: *mut std::ffi::c_void, info: *mut Info) -> i32;
+    }
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(0x02000000)
+        .open(path)?;
+    let mut info = Info::default();
+    if unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut info) } == 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+    Ok(format!(
+        "{}:{}:{}:{}:{}",
+        info.volume, info.index_high, info.index_low, info.creation[0], info.creation[1]
+    ))
+}
+#[cfg(not(any(unix, windows)))]
+fn entry_identity(_path: &Path) -> std::io::Result<String> {
+    Err(std::io::Error::other("当前平台不支持文件身份"))
 }

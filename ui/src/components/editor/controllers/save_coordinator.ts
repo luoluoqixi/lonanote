@@ -4,11 +4,14 @@ import { workspaceFile } from "@/api/commands/workspace";
 import { isDesktop } from "@/api/common/platform";
 import type { EditorDocumentCapturePayload } from "@/assets/editor/src/bridge/protocol";
 import { documentConflictCoordinator } from "@/components/editor/controllers/document_conflict_coordinator";
-import { editorStore, isDocumentDirty } from "@/stores/editor";
+import { editorStore, getEditorDocumentKey, isDocumentDirty } from "@/stores/editor";
 import { settingsStore } from "@/stores/settings";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
 import { editorInputLeaseCoordinator } from "./editor_input_lease_coordinator";
+import { chooseUntitledSaveTarget } from "./untitled_save_target";
+
+export type DocumentSaveResult = "saved" | "cancelled";
 
 type SaveEntry = {
   autoSaveTimer: ReturnType<typeof setTimeout> | null;
@@ -80,25 +83,88 @@ async function captureLatestDraft(documentId: string, strict = false): Promise<v
   }
 }
 
-async function writeLatestSnapshot(documentId: string): Promise<void> {
+async function writeLatestSnapshot(documentId: string): Promise<DocumentSaveResult> {
   let document = editorStore.getState().documentsById[documentId];
-  if (!document || !isDocumentDirty(document)) return;
+  if (!document) return "cancelled";
+  if (document.ref.kind === "untitled") {
+    const identityRevision = document.identityRevision;
+    const target = await chooseUntitledSaveTarget(document).catch((error) => {
+      editorStore
+        .getState()
+        .setDocumentSaveState(
+          documentId,
+          "error",
+          error instanceof Error ? error.message : "选择保存位置失败",
+        );
+      throw error;
+    });
+    if (!target) return "cancelled";
+    let release: (() => void) | undefined;
+    try {
+      await captureLatestDraft(documentId, true);
+      const current = editorStore.getState().documentsById[documentId];
+      if (!current || current.identityRevision !== identityRevision)
+        throw new Error("文档身份已变化，请重新保存");
+      const key = getEditorDocumentKey(target.reference);
+      const existing = editorStore.getState().documentIdByKey[key];
+      if (existing && existing !== documentId) throw new Error("目标路径已有打开的文档");
+      release = editorStore.getState().reserveDocumentTarget(documentId, target.reference);
+      const snapshot = { revision: current.draftRevision, text: current.draft };
+      editorStore.getState().setDocumentSaveState(documentId, "saving");
+      await target.commit(snapshot.text);
+      release?.();
+      release = undefined;
+      editorStore.getState().bindDocumentFile(documentId, target.reference, identityRevision);
+      const metadata =
+        target.reference.kind === "workspaceFile"
+          ? await workspaceFile
+              .metadata(target.reference.workspaceId, target.reference.filePath)
+              .catch(() => null)
+          : null;
+      editorStore
+        .getState()
+        .markDocumentSaved(
+          documentId,
+          snapshot.revision,
+          snapshot.text,
+          metadata
+            ? { size: metadata.size ?? null, modifiedAt: metadata.modifiedAt ?? null }
+            : undefined,
+        );
+      saveCoordinator.scheduleAutoSave(documentId);
+      if (target.reference.kind === "workspaceFile")
+        await workspaceExplorerStore
+          .getState()
+          .invalidatePaths(target.reference.workspaceId, [target.reference.filePath])
+          .catch((error) => console.warn("[editor-save] 文件已保存，刷新 Explorer 失败", error));
+      return "saved";
+    } catch (error) {
+      editorStore
+        .getState()
+        .setDocumentSaveState(
+          documentId,
+          "error",
+          error instanceof Error ? error.message : "保存文档失败",
+        );
+      throw error;
+    } finally {
+      release?.();
+      await target.abort().catch((error) => console.warn("释放保存目标失败", error));
+    }
+  }
+  if (!isDocumentDirty(document)) return "saved";
 
   if (document.loadState !== "ready") {
     throw new Error("文档尚未加载完成，无法保存");
   }
   await documentConflictCoordinator.checkForExternalChange(documentId);
   document = editorStore.getState().documentsById[documentId];
-  if (!document || !isDocumentDirty(document)) return;
+  if (!document || !isDocumentDirty(document)) return "saved";
   if (document.conflict) {
     clearAutoSaveTimer(getEntry(documentId));
     throw new Error("文档存在外部修改冲突，无法保存");
   }
-  if (document.ref.kind === "untitled") {
-    const message = "未命名文档需要先选择保存位置";
-    editorStore.getState().setDocumentSaveState(documentId, "error", message);
-    throw new Error(message);
-  }
+  if (document.ref.kind === "untitled") return "cancelled";
 
   if (document.ref.kind === "looseFile" && !isDesktop()) {
     const message = "移动端暂不支持保存 loose file";
@@ -128,11 +194,12 @@ async function writeLatestSnapshot(documentId: string): Promise<void> {
         .getState()
         .invalidatePaths(document.ref.workspaceId, [document.ref.filePath])
         .catch((error) => console.warn("[editor-save] 文件已保存，刷新 Explorer 失败", error));
-      return;
+      return "saved";
     }
 
     await fs.write(document.ref.absolutePath, snapshot.text);
     editorStore.getState().markDocumentSaved(documentId, snapshot.revision, snapshot.text);
+    return "saved";
   } catch (error) {
     const message = error instanceof Error ? error.message : "保存文档失败";
     editorStore.getState().setDocumentSaveState(documentId, "error", message);
@@ -140,7 +207,7 @@ async function writeLatestSnapshot(documentId: string): Promise<void> {
   }
 }
 
-async function flushDocument(documentId: string): Promise<void> {
+async function requestSaveDocument(documentId: string): Promise<DocumentSaveResult> {
   const entry = getEntry(documentId);
   clearAutoSaveTimer(entry);
 
@@ -149,13 +216,17 @@ async function flushDocument(documentId: string): Promise<void> {
     .catch(() => undefined)
     .then(async () => {
       await captureLatestDraft(documentId);
-      await writeLatestSnapshot(documentId);
+      return writeLatestSnapshot(documentId);
     });
-  entry.inFlight = task;
+  const barrier = task.then(
+    () => undefined,
+    () => undefined,
+  );
+  entry.inFlight = barrier;
   try {
-    await task;
+    return await task;
   } finally {
-    if (entry.inFlight === task) {
+    if (entry.inFlight === barrier) {
       entry.inFlight = null;
     }
   }
@@ -163,7 +234,7 @@ async function flushDocument(documentId: string): Promise<void> {
 
 export interface DocumentMutationContext {
   capture(): Promise<void>;
-  save(documentIds?: readonly string[]): Promise<void>;
+  save(documentIds?: readonly string[]): Promise<DocumentSaveResult | void>;
 }
 
 async function withDocumentMutation<T>(
@@ -188,7 +259,10 @@ async function withDocumentMutation<T>(
         save: async (selectedIds = ids) => {
           if (selectedIds.some((id) => !ids.includes(id)))
             throw new Error("只能保存当前 mutation 屏障内的文档");
-          for (const id of new Set(selectedIds)) await writeLatestSnapshot(id);
+          for (const id of new Set(selectedIds)) {
+            if ((await writeLatestSnapshot(id)) === "cancelled") return "cancelled";
+          }
+          return "saved";
         },
       });
     } finally {
@@ -244,7 +318,14 @@ export const saveCoordinator = {
   scheduleAutoSave: (documentId: string): void => {
     const document = editorStore.getState().documentsById[documentId];
     const settings = settingsStore.getSettings().editorDefaults;
-    if (!document || !isDocumentDirty(document) || document.conflict || !settings.autoSave) return;
+    if (
+      !document ||
+      document.ref.kind === "untitled" ||
+      !isDocumentDirty(document) ||
+      document.conflict ||
+      !settings.autoSave
+    )
+      return;
 
     const entry = getEntry(documentId);
     clearAutoSaveTimer(entry);
@@ -253,11 +334,14 @@ export const saveCoordinator = {
     const delayMs = Math.max(100, settings.autoSaveIntervalSeconds * 1000);
     entry.autoSaveTimer = setTimeout(() => {
       entry.autoSaveTimer = null;
-      void flushDocument(documentId).catch(() => undefined);
+      void requestSaveDocument(documentId).catch(() => undefined);
     }, delayMs);
   },
 
-  flushDocument,
+  requestSaveDocument,
+  flushDocument: async (documentId: string): Promise<void> => {
+    await requestSaveDocument(documentId);
+  },
 
   cancelAutoSave: (documentId: string): void => {
     clearAutoSaveTimer(getEntry(documentId));

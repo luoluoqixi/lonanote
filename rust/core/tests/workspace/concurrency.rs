@@ -12,6 +12,19 @@ use lonanote_core::workspace::{
 };
 use tempfile::TempDir;
 
+#[tokio::test]
+async fn controlled_storage_retains_early_release() {
+    let storage = ControlledStorage::paused();
+    storage.release_first_write();
+    tokio::time::timeout(
+        std::time::Duration::from_millis(100),
+        storage.write(&path("note.md"), b"test", WriteOptions::default()),
+    )
+    .await
+    .expect("测试屏障提前释放时不应丢失通知")
+    .unwrap();
+}
+
 async fn instance(storage: Arc<ControlledStorage>, name: &str) -> Arc<WorkspaceInstance> {
     let id = WorkspaceId::new();
     let storage: Arc<dyn WorkspaceStorage> = storage;

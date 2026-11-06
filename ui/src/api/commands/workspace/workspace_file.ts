@@ -6,6 +6,8 @@ import type {
   StorageEntryMetadata,
   WorkspaceId,
   WorkspaceRelativePath,
+  WorkspaceTransferEntryResult,
+  WorkspaceTransferSource,
   WriteWorkspaceFileOptions,
 } from "./types";
 
@@ -17,6 +19,22 @@ function writeOptions(options?: WriteWorkspaceFileOptions) {
 }
 
 export const workspaceFile = {
+  transfer: (
+    workspaceId: WorkspaceId,
+    sources: WorkspaceTransferSource[],
+    destinationDirectory: string,
+    operation: "move" | "copy",
+    conflictPolicy: "keepBoth" | "overwrite" | "skip" | "error",
+    protectedPaths: string[] = [],
+  ): Promise<WorkspaceTransferEntryResult[]> =>
+    invokeWorkspaceResult("workspace.file.transfer", {
+      workspaceId,
+      sources,
+      destinationDirectory,
+      operation,
+      conflictPolicy,
+      protectedPaths,
+    }),
   nativePath: (workspaceId: WorkspaceId, path: WorkspaceRelativePath): Promise<string | null> =>
     invokeWorkspaceResult("workspace.file.native_path", { workspaceId, path }),
   capabilities: (workspaceId: WorkspaceId): Promise<StorageCapabilities> => {

@@ -22,6 +22,10 @@ use crate::workspace::{
 };
 
 use super::index::WorkspaceIndex;
+use crate::workspace::{
+    StorageEntryKind, TransferConflictPolicy, TransferEntryResult, TransferOperation,
+    TransferSource, TransferStatus,
+};
 
 #[derive(Debug)]
 pub struct WorkspaceInstance {
@@ -37,6 +41,212 @@ pub struct WorkspaceInstance {
 }
 
 impl WorkspaceInstance {
+    pub async fn transfer_entries(
+        &self,
+        sources: Vec<TransferSource>,
+        destination: WorkspaceRelativePath,
+        operation: TransferOperation,
+        conflict_policy: TransferConflictPolicy,
+        protected_paths: Vec<WorkspaceRelativePath>,
+    ) -> Result<Vec<TransferEntryResult>, WorkspaceError> {
+        ensure_user_mutation_path(&destination)?;
+        let _mutation = self.mutation_lock.lock().await;
+        if self.session.metadata(&destination).await?.kind != StorageEntryKind::Directory {
+            return Err(StorageError::NotDirectory { path: destination }.into());
+        }
+        let capabilities = self.session.capabilities().await?;
+        if !capabilities.can_write
+            || !capabilities.can_read
+            || (operation == TransferOperation::Move
+                && (!capabilities.can_move_entry || !capabilities.can_delete))
+            || (operation == TransferOperation::Copy && !capabilities.can_copy_entry)
+        {
+            return Err(StorageError::UnsupportedOperation {
+                operation: "safe_transfer",
+            }
+            .into());
+        }
+        let mut sources = sources;
+        sources.sort_by(|a, b| a.path.cmp(&b.path));
+        sources.dedup_by(|a, b| a.path == b.path);
+        let all = sources.clone();
+        sources.retain(|s| {
+            !all.iter()
+                .any(|parent| parent.path != s.path && s.path.starts_with(&parent.path))
+        });
+        let mut result = Vec::new();
+        let mut committed_targets = Vec::new();
+        for source in &sources {
+            let mut cleanup_error = None;
+            let attempt: Result<(TransferStatus, Option<WorkspaceRelativePath>), WorkspaceError> =
+                async {
+                    ensure_user_mutation_path(&source.path)?;
+                    if source.path.is_root() {
+                        return Err(StorageError::CannotModifyRoot.into());
+                    }
+                    let metadata = self.session.metadata(&source.path).await?;
+                    if source.expected_metadata.as_ref().is_some_and(|expected| {
+                        expected.identity.is_none() || expected.identity != metadata.identity
+                    }) {
+                        return Err(StorageError::UnsupportedOperation {
+                            operation: "transfer_source_changed",
+                        }
+                        .into());
+                    }
+                    if sources.iter().any(|s| destination.starts_with(&s.path)) {
+                        return Err(StorageError::UnsupportedOperation {
+                            operation: "transfer_into_source",
+                        }
+                        .into());
+                    }
+                    let name = source
+                        .path
+                        .file_name()
+                        .ok_or(StorageError::CannotModifyRoot)?;
+                    let mut target = destination.join_name(&name);
+                    ensure_user_mutation_path(&target)?;
+                    // 同目录操作统一生成副本，保留来源，避免把自身当作重名覆盖目标。
+                    let same_directory = target == source.path;
+                    let operation = if same_directory {
+                        TransferOperation::Copy
+                    } else {
+                        operation
+                    };
+                    let conflict_policy = if same_directory {
+                        TransferConflictPolicy::KeepBoth
+                    } else {
+                        conflict_policy
+                    };
+                    if operation == TransferOperation::Copy && !capabilities.can_copy_entry {
+                        return Err(StorageError::UnsupportedOperation {
+                            operation: "safe_copy",
+                        }
+                        .into());
+                    }
+                    let protected = |target: &WorkspaceRelativePath| {
+                        protected_paths
+                            .iter()
+                            .chain(committed_targets.iter())
+                            .any(|p| p == target || p.starts_with(target))
+                    };
+                    if self.session.exists(&target).await? || protected(&target) {
+                        match conflict_policy {
+                            TransferConflictPolicy::Overwrite => {
+                                if target == source.path {
+                                    return Ok((TransferStatus::Skipped, Some(target)));
+                                }
+                                // 覆盖不能触碰任一来源或打开的目标文档，目录整体替换而非合并。
+                                if protected(&target) {
+                                    return Err(StorageError::io(
+                                        "overwrite_open_target",
+                                        "目标路径有已打开的文档，请先关闭后重试",
+                                    )
+                                    .into());
+                                }
+                                if sources.iter().any(|s| {
+                                    s.path.starts_with(&target) || target.starts_with(&s.path)
+                                }) {
+                                    return Err(StorageError::io(
+                                        "overwrite_source_overlap",
+                                        "目标与批量来源重叠，不能覆盖",
+                                    )
+                                    .into());
+                                }
+                                if !capabilities.can_move_entry || !capabilities.can_delete {
+                                    return Err(StorageError::UnsupportedOperation {
+                                        operation: "safe_overwrite",
+                                    }
+                                    .into());
+                                }
+                                let mut overwrite_protected = protected_paths.clone();
+                                overwrite_protected.extend(sources.iter().map(|s| s.path.clone()));
+                                overwrite_protected.extend(committed_targets.iter().cloned());
+                                self.session
+                                    .validate_overwrite(&target, &overwrite_protected)
+                                    .await?;
+                                cleanup_error = super::transfer_replace::replace_entry(
+                                    &self.session,
+                                    &source.path,
+                                    &target,
+                                    operation,
+                                )
+                                .await?;
+                                self.index
+                                    .invalidate_paths(&[source.path.clone(), target.clone()])
+                                    .await;
+                                self.mark_modified_locked().await;
+                                return Ok((TransferStatus::Succeeded, Some(target)));
+                            }
+                            TransferConflictPolicy::Skip => {
+                                return Ok((TransferStatus::Skipped, Some(target)))
+                            }
+                            TransferConflictPolicy::Error => {
+                                return Err(StorageError::AlreadyExists { path: target }.into())
+                            }
+                            TransferConflictPolicy::KeepBoth => {
+                                let value = name.as_str();
+                                let (stem, extension) = if metadata.kind == StorageEntryKind::File {
+                                    value
+                                        .rsplit_once('.')
+                                        .filter(|(stem, _)| !stem.is_empty())
+                                        .map(|(s, e)| (s.to_string(), format!(".{e}")))
+                                        .unwrap_or((value.to_string(), String::new()))
+                                } else {
+                                    (value.to_string(), String::new())
+                                };
+                                for count in 1..=10000 {
+                                    target = destination.join(&WorkspaceRelativePath::parse(
+                                        format!("{stem} ({count}){extension}"),
+                                    )?);
+                                    if !self.session.exists(&target).await? && !protected(&target) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ensure_user_mutation_path(&target)?;
+                    if protected(&target) {
+                        return Err(StorageError::AlreadyExists { path: target }.into());
+                    }
+                    if operation == TransferOperation::Move {
+                        self.session
+                            .rename_no_replace(&source.path, &target)
+                            .await?;
+                    } else {
+                        self.session
+                            .copy_entry_staged(&source.path, &target)
+                            .await?;
+                    }
+                    self.index
+                        .invalidate_paths(&[source.path.clone(), target.clone()])
+                        .await;
+                    self.mark_modified_locked().await;
+                    Ok((TransferStatus::Succeeded, Some(target)))
+                }
+                .await;
+            if let Ok((TransferStatus::Succeeded, Some(target))) = &attempt {
+                committed_targets.push(target.clone());
+            }
+            result.push(match attempt {
+                Ok((status, target_path)) => TransferEntryResult {
+                    source_path: source.path.clone(),
+                    target_path,
+                    status,
+                    error: None,
+                    cleanup_error,
+                },
+                Err(error) => TransferEntryResult {
+                    source_path: source.path.clone(),
+                    target_path: None,
+                    status: TransferStatus::Failed,
+                    error: Some(error.to_string()),
+                    cleanup_error: None,
+                },
+            });
+        }
+        Ok(result)
+    }
     pub async fn new(
         storage_binding: WorkspaceStorageBinding,
         session: Arc<WorkspaceStorageSession>,
@@ -374,7 +584,7 @@ fn ensure_user_mutation_path(path: &WorkspaceRelativePath) -> Result<(), Workspa
     if path
         .components()
         .next()
-        .is_some_and(|component| component == ".lonanote")
+        .is_some_and(|component| component.eq_ignore_ascii_case(".lonanote"))
     {
         return Err(StorageError::UnsupportedOperation {
             operation: "modify_workspace_metadata",

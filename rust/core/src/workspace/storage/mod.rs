@@ -1,5 +1,6 @@
 mod local;
 mod memory;
+mod no_replace;
 
 use std::{fmt, path::Path, pin::Pin, sync::Arc};
 
@@ -35,6 +36,9 @@ pub struct StorageEntryMetadata {
     pub size: Option<u64>,
     pub created_at: Option<u64>,
     pub modified_at: Option<u64>,
+    /// 文件身份与内容版本独立。
+    #[serde(default)]
+    pub identity: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -93,6 +97,10 @@ pub fn resolve_storage_range(
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StorageCapabilities {
+    #[serde(default)]
+    pub can_copy_entry: bool,
+    #[serde(default)]
+    pub can_move_entry: bool,
     pub can_read: bool,
     pub can_write: bool,
     pub can_create_directory: bool,
@@ -106,6 +114,20 @@ pub struct StorageCapabilities {
 impl StorageCapabilities {
     pub const fn local_file_system() -> Self {
         Self {
+            can_copy_entry: cfg!(any(
+                windows,
+                target_os = "linux",
+                target_os = "android",
+                target_os = "macos",
+                target_os = "ios"
+            )),
+            can_move_entry: cfg!(any(
+                windows,
+                target_os = "linux",
+                target_os = "android",
+                target_os = "macos",
+                target_os = "ios"
+            )),
             can_read: true,
             can_write: true,
             can_create_directory: true,
@@ -155,6 +177,34 @@ impl WriteOptions {
 
 #[async_trait]
 pub trait WorkspaceStorage: Send + Sync {
+    /// 覆盖前按 Provider 的实际路径/身份规则保护来源与打开目标。
+    async fn validate_overwrite(
+        &self,
+        _target: &WorkspaceRelativePath,
+        _protected: &[WorkspaceRelativePath],
+    ) -> Result<(), StorageError> {
+        Err(StorageError::UnsupportedOperation {
+            operation: "validate_overwrite",
+        })
+    }
+    async fn copy_entry_staged(
+        &self,
+        _from: &WorkspaceRelativePath,
+        _to: &WorkspaceRelativePath,
+    ) -> Result<(), StorageError> {
+        Err(StorageError::UnsupportedOperation {
+            operation: "copy_entry_staged",
+        })
+    }
+    async fn rename_no_replace(
+        &self,
+        _from: &WorkspaceRelativePath,
+        _to: &WorkspaceRelativePath,
+    ) -> Result<(), StorageError> {
+        Err(StorageError::UnsupportedOperation {
+            operation: "rename_no_replace",
+        })
+    }
     async fn capabilities(&self) -> Result<StorageCapabilities, StorageError>;
     async fn exists(&self, path: &WorkspaceRelativePath) -> Result<bool, StorageError>;
     async fn metadata(
@@ -219,6 +269,27 @@ pub struct WorkspaceStorageSession {
 }
 
 impl WorkspaceStorageSession {
+    pub async fn validate_overwrite(
+        &self,
+        target: &WorkspaceRelativePath,
+        protected: &[WorkspaceRelativePath],
+    ) -> Result<(), StorageError> {
+        self.storage.validate_overwrite(target, protected).await
+    }
+    pub async fn copy_entry_staged(
+        &self,
+        from: &WorkspaceRelativePath,
+        to: &WorkspaceRelativePath,
+    ) -> Result<(), StorageError> {
+        self.storage.copy_entry_staged(from, to).await
+    }
+    pub async fn rename_no_replace(
+        &self,
+        from: &WorkspaceRelativePath,
+        to: &WorkspaceRelativePath,
+    ) -> Result<(), StorageError> {
+        self.storage.rename_no_replace(from, to).await
+    }
     pub fn new(storage: Arc<dyn WorkspaceStorage>) -> Self {
         Self {
             storage,

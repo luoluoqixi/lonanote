@@ -16,6 +16,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { type DropdownItemData, confirmNative, useUiTheme } from "rn-ui-kit";
 
 import { isMobile } from "@/api/common/platform";
+import { isDesktop } from "@/api/common/platform";
 import {
   documentConflictCoordinator,
   documentRegistry,
@@ -23,10 +24,12 @@ import {
   editorInputLeaseCoordinator,
   saveCoordinator,
 } from "@/components/editor/controllers";
+import { getDocumentSaveCapabilities } from "@/components/editor/controllers/document_save_capabilities";
 import { toggleEditorPreviewMode } from "@/components/editor/controllers/editor_preview_mode";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useEditorDocument, useEditorView } from "@/hooks/editor";
 import { useGlobalSettings } from "@/hooks/settings";
+import { useToast } from "@/hooks/ui";
 import { editorStore, isDocumentDirty } from "@/stores/editor";
 
 import { EditorHeader } from "./editor_header";
@@ -49,6 +52,7 @@ export function EditorPage() {
   const navigation = useNavigation();
   const router = useRouter();
   const { settings } = useGlobalSettings();
+  const { toast } = useToast();
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [isSavingBeforeClose, setIsSavingBeforeClose] = useState(false);
   const [mobileToolbarOverlayHeight, setMobileToolbarOverlayHeight] = useState(0);
@@ -80,7 +84,8 @@ export function EditorPage() {
   const isConflictDialogOpen =
     conflictDetectedAt !== null && dismissedConflictAt !== conflictDetectedAt;
   const shouldFlushBeforeClose =
-    settings.editorDefaults.autoSave || settings.editorDefaults.autoSaveOnFocusChange;
+    document?.ref.kind !== "untitled" &&
+    (settings.editorDefaults.autoSave || settings.editorDefaults.autoSaveOnFocusChange);
 
   const handleEditorContentScroll = useCallback(
     ({
@@ -141,7 +146,11 @@ export function EditorPage() {
     setIsSavingBeforeClose(true);
     setCloseSaveError(null);
     try {
-      await saveCoordinator.flushDocument(documentId);
+      if ((await saveCoordinator.requestSaveDocument(documentId)) === "cancelled") {
+        pendingRemovalActionRef.current = null;
+        setCloseDialogOpen(false);
+        return;
+      }
       const latestDocument = editorStore.getState().documentsById[documentId];
       if (!latestDocument || isDocumentDirty(latestDocument)) {
         throw new Error("保存期间出现新的编辑，请再次保存后离开");
@@ -305,8 +314,10 @@ export function EditorPage() {
 
   const saveDocument = useCallback(() => {
     if (!documentId) return;
-    void saveCoordinator.flushDocument(documentId).catch(() => undefined);
-  }, [documentId]);
+    void saveCoordinator
+      .requestSaveDocument(documentId)
+      .catch((error) => toast.error(error instanceof Error ? error.message : "保存文档失败"));
+  }, [documentId, toast]);
   const executeEditorCommand = useCallback(
     (command: Parameters<typeof editorCommandCoordinator.execute>[1]) => {
       if (!editorId) return;
@@ -337,13 +348,24 @@ export function EditorPage() {
       document.editOwnerEditorId !== view.editorId;
     const items: DropdownItemData[] = [
       {
-        disabled: document.saveState === "saving",
+        disabled:
+          !getDocumentSaveCapabilities(document, view, isDesktop() ? "tauri" : "native").canSave ||
+          document.saveState === "saving",
         icon: <Save color={accentColor} size={14} />,
         iconProps: { ios: { name: "square.and.arrow.down" } },
         label: "保存",
         onPress: saveDocument,
         value: "save",
       },
+      ...(document.ref.kind === "untitled"
+        ? [
+            {
+              value: "auto-save-unavailable",
+              label: "自动保存不可用 · 选择保存位置后启用",
+              disabled: true,
+            },
+          ]
+        : []),
       { separator: true, value: "separator-history" },
       {
         disabled: editingDisabled || !view.editorState.canUndo,

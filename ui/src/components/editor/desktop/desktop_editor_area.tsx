@@ -8,6 +8,7 @@ import { clipboard } from "@/api/commands/system/clipboard";
 import { createAsyncSubscription } from "@/api/common/async_subscription";
 import { isDesktop, isWeb } from "@/api/common/platform";
 import { documentRegistry, editorInputLeaseCoordinator } from "@/components/editor/controllers";
+import { createUntitledDocument } from "@/components/editor/controllers/untitled_documents";
 import { EditorToolbar } from "@/components/editor/editor_toolbar";
 import { EditorWebView } from "@/components/editor/editor_webview";
 import { WorkspaceFilePreview } from "@/components/files/workspace_file_preview";
@@ -338,8 +339,10 @@ export function DesktopEditorArea({
             ))}
             <EditorTabBlankInput
               key={currentWorkspaceId ?? "no-workspace"}
-              disabled={!currentWorkspaceId || isCreatingNote}
-              onCreateNote={() => void createNote()}
+              disabled={false}
+              onCreateNote={() => {
+                createUntitledDocument();
+              }}
             />
           </ScrollView>
           {tabDrag.preview ? (
@@ -439,8 +442,10 @@ export function DesktopEditorArea({
           >
             <EditorEmptyInput
               key={currentWorkspaceId ?? "no-workspace"}
-              disabled={tabs.length > 0 || !currentWorkspaceId || isCreatingNote}
-              onCreateNote={() => void createNote()}
+              disabled={tabs.length > 0}
+              onCreateNote={() => {
+                createUntitledDocument();
+              }}
             >
               <ScrollView
                 style={{ width: "100%" }}

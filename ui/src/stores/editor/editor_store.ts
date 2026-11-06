@@ -60,6 +60,15 @@ export type EditorStoreState = {
   activeEditorId: string | null;
   openEditor: (ref: EditorDocumentRef, options?: OpenEditorOptions) => OpenEditorResult;
   closeEditor: (editorId: string) => void;
+  reserveDocumentTarget: (
+    documentId: string,
+    ref: Exclude<EditorDocumentRef, { kind: "untitled" }>,
+  ) => () => void;
+  bindDocumentFile: (
+    documentId: string,
+    targetRef: Exclude<EditorDocumentRef, { kind: "untitled" }>,
+    expectedIdentityRevision: number,
+  ) => void;
   reserveWorkspacePaths: (workspaceId: string, paths: string[]) => () => void;
   assertWorkspaceRename: (workspaceId: string, from: string, to: string) => void;
   renameWorkspacePath: (workspaceId: string, from: string, to: string) => void;
@@ -108,7 +117,12 @@ export type EditorStoreState = {
 };
 
 const pathReservations = new Map<symbol, { workspaceId: string; paths: string[] }>();
-const within = (path: string, parent: string) => path === parent || path.startsWith(`${parent}/`);
+const within = (path: string, parent: string) =>
+  parent === "" || path === parent || path.startsWith(`${parent}/`);
+const documentTargetReservations = new Map<
+  string,
+  { documentId: string; ref: Exclude<EditorDocumentRef, { kind: "untitled" }> }
+>();
 let nextRuntimeSequence = 1;
 
 function createRuntimeId(prefix: string): string {
@@ -245,6 +259,8 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
         : getEditorDocumentKey(normalizedRef);
     const state = get();
     const existingDocumentId = state.documentIdByKey[documentKey];
+    if (documentTargetReservations.has(documentKey))
+      throw new Error("该路径正在保存文档，请稍后重试");
     const documentId = existingDocumentId ?? createRuntimeId("document");
     const document = existingDocumentId
       ? state.documentsById[existingDocumentId]
@@ -304,6 +320,64 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
     return { documentId, editorId, reusedView: false };
   },
 
+  reserveDocumentTarget: (documentId, ref) => {
+    if (ref.kind === "workspaceFile") {
+      for (const reservation of pathReservations.values()) {
+        if (
+          reservation.workspaceId === ref.workspaceId &&
+          reservation.paths.some((path) => within(ref.filePath, path))
+        )
+          throw new Error("目标路径正在执行文件操作，请稍后重试");
+      }
+    }
+    const key = getEditorDocumentKey(ref);
+    const existing = get().documentIdByKey[key];
+    if ((existing && existing !== documentId) || documentTargetReservations.has(key))
+      throw new Error("目标路径已有打开或正在保存的文档");
+    documentTargetReservations.set(key, { documentId, ref });
+    return () => {
+      if (documentTargetReservations.get(key)?.documentId === documentId)
+        documentTargetReservations.delete(key);
+    };
+  },
+
+  bindDocumentFile: (documentId, targetRef, expectedIdentityRevision) => {
+    const state = get();
+    const document = state.documentsById[documentId];
+    if (!document || document.identityRevision !== expectedIdentityRevision)
+      throw new Error("文档身份已变化，请重新保存");
+    const ref = normalizeEditorDocumentRef(targetRef);
+    if (ref.kind === "untitled") throw new Error("保存目标必须是文件");
+    const documentKey = getEditorDocumentKey(ref);
+    const existing = state.documentIdByKey[documentKey];
+    if (existing && existing !== documentId) throw new Error("目标路径已有打开的文档");
+    if (ref.kind === "workspaceFile") {
+      for (const reservation of pathReservations.values()) {
+        if (
+          reservation.workspaceId === ref.workspaceId &&
+          reservation.paths.some((path) => within(ref.filePath, path))
+        )
+          throw new Error("此路径正在执行文件操作，请稍后重试");
+      }
+    }
+    const documentIdByKey = { ...state.documentIdByKey };
+    delete documentIdByKey[document.documentKey];
+    documentIdByKey[documentKey] = documentId;
+    set({
+      documentIdByKey,
+      documentsById: {
+        ...state.documentsById,
+        [documentId]: {
+          ...document,
+          ref,
+          documentKey,
+          title: getEditorDocumentTitle(ref),
+          identityRevision: document.identityRevision + 1,
+        },
+      },
+    });
+  },
+
   closeEditor: (editorId) => {
     const state = get();
     const editor = state.editorsById[editorId];
@@ -358,6 +432,14 @@ export const editorStore = createStore<EditorStoreState>()((set, get) => ({
   },
 
   reserveWorkspacePaths: (workspaceId, paths) => {
+    for (const { ref } of documentTargetReservations.values()) {
+      if (
+        ref.kind === "workspaceFile" &&
+        ref.workspaceId === workspaceId &&
+        paths.some((path) => within(ref.filePath, path) || within(path, ref.filePath))
+      )
+        throw new Error("相关路径有正在保存的文档，请稍后重试");
+    }
     for (const reservation of pathReservations.values()) {
       if (
         reservation.workspaceId === workspaceId &&

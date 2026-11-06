@@ -197,6 +197,7 @@ export interface RelocateWorkspaceResult {
 export type StorageEntryKind = "file" | "directory";
 
 export interface StorageEntryMetadata {
+  identity?: string | null;
   kind: StorageEntryKind;
   size: number | null;
   createdAt: UnixSeconds | null;
@@ -209,6 +210,8 @@ export interface StorageEntry {
 }
 
 export interface StorageCapabilities {
+  canCopyEntry?: boolean;
+  canMoveEntry?: boolean;
   canRead: boolean;
   canWrite: boolean;
   canCreateDirectory: boolean;
@@ -218,6 +221,18 @@ export interface StorageCapabilities {
   canWatch: boolean;
   hasNativePath: boolean;
 }
+
+export type WorkspaceTransferSource = {
+  path: string;
+  expectedMetadata?: StorageEntryMetadata | null;
+};
+export type WorkspaceTransferEntryResult = {
+  cleanupError?: string | null;
+  sourcePath: string;
+  targetPath: string | null;
+  status: "succeeded" | "skipped" | "failed";
+  error: string | null;
+};
 
 export type FileType = "file" | "directory";
 

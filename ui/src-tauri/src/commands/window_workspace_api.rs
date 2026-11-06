@@ -27,6 +27,16 @@ pub async fn invoke_workspace(
     }
     let file_operation = key.starts_with("workspace.file.") || key.starts_with("workspace.index.");
     if file_operation {
+        if key == "workspace.file.transfer" {
+            // 转移与文件占用交接互斥，检查后不能被其他窗口抢先打开来源。
+            let _guard = WORKSPACE_GATE.write().await;
+            let id = workspace_id(data).ok_or("缺少有效的 workspaceId")?;
+            check_workspace_access(&WINDOW_SESSIONS, label, key, id)?;
+            super::file_ownership_api::assert_transfer_access(label, id, data).await?;
+            return lonanote_core::invoke_command_async(key, args)
+                .await
+                .map_err(|error| error.to_string());
+        }
         let _guard = WORKSPACE_GATE.read().await;
         let id = workspace_id(data).ok_or("缺少有效的 workspaceId")?;
         check_workspace_access(&WINDOW_SESSIONS, label, key, id)?;

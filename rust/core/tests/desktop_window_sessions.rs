@@ -7,3 +7,6 @@ mod window_geometry;
 mod window_sessions;
 #[path = "../../../ui/src-tauri/src/setup/workspace_access.rs"]
 mod workspace_access;
+
+#[path = "../../../ui/src-tauri/src/setup/document_save_paths.rs"]
+mod document_save_paths;

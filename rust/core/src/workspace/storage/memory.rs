@@ -14,6 +14,7 @@ use crate::workspace::domain::WorkspaceRelativePath;
 
 #[derive(Debug, Clone)]
 struct MemoryEntry {
+    identity: String,
     kind: StorageEntryKind,
     data: Vec<u8>,
     created_at: u64,
@@ -24,6 +25,7 @@ impl MemoryEntry {
     fn directory() -> Self {
         let now = now_timestamp();
         Self {
+            identity: uuid::Uuid::new_v4().to_string(),
             kind: StorageEntryKind::Directory,
             data: Vec::new(),
             created_at: now,
@@ -33,6 +35,7 @@ impl MemoryEntry {
 
     fn metadata(&self) -> StorageEntryMetadata {
         StorageEntryMetadata {
+            identity: Some(self.identity.clone()),
             kind: self.kind,
             size: (self.kind == StorageEntryKind::File).then_some(self.data.len() as u64),
             created_at: Some(self.created_at),
@@ -85,6 +88,65 @@ impl MemoryStorage {
 
 #[async_trait]
 impl WorkspaceStorage for MemoryStorage {
+    async fn validate_overwrite(
+        &self,
+        target: &WorkspaceRelativePath,
+        protected: &[WorkspaceRelativePath],
+    ) -> Result<(), StorageError> {
+        if protected
+            .iter()
+            .any(|p| p.starts_with(target) || target.starts_with(p))
+        {
+            return Err(StorageError::io(
+                "overwrite_protected",
+                "目标与受保护路径重叠，不能覆盖",
+            ));
+        }
+        Ok(())
+    }
+
+    async fn rename_no_replace(
+        &self,
+        from: &WorkspaceRelativePath,
+        to: &WorkspaceRelativePath,
+    ) -> Result<(), StorageError> {
+        self.rename(from, to).await
+    }
+    async fn copy_entry_staged(
+        &self,
+        from: &WorkspaceRelativePath,
+        to: &WorkspaceRelativePath,
+    ) -> Result<(), StorageError> {
+        if from.is_root() || to.is_root() {
+            return Err(StorageError::CannotModifyRoot);
+        }
+        if to.starts_with(from) {
+            return Err(StorageError::UnsupportedOperation {
+                operation: "copy_directory_into_itself",
+            });
+        }
+        let mut entries = self.entries.write().await;
+        Self::get_entry(&entries, from)?;
+        Self::ensure_parent_directory(&entries, to)?;
+        if entries.contains_key(to) {
+            return Err(StorageError::AlreadyExists { path: to.clone() });
+        }
+        let copied = entries
+            .iter()
+            .filter(|(p, _)| p.starts_with(from))
+            .map(|(p, e)| {
+                (
+                    to.join(&p.strip_prefix(from).expect("已校验前缀")),
+                    MemoryEntry {
+                        identity: uuid::Uuid::new_v4().to_string(),
+                        ..e.clone()
+                    },
+                )
+            })
+            .collect::<Vec<_>>();
+        entries.extend(copied);
+        Ok(())
+    }
     async fn capabilities(&self) -> Result<StorageCapabilities, StorageError> {
         Ok(StorageCapabilities::memory())
     }
@@ -168,9 +230,14 @@ impl WorkspaceStorage for MemoryStorage {
             .get(path)
             .map(|entry| entry.created_at)
             .unwrap_or_else(now_timestamp);
+        let identity = entries
+            .get(path)
+            .map(|e| e.identity.clone())
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
         entries.insert(
             path.clone(),
             MemoryEntry {
+                identity,
                 kind: StorageEntryKind::File,
                 data: data.to_vec(),
                 created_at,

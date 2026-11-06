@@ -8,10 +8,12 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react-native";
-import { type ComponentProps } from "react";
+import { type ComponentProps, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  ContextMenu,
+  type ContextMenuItemData,
   NativeList,
   NativeListCustomItem,
   NativeListNavigationItem,
@@ -21,6 +23,8 @@ import {
 } from "rn-ui-kit";
 
 import type { WorkspaceIndexEntry } from "@/api/commands/workspace";
+import type { StorageCapabilities } from "@/api/commands/workspace/types";
+import { workspaceFile } from "@/api/commands/workspace/workspace_file";
 import {
   detectWorkspaceFileKind,
   formatUnixSecondsRelativeDate,
@@ -30,7 +34,11 @@ import {
   isIos17Plus,
   isMarkdownFile,
 } from "@/api/common";
+import { useLayoutMode } from "@/hooks/layout";
+import { useWorkspaceTransfers } from "@/hooks/workspace/use_workspace_transfers";
+import { workspaceSessionStore } from "@/stores/workspace/workspace_session_store";
 
+import { createWorkspaceExplorerMenu } from "./workspace_explorer_menu";
 import {
   type WorkspaceExplorerGroupMode,
   type WorkspaceExplorerSortValue,
@@ -45,6 +53,7 @@ export type WorkspaceExplorerSection = {
 };
 
 type WorkspaceExplorerListProps = {
+  workspaceId: string;
   entries: WorkspaceIndexEntry[];
   foldersFirst: boolean;
   groupMode: WorkspaceExplorerGroupMode;
@@ -52,6 +61,7 @@ type WorkspaceExplorerListProps = {
   isLoading: boolean;
   isSelectionMode: boolean;
   isUpdating: boolean;
+  onDeleteEntries: (entries: WorkspaceIndexEntry[]) => void;
   onDeleteEntry: (entry: WorkspaceIndexEntry) => void;
   onEditEntry: (entry: WorkspaceIndexEntry) => void;
   onEntryDetails: (entry: WorkspaceIndexEntry) => void;
@@ -116,6 +126,8 @@ function WorkspaceExplorerEntryItem({
   onEdit,
   onPress,
   sortValue,
+  menuItems,
+  cut = false,
 }: {
   entry: WorkspaceIndexEntry;
   isUpdating: boolean;
@@ -124,6 +136,8 @@ function WorkspaceExplorerEntryItem({
   onEdit: () => void;
   onPress: () => void;
   sortValue: WorkspaceExplorerSortValue;
+  menuItems?: ContextMenuItemData[];
+  cut?: boolean;
 }) {
   const theme = useUiTheme();
   const accentColor = theme.primary as ComponentProps<typeof Folder>["color"];
@@ -133,7 +147,7 @@ function WorkspaceExplorerEntryItem({
   const subtitle = formatUnixSecondsRelativeDate(timestamp) ?? "时间未知";
   const sharedProps = {
     contextMenuProps: {
-      items: [
+      items: menuItems ?? [
         {
           icon: <Info color={accentColor} size={14} />,
           iconProps: { ios: { name: "info.circle" as const } },
@@ -159,6 +173,7 @@ function WorkspaceExplorerEntryItem({
       ],
     },
     disabled: isUpdating,
+    style: cut ? { opacity: 0.45 } : undefined,
     icon: isDirectory ? (
       <Folder color={accentColor} fill={theme.primary} size={24} />
     ) : fileKind === "image" ? (
@@ -193,6 +208,7 @@ function WorkspaceExplorerEntryItem({
 }
 
 export function WorkspaceExplorerList({
+  workspaceId,
   entries,
   foldersFirst,
   groupMode,
@@ -201,6 +217,7 @@ export function WorkspaceExplorerList({
   isSelectionMode,
   isUpdating,
   onDeleteEntry,
+  onDeleteEntries,
   onEntryDetails,
   onEditEntry,
   onEntryPress,
@@ -213,6 +230,58 @@ export function WorkspaceExplorerList({
   usesNativeIosHeader,
 }: WorkspaceExplorerListProps) {
   const insets = useSafeAreaInsets();
+  const desktop = useLayoutMode().layoutMode === "desktop";
+  const transfers = useWorkspaceTransfers(workspaceId);
+  const [capabilities, setCapabilities] = useState<StorageCapabilities | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void workspaceFile
+      .capabilities(workspaceId)
+      .then((value) => {
+        if (!cancelled) setCapabilities(value);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceId]);
+  const menuFor = (entry?: WorkspaceIndexEntry) => {
+    if (!desktop || !capabilities) return undefined;
+    const path = entry?.path ?? "";
+    const targets = entry && selectedEntryPaths.includes(path) ? selectedEntryPaths : [path];
+    return createWorkspaceExplorerMenu({
+      workspaceId,
+      epoch: 0,
+      targetPaths: targets,
+      targetDirectory:
+        !entry || entry.fileType === "directory" ? path : path.split("/").slice(0, -1).join("/"),
+      capabilities,
+      desktop: true,
+      canPaste: transfers.canPaste,
+      actions: {
+        isCurrent: () => workspaceSessionStore.getCurrentWorkspaceId() === workspaceId,
+        open: (p) => {
+          const target = entries.find((e) => e.path === p);
+          if (target) onEntryPress(target);
+        },
+        create: () => {},
+        rename: () => {
+          if (entry) onEditEntry(entry);
+        },
+        remove: (paths) => onDeleteEntries(entries.filter((entry) => paths.includes(entry.path))),
+        details: () => {
+          if (entry) onEntryDetails(entry);
+        },
+        select: onSelectedEntryPathsChange,
+        refresh: () => {
+          void onRefresh();
+        },
+        transfer: transfers.choose,
+        recordClipboard: transfers.record,
+        paste: transfers.paste,
+      },
+    }).filter((item) => item.value !== "create-note" && item.value !== "create-directory");
+  };
   const statusMessage = isLoading
     ? "正在加载文件"
     : hasError && entries.length === 0
@@ -222,7 +291,7 @@ export function WorkspaceExplorerList({
         : null;
   const sections = groupWorkspaceExplorerEntries(entries, foldersFirst, groupMode, sortValue);
 
-  return (
+  const content = (
     <NativeList
       automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
       basicScrollViewProps={
@@ -251,6 +320,10 @@ export function WorkspaceExplorerList({
             {section.entries.map((entry) => (
               <WorkspaceExplorerEntryItem
                 entry={entry}
+                menuItems={menuFor(entry)}
+                cut={transfers.cutPaths.some(
+                  (p) => p === entry.path || entry.path.startsWith(`${p}/`),
+                )}
                 isUpdating={isUpdating}
                 key={entry.path}
                 onDelete={() => onDeleteEntry(entry)}
@@ -264,6 +337,17 @@ export function WorkspaceExplorerList({
         ))
       )}
     </NativeList>
+  );
+  return desktop ? (
+    <ContextMenu
+      native={false}
+      contentSize="sm"
+      items={menuFor() ?? []}
+      triggerProps={{ style: { flex: 1 } }}
+      trigger={content}
+    />
+  ) : (
+    content
   );
 }
 

@@ -56,6 +56,7 @@ fn expected_keys() -> BTreeSet<String> {
         "workspace.file.read_text",
         "workspace.file.remove",
         "workspace.file.rename",
+        "workspace.file.transfer",
         "workspace.file.write_bytes",
         "workspace.file.write_text",
         "workspace.get",

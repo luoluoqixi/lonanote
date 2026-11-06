@@ -58,8 +58,9 @@ test("刷新窗口只在开发模式加入视图菜单，且位于全屏动作�
     action: "refreshWindow",
     enabled: true,
   });
-  expect(productionItems.some((node) => node.type === "item" && node.action === "refreshWindow"))
-    .toBe(false);
+  expect(
+    productionItems.some((node) => node.type === "item" && node.action === "refreshWindow"),
+  ).toBe(false);
 });
 
 test("最近工作区过滤未打开记录并稳定排序，不按名称去重", () => {
@@ -73,7 +74,7 @@ test("最近工作区过滤未打开记录并稳定排序，不按名称去重",
   expect(items[0].id).toBe("b");
 });
 
-test("保存过滤未加载、只读、冲突、媒体及 untitled，按文档去重", () => {
+test("保存支持 untitled，过滤未加载、只读、冲突和媒体，按文档去重", () => {
   const store = editorStore.getState();
   const first = store.openEditor({
     kind: "workspaceFile",
@@ -85,7 +86,7 @@ test("保存过滤未加载、只读、冲突、媒体及 untitled，按文档�
   store.setDocumentLoadState(untitled.documentId, "ready");
   const ids = getSaveableDocumentIds(editorStore.getState(), false);
   expect(ids).toContain(first.documentId);
-  expect(ids).not.toContain(untitled.documentId);
+  expect(ids).toContain(untitled.documentId);
   store.setDocumentLoadState(first.documentId, "loading");
   expect(getSaveableDocumentIds(editorStore.getState(), false)).not.toContain(first.documentId);
   for (const id of [...editorStore.getState().openEditorIds]) store.closeEditor(id);

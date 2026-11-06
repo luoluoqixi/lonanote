@@ -94,7 +94,6 @@ export function getSaveableDocumentIds(
           !view.previewMode &&
           doc.loadState === "ready" &&
           !doc.conflict &&
-          doc.ref.kind !== "untitled" &&
           (doc.ref.kind !== "looseFile" || desktop)
           ? [doc.documentId]
           : [];

@@ -8,6 +8,7 @@ import {
   isDocumentDirty,
 } from "@/stores/editor";
 import { isPathWithin } from "@/stores/workspace/workspace_explorer_store";
+import { workspaceFileClipboard } from "@/stores/workspace/workspace_file_clipboard";
 
 export type WorkspaceFileActionResult = {
   cancelled: boolean;
@@ -148,6 +149,7 @@ export function createWorkspaceFileActions(deps: Dependencies) {
           if (await deps.workspaceFile.exists(workspaceId, nextPath))
             throw new Error("目标路径已存在");
           await deps.workspaceFile.rename(workspaceId, path, nextPath);
+          workspaceFileClipboard.invalidateSources(workspaceId, [path]);
           if (discard)
             for (const d of documentsFor(workspaceId, [path]))
               editorStore.getState().discardDocumentDraft(d.documentId);
@@ -164,6 +166,7 @@ export function createWorkspaceFileActions(deps: Dependencies) {
       );
       const value = await mutate(workspaceId, unique, async (path) => {
         await deps.workspaceFile.remove(workspaceId, path, true);
+        workspaceFileClipboard.invalidateSources(workspaceId, [path]);
         editorStore.getState().removeWorkspacePaths(workspaceId, [path]);
       });
       await refresh(workspaceId, value.succeededPaths, value);
