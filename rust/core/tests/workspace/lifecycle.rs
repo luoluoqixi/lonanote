@@ -10,6 +10,92 @@ use lonanote_core::workspace::{
 use tokio::sync::Barrier;
 
 #[tokio::test]
+async fn rename_closed_workspace_preserves_open_workspaces_and_last_session() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let a = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "A".into())
+        .await
+        .unwrap();
+    let c = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "C".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&c.id).await.unwrap();
+    manager
+        .write_text(&a.id, &path("note.md"), "原工作区内容", Default::default())
+        .await
+        .unwrap();
+    let last = manager.get_last_workspace_id().await;
+    let before = manager
+        .list_workspaces()
+        .await
+        .into_iter()
+        .find(|item| item.id == c.id)
+        .unwrap();
+    let renamed = manager
+        .update_display_name(&c.id, "改名后的 C".into())
+        .await
+        .unwrap();
+    assert_eq!(
+        renamed.status,
+        lonanote_core::workspace::WorkspaceRuntimeStatus::Closed
+    );
+    assert_eq!(renamed.display_name, "改名后的 C");
+    assert!(manager.is_workspace_open(&a.id).await);
+    assert!(!manager.is_workspace_open(&c.id).await);
+    assert_eq!(manager.get_last_workspace_id().await, last);
+    assert_eq!(
+        manager.read_text(&a.id, &path("note.md")).await.unwrap(),
+        "原工作区内容"
+    );
+    let after = manager
+        .list_workspaces()
+        .await
+        .into_iter()
+        .find(|item| item.id == c.id)
+        .unwrap();
+    assert_eq!(after.last_opened_at, before.last_opened_at);
+    assert_eq!(after.display_name, "改名后的 C");
+    assert_eq!(app.read_manifest(&c).display_name, "改名后的 C");
+    assert!(manager
+        .update_display_name(&c.id, " ".into())
+        .await
+        .is_err());
+    assert!(manager.is_workspace_open(&a.id).await);
+    assert!(!manager.is_workspace_open(&c.id).await);
+}
+
+#[tokio::test]
+async fn rename_closed_workspace_rejects_mismatched_manifest_without_switching() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let a = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "A".into())
+        .await
+        .unwrap();
+    let c = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "C".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&c.id).await.unwrap();
+    let mut manifest = app.read_manifest(&c);
+    manifest.id = WorkspaceId::new();
+    let manifest_path = app
+        .managed_workspace_root(&c)
+        .join(".lonanote/manifest.json");
+    let bytes = serde_json::to_vec(&manifest).unwrap();
+    std::fs::write(&manifest_path, &bytes).unwrap();
+    assert!(matches!(
+        manager.update_display_name(&c.id, "新名称".into()).await,
+        Err(WorkspaceError::WorkspaceIdMismatch { .. })
+    ));
+    assert_eq!(std::fs::read(manifest_path).unwrap(), bytes);
+    assert!(manager.is_workspace_open(&a.id).await);
+    assert!(!manager.is_workspace_open(&c.id).await);
+}
+
+#[tokio::test]
 async fn workspace_list_reports_live_open_state() {
     let app = WorkspaceTestApp::new();
     let manager = app.start().await;

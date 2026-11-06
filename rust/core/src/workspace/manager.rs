@@ -597,8 +597,16 @@ impl WorkspaceManager {
     ) -> Result<WorkspaceSnapshot, WorkspaceError> {
         validate_display_name(&display_name)?;
         let _lifecycle = self.lifecycle_lock.write().await;
-        let workspace = self.get_open_instance(id).await?;
+        // 修改元信息不属于用户打开操作，不登记 Runtime、Session 或 lastOpenedAt。
+        let (workspace, is_open) = match self.runtime.get(id).await {
+            Some(workspace) => (workspace, true),
+            None => (self.load_workspace_instance(id).await?, false),
+        };
         let manifest = workspace.update_display_name(display_name).await?;
+        if !is_open {
+            // 临时实例不会留在 Runtime 中，释放前必须完成状态持久化。
+            workspace.flush_state().await?;
+        }
         let previous_summary = self.catalog.get(id).await?.cached_summary;
         let state = workspace.state_status().await;
         self.catalog
@@ -616,7 +624,11 @@ impl WorkspaceManager {
                 ),
             )
             .await?;
-        Ok(workspace.snapshot().await)
+        let mut snapshot = workspace.snapshot().await;
+        if !is_open {
+            snapshot.status = super::WorkspaceRuntimeStatus::Closed;
+        }
+        Ok(snapshot)
     }
 
     pub async fn get_settings(
@@ -952,6 +964,38 @@ impl WorkspaceManager {
             self.cache_modification(id).await;
             return Ok(workspace.snapshot().await);
         }
+        let workspace = self.load_workspace_instance(id).await?;
+        let manifest = workspace.manifest().await;
+        let modified_at = workspace.state_status().await.state.modified_at;
+        self.runtime.insert(*id, Arc::clone(&workspace)).await?;
+        let now = now_timestamp();
+        if let Err(error) = workspace.mark_opened(now).await {
+            self.runtime.remove(id).await;
+            return Err(error);
+        }
+        if let Err(error) = self
+            .catalog
+            .update_summary(
+                id,
+                summary_from_manifest(&manifest, now, Some(now), modified_at),
+            )
+            .await
+        {
+            self.runtime.remove(id).await;
+            return Err(error);
+        }
+        if let Err(error) = self.session.mark_opened(*id).await {
+            self.runtime.remove(id).await;
+            return Err(error);
+        }
+        Ok(workspace.snapshot().await)
+    }
+
+    /// 加载并验证存储，不产生用户打开工作区的副作用；调用方持有生命周期写锁。
+    async fn load_workspace_instance(
+        &self,
+        id: &WorkspaceId,
+    ) -> Result<Arc<WorkspaceInstance>, WorkspaceError> {
         let record = self.catalog.get(id).await?;
         let session = self.storage_resolver.open(&record.storage_binding).await?;
         let manifest = load_manifest(session.as_ref())
@@ -980,8 +1024,7 @@ impl WorkspaceManager {
                 state
             }
         };
-        let modified_at = state.modified_at;
-        let workspace = Arc::new(
+        Ok(Arc::new(
             WorkspaceInstance::new(
                 record.storage_binding,
                 session,
@@ -991,29 +1034,7 @@ impl WorkspaceManager {
                 state,
             )
             .await?,
-        );
-        self.runtime.insert(*id, Arc::clone(&workspace)).await?;
-        let now = now_timestamp();
-        if let Err(error) = workspace.mark_opened(now).await {
-            self.runtime.remove(id).await;
-            return Err(error);
-        }
-        if let Err(error) = self
-            .catalog
-            .update_summary(
-                id,
-                summary_from_manifest(&manifest, now, Some(now), modified_at),
-            )
-            .await
-        {
-            self.runtime.remove(id).await;
-            return Err(error);
-        }
-        if let Err(error) = self.session.mark_opened(*id).await {
-            self.runtime.remove(id).await;
-            return Err(error);
-        }
-        Ok(workspace.snapshot().await)
+        ))
     }
 }
 

@@ -64,6 +64,29 @@ fn external_folder_conflict_returns_diagnostics_and_imports_only_the_copy() {
 }
 
 #[test]
+fn rename_closed_workspace_command_does_not_open_it() {
+    let (_app, _guard) = locked_app();
+    run(async {
+        let a = create_managed("API Current A").await;
+        let c = create_managed("API Closed C").await;
+        invoke_unit("workspace.close", workspace_args(c.id)).await;
+        let last = workspace_manager().get_last_workspace_id().await;
+        let renamed: Value = invoke_json(
+            "workspace.update_display_name",
+            json!({"workspaceId": c.id, "displayName": "API Renamed C"}),
+        )
+        .await;
+        assert_eq!(renamed["status"], "closed");
+        assert_eq!(renamed["displayName"], "API Renamed C");
+        assert!(workspace_manager().is_workspace_open(&a.id).await);
+        assert!(!workspace_manager().is_workspace_open(&c.id).await);
+        assert_eq!(workspace_manager().get_last_workspace_id().await, last);
+        remove_closed(c.id).await;
+        close_and_remove(a.id).await;
+    });
+}
+
+#[test]
 fn managed_flow() {
     let (_app, _guard) = locked_app();
     run(async {

@@ -10,7 +10,6 @@ import {
 import { isDesktop, isSystemLocaleCN, os } from "@/api/common";
 import { getErrorMessage } from "@/api/common/error_message";
 import { isTauri } from "@/api/common/platform";
-import { closeWorkspaceViewerSessions } from "@/components/editor/controllers/workspace_editor_lifecycle";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useLayoutMode } from "@/hooks/layout";
 import { useAndroidDoubleBackToExit } from "@/hooks/navigation";
@@ -375,15 +374,7 @@ export function WorkspaceSelectContent({
     }
 
     setIsUpdatingWorkspace(true);
-    let openedForUpdate = false;
-
     try {
-      const isWorkspaceOpen = await workspace.isOpen(editingWorkspace.id);
-      if (!isWorkspaceOpen) {
-        await workspace.open(editingWorkspace.id);
-        openedForUpdate = true;
-      }
-
       const updatedWorkspace = await workspace.updateDisplayName(
         editingWorkspace.id,
         nextDisplayName,
@@ -396,20 +387,9 @@ export function WorkspaceSelectContent({
       console.error("[workspace-select] update workspace failed", error);
       toast.error(getErrorMessage(error, "更新工作区失败"));
     } finally {
-      if (openedForUpdate && currentWorkspaceId !== editingWorkspace.id) {
-        try {
-          await workspace.close(editingWorkspace.id);
-          closeWorkspaceViewerSessions(editingWorkspace.id);
-          workspaceExplorerStore.getState().resetWorkspace(editingWorkspace.id);
-        } catch (error) {
-          console.error("[workspace-select] close workspace after update failed", error);
-        }
-      }
-
       setIsUpdatingWorkspace(false);
     }
   }, [
-    currentWorkspaceId,
     editedWorkspaceName,
     editingWorkspace,
     handleEditWorkspaceSheetOpenChange,
