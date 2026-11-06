@@ -28,6 +28,7 @@ import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 import { canEditWorkspace } from "./workspace_edit_permission";
 import { type WorkspaceGroupMode, groupWorkspaces } from "./workspace_group";
 import { getWorkspaceOpenLabel } from "./workspace_open_label";
+import { WorkspaceSelectSubtitle } from "./workspace_select_subtitle";
 import { type WorkspaceSortValue, getWorkspaceSubtitle } from "./workspace_sort";
 
 type WorkspaceSelectListProps = {
@@ -233,7 +234,13 @@ export function WorkspaceSelectList({
                 nativeScrollId={workspaceItem.id}
                 onPress={() => onWorkspacePress(workspaceItem.id)}
                 sfSymbol="folder.fill"
-                subtitle={getWorkspaceSubtitle(workspaceItem, sortValue)}
+                subtitle={
+                  desktop ? (
+                    <WorkspaceSelectSubtitle item={workspaceItem} sortValue={sortValue} />
+                  ) : (
+                    getWorkspaceSubtitle(workspaceItem, sortValue)
+                  )
+                }
                 title={workspaceItem.displayName}
                 value={
                   desktop ? getWorkspaceOpenLabel(workspaceItem, currentWorkspaceId) : undefined
