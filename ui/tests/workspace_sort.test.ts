@@ -37,6 +37,7 @@ const { createDefaultUiPreferences, uiPreferences } =
 function item(displayName: string, modifiedAt: number | null): WorkspaceListItem {
   return {
     id: displayName,
+    isOpen: false,
     displayName,
     modifiedAt,
     createdAt: 10,

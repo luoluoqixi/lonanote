@@ -144,6 +144,7 @@ impl WorkspaceManager {
             }
             items.push(WorkspaceListItem {
                 id: record.id,
+                is_open,
                 display_name: record.cached_summary.display_name,
                 created_at: record.cached_summary.created_at,
                 last_opened_at: record.cached_summary.last_opened_at,

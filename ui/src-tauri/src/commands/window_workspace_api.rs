@@ -164,7 +164,7 @@ fn focus_owner(window: &WebviewWindow, id: WorkspaceId) {
     }
 }
 
-pub fn cleanup_window(label: String) {
+pub fn cleanup_window(app: tauri::AppHandle, label: String) {
     super::window_callbacks::cleanup_callbacks(&label);
     tauri::async_runtime::spawn(async move {
         let _guard = WORKSPACE_GATE.write().await;
@@ -176,5 +176,8 @@ pub fn cleanup_window(label: String) {
             }
         }
         WINDOW_SESSIONS.release_window(&label);
+        if let Err(error) = app.emit("lonanote://workspace-catalog-changed", ()) {
+            log::warn!("广播窗口销毁后的 Catalog 变化失败：{error}");
+        }
     });
 }

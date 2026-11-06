@@ -120,7 +120,10 @@ pub fn create_workspace_window(
         if matches!(event, tauri::WindowEvent::Destroyed) {
             super::window_close::cleanup_window(&cleanup_label);
             super::app_menu::release(&close_app, &cleanup_label);
-            crate::commands::window_workspace_api::cleanup_window(cleanup_label.clone());
+            crate::commands::window_workspace_api::cleanup_window(
+                close_app.clone(),
+                cleanup_label.clone(),
+            );
         }
     });
     if let Err(error) = init_window(&window, &preferences) {

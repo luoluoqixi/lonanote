@@ -10,6 +10,47 @@ use lonanote_core::workspace::{
 use tokio::sync::Barrier;
 
 #[tokio::test]
+async fn workspace_list_reports_live_open_state() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let first = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "第一个".into())
+        .await
+        .unwrap();
+    let second = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "第二个".into())
+        .await
+        .unwrap();
+    assert!(manager
+        .list_workspaces()
+        .await
+        .iter()
+        .all(|item| item.is_open));
+    manager.close_workspace(&first.id).await.unwrap();
+    let items = manager.list_workspaces().await;
+    assert!(
+        !items
+            .iter()
+            .find(|item| item.id == first.id)
+            .unwrap()
+            .is_open
+    );
+    assert!(
+        items
+            .iter()
+            .find(|item| item.id == second.id)
+            .unwrap()
+            .is_open
+    );
+    manager.open_workspace(&first.id).await.unwrap();
+    assert!(manager
+        .list_workspaces()
+        .await
+        .iter()
+        .all(|item| item.is_open));
+}
+
+#[tokio::test]
 async fn external_conflict_only_rekeys_selected_copy_and_rejects_stale_confirmation() {
     let app = WorkspaceTestApp::new();
     let manager = app.start().await;

@@ -74,6 +74,8 @@ pub struct WorkspaceSnapshot {
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceListItem {
     pub id: WorkspaceId,
+    /// 当前进程中是否存在已打开的实例，不随 Catalog 持久化。
+    pub is_open: bool,
     pub display_name: String,
     pub created_at: Option<u64>,
     pub last_opened_at: Option<u64>,

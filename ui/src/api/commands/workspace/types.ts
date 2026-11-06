@@ -87,6 +87,8 @@ export interface WorkspaceSnapshot {
 
 export interface WorkspaceListItem {
   id: WorkspaceId;
+  /** 当前进程中的实时打开状态，由 Rust Runtime 提供。 */
+  isOpen: boolean;
   displayName: string;
   createdAt: UnixSeconds | null;
   lastOpenedAt: UnixSeconds | null;

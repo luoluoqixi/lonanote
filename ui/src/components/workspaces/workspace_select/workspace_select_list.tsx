@@ -26,6 +26,7 @@ import { useLayoutMode } from "@/hooks/layout";
 import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 
 import { type WorkspaceGroupMode, groupWorkspaces } from "./workspace_group";
+import { getWorkspaceOpenLabel } from "./workspace_open_label";
 import { type WorkspaceSortValue, getWorkspaceSubtitle } from "./workspace_sort";
 
 type WorkspaceSelectListProps = {
@@ -214,7 +215,9 @@ export function WorkspaceSelectList({
                 sfSymbol="folder.fill"
                 subtitle={getWorkspaceSubtitle(workspaceItem, sortValue)}
                 title={workspaceItem.displayName}
-                value={desktop && workspaceItem.id === currentWorkspaceId ? "已打开" : undefined}
+                value={
+                  desktop ? getWorkspaceOpenLabel(workspaceItem, currentWorkspaceId) : undefined
+                }
                 valueFontSize={compact ? 12 : 14}
                 valueColor={theme.mutedForeground}
                 titleFontSize={compact ? 13 : 16}

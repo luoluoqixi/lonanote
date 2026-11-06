@@ -81,7 +81,8 @@ export function WorkspaceSelectContent({
   const { closeWorkspace, withWorkspaceClose } = useEditorCloseActions();
   const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceSession();
   const { preferences, updateAndSave: updateUiPreferencesAndSave } = useUiPreferences();
-  const { invalidateCatalog } = useWorkspaceCatalogRevision();
+  const { revision: catalogRevision, invalidateCatalog } = useWorkspaceCatalogRevision();
+  const desktopCatalogRevision = isTauri() ? catalogRevision : 0;
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
   const workspaceSortValue = preferences.workspaceSelect.sortValue;
   const workspaceGroupMode = preferences.workspaceSelect.groupMode;
@@ -141,7 +142,8 @@ export function WorkspaceSelectContent({
 
         if (requestId === requestIdRef.current) {
           setWorkspaces(records);
-          invalidateCatalog();
+          // 桌面由 Rust 广播 Catalog 变化，读取后再次通知会造成刷新循环。
+          if (!isTauri()) invalidateCatalog();
           setHasError(false);
         }
       } catch (nextError: unknown) {
@@ -657,7 +659,7 @@ export function WorkspaceSelectContent({
     return () => {
       requestIdRef.current += 1;
     };
-  }, [refreshWorkspaces]);
+  }, [refreshWorkspaces, desktopCatalogRevision]);
 
   return (
     <>
