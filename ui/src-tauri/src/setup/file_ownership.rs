@@ -189,9 +189,15 @@ mod tests {
                 },
             )
             .unwrap();
-        assert!(claims.assert_transfer_access("a", &[file.clone()]).is_ok());
-        assert!(claims.assert_overwrite_access(&[file.clone()]).is_err());
-        assert!(claims.assert_overwrite_access(&[alias.clone()]).is_err());
+        assert!(claims
+            .assert_transfer_access("a", std::slice::from_ref(&file))
+            .is_ok());
+        assert!(claims
+            .assert_overwrite_access(std::slice::from_ref(&file))
+            .is_err());
+        assert!(claims
+            .assert_overwrite_access(std::slice::from_ref(&alias))
+            .is_err());
         std::fs::remove_file(&file).unwrap();
         assert!(claims.assert_overwrite_access(&[file]).is_err());
         drop(claims);
