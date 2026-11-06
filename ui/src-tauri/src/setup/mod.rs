@@ -9,3 +9,8 @@ pub(crate) mod window_runtime;
 pub(crate) mod window_sessions;
 pub(crate) mod workspace_access;
 pub(crate) mod workspace_storage_transaction;
+
+#[cfg(desktop)]
+pub(crate) mod launch_requests;
+#[cfg(desktop)]
+pub(crate) mod single_instance;

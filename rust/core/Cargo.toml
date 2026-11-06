@@ -23,7 +23,6 @@ fs_extra = { workspace = true }
 walkdir = { workspace = true }
 fern = { workspace = true }
 chrono = { workspace = true }
-indexmap = { workspace = true }
 encoding_rs = { workspace = true }
 futures = { workspace = true }
 rust-embed = { workspace = true, features = ["debug-embed"] }
@@ -31,7 +30,6 @@ sha2 = { workspace = true }
 uuid = { workspace = true }
 ignore = { workspace = true }
 alphanumeric-sort = { workspace = true }
-relative-path = { workspace = true, features = ["serde"] }
 dunce = { workspace = true }
 
 # [target.'cfg(target_os = "windows")'.dependencies]
@@ -58,5 +56,5 @@ rename_all = "camelCase"
 generate_api = ["cmdreg/metadata"]
 
 [dev-dependencies]
-same-file = "1.0"
-tempfile = "3"
+same-file = { workspace = true }
+tempfile = { workspace = true }

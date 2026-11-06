@@ -19,6 +19,12 @@ pub static APP_TITLE: LazyLock<String> = LazyLock::new(|| format!("{} {}", APP_N
 pub fn run() {
     let ctx = tauri::generate_context!();
     let builder = tauri::Builder::default();
+    // 必须最先注册：第二个进程在插件 setup 中转发请求并退出，不能初始化 Core。
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        log::info!("收到重复启动请求，使用当前进程新建工作台窗口");
+        setup::single_instance::request_new_window(app);
+    }));
     let builder = commands::reg_commands(builder);
 
     let app = builder
@@ -45,6 +51,10 @@ pub fn run() {
         .expect("error while running tauri application");
     APP_HANDLE.set(app.app_handle().to_owned()).unwrap();
     app.run(|app, event| {
+        #[cfg(desktop)]
+        if matches!(&event, tauri::RunEvent::Ready) {
+            setup::single_instance::ready(app);
+        }
         if let tauri::RunEvent::ExitRequested { api, code, .. } = &event {
             log::info!("application exit requested: code={code:?}");
             if !setup::window_close::ALLOW_EXIT.load(std::sync::atomic::Ordering::SeqCst) {
@@ -63,14 +73,9 @@ pub fn run() {
             }
         }
         #[cfg(target_os = "macos")]
-        if matches!(event, tauri::RunEvent::Reopen { .. }) && app.webview_windows().is_empty() {
-            let app = app.clone();
-            tauri::async_runtime::spawn(async move {
-                let label = format!("workspace-window-{}", uuid::Uuid::new_v4());
-                if let Err(error) = setup::window::create_workspace_window(&app, &label, None) {
-                    log::error!("重新打开工作台窗口失败：{error}");
-                }
-            });
+        if matches!(event, tauri::RunEvent::Reopen { .. }) {
+            // Finder / Dock 再次打开通常直接通知已有进程，不启动第二个可执行文件。
+            setup::single_instance::request_new_window(app);
         }
     });
 }
