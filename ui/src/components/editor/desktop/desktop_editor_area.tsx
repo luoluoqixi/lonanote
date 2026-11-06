@@ -61,7 +61,7 @@ export function DesktopEditorArea({
   const { closeEditors } = useEditorCloseActions();
   const { toast } = useToast();
   const currentWorkspaceId = useCurrentWorkspaceId();
-  const { createNote, openLooseFile, busy: isCreatingNote } = useEditorFileActions();
+  const { openLooseFile } = useEditorFileActions();
   const editorAreaRef = useRef<View>(null);
   const scrollRef = useRef<ScrollView>(null);
   const tabBounds = useRef(new Map<string, { x: number; width: number }>());
@@ -478,8 +478,9 @@ export function DesktopEditorArea({
                     <Button
                       size="sm"
                       variant="ghost"
-                      disabled={!currentWorkspaceId || isCreatingNote}
-                      onPress={() => void createNote()}
+                      onPress={() => {
+                        createUntitledDocument();
+                      }}
                     >
                       <FilePlus2 size={16} color={theme.mutedForeground} />
                       新建笔记
