@@ -1,6 +1,9 @@
 import { isDesktop, isTauri } from "@/api/common/platform";
 
-export type WindowStartCause = "initialLaunch" | "newWindow";
+export type WindowBootstrap = {
+  currentWorkspaceId: string | null;
+  restoreLastWorkspace: boolean;
+};
 
 export const multiWindow = {
   async createWindow(): Promise<string> {
@@ -8,9 +11,11 @@ export const multiWindow = {
     const { invoke } = await import("@tauri-apps/api/core");
     return invoke<string>("create_workspace_window");
   },
-  async getBootstrap(): Promise<WindowStartCause> {
-    if (!isTauri() || !isDesktop()) return "initialLaunch";
+  async getBootstrap(): Promise<WindowBootstrap> {
+    if (!isTauri() || !isDesktop()) {
+      return { currentWorkspaceId: null, restoreLastWorkspace: true };
+    }
     const { invoke } = await import("@tauri-apps/api/core");
-    return invoke<WindowStartCause>("get_window_bootstrap");
+    return invoke<WindowBootstrap>("get_window_bootstrap");
   },
 };

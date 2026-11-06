@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { multiWindow } from "@/api/commands/win/multi_window";
 import { workspace } from "@/api/commands/workspace";
 import { waitForConfigSyncReady } from "@/api/common/config_sync_controller";
+import { getErrorMessage } from "@/api/common/error_message";
+import { resolveWorkspaceStartupTarget } from "@/api/common/workspace_startup_target";
 import { useToast } from "@/hooks/ui";
 import { settingsStore } from "@/stores/settings";
 import { workspaceSessionStore } from "@/stores/workspace";
@@ -20,36 +22,29 @@ type WorkspaceStartupResult = {
 
 let workspaceStartupPromise: Promise<WorkspaceStartupResult> | null = null;
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error && error.message.trim() ? error.message : "发生未知错误";
-}
-
 async function initializeWorkspace(): Promise<WorkspaceStartupResult> {
   let openingWorkspaceId: string | null = null;
   try {
     await waitForConfigSyncReady();
-    if ((await multiWindow.getBootstrap()) === "newWindow") {
-      return { autoOpenedWorkspaceId: null, errorMessage: null };
-    }
-    const globalSettings = await settingsStore.load();
-    if (!globalSettings.app.autoOpenLastWorkspace) {
-      return { autoOpenedWorkspaceId: null, errorMessage: null };
-    }
-
-    const lastWorkspaceId = await workspace.getLastWorkspaceId();
-    if (!lastWorkspaceId) {
-      return { autoOpenedWorkspaceId: null, errorMessage: null };
-    }
-
-    openingWorkspaceId = lastWorkspaceId;
-    await workspace.open(lastWorkspaceId);
-    workspaceSessionStore.setCurrentWorkspaceId(lastWorkspaceId);
-    return { autoOpenedWorkspaceId: lastWorkspaceId, errorMessage: null };
+    const target = await resolveWorkspaceStartupTarget(
+      await multiWindow.getBootstrap(),
+      async () => {
+        const globalSettings = await settingsStore.load();
+        return globalSettings.app.autoOpenLastWorkspace ? workspace.getLastWorkspaceId() : null;
+      },
+    );
+    if (!target) return { autoOpenedWorkspaceId: null, errorMessage: null };
+    openingWorkspaceId = target.workspaceId;
+    // 刷新只恢复当前窗口的投影，不重新 open 或改写全局最近工作区。
+    if (target.alreadyOpen) await workspace.get(target.workspaceId);
+    else await workspace.open(target.workspaceId);
+    workspaceSessionStore.setCurrentWorkspaceId(target.workspaceId);
+    return { autoOpenedWorkspaceId: target.workspaceId, errorMessage: null };
   } catch (error) {
     if (openingWorkspaceId) workspaceExplorerStore.getState().resetWorkspace(openingWorkspaceId);
     console.error("[workspace-startup] auto open last workspace failed", error);
     workspaceSessionStore.clearCurrentWorkspaceId();
-    return { autoOpenedWorkspaceId: null, errorMessage: getErrorMessage(error) };
+    return { autoOpenedWorkspaceId: null, errorMessage: getErrorMessage(error, "发生未知错误") };
   }
 }
 

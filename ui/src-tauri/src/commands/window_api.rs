@@ -1,4 +1,4 @@
-use crate::setup::{window_runtime::WINDOW_SESSIONS, window_sessions::WindowStartCause};
+use crate::setup::{window_runtime::WINDOW_SESSIONS, window_sessions::WindowBootstrap};
 use tauri::{Manager, WebviewWindow};
 
 #[tauri::command]
@@ -19,8 +19,13 @@ pub async fn create_workspace_window(window: WebviewWindow) -> Result<String, St
 }
 
 #[tauri::command]
-pub fn get_window_bootstrap(window: WebviewWindow) -> Result<WindowStartCause, String> {
-    WINDOW_SESSIONS
-        .start_cause(window.label())
-        .ok_or_else(|| "未知的工作台窗口".to_string())
+pub async fn get_window_bootstrap(window: WebviewWindow) -> Result<WindowBootstrap, String> {
+    let _guard = super::window_workspace_api::WORKSPACE_GATE.write().await;
+    let bootstrap = WINDOW_SESSIONS
+        .take_bootstrap(window.label())
+        .ok_or_else(|| "未知的工作台窗口".to_string())?;
+    // 旧 WebView 的编辑器已销毁，其文件 lease 不应阻止新前端重新打开笔记。
+    // 只清理文件占用，保留当前窗口的 Core 工作区与其他窗口的全部状态。
+    super::file_ownership_api::release_window(window.label());
+    Ok(bootstrap)
 }

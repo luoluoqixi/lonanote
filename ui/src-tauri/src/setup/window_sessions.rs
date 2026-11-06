@@ -16,6 +16,7 @@ struct WindowSessionState {
 #[derive(Default)]
 struct WindowSession {
     start_cause: WindowStartCause,
+    bootstrapped: bool,
     workspace_id: Option<WorkspaceId>,
     pending_workspace_id: Option<WorkspaceId>,
 }
@@ -26,6 +27,13 @@ pub enum WindowStartCause {
     #[default]
     InitialLaunch,
     NewWindow,
+}
+
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowBootstrap {
+    pub current_workspace_id: Option<WorkspaceId>,
+    pub restore_last_workspace: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -68,6 +76,19 @@ impl std::fmt::Display for WindowSessionError {
 }
 
 impl WindowSessions {
+    /// WebView 重载保留窗口归属；全局最近工作区仅用于主窗口第一次启动。
+    pub fn take_bootstrap(&self, label: &str) -> Option<WindowBootstrap> {
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let session = state.windows.get_mut(label)?;
+        let bootstrap = WindowBootstrap {
+            current_workspace_id: session.workspace_id,
+            restore_last_workspace: !session.bootstrapped
+                && session.start_cause == WindowStartCause::InitialLaunch,
+        };
+        session.bootstrapped = true;
+        Some(bootstrap)
+    }
+
     #[cfg(test)]
     pub fn register_window(&self, label: impl Into<String>) {
         self.register_window_with_cause(label, WindowStartCause::InitialLaunch);
@@ -247,6 +268,30 @@ mod tests {
     use super::*;
     use lonanote_core::workspace::WorkspaceId;
     use std::sync::{Arc, Barrier};
+
+    #[test]
+    fn reload_bootstrap_restores_only_its_window_and_never_reuses_global_last() {
+        let sessions = WindowSessions::default();
+        sessions.register_window("a");
+        sessions.register_window_with_cause("b", WindowStartCause::NewWindow);
+        assert!(sessions.take_bootstrap("a").unwrap().restore_last_workspace);
+        assert!(!sessions.take_bootstrap("b").unwrap().restore_last_workspace);
+        let a = WorkspaceId::new();
+        let b = WorkspaceId::new();
+        for (label, id) in [("a", a), ("b", b)] {
+            sessions.reserve_open(label, id).unwrap();
+            sessions.commit_open(label, id).unwrap();
+            let bootstrap = sessions.take_bootstrap(label).unwrap();
+            assert_eq!(bootstrap.current_workspace_id, Some(id));
+            assert!(!bootstrap.restore_last_workspace);
+        }
+        sessions.release_workspace("a", a).unwrap();
+        let empty_reload = sessions.take_bootstrap("a").unwrap();
+        assert_eq!(empty_reload.current_workspace_id, None);
+        assert!(!empty_reload.restore_last_workspace);
+        assert!(sessions.take_bootstrap("unknown").is_none());
+        assert_eq!(sessions.current_workspace("b"), Some(b));
+    }
 
     #[test]
     fn pending_open_cannot_be_replaced_by_another_request() {
