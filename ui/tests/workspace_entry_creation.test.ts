@@ -1,29 +1,13 @@
 import { expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-import {
-  getDefaultWorkspaceEntryName,
-  getWorkspaceEntryCreateParent,
-} from "../src/api/common/utils/workspace_entry_name";
-
-test("创建位置跟随选中项，未选择时使用当前目录", () => {
-  expect(getWorkspaceEntryCreateParent({ path: "notes/a.md", fileType: "file" })).toBe("notes");
-  expect(getWorkspaceEntryCreateParent({ path: "notes/archive", fileType: "directory" })).toBe(
-    "notes/archive",
+test("隔离运行文件菜单命名创建流程回归", () => {
+  const result = spawnSync(
+    process.execPath,
+    ["test", fileURLToPath(new URL("./workspace_entry_creation.fixture.tsx", import.meta.url))],
+    { encoding: "utf8" },
   );
-  expect(getWorkspaceEntryCreateParent({ path: "a.md", fileType: "file" })).toBe("");
-  expect(getWorkspaceEntryCreateParent(undefined, "notes")).toBe("notes");
-  expect(getWorkspaceEntryCreateParent(undefined)).toBe("");
-});
-
-test("弹窗与快速创建共用递增命名，文件夹和文件均参与避让", () => {
-  const entries = [
-    { path: "notes/未命名笔记.md" },
-    { path: "notes/未命名笔记 2.md" },
-    { path: "notes/新建文件夹" },
-    { path: "notes/新建文件夹 2" },
-  ];
-  expect(getDefaultWorkspaceEntryName(entries, "note")).toBe("未命名笔记 3.md");
-  expect(getDefaultWorkspaceEntryName(entries, "directory")).toBe("新建文件夹 3");
-  expect(getDefaultWorkspaceEntryName([], "note")).toBe("未命名笔记.md");
-  expect(getDefaultWorkspaceEntryName([], "directory")).toBe("新建文件夹");
+  if (result.status !== 0) throw new Error(`${result.stdout}\n${result.stderr}`);
+  expect(result.status).toBe(0);
 });

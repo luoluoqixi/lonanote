@@ -21,6 +21,7 @@ type WebTextInput = TextInput & {
 export type CreateWorkspaceEntryKind = "directory" | "note";
 
 type CreateWorkspaceEntrySheetProps = {
+  modalName?: string;
   entryKind: CreateWorkspaceEntryKind;
   isCreating: boolean;
   name: string;
@@ -32,6 +33,7 @@ type CreateWorkspaceEntrySheetProps = {
 };
 
 export function CreateWorkspaceEntrySheet({
+  modalName = "create-workspace-entry-sheet",
   entryKind,
   isCreating,
   name,
@@ -105,7 +107,7 @@ export function CreateWorkspaceEntrySheet({
 
   return (
     <AdaptiveModal
-      name="create-workspace-entry-sheet"
+      name={modalName}
       screenName="create-entry"
       title={`${title} · ${parentPath || "/"}`}
       open={open}

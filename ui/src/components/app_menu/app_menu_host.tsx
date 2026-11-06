@@ -1,6 +1,7 @@
 import { type ReactNode, createContext, useContext } from "react";
 
 import { DesktopSettingsDialog } from "@/components/settings/desktop/settings_dialog";
+import { CreateWorkspaceEntrySheet } from "@/components/workspaces/workspace_explorer/create_workspace_entry_sheet";
 import { WorkspaceLocationSheet } from "@/components/workspaces/workspace_select/workspace_location_sheet";
 import { useLayoutMode } from "@/hooks/layout";
 
@@ -24,6 +25,10 @@ export function AppMenuHost({ children }: { children: ReactNode }) {
         />
       ) : null}
       <WorkspaceLocationSheet location={menu.location} />
+      <CreateWorkspaceEntrySheet
+        modalName="app-menu-create-entry-sheet"
+        {...menu.creation.sheetProps}
+      />
     </AppMenuContext.Provider>
   );
 }

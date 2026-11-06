@@ -1,9 +1,10 @@
-import { type Href, useRouter } from "expo-router";
+import { type Href, useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { multiWindow } from "@/api/commands/win/multi_window";
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
 import { isDesktop, isDev, isMobile, isTauri, os } from "@/api/common/platform";
+import { getWorkspaceEntryCreateParent } from "@/api/common/utils/workspace_entry_name";
 import { useAppEditActions } from "@/hooks/editor/use_app_edit_actions";
 import { useAppSaveActions } from "@/hooks/editor/use_app_save_actions";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
@@ -11,8 +12,9 @@ import { useEditorFileActions } from "@/hooks/editor/use_editor_file_actions";
 import { useLayoutMode } from "@/hooks/layout";
 import { useDesktopViewActions } from "@/hooks/settings/use_desktop_view_actions";
 import { useToast } from "@/hooks/ui";
-import { useCurrentWorkspaceId } from "@/hooks/workspace";
+import { useCurrentWorkspaceId, useWorkspaceExplorerSelectedEntries } from "@/hooks/workspace";
 import { useWorkspaceCatalogRevision } from "@/hooks/workspace/use_workspace_catalog_revision";
+import { useWorkspaceEntryCreation } from "@/hooks/workspace/use_workspace_entry_creation";
 import { useWorkspaceLocation } from "@/hooks/workspace/use_workspace_location";
 import { useWorkspaceOpenActions } from "@/hooks/workspace/use_workspace_open_actions";
 
@@ -34,6 +36,21 @@ export function useAppMenu() {
   const presentation = resolveAppMenuPresentation(platform, isTauri(), layoutMode);
   const desktop = isDesktop();
   const currentWorkspaceId = useCurrentWorkspaceId();
+  const creation = useWorkspaceEntryCreation(currentWorkspaceId);
+  const getSelectedEntries = useWorkspaceExplorerSelectedEntries();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams<{ path?: string }>();
+  const openCreation = (kind: "note" | "directory") => {
+    if (!currentWorkspaceId) return;
+    const selected = getSelectedEntries(currentWorkspaceId);
+    return creation.open(
+      kind,
+      getWorkspaceEntryCreateParent(
+        selected.length === 1 ? selected[0] : undefined,
+        pathname === "/workspace" ? (params.path ?? "") : "",
+      ),
+    );
+  };
   const { revision } = useWorkspaceCatalogRevision();
   const router = useRouter();
   const [settings, setSettings] = useState<{ open: boolean; page: "global" | "about" }>({
@@ -91,8 +108,8 @@ export function useAppMenu() {
       id: "file",
       title: "文件",
       items: [
-        item("新建文件", "newFile", Boolean(currentWorkspaceId && !files.busy)),
-        item("新建文件夹", "newFolder", Boolean(currentWorkspaceId && !files.busy)),
+        item("新建文件", "newFile", Boolean(currentWorkspaceId && !creation.busy)),
+        item("新建文件夹", "newFolder", Boolean(currentWorkspaceId && !creation.busy)),
         ...(desktop ? [item("新建窗口", "newWindow", true, `${mod}+Shift+N`)] : []),
         sep,
         item("打开文件", "openFile", desktop),
@@ -187,10 +204,10 @@ export function useAppMenu() {
           );
           break;
         case "newFile":
-          await files.createNote();
+          await openCreation("note");
           break;
         case "newFolder":
-          await files.createDirectory();
+          await openCreation("directory");
           break;
         case "newWindow":
           await multiWindow.createWindow();
@@ -231,6 +248,7 @@ export function useAppMenu() {
   };
   useAppViewShortcuts(execute);
   return {
+    creation,
     groups,
     settings,
     openSettings,
