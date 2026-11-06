@@ -4,8 +4,10 @@ import { NativeList, NativeListSection } from "rn-ui-kit";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime, isDesktop } from "@/api/common";
+import { getErrorMessage } from "@/api/common/error_message";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { getStorageProviderLabel } from "@/components/common/storage_provider_utils";
+import { useLayoutMode } from "@/hooks/layout";
 
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
@@ -30,6 +32,7 @@ export function WorkspaceDetailsSheet({
   open,
   workspaceItem,
 }: WorkspaceDetailsSheetProps) {
+  const desktop = useLayoutMode().layoutMode === "desktop";
   const storage = workspaceItem?.storage;
   const [rootPath, setRootPath] = useState<{ id: string; value: string } | null>(null);
   const workspaceId = workspaceItem?.id;
@@ -46,7 +49,7 @@ export function WorkspaceDetailsSheet({
         if (!disposed)
           setRootPath({
             id: workspaceId,
-            value: error instanceof Error ? error.message : "读取路径失败",
+            value: getErrorMessage(error, "读取路径失败"),
           });
       });
     return () => {
@@ -67,7 +70,7 @@ export function WorkspaceDetailsSheet({
 
   const content = (
     <NativeList style={styles.list} tracksNavigationBarScrollEdge>
-      <NativeListSection title="基本信息">
+      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="基本信息">
         <WorkspaceDetailsListItem
           copyId="workspace-display-name"
           title="工作区名称"
@@ -84,6 +87,7 @@ export function WorkspaceDetailsSheet({
           value={`${getStorageProviderLabel(storage?.providerId)} (${formatValue(storage?.providerId)})`}
         />
         <WorkspaceDetailsListItem
+          tooltip
           copyId="workspace-local-directory-path"
           title="本地文件夹路径"
           copyLabel="复制路径"
@@ -97,7 +101,7 @@ export function WorkspaceDetailsSheet({
           valueFontSize={14}
         />
       </NativeListSection>
-      <NativeListSection title="时间">
+      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="时间">
         <WorkspaceDetailsListItem
           copyId="workspace-modified-at"
           title="修改时间"

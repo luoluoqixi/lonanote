@@ -35,6 +35,7 @@ export function CreateWorkspaceSheet({
   target,
 }: CreateWorkspaceSheetProps) {
   const { layoutMode } = useLayoutMode();
+  const desktop = layoutMode === "desktop";
   const usesNativeIosScrollEdgeHeader = isIos() && layoutMode !== "desktop";
   const canSubmit =
     displayName.trim().length > 0 &&
@@ -63,10 +64,13 @@ export function CreateWorkspaceSheet({
         style={styles.list}
         tracksNavigationBarScrollEdge
       >
-        <NativeListSection title="基本信息">
+        <NativeListSection titleFontSize={desktop ? 12 : undefined} title="基本信息">
           <NativeListInputItem
+            titleFontSize={desktop ? 13 : undefined}
+            valueFontSize={desktop ? 13 : undefined}
             title="工作区名称"
             inputProps={{
+              style: desktop ? { fontSize: 13 } : undefined,
               autoFocus: true,
               editable: !isCreating,
               onChangeText: onDisplayNameChange,
@@ -75,10 +79,12 @@ export function CreateWorkspaceSheet({
               value: displayName,
             }}
           />
-          {renderWorkspaceStorageFields({ target, disabled: isCreating })}
+          {renderWorkspaceStorageFields({ desktop, target, disabled: isCreating })}
         </NativeListSection>
         <NativeListSection>
           <NativeListButtonItem
+            titleFontSize={desktop ? 13 : undefined}
+            valueFontSize={desktop ? 13 : undefined}
             disabled={!canSubmit}
             onPress={onSubmit}
             title={isCreating ? "正在创建…" : "创建工作区"}

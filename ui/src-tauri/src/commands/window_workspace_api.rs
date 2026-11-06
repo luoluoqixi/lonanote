@@ -7,7 +7,9 @@ use tauri::{Emitter, Manager, WebviewWindow};
 
 use crate::setup::{
     window_runtime::WINDOW_SESSIONS,
-    workspace_access::{check_workspace_access, should_focus_workspace_owner},
+    workspace_access::{
+        check_workspace_access, should_focus_workspace_owner, should_notify_catalog_changed,
+    },
 };
 
 // 生命周期修改与文件操作互斥；不同工作区的普通文件请求仍可并发执行。
@@ -111,12 +113,7 @@ pub async fn invoke_workspace(
             }
         }
         // Catalog 是全局投影；本窗口完成命令后也使用同一刷新协议。
-        if !matches!(
-            key,
-            "workspace.list" | "workspace.get" | "workspace.is_open"
-        ) && !key.contains("get_")
-            && !key.starts_with("workspace.list_")
-        {
+        if should_notify_catalog_changed(key) {
             if let Err(error) = window
                 .app_handle()
                 .emit("lonanote://workspace-catalog-changed", ())

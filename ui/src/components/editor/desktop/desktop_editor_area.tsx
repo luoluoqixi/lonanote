@@ -22,6 +22,7 @@ import { isDocumentDirty } from "@/stores/editor";
 import { DesktopEditorActions } from "./desktop_editor_actions";
 import { DesktopEditorSurface } from "./desktop_editor_surface";
 import { DesktopEditorTab } from "./desktop_editor_tab";
+import { EditorEmptyInput } from "./editor_empty_input";
 import { getEditorDroppedFiles } from "./editor_file_drop";
 import { EditorTabBlankInput } from "./editor_tab_blank_input";
 import { EditorTabDragInput } from "./editor_tab_drag_input";
@@ -436,53 +437,55 @@ export function DesktopEditorArea({
               { backgroundColor: theme.background },
             ]}
           >
-            {tabs.length === 0 ? (
-              <EditorTabBlankInput
-                key={currentWorkspaceId ?? "no-workspace"}
-                area="editor"
-                disabled={!currentWorkspaceId || isCreatingNote}
-                onCreateNote={() => void createNote()}
-              />
-            ) : null}
-            <ScrollView
-              style={{ width: "100%" }}
-              contentContainerStyle={styles.welcomeScroll}
-              onLayout={(event) => setEmptyWidth(event.nativeEvent.layout.width)}
+            <EditorEmptyInput
+              key={currentWorkspaceId ?? "no-workspace"}
+              disabled={tabs.length > 0 || !currentWorkspaceId || isCreatingNote}
+              onCreateNote={() => void createNote()}
             >
-              <View
-                style={[
-                  styles.welcome,
-                  { flexDirection: emptyWidth >= WELCOME_STACK_WIDTH ? "row" : "column" },
-                ]}
+              <ScrollView
+                style={{ width: "100%" }}
+                contentContainerStyle={styles.welcomeScroll}
+                onLayout={(event) => setEmptyWidth(event.nativeEvent.layout.width)}
               >
                 <View
                   style={[
-                    styles.welcomeActions,
-                    currentWorkspaceId || openEditorIds.length > 0 ? { alignSelf: "center" } : null,
+                    styles.welcome,
+                    { flexDirection: emptyWidth >= WELCOME_STACK_WIDTH ? "row" : "column" },
                   ]}
                 >
-                  <Text style={{ color: theme.mutedForeground, fontSize: 13, alignSelf: "center" }}>
-                    尚未打开文档
-                  </Text>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={!currentWorkspaceId || isCreatingNote}
-                    onPress={() => void createNote()}
+                  <View
+                    style={[
+                      styles.welcomeActions,
+                      currentWorkspaceId || openEditorIds.length > 0
+                        ? { alignSelf: "center" }
+                        : null,
+                    ]}
                   >
-                    <FilePlus2 size={16} color={theme.mutedForeground} />
-                    新建笔记
-                  </Button>
-                  {canOpenLooseFile ? (
-                    <Button size="sm" variant="ghost" onPress={() => void openLooseFile()}>
-                      <FolderOpen size={16} color={theme.mutedForeground} />
-                      打开文件
+                    <Text
+                      style={{ color: theme.mutedForeground, fontSize: 13, alignSelf: "center" }}
+                    >
+                      尚未打开文档
+                    </Text>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={!currentWorkspaceId || isCreatingNote}
+                      onPress={() => void createNote()}
+                    >
+                      <FilePlus2 size={16} color={theme.mutedForeground} />
+                      新建笔记
                     </Button>
-                  ) : null}
+                    {canOpenLooseFile ? (
+                      <Button size="sm" variant="ghost" onPress={() => void openLooseFile()}>
+                        <FolderOpen size={16} color={theme.mutedForeground} />
+                        打开文件
+                      </Button>
+                    ) : null}
+                  </View>
+                  {!currentWorkspaceId && openEditorIds.length === 0 ? <RecentWorkspaces /> : null}
                 </View>
-                {!currentWorkspaceId && openEditorIds.length === 0 ? <RecentWorkspaces /> : null}
-              </View>
-            </ScrollView>
+              </ScrollView>
+            </EditorEmptyInput>
           </View>
         ) : null}
       </View>

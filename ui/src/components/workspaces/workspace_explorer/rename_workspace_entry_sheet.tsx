@@ -7,6 +7,7 @@ import {
 } from "rn-ui-kit";
 
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
+import { useLayoutMode } from "@/hooks/layout";
 
 type RenameWorkspaceEntrySheetProps = {
   isRenaming: boolean;
@@ -25,11 +26,15 @@ export function RenameWorkspaceEntrySheet({
   onSubmit,
   open,
 }: RenameWorkspaceEntrySheetProps) {
+  const desktop = useLayoutMode().layoutMode === "desktop";
   const content = (
     <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
-      <NativeListSection title="文件名">
+      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="文件名">
         <NativeListInputItem
+          titleFontSize={desktop ? 13 : undefined}
+          valueFontSize={desktop ? 13 : undefined}
           inputProps={{
+            style: desktop ? { fontSize: 13 } : undefined,
             autoFocus: true,
             onChangeText: onNameChange,
             onSubmitEditing: onSubmit,
@@ -40,6 +45,8 @@ export function RenameWorkspaceEntrySheet({
       </NativeListSection>
       <NativeListSection>
         <NativeListButtonItem
+          titleFontSize={desktop ? 13 : undefined}
+          valueFontSize={desktop ? 13 : undefined}
           disabled={name.trim().length === 0 || isRenaming}
           onPress={onSubmit}
           title={isRenaming ? "正在保存…" : "保存"}

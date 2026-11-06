@@ -2,7 +2,10 @@ use crate::setup::{window_runtime::WINDOW_SESSIONS, window_sessions::WindowBoots
 use tauri::{Manager, WebviewWindow};
 
 #[tauri::command]
-pub async fn create_workspace_window(window: WebviewWindow) -> Result<String, String> {
+pub async fn create_workspace_window(
+    window: WebviewWindow,
+    workspace_id: Option<lonanote_core::workspace::WorkspaceId>,
+) -> Result<String, String> {
     if crate::setup::window_close::CLOSE_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
         return Err("正在确认窗口关闭，请稍后重试".to_string());
     }
@@ -12,9 +15,41 @@ pub async fn create_workspace_window(window: WebviewWindow) -> Result<String, St
     let monitor = window
         .current_monitor()
         .map_err(|error| error.to_string())?;
+    let _guard = super::window_workspace_api::WORKSPACE_GATE.write().await;
+    if let Some(id) = workspace_id {
+        if let Some(owner) = WINDOW_SESSIONS.owner_of(id) {
+            let target = window
+                .app_handle()
+                .get_webview_window(&owner)
+                .ok_or("工作区所属窗口已关闭")?;
+            target.unminimize().map_err(|e| e.to_string())?;
+            target.show().map_err(|e| e.to_string())?;
+            target.set_focus().map_err(|e| e.to_string())?;
+            return Ok(owner);
+        }
+    }
     let label = format!("workspace-window-{}", uuid::Uuid::new_v4());
-    crate::setup::window::create_workspace_window(window.app_handle(), &label, monitor)
-        .map_err(|error| error.to_string())?;
+    let created =
+        crate::setup::window::create_workspace_window(window.app_handle(), &label, monitor)
+            .map_err(|error| error.to_string())?;
+    if let Some(id) = workspace_id {
+        let manager = lonanote_core::workspace::workspace_manager();
+        let opened = crate::setup::workspace_window_launch::open_in_window(
+            manager,
+            &WINDOW_SESSIONS,
+            &label,
+            id,
+        )
+        .await;
+        if let Err(error) = opened {
+            WINDOW_SESSIONS.release_window(&label);
+            let _ = created.destroy();
+            return Err(error);
+        }
+        use tauri::Emitter;
+        let _ = window.emit("lonanote://workspace-catalog-changed", ());
+    }
+    let _ = created.set_focus();
     Ok(label)
 }
 

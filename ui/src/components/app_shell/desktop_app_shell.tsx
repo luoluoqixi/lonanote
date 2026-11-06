@@ -19,8 +19,10 @@ import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { DesktopEditorArea } from "@/components/editor/desktop/desktop_editor_area";
 import { DesktopEditorStatusBar } from "@/components/editor/desktop/desktop_editor_status_bar";
 import { TitleBar } from "@/components/window/titlebar";
+import { RecentWorkspaces } from "@/components/workspaces/recent_workspaces";
 import { WorkspaceExplorerForWorkspace } from "@/components/workspaces/workspace_explorer";
 import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select";
+import { useEditorSession } from "@/hooks/editor";
 import { useDesktopLayoutResetRevision } from "@/hooks/settings/use_desktop_layout_reset";
 import { useWorkbenchDragGuard } from "@/hooks/ui/use_workbench_drag_guard";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
@@ -245,6 +247,7 @@ function ActivityButton({ accessibilityLabel, active, icon: Icon, onPress }: Act
 
 function SidePanel({ onSelectWorkspace }: { onSelectWorkspace: () => void }) {
   const workspaceId = useCurrentWorkspaceId();
+  const { openEditorIds } = useEditorSession();
   return (
     <View style={[styles.fullHeight, { minHeight: 0, minWidth: 0 }]}>
       {workspaceId ? (
@@ -257,6 +260,7 @@ function SidePanel({ onSelectWorkspace }: { onSelectWorkspace: () => void }) {
           <Button size="sm" onPress={onSelectWorkspace}>
             选择或创建工作区
           </Button>
+          {openEditorIds.length > 0 ? <RecentWorkspaces /> : null}
         </View>
       )}
     </View>

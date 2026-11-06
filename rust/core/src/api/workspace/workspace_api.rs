@@ -239,3 +239,10 @@ async fn set_last_open_file(
         .set_last_open_file(&workspace_id, path)
         .await?)
 }
+
+#[command("workspace")]
+async fn clear_history(workspace_id: WorkspaceId) -> anyhow::Result<()> {
+    Ok(workspace_manager()
+        .clear_workspace_history(&workspace_id)
+        .await?)
+}

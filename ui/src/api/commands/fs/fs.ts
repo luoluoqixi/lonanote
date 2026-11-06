@@ -1,3 +1,4 @@
+import { isDesktop, isTauri } from "@/api/common/platform";
 import { invoke } from "@/api/invoke";
 
 export type SelectDialogType = "openFile" | "openFiles" | "openFolder" | "openFolders" | "saveFile";
@@ -72,6 +73,10 @@ export const fs = {
   showSelectDialog: async (
     options: SelectDialogOptions,
   ): Promise<SelectDialogResult | undefined> => {
+    if (isDesktop() && isTauri()) {
+      const { invoke: invokeTauri } = await import("@tauri-apps/api/core");
+      return invokeTauri<SelectDialogResult>("select_files", { options });
+    }
     return await invoke("fs.show_select_dialog", options);
   },
 };

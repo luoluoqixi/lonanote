@@ -26,6 +26,7 @@ export function WorkspaceLocationSheet({
   location: ReturnType<typeof useWorkspaceLocation>;
 }) {
   const { layoutMode } = useLayoutMode();
+  const desktop = layoutMode === "desktop";
   const theme = useUiTheme();
   const usesNativeIosScrollEdgeHeader = isIos() && layoutMode !== "desktop";
   const { item, mode, target, isWorking, error } = location;
@@ -61,7 +62,12 @@ export function WorkspaceLocationSheet({
       >
         <View className="gap-1 px-5 pb-2 pt-3">
           <View className="flex-row items-center gap-1">
-            <Text className="shrink text-base font-semibold">{item?.displayName}</Text>
+            <Text
+              style={desktop ? { fontSize: 13 } : undefined}
+              className="shrink text-base font-semibold"
+            >
+              {item?.displayName}
+            </Text>
             <Tooltip
               content={hint}
               openOnFocus={false}
@@ -83,7 +89,7 @@ export function WorkspaceLocationSheet({
         <NativeListSection>
           <NativeListItem
             title={`当前存储位置：${getStorageProviderLabel(item?.storage.providerId)}`}
-            titleFontSize={14}
+            titleFontSize={desktop ? 13 : 14}
             subtitle={
               <Text selectable className="text-xs leading-5 text-muted-foreground">
                 {location.currentPath}
@@ -109,18 +115,27 @@ export function WorkspaceLocationSheet({
             }
           />
         </NativeListSection>
-        <NativeListSection title="目标位置">
-          {renderWorkspaceStorageFields({ target, disabled: isWorking, showDirectoryName: true })}
+        <NativeListSection titleFontSize={desktop ? 12 : undefined} title="目标位置">
+          {renderWorkspaceStorageFields({
+            desktop,
+            target,
+            disabled: isWorking,
+            showDirectoryName: true,
+          })}
         </NativeListSection>
         {error ? (
           <NativeListSection>
             <NativeListCustomItem>
-              <Text className="text-destructive">{error}</Text>
+              <Text style={desktop ? { fontSize: 13 } : undefined} className="text-destructive">
+                {error}
+              </Text>
             </NativeListCustomItem>
           </NativeListSection>
         ) : null}
         <NativeListSection>
           <NativeListButtonItem
+            titleFontSize={desktop ? 13 : undefined}
+            valueFontSize={desktop ? 13 : undefined}
             disabled={!canSubmit}
             title={isWorking ? "正在处理…" : mode === "rebind" ? "重新定位" : "迁移"}
             onPress={() => {

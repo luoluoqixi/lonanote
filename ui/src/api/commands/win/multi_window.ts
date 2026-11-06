@@ -36,10 +36,10 @@ export const multiWindow = {
     const { invoke } = await import("@tauri-apps/api/core");
     return invoke<StorageChangeResult>("change_workspace_storage", { workspaceId, change });
   },
-  async createWindow(): Promise<string> {
+  async createWindow(workspaceId?: string): Promise<string> {
     if (!isTauri() || !isDesktop()) throw new Error("当前平台不支持新建桌面窗口");
     const { invoke } = await import("@tauri-apps/api/core");
-    return invoke<string>("create_workspace_window");
+    return invoke<string>("create_workspace_window", { workspaceId: workspaceId ?? null });
   },
   async getBootstrap(): Promise<WindowBootstrap> {
     if (!isTauri() || !isDesktop()) {

@@ -120,6 +120,9 @@ export const workspace = {
     return invokeWorkspaceResult("workspace.remove", { workspaceId, deleteFiles });
   },
 
+  clearHistory: (workspaceId: WorkspaceId): Promise<void> =>
+    invokeWorkspaceUnit("workspace.clear_history", { workspaceId }),
+
   relocate: (
     workspaceId: WorkspaceId,
     target: WorkspaceStorageTarget,

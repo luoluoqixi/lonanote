@@ -34,6 +34,7 @@ export function EditWorkspaceSheet({
   open,
 }: EditWorkspaceSheetProps) {
   const { layoutMode } = useLayoutMode();
+  const desktop = layoutMode === "desktop";
   const usesNativeIosScrollEdgeHeader = isIos() && layoutMode !== "desktop";
   const canSubmit = displayName.trim().length > 0 && !isUpdating;
 
@@ -45,10 +46,13 @@ export function EditWorkspaceSheet({
       style={styles.list}
       tracksNavigationBarScrollEdge
     >
-      <NativeListSection title="基本信息">
+      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="基本信息">
         <NativeListInputItem
+          titleFontSize={desktop ? 13 : undefined}
+          valueFontSize={desktop ? 13 : undefined}
           title="工作区名称"
           inputProps={{
+            style: desktop ? { fontSize: 13 } : undefined,
             autoFocus: true,
             onChangeText: onDisplayNameChange,
             placeholder: "我的笔记",
@@ -57,12 +61,26 @@ export function EditWorkspaceSheet({
           }}
         />
       </NativeListSection>
-      <NativeListSection title="文件夹">
-        <NativeListButtonItem disabled={isUpdating} title="更改存储位置…" onPress={onRelocate} />
-        <NativeListButtonItem disabled={isUpdating} title="重新定位工作区…" onPress={onRebind} />
+      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="文件夹">
+        <NativeListButtonItem
+          titleFontSize={desktop ? 13 : undefined}
+          valueFontSize={desktop ? 13 : undefined}
+          disabled={isUpdating}
+          title="更改存储位置…"
+          onPress={onRelocate}
+        />
+        <NativeListButtonItem
+          titleFontSize={desktop ? 13 : undefined}
+          valueFontSize={desktop ? 13 : undefined}
+          disabled={isUpdating}
+          title="重新定位工作区…"
+          onPress={onRebind}
+        />
       </NativeListSection>
       <NativeListSection>
         <NativeListButtonItem
+          titleFontSize={desktop ? 13 : undefined}
+          valueFontSize={desktop ? 13 : undefined}
           disabled={!canSubmit}
           onPress={onSubmit}
           title={isUpdating ? "正在保存…" : "保存"}

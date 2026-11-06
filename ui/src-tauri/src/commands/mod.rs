@@ -1,3 +1,5 @@
+mod file_dialog_api;
+use file_dialog_api::*;
 mod api;
 mod file_ownership_api;
 mod invoke;
@@ -73,6 +75,7 @@ pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         write_clipboard_text,
         exit_app,
         create_workspace_window,
+        select_files,
         get_window_bootstrap,
         get_window_workspace,
         assert_workspace_editable,

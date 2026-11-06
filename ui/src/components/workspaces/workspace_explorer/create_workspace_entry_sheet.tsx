@@ -9,6 +9,7 @@ import {
 
 import { isWeb } from "@/api/common";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
+import { useLayoutMode } from "@/hooks/layout";
 
 import { getCreateEntrySelectionEnd } from "./create_workspace_entry_input";
 import { scheduleAfterAnimationFrames } from "./schedule_after_animation_frames";
@@ -40,6 +41,7 @@ export function CreateWorkspaceEntrySheet({
   onSubmit,
   open,
 }: CreateWorkspaceEntrySheetProps) {
+  const desktop = useLayoutMode().layoutMode === "desktop";
   const inputRef = useRef<TextInput>(null);
   const cancelScheduledFocusRef = useRef<(() => void) | null>(null);
   const isNote = entryKind === "note";
@@ -74,9 +76,12 @@ export function CreateWorkspaceEntrySheet({
 
   const content = (
     <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
-      <NativeListSection title="名称">
+      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="名称">
         <NativeListInputItem
+          titleFontSize={desktop ? 13 : undefined}
+          valueFontSize={desktop ? 13 : undefined}
           inputProps={{
+            style: desktop ? { fontSize: 13 } : undefined,
             onChangeText: onNameChange,
             onSubmitEditing: onSubmit,
             placeholder: isNote ? "未命名笔记" : "新建文件夹",
@@ -88,6 +93,8 @@ export function CreateWorkspaceEntrySheet({
       </NativeListSection>
       <NativeListSection>
         <NativeListButtonItem
+          titleFontSize={desktop ? 13 : undefined}
+          valueFontSize={desktop ? 13 : undefined}
           disabled={name.trim().length === 0 || isCreating}
           onPress={onSubmit}
           title={isCreating ? "正在创建…" : title}

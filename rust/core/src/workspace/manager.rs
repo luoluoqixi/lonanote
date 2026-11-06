@@ -546,6 +546,14 @@ impl WorkspaceManager {
         self.open_workspace_locked(&replacement_id).await
     }
 
+    /// 仅移除应用最近记录，不关闭工作区或删除文件；下次打开会重新登记。
+    pub async fn clear_workspace_history(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.write().await;
+        let mut record = self.catalog.get(id).await?;
+        record.cached_summary.last_opened_at = None;
+        self.catalog.update_summary(id, record.cached_summary).await
+    }
+
     pub async fn close_workspace(&self, id: &WorkspaceId) -> Result<(), WorkspaceError> {
         let _lifecycle = self.lifecycle_lock.write().await;
         if let Some(workspace) = self.runtime.get(id).await {

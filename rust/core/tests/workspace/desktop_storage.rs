@@ -146,3 +146,83 @@ async fn rebind_closed_workspace_preserves_current_workspace() {
     assert_eq!(sessions.current_workspace("a"), Some(a.id));
     assert_eq!(sessions.owner_of(c.id), None);
 }
+
+#[tokio::test]
+async fn removing_recent_history_preserves_workspace_and_reappears_on_open() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let created = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "History".into())
+        .await
+        .unwrap();
+    manager.open_workspace(&created.id).await.unwrap();
+    manager.clear_workspace_history(&created.id).await.unwrap();
+    assert!(manager.is_workspace_open(&created.id).await);
+    assert!(manager
+        .list_workspaces()
+        .await
+        .iter()
+        .find(|item| item.id == created.id)
+        .unwrap()
+        .last_opened_at
+        .is_none());
+    manager.close_workspace(&created.id).await.unwrap();
+    let restarted = app.start().await;
+    assert!(restarted
+        .list_workspaces()
+        .await
+        .iter()
+        .find(|item| item.id == created.id)
+        .unwrap()
+        .last_opened_at
+        .is_none());
+    assert!(app.managed_workspace_root(&created).exists());
+    restarted.open_workspace(&created.id).await.unwrap();
+    assert!(restarted
+        .list_workspaces()
+        .await
+        .iter()
+        .find(|item| item.id == created.id)
+        .unwrap()
+        .last_opened_at
+        .is_some());
+}
+
+#[tokio::test]
+async fn open_in_new_window_keeps_source_workspace_and_rolls_back_failure() {
+    let app = WorkspaceTestApp::new();
+    let manager = app.start().await;
+    let a = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "A".into())
+        .await
+        .unwrap();
+    let c = manager
+        .create_managed_workspace(provider(MANAGED_PROVIDER), "C".into())
+        .await
+        .unwrap();
+    manager.close_workspace(&c.id).await.unwrap();
+    let sessions = sessions(a.id);
+    crate::workspace_window_launch::open_in_window(&manager, &sessions, "b", c.id)
+        .await
+        .unwrap();
+    assert_eq!(sessions.current_workspace("a"), Some(a.id));
+    assert_eq!(sessions.current_workspace("b"), Some(c.id));
+    assert!(manager.is_workspace_open(&a.id).await);
+    assert!(manager.is_workspace_open(&c.id).await);
+    sessions.register_window("d");
+    assert!(
+        crate::workspace_window_launch::open_in_window(&manager, &sessions, "d", a.id)
+            .await
+            .is_err()
+    );
+    assert_eq!(sessions.current_workspace("a"), Some(a.id));
+    let missing = WorkspaceId::new();
+    assert!(
+        crate::workspace_window_launch::open_in_window(&manager, &sessions, "d", missing)
+            .await
+            .is_err()
+    );
+    assert_eq!(sessions.owner_of(missing), None);
+    assert_eq!(sessions.current_workspace("d"), None);
+    assert!(sessions.reserve_open("d", missing).is_ok());
+}

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { confirmNative } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
+import { multiWindow } from "@/api/commands/win/multi_window";
 import {
   type ExternalWorkspaceStorageBindingRequest,
   type WorkspaceListItem,
@@ -133,6 +134,12 @@ export function useWorkspaceOpenActions(
     });
   return {
     busy,
+    openInNewWindow: (id: string) =>
+      perform(async () => {
+        await multiWindow.createWindow(id);
+        await refreshWorkspaces();
+        onWorkspaceOpened();
+      }),
     openWorkspace: (id: string) => perform(() => openTargetWorkspace(id)),
     openFolder: () =>
       perform(async () => {

@@ -40,6 +40,7 @@ fn expected_keys() -> BTreeSet<String> {
     [
         "workspace.attach",
         "workspace.close",
+        "workspace.clear_history",
         "workspace.create_external",
         "workspace.create_managed",
         "workspace.discard_scan_id_conflict",

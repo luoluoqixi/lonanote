@@ -1,6 +1,15 @@
 use super::window_sessions::WindowSessions;
 use lonanote_core::workspace::WorkspaceId;
 
+/// 只读 Catalog 查询不能触发刷新，否则路径查询会与前端刷新形成循环。
+pub fn should_notify_catalog_changed(key: &str) -> bool {
+    !matches!(
+        key,
+        "workspace.list" | "workspace.get" | "workspace.is_open" | "workspace.native_root_path"
+    ) && !key.contains("get_")
+        && !key.starts_with("workspace.list_")
+}
+
 pub fn should_focus_workspace_owner(key: &str) -> bool {
     matches!(
         key,
@@ -16,7 +25,13 @@ pub fn check_workspace_access(
 ) -> Result<(), String> {
     let owner = sessions.owner_of(workspace_id);
     // Catalog 元信息是共享投影，读取不能切换窗口或要求调用方拥有实例。
-    if matches!(key, "workspace.get" | "workspace.is_open") {
+    if matches!(
+        key,
+        "workspace.get"
+            | "workspace.is_open"
+            | "workspace.native_root_path"
+            | "workspace.clear_history"
+    ) {
         return Ok(());
     }
     if owner.as_deref().is_some_and(|owner| owner != label) {
@@ -33,6 +48,30 @@ pub fn check_workspace_access(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn catalog_queries_do_not_trigger_refresh_cycles() {
+        for key in [
+            "workspace.list",
+            "workspace.get",
+            "workspace.is_open",
+            "workspace.native_root_path",
+            "workspace.get_settings",
+            "workspace.list_storage_provider_ids",
+        ] {
+            assert!(!should_notify_catalog_changed(key), "{key}");
+        }
+        for key in [
+            "workspace.open",
+            "workspace.close",
+            "workspace.update_display_name",
+            "workspace.relocate",
+            "workspace.rebind",
+            "workspace.clear_history",
+        ] {
+            assert!(should_notify_catalog_changed(key), "{key}");
+        }
+    }
 
     #[test]
     fn file_and_close_commands_reject_foreign_owner() {
@@ -73,7 +112,11 @@ mod tests {
         sessions.register_window("b");
         sessions.reserve_open("a", id).unwrap();
         sessions.commit_open("a", id).unwrap();
-        for key in ["workspace.get", "workspace.is_open"] {
+        for key in [
+            "workspace.get",
+            "workspace.is_open",
+            "workspace.native_root_path",
+        ] {
             assert!(check_workspace_access(&sessions, "b", key, id).is_ok());
             assert!(!should_focus_workspace_owner(key));
         }

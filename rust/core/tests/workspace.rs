@@ -36,3 +36,6 @@ mod window_sessions;
 mod workspace_access;
 #[path = "../../../ui/src-tauri/src/setup/workspace_storage_transaction.rs"]
 mod workspace_storage_transaction;
+
+#[path = "../../../ui/src-tauri/src/setup/workspace_window_launch.rs"]
+mod workspace_window_launch;

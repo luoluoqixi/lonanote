@@ -49,6 +49,7 @@ type WorkspaceSelectListProps = {
   onRevealWorkspace: (workspaceItem: WorkspaceListItem) => void;
   onRefresh: () => Promise<void>;
   onSelectedWorkspaceIdsChange: (selectedIds: Array<string | number>) => void;
+  onOpenInNewWindow: (workspaceId: string) => void;
   onWorkspacePress: (workspaceId: string) => void;
   selectedWorkspaceIds: string[];
   sortValue: WorkspaceSortValue;
@@ -84,6 +85,7 @@ export function WorkspaceSelectList({
   onRevealWorkspace,
   onRefresh,
   onSelectedWorkspaceIdsChange,
+  onOpenInNewWindow,
   onWorkspacePress,
   selectedWorkspaceIds,
   sortValue,
@@ -160,6 +162,17 @@ export function WorkspaceSelectList({
                   native: desktop ? false : undefined,
                   contentSize: desktop ? "sm" : undefined,
                   items: [
+                    ...(isDesktop()
+                      ? [
+                          {
+                            icon: <FolderOpen color={accentColor} size={14} />,
+                            label: "在新窗口中打开",
+                            disabled: workspaceItem.isOpen,
+                            onSelect: () => onOpenInNewWindow(workspaceItem.id),
+                            value: `new-window-workspace-${workspaceItem.id}`,
+                          },
+                        ]
+                      : []),
                     {
                       icon: <Info color={accentColor} size={14} />,
                       label: "查看详情",

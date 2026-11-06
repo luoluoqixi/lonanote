@@ -737,7 +737,7 @@ export function WorkspaceSelectContent({
         hasError={hasError}
         isDeletingWorkspace={isDeletingWorkspace}
         isLoading={isLoading}
-        isOpeningWorkspace={isOpeningWorkspace}
+        isOpeningWorkspace={isOpeningWorkspace || sharedOpen.busy}
         isScanningWorkspaces={isScanningWorkspaces}
         isUpdatingWorkspace={isUpdatingWorkspace || location.isWorking || isCreatingWorkspace}
         isWorkspaceSelectionMode={isWorkspaceSelectionMode}
@@ -754,6 +754,9 @@ export function WorkspaceSelectContent({
         }}
         onRefresh={handlePullToRefresh}
         onSelectedWorkspaceIdsChange={handleSelectedWorkspaceIdsChange}
+        onOpenInNewWindow={(workspaceId) => {
+          void sharedOpen.openInNewWindow(workspaceId);
+        }}
         onWorkspacePress={(workspaceId) => {
           void handleWorkspacePress(workspaceId);
         }}

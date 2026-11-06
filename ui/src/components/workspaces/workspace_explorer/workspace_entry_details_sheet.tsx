@@ -4,6 +4,7 @@ import { NativeList, NativeListSection } from "rn-ui-kit";
 import type { WorkspaceIndexEntry } from "@/api/commands/workspace";
 import { formatUnixSecondsFullDateTime, getFileName } from "@/api/common";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
+import { useLayoutMode } from "@/hooks/layout";
 
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
@@ -24,6 +25,7 @@ export function WorkspaceEntryDetailsSheet({
   open,
   rootName,
 }: WorkspaceEntryDetailsSheetProps) {
+  const desktop = useLayoutMode().layoutMode === "desktop";
   if (!entry) {
     return null;
   }
@@ -32,7 +34,7 @@ export function WorkspaceEntryDetailsSheet({
 
   const content = (
     <NativeList style={styles.list} tracksNavigationBarScrollEdge>
-      <NativeListSection title="基本信息">
+      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="基本信息">
         <WorkspaceDetailsListItem
           copyId="entry-name"
           title="名称"
@@ -44,13 +46,14 @@ export function WorkspaceEntryDetailsSheet({
           value={isDirectory ? "文件夹" : "文件"}
         />
         <WorkspaceDetailsListItem
+          tooltip
           copyId="entry-path"
           title="路径"
           value={entry.path || "."}
           valueFontSize={14}
         />
       </NativeListSection>
-      <NativeListSection title="时间">
+      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="时间">
         <WorkspaceDetailsListItem
           copyId="entry-created-at"
           title="创建时间"

@@ -14,3 +14,5 @@ pub(crate) mod workspace_storage_transaction;
 pub(crate) mod launch_requests;
 #[cfg(desktop)]
 pub(crate) mod single_instance;
+
+pub(crate) mod workspace_window_launch;
