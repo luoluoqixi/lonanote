@@ -6,7 +6,8 @@ import {
   createWindowSizeRecorder,
   registerWindowSizeFlusher,
 } from "@/api/common/window_size_recorder";
-import { uiPreferences, uiPreferencesStore } from "@/stores/ui";
+import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
+import { uiPreferencesStore } from "@/stores/ui";
 
 import { useUiPreferences } from "./use_ui_preferences";
 
@@ -26,7 +27,7 @@ export function useDesktopWindowState() {
       const [size, scale] = await Promise.all([appWindow.innerSize(), appWindow.scaleFactor()]);
       if (cancelled) return;
       const recorder = createWindowSizeRecorder(size.toLogical(scale), async (next) => {
-        await uiPreferences.saveDesktopWindowSize(next);
+        await editorWindowService.saveWindowSize(next);
       });
       const sample = async () => {
         const revision = ++sampleRevision;

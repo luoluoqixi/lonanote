@@ -25,6 +25,16 @@ const premature: string[] = [];
 const sent: string[] = [];
 const nativeCalls: unknown[] = [];
 const closeTargets: string[][] = [];
+const savedWindowSizes: unknown[] = [];
+let rememberWindowSize = true;
+mock.module("../src/stores/ui/ui_preferences", () => ({
+  uiPreferences: {
+    getPreferences: () => ({ window: { rememberSize: rememberWindowSize } }),
+    saveDesktopWindowSize: async (size: unknown) => {
+      savedWindowSizes.push(size);
+    },
+  },
+}));
 mock.module("../src/components/editor/controllers/document_registry", () => ({
   documentRegistry: {
     ensureDocumentLoaded: async (id: string) => {
@@ -260,6 +270,19 @@ test("文件树拖放通过 owner 登记路径，辅助窗口重复打开在目�
   })) as any[];
   expect(values.map((p) => p.document.ref.filePath)).toEqual(["a.md", "b.md"]);
   expect(editorStore.getState().activeEditorId).toBe(active);
+  await child.request("owner", "persist-window-size", {
+    width: 1000,
+    height: 700,
+    themeMode: "dark",
+  });
+  expect(savedWindowSizes).toEqual([{ width: 1000, height: 700 }]);
+  await expect(
+    child.request("owner", "persist-window-size", { width: -1, height: 700 }),
+  ).rejects.toThrow("窗口尺寸无效");
+  rememberWindowSize = false;
+  await child.request("owner", "persist-window-size", { width: 1200, height: 800 });
+  expect(savedWindowSizes).toHaveLength(1);
+  rememberWindowSize = true;
   const next = editorWindowService.beginWorkspaceFileDrag("drag-workspace", ["a.md"]);
   const again = (await child.request("owner", "drop-workspace-files", {
     token: next,

@@ -3,6 +3,7 @@ import { createStore } from "zustand/vanilla";
 import { type EditorWindowBootstrap, editorWindows } from "@/api/commands/win/editor_windows";
 import { detectWorkspaceFileKind } from "@/api/common";
 import { isDesktop, isTauri } from "@/api/common/platform";
+import type { WindowSize } from "@/api/common/window_size_recorder";
 import type { EditorDocumentChangedPayload } from "@/assets/editor/src/bridge/protocol";
 import {
   type DocumentModel,
@@ -16,7 +17,10 @@ import { workspaceSessionStore } from "@/stores/workspace/workspace_session_stor
 
 import { type DocumentHistorySnapshot, documentHistoryService } from "./document_history";
 import { withDocumentSaveWindow } from "./document_save_window";
-import type { InputLeaseProvider } from "./editor_input_lease_coordinator";
+import {
+  type InputLeaseProvider,
+  editorInputLeaseCoordinator,
+} from "./editor_input_lease_coordinator";
 import {
   type EditorWindowLayoutSnapshot,
   captureEditorWindowLayout,
@@ -38,6 +42,7 @@ import {
   markViewerReadyCommitted,
   viewerProjection,
 } from "./editor_window_viewers";
+import { saveCoordinator } from "./save_coordinator";
 import { WorkspaceFileDragTickets } from "./workspace_file_drag";
 
 type WindowState = {
@@ -48,6 +53,23 @@ type WindowState = {
   ownerDestroyed: boolean;
 };
 const workspaceFileDrags = new WorkspaceFileDragTickets();
+
+async function persistWindowSize(value: unknown) {
+  const size = value as Partial<WindowSize> | null;
+  if (
+    !size ||
+    typeof size.width !== "number" ||
+    typeof size.height !== "number" ||
+    !Number.isFinite(size.width) ||
+    !Number.isFinite(size.height) ||
+    size.width <= 0 ||
+    size.height <= 0
+  )
+    throw new Error("窗口尺寸无效");
+  const { uiPreferences } = await import("@/stores/ui/ui_preferences");
+  if (uiPreferences.getPreferences().window.rememberSize)
+    await uiPreferences.saveDesktopWindowSize({ width: size.width, height: size.height });
+}
 export const editorWindowState = createStore<WindowState>(() => ({
   role: "loading",
   ready: false,
@@ -471,10 +493,6 @@ async function initialize() {
     const { editorId } = args as { editorId: string };
     assertRemoteView(editorId, from);
     sentProjections.delete(editorId);
-    const [{ editorInputLeaseCoordinator }, { saveCoordinator }] = await Promise.all([
-      import("./editor_input_lease_coordinator"),
-      import("./save_coordinator"),
-    ]);
     const call = (method: keyof InputLeaseProvider, ...values: unknown[]) =>
       requireRpc().request(from, "provider", { editorId, method, values });
     const provider: InputLeaseProvider = {
@@ -621,6 +639,10 @@ async function initialize() {
     }
   });
   rpc.handle("ping", async () => null);
+  rpc.handle("persist-window-size", async (args) => {
+    await persistWindowSize(args);
+    return null;
+  });
   rpc.handle("drop-workspace-files", async (args, from) => {
     const { token, groupId } = args as { token: string; groupId: string };
     return openDraggedWorkspaceFiles(token, from, groupId);
@@ -981,6 +1003,13 @@ export const editorWindowService = {
     return rpc?.handle(method, handler) ?? (() => ownerHandlers.delete(method));
   },
   requestOwner: ownerRequest,
+  saveWindowSize: async (size: WindowSize) => {
+    await editorWindowService.initialize();
+    if (editorWindowRuntime.isRemote()) {
+      // 原工作台意外销毁后，辅助窗口仅保留草稿恢复，不再写入共享配置。
+      if (!bootstrap?.ownerDestroyed) await ownerRequest("persist-window-size", size);
+    } else await persistWindowSize(size);
+  },
   splitRemoteEditor: async (
     editorId: string,
     direction: "row" | "column",
@@ -1267,7 +1296,6 @@ export async function transferEditorToNewWindow(
   }
   if (!state.editorsById[editorId]) throw new Error("当前标签暂不支持跨窗口转移");
   let targetEditorId: string | undefined;
-  const { saveCoordinator } = await import("./save_coordinator");
   await saveCoordinator.withDocumentMutation(
     [state.editorsById[editorId].documentId],
     async (context) => {
@@ -1326,8 +1354,5 @@ export async function transferEditorToNewWindow(
       }
     },
   );
-  if (targetEditorId)
-    await (
-      await import("./editor_input_lease_coordinator")
-    ).editorInputLeaseCoordinator.requestLease(targetEditorId);
+  if (targetEditorId) await editorInputLeaseCoordinator.requestLease(targetEditorId);
 }

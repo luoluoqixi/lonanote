@@ -13,6 +13,11 @@ import {
   editorInputLeaseCoordinator,
 } from "@/components/editor/controllers";
 import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
+// 创建窗口依赖提前加载，避免 Metro 在首次菜单操作时注册动态 bundle 并因 HMR 失联重载页面。
+import {
+  editorWindowService,
+  transferEditorToNewWindow,
+} from "@/components/editor/controllers/editor_window_service";
 import { createUntitledDocumentForWindow } from "@/components/editor/controllers/untitled_documents";
 import { WorkspaceFilePreview } from "@/components/files/workspace_file_preview";
 import { RecentWorkspaces } from "@/components/workspaces/recent_workspaces";
@@ -279,13 +284,9 @@ export function DesktopEditorGroup({
           const direction = action === "splitRight" || action === "splitLeft" ? "row" : "column";
           const placement = action === "splitLeft" || action === "splitUp" ? "before" : "after";
           if (remote) {
-            const { editorWindowService } =
-              await import("@/components/editor/controllers/editor_window_service");
             await editorWindowService.splitRemoteEditor(id, direction, placement);
           } else editorStore.getState().splitEditor(id, direction, placement);
         } else if (action === "moveToNewWindow" || action === "copyToNewWindow") {
-          const { transferEditorToNewWindow } =
-            await import("@/components/editor/controllers/editor_window_service");
           await transferEditorToNewWindow(id, action === "moveToNewWindow" ? "move" : "copy");
         } else if (action === "copyPath") {
           if (nativePath) await clipboard.writeText(nativePath);

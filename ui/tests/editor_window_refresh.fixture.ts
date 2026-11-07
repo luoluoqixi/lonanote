@@ -5,6 +5,11 @@ import { EditorWindowRpc } from "../src/components/editor/controllers/editor_win
 
 mock.module("../src/api/common/platform", () => ({ isDesktop: () => true, isTauri: () => true }));
 mock.module("../src/api/common", () => ({ detectWorkspaceFileKind: () => "text" }));
+mock.module("../src/api/invoke", () => ({
+  invoke: async () => {
+    throw new Error("测试不允许文件 IO");
+  },
+}));
 const { editorStore } = await import("../src/stores/editor");
 const stale = editorStore.getState().openEditor({ kind: "untitled" }, { initialText: "旧快照" });
 const staleProjection = {
@@ -52,6 +57,11 @@ owner.handle("prepare-close", async (args: any) => {
   expect(args.editorIds).toEqual([actual.editorId]);
   return true;
 });
+const savedSizes: unknown[] = [];
+owner.handle("persist-window-size", async (size) => {
+  savedSizes.push(size);
+  return null;
+});
 mock.module("../src/api/commands/win/editor_windows", () => ({
   editorWindows: {
     getBootstrap: async () => ({
@@ -86,6 +96,8 @@ test("丢弃已过期标签归属，恢复最新草稿并完成 ready 和关闭�
   );
   await editorWindowService.markRemoteProviderReady(actual.editorId);
   expect(editorWindowState.getState().connected).toBe(true);
+  await editorWindowService.saveWindowSize({ width: 960, height: 720 });
+  expect(savedSizes).toEqual([{ width: 960, height: 720 }]);
   expect(
     await editorWindowService.requestOwner("prepare-close", {
       editorIds: editorStore.getState().openEditorIds,

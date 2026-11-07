@@ -1,3 +1,6 @@
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+
 import { isDesktop, isTauri } from "@/api/common/platform";
 import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
 
@@ -21,7 +24,6 @@ export type EditorWindowMessage = {
 };
 async function invokeDesktop<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   if (!isDesktop() || !isTauri()) throw new Error("当前平台不支持辅助编辑器窗口");
-  const { invoke } = await import("@tauri-apps/api/core");
   return invoke<T>(command, args);
 }
 export const editorWindows = {
@@ -59,7 +61,6 @@ export const editorWindows = {
     invokeDesktop<void>("store_editor_window_checkpoint", { ownerEpoch, checkpoint }),
   async listen(handler: (message: EditorWindowMessage) => void): Promise<() => void> {
     if (!isDesktop() || !isTauri()) return () => {};
-    const { getCurrentWebviewWindow } = await import("@tauri-apps/api/webviewWindow");
     return getCurrentWebviewWindow().listen<EditorWindowMessage>(
       "lonanote://editor-window-message",
       ({ payload }) => handler(payload),
