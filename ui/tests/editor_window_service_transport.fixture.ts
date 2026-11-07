@@ -26,6 +26,19 @@ const sent: string[] = [];
 const nativeCalls: unknown[] = [];
 const closeTargets: string[][] = [];
 const savedWindowSizes: unknown[] = [];
+const externalDrops = new Map<string, any[]>();
+const externalTakes: unknown[] = [];
+mock.module("../src/api/commands/win/external_file_drop", () => ({
+  externalFileDrop: {
+    take: async (token: string, from: string) => {
+      externalTakes.push([token, from]);
+      const refs = externalDrops.get(token);
+      if (!refs) throw new Error("文件拖放已失效");
+      externalDrops.delete(token);
+      return refs;
+    },
+  },
+}));
 let rememberWindowSize = true;
 mock.module("../src/stores/ui/ui_preferences", () => ({
   uiPreferences: {
@@ -304,6 +317,45 @@ test("文件树拖放通过 owner 登记路径，辅助窗口重复打开在目�
   ).toEqual([remoteId, ...values.map((p) => p.editor.editorId)].sort());
   await expect(
     child.request("owner", "drop-workspace-files", { token: next, groupId: "files" }),
+  ).rejects.toThrow("文件拖放已失效");
+  receiveDestroyed({
+    payload: { windowLabel: childLabel, sessionId: owner.sessionId, ownerEpoch: 1 },
+  });
+  child.dispose();
+  workspaceSessionStore.clearCurrentWorkspaceId();
+});
+
+test("外部拖放经所属 owner 消费凭据，保持工作区引用和组内去重", async () => {
+  const { workspaceSessionStore } = await import("../src/stores/workspace/workspace_session_store");
+  workspaceSessionStore.setCurrentWorkspaceId("external-workspace");
+  listening = false;
+  const source = editorStore.getState().openEditor({ kind: "untitled" });
+  const transfer = transferEditorToNewWindow(source.editorId, "copy");
+  await flush();
+  listening = true;
+  await child.request("owner", "ready", { editorId: remoteId });
+  await transfer;
+  const refs = [
+    { kind: "workspaceFile", workspaceId: "external-workspace", filePath: "folder/note.md" },
+    { kind: "looseFile", absolutePath: "/outside/note.md" },
+  ];
+  externalDrops.set("external", refs);
+  const values = (await child.request("owner", "drop-external-files", {
+    token: "external",
+    groupId: "target",
+  })) as any[];
+  expect(values.map((value) => value.document.ref)).toEqual(refs);
+  expect(externalTakes.at(-1)).toEqual(["external", childLabel]);
+  externalDrops.set("external-again", refs);
+  const again = (await child.request("owner", "drop-external-files", {
+    token: "external-again",
+    groupId: "target",
+  })) as any[];
+  expect(again.map((value) => value.editor.editorId)).toEqual(
+    values.map((value) => value.editor.editorId),
+  );
+  await expect(
+    child.request("owner", "drop-external-files", { token: "external", groupId: "target" }),
   ).rejects.toThrow("文件拖放已失效");
   receiveDestroyed({
     payload: { windowLabel: childLabel, sessionId: owner.sessionId, ownerEpoch: 1 },

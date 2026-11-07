@@ -59,7 +59,11 @@ tauri-plugin-single-instance = { workspace = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = { workspace = true }
-objc2-app-kit= { workspace = true, features = ["NSColor", "NSWindow"] }
+objc2-app-kit = { workspace = true, features = ["NSColor", "NSWindow"] }
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = { workspace = true }
+windows = { workspace = true, features = ["Win32_Foundation"] }
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

@@ -34,14 +34,15 @@ pub fn create_workspace_window(
         .context("找不到工作台窗口模板")?
         .clone();
     config.label = label.to_string();
-    // 使用 HTML 拖放实现标签跨 WebView 交接，避免 Windows native drop handler 截获。
-    config.drag_drop_enabled = false;
+    // Windows/macOS 保留 HTML 标签拖放；Linux 的原生监听仅处理文件 URI。
+    config.drag_drop_enabled = cfg!(target_os = "linux");
     config.maximized = false;
     config.fullscreen = false;
     let preferences = utils::win::resolve_startup_window_preferences();
     let mut builder = WebviewWindowBuilder::from_config(app, &config)?
         .title(crate::APP_TITLE.as_str())
         .visible(false)
+        .initialization_script_for_all_frames(super::external_file_drop::SCRIPT)
         .initialization_script_for_all_frames(
             "window.addEventListener('contextmenu', (event) => event.preventDefault());",
         );
@@ -98,6 +99,7 @@ pub fn create_workspace_window(
             return Err(error).context("创建工作台窗口失败");
         }
     };
+    super::external_file_drop::install(&window)?;
     // 显示器原点使用全局物理坐标，避免混合 DPI 下 builder 的逻辑坐标换算偏移。
     if let Some(position) = physical_position {
         if let Err(error) = window.set_position(position) {

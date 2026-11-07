@@ -19,3 +19,5 @@ pub(crate) mod single_instance;
 pub(crate) mod workspace_window_launch;
 pub(crate) mod editor_window_sessions;
 pub(crate) mod editor_window;
+pub(crate) mod external_file_drop;
+pub(crate) mod external_file_drop_tickets;

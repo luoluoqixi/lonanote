@@ -2,6 +2,33 @@ import { expect, test } from "bun:test";
 
 import { chooseUntitledSaveTargetWith } from "../src/components/editor/controllers/untitled_save_target";
 
+for (const [selected, expected, confirmed] of [
+  ["C:/notes/existing.md", "C:/notes/existing.md", true],
+  ["C:/notes/existing", "C:/notes/existing.md", false],
+] as const) {
+  test(`原生覆盖确认仅对实际选择的路径生效：${selected}`, async () => {
+    let preparation: unknown;
+    await chooseUntitledSaveTargetWith(
+      { title: "无标题" },
+      {
+        tauri: true,
+        workspaceId: null,
+        root: async () => null,
+        dialog: async () => ({ path: selected, overwriteConfirmed: true }),
+        prepare: async (...args) => {
+          preparation = args;
+          return null;
+        },
+        directory: async () => null,
+        nativeTarget: async () => {
+          throw new Error("不应调用");
+        },
+      },
+    );
+    expect(preparation).toEqual([expected, { overwriteConfirmed: confirmed }]);
+  });
+}
+
 test("Tauri 取消目标不准备写入，无工作区使用系统默认目录", async () => {
   let prepared = 0;
   const result = await chooseUntitledSaveTargetWith(

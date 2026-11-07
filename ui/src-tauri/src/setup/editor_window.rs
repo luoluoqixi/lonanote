@@ -52,7 +52,7 @@ fn create(
             .context("找不到编辑器窗口模板")?
             .clone();
         config.label = label.clone();
-        config.drag_drop_enabled = false;
+        config.drag_drop_enabled = cfg!(target_os = "linux");
         config.maximized = false;
         config.fullscreen = false;
         config.decorations = true;
@@ -61,10 +61,12 @@ fn create(
             .title(crate::APP_TITLE.as_str())
             .visible(false)
             .decorations(true)
+            .initialization_script_for_all_frames(super::external_file_drop::SCRIPT)
             .initialization_script_for_all_frames(
                 "window.addEventListener('contextmenu', (event) => event.preventDefault());",
             )
             .build()?;
+        super::external_file_drop::install(&window)?;
         Ok(window)
     })();
     let window = match created {

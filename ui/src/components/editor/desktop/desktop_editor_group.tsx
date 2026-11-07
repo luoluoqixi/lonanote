@@ -32,7 +32,7 @@ import { editorStore, isDocumentDirty } from "@/stores/editor";
 import { DesktopEditorActions } from "./desktop_editor_actions";
 import { DesktopEditorTab } from "./desktop_editor_tab";
 import { EditorEmptyInput } from "./editor_empty_input";
-import { getEditorDroppedFiles } from "./editor_file_drop";
+import { isEditorFileDropInside } from "./editor_file_drop";
 import { getEditorGroupAtPoint } from "./editor_group_hit";
 import { EditorTabBlankInput } from "./editor_tab_blank_input";
 import { EditorTabDragInput } from "./editor_tab_drag_input";
@@ -317,42 +317,45 @@ export function DesktopEditorGroup({
     ],
   );
 
-  const openLooseFilePath = useCallback(
-    (absolutePath: string) => {
-      documentRegistry.openEditor({ kind: "looseFile", absolutePath }, { groupId });
-    },
-    [groupId],
-  );
-
   const reportDropError = useEffectEvent((error: unknown) => reportError(error));
 
   useEffect(() => {
-    if (!isDesktop() || remote) return;
+    if (!isDesktop()) return;
     let disposed = false;
+    type ExternalDrop = {
+      token?: string;
+      error?: string;
+      x: number;
+      y: number;
+      physical?: boolean;
+    };
+    const accept = (payload: ExternalDrop) => {
+      if (disposed) return;
+      const area = editorAreaRef.current as unknown as HTMLElement | null;
+      if (
+        !area ||
+        !isEditorFileDropInside(
+          payload,
+          area.getBoundingClientRect(),
+          payload.physical ? window.devicePixelRatio || 1 : 1,
+        )
+      )
+        return;
+      if (payload.error) {
+        reportDropError(new Error(payload.error));
+        return;
+      }
+      if (payload.token)
+        void editorWindowService.dropExternalFiles(payload.token, groupId).catch(reportDropError);
+    };
+    const onError = (event: Event) => accept((event as CustomEvent<ExternalDrop>).detail);
+    window.addEventListener("lonanote:external-file-drop", onError);
     const cleanup = createAsyncSubscription(
       async () => {
         const { getCurrentWebview } = await import("@tauri-apps/api/webview");
-        // 只监听实际落下事件，直接保留可等待的 unlisten，避免组合 API 丢弃清理 Promise。
-        return getCurrentWebview().listen<{ paths: string[]; position: { x: number; y: number } }>(
-          "tauri://drag-drop",
-          ({ payload }) => {
-            if (disposed) return;
-            const area = editorAreaRef.current as unknown as HTMLElement | null;
-            if (!area) return;
-            const paths = getEditorDroppedFiles(
-              payload.paths,
-              payload.position,
-              area.getBoundingClientRect(),
-              window.devicePixelRatio || 1,
-            );
-            for (const path of paths) {
-              try {
-                openLooseFilePath(path);
-              } catch (error) {
-                reportDropError(error);
-              }
-            }
-          },
+        return getCurrentWebview().listen<ExternalDrop>(
+          "lonanote://external-file-drop",
+          ({ payload }) => accept(payload),
         );
       },
       (error) => {
@@ -361,9 +364,10 @@ export function DesktopEditorGroup({
     );
     return () => {
       disposed = true;
+      window.removeEventListener("lonanote:external-file-drop", onError);
       cleanup();
     };
-  }, [openLooseFilePath, remote]);
+  }, [groupId]);
 
   return (
     <View

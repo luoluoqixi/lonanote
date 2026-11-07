@@ -15,8 +15,8 @@ type TargetDependencies = {
   dialog(options: {
     defaultDirectory: string | null;
     defaultFileName: string;
-  }): Promise<string | null>;
-  prepare(path: string): Promise<SaveTarget | null>;
+  }): Promise<{ path: string; overwriteConfirmed?: boolean } | null>;
+  prepare(path: string, options: { overwriteConfirmed: boolean }): Promise<SaveTarget | null>;
   directory(id: string, fileName: string): Promise<{ directory: string; fileName?: string } | null>;
   nativeTarget(id: string, path: string): Promise<SaveTarget>;
 };
@@ -30,8 +30,13 @@ export async function chooseUntitledSaveTargetWith(
   const fileName = markdownName(document.title);
   if (deps.tauri) {
     const root = deps.workspaceId ? await deps.root(deps.workspaceId).catch(() => null) : null;
-    const path = await deps.dialog({ defaultDirectory: root, defaultFileName: fileName });
-    return path ? deps.prepare(markdownName(path)) : null;
+    const selected = await deps.dialog({ defaultDirectory: root, defaultFileName: fileName });
+    if (!selected) return null;
+    const path = markdownName(selected.path);
+    // 自动补扩展名后可能指向另一个已有文件，不能沿用原路径的覆盖确认。
+    return deps.prepare(path, {
+      overwriteConfirmed: selected.overwriteConfirmed === true && path === selected.path,
+    });
   }
   if (!deps.workspaceId) throw new Error("请先打开工作区，再保存笔记");
   const selected = await deps.directory(deps.workspaceId, fileName);
@@ -65,14 +70,16 @@ export function chooseUntitledSaveTarget(document: DocumentModel): Promise<SaveT
         tauri: isTauri(),
         workspaceId,
         root: (id) => workspace.nativeRootPath(id),
-        dialog: async (options) =>
-          (
-            await fs.showSelectDialog(
-              { ...options, type: "saveFile", title: "保存笔记" },
-              getDocumentSaveWindow(document.documentId),
-            )
-          )?.path ?? null,
-        prepare: async (absolutePath) => {
+        dialog: async (options) => {
+          const selected = await fs.showSelectDialog(
+            { ...options, type: "saveFile", title: "保存笔记" },
+            getDocumentSaveWindow(document.documentId),
+          );
+          return selected?.path
+            ? { path: selected.path, overwriteConfirmed: selected.overwriteConfirmed }
+            : null;
+        },
+        prepare: async (absolutePath, options) => {
           assertWorkspace();
           const { invoke } = await import("@tauri-apps/api/core");
           const prepared = await invoke<{
@@ -91,7 +98,7 @@ export function chooseUntitledSaveTarget(document: DocumentModel): Promise<SaveT
               ownerEpoch: editorWindowRuntime.ownerEpoch(),
             });
           try {
-            if (prepared.exists) {
+            if (prepared.exists && !options.overwriteConfirmed) {
               const { confirmNative } = await import("rn-ui-kit");
               const choice = await confirmNative({
                 title: "覆盖已有文件？",

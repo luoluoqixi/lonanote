@@ -19,6 +19,8 @@ export interface SelectDialogOptions {
 export interface SelectDialogResult {
   path: string | null;
   paths: string[] | null;
+  /** 桌面原生保存框已处理所选路径的覆盖确认。 */
+  overwriteConfirmed?: boolean;
 }
 
 export const fs = {

@@ -1,6 +1,7 @@
 import { createStore } from "zustand/vanilla";
 
 import { type EditorWindowBootstrap, editorWindows } from "@/api/commands/win/editor_windows";
+import { externalFileDrop } from "@/api/commands/win/external_file_drop";
 import { detectWorkspaceFileKind } from "@/api/common";
 import { isDesktop, isTauri } from "@/api/common/platform";
 import type { WindowSize } from "@/api/common/window_size_recorder";
@@ -647,6 +648,12 @@ async function initialize() {
     const { token, groupId } = args as { token: string; groupId: string };
     return openDraggedWorkspaceFiles(token, from, groupId);
   });
+  rpc.handle("drop-external-files", async (args, from) => {
+    const { token, groupId } = args as { token: string; groupId: string };
+    const workspaceId = workspaceSessionStore.getCurrentWorkspaceId();
+    const refs = await externalFileDrop.take(token, from);
+    return openDroppedReferences(refs, from, groupId, workspaceId);
+  });
   rpc.handle("window-state", async (args, from) => {
     if (bootstrap?.role !== "workbench") throw new Error("不是owner");
     const snapshot = args as EditorWindowLayoutSnapshot;
@@ -916,6 +923,22 @@ export const editorWindowService = {
       }
     } else await openDraggedWorkspaceFiles(token, null, groupId);
   },
+  dropExternalFiles: async (token: string, groupId: string) => {
+    if (editorWindowRuntime.isRemote()) {
+      const values = (await ownerRequest("drop-external-files", {
+        token,
+        groupId,
+      })) as Projection[];
+      editorStore.getState().setActiveGroup(groupId);
+      for (const value of values) applyProjection(value);
+    } else {
+      const workspaceId = workspaceSessionStore.getCurrentWorkspaceId();
+      const refs = await externalFileDrop.take(token, bootstrap!.windowLabel);
+      if (workspaceSessionStore.getCurrentWorkspaceId() !== workspaceId)
+        throw new Error("工作区已切换，请重新拖动");
+      await openDroppedReferences(refs, null, groupId, workspaceId);
+    }
+  },
   handleOwnerDestroyed: async () => {
     if (bootstrap?.role !== "editor") return;
     bootstrap = { ...bootstrap, ownerDestroyed: true };
@@ -1148,6 +1171,19 @@ export const editorWindowService = {
 async function openDraggedWorkspaceFiles(token: string, target: string | null, groupId: string) {
   const workspaceId = workspaceSessionStore.requireCurrentWorkspaceId();
   const paths = workspaceFileDrags.take(token, workspaceId);
+  return openDroppedReferences(
+    paths.map((filePath) => ({ kind: "workspaceFile", workspaceId, filePath })),
+    target,
+    groupId,
+    workspaceId,
+  );
+}
+async function openDroppedReferences(
+  refs: EditorDocumentRef[],
+  target: string | null,
+  groupId: string,
+  workspaceId: string | null,
+) {
   const { documentRegistry } = await import("./document_registry");
   const values: (
     | Projection
@@ -1155,13 +1191,14 @@ async function openDraggedWorkspaceFiles(token: string, target: string | null, g
   )[] = [];
   const created: string[] = [];
   try {
-    for (const filePath of paths) {
+    for (const ref of refs) {
       if (workspaceSessionStore.getCurrentWorkspaceId() !== workspaceId)
         throw new Error("工作区已切换，请重新拖动");
-      const ref = { kind: "workspaceFile" as const, workspaceId, filePath };
+      if (ref.kind === "untitled") throw new Error("无效的文件拖放引用");
+      const filePath = ref.kind === "workspaceFile" ? ref.filePath : ref.absolutePath;
       const kind = detectWorkspaceFileKind(filePath);
       const state = editorStore.getState();
-      if (kind !== "markdown" && kind !== "text") {
+      if (ref.kind === "workspaceFile" && kind !== "markdown" && kind !== "text") {
         const viewerKind =
           kind === "image" || kind === "video" || kind === "pdf" ? kind : "unknown";
         const id = target

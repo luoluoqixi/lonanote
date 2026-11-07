@@ -2,6 +2,8 @@ mod editor_window_api;
 use editor_window_api::*;
 mod file_dialog_api;
 use file_dialog_api::*;
+mod external_file_drop_api;
+use external_file_drop_api::*;
 mod api;
 mod document_save_api;
 mod file_ownership_api;
@@ -84,6 +86,9 @@ pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         begin_editor_tab_drag,
         take_editor_tab_drag,
         select_files,
+        resolve_document_open_reference,
+        take_external_file_drop,
+        capture_external_file_drop,
         get_window_bootstrap,
         get_editor_window_bootstrap,
         create_editor_window,

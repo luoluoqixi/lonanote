@@ -166,6 +166,13 @@ impl EditorWindowSessions {
         }
         self.sessions.get(self.owner_of(label)?).map(|s| s.epoch)
     }
+    /// 拖放只读取当前会话身份，不得调用 bootstrap 推进 owner 代次。
+    pub fn drag_session(&self, label: &str) -> Result<(String, String, u64), String> {
+        if self.orphans.contains_key(label) { return Err("原工作台已关闭".into()); }
+        let owner = self.owner_of(label).ok_or("窗口会话已结束")?;
+        let session = self.sessions.get(owner).ok_or("窗口会话已结束")?;
+        Ok((owner.into(), session.id.clone(), session.epoch))
+    }
     fn projection(&self, label: &str) -> Result<EditorWindowBootstrap, String> {
         if let Some(orphan) = self.orphans.get(label) {
             return Ok(orphan.clone());
@@ -430,6 +437,17 @@ impl EditorWindowSessions {
 mod tests {
     use super::*;
     use serde_json::json;
+    #[test]
+    fn reading_drag_identity_does_not_reload_the_owner() {
+        let mut state = EditorWindowSessions::default();
+        state.register_owner("main");
+        let boot = state.bootstrap("main").unwrap();
+        state.create("main", "transfer", "editor-window-child", json!({})).unwrap();
+        for label in ["main", "editor-window-child", "main"] {
+            assert_eq!(state.drag_session(label).unwrap(), ("main".into(), boot.session_id.clone(), boot.owner_epoch));
+            assert_eq!(state.epoch("main"), Some(boot.owner_epoch));
+        }
+    }
     #[test]
     fn tab_drag_is_authenticated_one_shot_and_limited_to_the_owners_session() {
         let mut state = EditorWindowSessions::default();

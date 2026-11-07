@@ -2,6 +2,7 @@ import { type Href, useGlobalSearchParams, usePathname, useRouter } from "expo-r
 import { useState } from "react";
 
 import { fs } from "@/api/commands/fs";
+import { externalFileDrop } from "@/api/commands/win/external_file_drop";
 import { workspaceFile } from "@/api/commands/workspace";
 import { isDesktop } from "@/api/common/platform";
 import { getDefaultWorkspaceEntryName } from "@/api/common/utils/workspace_entry_name";
@@ -91,10 +92,9 @@ export function useEditorFileActions() {
           filters: [{ name: "Markdown", extensions: EDITOR_FILE_EXTENSIONS }],
         });
         if (result?.path) {
-          const opened = documentRegistry.openEditor({
-            kind: "looseFile",
-            absolutePath: result.path,
-          });
+          const opened = documentRegistry.openEditor(
+            await externalFileDrop.resolveReference(result.path),
+          );
           if (layoutMode === "mobile")
             router.push({
               pathname: "/editor/[editorId]",

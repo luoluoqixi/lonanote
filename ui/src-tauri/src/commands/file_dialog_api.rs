@@ -25,9 +25,11 @@ pub struct SelectDialogOptions {
     default_file_name: Option<String>,
 }
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SelectDialogResult {
     path: Option<String>,
     paths: Option<Vec<String>>,
+    overwrite_confirmed: bool,
 }
 
 /// 所属窗口模态：文件选择期间阻止该窗口交互，其他工作台窗口仍可正常工作。
@@ -74,6 +76,8 @@ pub async fn select_files(
             options.kind,
             SelectDialogType::OpenFiles | SelectDialogType::OpenFolders
         );
+        // Windows IFileSaveDialog、macOS NSSavePanel 及 Linux 保存 chooser 负责覆盖确认。
+        let save = matches!(options.kind, SelectDialogType::SaveFile);
         let (sender, receiver) = tokio::sync::oneshot::channel();
         match options.kind {
             SelectDialogType::OpenFile => dialog.pick_file(move |value| {
@@ -106,10 +110,16 @@ pub async fn select_files(
             })
             .transpose()?;
         Ok(if multiple {
-            SelectDialogResult { path: None, paths }
-        } else {
             SelectDialogResult {
-                path: paths.and_then(|v| v.into_iter().next()),
+                path: None,
+                paths,
+                overwrite_confirmed: false,
+            }
+        } else {
+            let path = paths.and_then(|v| v.into_iter().next());
+            SelectDialogResult {
+                overwrite_confirmed: save && path.is_some(),
+                path,
                 paths: None,
             }
         })
