@@ -1,4 +1,6 @@
 /* eslint-disable quote-props */
+import { ChevronsUpDown } from "lucide-react-native";
+import { useState } from "react";
 import {
   BrightnessSlider,
   HueSlider,
@@ -11,10 +13,12 @@ import {
   Preview,
   type SelectOption,
   Swatches,
+  useUiTheme,
 } from "rn-ui-kit";
 
 import { useLayoutMode } from "@/hooks/layout";
 import { useColorSchemeSettings, useUiPreferences } from "@/hooks/settings";
+import { useFontSettings } from "@/hooks/settings/use_font_settings";
 import type { AccentColorSetting, AppLayoutMode, ColorSchemeSetting } from "@/stores/ui";
 import {
   accentThemeNames,
@@ -23,6 +27,7 @@ import {
   isCustomAccentColor,
 } from "@/theme/accent_themes";
 
+import { FontPicker } from "../font_picker";
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
 import { useSettingsPresentation } from "../use_settings_presentation";
@@ -42,6 +47,9 @@ export function AppearanceSettingsPage({
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
   const presentation = useSettingsPresentation();
+  const theme = useUiTheme();
+  const fonts = useFontSettings();
+  const [fontPicker, setFontPicker] = useState<"ui" | "editor" | null>(null);
   const colorSchemeSettings = useColorSchemeSettings();
   const { layoutMode, setLayoutMode } = useLayoutMode();
   const uiPreferences = useUiPreferences();
@@ -87,6 +95,33 @@ export function AppearanceSettingsPage({
         </NativeListSection>
       ) : null}
 
+      <NativeListSection {...presentation.section} title="字体">
+        <NativeListItem
+          {...presentation.item}
+          title="编辑器字体"
+          value={fonts.editor.selection?.displayName ?? "系统默认"}
+          valueColor={theme.primary}
+          trailing={<ChevronsUpDown color={theme.primary} size={16} />}
+          onPress={() => setFontPicker("editor")}
+        />
+        <NativeListItem
+          {...presentation.item}
+          title="UI 界面字体"
+          value={fonts.ui.selection?.displayName ?? "系统默认"}
+          valueColor={theme.primary}
+          trailing={<ChevronsUpDown color={theme.primary} size={16} />}
+          onPress={() => setFontPicker("ui")}
+        />
+      </NativeListSection>
+      {fontPicker ? (
+        <FontPicker
+          consumer={fontPicker}
+          open
+          onOpenChange={(open) => {
+            if (!open) setFontPicker(null);
+          }}
+        />
+      ) : null}
       <NativeListSection {...presentation.section} title="主题">
         <NativeListSelectItem
           {...presentation.item}

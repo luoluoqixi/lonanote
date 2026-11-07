@@ -25,6 +25,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 
 [dependencies]
+font-kit = "0.14.3"
 dunce = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

@@ -12,6 +12,7 @@ mock.module("react-native", () => ({
   Pressable: ({ children, onPress }: any) => <button onClick={onPress}>{children}</button>,
   StyleSheet: { create: (styles: any) => styles, absoluteFillObject: {} },
 }));
+mock.module("rn-ui-kit", () => ({ Text: ({ children }: any) => <span>{children}</span> }));
 const copiedDrafts: string[] = [];
 let reconnects = 0;
 let ownerDestroyed = false;

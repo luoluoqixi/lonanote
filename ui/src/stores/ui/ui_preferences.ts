@@ -1,7 +1,9 @@
+import type { FontSelection } from "@/api/commands/fonts/types";
 import { store } from "@/api/commands/store";
 import { isDesktop } from "@/api/common";
 import type { CommonStoreSnapshot } from "@/api/common/common_store_sync";
 import { clampWindowZoom } from "@/api/common/window_zoom";
+import { normalizeFontSelection } from "@/fonts/font_selection";
 import {
   type AccentThemeName,
   defaultAccentThemeName,
@@ -41,6 +43,7 @@ export interface UiPreferences {
     layoutMode: AppLayoutMode;
   };
   appearance: {
+    font: FontSelection;
     accentColor: AccentColorSetting;
     backgroundFollowsTheme: boolean;
     themeMode: ColorSchemeSetting;
@@ -65,6 +68,7 @@ export interface UiPreferences {
   };
 }
 
+const UI_FONT_KEY = "ui.appearance.font";
 const UI_ACCENT_COLOR_KEY = "ui.appearance.accentColor";
 const UI_BACKGROUND_FOLLOWS_THEME_KEY = "ui.appearance.backgroundFollowsTheme";
 const UI_THEME_MODE_KEY = "ui.appearance.themeMode";
@@ -86,6 +90,7 @@ export function createDefaultUiPreferences(): UiPreferences {
       layoutMode: isDesktop() ? "desktop" : "mobile",
     },
     appearance: {
+      font: null,
       accentColor: defaultAccentThemeName,
       backgroundFollowsTheme: false,
       themeMode: "system",
@@ -201,6 +206,7 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
       layoutMode: normalizeLayoutMode(preferences.shell?.layoutMode, defaults.shell.layoutMode),
     },
     appearance: {
+      font: normalizeFontSelection(preferences.appearance.font),
       accentColor: normalizeAccentColor(preferences.appearance.accentColor),
       backgroundFollowsTheme: Boolean(preferences.appearance.backgroundFollowsTheme),
       themeMode: normalizeThemeMode(preferences.appearance.themeMode),
@@ -256,6 +262,7 @@ function readUiPreferencesFromStore(): UiPreferences {
       layoutMode: normalizeLayoutMode(layoutMode, defaults.shell.layoutMode),
     },
     appearance: {
+      font: normalizeFontSelection(store.commonGetSync<unknown>(UI_FONT_KEY)),
       accentColor: normalizeAccentColor(accentColor ?? defaults.appearance.accentColor),
       backgroundFollowsTheme:
         typeof backgroundFollowsTheme === "boolean"
@@ -299,6 +306,7 @@ function readUiPreferencesFromStore(): UiPreferences {
 
 function toStoreEntries(preferences: UiPreferences): Array<[string, unknown]> {
   return [
+    [UI_FONT_KEY, preferences.appearance.font],
     [UI_LAYOUT_MODE_KEY, preferences.shell.layoutMode],
     [UI_ACCENT_COLOR_KEY, preferences.appearance.accentColor],
     [UI_BACKGROUND_FOLLOWS_THEME_KEY, preferences.appearance.backgroundFollowsTheme],

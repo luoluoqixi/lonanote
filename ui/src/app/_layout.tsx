@@ -1,7 +1,7 @@
 // sort-imports-ignore
 import "../initialize";
 
-import { Text, View, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
@@ -10,6 +10,7 @@ import { isWeb, os } from "@/api/common";
 import { initializeRustRuntime } from "@/api/invoke";
 import {
   AppStatusBar,
+  Text,
   nativeStackStatusBarOptions,
   resolveNativeStackStatusBarStyle,
   withNativeStackGestureOptions,

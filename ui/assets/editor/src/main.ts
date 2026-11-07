@@ -35,6 +35,8 @@ import { applyTextChange, normalizeEditorText, textChange } from "./bridge/text_
 import { ANDROID_SELECTION_BOTTOM_OFFSET, EDITOR_MESSAGE_DEDUPLICATION_LIMIT } from "./consts";
 import { installDesktopBackgroundFocus } from "./core/background_focus";
 import { applyEditorFocusCommand } from "./core/focus_command";
+import { loadFont } from "./core/font_loading";
+import { createFontPresentation, fontFamilyStack } from "./core/font_presentation";
 import { applyEditorInputLease } from "./core/input_lease";
 import {
   captureEditorViewState,
@@ -638,7 +640,20 @@ function applyRuntimeStyles(runtime: EditorRuntimeUpdatePayload): void {
   bottomSafeArea.style.minHeight = `${runtime.contentInsets.bottom}px`;
 }
 
+const fontPresentation = createFontPresentation({
+  load: loadFont,
+  apply: (family) => {
+    if (family)
+      document.documentElement.style.setProperty("--lonanote-editor-font", fontFamilyStack(family));
+    else document.documentElement.style.removeProperty("--lonanote-editor-font");
+  },
+  measure: () => session?.editor.editor.requestMeasure(),
+});
+
 function applyPresentation(currentSession: SurfaceSession): void {
+  void fontPresentation
+    .applyFont(currentSession.preferences.font ?? null)
+    .catch((error) => console.error("编辑器字体加载失败", error));
   currentSession.editor.updatePresentation({
     lineNumbers: currentSession.preferences.lineNumbers,
     lineWrapping: currentSession.preferences.lineWrapping,
@@ -863,6 +878,7 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     },
   });
   applyRuntimeStyles(payload.runtime);
+  applyPresentation(currentSession);
   if (payload.viewState) {
     restoreEditorViewState(editor.editor, getViewScrollElement(currentSession), payload.viewState);
     const restored = payload.viewState;

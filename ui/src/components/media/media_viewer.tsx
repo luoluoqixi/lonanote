@@ -6,7 +6,7 @@ import { Redirect, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { ExternalLink, Maximize, Pause, Play, Volume2, VolumeX } from "lucide-react-native";
 import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Text as NativeText, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import PagerView, { type PagerViewOnPageSelectedEvent } from "react-native-pager-view";
 import Animated, {
@@ -16,6 +16,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Text as NativeText } from "rn-ui-kit";
 import {
   Button,
   type DropdownItemData,

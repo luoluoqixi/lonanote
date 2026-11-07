@@ -25,6 +25,7 @@ mock.module("react-native", () => ({
   PanResponder: { create: () => ({ panHandlers: {} }) },
 }));
 mock.module("rn-ui-kit", () => ({
+  Text: ({ children }: any) => <span>{children}</span>,
   useUiTheme: () => ({ background: "white", border: "gray" }),
   Spinner: () => null,
 }));

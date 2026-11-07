@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
+import { Text } from "rn-ui-kit";
 import { useUiTheme } from "rn-ui-kit";
 
 import { isDesktop, os } from "@/api/common/platform";

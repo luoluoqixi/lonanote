@@ -21,6 +21,7 @@ import {
 import { useEditorResourceActivation, useEditorResourceContext } from "@/hooks/editor";
 import { useLayoutMode } from "@/hooks/layout";
 import { useGlobalSettings } from "@/hooks/settings";
+import { useFontSettings } from "@/hooks/settings/use_font_settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
 import { registerEditorMenuInvalidation } from "./controllers/editor_menu_lifecycle";
@@ -82,6 +83,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
     [colorScheme, theme],
   );
   const { settings } = useGlobalSettings();
+  const { editor: editorFont } = useFontSettings();
   const { layoutMode } = useLayoutMode();
   const onResourceActivated = useEditorResourceActivation(document, editor.editorId);
   const resourceContext = useEditorResourceContext(document);
@@ -113,6 +115,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
         },
         {
           slashMenu: isDesktop() && layoutMode === "desktop",
+          font: editorFont.font,
           lineNumbers:
             editor.preferenceOverrides.lineNumbers ?? settings.editorDefaults.showLineNumber,
           lineWrapping:
@@ -124,7 +127,16 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
         },
         resourceContext.context,
       ),
-    [colorScheme, document, editor, editorColors, layoutMode, resourceContext.context, settings],
+    [
+      colorScheme,
+      document,
+      editor,
+      editorColors,
+      editorFont.font,
+      layoutMode,
+      resourceContext.context,
+      settings,
+    ],
   );
   const initializePayloadRef = useRef(initializePayload);
   initializePayloadRef.current = initializePayload;

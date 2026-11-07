@@ -11,6 +11,7 @@ import {
   useDesktopZoomFactor,
 } from "@/hooks/settings";
 import { useDesktopWindowState } from "@/hooks/settings/use_desktop_window_state";
+import { useFontSettings } from "@/hooks/settings/use_font_settings";
 import { applyDocumentTheme } from "@/stores/ui";
 import { accentThemeNames } from "@/theme/accent_themes";
 import {
@@ -22,6 +23,8 @@ import { composeWorkbenchTheme } from "@/theme/workbench_theme";
 import type { AppProviderProps } from "./types";
 
 export function AppProvider({ children }: AppProviderProps) {
+  const fonts = useFontSettings();
+  const fontProviderProps = { textFontFamily: fonts.ui.font?.family };
   const { isLoaded, preferredColorScheme, preferences, resolvedColorScheme } =
     useColorSchemeSettings();
 
@@ -48,6 +51,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
   return (
     <RootProvider
+      {...fontProviderProps}
       accentThemeNames={accentThemeNames}
       appBackgroundColors={
         preferences.shell.layoutMode === "desktop"

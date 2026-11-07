@@ -1,3 +1,5 @@
+mod font_api;
+use font_api::*;
 mod editor_window_api;
 use editor_window_api::*;
 mod file_dialog_api;
@@ -64,6 +66,8 @@ pub fn resolve_default_paths(app: &AppHandle) -> Result<lonanote_core::config::a
 
 pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
     resource_protocol::register_resource_protocol(builder).invoke_handler(tauri::generate_handler![
+        list_system_fonts,
+        resolve_system_font,
         invoke,
         invoke_async,
         get_command_len,

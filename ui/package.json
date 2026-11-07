@@ -76,6 +76,7 @@
     "lonanote_rust_module": "workspace:*",
     "lucide-react-native": "^1.21.0",
     "native-ios-common": "workspace:*",
+    "native-system-fonts": "workspace:*",
     "prettier": "^3.8.4",
     "react": "=19.2.5",
     "react-dom": "=19.2.5",

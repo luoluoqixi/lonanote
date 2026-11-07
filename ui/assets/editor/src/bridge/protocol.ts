@@ -1,3 +1,5 @@
+import { type ResolvedFont, isResolvedFont } from "./font_types";
+
 export const EDITOR_BRIDGE_PROTOCOL_VERSION = 1;
 export const EDITOR_BRIDGE_MAX_SERIALIZED_MESSAGE_LENGTH = 1024 * 1024;
 
@@ -85,6 +87,7 @@ export type EditorSemanticColors = {
 };
 
 export type EditorPreferences = {
+  font?: ResolvedFont | null;
   slashMenu?: boolean;
   lineNumbers: boolean;
   lineWrapping: boolean;
@@ -432,6 +435,7 @@ export function isEditorInitializePayload(value: unknown): value is EditorInitia
     typeof document.readOnly === "boolean" &&
     typeof document.inputEnabled === "boolean" &&
     isRecord(value.preferences) &&
+    (value.preferences.font == null || isResolvedFont(value.preferences.font)) &&
     typeof value.preferences.lineNumbers === "boolean" &&
     typeof value.preferences.lineWrapping === "boolean" &&
     typeof value.preferences.sourceMode === "boolean" &&
@@ -463,6 +467,7 @@ export function isEditorPreferencesUpdatePayload(
 ): value is EditorPreferencesUpdatePayload {
   return (
     isRecord(value) &&
+    (value.font == null || isResolvedFont(value.font)) &&
     typeof value.lineNumbers === "boolean" &&
     typeof value.lineWrapping === "boolean" &&
     typeof value.sourceMode === "boolean" &&

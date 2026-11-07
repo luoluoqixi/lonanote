@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { Text } from "rn-ui-kit";
 import { useUiTheme } from "rn-ui-kit";
 
 import { useEditorSession } from "@/hooks/editor";

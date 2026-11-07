@@ -7,7 +7,8 @@ import {
   MoreHorizontal,
 } from "lucide-react-native";
 import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Pressable, type ScrollView, StyleSheet, Text, View, VirtualizedList } from "react-native";
+import { Pressable, type ScrollView, StyleSheet, View, VirtualizedList } from "react-native";
+import { Text } from "rn-ui-kit";
 import { ContextMenu, type ContextMenuItemData, Dropdown, Spinner, useUiTheme } from "rn-ui-kit";
 
 import { workspaceFile } from "@/api/commands/workspace";

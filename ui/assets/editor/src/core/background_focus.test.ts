@@ -1,3 +1,5 @@
+import { history, undo, undoDepth } from "@codemirror/commands";
+import { StateEffect } from "@codemirror/state";
 import { Window } from "happy-dom";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -5,6 +7,7 @@ import { test } from "node:test";
 import type { EditorPlatform } from "../bridge/protocol";
 import { installDesktopBackgroundFocus } from "./background_focus";
 import { LonaEditor, type LonaEditorThemeColors } from "./editor";
+import { createFontPresentation } from "./font_presentation";
 import { applyEditorInputLease } from "./input_lease";
 
 // happy-dom 不计算排版；仅替换坐标测量，保留真实 CodeMirror state、DOM focus 和选区事务。
@@ -89,6 +92,35 @@ function createEditor(text = "短文", readOnly = false, filePath?: string) {
   view.lineBlockAt = () => ({ bottom: 26 }) as ReturnType<typeof view.lineBlockAt>;
   return { editor, root, view };
 }
+
+test("切换字体保留真实 EditorView、草稿、选区与撤销历史", async () => {
+  const { editor, root, view } = createEditor("初始", false, "note.md");
+  const controller = createFontPresentation({
+    load: async () => {},
+    apply: (family) => {
+      view.contentDOM.style.fontFamily = family ?? "";
+    },
+    measure: () => view.requestMeasure(),
+  });
+  try {
+    view.dispatch({ effects: StateEffect.appendConfig.of(history()) });
+    view.dispatch({ changes: { from: 2, insert: "草稿" }, selection: { anchor: 3 } });
+    const depth = undoDepth(view.state);
+    await controller.applyFont({ family: "Example", faces: [] });
+    assert.equal(editor.editor, view);
+    assert.equal(view.state.doc.toString(), "初始草稿");
+    assert.equal(view.state.selection.main.head, 3);
+    assert.equal(undoDepth(view.state), depth);
+    assert.ok(undo(view));
+    assert.equal(view.state.doc.toString(), "初始");
+    await controller.applyFont(null);
+    assert.equal(view.contentDOM.style.fontFamily, "");
+  } finally {
+    controller.dispose();
+    editor.destroy();
+    root.remove();
+  }
+});
 
 test("切换桌面布局的斜杠菜单时保留文档和选区，启用真实 PurrMD 菜单", async () => {
   const { editor, root, view } = createEditor("", false, "note.md");

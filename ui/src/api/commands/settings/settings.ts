@@ -1,114 +1,14 @@
 import { invoke } from "@/api/invoke";
 
-export interface SettingsPayload {
-  firstSetup: boolean;
-  autoCheckUpdate: boolean;
-  autoOpenLastWorkspace: boolean;
-  autoSave: boolean;
-  autoSaveInterval: number;
-  autoSaveFocusChange: boolean;
-  showLineNumber: boolean;
-  disableLineWrap: boolean;
-  sourceMode: boolean;
-}
+import { diffSettings, fromSettingsPayload, toSettingsPayload } from "./settings_model";
+import type {
+  GlobalSettings,
+  GlobalSettingsSnapshot,
+  SettingsPatchPayload,
+  SettingsPayload,
+} from "./settings_model";
 
-export interface GlobalSettings {
-  system: {
-    firstSetup: boolean;
-  };
-  app: {
-    autoCheckUpdate: boolean;
-    autoOpenLastWorkspace: boolean;
-  };
-  editorDefaults: {
-    autoSave: boolean;
-    autoSaveIntervalSeconds: number;
-    autoSaveOnFocusChange: boolean;
-    showLineNumber: boolean;
-    disableLineWrap: boolean;
-    sourceMode: boolean;
-  };
-}
-
-export interface GlobalSettingsSnapshot {
-  runtimeId: string;
-  revision: number;
-  values: GlobalSettings;
-}
-
-export interface SettingsPatchPayload extends Partial<SettingsPayload> {}
-
-export function createDefaultGlobalSettings(): GlobalSettings {
-  return {
-    system: {
-      firstSetup: true,
-    },
-    app: {
-      autoCheckUpdate: true,
-      autoOpenLastWorkspace: true,
-    },
-    editorDefaults: {
-      autoSave: true,
-      autoSaveIntervalSeconds: 1,
-      autoSaveOnFocusChange: true,
-      showLineNumber: false,
-      disableLineWrap: false,
-      sourceMode: false,
-    },
-  };
-}
-
-export function fromSettingsPayload(
-  payload: Partial<SettingsPayload> | null | undefined,
-): GlobalSettings {
-  const defaults = createDefaultGlobalSettings();
-
-  return {
-    system: {
-      firstSetup: payload?.firstSetup ?? defaults.system.firstSetup,
-    },
-    app: {
-      autoCheckUpdate: payload?.autoCheckUpdate ?? defaults.app.autoCheckUpdate,
-      autoOpenLastWorkspace: payload?.autoOpenLastWorkspace ?? defaults.app.autoOpenLastWorkspace,
-    },
-    editorDefaults: {
-      autoSave: payload?.autoSave ?? defaults.editorDefaults.autoSave,
-      autoSaveIntervalSeconds:
-        payload?.autoSaveInterval ?? defaults.editorDefaults.autoSaveIntervalSeconds,
-      autoSaveOnFocusChange:
-        payload?.autoSaveFocusChange ?? defaults.editorDefaults.autoSaveOnFocusChange,
-      showLineNumber: payload?.showLineNumber ?? defaults.editorDefaults.showLineNumber,
-      disableLineWrap: payload?.disableLineWrap ?? defaults.editorDefaults.disableLineWrap,
-      sourceMode: payload?.sourceMode ?? defaults.editorDefaults.sourceMode,
-    },
-  };
-}
-
-export function toSettingsPayload(settings: GlobalSettings): SettingsPayload {
-  return {
-    firstSetup: settings.system.firstSetup,
-    autoCheckUpdate: settings.app.autoCheckUpdate,
-    autoOpenLastWorkspace: settings.app.autoOpenLastWorkspace,
-    autoSave: settings.editorDefaults.autoSave,
-    autoSaveInterval: settings.editorDefaults.autoSaveIntervalSeconds,
-    autoSaveFocusChange: settings.editorDefaults.autoSaveOnFocusChange,
-    showLineNumber: settings.editorDefaults.showLineNumber,
-    disableLineWrap: settings.editorDefaults.disableLineWrap,
-    sourceMode: settings.editorDefaults.sourceMode,
-  };
-}
-
-export function diffSettings(previous: GlobalSettings, next: GlobalSettings): SettingsPatchPayload {
-  const oldPayload = toSettingsPayload(previous);
-  const nextPayload = toSettingsPayload(next);
-  const patch: SettingsPatchPayload = {};
-  for (const key of Object.keys(nextPayload) as Array<keyof SettingsPayload>) {
-    if (!Object.is(oldPayload[key], nextPayload[key])) {
-      patch[key] = nextPayload[key] as never;
-    }
-  }
-  return patch;
-}
+export * from "./settings_model";
 
 export const settings = {
   getSettings: async (): Promise<GlobalSettings> => {

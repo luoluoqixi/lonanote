@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Text } from "rn-ui-kit";
 
 import { clipboard } from "@/api/commands/system/clipboard";
 import { editorWindows } from "@/api/commands/win/editor_windows";

@@ -1,4 +1,5 @@
 mod config;
+pub mod font;
 
 use anyhow::{anyhow, Result};
 use config::get_settings_config_path;
@@ -42,6 +43,9 @@ pub struct Settings {
     /// 源码模式
     #[serde(default = "Settings::default_source_mode")]
     pub source_mode: bool,
+    /// 全局编辑器字体，None 使用系统默认。
+    #[serde(default, deserialize_with = "font::deserialize_selection")]
+    pub editor_font: Option<font::FontSelection>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -56,6 +60,8 @@ pub struct SettingsPatch {
     pub show_line_number: Option<bool>,
     pub disable_line_wrap: Option<bool>,
     pub source_mode: Option<bool>,
+    #[serde(default, deserialize_with = "font::deserialize_patch")]
+    pub editor_font: Option<Option<font::FontSelection>>,
 }
 
 impl Settings {
@@ -108,6 +114,7 @@ impl Default for Settings {
             show_line_number: Self::default_show_line_number(),
             disable_line_wrap: Self::default_disable_line_wrap(),
             source_mode: Self::default_source_mode(),
+            editor_font: None,
         }
     }
 }
@@ -156,6 +163,9 @@ impl Settings {
         assign_if_some!(show_line_number);
         assign_if_some!(disable_line_wrap);
         assign_if_some!(source_mode);
+        if let Some(value) = &patch.editor_font {
+            next.editor_font = value.clone();
+        }
         Ok(next)
     }
 
@@ -211,6 +221,7 @@ pub async fn replace_settings_and_save(
         show_line_number: Some(settings_value.show_line_number),
         disable_line_wrap: Some(settings_value.disable_line_wrap),
         source_mode: Some(settings_value.source_mode),
+        editor_font: Some(settings_value.editor_font),
     };
     settings.patch_and_save(&patch, &get_settings_config_path(), config_sync_hub())
 }
@@ -224,6 +235,26 @@ mod tests {
     use crate::config::config_sync::{ConfigChangedEvent, ConfigSyncHub};
 
     use super::{Settings, SettingsPatch};
+
+    #[test]
+    fn editor_font_patch_distinguishes_omitted_null_and_value() {
+        let value = json!({"platform":"windows","familyKey":"Segoe UI","displayName":"Segoe UI"});
+        let patch: SettingsPatch = serde_json::from_value(json!({"editorFont": value})).unwrap();
+        let selected = Settings::default().apply_patch(&patch).unwrap();
+        assert!(selected.editor_font.is_some());
+        let unchanged = selected
+            .apply_patch(&serde_json::from_value(json!({})).unwrap())
+            .unwrap();
+        assert_eq!(selected, unchanged);
+        let cleared = selected
+            .apply_patch(&serde_json::from_value(json!({"editorFont":null})).unwrap())
+            .unwrap();
+        assert!(cleared.editor_font.is_none());
+        assert_eq!(selected.auto_save, cleared.auto_save);
+        let invalid: Settings =
+            serde_json::from_value(json!({"editorFont":{"platform":"bad"}})).unwrap();
+        assert!(invalid.editor_font.is_none());
+    }
 
     #[test]
     fn settings_patch_preserves_unmentioned_fields() {

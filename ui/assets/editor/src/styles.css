@@ -194,3 +194,20 @@ html.desktop-scrollbar-enabled::-webkit-scrollbar {
   outline: 1px solid var(--lonanote-editor-accent);
   outline-offset: -1px;
 }
+
+/* 自定义正文字体不覆盖代码块/行内代码的等宽语义。 */
+:root[style*="--lonanote-editor-font"] .cm-content {
+  font-family: var(--lonanote-editor-font);
+}
+:root[style*="--lonanote-editor-font"]
+  .cm-content
+  :is(
+    code,
+    pre,
+    .cm-inline-code,
+    .cm-code-block,
+    .purrmd-cm-inline-code,
+    .purrmd-cm-code-block-line
+  ) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

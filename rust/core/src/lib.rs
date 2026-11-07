@@ -19,3 +19,5 @@ pub fn init_log() -> Result<()> {
     utils::init_logger()?;
     Ok(())
 }
+
+pub use settings::font::{FontPlatform, FontSelection};

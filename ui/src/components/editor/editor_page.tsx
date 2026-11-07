@@ -12,7 +12,8 @@ import {
   Undo2,
 } from "lucide-react-native";
 import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { Text } from "rn-ui-kit";
 import { type DropdownItemData, confirmNative, useUiTheme } from "rn-ui-kit";
 
 import { isMobile } from "@/api/common/platform";

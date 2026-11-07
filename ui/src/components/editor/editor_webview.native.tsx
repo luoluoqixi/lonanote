@@ -1,9 +1,10 @@
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Keyboard, PixelRatio, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Keyboard, PixelRatio, StyleSheet, View } from "react-native";
 import { runOnJS, useAnimatedReaction } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
+import { Text } from "rn-ui-kit";
 import { triggerNativeHaptics, useToast, useUiColorScheme, useUiTheme } from "rn-ui-kit";
 import { type KeyboardVisibilityPhase, useKeyboardAvoidance } from "rn-ui-kit/core";
 
@@ -23,6 +24,7 @@ import {
 } from "@/components/editor/controllers";
 import { useEditorResourceActivation, useEditorResourceContext } from "@/hooks/editor";
 import { useGlobalSettings } from "@/hooks/settings";
+import { useFontSettings } from "@/hooks/settings/use_font_settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
 import { getEditorDevUrl } from "./editor_dev_url";
@@ -139,6 +141,7 @@ export function EditorWebView({
     [colorScheme, theme],
   );
   const { settings } = useGlobalSettings();
+  const { editor: editorFont } = useFontSettings();
   const onResourceActivated = useEditorResourceActivation(document, editor.editorId);
   const resourceContext = useEditorResourceContext(document);
   const webViewRef = useRef<EditorWebViewHandle | null>(null);
@@ -224,6 +227,7 @@ export function EditorWebView({
           reducedMotion: false,
         },
         {
+          font: editorFont.font,
           lineNumbers:
             editor.preferenceOverrides.lineNumbers ?? settings.editorDefaults.showLineNumber,
           lineWrapping:
@@ -246,6 +250,7 @@ export function EditorWebView({
       resourceContext.context,
       settings,
       editorColors,
+      editorFont.font,
     ],
   );
   const initializePayloadRef = useRef(initializePayload);

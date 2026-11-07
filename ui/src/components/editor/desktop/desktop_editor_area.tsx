@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PanResponder, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { PanResponder, StyleSheet, View, type ViewStyle } from "react-native";
+import { Text } from "rn-ui-kit";
 import { Spinner, useUiTheme } from "rn-ui-kit";
 
 import { isDesktop, isWeb } from "@/api/common/platform";

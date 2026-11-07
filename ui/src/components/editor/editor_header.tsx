@@ -7,7 +7,8 @@ import { Stack, useRouter } from "expo-router";
 import { ChevronLeft, Ellipsis, Eye, Pencil } from "lucide-react-native";
 import { VariableBlurView } from "native-ios-common";
 import { useCallback, useMemo, useState } from "react";
-import { StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { StyleSheet, View, type ViewStyle } from "react-native";
+import { Text } from "rn-ui-kit";
 import {
   Button,
   Dropdown,

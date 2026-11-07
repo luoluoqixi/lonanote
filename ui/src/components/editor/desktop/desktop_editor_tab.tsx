@@ -1,6 +1,7 @@
 import { X } from "lucide-react-native";
 import { forwardRef, useState } from "react";
-import { Pressable, type PressableProps, StyleSheet, Text, View } from "react-native";
+import { Pressable, type PressableProps, StyleSheet, View } from "react-native";
+import { Text } from "rn-ui-kit";
 import { useUiTheme } from "rn-ui-kit";
 
 type DesktopEditorTabProps = PressableProps & {
