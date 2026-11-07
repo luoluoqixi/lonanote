@@ -10,6 +10,12 @@ use std::{
 use tauri::{Emitter, WebviewWindow};
 
 pub const SCRIPT: &str = include_str!("external_file_drop.js");
+pub fn initialization_script(app: &tauri::AppHandle) -> String {
+    SCRIPT.replace(
+        "__LONANOTE_INVOKE_KEY__",
+        &serde_json::to_string(app.invoke_key()).expect("invoke key can be serialized"),
+    )
+}
 pub static DROPS: LazyLock<Mutex<ExternalFileDrops>> =
     LazyLock::new(|| Mutex::new(ExternalFileDrops::default()));
 
@@ -71,10 +77,17 @@ pub fn install(window: &WebviewWindow) -> anyhow::Result<()> {
                         };
                         let mut json = PWSTR::null();
                         args.WebMessageAsJson(&mut json)?;
-                        let Ok(data) = serde_json::from_str::<serde_json::Value>(&take_pwstr(json))
+                        let Ok(envelope) = serde_json::from_str::<String>(&take_pwstr(json)) else {
+                            return Ok(());
+                        };
+                        let Ok(envelope) = serde_json::from_str::<serde_json::Value>(&envelope)
                         else {
                             return Ok(());
                         };
+                        let data = &envelope["payload"];
+                        if envelope["cmd"].as_str() != Some("capture_external_file_drop") {
+                            return Ok(());
+                        }
                         if data.get("channel").and_then(|v| v.as_str())
                             != Some("lonanote:external-file-drop")
                         {
@@ -89,34 +102,58 @@ pub fn install(window: &WebviewWindow) -> anyhow::Result<()> {
                             .zip(tauri::Url::parse(&source).ok())
                             .is_some_and(|(current, source)| current.origin() == source.origin());
                         if !trusted {
+                            log::warn!(
+                                "[external-file-drop] rejected message origin: window={}",
+                                target.label()
+                            );
                             return Ok(());
                         }
-                        let objects = args
-                            .cast::<ICoreWebView2WebMessageReceivedEventArgs2>()?
-                            .AdditionalObjects()?;
-                        let mut count = 0;
-                        objects.Count(&mut count)?;
-                        if count == 0 || count > 256 {
-                            return Ok(());
-                        }
-                        let mut paths = Vec::new();
-                        for index in 0..count {
-                            let file = objects
-                                .GetValueAtIndex(index)?
-                                .cast::<ICoreWebView2File>()?;
-                            let mut path = PWSTR::null();
-                            file.Path(&mut path)?;
-                            paths.push(PathBuf::from(take_pwstr(path)));
-                        }
-                        let result = publish(
-                            &target,
-                            paths,
-                            data["x"].as_f64().unwrap_or(f64::NAN),
-                            data["y"].as_f64().unwrap_or(f64::NAN),
-                            false,
+                        log::info!(
+                            "[external-file-drop] native received: window={}",
+                            target.label()
                         );
+                        let received = (|| -> windows::core::Result<Vec<PathBuf>> {
+                            let objects = args
+                                .cast::<ICoreWebView2WebMessageReceivedEventArgs2>()?
+                                .AdditionalObjects()?;
+                            let mut count = 0;
+                            objects.Count(&mut count)?;
+                            if count == 0 || count > 256 {
+                                return Err(windows::core::Error::from(
+                                    windows::Win32::Foundation::E_INVALIDARG,
+                                ));
+                            }
+                            let mut paths = Vec::new();
+                            for index in 0..count {
+                                let file = objects
+                                    .GetValueAtIndex(index)?
+                                    .cast::<ICoreWebView2File>()?;
+                                let mut path = PWSTR::null();
+                                file.Path(&mut path)?;
+                                paths.push(PathBuf::from(take_pwstr(path)));
+                            }
+                            Ok(paths)
+                        })()
+                        .map_err(|error| error.to_string());
+                        let x = data["x"].as_f64().unwrap_or(f64::NAN);
+                        let y = data["y"].as_f64().unwrap_or(f64::NAN);
+                        let result =
+                            received.and_then(|paths| publish(&target, paths, x, y, false));
                         if let Err(error) = result {
-                            log::warn!("外部文件拖放失败：{error}");
+                            log::warn!(
+                                "[external-file-drop] native failed: window={}, error={error}",
+                                target.label()
+                            );
+                            let _ = target.emit_to(
+                                tauri::EventTarget::webview_window(target.label()),
+                                "lonanote://external-file-drop",
+                                serde_json::json!({ "error": error, "x": x, "y": y }),
+                            );
+                        } else {
+                            log::info!(
+                                "[external-file-drop] native published: window={}",
+                                target.label()
+                            );
                         }
                         Ok(())
                     })),

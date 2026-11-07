@@ -5,11 +5,20 @@ import { readFileSync } from "node:fs";
 const script = readFileSync(
   new URL("../src-tauri/src/setup/external_file_drop.js", import.meta.url),
   "utf8",
-);
+).replaceAll("__LONANOTE_INVOKE_KEY__", JSON.stringify("probe-invoke-key"));
 
 test("外部文件交给原生 File bridge，不插入路径；内部标签拖放不受影响", () => {
   const win = new Window();
   const calls: unknown[][] = [];
+  const callbacks = new Map<number, (value?: unknown) => void>();
+  (win as any).__TAURI_INTERNALS__ = {
+    transformCallback: (callback: (value?: unknown) => void) => {
+      const id = callbacks.size + 1;
+      callbacks.set(id, callback);
+      return id;
+    },
+    unregisterCallback: (id: number) => callbacks.delete(id),
+  };
   (win as any).chrome = {
     webview: { postMessageWithAdditionalObjects: (...args: unknown[]) => calls.push(args) },
   };
@@ -29,7 +38,18 @@ test("外部文件交给原生 File bridge，不插入路径；内部标签拖�
   win.document.getElementById("editor")!.dispatchEvent(drop);
   expect(drop.defaultPrevented).toBe(true);
   expect(defaults).toBe(0);
-  expect(calls).toEqual([[{ channel: "lonanote:external-file-drop", x: 20, y: 30 }, [file]]]);
+  // Wry 先行处理器只接受字符串；必须同时满足 Tauri 的 IPC envelope，不能发送裸对象。
+  expect(typeof calls[0][0]).toBe("string");
+  const envelope = JSON.parse(calls[0][0] as string);
+  expect(envelope).toMatchObject({
+    cmd: "capture_external_file_drop",
+    __TAURI_INVOKE_KEY__: "probe-invoke-key",
+    payload: { channel: "lonanote:external-file-drop", names: ["note.md"], x: 20, y: 30 },
+  });
+  expect(calls[0][1]).toEqual([file]);
+  expect(callbacks.size).toBe(2);
+  callbacks.get(envelope.callback)!();
+  expect(callbacks.size).toBe(0);
   const internal = new win.MouseEvent("drop", { bubbles: true, cancelable: true });
   Object.defineProperty(internal, "dataTransfer", {
     value: { types: ["application/x-lonanote-editor-tab"], files: [] },
@@ -47,7 +67,13 @@ test("外部文件交给原生 File bridge，不插入路径；内部标签拖�
       data: { channel: "lonanote:external-file-drop", files: [file], x: 3, y: 4 },
     }),
   );
-  expect(calls[1]).toEqual([{ channel: "lonanote:external-file-drop", x: 103, y: 54 }, [file]]);
+  expect(JSON.parse(calls[1][0] as string).payload).toMatchObject({
+    channel: "lonanote:external-file-drop",
+    x: 103,
+    y: 54,
+  });
+  expect(calls[1][1]).toEqual([file]);
+  callbacks.get(JSON.parse(calls[1][0] as string).callback)!();
   win.dispatchEvent(
     new win.MessageEvent("message", {
       source: null,
@@ -75,5 +101,13 @@ test("外部文件交给原生 File bridge，不插入路径；内部标签拖�
   });
   win.document.getElementById("editor")!.dispatchEvent(failedDrop);
   expect(bridgeError).toContain("bridge unavailable");
+  expect(callbacks.size).toBe(0);
+  delete (win as any).chrome.webview.postMessageWithAdditionalObjects;
+  const unsupportedDrop = new win.MouseEvent("drop", { bubbles: true, cancelable: true });
+  Object.defineProperty(unsupportedDrop, "dataTransfer", {
+    value: { types: ["Files"], files: [file] },
+  });
+  win.document.getElementById("editor")!.dispatchEvent(unsupportedDrop);
+  expect(bridgeError).toContain("WebView2 Runtime");
   win.happyDOM.abort();
 });

@@ -42,7 +42,7 @@ pub fn create_workspace_window(
     let mut builder = WebviewWindowBuilder::from_config(app, &config)?
         .title(crate::APP_TITLE.as_str())
         .visible(false)
-        .initialization_script_for_all_frames(super::external_file_drop::SCRIPT)
+        .initialization_script_for_all_frames(super::external_file_drop::initialization_script(app))
         .initialization_script_for_all_frames(
             "window.addEventListener('contextmenu', (event) => event.preventDefault());",
         );

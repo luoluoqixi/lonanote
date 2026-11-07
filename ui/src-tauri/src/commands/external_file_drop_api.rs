@@ -109,7 +109,14 @@ pub async fn capture_external_file_drop(
         }
         external_file_drop::publish(&window, paths, x, y, false)
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(windows)]
+    {
+        // 确认合法 Tauri envelope，路径由随后执行的 WebView2 AdditionalObjects handler 读取。
+        // 此命令不接收路径，也不允许仅凭文件名生成拖放凭据。
+        let _ = (window, names, x, y);
+        Ok(())
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
     {
         let _ = (window, names, x, y);
         Err("当前 WebView 不支持读取拖放文件路径，请使用打开文件".into())

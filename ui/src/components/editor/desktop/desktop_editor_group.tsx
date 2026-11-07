@@ -5,6 +5,10 @@ import { Button, useUiTheme } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
+import {
+  type ExternalFileDropEvent,
+  listenExternalFileDrop,
+} from "@/api/commands/win/external_file_drop_events";
 import { createAsyncSubscription } from "@/api/common/async_subscription";
 import { isDesktop, isWeb } from "@/api/common/platform";
 import {
@@ -322,14 +326,7 @@ export function DesktopEditorGroup({
   useEffect(() => {
     if (!isDesktop()) return;
     let disposed = false;
-    type ExternalDrop = {
-      token?: string;
-      error?: string;
-      x: number;
-      y: number;
-      physical?: boolean;
-    };
-    const accept = (payload: ExternalDrop) => {
+    const accept = (payload: ExternalFileDropEvent) => {
       if (disposed) return;
       const area = editorAreaRef.current as unknown as HTMLElement | null;
       if (
@@ -348,16 +345,10 @@ export function DesktopEditorGroup({
       if (payload.token)
         void editorWindowService.dropExternalFiles(payload.token, groupId).catch(reportDropError);
     };
-    const onError = (event: Event) => accept((event as CustomEvent<ExternalDrop>).detail);
+    const onError = (event: Event) => accept((event as CustomEvent<ExternalFileDropEvent>).detail);
     window.addEventListener("lonanote:external-file-drop", onError);
     const cleanup = createAsyncSubscription(
-      async () => {
-        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
-        return getCurrentWebview().listen<ExternalDrop>(
-          "lonanote://external-file-drop",
-          ({ payload }) => accept(payload),
-        );
-      },
+      () => listenExternalFileDrop(accept),
       (error) => {
         console.warn("[editor] 文件拖放监听操作失败", error);
       },
