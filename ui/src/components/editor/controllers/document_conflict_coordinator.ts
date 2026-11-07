@@ -1,6 +1,7 @@
 import { workspaceFile } from "@/api/commands/workspace";
 import type { FileFingerprint } from "@/stores/editor";
 import { editorStore, isDocumentDirty } from "@/stores/editor";
+import { normalizeEditorDocumentText } from "@/stores/editor/editor_document_types";
 
 function toFingerprint(metadata: {
   size: number | null;
@@ -32,7 +33,7 @@ async function readExternalDocument(
     editorStore.getState().documentsById[documentId]?.identityRevision !== document.identityRevision
   )
     return null;
-  return { text, fingerprint: toFingerprint(metadata) };
+  return { text: normalizeEditorDocumentText(text), fingerprint: toFingerprint(metadata) };
 }
 
 export const documentConflictCoordinator = {

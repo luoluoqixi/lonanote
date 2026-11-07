@@ -5,7 +5,8 @@ import { useUiTheme } from "rn-ui-kit";
 import { isDesktop, os } from "@/api/common/platform";
 import { useAppMenuContext } from "@/components/app_menu/app_menu_host";
 import { AppMenubar } from "@/components/app_menu/app_menubar";
-import { TITLE_HEIGHT, getAppTitle } from "@/config";
+import { TITLE_HEIGHT } from "@/config";
+import { useWindowTitle } from "@/hooks/editor/use_desktop_window_title";
 import { useSeparatorColor } from "@/hooks/ui/use_separator_color";
 
 import { tauriDragRegionProps } from "./tauri_drag_region";
@@ -15,6 +16,7 @@ import { WindowControls } from "./window_controls";
 const TITLE_RESERVED_WIDTH = 200;
 
 export function TitleBar() {
+  const title = useWindowTitle();
   const theme = useUiTheme();
   const separatorColor = useSeparatorColor();
   const { presentation } = useAppMenuContext();
@@ -61,7 +63,7 @@ export function TitleBar() {
               textAlign: "center",
             }}
           >
-            {getAppTitle()}
+            {title}
           </Text>
         </View>
         {!presentation.native ? (

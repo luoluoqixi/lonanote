@@ -1,6 +1,8 @@
 // sort-imports-ignore
 import "../initialize";
 
+import { Text, View, Pressable } from "react-native";
+import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 
@@ -17,7 +19,10 @@ import { AppProvider } from "@/providers/app_provider";
 import { useAppBackgroundColors, useResolvedeColorScheme } from "@/hooks/settings";
 import { applyThemeBootstrap } from "@/stores/ui";
 import { initializeConfigSyncController } from "@/api/common/config_sync_controller";
+import { AuxiliaryEditorShell } from "@/components/app_shell/auxiliary_editor_shell";
+import { useEditorWindows } from "@/hooks/editor/use_editor_windows";
 import { useDesktopWindowLifecycle } from "@/hooks/editor/use_desktop_window_lifecycle";
+import { useDesktopWindowTitle } from "@/hooks/editor/use_desktop_window_title";
 
 applyThemeBootstrap();
 initializeRustRuntime();
@@ -51,6 +56,25 @@ export default function RootLayout() {
 }
 
 function RootNavigation() {
+  const editorWindow = useEditorWindows();
+  useDesktopWindowTitle(editorWindow.ready);
+  if (!editorWindow.ready)
+    return editorWindow.error ? (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text accessibilityRole="alert">编辑器窗口初始化失败：{editorWindow.error}</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void editorWindowService.retry().catch(console.error)}
+        >
+          <Text>重试</Text>
+        </Pressable>
+      </View>
+    ) : null;
+  if (editorWindow.role === "editor") return <AuxiliaryEditorShell />;
+  return <WorkbenchNavigation />;
+}
+
+function WorkbenchNavigation() {
   useDesktopWindowLifecycle();
   const colorScheme = useResolvedeColorScheme();
   const appBackgroundColors = useAppBackgroundColors();

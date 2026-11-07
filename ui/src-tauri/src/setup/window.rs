@@ -34,6 +34,8 @@ pub fn create_workspace_window(
         .context("找不到工作台窗口模板")?
         .clone();
     config.label = label.to_string();
+    // 使用 HTML 拖放实现标签跨 WebView 交接，避免 Windows native drop handler 截获。
+    config.drag_drop_enabled = false;
     config.maximized = false;
     config.fullscreen = false;
     let preferences = utils::win::resolve_startup_window_preferences();
@@ -85,6 +87,10 @@ pub fn create_workspace_window(
             super::window_sessions::WindowStartCause::NewWindow
         },
     );
+    super::window_runtime::EDITOR_WINDOW_SESSIONS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .register_owner(label);
     let window = match builder.build() {
         Ok(window) => window,
         Err(error) => {

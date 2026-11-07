@@ -11,3 +11,8 @@ html[data-workspace-tree-dragging],
 html[data-workspace-tree-dragging] * {
   cursor: default !important;
 }
+
+/* 辅助 shell 的标签和布局不参与浏览器选区；iframe 内仍由编辑器管理文本选择。 */
+#auxiliary-editor-shell, #auxiliary-editor-shell *:not(input):not(textarea) { user-select: none; -webkit-user-select: none; }
+html[data-editor-tab-dragging], html[data-editor-tab-dragging] * { cursor: default !important; }
+html[data-workspace-tree-native-drag] [data-workspace-tree-preview] { visibility: hidden; }

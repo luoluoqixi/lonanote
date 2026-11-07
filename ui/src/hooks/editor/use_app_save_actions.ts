@@ -5,6 +5,7 @@ import {
   getSaveableDocumentIds,
 } from "@/components/app_menu/app_menu_model";
 import { saveCoordinator } from "@/components/editor/controllers";
+import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { useToast } from "@/hooks/ui";
 
 import { useEditorSession } from "./use_editor_session";
@@ -15,6 +16,14 @@ export function useAppSaveActions() {
   const ids = getSaveableDocumentIds(session, isDesktop());
   const active = getActiveSaveableDocumentId(session, isDesktop());
   const save = async (all: boolean) => {
+    if (all && editorWindowService.isRemote()) {
+      try {
+        await editorWindowService.requestOwner("save-all", null);
+      } catch (error) {
+        toast.error("保存失败", { description: String(error) });
+      }
+      return;
+    }
     const state = session.getSnapshot();
     const allowed = getSaveableDocumentIds(state, isDesktop());
     const activeId = getActiveSaveableDocumentId(state, isDesktop());

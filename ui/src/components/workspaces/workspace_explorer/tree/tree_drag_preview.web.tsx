@@ -33,6 +33,7 @@ export function TreeDragPreview({ pointer, sources, folder }: TreeDragPreviewPro
   return createPortal(
     <div
       ref={element}
+      data-workspace-tree-preview
       aria-hidden
       style={{
         position: "fixed",

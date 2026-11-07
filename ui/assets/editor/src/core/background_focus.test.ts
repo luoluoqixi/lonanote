@@ -1,10 +1,11 @@
+import { Window } from "happy-dom";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Window } from "happy-dom";
 
-import { LonaEditor, type LonaEditorThemeColors } from "./editor";
-import { installDesktopBackgroundFocus } from "./background_focus";
 import type { EditorPlatform } from "../bridge/protocol";
+import { installDesktopBackgroundFocus } from "./background_focus";
+import { LonaEditor, type LonaEditorThemeColors } from "./editor";
+import { applyEditorInputLease } from "./input_lease";
 
 // happy-dom 不计算排版；仅替换坐标测量，保留真实 CodeMirror state、DOM focus 和选区事务。
 const domWindow = new Window({ url: "http://localhost/" });
@@ -102,6 +103,30 @@ function mouseDown(
     ...init,
   }) as unknown as MouseEvent;
 }
+
+test("输入权启用和屏障恢复不抢走另一分屏的真实焦点和选区", () => {
+  const first = createEditor("第一个编辑器");
+  const second = createEditor("第二个编辑器");
+  try {
+    second.view.dispatch({ selection: { anchor: 2 } });
+    second.view.focus();
+    const session = { editor: first.editor, documentReadOnly: false, inputEnabled: false };
+    assert.equal(
+      applyEditorInputLease(session, { enabled: true, leaseToken: "a", identityRevision: 1 }),
+      true,
+    );
+    assert.equal(document.activeElement, second.view.contentDOM);
+    assert.equal(second.view.state.selection.main.head, 2);
+    assert.equal(applyEditorInputLease(session, { enabled: false }), true);
+    assert.equal(applyEditorInputLease(session, { enabled: true }), true);
+    assert.equal(document.activeElement, second.view.contentDOM);
+  } finally {
+    first.editor.destroy();
+    second.editor.destroy();
+    first.root.remove();
+    second.root.remove();
+  }
+});
 
 test("桌面背景点击允许远离短文末尾的坐标连续恢复真实输入焦点", () => {
   const { editor, root, view } = createEditor();

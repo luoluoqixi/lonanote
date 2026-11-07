@@ -3,6 +3,7 @@ import { type LayoutChangeEvent, View } from "react-native";
 import { Gesture, GestureDetector, MouseButton } from "react-native-gesture-handler";
 
 export type EditorTabDragInputProps = {
+  editorId: string;
   children: ReactNode;
   enabled: boolean;
   dragging: boolean;
@@ -23,7 +24,7 @@ export function EditorTabDragInput(props: EditorTabDragInputProps) {
         .enabled(props.enabled)
         .mouseButton(MouseButton.LEFT)
         .activeOffsetX([-6, 6])
-        .failOffsetY([-16, 16])
+        .activeOffsetY([-6, 6])
         .runOnJS(true)
         .onStart((event) => latest.current.onStart(event.absoluteX, event.absoluteY))
         .onUpdate((event) => latest.current.onMove(event.absoluteX, event.absoluteY))

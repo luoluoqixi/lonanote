@@ -27,6 +27,7 @@ export function useEditorTabDrag({
   contentWidth,
   tabNodes,
   moveEditor,
+  dropInGroup,
 }: {
   ids: string[];
   bounds: RefObject<Map<string, { x: number; width: number }>>;
@@ -36,9 +37,10 @@ export function useEditorTabDrag({
   contentWidth: RefObject<number>;
   tabNodes: RefObject<Map<string, View>>;
   moveEditor: (id: string, beforeId: string | null) => void;
+  dropInGroup?: (id: string, x: number, y: number) => boolean;
 }) {
-  const latest = useRef({ ids, moveEditor });
-  latest.current = { ids, moveEditor };
+  const latest = useRef({ ids, moveEditor, dropInGroup });
+  latest.current = { ids, moveEditor, dropInGroup };
   const session = useRef<DragSession | null>(null);
   const pending = useRef(0);
   const frame = useRef<number | null>(null);
@@ -84,6 +86,7 @@ export function useEditorTabDrag({
       if (!drag) return;
       // 某些平台在释放拖动后还会派发 click，不能把它当作关闭或激活。
       suppressUntil.current = Date.now() + 200;
+      if (commit && latest.current.dropInGroup?.(drag.id, drag.x, drag.y)) return;
       const geometry = getGeometry(drag);
       if (
         commit &&

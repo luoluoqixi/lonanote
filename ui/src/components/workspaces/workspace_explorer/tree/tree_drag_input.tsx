@@ -2,7 +2,7 @@ import { type ReactNode, useMemo, useRef } from "react";
 import { type LayoutChangeEvent, View } from "react-native";
 import { Gesture, GestureDetector, MouseButton, PointerType } from "react-native-gesture-handler";
 
-type Props = {
+export type TreeDragInputProps = {
   children: ReactNode;
   enabled: boolean;
   viewRef: (node: View | null) => void;
@@ -10,10 +10,14 @@ type Props = {
   onStart: (fromX: number, fromY: number, x: number, y: number) => void;
   onMove: (x: number, y: number) => void;
   onFinish: (commit: boolean) => void;
+  nativeData?: (
+    x: number,
+    y: number,
+  ) => { workspaceId: string; files: string[]; label: string } | null;
 };
 
 /** 与标签页相同的 Pan 接入；仅处理鼠标，触摸继续滚动文件树。 */
-export function TreeDragInput(props: Props) {
+export function TreeDragInput(props: TreeDragInputProps) {
   const latest = useRef(props);
   const origin = useRef({ x: 0, y: 0 });
   latest.current = props;

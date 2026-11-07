@@ -22,6 +22,7 @@ struct CloseMessage {
     window_label: String,
     request_id: String,
     stage: String,
+    closing_owner: bool,
 }
 
 #[tauri::command]
@@ -57,7 +58,12 @@ pub async fn request_window_close(window: WebviewWindow) -> Result<bool, String>
     .await
 }
 
-async fn exchange(window: &WebviewWindow, request_id: &str, stage: &str) -> Result<bool, String> {
+async fn exchange(
+    window: &WebviewWindow,
+    request_id: &str,
+    stage: &str,
+    closing_owner: bool,
+) -> Result<bool, String> {
     log::info!(
         "window-close exchange: window={}, request={request_id}, stage={stage}",
         window.label()
@@ -80,14 +86,20 @@ async fn exchange(window: &WebviewWindow, request_id: &str, stage: &str) -> Resu
             window_label: window.label().to_string(),
             request_id: request_id.to_string(),
             stage: stage.to_string(),
+            closing_owner,
         },
     );
     let result = match emitted {
         // 用户确认可能持续任意时长；窗口销毁会撤销 sender，不能把迟到确认当成新一轮。
-        Ok(()) if stage == "prepare" || stage == "abort" => receiver
+        Ok(()) if stage == "prepare" => receiver
             .await
             .map_err(|_| "窗口关闭确认通道已中断".to_string()),
-        Ok(()) => match tokio::time::timeout(std::time::Duration::from_secs(120), receiver).await {
+        Ok(()) => match tokio::time::timeout(
+            std::time::Duration::from_secs(if stage == "abort" { 10 } else { 120 }),
+            receiver,
+        )
+        .await
+        {
             Ok(result) => result.map_err(|_| "窗口关闭确认通道已中断".to_string()),
             Err(_) => Err("等待窗口关闭确认超时".to_string()),
         },
@@ -100,10 +112,22 @@ async fn exchange(window: &WebviewWindow, request_id: &str, stage: &str) -> Resu
     result
 }
 
-async fn abort(windows: &[WebviewWindow], request_id: &str) {
+async fn abort(windows: &[WebviewWindow], request_id: &str, closing_owner: bool) {
     for window in windows {
-        if let Err(error) = exchange(window, request_id, "abort").await {
-            log::warn!("撤销窗口关闭失败：{error}");
+        let result = exchange(window, request_id, "abort", closing_owner).await;
+        if !matches!(result, Ok(true)) {
+            log::warn!("撤销窗口关闭失败：{result:?}");
+            let message = super::window_runtime::EDITOR_WINDOW_SESSIONS
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .member_lifecycle(window.label(), Some(request_id));
+            if let Some(message) = message {
+                let _ = window.emit_to(
+                    tauri::EventTarget::webview_window(&message.owner_window_label),
+                    "lonanote://editor-window-close-aborted",
+                    message,
+                );
+            }
         }
     }
 }
@@ -119,6 +143,12 @@ pub async fn request_close(app: AppHandle, only_window: Option<String>) -> Resul
         }
     }
     let _reset = Reset;
+    let closing_owner = only_window.as_ref().is_none_or(|label| {
+        !super::window_runtime::EDITOR_WINDOW_SESSIONS
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_editor(label)
+    });
     let request_id = uuid::Uuid::new_v4().to_string();
     log::info!("window-close requested: target={only_window:?}, request={request_id}");
     let mut windows: Vec<_> = {
@@ -127,27 +157,39 @@ pub async fn request_close(app: AppHandle, only_window: Option<String>) -> Resul
             .lock()
             .unwrap_or_else(|error| error.into_inner());
         CLOSE_ACTIVE.store(true, Ordering::SeqCst);
+        let close_labels = only_window.as_ref().map(|label| {
+            super::window_runtime::EDITOR_WINDOW_SESSIONS
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .close_members(label)
+        });
         app.webview_windows()
             .into_values()
             .filter(|window| {
-                only_window
+                close_labels
                     .as_ref()
-                    .is_none_or(|label| label == window.label())
+                    .is_none_or(|labels| labels.iter().any(|label| label == window.label()))
             })
             .collect()
     };
-    windows.sort_by_key(|window| window.label().to_string());
+    windows.sort_by_key(|window| {
+        let editor = super::window_runtime::EDITOR_WINDOW_SESSIONS
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_editor(window.label());
+        (!editor, window.label().to_string())
+    });
     let preparing = async {
         // 先对所有窗口建立禁止新开文档的屏障，再逐窗确认，避免多个对话框抢焦点。
         for window in &windows {
-            if !exchange(window, &request_id, "barrier").await? {
+            if !exchange(window, &request_id, "barrier", closing_owner).await? {
                 return Ok(false);
             }
         }
         for window in &windows {
             let _ = window.unminimize();
             let _ = window.set_focus();
-            if !exchange(window, &request_id, "prepare").await? {
+            if !exchange(window, &request_id, "prepare", closing_owner).await? {
                 return Ok(false);
             }
         }
@@ -155,7 +197,7 @@ pub async fn request_close(app: AppHandle, only_window: Option<String>) -> Resul
     }
     .await;
     if !matches!(preparing, Ok(true)) {
-        abort(&windows, &request_id).await;
+        abort(&windows, &request_id, closing_owner).await;
         return preparing;
     }
     // 工作区写盘已在 prepare 完成。单窗口还需在销毁前关闭自身 Core 实例。
@@ -168,7 +210,7 @@ pub async fn request_close(app: AppHandle, only_window: Option<String>) -> Resul
                 .close_workspace(&id)
                 .await
             {
-                abort(&windows, &request_id).await;
+                abort(&windows, &request_id, closing_owner).await;
                 return Err(error.to_string());
             }
             super::window_runtime::WINDOW_SESSIONS
@@ -180,7 +222,10 @@ pub async fn request_close(app: AppHandle, only_window: Option<String>) -> Resul
         // 提交决定之后不再执行可能失败的持久化或弹窗。
         // commit 是不可撤销决定。某个 WebView 没有回复时仍必须完成全部窗口收尾，
         // 不能留下已经放弃草稿、却继续运行的半提交窗口。
-        if !matches!(exchange(window, &request_id, "commit").await, Ok(true)) {
+        if !matches!(
+            exchange(window, &request_id, "commit", closing_owner).await,
+            Ok(true)
+        ) {
             log::warn!("窗口 {} 未回复关闭提交，将按已确认决定销毁", window.label());
         }
     }

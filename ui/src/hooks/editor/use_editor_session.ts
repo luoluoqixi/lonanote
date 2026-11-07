@@ -7,6 +7,14 @@ export function useEditorSession() {
 
   return {
     getSnapshot: editorStore.getState,
+    groupsById: state.groupsById,
+    layout: state.layout,
+    activeGroupId: state.activeGroupId,
+    setActiveGroup: state.setActiveGroup,
+    splitEditor: state.splitEditor,
+    moveEditorToGroup: state.moveEditorToGroup,
+    duplicateEditor: state.duplicateEditor,
+    setSplitRatio: state.setSplitRatio,
     viewersById: state.viewersById,
     getDocument: (id: string) => editorStore.getState().documentsById[id],
     closeWorkspaceViewers: state.closeWorkspaceViewers,

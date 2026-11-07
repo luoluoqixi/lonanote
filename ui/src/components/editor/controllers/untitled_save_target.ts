@@ -1,5 +1,8 @@
 import type { DocumentModel, EditorDocumentRef } from "@/stores/editor/editor_document_types";
 
+import { getDocumentSaveWindow } from "./document_save_window";
+import { editorWindowRuntime } from "./editor_window_runtime";
+
 export type SaveTarget = {
   reference: Exclude<EditorDocumentRef, { kind: "untitled" }>;
   commit(text: string): Promise<void>;
@@ -63,8 +66,12 @@ export function chooseUntitledSaveTarget(document: DocumentModel): Promise<SaveT
         workspaceId,
         root: (id) => workspace.nativeRootPath(id),
         dialog: async (options) =>
-          (await fs.showSelectDialog({ ...options, type: "saveFile", title: "保存笔记" }))?.path ??
-          null,
+          (
+            await fs.showSelectDialog(
+              { ...options, type: "saveFile", title: "保存笔记" },
+              getDocumentSaveWindow(document.documentId),
+            )
+          )?.path ?? null,
         prepare: async (absolutePath) => {
           assertWorkspace();
           const { invoke } = await import("@tauri-apps/api/core");
@@ -73,11 +80,16 @@ export function chooseUntitledSaveTarget(document: DocumentModel): Promise<SaveT
             reference: SaveTarget["reference"];
             exists: boolean;
           }>("prepare_document_save_target", {
+            ownerEpoch: editorWindowRuntime.ownerEpoch(),
             documentId: document.documentId,
             leaseId: `${document.documentId}:${document.identityRevision + 1}`,
             absolutePath,
           });
-          const abort = () => invoke<void>("abort_document_save_target", { token: prepared.token });
+          const abort = () =>
+            invoke<void>("abort_document_save_target", {
+              token: prepared.token,
+              ownerEpoch: editorWindowRuntime.ownerEpoch(),
+            });
           try {
             if (prepared.exists) {
               const { confirmNative } = await import("rn-ui-kit");
@@ -101,6 +113,7 @@ export function chooseUntitledSaveTarget(document: DocumentModel): Promise<SaveT
                 assertWorkspace();
                 await invoke("commit_document_save_target", {
                   token: prepared.token,
+                  ownerEpoch: editorWindowRuntime.ownerEpoch(),
                   text,
                   overwrite: prepared.exists,
                 });

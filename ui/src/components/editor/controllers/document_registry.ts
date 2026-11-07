@@ -14,6 +14,8 @@ import {
   editorStore,
 } from "@/stores/editor";
 
+import { editorWindowRuntime } from "./editor_window_runtime";
+
 const documentLoadTasks = new Map<string, { identityRevision: number; task: Promise<void> }>();
 
 function getErrorMessage(error: unknown, fallbackMessage: string): string {
@@ -105,6 +107,7 @@ export const documentRegistry = {
   },
 
   ensureDocumentLoaded: (documentId: string): Promise<void> => {
+    if (editorWindowRuntime.isRemote()) return Promise.resolve();
     const document = editorStore.getState().documentsById[documentId];
     if (!document || document.loadState === "ready") {
       return Promise.resolve();
@@ -122,6 +125,7 @@ export const documentRegistry = {
 };
 
 editorStore.subscribe((state, previous) => {
+  if (editorWindowRuntime.isRemote()) return;
   for (const document of Object.values(previous.documentsById)) {
     const next = state.documentsById[document.documentId];
     if (!next) {

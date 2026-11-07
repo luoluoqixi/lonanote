@@ -10,7 +10,9 @@ export function useWorkbenchDragGuard() {
   const onDragStart = useCallback(() => {
     onDragEnd();
     const style = document.createElement("style");
-    style.textContent = "iframe { pointer-events: none !important; }";
+    style.textContent =
+      "iframe { pointer-events: none !important; } * { user-select: none !important; -webkit-user-select: none !important; }";
+    document.getSelection()?.removeAllRanges();
     document.head.appendChild(style);
     restore.current = () => style.remove();
   }, [onDragEnd]);

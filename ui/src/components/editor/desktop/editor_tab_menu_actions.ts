@@ -3,7 +3,7 @@ import { type EditorDocumentRef, type EditorStoreState, isDocumentDirty } from "
 type TabState = Pick<
   EditorStoreState,
   "openEditorIds" | "editorsById" | "documentsById" | "viewersById"
->;
+> & { groupsById?: Record<string, { tabIds: string[] }> };
 export type EditorTabCloseAction =
   | "close"
   | "closeOthers"
@@ -23,19 +23,22 @@ export function getEditorTabCloseTargets(
   id: string,
   state: TabState,
 ): string[] {
-  const index = state.openEditorIds.indexOf(id);
+  const ids =
+    Object.values(state.groupsById ?? {}).find((group) => group.tabIds.includes(id))?.tabIds ??
+    state.openEditorIds;
+  const index = ids.indexOf(id);
   if (index < 0) return [];
   switch (action) {
     case "close":
       return [id];
     case "closeOthers":
-      return state.openEditorIds.filter((other) => other !== id);
+      return ids.filter((other) => other !== id);
     case "closeRight":
-      return state.openEditorIds.slice(index + 1);
+      return ids.slice(index + 1);
     case "closeAll":
-      return [...state.openEditorIds];
+      return [...ids];
     case "closeSaved":
-      return state.openEditorIds.filter((other) => {
+      return ids.filter((other) => {
         const editor = state.editorsById[other];
         const document = editor ? state.documentsById[editor.documentId] : null;
         return !!state.viewersById[other] || (!!document && !isDocumentDirty(document));

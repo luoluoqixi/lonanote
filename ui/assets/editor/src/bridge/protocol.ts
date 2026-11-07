@@ -103,7 +103,10 @@ export type EditorResourceContext =
       reason: "untitled" | "unsupportedDocument" | "providerUnavailable";
     };
 
+export type EditorViewSnapshot = { selection: { anchor: number; head: number }; scrollTop: number };
+
 export type EditorInitializePayload = {
+  viewState?: EditorViewSnapshot;
   runtime: {
     revision: number;
     platform: EditorPlatform;
@@ -182,6 +185,7 @@ export type EditorSurfaceCapabilities = {
 };
 
 export type EditorStateSnapshot = {
+  viewState?: EditorViewSnapshot;
   revision: number;
   focused: boolean;
   composing: boolean;
@@ -199,15 +203,22 @@ export type EditorStateSnapshot = {
 export type EditorDocumentChangedPayload = {
   baseRevision: number;
   localSequence: number;
-  text: string;
+  text?: string;
+  identityRevision?: number;
+  historyBoundary?: boolean;
+  leaseToken?: string;
+  change?: { from: number; to: number; insert: string };
 };
 
 export type EditorDocumentRevisionPayload = {
+  selection?: number;
+  change?: { from: number; to: number; insert: string };
   revision: number;
-  text: string;
+  text?: string;
 };
 
 export type EditorDocumentCapturePayload = {
+  composing?: boolean;
   revision: number;
   text: string;
 };
@@ -245,6 +256,8 @@ export type EditorResourceActivatedPayload = {
 };
 
 export type EditorInputEnabledPayload = {
+  leaseToken?: string;
+  identityRevision?: number;
   enabled: boolean;
 };
 
@@ -399,6 +412,7 @@ export function isEditorInitializePayload(value: unknown): value is EditorInitia
 
   const { runtime, document } = value;
   return (
+    (value.viewState === undefined || isEditorViewSnapshot(value.viewState)) &&
     Number.isSafeInteger(runtime.revision) &&
     isNonEmptyString(runtime.platform) &&
     (runtime.colorScheme === "light" || runtime.colorScheme === "dark") &&
@@ -452,9 +466,21 @@ export function isEditorPreferencesUpdatePayload(
   );
 }
 
+export function isEditorViewSnapshot(value: unknown): value is EditorViewSnapshot {
+  return (
+    isRecord(value) &&
+    isRecord(value.selection) &&
+    Number.isSafeInteger(value.selection.anchor) &&
+    Number.isSafeInteger(value.selection.head) &&
+    typeof value.scrollTop === "number" &&
+    Number.isFinite(value.scrollTop) &&
+    value.scrollTop >= 0
+  );
+}
 export function isEditorStateSnapshot(value: unknown): value is EditorStateSnapshot {
   return (
     isRecord(value) &&
+    (value.viewState === undefined || isEditorViewSnapshot(value.viewState)) &&
     Number.isSafeInteger(value.revision) &&
     typeof value.focused === "boolean" &&
     typeof value.composing === "boolean" &&
@@ -528,6 +554,16 @@ export function isEditorCommandResult(value: unknown): value is EditorCommandRes
   );
 }
 
+function isTextChange(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Number.isSafeInteger(value.from) &&
+    Number.isSafeInteger(value.to) &&
+    (value.from as number) >= 0 &&
+    (value.to as number) >= (value.from as number) &&
+    typeof value.insert === "string"
+  );
+}
 export function isEditorDocumentChangedPayload(
   value: unknown,
 ): value is EditorDocumentChangedPayload {
@@ -535,20 +571,37 @@ export function isEditorDocumentChangedPayload(
     isRecord(value) &&
     Number.isSafeInteger(value.baseRevision) &&
     Number.isSafeInteger(value.localSequence) &&
-    typeof value.text === "string"
+    (value.localSequence as number) > 0 &&
+    (value.baseRevision as number) >= 0 &&
+    (value.leaseToken === undefined || typeof value.leaseToken === "string") &&
+    (value.identityRevision === undefined ||
+      (Number.isSafeInteger(value.identityRevision) && (value.identityRevision as number) >= 0)) &&
+    (value.historyBoundary === undefined || typeof value.historyBoundary === "boolean") &&
+    (value.change === undefined || isTextChange(value.change)) &&
+    (typeof value.text === "string" || isTextChange(value.change))
   );
 }
 
 export function isEditorDocumentRevisionPayload(
   value: unknown,
 ): value is EditorDocumentRevisionPayload {
-  return isRecord(value) && Number.isSafeInteger(value.revision) && typeof value.text === "string";
+  return (
+    isRecord(value) &&
+    Number.isSafeInteger(value.revision) &&
+    (typeof value.text === "string" || isTextChange(value.change)) &&
+    (value.change === undefined || isTextChange(value.change))
+  );
 }
 
 export function isEditorDocumentCapturePayload(
   value: unknown,
 ): value is EditorDocumentCapturePayload {
-  return isEditorDocumentRevisionPayload(value);
+  return (
+    isRecord(value) &&
+    (value.composing === undefined || typeof value.composing === "boolean") &&
+    isEditorDocumentRevisionPayload(value) &&
+    typeof value.text === "string"
+  );
 }
 
 export function isEditorInputEnabledPayload(value: unknown): value is EditorInputEnabledPayload {

@@ -9,6 +9,7 @@ import {
   resolveEditorResourceReference,
 } from "@/assets/editor/src/resources/resource_reference";
 import { documentRegistry, editorCommandCoordinator } from "@/components/editor/controllers";
+import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { useLayoutMode } from "@/hooks/layout";
 import { useMediaNavigation } from "@/hooks/media";
 import { type DocumentModel, editorStore } from "@/stores/editor";
@@ -40,7 +41,7 @@ function matchesExternalActivation(payload: EditorResourceActivatedPayload): boo
   }
 }
 
-export function useEditorResourceActivation(document: DocumentModel) {
+export function useEditorResourceActivation(document: DocumentModel, sourceEditorId?: string) {
   const router = useRouter();
   const { layoutMode } = useLayoutMode();
   const { setMediaSequence } = useMediaNavigation();
@@ -51,6 +52,35 @@ export function useEditorResourceActivation(document: DocumentModel) {
     (payload: EditorResourceActivatedPayload) => {
       if (matchesWorkspaceActivation(workspaceFilePath, payload)) {
         if (!workspaceId) return;
+        const groupId = sourceEditorId
+          ? editorStore.getState().editorsById[sourceEditorId]?.groupId
+          : undefined;
+        if (editorWindowService.isRemote() && sourceEditorId) {
+          void editorWindowService
+            .openReference(
+              sourceEditorId,
+              {
+                kind: "workspaceFile",
+                workspaceId,
+                filePath: payload.resolved.path,
+              },
+              groupId ?? undefined,
+              { duplicate: payload.modifiers.newView },
+            )
+            .then(({ editorId }) => {
+              const fragment = payload.resolved.fragment;
+              if (!fragment || !editorStore.getState().editorsById[editorId]) return;
+              editorStore.getState().setEditorPendingAnchor(editorId, fragment);
+              void editorCommandCoordinator
+                .execute(editorId, { type: "navigation.scrollToAnchor", fragment })
+                .then((result) => {
+                  if (result.applied) editorStore.getState().setEditorPendingAnchor(editorId, null);
+                })
+                .catch(() => undefined);
+            })
+            .catch((error) => console.warn("打开文档链接失败", error));
+          return;
+        }
         const fileKind = detectWorkspaceFileKind(payload.resolved.path);
         if (layoutMode === "desktop" && fileKind !== "markdown" && fileKind !== "text") {
           editorStore
@@ -60,6 +90,7 @@ export function useEditorResourceActivation(document: DocumentModel) {
               fileKind === "image" || fileKind === "video" || fileKind === "pdf"
                 ? fileKind
                 : "unknown",
+              { groupId: groupId ?? undefined },
             );
           return;
         }
@@ -93,7 +124,7 @@ export function useEditorResourceActivation(document: DocumentModel) {
             workspaceId,
             filePath: payload.resolved.path,
           },
-          { duplicate: payload.modifiers.newView },
+          { duplicate: payload.modifiers.newView, groupId },
         );
         if (payload.resolved.fragment) {
           editorStore.getState().setEditorPendingAnchor(editorId, payload.resolved.fragment);
@@ -118,6 +149,6 @@ export function useEditorResourceActivation(document: DocumentModel) {
         void openExternalUrl(payload.resolved.url).catch(() => undefined);
       }
     },
-    [layoutMode, router, setMediaSequence, workspaceFilePath, workspaceId],
+    [layoutMode, router, setMediaSequence, workspaceFilePath, workspaceId, sourceEditorId],
   );
 }

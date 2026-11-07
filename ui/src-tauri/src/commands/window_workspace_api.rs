@@ -173,8 +173,40 @@ fn focus_owner(window: &WebviewWindow, id: WorkspaceId) {
 
 pub fn cleanup_window(app: tauri::AppHandle, label: String) {
     super::window_callbacks::cleanup_callbacks(&label);
+    let epoch = crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .epoch(&label);
     tauri::async_runtime::spawn(async move {
         let _guard = WORKSPACE_GATE.write().await;
+        let (removed, hidden) = {
+            let mut sessions = crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            if epoch.is_some_and(|epoch| sessions.epoch(&label) != Some(epoch)) {
+                return;
+            }
+            let hidden = sessions.hidden_members(&label);
+            let notices = epoch
+                .map(|epoch| sessions.orphan_owner_if_epoch(&label, epoch))
+                .unwrap_or_default();
+            (notices, hidden)
+        };
+        // 尚未显示的转移目标未接管输入，可以直接清理。
+        for member in hidden {
+            if let Some(window) = app.get_webview_window(&member) {
+                let _ = window.destroy();
+            }
+        }
+        // owner 异常消失不能销毁辅助 surface：它可能仍持有尚未 ACK 的输入。
+        // 保留只读恢复窗口，用户复制/导出或明确放弃后再独立关闭。
+        for notice in removed {
+            let _ = app.emit_to(
+                tauri::EventTarget::webview_window(&notice.window_label),
+                "lonanote://editor-window-owner-destroyed",
+                &notice,
+            );
+        }
         // 等待所有在途 claim 完成后清理，防止已销毁窗口重新留下文件占用。
         super::file_ownership_api::release_window(&label);
         if let Some(id) = WINDOW_SESSIONS.current_workspace(&label) {

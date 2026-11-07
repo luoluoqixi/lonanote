@@ -19,13 +19,15 @@ export function getWorkspaceCloseTargets(workspaceId: string): EditorCloseTarget
   return {
     workspaceId,
     documentIds: [...documentIds],
-    editorIds: state.openEditorIds.filter((id) => {
-      const editor = state.editorsById[id];
-      return (
-        documentIds.has(editor?.documentId) ||
-        state.viewersById[id]?.ref.workspaceId === workspaceId
-      );
-    }),
+    editorIds: [...Object.keys(state.editorsById), ...Object.keys(state.viewersById)].filter(
+      (id) => {
+        const editor = state.editorsById[id];
+        return (
+          documentIds.has(editor?.documentId) ||
+          state.viewersById[id]?.ref.workspaceId === workspaceId
+        );
+      },
+    ),
   };
 }
 
@@ -33,12 +35,14 @@ export function getWorkspaceCloseTargets(workspaceId: string): EditorCloseTarget
 export function createEditorCloseActions(deps: {
   saveCoordinator: Pick<typeof saveCoordinator, "withDocumentMutation">;
   confirmDirty(documents: DocumentModel[]): Promise<EditorCloseDecision>;
+  focusConfirmationWindow?(): Promise<void>;
 }) {
   let pending = false;
   return {
     async close(
       targets: EditorCloseTargets,
       beforeClose?: () => Promise<boolean | void>,
+      signal?: AbortSignal,
     ): Promise<boolean> {
       if (pending) return false;
       pending = true;
@@ -60,6 +64,7 @@ export function createEditorCloseActions(deps: {
           });
         return await deps.saveCoordinator.withDocumentMutation(documentIds, async (context) => {
           await context.capture();
+          if (signal?.aborted) return false;
           if (targets.savedOnly) {
             for (const id of closing) {
               const editor = editorStore.getState().editorsById[id];
@@ -68,7 +73,20 @@ export function createEditorCloseActions(deps: {
             }
           }
           const dirty = finalDocuments().filter(isDocumentDirty);
-          const decision = dirty.length ? await deps.confirmDirty(dirty) : "discard";
+          if (dirty.length) await deps.focusConfirmationWindow?.();
+          if (signal?.aborted) return false;
+          let stopWaiting: (() => void) | undefined;
+          const cancelled = new Promise<EditorCloseDecision>((resolve) => {
+            const abort = () => resolve("cancel");
+            signal?.addEventListener("abort", abort, { once: true });
+            stopWaiting = () => signal?.removeEventListener("abort", abort);
+          });
+          const decision = dirty.length
+            ? await Promise.race([deps.confirmDirty(dirty), cancelled]).finally(() =>
+                stopWaiting?.(),
+              )
+            : "discard";
+          stopWaiting?.();
           if (decision === "cancel") return false;
           if (decision === "save") {
             if ((await context.save(finalDocuments().map((d) => d.documentId))) === "cancelled")
@@ -76,6 +94,7 @@ export function createEditorCloseActions(deps: {
             if (finalDocuments().some(isDocumentDirty))
               throw new Error("保存期间出现新的编辑，请重试");
           }
+          if (signal?.aborted) return false;
           if (targets.workspaceId) {
             const latest = getWorkspaceCloseTargets(targets.workspaceId);
             if (
@@ -86,6 +105,7 @@ export function createEditorCloseActions(deps: {
           }
           // Core 操作失败时保留所有标签和草稿，确认“放弃”不提前销毁数据。
           if ((await beforeClose?.()) === false) return false;
+          if (signal?.aborted) return false;
           const closedDocuments = finalDocuments();
           for (const d of closedDocuments)
             editorStore.getState().discardDocumentDraft(d.documentId);

@@ -36,6 +36,8 @@ const { editorStore, isDocumentDirty } = await import("../src/stores/editor");
 const { saveCoordinator } = await import("../src/components/editor/controllers/save_coordinator");
 const { documentConflictCoordinator } =
   await import("../src/components/editor/controllers/document_conflict_coordinator");
+const { documentHistoryService } =
+  await import("../src/components/editor/controllers/document_history");
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -87,6 +89,71 @@ beforeEach(() => {
     diskText = text;
     modifiedAt += 1;
   });
+});
+
+test("composition capture 阻止保存与关闭mutation，远端草稿保持不变", async () => {
+  const { documentId, editorId } = openDocument();
+  const remote = editorStore.getState().attachRemoteEditor(editorId, "aux");
+  editorStore.getState().closeEditor(editorId);
+  const unregister = saveCoordinator.registerCaptureProvider(documentId, remote, async () => ({
+    ...captureDraft(documentId),
+    text: "拼音尚未提交",
+    composing: true,
+  }));
+  try {
+    await expect(saveCoordinator.flushDocument(documentId)).rejects.toThrow("composition");
+    const operation = mock(async () => {});
+    await expect(
+      saveCoordinator.withDocumentMutation([documentId], async (context) => {
+        await context.capture();
+        await operation();
+      }),
+    ).rejects.toThrow("composition");
+    expect(operation).not.toHaveBeenCalled();
+    expect(writeText).not.toHaveBeenCalled();
+    expect(editorStore.getState().documentsById[documentId].draft).toBe("本地编辑");
+  } finally {
+    unregister();
+  }
+});
+
+test("保存capture进入共享history，先前输入仍可连续撤销", async () => {
+  const { documentId, editorId } = openDocument();
+  editorStore.getState().setDocumentEditOwner(documentId, editorId);
+  documentHistoryService.capture(documentId, editorId, "第一笔");
+  const unregister = saveCoordinator.registerCaptureProvider(documentId, editorId, async () => ({
+    ...captureDraft(documentId),
+    text: "最后输入",
+  }));
+  try {
+    await saveCoordinator.flushDocument(documentId);
+    expect(diskText).toBe("最后输入");
+    documentHistoryService.history(documentId, "undo", editorId);
+    expect(editorStore.getState().documentsById[documentId].draft).toBe("第一笔");
+    documentHistoryService.history(documentId, "undo", editorId);
+    expect(editorStore.getState().documentsById[documentId].draft).toBe("本地编辑");
+  } finally {
+    unregister();
+  }
+});
+
+test("磁盘CRLF与canonical LF内容等价，不误报外部冲突并保留原metadata", async () => {
+  const { documentId } = openDocument();
+  diskText = "甲\r\n乙\r\n";
+  modifiedAt = 10;
+  editorStore
+    .getState()
+    .setDocumentPersistedSnapshot(documentId, "甲\n乙\n", { size: diskText.length, modifiedAt });
+  editorStore.getState().setDocumentDraft(documentId, "甲\n乙\n丁\n");
+  modifiedAt = 11;
+  expect(await documentConflictCoordinator.checkForExternalChange(documentId)).toBe("unchanged");
+  expect(editorStore.getState().documentsById[documentId].savedFingerprint).toEqual({
+    size: diskText.length,
+    modifiedAt: 11,
+  });
+  await saveCoordinator.flushDocument(documentId);
+  expect(diskText).toBe("甲\n乙\n丁\n");
+  expect(editorStore.getState().documentsById[documentId].conflict).toBeNull();
 });
 
 test("自动保存与返回保存同时进入时，capture 也必须串行且只写入一次", async () => {
@@ -370,12 +437,10 @@ test("mutation 只保存指定的关闭文档，保留共享视图的未保存�
   const second = editorStore
     .getState()
     .openEditor({ kind: "workspaceFile", workspaceId: "workspace", filePath: "second.md" });
-  editorStore
-    .getState()
-    .setDocumentPersistedSnapshot(second.documentId, diskText, {
-      size: diskText.length,
-      modifiedAt,
-    });
+  editorStore.getState().setDocumentPersistedSnapshot(second.documentId, diskText, {
+    size: diskText.length,
+    modifiedAt,
+  });
   editorStore.getState().setDocumentLoadState(second.documentId, "ready");
   editorStore.getState().setDocumentDraft(second.documentId, "共享视图草稿");
   try {

@@ -1,11 +1,14 @@
 import { type Href, Redirect, Stack, useLocalSearchParams } from "expo-router";
 import { ExternalLink } from "lucide-react-native";
-import { type ComponentProps, useMemo } from "react";
+import { type ComponentProps, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { type DropdownItemData, Text, useUiTheme } from "rn-ui-kit";
 
 import { getFileName } from "@/api/common";
 import { getMenuHeaderRightMenuProps } from "@/components/common/header_actions";
+import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
+import { openViewerExternally } from "@/components/editor/controllers/editor_window_viewers";
+import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 import { OpenInOtherAppButton, useOpenInOtherApp } from "./open_in_other_app";
@@ -56,7 +59,43 @@ export function UnknownFileViewer() {
   );
 }
 
-export function UnknownFileContent({
+export function UnknownFileContent(props: {
+  filePath: string;
+  workspaceId: string;
+  viewerId?: string;
+}) {
+  if (editorWindowRuntime.isRemote()) return <RemoteUnknownFileContent viewerId={props.viewerId} />;
+  return <LocalUnknownFileContent {...props} />;
+}
+
+function RemoteUnknownFileContent({ viewerId }: { viewerId?: string }) {
+  const [isOpening, setIsOpening] = useState(false);
+  const { toast } = useToast();
+  const open = async () => {
+    if (!viewerId || isOpening) return;
+    setIsOpening(true);
+    try {
+      await openViewerExternally(viewerId);
+    } catch (error) {
+      toast.error(String(error));
+    } finally {
+      setIsOpening(false);
+    }
+  };
+  return (
+    <View style={styles.container}>
+      <Text>无法预览此文件</Text>
+      <View style={styles.openButton}>
+        <OpenInOtherAppButton
+          isOpening={isOpening || !viewerId}
+          onOpenInOtherApp={() => void open()}
+        />
+      </View>
+    </View>
+  );
+}
+
+function LocalUnknownFileContent({
   filePath,
   workspaceId,
 }: {

@@ -13,6 +13,9 @@ export type EditorDocumentRef =
       initialTitle?: string;
     };
 
+/** 文档修订与 CodeMirror 统一使用 LF，UTF-16 变更坐标不受磁盘换行形式影响。 */
+export { normalizeEditorText as normalizeEditorDocumentText } from "@/assets/editor/src/bridge/text_change";
+
 export type FileFingerprint = {
   size: number | null;
   modifiedAt: number | null;

@@ -1,4 +1,5 @@
 import { isTauri } from "@/api/common/platform";
+import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
 import { type DocumentModel, editorStore } from "@/stores/editor";
 
 export const documentLeaseId = (document: DocumentModel) =>
@@ -17,6 +18,7 @@ export function claimDocumentFile(document: DocumentModel): Promise<void> {
         throw new Error("文档身份已变化，请重试");
       }
       await invoke("claim_document_file", {
+        ownerEpoch: editorWindowRuntime.ownerEpoch(),
         documentId: document.documentId,
         leaseId: documentLeaseId(document),
         reference: document.ref,
@@ -33,11 +35,14 @@ export function claimDocumentFile(document: DocumentModel): Promise<void> {
 export async function releaseDocumentFile(leaseId: string): Promise<void> {
   if (!isTauri()) return;
   const { invoke } = await import("@tauri-apps/api/core");
-  await invoke("release_document_file", { leaseId });
+  await invoke("release_document_file", { leaseId, ownerEpoch: editorWindowRuntime.ownerEpoch() });
 }
 
 export async function releaseDocumentOwnership(documentId: string): Promise<void> {
   if (!isTauri()) return;
   const { invoke } = await import("@tauri-apps/api/core");
-  await invoke("release_document_file", { documentId });
+  await invoke("release_document_file", {
+    documentId,
+    ownerEpoch: editorWindowRuntime.ownerEpoch(),
+  });
 }

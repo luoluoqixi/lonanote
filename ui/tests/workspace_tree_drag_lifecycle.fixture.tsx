@@ -19,7 +19,17 @@ mock.module("../src/api/common/platform", () => ({ isWeb: () => true }));
 let overEditor = false;
 mock.module("../src/components/workspaces/workspace_explorer/tree/tree_drag_hit", () => ({
   canStartTreeDrag: () => true,
-  readTreeDragBounds: () => null,
+  readTreeDragBounds: (view) => {
+    if (!view?.getBoundingClientRect || !view.clientHeight) return null;
+    const rect = view.getBoundingClientRect();
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      scaleY: rect.height / view.clientHeight,
+    };
+  },
   isTreeEditorDrop: () => overEditor,
 }));
 const { createRoot } = await import("react-dom/client");
@@ -246,6 +256,68 @@ test("拖放提交复用移动回调，多选不丢失，取消/切换工作区/
     });
     expect(drag.preview).toBeNull();
     expect(moves).toHaveLength(1);
+    expect(frames.size).toBe(0);
+  } finally {
+    await act(() => root.unmount());
+    container.remove();
+  }
+});
+
+test("真实 DOM 拖动容器无需 measureInWindow 即可启动并提交目录移动", async () => {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const moved = mock();
+  let drag!: ReturnType<typeof useTreeDrag>;
+  const rows = ["note.md", "folder"].map((path) => ({
+    kind: "node" as const,
+    key: path,
+    path,
+    parentPath: "",
+    depth: 0,
+    isLoading: false,
+    entry: {
+      path,
+      fileType: path === "folder" ? ("directory" as const) : ("file" as const),
+      createTime: null,
+      lastModifiedTime: null,
+      size: null,
+    },
+  }));
+  function Probe() {
+    drag = useTreeDrag({
+      workspaceId: "dom",
+      epoch: 1,
+      enabled: true,
+      rows,
+      selectedPaths: ["note.md"],
+      expandedPaths: ["folder"],
+      rowHeight: 30,
+      getOffset: () => 0,
+      scrollTo: () => {},
+      select: () => {},
+      expand: async () => {},
+      move: moved,
+    });
+    return (
+      <div
+        ref={(node) => {
+          if (node) {
+            Object.defineProperty(node, "clientHeight", { value: 120, configurable: true });
+            node.getBoundingClientRect = () =>
+              ({ left: 0, top: 0, width: 200, height: 120 }) as DOMRect;
+          }
+          drag.viewRef(node as never);
+        }}
+      />
+    );
+  }
+  try {
+    await act(() => root.render(<Probe />));
+    await act(() => drag.start(30, 15, 30, 45));
+    expect(drag.preview?.target?.directory).toBe("folder");
+    await act(() => drag.finish(true));
+    expect(moved).toHaveBeenCalledWith(["note.md"], "folder");
     expect(frames.size).toBe(0);
   } finally {
     await act(() => root.unmount());

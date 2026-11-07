@@ -34,6 +34,7 @@ pub async fn claim_document_file(
     document_id: String,
     lease_id: String,
     reference: FileReference,
+    owner_epoch: Option<u64>,
 ) -> Result<(), String> {
     let _guard = super::window_workspace_api::WORKSPACE_GATE.read().await;
     let path = match reference {
@@ -78,10 +79,15 @@ pub async fn claim_document_file(
         document_id,
         lease_id,
     };
+    let sessions = crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    sessions.authorize_claim_epoch(window.label(), owner_epoch)?;
     let result = FILES
         .lock()
         .unwrap_or_else(|error| error.into_inner())
         .claim(identity, owner);
+    drop(sessions);
     if let Err(owner) = result {
         if let Some(target) = window.app_handle().get_webview_window(&owner.window_label) {
             let _ = target.unminimize();
@@ -103,8 +109,18 @@ pub async fn release_document_file(
     window: WebviewWindow,
     lease_id: Option<String>,
     document_id: Option<String>,
+    owner_epoch: Option<u64>,
 ) {
     let _guard = super::window_workspace_api::WORKSPACE_GATE.write().await;
+    let sessions = crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    if sessions
+        .authorize_claim_epoch(window.label(), owner_epoch)
+        .is_err()
+    {
+        return;
+    }
     let mut files = FILES.lock().unwrap_or_else(|error| error.into_inner());
     if let Some(document) = document_id {
         files.release_document(window.label(), &document);

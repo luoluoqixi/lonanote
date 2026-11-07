@@ -5,10 +5,13 @@ import { isDesktop } from "@/api/common/platform";
 import type { EditorDocumentCapturePayload } from "@/assets/editor/src/bridge/protocol";
 import { documentConflictCoordinator } from "@/components/editor/controllers/document_conflict_coordinator";
 import { editorStore, getEditorDocumentKey, isDocumentDirty } from "@/stores/editor";
+import { normalizeEditorDocumentText } from "@/stores/editor/editor_document_types";
 import { settingsStore } from "@/stores/settings";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
+import { documentHistoryService } from "./document_history";
 import { editorInputLeaseCoordinator } from "./editor_input_lease_coordinator";
+import { editorWindowRuntime } from "./editor_window_runtime";
 import { chooseUntitledSaveTarget } from "./untitled_save_target";
 
 export type DocumentSaveResult = "saved" | "cancelled";
@@ -20,6 +23,10 @@ type SaveEntry = {
 };
 
 type CaptureProvider = () => Promise<EditorDocumentCapturePayload>;
+
+/** composition 不允许退回 RN 已确认草稿继续保存，否则会漏掉尚未提交的输入。 */
+class DocumentCompositionPendingError extends Error {}
+class DocumentCaptureAuthorityError extends Error {}
 
 const entries = new Map<string, SaveEntry>();
 const captureProvidersByDocumentId = new Map<string, Map<string, CaptureProvider>>();
@@ -40,23 +47,29 @@ function clearAutoSaveTimer(entry: SaveEntry): void {
   }
 }
 
-function getCaptureProvider(documentId: string): CaptureProvider | null {
+function getCaptureProvider(
+  documentId: string,
+): { editorId: string; capture: CaptureProvider } | null {
   const providers = captureProvidersByDocumentId.get(documentId);
-  if (!providers || providers.size === 0) return null;
-
   const editOwnerEditorId = editorStore.getState().documentsById[documentId]?.editOwnerEditorId;
+  if (!providers || providers.size === 0) {
+    if (editOwnerEditorId) throw new DocumentCaptureAuthorityError("输入持有者不可达，保存已暂停");
+    return null;
+  }
   if (editOwnerEditorId) {
     const ownerProvider = providers.get(editOwnerEditorId);
-    if (ownerProvider) return ownerProvider;
+    if (ownerProvider) return { editorId: editOwnerEditorId, capture: ownerProvider };
+    throw new DocumentCaptureAuthorityError("输入持有者不可达，保存已暂停");
   }
 
   const activeEditorId = editorStore.getState().activeEditorId;
   if (activeEditorId) {
     const activeProvider = providers.get(activeEditorId);
-    if (activeProvider) return activeProvider;
+    if (activeProvider) return { editorId: activeEditorId, capture: activeProvider };
   }
 
-  return providers.values().next().value ?? null;
+  const first = providers.entries().next().value;
+  return first ? { editorId: first[0], capture: first[1] } : null;
 }
 
 async function captureLatestDraft(documentId: string, strict = false): Promise<void> {
@@ -65,20 +78,36 @@ async function captureLatestDraft(documentId: string, strict = false): Promise<v
   if (!captureProvider) return;
 
   try {
-    const capture = await captureProvider();
+    const capture = await captureProvider.capture();
+    const captureText = normalizeEditorDocumentText(capture.text);
+    if (capture.composing)
+      throw new DocumentCompositionPendingError("请完成当前输入法 composition 后重试");
     const document = editorStore.getState().documentsById[documentId];
     if (strict && document && capture.revision !== document.draftRevision)
       throw new Error("文档 capture 版本已变化，请重试");
     if (
       !document ||
       capture.revision !== document.draftRevision ||
-      capture.text === document.draft
+      captureText === document.draft
     ) {
       return;
     }
-    editorStore.getState().setDocumentDraft(documentId, capture.text);
+    const view = editorStore.getState().editorsById[captureProvider.editorId];
+    if (document.editOwnerEditorId === captureProvider.editorId) {
+      documentHistoryService.capture(documentId, captureProvider.editorId, captureText);
+    } else if (!document.editOwnerEditorId && view && view.bridgeState !== "ready") {
+      // surface 首次建立输入 lease 之前的兼容初始化，仍经统一 history 接管。
+      documentHistoryService.captureInitial(documentId, captureProvider.editorId, captureText);
+    } else {
+      throw new DocumentCaptureAuthorityError("capture持有者已改变，保存已暂停");
+    }
   } catch (error) {
-    if (strict) throw error;
+    if (
+      strict ||
+      error instanceof DocumentCompositionPendingError ||
+      error instanceof DocumentCaptureAuthorityError
+    )
+      throw error;
     console.warn("[editor-save] document.capture failed; saving the RN draft instead", error);
   }
 }
@@ -208,6 +237,14 @@ async function writeLatestSnapshot(documentId: string): Promise<DocumentSaveResu
 }
 
 async function requestSaveDocument(documentId: string): Promise<DocumentSaveResult> {
+  if (editorWindowRuntime.isRemote()) {
+    const { editorWindowService } = await import("./editor_window_service");
+    const view = Object.values(editorStore.getState().editorsById).find(
+      (v) => v.documentId === documentId,
+    );
+    if (!view) return "cancelled";
+    return (await editorWindowService.save(view.editorId)) as DocumentSaveResult;
+  }
   const entry = getEntry(documentId);
   clearAutoSaveTimer(entry);
 
@@ -316,6 +353,7 @@ export const saveCoordinator = {
   },
 
   scheduleAutoSave: (documentId: string): void => {
+    if (editorWindowRuntime.isRemote()) return;
     const document = editorStore.getState().documentsById[documentId];
     const settings = settingsStore.getSettings().editorDefaults;
     if (

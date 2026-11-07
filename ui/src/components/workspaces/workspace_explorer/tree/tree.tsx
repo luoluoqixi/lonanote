@@ -427,6 +427,7 @@ export function WorkspaceTree(props: Props) {
       onStart={drag.start}
       onMove={drag.move}
       onFinish={drag.finish}
+      nativeData={drag.nativeData}
     >
       <TreeInput
         activeDescendant={focusedPath ? rowId(focusedPath) : undefined}

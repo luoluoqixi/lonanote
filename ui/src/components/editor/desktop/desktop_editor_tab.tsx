@@ -5,6 +5,7 @@ import { useUiTheme } from "rn-ui-kit";
 
 type DesktopEditorTabProps = PressableProps & {
   active: boolean;
+  groupFocused?: boolean;
   dirty: boolean;
   title: string;
   onActivate: () => void;
@@ -16,6 +17,7 @@ export const DesktopEditorTab = forwardRef<View, DesktopEditorTabProps>(
   (
     {
       active,
+      groupFocused = true,
       dirty,
       title,
       onActivate,
@@ -52,7 +54,7 @@ export const DesktopEditorTab = forwardRef<View, DesktopEditorTabProps>(
           styles.tab,
           {
             backgroundColor: active ? theme.background : hovered ? theme.secondary : theme.muted,
-            borderTopColor: active ? theme.primary : "transparent",
+            borderTopColor: active ? (groupFocused ? theme.primary : theme.border) : "transparent",
             borderRightColor: theme.border,
           },
         ]}
@@ -61,7 +63,9 @@ export const DesktopEditorTab = forwardRef<View, DesktopEditorTabProps>(
           numberOfLines={1}
           style={[
             styles.label,
-            { color: active || hovered ? theme.foreground : theme.mutedForeground },
+            {
+              color: (active && groupFocused) || hovered ? theme.foreground : theme.mutedForeground,
+            },
           ]}
         >
           {title}

@@ -39,6 +39,7 @@ export function createEditorInitializePayload(
   const fileName = document.ref.kind === "untitled" ? `${document.title}.md` : document.title;
 
   return {
+    ...(view.editorState.viewState ? { viewState: view.editorState.viewState } : {}),
     runtime: {
       revision: 1,
       ...runtime,

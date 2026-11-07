@@ -4,6 +4,7 @@ import type {
   WorkspaceStorageTarget,
 } from "@/api/commands/workspace";
 import { isDesktop, isTauri } from "@/api/common/platform";
+import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
 
 export type StorageChangeResult = {
   wasOpen: boolean;
@@ -39,13 +40,18 @@ export const multiWindow = {
   async createWindow(workspaceId?: string): Promise<string> {
     if (!isTauri() || !isDesktop()) throw new Error("当前平台不支持新建桌面窗口");
     const { invoke } = await import("@tauri-apps/api/core");
-    return invoke<string>("create_workspace_window", { workspaceId: workspaceId ?? null });
+    return invoke<string>("create_workspace_window", {
+      workspaceId: workspaceId ?? null,
+      ownerEpoch: editorWindowRuntime.ownerEpoch(),
+    });
   },
   async getBootstrap(): Promise<WindowBootstrap> {
     if (!isTauri() || !isDesktop()) {
       return { currentWorkspaceId: null, restoreLastWorkspace: true };
     }
     const { invoke } = await import("@tauri-apps/api/core");
-    return invoke<WindowBootstrap>("get_window_bootstrap");
+    return invoke<WindowBootstrap>("get_window_bootstrap", {
+      ownerEpoch: editorWindowRuntime.ownerEpoch(),
+    });
   },
 };

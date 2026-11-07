@@ -13,6 +13,7 @@ import {
   logEditorConsole,
 } from "@/components/editor/bridge";
 import {
+  documentHistoryService,
   editorCommandCoordinator,
   editorInputLeaseCoordinator,
   saveCoordinator,
@@ -22,6 +23,7 @@ import { useGlobalSettings } from "@/hooks/settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
 import { registerEditorMenuInvalidation } from "./controllers/editor_menu_lifecycle";
+import { editorWindowService } from "./controllers/editor_window_service";
 import { createEditorMenuItems } from "./desktop/editor_menu_items";
 import { EditorMenuPopup } from "./desktop/editor_menu_popup";
 import type { EditorMenuRequest } from "./desktop/editor_menu_popup_types";
@@ -79,7 +81,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
     [colorScheme, theme],
   );
   const { settings } = useGlobalSettings();
-  const onResourceActivated = useEditorResourceActivation(document);
+  const onResourceActivated = useEditorResourceActivation(document, editor.editorId);
   const resourceContext = useEditorResourceContext(document);
   const identity = useMemo(
     () =>
@@ -131,31 +133,92 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
           iframeRef.current?.contentWindow?.postMessage(serializedMessage, "*"),
         getInitializePayload: () => initializePayloadRef.current,
         onDocumentChanged: (payload) => {
-          const currentDocument = editorStore.getState().documentsById[document.documentId];
-          if (
-            !currentDocument ||
-            currentDocument.editOwnerEditorId !== editor.editorId ||
-            payload.baseRevision !== currentDocument.draftRevision
-          ) {
-            queueMicrotask(() => {
-              const latestDocument = editorStore.getState().documentsById[document.documentId];
-              if (latestDocument) {
-                bridgeClientRef.current?.syncDocumentRevision(
-                  latestDocument.draftRevision,
-                  latestDocument.draft,
+          const sourceClient = bridgeClientRef.current;
+          if (editorWindowService.isRemote()) {
+            void editorWindowService
+              .submitDocumentChange(document.documentId, editor.editorId, payload)
+              .then((accepted) => {
+                if (bridgeClientRef.current !== sourceClient) return;
+                if (accepted) {
+                  bridgeClientRef.current?.acknowledgeDocumentChange(payload.localSequence);
+                  const latest = editorStore.getState().documentsById[document.documentId];
+                  if (latest)
+                    bridgeClientRef.current?.syncDocumentRevision(
+                      latest.draftRevision,
+                      latest.draft,
+                    );
+                } else
+                  bridgeClientRef.current?.retainUnconfirmedDraft(
+                    bridgeClientRef.current.getCurrentDraft(),
+                  );
+              })
+              .catch((error) => {
+                if (bridgeClientRef.current !== sourceClient) return;
+                bridgeClientRef.current?.retainUnconfirmedDraft(
+                  bridgeClientRef.current.getCurrentDraft(),
                 );
-              }
-            });
-            return false;
+                toastRef.current.error(String(error));
+              });
+            return "pending";
           }
-          editorStore.getState().setDocumentDraft(document.documentId, payload.text);
+          const accepted = documentHistoryService.submit(
+            document.documentId,
+            editor.editorId,
+            payload,
+          );
+          if (accepted) {
+            saveCoordinator.scheduleAutoSave(document.documentId);
+            void editorWindowService
+              .confirmLocalDocumentChange()
+              .then(() => {
+                if (bridgeClientRef.current !== sourceClient) return;
+                bridgeClientRef.current?.acknowledgeDocumentChange(payload.localSequence);
+                const latest = editorStore.getState().documentsById[document.documentId];
+                if (latest)
+                  bridgeClientRef.current?.syncDocumentRevision(
+                    latest.draftRevision,
+                    latest.draft,
+                    documentHistoryService.selectionFor(editor.editorId, latest.draftRevision),
+                  );
+              })
+              .catch((error) => {
+                if (bridgeClientRef.current !== sourceClient) return;
+                bridgeClientRef.current?.retainUnconfirmedDraft(
+                  bridgeClientRef.current.getCurrentDraft(),
+                );
+                toastRef.current.error(String(error));
+              });
+            return "pending";
+          }
+          return false;
+        },
+        onHistoryRequested: (direction) => {
+          if (editorWindowService.isRemote()) {
+            void editorWindowService
+              .remoteHistory(document.documentId, direction)
+              .catch((error) => toastRef.current.error(String(error)));
+            return;
+          }
+          documentHistoryService.history(document.documentId, direction, editor.editorId);
           saveCoordinator.scheduleAutoSave(document.documentId);
-          return true;
         },
         onEditorReady: () => {
           recoveryAttemptsRef.current = 0;
+          bridgeClientRef.current?.syncHistoryStatus(
+            editorWindowService.isRemote()
+              ? editorWindowService.getRemoteHistoryStatus(document.documentId)
+              : documentHistoryService.status(document.documentId),
+          );
           editorStore.getState().setEditorBridgeState(editor.editorId, "ready");
-          editorInputLeaseCoordinator.handleSurfaceReady(editor.editorId);
+          if (editorWindowService.isRemote())
+            void editorWindowService
+              .markRemoteProviderReady(editor.editorId)
+              .catch((error) => toastRef.current.error(String(error)));
+          else if (editorStore.getState().activeEditorId === editor.editorId)
+            void editorInputLeaseCoordinator
+              .requestLease(editor.editorId)
+              .then(() => editorCommandCoordinator.focusIfActive(editor.editorId))
+              .catch(() => undefined);
           const pendingAnchor = editorStore.getState().editorsById[editor.editorId]?.pendingAnchor;
           if (pendingAnchor) {
             editorStore.getState().setEditorPendingAnchor(editor.editorId, null);
@@ -166,8 +229,25 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
         },
         onEditorStateChanged: (snapshot) =>
           editorStore.getState().setEditorStateSnapshot(editor.editorId, snapshot),
-        onEditorFocusChanged: (focused) =>
-          editorInputLeaseCoordinator.handleFocusChanged(editor.editorId, focused),
+        onEditorFocusChanged: (focused) => {
+          if (editorWindowService.isRemote()) {
+            if (focused) {
+              editorStore.getState().setActiveEditor(editor.editorId);
+              void editorWindowService
+                .requestLease(editor.editorId)
+                .catch((error) => toastRef.current.error(String(error)));
+            }
+          } else editorInputLeaseCoordinator.handleFocusChanged(editor.editorId, focused);
+        },
+        onEditorInputRequested: () => {
+          editorStore.getState().setActiveEditor(editor.editorId);
+          const request = editorWindowService.isRemote()
+            ? editorWindowService.requestLease(editor.editorId)
+            : editorInputLeaseCoordinator.requestLease(editor.editorId);
+          void request
+            .then(() => editorCommandCoordinator.focusIfActive(editor.editorId))
+            .catch((error) => toastRef.current.error(String(error)));
+        },
         onViewportScrollRequested: () => undefined,
         onAppMenuKey: (payload) => {
           if (
@@ -179,6 +259,12 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
           window.dispatchEvent(new KeyboardEvent(payload.type, { ...payload, cancelable: true }));
         },
         onSaveRequested: () => {
+          if (editorWindowService.isRemote()) {
+            void editorWindowService
+              .save(editor.editorId)
+              .catch((error) => toastRef.current.error(String(error)));
+            return;
+          }
           void saveCoordinator
             .requestSaveDocument(document.documentId)
             .catch((error) =>
@@ -291,20 +377,25 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
 
   useEffect(
     () =>
-      saveCoordinator.registerCaptureProvider(document.documentId, editor.editorId, () =>
-        bridgeClient.captureDocument(),
-      ),
+      editorWindowService.isRemote()
+        ? () => {}
+        : saveCoordinator.registerCaptureProvider(document.documentId, editor.editorId, () =>
+            bridgeClient.captureDocument(),
+          ),
     [bridgeClient, document.documentId, editor.editorId],
   );
 
   useEffect(
     () =>
-      editorInputLeaseCoordinator.registerProvider(editor.editorId, {
+      (editorWindowService.isRemote()
+        ? editorWindowService.registerRemoteProvider
+        : editorInputLeaseCoordinator.registerProvider)(editor.editorId, {
         applyDocumentRevision: (revision, text) =>
           bridgeClient.applyDocumentRevision(revision, text),
         blur: () => bridgeClient.executeCommand({ type: "editor.blur" }).then(() => undefined),
         captureDocument: () => bridgeClient.captureDocument(),
-        setInputEnabled: (enabled) => bridgeClient.setInputEnabled(enabled),
+        setInputEnabled: (enabled, token, identityRevision) =>
+          bridgeClient.setInputEnabled(enabled, token, identityRevision),
       }),
     [bridgeClient, editor.editorId],
   );
@@ -320,7 +411,16 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
   );
 
   useEffect(() => {
-    bridgeClient.syncDocumentRevision(document.draftRevision, document.draft);
+    bridgeClient.syncDocumentRevision(
+      document.draftRevision,
+      document.draft,
+      documentHistoryService.selectionFor(editor.editorId, document.draftRevision),
+    );
+    bridgeClient.syncHistoryStatus(
+      editorWindowService.isRemote()
+        ? editorWindowService.getRemoteHistoryStatus(document.documentId)
+        : documentHistoryService.status(document.documentId),
+    );
   }, [bridgeClient, document.draft, document.draftRevision]);
 
   useEffect(() => {

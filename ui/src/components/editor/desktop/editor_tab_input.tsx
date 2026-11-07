@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { ContextMenu, type ContextMenuItemData } from "rn-ui-kit";
 
 import { workspaceFile } from "@/api/commands/workspace";
+import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
 import { FilePathTooltip } from "@/components/files/file_path_tooltip";
 import { useLayoutMode } from "@/hooks/layout";
 import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
@@ -31,7 +32,7 @@ export function EditorTabInput({
   } | null>(null);
   const [frozenItems, setFrozenItems] = useState<ContextMenuItemData[] | null>(null);
   useEffect(() => {
-    if (documentRef?.kind !== "workspaceFile") return;
+    if (documentRef?.kind !== "workspaceFile" || editorWindowRuntime.isRemote()) return;
     let disposed = false;
     void workspaceFile
       .nativePath(documentRef.workspaceId, documentRef.filePath)

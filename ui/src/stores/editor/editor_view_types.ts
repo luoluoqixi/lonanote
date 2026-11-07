@@ -12,6 +12,8 @@ export type EditorViewSession = {
   editorId: string;
   documentId: string;
   groupId: string | null;
+  /** owner 中的远端视图引用；不加入 owner 本地标签组。 */
+  windowLabel?: string;
   readOnly: boolean;
   previewMode: boolean;
   preferenceOverrides: Partial<EditorPreferences>;

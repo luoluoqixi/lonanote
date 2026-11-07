@@ -4,17 +4,26 @@ import type {
 } from "@/assets/editor/src/bridge/protocol";
 import { editorStore } from "@/stores/editor";
 
-type InputLeaseProvider = {
+import { documentHistoryService } from "./document_history";
+
+export type InputLeaseProvider = {
   captureDocument: () => Promise<EditorDocumentCapturePayload>;
   applyDocumentRevision: (revision: number, text: string) => Promise<EditorBridgeApplyResult>;
   blur: () => Promise<void>;
-  setInputEnabled: (enabled: boolean) => Promise<EditorBridgeApplyResult>;
+  setInputEnabled: (
+    enabled: boolean,
+    leaseToken?: string,
+    identityRevision?: number,
+  ) => Promise<EditorBridgeApplyResult>;
 };
 
+let leaseSequence = 0;
 const suspended = new Map<string, number>();
 
 const providersByEditorId = new Map<string, InputLeaseProvider>();
 const transferTasksByDocumentId = new Map<string, Promise<void>>();
+// 只保留最新用户意图；旧申请跨 bridge 等待返回后不能再次启用旧分屏。
+const latestRequests = new Map<string, object>();
 
 function isViewEditable(editorId: string): boolean {
   const state = editorStore.getState();
@@ -38,17 +47,23 @@ function enqueueTransfer(documentId: string, task: () => Promise<void>): Promise
 
 async function captureReleasedOwner(documentId: string, editorId: string): Promise<void> {
   const provider = providersByEditorId.get(editorId);
-  if (!provider) return;
+  if (!provider) throw new Error("输入持有者不可达，草稿尚未接管");
 
   const capture = await provider.captureDocument();
+  if (capture.composing) throw new Error("请完成当前输入法 composition 后重试");
   const document = editorStore.getState().documentsById[documentId];
   if (!document || document.editOwnerEditorId !== editorId) return;
-  if (capture.revision < document.draftRevision || capture.text === document.draft) return;
-
-  editorStore.getState().setDocumentDraft(documentId, capture.text);
+  if (capture.text === document.draft) return;
+  if (capture.revision < document.draftRevision) throw new Error("capture修订过期，保留草稿并重试");
+  documentHistoryService.capture(documentId, editorId, capture.text);
 }
 
-async function transferInputLease(editorId: string): Promise<void> {
+async function transferInputLease(
+  editorId: string,
+  restore = false,
+  isCurrent = () => true,
+): Promise<void> {
+  if (!isCurrent()) return;
   const state = editorStore.getState();
   const targetView = state.editorsById[editorId];
   if (!targetView || !isViewEditable(editorId) || suspended.has(targetView.documentId)) return;
@@ -58,26 +73,37 @@ async function transferInputLease(editorId: string): Promise<void> {
   if (!document || !targetProvider || targetView.bridgeState !== "ready") return;
 
   const previousOwnerEditorId = document.editOwnerEditorId;
+  if (previousOwnerEditorId === editorId && !restore) return;
   if (previousOwnerEditorId && previousOwnerEditorId !== editorId) {
     const previousOwner = state.editorsById[previousOwnerEditorId];
     const previousProvider = providersByEditorId.get(previousOwnerEditorId);
     if (previousProvider && previousOwner?.bridgeState === "ready") {
-      await previousProvider.setInputEnabled(false);
+      const frozen = await previousProvider.setInputEnabled(false);
+      if (!frozen.applied) throw new Error("输入法 composition 尚未结束");
       await captureReleasedOwner(document.documentId, previousOwnerEditorId);
-    } else if (previousOwner?.bridgeState === "ready") {
+    } else {
       throw new Error("当前 Editor 输入 lease 尚未安全释放");
     }
   }
 
   const latestDocument = editorStore.getState().documentsById[targetView.documentId];
   const latestTargetView = editorStore.getState().editorsById[editorId];
-  if (!latestDocument || !latestTargetView || !isViewEditable(editorId)) return;
+  if (!latestDocument || !latestTargetView || !isViewEditable(editorId) || !isCurrent()) return;
 
   await targetProvider.applyDocumentRevision(latestDocument.draftRevision, latestDocument.draft);
-  if (suspended.has(latestDocument.documentId)) return;
+  if (suspended.has(latestDocument.documentId) || !isCurrent()) return;
   editorStore.getState().setDocumentEditOwner(latestDocument.documentId, editorId);
   try {
-    await targetProvider.setInputEnabled(true);
+    const token =
+      globalThis.crypto?.randomUUID?.() ??
+      `lease-${Date.now()}-${++leaseSequence}-${Math.random().toString(36).slice(2)}`;
+    documentHistoryService.grant(latestDocument.documentId, editorId, token);
+    const enabled = await targetProvider.setInputEnabled(
+      true,
+      token,
+      latestDocument.identityRevision,
+    );
+    if (!enabled.applied) throw new Error("Editor 未确认输入 lease");
   } catch (error) {
     editorStore.getState().setDocumentEditOwner(latestDocument.documentId, null);
     throw error;
@@ -87,7 +113,10 @@ async function transferInputLease(editorId: string): Promise<void> {
 export const editorInputLeaseCoordinator = {
   suspendDocuments: async (documentIds: string[]): Promise<() => Promise<void>> => {
     for (const id of documentIds) suspended.set(id, (suspended.get(id) ?? 0) + 1);
+    let resumed = false;
     const resume = async () => {
+      if (resumed) return;
+      resumed = true;
       for (const id of documentIds) {
         const count = (suspended.get(id) ?? 1) - 1;
         if (count) suspended.set(id, count);
@@ -97,10 +126,25 @@ export const editorInputLeaseCoordinator = {
       // 已销毁的 view 不再保留 bridge provider，也不能重新获取输入权。
       for (const id of providersByEditorId.keys())
         if (!state.editorsById[id]) providersByEditorId.delete(id);
-      if (state.activeEditorId)
-        await editorInputLeaseCoordinator
-          .requestLease(state.activeEditorId)
-          .catch((error) => console.warn("恢复 Editor 输入失败", error));
+      const owners = new Set(
+        documentIds
+          .map((id) => state.documentsById[id]?.editOwnerEditorId)
+          .filter((id): id is string => Boolean(id)),
+      );
+      if (
+        state.activeEditorId &&
+        documentIds.includes(state.editorsById[state.activeEditorId]?.documentId) &&
+        !state.documentsById[state.editorsById[state.activeEditorId]?.documentId]?.editOwnerEditorId
+      )
+        owners.add(state.activeEditorId);
+      await Promise.all(
+        [...owners].map((editorId) => {
+          const view = editorStore.getState().editorsById[editorId];
+          return view
+            ? enqueueTransfer(view.documentId, () => transferInputLease(editorId, true))
+            : Promise.resolve();
+        }),
+      );
     };
     try {
       await Promise.all(
@@ -109,7 +153,8 @@ export const editorInputLeaseCoordinator = {
             const document = editorStore.getState().documentsById[id];
             for (const editorId of document?.attachedEditorIds ?? []) {
               const provider = providersByEditorId.get(editorId);
-              if (provider) await provider.setInputEnabled(false);
+              if (provider && !(await provider.setInputEnabled(false)).applied)
+                throw new Error("输入法 composition 尚未结束");
             }
           }),
         ),
@@ -139,7 +184,13 @@ export const editorInputLeaseCoordinator = {
   requestLease: (editorId: string): Promise<void> => {
     const view = editorStore.getState().editorsById[editorId];
     if (!view) return Promise.resolve();
-    return enqueueTransfer(view.documentId, () => transferInputLease(editorId));
+    const request = {};
+    latestRequests.set(view.documentId, request);
+    return enqueueTransfer(view.documentId, () =>
+      transferInputLease(editorId, false, () => latestRequests.get(view.documentId) === request),
+    ).finally(() => {
+      if (latestRequests.get(view.documentId) === request) latestRequests.delete(view.documentId);
+    });
   },
 
   releaseLease: (editorId: string): Promise<void> => {
@@ -152,9 +203,12 @@ export const editorInputLeaseCoordinator = {
       if (!currentView || !document || document.editOwnerEditorId !== editorId) return;
 
       const provider = providersByEditorId.get(editorId);
+      if (!provider || currentView.bridgeState !== "ready")
+        throw new Error("输入持有者不可达，无法安全释放");
       if (provider && currentView.bridgeState === "ready") {
         await provider.blur();
-        await provider.setInputEnabled(false);
+        if (!(await provider.setInputEnabled(false)).applied)
+          throw new Error("输入法 composition 尚未结束");
         await captureReleasedOwner(document.documentId, editorId);
       }
 

@@ -41,9 +41,10 @@ fn parse_invoke_args<'a>(request: &'a Request<'a>) -> Result<(String, CommandCon
 }
 
 #[command]
-pub fn invoke(request: Request<'_>) -> Result<Response, String> {
+pub fn invoke(window: tauri::WebviewWindow, request: Request<'_>) -> Result<Response, String> {
     match parse_invoke_args(&request) {
         Ok((key, args)) => {
+            check_editor_command(window.label(), &key)?;
             let res = invoke_command(key.as_str(), args);
             parse_invoke_result(res)
         }
@@ -70,6 +71,7 @@ pub async fn invoke_async(
 ) -> Result<Response, String> {
     match parse_invoke_args(&request) {
         Ok((key, args)) => {
+            check_editor_command(window.label(), &key)?;
             if key.starts_with("workspace.") {
                 let data = match request.body() {
                     InvokeBody::Json(body) => body
@@ -110,4 +112,12 @@ pub fn get_command_async_keys() -> Result<Vec<String>, String> {
 pub fn get_command_async_len() -> Result<usize, String> {
     let res = lonanote_core::get_command_async_len();
     res.map_err(|e| e.to_string())
+}
+
+// 辅助 renderer 只消费 owner 投影；资源 URL 由 owner 的受限 scope 授予。
+fn check_editor_command(label: &str, key: &str) -> Result<(), String> {
+    crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .authorize_core_command(label, key)
 }

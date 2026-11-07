@@ -24,6 +24,8 @@ import { getFileMimeType, isDesktop, isMarkdownFile } from "@/api/common";
 import { editorCommandCoordinator, saveCoordinator } from "@/components/editor/controllers";
 import { getDocumentSaveCapabilities } from "@/components/editor/controllers/document_save_capabilities";
 import { toggleEditorPreviewMode } from "@/components/editor/controllers/editor_preview_mode";
+import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
+import { openViewerExternally } from "@/components/editor/controllers/editor_window_viewers";
 import { useEditorSession } from "@/hooks/editor";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
 import { useGlobalSettings } from "@/hooks/settings";
@@ -81,7 +83,7 @@ export function DesktopEditorActions({
       const path =
         target?.kind === "looseFile"
           ? target.absolutePath
-          : target?.kind === "workspaceFile" && isDesktop()
+          : target?.kind === "workspaceFile" && isDesktop() && !editorWindowRuntime.isRemote()
             ? await workspaceFile.nativePath(target.workspaceId, target.filePath).catch(() => null)
             : null;
       if (!cancelled) setPathState({ identity, path });
@@ -215,10 +217,14 @@ export function DesktopEditorActions({
       value: "open-external",
       label: "在其他应用中打开",
       icon: icon(ExternalLink),
-      disabled: !nativePath || !isDesktop(),
+      disabled: (!nativePath && !getSnapshot().viewersById[editorId]) || !isDesktop(),
       onPress: () =>
         run(() =>
-          nativePath ? openExternalFile(nativePath, getFileMimeType(nativePath)) : undefined,
+          getSnapshot().viewersById[editorId]
+            ? openViewerExternally(editorId)
+            : nativePath
+              ? openExternalFile(nativePath, getFileMimeType(nativePath))
+              : undefined,
         ),
     },
     { value: "separator-path", separator: true },

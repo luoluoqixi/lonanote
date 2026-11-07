@@ -17,3 +17,5 @@ pub(crate) mod launch_requests;
 pub(crate) mod single_instance;
 
 pub(crate) mod workspace_window_launch;
+pub(crate) mod editor_window_sessions;
+pub(crate) mod editor_window;

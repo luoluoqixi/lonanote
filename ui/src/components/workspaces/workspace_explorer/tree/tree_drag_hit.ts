@@ -6,4 +6,4 @@ import type { TreeDragBounds } from "./tree_drag_model";
 export const canStartTreeDrag: (x: number, y: number, path: string) => boolean = () => true;
 export const readTreeDragBounds: (node: View | null) => TreeDragBounds | null = () => null;
 
-export const isTreeEditorDrop: (x: number, y: number) => boolean = () => false;
+export const isTreeEditorDrop: (x: number, y: number, activate?: boolean) => boolean = () => false;

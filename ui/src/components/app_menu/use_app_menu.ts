@@ -27,7 +27,7 @@ import {
   resolveAppMenuPresentation,
 } from "./app_menu_model";
 import { openAppSettings } from "./app_settings_actions";
-import { reloadAppWindow } from "./app_window_reload";
+import { reloadAppWindowWithPreparation } from "./app_window_reload";
 import { useAppViewShortcuts } from "./use_app_view_shortcuts";
 
 export function useAppMenu() {
@@ -195,11 +195,18 @@ export function useAppMenu() {
           await view.toggleFullscreen();
           break;
         case "refreshWindow":
-          reloadAppWindow(
+          await reloadAppWindowWithPreparation(
             isMobile(),
             () => window.location.reload(),
             () => {
               void import("react-native").then(({ DevSettings }) => DevSettings.reload());
+            },
+            async (reload) => {
+              if (isTauri() && desktop) {
+                const { editorWindowService } =
+                  await import("@/components/editor/controllers/editor_window_service");
+                await editorWindowService.reloadWindow(reload);
+              } else reload();
             },
           );
           break;

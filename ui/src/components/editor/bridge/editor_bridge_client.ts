@@ -33,17 +33,24 @@ import {
   isEditorViewportScrollPayload,
   parseEditorBridgeMessage,
 } from "@/assets/editor/src/bridge/protocol";
+import {
+  applyTextChange,
+  normalizeEditorText,
+  textChange,
+} from "@/assets/editor/src/bridge/text_change";
 
 type EditorBridgeClientOptions = {
   identity: EditorBridgeBootstrap;
   send: (serializedMessage: string) => void;
   getInitializePayload: () => EditorInitializePayload;
-  onDocumentChanged: (payload: EditorDocumentChangedPayload) => boolean;
+  onDocumentChanged: (payload: EditorDocumentChangedPayload) => boolean | "pending";
   onEditorReady: () => void;
   onEditorStateChanged: (snapshot: EditorStateSnapshot) => void;
   onEditorFocusChanged: (focused: boolean) => void;
+  onEditorInputRequested?: () => void;
   onViewportScrollRequested: (payload: EditorViewportScrollPayload) => void;
   onSaveRequested: () => void;
+  onHistoryRequested?: (direction: "undo" | "redo") => void;
   onAppMenuKey?: (payload: EditorAppMenuKey) => void;
   onResourceActivated: (payload: EditorResourceActivatedPayload) => void;
   onContextMenu?: (payload: EditorContextMenuPayload) => void;
@@ -86,6 +93,10 @@ export function createEditorBridgeBootstrap(
 export class EditorBridgeClient {
   readonly #options: EditorBridgeClientOptions;
   #initialized = false;
+  #documentText = "";
+  #unconfirmedDraft: string | null = null;
+  #pendingDocumentSequences = new Map<number, number>();
+  #leaseToken: string | undefined;
   #surfaceReady = false;
   #disposed = false;
   #originatedDocumentRevision: number | null = null;
@@ -117,6 +128,7 @@ export class EditorBridgeClient {
     const payload = this.#options.getInitializePayload();
     if (!this.#initialized) {
       this.#initialized = true;
+      this.#documentText = normalizeEditorText(payload.document.text);
       this.#runtimeRevision = payload.runtime.revision;
       this.#runtimeKey = this.#getRuntimeKey(payload.runtime);
       this.#preferencesKey = JSON.stringify(payload.preferences);
@@ -134,14 +146,43 @@ export class EditorBridgeClient {
     }
   }
 
-  syncDocumentRevision(revision: number, text: string): void {
-    if (!this.#surfaceReady || this.#disposed) return;
-    if (this.#originatedDocumentRevision === revision) return;
+  acknowledgeDocumentChange(sequence: number): void {
+    const revision = this.#pendingDocumentSequences.get(sequence);
+    for (const pending of this.#pendingDocumentSequences.keys())
+      if (pending <= sequence) this.#pendingDocumentSequences.delete(pending);
+    if (revision !== undefined) this.#originatedDocumentRevision = revision;
+  }
+
+  getCurrentDraft(): string {
+    return this.#documentText;
+  }
+
+  getUnconfirmedDraft(): string | null {
+    return this.#unconfirmedDraft;
+  }
+
+  retainUnconfirmedDraft(text: string): void {
+    this.#unconfirmedDraft = text;
+    if (this.#surfaceReady && !this.#disposed)
+      this.#sendRequest("editor.setInputEnabled", { enabled: false });
+  }
+
+  syncDocumentRevision(revision: number, text: string, selection?: number): void {
+    text = normalizeEditorText(text);
+    if (!this.#surfaceReady || this.#disposed || this.#unconfirmedDraft !== null) return;
+    if (this.#pendingDocumentSequences.size) return;
+    if (this.#originatedDocumentRevision !== null && revision <= this.#originatedDocumentRevision)
+      return;
     this.#originatedDocumentRevision = null;
-    this.#sendRequest("document.applyRevision", { revision, text });
+    const change = textChange(this.#documentText, text);
+    this.#documentText = text;
+    this.#sendRequest("document.applyRevision", { revision, change, selection });
   }
 
   async applyDocumentRevision(revision: number, text: string): Promise<EditorBridgeApplyResult> {
+    text = normalizeEditorText(text);
+    if (this.#unconfirmedDraft !== null || this.#pendingDocumentSequences.size)
+      throw new Error("存在未确认草稿，不能覆盖checkpoint");
     if (!this.#surfaceReady || this.#disposed) {
       throw new Error("Editor surface 当前不可应用文档 revision");
     }
@@ -153,16 +194,29 @@ export class EditorBridgeClient {
     if (!isEditorBridgeApplyResult(result)) {
       throw new Error("document.applyRevision 返回了无效结果");
     }
+    if (!result.applied) {
+      const capture = await this.captureDocument();
+      if (capture.composing || capture.revision !== revision || capture.text !== text)
+        throw new Error("目标视图尚未确认checkpoint，不能移交输入");
+    }
+    this.#documentText = text;
     return result;
   }
 
-  async setInputEnabled(enabled: boolean): Promise<EditorBridgeApplyResult> {
+  async setInputEnabled(
+    enabled: boolean,
+    leaseToken?: string,
+    identityRevision?: number,
+  ): Promise<EditorBridgeApplyResult> {
+    if (enabled && (this.#unconfirmedDraft !== null || this.#pendingDocumentSequences.size))
+      throw new Error("存在未确认草稿，不能重新启用输入");
     if (!this.#surfaceReady || this.#disposed) {
       throw new Error("Editor surface 当前不可更新输入 lease");
     }
+    if (enabled) this.#leaseToken = leaseToken;
     const result = await this.#sendRequestWithResponse(
       "editor.setInputEnabled",
-      { enabled },
+      { enabled, leaseToken, identityRevision },
       CAPTURE_TIMEOUT_MS,
     );
     if (!isEditorBridgeApplyResult(result)) {
@@ -183,6 +237,10 @@ export class EditorBridgeClient {
     );
     if (!isEditorCommandResult(result)) throw new Error("菜单命令返回无效结果");
     return result;
+  }
+
+  syncHistoryStatus(status: { canUndo: boolean; canRedo: boolean }): void {
+    if (this.#surfaceReady && !this.#disposed) this.#sendRequest("history.update", status);
   }
 
   syncRuntime(runtime: EditorRuntimeUpdatePayload): void {
@@ -220,6 +278,13 @@ export class EditorBridgeClient {
   }
 
   async executeCommand(command: EditorCommand): Promise<EditorCommandResult> {
+    if (
+      (command.type === "history.undo" || command.type === "history.redo") &&
+      this.#options.onHistoryRequested
+    ) {
+      this.#options.onHistoryRequested(command.type === "history.undo" ? "undo" : "redo");
+      return { applied: true, stateRevision: 0 };
+    }
     if (!this.#surfaceReady || this.#disposed) {
       throw new Error("Editor surface 当前不可执行命令");
     }
@@ -249,9 +314,27 @@ export class EditorBridgeClient {
       this.initializeSurface();
       return;
     }
+    if (event.event === "editor.historyRequested") {
+      const payload = event.payload as { direction?: string; leaseToken?: string };
+      if (payload?.leaseToken !== this.#leaseToken || this.#unconfirmedDraft !== null) return;
+      const direction = payload?.direction;
+      if (direction === "undo" || direction === "redo")
+        this.#options.onHistoryRequested?.(direction);
+      return;
+    }
     if (event.event === "document.changed") {
       if (isEditorDocumentChangedPayload(event.payload)) {
-        if (this.#options.onDocumentChanged(event.payload)) {
+        this.#documentText = event.payload.change
+          ? applyTextChange(this.#documentText, event.payload.change)
+          : (event.payload.text ?? this.#documentText);
+        const accepted = this.#options.onDocumentChanged(event.payload);
+        if (accepted === "pending")
+          this.#pendingDocumentSequences.set(
+            event.payload.localSequence,
+            event.payload.baseRevision + 1,
+          );
+        if (accepted === false) this.retainUnconfirmedDraft(this.#documentText);
+        if (accepted === true) {
           this.#originatedDocumentRevision = event.payload.baseRevision + 1;
         }
       } else {
@@ -275,6 +358,10 @@ export class EditorBridgeClient {
     }
     if (event.event === "appMenu.key") {
       if (isEditorAppMenuKey(event.payload)) this.#options.onAppMenuKey?.(event.payload);
+      return;
+    }
+    if (event.event === "editor.inputRequested") {
+      this.#options.onEditorInputRequested?.();
       return;
     }
     if (event.event === "editor.focusChanged") {

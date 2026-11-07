@@ -39,6 +39,97 @@ function setup(choice: "save" | "discard" | "cancel" = "cancel") {
   });
   return { actions, confirmDirty, save, capture };
 }
+
+test("最后远端视图关闭由owner确认，取消保留草稿与引用", async () => {
+  const local = open();
+  const remote = editorStore.getState().attachRemoteEditor(local.editorId, "editor-window-1");
+  editorStore.getState().closeEditor(local.editorId);
+  const { actions, confirmDirty } = setup("cancel");
+  expect(await actions.close({ editorIds: [remote] })).toBe(false);
+  expect(confirmDirty).toHaveBeenCalledTimes(1);
+  expect(editorStore.getState().documentsById[local.documentId].attachedEditorIds).toEqual([
+    remote,
+  ]);
+  expect(editorStore.getState().documentsById[local.documentId].draft).toBe("修改");
+});
+
+test("owner关闭包含远端引用，按文档去重且最终abort保留全部视图", async () => {
+  const local = open();
+  const remote = editorStore.getState().attachRemoteEditor(local.editorId, "editor-window-1");
+  const { actions, confirmDirty } = setup("discard");
+  const targets = getWorkspaceCloseTargets("old");
+  expect(targets.editorIds).toEqual([local.editorId, remote]);
+  expect(await actions.close(targets, async () => false)).toBe(false);
+  expect(confirmDirty.mock.calls[0][0]).toHaveLength(1);
+  expect(editorStore.getState().documentsById[local.documentId].attachedEditorIds).toEqual([
+    local.editorId,
+    remote,
+  ]);
+  expect(editorStore.getState().documentsById[local.documentId].draft).toBe("修改");
+});
+
+test("成员失联时取消未结束的用户确认，释放mutation并保留draft", async () => {
+  const local = open();
+  const remote = editorStore.getState().attachRemoteEditor(local.editorId, "aux");
+  editorStore.getState().closeEditor(local.editorId);
+  let confirmStarted!: () => void;
+  const started = new Promise<void>((resolve) => {
+    confirmStarted = resolve;
+  });
+  let confirm!: () => void;
+  const confirmation = new Promise<"discard">((resolve) => {
+    confirm = () => resolve("discard");
+  });
+  let released = false;
+  const actions = createEditorCloseActions({
+    confirmDirty: async () => {
+      confirmStarted();
+      return confirmation;
+    },
+    saveCoordinator: {
+      withDocumentMutation: async (_ids, run) => {
+        try {
+          return await run({ capture: async () => {}, save: async () => {} });
+        } finally {
+          released = true;
+        }
+      },
+    },
+  });
+  const controller = new AbortController();
+  const closing = actions.close({ editorIds: [remote] }, undefined, controller.signal);
+  await started;
+  controller.abort();
+  expect(await closing).toBe(false);
+  expect(released).toBe(true);
+  confirm();
+  await Promise.resolve();
+  expect(editorStore.getState().documentsById[local.documentId].draft).toBe("修改");
+  expect(editorStore.getState().editorsById[remote]).toBeDefined();
+});
+
+test("只有最后dirty引用需要确认时才聚焦owner一次", async () => {
+  const dirty = open();
+  const remote = editorStore.getState().attachRemoteEditor(dirty.editorId, "aux");
+  const focusConfirmationWindow = mock(async () => {});
+  const confirmDirty = mock(async () => "cancel" as const);
+  const actions = createEditorCloseActions({
+    focusConfirmationWindow,
+    confirmDirty,
+    saveCoordinator: {
+      withDocumentMutation: async (_ids, run) =>
+        run({ capture: async () => {}, save: async () => {} }),
+    },
+  });
+  expect(await actions.close({ editorIds: [dirty.editorId] })).toBe(true);
+  expect(focusConfirmationWindow).not.toHaveBeenCalled();
+  const clean = open("clean", false);
+  expect(await actions.close({ editorIds: [clean.editorId] })).toBe(true);
+  expect(focusConfirmationWindow).not.toHaveBeenCalled();
+  expect(await actions.close({ editorIds: [remote] })).toBe(false);
+  expect(focusConfirmationWindow).toHaveBeenCalledTimes(1);
+  expect(confirmDirty).toHaveBeenCalledTimes(1);
+});
 test("取消工作区关闭不关闭 Core、不丢弃草稿和标签", async () => {
   const { editorId, documentId } = open();
   const closeCore = mock(async () => {});

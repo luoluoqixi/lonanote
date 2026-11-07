@@ -1,6 +1,8 @@
 export type WindowCloseMessage = {
   windowLabel: string;
   requestId: string;
+  /** 会话 owner 也在本次关闭集合中，辅助窗口只参与输入屏障。 */
+  closingOwner?: boolean;
   stage: "barrier" | "prepare" | "commit" | "abort";
 };
 

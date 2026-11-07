@@ -84,8 +84,10 @@ export function useTreeDrag(options: Options) {
       if (!drag) return;
       suppressUntil.current = Date.now() + 200;
       const openPaths = commit ? currentOpenPaths(drag) : [];
-      if (openPaths.length) latest.current.open?.(openPaths);
-      else {
+      if (openPaths.length) {
+        isTreeEditorDrop(drag.x, drag.y, true);
+        latest.current.open?.(openPaths);
+      } else {
         const target = commit ? currentTarget(drag) : null;
         if (target) latest.current.move?.(target.paths, target.directory);
       }
@@ -134,25 +136,17 @@ export function useTreeDrag(options: Options) {
       const token = ++pending.current;
       const workspaceId = latest.current.workspaceId;
       const epoch = latest.current.epoch;
-      // 释放可能先于异步测量返回，token 保证不会在手势结束后重新开启会话。
-      view.current?.measureInWindow((left, top, width, height) => {
+      const begin = (bounds: TreeDragBounds) => {
         const props = latest.current;
         if (
           pending.current !== token ||
-          !width ||
-          !height ||
+          !bounds.width ||
+          !bounds.height ||
           !props.enabled ||
           props.workspaceId !== workspaceId ||
           props.epoch !== epoch
         )
           return;
-        const bounds = readTreeDragBounds(view.current) ?? {
-          left,
-          top,
-          width,
-          height,
-          scaleY: layoutHeight.current ? height / layoutHeight.current : 1,
-        };
         const index = treeRowAtPoint(fromX, fromY, bounds, props.getOffset(), props.rowHeight);
         const row = index === null ? null : props.rows[index];
         if (!row || row.kind !== "node" || !canStartTreeDrag(fromX, fromY, row.path)) return;
@@ -177,6 +171,9 @@ export function useTreeDrag(options: Options) {
             finish(false);
             return;
           }
+          // 分栏 resize 后继续使用当前几何，不取消正在进行的拖拽。
+          const bounds = readTreeDragBounds(view.current);
+          if (bounds) Object.assign(drag, bounds);
           const elapsed = previousTime ? Math.min((time - previousTime) / 1000, 0.05) : 0;
           previousTime = time;
           const localY = (drag.y - drag.top) / drag.scaleY;
@@ -222,12 +219,45 @@ export function useTreeDrag(options: Options) {
           openPaths: currentOpenPaths(session.current),
         });
         frame.current = requestAnimationFrame(tick);
+      };
+      // Web 容器是 DOM 元素，没有 RN 的 measureInWindow；直接读取实际边界。
+      const bounds = readTreeDragBounds(view.current);
+      if (bounds) {
+        begin(bounds);
+        return;
+      }
+      // Native 的异步测量仍受 token 保护，结束后不能迟到启动会话。
+      view.current?.measureInWindow?.((left, top, width, height) => {
+        begin({
+          left,
+          top,
+          width,
+          height,
+          scaleY: layoutHeight.current ? height / layoutHeight.current : 1,
+        });
       });
     },
     [currentTarget, currentOpenPaths, finish],
   );
   return {
     preview,
+    nativeData: (x: number, y: number) => {
+      const props = latest.current;
+      const bounds = readTreeDragBounds(view.current);
+      if (!props.enabled || !bounds) return null;
+      const index = treeRowAtPoint(x, y, bounds, props.getOffset(), props.rowHeight);
+      const row = index === null ? null : props.rows[index];
+      if (!row || row.kind !== "node" || !canStartTreeDrag(x, y, row.path)) return null;
+      const paths = props.selectedPaths.includes(row.path) ? props.selectedPaths : [row.path];
+      const files = paths.filter((path) =>
+        props.rows.some((r) => r.kind === "node" && r.path === path && r.entry.fileType === "file"),
+      );
+      return {
+        workspaceId: props.workspaceId,
+        files: props.open ? files : [],
+        label: paths.length > 1 ? `${paths.length} 个项目` : row.path.split("/").at(-1)!,
+      };
+    },
     pointer: session,
     viewRef: (node: View | null) => {
       view.current = node;

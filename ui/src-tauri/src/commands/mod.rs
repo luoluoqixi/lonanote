@@ -1,3 +1,5 @@
+mod editor_window_api;
+use editor_window_api::*;
 mod file_dialog_api;
 use file_dialog_api::*;
 mod api;
@@ -77,8 +79,18 @@ pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         write_clipboard_text,
         exit_app,
         create_workspace_window,
+        set_current_window_background,
+        refresh_current_window_title,
+        begin_editor_tab_drag,
+        take_editor_tab_drag,
         select_files,
         get_window_bootstrap,
+        get_editor_window_bootstrap,
+        create_editor_window,
+        show_editor_window,
+        discard_editor_window,
+        send_editor_window_message,
+        store_editor_window_checkpoint,
         get_window_workspace,
         assert_workspace_editable,
         change_workspace_storage,
@@ -121,3 +133,4 @@ pub fn init_commands(app: &AppHandle) -> Result<()> {
     lonanote_core::init()?;
     Ok(())
 }
+

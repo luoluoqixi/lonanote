@@ -11,7 +11,7 @@ export function getDesktopWindowBackgroundColor(colorScheme: ResolvedColorScheme
   return getStandardAppBackgroundColors(colorScheme).screen;
 }
 
-// Keep the native desktop window background aligned with the resolved app theme.
+// 原生窗口背景跟随当前解析的应用主题。
 export function useDesktopWindowBackground(
   preferredColorScheme: ColorSchemeSetting,
   resolvedColorScheme: ResolvedColorScheme,
@@ -30,8 +30,7 @@ export function useDesktopWindowBackground(
     }
 
     try {
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      const applied = await win.setWindowBgColor(getCurrentWindow().label, nextColor);
+      const applied = await win.setCurrentWindowBgColor(nextColor);
       // console.log(
       //   `[appearance] applied desktop window background color ${nextColor} for theme ${nextColorScheme}`,
       //   { applied },

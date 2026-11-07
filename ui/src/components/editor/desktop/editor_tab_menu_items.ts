@@ -4,6 +4,12 @@ import type { EditorTabCloseAction } from "./editor_tab_menu_actions";
 
 export type EditorTabMenuAction =
   | EditorTabCloseAction
+  | "splitRight"
+  | "splitLeft"
+  | "splitUp"
+  | "splitDown"
+  | "moveToNewWindow"
+  | "copyToNewWindow"
   | "copyPath"
   | "copyRelativePath"
   | "revealFile"

@@ -5,6 +5,7 @@ import { isTauri, os } from "@/api/common/platform";
 import { createWorkspaceResourceEndpoint } from "@/api/common/workspace_resource_endpoint";
 import type { EditorResourceContext } from "@/assets/editor/src/bridge/protocol";
 import { createUnavailableEditorResourceContext } from "@/components/editor/bridge";
+import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 import type { DocumentModel } from "@/stores/editor";
 
@@ -52,8 +53,11 @@ export function useEditorResourceContext(document: DocumentModel): {
     let active = true;
     setState(null);
     setFailedResourceKey(null);
-    void workspaceResource
-      .acquireScope(workspaceRef.workspaceId)
+    void (
+      editorWindowService.isRemote()
+        ? editorWindowService.acquireResourceScope(document.documentId)
+        : workspaceResource.acquireScope(workspaceRef.workspaceId)
+    )
       .then((scope) => {
         if (!active) return;
         setState({

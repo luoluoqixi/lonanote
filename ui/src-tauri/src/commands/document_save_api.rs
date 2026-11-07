@@ -18,6 +18,7 @@ use tauri::WebviewWindow;
 
 struct PreparedTarget {
     owner: FileOwner,
+    owner_epoch: Option<u64>,
     path: PathBuf,
     reference: FileReference,
     // 已存在文件保留句柄；提交前同时检查路径身份与完整内容，拒绝迟到覆盖。
@@ -77,11 +78,13 @@ pub async fn prepare_document_save_target(
     document_id: String,
     lease_id: String,
     absolute_path: String,
+    owner_epoch: Option<u64>,
 ) -> Result<PreparedSaveTarget, String> {
     let _guard = WORKSPACE_GATE.write().await;
     if WINDOW_SESSIONS.start_cause(window.label()).is_none() {
         return Err("窗口会话已结束".into());
     }
+    authorize_owner(window.label(), owner_epoch)?;
     let path = normalized_target(Path::new(&absolute_path))?;
     let reference = classify_target(window.label(), &path).await?;
     let identity = FileIdentity::resolve_target(&path).map_err(|e| e.to_string())?;
@@ -117,6 +120,7 @@ pub async fn prepare_document_save_target(
         token,
         PreparedTarget {
             owner,
+            owner_epoch,
             path,
             reference,
             existing,
@@ -126,12 +130,19 @@ pub async fn prepare_document_save_target(
 }
 
 #[tauri::command]
-pub async fn abort_document_save_target(window: WebviewWindow, token: String) {
+pub async fn abort_document_save_target(
+    window: WebviewWindow,
+    token: String,
+    owner_epoch: Option<u64>,
+) {
     let _guard = WORKSPACE_GATE.write().await;
+    if authorize_owner(window.label(), owner_epoch).is_err() {
+        return;
+    }
     let mut targets = TARGETS.lock().unwrap_or_else(|e| e.into_inner());
     if targets
         .get(&token)
-        .is_some_and(|p| p.owner.window_label == window.label())
+        .is_some_and(|p| p.owner.window_label == window.label() && p.owner_epoch == owner_epoch)
     {
         if let Some(target) = targets.remove(&token) {
             FILES
@@ -148,13 +159,15 @@ pub async fn commit_document_save_target(
     token: String,
     text: String,
     overwrite: bool,
+    owner_epoch: Option<u64>,
 ) -> Result<FileReference, String> {
     let _guard = WORKSPACE_GATE.write().await;
+    authorize_owner(window.label(), owner_epoch)?;
     let mut target = {
         let mut targets = TARGETS.lock().unwrap_or_else(|e| e.into_inner());
         if !targets
             .get(&token)
-            .is_some_and(|p| p.owner.window_label == window.label())
+            .is_some_and(|p| p.owner.window_label == window.label() && p.owner_epoch == owner_epoch)
         {
             return Err("保存目标预占已失效".into());
         }
@@ -251,4 +264,11 @@ pub fn assert_no_pending_targets(roots: &[PathBuf]) -> Result<(), String> {
         return Err("来源中有正在保存的文档，请稍后重试".into());
     }
     Ok(())
+}
+
+fn authorize_owner(label: &str, epoch: Option<u64>) -> Result<(), String> {
+    crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .authorize_claim_epoch(label, epoch)
 }

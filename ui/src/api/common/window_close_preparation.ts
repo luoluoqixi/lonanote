@@ -1,7 +1,8 @@
 /** 准备阶段持有文档 mutation 屏障，收到所有窗口的最终决定后才释放。 */
 export function createClosePreparation(
-  close: (waitForCommit: () => Promise<boolean>) => Promise<boolean>,
+  close: (waitForCommit: () => Promise<boolean>, signal: AbortSignal) => Promise<boolean>,
 ) {
+  const cancellation = new AbortController();
   let markReady!: (ready: boolean) => void;
   let decide!: (commit: boolean) => void;
   let failure: unknown;
@@ -14,7 +15,7 @@ export function createClosePreparation(
   const done = close(async () => {
     markReady(true);
     return decision;
-  }).then(
+  }, cancellation.signal).then(
     (result) => {
       markReady(false);
       return result;
@@ -29,6 +30,7 @@ export function createClosePreparation(
     getError: () => failure,
     ready,
     finish: (commit: boolean) => {
+      if (!commit) cancellation.abort();
       decide(commit);
       return done;
     },

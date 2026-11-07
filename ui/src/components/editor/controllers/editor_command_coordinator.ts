@@ -13,6 +13,13 @@ type CommandProvider = (
 const providers = new Map<string, CommandProvider>();
 
 export const editorCommandCoordinator = {
+  focusIfActive: async (editorId: string): Promise<void> => {
+    if (editorStore.getState().activeEditorId !== editorId) return;
+    await editorCommandCoordinator.execute(editorId, {
+      type: "editor.focus",
+      preserveSelection: true,
+    });
+  },
   registerProvider: (editorId: string, provider: CommandProvider): (() => void) => {
     providers.set(editorId, provider);
     return () => {

@@ -5,9 +5,14 @@ import { VideoView, useVideoPlayer } from "expo-video";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { Button, Text } from "rn-ui-kit";
+import { useStore } from "zustand";
 
-import { workspace } from "@/api/commands/workspace";
-import { resolveWorkspaceFileUrl } from "@/api/common";
+import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
+import {
+  editorWindowService,
+  editorWindowState,
+} from "@/components/editor/controllers/editor_window_service";
+import { resolveViewerResource } from "@/components/editor/controllers/editor_window_viewers";
 import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
 import type { WorkspaceViewerSession } from "@/stores/editor/editor_store";
 
@@ -24,6 +29,8 @@ function VideoContent({ uri, onError }: { uri: string; onError(message: string):
 
 export function WorkspaceFilePreview({ viewer }: { viewer: WorkspaceViewerSession }) {
   const revision = useWorkspaceResourceRevision(viewer.ref.workspaceId);
+  const connected = useStore(editorWindowState, (state) => state.connected);
+  const remote = editorWindowRuntime.isRemote();
   const [resource, setResource] = useState<{ key: string; uri?: string; error?: string } | null>(
     null,
   );
@@ -32,9 +39,11 @@ export function WorkspaceFilePreview({ viewer }: { viewer: WorkspaceViewerSessio
   useEffect(() => {
     if (viewer.viewerKind !== "image" && viewer.viewerKind !== "video") return;
     let current = true;
-    void workspace
-      .get(viewer.ref.workspaceId)
-      .then((snapshot) => resolveWorkspaceFileUrl(snapshot, viewer.ref.filePath))
+    if (remote && !connected) {
+      setResource(null);
+      return;
+    }
+    void resolveViewerResource(viewer)
       .then((uri) => {
         if (current) setResource({ key, uri });
       })
@@ -44,10 +53,34 @@ export function WorkspaceFilePreview({ viewer }: { viewer: WorkspaceViewerSessio
     return () => {
       current = false;
     };
-  }, [key, viewer.ref.workspaceId, viewer.ref.filePath, viewer.viewerKind, retry]);
+  }, [
+    key,
+    viewer.ref.workspaceId,
+    viewer.ref.filePath,
+    viewer.viewerKind,
+    retry,
+    remote,
+    connected,
+  ]);
+  useEffect(() => {
+    if (!remote || !connected) return;
+    if (
+      (viewer.viewerKind === "image" || viewer.viewerKind === "video") &&
+      (resource?.key !== key || !resource.uri)
+    )
+      return;
+    // 隐藏辅助窗口先挂载真实预览 shell，再通知 owner 可以提交转移。
+    void editorWindowService
+      .requestOwner("viewer-ready", { editorId: viewer.viewerId })
+      .catch((error) => console.error("[viewer] 预览窗口就绪确认失败", error));
+  }, [remote, connected, viewer.viewerId, viewer.viewerKind, key, resource?.key, resource?.uri]);
   if (viewer.viewerKind === "pdf" || viewer.viewerKind === "unknown")
     return (
-      <UnknownFileContent filePath={viewer.ref.filePath} workspaceId={viewer.ref.workspaceId} />
+      <UnknownFileContent
+        filePath={viewer.ref.filePath}
+        workspaceId={viewer.ref.workspaceId}
+        viewerId={viewer.viewerId}
+      />
     );
   const value = resource?.key === key ? resource : null;
   return (

@@ -35,11 +35,22 @@ pub struct SelectDialogResult {
 pub async fn select_files(
     window: WebviewWindow,
     options: SelectDialogOptions,
+    parent_window_label: Option<String>,
 ) -> Result<SelectDialogResult, String> {
     #[cfg(desktop)]
     {
+        use tauri::Manager;
         use tauri_plugin_dialog::DialogExt;
-        let mut dialog = window.dialog().file().set_parent(&window);
+        let parent_label = parent_window_label.as_deref().unwrap_or(window.label());
+        crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .authorize_dialog_parent(window.label(), parent_label)?;
+        let parent = window
+            .app_handle()
+            .get_webview_window(parent_label)
+            .ok_or("对话框所属窗口已关闭")?;
+        let mut dialog = window.dialog().file().set_parent(&parent);
         if let Some(title) = options.title {
             dialog = dialog.set_title(title);
         }
@@ -105,7 +116,7 @@ pub async fn select_files(
     }
     #[cfg(not(desktop))]
     {
-        let _ = (window, options);
+        let _ = (window, options, parent_window_label);
         Err("当前平台不支持桌面文件选择器".into())
     }
 }

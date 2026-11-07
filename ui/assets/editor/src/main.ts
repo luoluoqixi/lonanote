@@ -1,3 +1,4 @@
+import { Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { type ImageRetryContext, PurrMDFeatures, commands } from "purrmd";
 
@@ -30,9 +31,16 @@ import {
   isEditorRuntimeUpdatePayload,
   parseEditorBridgeMessage,
 } from "./bridge/protocol";
+import { applyTextChange, normalizeEditorText, textChange } from "./bridge/text_change";
 import { ANDROID_SELECTION_BOTTOM_OFFSET, EDITOR_MESSAGE_DEDUPLICATION_LIMIT } from "./consts";
 import { installDesktopBackgroundFocus } from "./core/background_focus";
 import { applyEditorFocusCommand } from "./core/focus_command";
+import { applyEditorInputLease } from "./core/input_lease";
+import {
+  captureEditorViewState,
+  restoreEditorScroll,
+  restoreEditorViewState,
+} from "./core/view_snapshot";
 import { createDesktopScrollbar } from "./desktop_scrollbar";
 import { LonaEditor } from "./index";
 import {
@@ -208,7 +216,13 @@ type SurfaceSession = {
   identity: EditorBridgeBootstrap;
   editor: LonaEditor;
   documentRevision: number;
+  canUndo: boolean;
+  canRedo: boolean;
   localSequence: number;
+  lastText: string;
+  compositionBoundary: boolean;
+  leaseToken?: string;
+  identityRevision?: number;
   selectionVersion: number;
   suppressDocumentChange: boolean;
   pendingDocumentChange: boolean;
@@ -494,17 +508,27 @@ function respond(request: EditorBridgeRequest, result?: unknown, error?: EditorB
   sendMessage(message);
 }
 
+function getViewScrollElement(currentSession: SurfaceSession): HTMLElement {
+  return currentSession.runtime.platform === "macos"
+    ? getRoot()
+    : ((document.scrollingElement ?? document.documentElement) as HTMLElement);
+}
+
 function getStateSnapshot(currentSession: SurfaceSession): EditorStateSnapshot {
   const state = currentSession.editor.editor.state;
   const selection = state.selection.main;
   const status = currentSession.editor.getStatusInfo();
   currentSession.stateRevision += 1;
   return {
+    viewState: captureEditorViewState(
+      currentSession.editor.editor,
+      getViewScrollElement(currentSession),
+    ),
     revision: currentSession.stateRevision,
     focused: currentSession.editor.editor.hasFocus,
     composing: currentSession.editor.editor.composing,
-    canUndo: currentSession.editor.canUndo(),
-    canRedo: currentSession.editor.canRedo(),
+    canUndo: currentSession.canUndo,
+    canRedo: currentSession.canRedo,
     selectionEmpty: selection.empty,
     activeMarks: Object.entries({
       bold: commands.isStrong(state),
@@ -528,7 +552,7 @@ function emitStateSnapshot(currentSession: SurfaceSession): void {
 }
 
 function scheduleDocumentChanged(currentSession: SurfaceSession): void {
-  if (currentSession.suppressDocumentChange || currentSession.pendingDocumentChange) return;
+  if (currentSession.suppressDocumentChange) return;
   currentSession.pendingDocumentChange = true;
   queueMicrotask(() => {
     flushPendingDocumentChange(currentSession);
@@ -536,20 +560,26 @@ function scheduleDocumentChanged(currentSession: SurfaceSession): void {
 }
 
 function flushPendingDocumentChange(currentSession: SurfaceSession): void {
-  if (!currentSession.pendingDocumentChange) return;
+  if (!currentSession.pendingDocumentChange || currentSession.editor.editor.composing) return;
   currentSession.pendingDocumentChange = false;
   if (session !== currentSession || currentSession.suppressDocumentChange) return;
 
   const text = currentSession.editor.getValue();
-  if (text === null) return;
+  if (text === null || text === currentSession.lastText) return;
   const baseRevision = currentSession.documentRevision;
   currentSession.documentRevision += 1;
   currentSession.localSequence += 1;
+  const change = textChange(currentSession.lastText, text);
+  currentSession.lastText = text;
   emitEvent("document.changed", {
+    change,
+    historyBoundary: currentSession.compositionBoundary,
+    leaseToken: currentSession.leaseToken,
+    identityRevision: currentSession.identityRevision,
     baseRevision,
     localSequence: currentSession.localSequence,
-    text,
   });
+  currentSession.compositionBoundary = false;
 }
 
 function applyRuntimeStyles(runtime: EditorRuntimeUpdatePayload): void {
@@ -679,7 +709,11 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     identity,
     editor,
     documentRevision: payload.document.revision,
+    canUndo: false,
+    canRedo: false,
     localSequence: 0,
+    lastText: normalizeEditorText(payload.document.text),
+    compositionBoundary: false,
     selectionVersion: 0,
     suppressDocumentChange: false,
     pendingDocumentChange: false,
@@ -705,8 +739,8 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
       activeMarks: getStateSnapshot(currentSession).activeMarks,
       x: event.clientX,
       y: event.clientY,
-      canUndo: currentSession.editor.canUndo(),
-      canRedo: currentSession.editor.canRedo(),
+      canUndo: currentSession.canUndo,
+      canRedo: currentSession.canRedo,
     });
   };
 
@@ -808,6 +842,18 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     },
   });
   applyRuntimeStyles(payload.runtime);
+  if (payload.viewState) {
+    restoreEditorViewState(editor.editor, getViewScrollElement(currentSession), payload.viewState);
+    const restored = payload.viewState;
+    editor.editor.requestMeasure({
+      read: () => undefined,
+      write: () => {
+        if (session !== currentSession) return;
+        restoreEditorScroll(getViewScrollElement(currentSession), restored.scrollTop);
+        emitStateSnapshot(currentSession);
+      },
+    });
+  }
   editor.addListener("onUpdate", (_editor, update) => {
     if (update.docChanged || update.selectionSet) currentSession.selectionVersion += 1;
     if (update.docChanged) {
@@ -936,7 +982,19 @@ function applyDocumentRevision(request: EditorBridgeRequest): void {
 
   session.suppressDocumentChange = true;
   try {
-    session.editor.setValue(payload.text, { useHistory: false, scrollToTop: false });
+    const currentText = session.editor.getValue() ?? "";
+    const change =
+      payload.change ?? textChange(currentText, normalizeEditorText(payload.text ?? currentText));
+    const text = applyTextChange(currentText, change);
+    session.editor.editor.dispatch({
+      changes: change,
+      selection:
+        payload.selection === undefined
+          ? undefined
+          : { anchor: Math.max(0, Math.min(text.length, payload.selection)) },
+      annotations: Transaction.addToHistory.of(false),
+    });
+    session.lastText = text;
     session.documentRevision = payload.revision;
   } finally {
     session.suppressDocumentChange = false;
@@ -955,10 +1013,12 @@ function applyInputEnabled(request: EditorBridgeRequest): void {
     return;
   }
 
-  session.inputEnabled = request.payload.enabled;
-  session.editor.setReadonly(session.documentReadOnly || !session.inputEnabled);
+  const current = session;
+  const applied = applyEditorInputLease(current, request.payload, () =>
+    flushPendingDocumentChange(current),
+  );
   emitStateSnapshot(session);
-  respond(request, { applied: true });
+  respond(request, { applied });
 }
 
 function revealSelection(request: EditorBridgeRequest): void {
@@ -1000,8 +1060,8 @@ function executeCommand(request: EditorBridgeRequest): void {
         activeMarks: getStateSnapshot(session).activeMarks,
         x: 0,
         y: 0,
-        canUndo: session.editor.canUndo(),
-        canRedo: session.editor.canRedo(),
+        canUndo: session.canUndo,
+        canRedo: session.canRedo,
       },
     });
     return;
@@ -1018,6 +1078,14 @@ function executeCommand(request: EditorBridgeRequest): void {
     respond(request, { applied: false, stateRevision: snapshot.revision });
     return;
   }
+  if (
+    !["selection.selectAll", "editor.focus", "editor.blur", "navigation.scrollToAnchor"].includes(
+      command.type,
+    )
+  ) {
+    flushPendingDocumentChange(session);
+    session.compositionBoundary = true;
+  }
   if (command.type === "selection.selectAll") {
     const view = session.editor.editor;
     view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
@@ -1026,8 +1094,10 @@ function executeCommand(request: EditorBridgeRequest): void {
     const view = session.editor.editor;
     view.dispatch(view.state.replaceSelection(command.text));
   }
-  if (command.type === "history.undo") session.editor.undo();
-  if (command.type === "history.redo") session.editor.redo();
+  if (command.type === "history.undo")
+    emitEvent("editor.historyRequested", { direction: "undo", leaseToken: session.leaseToken });
+  if (command.type === "history.redo")
+    emitEvent("editor.historyRequested", { direction: "redo", leaseToken: session.leaseToken });
   if (command.type === "editor.focus") applyEditorFocusCommand(session.editor, command);
   if (command.type === "editor.blur") session.editor.blur();
   if (command.type === "navigation.scrollToAnchor") session.editor.scrollToAnchor(command.fragment);
@@ -1147,12 +1217,26 @@ function handleRequest(request: EditorBridgeRequest): void {
     executeCommand(request);
     return;
   }
+  if (request.method === "history.update") {
+    const payload = request.payload as { canUndo?: unknown; canRedo?: unknown };
+    if (session && typeof payload?.canUndo === "boolean" && typeof payload?.canRedo === "boolean") {
+      session.canUndo = payload.canUndo;
+      session.canRedo = payload.canRedo;
+      emitStateSnapshot(session);
+      respond(request, { applied: true });
+    } else respond(request, { applied: false });
+    return;
+  }
   if (request.method === "document.capture") {
     if (session) {
       flushPendingDocumentChange(session);
     }
     const text = session?.editor.getValue();
-    respond(request, { text: text ?? "", revision: session?.documentRevision ?? 0 });
+    respond(request, {
+      text: text ?? "",
+      revision: session?.documentRevision ?? 0,
+      composing: session?.editor.editor.composing ?? false,
+    });
     return;
   }
   if (request.method === "editor.dispose") {
@@ -1212,3 +1296,58 @@ if (bootstrap) {
 } else if (isStandaloneDevelopmentMode()) {
   receiveMessage(JSON.stringify(createStandaloneInitializeRequest()));
 }
+
+// surface 不保留独立快捷键历史，所有撤销请求交回 owner。
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+    const key = event.key.toLowerCase();
+    if (key !== "z" && key !== "y") return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (session?.inputEnabled) {
+      flushPendingDocumentChange(session);
+      emitEvent("editor.historyRequested", {
+        direction: key === "y" || event.shiftKey ? "redo" : "undo",
+        leaseToken: session.leaseToken,
+      });
+    }
+  },
+  true,
+);
+
+// 非持有视图保持选择/滚动；正文点击通过 bridge 显式申请输入权。
+getRoot().addEventListener(
+  "pointerdown",
+  () => {
+    if (session && !session.documentReadOnly && !session.inputEnabled)
+      emitEvent("editor.inputRequested", {});
+  },
+  true,
+);
+
+getRoot().addEventListener("compositionend", () => {
+  const current = session;
+  if (!current) return;
+  current.compositionBoundary = true;
+  // 等待 CodeMirror 应用 composition 最后一笔事务后再发布一个边界。
+  setTimeout(() => {
+    if (session === current) flushPendingDocumentChange(current);
+  }, 0);
+});
+
+let scrollSnapshotScheduled = false;
+document.addEventListener(
+  "scroll",
+  () => {
+    if (!session || scrollSnapshotScheduled) return;
+    const current = session;
+    scrollSnapshotScheduled = true;
+    requestAnimationFrame(() => {
+      scrollSnapshotScheduled = false;
+      if (session === current) emitStateSnapshot(current);
+    });
+  },
+  true,
+);
