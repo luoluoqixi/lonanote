@@ -85,6 +85,7 @@ export type EditorSemanticColors = {
 };
 
 export type EditorPreferences = {
+  slashMenu?: boolean;
   lineNumbers: boolean;
   lineWrapping: boolean;
   sourceMode: boolean;
@@ -434,6 +435,8 @@ export function isEditorInitializePayload(value: unknown): value is EditorInitia
     typeof value.preferences.lineNumbers === "boolean" &&
     typeof value.preferences.lineWrapping === "boolean" &&
     typeof value.preferences.sourceMode === "boolean" &&
+    (value.preferences.slashMenu === undefined ||
+      typeof value.preferences.slashMenu === "boolean") &&
     isRecord(value.resources) &&
     typeof value.resources.available === "boolean"
   );
@@ -462,7 +465,8 @@ export function isEditorPreferencesUpdatePayload(
     isRecord(value) &&
     typeof value.lineNumbers === "boolean" &&
     typeof value.lineWrapping === "boolean" &&
-    typeof value.sourceMode === "boolean"
+    typeof value.sourceMode === "boolean" &&
+    (value.slashMenu === undefined || typeof value.slashMenu === "boolean")
   );
 }
 

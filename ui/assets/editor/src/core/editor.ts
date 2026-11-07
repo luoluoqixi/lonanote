@@ -194,6 +194,7 @@ export interface LonaEditorSetValueOptions {
 }
 
 export interface LonaEditorPresentationOptions {
+  slashMenu?: boolean;
   lineNumbers: boolean;
   lineWrapping: boolean;
   sourceMode: boolean;
@@ -305,6 +306,7 @@ export class LonaEditor {
       lineNumbers: !disableAll && enableLineNumbers,
       lineWrapping: !disableAll && enableLineWrapping,
       sourceMode: markdownConfig?.formattingDisplayMode === "show",
+      slashMenu: markdownConfig?.defaultSlashMenu?.show === true,
       theme: resolvedTheme === "dark" ? "dark" : "light",
       themeColors,
     };
@@ -498,7 +500,11 @@ export class LonaEditor {
     const themeChanged =
       previous.theme !== options.theme ||
       !areThemeColorsEqual(previous.themeColors, options.themeColors);
-    if (previous.sourceMode !== options.sourceMode || themeChanged) {
+    if (
+      previous.sourceMode !== options.sourceMode ||
+      previous.slashMenu !== options.slashMenu ||
+      themeChanged
+    ) {
       effects.push(this.#languageEx.reconfigure(this.#createLanguageExtensions()));
     }
     if (themeChanged) effects.push(this.#themeEx.reconfigure(this.#createThemeExtension()));
@@ -510,6 +516,10 @@ export class LonaEditor {
     const { filePath, detectLanguage, markdownConfig, markdownTheme } = this.#presentationBase;
     const resolvedMarkdownConfig = {
       ...markdownConfig,
+      defaultSlashMenu: {
+        ...markdownConfig?.defaultSlashMenu,
+        show: this.#presentation.slashMenu === true,
+      },
       formattingDisplayMode: (this.#presentation.sourceMode
         ? "show"
         : "auto") as PurrMDConfig["formattingDisplayMode"],
@@ -597,10 +607,7 @@ export class LonaEditor {
   }
 
   /** 获取焦点；传入坐标时仅在能可靠映射到附近文档位置时移动光标。 */
-  focus = (
-    pos?: { x: number; y: number },
-    options?: { allowDocumentEnd?: boolean },
-  ): boolean => {
+  focus = (pos?: { x: number; y: number }, options?: { allowDocumentEnd?: boolean }): boolean => {
     if (!this.#editor) throw new Error("Editor not initialized");
     const lastLine = this.#editor.state.doc.lines;
     const lastPos = this.#editor.state.doc.line(lastLine).to;
@@ -622,7 +629,8 @@ export class LonaEditor {
       const verticalDistance =
         pos.y < cursor.top ? cursor.top - pos.y : pos.y > cursor.bottom ? pos.y - cursor.bottom : 0;
       // WKWebView 偶发把装饰区点击估算到文档起点；拒绝与实际触点明显不相邻的结果。
-      if (!isBelowDocument && verticalDistance > COORDINATE_FOCUS_MAX_VERTICAL_DISTANCE) return false;
+      if (!isBelowDocument && verticalDistance > COORDINATE_FOCUS_MAX_VERTICAL_DISTANCE)
+        return false;
     } else {
       targetPos = lastPos;
     }

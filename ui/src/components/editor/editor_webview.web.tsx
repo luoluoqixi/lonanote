@@ -19,6 +19,7 @@ import {
   saveCoordinator,
 } from "@/components/editor/controllers";
 import { useEditorResourceActivation, useEditorResourceContext } from "@/hooks/editor";
+import { useLayoutMode } from "@/hooks/layout";
 import { useGlobalSettings } from "@/hooks/settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
@@ -81,6 +82,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
     [colorScheme, theme],
   );
   const { settings } = useGlobalSettings();
+  const { layoutMode } = useLayoutMode();
   const onResourceActivated = useEditorResourceActivation(document, editor.editorId);
   const resourceContext = useEditorResourceContext(document);
   const identity = useMemo(
@@ -110,6 +112,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
           reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
         },
         {
+          slashMenu: isDesktop() && layoutMode === "desktop",
           lineNumbers:
             editor.preferenceOverrides.lineNumbers ?? settings.editorDefaults.showLineNumber,
           lineWrapping:
@@ -121,7 +124,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
         },
         resourceContext.context,
       ),
-    [colorScheme, document, editor, editorColors, resourceContext.context, settings],
+    [colorScheme, document, editor, editorColors, layoutMode, resourceContext.context, settings],
   );
   const initializePayloadRef = useRef(initializePayload);
   initializePayloadRef.current = initializePayload;

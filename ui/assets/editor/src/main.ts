@@ -643,6 +643,7 @@ function applyPresentation(currentSession: SurfaceSession): void {
     lineNumbers: currentSession.preferences.lineNumbers,
     lineWrapping: currentSession.preferences.lineWrapping,
     sourceMode: currentSession.preferences.sourceMode,
+    slashMenu: currentSession.preferences.slashMenu === true,
     theme: currentSession.runtime.colorScheme,
     themeColors: currentSession.runtime.colors,
   });
@@ -801,7 +802,27 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
     themeColors: payload.runtime.colors,
     markdownConfig: {
       formattingDisplayMode: payload.preferences.sourceMode ? "show" : "auto",
-      defaultSlashMenu: { show: false },
+      defaultSlashMenu: {
+        show: payload.preferences.slashMenu === true,
+        title: "插入",
+        defaultCommands: {
+          heading1: { label: "一级标题" },
+          heading2: { label: "二级标题" },
+          heading3: { label: "三级标题" },
+          heading4: { label: "四级标题" },
+          heading5: { label: "五级标题" },
+          heading6: { label: "六级标题" },
+          unorderedList: { label: "无序列表" },
+          orderedList: { label: "有序列表" },
+          taskList: { label: "任务列表" },
+          table: { label: "表格" },
+          blockquote: { label: "引用" },
+          image: { label: "图片" },
+          link: { label: "链接" },
+          codeBlock: { label: "代码块" },
+          horizontalRule: { label: "分割线" },
+        },
+      },
       featuresConfigs: {
         [PurrMDFeatures.Image]: {
           proxyURL: (rawReference: string) =>

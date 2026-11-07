@@ -68,7 +68,7 @@ const colors = Object.fromEntries(
   ].map((key) => [key, "#000000"]),
 ) as LonaEditorThemeColors;
 
-function createEditor(text = "短文", readOnly = false) {
+function createEditor(text = "短文", readOnly = false, filePath?: string) {
   const root = document.createElement("main");
   document.body.append(root);
   const editor = new LonaEditor();
@@ -76,6 +76,7 @@ function createEditor(text = "短文", readOnly = false) {
     root,
     defaultValue: text,
     readOnly,
+    filePath,
     theme: "none",
     themeColors: colors,
     extensionsConfig: { disableAll: true },
@@ -88,6 +89,34 @@ function createEditor(text = "短文", readOnly = false) {
   view.lineBlockAt = () => ({ bottom: 26 }) as ReturnType<typeof view.lineBlockAt>;
   return { editor, root, view };
 }
+
+test("切换桌面布局的斜杠菜单时保留文档和选区，启用真实 PurrMD 菜单", async () => {
+  const { editor, root, view } = createEditor("", false, "note.md");
+  const options = {
+    lineNumbers: false,
+    lineWrapping: false,
+    sourceMode: false,
+    theme: "light" as const,
+    themeColors: colors,
+    slashMenu: false,
+  };
+  try {
+    editor.updatePresentation(options);
+    assert.equal(root.querySelector(".purrmd-slash-menu"), null);
+    editor.updatePresentation({ ...options, slashMenu: true });
+    assert.ok(root.querySelector(".purrmd-slash-menu"));
+    view.dispatch({ changes: { from: 0, insert: "/" }, selection: { anchor: 1 } });
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    assert.equal((root.querySelector(".purrmd-slash-menu") as HTMLElement).style.display, "block");
+    editor.updatePresentation(options);
+    assert.equal(root.querySelector(".purrmd-slash-menu"), null);
+    assert.equal(editor.getValue(), "/");
+    assert.equal(view.state.selection.main.head, 1);
+  } finally {
+    editor.destroy();
+    root.remove();
+  }
+});
 
 function mouseDown(
   init: Pick<
