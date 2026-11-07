@@ -14,15 +14,14 @@ import { useLayoutMode } from "@/hooks/layout";
 import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId, useWorkspaceExplorerSelectedEntries } from "@/hooks/workspace";
 import { useWorkspaceFileActions } from "@/hooks/workspace/use_workspace_file_actions";
-
-import { useEditorSession } from "./use_editor_session";
+import { editorStore } from "@/stores/editor";
 
 const runCreate = createSingleFlight();
 const runOpen = createSingleFlight();
 
 export function useEditorFileActions() {
   const workspaceId = useCurrentWorkspaceId();
-  const { getSnapshot } = useEditorSession();
+  const getSnapshot = editorStore.getState;
   const getSelected = useWorkspaceExplorerSelectedEntries();
   const fileActions = useWorkspaceFileActions();
   const { layoutMode } = useLayoutMode();

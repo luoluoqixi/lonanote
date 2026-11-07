@@ -45,7 +45,7 @@ import {
   getDefaultWorkspaceEntryName,
   getWorkspaceEntryCreateParent,
 } from "@/api/common/utils/workspace_entry_name";
-import { useEditorSession } from "@/hooks/editor";
+import { useEditorSelector } from "@/hooks/editor/use_editor_selector";
 import { useLayoutMode } from "@/hooks/layout";
 import { useMediaNavigation } from "@/hooks/media";
 import { useUiPreferences } from "@/hooks/settings";
@@ -93,12 +93,17 @@ export function WorkspaceTreeHost({
   const theme = useUiTheme();
   const { layoutMode } = useLayoutMode();
   const desktop = layoutMode === "desktop";
-  const { activeEditorId, editorsById, documentsById, viewersById, openViewer } =
-    useEditorSession();
-  const activeRef = activeEditorId
-    ? (viewersById[activeEditorId]?.ref ??
-      documentsById[editorsById[activeEditorId]?.documentId]?.ref)
-    : null;
+  const { activeEditorId, activeRef, openViewer } = useEditorSelector((state) => {
+    const id = state.activeEditorId;
+    return {
+      activeEditorId: id,
+      activeRef: id
+        ? (state.viewersById[id]?.ref ??
+          state.documentsById[state.editorsById[id]?.documentId]?.ref)
+        : null,
+      openViewer: state.openViewer,
+    };
+  });
   const activePath =
     activeRef?.kind === "workspaceFile" && activeRef.workspaceId === workspaceId
       ? activeRef.filePath

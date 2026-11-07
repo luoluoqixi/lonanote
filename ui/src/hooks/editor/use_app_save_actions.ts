@@ -7,14 +7,17 @@ import {
 import { saveCoordinator } from "@/components/editor/controllers";
 import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { useToast } from "@/hooks/ui";
+import { editorStore } from "@/stores/editor";
 
-import { useEditorSession } from "./use_editor_session";
+import { useEditorSelector } from "./use_editor_selector";
 
 export function useAppSaveActions() {
-  const session = useEditorSession();
+  const availability = useEditorSelector((state) => {
+    const ids = getSaveableDocumentIds(state, isDesktop());
+    const active = getActiveSaveableDocumentId(state, isDesktop());
+    return { canSave: Boolean(active && ids.includes(active)), canSaveAll: ids.length > 0 };
+  });
   const { toast } = useToast();
-  const ids = getSaveableDocumentIds(session, isDesktop());
-  const active = getActiveSaveableDocumentId(session, isDesktop());
   const save = async (all: boolean) => {
     if (all && editorWindowService.isRemote()) {
       try {
@@ -24,7 +27,7 @@ export function useAppSaveActions() {
       }
       return;
     }
-    const state = session.getSnapshot();
+    const state = editorStore.getState();
     const allowed = getSaveableDocumentIds(state, isDesktop());
     const activeId = getActiveSaveableDocumentId(state, isDesktop());
     const failures = await saveDocuments(
@@ -34,8 +37,7 @@ export function useAppSaveActions() {
     if (failures.length) toast.error("保存失败", { description: failures.join("\n") });
   };
   return {
-    canSave: Boolean(active && ids.includes(active)),
-    canSaveAll: ids.length > 0,
+    ...availability,
     saveActive: () => save(false),
     saveAll: () => save(true),
   };

@@ -4,8 +4,9 @@ import { clipboard } from "@/api/commands/system/clipboard";
 import type { EditorCommand } from "@/assets/editor/src/bridge/protocol";
 import { editorCommandCoordinator } from "@/components/editor/controllers";
 import { executeEditorMenuAction } from "@/components/editor/desktop/editor_menu_actions";
+import { editorStore } from "@/stores/editor";
 
-import { useEditorSession } from "./use_editor_session";
+import { useEditorSelector } from "./use_editor_selector";
 import { type TextMenuAction, useTextMenuTarget } from "./use_text_menu_target";
 
 const commands: Partial<Record<TextMenuAction, EditorCommand>> = {
@@ -15,38 +16,47 @@ const commands: Partial<Record<TextMenuAction, EditorCommand>> = {
 };
 
 export function useAppEditActions() {
-  const { activeEditorId, editorsById, documentsById, getSnapshot } = useEditorSession();
+  const target = useEditorSelector((state) => {
+    const view = state.activeEditorId ? state.editorsById[state.activeEditorId] : null;
+    const doc = view && state.documentsById[view.documentId];
+    return {
+      activeEditorId: state.activeEditorId,
+      documentId: view?.documentId,
+      ready: doc?.loadState === "ready" && view?.bridgeState === "ready",
+      writable:
+        !!view && !view.readOnly && !view.previewMode && doc?.editOwnerEditorId === view.editorId,
+      focused: view?.editorState.focused,
+      canUndo: view?.editorState.canUndo,
+      canRedo: view?.editorState.canRedo,
+      selectionEmpty: view?.editorState.selectionEmpty,
+    };
+  });
+  const { activeEditorId } = target;
+  const getSnapshot = editorStore.getState;
   const textTarget = useTextMenuTarget();
-  const view = activeEditorId ? editorsById[activeEditorId] : null;
-  const doc = view && documentsById[view.documentId];
   const lastFocused = useRef<string | null>(null);
   if (lastFocused.current !== activeEditorId) lastFocused.current = null;
   const available = Boolean(
     !textTarget.active &&
-    view &&
-    doc?.loadState === "ready" &&
-    view.bridgeState === "ready" &&
-    (view.editorState.focused || lastFocused.current === view.editorId),
+    activeEditorId &&
+    target.ready &&
+    (target.focused || lastFocused.current === activeEditorId),
   );
-  const writable =
-    available && !view?.readOnly && !view?.previewMode && doc?.editOwnerEditorId === view?.editorId;
+  const writable = available && target.writable;
   const enabled = {
-    undo: textTarget.active ? textTarget.writable : Boolean(writable && view?.editorState.canUndo),
-    redo: textTarget.active ? textTarget.writable : Boolean(writable && view?.editorState.canRedo),
+    undo: textTarget.active ? textTarget.writable : Boolean(writable && target.canUndo),
+    redo: textTarget.active ? textTarget.writable : Boolean(writable && target.canRedo),
     cut: textTarget.active
       ? textTarget.writable && textTarget.selected
-      : Boolean(writable && !view?.editorState.selectionEmpty),
-    copy: textTarget.active
-      ? textTarget.selected
-      : Boolean(available && !view?.editorState.selectionEmpty),
+      : Boolean(writable && !target.selectionEmpty),
+    copy: textTarget.active ? textTarget.selected : Boolean(available && !target.selectionEmpty),
     paste: textTarget.active ? textTarget.writable : Boolean(writable),
     selectAll: textTarget.active ? textTarget.selectable : available,
   };
   return {
     enabled,
     captureTarget: () => {
-      lastFocused.current =
-        !textTarget.isActive() && view?.editorState.focused ? view.editorId : null;
+      lastFocused.current = !textTarget.isActive() && target.focused ? activeEditorId : null;
     },
     execute: async (action: TextMenuAction) => {
       if (!enabled[action]) return;
@@ -56,7 +66,7 @@ export function useAppEditActions() {
       }
       const id = activeEditorId;
       if (!id || getSnapshot().activeEditorId !== id) return;
-      const documentId = view?.documentId;
+      const documentId = target.documentId;
       const capture = await editorCommandCoordinator.execute(id, { type: "selection.capture" });
       const snapshot = capture.selection;
       if (!snapshot) return;

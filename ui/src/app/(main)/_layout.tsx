@@ -5,7 +5,7 @@ import { detectWorkspaceFileKind } from "@/api/common";
 import { AppMenuHost } from "@/components/app_menu/app_menu_host";
 import { DesktopAppShell } from "@/components/app_shell/desktop_app_shell";
 import { MobileAppStack } from "@/components/app_shell/mobile_app_stack";
-import { useEditorSession } from "@/hooks/editor";
+import { useEditorSelector } from "@/hooks/editor/use_editor_selector";
 import { useLayoutMode } from "@/hooks/layout";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { useWorkspaceStartup } from "@/hooks/workspace";
@@ -23,7 +23,7 @@ export default function MainLayout() {
     workspaceId?: string | string[];
   }>();
   const currentWorkspaceId = useCurrentWorkspaceId();
-  const { openViewer } = useEditorSession();
+  const openViewer = useEditorSelector((state) => state.openViewer);
   const filePath = Array.isArray(params.path) ? params.path[0] : params.path;
   const workspaceId =
     (Array.isArray(params.workspaceId) ? params.workspaceId[0] : params.workspaceId) ??
