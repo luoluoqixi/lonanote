@@ -16,6 +16,7 @@ import {
   useUiTheme,
 } from "rn-ui-kit";
 
+import { fontSelectionName } from "@/fonts/font_selection";
 import { useLayoutMode } from "@/hooks/layout";
 import { useColorSchemeSettings, useUiPreferences } from "@/hooks/settings";
 import { useFontSettings } from "@/hooks/settings/use_font_settings";
@@ -99,7 +100,7 @@ export function AppearanceSettingsPage({
         <NativeListItem
           {...presentation.item}
           title="编辑器字体"
-          value={fonts.editor.selection?.displayName ?? "系统默认"}
+          value={fontSelectionName(fonts.editor.selection)}
           valueColor={theme.primary}
           trailing={<ChevronsUpDown color={theme.primary} size={16} />}
           onPress={() => setFontPicker("editor")}
@@ -107,7 +108,7 @@ export function AppearanceSettingsPage({
         <NativeListItem
           {...presentation.item}
           title="UI 界面字体"
-          value={fonts.ui.selection?.displayName ?? "系统默认"}
+          value={fontSelectionName(fonts.ui.selection)}
           valueColor={theme.primary}
           trailing={<ChevronsUpDown color={theme.primary} size={16} />}
           onPress={() => setFontPicker("ui")}

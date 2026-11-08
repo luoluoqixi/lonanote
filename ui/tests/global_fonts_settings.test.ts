@@ -6,15 +6,15 @@ import {
   fromSettingsPayload,
   toSettingsPayload,
 } from "../src/api/commands/settings/settings_model";
-import { fontSelectionIdentity, normalizeFontSelection } from "../src/fonts/font_selection";
+import { systemFontIdentity, normalizeFontSelection } from "../src/fonts/font_selection";
 
-const font = { platform: "windows" as const, familyKey: "Segoe UI", displayName: "Segoe UI" };
+const font = { source: "system" as const, platform: "windows" as const, familyKey: "Segoe UI", displayName: "Segoe UI" };
 
 test("原生桥只发送三个字符串身份字段，不发送目录能力对象", () => {
   const entry = { ...font, ui: { available: true }, editor: { available: true } };
-  expect(fontSelectionIdentity(entry)).toEqual(font);
+  expect(systemFontIdentity(entry)).toEqual(({ platform: font.platform, familyKey: font.familyKey, displayName: font.displayName }));
   expect(
-    Object.values(fontSelectionIdentity(entry)).every((value) => typeof value === "string"),
+    Object.values(systemFontIdentity(entry)).every((value) => typeof value === "string"),
   ).toBe(true);
 });
 

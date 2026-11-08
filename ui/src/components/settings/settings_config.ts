@@ -9,6 +9,7 @@ import { DeveloperSettingsPage } from "./pages/developer_settings_page";
 import { GlobalSettingsPage } from "./pages/global_settings_page";
 import { GmSettingsPage } from "./pages/gm_settings_page";
 import { LanguageSettingsPage } from "./pages/language_settings_page";
+import { LicensesSettingsPage } from "./pages/licenses_settings_page";
 import { WindowSettingsPage } from "./pages/window_settings_page";
 
 export type SettingsPageId =
@@ -18,11 +19,15 @@ export type SettingsPageId =
   | "gm"
   | "global"
   | "language"
+  | "licenses"
   | "window"
   | "workspace";
 export type MobileSettingsSectionId = "general" | "workspace" | "more";
 
 export type SettingsPageProps = {
+  onNavigate?: (pageId: SettingsPageId, params?: Record<string, string>) => void;
+  onBack?: () => void;
+  pageParams?: Record<string, string>;
   /** 由桌面设置容器提供，用于在 Dialog 外层打开调试 Sheet。 */
   onOpenDebugSheet?: () => void;
   /** 由桌面设置容器提供，用于在 Dialog 外层打开 GM 调试 Sheet。 */
@@ -52,6 +57,13 @@ export const mobileSettingsSections: Array<{
 ];
 
 export const settingsPages: SettingsPageConfig[] = [
+  {
+    Component: LicensesSettingsPage,
+    desktopTab: false,
+    id: "licenses",
+    parentId: "about",
+    title: "开源许可",
+  },
   {
     Component: GlobalSettingsPage,
     desktopTab: true,

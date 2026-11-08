@@ -20,4 +20,4 @@ pub fn init_log() -> Result<()> {
     Ok(())
 }
 
-pub use settings::font::{FontPlatform, FontSelection};
+pub use settings::font::{FontPlatform, FontSelection, SystemFontSelection};

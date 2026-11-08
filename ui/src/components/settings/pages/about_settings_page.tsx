@@ -15,6 +15,7 @@ const DEVELOPER_OPTIONS_ENABLED_TOAST_COOLDOWN_MS = 10_000;
 const GITHUB_REPOSITORY_URL = "https://github.com/luoluoqixi/lonanote";
 
 export function AboutSettingsPage({
+  onNavigate,
   tracksNavigationBarScrollEdge = false,
 }: SettingsPageProps = {}) {
   const presentation = useSettingsPresentation();
@@ -90,6 +91,12 @@ export function AboutSettingsPage({
       </NativeListSection>
 
       <NativeListSection {...presentation.section} title="相关链接">
+        <NativeListItem
+          {...presentation.item}
+          title="开源许可"
+          chevron
+          onPress={() => onNavigate?.("licenses")}
+        />
         <NativeListItem
           {...presentation.item}
           onPress={() => {

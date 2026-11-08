@@ -111,3 +111,7 @@
 *.pfx   binary
 *.p12   binary
 *.key   binary
+
+# 许可正文保留上游原始换行。
+ui/assets/fonts/fira_code/LICENSE.txt -text
+ui/assets/licenses/*LICENSES.txt -text

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import type { FontConsumer, FontFamilyEntry } from "@/api/commands/fonts/types";
-import { listFontFamilies, verifyFontFamily } from "@/stores/font_store";
+import { getFontDirectoryError, listFontFamilies, verifyFontFamily } from "@/stores/font_store";
 
 export function useFontDirectory(open: boolean) {
   const [entries, setEntries] = useState<FontFamilyEntry[]>([]);
@@ -16,7 +16,10 @@ export function useFontDirectory(open: boolean) {
     listFontFamilies(revision > 0)
       .then(
         (value) => {
-          if (active) setEntries(value);
+          if (active) {
+            setEntries(value);
+            setError(getFontDirectoryError());
+          }
         },
         (reason) => {
           if (active) setError(String(reason));

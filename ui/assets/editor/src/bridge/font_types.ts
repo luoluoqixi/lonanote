@@ -4,7 +4,7 @@ export type ResolvedFont = {
     family: string;
     weight: number;
     italic: boolean;
-    source: { kind: "local"; name: string } | { kind: "url"; url: string };
+    source: { kind: "local"; name: string } | { kind: "url"; url: string } | { kind: "bundled"; assetId: "fira-code-regular" | "fira-code-bold" };
   }>;
 };
 
@@ -31,6 +31,8 @@ export function isResolvedFont(value: unknown): value is ResolvedFont {
       !face.source
     )
       return false;
+    if (face.source.kind === "bundled")
+      return face.source.assetId === "fira-code-regular" || face.source.assetId === "fira-code-bold";
     if (face.source.kind === "local")
       return (
         typeof face.source.name === "string" &&

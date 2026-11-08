@@ -36,3 +36,6 @@ CLAUDE.md
 .codegraph/
 
 .temp/
+
+# 许可生成过程的临时文件。
+/ui/assets/licenses/*.tmp

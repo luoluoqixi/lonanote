@@ -3,7 +3,7 @@ use font_kit::{
     properties::{Properties, Style, Weight},
     source::SystemSource,
 };
-use lonanote_core::{FontPlatform, FontSelection};
+use lonanote_core::{FontPlatform, SystemFontSelection as FontSelection};
 use serde::Serialize;
 use std::{
     collections::BTreeSet,

@@ -38,6 +38,16 @@ class NativeSystemFontsModule : Module() {
 
   override fun definition() = ModuleDefinition {
     Name("NativeSystemFonts")
+    AsyncFunction("registerBundledFamily") {
+      val manager = ReactFontManager.getInstance()
+      val assets = appContext.reactContext?.assets ?: error("原生字体上下文未就绪")
+      val regular = manager.getTypeface("LonaFiraCodeRegular", Typeface.NORMAL, assets)
+      val bold = manager.getTypeface("LonaFiraCodeBold", Typeface.NORMAL, assets)
+      manager.setTypeface("LonaBundledFiraCode", Typeface.NORMAL, regular)
+      manager.setTypeface("LonaBundledFiraCode", Typeface.BOLD, bold)
+      manager.setTypeface("LonaBundledFiraCode", Typeface.ITALIC, Typeface.create(regular, Typeface.ITALIC))
+      manager.setTypeface("LonaBundledFiraCode", Typeface.BOLD_ITALIC, Typeface.create(bold, Typeface.BOLD_ITALIC))
+    }
     AsyncFunction("list") { refresh: Boolean ->
       (aliases + families(refresh).keys).distinct().sorted().map { family ->
         mapOf("platform" to "android", "familyKey" to family, "displayName" to family,

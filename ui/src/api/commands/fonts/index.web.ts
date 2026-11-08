@@ -1,11 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import { fontSelectionIdentity } from "@/fonts/font_selection";
+import { systemFontAdapter } from "./system_adapter";
 
-import type { SystemFontsApi } from "./types";
-
-export const systemFonts: SystemFontsApi = {
+export const systemFonts = systemFontAdapter({
   list: (refresh = false) => invoke("list_system_fonts", { refresh }),
-  resolve: (selection, consumer) =>
-    invoke("resolve_system_font", { selection: fontSelectionIdentity(selection), consumer }),
-};
+  resolve: (selection, consumer) => invoke("resolve_system_font", { selection, consumer }),
+});

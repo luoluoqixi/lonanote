@@ -4,6 +4,8 @@ import { Button, Input, Text } from "rn-ui-kit";
 
 import type { FontConsumer, FontFamilyEntry, FontSelection } from "@/api/commands/fonts/types";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
+import { fontSelectionKey } from "@/fonts/font_selection";
+import { useLayoutMode } from "@/hooks/layout";
 import { useFontCapability, useFontDirectory } from "@/hooks/settings/use_font_directory";
 import { useFontSettings } from "@/hooks/settings/use_font_settings";
 
@@ -70,6 +72,8 @@ export function FontPicker({
   open: boolean;
   onOpenChange(open: boolean): void;
 }) {
+  const { layoutMode } = useLayoutMode();
+  const isDesktop = layoutMode === "desktop";
   const fonts = useFontSettings();
   const directory = useFontDirectory(open);
   const [query, setQuery] = useState("");
@@ -115,14 +119,15 @@ export function FontPicker({
           onChangeText={setQuery}
           placeholder="搜索本机字体"
           accessibilityLabel="搜索本机字体"
-          size="sm"
+          size={isDesktop ? "xs" : "sm"}
         />
         <Button
-          variant="outline"
+          variant={fonts[consumer].selection === null ? "secondary" : "outline"}
           disabled={saving}
           onPress={() => {
             void select(null);
           }}
+          size={isDesktop ? "xs" : "sm"}
         >
           系统默认{fonts[consumer].selection === null ? " ✓" : ""}
         </Button>
@@ -144,7 +149,7 @@ export function FontPicker({
         ) : null}
         <FlatList
           data={entries}
-          keyExtractor={(entry) => `${entry.platform}:${entry.familyKey}`}
+          keyExtractor={(entry) => fontSelectionKey(entry.selection)}
           style={{ flex: 1 }}
           initialNumToRender={8}
           maxToRenderPerBatch={6}
@@ -155,16 +160,25 @@ export function FontPicker({
               {directory.loading ? "正在读取本机字体…" : "没有匹配的字体"}
             </Text>
           }
-          renderItem={({ item }) => (
-            <FontRow
-              entry={item}
-              consumer={consumer}
-              selected={fonts[consumer].selection?.familyKey === item.familyKey}
-              disabled={saving}
-              onPress={() => {
-                void select(item);
-              }}
-            />
+          renderItem={({ item, index }) => (
+            <>
+              {index === 0 || entries[index - 1].source !== item.source ? (
+                <Text className="text-muted-foreground" style={{ fontSize: 12, padding: 8 }}>
+                  {item.source === "bundled" ? "内置字体" : "本机字体"}
+                </Text>
+              ) : null}
+              <FontRow
+                entry={item}
+                consumer={consumer}
+                selected={
+                  fontSelectionKey(fonts[consumer].selection) === fontSelectionKey(item.selection)
+                }
+                disabled={saving}
+                onPress={() => {
+                  void select(item.selection);
+                }}
+              />
+            </>
           )}
         />
       </View>

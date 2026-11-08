@@ -1,5 +1,5 @@
 use crate::setup::system_fonts::{self, FamilyEntry, ResolvedFont};
-use lonanote_core::FontSelection;
+use lonanote_core::SystemFontSelection as FontSelection;
 
 #[tauri::command]
 pub async fn list_system_fonts(refresh: bool) -> Result<Vec<FamilyEntry>, String> {

@@ -10,11 +10,11 @@ export function loadFont(font: ResolvedFont): Promise<void> {
   const request = (async () => {
     try {
       const faces = await Promise.all(
-        font.faces.map((face) => {
+        font.faces.map(async (face) => {
           const source =
             face.source.kind === "local"
               ? `local(${JSON.stringify(face.source.name)})`
-              : `url(${JSON.stringify(face.source.url)})`;
+              : `url(${JSON.stringify(face.source.kind === "bundled" ? await (await import("./bundled_fonts")).bundledFontUrl(face.source.assetId) : face.source.url)})`;
           return new FontFace(font.family, source, {
             weight: String(face.weight),
             style: face.italic ? "italic" : "normal",

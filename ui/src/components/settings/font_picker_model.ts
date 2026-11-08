@@ -9,8 +9,11 @@ export function filterFontFamilies(
   return entries
     .filter(
       (entry) =>
-        entry[consumer].available &&
-        `${entry.displayName} ${entry.familyKey}`.toLocaleLowerCase().includes(search),
+        entry[consumer].available && entry.displayName.toLocaleLowerCase().includes(search),
     )
-    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+    .sort(
+      (a, b) =>
+        Number(b.source === "bundled") - Number(a.source === "bundled") ||
+        a.displayName.localeCompare(b.displayName),
+    );
 }

@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { Dialog, NativeSheetStack, Tabs, Text, cn, useUiTheme } from "rn-ui-kit";
+import { Button, Dialog, NativeSheetStack, Tabs, Text, cn, useUiTheme } from "rn-ui-kit";
 import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
 import { useUiPreferences } from "@/hooks/settings";
@@ -8,6 +8,7 @@ import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
 import { GmSettingsPage } from "../pages/gm_settings_page";
 import { type SettingsPageId, getSettingsPage, settingsPages } from "../settings_config";
+import { type SettingsLocation, settingsNavigation } from "../settings_navigation";
 
 type DesktopSettingsDialogProps = {
   initialPageId?: SettingsPageId;
@@ -30,7 +31,18 @@ export function DesktopSettingsDialog({
   const currentWorkspaceId = useCurrentWorkspaceId();
   const [isDebugSheetOpen, setIsDebugSheetOpen] = useState(false);
   const [isGmSheetOpen, setIsGmSheetOpen] = useState(false);
-  const [selectedPageId, setSelectedPageId] = useState<SettingsPageId>(initialPageId);
+  const [navigation, setNavigation] = useState<SettingsLocation[]>([
+    { id: initialPageId, params: {} },
+  ]);
+  const location = navigation[navigation.length - 1];
+  const selectedPageId = location.id;
+  const setSelectedPageId = (id: SettingsPageId) =>
+    setNavigation((stack) => settingsNavigation(stack, { type: "reset", id }));
+  const navigate = (id: SettingsPageId, params?: Record<string, string>) => {
+    if (getSettingsPage(id))
+      setNavigation((stack) => settingsNavigation(stack, { type: "push", id, params }));
+  };
+  const back = () => setNavigation((stack) => settingsNavigation(stack, { type: "back" }));
   const desktopPages = useMemo(
     () =>
       settingsPages.filter(
@@ -126,8 +138,26 @@ export function DesktopSettingsDialog({
                 </Tabs.List>
               </ScrollView>
               <View style={styles.content}>
+                {navigation.length > 1 ? (
+                  <View
+                    style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 8 }}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onPress={back}
+                      accessibilityLabel="返回上一级设置"
+                    >
+                      返回
+                    </Button>
+                    <Text>{selectedPage?.title}</Text>
+                  </View>
+                ) : null}
                 {SelectedPageComponent ? (
                   <SelectedPageComponent
+                    onNavigate={navigate}
+                    onBack={back}
+                    pageParams={location.params}
                     onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
                     onOpenGmSheet={() => setIsGmSheetOpen(true)}
                   />

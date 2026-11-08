@@ -22,6 +22,9 @@ const config = {
   },
 };
 
+// 开源许可直接以 TXT 资源随包发布，Web 与原生端共享同一份原文。
+config.resolver.assetExts = [...new Set([...config.resolver.assetExts, "txt"])];
+
 if (isProd) {
   // 生产模式时不使用缓存 build, 防止安卓构建时因为 package 更新但 src 未改动导致产物未更新
   config.cacheStores = [];
