@@ -34,7 +34,6 @@ bun run licenses:generate
 
 成功下载缓存到已忽略的 .temp/license_materials/，可随时删除，后续会重新下载。网络失败或上游本身没有正文时输出警告，不阻止构建。当前 dark-light 2.0.0 的准确版本材料缺少独立 LICENSE，仍会提示。
 
-生成器不会重新扫描全部间接依赖；新增间接或平台声明时，按实际分发情况将上游总声明追加到完整文本的补充区。iOS 待办见 .agents/work/pending_ios_license_audit.md。
 
 ## 展示与验证
 

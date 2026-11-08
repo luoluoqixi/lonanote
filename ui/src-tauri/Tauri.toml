@@ -42,8 +42,8 @@ label = "main"
 title = "lonanote"
 tabbingIdentifier = "main"
 visible = false
-width = 1024
-height = 576
+width = 1200
+height = 700
 
 [app.security]
 # csp = "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost"
