@@ -74,8 +74,8 @@ pub fn create_workspace_window(
         let size = preferences
             .window_size
             .unwrap_or(super::window_geometry::WindowSize {
-                width: 1024.0,
-                height: 576.0,
+                width: 1200.0,
+                height: 700.0,
             });
         builder = builder.inner_size(size.width, size.height).center();
     }

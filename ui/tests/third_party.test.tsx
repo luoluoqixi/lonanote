@@ -351,7 +351,7 @@ if (process.env.LONANOTE_LICENSE_UI_TEST === "1") {
     expect(licenseTextBlocks("")).toEqual([]);
   });
 
-  test("所有构建只使用唯一生成入口更新两份 TXT", () => {
+  test("各平台构建不自动生成或核验许可", () => {
     for (const mode of ["build:android", "build:ios", "build:web"]) {
       const commands: string[] = [];
       vm.runInNewContext(readFileSync("tools/build/build.cjs", "utf8"), {
@@ -363,7 +363,7 @@ if (process.env.LONANOTE_LICENSE_UI_TEST === "1") {
             ? {
                 execSync: (cmd: string) => {
                   commands.push(cmd);
-                  if (cmd.includes("licenses:")) throw new Error("stop before build");
+                  if (cmd === "bun run build") throw new Error("stop before editor build");
                 },
                 spawn() {},
               }
@@ -371,9 +371,8 @@ if (process.env.LONANOTE_LICENSE_UI_TEST === "1") {
               ? {}
               : require(id),
       });
-      expect(commands).toContain("bun run licenses:generate");
-      expect(commands).not.toContain("bun run licenses:verify");
-      expect(commands).not.toContain("bun run licenses:release");
+      expect(commands).toContain("bun run build");
+      expect(commands.some((cmd) => cmd.includes("licenses:"))).toBe(false);
     }
   });
 

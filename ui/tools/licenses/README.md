@@ -6,7 +6,7 @@
 bun run licenses:generate
 ```
 
-工具使用 Bun 执行 generate.js 和 download.js，不执行 Git 或安装依赖。构建使用同一个生成入口。
+工具使用 Bun 执行 generate.js 和 download.js，不执行 Git 或安装依赖。许可仅通过上述命令手动更新，打包直接使用现有的两份 TXT，不自动重新生成或下载许可。
 
 ## 两份发布文本
 

@@ -213,9 +213,7 @@ function buildEntry() {
   console.log(`  [build] ${label}`);
   console.log("═══════════════════════════════════════════\n");
 
-  // 构建前重生成两份许可文本；缺少本地材料时按准确版本 HTTPS 补取，不执行发行审计。
   run("bun run fonts:verify");
-  run("bun run licenses:generate");
   buildEditor();
 
   // android/ios 需要在执行前切换目录
