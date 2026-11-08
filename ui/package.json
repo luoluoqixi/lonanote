@@ -31,8 +31,8 @@
     "typecheck": "tsc --noEmit --pretty false",
     "sync-patchs": "rn-ui-sync-patches",
     "clear-patch-cache": "rn-ui-clear-patch-cache",
-    "fonts:generate": "bun tools/fonts/generate.ts",
-    "fonts:verify": "bun tools/fonts/generate.ts --check",
+    "fonts:generate": "bun tools/fonts/generate.js",
+    "fonts:verify": "bun tools/fonts/generate.js --check",
     "licenses:generate": "bun tools/licenses/generate.js"
   },
   "dependencies": {

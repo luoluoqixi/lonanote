@@ -12,7 +12,7 @@ const originals = {
   Bold: "41f6554e845e2f5b70adad3950122334b866aac436793b7742ade600067701be",
 };
 export async function generateFontSources(check = false) {
-  const sources: Record<string, string> = {};
+  const sources = {};
   for (const [weight, expected] of Object.entries(originals)) {
     const bytes = await readFile(path.join(root, `FiraCode-${weight}.ttf`));
     if (createHash("sha256").update(bytes).digest("hex") !== expected)
@@ -20,7 +20,7 @@ export async function generateFontSources(check = false) {
     sources[`fira-code-${weight.toLowerCase()}`] =
       `data:font/ttf;base64,${bytes.toString("base64")}`;
   }
-  const text = JSON.stringify(sources) + "\n",
+  const text = `${JSON.stringify(sources)}\n`,
     output = path.join(root, "web_sources.json");
   if (check) {
     if ((await readFile(output, "utf8")) !== text)
