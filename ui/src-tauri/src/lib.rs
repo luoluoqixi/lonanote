@@ -1,4 +1,5 @@
 mod commands;
+pub mod common;
 mod plugins;
 mod setup;
 mod utils;

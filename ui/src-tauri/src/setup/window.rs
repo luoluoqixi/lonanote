@@ -5,6 +5,7 @@ use tauri::{App, WebviewWindow, WebviewWindowBuilder};
 #[cfg(not(target_os = "windows"))]
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
+use crate::common::consts::{DEFAULT_WINDOW_INIT_HEIGHT, DEFAULT_WINDOW_INIT_WIDTH};
 use crate::utils;
 
 pub fn init_main_window(app: &App) -> Result<WebviewWindow> {
@@ -74,8 +75,8 @@ pub fn create_workspace_window(
         let size = preferences
             .window_size
             .unwrap_or(super::window_geometry::WindowSize {
-                width: 1200.0,
-                height: 700.0,
+                width: DEFAULT_WINDOW_INIT_WIDTH,
+                height: DEFAULT_WINDOW_INIT_HEIGHT,
             });
         builder = builder.inner_size(size.width, size.height).center();
     }

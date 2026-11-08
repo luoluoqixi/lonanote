@@ -24,7 +24,7 @@ test("重置窗口尺寸退出全屏和最大化，并保留操作前的位置",
       position = next;
     },
   });
-  expect(size).toEqual({ width: 1024, height: 576 });
+  expect(size).toEqual({ width: 1200, height: 700 });
   expect(position).toEqual({ x: 350, y: 180 });
   expect(fullscreen).toBe(false);
   expect(maximized).toBe(false);

@@ -1,4 +1,6 @@
 // 复用桌面纯状态测试，避免其验证依赖 WebView 与系统窗口运行库。
+#[path = "../../../ui/src-tauri/src/common/mod.rs"]
+mod common;
 #[path = "../../../ui/src-tauri/src/setup/file_ownership.rs"]
 mod file_ownership;
 #[path = "../../../ui/src-tauri/src/setup/window_geometry.rs"]

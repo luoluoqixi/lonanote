@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
+use crate::common::consts::{DEFAULT_WINDOW_INIT_HEIGHT, DEFAULT_WINDOW_INIT_WIDTH};
+
 pub fn geometry_migration(
     values: &HashMap<String, Value>,
     scale: f64,
@@ -65,8 +67,8 @@ pub struct Geometry {
 
 pub fn resolve_geometry(size: Option<WindowSize>, area: WorkArea) -> Geometry {
     let size = size.filter(|size| size.is_valid()).unwrap_or(WindowSize {
-        width: 1024.0,
-        height: 576.0,
+        width: DEFAULT_WINDOW_INIT_WIDTH,
+        height: DEFAULT_WINDOW_INIT_HEIGHT,
     });
     let scale = if area.scale.is_finite() && area.scale > 0.0 {
         area.scale
@@ -104,10 +106,10 @@ mod tests {
         assert_eq!(
             geometry,
             Geometry {
-                x: 548.0,
-                y: 272.0,
-                width: 1024.0,
-                height: 576.0
+                x: 460.0,
+                y: 210.0,
+                width: 1200.0,
+                height: 700.0
             }
         );
     }
@@ -184,7 +186,7 @@ mod tests {
             },
         ] {
             let geometry = resolve_geometry(Some(size), area);
-            assert_eq!((geometry.width, geometry.height), (1024.0, 576.0));
+            assert_eq!((geometry.width, geometry.height), (1200.0, 700.0));
         }
     }
 
