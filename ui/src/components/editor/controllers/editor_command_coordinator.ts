@@ -5,6 +5,8 @@ import type {
 } from "@/assets/editor/src/bridge/protocol";
 import { editorStore } from "@/stores/editor";
 
+import { editorWindowRuntime } from "./editor_window_runtime";
+
 type CommandProvider = (
   command: EditorCommand,
   snapshot?: EditorMenuSnapshot,
@@ -13,6 +15,22 @@ type CommandProvider = (
 const providers = new Map<string, CommandProvider>();
 
 export const editorCommandCoordinator = {
+  prepareMenuEdit: async (editorId: string): Promise<void> => {
+    if (editorStore.getState().activeEditorId !== editorId) return;
+    if (editorWindowRuntime.isRemote()) {
+      const { editorWindowService } = await import("./editor_window_service");
+      await editorWindowService.requestLease(editorId);
+    } else {
+      const { editorInputLeaseCoordinator } = await import("./editor_input_lease_coordinator");
+      await editorInputLeaseCoordinator.requestLease(editorId);
+    }
+  },
+  executeMenuCommand: async (editorId: string, command: EditorCommand): Promise<void> => {
+    await editorCommandCoordinator.prepareMenuEdit(editorId);
+    if (editorStore.getState().activeEditorId !== editorId) return;
+    await editorCommandCoordinator.execute(editorId, command);
+    await editorCommandCoordinator.focusIfActive(editorId);
+  },
   focusIfActive: async (editorId: string): Promise<void> => {
     if (editorStore.getState().activeEditorId !== editorId) return;
     await editorCommandCoordinator.execute(editorId, {

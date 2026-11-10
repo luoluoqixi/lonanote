@@ -28,6 +28,7 @@ import { editorWindowRuntime } from "@/components/editor/controllers/editor_wind
 import { openViewerExternally } from "@/components/editor/controllers/editor_window_viewers";
 import { useEditorSession } from "@/hooks/editor";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
+import { useEditorHistoryStatus } from "@/hooks/editor/use_editor_history_status";
 import { useGlobalSettings } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
@@ -50,6 +51,7 @@ export function DesktopEditorActions({
   const { getSnapshot, editorsById, documentsById, setEditorPreferenceOverrides } =
     useEditorSession();
   const view = editorsById[editorId];
+  const history = useEditorHistoryStatus(editorId);
   const document = view ? documentsById[view.documentId] : null;
   const ref = getEditorTabRef(editorId, getSnapshot());
   const supportsMarkdownModes =
@@ -119,8 +121,7 @@ export function DesktopEditorActions({
     });
   const ready = view?.bridgeState === "ready" && document?.loadState === "ready";
   const previewMode = pendingPreviewMode ?? view?.previewMode ?? false;
-  const editingDisabled =
-    !ready || view?.readOnly || view?.previewMode || document?.editOwnerEditorId !== editorId;
+  const editingDisabled = !ready || view?.readOnly || view?.previewMode;
   const sourceMode = view?.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode;
   const icon = (Icon: typeof Save) => <Icon size={14} color={theme.mutedForeground} />;
   const items: DropdownItemData[] =
@@ -151,17 +152,21 @@ export function DesktopEditorActions({
             value: "undo",
             label: "撤销",
             icon: icon(Undo2),
-            disabled: editingDisabled || !view.editorState.canUndo,
+            disabled: editingDisabled || !history.canUndo,
             onPress: () =>
-              run(() => editorCommandCoordinator.execute(editorId, { type: "history.undo" })),
+              run(() =>
+                editorCommandCoordinator.executeMenuCommand(editorId, { type: "history.undo" }),
+              ),
           },
           {
             value: "redo",
             label: "重做",
             icon: icon(Redo2),
-            disabled: editingDisabled || !view.editorState.canRedo,
+            disabled: editingDisabled || !history.canRedo,
             onPress: () =>
-              run(() => editorCommandCoordinator.execute(editorId, { type: "history.redo" })),
+              run(() =>
+                editorCommandCoordinator.executeMenuCommand(editorId, { type: "history.redo" }),
+              ),
           },
         ]
       : [];

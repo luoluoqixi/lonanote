@@ -29,6 +29,7 @@ import { getDocumentSaveCapabilities } from "@/components/editor/controllers/doc
 import { toggleEditorPreviewMode } from "@/components/editor/controllers/editor_preview_mode";
 import { useOpenInOtherApp } from "@/components/files/open_in_other_app";
 import { useEditorDocument, useEditorView } from "@/hooks/editor";
+import { useEditorHistoryStatus } from "@/hooks/editor/use_editor_history_status";
 import { useGlobalSettings } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
 import { editorStore, isDocumentDirty } from "@/stores/editor";
@@ -50,6 +51,7 @@ export function EditorPage() {
   const editorId = getRouteEditorId(editorIdParam);
   const view = useEditorView(editorId ?? "");
   const document = useEditorDocument(view?.documentId ?? "");
+  const history = useEditorHistoryStatus(editorId);
   const navigation = useNavigation();
   const router = useRouter();
   const { settings } = useGlobalSettings();
@@ -322,7 +324,7 @@ export function EditorPage() {
   const executeEditorCommand = useCallback(
     (command: Parameters<typeof editorCommandCoordinator.execute>[1]) => {
       if (!editorId) return;
-      void editorCommandCoordinator.execute(editorId, command).catch(() => undefined);
+      void editorCommandCoordinator.executeMenuCommand(editorId, command).catch(() => undefined);
     },
     [editorId],
   );
@@ -342,11 +344,7 @@ export function EditorPage() {
 
   const menuItems = useMemo<DropdownItemData[]>(() => {
     if (!view || !document) return [];
-    const editingDisabled =
-      view.bridgeState !== "ready" ||
-      view.readOnly ||
-      view.previewMode ||
-      document.editOwnerEditorId !== view.editorId;
+    const editingDisabled = view.bridgeState !== "ready" || view.readOnly || view.previewMode;
     const items: DropdownItemData[] = [
       {
         disabled:
@@ -369,7 +367,7 @@ export function EditorPage() {
         : []),
       { separator: true, value: "separator-history" },
       {
-        disabled: editingDisabled || !view.editorState.canUndo,
+        disabled: editingDisabled || !history.canUndo,
         icon: <Undo2 color={accentColor} size={14} />,
         iconProps: { ios: { name: "arrow.uturn.backward" } },
         label: "撤销",
@@ -377,7 +375,7 @@ export function EditorPage() {
         value: "undo",
       },
       {
-        disabled: editingDisabled || !view.editorState.canRedo,
+        disabled: editingDisabled || !history.canRedo,
         icon: <Redo2 color={accentColor} size={14} />,
         iconProps: { ios: { name: "arrow.uturn.forward" } },
         label: "重做",
@@ -432,6 +430,8 @@ export function EditorPage() {
     accentColor,
     document,
     executeEditorCommand,
+    history.canUndo,
+    history.canRedo,
     isOpening,
     openInOtherApp,
     router,
