@@ -168,7 +168,9 @@ impl EditorWindowSessions {
     }
     /// 拖放只读取当前会话身份，不得调用 bootstrap 推进 owner 代次。
     pub fn drag_session(&self, label: &str) -> Result<(String, String, u64), String> {
-        if self.orphans.contains_key(label) { return Err("原工作台已关闭".into()); }
+        if self.orphans.contains_key(label) {
+            return Err("原工作台已关闭".into());
+        }
         let owner = self.owner_of(label).ok_or("窗口会话已结束")?;
         let session = self.sessions.get(owner).ok_or("窗口会话已结束")?;
         Ok((owner.into(), session.id.clone(), session.epoch))
@@ -324,7 +326,8 @@ impl EditorWindowSessions {
             return Err("原工作台已销毁，辅助编辑器仅可恢复草稿".into());
         }
         let owner = self.owner_of(caller).ok_or("未知的编辑器窗口会话")?;
-        if self.owner_of(target) != Some(owner) || (caller != owner && target != owner) {
+        let target_owner = self.owner_of(target).ok_or("目标编辑器窗口已关闭")?;
+        if target_owner != owner || (caller != owner && target != owner) {
             return Err("不允许跨会话或辅助窗口之间直接通信".into());
         }
         Ok(())
@@ -442,9 +445,14 @@ mod tests {
         let mut state = EditorWindowSessions::default();
         state.register_owner("main");
         let boot = state.bootstrap("main").unwrap();
-        state.create("main", "transfer", "editor-window-child", json!({})).unwrap();
+        state
+            .create("main", "transfer", "editor-window-child", json!({}))
+            .unwrap();
         for label in ["main", "editor-window-child", "main"] {
-            assert_eq!(state.drag_session(label).unwrap(), ("main".into(), boot.session_id.clone(), boot.owner_epoch));
+            assert_eq!(
+                state.drag_session(label).unwrap(),
+                ("main".into(), boot.session_id.clone(), boot.owner_epoch)
+            );
             assert_eq!(state.epoch("main"), Some(boot.owner_epoch));
         }
     }
@@ -616,6 +624,29 @@ mod tests {
         assert_eq!(state.remove_if_epoch("main", restored.owner_epoch).len(), 2);
         assert!(!state.is_editor("editor-window-one"));
     }
+    #[test]
+    fn closed_target_is_distinct_from_live_foreign_session() {
+        let mut state = EditorWindowSessions::default();
+        state.register_owner("main");
+        state.register_owner("other");
+        let owner = state.bootstrap("main").unwrap();
+        state
+            .create("main", "t", "editor-window-one", json!({}))
+            .unwrap();
+        assert!(state.authorize_target("main", "editor-window-one").is_ok());
+        assert_eq!(
+            state.authorize_target("main", "other").unwrap_err(),
+            "不允许跨会话或辅助窗口之间直接通信"
+        );
+        state.remove_if_epoch("editor-window-one", owner.owner_epoch);
+        assert_eq!(
+            state
+                .authorize_target("main", "editor-window-one")
+                .unwrap_err(),
+            "目标编辑器窗口已关闭"
+        );
+    }
+
     #[test]
     fn transfers_are_idempotent_and_messages_only_route_through_owner() {
         let mut state = EditorWindowSessions::default();

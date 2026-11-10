@@ -11,6 +11,35 @@ const bootstrap = {
   checkpoint: null,
 };
 
+test("销毁通知迟到时忽略已关闭目标的回复失败，仍报告真实跨会话错误", async () => {
+  for (const failure of ["目标编辑器窗口已关闭", "不允许跨会话或辅助窗口之间直接通信"]) {
+    const rpc = new EditorWindowRpc(
+      bootstrap,
+      async () => {
+        throw failure;
+      },
+      async () => {},
+    );
+    rpc.handle("finish-close", async () => true);
+    const receiving = rpc.receive({
+      fromWindowLabel: "child",
+      toWindowLabel: "owner",
+      sessionId: "s",
+      ownerEpoch: 1,
+      requestId: "close:1",
+      payload: { kind: "request", method: "finish-close", args: null },
+    });
+    try {
+      if (failure === "目标编辑器窗口已关闭") {
+        await receiving;
+        await expect(rpc.request("child", "projection", null)).rejects.toThrow(failure);
+      } else await expect(receiving).rejects.toBe(failure);
+    } finally {
+      rpc.dispose();
+    }
+  }
+});
+
 test("成员销毁时立即结束等待，并且不向已销毁成员发送迟到回复", async () => {
   const sent: unknown[] = [];
   let committed = false;

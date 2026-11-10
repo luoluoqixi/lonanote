@@ -108,7 +108,7 @@ export class EditorWindowRpc {
         ? receiverMethods.includes(payload.method) && event.fromWindowLabel === b.ownerWindowLabel
         : !receiverMethods.includes(payload.method);
     if (!permitted) {
-      await this.send(event.fromWindowLabel, event.requestId, {
+      await this.reply(event.fromWindowLabel, event.requestId, {
         kind: "response",
         ok: false,
         error: "窗口角色不允许该操作",
@@ -124,7 +124,7 @@ export class EditorWindowRpc {
         : null;
       if (client && !this.retiredFloor.has(client)) {
         if (this.retiredFloor.size >= 128) {
-          await this.send(event.fromWindowLabel, event.requestId, {
+          await this.reply(event.fromWindowLabel, event.requestId, {
             kind: "response",
             ok: false,
             error: "客户端重连次数过多，请刷新原窗口",
@@ -137,7 +137,7 @@ export class EditorWindowRpc {
         ? Number(requestSequence![2]) <= (this.retiredFloor.get(client) ?? 0)
         : this.completed.size >= 2048;
       if (expired) {
-        await this.send(event.fromWindowLabel, event.requestId, {
+        await this.reply(event.fromWindowLabel, event.requestId, {
           kind: "response",
           ok: false,
           error: "请求去重窗口已过期，请重新连接",
@@ -182,7 +182,18 @@ export class EditorWindowRpc {
     }
     // handler/checkpoint 期间 native 成员可能已销毁，迟到回复不能再触发路由校验。
     if (!this.disposed && !this.disconnectedTargets.has(event.fromWindowLabel))
-      await this.send(event.fromWindowLabel, event.requestId, reply);
+      await this.reply(event.fromWindowLabel, event.requestId, reply);
+  }
+  private async reply(target: string, requestId: string, payload: Reply) {
+    try {
+      await this.send(target, requestId, payload);
+    } catch (error) {
+      // Rust 已移除成员时，Destroyed 通知可能尚未到达 renderer。
+      // 仅结束发往已关闭窗口的迟到回复；认证及跨会话错误继续上报。
+      if ((error instanceof Error ? error.message : String(error)) !== "目标编辑器窗口已关闭")
+        throw error;
+      this.disconnectTarget(target);
+    }
   }
   disconnectTarget(target: string) {
     this.disconnectedTargets.add(target);
