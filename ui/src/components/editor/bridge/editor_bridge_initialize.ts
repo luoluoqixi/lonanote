@@ -9,6 +9,7 @@ import type { DocumentModel, EditorViewSession } from "@/stores/editor";
 
 type EditorBridgeRuntimeInput = {
   platform: EditorPlatform;
+  layoutMode?: "desktop" | "mobile";
   colorScheme: "light" | "dark";
   colors: EditorSemanticColors;
   safeAreaInsets: EditorInsets;

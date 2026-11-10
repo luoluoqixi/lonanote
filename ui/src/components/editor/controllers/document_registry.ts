@@ -6,6 +6,7 @@ import {
   releaseDocumentOwnership,
 } from "@/api/commands/win/file_ownership";
 import { workspaceFile } from "@/api/commands/workspace";
+import { getErrorMessage } from "@/api/common/error_message";
 import { isDesktop } from "@/api/common/platform";
 import {
   type EditorDocumentRef,
@@ -17,10 +18,6 @@ import {
 import { editorWindowRuntime } from "./editor_window_runtime";
 
 const documentLoadTasks = new Map<string, { identityRevision: number; task: Promise<void> }>();
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 async function loadWorkspaceFile(documentId: string): Promise<void> {
   const document = editorStore.getState().documentsById[documentId];
@@ -76,6 +73,7 @@ async function loadDocument(documentId: string): Promise<void> {
     editorStore.getState().documentsById[documentId]?.identityRevision ===
     document.identityRevision;
   editorStore.getState().setDocumentLoadState(documentId, "loading");
+  let stage = "claim-file";
   try {
     await claimDocumentFile(document);
     if (!current()) {
@@ -83,15 +81,26 @@ async function loadDocument(documentId: string): Promise<void> {
       return;
     }
     if (document.ref.kind === "workspaceFile") {
+      stage = "read-workspace-file";
       await loadWorkspaceFile(documentId);
       if (current()) editorStore.getState().setDocumentLoadState(documentId, "ready");
       return;
     }
-
+    stage = "read-loose-file";
     await loadLooseFile(documentId);
     if (current()) editorStore.getState().setDocumentLoadState(documentId, "ready");
   } catch (error) {
-    await releaseDocumentFile(documentLeaseId(document));
+    const context = {
+      documentId,
+      identityRevision: document.identityRevision,
+      reference: document.ref,
+      stage,
+    };
+    // 上层允许静默接收失败，但加载入口必须保留原始 Native 错误和文件上下文。
+    console.error("[editor-load] 读取文档失败", context, error);
+    await releaseDocumentFile(documentLeaseId(document)).catch((releaseError) => {
+      console.warn("[editor-load] 加载失败后释放文件占用失败", context, releaseError);
+    });
     if (!current()) return;
     const message = getErrorMessage(error, "读取文档失败");
     editorStore.getState().setDocumentLoadState(documentId, "error", message);

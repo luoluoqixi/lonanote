@@ -114,6 +114,7 @@ export type EditorInitializePayload = {
   runtime: {
     revision: number;
     platform: EditorPlatform;
+    layoutMode?: "desktop" | "mobile";
     colorScheme: "light" | "dark";
     colors: EditorSemanticColors;
     safeAreaInsets: EditorInsets;
@@ -419,6 +420,9 @@ export function isEditorInitializePayload(value: unknown): value is EditorInitia
     (value.viewState === undefined || isEditorViewSnapshot(value.viewState)) &&
     Number.isSafeInteger(runtime.revision) &&
     isNonEmptyString(runtime.platform) &&
+    (runtime.layoutMode === undefined ||
+      runtime.layoutMode === "desktop" ||
+      runtime.layoutMode === "mobile") &&
     (runtime.colorScheme === "light" || runtime.colorScheme === "dark") &&
     isEditorSemanticColors(runtime.colors) &&
     isRecord(runtime.safeAreaInsets) &&
@@ -451,6 +455,9 @@ export function isEditorRuntimeUpdatePayload(value: unknown): value is EditorRun
     isRecord(value) &&
     Number.isSafeInteger(value.revision) &&
     isNonEmptyString(value.platform) &&
+    (value.layoutMode === undefined ||
+      value.layoutMode === "desktop" ||
+      value.layoutMode === "mobile") &&
     (value.colorScheme === "light" || value.colorScheme === "dark") &&
     isEditorSemanticColors(value.colors) &&
     isRecord(value.safeAreaInsets) &&

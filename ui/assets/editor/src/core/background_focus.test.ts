@@ -1,5 +1,6 @@
 import { history, undo, undoDepth } from "@codemirror/commands";
 import { StateEffect } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 import { Window } from "happy-dom";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -161,6 +162,7 @@ function mouseDown(
     cancelable: true,
     clientX: 200,
     clientY: 600,
+    detail: 1,
     ...init,
   }) as unknown as MouseEvent;
 }
@@ -205,11 +207,14 @@ test("桌面背景点击允许远离短文末尾的坐标连续恢复真实输�
   }
 });
 
-test("桌面各层文末背景连续点击阻止原生清选区，并保持真实 CodeMirror 光标", () => {
+test("桌面各层文末背景连续单击保持真实 CodeMirror 光标，向上拖拽扩展选区", () => {
   const { editor, root, view } = createEditor();
   const session = {
     editor,
-    runtime: { platform: "windows" as EditorPlatform },
+    runtime: {
+      platform: "windows" as EditorPlatform,
+      layoutMode: "desktop" as "desktop" | "mobile",
+    },
     documentReadOnly: false,
     inputEnabled: true,
   };
@@ -218,16 +223,117 @@ test("桌面各层文末背景连续点击阻止原生清选区，并保持真�
     for (const platform of ["windows", "macos", "linux", "web"] as const) {
       session.runtime.platform = platform;
       for (const target of [document.body, root, view.dom, view.scrollDOM, view.contentDOM]) {
-        for (let detail = 1; detail <= 3; detail += 1) {
-          const event = mouseDown({ detail });
+        for (let click = 0; click < 3; click += 1) {
+          view.posAtCoords = ({ y }) => (y > 36 ? 2 : 0);
+          const event = mouseDown();
           target.dispatchEvent(event);
           assert.equal(event.defaultPrevented, true);
           assert.equal(document.activeElement, view.contentDOM);
           assert.equal(view.state.selection.main.head, 2);
           assert.equal(view.state.selection.main.empty, true);
+          document.dispatchEvent(
+            new domWindow.MouseEvent("mousemove", {
+              bubbles: true,
+              clientX: 200,
+              clientY: 20,
+              buttons: 1,
+            }) as unknown as MouseEvent,
+          );
+          assert.equal(view.state.selection.main.anchor, 2);
+          assert.equal(view.state.selection.main.head, 0);
+          document.dispatchEvent(
+            new domWindow.MouseEvent("mouseup", {
+              bubbles: true,
+              clientX: 200,
+              clientY: 20,
+            }) as unknown as MouseEvent,
+          );
         }
       }
     }
+    session.runtime.layoutMode = "mobile";
+    const mobileLayoutClick = mouseDown();
+    root.dispatchEvent(mobileLayoutClick);
+    assert.equal(mobileLayoutClick.defaultPrevented, false);
+  } finally {
+    dispose();
+    editor.destroy();
+    root.remove();
+  }
+});
+
+test("桌面各层留白右键进入编辑器菜单一次，保留选区和坐标，支持只读", () => {
+  const { editor, root, view } = createEditor("选中的正文");
+  const session = {
+    editor,
+    runtime: {
+      platform: "windows" as EditorPlatform,
+      layoutMode: "desktop" as "desktop" | "mobile",
+    },
+    documentReadOnly: false,
+    inputEnabled: true,
+  };
+  const menus: { text: string; x: number; y: number }[] = [];
+  view.dispatch({
+    selection: { anchor: 0, head: 3 },
+    effects: StateEffect.appendConfig.of(
+      EditorView.domEventHandlers({
+        contextmenu: (event, current) => {
+          const selection = current.state.selection.main;
+          menus.push({
+            text: current.state.sliceDoc(selection.from, selection.to),
+            x: event.clientX,
+            y: event.clientY,
+          });
+          event.preventDefault();
+          return true;
+        },
+      }),
+    ),
+  });
+  const dispose = installDesktopBackgroundFocus(root, () => session);
+  const contextMenu = () =>
+    new domWindow.MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      button: 2,
+      clientX: 200,
+      clientY: 600,
+    }) as unknown as MouseEvent;
+  try {
+    for (const platform of ["windows", "macos", "linux"] as const) {
+      session.runtime.platform = platform;
+      for (const readOnly of [false, true]) {
+        session.documentReadOnly = readOnly;
+        session.inputEnabled = !readOnly;
+        for (const target of [document.body, root, view.dom, view.scrollDOM, view.contentDOM]) {
+          const count = menus.length;
+          const event = contextMenu();
+          target.dispatchEvent(mouseDown({ button: 2 }));
+          target.dispatchEvent(event);
+          assert.equal(event.defaultPrevented, true);
+          assert.equal(menus.length, count + 1);
+          assert.deepEqual(menus.at(-1), { text: "选中的", x: 200, y: 600 });
+          assert.equal(view.state.selection.main.anchor, 0);
+          assert.equal(view.state.selection.main.head, 3);
+        }
+      }
+    }
+    const count = menus.length;
+    session.runtime.layoutMode = "mobile";
+    const mobile = contextMenu();
+    root.dispatchEvent(mobile);
+    assert.equal(mobile.defaultPrevented, false);
+    assert.equal(menus.length, count);
+    session.runtime.layoutMode = "desktop";
+    for (const platform of ["ios", "android"] as const) {
+      session.runtime.platform = platform;
+      root.dispatchEvent(contextMenu());
+      assert.equal(menus.length, count);
+    }
+    dispose();
+    root.dispatchEvent(contextMenu());
+    assert.equal(menus.length, count);
   } finally {
     dispose();
     editor.destroy();

@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 
 import type { EditorDocumentCapturePayload } from "../assets/editor/src/bridge/protocol";
 
@@ -518,6 +518,64 @@ test("改名后冲突读取晚返回不覆盖新身份与 draft", async () => {
   await check;
   expect(editorStore.getState().documentsById[documentId].draft).toBe("改名后的 draft");
   expect(editorStore.getState().documentsById[documentId].conflict).toBeNull();
+});
+
+test("加载失败保留 Native 字符串原因，并记录文件引用、失败阶段和原始错误", async () => {
+  const { documentRegistry } =
+    await import("../src/components/editor/controllers/document_registry");
+  const opened = editorStore.getState().openEditor({
+    kind: "workspaceFile",
+    workspaceId: "workspace",
+    filePath: "unreadable.md",
+  });
+  const error = "存储路径不存在: unreadable.md";
+  readText.mockRejectedValueOnce(error);
+  const log = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    await expect(documentRegistry.ensureDocumentLoaded(opened.documentId)).rejects.toBe(error);
+    const document = editorStore.getState().documentsById[opened.documentId];
+    expect(document.loadState).toBe("error");
+    expect(document.loadError).toBe(error);
+    expect(log.mock.calls).toHaveLength(1);
+    expect(log.mock.calls[0][1]).toMatchObject({
+      documentId: opened.documentId,
+      reference: { kind: "workspaceFile", workspaceId: "workspace", filePath: "unreadable.md" },
+      stage: "read-workspace-file",
+    });
+    expect(log.mock.calls[0][2]).toBe(error);
+  } finally {
+    log.mockRestore();
+  }
+});
+
+test("占用登记失败即使释放也失败，仍展示并抛出最初的错误", async () => {
+  const { documentRegistry } =
+    await import("../src/components/editor/controllers/document_registry");
+  const ownership = await import("../src/api/commands/win/file_ownership");
+  const opened = editorStore
+    .getState()
+    .openEditor({ kind: "looseFile", absolutePath: "C:/notes/failed.md" });
+  const error = { message: "文件占用登记失败", code: "claim_failed" };
+  const claim = spyOn(ownership, "claimDocumentFile").mockRejectedValueOnce(error);
+  const release = spyOn(ownership, "releaseDocumentFile").mockRejectedValueOnce("释放失败");
+  const log = spyOn(console, "error").mockImplementation(() => {});
+  const warn = spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    await expect(documentRegistry.ensureDocumentLoaded(opened.documentId)).rejects.toBe(error);
+    const document = editorStore.getState().documentsById[opened.documentId];
+    expect(document.loadState).toBe("error");
+    expect(document.loadError).toBe("文件占用登记失败");
+    expect(log.mock.calls[0][1]).toMatchObject({
+      stage: "claim-file",
+      reference: { absolutePath: "C:/notes/failed.md" },
+    });
+    expect(log.mock.calls[0][2]).toBe(error);
+  } finally {
+    claim.mockRestore();
+    release.mockRestore();
+    log.mockRestore();
+    warn.mockRestore();
+  }
 });
 
 test("文档加载晚返回不发布旧身份；删除 dirty 无 view 文档及多个 views", async () => {
