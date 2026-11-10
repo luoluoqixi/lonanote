@@ -116,7 +116,7 @@ pub async fn get_window_bootstrap(
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .preserve_owner_claims(window.label());
-    // 恢复记录中的文档仍由同一 owner 持有；新 renderer 按 documentId 原子更换 lease。
+    // 编辑器 bootstrap 已按恢复快照清理残留占用；这里保留其余有效文档，避免误释放。
     if !preserve_claims {
         super::file_ownership_api::release_window(window.label());
     }

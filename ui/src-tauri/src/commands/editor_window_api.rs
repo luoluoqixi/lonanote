@@ -39,7 +39,22 @@ pub async fn get_editor_window_bootstrap(
     if WINDOW_SESSIONS.start_cause(window.label()).is_some() {
         sessions.register_owner(window.label());
     }
-    sessions.bootstrap(window.label())
+    let bootstrap = sessions.bootstrap(window.label())?;
+    if bootstrap.role == "workbench" {
+        // 与代次切换共用写屏障：旧请求失效后，再按本次实际恢复的快照清理占用。
+        let released = super::file_ownership_api::FILES
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .restore_window_claims(window.label(), bootstrap.checkpoint.as_ref());
+        // 原 renderer 的保存对话框凭据也已失效，不能继续阻塞文件操作。
+        super::document_save_api::release_window(window.label());
+        log::info!(
+            "编辑器会话恢复文件占用：window={}, epoch={}, released={released}",
+            window.label(),
+            bootstrap.owner_epoch,
+        );
+    }
+    Ok(bootstrap)
 }
 #[tauri::command]
 // Windows WebView 创建必须离开同步 command 的 UI 线程，否则 build 会等待自身而死锁。

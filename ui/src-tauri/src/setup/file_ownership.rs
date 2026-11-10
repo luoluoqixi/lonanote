@@ -161,6 +161,28 @@ impl FileOwnership {
     pub fn release_window(&mut self, window: &str) {
         self.claims.retain(|(owner, _), _| owner != window);
     }
+    /// 新 renderer 只恢复快照中的文档；未被恢复的旧身份不应继续阻止打开同一文件。
+    pub fn restore_window_claims(
+        &mut self,
+        window: &str,
+        checkpoint: Option<&serde_json::Value>,
+    ) -> usize {
+        // 与前端恢复条件一致：同时具备文档和编辑器映射才会恢复文档身份。
+        let documents = checkpoint
+            .filter(|value| {
+                value
+                    .get("editorsById")
+                    .is_some_and(|value| value.is_object())
+            })
+            .and_then(|value| value.get("documentsById"))
+            .and_then(|value| value.as_object());
+        let before = self.claims.len();
+        self.claims.retain(|_, (_, owner)| {
+            owner.window_label != window
+                || documents.is_some_and(|documents| documents.contains_key(&owner.document_id))
+        });
+        before - self.claims.len()
+    }
     pub fn release_document(&mut self, window: &str, document: &str) {
         self.claims
             .retain(|_, (_, owner)| owner.window_label != window || owner.document_id != document);
@@ -170,6 +192,95 @@ impl FileOwnership {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reload_keeps_checkpoint_claims_and_other_windows_but_releases_stale_documents() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut claims = FileOwnership::default();
+        let owner = |window: &str, document: &str| FileOwner {
+            window_label: window.into(),
+            document_id: document.into(),
+            lease_id: format!("{document}:0"),
+        };
+        for (name, window, document) in [
+            ("restored.md", "main", "restored"),
+            ("stale.md", "main", "stale"),
+            ("foreign.md", "other", "foreign"),
+        ] {
+            let path = dir.path().join(name);
+            std::fs::write(&path, name).unwrap();
+            claims
+                .claim(
+                    FileIdentity::resolve(&path).unwrap(),
+                    owner(window, document),
+                )
+                .unwrap();
+        }
+        let stale = dir.path().join("stale.md");
+        // 同一窗口的新文档身份确实会被旧占用拒绝。
+        assert_eq!(
+            claims.claim(FileIdentity::resolve(&stale).unwrap(), owner("main", "new")),
+            Err(owner("main", "stale"))
+        );
+        let checkpoint = serde_json::json!({
+            "documentsById": {"restored": {}}, "editorsById": {},
+        });
+        assert_eq!(claims.restore_window_claims("main", Some(&checkpoint)), 1);
+        claims
+            .claim(FileIdentity::resolve(&stale).unwrap(), owner("main", "new"))
+            .unwrap();
+        for (name, window, document) in [
+            ("restored.md", "main", "restored"),
+            ("foreign.md", "other", "foreign"),
+        ] {
+            assert_eq!(
+                claims.claim(
+                    FileIdentity::resolve(&dir.path().join(name)).unwrap(),
+                    owner("third", "intruder")
+                ),
+                Err(owner(window, document))
+            );
+        }
+        // 快照中的文档仍可以按相同 documentId 交接占用。
+        claims
+            .claim(
+                FileIdentity::resolve(&dir.path().join("restored.md")).unwrap(),
+                owner("main", "restored"),
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn reload_without_restorable_checkpoint_clears_only_current_window() {
+        let dir = tempfile::tempdir().unwrap();
+        for checkpoint in [
+            None,
+            Some(serde_json::json!({"documentsById": {"old": {}}})),
+        ] {
+            let mut claims = FileOwnership::default();
+            for window in ["main", "other"] {
+                let path = dir.path().join(window);
+                std::fs::write(&path, window).unwrap();
+                claims
+                    .claim(
+                        FileIdentity::resolve(&path).unwrap(),
+                        FileOwner {
+                            window_label: window.into(),
+                            document_id: "old".into(),
+                            lease_id: "old:0".into(),
+                        },
+                    )
+                    .unwrap();
+            }
+            assert_eq!(claims.restore_window_claims("main", checkpoint.as_ref()), 1);
+            assert!(claims
+                .assert_transfer_access("third", &[dir.path().join("main")])
+                .is_ok());
+            assert!(claims
+                .assert_transfer_access("third", &[dir.path().join("other")])
+                .is_err());
+        }
+    }
 
     #[test]
     fn overwrite_rejects_own_loose_file_and_alias_even_after_deletion() {
