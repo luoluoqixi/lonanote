@@ -141,7 +141,7 @@ async fn show_in_folder(path: String) -> Result<()> {
     #[cfg(target_os = "windows")]
     {
         // Shell 和网络路径解析均可能阻塞，不能占用命令执行线程。
-        return tokio::task::spawn_blocking(move || show_in_folder_windows(path)).await?;
+        tokio::task::spawn_blocking(move || show_in_folder_windows(path)).await?
     }
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
