@@ -1,6 +1,107 @@
 import { expect, test } from "bun:test";
 
-import { chooseUntitledSaveTargetWith } from "../src/components/editor/controllers/untitled_save_target";
+import {
+  chooseUntitledSaveTargetWith,
+  selectedSaveDirectory,
+} from "../src/components/editor/controllers/untitled_save_target";
+import type { ExplorerWorkspace } from "../src/stores/workspace/workspace_explorer_store";
+
+test("保存目录仅使用选中文件夹，忽略文件选择，失效或空选择回根目录", () => {
+  const explorer: ExplorerWorkspace = {
+    epoch: 1,
+    expandedPaths: [],
+    selectedPaths: [],
+    focusedPath: null,
+    rangeAnchorPath: null,
+    selectionMode: false,
+    directories: {
+      "": {
+        loading: false,
+        error: null,
+        stale: false,
+        requestId: 1,
+        snapshot: {
+          path: "",
+          entries: [
+            {
+              path: "notes",
+              fileType: "directory",
+              lastModifiedTime: null,
+              createTime: null,
+              size: null,
+            },
+            {
+              path: "notes/a.md",
+              fileType: "file",
+              lastModifiedTime: null,
+              createTime: null,
+              size: null,
+            },
+            {
+              path: "README.md",
+              fileType: "file",
+              lastModifiedTime: null,
+              createTime: null,
+              size: null,
+            },
+          ],
+        },
+      },
+    },
+  };
+  for (const [paths, focused, expected] of [
+    [["notes"], "notes", "notes"],
+    [["notes/a.md"], "notes/a.md", ""],
+    [["README.md", "notes"], "notes", "notes"],
+    [["notes/a.md", "notes"], "notes/a.md", "notes"],
+    [["notes"], null, "notes"],
+    [["README.md"], "notes", ""],
+    [["removed"], "removed", ""],
+    [[], "notes", ""],
+  ] as const) {
+    expect(
+      selectedSaveDirectory({ ...explorer, selectedPaths: [...paths], focusedPath: focused }),
+    ).toBe(expected);
+  }
+  expect(selectedSaveDirectory()).toBe("");
+});
+
+test("系统保存框使用工作区选中目录，Native 目录选择使用相同初始路径", async () => {
+  for (const tauri of [true, false]) {
+    for (const root of ["C:\\notes\\", "/notes/"]) {
+      for (const selectedDirectory of ["", "folder/child"]) {
+        await chooseUntitledSaveTargetWith(
+          { title: "无标题" },
+          {
+            tauri,
+            workspaceId: "w",
+            selectedDirectory,
+            root: async () => root,
+            dialog: async ({ defaultDirectory }) => {
+              const expected = selectedDirectory
+                ? root.startsWith("C:")
+                  ? "C:\\notes\\folder\\child"
+                  : "/notes/folder/child"
+                : root;
+              expect(defaultDirectory).toBe(expected);
+              return null;
+            },
+            directory: async (id, name, initialPath) => {
+              expect([id, name, initialPath]).toEqual(["w", "无标题.md", selectedDirectory]);
+              return null;
+            },
+            prepare: async () => {
+              throw new Error("不应写入");
+            },
+            nativeTarget: async () => {
+              throw new Error("不应写入");
+            },
+          },
+        );
+      }
+    }
+  }
+});
 
 for (const [selected, expected, confirmed] of [
   ["C:/notes/existing.md", "C:/notes/existing.md", true],
