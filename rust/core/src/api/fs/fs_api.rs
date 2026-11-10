@@ -7,8 +7,9 @@ use walkdir::WalkDir;
 use crate::utils::{self, fs_utils};
 
 #[command("fs")]
-fn exists(path: String) -> bool {
-    PathBuf::from(path).exists()
+fn exists(path: String) -> Result<bool> {
+    // 保留权限及 I/O 错误，调用方不能将这些情况误认为文件已被删除。
+    Ok(PathBuf::from(path).try_exists()?)
 }
 
 #[command("fs")]

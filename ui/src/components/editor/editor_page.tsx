@@ -19,7 +19,6 @@ import { type DropdownItemData, confirmNative, useUiTheme } from "rn-ui-kit";
 import { isMobile } from "@/api/common/platform";
 import { isDesktop } from "@/api/common/platform";
 import {
-  documentConflictCoordinator,
   documentRegistry,
   editorCommandCoordinator,
   editorInputLeaseCoordinator,
@@ -62,8 +61,6 @@ export function EditorPage() {
   const [mobileInputMethodEnabled, setMobileInputMethodEnabled] = useState(true);
   const [editorHeaderHidden, setEditorHeaderHidden] = useState(false);
   const [closeSaveError, setCloseSaveError] = useState<string | null>(null);
-  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
-  const [dismissedConflictAt, setDismissedConflictAt] = useState<string | null>(null);
   const [isNativeDialogOpen, setIsNativeDialogOpen] = useState(false);
   const nativeDialogInFlightRef = useRef(false);
   const mountedRef = useRef(true);
@@ -83,9 +80,6 @@ export function EditorPage() {
   const accentColor = theme.primary as ComponentProps<typeof ExternalLink>["color"];
   const documentId = document?.documentId ?? null;
   const isDirty = document ? isDocumentDirty(document) : false;
-  const conflictDetectedAt = document?.conflict?.detectedAt ?? null;
-  const isConflictDialogOpen =
-    conflictDetectedAt !== null && dismissedConflictAt !== conflictDetectedAt;
   const shouldFlushBeforeClose =
     document?.ref.kind !== "untitled" &&
     (settings.editorDefaults.autoSave || settings.editorDefaults.autoSaveOnFocusChange);
@@ -174,28 +168,6 @@ export function EditorPage() {
     continueRemoval();
   }, [continueRemoval, documentId]);
 
-  const keepLocalConflict = useCallback(async () => {
-    if (!documentId) return;
-    setIsResolvingConflict(true);
-    try {
-      await documentConflictCoordinator.keepLocal(documentId);
-      await saveCoordinator.flushDocument(documentId);
-    } finally {
-      setIsResolvingConflict(false);
-    }
-  }, [documentId]);
-
-  const loadExternalConflict = useCallback(async () => {
-    if (!documentId) return;
-    setIsResolvingConflict(true);
-    try {
-      saveCoordinator.cancelAutoSave(documentId);
-      await documentConflictCoordinator.loadExternal(documentId);
-    } finally {
-      setIsResolvingConflict(false);
-    }
-  }, [documentId]);
-
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -204,47 +176,15 @@ export function EditorPage() {
   }, []);
 
   useEffect(() => {
-    if (
-      !documentId ||
-      isSavingBeforeClose ||
-      isResolvingConflict ||
-      nativeDialogInFlightRef.current ||
-      (!isConflictDialogOpen && !closeDialogOpen)
-    ) {
+    if (!documentId || isSavingBeforeClose || nativeDialogInFlightRef.current || !closeDialogOpen) {
       return;
     }
 
-    // 冲突与关闭失败可能同时出现，每次只展示一个 NativeDialog，优先处理冲突。
+    // 关闭确认串行展示；保存冲突由保存协调器统一处理。
     nativeDialogInFlightRef.current = true;
     setIsNativeDialogOpen(true);
     const showDialog = async () => {
       try {
-        if (isConflictDialogOpen) {
-          const result = await confirmNative({
-            title: "检测到外部修改",
-            message: "磁盘中的文件已在外部修改。自动保存已暂停。",
-            buttons: [
-              { key: "cancel", text: "稍后处理", style: "cancel" },
-              { key: "keep-local", text: "保留本地" },
-              { key: "load-external", text: "加载外部版本", style: "destructive" },
-            ],
-          });
-          if (!mountedRef.current) return;
-          setDismissedConflictAt(conflictDetectedAt);
-          setCloseDialogOpen(false);
-          setCloseSaveError(null);
-          if (result === "keep-local") {
-            await keepLocalConflict();
-          } else if (result === "load-external") {
-            await loadExternalConflict();
-          } else {
-            pendingRemovalActionRef.current = null;
-            return;
-          }
-          if (mountedRef.current && pendingRemovalActionRef.current) await saveBeforeClose();
-          return;
-        }
-
         const result = await confirmNative({
           title: closeSaveError ? "无法保存文档" : "保存更改？",
           message: closeSaveError ?? "此文档包含尚未保存的更改。",
@@ -276,15 +216,10 @@ export function EditorPage() {
   }, [
     closeDialogOpen,
     closeSaveError,
-    conflictDetectedAt,
     discardBeforeClose,
     documentId,
-    isConflictDialogOpen,
     isNativeDialogOpen,
-    isResolvingConflict,
     isSavingBeforeClose,
-    keepLocalConflict,
-    loadExternalConflict,
     saveBeforeClose,
   ]);
 
@@ -293,7 +228,7 @@ export function EditorPage() {
       allowNextRemovalRef.current = false;
       return;
     }
-    if (isSavingBeforeClose || isResolvingConflict || nativeDialogInFlightRef.current) return;
+    if (isSavingBeforeClose || nativeDialogInFlightRef.current) return;
     pendingRemovalActionRef.current = data.action;
     if (shouldFlushBeforeClose) {
       void saveBeforeClose();

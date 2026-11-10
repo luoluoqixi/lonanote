@@ -1,5 +1,6 @@
+import { fs } from "@/api/commands/fs";
 import { workspaceFile } from "@/api/commands/workspace";
-import type { FileFingerprint } from "@/stores/editor";
+import type { DocumentModel, FileFingerprint } from "@/stores/editor";
 import { editorStore, isDocumentDirty } from "@/stores/editor";
 import { normalizeEditorDocumentText } from "@/stores/editor/editor_document_types";
 
@@ -20,41 +21,64 @@ function isSameFingerprint(left: FileFingerprint | null, right: FileFingerprint 
 
 async function readExternalDocument(
   documentId: string,
-): Promise<{ text: string; fingerprint: FileFingerprint } | null> {
+): Promise<{ text: string; fingerprint: FileFingerprint | null } | null> {
   const document = editorStore.getState().documentsById[documentId];
-  if (!document || document.ref.kind !== "workspaceFile") return null;
+  if (!document || document.ref.kind === "untitled") return null;
 
-  const { workspaceId, filePath } = document.ref;
-  const [text, metadata] = await Promise.all([
-    workspaceFile.readText(workspaceId, filePath),
-    workspaceFile.metadata(workspaceId, filePath),
-  ]);
+  const [text, metadata] =
+    document.ref.kind === "workspaceFile"
+      ? await Promise.all([
+          workspaceFile.readText(document.ref.workspaceId, document.ref.filePath),
+          workspaceFile.metadata(document.ref.workspaceId, document.ref.filePath),
+        ])
+      : [await fs.readToString(document.ref.absolutePath), null];
   if (
     editorStore.getState().documentsById[documentId]?.identityRevision !== document.identityRevision
   )
     return null;
-  return { text: normalizeEditorDocumentText(text), fingerprint: toFingerprint(metadata) };
+  return {
+    text: normalizeEditorDocumentText(text),
+    fingerprint: metadata ? toFingerprint(metadata) : null,
+  };
+}
+
+async function fileExists(document: DocumentModel): Promise<boolean> {
+  if (document.ref.kind === "workspaceFile")
+    return workspaceFile.exists(document.ref.workspaceId, document.ref.filePath);
+  if (document.ref.kind === "looseFile") return fs.exists(document.ref.absolutePath);
+  return false;
 }
 
 export const documentConflictCoordinator = {
   checkForExternalChange: async (
     documentId: string,
-  ): Promise<"unchanged" | "reloaded" | "conflict"> => {
+  ): Promise<"unchanged" | "reloaded" | "conflict" | "missing"> => {
     const document = editorStore.getState().documentsById[documentId];
-    if (!document || document.ref.kind !== "workspaceFile" || !document.savedFingerprint) {
+    if (!document || document.ref.kind === "untitled") {
       return "unchanged";
     }
 
-    const metadata = await workspaceFile.metadata(document.ref.workspaceId, document.ref.filePath);
-    if (
-      editorStore.getState().documentsById[documentId]?.identityRevision !==
-      document.identityRevision
-    )
-      return "unchanged";
-    const externalFingerprint = toFingerprint(metadata);
-    if (isSameFingerprint(document.savedFingerprint, externalFingerprint)) return "unchanged";
-
-    const external = await readExternalDocument(documentId);
+    let external;
+    try {
+      if (document.ref.kind === "workspaceFile" && document.savedFingerprint) {
+        const metadata = await workspaceFile.metadata(
+          document.ref.workspaceId,
+          document.ref.filePath,
+        );
+        if (isSameFingerprint(document.savedFingerprint, toFingerprint(metadata)))
+          return "unchanged";
+      }
+      external = await readExternalDocument(documentId);
+    } catch (error) {
+      // 仅确认不存在时允许重新创建；权限及其他 I/O 错误仍交给调用方处理。
+      if (await fileExists(document)) throw error;
+      if (
+        editorStore.getState().documentsById[documentId]?.identityRevision ===
+        document.identityRevision
+      )
+        editorStore.getState().clearDocumentConflict(documentId);
+      return "missing";
+    }
     const latestDocument = editorStore.getState().documentsById[documentId];
     if (
       !external ||

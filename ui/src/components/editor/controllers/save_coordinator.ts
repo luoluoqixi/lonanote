@@ -9,6 +9,7 @@ import { normalizeEditorDocumentText } from "@/stores/editor/editor_document_typ
 import { settingsStore } from "@/stores/settings";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 
+import { confirmExternalDocumentChange } from "./document_conflict_dialog";
 import { documentHistoryService } from "./document_history";
 import { editorInputLeaseCoordinator } from "./editor_input_lease_coordinator";
 import { editorWindowRuntime } from "./editor_window_runtime";
@@ -181,17 +182,34 @@ async function writeLatestSnapshot(documentId: string): Promise<DocumentSaveResu
       await target.abort().catch((error) => console.warn("释放保存目标失败", error));
     }
   }
-  if (!isDocumentDirty(document)) return "saved";
-
   if (document.loadState !== "ready") {
     throw new Error("文档尚未加载完成，无法保存");
   }
-  await documentConflictCoordinator.checkForExternalChange(documentId);
+  const identityRevision = document.identityRevision;
+  const externalState = await documentConflictCoordinator.checkForExternalChange(documentId);
   document = editorStore.getState().documentsById[documentId];
-  if (!document || !isDocumentDirty(document)) return "saved";
+  if (!document || document.identityRevision !== identityRevision) return "cancelled";
+  if (!isDocumentDirty(document) && externalState !== "missing") return "saved";
   if (document.conflict) {
     clearAutoSaveTimer(getEntry(documentId));
-    throw new Error("文档存在外部修改冲突，无法保存");
+    const before = document;
+    const choice = await confirmExternalDocumentChange(document.title);
+    if (choice !== "overwrite" && choice !== "discard") return "cancelled";
+    await captureLatestDraft(documentId, true);
+    document = editorStore.getState().documentsById[documentId];
+    // 弹窗等待期间的输入或身份变更不属于本次确认，不能丢弃或写入。
+    if (
+      !document ||
+      document.identityRevision !== before.identityRevision ||
+      document.draftRevision !== before.draftRevision
+    )
+      return "cancelled";
+    if (choice === "discard") {
+      await documentConflictCoordinator.loadExternal(documentId);
+      const latest = editorStore.getState().documentsById[documentId];
+      return latest && !isDocumentDirty(latest) ? "saved" : "cancelled";
+    }
+    // 覆盖只作用于本次保存；写入失败时继续保留冲突并暂停自动保存。
   }
   if (document.ref.kind === "untitled") return "cancelled";
 

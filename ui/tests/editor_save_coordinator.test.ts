@@ -4,6 +4,11 @@ import type { EditorDocumentCapturePayload } from "../assets/editor/src/bridge/p
 
 let diskText = "原始内容";
 let modifiedAt = 1;
+let fileExists = true;
+const confirmConflict = mock(async (): Promise<string | null> => "cancel");
+mock.module("@/components/editor/controllers/document_conflict_dialog", () => ({
+  confirmExternalDocumentChange: confirmConflict,
+}));
 const metadata = mock(async () => ({ size: diskText.length, modifiedAt }));
 const readText = mock(async () => diskText);
 const writeText = mock(async (_workspaceId: string, _path: string, text: string) => {
@@ -12,9 +17,21 @@ const writeText = mock(async (_workspaceId: string, _path: string, text: string)
 });
 
 mock.module("@/api/commands/workspace", () => ({
-  workspaceFile: { metadata, readText, writeText },
+  workspaceFile: { metadata, readText, writeText, exists: async () => fileExists },
 }));
-mock.module("@/api/commands/fs", () => ({ fs: {} }));
+mock.module("@/api/commands/fs", () => ({
+  fs: {
+    exists: async () => fileExists,
+    readToString: async () => {
+      if (!fileExists) throw new Error("不存在");
+      return diskText;
+    },
+    write: async (_path: string, text: string) => {
+      diskText = text;
+      fileExists = true;
+    },
+  },
+}));
 mock.module("@/api/common/platform", () => ({
   isDesktop: () => true,
   isTauri: () => false,
@@ -67,6 +84,116 @@ function captureDraft(documentId: string): EditorDocumentCapturePayload {
   return { revision: document.draftRevision, text: document.draft };
 }
 
+test("外部修改选择覆盖时写入本地草稿并清除冲突", async () => {
+  const { documentId } = openDocument();
+  diskText = "外部修改";
+  modifiedAt++;
+  confirmConflict.mockResolvedValueOnce("overwrite");
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("saved");
+  expect(diskText).toBe("本地编辑");
+  expect(isDocumentDirty(editorStore.getState().documentsById[documentId])).toBe(false);
+  expect(editorStore.getState().documentsById[documentId].conflict).toBeNull();
+});
+
+test("外部修改选择丢弃时加载磁盘版本而不写入", async () => {
+  const { documentId } = openDocument();
+  diskText = "外部修改";
+  modifiedAt++;
+  confirmConflict.mockResolvedValueOnce("discard");
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("saved");
+  expect(diskText).toBe("外部修改");
+  expect(editorStore.getState().documentsById[documentId].draft).toBe("外部修改");
+  expect(isDocumentDirty(editorStore.getState().documentsById[documentId])).toBe(false);
+});
+
+test("冲突确认期间新增编辑时不丢弃草稿", async () => {
+  const { documentId } = openDocument();
+  diskText = "外部修改";
+  modifiedAt++;
+  confirmConflict.mockImplementationOnce(async () => {
+    editorStore.getState().setDocumentDraft(documentId, "确认期间输入");
+    return "discard";
+  });
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("cancelled");
+  expect(editorStore.getState().documentsById[documentId].draft).toBe("确认期间输入");
+  expect(diskText).toBe("外部修改");
+});
+
+test("关闭时保存遇到冲突选择取消，保留标签与本地草稿", async () => {
+  const { documentId, editorId } = openDocument();
+  diskText = "外部修改";
+  modifiedAt++;
+  const { createEditorCloseActions } =
+    await import("../src/components/editor/controllers/editor_close_actions");
+  const actions = createEditorCloseActions({ saveCoordinator, confirmDirty: async () => "save" });
+  expect(await actions.close({ editorIds: [editorId] })).toBe(false);
+  expect(editorStore.getState().editorsById[editorId]).toBeDefined();
+  expect(editorStore.getState().documentsById[documentId].draft).toBe("本地编辑");
+  expect(diskText).toBe("外部修改");
+});
+
+test("外部检查期间文档改名时不写入新身份", async () => {
+  const { documentId } = openDocument();
+  modifiedAt++;
+  readText.mockImplementationOnce(async () => {
+    editorStore.getState().renameWorkspacePath("workspace", "note.md", "renamed.md");
+    return "原始内容";
+  });
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("cancelled");
+  expect(diskText).toBe("原始内容");
+});
+
+test("外部删除后保存重新创建文件，真实写入失败仍保留草稿", async () => {
+  const { documentId } = openDocument();
+  fileExists = false;
+  metadata.mockRejectedValue(new Error("不存在"));
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("saved");
+  expect(diskText).toBe("本地编辑");
+  editorStore.getState().setDocumentDraft(documentId, "再次输入");
+  writeText.mockRejectedValueOnce(new Error("拒绝写入"));
+  await expect(saveCoordinator.requestSaveDocument(documentId)).rejects.toThrow("拒绝写入");
+  expect(editorStore.getState().documentsById[documentId].draft).toBe("再次输入");
+  expect(isDocumentDirty(editorStore.getState().documentsById[documentId])).toBe(true);
+});
+
+test("文件仍存在时元数据错误不能视为外部删除", async () => {
+  const { documentId } = openDocument();
+  metadata.mockRejectedValueOnce(new Error("读取被拒绝"));
+  await expect(saveCoordinator.requestSaveDocument(documentId)).rejects.toThrow("读取被拒绝");
+  expect(diskText).toBe("原始内容");
+});
+
+test("没有新增编辑时主动保存也会重建被外部删除的文件", async () => {
+  const { documentId } = openDocument();
+  editorStore.getState().discardDocumentDraft(documentId);
+  fileExists = false;
+  diskText = "";
+  metadata.mockRejectedValue(new Error("不存在"));
+  readText.mockRejectedValue(new Error("不存在"));
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("saved");
+  expect(diskText).toBe("原始内容");
+});
+
+test("外部文件也检测冲突，丢弃后再次编辑可重新创建已删除文件", async () => {
+  const { documentId } = editorStore.getState().openEditor({
+    kind: "looseFile",
+    absolutePath: "C:/notes/note.md",
+  });
+  editorStore.getState().setDocumentPersistedSnapshot(documentId, diskText);
+  editorStore.getState().setDocumentLoadState(documentId, "ready");
+  editorStore.getState().setDocumentDraft(documentId, "本地修改");
+  diskText = "外部修改";
+  confirmConflict.mockResolvedValueOnce("discard");
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("saved");
+  expect(diskText).toBe("外部修改");
+  expect(editorStore.getState().documentsById[documentId].draft).toBe("外部修改");
+  editorStore.getState().setDocumentDraft(documentId, "删除后编辑");
+  fileExists = false;
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("saved");
+  expect(fileExists).toBe(true);
+  expect(diskText).toBe("删除后编辑");
+});
+
 beforeEach(() => {
   editorStore.setState({
     documentIds: [],
@@ -80,6 +207,9 @@ beforeEach(() => {
   invalidatePaths.mockImplementation(async () => {});
   diskText = "原始内容";
   modifiedAt = 1;
+  fileExists = true;
+  confirmConflict.mockReset();
+  confirmConflict.mockImplementation(async () => "cancel");
   metadata.mockReset();
   metadata.mockImplementation(async () => ({ size: diskText.length, modifiedAt }));
   readText.mockReset();
@@ -236,11 +366,11 @@ test("写入后 metadata 读取失败，下一次保存仍能通过 savedText �
   expect(editorStore.getState().documentsById[documentId].conflict).toBeNull();
 });
 
-test("真实外部内容变化仍阻止覆盖，继续编辑也不会恢复自动保存", async () => {
+test("外部修改选择取消时保留双方内容，继续编辑也不会恢复自动保存", async () => {
   const { documentId } = openDocument();
   diskText = "真正的外部编辑";
   modifiedAt += 1;
-  await expect(saveCoordinator.flushDocument(documentId)).rejects.toThrow("外部修改冲突");
+  expect(await saveCoordinator.requestSaveDocument(documentId)).toBe("cancelled");
   editorStore.getState().setDocumentDraft(documentId, "冲突后的编辑");
   saveCoordinator.scheduleAutoSave(documentId);
   expect(editorStore.getState().documentsById[documentId].saveState).toBe("conflict");
@@ -280,7 +410,7 @@ test("检测冲突时取消 capture 期间新建的自动保存 timer，避免�
     editorStore.getState().setDocumentDraft(documentId, "capture 期间的新编辑");
     saveCoordinator.scheduleAutoSave(documentId);
     releaseCapture.resolve();
-    expect(await saveError).toMatchObject({ message: "文档存在外部修改冲突，无法保存" });
+    expect(await saveError).toBeUndefined();
     const detectedAt = editorStore.getState().documentsById[documentId].conflict?.detectedAt;
     await new Promise((resolve) => setTimeout(resolve, 150));
     expect(capture).toHaveBeenCalledTimes(1);

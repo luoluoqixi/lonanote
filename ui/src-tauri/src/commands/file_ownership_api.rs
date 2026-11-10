@@ -48,18 +48,43 @@ pub async fn claim_document_file(
                 "workspace.file.native_path",
                 workspace_id,
             )?;
-            PathBuf::from(
-                workspace_manager()
-                    .native_path(&workspace_id, &file_path)
-                    .await
-                    .map_err(|error| error.to_string())?
-                    .ok_or("当前 Storage Provider 未提供本地文件路径")?,
-            )
+            let native = workspace_manager()
+                .native_path(&workspace_id, &file_path)
+                .await;
+            match native {
+                Ok(path) => PathBuf::from(path.ok_or("当前 Storage Provider 未提供本地文件路径")?),
+                Err(error) => {
+                    if workspace_manager()
+                        .file_exists(&workspace_id, &file_path)
+                        .await
+                        .map_err(|e| e.to_string())?
+                    {
+                        return Err(error.to_string());
+                    }
+                    // 缺失文件通过 Provider 校验父目录，避免绕过路径及符号链接边界。
+                    let parent = file_path.parent().ok_or("缺少父目录")?;
+                    let parent = workspace_manager()
+                        .native_path(&workspace_id, &parent)
+                        .await
+                        .map_err(|e| e.to_string())?
+                        .ok_or("当前 Storage Provider 未提供本地文件路径")?;
+                    PathBuf::from(parent).join(file_path.file_name().ok_or("缺少文件名")?.as_str())
+                }
+            }
         }
         FileReference::LooseFile { absolute_path } => {
-            let path = PathBuf::from(absolute_path)
-                .canonicalize()
-                .map_err(|e| e.to_string())?;
+            let path = PathBuf::from(absolute_path);
+            let path = match path.canonicalize() {
+                Ok(path) => path,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    let parent = path.parent().ok_or("缺少父目录")?;
+                    parent
+                        .canonicalize()
+                        .map_err(|e| e.to_string())?
+                        .join(path.file_name().ok_or("缺少文件名")?)
+                }
+                Err(error) => return Err(error.to_string()),
+            };
             super::document_save_api::classify_target(window.label(), &path).await?;
             path
         }
@@ -67,10 +92,12 @@ pub async fn claim_document_file(
     if !path.is_absolute() {
         return Err("文件路径必须是绝对路径".to_string());
     }
-    let identity = tauri::async_runtime::spawn_blocking(move || FileIdentity::resolve(&path))
-        .await
-        .map_err(|error| error.to_string())?
-        .map_err(|error| error.to_string())?;
+    // 正在编辑的文件被外部删除后，仍须占用原路径，以便重新保存。
+    let identity =
+        tauri::async_runtime::spawn_blocking(move || FileIdentity::resolve_target(&path))
+            .await
+            .map_err(|error| error.to_string())?
+            .map_err(|error| error.to_string())?;
     if WINDOW_SESSIONS.start_cause(window.label()).is_none() {
         return Err("窗口会话已结束".to_string());
     }
