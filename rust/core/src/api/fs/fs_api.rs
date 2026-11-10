@@ -136,12 +136,15 @@ fn write(path: String, contents: String) -> Result<()> {
 }
 
 #[command("fs")]
-fn show_in_folder(path: String) -> Result<()> {
-    #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos",))]
+async fn show_in_folder(path: String) -> Result<()> {
+    #[cfg(target_os = "windows")]
+    {
+        // Shell 和网络路径解析均可能阻塞，不能占用命令执行线程。
+        return tokio::task::spawn_blocking(move || show_in_folder_windows(path)).await?;
+    }
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
         use std::process::Command;
-        #[cfg(target_os = "windows")]
-        let path = path.replace("/", "\\");
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         let path = path.replace("\\", "/");
         let path = PathBuf::from(&path);
@@ -156,16 +159,6 @@ fn show_in_folder(path: String) -> Result<()> {
             return Ok(());
         }
         let path = path.unwrap();
-
-        #[cfg(target_os = "windows")]
-        {
-            use std::os::windows::process::CommandExt;
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
-            Command::new("explorer")
-                .creation_flags(CREATE_NO_WINDOW)
-                .args(["/select,", &path]) // The comma after select is not a typo
-                .spawn()?;
-        }
 
         #[cfg(target_os = "linux")]
         {
@@ -210,7 +203,112 @@ fn show_in_folder(path: String) -> Result<()> {
         }
     }
 
+    #[cfg(not(target_os = "windows"))]
     Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn reveal_existing_path(path: &std::path::Path) -> Result<Option<PathBuf>> {
+    let existing = if path.exists() {
+        Some(path)
+    } else {
+        path.parent().filter(|parent| parent.exists())
+    };
+    // Shell PIDL 使用绝对路径；dunce 避免为普通路径引入扩展路径前缀。
+    existing
+        .map(dunce::canonicalize)
+        .transpose()
+        .map_err(Into::into)
+}
+
+#[cfg(target_os = "windows")]
+fn show_in_folder_windows(path: String) -> Result<()> {
+    use std::{ffi::c_void, os::windows::ffi::OsStrExt, ptr};
+
+    #[link(name = "ole32")]
+    unsafe extern "system" {
+        fn CoInitializeEx(reserved: *mut c_void, co_init: u32) -> i32;
+        fn CoUninitialize();
+    }
+    #[link(name = "shell32")]
+    unsafe extern "system" {
+        fn ILCreateFromPathW(path: *const u16) -> *mut c_void;
+        fn ILFree(pidl: *mut c_void);
+        fn SHOpenFolderAndSelectItems(
+            pidl: *const c_void,
+            count: u32,
+            items: *const *const c_void,
+            flags: u32,
+        ) -> i32;
+    }
+    struct ComApartment;
+    impl Drop for ComApartment {
+        fn drop(&mut self) {
+            // 仅在本次 CoInitializeEx 成功后创建 guard，保持初始化次数配对。
+            unsafe { CoUninitialize() };
+        }
+    }
+    struct ShellItem(*mut c_void);
+    impl Drop for ShellItem {
+        fn drop(&mut self) {
+            unsafe { ILFree(self.0) };
+        }
+    }
+
+    let path = PathBuf::from(path.replace("/", "\\"));
+    let Some(path) = reveal_existing_path(&path)? else {
+        return Ok(());
+    };
+    let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
+    anyhow::ensure!(!wide.contains(&0), "路径不能包含空字符");
+    wide.push(0);
+    // COINIT_APARTMENTTHREADED：每次在后台线程建立并清理自己的 COM apartment。
+    let initialized = unsafe { CoInitializeEx(ptr::null_mut(), 2) };
+    anyhow::ensure!(
+        initialized >= 0,
+        "初始化 Windows Shell COM 失败：0x{:08X}",
+        initialized as u32
+    );
+    let _apartment = ComApartment;
+    let pidl = unsafe { ILCreateFromPathW(wide.as_ptr()) };
+    anyhow::ensure!(
+        !pidl.is_null(),
+        "Windows Shell 无法解析路径：{}",
+        path.display()
+    );
+    let item = ShellItem(pidl);
+    // count=0 时，绝对 PIDL 指向要在父目录中选中的文件或文件夹。
+    let result = unsafe { SHOpenFolderAndSelectItems(item.0, 0, ptr::null(), 0) };
+    anyhow::ensure!(
+        result >= 0,
+        "在文件管理器中显示失败：0x{:08X}",
+        result as u32
+    );
+    Ok(())
+}
+
+#[cfg(all(test, target_os = "windows"))]
+mod reveal_tests {
+    use super::reveal_existing_path;
+
+    #[test]
+    fn resolves_existing_item_or_immediate_parent_without_opening_shell() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("中文 文件,example.md");
+        std::fs::write(&file, "test").unwrap();
+        assert_eq!(
+            reveal_existing_path(&file).unwrap(),
+            Some(dunce::canonicalize(&file).unwrap())
+        );
+        assert_eq!(
+            reveal_existing_path(&dir.path().join("missing.md")).unwrap(),
+            Some(dunce::canonicalize(dir.path()).unwrap())
+        );
+        assert_eq!(
+            reveal_existing_path(&dir.path().join("missing/child.md")).unwrap(),
+            None
+        );
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
