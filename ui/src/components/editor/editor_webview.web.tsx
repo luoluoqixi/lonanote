@@ -24,8 +24,8 @@ import { useGlobalSettings } from "@/hooks/settings";
 import { useFontSettings } from "@/hooks/settings/use_font_settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
-import { registerEditorMenuInvalidation } from "./controllers/editor_menu_lifecycle";
 import { forwardEditorPointer } from "./bridge/editor_pointer.web";
+import { registerEditorMenuInvalidation } from "./controllers/editor_menu_lifecycle";
 import { editorWindowService } from "./controllers/editor_window_service";
 import { createEditorMenuItems } from "./desktop/editor_menu_items";
 import { EditorMenuPopup } from "./desktop/editor_menu_popup";
@@ -454,7 +454,12 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
   }, [active, bridgeClient, document.draftRevision, document.identityRevision]);
 
   const source = isDev() ? (getEditorDevUrl() ?? editorHtml) : editorHtml;
-  const resolvedIframeStyle = { ...iframeStyle, backgroundColor: editorColors.canvas };
+  const resolvedIframeStyle = {
+    ...iframeStyle,
+    backgroundColor: editorColors.canvas,
+    color: editorColors.text,
+    colorScheme,
+  };
   if (resourceContext.isLoading)
     return <div aria-label="编辑器资源加载中" style={resolvedIframeStyle} />;
   return (

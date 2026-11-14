@@ -7,6 +7,24 @@
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <meta name="color-scheme" content="light dark" />
+    <script>
+      // 桌面 iframe 的样式先于文档导航生效；首帧直接继承宿主配色，避免等待 bridge 时闪白。
+      (function () {
+        var frame = window.frameElement;
+        if (!frame) return;
+        var root = document.documentElement;
+        var style = frame.style;
+        if (style.backgroundColor) {
+          root.style.setProperty("--lonanote-editor-canvas", style.backgroundColor);
+          root.style.backgroundColor = "var(--lonanote-editor-canvas)";
+        }
+        if (style.color) {
+          root.style.setProperty("--lonanote-editor-text", style.color);
+          root.style.color = "var(--lonanote-editor-text)";
+        }
+        if (style.colorScheme) root.style.colorScheme = style.colorScheme;
+      })();
+    </script>
     <title>editor</title>
   </head>
   <body>
