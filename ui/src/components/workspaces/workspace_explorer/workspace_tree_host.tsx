@@ -6,6 +6,7 @@ import {
   ChevronsDownUp,
   ClipboardPaste,
   Copy,
+  CopyPlus,
   ExternalLink,
   FileInput,
   FilePlus2,
@@ -370,6 +371,7 @@ export function WorkspaceTreeHost({
         expanded: explorer.expandedPaths.includes(path),
         actions: {
           transfer: transfers.choose,
+          duplicate: transfers.duplicate,
           recordClipboard: transfers.record,
           paste: transfers.paste,
           isCurrent: (id, epoch, paths) =>
@@ -479,6 +481,8 @@ export function WorkspaceTreeHost({
           ["copy-to", Files],
           ["cut", Scissors],
           ["copy", Copy],
+          ["duplicate", CopyPlus],
+          ["copy-path", Copy],
           ["paste", ClipboardPaste],
           ["copy-absolute", Copy],
           ["copy-relative", Copy],

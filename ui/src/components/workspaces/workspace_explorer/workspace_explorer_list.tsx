@@ -1,4 +1,5 @@
 import {
+  CopyPlus,
   FileImage,
   FileQuestion,
   FileText,
@@ -22,6 +23,7 @@ import {
   useUiTheme,
 } from "rn-ui-kit";
 
+import { clipboard } from "@/api/commands/system/clipboard";
 import type { WorkspaceIndexEntry } from "@/api/commands/workspace";
 import type { StorageCapabilities } from "@/api/commands/workspace/types";
 import { workspaceFile } from "@/api/commands/workspace/workspace_file";
@@ -35,6 +37,7 @@ import {
   isMarkdownFile,
 } from "@/api/common";
 import { useLayoutMode } from "@/hooks/layout";
+import { useToast } from "@/hooks/ui";
 import { useWorkspaceTransfers } from "@/hooks/workspace/use_workspace_transfers";
 import { workspaceSessionStore } from "@/stores/workspace/workspace_session_store";
 
@@ -122,6 +125,7 @@ function WorkspaceExplorerEntryItem({
   entry,
   isUpdating,
   onDelete,
+  onDuplicate,
   onDetails,
   onEdit,
   onPress,
@@ -132,6 +136,7 @@ function WorkspaceExplorerEntryItem({
   entry: WorkspaceIndexEntry;
   isUpdating: boolean;
   onDelete: () => void;
+  onDuplicate: () => void;
   onDetails: () => void;
   onEdit: () => void;
   onPress: () => void;
@@ -161,6 +166,12 @@ function WorkspaceExplorerEntryItem({
           label: "编辑名称",
           onSelect: onEdit,
           value: `edit-entry-${entry.path}`,
+        },
+        {
+          icon: <CopyPlus color={accentColor} size={14} />,
+          label: "创建副本",
+          onSelect: onDuplicate,
+          value: `duplicate-entry-${entry.path}`,
         },
         {
           destructive: true,
@@ -232,6 +243,7 @@ export function WorkspaceExplorerList({
   const insets = useSafeAreaInsets();
   const desktop = useLayoutMode().layoutMode === "desktop";
   const transfers = useWorkspaceTransfers(workspaceId);
+  const { toast } = useToast();
   const [capabilities, setCapabilities] = useState<StorageCapabilities | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -257,6 +269,7 @@ export function WorkspaceExplorerList({
         !entry || entry.fileType === "directory" ? path : path.split("/").slice(0, -1).join("/"),
       capabilities,
       desktop: true,
+      nativePathAvailable: Boolean(capabilities.hasNativePath),
       canPaste: transfers.canPaste,
       actions: {
         isCurrent: () => workspaceSessionStore.getCurrentWorkspaceId() === workspaceId,
@@ -277,6 +290,19 @@ export function WorkspaceExplorerList({
           void onRefresh();
         },
         transfer: transfers.choose,
+        duplicate: transfers.duplicate,
+        copyPath: (path, absolute) => {
+          void (
+            absolute ? workspaceFile.nativePath(workspaceId, path) : Promise.resolve(path || ".")
+          )
+            .then((value) => {
+              if (value) {
+                toast.success(value);
+                return clipboard.writeText(value);
+              }
+            })
+            .catch((error) => toast.error("复制路径失败", { description: String(error) }));
+        },
         recordClipboard: transfers.record,
         paste: transfers.paste,
       },
@@ -327,6 +353,7 @@ export function WorkspaceExplorerList({
                 isUpdating={isUpdating}
                 key={entry.path}
                 onDelete={() => onDeleteEntry(entry)}
+                onDuplicate={() => transfers.duplicate([entry.path])}
                 onDetails={() => onEntryDetails(entry)}
                 onEdit={() => onEditEntry(entry)}
                 onPress={() => onEntryPress(entry)}

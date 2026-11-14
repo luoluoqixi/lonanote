@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import {
   Button,
   NativeListCustomItem,
   NativeListSection,
   NativeListSwitchItem,
+  Slider,
   Text,
 } from "rn-ui-kit";
 
@@ -35,6 +37,8 @@ export function WindowSettingsPage({
   const presentation = useSettingsPresentation();
   const { preferences, updateAndSave } = useUiPreferences();
   const view = useDesktopViewActions();
+  const [zoomDraft, setZoomDraft] = useState(view.zoom);
+  useEffect(() => setZoomDraft(view.zoom), [view.zoom]);
 
   return (
     <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
@@ -58,8 +62,32 @@ export function WindowSettingsPage({
                   −
                 </Button>
                 <Text style={{ minWidth: 48, textAlign: "center" }}>
-                  {Math.round(view.zoom * 100)}%
+                  {Math.round(zoomDraft * 100)}%
                 </Text>
+                <Slider
+                  accessibilityLabel="界面缩放"
+                  max={3}
+                  min={0.25}
+                  native
+                  onValueChange={(nextValue) => setZoomDraft(nextValue[0] ?? view.zoom)}
+                  onValueChangeFinished={(nextValue) => {
+                    const nextZoom = nextValue[0] ?? view.zoom;
+                    setZoomDraft(nextZoom);
+                    runSettingsAction(
+                      "调整界面缩放",
+                      updateAndSave((currentPreferences) => ({
+                        ...currentPreferences,
+                        appearance: {
+                          ...currentPreferences.appearance,
+                          zoomFactor: nextZoom,
+                        },
+                      })),
+                    );
+                  }}
+                  step={0.015}
+                  style={styles.zoomSlider}
+                  value={[zoomDraft]}
+                />
                 <Button
                   size="sm"
                   variant="ghost"
@@ -155,6 +183,7 @@ export function WindowSettingsPage({
 }
 
 const styles = StyleSheet.create({
+  zoomSlider: { width: 140 },
   zoomControls: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   row: {
     alignItems: "center",

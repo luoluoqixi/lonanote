@@ -114,6 +114,7 @@ export function useAppMenu() {
         sep,
         item("打开文件", "openFile", desktop),
         item("打开文件夹", "openFolder", desktop && !opening.busy),
+        item("打开工作区", "openWorkspace", desktop, `${mod}+Shift+O`),
         {
           type: "submenu",
           title: "打开最近的工作区",
@@ -156,6 +157,32 @@ export function useAppMenu() {
       id: "selection",
       title: "选择",
       items: [item("全选", "selectAll", edits.enabled.selectAll, `${mod}+A`)],
+    },
+    {
+      id: "insert",
+      title: "插入",
+      items: [
+        {
+          type: "submenu",
+          title: "插入",
+          items: [
+            item("链接", "insertLink", edits.canInsert),
+            item("图片", "insertImage", edits.canInsert),
+            item("代码块", "insertCodeBlock", edits.canInsert),
+            item("表格", "insertTable", edits.canInsert),
+            item("分隔线", "insertHorizontalRule", edits.canInsert),
+          ],
+        },
+        {
+          type: "submenu",
+          title: "列表",
+          items: [
+            item("无序列表", "listUnordered", edits.canInsert),
+            item("有序列表", "listOrdered", edits.canInsert),
+            item("任务列表", "listTask", edits.canInsert),
+          ],
+        },
+      ],
     },
     {
       id: "view",
@@ -225,6 +252,10 @@ export function useAppMenu() {
         case "openFolder":
           await opening.openFolder();
           break;
+        case "openWorkspace":
+          if (typeof window !== "undefined")
+            window.dispatchEvent(new Event("lonanote:open-workspace-picker"));
+          break;
         case "save":
           await saves.saveActive();
           break;
@@ -247,6 +278,30 @@ export function useAppMenu() {
         case "paste":
         case "selectAll":
           await edits.execute(action);
+          break;
+        case "insertLink":
+          await edits.executeCommand({ type: "insert.link" });
+          break;
+        case "insertImage":
+          await edits.executeCommand({ type: "insert.image" });
+          break;
+        case "insertCodeBlock":
+          await edits.executeCommand({ type: "insert.codeBlock" });
+          break;
+        case "insertTable":
+          await edits.executeCommand({ type: "insert.table" });
+          break;
+        case "insertHorizontalRule":
+          await edits.executeCommand({ type: "insert.horizontalRule" });
+          break;
+        case "listUnordered":
+          await edits.executeCommand({ type: "list.toggle", list: "unordered" });
+          break;
+        case "listOrdered":
+          await edits.executeCommand({ type: "list.toggle", list: "ordered" });
+          break;
+        case "listTask":
+          await edits.executeCommand({ type: "list.toggle", list: "task" });
           break;
       }
     } catch (error) {

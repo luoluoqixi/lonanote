@@ -15,6 +15,7 @@ type MenuActions = {
   setExpanded?(path: string, expanded: boolean): void;
   reveal?(path: string): void;
   copyPath?(path: string, absolute: boolean): void;
+  duplicate?(paths: string[]): void;
   transfer?(paths: string[], operation: "move" | "copy"): void;
   recordClipboard?(paths: string[], mode: "cut" | "copy"): void;
   paste?(directory: string): void;
@@ -165,6 +166,20 @@ export function createWorkspaceExplorerMenu({
             { value: "separator-transfer", separator: true },
           ]
         : []),
+      ...(actions.duplicate
+        ? [
+            {
+              value: "duplicate",
+              label: "创建副本",
+              disabled: root || !single || !canCopy,
+              onSelect: guarded(
+                () => actions.duplicate?.([targets[0]]),
+                !root && single && canCopy,
+              ),
+            },
+            { value: "separator-duplicate", separator: true },
+          ]
+        : []),
       ...(nativePathAvailable
         ? [
             {
@@ -176,21 +191,29 @@ export function createWorkspaceExplorerMenu({
             { value: "separator-reveal", separator: true },
           ]
         : []),
-      ...(nativePathAvailable
-        ? [
-            {
-              value: "copy-absolute",
-              label: "复制绝对路径",
-              disabled: !single,
-              onSelect: guarded(() => actions.copyPath?.(targets[0], true), single),
-            },
-          ]
-        : []),
       {
-        value: "copy-relative",
-        label: "复制相对路径",
+        value: "copy-path",
+        label: "复制路径",
         disabled: !single,
-        onSelect: guarded(() => actions.copyPath?.(targets[0], false), single),
+        subMenuTitle: false,
+        subMenu: [
+          ...(nativePathAvailable
+            ? [
+                {
+                  value: "copy-absolute",
+                  label: "复制完整路径",
+                  disabled: !single,
+                  onSelect: guarded(() => actions.copyPath?.(targets[0], true), single),
+                },
+              ]
+            : []),
+          {
+            value: "copy-relative",
+            label: "复制相对路径",
+            disabled: !single,
+            onSelect: guarded(() => actions.copyPath?.(targets[0], false), single),
+          },
+        ],
       },
       { value: "separator-path", separator: true },
       ...(root
@@ -264,6 +287,16 @@ export function createWorkspaceExplorerMenu({
       disabled: !single || !capabilities.canRename,
       onSelect: guarded(() => actions.rename(targets[0]), single && capabilities.canRename),
     },
+    ...(actions.duplicate
+      ? [
+          {
+            value: "duplicate",
+            label: "创建副本",
+            disabled: root || !single || !canCopy,
+            onSelect: guarded(() => actions.duplicate?.([targets[0]]), !root && single && canCopy),
+          },
+        ]
+      : []),
     {
       value: "delete",
       label: "删除",

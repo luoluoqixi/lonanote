@@ -95,6 +95,20 @@ export function useWorkspaceTransfers(workspaceId: string) {
       if (result.refreshError)
         toast.warning("文件操作已成功，刷新失败", { description: result.refreshError });
     };
+    const duplicate = (paths: string[]) =>
+      run(async () => {
+        const sources = await snapshot(paths);
+        const byDirectory = new Map<string, WorkspaceTransferSource[]>();
+        for (const source of sources) {
+          const parts = source.path.split("/");
+          parts.pop();
+          const directory = parts.join("/");
+          const group = byDirectory.get(directory) ?? [];
+          group.push(source);
+          byDirectory.set(directory, group);
+        }
+        for (const [directory, group] of byDirectory) await execute(group, directory, "copy");
+      });
     return {
       move: (paths: string[], directory: string) =>
         run(async () => {
@@ -125,6 +139,7 @@ export function useWorkspaceTransfers(workspaceId: string) {
           });
           if (selected) await execute(sources, selected.directory, operation);
         }),
+      duplicate,
       paste: (directory: string) => {
         const value = clipboard.getSnapshot();
         if (value?.workspaceId === workspaceId)

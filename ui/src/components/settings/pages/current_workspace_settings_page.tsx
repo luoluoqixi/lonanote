@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   NativeListButtonItem,
-  NativeListInputItem,
   NativeListItem,
   NativeListSection,
   NativeListSelectItem,
@@ -17,6 +16,7 @@ import {
 import { type WorkspaceSettings, workspace } from "@/api/commands/workspace";
 import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId, useWorkspaceState } from "@/hooks/workspace";
+import { selectWorkspaceDirectory } from "@/hooks/workspace/use_workspace_directory_picker";
 
 import { SettingsList } from "../settings_list";
 import { useSettingsPresentation } from "../use_settings_presentation";
@@ -223,6 +223,24 @@ export function CurrentWorkspaceSettingsPage({
     }
   };
 
+  const chooseUploadDirectory = async (setting: "uploadImagePath" | "uploadAttachmentPath") => {
+    if (!workspaceId || !settings || isEditingDisabled) return;
+    try {
+      const selected = await selectWorkspaceDirectory({
+        workspaceId,
+        purpose: "copy",
+        initialPath: settings[setting],
+      });
+      if (selected)
+        updateSettings((currentSettings) => ({
+          ...currentSettings,
+          [setting]: selected.directory,
+        }));
+    } catch (nextError) {
+      setError(getErrorMessage(nextError, "无法选择目录"));
+    }
+  };
+
   const createResetContextMenu = (setting: ResettableWorkspaceSetting) => ({
     items: [
       {
@@ -357,45 +375,23 @@ export function CurrentWorkspaceSettingsPage({
           </NativeListSection>
 
           <NativeListSection {...presentation.section} title="上传">
-            <NativeListInputItem
+            <NativeListItem
               {...presentation.item}
+              chevron
               contextMenuProps={createResetContextMenu("uploadImagePath")}
               disabled={isEditingDisabled}
-              inputProps={{
-                style: presentation.compact ? { fontSize: 13 } : undefined,
-                autoCapitalize: "none",
-                onChangeText: (nextValue) => {
-                  updateSettings((currentSettings) => ({
-                    ...currentSettings,
-                    uploadImagePath: nextValue,
-                  }));
-                },
-                placeholder: "assets/images",
-                textAlign: "right",
-                value: settings.uploadImagePath,
-              }}
-              inputWidth={200}
+              onPress={() => void chooseUploadDirectory("uploadImagePath")}
               title="图片目录"
+              value={settings.uploadImagePath || "工作区根目录"}
             />
-            <NativeListInputItem
+            <NativeListItem
               {...presentation.item}
+              chevron
               contextMenuProps={createResetContextMenu("uploadAttachmentPath")}
               disabled={isEditingDisabled}
-              inputProps={{
-                style: presentation.compact ? { fontSize: 13 } : undefined,
-                autoCapitalize: "none",
-                onChangeText: (nextValue) => {
-                  updateSettings((currentSettings) => ({
-                    ...currentSettings,
-                    uploadAttachmentPath: nextValue,
-                  }));
-                },
-                placeholder: "assets/attachments",
-                textAlign: "right",
-                value: settings.uploadAttachmentPath,
-              }}
-              inputWidth={200}
+              onPress={() => void chooseUploadDirectory("uploadAttachmentPath")}
               title="附件目录"
+              value={settings.uploadAttachmentPath || "工作区根目录"}
             />
           </NativeListSection>
 

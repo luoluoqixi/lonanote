@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { NativeListItem, NativeListSection, isIos15, triggerNativeHaptics } from "rn-ui-kit";
 
 import { openExternalUrl } from "@/api/commands/utils";
+import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { getAppHomeTitle, getVersion } from "@/config";
 import { useUiPreferences } from "@/hooks/settings";
 import { useToast } from "@/hooks/ui";
@@ -9,6 +10,7 @@ import { useToast } from "@/hooks/ui";
 import type { SettingsPageProps } from "../settings_config";
 import { SettingsList } from "../settings_list";
 import { useSettingsPresentation } from "../use_settings_presentation";
+import { LicensesSettingsPage } from "./licenses_settings_page";
 
 const DEVELOPER_OPTIONS_TAP_COUNT = 10;
 const DEVELOPER_OPTIONS_ENABLED_TOAST_COOLDOWN_MS = 10_000;
@@ -24,6 +26,7 @@ export function AboutSettingsPage({
   const enabledToastShownAtRef = useRef(0);
   const { isLoaded, preferences, updateAndSave } = useUiPreferences();
   const { toast } = useToast();
+  const [licensesOpen, setLicensesOpen] = useState(false);
 
   const handleVersionPress = () => {
     if (!isLoaded || unlockPendingRef.current) {
@@ -74,43 +77,62 @@ export function AboutSettingsPage({
   };
 
   return (
-    <SettingsList style={{ flex: 1 }} tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}>
-      <NativeListSection {...presentation.section} title="应用信息">
-        <NativeListItem
-          {...presentation.item}
-          title="名称"
-          value={getAppHomeTitle()}
-          onPress={() => {}}
-        />
-        <NativeListItem
-          {...presentation.item}
-          onPress={handleVersionPress}
-          title="版本号"
-          value={`v${getVersion()}`}
-        />
-      </NativeListSection>
+    <>
+      <SettingsList
+        style={{ flex: 1 }}
+        tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
+      >
+        <NativeListSection {...presentation.section} title="应用信息">
+          <NativeListItem
+            {...presentation.item}
+            title="名称"
+            value={getAppHomeTitle()}
+            onPress={() => {}}
+          />
+          <NativeListItem
+            {...presentation.item}
+            onPress={handleVersionPress}
+            title="版本号"
+            value={`v${getVersion()}`}
+          />
+        </NativeListSection>
 
-      <NativeListSection {...presentation.section} title="相关链接">
-        <NativeListItem
-          {...presentation.item}
+        <NativeListSection {...presentation.section} title="相关链接">
+          <NativeListItem
+            {...presentation.item}
+            title="开源许可"
+            chevron
+            onPress={() => {
+              if (presentation.desktop) setLicensesOpen(true);
+              else onNavigate?.("licenses");
+            }}
+          />
+          <NativeListItem
+            {...presentation.item}
+            onPress={() => {
+              void openExternalUrl(GITHUB_REPOSITORY_URL).catch((error) => {
+                console.error("[about] open GitHub failed", error);
+                toast.error("无法打开 GitHub");
+              });
+            }}
+            title="GitHub"
+            value={GITHUB_REPOSITORY_URL}
+            valueFontSize={14}
+            chevron
+          />
+        </NativeListSection>
+      </SettingsList>
+      {presentation.desktop ? (
+        <AdaptiveModal
+          name="desktop-licenses"
+          open={licensesOpen}
+          onOpenChange={setLicensesOpen}
           title="开源许可"
-          chevron
-          onPress={() => onNavigate?.("licenses")}
-        />
-        <NativeListItem
-          {...presentation.item}
-          onPress={() => {
-            void openExternalUrl(GITHUB_REPOSITORY_URL).catch((error) => {
-              console.error("[about] open GitHub failed", error);
-              toast.error("无法打开 GitHub");
-            });
-          }}
-          title="GitHub"
-          value={GITHUB_REPOSITORY_URL}
-          valueFontSize={14}
-          chevron
-        />
-      </NativeListSection>
-    </SettingsList>
+          dialogSize={{ height: 560, width: 720 }}
+        >
+          <LicensesSettingsPage />
+        </AdaptiveModal>
+      ) : null}
+    </>
   );
 }

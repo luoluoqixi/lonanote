@@ -49,6 +49,11 @@ export function DesktopAppShell() {
     setPanel("explorer");
   }, [resetRevision]);
   const [selectOpen, setSelectOpen] = useState(false);
+  useEffect(() => {
+    const openWorkspacePicker = () => setSelectOpen(true);
+    window.addEventListener("lonanote:open-workspace-picker", openWorkspacePicker);
+    return () => window.removeEventListener("lonanote:open-workspace-picker", openWorkspacePicker);
+  }, []);
   const dragGuard = useWorkbenchDragGuard();
   const theme = useUiTheme();
   const revealPath = useRevealWorkspacePath();

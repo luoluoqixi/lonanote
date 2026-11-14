@@ -12,6 +12,7 @@ export type AppMenuActionId =
   | "newWindow"
   | "openFile"
   | "openFolder"
+  | "openWorkspace"
   | "save"
   | "saveAll"
   | "settings"
@@ -23,6 +24,14 @@ export type AppMenuActionId =
   | "paste"
   | "selectAll"
   | "about"
+  | "insertLink"
+  | "insertImage"
+  | "insertCodeBlock"
+  | "insertTable"
+  | "insertHorizontalRule"
+  | "listUnordered"
+  | "listOrdered"
+  | "listTask"
   | `workspace:${string}`;
 export type AppMenuNode =
   | { type: "separator" }

@@ -132,6 +132,7 @@ export function WorkspaceSelectHeader({
         label: "排序方式",
         onPress: sortMenuItems ? undefined : onOpenWorkspaceSort,
         subMenu: sortMenuItems,
+        subMenuTitle: false,
         value: "sort-workspaces",
       },
       {
@@ -142,6 +143,7 @@ export function WorkspaceSelectHeader({
           ios: { name: "calendar" },
         },
         label: "分组方式",
+        subMenuTitle: false,
         onPress: groupMenuItems ? undefined : onOpenWorkspaceGroupMode,
         subMenu: groupMenuItems,
         value: "group-workspaces",

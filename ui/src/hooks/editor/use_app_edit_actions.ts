@@ -44,7 +44,13 @@ export function useAppEditActions() {
   };
   return {
     enabled,
+    canInsert: Boolean(writable),
     captureTarget: () => {},
+    executeCommand: async (command: EditorCommand) => {
+      const id = editorStore.getState().activeEditorId;
+      if (!id || !writable || editorStore.getState().activeEditorId !== id) return;
+      await editorCommandCoordinator.executeMenuCommand(id, command);
+    },
     execute: async (action: TextMenuAction) => {
       if (!enabled[action]) return;
       if (textTarget.isActive()) {

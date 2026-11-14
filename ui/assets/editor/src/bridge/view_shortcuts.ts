@@ -3,7 +3,8 @@ export type ViewShortcutAction =
   | "zoomOut"
   | "zoomReset"
   | "toggleFullscreen"
-  | "newWindow";
+  | "newWindow"
+  | "openWorkspace";
 
 export function getViewShortcutAction(
   event: {
@@ -24,6 +25,7 @@ export function getViewShortcutAction(
   if (platform === "macos" ? !event.metaKey || event.ctrlKey : !event.ctrlKey || event.metaKey)
     return null;
   if (event.key.toLowerCase() === "n" && event.shiftKey && !event.repeat) return "newWindow";
+  if (event.key.toLowerCase() === "o" && event.shiftKey && !event.repeat) return "openWorkspace";
   if (["+", "=", "Add"].includes(event.key)) return "zoomIn";
   if (["-", "Subtract"].includes(event.key)) return "zoomOut";
   if (event.key === "0") return "zoomReset";
