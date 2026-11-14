@@ -46,6 +46,7 @@ pub(crate) async fn show_wcpopup_context_menu(
     x: f64,
     y: f64,
     device_pixel_ratio: f64,
+    dark_mode: bool,
 ) -> Result<Option<String>, String> {
     #[cfg(windows)]
     let (window_handle, popup_x, popup_y) = {
@@ -59,7 +60,7 @@ pub(crate) async fn show_wcpopup_context_menu(
     };
     let scale_factor = window.scale_factor().map_err(|error| error.to_string())?;
     let mut config = Config {
-        theme: Theme::System,
+        theme: if dark_mode { Theme::Dark } else { Theme::Light },
         ..Config::default()
     };
     #[cfg(windows)]
@@ -91,6 +92,12 @@ pub(crate) async fn show_wcpopup_context_menu(
                     return;
                 }
             };
+            #[cfg(windows)]
+            if let Err(error) = install_windows_menu_bounds(&menu, popup_x, popup_y) {
+                destroy_menu(menu);
+                let _ = result_sender.send(Err(error));
+                return;
+            }
             #[cfg(target_os = "linux")]
             gtk::glib::MainContext::default().spawn_local(async move {
                 let selected = menu
@@ -159,6 +166,94 @@ fn scale_windows_menu(config: &mut Config, scale_factor: f64) {
         // 勾选和子菜单箭头大小由字体大小自动推导；仅缩放显式设置的图标间距。
         icon.horizontal_margin = icon.horizontal_margin.map(pixels);
     }
+}
+
+/// 在库计算位置之后、窗口显示之前校正实际矩形，保持菜单字号、留白和尺寸。
+#[cfg(windows)]
+fn install_windows_menu_bounds(menu: &wcpopup::Menu, x: i32, y: i32) -> Result<(), String> {
+    use windows::Win32::{
+        Foundation::{HWND, POINT},
+        Graphics::Gdi::{MonitorFromPoint, MONITOR_DEFAULTTONEAREST},
+        UI::Shell::SetWindowSubclass,
+    };
+    let monitor = unsafe { MonitorFromPoint(POINT { x, y }, MONITOR_DEFAULTTONEAREST) };
+    if monitor.0.is_null() {
+        return Err("无法获取菜单所在显示器".to_owned());
+    }
+    let installed = unsafe {
+        SetWindowSubclass(
+            HWND(menu.window_handle as *mut std::ffi::c_void),
+            Some(menu_bounds_subclass),
+            1,
+            monitor.0 as usize,
+        )
+    };
+    if !installed.as_bool() {
+        return Err("无法安装菜单边界定位处理".to_owned());
+    }
+    // 子菜单拥有独立的原生窗口，也需要在最终布局时约束位置。
+    for item in menu.items() {
+        if let Some(submenu) = item.submenu {
+            install_windows_menu_bounds(&submenu, x, y)?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+unsafe extern "system" fn menu_bounds_subclass(
+    hwnd: windows::Win32::Foundation::HWND,
+    message: u32,
+    wparam: windows::Win32::Foundation::WPARAM,
+    lparam: windows::Win32::Foundation::LPARAM,
+    subclass_id: usize,
+    monitor: usize,
+) -> windows::Win32::Foundation::LRESULT {
+    use windows::Win32::{
+        Graphics::Gdi::{GetMonitorInfoW, HMONITOR, MONITORINFO},
+        UI::{
+            Shell::{DefSubclassProc, RemoveWindowSubclass},
+            WindowsAndMessaging::{
+                GetWindowRect, SWP_NOMOVE, SWP_NOSIZE, WINDOWPOS, WM_NCDESTROY,
+                WM_WINDOWPOSCHANGING,
+            },
+        },
+    };
+    if message == WM_WINDOWPOSCHANGING && lparam.0 != 0 {
+        // WINDOWPOS 来自系统的同步消息，仅在当前回调中访问；所有数值均为物理像素。
+        let position = unsafe { &mut *(lparam.0 as *mut WINDOWPOS) };
+        if !position.flags.contains(SWP_NOMOVE) {
+            let mut info = MONITORINFO {
+                cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+                ..Default::default()
+            };
+            if unsafe { GetMonitorInfoW(HMONITOR(monitor as *mut std::ffi::c_void), &mut info) }
+                .as_bool()
+            {
+                let mut rect = windows::Win32::Foundation::RECT::default();
+                let height = if position.flags.contains(SWP_NOSIZE) {
+                    if unsafe { GetWindowRect(hwnd, &mut rect) }.is_ok() {
+                        rect.bottom - rect.top
+                    } else {
+                        0
+                    }
+                } else {
+                    position.cy
+                };
+                if height > 0 {
+                    position.y = super::wcpopup_menu_position::clamp_menu_top(
+                        position.y,
+                        height,
+                        info.rcWork.top,
+                        info.rcWork.bottom,
+                    );
+                }
+            }
+        }
+    } else if message == WM_NCDESTROY {
+        let _ = unsafe { RemoveWindowSubclass(hwnd, Some(menu_bounds_subclass), subclass_id) };
+    }
+    unsafe { DefSubclassProc(hwnd, message, wparam, lparam) }
 }
 
 /// WcPopup 的 Menu 是原生句柄封装，关闭后需要由创建它的 UI 线程销毁。

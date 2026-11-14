@@ -1,5 +1,10 @@
 import { useEffect, useMemo } from "react";
-import { MenuProvider, RootProvider, resolveGeneratedAccentTheme } from "rn-ui-kit";
+import {
+  MenuProvider,
+  type NativeMenuRequest,
+  RootProvider,
+  resolveGeneratedAccentTheme,
+} from "rn-ui-kit";
 
 import {
   resolveDesktopContextMenuNative,
@@ -48,12 +53,12 @@ export function AppProvider({ children }: AppProviderProps) {
       showNativeMenu:
         nativeMenus && tauriDesktop
           ? resolveDesktopMenuBackend(os()) === "wcpopup"
-            ? showWcPopupContextMenu
+            ? (request: NativeMenuRequest) => showWcPopupContextMenu(request, resolvedColorScheme)
             : showTauriContextMenu
           : undefined,
       onNativeMenuError: (error: unknown) => console.warn("无法打开原生菜单", error),
     }),
-    [menuStyle, nativeMenus, preferences.shell.layoutMode, tauriDesktop],
+    [menuStyle, nativeMenus, preferences.shell.layoutMode, resolvedColorScheme, tauriDesktop],
   );
 
   useDesktopAccentColor();

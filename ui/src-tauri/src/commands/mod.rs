@@ -13,6 +13,8 @@ use document_save_api::*;
 mod invoke;
 #[cfg(any(windows, target_os = "linux"))]
 mod wcpopup_menu_api;
+#[cfg(windows)]
+mod wcpopup_menu_position;
 #[cfg(any(windows, target_os = "linux"))]
 use wcpopup_menu_api::*;
 mod resource_protocol;

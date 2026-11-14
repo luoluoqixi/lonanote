@@ -64,7 +64,7 @@ objc2-app-kit = { workspace = true, features = ["NSColor", "NSWindow"] }
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = { workspace = true }
-windows = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+windows = { workspace = true, features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
 wcpopup = { workspace = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
