@@ -332,7 +332,7 @@ async fn managed_restart_flow() {
     assert!(root.join(".lonanote/settings.local.json").exists());
     assert_eq!(
         std::fs::read_to_string(root.join(".lonanote/.gitignore")).unwrap(),
-        "settings.local.json\n"
+        "settings.local.json\ncache/\ntemp/\n"
     );
     assert!(!root.join("README.md").exists());
     assert!(!root.join("README_en.md").exists());

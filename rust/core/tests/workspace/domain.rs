@@ -211,13 +211,16 @@ fn public_json_contract() {
         "customIgnore": "",
         "uploadImagePath": "assets/images",
         "uploadAttachmentPath": "assets/attachments",
-        "historySnapshotCount": 37
+        "historySnapshotCount": 37,
+        "historySnapshotIntervalMinutes": 12
     }))
     .unwrap();
     assert_eq!(settings.history_snapshot_count, 37);
+    assert_eq!(settings.history_snapshot_interval_minutes, 12);
     let settings_json = serde_json::to_value(settings).unwrap();
     assert_eq!(settings_json["schemaVersion"], 1);
     assert_eq!(settings_json["historySnapshotCount"], 37);
+    assert_eq!(settings_json["historySnapshotIntervalMinutes"], 12);
     assert!(settings_json.get("fileTreeSortType").is_none());
 
     let manifest_json =

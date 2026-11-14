@@ -48,7 +48,7 @@ async fn create_initializes_syncable_state_and_keeps_created_time_in_manifest() 
                 .join(".lonanote/.gitignore")
         )
         .unwrap(),
-        "settings.local.json\n"
+        "settings.local.json\ncache/\ntemp/\n"
     );
     let status = manager.get_state(&created.id).await.unwrap();
     assert!(!status.save_pending);

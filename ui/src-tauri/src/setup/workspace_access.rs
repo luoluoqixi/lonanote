@@ -5,7 +5,12 @@ use lonanote_core::workspace::WorkspaceId;
 pub fn should_notify_catalog_changed(key: &str) -> bool {
     !matches!(
         key,
-        "workspace.list" | "workspace.get" | "workspace.is_open" | "workspace.native_root_path"
+        "workspace.list"
+            | "workspace.get"
+            | "workspace.is_open"
+            | "workspace.native_root_path"
+            | "workspace.history.list"
+            | "workspace.history.read"
     ) && !key.contains("get_")
         && !key.starts_with("workspace.list_")
 }

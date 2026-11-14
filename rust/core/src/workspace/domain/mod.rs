@@ -1,6 +1,7 @@
 mod binding;
 mod directory_name;
 mod dto;
+mod history;
 mod identity;
 mod local_setting;
 mod manifest;
@@ -12,6 +13,7 @@ mod state;
 pub use binding::*;
 pub use directory_name::*;
 pub use dto::*;
+pub use history::*;
 pub use identity::*;
 pub use local_setting::*;
 pub use manifest::*;

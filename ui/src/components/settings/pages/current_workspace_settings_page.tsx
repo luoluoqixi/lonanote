@@ -25,9 +25,18 @@ const HISTORY_SNAPSHOT_COUNT_OPTIONS: SelectOption[] = [
   { label: "不保留", value: "0" },
   { label: "5 个", value: "5" },
   { label: "10 个", value: "10" },
-  { label: "20 个（默认）", value: "20" },
+  { label: "20 个", value: "20" },
   { label: "50 个", value: "50" },
   { label: "100 个", value: "100" },
+];
+
+const HISTORY_SNAPSHOT_INTERVAL_OPTIONS: SelectOption[] = [
+  { label: "每次保存", value: "0" },
+  { label: "1 分钟", value: "1" },
+  { label: "5 分钟（默认）", value: "5" },
+  { label: "10 分钟", value: "10" },
+  { label: "30 分钟", value: "30" },
+  { label: "60 分钟", value: "60" },
 ];
 
 type CurrentWorkspaceSettingsPageProps = {
@@ -397,7 +406,7 @@ export function CurrentWorkspaceSettingsPage({
 
           <NativeListSection
             {...presentation.section}
-            footer="超过数量的历史快照会被清理。"
+            footer="超过数量的历史快照会被清理；同一文件在间隔内的保存不会重复创建快照。"
             title="历史记录"
           >
             <NativeListSelectItem
@@ -426,6 +435,33 @@ export function CurrentWorkspaceSettingsPage({
                 value: String(settings.historySnapshotCount),
               }}
               title="保留历史快照"
+            />
+            <NativeListSelectItem
+              {...presentation.item}
+              disabled={isEditingDisabled}
+              selectProps={{
+                ...presentation.select,
+                "aria-label": "历史快照间隔",
+                onValueChange: (nextValue) => {
+                  if (nextValue == null) {
+                    return;
+                  }
+
+                  const nextInterval = Number(nextValue);
+
+                  if (!Number.isSafeInteger(nextInterval) || nextInterval < 0) {
+                    return;
+                  }
+
+                  updateSettings((currentSettings) => ({
+                    ...currentSettings,
+                    historySnapshotIntervalMinutes: nextInterval,
+                  }));
+                },
+                options: HISTORY_SNAPSHOT_INTERVAL_OPTIONS,
+                value: String(settings.historySnapshotIntervalMinutes),
+              }}
+              title="历史快照间隔"
             />
           </NativeListSection>
 

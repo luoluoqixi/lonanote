@@ -33,6 +33,7 @@ export interface WorkspaceSettings {
   uploadImagePath: WorkspaceRelativePath;
   uploadAttachmentPath: WorkspaceRelativePath;
   historySnapshotCount: number;
+  historySnapshotIntervalMinutes: number;
   sync?: WorkspaceSyncSettings;
 }
 
@@ -40,6 +41,13 @@ export interface WorkspaceLocalSetting {
   schemaVersion: number;
   lastOpenedAt: UnixSeconds | null;
   lastOpenFile: WorkspaceRelativePath | null;
+}
+
+export interface WorkspaceHistorySnapshot {
+  id: string;
+  path: WorkspaceRelativePath;
+  createdAt: UnixSeconds;
+  size: number;
 }
 
 /** 可随工作区同步的业务状态；时间使用 Unix 秒。 */

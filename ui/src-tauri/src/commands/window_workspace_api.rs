@@ -25,7 +25,9 @@ pub async fn invoke_workspace(
     if WINDOW_SESSIONS.start_cause(label).is_none() {
         return Err("当前窗口尚未注册工作台会话".to_string());
     }
-    let file_operation = key.starts_with("workspace.file.") || key.starts_with("workspace.index.");
+    let file_operation = key.starts_with("workspace.file.")
+        || key.starts_with("workspace.index.")
+        || matches!(key, "workspace.history.list" | "workspace.history.read");
     if file_operation {
         if key == "workspace.file.transfer" {
             // 转移与文件占用交接互斥，检查后不能被其他窗口抢先打开来源。

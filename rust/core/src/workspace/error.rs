@@ -191,6 +191,8 @@ pub enum WorkspaceError {
     InvalidLocalSetting(String),
     #[error("Workspace state 无效: {0}")]
     InvalidState(String),
+    #[error("Workspace 历史快照无效: {0}")]
+    InvalidHistory(String),
     #[error("内容已保存，但工作区状态尚未保存，请重试: {0}")]
     StateSavePending(String),
     #[error("Workspace 已打开，不能执行该生命周期操作: {0}")]

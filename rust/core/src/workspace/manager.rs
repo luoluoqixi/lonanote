@@ -13,11 +13,12 @@ use crate::workspace::{
     domain::{
         AttachWorkspaceResult, OpenWorkspaceResult, RelocateWorkspaceResult, RemoveWorkspaceResult,
         StorageCleanupStatus, StorageProviderId, WorkspaceAvailability, WorkspaceCachedSummary,
-        WorkspaceDirectoryName, WorkspaceId, WorkspaceIdMismatchResolution, WorkspaceListItem,
-        WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRecord, WorkspaceRelativePath,
-        WorkspaceSettings, WorkspaceSnapshot, WorkspaceState, WorkspaceStateStatus,
-        WorkspaceStorageBinding, WorkspaceStorageBindingRequest, WorkspaceStorageKindView,
-        WorkspaceStorageLocation, WorkspaceStorageTarget, WorkspaceStorageView,
+        WorkspaceDirectoryName, WorkspaceHistorySnapshot, WorkspaceId,
+        WorkspaceIdMismatchResolution, WorkspaceListItem, WorkspaceLocalSetting, WorkspaceManifest,
+        WorkspaceRecord, WorkspaceRelativePath, WorkspaceSettings, WorkspaceSnapshot,
+        WorkspaceState, WorkspaceStateStatus, WorkspaceStorageBinding,
+        WorkspaceStorageBindingRequest, WorkspaceStorageKindView, WorkspaceStorageLocation,
+        WorkspaceStorageTarget, WorkspaceStorageView,
     },
     error::{StorageError, WorkspaceError},
     persistence::{
@@ -859,6 +860,44 @@ impl WorkspaceManager {
         self.get_open_instance(id)
             .await?
             .write_text(path, text, options)
+            .await?;
+        self.resource_gateway.invalidate_workspace(id).await;
+        self.cache_modification(id).await;
+        Ok(())
+    }
+
+    pub async fn list_history(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+    ) -> Result<Vec<WorkspaceHistorySnapshot>, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.get_open_instance(id).await?.list_history(path).await
+    }
+
+    pub async fn read_history(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+        snapshot_id: &str,
+    ) -> Result<String, WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.get_open_instance(id)
+            .await?
+            .read_history(path, snapshot_id)
+            .await
+    }
+
+    pub async fn restore_history(
+        &self,
+        id: &WorkspaceId,
+        path: &WorkspaceRelativePath,
+        snapshot_id: &str,
+    ) -> Result<(), WorkspaceError> {
+        let _lifecycle = self.lifecycle_lock.read().await;
+        self.get_open_instance(id)
+            .await?
+            .restore_history(path, snapshot_id)
             .await?;
         self.resource_gateway.invalidate_workspace(id).await;
         self.cache_modification(id).await;

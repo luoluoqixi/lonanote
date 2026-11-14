@@ -165,6 +165,9 @@ Provider ID 由 Provider 实现方定义，但它是会进入 Catalog Binding �
 │   ├── manifest.json
 │   ├── settings.json
 │   ├── settings.local.json
+│   ├── cache/
+│   │   └── history/       # 本机历史快照
+│   ├── temp/              # 本机临时文件
 │   └── .gitignore
 └── ...默认 Workspace 文件与用户文件
 ```
@@ -173,6 +176,8 @@ Provider ID 由 Provider 实现方定义，但它是会进入 Catalog Binding �
 
 ```gitignore
 settings.local.json
+cache/
+temp/
 ```
 
 因此未来基于 Git 的同步天然得到以下行为：
@@ -182,6 +187,7 @@ settings.local.json
 | `manifest.json` | 是 | Workspace 身份与名称应跟随目录 |
 | `settings.json` | 是 | 业务设置应跨设备共享 |
 | `settings.local.json` | 否 | 最近文件等设备本地恢复信息不应共享 |
+| `.lonanote/cache/`、`.lonanote/temp/` | 否 | 历史快照和临时文件只属于本机运行时 |
 
 迁移 Workspace 目录是本机文件复制，会复制整个目录，包括 `settings.local.json`；Git 同步是否包含文件则由 `.gitignore` 决定。这两个流程语义不同。
 
@@ -219,13 +225,20 @@ Manifest 是以下字段的权威来源：
   "customIgnore": "...",
   "uploadImagePath": "assets/images",
   "uploadAttachmentPath": "assets/attachments",
-  "historySnapshotCount": 20
+  "historySnapshotCount": 5,
+  "historySnapshotIntervalMinutes": 5
 }
 ```
 
 可选的 `sync` 扩展也属于这个文件。Settings 拥有独立且必填的 schema version，未来可以在不改变 Manifest schema 的情况下演进。
 
 `settings.json` 是当前格式的必需文件：打开或 attach 时缺失会返回 `SettingsNotFound`，不会默默从旧 Manifest 恢复，因为当前重构明确不承担 v1 兼容迁移。
+
+`historySnapshotCount` 控制文本文件覆盖前保留的历史版本数量，默认值为 `5`。`historySnapshotIntervalMinutes`
+控制同一文件创建快照的最短间隔，默认值为 `5` 分钟，设置为 `0` 时恢复为每次保存都创建快照。
+历史版本写入 `.lonanote/cache/history/<path-hash>/<date-time>.<extension>`，文件名使用 UTC
+时间，文件内容就是原始正文，不再包装 JSON。路径哈希目录表示来源文件，因此用户可以直接打开快照文件并将正文复制回原文件；编辑器恢复命令仍然可用。旧版本的 UUID `.json` 快照会继续读取。
+它们只用于当前设备的恢复，不参与 Workspace 同步。写入失败不会阻止正文保存，恢复快照会强制先把当前正文再保存为一个新的历史版本。设置数量为 `0` 时清空该 Workspace 的历史快照缓存。
 
 ### 4.4 LocalSetting：Workspace 内的设备本地设置
 

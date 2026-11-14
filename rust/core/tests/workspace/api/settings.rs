@@ -12,7 +12,8 @@ fn settings_round_trip() {
         let id = create_managed("API Settings").await.id;
 
         let mut settings: Value = invoke_json("workspace.get_settings", workspace_args(id)).await;
-        assert_eq!(settings["historySnapshotCount"], 20);
+        assert_eq!(settings["historySnapshotCount"], 5);
+        assert_eq!(settings["historySnapshotIntervalMinutes"], 5);
         settings["historySnapshotCount"] = json!(7);
         let updated: Value = invoke_json(
             "workspace.set_settings",

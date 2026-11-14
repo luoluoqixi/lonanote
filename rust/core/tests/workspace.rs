@@ -6,6 +6,8 @@ mod concurrency;
 mod domain;
 #[path = "workspace/files.rs"]
 mod files;
+#[path = "workspace/history.rs"]
+mod history;
 #[path = "workspace/lifecycle.rs"]
 mod lifecycle;
 #[path = "workspace/managed_scan.rs"]

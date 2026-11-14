@@ -1,15 +1,18 @@
 use std::{
     sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+use chrono::{NaiveDateTime, Utc};
+use sha2::{Digest, Sha256};
 use tokio::sync::{Mutex, MutexGuard, RwLock};
 
 use crate::workspace::{
     domain::{
-        WorkspaceId, WorkspaceLocalSetting, WorkspaceManifest, WorkspaceRelativePath,
-        WorkspaceRuntimeStatus, WorkspaceSettings, WorkspaceSnapshot, WorkspaceState,
-        WorkspaceStateStatus, WorkspaceStorageBinding, WorkspaceStorageView,
+        WorkspaceHistoryRecord, WorkspaceHistorySnapshot, WorkspaceId, WorkspaceLocalSetting,
+        WorkspaceManifest, WorkspaceRelativePath, WorkspaceRuntimeStatus, WorkspaceSettings,
+        WorkspaceSnapshot, WorkspaceState, WorkspaceStateStatus, WorkspaceStorageBinding,
+        WorkspaceStorageView, WORKSPACE_HISTORY_ROOT, WORKSPACE_HISTORY_SCHEMA_VERSION,
     },
     error::{StorageError, WorkspaceError},
     storage::{
@@ -462,7 +465,63 @@ impl WorkspaceInstance {
         text: &str,
         options: WriteOptions,
     ) -> Result<(), WorkspaceError> {
-        self.write_bytes(path, text.as_bytes(), options).await
+        ensure_user_mutation_path(path)?;
+        let _mutation = self.mutation_lock.lock().await;
+        if options.overwrite {
+            self.capture_history_locked(path, text, false).await;
+        }
+        self.session.write(path, text.as_bytes(), options).await?;
+        self.index
+            .invalidate_paths(std::slice::from_ref(path))
+            .await;
+        self.mark_modified_locked().await;
+        Ok(())
+    }
+
+    pub async fn list_history(
+        &self,
+        path: &WorkspaceRelativePath,
+    ) -> Result<Vec<WorkspaceHistorySnapshot>, WorkspaceError> {
+        ensure_user_mutation_path(path)?;
+        let _mutation = self.mutation_lock.lock().await;
+        let mut entries = self.history_entries_locked(path).await?;
+        sort_history_entries(&mut entries);
+        Ok(entries.into_iter().map(|entry| entry.snapshot()).collect())
+    }
+
+    pub async fn read_history(
+        &self,
+        path: &WorkspaceRelativePath,
+        id: &str,
+    ) -> Result<String, WorkspaceError> {
+        ensure_user_mutation_path(path)?;
+        let _mutation = self.mutation_lock.lock().await;
+        let entry = self.read_history_entry_locked(path, id).await?;
+        Ok(entry.content)
+    }
+
+    pub async fn restore_history(
+        &self,
+        path: &WorkspaceRelativePath,
+        id: &str,
+    ) -> Result<(), WorkspaceError> {
+        ensure_user_mutation_path(path)?;
+        let _mutation = self.mutation_lock.lock().await;
+        let entry = self.read_history_entry_locked(path, id).await?;
+        self.capture_history_locked(path, &entry.content, true)
+            .await;
+        self.session
+            .write(
+                path,
+                entry.content.as_bytes(),
+                WriteOptions::atomic_replace(),
+            )
+            .await?;
+        self.index
+            .invalidate_paths(std::slice::from_ref(path))
+            .await;
+        self.mark_modified_locked().await;
+        Ok(())
     }
 
     pub async fn create_directory(
@@ -535,6 +594,15 @@ impl WorkspaceInstance {
             self.index.invalidate().await;
             *current = settings.clone();
         }
+        if settings.history_snapshot_count == 0 {
+            if let Ok(history_root) = WorkspaceRelativePath::parse(WORKSPACE_HISTORY_ROOT) {
+                if let Err(error) = self.session.remove(&history_root, true).await {
+                    if !matches!(error, StorageError::NotFound { .. }) {
+                        log::warn!("Workspace {} 清理历史快照失败: {error}", self.id);
+                    }
+                }
+            }
+        }
         self.mark_modified_locked().await;
         Ok(settings)
     }
@@ -578,6 +646,275 @@ impl WorkspaceInstance {
         self.index.invalidate().await;
         Ok(())
     }
+
+    async fn capture_history_locked(
+        &self,
+        path: &WorkspaceRelativePath,
+        next_text: &str,
+        force: bool,
+    ) {
+        let settings = self.settings().await;
+        let limit = settings.history_snapshot_count;
+        if limit == 0 {
+            return;
+        }
+        if !force && settings.history_snapshot_interval_minutes > 0 {
+            let interval = Duration::from_secs(
+                u64::from(settings.history_snapshot_interval_minutes).saturating_mul(60),
+            );
+            let now = SystemTime::now();
+            if let Ok(entries) = self.history_entries_locked(path).await {
+                if entries.iter().any(|entry| {
+                    entry.created_at_nanos > 0
+                        && now
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_nanos()
+                            .saturating_sub(u128::from(entry.created_at_nanos))
+                            < interval.as_nanos()
+                }) {
+                    return;
+                }
+            }
+        }
+        let Ok(metadata) = self.session.metadata(path).await else {
+            return;
+        };
+        if metadata.kind != StorageEntryKind::File {
+            return;
+        }
+        let Ok(previous) = self.session.read(path).await else {
+            return;
+        };
+        let Ok(previous) = String::from_utf8(previous) else {
+            return;
+        };
+        if previous == next_text {
+            return;
+        }
+        let now = Utc::now();
+        let Ok(bucket) = history_bucket_path(path) else {
+            return;
+        };
+        let extension = snapshot_extension(path);
+        let base_id = format!(
+            "{}.{}",
+            now.format("%Y-%m-%d_%H-%M-%S"),
+            now.timestamp_subsec_nanos()
+        );
+        let mut id = format!("{base_id}.{extension}");
+        for suffix in 1..1000 {
+            let Ok(candidate) = WorkspaceRelativePath::parse(id.clone()) else {
+                return;
+            };
+            let candidate_path = bucket.join(&candidate);
+            if !self.session.exists(&candidate_path).await.unwrap_or(false) {
+                break;
+            }
+            id = format!("{base_id}-{suffix}.{extension}");
+        }
+        let Ok(snapshot_path) = history_file_path(path, &id) else {
+            return;
+        };
+        if let Err(error) = self.session.create_dir_all(&bucket).await {
+            log::warn!("Workspace {} 创建历史快照目录失败: {error}", self.id);
+            return;
+        }
+        if let Err(error) = self
+            .session
+            .write(
+                &snapshot_path,
+                previous.as_bytes(),
+                WriteOptions::atomic_replace(),
+            )
+            .await
+        {
+            log::warn!("Workspace {} 写入历史快照失败: {error}", self.id);
+            return;
+        }
+        if let Err(error) = self.prune_history_locked(path, limit).await {
+            log::warn!("Workspace {} 清理历史快照失败: {error}", self.id);
+        }
+    }
+
+    async fn history_entries_locked(
+        &self,
+        path: &WorkspaceRelativePath,
+    ) -> Result<Vec<HistoryEntry>, WorkspaceError> {
+        let bucket = history_bucket_path(path)?;
+        let entries = match self.session.list_dir(&bucket).await {
+            Ok(entries) => entries,
+            Err(StorageError::NotFound { .. }) => return Ok(Vec::new()),
+            Err(error) => return Err(error.into()),
+        };
+        let mut history = Vec::new();
+        for entry in entries {
+            if entry.metadata.kind != StorageEntryKind::File {
+                continue;
+            }
+            let Some(name) = entry.path.file_name().map(|name| name.as_str().to_string()) else {
+                continue;
+            };
+            if let Some((created_at, created_at_nanos)) = parse_snapshot_timestamp(&name) {
+                history.push(HistoryEntry {
+                    storage_path: entry.path,
+                    path: path.clone(),
+                    id: name,
+                    created_at,
+                    created_at_nanos,
+                    size: entry.metadata.size.unwrap_or_default(),
+                    content: String::new(),
+                });
+                continue;
+            }
+            if !name.ends_with(".json") {
+                continue;
+            }
+            let Ok(bytes) = self.session.read(&entry.path).await else {
+                continue;
+            };
+            let Ok(record) = serde_json::from_slice::<WorkspaceHistoryRecord>(&bytes) else {
+                continue;
+            };
+            if record.schema_version == WORKSPACE_HISTORY_SCHEMA_VERSION && record.path == *path {
+                history.push(HistoryEntry {
+                    storage_path: entry.path,
+                    path: path.clone(),
+                    id: record.id,
+                    created_at: record.created_at,
+                    created_at_nanos: record.created_at_nanos,
+                    size: record.content.len() as u64,
+                    content: record.content,
+                });
+            }
+        }
+        Ok(history)
+    }
+
+    async fn read_history_entry_locked(
+        &self,
+        path: &WorkspaceRelativePath,
+        id: &str,
+    ) -> Result<HistoryEntry, WorkspaceError> {
+        let entries = self.history_entries_locked(path).await?;
+        let mut entry = entries
+            .into_iter()
+            .find(|entry| entry.id == id)
+            .ok_or_else(|| WorkspaceError::InvalidHistory("历史快照 ID 无效".into()))?;
+        if entry.content.is_empty() {
+            let bytes = self.session.read(&entry.storage_path).await?;
+            entry.content = String::from_utf8(bytes)
+                .map_err(|error| WorkspaceError::InvalidHistory(error.to_string()))?;
+        }
+        Ok(entry)
+    }
+
+    async fn prune_history_locked(
+        &self,
+        path: &WorkspaceRelativePath,
+        limit: usize,
+    ) -> Result<(), WorkspaceError> {
+        let mut entries = self.history_entries_locked(path).await?;
+        sort_history_entries(&mut entries);
+        for entry in entries.into_iter().skip(limit) {
+            self.session.remove(&entry.storage_path, false).await?;
+        }
+        Ok(())
+    }
+}
+
+fn history_bucket_path(
+    path: &WorkspaceRelativePath,
+) -> Result<WorkspaceRelativePath, WorkspaceError> {
+    let digest = Sha256::digest(path.as_str().as_bytes());
+    let bucket = digest
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    Ok(WorkspaceRelativePath::parse(format!(
+        "{WORKSPACE_HISTORY_ROOT}/{bucket}"
+    ))?)
+}
+
+fn history_file_path(
+    path: &WorkspaceRelativePath,
+    id: &str,
+) -> Result<WorkspaceRelativePath, WorkspaceError> {
+    let name = WorkspaceRelativePath::parse(id.to_string())?;
+    if name.components().count() != 1 || name.is_root() {
+        return Err(WorkspaceError::InvalidHistory("历史快照 ID 无效".into()));
+    }
+    Ok(history_bucket_path(path)?.join(&name))
+}
+
+#[derive(Debug)]
+struct HistoryEntry {
+    storage_path: WorkspaceRelativePath,
+    path: WorkspaceRelativePath,
+    id: String,
+    created_at: u64,
+    created_at_nanos: u64,
+    size: u64,
+    content: String,
+}
+
+impl HistoryEntry {
+    fn snapshot(&self) -> WorkspaceHistorySnapshot {
+        WorkspaceHistorySnapshot {
+            id: self.id.clone(),
+            path: self.path.clone(),
+            created_at: self.created_at,
+            size: self.size,
+        }
+    }
+}
+
+fn sort_history_entries(entries: &mut [HistoryEntry]) {
+    entries.sort_by(|a, b| {
+        b.created_at_nanos
+            .cmp(&a.created_at_nanos)
+            .then_with(|| b.created_at.cmp(&a.created_at))
+            .then_with(|| b.id.cmp(&a.id))
+    });
+}
+
+fn snapshot_extension(path: &WorkspaceRelativePath) -> String {
+    path.file_name()
+        .map(|name| name.as_str().to_string())
+        .and_then(|name| {
+            name.rsplit_once('.')
+                .filter(|(stem, extension)| !stem.is_empty() && !extension.is_empty())
+                .map(|(_, extension)| extension.to_string())
+        })
+        .unwrap_or_else(|| "snapshot".into())
+}
+
+fn parse_snapshot_timestamp(id: &str) -> Option<(u64, u64)> {
+    let mut parts = id.split('.');
+    let date = parts.next()?;
+    let nanos = parts.next()?;
+    let _extension = parts.next()?;
+    let nanos = nanos
+        .split_once('-')
+        .map(|(value, _)| value)
+        .unwrap_or(nanos);
+    if nanos.len() != 9 {
+        return None;
+    }
+    let nanos = nanos.parse::<u32>().ok()?;
+    let datetime = NaiveDateTime::parse_from_str(date, "%Y-%m-%d_%H-%M-%S").ok()?;
+    let timestamp = datetime.and_utc();
+    let created_at = timestamp.timestamp();
+    if created_at < 0 {
+        return None;
+    }
+    let created_at = created_at as u64;
+    Some((
+        created_at,
+        created_at
+            .saturating_mul(1_000_000_000)
+            .saturating_add(u64::from(nanos)),
+    ))
 }
 
 fn ensure_user_mutation_path(path: &WorkspaceRelativePath) -> Result<(), WorkspaceError> {

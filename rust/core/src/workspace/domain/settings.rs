@@ -30,6 +30,8 @@ pub struct WorkspaceSettings {
     pub upload_attachment_path: WorkspaceRelativePath,
     #[serde(default = "default_history_snapshot_count")]
     pub history_snapshot_count: usize,
+    #[serde(default = "default_history_snapshot_interval_minutes")]
+    pub history_snapshot_interval_minutes: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sync: Option<WorkspaceSyncSettings>,
 }
@@ -43,6 +45,7 @@ impl Default for WorkspaceSettings {
             upload_image_path: default_upload_image_path(),
             upload_attachment_path: default_upload_attachment_path(),
             history_snapshot_count: default_history_snapshot_count(),
+            history_snapshot_interval_minutes: default_history_snapshot_interval_minutes(),
             sync: None,
         }
     }
@@ -67,5 +70,9 @@ fn default_upload_attachment_path() -> WorkspaceRelativePath {
 }
 
 const fn default_history_snapshot_count() -> usize {
-    20
+    5
+}
+
+const fn default_history_snapshot_interval_minutes() -> u32 {
+    5
 }
