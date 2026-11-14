@@ -64,7 +64,12 @@ objc2-app-kit = { workspace = true, features = ["NSColor", "NSWindow"] }
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = { workspace = true }
-windows = { workspace = true, features = ["Win32_Foundation"] }
+windows = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+wcpopup = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+wcpopup = { workspace = true }
+gtk = { workspace = true }
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

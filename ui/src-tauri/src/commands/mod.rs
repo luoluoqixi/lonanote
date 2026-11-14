@@ -11,6 +11,10 @@ mod document_save_api;
 mod file_ownership_api;
 use document_save_api::*;
 mod invoke;
+#[cfg(any(windows, target_os = "linux"))]
+mod wcpopup_menu_api;
+#[cfg(any(windows, target_os = "linux"))]
+use wcpopup_menu_api::*;
 mod resource_protocol;
 mod window_api;
 pub(crate) mod window_callbacks;
@@ -63,13 +67,14 @@ pub fn resolve_default_paths(app: &AppHandle) -> Result<lonanote_core::config::a
         path_to_string(home_dir, "home_dir")?,
     ))
 }
-
 pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
     resource_protocol::register_resource_protocol(builder).invoke_handler(tauri::generate_handler![
         list_system_fonts,
         resolve_system_font,
         invoke,
         invoke_async,
+        #[cfg(any(windows, target_os = "linux"))]
+        show_wcpopup_context_menu,
         get_command_len,
         get_command_keys,
         get_command_async_len,
@@ -142,4 +147,3 @@ pub fn init_commands(app: &AppHandle) -> Result<()> {
     lonanote_core::init()?;
     Ok(())
 }
-

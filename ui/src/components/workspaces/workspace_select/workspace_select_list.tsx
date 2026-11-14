@@ -160,7 +160,6 @@ export function WorkspaceSelectList({
             {section.workspaces.map((workspaceItem) => (
               <NativeListNavigationItem
                 contextMenuProps={{
-                  native: desktop ? false : undefined,
                   contentSize: desktop ? "sm" : undefined,
                   items: [
                     ...(isDesktop()

@@ -14,6 +14,7 @@ export type ColorSchemeSetting = "light" | "dark" | "system";
 /** A preset theme name or an opaque hex color selected by the user. */
 export type AccentColorSetting = AccentThemeName | string;
 export type AppLayoutMode = "mobile" | "desktop";
+export type DesktopContextMenuStyle = "system" | "app";
 export type WorkspaceExplorerGroupModeSetting = "date" | "none";
 export type WorkspaceExplorerSortSetting =
   | "name"
@@ -48,6 +49,7 @@ export interface UiPreferences {
     backgroundFollowsTheme: boolean;
     themeMode: ColorSchemeSetting;
     zoomFactor: number;
+    contextMenuStyle: DesktopContextMenuStyle;
   };
   developer: {
     optionsEnabled: boolean;
@@ -73,6 +75,7 @@ const UI_ACCENT_COLOR_KEY = "ui.appearance.accentColor";
 const UI_BACKGROUND_FOLLOWS_THEME_KEY = "ui.appearance.backgroundFollowsTheme";
 const UI_THEME_MODE_KEY = "ui.appearance.themeMode";
 const UI_ZOOM_FACTOR_KEY = "ui.appearance.zoomFactor";
+const UI_CONTEXT_MENU_STYLE_KEY = "ui.appearance.contextMenuStyle";
 const UI_DEVELOPER_OPTIONS_ENABLED_KEY = "ui.developer.optionsEnabled";
 const UI_LAYOUT_MODE_KEY = "ui.shell.layoutMode";
 const UI_WORKSPACE_EXPLORER_FOLDERS_FIRST_KEY = "ui.workspaceExplorer.foldersFirst";
@@ -95,6 +98,7 @@ export function createDefaultUiPreferences(): UiPreferences {
       backgroundFollowsTheme: false,
       themeMode: "system",
       zoomFactor: 1,
+      contextMenuStyle: "system",
     },
     developer: {
       optionsEnabled: false,
@@ -146,6 +150,10 @@ function normalizeZoomFactor(value: unknown): number {
   }
 
   return clampWindowZoom(value);
+}
+
+function normalizeDesktopContextMenuStyle(value: unknown): DesktopContextMenuStyle {
+  return value === "app" ? "app" : "system";
 }
 
 function normalizeWorkspaceExplorerSortValue(value: unknown): WorkspaceExplorerSortSetting {
@@ -211,6 +219,7 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
       backgroundFollowsTheme: Boolean(preferences.appearance.backgroundFollowsTheme),
       themeMode: normalizeThemeMode(preferences.appearance.themeMode),
       zoomFactor: normalizeZoomFactor(preferences.appearance.zoomFactor),
+      contextMenuStyle: normalizeDesktopContextMenuStyle(preferences.appearance.contextMenuStyle),
     },
     developer: {
       optionsEnabled: Boolean(preferences.developer?.optionsEnabled),
@@ -238,6 +247,7 @@ function readUiPreferencesFromStore(): UiPreferences {
   const backgroundFollowsTheme = store.commonGetSync<unknown>(UI_BACKGROUND_FOLLOWS_THEME_KEY);
   const themeMode = store.commonGetSync<unknown>(UI_THEME_MODE_KEY);
   const zoomFactor = store.commonGetSync<unknown>(UI_ZOOM_FACTOR_KEY);
+  const contextMenuStyle = store.commonGetSync<unknown>(UI_CONTEXT_MENU_STYLE_KEY);
   const developerOptionsEnabled = store.commonGetSync<unknown>(UI_DEVELOPER_OPTIONS_ENABLED_KEY);
   const rememberSize = store.commonGetSync<unknown>(UI_REMEMBER_WINDOW_SIZE_KEY);
   const lastSize = store.commonGetSync<unknown>(UI_WINDOW_LAST_SIZE_KEY);
@@ -270,6 +280,9 @@ function readUiPreferencesFromStore(): UiPreferences {
           : defaults.appearance.backgroundFollowsTheme,
       themeMode: normalizeThemeMode(themeMode ?? defaults.appearance.themeMode),
       zoomFactor: normalizeZoomFactor(zoomFactor ?? defaults.appearance.zoomFactor),
+      contextMenuStyle: normalizeDesktopContextMenuStyle(
+        contextMenuStyle ?? defaults.appearance.contextMenuStyle,
+      ),
     },
     developer: {
       optionsEnabled:
@@ -312,6 +325,7 @@ function toStoreEntries(preferences: UiPreferences): Array<[string, unknown]> {
     [UI_BACKGROUND_FOLLOWS_THEME_KEY, preferences.appearance.backgroundFollowsTheme],
     [UI_THEME_MODE_KEY, preferences.appearance.themeMode],
     [UI_ZOOM_FACTOR_KEY, preferences.appearance.zoomFactor],
+    [UI_CONTEXT_MENU_STYLE_KEY, preferences.appearance.contextMenuStyle],
     [UI_DEVELOPER_OPTIONS_ENABLED_KEY, preferences.developer.optionsEnabled],
     [UI_WORKSPACE_EXPLORER_FOLDERS_FIRST_KEY, preferences.workspaceExplorer.foldersFirst],
     [UI_WORKSPACE_EXPLORER_GROUP_MODE_KEY, preferences.workspaceExplorer.groupMode],

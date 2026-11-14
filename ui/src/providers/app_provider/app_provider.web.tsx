@@ -1,9 +1,13 @@
 import { useEffect, useMemo } from "react";
 import { MenuProvider, RootProvider, resolveGeneratedAccentTheme } from "rn-ui-kit";
 
-import { resolveDesktopContextMenuNative } from "@/api/common/desktop_menu_policy";
+import {
+  resolveDesktopContextMenuNative,
+  resolveDesktopMenuBackend,
+} from "@/api/common/desktop_menu_policy";
 import { isTauri, os } from "@/api/common/platform";
 import { showTauriContextMenu } from "@/api/common/tauri_context_menu.web";
+import { showWcPopupContextMenu } from "@/api/common/wcpopup_context_menu.web";
 import {
   useColorSchemeSettings,
   useDesktopAccentColor,
@@ -28,16 +32,28 @@ export function AppProvider({ children }: AppProviderProps) {
   const { isLoaded, preferredColorScheme, preferences, resolvedColorScheme } =
     useColorSchemeSettings();
 
-  const nativeMenus = resolveDesktopContextMenuNative(preferences.shell.layoutMode, os());
+  const tauriDesktop = isTauri() && preferences.shell.layoutMode === "desktop";
+  const menuStyle = preferences.appearance.contextMenuStyle;
+  const nativeMenus =
+    preferences.shell.layoutMode !== "desktop"
+      ? undefined
+      : tauriDesktop
+        ? resolveDesktopContextMenuNative(preferences.shell.layoutMode, os(), menuStyle)
+        : false;
   const menuConfig = useMemo(
     () => ({
       native: nativeMenus,
       webContentMaxHeight:
         preferences.shell.layoutMode === "desktop" ? "calc(100vh - 24px)" : undefined,
-      showNativeMenu: nativeMenus && isTauri() ? showTauriContextMenu : undefined,
+      showNativeMenu:
+        nativeMenus && tauriDesktop
+          ? resolveDesktopMenuBackend(os()) === "wcpopup"
+            ? showWcPopupContextMenu
+            : showTauriContextMenu
+          : undefined,
       onNativeMenuError: (error: unknown) => console.warn("无法打开原生菜单", error),
     }),
-    [nativeMenus, preferences.shell.layoutMode],
+    [menuStyle, nativeMenus, preferences.shell.layoutMode, tauriDesktop],
   );
 
   useDesktopAccentColor();

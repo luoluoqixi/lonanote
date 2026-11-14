@@ -367,7 +367,6 @@ export function WorkspaceExplorerList({
   );
   return desktop ? (
     <ContextMenu
-      native={false}
       contentSize="sm"
       items={menuFor() ?? []}
       triggerProps={{ style: { flex: 1 } }}

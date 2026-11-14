@@ -59,7 +59,6 @@ export function EditorTabInput({
       {/* 容器只承载悬浮事件；覆盖 Tooltip 注入的 button role，避免嵌套关闭按钮。 */}
       <View role="presentation" style={{ flexShrink: 0, height: 36 }}>
         <ContextMenu
-          native={layoutMode === "desktop" ? false : undefined}
           contentSize={layoutMode === "desktop" ? "sm" : "default"}
           items={frozenItems ?? getItems(nativePath)}
           onOpenWillChange={(open) => {

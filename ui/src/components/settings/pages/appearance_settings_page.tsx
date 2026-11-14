@@ -20,7 +20,12 @@ import { fontSelectionName } from "@/fonts/font_selection";
 import { useLayoutMode } from "@/hooks/layout";
 import { useColorSchemeSettings, useUiPreferences } from "@/hooks/settings";
 import { useFontSettings } from "@/hooks/settings/use_font_settings";
-import type { AccentColorSetting, AppLayoutMode, ColorSchemeSetting } from "@/stores/ui";
+import type {
+  AccentColorSetting,
+  AppLayoutMode,
+  ColorSchemeSetting,
+  DesktopContextMenuStyle,
+} from "@/stores/ui";
 import {
   accentThemeNames,
   accentThemeSeeds,
@@ -227,6 +232,38 @@ export function AppearanceSettingsPage({
           title="背景跟随主题"
         />
       </NativeListSection>
+
+      {layoutMode === "desktop" ? (
+        <NativeListSection {...presentation.section} title="菜单">
+          <NativeListSelectItem
+            {...presentation.item}
+            selectProps={{
+              ...presentation.select,
+              "aria-label": "桌面上下文菜单样式",
+              onValueChange: (nextValue: string | null) => {
+                if (nextValue !== "system" && nextValue !== "app") return;
+                runSettingsAction(
+                  "set desktop context menu style",
+                  uiPreferences.updateAndSave((currentPreferences) => ({
+                    ...currentPreferences,
+                    appearance: {
+                      ...currentPreferences.appearance,
+                      contextMenuStyle: nextValue as DesktopContextMenuStyle,
+                    },
+                  })),
+                );
+              },
+              options: [
+                { label: "系统原生", value: "system" },
+                { label: "应用样式", value: "app" },
+              ],
+              placeholder: "选择菜单样式",
+              value: uiPreferences.preferences.appearance.contextMenuStyle,
+            }}
+            title="上下文菜单样式"
+          />
+        </NativeListSection>
+      ) : null}
 
       {supportSwitchUIMode() && (
         <NativeListSection {...presentation.section} title="界面布局">

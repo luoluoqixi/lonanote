@@ -145,7 +145,6 @@ function TreeNode({
       >
         <View style={{ flex: 1, minWidth: 0 }}>
           <ContextMenu
-            native={desktop ? false : undefined}
             contentSize={desktop ? "sm" : "default"}
             triggerProps={{ style: { width: "100%", height: rowHeight } }}
             items={frozenItems.current ?? currentMenuItems}

@@ -28,7 +28,6 @@ export function WorkspaceDetailsListItem({
   const desktop = layoutMode === "desktop";
 
   const contextMenuProps = {
-    native: desktop ? false : undefined,
     contentSize: desktop ? ("sm" as const) : undefined,
     items: [
       {

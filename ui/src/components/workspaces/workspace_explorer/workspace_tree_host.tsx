@@ -695,7 +695,6 @@ export function WorkspaceTreeHost({
       ) : null}
       {desktop ? (
         <ContextMenu
-          native={false}
           style={styles.root}
           contentSize="sm"
           items={menuItems("")}
