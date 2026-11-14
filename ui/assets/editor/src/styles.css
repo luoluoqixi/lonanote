@@ -99,7 +99,7 @@ html[data-platform="macos"] #editor {
   overflow: visible;
 }
 
-.cm-editor:not(.cm-lineWrapping) .cm-scroller {
+.cm-editor:has(.cm-content:not(.cm-lineWrapping)) .cm-scroller {
   min-width: max-content;
 }
 
