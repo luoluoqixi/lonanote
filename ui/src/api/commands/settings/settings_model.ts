@@ -11,6 +11,7 @@ export interface SettingsPayload {
   showLineNumber: boolean;
   disableLineWrap: boolean;
   sourceMode: boolean;
+  linkOpenRequiresCtrl: boolean;
   editorFont: FontSelection;
 }
 
@@ -29,6 +30,7 @@ export interface GlobalSettings {
     showLineNumber: boolean;
     disableLineWrap: boolean;
     sourceMode: boolean;
+    linkOpenRequiresCtrl: boolean;
     font: FontSelection;
   };
 }
@@ -57,6 +59,7 @@ export function createDefaultGlobalSettings(): GlobalSettings {
       showLineNumber: false,
       disableLineWrap: false,
       sourceMode: false,
+      linkOpenRequiresCtrl: true,
       font: null,
     },
   };
@@ -84,6 +87,8 @@ export function fromSettingsPayload(
       showLineNumber: payload?.showLineNumber ?? defaults.editorDefaults.showLineNumber,
       disableLineWrap: payload?.disableLineWrap ?? defaults.editorDefaults.disableLineWrap,
       sourceMode: payload?.sourceMode ?? defaults.editorDefaults.sourceMode,
+      linkOpenRequiresCtrl:
+        payload?.linkOpenRequiresCtrl ?? defaults.editorDefaults.linkOpenRequiresCtrl,
       font: normalizeFontSelection(payload?.editorFont),
     },
   };
@@ -100,6 +105,7 @@ export function toSettingsPayload(settings: GlobalSettings): SettingsPayload {
     showLineNumber: settings.editorDefaults.showLineNumber,
     disableLineWrap: settings.editorDefaults.disableLineWrap,
     sourceMode: settings.editorDefaults.sourceMode,
+    linkOpenRequiresCtrl: settings.editorDefaults.linkOpenRequiresCtrl,
     editorFont: settings.editorDefaults.font,
   };
 }

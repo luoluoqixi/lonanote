@@ -7,6 +7,7 @@ import {
 } from "rn-ui-kit";
 
 import type { GlobalSettings } from "@/api/commands/settings";
+import { isWeb, os } from "@/api/common/platform";
 import { useGlobalSettings, useUiPreferences } from "@/hooks/settings";
 
 import type { SettingsPageProps } from "../settings_config";
@@ -152,6 +153,27 @@ export function GlobalSettingsPage({
       </NativeListSection>
 
       <NativeListSection {...presentation.section} title="编辑器">
+        {isWeb() ? (
+          <NativeListSwitchItem
+            {...presentation.item}
+            title={`按住 ${os() === "macos" ? "Command" : "Ctrl"} 点击打开链接和图片链接`}
+            switchProps={{
+              ...presentation.switch,
+              checked: settings.editorDefaults.linkOpenRequiresCtrl,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle link open modifier",
+                  updateAndSave((currentSettings) =>
+                    updateSettingsSection(currentSettings, "editorDefaults", {
+                      ...currentSettings.editorDefaults,
+                      linkOpenRequiresCtrl: nextValue,
+                    }),
+                  ),
+                );
+              },
+            }}
+          />
+        ) : null}
         <NativeListSwitchItem
           {...presentation.item}
           switchProps={{

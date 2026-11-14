@@ -236,6 +236,7 @@ export function EditorWebView({
           sourceMode:
             !editor.previewMode &&
             (editor.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode),
+          linkOpenRequiresCtrl: settings.editorDefaults.linkOpenRequiresCtrl,
         },
         resourceContext.context,
       ),

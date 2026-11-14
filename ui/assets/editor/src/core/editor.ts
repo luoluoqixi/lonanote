@@ -36,7 +36,7 @@ import {
   lineNumbers,
   rectangularSelection,
 } from "@codemirror/view";
-import { PurrMDConfig, PurrMDThemeConfig } from "purrmd";
+import { PurrMDConfig, PurrMDFeatures, PurrMDThemeConfig } from "purrmd";
 
 import { IOS_SELECTION_BOTTOM_GAP } from "../consts";
 import { findMarkdownAnchorLine } from "../resources/markdown_anchor";
@@ -195,6 +195,7 @@ export interface LonaEditorSetValueOptions {
 
 export interface LonaEditorPresentationOptions {
   slashMenu?: boolean;
+  linkOpenMode?: "click" | "controlOrCommand" | "none";
   lineNumbers: boolean;
   lineWrapping: boolean;
   sourceMode: boolean;
@@ -307,6 +308,7 @@ export class LonaEditor {
       lineWrapping: !disableAll && enableLineWrapping,
       sourceMode: markdownConfig?.formattingDisplayMode === "show",
       slashMenu: markdownConfig?.defaultSlashMenu?.show === true,
+      linkOpenMode: markdownConfig?.featuresConfigs?.[PurrMDFeatures.Link]?.clickToOpenInPreview,
       theme: resolvedTheme === "dark" ? "dark" : "light",
       themeColors,
     };
@@ -503,6 +505,7 @@ export class LonaEditor {
     if (
       previous.sourceMode !== options.sourceMode ||
       previous.slashMenu !== options.slashMenu ||
+      previous.linkOpenMode !== options.linkOpenMode ||
       themeChanged
     ) {
       effects.push(this.#languageEx.reconfigure(this.#createLanguageExtensions()));
@@ -516,6 +519,18 @@ export class LonaEditor {
     const { filePath, detectLanguage, markdownConfig, markdownTheme } = this.#presentationBase;
     const resolvedMarkdownConfig = {
       ...markdownConfig,
+      ...(this.#presentation.linkOpenMode === undefined
+        ? {}
+        : {
+            featuresConfigs: {
+              ...markdownConfig?.featuresConfigs,
+              [PurrMDFeatures.Link]: {
+                ...markdownConfig?.featuresConfigs?.[PurrMDFeatures.Link],
+                clickToOpenInPreview: this.#presentation.linkOpenMode,
+                clickToOpenInSource: this.#presentation.linkOpenMode,
+              },
+            },
+          }),
       defaultSlashMenu: {
         ...markdownConfig?.defaultSlashMenu,
         show: this.#presentation.slashMenu === true,

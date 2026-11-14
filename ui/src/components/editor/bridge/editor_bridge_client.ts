@@ -1,4 +1,5 @@
 import { type EditorAppMenuKey, isEditorAppMenuKey } from "@/assets/editor/src/bridge/app_menu_key";
+import { type EditorPointerPayload, isEditorPointerPayload } from "@/assets/editor/src/bridge/pointer";
 import {
   EDITOR_BRIDGE_PROTOCOL_VERSION,
   type EditorBridgeApplyResult,
@@ -48,6 +49,7 @@ type EditorBridgeClientOptions = {
   onEditorStateChanged: (snapshot: EditorStateSnapshot) => void;
   onEditorFocusChanged: (focused: boolean) => void;
   onEditorInputRequested?: () => void;
+  onEditorPointer?: (payload: EditorPointerPayload) => void;
   onViewportScrollRequested: (payload: EditorViewportScrollPayload) => void;
   onSaveRequested: () => void;
   onHistoryRequested?: (direction: "undo" | "redo") => void;
@@ -362,6 +364,10 @@ export class EditorBridgeClient {
     }
     if (event.event === "editor.inputRequested") {
       this.#options.onEditorInputRequested?.();
+      return;
+    }
+    if (event.event === "editor.pointer") {
+      if (isEditorPointerPayload(event.payload)) this.#options.onEditorPointer?.(event.payload);
       return;
     }
     if (event.event === "editor.focusChanged") {

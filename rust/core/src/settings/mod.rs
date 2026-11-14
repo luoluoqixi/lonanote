@@ -43,6 +43,9 @@ pub struct Settings {
     /// 源码模式
     #[serde(default = "Settings::default_source_mode")]
     pub source_mode: bool,
+    /// 桌面端按住 Ctrl（macOS 为 Command）才打开编辑器链接。
+    #[serde(default = "Settings::default_link_open_requires_ctrl")]
+    pub link_open_requires_ctrl: bool,
     /// 全局编辑器字体，None 使用系统默认。
     #[serde(default, deserialize_with = "font::deserialize_selection")]
     pub editor_font: Option<font::FontSelection>,
@@ -60,6 +63,7 @@ pub struct SettingsPatch {
     pub show_line_number: Option<bool>,
     pub disable_line_wrap: Option<bool>,
     pub source_mode: Option<bool>,
+    pub link_open_requires_ctrl: Option<bool>,
     #[serde(default, deserialize_with = "font::deserialize_patch")]
     pub editor_font: Option<Option<font::FontSelection>>,
 }
@@ -100,6 +104,10 @@ impl Settings {
     pub const fn default_source_mode() -> bool {
         false
     }
+
+    pub const fn default_link_open_requires_ctrl() -> bool {
+        true
+    }
 }
 
 impl Default for Settings {
@@ -114,6 +122,7 @@ impl Default for Settings {
             show_line_number: Self::default_show_line_number(),
             disable_line_wrap: Self::default_disable_line_wrap(),
             source_mode: Self::default_source_mode(),
+            link_open_requires_ctrl: Self::default_link_open_requires_ctrl(),
             editor_font: None,
         }
     }
@@ -163,6 +172,7 @@ impl Settings {
         assign_if_some!(show_line_number);
         assign_if_some!(disable_line_wrap);
         assign_if_some!(source_mode);
+        assign_if_some!(link_open_requires_ctrl);
         if let Some(value) = &patch.editor_font {
             next.editor_font = value.clone();
         }
@@ -221,6 +231,7 @@ pub async fn replace_settings_and_save(
         show_line_number: Some(settings_value.show_line_number),
         disable_line_wrap: Some(settings_value.disable_line_wrap),
         source_mode: Some(settings_value.source_mode),
+        link_open_requires_ctrl: Some(settings_value.link_open_requires_ctrl),
         editor_font: Some(settings_value.editor_font),
     };
     settings.patch_and_save(&patch, &get_settings_config_path(), config_sync_hub())

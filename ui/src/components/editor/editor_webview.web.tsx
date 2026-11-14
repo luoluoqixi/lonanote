@@ -25,6 +25,7 @@ import { useFontSettings } from "@/hooks/settings/use_font_settings";
 import { type DocumentModel, type EditorViewSession, editorStore } from "@/stores/editor";
 
 import { registerEditorMenuInvalidation } from "./controllers/editor_menu_lifecycle";
+import { forwardEditorPointer } from "./bridge/editor_pointer.web";
 import { editorWindowService } from "./controllers/editor_window_service";
 import { createEditorMenuItems } from "./desktop/editor_menu_items";
 import { EditorMenuPopup } from "./desktop/editor_menu_popup";
@@ -117,6 +118,7 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
         {
           slashMenu: isDesktop() && layoutMode === "desktop",
           font: editorFont.font,
+          linkOpenRequiresCtrl: settings.editorDefaults.linkOpenRequiresCtrl,
           lineNumbers:
             editor.preferenceOverrides.lineNumbers ?? settings.editorDefaults.showLineNumber,
           lineWrapping:
@@ -263,6 +265,9 @@ export function EditorWebView({ active = true, document, editor }: EditorWebView
           void request
             .then(() => editorCommandCoordinator.focusIfActive(editor.editorId))
             .catch((error) => toastRef.current.error(String(error)));
+        },
+        onEditorPointer: (payload) => {
+          if (iframeRef.current) forwardEditorPointer(iframeRef.current, payload);
         },
         onViewportScrollRequested: () => undefined,
         onAppMenuKey: (payload) => {

@@ -88,6 +88,7 @@ export type EditorSemanticColors = {
 
 export type EditorPreferences = {
   font?: ResolvedFont | null;
+  linkOpenRequiresCtrl?: boolean;
   slashMenu?: boolean;
   lineNumbers: boolean;
   lineWrapping: boolean;
@@ -439,6 +440,8 @@ export function isEditorInitializePayload(value: unknown): value is EditorInitia
     typeof document.readOnly === "boolean" &&
     typeof document.inputEnabled === "boolean" &&
     isRecord(value.preferences) &&
+    (value.preferences.linkOpenRequiresCtrl === undefined ||
+      typeof value.preferences.linkOpenRequiresCtrl === "boolean") &&
     (value.preferences.font == null || isResolvedFont(value.preferences.font)) &&
     typeof value.preferences.lineNumbers === "boolean" &&
     typeof value.preferences.lineWrapping === "boolean" &&
@@ -475,6 +478,7 @@ export function isEditorPreferencesUpdatePayload(
   return (
     isRecord(value) &&
     (value.font == null || isResolvedFont(value.font)) &&
+    (value.linkOpenRequiresCtrl === undefined || typeof value.linkOpenRequiresCtrl === "boolean") &&
     typeof value.lineNumbers === "boolean" &&
     typeof value.lineWrapping === "boolean" &&
     typeof value.sourceMode === "boolean" &&

@@ -3,6 +3,7 @@ import { EditorView } from "@codemirror/view";
 import { type ImageRetryContext, PurrMDFeatures, commands } from "purrmd";
 
 import { installEditorAppMenuKeys } from "./bridge/app_menu_key";
+import { installEditorPointerEvents } from "./bridge/pointer";
 import {
   EDITOR_BRIDGE_PROTOCOL_VERSION,
   type EditorBridgeBootstrap,
@@ -49,6 +50,7 @@ import {
   parseEditorResourceReference,
   resolveEditorResourceReference,
 } from "./resources/resource_reference";
+import { getEditorLinkOpenMode, shouldActivateEditorLink } from "./resources/link_activation";
 import { createEditorResourceRetryUrl, resolveEditorResourceUrl } from "./resources/resource_url";
 import "./styles.css";
 
@@ -659,6 +661,7 @@ function applyPresentation(currentSession: SurfaceSession): void {
     lineWrapping: currentSession.preferences.lineWrapping,
     sourceMode: currentSession.preferences.sourceMode,
     slashMenu: currentSession.preferences.slashMenu === true,
+    linkOpenMode: getEditorLinkOpenMode(currentSession.runtime.platform, currentSession.preferences),
     theme: currentSession.runtime.colorScheme,
     themeColors: currentSession.runtime.colors,
   });
@@ -867,8 +870,8 @@ function initializeEditor(request: EditorBridgeRequest, payload: EditorInitializ
           onTaskItemChecked: (checked: boolean) => emitEvent("task.toggled", { checked }),
         },
         [PurrMDFeatures.Link]: {
-          clickToOpenInPreview: "click",
-          clickToOpenInSource: "click",
+          clickToOpenInPreview: getEditorLinkOpenMode(payload.runtime.platform, payload.preferences),
+          clickToOpenInSource: getEditorLinkOpenMode(payload.runtime.platform, payload.preferences),
           onLinkClickPreview: (rawReference: string, event: MouseEvent) =>
             emitResourceActivation(currentSession, rawReference, event),
           onLinkClickSource: (rawReference: string, event: MouseEvent) =>
@@ -925,6 +928,9 @@ function emitResourceActivation(
   rawReference: string,
   event: MouseEvent,
 ): void {
+  // PurrMD 的自定义回调绕过 clickToOpen 配置，需要在激活入口同步检查修饰键。
+  if (!shouldActivateEditorLink(currentSession.runtime.platform, currentSession.preferences, event))
+    return;
   event.preventDefault();
   const reference = parseEditorResourceReference(rawReference);
   const resolved = currentSession.documentWorkspacePath
@@ -1321,6 +1327,10 @@ function receiveMessage(rawMessage: unknown): void {
 
 window.addEventListener("message", (event) => receiveMessage(event.data));
 document.addEventListener("message", (event) => receiveMessage((event as MessageEvent).data));
+installEditorPointerEvents(document, (payload) => {
+  if (session && ["windows", "macos", "linux", "web"].includes(session.runtime.platform))
+    emitEvent("editor.pointer", payload);
+});
 
 if (bootstrap) {
   emitEvent("bridge.ready", {
