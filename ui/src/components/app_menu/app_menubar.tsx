@@ -4,6 +4,7 @@ import { Menubar, Text, useUiTheme } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common/platform";
 
+import { DESKTOP_MENUBAR_SIZE, DESKTOP_UI_MENU_CONTENT_SIZE } from "../common/consts";
 import { useAppMenuContext } from "./app_menu_host";
 import type { AppMenuNode } from "./app_menu_model";
 import { useAppMenuKeyboard } from "./use_app_menu_keyboard";
@@ -85,11 +86,12 @@ export function AppMenubar({ compact }: { compact: boolean }) {
           if (next) handingOffFocus.current = false;
           if (next) void refresh().catch(() => undefined);
         }}
-        size="sm"
-        contentSize="sm"
+        size={DESKTOP_MENUBAR_SIZE}
+        contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
         className="rounded-none border-0 shadow-none"
         style={{
           height: "100%",
+          marginTop: 1,
           borderWidth: 0,
           borderRadius: 0,
           backgroundColor: "transparent",

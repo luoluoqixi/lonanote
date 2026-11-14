@@ -14,6 +14,7 @@ import { type ComponentProps, useMemo } from "react";
 import { View } from "react-native";
 import { Button, Dropdown, type DropdownItemData, Text, useUiTheme } from "rn-ui-kit";
 
+import { DESKTOP_UI_MENU_CONTENT_SIZE } from "@/components/common/consts";
 import { getSelectionHeaderRightMenuProps } from "@/components/common/header_actions";
 
 import { getWorkspaceSelectSettingsMenuItems } from "./workspace_select_menu";
@@ -208,7 +209,7 @@ export function WorkspaceSelectHeader({
           </>
         ) : (
           <Dropdown
-            contentSize="sm"
+            contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
             contentProps={{ align: "end" }}
             items={menuItems}
             nativeTrigger

@@ -21,6 +21,7 @@ import { clipboard } from "@/api/commands/system/clipboard";
 import { openExternalFile } from "@/api/commands/utils";
 import { workspaceFile } from "@/api/commands/workspace";
 import { getFileMimeType, isDesktop, isMarkdownFile } from "@/api/common";
+import { DESKTOP_UI_MENU_CONTENT_SIZE } from "@/components/common/consts";
 import { editorCommandCoordinator, saveCoordinator } from "@/components/editor/controllers";
 import { getDocumentSaveCapabilities } from "@/components/editor/controllers/document_save_capabilities";
 import { toggleEditorPreviewMode } from "@/components/editor/controllers/editor_preview_mode";
@@ -286,7 +287,7 @@ export function DesktopEditorActions({
       ) : null}
       <Dropdown
         items={items}
-        contentSize="sm"
+        contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
         contentProps={{ align: "end" }}
         nativeTrigger
         nativeTriggerIcon="none"

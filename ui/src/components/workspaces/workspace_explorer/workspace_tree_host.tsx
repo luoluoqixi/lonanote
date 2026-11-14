@@ -47,6 +47,7 @@ import {
   getDefaultWorkspaceEntryName,
   getWorkspaceEntryCreateParent,
 } from "@/api/common/utils/workspace_entry_name";
+import { DESKTOP_UI_MENU_CONTENT_SIZE } from "@/components/common/consts";
 import { useEditorSelector } from "@/hooks/editor/use_editor_selector";
 import { useLayoutMode } from "@/hooks/layout";
 import { useMediaNavigation } from "@/hooks/media";
@@ -614,7 +615,7 @@ export function WorkspaceTreeHost({
         <View style={styles.headerActions}>
           {desktop ? (
             <Dropdown
-              contentSize="sm"
+              contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
               contentProps={{ align: "start" }}
               items={WORKSPACE_EXPLORER_SORT_GROUPS.flatMap((group) =>
                 group.items.map((item) => ({

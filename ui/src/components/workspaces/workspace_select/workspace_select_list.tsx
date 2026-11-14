@@ -22,6 +22,7 @@ import {
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
 import { isAndroid, isDesktop } from "@/api/common";
+import { DESKTOP_UI_MENU_CONTENT_SIZE, MOBILE_UI_MENU_SIZE } from "@/components/common/consts";
 import { useLayoutMode } from "@/hooks/layout";
 import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 
@@ -160,7 +161,7 @@ export function WorkspaceSelectList({
             {section.workspaces.map((workspaceItem) => (
               <NativeListNavigationItem
                 contextMenuProps={{
-                  contentSize: desktop ? "sm" : undefined,
+                  contentSize: desktop ? DESKTOP_UI_MENU_CONTENT_SIZE : MOBILE_UI_MENU_SIZE,
                   items: [
                     ...(isDesktop()
                       ? [

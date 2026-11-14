@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { ContextMenu, type ContextMenuItemData } from "rn-ui-kit";
 
 import { workspaceFile } from "@/api/commands/workspace";
+import { DESKTOP_UI_MENU_CONTENT_SIZE, MOBILE_UI_MENU_SIZE } from "@/components/common/consts";
 import { editorWindowRuntime } from "@/components/editor/controllers/editor_window_runtime";
 import { FilePathTooltip } from "@/components/files/file_path_tooltip";
 import { useLayoutMode } from "@/hooks/layout";
@@ -59,7 +60,9 @@ export function EditorTabInput({
       {/* 容器只承载悬浮事件；覆盖 Tooltip 注入的 button role，避免嵌套关闭按钮。 */}
       <View role="presentation" style={{ flexShrink: 0, height: 36 }}>
         <ContextMenu
-          contentSize={layoutMode === "desktop" ? "sm" : "default"}
+          contentSize={
+            layoutMode === "desktop" ? DESKTOP_UI_MENU_CONTENT_SIZE : MOBILE_UI_MENU_SIZE
+          }
           items={frozenItems ?? getItems(nativePath)}
           onOpenWillChange={(open) => {
             if (open) setFrozenItems(getItems(nativePath));

@@ -13,6 +13,7 @@ import { ContextMenu, type ContextMenuItemData, Dropdown, Spinner, useUiTheme } 
 
 import { workspaceFile } from "@/api/commands/workspace";
 import { isWeb } from "@/api/common/platform";
+import { DESKTOP_UI_MENU_CONTENT_SIZE, MOBILE_UI_MENU_SIZE } from "@/components/common/consts";
 import { FilePathTooltip } from "@/components/files/file_path_tooltip";
 import { useLayoutMode } from "@/hooks/layout";
 import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
@@ -145,7 +146,7 @@ function TreeNode({
       >
         <View style={{ flex: 1, minWidth: 0 }}>
           <ContextMenu
-            contentSize={desktop ? "sm" : "default"}
+            contentSize={desktop ? DESKTOP_UI_MENU_CONTENT_SIZE : MOBILE_UI_MENU_SIZE}
             triggerProps={{ style: { width: "100%", height: rowHeight } }}
             items={frozenItems.current ?? currentMenuItems}
             onOpenWillChange={(open) => {

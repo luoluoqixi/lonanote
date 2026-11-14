@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Dropdown, createNativeMenuItems, useMenuConfig } from "rn-ui-kit";
 
 import { editorPredefinedItem } from "@/api/common/tauri_menu_items";
+import { DESKTOP_UI_MENU_CONTENT_SIZE } from "@/components/common/consts";
 
 import type { EditorMenuPopupProps } from "./editor_menu_popup_types";
 
@@ -57,6 +58,7 @@ export function EditorMenuPopup({ request, onDismiss }: EditorMenuPopupProps) {
         if (!open) onDismiss();
       }}
       items={request.items}
+      contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
       trigger={
         <div
           aria-hidden
