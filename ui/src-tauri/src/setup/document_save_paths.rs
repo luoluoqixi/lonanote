@@ -27,6 +27,17 @@ pub fn normalized_target(path: &Path) -> Result<PathBuf, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn containment_respects_directory_boundaries() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("notes");
+        assert!(is_within(&root, &root));
+        assert!(is_within(&root.join("sub/note.md"), &root));
+        assert!(!is_within(&dir.path().join("notes-other/note.md"), &root));
+        assert!(!is_within(dir.path(), &root));
+    }
+
     #[test]
     fn resolves_missing_target_without_creating_it() {
         let dir = tempfile::tempdir().unwrap();
