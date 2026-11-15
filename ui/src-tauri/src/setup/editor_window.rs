@@ -57,6 +57,13 @@ fn create(
         config.fullscreen = false;
         config.decorations = true;
         config.visible = false;
+        let source_size = owner
+            .inner_size()
+            .ok()
+            .zip(owner.scale_factor().ok())
+            .and_then(|(size, scale)| {
+                super::window_geometry::logical_size_from_physical(size.width, size.height, scale)
+            });
         #[cfg(target_os = "macos")]
         {
             // 辅助编辑器没有自定义标题栏，恢复系统标题栏以提供窗口拖拽区域。
@@ -64,15 +71,25 @@ fn create(
             config.hidden_title = false;
             config.traffic_light_position = None;
         }
-        let window = WebviewWindowBuilder::from_config(app, &config)?
+        let mut builder = WebviewWindowBuilder::from_config(app, &config)?
             .title(crate::APP_TITLE.as_str())
             .visible(false)
             .decorations(true)
-            .initialization_script_for_all_frames(super::external_file_drop::initialization_script(app))
+            .initialization_script_for_all_frames(super::external_file_drop::initialization_script(
+                app,
+            ))
             .initialization_script_for_all_frames(
                 "window.addEventListener('contextmenu', (event) => event.preventDefault());",
-            )
-            .build()?;
+            );
+        if let Some(size) = source_size {
+            builder = builder.inner_size(size.width, size.height);
+        } else {
+            log::warn!(
+                "无法读取源窗口内容区尺寸，辅助窗口使用默认尺寸：source={}",
+                owner.label()
+            );
+        }
+        let window = builder.build()?;
         super::external_file_drop::install(&window)?;
         Ok(window)
     })();

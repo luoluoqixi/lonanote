@@ -48,6 +48,19 @@ impl WindowSize {
     }
 }
 
+pub fn logical_size_from_physical(width: u32, height: u32, scale: f64) -> Option<WindowSize> {
+    let scale = if scale.is_finite() && scale > 0.0 {
+        scale
+    } else {
+        return None;
+    };
+    let size = WindowSize {
+        width: width as f64 / scale,
+        height: height as f64 / scale,
+    };
+    size.is_valid().then_some(size)
+}
+
 #[derive(Clone, Copy)]
 pub struct WorkArea {
     pub x: f64,
@@ -90,6 +103,23 @@ pub fn resolve_geometry(size: Option<WindowSize>, area: WorkArea) -> Geometry {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn converts_physical_window_size_to_logical_content_size() {
+        assert_eq!(
+            logical_size_from_physical(2400, 1400, 2.0),
+            Some(WindowSize {
+                width: 1200.0,
+                height: 700.0,
+            })
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_scale_when_converting_window_size() {
+        assert_eq!(logical_size_from_physical(1200, 700, 0.0), None);
+        assert_eq!(logical_size_from_physical(1200, 700, f64::NAN), None);
+    }
 
     #[test]
     fn center_uses_target_monitor_work_area() {
