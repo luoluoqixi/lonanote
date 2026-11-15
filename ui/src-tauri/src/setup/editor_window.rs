@@ -57,6 +57,13 @@ fn create(
         config.fullscreen = false;
         config.decorations = true;
         config.visible = false;
+        #[cfg(target_os = "macos")]
+        {
+            // 辅助编辑器没有自定义标题栏，恢复系统标题栏以提供窗口拖拽区域。
+            config.title_bar_style = tauri::TitleBarStyle::Visible;
+            config.hidden_title = false;
+            config.traffic_light_position = None;
+        }
         let window = WebviewWindowBuilder::from_config(app, &config)?
             .title(crate::APP_TITLE.as_str())
             .visible(false)
