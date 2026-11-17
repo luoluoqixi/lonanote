@@ -8,3 +8,6 @@ pub static WINDOW_SESSIONS: LazyLock<WindowSessions> = LazyLock::new(WindowSessi
 pub static EDITOR_WINDOW_SESSIONS: LazyLock<
     std::sync::Mutex<super::editor_window_sessions::EditorWindowSessions>,
 > = LazyLock::new(Default::default);
+
+pub static DIALOG_SESSIONS: LazyLock<std::sync::Mutex<super::dialog_sessions::DialogSessions>> =
+    LazyLock::new(Default::default);

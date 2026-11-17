@@ -34,7 +34,8 @@ const LAYOUT_STORAGE_KEY = DESKTOP_LAYOUT_STORAGE_KEY;
 const DEFAULT_LAYOUT_STATE = DEFAULT_DESKTOP_LAYOUT;
 
 export function DesktopAppShell() {
-  const { openSettings } = useAppMenuContext();
+  const { execute, openSettings } = useAppMenuContext();
+  const currentWorkspaceId = useCurrentWorkspaceId();
   const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
   const outerLayoutRef = useRef<SplitLayoutHandle | null>(null);
   const resetRevision = useDesktopLayoutResetRevision();
@@ -150,6 +151,16 @@ export function DesktopAppShell() {
         name="desktop-workspace-select"
         open={selectOpen}
         onOpenChange={setSelectOpen}
+        nativeDialog={{
+          id: "workspace.select",
+          payload: { currentWorkspaceId },
+          title: "选择工作区",
+          width: 720,
+          height: 600,
+        }}
+        onNativeResult={(result) => {
+          if (typeof result === "string") void execute(`workspace:${result}`);
+        }}
         // title="选择工作区"
         dialogSize={{ width: 720, height: 600 }}
         dialogContentProps={{ style: { backgroundColor: theme.background } }}

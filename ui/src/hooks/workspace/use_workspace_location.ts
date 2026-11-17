@@ -102,7 +102,7 @@ export function useWorkspaceLocation({
       target,
     );
 
-  const nativePath = currentPath?.id === item?.id ? currentPath?.path : null;
+  const nativePath = currentPath?.id === item?.id ? (currentPath?.path ?? null) : null;
   const canRevealCurrentFolder = isDesktop() && !!nativePath && !isWorking;
   const revealCurrentFolder = useCallback(async () => {
     if (!isDesktop() || !nativePath || busyRef.current) return;
@@ -113,139 +113,159 @@ export function useWorkspaceLocation({
     }
   }, [nativePath, busyRef, toast]);
 
-  const submit = useCallback(async () => {
-    if (
-      !item ||
-      isSameLocation ||
-      busyRef.current ||
-      latestBlockedRef.current() ||
-      target.isLoading ||
-      target.isChoosing
-    )
-      return;
-    const providerId = target.providerId;
-    if (!providerId) return;
-    const directoryName = target.directoryName.trim();
-    if (target.isManaged && !directoryName) {
-      setError("请输入文件夹名");
-      return;
-    }
-    if (!target.isManaged && !target.externalBinding) {
-      setError("请选择目标文件夹");
-      return;
-    }
-    const binding: WorkspaceStorageBindingRequest = target.isManaged
-      ? { kind: "managed", providerId, providerSchemaVersion: 1, directoryName }
-      : target.externalBinding!;
-    busyRef.current = true;
-    setIsWorking(true);
-    setError(null);
-    try {
-      const result = await changeWorkspaceStorage(
-        item.id,
-        async () => {
-          if (mode === "rebind") {
-            await workspace.rebind(item.id, binding);
-            return null;
-          }
-          const relocated = await workspace.relocate(
-            item.id,
-            binding.kind === "managed"
-              ? { kind: "managed", providerId, preferredDirectoryName: directoryName }
-              : { kind: "external", binding },
-          );
-          return relocated.sourceCleanup;
-        },
-        {
-          atomicChange:
-            isTauri() && isDesktop()
-              ? () =>
-                  multiWindow.changeStorage(
-                    item.id,
-                    mode === "rebind"
-                      ? { mode, binding }
-                      : {
-                          mode,
-                          target:
-                            binding.kind === "managed"
-                              ? {
-                                  kind: "managed",
-                                  providerId,
-                                  preferredDirectoryName: directoryName,
-                                }
-                              : { kind: "external", binding },
-                        },
-                  )
-              : undefined,
-          isOpen: workspace.isOpen,
-          close: workspace.close,
-          open: workspace.open,
-          withClose: withWorkspaceClose,
-          sessionChanged: (id) => workspaceResourceSessionStore.getState().invalidate(id),
-        },
-      );
-      if (!result.completed) return;
-      closeWorkspaceViewerSessions(item.id);
-      let projectionWarning: string | null = null;
-      if (currentWorkspaceId === item.id && result.reopened) {
-        projectionWarning = await workspaceExplorerStore
-          .getState()
-          .restartWorkspace(item.id)
-          .then(() => null)
-          .catch((error) => getErrorMessage(error, "文件列表刷新失败"));
-      } else {
-        workspaceExplorerStore.getState().resetWorkspace(item.id);
+  const submit = useCallback(
+    async (submittedBinding?: WorkspaceStorageBindingRequest) => {
+      if (!item || busyRef.current || latestBlockedRef.current()) return false;
+      if (!submittedBinding && (isSameLocation || target.isLoading || target.isChoosing))
+        return false;
+      const providerId = submittedBinding?.providerId ?? target.providerId;
+      if (!providerId) return false;
+      const isManaged = submittedBinding ? submittedBinding.kind === "managed" : target.isManaged;
+      const directoryName =
+        submittedBinding?.kind === "managed"
+          ? submittedBinding.directoryName.trim()
+          : target.directoryName.trim();
+      const externalBinding =
+        submittedBinding?.kind === "external" ? submittedBinding : target.externalBinding;
+      const sameLocation = submittedBinding
+        ? isCurrentWorkspaceLocation(item.storage, nativePath, {
+            providerId,
+            isManaged,
+            directoryName,
+            externalBinding,
+          })
+        : isSameLocation;
+      if (sameLocation) return false;
+      if (isManaged && !directoryName) {
+        setError("请输入文件夹名");
+        toast.error("请输入文件夹名");
+        return false;
       }
-      if (currentWorkspaceId === item.id && result.wasOpen && !result.reopened) {
-        setCurrentWorkspaceId(null);
+      if (!isManaged && !externalBinding) {
+        setError("请选择目标文件夹");
+        toast.error("请选择目标文件夹");
+        return false;
       }
-      setItem(null);
-      const warnings: string[] = [];
-      if (projectionWarning) warnings.push(projectionWarning);
+      const binding: WorkspaceStorageBindingRequest =
+        submittedBinding ??
+        (isManaged
+          ? { kind: "managed", providerId, providerSchemaVersion: 1, directoryName }
+          : externalBinding!);
+      busyRef.current = true;
+      setIsWorking(true);
+      setError(null);
       try {
-        await onChanged();
-      } catch (refreshError) {
-        warnings.push(`列表刷新失败：${getErrorMessage(refreshError, "请刷新工作区列表")}`);
-      }
-      const cleanup = result.sourceCleanup;
-      if (cleanup?.status === "failed")
-        warnings.push(`旧文件夹未删除：${cleanup.message ?? "请检查旧位置"}`);
-      if (result.reopenError) warnings.push(`重新打开失败：${result.reopenError}`);
-      const success = mode === "rebind" ? "已重新定位工作区" : "已更改存储位置";
-      if (warnings.length) toast.warning(`${success}，${warnings.join("；")}`);
-      else toast.success(success);
-    } catch (nextError) {
-      const stillOwned =
-        currentWorkspaceId === item.id &&
-        (isTauri() && isDesktop()
-          ? await multiWindow
-              .getCurrentWorkspaceId()
-              .then((id) => id === item.id)
-              .catch(() => undefined)
-          : await workspace.isOpen(item.id).catch(() => undefined));
-      // 查询失败时保留草稿，只有权威状态确认失去归属才清理本窗口。
-      if (currentWorkspaceId === item.id && stillOwned === false) {
-        setCurrentWorkspaceId(null);
+        const result = await changeWorkspaceStorage(
+          item.id,
+          async () => {
+            if (mode === "rebind") {
+              await workspace.rebind(item.id, binding);
+              return null;
+            }
+            const relocated = await workspace.relocate(
+              item.id,
+              binding.kind === "managed"
+                ? { kind: "managed", providerId, preferredDirectoryName: directoryName }
+                : { kind: "external", binding },
+            );
+            return relocated.sourceCleanup;
+          },
+          {
+            atomicChange:
+              isTauri() && isDesktop()
+                ? () =>
+                    multiWindow.changeStorage(
+                      item.id,
+                      mode === "rebind"
+                        ? { mode, binding }
+                        : {
+                            mode,
+                            target:
+                              binding.kind === "managed"
+                                ? {
+                                    kind: "managed",
+                                    providerId,
+                                    preferredDirectoryName: directoryName,
+                                  }
+                                : { kind: "external", binding },
+                          },
+                    )
+                : undefined,
+            isOpen: workspace.isOpen,
+            close: workspace.close,
+            open: workspace.open,
+            withClose: withWorkspaceClose,
+            sessionChanged: (id) => workspaceResourceSessionStore.getState().invalidate(id),
+          },
+        );
+        if (!result.completed) return false;
         closeWorkspaceViewerSessions(item.id);
-        workspaceExplorerStore.getState().resetWorkspace(item.id);
+        let projectionWarning: string | null = null;
+        if (currentWorkspaceId === item.id && result.reopened) {
+          projectionWarning = await workspaceExplorerStore
+            .getState()
+            .restartWorkspace(item.id)
+            .then(() => null)
+            .catch((error) => getErrorMessage(error, "文件列表刷新失败"));
+        } else {
+          workspaceExplorerStore.getState().resetWorkspace(item.id);
+        }
+        if (currentWorkspaceId === item.id && result.wasOpen && !result.reopened) {
+          setCurrentWorkspaceId(null);
+        }
+        setItem(null);
+        const warnings: string[] = [];
+        if (projectionWarning) warnings.push(projectionWarning);
+        try {
+          await onChanged();
+        } catch (refreshError) {
+          warnings.push(`列表刷新失败：${getErrorMessage(refreshError, "请刷新工作区列表")}`);
+        }
+        const cleanup = result.sourceCleanup;
+        if (cleanup?.status === "failed")
+          warnings.push(`旧文件夹未删除：${cleanup.message ?? "请检查旧位置"}`);
+        if (result.reopenError) warnings.push(`重新打开失败：${result.reopenError}`);
+        const success = mode === "rebind" ? "已重新定位工作区" : "已更改存储位置";
+        if (warnings.length) toast.warning(`${success}，${warnings.join("；")}`);
+        else toast.success(success);
+        return true;
+      } catch (nextError) {
+        const stillOwned =
+          currentWorkspaceId === item.id &&
+          (isTauri() && isDesktop()
+            ? await multiWindow
+                .getCurrentWorkspaceId()
+                .then((id) => id === item.id)
+                .catch(() => undefined)
+            : await workspace.isOpen(item.id).catch(() => undefined));
+        // 查询失败时保留草稿，只有权威状态确认失去归属才清理本窗口。
+        if (currentWorkspaceId === item.id && stillOwned === false) {
+          setCurrentWorkspaceId(null);
+          closeWorkspaceViewerSessions(item.id);
+          workspaceExplorerStore.getState().resetWorkspace(item.id);
+        }
+        setError(getErrorMessage(nextError, mode === "rebind" ? "重新定位失败" : "迁移失败"));
+        toast.error(getErrorMessage(nextError, mode === "rebind" ? "重新定位失败" : "迁移失败"));
+        return false;
+      } finally {
+        busyRef.current = false;
+        setIsWorking(false);
       }
-      setError(getErrorMessage(nextError, mode === "rebind" ? "重新定位失败" : "迁移失败"));
-    } finally {
-      busyRef.current = false;
-      setIsWorking(false);
-    }
-  }, [
-    item,
-    isSameLocation,
-    busyRef,
-    target,
-    mode,
-    withWorkspaceClose,
-    currentWorkspaceId,
-    setCurrentWorkspaceId,
-    onChanged,
-    toast,
-  ]);
+    },
+    [
+      item,
+      isSameLocation,
+      busyRef,
+      target,
+      mode,
+      withWorkspaceClose,
+      currentWorkspaceId,
+      setCurrentWorkspaceId,
+      onChanged,
+      toast,
+      nativePath,
+    ],
+  );
 
   return {
     item,

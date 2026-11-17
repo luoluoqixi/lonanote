@@ -65,10 +65,12 @@ function FontRow({
 
 export function FontPicker({
   consumer,
+  dialogContentOnly = false,
   open,
   onOpenChange,
 }: {
   consumer: FontConsumer;
+  dialogContentOnly?: boolean;
   open: boolean;
   onOpenChange(open: boolean): void;
 }) {
@@ -105,83 +107,94 @@ export function FontPicker({
     }
   }
   const entries = filterFontFamilies(directory.entries, consumer, query);
+  const content = (
+    <View style={{ flex: 1, gap: 10, padding: 8 }}>
+      <Input
+        value={query}
+        onChangeText={setQuery}
+        placeholder="搜索本机字体"
+        accessibilityLabel="搜索本机字体"
+        size={isDesktop ? "xs" : "sm"}
+      />
+      <Button
+        variant={fonts[consumer].selection === null ? "secondary" : "outline"}
+        disabled={saving}
+        onPress={() => {
+          void select(null);
+        }}
+        size={isDesktop ? "xs" : "sm"}
+      >
+        系统默认{fonts[consumer].selection === null ? " ✓" : ""}
+      </Button>
+      {fonts[consumer].unavailable ? (
+        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+          当前字体不可用，已使用系统默认
+        </Text>
+      ) : null}
+      {error ? (
+        <Text className="text-destructive" style={{ fontSize: 12 }}>
+          {error}
+        </Text>
+      ) : null}
+      {directory.error ? (
+        <>
+          <Text className="text-destructive">读取本机字体失败</Text>
+          <Button onPress={directory.retry}>重试</Button>
+        </>
+      ) : null}
+      <FlatList
+        data={entries}
+        keyExtractor={(entry) => fontSelectionKey(entry.selection)}
+        style={{ flex: 1 }}
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        windowSize={3}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          <Text className="text-muted-foreground">
+            {directory.loading ? "正在读取本机字体…" : "没有匹配的字体"}
+          </Text>
+        }
+        renderItem={({ item, index }) => (
+          <>
+            {index === 0 || entries[index - 1].source !== item.source ? (
+              <Text className="text-muted-foreground" style={{ fontSize: 12, padding: 8 }}>
+                {item.source === "bundled" ? "内置字体" : "本机字体"}
+              </Text>
+            ) : null}
+            <FontRow
+              entry={item}
+              consumer={consumer}
+              selected={
+                fontSelectionKey(fonts[consumer].selection) === fontSelectionKey(item.selection)
+              }
+              disabled={saving}
+              onPress={() => {
+                void select(item.selection);
+              }}
+            />
+          </>
+        )}
+      />
+    </View>
+  );
+  if (dialogContentOnly) return content;
   return (
     <AdaptiveModal
       name={`font-picker-${consumer}`}
+      nativeDialog={{
+        id: "settings.font-picker",
+        payload: { consumer },
+        title: consumer === "ui" ? "UI 界面字体" : "编辑器字体",
+        width: 480,
+        height: 520,
+      }}
       open={open}
       onOpenChange={onOpenChange}
       title={consumer === "ui" ? "UI 界面字体" : "编辑器字体"}
       dialogSize={{ width: 480, height: 520 }}
     >
-      <View style={{ flex: 1, gap: 10, padding: 8 }}>
-        <Input
-          value={query}
-          onChangeText={setQuery}
-          placeholder="搜索本机字体"
-          accessibilityLabel="搜索本机字体"
-          size={isDesktop ? "xs" : "sm"}
-        />
-        <Button
-          variant={fonts[consumer].selection === null ? "secondary" : "outline"}
-          disabled={saving}
-          onPress={() => {
-            void select(null);
-          }}
-          size={isDesktop ? "xs" : "sm"}
-        >
-          系统默认{fonts[consumer].selection === null ? " ✓" : ""}
-        </Button>
-        {fonts[consumer].unavailable ? (
-          <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
-            当前字体不可用，已使用系统默认
-          </Text>
-        ) : null}
-        {error ? (
-          <Text className="text-destructive" style={{ fontSize: 12 }}>
-            {error}
-          </Text>
-        ) : null}
-        {directory.error ? (
-          <>
-            <Text className="text-destructive">读取本机字体失败</Text>
-            <Button onPress={directory.retry}>重试</Button>
-          </>
-        ) : null}
-        <FlatList
-          data={entries}
-          keyExtractor={(entry) => fontSelectionKey(entry.selection)}
-          style={{ flex: 1 }}
-          initialNumToRender={8}
-          maxToRenderPerBatch={6}
-          windowSize={3}
-          keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={
-            <Text className="text-muted-foreground">
-              {directory.loading ? "正在读取本机字体…" : "没有匹配的字体"}
-            </Text>
-          }
-          renderItem={({ item, index }) => (
-            <>
-              {index === 0 || entries[index - 1].source !== item.source ? (
-                <Text className="text-muted-foreground" style={{ fontSize: 12, padding: 8 }}>
-                  {item.source === "bundled" ? "内置字体" : "本机字体"}
-                </Text>
-              ) : null}
-              <FontRow
-                entry={item}
-                consumer={consumer}
-                selected={
-                  fontSelectionKey(fonts[consumer].selection) === fontSelectionKey(item.selection)
-                }
-                disabled={saving}
-                onPress={() => {
-                  void select(item.selection);
-                }}
-              />
-            </>
-          )}
-        />
-      </View>
+      {content}
     </AdaptiveModal>
   );
 }

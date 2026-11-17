@@ -111,3 +111,15 @@ test("无偏好或非法偏好默认最近修改，保留已有选择，并持�
   await uiPreferences.savePreferences(next);
   expect(uiPreferences.getPreferences().workspaceSelect.sortValue).toBe("modified-at-asc");
 });
+
+test("原生弹窗偏好默认开启并持久化关闭状态", async () => {
+  preferences.clear();
+  expect(createDefaultUiPreferences().window.nativeDialogs).toBe(true);
+  expect(uiPreferences.getPreferences().window.nativeDialogs).toBe(true);
+  preferences.set("ui.window.nativeDialogs", false);
+  expect(uiPreferences.getPreferences().window.nativeDialogs).toBe(false);
+  const next = uiPreferences.getPreferences();
+  next.window.nativeDialogs = true;
+  await uiPreferences.savePreferences(next);
+  expect(preferences.get("ui.window.nativeDialogs")).toBe(true);
+});

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { confirmNative } from "rn-ui-kit";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 
 import { store } from "@/api/commands/store";
 import { exitDesktopApp } from "@/api/commands/win/app_exit";

@@ -1,8 +1,12 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Dialog, NativeSheetStack, Tabs, Text, cn, useUiTheme } from "rn-ui-kit";
 import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
+import { dialogWindows } from "@/api/commands/win/dialog_windows";
+import { claimNativeSettingsDialogLaunch } from "@/api/common/dialogs/dialog_launch_guard";
+import { isDialogWindowRendererFailure } from "@/api/common/dialogs/dialog_types";
+import { isDesktop, isTauri } from "@/api/common/platform";
 import { useUiPreferences } from "@/hooks/settings";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 
@@ -14,6 +18,7 @@ type DesktopSettingsDialogProps = {
   initialPageId?: SettingsPageId;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  nativeWindow?: boolean;
   trigger?: ReactNode;
 };
 
@@ -21,13 +26,22 @@ export function DesktopSettingsDialog({
   initialPageId = "global",
   isOpen,
   onOpenChange,
+  nativeWindow = false,
   trigger,
 }: DesktopSettingsDialogProps) {
   const { width, height } = useWindowDimensions();
   const theme = useUiTheme();
-  const dialogWidth = Math.min(880, width * 0.88);
-  const dialogHeight = Math.min(640, height * 0.8);
+  const dialogWidth = nativeWindow ? Math.min(880, width) : Math.min(880, width * 0.88);
+  const dialogHeight = nativeWindow ? Math.min(560, height) : Math.min(560, height * 0.8);
   const { preferences } = useUiPreferences();
+  const useNativeWindow =
+    !nativeWindow && isDesktop() && isTauri() && preferences.window.nativeDialogs;
+  const [nativeWindowFailed, setNativeWindowFailed] = useState(false);
+  const onOpenChangeRef = useRef(onOpenChange);
+  const initialPageIdRef = useRef(initialPageId);
+  const isOpenRef = useRef(isOpen);
+  initialPageIdRef.current = initialPageId;
+  isOpenRef.current = isOpen;
   const currentWorkspaceId = useCurrentWorkspaceId();
   const [isDebugSheetOpen, setIsDebugSheetOpen] = useState(false);
   const [isGmSheetOpen, setIsGmSheetOpen] = useState(false);
@@ -82,116 +96,159 @@ export function DesktopSettingsDialog({
     : (selectedPage?.parentId ?? desktopPages[0]?.id ?? "global");
   const SelectedPageComponent = selectedPage?.Component;
 
-  return (
-    <>
-      <Dialog
-        onOpenChange={onOpenChange}
-        open={isOpen}
-        title="设置"
-        titleProps={{ style: { fontSize: 16 } }}
-        trigger={trigger}
-        contentProps={{
-          style: {
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange;
+  }, [onOpenChange]);
+
+  useEffect(() => {
+    if (!claimNativeSettingsDialogLaunch(isOpen, useNativeWindow && !nativeWindowFailed)) {
+      if (!isOpen) {
+        setNativeWindowFailed(false);
+      }
+      return;
+    }
+    void dialogWindows
+      .open({
+        requestId: crypto.randomUUID(),
+        dialogId: "settings",
+        payload: { initialPageId: initialPageIdRef.current },
+        title: "设置",
+        width: 880,
+        height: 560,
+      })
+      .then((result) => {
+        if (isDialogWindowRendererFailure(result)) {
+          if (isOpenRef.current) setNativeWindowFailed(true);
+          return;
+        }
+        if (isOpenRef.current) onOpenChangeRef.current(false);
+      })
+      .catch((error) => {
+        console.error("[settings] 原生设置窗口创建失败，回退到应用内 Dialog", error);
+        if (isOpenRef.current) setNativeWindowFailed(true);
+      });
+  }, [isOpen, nativeWindowFailed, useNativeWindow]);
+
+  const content = (
+    <View style={styles.root}>
+      <Tabs
+        aria-label="设置页面导航"
+        onValueChange={(nextValue) => setSelectedPageId(nextValue as SettingsPageId)}
+        orientation="vertical"
+        size="sm"
+        style={styles.tabs}
+        value={selectedTabId}
+      >
+        <ScrollView
+          style={[styles.navigation, { width: width < 720 ? 116 : 144 }]}
+          contentContainerStyle={styles.navigationContent}
+        >
+          <Tabs.List
+            aria-label="设置页面导航"
+            style={{ ...styles.list, backgroundColor: theme.background }}
+          >
+            {desktopPages.map((page) => (
+              <Tabs.Trigger
+                key={page.id}
+                value={page.id}
+                className={cn(
+                  selectedTabId === page.id && "bg-accent text-accent-foreground",
+                  selectedTabId !== page.id && "hover:bg-accent03",
+                )}
+                style={{
+                  ...styles.navigationItem,
+                  borderBottomWidth: selectedTabId === page.id ? 2 : 0,
+                  borderBottomColor: theme.primary,
+                }}
+              >
+                <Text style={{ fontSize: 13 }}>{page.title}</Text>
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
+        </ScrollView>
+        <View style={styles.content}>
+          {navigation.length > 1 ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 8 }}>
+              <Button variant="ghost" size="sm" onPress={back} accessibilityLabel="返回上一级设置">
+                返回
+              </Button>
+              <Text>{selectedPage?.title}</Text>
+            </View>
+          ) : null}
+          {SelectedPageComponent ? (
+            <SelectedPageComponent
+              onNavigate={navigate}
+              onBack={back}
+              pageParams={location.params}
+              onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
+              onOpenGmSheet={() => setIsGmSheetOpen(true)}
+            />
+          ) : null}
+        </View>
+      </Tabs>
+      <RnUiKitDebugPanel
+        panelSheetProps={{ snapPoints: ["60%"] }}
+        onOpenChange={setIsDebugSheetOpen}
+        open={isDebugSheetOpen}
+        sheetMode
+      />
+      <NativeSheetStack
+        name="lonanote-gm-settings-sheet"
+        onOpenChange={setIsGmSheetOpen}
+        open={isGmSheetOpen}
+        overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
+        sheetProps={{ snapPoints: ["60%"] }}
+        screenOptions={{ headerShadowVisible: false }}
+      >
+        <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>
+          {() => <GmSettingsPage />}
+        </NativeSheetStack.Screen>
+      </NativeSheetStack>
+    </View>
+  );
+
+  if (nativeWindow) {
+    return (
+      <View
+        style={[
+          styles.nativeWindow,
+          {
             height: dialogHeight,
             width: dialogWidth,
-            maxWidth: dialogWidth,
-            maxHeight: dialogHeight,
-            padding: 16,
             backgroundColor: theme.background,
           },
-        }}
-        content={
-          <View style={styles.root}>
-            <Tabs
-              aria-label="设置页面导航"
-              onValueChange={(nextValue) => setSelectedPageId(nextValue as SettingsPageId)}
-              orientation="vertical"
-              size="sm"
-              style={styles.tabs}
-              value={selectedTabId}
-            >
-              <ScrollView
-                style={[styles.navigation, { width: width < 720 ? 116 : 144 }]}
-                contentContainerStyle={styles.navigationContent}
-              >
-                <Tabs.List
-                  aria-label="设置页面导航"
-                  style={{ ...styles.list, backgroundColor: theme.background }}
-                >
-                  {desktopPages.map((page) => (
-                    <Tabs.Trigger
-                      key={page.id}
-                      value={page.id}
-                      className={cn(
-                        selectedTabId === page.id && "bg-accent text-accent-foreground",
-                        selectedTabId !== page.id && "hover:bg-accent03",
-                      )}
-                      style={{
-                        ...styles.navigationItem,
-                        borderBottomWidth: selectedTabId === page.id ? 2 : 0,
-                        borderBottomColor: theme.primary,
-                      }}
-                    >
-                      <Text style={{ fontSize: 13 }}>{page.title}</Text>
-                    </Tabs.Trigger>
-                  ))}
-                </Tabs.List>
-              </ScrollView>
-              <View style={styles.content}>
-                {navigation.length > 1 ? (
-                  <View
-                    style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 8 }}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onPress={back}
-                      accessibilityLabel="返回上一级设置"
-                    >
-                      返回
-                    </Button>
-                    <Text>{selectedPage?.title}</Text>
-                  </View>
-                ) : null}
-                {SelectedPageComponent ? (
-                  <SelectedPageComponent
-                    onNavigate={navigate}
-                    onBack={back}
-                    pageParams={location.params}
-                    onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
-                    onOpenGmSheet={() => setIsGmSheetOpen(true)}
-                  />
-                ) : null}
-              </View>
-            </Tabs>
-            <RnUiKitDebugPanel
-              panelSheetProps={{
-                snapPoints: ["60%"],
-              }}
-              onOpenChange={setIsDebugSheetOpen}
-              open={isDebugSheetOpen}
-              sheetMode
-            />
-            <NativeSheetStack
-              name="lonanote-gm-settings-sheet"
-              onOpenChange={setIsGmSheetOpen}
-              open={isGmSheetOpen}
-              overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
-              sheetProps={{ snapPoints: ["60%"] }}
-              screenOptions={{ headerShadowVisible: false }}
-            >
-              <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>
-                {() => <GmSettingsPage />}
-              </NativeSheetStack.Screen>
-            </NativeSheetStack>
-          </View>
-        }
-      />
-    </>
+        ]}
+      >
+        {content}
+      </View>
+    );
+  }
+  if (useNativeWindow && !nativeWindowFailed) return null;
+
+  return (
+    <Dialog
+      onOpenChange={onOpenChange}
+      open={isOpen}
+      title="设置"
+      titleProps={{ style: { fontSize: 16 } }}
+      trigger={trigger}
+      contentProps={{
+        style: {
+          height: dialogHeight,
+          width: dialogWidth,
+          maxWidth: dialogWidth,
+          maxHeight: dialogHeight,
+          padding: 16,
+          backgroundColor: theme.background,
+        },
+      }}
+      content={content}
+    />
   );
 }
 
 const styles = StyleSheet.create({
+  nativeWindow: { padding: 16 },
   content: {
     flex: 1,
     minWidth: 0,

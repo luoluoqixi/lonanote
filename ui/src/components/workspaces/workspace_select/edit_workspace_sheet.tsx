@@ -13,25 +13,31 @@ import { useLayoutMode } from "@/hooks/layout";
 const EDIT_WORKSPACE_SNAP_POINTS = ["50%" as const];
 
 type EditWorkspaceSheetProps = {
+  dialogContentOnly?: boolean;
   displayName: string;
   isUpdating: boolean;
   onDisplayNameChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
+  onNativeResult?: (result: unknown) => void;
   onSubmit: () => void;
   onRelocate: () => void;
   onRebind: () => void;
   open: boolean;
+  workspaceId?: string;
 };
 
 export function EditWorkspaceSheet({
+  dialogContentOnly = false,
   displayName,
   isUpdating,
   onDisplayNameChange,
   onOpenChange,
+  onNativeResult,
   onSubmit,
   onRelocate,
   onRebind,
   open,
+  workspaceId,
 }: EditWorkspaceSheetProps) {
   const { layoutMode } = useLayoutMode();
   const desktop = layoutMode === "desktop";
@@ -89,9 +95,23 @@ export function EditWorkspaceSheet({
     </NativeList>
   );
 
+  if (dialogContentOnly) return content;
+
   return (
     <AdaptiveModal
       name="edit-workspace-sheet"
+      nativeDialog={
+        workspaceId
+          ? {
+              id: "workspace.edit",
+              payload: { workspaceId, displayName },
+              title: "编辑工作区",
+              width: 520,
+              height: 460,
+            }
+          : undefined
+      }
+      onNativeResult={onNativeResult}
       screenName="edit-workspace"
       title="编辑工作区"
       open={open}

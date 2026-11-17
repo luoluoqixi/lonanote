@@ -1,8 +1,9 @@
 import { type Href, Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type SelectHandle, confirmNative } from "rn-ui-kit";
+import { type SelectHandle } from "rn-ui-kit";
 
 import { type WorkspaceIndexEntry, workspaceFile } from "@/api/commands/workspace";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
 import {
   getDefaultWorkspaceEntryName,
@@ -361,12 +362,12 @@ function DirectoryExplorerForWorkspace({
     }
   }, []);
 
-  const renameEntry = useCallback(async () => {
+  const renameEntry = useCallback(async (submittedName?: string) => {
     if (!editingEntry || isRenamingEntry) {
       return;
     }
 
-    const nextName = editedEntryName.trim();
+    const nextName = (submittedName ?? editedEntryName).trim();
     const validationError = validateEntryName(nextName);
     if (validationError) {
       toast.error(validationError);
@@ -705,6 +706,22 @@ function DirectoryExplorerForWorkspace({
         isCreating={isCreatingEntry}
         name={createEntryName}
         onNameChange={setCreateEntryName}
+        onNativeResult={(result) => {
+          if (
+            !result ||
+            typeof result !== "object" ||
+            Array.isArray(result) ||
+            !("name" in result) ||
+            typeof result.name !== "string"
+          )
+            return;
+          void createWorkspaceEntry({
+            entryKind: createEntryKind,
+            name: result.name,
+            openAfterCreate: false,
+            parentPath: createEntryParent,
+          });
+        }}
         onOpenChange={setIsCreateEntrySheetOpen}
         onSubmit={() => {
           void createEntry();
@@ -715,6 +732,17 @@ function DirectoryExplorerForWorkspace({
         isRenaming={isRenamingEntry}
         name={editedEntryName}
         onNameChange={setEditedEntryName}
+        onNativeResult={(result) => {
+          if (
+            !result ||
+            typeof result !== "object" ||
+            Array.isArray(result) ||
+            !("name" in result) ||
+            typeof result.name !== "string"
+          )
+            return;
+          void renameEntry(result.name);
+        }}
         onOpenChange={handleRenameEntrySheetOpenChange}
         onSubmit={() => {
           void renameEntry();

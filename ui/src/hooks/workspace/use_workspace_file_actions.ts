@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { confirmNative } from "rn-ui-kit";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 
 import { workspaceFile } from "@/api/commands/workspace/workspace_file";
 import { saveCoordinator } from "@/components/editor/controllers/save_coordinator";

@@ -1,4 +1,4 @@
-import { confirmNative } from "rn-ui-kit";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 
 import type {
   ScanWorkspaceConflictCandidate,

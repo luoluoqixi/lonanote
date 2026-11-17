@@ -125,6 +125,13 @@ export function AboutSettingsPage({
       {presentation.desktop ? (
         <AdaptiveModal
           name="desktop-licenses"
+          nativeDialog={{
+            id: "settings.licenses",
+            payload: null,
+            title: "开源许可",
+            width: 720,
+            height: 560,
+          }}
           open={licensesOpen}
           onOpenChange={setLicensesOpen}
           title="开源许可"

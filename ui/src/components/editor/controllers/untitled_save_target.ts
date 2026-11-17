@@ -134,7 +134,7 @@ export function chooseUntitledSaveTarget(document: DocumentModel): Promise<SaveT
             });
           try {
             if (prepared.exists && !options.overwriteConfirmed) {
-              const { confirmNative } = await import("rn-ui-kit");
+              const { confirmNative } = await import("@/api/common/dialogs/native_dialogs");
               const choice = await confirmNative({
                 title: "覆盖已有文件？",
                 message: absolutePath,

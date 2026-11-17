@@ -9,6 +9,7 @@ import {
   Text,
 } from "rn-ui-kit";
 
+import { isDesktop, isTauri } from "@/api/common/platform";
 import { useUiPreferences } from "@/hooks/settings";
 import { useDesktopViewActions } from "@/hooks/settings/use_desktop_view_actions";
 import type { DesktopWindowSize } from "@/stores/ui";
@@ -37,6 +38,7 @@ export function WindowSettingsPage({
   const presentation = useSettingsPresentation();
   const { preferences, updateAndSave } = useUiPreferences();
   const view = useDesktopViewActions();
+  const supportsNativeDialogs = isDesktop() && isTauri();
   const [zoomDraft, setZoomDraft] = useState(view.zoom);
   useEffect(() => setZoomDraft(view.zoom), [view.zoom]);
 
@@ -142,6 +144,30 @@ export function WindowSettingsPage({
           title="记住窗口尺寸"
         />
       </NativeListSection>
+      {supportsNativeDialogs ? (
+        <NativeListSection {...presentation.section} title="窗口交互">
+          <NativeListSwitchItem
+            {...presentation.item}
+            title="原生弹窗"
+            switchProps={{
+              ...presentation.switch,
+              checked: preferences.window.nativeDialogs,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "切换原生弹窗",
+                  updateAndSave((currentPreferences) => ({
+                    ...currentPreferences,
+                    window: {
+                      ...currentPreferences.window,
+                      nativeDialogs: nextValue,
+                    },
+                  })),
+                );
+              },
+            }}
+          />
+        </NativeListSection>
+      ) : null}
 
       <NativeListSection {...presentation.section}>
         <NativeListCustomItem {...presentation.item}>

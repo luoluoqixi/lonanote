@@ -1,9 +1,9 @@
-pub(crate) mod system_fonts;
 pub(crate) mod app_menu;
 pub mod config_events;
 pub(crate) mod document_save_paths;
 pub(crate) mod file_ownership;
 pub mod log;
+pub(crate) mod system_fonts;
 pub mod window;
 pub(crate) mod window_close;
 pub(crate) mod window_geometry;
@@ -17,8 +17,11 @@ pub(crate) mod launch_requests;
 #[cfg(desktop)]
 pub(crate) mod single_instance;
 
-pub(crate) mod workspace_window_launch;
-pub(crate) mod editor_window_sessions;
+pub(crate) mod dialog_input_locks;
+pub(crate) mod dialog_sessions;
+pub(crate) mod dialog_window;
 pub(crate) mod editor_window;
+pub(crate) mod editor_window_sessions;
 pub(crate) mod external_file_drop;
 pub(crate) mod external_file_drop_tickets;
+pub(crate) mod workspace_window_launch;

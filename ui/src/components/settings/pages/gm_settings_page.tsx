@@ -2,13 +2,13 @@ import { useState } from "react";
 import {
   NativeListButtonItem,
   NativeListSection,
-  confirmNative,
   toSwiftUIHexColor,
   triggerNativeHaptics,
   useUiTheme,
 } from "rn-ui-kit";
 
 import { system } from "@/api";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { gm } from "@/api/commands/gm";
 import { isSystemLocaleCN, systemLocale } from "@/api/common/platform";
 import { useToast } from "@/hooks/ui";

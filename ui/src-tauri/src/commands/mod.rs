@@ -7,8 +7,10 @@ use file_dialog_api::*;
 mod external_file_drop_api;
 use external_file_drop_api::*;
 mod api;
+mod dialog_window_api;
 mod document_save_api;
 mod file_ownership_api;
+use dialog_window_api::*;
 use document_save_api::*;
 mod invoke;
 #[cfg(any(windows, target_os = "linux"))]
@@ -97,6 +99,12 @@ pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         begin_editor_tab_drag,
         take_editor_tab_drag,
         select_files,
+        acquire_parent_input_lock,
+        release_parent_input_lock,
+        show_native_message,
+        create_dialog_window,
+        get_dialog_window_request,
+        complete_dialog_window,
         resolve_document_open_reference,
         take_external_file_drop,
         capture_external_file_drop,

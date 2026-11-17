@@ -1,8 +1,12 @@
 import { ChevronDown, ChevronRight, Folder, FolderOpen } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Input, Spinner, Text, useUiTheme } from "rn-ui-kit";
 
+import type {
+  DirectoryPickerOptions,
+  DirectoryPickerResult,
+} from "@/api/common/dialogs/dialog_types";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { FilePathTooltip } from "@/components/files/file_path_tooltip";
 import { useLayoutMode } from "@/hooks/layout";
@@ -103,7 +107,17 @@ function DirectoryRow({
   );
 }
 
-export function DirectoryPickerHost() {
+export function DirectoryPickerHost({
+  dialogContentOnly = false,
+  dialogPayload,
+  onDialogComplete,
+}: {
+  dialogContentOnly?: boolean;
+  dialogPayload?: { token: number; options: DirectoryPickerOptions };
+  onDialogComplete?: (result: { token: number; result: DirectoryPickerResult | null }) => void;
+} = {}) {
+  const onDialogCompleteRef = useRef(onDialogComplete);
+  onDialogCompleteRef.current = onDialogComplete;
   const state = useWorkspaceDirectoryPicker();
   const { layoutMode } = useLayoutMode();
   const desktop = layoutMode === "desktop";
@@ -113,58 +127,87 @@ export function DirectoryPickerHost() {
     if (token !== undefined) void picker.load("");
   }, [token]);
   useEffect(() => () => picker.cancel(), []);
+  useEffect(() => {
+    if (!dialogPayload) return;
+    let active = true;
+    void picker.request(dialogPayload.options).then((result) => {
+      if (active) onDialogCompleteRef.current?.({ token: dialogPayload.token, result });
+    });
+    return () => {
+      active = false;
+      picker.cancel();
+    };
+  }, [dialogPayload]);
   if (!state) return null;
+  const title = state.options.purpose === "save" ? "保存笔记" : "选择目标文件夹";
+  const content = (
+    <View style={{ flex: 1, gap: 12, minHeight: 0 }}>
+      {state.options.purpose !== "save" && (state.options.sourceCount ?? 0) > 1 ? (
+        <Text style={{ fontSize: desktop ? 12 : 14, color: theme.mutedForeground }}>
+          将{state.options.purpose === "move" ? "移动" : "复制"} {state.options.sourceCount} 个项目
+        </Text>
+      ) : null}
+      <FilePathTooltip path={`/${state.selected}`} disabled={!desktop}>
+        <View>
+          <Text
+            numberOfLines={1}
+            style={{ fontSize: desktop ? 12 : 14, color: theme.mutedForeground }}
+          >
+            /{state.selected}
+          </Text>
+        </View>
+      </FilePathTooltip>
+      <ScrollView
+        style={{
+          flex: 1,
+          minHeight: 0,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: theme.border,
+          borderRadius: 6,
+        }}
+        contentContainerStyle={{ paddingVertical: 4 }}
+      >
+        <DirectoryRow path="" depth={0} state={state} desktop={desktop} />
+      </ScrollView>
+      {state.options.purpose === "save" ? (
+        <Input value={state.fileName} onChangeText={picker.setFileName} placeholder="文件名.md" />
+      ) : null}
+      <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
+        <Button variant="outline" onPress={picker.cancel}>
+          <Text>取消</Text>
+        </Button>
+        <Button disabled={!picker.canConfirm()} onPress={picker.confirm}>
+          <Text>确定</Text>
+        </Button>
+      </View>
+    </View>
+  );
+  if (dialogContentOnly) return content;
   return (
     <AdaptiveModal
       name="workspace-directory-picker"
-      title={state.options.purpose === "save" ? "保存笔记" : "选择目标文件夹"}
+      title={title}
       open
+      nativeDialog={{
+        id: "workspace.directory-picker",
+        payload: { token: state.token, options: state.options },
+        title,
+        width: 560,
+        height: 460,
+        blockParentInput: true,
+      }}
+      onNativeResult={(result) => {
+        if (!result || typeof result !== "object" || Array.isArray(result)) return;
+        if (!("token" in result) || typeof result.token !== "number" || !("result" in result))
+          return;
+        picker.accept(result.token, result.result as DirectoryPickerResult | null);
+      }}
       onOpenChange={(open) => {
         if (!open) picker.cancel();
       }}
       dialogSize={{ width: 560, height: 460 }}
     >
-      <View style={{ flex: 1, gap: 12, minHeight: 0 }}>
-        {state.options.purpose !== "save" && (state.options.sourceCount ?? 0) > 1 ? (
-          <Text style={{ fontSize: desktop ? 12 : 14, color: theme.mutedForeground }}>
-            将{state.options.purpose === "move" ? "移动" : "复制"} {state.options.sourceCount}{" "}
-            个项目
-          </Text>
-        ) : null}
-        <FilePathTooltip path={`/${state.selected}`} disabled={!desktop}>
-          <View>
-            <Text
-              numberOfLines={1}
-              style={{ fontSize: desktop ? 12 : 14, color: theme.mutedForeground }}
-            >
-              /{state.selected}
-            </Text>
-          </View>
-        </FilePathTooltip>
-        <ScrollView
-          style={{
-            flex: 1,
-            minHeight: 0,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: theme.border,
-            borderRadius: 6,
-          }}
-          contentContainerStyle={{ paddingVertical: 4 }}
-        >
-          <DirectoryRow path="" depth={0} state={state} desktop={desktop} />
-        </ScrollView>
-        {state.options.purpose === "save" ? (
-          <Input value={state.fileName} onChangeText={picker.setFileName} placeholder="文件名.md" />
-        ) : null}
-        <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
-          <Button variant="outline" onPress={picker.cancel}>
-            <Text>取消</Text>
-          </Button>
-          <Button disabled={!picker.canConfirm()} onPress={picker.confirm}>
-            <Text>确定</Text>
-          </Button>
-        </View>
-      </View>
+      {content}
     </AdaptiveModal>
   );
 }

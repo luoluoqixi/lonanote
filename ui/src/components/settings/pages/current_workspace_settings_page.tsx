@@ -8,12 +8,12 @@ import {
   NativeListSwitchItem,
   NativeListTextAreaItem,
   type SelectOption,
-  confirmNative,
   toSwiftUIHexColor,
   useUiTheme,
 } from "rn-ui-kit";
 
 import { type WorkspaceSettings, workspace } from "@/api/commands/workspace";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { useToast } from "@/hooks/ui";
 import { useCurrentWorkspaceId, useWorkspaceState } from "@/hooks/workspace";
 import { selectWorkspaceDirectory } from "@/hooks/workspace/use_workspace_directory_picker";

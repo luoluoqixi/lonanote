@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type SelectHandle, confirmNative } from "rn-ui-kit";
+import { type SelectHandle } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { multiWindow } from "@/api/commands/win/multi_window";
 import {
   type WorkspaceListItem,
@@ -9,6 +10,7 @@ import {
   workspace,
 } from "@/api/commands/workspace";
 import { isDesktop, isSystemLocaleCN, os } from "@/api/common";
+import type { DialogWindowResultMap } from "@/api/common/dialogs/dialog_types";
 import { getErrorMessage } from "@/api/common/error_message";
 import { isTauri } from "@/api/common/platform";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
@@ -270,29 +272,31 @@ export function WorkspaceSelectContent({
     void createTarget.load();
   }, [createTarget.load]);
 
-  const createWorkspace = useCallback(async () => {
+  const createWorkspace = useCallback(async (submission?: DialogWindowResultMap["workspace.create"]) => {
     if (
       creatingRef.current ||
       locationBusyRef.current ||
       scanInProgressRef.current ||
       openingFolderRef.current ||
-      createTarget.isLoading ||
-      createTarget.isChoosing
+      (!submission && (createTarget.isLoading || createTarget.isChoosing))
     ) {
       return;
     }
 
-    const nextDisplayName = displayName.trim();
+    const nextDisplayName = (submission?.displayName ?? displayName).trim();
     if (!nextDisplayName) {
       toast.error("请输入工作区名称");
       return;
     }
-    if (!createTarget.providerId) {
+    const providerId = submission?.providerId ?? createTarget.providerId;
+    const isManaged = submission?.isManaged ?? createTarget.isManaged;
+    const externalBinding = submission?.externalBinding ?? createTarget.externalBinding;
+    if (!providerId) {
       toast.error("请选择存储位置");
       return;
     }
 
-    if (!createTarget.isManaged && !createTarget.externalBinding) {
+    if (!isManaged && !externalBinding) {
       toast.error("请选择目标文件夹");
       return;
     }
@@ -301,9 +305,9 @@ export function WorkspaceSelectContent({
     try {
       let createdWorkspace: WorkspaceSnapshot | null = null;
       const create = async () => {
-        createdWorkspace = createTarget.isManaged
-          ? await workspace.createManaged(createTarget.providerId!, nextDisplayName)
-          : await workspace.createExternal(createTarget.externalBinding!, nextDisplayName);
+        createdWorkspace = isManaged
+          ? await workspace.createManaged(providerId, nextDisplayName)
+          : await workspace.createExternal(externalBinding!, nextDisplayName);
         if (currentWorkspaceId && !isTauri()) {
           try {
             await workspace.close(currentWorkspaceId);
@@ -366,7 +370,7 @@ export function WorkspaceSelectContent({
     }
   }, []);
 
-  const updateWorkspace = useCallback(async () => {
+  const updateWorkspace = useCallback(async (submittedName?: string) => {
     if (
       !editingWorkspace ||
       isUpdatingWorkspace ||
@@ -377,7 +381,7 @@ export function WorkspaceSelectContent({
       return;
     }
 
-    const nextDisplayName = editedWorkspaceName.trim();
+    const nextDisplayName = (submittedName ?? editedWorkspaceName).trim();
     if (!nextDisplayName) {
       toast.error("请输入工作区名称");
       return;
@@ -804,6 +808,19 @@ export function WorkspaceSelectContent({
         displayName={displayName}
         isCreating={isCreatingWorkspace}
         onDisplayNameChange={setDisplayName}
+        onNativeResult={(result) => {
+          if (!result || typeof result !== "object" || Array.isArray(result)) return;
+          if (
+            !("displayName" in result) ||
+            typeof result.displayName !== "string" ||
+            !("providerId" in result) ||
+            typeof result.providerId !== "string" ||
+            !("isManaged" in result) ||
+            typeof result.isManaged !== "boolean"
+          )
+            return;
+          void createWorkspace(result as DialogWindowResultMap["workspace.create"]);
+        }}
         onOpenChange={setIsCreateWorkspaceSheetOpen}
         onSubmit={() => {
           void createWorkspace();
@@ -815,11 +832,25 @@ export function WorkspaceSelectContent({
         displayName={editedWorkspaceName}
         isUpdating={isUpdatingWorkspace}
         onDisplayNameChange={setEditedWorkspaceName}
+        onNativeResult={(result) => {
+          if (!result || typeof result !== "object" || Array.isArray(result) || !("action" in result))
+            return;
+          if (result.action === "save" && "displayName" in result && typeof result.displayName === "string") {
+            void updateWorkspace(result.displayName);
+          } else if (result.action === "relocate" && editingWorkspace) {
+            setIsEditWorkspaceSheetOpen(false);
+            location.open(editingWorkspace, "relocate");
+          } else if (result.action === "rebind" && editingWorkspace) {
+            setIsEditWorkspaceSheetOpen(false);
+            location.open(editingWorkspace, "rebind");
+          }
+        }}
         onOpenChange={handleEditWorkspaceSheetOpenChange}
         onSubmit={() => {
           void updateWorkspace();
         }}
         open={isEditWorkspaceSheetOpen}
+        workspaceId={editingWorkspace?.id}
         onRelocate={() => {
           if (!editingWorkspace) return;
           setIsEditWorkspaceSheetOpen(false);

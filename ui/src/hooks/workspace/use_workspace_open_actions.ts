@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { confirmNative } from "rn-ui-kit";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 
 import { fs } from "@/api/commands/fs";
 import { multiWindow } from "@/api/commands/win/multi_window";

@@ -23,10 +23,12 @@ export type CreateWorkspaceEntryKind = "directory" | "note";
 type CreateWorkspaceEntrySheetProps = {
   modalName?: string;
   entryKind: CreateWorkspaceEntryKind;
+  dialogContentOnly?: boolean;
   isCreating: boolean;
   name: string;
   parentPath: string;
   onNameChange: (name: string) => void;
+  onNativeResult?: (result: unknown) => void;
   onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
   open: boolean;
@@ -35,10 +37,12 @@ type CreateWorkspaceEntrySheetProps = {
 export function CreateWorkspaceEntrySheet({
   modalName = "create-workspace-entry-sheet",
   entryKind,
+  dialogContentOnly = false,
   isCreating,
   name,
   parentPath,
   onNameChange,
+  onNativeResult,
   onOpenChange,
   onSubmit,
   open,
@@ -105,9 +109,19 @@ export function CreateWorkspaceEntrySheet({
     </NativeList>
   );
 
+  if (dialogContentOnly) return content;
+
   return (
     <AdaptiveModal
       name={modalName}
+      nativeDialog={{
+        id: "workspace.entry.create",
+        payload: { entryKind, name, parentPath },
+        title: `${title} · ${parentPath || "/"}`,
+        width: 520,
+        height: 320,
+      }}
+      onNativeResult={onNativeResult}
       screenName="create-entry"
       title={`${title} · ${parentPath || "/"}`}
       open={open}

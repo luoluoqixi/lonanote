@@ -9,6 +9,7 @@ import { useLayoutMode } from "@/hooks/layout";
 import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 
 type WorkspaceEntryDetailsSheetProps = {
+  dialogContentOnly?: boolean;
   entry: WorkspaceIndexEntry | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -20,6 +21,7 @@ function formatDate(value: number | null | undefined): string {
 }
 
 export function WorkspaceEntryDetailsSheet({
+  dialogContentOnly = false,
   entry,
   onOpenChange,
   open,
@@ -68,9 +70,18 @@ export function WorkspaceEntryDetailsSheet({
     </NativeList>
   );
 
+  if (dialogContentOnly) return content;
+
   return (
     <AdaptiveModal
       name="workspace-entry-details-sheet"
+      nativeDialog={{
+        id: "workspace.entry.details",
+        payload: { entry, rootName },
+        title: isDirectory ? "文件夹详情" : "文件详情",
+        width: 600,
+        height: 480,
+      }}
       screenName="entry-details"
       title={isDirectory ? "文件夹详情" : "文件详情"}
       open={open}

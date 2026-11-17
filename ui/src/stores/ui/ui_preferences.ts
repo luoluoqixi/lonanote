@@ -66,6 +66,7 @@ export interface UiPreferences {
   };
   window: {
     lastSize: DesktopWindowSize | null;
+    nativeDialogs: boolean;
     rememberSize: boolean;
   };
 }
@@ -85,6 +86,7 @@ const UI_WORKSPACE_EXPLORER_SORT_VALUE_KEY = "ui.workspaceExplorer.sortValue";
 const UI_WORKSPACE_SELECT_GROUP_MODE_KEY = "ui.workspaceSelect.groupMode";
 const UI_WORKSPACE_SELECT_SORT_VALUE_KEY = "ui.workspaceSelect.sortValue";
 const UI_WINDOW_LAST_SIZE_KEY = "ui.window.lastSize";
+const UI_NATIVE_DIALOGS_KEY = "ui.window.nativeDialogs";
 const UI_REMEMBER_WINDOW_SIZE_KEY = "ui.window.rememberSize";
 
 export function createDefaultUiPreferences(): UiPreferences {
@@ -115,6 +117,7 @@ export function createDefaultUiPreferences(): UiPreferences {
     },
     window: {
       lastSize: null,
+      nativeDialogs: true,
       rememberSize: true,
     },
   };
@@ -236,6 +239,7 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
     },
     window: {
       lastSize: normalizeDesktopWindowSize(preferences.window.lastSize),
+      nativeDialogs: preferences.window.nativeDialogs !== false,
       rememberSize: Boolean(preferences.window.rememberSize),
     },
   };
@@ -250,6 +254,7 @@ function readUiPreferencesFromStore(): UiPreferences {
   const contextMenuStyle = store.commonGetSync<unknown>(UI_CONTEXT_MENU_STYLE_KEY);
   const developerOptionsEnabled = store.commonGetSync<unknown>(UI_DEVELOPER_OPTIONS_ENABLED_KEY);
   const rememberSize = store.commonGetSync<unknown>(UI_REMEMBER_WINDOW_SIZE_KEY);
+  const nativeDialogs = store.commonGetSync<unknown>(UI_NATIVE_DIALOGS_KEY);
   const lastSize = store.commonGetSync<unknown>(UI_WINDOW_LAST_SIZE_KEY);
   const layoutMode = store.commonGetSync<unknown>(UI_LAYOUT_MODE_KEY);
   const workspaceExplorerFoldersFirst = store.commonGetSync<unknown>(
@@ -312,6 +317,8 @@ function readUiPreferencesFromStore(): UiPreferences {
     },
     window: {
       lastSize: normalizeDesktopWindowSize(lastSize),
+      nativeDialogs:
+        typeof nativeDialogs === "boolean" ? nativeDialogs : defaults.window.nativeDialogs,
       rememberSize: typeof rememberSize === "boolean" ? rememberSize : defaults.window.rememberSize,
     },
   };
@@ -337,6 +344,7 @@ function toStoreEntries(preferences: UiPreferences): Array<[string, unknown]> {
     [UI_WORKSPACE_SELECT_GROUP_MODE_KEY, preferences.workspaceSelect.groupMode],
     [UI_WORKSPACE_SELECT_SORT_VALUE_KEY, preferences.workspaceSelect.sortValue],
     [UI_REMEMBER_WINDOW_SIZE_KEY, preferences.window.rememberSize],
+    [UI_NATIVE_DIALOGS_KEY, preferences.window.nativeDialogs],
     [UI_WINDOW_LAST_SIZE_KEY, preferences.window.lastSize],
   ];
 }

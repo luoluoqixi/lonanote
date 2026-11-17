@@ -57,6 +57,10 @@ export function useAppMenu() {
     open: false,
     page: "global",
   });
+  const setSettingsOpen = useCallback(
+    (open: boolean) => setSettings((current) => ({ ...current, open })),
+    [],
+  );
   const openSettings = (page: "global" | "about" = "global") =>
     openAppSettings(layoutMode, page, {
       openDialog: (page) => setSettings({ open: true, page }),
@@ -314,7 +318,7 @@ export function useAppMenu() {
     groups,
     settings,
     openSettings,
-    setSettingsOpen: (open: boolean) => setSettings((current) => ({ ...current, open })),
+    setSettingsOpen,
     execute,
     presentation,
     refresh,

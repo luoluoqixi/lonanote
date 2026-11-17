@@ -12,6 +12,7 @@ import {
   useUiTheme,
 } from "rn-ui-kit";
 
+import type { WorkspaceStorageBindingRequest } from "@/api/commands/workspace";
 import { isDesktop, isIos } from "@/api/common";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { getStorageProviderLabel } from "@/components/common/storage_provider_utils";
@@ -49,6 +50,25 @@ export function WorkspaceLocationSheet({
       title={title}
       open={item !== null}
       onOpenChange={location.onOpenChange}
+      nativeDialog={
+        item
+          ? {
+              id: "workspace.location",
+              payload: { workspaceItem: item, mode },
+              title,
+              width: 620,
+              height: 560,
+              blockParentInput: true,
+            }
+          : undefined
+      }
+      onNativeResult={(result) => {
+        if (!result || typeof result !== "object" || !("kind" in result)) return;
+        if (result.kind === "managed" || result.kind === "external") {
+          location.onOpenChange(false);
+          void location.submit(result as WorkspaceStorageBindingRequest);
+        }
+      }}
       dialogSize={{ width: 620, height: 560 }}
       sheetProps={{ snapPoints: ["88%"] }}
     >

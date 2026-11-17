@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "plugins",
   "description": "main plugins",
-  "windows": ["main", "workspace-window-*"],
+  "windows": ["main", "workspace-window-*", "dialog-window-*"],
   "permissions": [
     "os:default",
     "os:allow-arch",

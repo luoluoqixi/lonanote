@@ -14,8 +14,9 @@ import {
 import { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Text } from "rn-ui-kit";
-import { type DropdownItemData, confirmNative, useUiTheme } from "rn-ui-kit";
+import { type DropdownItemData, useUiTheme } from "rn-ui-kit";
 
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { isMobile } from "@/api/common/platform";
 import { isDesktop } from "@/api/common/platform";
 import {

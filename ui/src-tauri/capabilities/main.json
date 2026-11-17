@@ -4,7 +4,8 @@
   "description": "Capability for the main window",
   "windows": [
     "main",
-    "workspace-window-*"
+    "workspace-window-*",
+    "dialog-window-*"
   ],
   "permissions": [
     "core:default",

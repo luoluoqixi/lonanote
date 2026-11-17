@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { confirmNative } from "rn-ui-kit";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 
 import type { WorkspaceTransferSource } from "@/api/commands/workspace/types";
 import { workspaceFile } from "@/api/commands/workspace/workspace_file";

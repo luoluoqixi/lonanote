@@ -29,10 +29,10 @@ import {
   Dropdown,
   type SelectHandle,
   Tooltip,
-  confirmNative,
   useUiTheme,
 } from "rn-ui-kit";
 
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
 import { openExternalFile } from "@/api/commands/utils";
@@ -524,7 +524,7 @@ export function WorkspaceTreeHost({
       refresh,
     ],
   );
-  async function submit() {
+  async function submit(submittedName?: string) {
     const target = create ?? rename;
     if (
       !target ||
@@ -532,24 +532,25 @@ export function WorkspaceTreeHost({
       workspaceExplorerStore.getState().workspaces[workspaceId]?.epoch !== target.epoch
     )
       return;
+    const nextName = (submittedName ?? name).trim();
     setBusy(true);
     try {
       const result = create
         ? await fileActions.createEntry({
             workspaceId,
             parentPath: create.parent,
-            name,
+            name: nextName,
             kind: create.kind,
           })
         : await fileActions.renameEntry({
             workspaceId,
             path: rename!.path,
-            nextPath: [...rename!.path.split("/").slice(0, -1), name.trim()].join("/"),
+            nextPath: [...rename!.path.split("/").slice(0, -1), nextName].join("/"),
           });
       if (result.succeededPaths.length) {
         const revealed = create
           ? result.succeededPaths[0]
-          : [...rename!.path.split("/").slice(0, -1), name.trim()].join("/");
+          : [...rename!.path.split("/").slice(0, -1), nextName].join("/");
         setCreate(null);
         setRename(null);
         await explorer.revealPath(revealed).catch(() => undefined);
@@ -719,6 +720,16 @@ export function WorkspaceTreeHost({
         parentPath={create?.parent ?? ""}
         name={name}
         onNameChange={setName}
+        onNativeResult={(result) => {
+          if (
+            result &&
+            typeof result === "object" &&
+            !Array.isArray(result) &&
+            "name" in result &&
+            typeof result.name === "string"
+          )
+            void submit(result.name);
+        }}
         isCreating={busy}
         onSubmit={() => {
           void submit();
@@ -731,6 +742,16 @@ export function WorkspaceTreeHost({
         }}
         name={name}
         onNameChange={setName}
+        onNativeResult={(result) => {
+          if (
+            result &&
+            typeof result === "object" &&
+            !Array.isArray(result) &&
+            "name" in result &&
+            typeof result.name === "string"
+          )
+            void submit(result.name);
+        }}
         isRenaming={busy}
         onSubmit={() => {
           void submit();

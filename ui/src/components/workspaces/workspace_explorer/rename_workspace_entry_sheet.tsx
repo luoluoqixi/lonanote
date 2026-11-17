@@ -10,18 +10,22 @@ import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { useLayoutMode } from "@/hooks/layout";
 
 type RenameWorkspaceEntrySheetProps = {
+  dialogContentOnly?: boolean;
   isRenaming: boolean;
   name: string;
   onNameChange: (name: string) => void;
+  onNativeResult?: (result: unknown) => void;
   onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
   open: boolean;
 };
 
 export function RenameWorkspaceEntrySheet({
+  dialogContentOnly = false,
   isRenaming,
   name,
   onNameChange,
+  onNativeResult,
   onOpenChange,
   onSubmit,
   open,
@@ -55,9 +59,19 @@ export function RenameWorkspaceEntrySheet({
     </NativeList>
   );
 
+  if (dialogContentOnly) return content;
+
   return (
     <AdaptiveModal
       name="rename-workspace-entry-sheet"
+      nativeDialog={{
+        id: "workspace.entry.rename",
+        payload: { name },
+        title: "编辑名称",
+        width: 520,
+        height: 320,
+      }}
+      onNativeResult={onNativeResult}
       screenName="rename-entry"
       title="编辑名称"
       onOpenChange={onOpenChange}
