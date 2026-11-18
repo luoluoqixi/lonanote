@@ -49,10 +49,11 @@ export function WorkspaceLocationDialogRenderer({
         ) : null}
       </NativeList>
       <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
-        <Button variant="outline" onPress={() => onComplete(undefined)}>
+        <Button size="sm" variant="outline" onPress={() => onComplete(undefined)}>
           <Text>取消</Text>
         </Button>
         <Button
+          size="sm"
           disabled={!canSubmit}
           onPress={() => {
             if (!target.providerId) return;

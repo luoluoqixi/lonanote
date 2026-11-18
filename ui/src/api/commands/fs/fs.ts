@@ -75,10 +75,15 @@ export const fs = {
   showSelectDialog: async (
     options: SelectDialogOptions,
     parentWindowLabel?: string,
+    parentRequestId?: string,
   ): Promise<SelectDialogResult | undefined> => {
     if (isDesktop() && isTauri()) {
       const { invoke: invokeTauri } = await import("@tauri-apps/api/core");
-      return invokeTauri<SelectDialogResult>("select_files", { options, parentWindowLabel });
+      return invokeTauri<SelectDialogResult>("select_files", {
+        options,
+        parentWindowLabel,
+        parentRequestId,
+      });
     }
     return await invoke("fs.show_select_dialog", options);
   },

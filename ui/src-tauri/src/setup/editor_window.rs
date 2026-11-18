@@ -55,7 +55,7 @@ fn create(
         config.drag_drop_enabled = cfg!(target_os = "linux");
         config.maximized = false;
         config.fullscreen = false;
-        config.decorations = true;
+        config.decorations = cfg!(target_os = "macos");
         config.visible = false;
         let source_size = owner
             .inner_size()
@@ -66,15 +66,14 @@ fn create(
             });
         #[cfg(target_os = "macos")]
         {
-            // 辅助编辑器没有自定义标题栏，恢复系统标题栏以提供窗口拖拽区域。
-            config.title_bar_style = tauri::TitleBarStyle::Visible;
-            config.hidden_title = false;
-            config.traffic_light_position = None;
+            // 与内容 Dialog 一致：WebView 绘制标题栏，系统保留真实交通灯。
+            config.title_bar_style = tauri::TitleBarStyle::Overlay;
+            config.hidden_title = true;
         }
         let mut builder = WebviewWindowBuilder::from_config(app, &config)?
             .title(crate::APP_TITLE.as_str())
             .visible(false)
-            .decorations(true)
+            .decorations(cfg!(target_os = "macos"))
             .initialization_script_for_all_frames(super::external_file_drop::initialization_script(
                 app,
             ))

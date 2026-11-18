@@ -33,6 +33,7 @@ import { WorkspaceSelectSubtitle } from "./workspace_select_subtitle";
 import { type WorkspaceSortValue, getWorkspaceSubtitle } from "./workspace_sort";
 
 type WorkspaceSelectListProps = {
+  currentWorkspaceId?: string | null;
   embedded?: boolean;
   hasError: boolean;
   groupMode: WorkspaceGroupMode;
@@ -69,6 +70,7 @@ function WorkspaceSelectStatus({ message }: { message: string }) {
 }
 
 export function WorkspaceSelectList({
+  currentWorkspaceId: projectedWorkspaceId,
   embedded = false,
   hasError,
   groupMode,
@@ -97,7 +99,9 @@ export function WorkspaceSelectList({
 }: WorkspaceSelectListProps) {
   const theme = useUiTheme();
   const { layoutMode } = useLayoutMode();
-  const currentWorkspaceId = useCurrentWorkspaceId();
+  const sessionWorkspaceId = useCurrentWorkspaceId();
+  const currentWorkspaceId =
+    projectedWorkspaceId === undefined ? sessionWorkspaceId : projectedWorkspaceId;
   const desktop = layoutMode === "desktop";
   const compact = desktop;
   const insets = useSafeAreaInsets();

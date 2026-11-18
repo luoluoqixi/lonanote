@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle } from "rn-ui-kit";
 
 import { type WorkspaceIndexEntry, workspaceFile } from "@/api/commands/workspace";
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import {
   getDefaultWorkspaceEntryName,
   getWorkspaceEntryCreateParent,

@@ -103,9 +103,11 @@ export type DialogWindowRequest<TDialogId extends DialogId = DialogId> = {
   width: number;
   height: number;
   blockParentInput?: boolean;
+  parentRequestId?: string;
 };
 
 export type DialogWindowSession<TDialogId extends DialogId = DialogId> = {
+  title: string;
   requestId: string;
   dialogId: TDialogId;
   payload: DialogPayloadMap[TDialogId];

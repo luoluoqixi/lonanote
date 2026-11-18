@@ -8,7 +8,8 @@ use tauri::{Emitter, Manager, WebviewWindow};
 use crate::setup::{
     window_runtime::WINDOW_SESSIONS,
     workspace_access::{
-        check_workspace_access, should_focus_workspace_owner, should_notify_catalog_changed,
+        check_workspace_access, is_dialog_read_only_command, should_focus_workspace_owner,
+        should_notify_catalog_changed,
     },
 };
 
@@ -22,9 +23,17 @@ pub async fn invoke_workspace(
     data: &Value,
 ) -> Result<CommandResponse, String> {
     let label = window.label();
-    if WINDOW_SESSIONS.start_cause(label).is_none() {
-        return Err("当前窗口尚未注册工作台会话".to_string());
-    }
+    let dialog_owner = if WINDOW_SESSIONS.start_cause(label).is_none() {
+        let owner = crate::setup::dialog_window::owner_for_dialog_window(label)
+            .ok_or_else(|| "当前窗口尚未注册工作台会话".to_string())?;
+        if !is_dialog_read_only_command(key) {
+            return Err("原生 Dialog 窗口仅允许读取工作区数据".to_string());
+        }
+        Some(owner)
+    } else {
+        None
+    };
+    let access_label = dialog_owner.as_deref().unwrap_or(label);
     let file_operation = key.starts_with("workspace.file.")
         || key.starts_with("workspace.index.")
         || matches!(key, "workspace.history.list" | "workspace.history.read");
@@ -33,7 +42,7 @@ pub async fn invoke_workspace(
             // 转移与文件占用交接互斥，检查后不能被其他窗口抢先打开来源。
             let _guard = WORKSPACE_GATE.write().await;
             let id = workspace_id(data).ok_or("缺少有效的 workspaceId")?;
-            check_workspace_access(&WINDOW_SESSIONS, label, key, id)?;
+            check_workspace_access(&WINDOW_SESSIONS, access_label, key, id)?;
             super::file_ownership_api::assert_transfer_access(label, id, data).await?;
             return lonanote_core::invoke_command_async(key, args)
                 .await
@@ -41,7 +50,7 @@ pub async fn invoke_workspace(
         }
         let _guard = WORKSPACE_GATE.read().await;
         let id = workspace_id(data).ok_or("缺少有效的 workspaceId")?;
-        check_workspace_access(&WINDOW_SESSIONS, label, key, id)?;
+        check_workspace_access(&WINDOW_SESSIONS, access_label, key, id)?;
         return lonanote_core::invoke_command_async(key, args)
             .await
             .map_err(|error| error.to_string());
@@ -49,7 +58,7 @@ pub async fn invoke_workspace(
     let _guard = WORKSPACE_GATE.write().await;
     let requested_id = workspace_id(data);
     if let Some(id) = requested_id {
-        if let Err(error) = check_workspace_access(&WINDOW_SESSIONS, label, key, id) {
+        if let Err(error) = check_workspace_access(&WINDOW_SESSIONS, access_label, key, id) {
             if should_focus_workspace_owner(key) {
                 log::info!(
                     "workspace open conflict: caller={label}, command={key}, owner={:?}",

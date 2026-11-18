@@ -1,9 +1,8 @@
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
-
 import type {
   ScanWorkspaceConflictCandidate,
   ScanWorkspaceIdConflict,
 } from "@/api/commands/workspace";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { getFileName } from "@/api/common/utils/file_type_utils";
 
 function getFolderName(candidate: ScanWorkspaceConflictCandidate): string {
@@ -43,8 +42,12 @@ function describeCandidate(name: string, candidate: ScanWorkspaceConflictCandida
 }
 
 /** 整组只记录最终保留者；任何一步跳过或关闭弹窗都不提交文件修改。 */
-export async function confirmExternalIdRegeneration(folderPath: string): Promise<boolean> {
+export async function confirmExternalIdRegeneration(
+  folderPath: string,
+  parentRequestId?: string,
+): Promise<boolean> {
   const result = await confirmNative({
+    parentRequestId,
     title: "工作区 ID 重复",
     message: `所选文件夹与已有工作区使用相同的 ID：\n${folderPath}\n\n是否为此文件夹生成新 ID 并导入？已有工作区的 ID 保持不变。`,
     buttons: [
@@ -57,6 +60,7 @@ export async function confirmExternalIdRegeneration(folderPath: string): Promise
 
 export async function chooseScanIdConflictKeeper(
   conflict: ScanWorkspaceIdConflict,
+  parentRequestId?: string,
 ): Promise<number | null> {
   let keepIndex = 0;
   const comparisonCount = conflict.candidates.length - 1;
@@ -66,6 +70,7 @@ export async function chooseScanIdConflictKeeper(
     const second = conflict.candidates[nextIndex];
     const [firstName, secondName] = getCandidateLabels(first, second);
     const result = await confirmNative({
+      parentRequestId,
       buttons: [
         { key: "skip", style: "cancel", text: "跳过本组" },
         { key: "keep-a", text: `保留 ${firstName} 的ID` },

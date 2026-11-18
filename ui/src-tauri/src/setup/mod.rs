@@ -20,6 +20,8 @@ pub(crate) mod single_instance;
 pub(crate) mod dialog_input_locks;
 pub(crate) mod dialog_sessions;
 pub(crate) mod dialog_window;
+#[cfg(windows)]
+pub(crate) mod dialog_window_parent;
 pub(crate) mod editor_window;
 pub(crate) mod editor_window_sessions;
 pub(crate) mod external_file_drop;

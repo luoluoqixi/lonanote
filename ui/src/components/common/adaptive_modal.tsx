@@ -10,13 +10,18 @@ import {
 } from "rn-ui-kit";
 
 import { dialogWindows } from "@/api/commands/win/dialog_windows";
-import { claimNativeDialogWindowLaunch } from "@/api/common/dialogs/dialog_launch_guard";
+import {
+  claimNativeDialogWindowLaunch,
+  releaseNativeDialogWindowLaunch,
+  subscribeNativeDialogWindowLaunch,
+} from "@/api/common/dialogs/dialog_launch_guard";
 import { isDialogWindowRendererFailure } from "@/api/common/dialogs/dialog_types";
 import type { DialogId, DialogPayloadMap } from "@/api/common/dialogs/dialog_types";
 import { shouldUseNativeDialogWindow } from "@/api/common/dialogs/dialog_window_policy";
 import { isDesktop, isTauri } from "@/api/common/platform";
 import { useLayoutMode } from "@/hooks/layout";
 import { useUiPreferences } from "@/hooks/settings";
+import { useDialogPresentationParent } from "@/hooks/ui/use_dialog_presentation_parent";
 
 type SheetStackProps = ComponentProps<typeof NativeSheetStack>;
 type NativeDialogConfig = {
@@ -28,6 +33,8 @@ type NativeDialogConfig = {
     width?: number;
     height?: number;
     blockParentInput?: boolean;
+    /** 同一个入口替换业务请求时，撤销旧窗口并创建新窗口。 */
+    requestKey?: string | number;
   };
 }[DialogId];
 export type AdaptiveModalNativeDialog = NativeDialogConfig;
@@ -38,6 +45,8 @@ export type AdaptiveModalProps = {
   dialogSize?: { width: number; height: number };
   name: string;
   nativeDialog?: NativeDialogConfig;
+  /** 跨窗口交互的业务控制器留在所属工作台执行。 */
+  nativeController?: (requestId: string) => ReactNode;
   onNativeResult?: (result: unknown) => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -55,6 +64,7 @@ export function AdaptiveModal({
   dialogSize = { width: 520, height: 320 },
   name,
   nativeDialog,
+  nativeController,
   onNativeResult,
   onOpenChange,
   open,
@@ -67,7 +77,21 @@ export function AdaptiveModal({
   const { width, height } = useWindowDimensions();
   const appBackgroundColors = useAppBackgroundColors();
   const { preferences } = useUiPreferences();
+  const parentRequestId = useDialogPresentationParent();
   const [nativeWindowFailed, setNativeWindowFailed] = useState(false);
+  const [nativeRequestId, setNativeRequestId] = useState<string | null>(null);
+  const [nativeRetry, setNativeRetry] = useState(0);
+  const nativeSession = useRef<{
+    requestId: string;
+    launchKey: string;
+    abort: AbortController;
+  } | null>(null);
+  const mounted = useRef(false);
+  const launchKey = JSON.stringify([name, nativeDialog?.requestKey ?? null]);
+  const launchKeyRef = useRef(launchKey);
+  launchKeyRef.current = launchKey;
+  const openRef = useRef(open);
+  openRef.current = open;
   const onOpenChangeRef = useRef(onOpenChange);
   const onNativeResultRef = useRef(onNativeResult);
   const nativeDialogRef = useRef(nativeDialog);
@@ -85,25 +109,70 @@ export function AdaptiveModal({
   });
 
   useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      // StrictMode 会立即重放同一实例的 effect；只在真正卸载后撤销原生请求。
+      queueMicrotask(() => {
+        if (mounted.current) return;
+        const session = nativeSession.current;
+        if (!session) return;
+        nativeSession.current = null;
+        session.abort.abort();
+        releaseNativeDialogWindowLaunch(session.launchKey, session.requestId);
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    const previous = nativeSession.current;
+    if (previous && (!open || previous.launchKey !== launchKey)) {
+      nativeSession.current = null;
+      previous.abort.abort();
+      releaseNativeDialogWindowLaunch(previous.launchKey, previous.requestId);
+      setNativeRequestId(null);
+    }
     if (!open) {
-      claimNativeDialogWindowLaunch(name, false, false);
       setNativeWindowFailed(false);
       return;
     }
-    if (!claimNativeDialogWindowLaunch(name, true, useNativeWindow && !nativeWindowFailed)) return;
+    if (nativeSession.current) return;
     const config = nativeDialogRef.current;
-    if (!config) return;
+    if (!config || !useNativeWindow || nativeWindowFailed) return;
+    const requestId = crypto.randomUUID();
+    if (!claimNativeDialogWindowLaunch(launchKey, true, requestId)) {
+      return subscribeNativeDialogWindowLaunch(launchKey, () =>
+        setNativeRetry((value) => value + 1),
+      );
+    }
+    const abort = new AbortController();
+    const session = { requestId, launchKey, abort };
+    nativeSession.current = session;
+    setNativeRequestId(requestId);
     void dialogWindows
-      .open({
-        requestId: crypto.randomUUID(),
-        dialogId: config.id,
-        payload: config.payload,
-        title: config.title ?? title ?? "",
-        width: config.width ?? dialogSize.width,
-        height: config.height ?? dialogSize.height,
-        blockParentInput: config.blockParentInput,
-      } as never)
+      .open(
+        {
+          requestId,
+          dialogId: config.id,
+          payload: config.payload,
+          title: config.title ?? title ?? "",
+          width: config.width ?? dialogSize.width,
+          height: config.height ?? dialogSize.height,
+          blockParentInput: config.blockParentInput,
+          parentRequestId,
+        } as never,
+        { signal: abort.signal },
+      )
       .then((result) => {
+        if (
+          !mounted.current ||
+          nativeSession.current !== session ||
+          launchKeyRef.current !== launchKey ||
+          abort.signal.aborted ||
+          !openRef.current
+        )
+          return;
+        nativeSession.current = null;
         if (isDialogWindowRendererFailure(result)) {
           setNativeWindowFailed(true);
           return;
@@ -112,15 +181,43 @@ export function AdaptiveModal({
         onOpenChangeRef.current(false);
       })
       .catch((error) => {
+        if (
+          !mounted.current ||
+          nativeSession.current !== session ||
+          launchKeyRef.current !== launchKey ||
+          abort.signal.aborted ||
+          !openRef.current
+        )
+          return;
+        nativeSession.current = null;
         console.error(`[dialog:${name}] 原生窗口创建失败，回退到应用内 Dialog`, error);
         setNativeWindowFailed(true);
+      })
+      .finally(() => {
+        if (nativeSession.current === session) nativeSession.current = null;
+        releaseNativeDialogWindowLaunch(launchKey, requestId);
+        if (mounted.current)
+          setNativeRequestId((current) => (current === requestId ? null : current));
       });
-  }, [dialogSize.height, dialogSize.width, name, nativeWindowFailed, open, title, useNativeWindow]);
+  }, [
+    dialogSize.height,
+    dialogSize.width,
+    name,
+    launchKey,
+    nativeRetry,
+    nativeWindowFailed,
+    open,
+    parentRequestId,
+    title,
+    useNativeWindow,
+  ]);
 
   if (isDialogWindow && !nativeDialog) {
     return <View style={{ flex: 1, minHeight: 0 }}>{children}</View>;
   }
-  if (useNativeWindow && !nativeWindowFailed) return null;
+  if ((useNativeWindow && !nativeWindowFailed) || nativeRequestId) {
+    return nativeRequestId ? (nativeController?.(nativeRequestId) ?? null) : null;
+  }
 
   if (layoutMode === "desktop") {
     return (

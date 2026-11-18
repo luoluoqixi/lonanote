@@ -23,16 +23,8 @@ import {
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "rn-ui-kit";
-import {
-  Button,
-  ContextMenu,
-  Dropdown,
-  type SelectHandle,
-  Tooltip,
-  useUiTheme,
-} from "rn-ui-kit";
+import { Button, ContextMenu, Dropdown, type SelectHandle, Tooltip, useUiTheme } from "rn-ui-kit";
 
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
 import { openExternalFile } from "@/api/commands/utils";
@@ -42,6 +34,7 @@ import {
   workspaceFile,
 } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, getFileMimeType, getFileName } from "@/api/common";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { isDesktop } from "@/api/common/platform";
 import {
   getDefaultWorkspaceEntryName,

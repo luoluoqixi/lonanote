@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Text, useAppBackgroundColors } from "rn-ui-kit";
 
 import { type DialogWindowSession, dialogWindows } from "@/api/commands/win/dialog_windows";
+import { DialogTitleBar } from "@/components/window/dialog_titlebar";
 
 import { getDialogRenderer } from "./dialog_content_registry";
 import type { DialogId, DialogJsonValue } from "./dialog_types";
@@ -35,32 +36,31 @@ export function DialogWindowHost({ requestId }: { requestId: string }) {
         .catch(() => dialogWindows.closeCurrent().catch(console.error));
   }, [requestId, session]);
 
-  if (error) {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.screen }]}>
-        <Text accessibilityRole="alert">弹窗加载失败：{error}</Text>
-      </View>
-    );
-  }
-  if (!session) {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.screen }]}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
-  const Renderer = getDialogRenderer(session.dialogId);
-  if (!Renderer) return null;
+  const Renderer = session ? getDialogRenderer(session.dialogId) : null;
   return (
     <View style={[styles.root, { backgroundColor: colors.screen }]}>
-      <Renderer
-        payload={session.payload}
-        onComplete={(result) =>
-          void dialogWindows
-            .complete(requestId, result as DialogJsonValue | undefined)
-            .catch(console.error)
-        }
-      />
+      <DialogTitleBar title={session?.title ?? "加载中…"} />
+      <View style={styles.root}>
+        {error ? (
+          <View style={styles.center}>
+            <Text accessibilityRole="alert">弹窗加载失败：{error}</Text>
+          </View>
+        ) : session && Renderer ? (
+          <Renderer
+            requestId={requestId}
+            payload={session.payload}
+            onComplete={(result) =>
+              void dialogWindows
+                .complete(requestId, result as DialogJsonValue | undefined)
+                .catch(console.error)
+            }
+          />
+        ) : (
+          <View style={styles.center}>
+            <ActivityIndicator />
+          </View>
+        )}
+      </View>
     </View>
   );
 }

@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 
 import { fs } from "@/api/commands/fs";
 import { multiWindow } from "@/api/commands/win/multi_window";
@@ -10,6 +9,7 @@ import {
   workspace,
 } from "@/api/commands/workspace";
 import { getFileName, isDesktop, isTauri } from "@/api/common";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { createSingleFlight } from "@/components/app_menu/app_menu_actions";
 import { confirmExternalIdRegeneration } from "@/components/workspaces/workspace_select/scan_id_conflict_dialog";
 import { notifyWorkspaceOpenError } from "@/components/workspaces/workspace_select/workspace_open_feedback";
@@ -21,6 +21,7 @@ import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_ru
 const run = createSingleFlight();
 export function useWorkspaceOpenActions(
   options: {
+    parentRequestId?: string;
     onOpened?: () => void;
     onMissing?: (item: WorkspaceListItem) => void;
     onChanged?: () => Promise<unknown>;
@@ -50,6 +51,7 @@ export function useWorkspaceOpenActions(
       }
       if (openResult.status === "directoryMissing") {
         const result = await confirmNative({
+          parentRequestId: latest.current.parentRequestId,
           buttons: [
             { key: "cancel", style: "cancel", text: "取消" },
             { key: "locate", text: "重新定位" },
@@ -73,6 +75,7 @@ export function useWorkspaceOpenActions(
 
       const resolution = openResult.manifestIdRegistered
         ? await confirmNative({
+            parentRequestId: latest.current.parentRequestId,
             buttons: [
               { key: "cancel", style: "cancel", text: "取消" },
               { key: "generate-new-id", text: "生成新 ID" },
@@ -81,6 +84,7 @@ export function useWorkspaceOpenActions(
             title: "Workspace ID 已存在",
           })
         : await confirmNative({
+            parentRequestId: latest.current.parentRequestId,
             buttons: [
               { key: "cancel", style: "cancel", text: "取消" },
               { key: "update-id", text: "更新 ID" },
@@ -144,7 +148,11 @@ export function useWorkspaceOpenActions(
     openFolder: () =>
       perform(async () => {
         if (!isDesktop()) return;
-        const selected = await fs.showSelectDialog({ type: "openFolder", title: "打开文件夹" });
+        const selected = await fs.showSelectDialog(
+          { type: "openFolder", title: "打开文件夹" },
+          undefined,
+          latest.current.parentRequestId,
+        );
         if (!selected?.path) return;
         const binding: ExternalWorkspaceStorageBindingRequest = {
           kind: "external",
@@ -156,7 +164,10 @@ export function useWorkspaceOpenActions(
           binding,
           getFileName(selected.path.replace(/\\/g, "/")),
         );
-        if (result.status === "idConflict" && !(await confirmExternalIdRegeneration(selected.path)))
+        if (
+          result.status === "idConflict" &&
+          !(await confirmExternalIdRegeneration(selected.path, latest.current.parentRequestId))
+        )
           return;
         const target =
           result.status === "ready"

@@ -25,12 +25,19 @@ const dragOverlayStyle: DragOverlayStyle = {
   zIndex: TITLEBAR_DRAG_OVERLAY_Z_INDEX,
 };
 
-function TitleBarDragOverlay({ reservedLeft = 0 }: { reservedLeft?: number }) {
+function TitleBarDragOverlay({
+  reservedLeft = 0,
+  reservedRight,
+}: {
+  reservedLeft?: number;
+  reservedRight?: number;
+}) {
   const [mounted, setMounted] = useState(false);
   const desktop = isDesktop();
   const platform = os();
-  const reservedRight =
-    platform === "windows" || platform === "linux" ? WINDOWS_CONTROL_AREA_WIDTH : 0;
+  const rightInset =
+    reservedRight ??
+    (platform === "windows" || platform === "linux" ? WINDOWS_CONTROL_AREA_WIDTH : 0);
 
   useEffect(() => {
     setMounted(true);
@@ -49,7 +56,7 @@ function TitleBarDragOverlay({ reservedLeft = 0 }: { reservedLeft?: number }) {
       style={{
         ...dragOverlayStyle,
         height: TITLE_HEIGHT,
-        right: reservedRight,
+        right: rightInset,
         left: reservedLeft,
       }}
     />,

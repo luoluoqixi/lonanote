@@ -9,6 +9,7 @@ import type {
 import { registerSettingsDialogRenderer } from "./settings_dialog_renderer";
 
 export type DialogRendererProps<TDialogId extends DialogId = DialogId> = {
+  requestId: string;
   payload: DialogPayloadMap[TDialogId];
   onComplete: (result?: DialogWindowResultMap[TDialogId] | DialogJsonValue) => void;
 };

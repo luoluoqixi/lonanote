@@ -141,7 +141,7 @@ export function DirectoryPickerHost({
   if (!state) return null;
   const title = state.options.purpose === "save" ? "保存笔记" : "选择目标文件夹";
   const content = (
-    <View style={{ flex: 1, gap: 12, minHeight: 0 }}>
+    <View style={{ flex: 1, gap: 12, minHeight: 0, ...(dialogContentOnly ? { padding: 16 } : {}) }}>
       {state.options.purpose !== "save" && (state.options.sourceCount ?? 0) > 1 ? (
         <Text style={{ fontSize: desktop ? 12 : 14, color: theme.mutedForeground }}>
           将{state.options.purpose === "move" ? "移动" : "复制"} {state.options.sourceCount} 个项目
@@ -173,10 +173,14 @@ export function DirectoryPickerHost({
         <Input value={state.fileName} onChangeText={picker.setFileName} placeholder="文件名.md" />
       ) : null}
       <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
-        <Button variant="outline" onPress={picker.cancel}>
+        <Button size={desktop ? "sm" : undefined} variant="outline" onPress={picker.cancel}>
           <Text>取消</Text>
         </Button>
-        <Button disabled={!picker.canConfirm()} onPress={picker.confirm}>
+        <Button
+          size={desktop ? "sm" : undefined}
+          disabled={!picker.canConfirm()}
+          onPress={picker.confirm}
+        >
           <Text>确定</Text>
         </Button>
       </View>
@@ -190,6 +194,7 @@ export function DirectoryPickerHost({
       open
       nativeDialog={{
         id: "workspace.directory-picker",
+        requestKey: state.token,
         payload: { token: state.token, options: state.options },
         title,
         width: 560,
@@ -203,7 +208,7 @@ export function DirectoryPickerHost({
         picker.accept(result.token, result.result as DirectoryPickerResult | null);
       }}
       onOpenChange={(open) => {
-        if (!open) picker.cancel();
+        if (!open && picker.getSnapshot()?.token === state.token) picker.cancel();
       }}
       dialogSize={{ width: 560, height: 460 }}
     >

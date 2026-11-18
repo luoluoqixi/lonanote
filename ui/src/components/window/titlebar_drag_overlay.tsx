@@ -1,4 +1,4 @@
-function TitleBarDragOverlay(_props: { reservedLeft?: number }) {
+function TitleBarDragOverlay(_props: { reservedLeft?: number; reservedRight?: number }) {
   void _props;
   return null;
 }

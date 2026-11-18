@@ -6,8 +6,10 @@ pub(crate) struct DialogWindowSession {
     pub request_id: String,
     pub dialog_id: String,
     pub owner_label: String,
+    pub parent_label: String,
     pub window_label: String,
     pub payload: Value,
+    pub title: String,
     pub block_parent_input: bool,
     pub input_lock_token: Option<String>,
 }
@@ -18,7 +20,42 @@ pub(crate) struct DialogSessions {
     windows: HashMap<String, String>,
 }
 
+pub(crate) enum DialogRegistration {
+    Created(Vec<DialogWindowSession>),
+    Existing(DialogWindowSession),
+}
+
 impl DialogSessions {
+    pub(crate) fn register(
+        &mut self,
+        session: DialogWindowSession,
+    ) -> Result<DialogRegistration, String> {
+        if session.dialog_id != "settings" {
+            self.insert(session)?;
+            return Ok(DialogRegistration::Created(Vec::new()));
+        }
+        if let Some(existing) = self.requests.get(&session.request_id) {
+            if existing.owner_label == session.owner_label
+                && existing.dialog_id == session.dialog_id
+            {
+                return Ok(DialogRegistration::Existing(existing.clone()));
+            }
+            return Err("Dialog 请求标识重复".into());
+        }
+        if self.windows.contains_key(&session.window_label) {
+            return Err("Dialog 窗口标识重复".into());
+        }
+        // 在同一注册表锁内替换旧设置请求，旧 Abort 只能撤销旧 requestId。
+        let mut removed = Vec::new();
+        while let Some(existing) = self.find_owner_dialog(&session.owner_label, "settings") {
+            self.remove_request(&existing.request_id);
+            removed.extend(self.remove_owner(&existing.window_label));
+            removed.push(existing);
+        }
+        self.insert(session)?;
+        Ok(DialogRegistration::Created(removed))
+    }
+
     pub(crate) fn find_owner_dialog(
         &self,
         owner_label: &str,
@@ -26,10 +63,31 @@ impl DialogSessions {
     ) -> Option<DialogWindowSession> {
         self.requests
             .values()
-            .find(|session| {
-                session.owner_label == owner_label && session.dialog_id == dialog_id
-            })
+            .find(|session| session.owner_label == owner_label && session.dialog_id == dialog_id)
             .cloned()
+    }
+
+    pub(crate) fn owner_for_window(&self, window_label: &str) -> Option<String> {
+        let mut current = window_label;
+        for _ in 0..=self.windows.len() {
+            let Some(request_id) = self.windows.get(current) else {
+                return (current != window_label).then(|| current.to_owned());
+            };
+            current = &self.requests.get(request_id)?.owner_label;
+        }
+        None
+    }
+
+    pub(crate) fn owned_request(
+        &self,
+        request_id: &str,
+        caller: &str,
+    ) -> Result<DialogWindowSession, String> {
+        let session = self.requests.get(request_id).ok_or("Dialog 请求不存在")?;
+        if session.owner_label != caller {
+            return Err("当前窗口无权操作此 Dialog 请求".into());
+        }
+        Ok(session.clone())
     }
 
     pub(crate) fn insert(&mut self, session: DialogWindowSession) -> Result<(), String> {
@@ -85,23 +143,38 @@ impl DialogSessions {
         let request_ids: Vec<_> = self
             .requests
             .iter()
-            .filter(|(_, session)| session.owner_label == owner_label)
+            .filter(|(_, session)| {
+                session.owner_label == owner_label || session.parent_label == owner_label
+            })
             .map(|(request_id, _)| request_id.clone())
             .collect();
-        request_ids
-            .into_iter()
-            .filter_map(|request_id| {
-                let session = self.requests.remove(&request_id)?;
-                self.windows.remove(&session.window_label);
-                Some(session)
-            })
-            .collect()
+        let mut removed = Vec::new();
+        for request_id in request_ids {
+            if let Some(session) = self.remove_request(&request_id) {
+                removed.extend(self.remove_owner(&session.window_label));
+                removed.push(session);
+            }
+        }
+        removed
+    }
+
+    pub(crate) fn remove_all(&mut self) -> Vec<DialogWindowSession> {
+        let owners: Vec<_> = self
+            .requests
+            .values()
+            .map(|session| session.owner_label.clone())
+            .collect();
+        let mut removed = Vec::new();
+        for owner in owners {
+            removed.extend(self.remove_owner(&owner));
+        }
+        removed
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{DialogSessions, DialogWindowSession};
+    use super::{DialogRegistration, DialogSessions, DialogWindowSession};
     use serde_json::json;
 
     fn session() -> DialogWindowSession {
@@ -109,8 +182,10 @@ mod tests {
             request_id: "request-1".into(),
             dialog_id: "workspace.rename".into(),
             owner_label: "main".into(),
+            parent_label: "main".into(),
             window_label: "dialog-window-1".into(),
             payload: json!({ "name": "draft" }),
+            title: "重命名".into(),
             block_parent_input: true,
             input_lock_token: Some("lock-1".into()),
         }
@@ -147,6 +222,7 @@ mod tests {
         other.request_id = "request-2".into();
         other.window_label = "dialog-window-2".into();
         other.owner_label = "workspace-window-a".into();
+        other.parent_label = other.owner_label.clone();
         sessions.insert(other).unwrap();
 
         assert_eq!(sessions.remove_owner("main").len(), 1);
@@ -167,7 +243,122 @@ mod tests {
                 .request_id,
             "request-1"
         );
-        assert!(sessions.find_owner_dialog("other", "workspace.rename").is_none());
+        assert!(sessions
+            .find_owner_dialog("other", "workspace.rename")
+            .is_none());
         assert!(sessions.find_owner_dialog("main", "settings").is_none());
+    }
+
+    #[test]
+    fn dialog_window_resolves_only_its_registered_owner() {
+        let mut sessions = DialogSessions::default();
+        sessions.insert(session()).unwrap();
+
+        assert_eq!(
+            sessions.owner_for_window("dialog-window-1").as_deref(),
+            Some("main")
+        );
+        assert_eq!(sessions.owner_for_window("main"), None);
+        assert_eq!(sessions.owner_for_window("unknown-dialog"), None);
+    }
+
+    #[test]
+    fn nested_dialog_resolves_to_its_workbench_and_cleanup_includes_descendants() {
+        let mut sessions = DialogSessions::default();
+        sessions.insert(session()).unwrap();
+        let mut nested = session();
+        nested.request_id = "nested-request".into();
+        nested.window_label = "nested-dialog".into();
+        nested.owner_label = "dialog-window-1".into();
+        nested.parent_label = nested.owner_label.clone();
+        sessions.insert(nested).unwrap();
+        assert_eq!(
+            sessions.owner_for_window("nested-dialog").as_deref(),
+            Some("main")
+        );
+        assert_eq!(sessions.remove_owner("main").len(), 2);
+        assert!(sessions.request("nested-request", "nested-dialog").is_err());
+    }
+
+    #[test]
+    fn only_the_request_owner_can_publish_or_dismiss_a_dialog() {
+        let mut sessions = DialogSessions::default();
+        sessions.insert(session()).unwrap();
+        assert!(sessions
+            .owned_request("request-1", "other-workbench")
+            .is_err());
+        assert!(sessions
+            .owned_request("request-1", "dialog-window-1")
+            .is_err());
+        assert!(sessions.owned_request("request-1", "main").is_ok());
+        sessions.remove_all();
+        assert!(sessions.owned_request("request-1", "main").is_err());
+    }
+
+    #[test]
+    fn closing_a_presenting_parent_also_cancels_workbench_owned_forms() {
+        let mut sessions = DialogSessions::default();
+        sessions.insert(session()).unwrap();
+        let mut form = session();
+        form.request_id = "form-request".into();
+        form.window_label = "form-dialog".into();
+        form.parent_label = "dialog-window-1".into();
+        sessions.insert(form).unwrap();
+        let removed = sessions.remove_owner("dialog-window-1");
+        assert_eq!(removed.len(), 1);
+        assert_eq!(removed[0].window_label, "form-dialog");
+        assert!(sessions.owned_request("request-1", "main").is_ok());
+        assert_eq!(sessions.remove_all().len(), 1);
+        assert!(sessions.remove_all().is_empty());
+    }
+
+    #[test]
+    fn reopening_settings_replaces_the_old_request_and_its_presented_forms() {
+        let mut sessions = DialogSessions::default();
+        let mut old = session();
+        old.dialog_id = "settings".into();
+        sessions.register(old.clone()).unwrap();
+        let mut form = session();
+        form.request_id = "form-request".into();
+        form.window_label = "form-dialog".into();
+        form.parent_label = old.window_label.clone();
+        sessions.insert(form).unwrap();
+        let mut other_owner = old.clone();
+        other_owner.request_id = "other-request".into();
+        other_owner.window_label = "other-dialog".into();
+        other_owner.owner_label = "other-workbench".into();
+        other_owner.parent_label = other_owner.owner_label.clone();
+        sessions.register(other_owner).unwrap();
+        let mut new = old.clone();
+        new.request_id = "new-request".into();
+        new.window_label = "new-dialog".into();
+
+        let DialogRegistration::Created(removed) = sessions.register(new).unwrap() else {
+            panic!("新请求不能复用旧 requestId");
+        };
+        assert_eq!(removed.len(), 2);
+        assert!(removed.iter().any(|item| item.request_id == old.request_id));
+        assert!(removed.iter().any(|item| item.request_id == "form-request"));
+        assert!(sessions.remove_request(&old.request_id).is_none());
+        assert!(sessions.owned_request("new-request", "main").is_ok());
+        assert!(sessions
+            .owned_request("other-request", "other-workbench")
+            .is_ok());
+    }
+
+    #[test]
+    fn repeated_settings_request_is_idempotent_even_before_the_window_is_built() {
+        let mut sessions = DialogSessions::default();
+        let mut original = session();
+        original.dialog_id = "settings".into();
+        sessions.register(original.clone()).unwrap();
+        let mut retry = original.clone();
+        retry.window_label = "unused-retry-window".into();
+
+        let DialogRegistration::Existing(existing) = sessions.register(retry).unwrap() else {
+            panic!("相同 requestId 必须保留正在创建的原会话");
+        };
+        assert_eq!(existing.window_label, original.window_label);
+        assert_eq!(sessions.remove_all().len(), 1);
     }
 }

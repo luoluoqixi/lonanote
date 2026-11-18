@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 
 import { store } from "@/api/commands/store";
 import { exitDesktopApp } from "@/api/commands/win/app_exit";
 import { workspace } from "@/api/commands/workspace";
+import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { isDesktop, isTauri } from "@/api/common/platform";
 import { createClosePreparation } from "@/api/common/window_close_preparation";
 import { flushWindowSize } from "@/api/common/window_size_recorder";

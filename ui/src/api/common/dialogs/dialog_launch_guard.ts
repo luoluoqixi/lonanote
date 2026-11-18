@@ -1,7 +1,8 @@
 export type NativeDialogLaunchGuard = { started: boolean };
 
 const nativeSettingsLaunchGuard: NativeDialogLaunchGuard = { started: false };
-const nativeDialogLaunchGuards = new Map<string, NativeDialogLaunchGuard>();
+const nativeDialogLaunchGuards = new Map<string, string>();
+const nativeDialogLaunchListeners = new Map<string, Set<() => void>>();
 
 /** 设置弹窗的保护状态跨组件重挂载共享，避免重复创建 Tauri 子窗口。 */
 export function claimNativeSettingsDialogLaunch(isOpen: boolean, enabled: boolean): boolean {
@@ -10,15 +11,31 @@ export function claimNativeSettingsDialogLaunch(isOpen: boolean, enabled: boolea
 
 export function claimNativeDialogWindowLaunch(
   dialogKey: string,
-  isOpen: boolean,
   enabled: boolean,
+  requestId: string,
 ): boolean {
-  let guard = nativeDialogLaunchGuards.get(dialogKey);
-  if (!guard) {
-    guard = { started: false };
-    nativeDialogLaunchGuards.set(dialogKey, guard);
+  if (!enabled || nativeDialogLaunchGuards.has(dialogKey)) return false;
+  nativeDialogLaunchGuards.set(dialogKey, requestId);
+  return true;
+}
+
+/** 请求结束后归还租约；旧请求延迟结束不能解除新窗口的防重保护。 */
+export function releaseNativeDialogWindowLaunch(dialogKey: string, requestId: string): void {
+  if (nativeDialogLaunchGuards.get(dialogKey) === requestId) {
+    nativeDialogLaunchGuards.delete(dialogKey);
+    nativeDialogLaunchListeners.get(dialogKey)?.forEach((listener) => listener());
   }
-  return claimNativeDialogLaunch(guard, isOpen, enabled);
+}
+
+/** 重挂载的新实例等待旧实例撤销完成，再取得启动租约。 */
+export function subscribeNativeDialogWindowLaunch(dialogKey: string, listener: () => void) {
+  const listeners = nativeDialogLaunchListeners.get(dialogKey) ?? new Set<() => void>();
+  nativeDialogLaunchListeners.set(dialogKey, listeners);
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+    if (!listeners.size) nativeDialogLaunchListeners.delete(dialogKey);
+  };
 }
 
 export function claimNativeDialogLaunch(

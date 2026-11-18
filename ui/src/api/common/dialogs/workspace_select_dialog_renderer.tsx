@@ -1,76 +1,74 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Text } from "rn-ui-kit";
+import { ActivityIndicator, View } from "react-native";
 
-import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
+import { dialogWindows } from "@/api/commands/win/dialog_windows";
+import { WorkspaceSelectView } from "@/components/workspaces/workspace_select/workspace_select_view";
 
-import { registerDialogRenderer } from "./dialog_content_registry";
-import type { DialogRendererProps } from "./dialog_content_registry";
+import { type DialogRendererProps, registerDialogRenderer } from "./dialog_content_registry";
+import type {
+  WorkspaceSelectViewModel,
+  WorkspaceSelectViewSnapshot,
+} from "./workspace_select_model";
 
-function WorkspaceSelectDialogRenderer({ payload, onComplete }: DialogRendererProps<"workspace.select">) {
-  const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+function WorkspaceSelectDialogRenderer({ requestId }: DialogRendererProps<"workspace.select">) {
+  const [model, setModel] = useState<WorkspaceSelectViewModel | null>(null);
   useEffect(() => {
-    let active = true;
-    void workspace.list().then(
-      (items) => {
-        if (!active) return;
-        setWorkspaces(items);
-        setLoading(false);
-      },
-      (reason) => {
-        if (!active) return;
-        setError(reason instanceof Error ? reason.message : String(reason));
-        setLoading(false);
-      },
-    );
-    return () => {
-      active = false;
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    let retry: ReturnType<typeof setInterval> | undefined;
+    let failed = false;
+    let revision = -1;
+    setModel(null);
+    const fail = () => {
+      if (disposed || failed) return;
+      failed = true;
+      clearInterval(retry);
+      clearTimeout(timeout);
+      void dialogWindows
+        .complete(requestId, { __dialogRendererFailure: true })
+        .catch(() => dialogWindows.closeCurrent().catch(console.error));
     };
-  }, []);
-
+    const timeout = setTimeout(fail, 10000);
+    void dialogWindows
+      .listen<WorkspaceSelectViewSnapshot>("view", requestId, (value) => {
+        if (disposed || failed || value.revision <= revision) return;
+        revision = value.revision;
+        clearInterval(retry);
+        clearTimeout(timeout);
+        setModel(value.model);
+      })
+      .then((stop) => {
+        if (disposed || failed) {
+          stop();
+          return;
+        }
+        unlisten = stop;
+        const ready = () =>
+          void dialogWindows.dispatchAction(requestId, { type: "ready" }).catch(fail);
+        ready();
+        // 首次创建时工作台控制器可能仍在挂载，收到首帧投影后立即停止握手。
+        retry = setInterval(ready, 500);
+      })
+      .catch(fail);
+    return () => {
+      disposed = true;
+      clearInterval(retry);
+      clearTimeout(timeout);
+      unlisten?.();
+    };
+  }, [requestId]);
   return (
-    <View style={styles.root}>
-      {loading ? (
-        <ActivityIndicator />
-      ) : error ? (
-        <Text accessibilityRole="alert" className="text-destructive">
-          读取工作区失败：{error}
-        </Text>
-      ) : workspaces.length === 0 ? (
-        <Text className="text-muted-foreground">暂无工作区</Text>
+    <View style={{ flex: 1, minHeight: 0, padding: 16 }}>
+      {model ? (
+        <WorkspaceSelectView
+          model={model}
+          onAction={(action) => dialogWindows.dispatchAction(requestId, action)}
+        />
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
-          {workspaces.map((item) => (
-            <Button
-              key={item.id}
-              variant={item.id === payload.currentWorkspaceId ? "secondary" : "outline"}
-              onPress={() => onComplete(item.id)}
-              style={styles.item}
-            >
-              <View style={styles.copy}>
-                <Text numberOfLines={1}>{item.displayName}</Text>
-                {item.id === payload.currentWorkspaceId ? (
-                  <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
-                    当前工作区
-                  </Text>
-                ) : null}
-              </View>
-            </Button>
-          ))}
-        </ScrollView>
+        <ActivityIndicator />
       )}
     </View>
   );
 }
 
 registerDialogRenderer("workspace.select", WorkspaceSelectDialogRenderer);
-
-const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: 0, padding: 16 },
-  list: { gap: 8 },
-  item: { minHeight: 48, justifyContent: "flex-start" },
-  copy: { alignItems: "flex-start", flex: 1, gap: 2 },
-});

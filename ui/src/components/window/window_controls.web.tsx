@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useUiTheme } from "rn-ui-kit";
 
 import { os } from "@/api/common";
 import type { OSType } from "@/api/common";
@@ -116,17 +117,24 @@ function getWindowsButtonStyle(
 
 function WindowsButton({
   children,
+  disabled = false,
   hoverDisabled,
   kind = "default",
   onClick,
+  pressed,
+  compact = false,
   title,
 }: {
   children: ReactNode;
+  disabled?: boolean;
   hoverDisabled: boolean;
   kind?: WindowButtonKind;
   onClick: () => void;
+  pressed?: boolean;
+  compact?: boolean;
   title: string;
 }) {
+  const theme = useUiTheme();
   const [interaction, setInteraction] = useState<ButtonInteractionState>("idle");
 
   useEffect(() => {
@@ -137,6 +145,8 @@ function WindowsButton({
 
   return (
     <button
+      aria-pressed={pressed}
+      disabled={disabled}
       onClick={onClick}
       onMouseDown={() => {
         if (!hoverDisabled) setInteraction("active");
@@ -148,7 +158,13 @@ function WindowsButton({
       onMouseUp={() => {
         if (!hoverDisabled) setInteraction("hover");
       }}
-      style={getWindowsButtonStyle(kind, interaction, hoverDisabled)}
+      style={{
+        ...getWindowsButtonStyle(kind, interaction, hoverDisabled),
+        ...(compact
+          ? { alignSelf: "center", borderRadius: 4, height: 24, margin: "0 4px", width: 28 }
+          : {}),
+        ...(pressed ? { color: theme.primary } : {}),
+      }}
       title={title}
       type="button"
     >
@@ -194,6 +210,83 @@ const MinimizeIcon = () => (
     <rect fill="currentColor" width="10" height="1" x="1" y="6"></rect>
   </svg>
 );
+
+function AlwaysOnTopButton({ hoverDisabled }: { hoverDisabled: boolean }) {
+  const appWindow = useMemo(() => getCurrentWindow(), []);
+  const [pinned, setPinned] = useState(false);
+  const [busy, setBusy] = useState(true);
+  const mounted = useRef(false);
+  const changing = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    let disposed = false;
+    void appWindow
+      .isAlwaysOnTop()
+      .then((value) => {
+        if (!disposed) setPinned(value);
+      })
+      .catch((error) => console.warn("读取窗口置顶状态失败", error))
+      .finally(() => {
+        if (!disposed) setBusy(false);
+      });
+    return () => {
+      disposed = true;
+      mounted.current = false;
+    };
+  }, [appWindow]);
+
+  const toggle = async () => {
+    if (changing.current) return;
+    changing.current = true;
+    setBusy(true);
+    try {
+      // 以当前原生窗口为准，刷新 WebView 后也能正确取消既有置顶。
+      const next = !(await appWindow.isAlwaysOnTop());
+      await appWindow.setAlwaysOnTop(next);
+      if (mounted.current) setPinned(next);
+    } catch (error) {
+      console.warn("切换窗口置顶失败", error);
+    } finally {
+      changing.current = false;
+      if (mounted.current) setBusy(false);
+    }
+  };
+
+  return (
+    <WindowsButton
+      compact
+      disabled={busy}
+      hoverDisabled={hoverDisabled}
+      onClick={() => void toggle()}
+      pressed={pinned}
+      title={pinned ? "取消置顶" : "窗口置顶"}
+    >
+      <svg
+        aria-hidden="true"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M16 9V4l1-1H7l1 1v5l-3 4v2h14v-2zM12 15v7" />
+      </svg>
+    </WindowsButton>
+  );
+}
+
+/** macOS 保留系统交通灯，只在右侧增加独立的置顶入口。 */
+export function WindowPinControl() {
+  return (
+    <div style={windowsControlsStyle}>
+      <AlwaysOnTopButton hoverDisabled={false} />
+    </div>
+  );
+}
 
 const MaximizeIcon = () => (
   <svg aria-hidden="false" width="12" height="12" viewBox="0 0 12 12">
@@ -265,7 +358,7 @@ const MacExpandIcon = () => (
   </svg>
 );
 
-function WindowsControls() {
+function WindowsControls({ showPin }: { showPin: boolean }) {
   const [isMaximized, setIsMaximized] = useState(false);
 
   // 在 Windows 上使用鼠标拖拽标题栏中间区域, 从最大化状态返回时, 有可能不正确的 hover 到最右侧按钮
@@ -349,6 +442,7 @@ function WindowsControls() {
           : windowsControlsStyle
       }
     >
+      {showPin ? <AlwaysOnTopButton hoverDisabled={isResizeTransitioning} /> : null}
       <WindowsButton hoverDisabled={isResizeTransitioning} onClick={delayedMinimize} title="最小化">
         <MinimizeIcon />
       </WindowsButton>
@@ -418,7 +512,7 @@ function MacOSControls() {
   );
 }
 
-export function WindowControls() {
+export function WindowControls({ showPin = false }: { showPin?: boolean } = {}) {
   const os = getOsType();
-  return os === "macos" ? <MacOSControls /> : <WindowsControls />;
+  return os === "macos" ? <MacOSControls /> : <WindowsControls showPin={showPin} />;
 }

@@ -72,98 +72,121 @@ export function WorkspaceLocationSheet({
       dialogSize={{ width: 620, height: 560 }}
       sheetProps={{ snapPoints: ["88%"] }}
     >
-      <NativeList
-        native={false}
-        style={styles.list}
-        automaticallyAdjustsScrollIndicatorInsets={usesNativeIosScrollEdgeHeader ? true : undefined}
-        contentInsetAdjustmentBehavior={usesNativeIosScrollEdgeHeader ? "automatic" : undefined}
-        dismissKeyboardOnTap
-        tracksNavigationBarScrollEdge
-      >
-        <View className="gap-1 px-5 pb-2 pt-3">
-          <View className="flex-row items-center gap-1">
-            <Text
-              style={desktop ? { fontSize: 13 } : undefined}
-              className="shrink text-base font-semibold"
-            >
-              {item?.displayName}
-            </Text>
-            <Tooltip
-              content={hint}
-              openOnFocus={false}
-              openOnPress
-              contentProps={{ side: "bottom", align: "start", style: { maxWidth: 280 } }}
-            >
-              <Button
-                aria-label={mode === "rebind" ? "重新定位说明" : "迁移说明"}
-                variant="ghost"
-                size="sm"
-                buttonSize={{ width: 28, height: 28 }}
-                hitSlop={8}
+      <View style={styles.list}>
+        <NativeList
+          native={false}
+          style={styles.list}
+          automaticallyAdjustsScrollIndicatorInsets={
+            usesNativeIosScrollEdgeHeader ? true : undefined
+          }
+          contentInsetAdjustmentBehavior={usesNativeIosScrollEdgeHeader ? "automatic" : undefined}
+          dismissKeyboardOnTap
+          tracksNavigationBarScrollEdge
+        >
+          <View className="gap-1 px-5 pb-2 pt-3">
+            <View className="flex-row items-center gap-1">
+              <Text
+                style={desktop ? { fontSize: 13 } : undefined}
+                className="shrink text-base font-semibold"
               >
-                <Info size={15} color={theme.mutedForeground} />
-              </Button>
-            </Tooltip>
+                {item?.displayName}
+              </Text>
+              <Tooltip
+                content={hint}
+                openOnFocus={false}
+                openOnPress
+                contentProps={{ side: "bottom", align: "start", style: { maxWidth: 280 } }}
+              >
+                <Button
+                  aria-label={mode === "rebind" ? "重新定位说明" : "迁移说明"}
+                  variant="ghost"
+                  size="sm"
+                  buttonSize={{ width: 28, height: 28 }}
+                  hitSlop={8}
+                >
+                  <Info size={15} color={theme.mutedForeground} />
+                </Button>
+              </Tooltip>
+            </View>
           </View>
-        </View>
-        <NativeListSection>
-          <NativeListItem
-            title={`当前存储位置：${getStorageProviderLabel(item?.storage.providerId)}`}
-            titleFontSize={desktop ? 13 : 14}
-            subtitle={
-              <Text selectable className="text-xs leading-5 text-muted-foreground">
-                {location.currentPath}
-              </Text>
-            }
-            value={
-              isDesktop() ? (
-                <Tooltip content="在文件管理器中显示" openOnFocus={false}>
-                  <Button
-                    aria-label="在文件管理器中显示"
-                    variant="ghost"
-                    size="sm"
-                    buttonSize={{ width: 32, height: 32 }}
-                    disabled={!location.canRevealCurrentFolder}
-                    onPress={() => {
-                      void location.revealCurrentFolder();
-                    }}
-                  >
-                    <FolderOpen size={18} color={theme.mutedForeground} />
-                  </Button>
-                </Tooltip>
-              ) : undefined
-            }
-          />
-        </NativeListSection>
-        <NativeListSection titleFontSize={desktop ? 12 : undefined} title="目标位置">
-          {renderWorkspaceStorageFields({
-            desktop,
-            target,
-            disabled: isWorking,
-            showDirectoryName: true,
-          })}
-        </NativeListSection>
-        {error ? (
           <NativeListSection>
-            <NativeListCustomItem>
-              <Text style={desktop ? { fontSize: 13 } : undefined} className="text-destructive">
-                {error}
-              </Text>
-            </NativeListCustomItem>
+            <NativeListItem
+              title={`当前存储位置：${getStorageProviderLabel(item?.storage.providerId)}`}
+              titleFontSize={desktop ? 13 : 14}
+              subtitle={
+                <Text selectable className="text-xs leading-5 text-muted-foreground">
+                  {location.currentPath}
+                </Text>
+              }
+              value={
+                isDesktop() ? (
+                  <Tooltip content="在文件管理器中显示" openOnFocus={false}>
+                    <Button
+                      aria-label="在文件管理器中显示"
+                      variant="ghost"
+                      size="sm"
+                      buttonSize={{ width: 32, height: 32 }}
+                      disabled={!location.canRevealCurrentFolder}
+                      onPress={() => {
+                        void location.revealCurrentFolder();
+                      }}
+                    >
+                      <FolderOpen size={18} color={theme.mutedForeground} />
+                    </Button>
+                  </Tooltip>
+                ) : undefined
+              }
+            />
           </NativeListSection>
+          <NativeListSection titleFontSize={desktop ? 12 : undefined} title="目标位置">
+            {renderWorkspaceStorageFields({
+              desktop,
+              target,
+              disabled: isWorking,
+              showDirectoryName: true,
+            })}
+          </NativeListSection>
+          {error ? (
+            <NativeListSection>
+              <NativeListCustomItem>
+                <Text style={desktop ? { fontSize: 13 } : undefined} className="text-destructive">
+                  {error}
+                </Text>
+              </NativeListCustomItem>
+            </NativeListSection>
+          ) : null}
+          {!desktop ? (
+            <NativeListSection>
+              <NativeListButtonItem
+                titleFontSize={desktop ? 13 : undefined}
+                valueFontSize={desktop ? 13 : undefined}
+                disabled={!canSubmit}
+                title={isWorking ? "正在处理…" : mode === "rebind" ? "重新定位" : "迁移"}
+                onPress={() => {
+                  void location.submit();
+                }}
+              />
+            </NativeListSection>
+          ) : null}
+        </NativeList>
+        {desktop ? (
+          <View
+            style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8, paddingTop: 12 }}
+          >
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isWorking}
+              onPress={() => location.onOpenChange(false)}
+            >
+              <Text>取消</Text>
+            </Button>
+            <Button size="sm" disabled={!canSubmit} onPress={() => void location.submit()}>
+              <Text>{isWorking ? "正在处理…" : mode === "rebind" ? "重新定位" : "迁移"}</Text>
+            </Button>
+          </View>
         ) : null}
-        <NativeListSection>
-          <NativeListButtonItem
-            titleFontSize={desktop ? 13 : undefined}
-            valueFontSize={desktop ? 13 : undefined}
-            disabled={!canSubmit}
-            title={isWorking ? "正在处理…" : mode === "rebind" ? "重新定位" : "迁移"}
-            onPress={() => {
-              void location.submit();
-            }}
-          />
-        </NativeListSection>
-      </NativeList>
+      </View>
     </AdaptiveModal>
   );
 }

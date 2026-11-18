@@ -17,6 +17,8 @@ pub fn init_config_event_relay(app: &AppHandle) {
                 Ok(lonanote_core::config::config_sync::ConfigChangedEvent::CommonStore(
                     snapshot,
                 )) => {
+                    let native_dialogs_disabled = snapshot.values.get("ui.window.nativeDialogs")
+                        == Some(&serde_json::Value::Bool(false));
                     if let Err(error) = app_handle.emit("lonanote://common-store-changed", snapshot)
                     {
                         log::error!("broadcast CommonStore snapshot failed: {error}");
@@ -27,6 +29,9 @@ pub fn init_config_event_relay(app: &AppHandle) {
                         {
                             log::error!("apply shared theme background failed: {error}");
                         }
+                    }
+                    if native_dialogs_disabled {
+                        super::dialog_window::close_all_dialogs(&app_handle);
                     }
                 }
                 Ok(lonanote_core::config::config_sync::ConfigChangedEvent::GlobalSettings(

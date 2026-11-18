@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "window-pin-capability",
+  "description": "工作台和辅助编辑器窗口的独立置顶能力",
+  "windows": ["main", "workspace-window-*", "editor-window-*"],
+  "permissions": [
+    "core:window:allow-is-always-on-top",
+    "core:window:allow-set-always-on-top"
+  ]
+}

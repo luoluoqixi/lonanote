@@ -37,6 +37,8 @@ export function DesktopSettingsDialog({
   const useNativeWindow =
     !nativeWindow && isDesktop() && isTauri() && preferences.window.nativeDialogs;
   const [nativeWindowFailed, setNativeWindowFailed] = useState(false);
+  const [nativeWindowPending, setNativeWindowPending] = useState(false);
+  const nativeAbort = useRef<AbortController | null>(null);
   const onOpenChangeRef = useRef(onOpenChange);
   const initialPageIdRef = useRef(initialPageId);
   const isOpenRef = useRef(isOpen);
@@ -101,22 +103,30 @@ export function DesktopSettingsDialog({
   }, [onOpenChange]);
 
   useEffect(() => {
+    if (!isOpen) nativeAbort.current?.abort();
     if (!claimNativeSettingsDialogLaunch(isOpen, useNativeWindow && !nativeWindowFailed)) {
       if (!isOpen) {
         setNativeWindowFailed(false);
       }
       return;
     }
+    const abort = new AbortController();
+    nativeAbort.current = abort;
+    setNativeWindowPending(true);
     void dialogWindows
-      .open({
-        requestId: crypto.randomUUID(),
-        dialogId: "settings",
-        payload: { initialPageId: initialPageIdRef.current },
-        title: "设置",
-        width: 880,
-        height: 560,
-      })
+      .open(
+        {
+          requestId: crypto.randomUUID(),
+          dialogId: "settings",
+          payload: { initialPageId: initialPageIdRef.current },
+          title: "设置",
+          width: 880,
+          height: 560,
+        },
+        { signal: abort.signal },
+      )
       .then((result) => {
+        if (abort.signal.aborted) return;
         if (isDialogWindowRendererFailure(result)) {
           if (isOpenRef.current) setNativeWindowFailed(true);
           return;
@@ -124,8 +134,12 @@ export function DesktopSettingsDialog({
         if (isOpenRef.current) onOpenChangeRef.current(false);
       })
       .catch((error) => {
+        if (abort.signal.aborted) return;
         console.error("[settings] 原生设置窗口创建失败，回退到应用内 Dialog", error);
         if (isOpenRef.current) setNativeWindowFailed(true);
+      })
+      .finally(() => {
+        if (nativeAbort.current === abort) setNativeWindowPending(false);
       });
   }, [isOpen, nativeWindowFailed, useNativeWindow]);
 
@@ -213,8 +227,6 @@ export function DesktopSettingsDialog({
         style={[
           styles.nativeWindow,
           {
-            height: dialogHeight,
-            width: dialogWidth,
             backgroundColor: theme.background,
           },
         ]}
@@ -223,7 +235,7 @@ export function DesktopSettingsDialog({
       </View>
     );
   }
-  if (useNativeWindow && !nativeWindowFailed) return null;
+  if ((useNativeWindow && !nativeWindowFailed) || nativeWindowPending) return null;
 
   return (
     <Dialog
@@ -248,7 +260,7 @@ export function DesktopSettingsDialog({
 }
 
 const styles = StyleSheet.create({
-  nativeWindow: { padding: 16 },
+  nativeWindow: { flex: 1, minHeight: 0, minWidth: 0, padding: 16 },
   content: {
     flex: 1,
     minWidth: 0,

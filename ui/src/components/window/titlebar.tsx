@@ -12,7 +12,7 @@ import { useSeparatorColor } from "@/hooks/ui/use_separator_color";
 
 import { tauriDragRegionProps } from "./tauri_drag_region";
 import { TitleBarDragOverlay } from "./titlebar_drag_overlay";
-import { WindowControls } from "./window_controls";
+import { WindowControls, WindowPinControl } from "./window_controls";
 
 const TITLE_RESERVED_WIDTH = 200;
 
@@ -23,19 +23,19 @@ export function TitleBar() {
   const { presentation } = useAppMenuContext();
   const desktop = isDesktop();
   const mac = desktop && os() === "macos";
+  const controlsWidth = desktop ? (mac ? 36 : 174) : 8;
   const [barWidth, setBarWidth] = useState(1024);
   const [leftWidth, setLeftWidth] = useState(mac ? 80 : 280);
   const [expandedLeftWidth, setExpandedLeftWidth] = useState(280);
   const compact =
     barWidth < Math.max(desktop ? 520 : 310, expandedLeftWidth * 2 + TITLE_RESERVED_WIDTH);
-  const titleInset = Math.max(
-    presentation.native ? (mac ? 80 : 8) : leftWidth,
-    desktop && !mac ? 138 : 8,
-  );
+  const titleInset = Math.max(presentation.native ? (mac ? 80 : 8) : leftWidth, controlsWidth);
   if (!presentation.visible) return null;
   return (
     <>
-      {desktop ? <TitleBarDragOverlay reservedLeft={mac ? 0 : leftWidth} /> : null}
+      {desktop ? (
+        <TitleBarDragOverlay reservedLeft={mac ? 0 : leftWidth} reservedRight={controlsWidth} />
+      ) : null}
       <View
         onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
         style={[
@@ -45,7 +45,7 @@ export function TitleBar() {
             borderBottomColor: separatorColor,
             height: desktop ? TITLE_HEIGHT : 44,
             paddingLeft: mac ? 80 : 8,
-            paddingRight: desktop && !mac ? 138 : 8,
+            paddingRight: controlsWidth,
           },
         ]}
       >
@@ -91,7 +91,7 @@ export function TitleBar() {
             <AppMenubar compact={compact} />
           </View>
         ) : null}
-        {desktop && !mac ? <WindowControls /> : null}
+        {desktop ? mac ? <WindowPinControl /> : <WindowControls showPin /> : null}
       </View>
     </>
   );

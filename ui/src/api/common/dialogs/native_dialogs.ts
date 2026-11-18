@@ -8,7 +8,9 @@ import { uiPreferences } from "@/stores/ui/ui_preferences";
 
 import { type NativeDialogChoice, mapNativeMessageButtons } from "./native_dialog_model";
 
-type NativeDialogOptions = Parameters<typeof confirmNativeFallback>[0];
+type NativeDialogOptions = Parameters<typeof confirmNativeFallback>[0] & {
+  parentRequestId?: string;
+};
 type NativeDialogButton = NonNullable<NativeDialogOptions["buttons"]>[number];
 
 function getButtons(options: NativeDialogOptions): NativeDialogButton[] {
@@ -51,6 +53,7 @@ export async function showNativeDialog(options: NativeDialogOptions): Promise<st
         width: 460,
         height: 220,
         blockParentInput: true,
+        parentRequestId: options.parentRequestId,
       });
       if (isDialogWindowRendererFailure(result)) return confirmNativeFallback(options);
       const selected =
@@ -69,18 +72,24 @@ export async function showNativeDialog(options: NativeDialogOptions): Promise<st
   let result: string | undefined;
   let nativeError: unknown;
   try {
-    token = await invoke<string>("acquire_parent_input_lock");
+    token = await invoke<string>("acquire_parent_input_lock", {
+      parentRequestId: options.parentRequestId,
+    });
     result = await invoke<string>("show_native_message", {
       title: options.title,
       message: options.message ?? "",
       kind: options.destructive ? "warning" : "info",
       buttons: plan.buttons,
+      parentRequestId: options.parentRequestId,
     });
   } catch (error) {
     nativeError = error;
   } finally {
     if (token) {
-      await invoke("release_parent_input_lock", { token }).catch((error) => {
+      await invoke("release_parent_input_lock", {
+        token,
+        parentRequestId: options.parentRequestId,
+      }).catch((error) => {
         console.error("[native-dialog] 释放父窗口输入锁失败", error);
       });
     }

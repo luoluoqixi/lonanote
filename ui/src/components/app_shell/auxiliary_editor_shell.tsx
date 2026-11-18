@@ -6,12 +6,15 @@ import { clipboard } from "@/api/commands/system/clipboard";
 import { editorWindows } from "@/api/commands/win/editor_windows";
 import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { DesktopEditorArea } from "@/components/editor/desktop/desktop_editor_area";
+import { DialogTitleBar } from "@/components/window/dialog_titlebar";
 import { useDesktopWindowLifecycle } from "@/hooks/editor/use_desktop_window_lifecycle";
+import { useWindowTitle } from "@/hooks/editor/use_desktop_window_title";
 import { useEditorSession } from "@/hooks/editor/use_editor_session";
 import { useEditorWindows } from "@/hooks/editor/use_editor_windows";
 
 export function AuxiliaryEditorShell() {
   useDesktopWindowLifecycle();
+  const title = useWindowTitle();
   const state = useEditorWindows();
   const { openEditorIds } = useEditorSession();
   const hadTabs = useRef(false);
@@ -28,40 +31,44 @@ export function AuxiliaryEditorShell() {
   }, [state.ready, openEditorIds.length]);
   return (
     <View nativeID="auxiliary-editor-shell" style={styles.root}>
-      <DesktopEditorArea />
-      {!state.connected && (
-        <View style={styles.disconnected}>
-          <Text accessibilityRole="alert">
-            {state.ownerDestroyed
-              ? "原窗口已意外关闭，草稿已保留。请复制草稿后关闭此窗口。"
-              : "编辑器连接已断开，草稿已保留。重新连接前暂停编辑。"}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              void editorWindowService
-                .getRecoveryDraft()
-                .then(clipboard.writeText)
-                .catch(console.error)
-            }
-          >
-            <Text>复制保留的草稿</Text>
-          </Pressable>
-          {!state.ownerDestroyed && (
+      <DialogTitleBar title={title} showPin />
+      <View style={styles.content}>
+        <DesktopEditorArea />
+        {!state.connected && (
+          <View style={styles.disconnected}>
+            <Text accessibilityRole="alert">
+              {state.ownerDestroyed
+                ? "原窗口已意外关闭，草稿已保留。请复制草稿后关闭此窗口。"
+                : "编辑器连接已断开，草稿已保留。重新连接前暂停编辑。"}
+            </Text>
             <Pressable
               accessibilityRole="button"
-              onPress={() => void editorWindowService.retry().catch(console.error)}
+              onPress={() =>
+                void editorWindowService
+                  .getRecoveryDraft()
+                  .then(clipboard.writeText)
+                  .catch(console.error)
+              }
             >
-              <Text>重新连接</Text>
+              <Text>复制保留的草稿</Text>
             </Pressable>
-          )}
-        </View>
-      )}
+            {!state.ownerDestroyed && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void editorWindowService.retry().catch(console.error)}
+              >
+                <Text>重新连接</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
+  content: { flex: 1, minHeight: 0, position: "relative" },
   disconnected: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(128,128,128,0.3)",
