@@ -36,6 +36,7 @@ const windowActions: string[] = [];
 let currentWindowLabel = "auxiliary";
 const pinnedWindows = new Map<string, boolean>();
 let rejectPin = false;
+let resizeWindow: (() => void) | undefined;
 mock.module("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => {
     const label = currentWindowLabel;
@@ -46,7 +47,12 @@ mock.module("@tauri-apps/api/window", () => ({
         pinnedWindows.set(label, value);
       },
       isMaximized: async () => false,
-      onResized: async () => () => {},
+      onResized: async (callback: () => void) => {
+        resizeWindow = callback;
+        return () => {
+          if (resizeWindow === callback) resizeWindow = undefined;
+        };
+      },
       close: () => windowActions.push("close"),
       minimize: () => windowActions.push("minimize"),
       toggleMaximize: () => windowActions.push("maximize"),
@@ -349,6 +355,59 @@ test("置顶按钮保持紧凑，开启后只强调图标且保留 hover 和按�
     platform = "windows";
     currentWindowLabel = "auxiliary";
     await act(() => root.unmount());
+  }
+});
+
+test("标题栏 resize 后忽略迟到的进入和松手事件，实际移动才恢复按钮 hover", async () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  platform = "windows";
+  try {
+    await act(async () => root.render(<TitleBar />));
+    const buttons = [...container.querySelectorAll("button")];
+    expect(buttons.length).toBe(4);
+    const idleBackgrounds = buttons.map((button) => button.style.backgroundColor);
+    const sendMouse = async (button: HTMLButtonElement, type: string, buttons = 0) => {
+      await act(() => {
+        button.dispatchEvent(new win.MouseEvent(type, { bubbles: true, buttons }));
+      });
+    };
+    for (const button of buttons) {
+      await sendMouse(button, "mouseover");
+    }
+    await act(() => resizeWindow!());
+    for (const [index, button] of buttons.entries()) {
+      expect(button.style.backgroundColor).toBe(idleBackgrounds[index]);
+      await sendMouse(button, "mousemove");
+      expect(button.style.backgroundColor).toBe(idleBackgrounds[index]);
+    }
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
+    for (const [index, button] of buttons.entries()) {
+      // 原生拖拽结束后，WebView 可能迟到地把进入/松手事件送到错误的按钮。
+      await sendMouse(button, "mouseout");
+      await sendMouse(button, "mouseover");
+      expect(button.style.backgroundColor).toBe(idleBackgrounds[index]);
+      await sendMouse(button, "mouseup");
+      expect(button.style.backgroundColor).toBe(idleBackgrounds[index]);
+      await sendMouse(button, "mousemove", 1);
+      expect(button.style.backgroundColor).toBe(idleBackgrounds[index]);
+      await sendMouse(button, "mousemove");
+      expect(button.style.backgroundColor).not.toBe(idleBackgrounds[index]);
+      await sendMouse(button, "mouseout");
+      expect(button.style.backgroundColor).toBe(idleBackgrounds[index]);
+      await sendMouse(button, "mouseover");
+      expect(button.style.backgroundColor).not.toBe(idleBackgrounds[index]);
+      await sendMouse(button, "mousedown", 1);
+      const activeBackground = button.style.backgroundColor;
+      await sendMouse(button, "mouseup");
+      expect(button.style.backgroundColor).not.toBe(activeBackground);
+    }
+  } finally {
+    await act(() => root.unmount());
+    mounts = 0;
+    unmounts = 0;
   }
 });
 

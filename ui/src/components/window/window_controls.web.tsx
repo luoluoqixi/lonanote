@@ -136,9 +136,11 @@ function WindowsButton({
 }) {
   const theme = useUiTheme();
   const [interaction, setInteraction] = useState<ButtonInteractionState>("idle");
+  const waitingForMouseMove = useRef(false);
 
   useEffect(() => {
     if (hoverDisabled) {
+      waitingForMouseMove.current = true;
       setInteraction("idle");
     }
   }, [hoverDisabled]);
@@ -149,14 +151,24 @@ function WindowsButton({
       disabled={disabled}
       onClick={onClick}
       onMouseDown={() => {
-        if (!hoverDisabled) setInteraction("active");
+        if (!hoverDisabled) {
+          waitingForMouseMove.current = false;
+          setInteraction("active");
+        }
       }}
       onMouseEnter={() => {
-        if (!hoverDisabled) setInteraction("hover");
+        if (!hoverDisabled && !waitingForMouseMove.current) setInteraction("hover");
       }}
       onMouseLeave={() => setInteraction("idle")}
+      onMouseMove={(event) => {
+        // 原生拖拽的 enter/up 可能晚于 resize 冷却结束；松手后的实际移动才恢复 hover。
+        if (!hoverDisabled && event.buttons === 0) {
+          waitingForMouseMove.current = false;
+          setInteraction("hover");
+        }
+      }}
       onMouseUp={() => {
-        if (!hoverDisabled) setInteraction("hover");
+        if (!hoverDisabled && !waitingForMouseMove.current) setInteraction("hover");
       }}
       style={{
         ...getWindowsButtonStyle(kind, interaction, hoverDisabled),
