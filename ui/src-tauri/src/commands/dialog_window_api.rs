@@ -68,6 +68,7 @@ pub async fn create_dialog_window(
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DialogWindowRequest {
+    pub current_workspace_id: Option<String>,
     pub request_id: String,
     pub dialog_id: String,
     pub payload: serde_json::Value,
@@ -76,12 +77,21 @@ pub struct DialogWindowRequest {
 }
 
 #[tauri::command]
+pub fn ready_dialog_window(window: WebviewWindow, request_id: String) -> Result<(), String> {
+    crate::setup::dialog_window::ready_dialog_window(&window, &request_id)
+}
+
+#[tauri::command]
 pub fn get_dialog_window_request(
     window: WebviewWindow,
     request_id: String,
 ) -> Result<DialogWindowRequest, String> {
     let session = crate::setup::dialog_window::get_dialog_request(&window, &request_id)?;
+    let current_workspace_id = crate::setup::dialog_window::owner_for_dialog_window(window.label())
+        .and_then(|owner| crate::setup::window_runtime::WINDOW_SESSIONS.current_workspace(&owner))
+        .map(|id| id.to_string());
     Ok(DialogWindowRequest {
+        current_workspace_id,
         request_id: session.request_id,
         dialog_id: session.dialog_id,
         payload: session.payload,

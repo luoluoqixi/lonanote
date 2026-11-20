@@ -1,24 +1,32 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Dialog, NativeSheetStack, Tabs, Text, cn, useUiTheme } from "rn-ui-kit";
-import { RnUiKitDebugPanel } from "rn-ui-kit/debug";
 
 import { dialogWindows } from "@/api/commands/win/dialog_windows";
+import { DialogContentReady } from "@/api/common/dialogs/dialog_content_boundary";
 import { claimNativeSettingsDialogLaunch } from "@/api/common/dialogs/dialog_launch_guard";
 import { isDialogWindowRendererFailure } from "@/api/common/dialogs/dialog_types";
 import { isDesktop, isTauri } from "@/api/common/platform";
 import { useUiPreferences } from "@/hooks/settings";
-import { useCurrentWorkspaceId } from "@/hooks/workspace";
+import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 
-import { GmSettingsPage } from "../pages/gm_settings_page";
-import { type SettingsPageId, getSettingsPage, settingsPages } from "../settings_config";
+import { type SettingsPageId, getSettingsPage, settingsPages } from "../settings_config.desktop";
 import { type SettingsLocation, settingsNavigation } from "../settings_navigation";
+
+const RnUiKitDebugPanel = lazy(() =>
+  import("rn-ui-kit/debug").then((m) => ({ default: m.RnUiKitDebugPanel })),
+);
+
+const GmSettingsPage = lazy(() =>
+  import("../pages/gm_settings_page").then((m) => ({ default: m.GmSettingsPage })),
+);
 
 type DesktopSettingsDialogProps = {
   initialPageId?: SettingsPageId;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   nativeWindow?: boolean;
+  onContentReady?: () => void;
   trigger?: ReactNode;
 };
 
@@ -27,6 +35,7 @@ export function DesktopSettingsDialog({
   isOpen,
   onOpenChange,
   nativeWindow = false,
+  onContentReady,
   trigger,
 }: DesktopSettingsDialogProps) {
   const { width, height } = useWindowDimensions();
@@ -190,34 +199,45 @@ export function DesktopSettingsDialog({
             </View>
           ) : null}
           {SelectedPageComponent ? (
-            <SelectedPageComponent
-              onNavigate={navigate}
-              onBack={back}
-              pageParams={location.params}
-              onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
-              onOpenGmSheet={() => setIsGmSheetOpen(true)}
-            />
+            <Suspense fallback={null}>
+              <SelectedPageComponent
+                onNavigate={navigate}
+                onBack={back}
+                pageParams={location.params}
+                onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
+                onOpenGmSheet={() => setIsGmSheetOpen(true)}
+              />
+              <DialogContentReady onReady={onContentReady} />
+            </Suspense>
           ) : null}
         </View>
       </Tabs>
-      <RnUiKitDebugPanel
-        panelSheetProps={{ snapPoints: ["60%"] }}
-        onOpenChange={setIsDebugSheetOpen}
-        open={isDebugSheetOpen}
-        sheetMode
-      />
-      <NativeSheetStack
-        name="lonanote-gm-settings-sheet"
-        onOpenChange={setIsGmSheetOpen}
-        open={isGmSheetOpen}
-        overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
-        sheetProps={{ snapPoints: ["60%"] }}
-        screenOptions={{ headerShadowVisible: false }}
-      >
-        <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>
-          {() => <GmSettingsPage />}
-        </NativeSheetStack.Screen>
-      </NativeSheetStack>
+      {isDebugSheetOpen ? (
+        <Suspense fallback={null}>
+          <RnUiKitDebugPanel
+            panelSheetProps={{ snapPoints: ["60%"] }}
+            onOpenChange={setIsDebugSheetOpen}
+            open={isDebugSheetOpen}
+            sheetMode
+          />
+        </Suspense>
+      ) : null}
+      {isGmSheetOpen ? (
+        <Suspense fallback={null}>
+          <NativeSheetStack
+            name="lonanote-gm-settings-sheet"
+            onOpenChange={setIsGmSheetOpen}
+            open={isGmSheetOpen}
+            overlayPortalHostName="lonanote-gm-settings-sheet-overlay"
+            sheetProps={{ snapPoints: ["60%"] }}
+            screenOptions={{ headerShadowVisible: false }}
+          >
+            <NativeSheetStack.Screen name="index" options={{ title: "GM 调试" }}>
+              {() => <GmSettingsPage />}
+            </NativeSheetStack.Screen>
+          </NativeSheetStack>
+        </Suspense>
+      ) : null}
     </View>
   );
 

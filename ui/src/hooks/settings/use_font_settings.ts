@@ -5,24 +5,14 @@ import { fontSelectionIdentity } from "@/fonts/font_selection";
 import { fontRuntimes } from "@/stores/font_store";
 
 import { useGlobalSettings } from "./use_global_settings";
+import { useUiFontRuntime } from "./use_ui_font_runtime";
 import { useUiPreferences } from "./use_ui_preferences";
 
 export function useFontSettings() {
   const global = useGlobalSettings();
   const ui = useUiPreferences();
-  const uiState = useSyncExternalStore(fontRuntimes.ui.subscribe, fontRuntimes.ui.getSnapshot);
-  const editorState = useSyncExternalStore(
-    fontRuntimes.editor.subscribe,
-    fontRuntimes.editor.getSnapshot,
-  );
-  const uiSelection = ui.preferences.appearance.font;
-  const editorSelection = global.settings.editorDefaults.font;
-  useEffect(() => {
-    void fontRuntimes.ui.observe(uiSelection);
-  }, [uiSelection]);
-  useEffect(() => {
-    if (global.isLoaded) void fontRuntimes.editor.observe(editorSelection);
-  }, [editorSelection, global.isLoaded]);
+  const uiState = useUiFontRuntime();
+  const editorState = useEditorFontRuntime();
   return {
     ui: uiState,
     editor: editorState,
@@ -44,4 +34,17 @@ export function useFontSettings() {
       );
     },
   };
+}
+
+export function useEditorFontRuntime() {
+  const global = useGlobalSettings();
+  const selection = global.settings.editorDefaults.font;
+  const state = useSyncExternalStore(
+    fontRuntimes.editor.subscribe,
+    fontRuntimes.editor.getSnapshot,
+  );
+  useEffect(() => {
+    if (global.isLoaded) void fontRuntimes.editor.observe(selection);
+  }, [selection, global.isLoaded]);
+  return state;
 }

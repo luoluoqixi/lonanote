@@ -4,7 +4,7 @@ import type {
 } from "@/api/common/dialogs/workspace_select_model";
 
 import { WORKSPACE_GROUP_MODE_GROUPS, type WorkspaceGroupMode } from "./workspace_group";
-import { WorkspaceSelectHeader } from "./workspace_select_header";
+import { WorkspaceSelectHeader, type WorkspaceSelectHeaderProps } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
 import { WorkspaceSelectionToolbar } from "./workspace_selection_toolbar";
 import { WORKSPACE_SORT_ITEM_GROUPS, type WorkspaceSortValue } from "./workspace_sort";
@@ -13,8 +13,10 @@ import { WORKSPACE_SORT_ITEM_GROUPS, type WorkspaceSortValue } from "./workspace
 export function WorkspaceSelectView({
   model: m,
   onAction,
+  navigationHeader,
 }: {
   model: WorkspaceSelectViewModel;
+  navigationHeader?: Pick<WorkspaceSelectHeaderProps, "onOpenSettings" | "renderNavigationHeader">;
   onAction: (action: WorkspaceSelectAction) => Promise<void>;
 }) {
   const act = (action: WorkspaceSelectAction) => {
@@ -23,6 +25,7 @@ export function WorkspaceSelectView({
   return (
     <>
       <WorkspaceSelectHeader
+        {...navigationHeader}
         embedded={m.embedded}
         sortMenuItems={
           m.embedded

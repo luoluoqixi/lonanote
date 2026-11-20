@@ -1,3 +1,4 @@
+import { Stack, router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle } from "rn-ui-kit";
 
@@ -783,7 +784,14 @@ export function WorkspaceSelectContent({
   return (
     <>
       {!nativeRequestId ? (
-        <WorkspaceSelectView model={viewModel} onAction={handleViewAction} />
+        <WorkspaceSelectView
+          model={viewModel}
+          onAction={handleViewAction}
+          navigationHeader={{
+            onOpenSettings: () => router.push("/settings"),
+            renderNavigationHeader: (options) => <Stack.Screen options={options} />,
+          }}
+        />
       ) : null}
       <WorkspaceSortSelect
         onOpenChange={setIsWorkspaceSortSelectOpen}

@@ -1,4 +1,3 @@
-import { Stack, router } from "expo-router";
 import {
   ArrowDownUp,
   CalendarDays,
@@ -10,7 +9,7 @@ import {
   Search,
   Settings,
 } from "lucide-react-native";
-import { type ComponentProps, useMemo } from "react";
+import { type ComponentProps, type ReactNode, useMemo } from "react";
 import { View } from "react-native";
 import { Button, Dropdown, type DropdownItemData, Text, useUiTheme } from "rn-ui-kit";
 
@@ -19,7 +18,11 @@ import { getSelectionHeaderRightMenuProps } from "@/components/common/header_act
 
 import { getWorkspaceSelectSettingsMenuItems } from "./workspace_select_menu";
 
-type WorkspaceSelectHeaderProps = {
+export type WorkspaceSelectHeaderProps = {
+  onOpenSettings?: () => void;
+  renderNavigationHeader?: (
+    options: ReturnType<typeof getSelectionHeaderRightMenuProps>,
+  ) => ReactNode;
   embedded?: boolean;
   sortMenuItems?: DropdownItemData[];
   groupMenuItems?: DropdownItemData[];
@@ -43,6 +46,8 @@ type WorkspaceSelectHeaderProps = {
 
 export function WorkspaceSelectHeader({
   embedded = false,
+  onOpenSettings,
+  renderNavigationHeader,
   sortMenuItems,
   groupMenuItems,
   areAllWorkspacesSelected,
@@ -158,9 +163,7 @@ export function WorkspaceSelectHeader({
             ios: { name: "gearshape" },
           },
           label: "设置",
-          onPress: () => {
-            router.push("/settings");
-          },
+          onPress: onOpenSettings,
           value: "settings",
         },
       }),
@@ -168,6 +171,7 @@ export function WorkspaceSelectHeader({
     [
       accentColor,
       embedded,
+      onOpenSettings,
       sortMenuItems,
       groupMenuItems,
       canSelectWorkspaces,
@@ -234,17 +238,15 @@ export function WorkspaceSelectHeader({
   }
 
   return (
-    <Stack.Screen
-      options={{
-        ...getSelectionHeaderRightMenuProps({
-          labelColor: theme.primary,
-          menuItems,
-          isSelectionMode: isWorkspaceSelectionMode,
-          areAllEntriesSelected: areAllWorkspacesSelected,
-          onFinishSelection: onFinishWorkspaceSelection,
-          onToggleSelectAllEntries: onToggleSelectAllWorkspaces,
-        }),
-      }}
-    />
+    renderNavigationHeader?.(
+      getSelectionHeaderRightMenuProps({
+        labelColor: theme.primary,
+        menuItems,
+        isSelectionMode: isWorkspaceSelectionMode,
+        areAllEntriesSelected: areAllWorkspacesSelected,
+        onFinishSelection: onFinishWorkspaceSelection,
+        onToggleSelectAllEntries: onToggleSelectAllWorkspaces,
+      }),
+    ) ?? null
   );
 }

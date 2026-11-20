@@ -1,0 +1,77 @@
+import { NativeListNavigationItem, NativeListSection, NativeListSwitchItem } from "rn-ui-kit";
+
+import { useUiPreferences } from "@/hooks/settings";
+
+import type { SettingsPageProps } from "../settings_config";
+import { SettingsList } from "../settings_list";
+import { useSettingsPresentation } from "../use_settings_presentation";
+
+function runSettingsAction(scope: string, action: Promise<unknown>) {
+  void action.catch((error) => {
+    console.error(`[settings] ${scope} failed`, error);
+  });
+}
+
+export function DeveloperSettingsContent({
+  onOpenDebugSheet,
+  onOpenGmSheet,
+  tracksNavigationBarScrollEdge = false,
+}: SettingsPageProps = {}) {
+  const presentation = useSettingsPresentation();
+  const { preferences, updateAndSave } = useUiPreferences();
+
+  return (
+    <>
+      <SettingsList
+        style={{ flex: 1 }}
+        tracksNavigationBarScrollEdge={tracksNavigationBarScrollEdge}
+      >
+        <NativeListSection {...presentation.section} title="设置">
+          <NativeListSwitchItem
+            {...presentation.item}
+            switchProps={{
+              ...presentation.switch,
+              checked: preferences.developer.optionsEnabled,
+              onCheckedChange: (nextValue) => {
+                runSettingsAction(
+                  "toggle developer options",
+                  updateAndSave((currentPreferences) => ({
+                    ...currentPreferences,
+                    developer: {
+                      ...currentPreferences.developer,
+                      optionsEnabled: nextValue,
+                    },
+                  })),
+                );
+              },
+            }}
+            title="开发者选项"
+          />
+        </NativeListSection>
+
+        <NativeListSection {...presentation.section} title="调试">
+          <NativeListNavigationItem
+            {...presentation.item}
+            onPress={() => {
+              if (onOpenDebugSheet != null) {
+                onOpenDebugSheet();
+                return;
+              }
+            }}
+            title="UI 组件调试"
+          />
+          <NativeListNavigationItem
+            {...presentation.item}
+            onPress={() => {
+              if (onOpenGmSheet != null) {
+                onOpenGmSheet();
+                return;
+              }
+            }}
+            title="GM 调试"
+          />
+        </NativeListSection>
+      </SettingsList>
+    </>
+  );
+}

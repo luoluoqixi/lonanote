@@ -1,5 +1,5 @@
 use super::{
-    dialog_sessions::{DialogRegistration, DialogWindowSession},
+    dialog_sessions::{dialog_entry_path, DialogRegistration, DialogWindowSession},
     window_runtime::DIALOG_SESSIONS,
 };
 use anyhow::{Context, Result};
@@ -152,6 +152,7 @@ pub(crate) fn create_dialog_window(
 ) -> Result<CreatedDialogWindow> {
     anyhow::ensure!(!request.request_id.is_empty(), "Dialog 请求标识不能为空");
     anyhow::ensure!(!request.dialog_id.is_empty(), "Dialog 类型不能为空");
+    let entry_path = dialog_entry_path(&request.dialog_id).context("Dialog 类型没有独立入口")?;
     anyhow::ensure!(
         request.width.is_finite() && request.height.is_finite(),
         "Dialog 尺寸无效"
@@ -216,8 +217,9 @@ pub(crate) fn create_dialog_window(
         Ok(DialogRegistration::Existing(existing)) => {
             release_input_lock(app, &session);
             if let Some(window) = app.get_webview_window(&existing.window_label) {
-                let _ = window.show();
-                let _ = window.set_focus();
+                if window.is_visible().unwrap_or(false) {
+                    let _ = window.set_focus();
+                }
             }
             return Ok(CreatedDialogWindow {
                 request_id: existing.request_id,
@@ -249,8 +251,7 @@ pub(crate) fn create_dialog_window(
             config.title_bar_style = tauri::TitleBarStyle::Overlay;
             config.hidden_title = true;
         }
-        let route = PathBuf::from("dialog").join(&request.request_id);
-        config.url = WebviewUrl::App(route);
+        config.url = WebviewUrl::App(PathBuf::from(entry_path));
         let builder = WebviewWindowBuilder::from_config(app, &config)?
             .title(request.title)
             .inner_size(
@@ -261,6 +262,10 @@ pub(crate) fn create_dialog_window(
             .skip_taskbar(false)
             .visible(false)
             .focused(true)
+            .initialization_script(format!(
+                "Object.defineProperty(window, '__LONANOTE_DIALOG_REQUEST_ID__', {{ value: {} }});",
+                serde_json::to_string(&request.request_id)?
+            ))
             .initialization_script_for_all_frames(
                 "window.addEventListener('contextmenu', (event) => event.preventDefault());",
             );
@@ -328,29 +333,80 @@ pub(crate) fn create_dialog_window(
     if discard_cancelled_creation(&window, &session) {
         return Ok(receipt);
     }
-    if let Err(error) = window.show() {
-        if discard_cancelled_creation(&window, &session) {
-            return Ok(receipt);
+    let present = DIALOG_SESSIONS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .mark_built(&session.request_id)
+        .unwrap_or(false);
+    if present {
+        present_dialog(&window, &session).map_err(anyhow::Error::msg)?;
+    }
+    // bundle 未加载、配置失败或 renderer 未提交时也必须解锁父窗口并触发应用内 fallback。
+    let timeout_app = app.clone();
+    let timeout_id = session.request_id.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        let expired = DIALOG_SESSIONS
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .expire_pending(&timeout_id);
+        if let Some(session) = expired {
+            close_dialogs_for_owner(&timeout_app, &session.window_label);
+            notify_completion(
+                &timeout_app,
+                &session,
+                Some(serde_json::json!({ "__dialogRendererFailure": true })),
+            );
+            if let Some(window) = timeout_app.get_webview_window(&session.window_label) {
+                let _ = window.destroy();
+            }
+        }
+    });
+    Ok(receipt)
+}
+
+fn present_dialog(window: &WebviewWindow, session: &DialogWindowSession) -> Result<(), String> {
+    if discard_cancelled_creation(window, session) {
+        return Ok(());
+    }
+    let app = window.app_handle();
+    let parent = app.get_webview_window(&session.parent_label);
+    let result = center_dialog(window, parent.as_ref())
+        .and_then(|_| window.show().context("显示 Dialog 窗口失败"));
+    if let Err(error) = result {
+        let removed = DIALOG_SESSIONS
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove_request(&session.request_id);
+        if let Some(session) = removed {
+            notify_completion(
+                app,
+                &session,
+                Some(serde_json::json!({ "__dialogRendererFailure": true })),
+            );
         }
         let _ = window.destroy();
-        if let Some(session) = DIALOG_SESSIONS
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner())
-            .remove_window(&label)
-        {
-            notify_completion(app, &session, None);
-        }
-        return Err(error).context("显示 Dialog 窗口失败");
+        return Err(error.to_string());
     }
     let _ = window.set_focus();
     #[cfg(any(windows, target_os = "linux"))]
     if let Err(error) = window.set_skip_taskbar(false) {
-        log::warn!("设置 Dialog 任务栏展示失败：{label}：{error}");
+        log::warn!("设置 Dialog 任务栏展示失败：{}：{error}", window.label());
     }
-    Ok(CreatedDialogWindow {
-        request_id: request.request_id,
-        window_label: label,
-    })
+    Ok(())
+}
+
+pub(crate) fn ready_dialog_window(window: &WebviewWindow, request_id: &str) -> Result<(), String> {
+    let (session, present) = {
+        let mut sessions = DIALOG_SESSIONS.lock().unwrap_or_else(|e| e.into_inner());
+        let session = sessions.request(request_id, window.label())?;
+        let present = sessions.mark_ready(request_id, window.label())?;
+        (session, present)
+    };
+    if present {
+        present_dialog(window, &session)?;
+    }
+    Ok(())
 }
 
 pub(crate) fn get_dialog_request(

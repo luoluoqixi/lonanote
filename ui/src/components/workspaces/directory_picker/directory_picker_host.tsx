@@ -111,10 +111,12 @@ export function DirectoryPickerHost({
   dialogContentOnly = false,
   dialogPayload,
   onDialogComplete,
+  onContentReady,
 }: {
   dialogContentOnly?: boolean;
   dialogPayload?: { token: number; options: DirectoryPickerOptions };
   onDialogComplete?: (result: { token: number; result: DirectoryPickerResult | null }) => void;
+  onContentReady?: () => void;
 } = {}) {
   const onDialogCompleteRef = useRef(onDialogComplete);
   onDialogCompleteRef.current = onDialogComplete;
@@ -123,6 +125,13 @@ export function DirectoryPickerHost({
   const desktop = layoutMode === "desktop";
   const theme = useUiTheme();
   const token = state?.token;
+  const initialContentReady =
+    !!state &&
+    (state.directories[""] !== undefined || state.errors[""] !== undefined) &&
+    !state.loading[""];
+  useEffect(() => {
+    if (initialContentReady) onContentReady?.();
+  }, [initialContentReady, onContentReady]);
   useEffect(() => {
     if (token !== undefined) void picker.load("");
   }, [token]);

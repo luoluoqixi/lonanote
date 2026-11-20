@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Text } from "rn-ui-kit";
 
-import { type DialogRendererProps, registerDialogRenderer } from "./dialog_content_registry";
+import type { DialogRendererProps } from "./dialog_content_registry";
 
 type ButtonOption = { key: string; text: string; style?: "cancel" | "destructive" | "default" };
 type ConfirmPayload = { title: string; message: string; buttons: ButtonOption[] };
 
-function ConfirmDialogRenderer({ payload, onComplete }: DialogRendererProps) {
+export function ConfirmDialogRenderer({ payload, onComplete }: DialogRendererProps) {
   const value = payload as ConfirmPayload;
   const buttons = useMemo(
     () => value.buttons.filter((button) => button.key && button.text),
@@ -33,8 +33,6 @@ function ConfirmDialogRenderer({ payload, onComplete }: DialogRendererProps) {
     </View>
   );
 }
-
-registerDialogRenderer("native.confirm", ConfirmDialogRenderer);
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "space-between", padding: 24, gap: 24 },

@@ -106,6 +106,7 @@ pub fn reg_commands(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         show_native_message,
         create_dialog_window,
         get_dialog_window_request,
+        ready_dialog_window,
         get_dialog_workbench_label,
         publish_dialog_view,
         dispatch_dialog_action,

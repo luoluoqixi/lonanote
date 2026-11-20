@@ -1,0 +1,54 @@
+{
+  "settings": {
+    "module": "./settings_dialog_renderer",
+    "component": "SettingsDialogRenderer"
+  },
+  "native.confirm": {
+    "module": "./confirm_dialog_renderer",
+    "component": "ConfirmDialogRenderer"
+  },
+  "workspace.select": {
+    "module": "./workspace_select_dialog_renderer",
+    "component": "WorkspaceSelectDialogRenderer"
+  },
+  "workspace.details": {
+    "module": "./renderers/workspace_details_renderer",
+    "component": "WorkspaceDetailsRenderer"
+  },
+  "workspace.create": {
+    "module": "./renderers/create_workspace_renderer",
+    "component": "CreateWorkspaceRenderer"
+  },
+  "workspace.edit": {
+    "module": "./renderers/edit_workspace_renderer",
+    "component": "EditWorkspaceRenderer"
+  },
+  "workspace.entry.create": {
+    "module": "./renderers/create_workspace_entry_renderer",
+    "component": "CreateWorkspaceEntryRenderer"
+  },
+  "workspace.entry.rename": {
+    "module": "./renderers/rename_workspace_entry_renderer",
+    "component": "RenameWorkspaceEntryRenderer"
+  },
+  "workspace.entry.details": {
+    "module": "./renderers/workspace_entry_details_renderer",
+    "component": "WorkspaceEntryDetailsRenderer"
+  },
+  "settings.font-picker": {
+    "module": "./renderers/font_picker_renderer",
+    "component": "FontPickerRenderer"
+  },
+  "settings.licenses": {
+    "module": "./renderers/licenses_renderer",
+    "component": "LicensesRenderer"
+  },
+  "workspace.location": {
+    "module": "./workspace_location_dialog_renderer",
+    "component": "WorkspaceLocationDialogRenderer"
+  },
+  "workspace.directory-picker": {
+    "module": "./renderers/directory_picker_renderer",
+    "component": "DirectoryPickerRenderer"
+  }
+}

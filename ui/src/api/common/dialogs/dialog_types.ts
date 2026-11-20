@@ -107,6 +107,7 @@ export type DialogWindowRequest<TDialogId extends DialogId = DialogId> = {
 };
 
 export type DialogWindowSession<TDialogId extends DialogId = DialogId> = {
+  currentWorkspaceId?: string | null;
   title: string;
   requestId: string;
   dialogId: TDialogId;

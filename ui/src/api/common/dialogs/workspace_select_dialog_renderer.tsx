@@ -4,14 +4,20 @@ import { ActivityIndicator, View } from "react-native";
 import { dialogWindows } from "@/api/commands/win/dialog_windows";
 import { WorkspaceSelectView } from "@/components/workspaces/workspace_select/workspace_select_view";
 
-import { type DialogRendererProps, registerDialogRenderer } from "./dialog_content_registry";
+import type { DialogRendererProps } from "./dialog_content_registry";
 import type {
   WorkspaceSelectViewModel,
   WorkspaceSelectViewSnapshot,
 } from "./workspace_select_model";
 
-function WorkspaceSelectDialogRenderer({ requestId }: DialogRendererProps<"workspace.select">) {
+export function WorkspaceSelectDialogRenderer({
+  requestId,
+  onReady,
+}: DialogRendererProps<"workspace.select">) {
   const [model, setModel] = useState<WorkspaceSelectViewModel | null>(null);
+  useEffect(() => {
+    if (model) onReady?.();
+  }, [model, onReady]);
   useEffect(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
@@ -70,5 +76,3 @@ function WorkspaceSelectDialogRenderer({ requestId }: DialogRendererProps<"works
     </View>
   );
 }
-
-registerDialogRenderer("workspace.select", WorkspaceSelectDialogRenderer);

@@ -55,7 +55,10 @@ mock.module("../src/hooks/layout", () => ({ useLayoutMode: () => ({ layoutMode: 
 mock.module("../src/hooks/settings", () => ({
   useUiPreferences: () => ({ preferences: { window: { nativeDialogs: true } } }),
 }));
-const picker = createDirectoryPickerModel(async () => []);
+let loadDirectory: () => Promise<
+  { path: string; metadata: { kind: "directory" } }[]
+> = async () => [];
+const picker = createDirectoryPickerModel(() => loadDirectory());
 mock.module("../src/hooks/workspace/use_workspace_directory_picker", () => ({
   workspaceDirectoryPicker: picker,
   useWorkspaceDirectoryPicker: () => useSyncExternalStore(picker.subscribe, picker.getSnapshot),
@@ -70,6 +73,11 @@ mock.module("../src/api/commands/win/dialog_windows", () => ({
 const { createRoot } = await import("react-dom/client");
 const { DirectoryPickerHost } =
   await import("../src/components/workspaces/directory_picker/directory_picker_host");
+mock.module("../src/components/settings/desktop/settings_dialog", () => ({
+  DesktopSettingsDialog: () => <div>设置内容</div>,
+}));
+const { SettingsDialogRenderer } =
+  await import("../src/api/common/dialogs/settings_dialog_renderer");
 const { AdaptiveModal } = await import("../src/components/common/adaptive_modal");
 
 // 抓住 AdaptiveModal 条件卸载后没有归还启动租约，后续移动/复制请求被永久拦截的问题。
@@ -179,6 +187,74 @@ test("替换目录请求会撤销旧窗口，迟到的旧结果不会取消新�
       current.finish({ token: current.request.payload.token, result: { directory: "" } });
     });
     expect(await second).toEqual({ directory: "" });
+  } finally {
+    await act(() => root.unmount());
+  }
+});
+
+test("目录首帧等待根目录数据，失败时以可重试界面 ready", async () => {
+  for (const fail of [false, true]) {
+    let resolve!: (value: { path: string; metadata: { kind: "directory" } }[]) => void;
+    let reject!: (error: Error) => void;
+    loadDirectory = () =>
+      new Promise((done, failed) => {
+        resolve = done;
+        reject = failed;
+      });
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    let ready = 0;
+    try {
+      await act(async () => {
+        root.render(
+          <DirectoryPickerHost
+            dialogContentOnly
+            dialogPayload={{ token: 100, options: { workspaceId: "w", purpose: "copy" } }}
+            onContentReady={() => {
+              ready++;
+            }}
+          />,
+        );
+      });
+      expect(ready).toBe(0);
+      await act(async () => {
+        if (fail) reject(new Error("读取失败"));
+        else resolve([{ path: "子文件夹", metadata: { kind: "directory" } }]);
+      });
+      expect(ready).toBe(1);
+      expect(container.textContent).toContain(fail ? "读取失败，点击重试" : "子文件夹");
+    } finally {
+      await act(() => root.unmount());
+      loadDirectory = async () => [];
+    }
+  }
+});
+
+test("独立设置中的目录请求有 Host 承接，完成和取消都能结算", async () => {
+  const root = createRoot(document.createElement("div"));
+  try {
+    await act(async () => {
+      root.render(
+        <SettingsDialogRenderer
+          requestId="settings"
+          payload={{ initialPageId: "global" }}
+          onComplete={() => {}}
+        />,
+      );
+    });
+    for (const value of [null, { directory: "attachments" }]) {
+      const before = requests.length;
+      let result!: Promise<unknown>;
+      await act(async () => {
+        result = picker.request({ workspaceId: "w", purpose: "copy" });
+      });
+      expect(requests.length).toBe(before + 1);
+      const current = requests.at(-1)!;
+      await act(async () => {
+        current.finish({ token: current.request.payload.token, result: value });
+      });
+      expect(await result).toEqual(value);
+    }
   } finally {
     await act(() => root.unmount());
   }

@@ -17,6 +17,10 @@ function assertDesktop() {
 }
 
 export const dialogWindows = {
+  async ready(requestId: string): Promise<void> {
+    assertDesktop();
+    await invoke("ready_dialog_window", { requestId });
+  },
   async dismissOwned(requestId: string): Promise<void> {
     assertDesktop();
     await invoke("dismiss_owned_dialog", { requestId });

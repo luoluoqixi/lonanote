@@ -1,5 +1,21 @@
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::LazyLock;
+
+static DIALOG_ENTRIES: LazyLock<Value> = LazyLock::new(|| {
+    serde_json::from_str(include_str!(
+        "../../../src/api/common/dialogs/dialog_entry_manifest.json"
+    ))
+    .expect("Dialog 入口清单无效")
+});
+
+pub(crate) fn dialog_entry_path(dialog_id: &str) -> Option<String> {
+    DIALOG_ENTRIES.get(dialog_id)?;
+    Some(format!(
+        "_dialog/{}.html",
+        dialog_id.replace(['.', '-'], "_")
+    ))
+}
 
 #[derive(Debug, Clone)]
 pub(crate) struct DialogWindowSession {
@@ -18,6 +34,24 @@ pub(crate) struct DialogWindowSession {
 pub(crate) struct DialogSessions {
     requests: HashMap<String, DialogWindowSession>,
     windows: HashMap<String, String>,
+    startup: HashMap<String, DialogStartup>,
+}
+
+#[derive(Default)]
+struct DialogStartup {
+    built: bool,
+    ready: bool,
+    presented: bool,
+}
+
+impl DialogStartup {
+    fn take_presentation(&mut self) -> bool {
+        if self.built && self.ready && !self.presented {
+            self.presented = true;
+            return true;
+        }
+        false
+    }
 }
 
 pub(crate) enum DialogRegistration {
@@ -26,6 +60,31 @@ pub(crate) enum DialogRegistration {
 }
 
 impl DialogSessions {
+    pub(crate) fn mark_ready(&mut self, request_id: &str, caller: &str) -> Result<bool, String> {
+        self.request(request_id, caller)?;
+        let startup = self
+            .startup
+            .get_mut(request_id)
+            .ok_or("Dialog 启动状态不存在")?;
+        startup.ready = true;
+        Ok(startup.take_presentation())
+    }
+
+    pub(crate) fn mark_built(&mut self, request_id: &str) -> Result<bool, String> {
+        let startup = self
+            .startup
+            .get_mut(request_id)
+            .ok_or("Dialog 请求已结束")?;
+        startup.built = true;
+        Ok(startup.take_presentation())
+    }
+
+    pub(crate) fn expire_pending(&mut self, request_id: &str) -> Option<DialogWindowSession> {
+        if self.startup.get(request_id)?.presented {
+            return None;
+        }
+        self.remove_request(request_id)
+    }
     pub(crate) fn register(
         &mut self,
         session: DialogWindowSession,
@@ -98,6 +157,8 @@ impl DialogSessions {
         }
         self.windows
             .insert(session.window_label.clone(), session.request_id.clone());
+        self.startup
+            .insert(session.request_id.clone(), DialogStartup::default());
         self.requests.insert(session.request_id.clone(), session);
         Ok(())
     }
@@ -123,18 +184,19 @@ impl DialogSessions {
         if session.window_label != caller {
             return Err("当前窗口无权结束此 Dialog 请求".into());
         }
-        let session = self.requests.remove(request_id).expect("请求已确认存在");
-        self.windows.remove(&session.window_label);
+        let session = self.remove_request(request_id).expect("请求已确认存在");
         Ok(session)
     }
 
     pub(crate) fn remove_window(&mut self, window_label: &str) -> Option<DialogWindowSession> {
         let request_id = self.windows.remove(window_label)?;
+        self.startup.remove(&request_id);
         self.requests.remove(&request_id)
     }
 
     pub(crate) fn remove_request(&mut self, request_id: &str) -> Option<DialogWindowSession> {
         let session = self.requests.remove(request_id)?;
+        self.startup.remove(request_id);
         self.windows.remove(&session.window_label);
         Some(session)
     }
@@ -176,6 +238,41 @@ impl DialogSessions {
 mod tests {
     use super::{DialogRegistration, DialogSessions, DialogWindowSession};
     use serde_json::json;
+
+    #[test]
+    fn dialog_entries_are_selected_from_the_shared_allowlist() {
+        assert_eq!(
+            super::dialog_entry_path("settings").as_deref(),
+            Some("_dialog/settings.html")
+        );
+        assert_eq!(
+            super::dialog_entry_path("workspace.entry.rename").as_deref(),
+            Some("_dialog/workspace_entry_rename.html")
+        );
+        assert!(super::dialog_entry_path("../../index").is_none());
+        assert!(super::dialog_entry_path("unknown").is_none());
+    }
+
+    #[test]
+    fn ready_requires_both_native_setup_and_content_and_only_reveals_once() {
+        let mut sessions = DialogSessions::default();
+        sessions.insert(session()).unwrap();
+        assert!(sessions.mark_ready("request-1", "main").is_err());
+        assert!(!sessions.mark_ready("request-1", "dialog-window-1").unwrap());
+        assert!(sessions.mark_built("request-1").unwrap());
+        assert!(!sessions.mark_ready("request-1", "dialog-window-1").unwrap());
+        assert!(sessions.expire_pending("request-1").is_none());
+    }
+
+    #[test]
+    fn pending_timeout_removes_only_hidden_sessions_and_ready_after_cancel_fails() {
+        let mut sessions = DialogSessions::default();
+        sessions.insert(session()).unwrap();
+        assert!(!sessions.mark_built("request-1").unwrap());
+        assert!(sessions.expire_pending("request-1").is_some());
+        assert!(sessions.mark_ready("request-1", "dialog-window-1").is_err());
+        assert!(sessions.remove_all().is_empty());
+    }
 
     fn session() -> DialogWindowSession {
         DialogWindowSession {
