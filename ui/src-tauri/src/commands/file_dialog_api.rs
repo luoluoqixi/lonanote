@@ -38,29 +38,20 @@ pub async fn select_files(
     window: WebviewWindow,
     options: SelectDialogOptions,
     parent_window_label: Option<String>,
-    parent_request_id: Option<String>,
 ) -> Result<SelectDialogResult, String> {
     #[cfg(desktop)]
     {
         use tauri::Manager;
         use tauri_plugin_dialog::DialogExt;
-        let parent = if let Some(request_id) = parent_request_id.as_deref() {
-            if parent_window_label.is_some() {
-                return Err("不能同时指定两种对话框父窗口".into());
-            }
-            crate::setup::dialog_window::resolve_presentation_parent(&window, Some(request_id))?
-        } else {
-            let parent_label = parent_window_label.as_deref().unwrap_or(window.label());
-            crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .authorize_dialog_parent(window.label(), parent_label)?;
-            let parent = window
-                .app_handle()
-                .get_webview_window(parent_label)
-                .ok_or("对话框所属窗口已关闭")?;
-            parent
-        };
+        let parent_label = parent_window_label.as_deref().unwrap_or(window.label());
+        crate::setup::window_runtime::EDITOR_WINDOW_SESSIONS
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .authorize_dialog_parent(window.label(), parent_label)?;
+        let parent = window
+            .app_handle()
+            .get_webview_window(parent_label)
+            .ok_or("对话框所属窗口已关闭")?;
         let mut dialog = window.dialog().file().set_parent(&parent);
         if let Some(title) = options.title {
             dialog = dialog.set_title(title);
@@ -135,7 +126,7 @@ pub async fn select_files(
     }
     #[cfg(not(desktop))]
     {
-        let _ = (window, options, parent_window_label, parent_request_id);
+        let _ = (window, options, parent_window_label);
         Err("当前平台不支持桌面文件选择器".into())
     }
 }

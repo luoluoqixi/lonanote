@@ -1,23 +1,6 @@
 use super::window_sessions::WindowSessions;
 use lonanote_core::workspace::WorkspaceId;
 
-pub fn is_dialog_read_only_command(key: &str) -> bool {
-    matches!(
-        key,
-        "workspace.list"
-            | "workspace.list_storage_provider_ids"
-            | "workspace.list_managed_storage_provider_ids"
-            | "workspace.get"
-            | "workspace.is_open"
-            | "workspace.native_root_path"
-            | "workspace.get_settings"
-            | "workspace.get_default_settings"
-            | "workspace.get_local_setting"
-            | "workspace.get_state"
-            | "workspace.index.get_directory"
-    )
-}
-
 /// 只读 Catalog 查询不能触发刷新，否则路径查询会与前端刷新形成循环。
 pub fn should_notify_catalog_changed(key: &str) -> bool {
     !matches!(
@@ -144,28 +127,5 @@ mod tests {
         }
         assert!(!should_focus_workspace_owner("workspace.close"));
         assert!(should_focus_workspace_owner("workspace.open"));
-    }
-
-    #[test]
-    fn dialog_windows_are_limited_to_read_only_workspace_commands() {
-        for key in [
-            "workspace.list",
-            "workspace.list_storage_provider_ids",
-            "workspace.list_managed_storage_provider_ids",
-            "workspace.get",
-            "workspace.native_root_path",
-            "workspace.index.get_directory",
-        ] {
-            assert!(is_dialog_read_only_command(key), "{key}");
-        }
-        for key in [
-            "workspace.open",
-            "workspace.close",
-            "workspace.remove",
-            "workspace.file.write_text",
-            "workspace.index.refresh",
-        ] {
-            assert!(!is_dialog_read_only_command(key), "{key}");
-        }
     }
 }

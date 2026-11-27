@@ -127,11 +127,6 @@ pub fn create_workspace_window(
             });
         }
         if matches!(event, tauri::WindowEvent::Destroyed) {
-            super::dialog_window::close_dialogs_for_owner(&close_app, &cleanup_label);
-            super::dialog_input_locks::DIALOG_INPUT_LOCKS
-                .lock()
-                .unwrap_or_else(|error| error.into_inner())
-                .window_destroyed(&cleanup_label);
             super::window_close::cleanup_window(&cleanup_label);
             super::app_menu::release(&close_app, &cleanup_label);
             crate::commands::window_workspace_api::cleanup_window(

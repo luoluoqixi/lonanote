@@ -9,8 +9,8 @@ import { tauriDragRegionProps } from "./tauri_drag_region";
 import { TitleBarDragOverlay } from "./titlebar_drag_overlay";
 import { WindowControls, WindowPinControl } from "./window_controls";
 
-/** 内容 Dialog 和辅助编辑器复用工作台拖拽层，macOS 保留系统交通灯。 */
-export function DialogTitleBar({ title, showPin = false }: { title: string; showPin?: boolean }) {
+/** 辅助编辑器复用工作台拖拽层，macOS 保留系统交通灯。 */
+export function EditorTitleBar({ title, showPin = false }: { title: string; showPin?: boolean }) {
   const theme = useUiTheme();
   const borderColor = useSeparatorColor();
   const mac = os() === "macos";

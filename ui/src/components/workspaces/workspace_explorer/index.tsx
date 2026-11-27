@@ -1,10 +1,10 @@
 import { type Href, Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle } from "rn-ui-kit";
+import { confirmNative } from "rn-ui-kit";
 
 import { type WorkspaceIndexEntry, workspaceFile } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, ensureNewNoteFileExtension, getFileName, os } from "@/api/common";
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import {
   getDefaultWorkspaceEntryName,
   getWorkspaceEntryCreateParent,
@@ -357,53 +357,56 @@ function DirectoryExplorerForWorkspace({
     }
   }, []);
 
-  const renameEntry = useCallback(async (submittedName?: string) => {
-    if (!editingEntry || isRenamingEntry) {
-      return;
-    }
+  const renameEntry = useCallback(
+    async (submittedName?: string) => {
+      if (!editingEntry || isRenamingEntry) {
+        return;
+      }
 
-    const nextName = (submittedName ?? editedEntryName).trim();
-    const validationError = validateEntryName(nextName);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
+      const nextName = (submittedName ?? editedEntryName).trim();
+      const validationError = validateEntryName(nextName);
+      if (validationError) {
+        toast.error(validationError);
+        return;
+      }
 
-    const currentName = getFileName(editingEntry.path);
-    if (nextName === currentName) {
-      handleRenameEntrySheetOpenChange(false);
-      return;
-    }
+      const currentName = getFileName(editingEntry.path);
+      if (nextName === currentName) {
+        handleRenameEntrySheetOpenChange(false);
+        return;
+      }
 
-    const nextPath = joinWorkspacePath(getParentPath(editingEntry.path), nextName);
-    setIsRenamingEntry(true);
+      const nextPath = joinWorkspacePath(getParentPath(editingEntry.path), nextName);
+      setIsRenamingEntry(true);
 
-    try {
-      const result = await fileActions.renameEntry({
-        workspaceId,
-        path: editingEntry.path,
-        nextPath,
-      });
-      if (!result.succeededPaths.length) return;
-      handleRenameEntrySheetOpenChange(false);
-      setSelectedEntryPaths([]);
-      setIsSelectionMode(false);
-      toast.success("名称已更新");
-    } catch (error) {
-      console.error("[workspace-explorer] rename entry failed", error);
-      toast.error(getErrorMessage(error, "编辑名称失败"));
-    } finally {
-      setIsRenamingEntry(false);
-    }
-  }, [
-    editedEntryName,
-    editingEntry,
-    handleRenameEntrySheetOpenChange,
-    isRenamingEntry,
-    fileActions,
-    toast,
-    workspaceId,
-  ]);
+      try {
+        const result = await fileActions.renameEntry({
+          workspaceId,
+          path: editingEntry.path,
+          nextPath,
+        });
+        if (!result.succeededPaths.length) return;
+        handleRenameEntrySheetOpenChange(false);
+        setSelectedEntryPaths([]);
+        setIsSelectionMode(false);
+        toast.success("名称已更新");
+      } catch (error) {
+        console.error("[workspace-explorer] rename entry failed", error);
+        toast.error(getErrorMessage(error, "编辑名称失败"));
+      } finally {
+        setIsRenamingEntry(false);
+      }
+    },
+    [
+      editedEntryName,
+      editingEntry,
+      handleRenameEntrySheetOpenChange,
+      isRenamingEntry,
+      fileActions,
+      toast,
+      workspaceId,
+    ],
+  );
 
   const deleteEntries = useCallback(
     async (targetEntries: WorkspaceIndexEntry[]) => {
@@ -702,22 +705,6 @@ function DirectoryExplorerForWorkspace({
         isCreating={isCreatingEntry}
         name={createEntryName}
         onNameChange={setCreateEntryName}
-        onNativeResult={(result) => {
-          if (
-            !result ||
-            typeof result !== "object" ||
-            Array.isArray(result) ||
-            !("name" in result) ||
-            typeof result.name !== "string"
-          )
-            return;
-          void createWorkspaceEntry({
-            entryKind: createEntryKind,
-            name: result.name,
-            openAfterCreate: false,
-            parentPath: createEntryParent,
-          });
-        }}
         onOpenChange={setIsCreateEntrySheetOpen}
         onSubmit={() => {
           void createEntry();
@@ -728,17 +715,6 @@ function DirectoryExplorerForWorkspace({
         isRenaming={isRenamingEntry}
         name={editedEntryName}
         onNameChange={setEditedEntryName}
-        onNativeResult={(result) => {
-          if (
-            !result ||
-            typeof result !== "object" ||
-            Array.isArray(result) ||
-            !("name" in result) ||
-            typeof result.name !== "string"
-          )
-            return;
-          void renameEntry(result.name);
-        }}
         onOpenChange={handleRenameEntrySheetOpenChange}
         onSubmit={() => {
           void renameEntry();

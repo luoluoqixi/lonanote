@@ -1,15 +1,11 @@
-import type {
-  WorkspaceSelectAction,
-  WorkspaceSelectViewModel,
-} from "@/api/common/dialogs/workspace_select_model";
-
 import { WORKSPACE_GROUP_MODE_GROUPS, type WorkspaceGroupMode } from "./workspace_group";
 import { WorkspaceSelectHeader, type WorkspaceSelectHeaderProps } from "./workspace_select_header";
 import { WorkspaceSelectList } from "./workspace_select_list";
+import type { WorkspaceSelectAction, WorkspaceSelectViewModel } from "./workspace_select_model";
 import { WorkspaceSelectionToolbar } from "./workspace_selection_toolbar";
 import { WORKSPACE_SORT_ITEM_GROUPS, type WorkspaceSortValue } from "./workspace_sort";
 
-/** 原生窗口与应用内 Dialog 共享同一套完整工作区界面。 */
+/** 工作区页面与应用内 Dialog 共享同一套工作区界面。 */
 export function WorkspaceSelectView({
   model: m,
   onAction,

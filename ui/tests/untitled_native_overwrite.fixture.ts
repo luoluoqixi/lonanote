@@ -18,7 +18,7 @@ mock.module("@tauri-apps/api/core", () => ({
     if (cmd === "commit_document_save_target") commits.push(args);
   },
 }));
-mock.module("../src/api/common/dialogs/native_dialogs", () => ({
+mock.module("rn-ui-kit", () => ({
   confirmNative: async () => {
     confirms++;
     return "overwrite";

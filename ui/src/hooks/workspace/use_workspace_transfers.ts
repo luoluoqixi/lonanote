@@ -1,8 +1,8 @@
 import { useMemo, useSyncExternalStore } from "react";
+import { confirmNative } from "rn-ui-kit";
 
 import type { WorkspaceTransferSource } from "@/api/commands/workspace/types";
 import { workspaceFile } from "@/api/commands/workspace/workspace_file";
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { saveCoordinator } from "@/components/editor/controllers/save_coordinator";
 import { useToast } from "@/hooks/ui";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";

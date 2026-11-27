@@ -1,12 +1,8 @@
 import { ChevronDown, ChevronRight, Folder, FolderOpen } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Input, Spinner, Text, useUiTheme } from "rn-ui-kit";
 
-import type {
-  DirectoryPickerOptions,
-  DirectoryPickerResult,
-} from "@/api/common/dialogs/dialog_types";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { FilePathTooltip } from "@/components/files/file_path_tooltip";
 import { useLayoutMode } from "@/hooks/layout";
@@ -107,50 +103,20 @@ function DirectoryRow({
   );
 }
 
-export function DirectoryPickerHost({
-  dialogContentOnly = false,
-  dialogPayload,
-  onDialogComplete,
-  onContentReady,
-}: {
-  dialogContentOnly?: boolean;
-  dialogPayload?: { token: number; options: DirectoryPickerOptions };
-  onDialogComplete?: (result: { token: number; result: DirectoryPickerResult | null }) => void;
-  onContentReady?: () => void;
-} = {}) {
-  const onDialogCompleteRef = useRef(onDialogComplete);
-  onDialogCompleteRef.current = onDialogComplete;
+export function DirectoryPickerHost() {
   const state = useWorkspaceDirectoryPicker();
   const { layoutMode } = useLayoutMode();
   const desktop = layoutMode === "desktop";
   const theme = useUiTheme();
   const token = state?.token;
-  const initialContentReady =
-    !!state &&
-    (state.directories[""] !== undefined || state.errors[""] !== undefined) &&
-    !state.loading[""];
-  useEffect(() => {
-    if (initialContentReady) onContentReady?.();
-  }, [initialContentReady, onContentReady]);
   useEffect(() => {
     if (token !== undefined) void picker.load("");
   }, [token]);
   useEffect(() => () => picker.cancel(), []);
-  useEffect(() => {
-    if (!dialogPayload) return;
-    let active = true;
-    void picker.request(dialogPayload.options).then((result) => {
-      if (active) onDialogCompleteRef.current?.({ token: dialogPayload.token, result });
-    });
-    return () => {
-      active = false;
-      picker.cancel();
-    };
-  }, [dialogPayload]);
   if (!state) return null;
   const title = state.options.purpose === "save" ? "保存笔记" : "选择目标文件夹";
   const content = (
-    <View style={{ flex: 1, gap: 12, minHeight: 0, ...(dialogContentOnly ? { padding: 16 } : {}) }}>
+    <View style={{ flex: 1, gap: 12, minHeight: 0 }}>
       {state.options.purpose !== "save" && (state.options.sourceCount ?? 0) > 1 ? (
         <Text style={{ fontSize: desktop ? 12 : 14, color: theme.muted }}>
           将{state.options.purpose === "move" ? "移动" : "复制"} {state.options.sourceCount} 个项目
@@ -192,27 +158,11 @@ export function DirectoryPickerHost({
       </View>
     </View>
   );
-  if (dialogContentOnly) return content;
   return (
     <AdaptiveModal
       name="workspace-directory-picker"
       title={title}
       open
-      nativeDialog={{
-        id: "workspace.directory-picker",
-        requestKey: state.token,
-        payload: { token: state.token, options: state.options },
-        title,
-        width: 560,
-        height: 460,
-        blockParentInput: true,
-      }}
-      onNativeResult={(result) => {
-        if (!result || typeof result !== "object" || Array.isArray(result)) return;
-        if (!("token" in result) || typeof result.token !== "number" || !("result" in result))
-          return;
-        picker.accept(result.token, result.result as DirectoryPickerResult | null);
-      }}
       onOpenChange={(open) => {
         if (!open && picker.getSnapshot()?.token === state.token) picker.cancel();
       }}

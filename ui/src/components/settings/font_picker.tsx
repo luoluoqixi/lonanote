@@ -64,12 +64,10 @@ function FontRow({
 
 export function FontPicker({
   consumer,
-  dialogContentOnly = false,
   open,
   onOpenChange,
 }: {
   consumer: FontConsumer;
-  dialogContentOnly?: boolean;
   open: boolean;
   onOpenChange(open: boolean): void;
 }) {
@@ -175,17 +173,9 @@ export function FontPicker({
       />
     </View>
   );
-  if (dialogContentOnly) return content;
   return (
     <AdaptiveModal
       name={`font-picker-${consumer}`}
-      nativeDialog={{
-        id: "settings.font-picker",
-        payload: { consumer },
-        title: consumer === "ui" ? "UI 界面字体" : "编辑器字体",
-        width: 480,
-        height: 520,
-      }}
       open={open}
       onOpenChange={onOpenChange}
       title={consumer === "ui" ? "UI 界面字体" : "编辑器字体"}

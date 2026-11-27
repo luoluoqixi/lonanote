@@ -1,6 +1,7 @@
 import { Stack, router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle } from "rn-ui-kit";
+import { confirmNative } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { multiWindow } from "@/api/commands/win/multi_window";
@@ -10,12 +11,6 @@ import {
   workspace,
 } from "@/api/commands/workspace";
 import { isDesktop, isSystemLocaleCN, os } from "@/api/common";
-import type { DialogWindowResultMap } from "@/api/common/dialogs/dialog_types";
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
-import type {
-  WorkspaceSelectAction,
-  WorkspaceSelectViewModel,
-} from "@/api/common/dialogs/workspace_select_model";
 import { getErrorMessage } from "@/api/common/error_message";
 import { isTauri } from "@/api/common/platform";
 import { useEditorCloseActions } from "@/hooks/editor/use_editor_close_actions";
@@ -27,7 +22,6 @@ import { useWorkspaceNavigation, useWorkspaceSession } from "@/hooks/workspace";
 import { useWorkspaceCatalogRevision } from "@/hooks/workspace/use_workspace_catalog_revision";
 import { useWorkspaceLocation } from "@/hooks/workspace/use_workspace_location";
 import { useWorkspaceOpenActions } from "@/hooks/workspace/use_workspace_open_actions";
-import { useWorkspaceSelectDialogBridge } from "@/hooks/workspace/use_workspace_select_dialog_bridge";
 import { useWorkspaceStorageTarget } from "@/hooks/workspace/use_workspace_storage_target";
 import { workspaceExplorerStore } from "@/stores/workspace/workspace_explorer_runtime";
 import { workspaceStateRevisionStore } from "@/stores/workspace/workspace_state_revision_store";
@@ -38,6 +32,7 @@ import { chooseScanIdConflictKeeper } from "./scan_id_conflict_dialog";
 import { WorkspaceDetailsSheet } from "./workspace_details_sheet";
 import { type WorkspaceGroupMode, WorkspaceGroupModeSelect } from "./workspace_group";
 import { WorkspaceLocationSheet } from "./workspace_location_sheet";
+import type { WorkspaceSelectAction, WorkspaceSelectViewModel } from "./workspace_select_model";
 import { WorkspaceSelectView } from "./workspace_select_view";
 import {
   WorkspaceSortSelect,
@@ -71,11 +66,9 @@ export function WorkspaceSelect() {
 
 export function WorkspaceSelectContent({
   embedded = false,
-  nativeRequestId,
   onWorkspaceOpened,
 }: {
   embedded?: boolean;
-  nativeRequestId?: string;
   onWorkspaceOpened: () => void;
 }) {
   const { toast } = useToast();
@@ -215,7 +208,7 @@ export function WorkspaceSelectContent({
       let skippedGroups = 0;
       for (const conflict of result.idConflicts) {
         try {
-          const keepIndex = await chooseScanIdConflictKeeper(conflict, nativeRequestId);
+          const keepIndex = await chooseScanIdConflictKeeper(conflict);
           if (keepIndex === null) {
             skippedGroups += 1;
             continue;
@@ -273,82 +266,79 @@ export function WorkspaceSelectContent({
     void createTarget.load();
   }, [createTarget.load]);
 
-  const createWorkspace = useCallback(
-    async (submission?: DialogWindowResultMap["workspace.create"]) => {
-      if (
-        creatingRef.current ||
-        locationBusyRef.current ||
-        scanInProgressRef.current ||
-        openingFolderRef.current ||
-        (!submission && (createTarget.isLoading || createTarget.isChoosing))
-      ) {
-        return;
-      }
+  const createWorkspace = useCallback(async () => {
+    if (
+      creatingRef.current ||
+      locationBusyRef.current ||
+      scanInProgressRef.current ||
+      openingFolderRef.current ||
+      createTarget.isLoading ||
+      createTarget.isChoosing
+    ) {
+      return;
+    }
 
-      const nextDisplayName = (submission?.displayName ?? displayName).trim();
-      if (!nextDisplayName) {
-        toast.error("请输入工作区名称");
-        return;
-      }
-      const providerId = submission?.providerId ?? createTarget.providerId;
-      const isManaged = submission?.isManaged ?? createTarget.isManaged;
-      const externalBinding = submission?.externalBinding ?? createTarget.externalBinding;
-      if (!providerId) {
-        toast.error("请选择存储位置");
-        return;
-      }
+    const nextDisplayName = displayName.trim();
+    if (!nextDisplayName) {
+      toast.error("请输入工作区名称");
+      return;
+    }
+    const providerId = createTarget.providerId;
+    const isManaged = createTarget.isManaged;
+    const externalBinding = createTarget.externalBinding;
+    if (!providerId) {
+      toast.error("请选择存储位置");
+      return;
+    }
 
-      if (!isManaged && !externalBinding) {
-        toast.error("请选择目标文件夹");
-        return;
-      }
-      creatingRef.current = true;
-      setIsCreatingWorkspace(true);
-      try {
-        let createdWorkspace: WorkspaceSnapshot | null = null;
-        const create = async () => {
-          createdWorkspace = isManaged
-            ? await workspace.createManaged(providerId, nextDisplayName)
-            : await workspace.createExternal(externalBinding!, nextDisplayName);
-          if (currentWorkspaceId && !isTauri()) {
-            try {
-              await workspace.close(currentWorkspaceId);
-            } catch (error) {
-              await workspace.close(createdWorkspace.id).catch(() => undefined);
-              throw error;
-            }
+    if (!isManaged && !externalBinding) {
+      toast.error("请选择目标文件夹");
+      return;
+    }
+    creatingRef.current = true;
+    setIsCreatingWorkspace(true);
+    try {
+      let createdWorkspace: WorkspaceSnapshot | null = null;
+      const create = async () => {
+        createdWorkspace = isManaged
+          ? await workspace.createManaged(providerId, nextDisplayName)
+          : await workspace.createExternal(externalBinding!, nextDisplayName);
+        if (currentWorkspaceId && !isTauri()) {
+          try {
+            await workspace.close(currentWorkspaceId);
+          } catch (error) {
+            await workspace.close(createdWorkspace.id).catch(() => undefined);
+            throw error;
           }
-        };
-        const completed = currentWorkspaceId
-          ? await withWorkspaceClose(currentWorkspaceId, create)
-          : (await create(), true);
-        if (!completed || !createdWorkspace) return;
-        if (currentWorkspaceId)
-          workspaceExplorerStore.getState().resetWorkspace(currentWorkspaceId);
-        const created = createdWorkspace as WorkspaceSnapshot;
-        setCurrentWorkspaceId(created.id);
-        setIsCreateWorkspaceSheetOpen(false);
-        void refreshWorkspaces();
-        toast.success(`已创建工作区“${created.displayName}”`);
-      } catch (error) {
-        console.error("[workspace-select] create workspace failed", error);
-        toast.error(getErrorMessage(error, "创建工作区失败"));
-      } finally {
-        creatingRef.current = false;
-        setIsCreatingWorkspace(false);
-      }
-    },
-    [
-      currentWorkspaceId,
-      withWorkspaceClose,
-      displayName,
-      isCreatingWorkspace,
-      refreshWorkspaces,
-      setCurrentWorkspaceId,
-      createTarget,
-      toast,
-    ],
-  );
+        }
+      };
+      const completed = currentWorkspaceId
+        ? await withWorkspaceClose(currentWorkspaceId, create)
+        : (await create(), true);
+      if (!completed || !createdWorkspace) return;
+      if (currentWorkspaceId) workspaceExplorerStore.getState().resetWorkspace(currentWorkspaceId);
+      const created = createdWorkspace as WorkspaceSnapshot;
+      setCurrentWorkspaceId(created.id);
+      setIsCreateWorkspaceSheetOpen(false);
+      void refreshWorkspaces();
+      toast.success(`已创建工作区“${created.displayName}”`);
+    } catch (error) {
+      console.error("[workspace-select] create workspace failed", error);
+      toast.error(getErrorMessage(error, "创建工作区失败"));
+    } finally {
+      creatingRef.current = false;
+      setIsCreatingWorkspace(false);
+    }
+  }, [
+    currentWorkspaceId,
+    withWorkspaceClose,
+    displayName,
+    isCreatingWorkspace,
+    refreshWorkspaces,
+    setCurrentWorkspaceId,
+    createTarget,
+    toast,
+  ]);
 
   const openEditWorkspaceSheet = useCallback(
     (workspaceItem: WorkspaceListItem) => {
@@ -375,50 +365,47 @@ export function WorkspaceSelectContent({
     }
   }, []);
 
-  const updateWorkspace = useCallback(
-    async (submittedName?: string) => {
-      if (
-        !editingWorkspace ||
-        isUpdatingWorkspace ||
-        scanInProgressRef.current ||
-        locationBusyRef.current ||
-        creatingRef.current
-      ) {
-        return;
-      }
+  const updateWorkspace = useCallback(async () => {
+    if (
+      !editingWorkspace ||
+      isUpdatingWorkspace ||
+      scanInProgressRef.current ||
+      locationBusyRef.current ||
+      creatingRef.current
+    ) {
+      return;
+    }
 
-      const nextDisplayName = (submittedName ?? editedWorkspaceName).trim();
-      if (!nextDisplayName) {
-        toast.error("请输入工作区名称");
-        return;
-      }
+    const nextDisplayName = editedWorkspaceName.trim();
+    if (!nextDisplayName) {
+      toast.error("请输入工作区名称");
+      return;
+    }
 
-      setIsUpdatingWorkspace(true);
-      try {
-        const updatedWorkspace = await workspace.updateDisplayName(
-          editingWorkspace.id,
-          nextDisplayName,
-        );
-        workspaceStateRevisionStore.getState().invalidate(editingWorkspace.id);
-        handleEditWorkspaceSheetOpenChange(false);
-        await refreshWorkspaces();
-        toast.success(`已更新工作区“${updatedWorkspace.displayName}”`);
-      } catch (error) {
-        console.error("[workspace-select] update workspace failed", error);
-        toast.error(getErrorMessage(error, "更新工作区失败"));
-      } finally {
-        setIsUpdatingWorkspace(false);
-      }
-    },
-    [
-      editedWorkspaceName,
-      editingWorkspace,
-      handleEditWorkspaceSheetOpenChange,
-      isUpdatingWorkspace,
-      refreshWorkspaces,
-      toast,
-    ],
-  );
+    setIsUpdatingWorkspace(true);
+    try {
+      const updatedWorkspace = await workspace.updateDisplayName(
+        editingWorkspace.id,
+        nextDisplayName,
+      );
+      workspaceStateRevisionStore.getState().invalidate(editingWorkspace.id);
+      handleEditWorkspaceSheetOpenChange(false);
+      await refreshWorkspaces();
+      toast.success(`已更新工作区“${updatedWorkspace.displayName}”`);
+    } catch (error) {
+      console.error("[workspace-select] update workspace failed", error);
+      toast.error(getErrorMessage(error, "更新工作区失败"));
+    } finally {
+      setIsUpdatingWorkspace(false);
+    }
+  }, [
+    editedWorkspaceName,
+    editingWorkspace,
+    handleEditWorkspaceSheetOpenChange,
+    isUpdatingWorkspace,
+    refreshWorkspaces,
+    toast,
+  ]);
 
   const deleteWorkspaces = useCallback(
     async (workspaceItems: WorkspaceListItem[]) => {
@@ -434,7 +421,6 @@ export function WorkspaceSelectContent({
 
       const isSingleWorkspace = workspaceItems.length === 1;
       const result = await confirmNative({
-        parentRequestId: nativeRequestId,
         buttons: [
           { key: "cancel", style: "cancel", text: "取消" },
           { key: "delete", style: "destructive", text: "删除" },
@@ -520,7 +506,6 @@ export function WorkspaceSelectContent({
       refreshWorkspaces,
       setCurrentWorkspaceId,
       toast,
-      nativeRequestId,
     ],
   );
 
@@ -581,7 +566,6 @@ export function WorkspaceSelectContent({
   );
 
   const sharedOpen = useWorkspaceOpenActions({
-    parentRequestId: nativeRequestId,
     onOpened: onWorkspaceOpened,
     onChanged: refreshWorkspaces,
     onMissing: setPendingRebindWorkspace,
@@ -691,7 +675,6 @@ export function WorkspaceSelectContent({
     usesNativeIosHeader,
   };
   const handleViewAction = async (action: WorkspaceSelectAction): Promise<void> => {
-    // 来自子 WebView 的消息只选择本地已有的操作，绝不执行任意 command。
     if ("workspaceId" in action) {
       const item = workspaces.find((item) => item.id === action.workspaceId);
       if (!item) return;
@@ -779,20 +762,17 @@ export function WorkspaceSelectContent({
         return;
     }
   };
-  useWorkspaceSelectDialogBridge(nativeRequestId, viewModel, handleViewAction);
 
   return (
     <>
-      {!nativeRequestId ? (
-        <WorkspaceSelectView
-          model={viewModel}
-          onAction={handleViewAction}
-          navigationHeader={{
-            onOpenSettings: () => router.push("/settings"),
-            renderNavigationHeader: (options) => <Stack.Screen options={options} />,
-          }}
-        />
-      ) : null}
+      <WorkspaceSelectView
+        model={viewModel}
+        onAction={handleViewAction}
+        navigationHeader={{
+          onOpenSettings: () => router.push("/settings"),
+          renderNavigationHeader: (options) => <Stack.Screen options={options} />,
+        }}
+      />
       <WorkspaceSortSelect
         onOpenChange={setIsWorkspaceSortSelectOpen}
         onValueChange={(nextValue) => {
@@ -815,19 +795,6 @@ export function WorkspaceSelectContent({
         displayName={displayName}
         isCreating={isCreatingWorkspace}
         onDisplayNameChange={setDisplayName}
-        onNativeResult={(result) => {
-          if (!result || typeof result !== "object" || Array.isArray(result)) return;
-          if (
-            !("displayName" in result) ||
-            typeof result.displayName !== "string" ||
-            !("providerId" in result) ||
-            typeof result.providerId !== "string" ||
-            !("isManaged" in result) ||
-            typeof result.isManaged !== "boolean"
-          )
-            return;
-          void createWorkspace(result as DialogWindowResultMap["workspace.create"]);
-        }}
         onOpenChange={setIsCreateWorkspaceSheetOpen}
         onSubmit={() => {
           void createWorkspace();
@@ -839,34 +806,11 @@ export function WorkspaceSelectContent({
         displayName={editedWorkspaceName}
         isUpdating={isUpdatingWorkspace}
         onDisplayNameChange={setEditedWorkspaceName}
-        onNativeResult={(result) => {
-          if (
-            !result ||
-            typeof result !== "object" ||
-            Array.isArray(result) ||
-            !("action" in result)
-          )
-            return;
-          if (
-            result.action === "save" &&
-            "displayName" in result &&
-            typeof result.displayName === "string"
-          ) {
-            void updateWorkspace(result.displayName);
-          } else if (result.action === "relocate" && editingWorkspace) {
-            setIsEditWorkspaceSheetOpen(false);
-            location.open(editingWorkspace, "relocate");
-          } else if (result.action === "rebind" && editingWorkspace) {
-            setIsEditWorkspaceSheetOpen(false);
-            location.open(editingWorkspace, "rebind");
-          }
-        }}
         onOpenChange={handleEditWorkspaceSheetOpenChange}
         onSubmit={() => {
           void updateWorkspace();
         }}
         open={isEditWorkspaceSheetOpen}
-        workspaceId={editingWorkspace?.id}
         onRelocate={() => {
           if (!editingWorkspace) return;
           setIsEditWorkspaceSheetOpen(false);

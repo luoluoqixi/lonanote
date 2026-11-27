@@ -11,18 +11,15 @@ import {
 import { useLayoutMode } from "@/hooks/layout";
 
 export type RenameWorkspaceEntrySheetProps = {
-  dialogContentOnly?: boolean;
   isRenaming: boolean;
   name: string;
   onNameChange: (name: string) => void;
-  onNativeResult?: (result: unknown) => void;
   onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
   open: boolean;
 };
 
 export function RenameWorkspaceEntryContent({
-  dialogContentOnly = false,
   isRenaming,
   name,
   onNameChange,
@@ -60,7 +57,7 @@ export function RenameWorkspaceEntryContent({
         ) : null}
       </NativeList>
       {desktop ? (
-        <View style={[styles.actions, dialogContentOnly ? styles.windowActions : undefined]}>
+        <View style={styles.actions}>
           <Button
             size="sm"
             variant="outline"
@@ -82,7 +79,6 @@ export function RenameWorkspaceEntryContent({
 
 const styles = StyleSheet.create({
   actions: { flexDirection: "row", justifyContent: "flex-end", gap: 8, paddingTop: 12 },
-  windowActions: { paddingHorizontal: 16, paddingBottom: 16 },
   list: {
     flex: 1,
     minHeight: 0,

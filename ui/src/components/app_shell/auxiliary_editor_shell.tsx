@@ -6,7 +6,7 @@ import { clipboard } from "@/api/commands/system/clipboard";
 import { editorWindows } from "@/api/commands/win/editor_windows";
 import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { DesktopEditorArea } from "@/components/editor/desktop/desktop_editor_area";
-import { DialogTitleBar } from "@/components/window/dialog_titlebar";
+import { EditorTitleBar } from "@/components/window/editor_titlebar";
 import { useDesktopWindowLifecycle } from "@/hooks/editor/use_desktop_window_lifecycle";
 import { useWindowTitle } from "@/hooks/editor/use_desktop_window_title";
 import { useEditorSession } from "@/hooks/editor/use_editor_session";
@@ -31,7 +31,7 @@ export function AuxiliaryEditorShell() {
   }, [state.ready, openEditorIds.length]);
   return (
     <View nativeID="auxiliary-editor-shell" style={styles.root}>
-      <DialogTitleBar title={title} showPin />
+      <EditorTitleBar title={title} showPin />
       <View style={styles.content}>
         <DesktopEditorArea />
         {!state.connected && (

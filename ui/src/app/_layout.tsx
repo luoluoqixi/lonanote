@@ -5,10 +5,8 @@ import { View, Pressable } from "react-native";
 import { editorWindowService } from "@/components/editor/controllers/editor_window_service";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 import { isWeb, os } from "@/api/common";
-import { isDesktop, isTauri } from "@/api/common/platform";
 import { initializeRustRuntime } from "@/api/invoke";
 import {
   AppStatusBar,
@@ -53,31 +51,8 @@ export default function RootLayout() {
 
   return (
     <AppProvider>
-      <RootNavigation />
+      <EditorNavigation />
     </AppProvider>
-  );
-}
-
-function RootNavigation() {
-  if (isDesktop() && isTauri() && getCurrentWebviewWindow().label.startsWith("dialog-window-")) {
-    return <DialogNavigation />;
-  }
-  return <EditorNavigation />;
-}
-
-function DialogNavigation() {
-  const colorScheme = useResolvedeColorScheme();
-  const appBackgroundColors = useAppBackgroundColors();
-  return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: appBackgroundColors.screen },
-        ...nativeStackStatusBarOptions(colorScheme),
-      }}
-    >
-      <Stack.Screen name="dialog/[request_id]" options={{ headerShown: false }} />
-    </Stack>
   );
 }
 

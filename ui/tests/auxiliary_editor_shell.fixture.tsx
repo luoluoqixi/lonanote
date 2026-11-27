@@ -179,7 +179,7 @@ const { createRoot } = await import("react-dom/client");
 const { TitleBarDragOverlay } = await import("../src/components/window/titlebar_drag_overlay.web");
 mock.module("../src/components/window/titlebar_drag_overlay", () => ({ TitleBarDragOverlay }));
 const { AuxiliaryEditorShell } = await import("../src/components/app_shell/auxiliary_editor_shell");
-const { DialogTitleBar } = await import("../src/components/window/dialog_titlebar");
+const { EditorTitleBar } = await import("../src/components/window/editor_titlebar");
 const { TitleBar } = await import("../src/components/window/titlebar");
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -213,7 +213,7 @@ test("内容窗口标题以全栏为中心并为平台按钮对称留白", async
   try {
     for (const os of ["windows", "linux", "macos"]) {
       platform = os;
-      await act(() => root.render(<DialogTitleBar title="居中标题" />));
+      await act(() => root.render(<EditorTitleBar title="居中标题" />));
       const label = [...container.querySelectorAll("span")].find(
         (node) => node.textContent === "居中标题",
       )!;
@@ -266,7 +266,7 @@ test("主窗口、工作区窗口和辅助 editor 可独立置顶，Dialog 不�
     await act(async () => pin.click());
     expect(pinnedWindows.get("editor-window-second")).toBe(false);
     expect(pinnedWindows.get("main")).toBe(true);
-    await act(async () => root.render(<DialogTitleBar title="普通弹窗" />));
+    await act(async () => root.render(<EditorTitleBar title="普通弹窗" />));
     expect(container.querySelector('button[title="窗口置顶"]')).toBeNull();
     expect(container.querySelectorAll("button").length).toBe(3);
     expect(

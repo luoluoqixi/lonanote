@@ -1,7 +1,7 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect } from "react";
 import { useStore } from "zustand";
 
-import { getWorkbenchWindow } from "@/api/commands/win/workbench_window";
 import { DEFAULT_DESKTOP_LAYOUT, DESKTOP_LAYOUT_STORAGE_KEY } from "@/api/common/desktop_layout";
 import { isDesktop } from "@/api/common/platform";
 import { rnUiKitStorageAdapter } from "@/api/common/rn_ui_kit_storage";
@@ -17,7 +17,7 @@ import { createFullscreenActions } from "./desktop_fullscreen_actions";
 import { resetDesktopWindowSize } from "./desktop_layout_reset";
 import { useUiPreferences } from "./use_ui_preferences";
 
-const currentWindow = getWorkbenchWindow;
+const currentWindow = async () => getCurrentWindow();
 let zoomUpdates = Promise.resolve();
 const fullscreenActions = createFullscreenActions({
   get: async () => (await currentWindow()).isFullscreen(),

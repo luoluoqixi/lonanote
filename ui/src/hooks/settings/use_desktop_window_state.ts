@@ -17,8 +17,6 @@ export function useDesktopWindowState() {
   useEffect(() => {
     if (!isLoaded || !isTauri() || !isDesktop()) return;
     const appWindow = getCurrentWindow();
-    // 内容 Dialog 的尺寸独立于工作台/editor，不应写入工作台恢复状态。
-    if (appWindow.label.startsWith("dialog-window-")) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let unlisten: (() => void) | undefined;

@@ -66,7 +66,7 @@ fn create(
             });
         #[cfg(target_os = "macos")]
         {
-            // 与内容 Dialog 一致：WebView 绘制标题栏，系统保留真实交通灯。
+            // WebView 绘制编辑器标题栏，系统保留真实交通灯。
             config.title_bar_style = tauri::TitleBarStyle::Overlay;
             config.hidden_title = true;
         }

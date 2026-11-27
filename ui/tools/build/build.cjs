@@ -91,10 +91,10 @@ const DEV_COMMANDS = {
   "dev:ios": "cross-env APP_MODE=development expo run:ios --device",
 
   /** 启动 Web 开发服务器 */
-  "dev:web": "node tools/build/dialog_entry.cjs dev",
+  "dev:web": "cross-env APP_MODE=development expo start --web",
 
   /** 启动 Web 开发服务器（CI 模式，禁用热重载） */
-  "dev:web:ci": "node tools/build/dialog_entry.cjs dev --ci",
+  "dev:web:ci": "cross-env CI=1 APP_MODE=development expo start --web",
 };
 
 /** Build 命令（生产模式，退出时复制产物到 build/） */
@@ -231,12 +231,6 @@ function buildEntry() {
       cwd: path.join(projectRoot, entry.cwd),
       stdio: "inherit",
     });
-  }
-
-  // iOS CI：archive + .ipa 导出
-  if (key.startsWith("web")) {
-    const flags = key === "web:dev" ? " --dev" : key === "web:sourcemap" ? " --sourcemap" : "";
-    run(`node tools/build/dialog_entry.cjs export${flags}`);
   }
 
   // iOS CI：archive + .ipa 导出

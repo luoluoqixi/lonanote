@@ -2,7 +2,7 @@ import type { WorkspaceListItem } from "@/api/commands/workspace";
 import type { WorkspaceGroupMode } from "@/components/workspaces/workspace_select/workspace_group";
 import type { WorkspaceSortValue } from "@/components/workspaces/workspace_select/workspace_sort";
 
-/** 只投影视图状态，工作区命令和编辑器生命周期仍由工作台持有。 */
+/** 工作区选择界面的状态和本地交互。 */
 export type WorkspaceSelectViewModel = {
   embedded: boolean;
   desktop: boolean;
@@ -27,12 +27,9 @@ export type WorkspaceSelectViewModel = {
   usesNativeIosHeader: boolean;
 };
 
-export type WorkspaceSelectViewSnapshot = { revision: number; model: WorkspaceSelectViewModel };
-
 export type WorkspaceSelectAction =
   | {
       type:
-        | "ready"
         | "create"
         | "openFolder"
         | "scan"

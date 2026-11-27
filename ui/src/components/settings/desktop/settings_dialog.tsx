@@ -2,15 +2,10 @@ import { type ReactNode, Suspense, lazy, useEffect, useId, useMemo, useRef, useS
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Dialog, NativeSheetStack, Text, useUiTheme } from "rn-ui-kit";
 
-import { dialogWindows } from "@/api/commands/win/dialog_windows";
-import { DialogContentReady } from "@/api/common/dialogs/dialog_content_boundary";
-import { claimNativeSettingsDialogLaunch } from "@/api/common/dialogs/dialog_launch_guard";
-import { isDialogWindowRendererFailure } from "@/api/common/dialogs/dialog_types";
-import { isDesktop, isTauri } from "@/api/common/platform";
 import { useUiPreferences } from "@/hooks/settings";
 import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 
-import { type SettingsPageId, getSettingsPage, settingsPages } from "../settings_config.desktop";
+import { type SettingsPageId, getSettingsPage, settingsPages } from "../settings_config";
 import {
   type SettingsLocation,
   settingsNavigation,
@@ -29,8 +24,6 @@ type DesktopSettingsDialogProps = {
   initialPageId?: SettingsPageId;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  nativeWindow?: boolean;
-  onContentReady?: () => void;
   trigger?: ReactNode;
 };
 
@@ -38,8 +31,6 @@ export function DesktopSettingsDialog({
   initialPageId = "global",
   isOpen,
   onOpenChange,
-  nativeWindow = false,
-  onContentReady,
   trigger,
 }: DesktopSettingsDialogProps) {
   const { width, height } = useWindowDimensions();
@@ -47,19 +38,9 @@ export function DesktopSettingsDialog({
   const tabGroupId = useId();
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const panelId = `${tabGroupId}-panel`;
-  const dialogWidth = nativeWindow ? Math.min(880, width) : Math.min(880, width * 0.88);
-  const dialogHeight = nativeWindow ? Math.min(560, height) : Math.min(560, height * 0.8);
+  const dialogWidth = Math.min(880, width * 0.88);
+  const dialogHeight = Math.min(560, height * 0.8);
   const { preferences } = useUiPreferences();
-  const useNativeWindow =
-    !nativeWindow && isDesktop() && isTauri() && preferences.window.nativeDialogs;
-  const [nativeWindowFailed, setNativeWindowFailed] = useState(false);
-  const [nativeWindowPending, setNativeWindowPending] = useState(false);
-  const nativeAbort = useRef<AbortController | null>(null);
-  const onOpenChangeRef = useRef(onOpenChange);
-  const initialPageIdRef = useRef(initialPageId);
-  const isOpenRef = useRef(isOpen);
-  initialPageIdRef.current = initialPageId;
-  isOpenRef.current = isOpen;
   const currentWorkspaceId = useCurrentWorkspaceId();
   const [isDebugSheetOpen, setIsDebugSheetOpen] = useState(false);
   const [isGmSheetOpen, setIsGmSheetOpen] = useState(false);
@@ -113,51 +94,6 @@ export function DesktopSettingsDialog({
     ? selectedPage.id
     : (selectedPage?.parentId ?? desktopPages[0]?.id ?? "global");
   const SelectedPageComponent = selectedPage?.Component;
-
-  useEffect(() => {
-    onOpenChangeRef.current = onOpenChange;
-  }, [onOpenChange]);
-
-  useEffect(() => {
-    if (!isOpen) nativeAbort.current?.abort();
-    if (!claimNativeSettingsDialogLaunch(isOpen, useNativeWindow && !nativeWindowFailed)) {
-      if (!isOpen) {
-        setNativeWindowFailed(false);
-      }
-      return;
-    }
-    const abort = new AbortController();
-    nativeAbort.current = abort;
-    setNativeWindowPending(true);
-    void dialogWindows
-      .open(
-        {
-          requestId: crypto.randomUUID(),
-          dialogId: "settings",
-          payload: { initialPageId: initialPageIdRef.current },
-          title: "设置",
-          width: 880,
-          height: 560,
-        },
-        { signal: abort.signal },
-      )
-      .then((result) => {
-        if (abort.signal.aborted) return;
-        if (isDialogWindowRendererFailure(result)) {
-          if (isOpenRef.current) setNativeWindowFailed(true);
-          return;
-        }
-        if (isOpenRef.current) onOpenChangeRef.current(false);
-      })
-      .catch((error) => {
-        if (abort.signal.aborted) return;
-        console.error("[settings] 原生设置窗口创建失败，回退到应用内 Dialog", error);
-        if (isOpenRef.current) setNativeWindowFailed(true);
-      })
-      .finally(() => {
-        if (nativeAbort.current === abort) setNativeWindowPending(false);
-      });
-  }, [isOpen, nativeWindowFailed, useNativeWindow]);
 
   const content = (
     <View style={styles.root}>
@@ -243,7 +179,6 @@ export function DesktopSettingsDialog({
                 onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
                 onOpenGmSheet={() => setIsGmSheetOpen(true)}
               />
-              <DialogContentReady onReady={onContentReady} />
             </Suspense>
           ) : null}
         </View>
@@ -276,22 +211,6 @@ export function DesktopSettingsDialog({
       ) : null}
     </View>
   );
-
-  if (nativeWindow) {
-    return (
-      <View
-        style={[
-          styles.nativeWindow,
-          {
-            backgroundColor: theme.background,
-          },
-        ]}
-      >
-        {content}
-      </View>
-    );
-  }
-  if ((useNativeWindow && !nativeWindowFailed) || nativeWindowPending) return null;
 
   return (
     <Dialog
@@ -328,7 +247,6 @@ export function DesktopSettingsDialog({
 }
 
 const styles = StyleSheet.create({
-  nativeWindow: { flex: 1, minHeight: 0, minWidth: 0, padding: 16 },
   content: {
     flex: 1,
     minWidth: 0,

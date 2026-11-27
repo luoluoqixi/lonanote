@@ -1,13 +1,16 @@
 import type { WorkspaceDirectorySnapshot } from "@/api/commands/workspace/types";
-import type {
-  DirectoryPickerOptions,
-  DirectoryPickerResult,
-} from "@/api/common/dialogs/dialog_types";
 
-export type {
-  DirectoryPickerOptions,
-  DirectoryPickerResult,
-} from "@/api/common/dialogs/dialog_types";
+export type DirectoryPickerOptions = {
+  workspaceId: string;
+  purpose: "save" | "move" | "copy";
+  initialPath?: string;
+  excludedPaths?: readonly string[];
+  suggestedFileName?: string;
+  sourceCount?: number;
+};
+
+export type DirectoryPickerResult = { directory: string; fileName?: string };
+
 type Directory = { path: string; metadata: { kind: "file" | "directory" } };
 export type DirectoryPickerState = {
   token: number;
@@ -157,15 +160,6 @@ export function createDirectoryPickerModel(
       state = null;
       emit();
       done?.(result);
-    },
-    accept(token: number, result: DirectoryPickerResult | null) {
-      if (!state || state.token !== token) return false;
-      const done = finish;
-      finish = null;
-      state = null;
-      emit();
-      done?.(result);
-      return true;
     },
     cancel,
   };

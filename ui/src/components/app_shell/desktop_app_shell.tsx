@@ -24,7 +24,6 @@ import { WorkspaceExplorerForWorkspace } from "@/components/workspaces/workspace
 import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select";
 import { useEditorSelector } from "@/hooks/editor/use_editor_selector";
 import { useDesktopLayoutResetRevision } from "@/hooks/settings/use_desktop_layout_reset";
-import { DialogPresentationParentProvider } from "@/hooks/ui/use_dialog_presentation_parent";
 import { useSeparatorColor } from "@/hooks/ui/use_separator_color";
 import { useWorkbenchDragGuard } from "@/hooks/ui/use_workbench_drag_guard";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
@@ -37,7 +36,6 @@ const DEFAULT_LAYOUT_STATE = DEFAULT_DESKTOP_LAYOUT;
 
 export function DesktopAppShell() {
   const { openSettings } = useAppMenuContext();
-  const currentWorkspaceId = useCurrentWorkspaceId();
   const contentLayoutRef = useRef<SplitLayoutHandle | null>(null);
   const outerLayoutRef = useRef<SplitLayoutHandle | null>(null);
   const resetRevision = useDesktopLayoutResetRevision();
@@ -163,22 +161,6 @@ export function DesktopAppShell() {
         name="desktop-workspace-select"
         open={selectOpen}
         onOpenChange={setSelectOpen}
-        nativeDialog={{
-          id: "workspace.select",
-          payload: { currentWorkspaceId },
-          title: "选择工作区",
-          width: 720,
-          height: 600,
-        }}
-        nativeController={(requestId) => (
-          <DialogPresentationParentProvider requestId={requestId}>
-            <WorkspaceSelectContent
-              embedded
-              nativeRequestId={requestId}
-              onWorkspaceOpened={() => setSelectOpen(false)}
-            />
-          </DialogPresentationParentProvider>
-        )}
         // title="选择工作区"
         dialogSize={{ width: 720, height: 600 }}
         dialogContentProps={{

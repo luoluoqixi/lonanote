@@ -7,7 +7,7 @@ export function confirmExternalDocumentChange(title: string): Promise<ConflictDe
   const task = confirmationQueue
     .catch(() => undefined)
     .then(async () => {
-      const { confirmNative } = await import("@/api/common/dialogs/native_dialogs");
+      const { confirmNative } = await import("rn-ui-kit");
       const choice = await confirmNative({
         title: "文件已被外部修改",
         message: `“${title}”的磁盘内容已发生变化。覆盖将写入当前编辑内容，丢弃将加载磁盘中的最新内容。`,

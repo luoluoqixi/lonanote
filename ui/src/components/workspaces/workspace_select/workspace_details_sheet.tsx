@@ -14,7 +14,6 @@ import { WorkspaceDetailsListItem } from "../workspace_details_list_item";
 const WORKSPACE_DETAILS_SNAP_POINTS = ["72%" as const];
 
 type WorkspaceDetailsSheetProps = {
-  dialogContentOnly?: boolean;
   onOpenChange: (open: boolean) => void;
   open: boolean;
   workspaceItem: WorkspaceListItem | null;
@@ -29,7 +28,6 @@ function formatDate(value: number | null | undefined): string {
 }
 
 export function WorkspaceDetailsSheet({
-  dialogContentOnly = false,
   onOpenChange,
   open,
   workspaceItem,
@@ -123,18 +121,9 @@ export function WorkspaceDetailsSheet({
     </NativeList>
   );
 
-  if (dialogContentOnly) return content;
-
   return (
     <AdaptiveModal
       name="workspace-details-sheet"
-      nativeDialog={{
-        id: "workspace.details",
-        payload: { workspaceItem },
-        title: "工作区详情",
-        width: 640,
-        height: 600,
-      }}
       screenName="workspace-details"
       title="工作区详情"
       open={open}

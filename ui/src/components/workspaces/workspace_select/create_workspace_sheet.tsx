@@ -16,24 +16,20 @@ import {
 } from "./workspace_storage_fields";
 
 type CreateWorkspaceSheetProps = {
-  dialogContentOnly?: boolean;
   displayName: string;
   isCreating: boolean;
   onDisplayNameChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
-  onNativeResult?: (result: unknown) => void;
   onSubmit: () => void;
   open: boolean;
   target: WorkspaceStorageTargetForm;
 };
 
 export function CreateWorkspaceSheet({
-  dialogContentOnly = false,
   displayName,
   isCreating,
   onDisplayNameChange,
   onOpenChange,
-  onNativeResult,
   onSubmit,
   open,
   target,
@@ -85,19 +81,10 @@ export function CreateWorkspaceSheet({
       </NativeListSection>
     </NativeList>
   );
-  if (dialogContentOnly) return content;
 
   return (
     <AdaptiveModal
       name="create-workspace-sheet"
-      nativeDialog={{
-        id: "workspace.create",
-        payload: { displayName },
-        title: "创建工作区",
-        width: 560,
-        height: 460,
-      }}
-      onNativeResult={onNativeResult}
       screenName="create-workspace"
       title="创建工作区"
       open={open}

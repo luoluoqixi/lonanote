@@ -24,6 +24,7 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } fro
 import { StyleSheet, View } from "react-native";
 import { Text } from "rn-ui-kit";
 import { Button, ContextMenu, Dropdown, type SelectHandle, Tooltip, useUiTheme } from "rn-ui-kit";
+import { confirmNative } from "rn-ui-kit";
 
 import { fs } from "@/api/commands/fs";
 import { clipboard } from "@/api/commands/system/clipboard";
@@ -34,7 +35,6 @@ import {
   workspaceFile,
 } from "@/api/commands/workspace";
 import { detectWorkspaceFileKind, getFileMimeType, getFileName } from "@/api/common";
-import { confirmNative } from "@/api/common/dialogs/native_dialogs";
 import { isDesktop } from "@/api/common/platform";
 import {
   getDefaultWorkspaceEntryName,
@@ -704,16 +704,6 @@ export function WorkspaceTreeHost({
         parentPath={create?.parent ?? ""}
         name={name}
         onNameChange={setName}
-        onNativeResult={(result) => {
-          if (
-            result &&
-            typeof result === "object" &&
-            !Array.isArray(result) &&
-            "name" in result &&
-            typeof result.name === "string"
-          )
-            void submit(result.name);
-        }}
         isCreating={busy}
         onSubmit={() => {
           void submit();
@@ -726,16 +716,6 @@ export function WorkspaceTreeHost({
         }}
         name={name}
         onNameChange={setName}
-        onNativeResult={(result) => {
-          if (
-            result &&
-            typeof result === "object" &&
-            !Array.isArray(result) &&
-            "name" in result &&
-            typeof result.name === "string"
-          )
-            void submit(result.name);
-        }}
         isRenaming={busy}
         onSubmit={() => {
           void submit();

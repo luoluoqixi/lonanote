@@ -112,16 +112,15 @@ test("无偏好或非法偏好默认最近修改，保留已有选择，并持�
   expect(uiPreferences.getPreferences().workspaceSelect.sortValue).toBe("modified-at-asc");
 });
 
-test("原生弹窗偏好默认开启并持久化关闭状态", async () => {
+test("旧原生弹窗偏好被忽略，保存时不再读写该字段", async () => {
   preferences.clear();
-  expect(createDefaultUiPreferences().window.nativeDialogs).toBe(true);
-  expect(uiPreferences.getPreferences().window.nativeDialogs).toBe(true);
-  preferences.set("ui.window.nativeDialogs", false);
-  expect(uiPreferences.getPreferences().window.nativeDialogs).toBe(false);
-  const next = uiPreferences.getPreferences();
-  next.window.nativeDialogs = true;
-  await uiPreferences.savePreferences(next);
-  expect(preferences.get("ui.window.nativeDialogs")).toBe(true);
+  preferences.set("ui.window.nativeDialogs", true);
+  expect(createDefaultUiPreferences().window).not.toHaveProperty("nativeDialogs");
+  const saved = await uiPreferences.savePreferences(uiPreferences.getPreferences());
+  expect(saved.window).not.toHaveProperty("nativeDialogs");
+  preferences.clear();
+  await uiPreferences.savePreferences(createDefaultUiPreferences());
+  expect(preferences.has("ui.window.nativeDialogs")).toBe(false);
 });
 
 test("旧背景跟随主题偏好被忽略，保存外观时不再读写该字段", async () => {
