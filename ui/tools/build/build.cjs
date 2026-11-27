@@ -90,11 +90,11 @@ const DEV_COMMANDS = {
   /** 在 iOS 设备上运行开发版 */
   "dev:ios": "cross-env APP_MODE=development expo run:ios --device",
 
-  /** 启动 Web 开发服务器 */
-  "dev:web": "cross-env APP_MODE=development expo start --web",
+  /** 为 Tauri 启动 Web 开发服务器，不额外打开系统浏览器。 */
+  "dev:web": "cross-env BROWSER=none APP_MODE=development expo start --web",
 
   /** 启动 Web 开发服务器（CI 模式，禁用热重载） */
-  "dev:web:ci": "cross-env CI=1 APP_MODE=development expo start --web",
+  "dev:web:ci": "cross-env CI=1 BROWSER=none APP_MODE=development expo start --web",
 };
 
 /** Build 命令（生产模式，退出时复制产物到 build/） */
