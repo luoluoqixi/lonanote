@@ -25,6 +25,7 @@ import { WorkspaceSelectContent } from "@/components/workspaces/workspace_select
 import { useEditorSelector } from "@/hooks/editor/use_editor_selector";
 import { useDesktopLayoutResetRevision } from "@/hooks/settings/use_desktop_layout_reset";
 import { DialogPresentationParentProvider } from "@/hooks/ui/use_dialog_presentation_parent";
+import { useSeparatorColor } from "@/hooks/ui/use_separator_color";
 import { useWorkbenchDragGuard } from "@/hooks/ui/use_workbench_drag_guard";
 import { useCurrentWorkspaceId } from "@/hooks/workspace";
 import { useRevealWorkspacePath } from "@/hooks/workspace/use_reveal_workspace_path";
@@ -58,6 +59,7 @@ export function DesktopAppShell() {
   }, []);
   const dragGuard = useWorkbenchDragGuard();
   const theme = useUiTheme();
+  const separatorColor = useSeparatorColor();
   const revealPath = useRevealWorkspacePath();
   const revealInExplorer = async (workspaceId: string, path: string) => {
     setPanel("explorer");
@@ -73,7 +75,7 @@ export function DesktopAppShell() {
     <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <TitleBar />
       <View style={[styles.workspace, { backgroundColor: theme.background }]}>
-        <SplitLayout ref={outerLayoutRef} vertical>
+        <SplitLayout ref={outerLayoutRef} separator={false} vertical>
           <SplitLayout.Pane minSize={1} priority={SplitLayoutPriority.High}>
             <SplitLayout
               ref={contentLayoutRef}
@@ -88,6 +90,7 @@ export function DesktopAppShell() {
                 );
               }}
               proportionalLayout={false}
+              separator={false}
               storageAdapter={rnUiKitStorageAdapter}
               storageFallbackState={DEFAULT_LAYOUT_STATE}
               storageKey={LAYOUT_STORAGE_KEY}
@@ -114,7 +117,15 @@ export function DesktopAppShell() {
                 priority={SplitLayoutPriority.Low}
                 snap
               >
-                <View style={[styles.fullHeight, { backgroundColor: theme.background }]}>
+                <View
+                  style={[
+                    styles.sidePanel,
+                    {
+                      backgroundColor: theme.background,
+                      borderRightColor: separatorColor,
+                    },
+                  ]}
+                >
                   <DesktopSidePanel active={showSidebar && panel === "explorer"}>
                     <SidePanel onSelectWorkspace={() => setSelectOpen(true)} />
                   </DesktopSidePanel>
@@ -200,13 +211,14 @@ function ActivityBar({
   settingsDialog,
 }: ActivityBarProps) {
   const theme = useUiTheme();
+  const separatorColor = useSeparatorColor();
   return (
     <View
       style={[
         styles.activityBar,
         {
           backgroundColor: theme.background,
-          borderRightColor: theme.border,
+          borderRightColor: separatorColor,
           borderRightWidth: StyleSheet.hairlineWidth,
         },
       ]}
@@ -304,8 +316,9 @@ function SidePanel({ onSelectWorkspace }: { onSelectWorkspace: () => void }) {
 // }
 
 function StatusBar() {
+  const separatorColor = useSeparatorColor();
   return (
-    <View style={styles.statusBar}>
+    <View style={[styles.statusBar, { borderTopColor: separatorColor }]}>
       <DesktopEditorStatusBar />
     </View>
   );
@@ -335,6 +348,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  sidePanel: {
+    borderRightWidth: StyleSheet.hairlineWidth,
+    height: "100%",
+  },
   sidePanelHeader: {
     alignItems: "center",
     gap: 12,
@@ -344,6 +361,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusBar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
     height: "100%",
   },
   workspace: {
