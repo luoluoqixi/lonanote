@@ -1,10 +1,15 @@
 import { createStore } from "zustand/vanilla";
 
-import type { WorkspaceDirectorySnapshot } from "@/api/commands/workspace/types";
+import type {
+  StorageEntryMetadata,
+  WorkspaceDirectorySnapshot,
+} from "@/api/commands/workspace/types";
 
 export type ExplorerMode = "directory" | "tree";
 export type ExplorerDirectory = {
   snapshot: WorkspaceDirectorySnapshot | null;
+  /** 最近一次目录加载的排序依据；保存元数据时保留当前行及分组位置。 */
+  sortSnapshot: WorkspaceDirectorySnapshot | null;
   loading: boolean;
   error: string | null;
   stale: boolean;
@@ -37,6 +42,12 @@ export type WorkspaceExplorerState = {
   setExpanded: (id: string, path: string, expanded: boolean) => Promise<void>;
   refreshVisible: (id: string, mode: ExplorerMode, path: string) => Promise<void>;
   invalidatePaths: (id: string, paths: string[]) => Promise<void>;
+  updateEntryMetadata: (
+    id: string,
+    path: string,
+    metadata: StorageEntryMetadata | null,
+  ) => Promise<void>;
+  commitDirectoryOrder: (id: string, path: string) => void;
   remapPath: (id: string, from: string, to: string) => void;
   resetWorkspace: (id: string) => void;
   restartWorkspace: (id: string) => Promise<void>;
@@ -57,6 +68,7 @@ export const isPathWithin = (path: string, ancestor: string): boolean =>
 export const parentWorkspacePath = (path: string): string => path.split("/").slice(0, -1).join("/");
 const emptyDirectory = (): ExplorerDirectory => ({
   snapshot: null,
+  sortSnapshot: null,
   loading: false,
   error: null,
   stale: true,
@@ -162,15 +174,48 @@ export function createWorkspaceExplorerStore(api: IndexApi) {
           get().workspaces[id]?.directories[path]?.requestId === requestId;
         const task = (async () => {
           try {
-            const snapshot = await api.getDirectory(id, path, { reload });
+            let snapshot = await api.getDirectory(id, path, { reload });
             if (!isCurrent()) return null;
+            const latestSnapshot = get().workspaces[id]?.directories[path]?.snapshot;
+            if (latestSnapshot && latestSnapshot !== previous.snapshot) {
+              // 目录读取期间发生的保存不能被较早取得的文件元数据覆盖。
+              const before = new Map(
+                previous.snapshot?.entries.map((entry) => [entry.path, entry]),
+              );
+              const updates = new Map(
+                latestSnapshot.entries
+                  .filter((entry) => entry !== before.get(entry.path))
+                  .map((entry) => [entry.path, entry]),
+              );
+              snapshot = {
+                ...snapshot,
+                entries: snapshot.entries.map((entry) => {
+                  const saved = updates.get(entry.path);
+                  return saved && saved.fileType === entry.fileType
+                    ? {
+                        ...entry,
+                        size: saved.size,
+                        createTime: saved.createTime,
+                        lastModifiedTime: saved.lastModifiedTime,
+                      }
+                    : entry;
+                }),
+              };
+            }
             update(id, epoch, (current) => {
               const next = prune(current, snapshot);
               return {
                 ...next,
                 directories: {
                   ...next.directories,
-                  [path]: { snapshot, loading: false, error: null, stale: false, requestId },
+                  [path]: {
+                    snapshot,
+                    sortSnapshot: snapshot,
+                    loading: false,
+                    error: null,
+                    stale: false,
+                    requestId,
+                  },
                 },
               };
             });
@@ -286,6 +331,63 @@ export function createWorkspaceExplorerStore(api: IndexApi) {
           layer = next;
         }
         if (firstError && current()) throw firstError;
+      },
+      commitDirectoryOrder: (id, path) => {
+        const w = get().workspaces[id];
+        const directory = w?.directories[path];
+        if (!directory?.snapshot || directory.sortSnapshot === directory.snapshot) return;
+        update(id, w.epoch, (current) => ({
+          ...current,
+          directories: {
+            ...current.directories,
+            [path]: { ...directory, sortSnapshot: directory.snapshot },
+          },
+        }));
+      },
+      updateEntryMetadata: async (id, path, metadata) => {
+        const w = get().workspaces[id];
+        if (!w) return;
+        const parent = parentWorkspacePath(path);
+        const directory = w.directories[parent];
+        const previous = directory?.snapshot?.entries.find((entry) => entry.path === path);
+        // 新增、重新创建或忽略规则变化仍需重新读取目录结构。
+        if (
+          !metadata ||
+          !previous ||
+          path.split("/").at(-1) === ".gitignore" ||
+          previous.fileType !== metadata.kind
+        ) {
+          await get().invalidatePaths(id, [path]);
+          return;
+        }
+        if (
+          previous.size === metadata.size &&
+          previous.createTime === metadata.createdAt &&
+          previous.lastModifiedTime === metadata.modifiedAt
+        )
+          return;
+        update(id, w.epoch, (current) => ({
+          ...current,
+          directories: {
+            ...current.directories,
+            [parent]: {
+              ...directory,
+              snapshot: {
+                ...directory.snapshot!,
+                entries: directory.snapshot!.entries.map((entry) =>
+                  entry.path === path
+                    ? {
+                        ...entry,
+                        size: metadata.size,
+                        createTime: metadata.createdAt,
+                        lastModifiedTime: metadata.modifiedAt,
+                      }
+                    : entry,
+                ),
+              },
+            },
+          },
+        }));
       },
       invalidatePaths: async (id, paths) => {
         const w = get().workspaces[id];

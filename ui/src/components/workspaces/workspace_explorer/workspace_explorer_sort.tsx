@@ -1,11 +1,17 @@
 import { Select, type SelectHandle, type SelectItemGroupData } from "rn-ui-kit";
 
-import type { WorkspaceIndexEntry } from "@/api/commands/workspace";
-import { compareNames, getFileName, isMarkdownFile } from "@/api/common";
-import type { WorkspaceExplorerGroupModeSetting, WorkspaceExplorerSortSetting } from "@/stores/ui";
+import type {
+  WorkspaceExplorerGroupMode,
+  WorkspaceExplorerSortValue,
+} from "./workspace_explorer_order";
 
-export type WorkspaceExplorerSortValue = WorkspaceExplorerSortSetting;
-export type WorkspaceExplorerGroupMode = WorkspaceExplorerGroupModeSetting;
+export {
+  type WorkspaceExplorerGroupMode,
+  type WorkspaceExplorerSortValue,
+  getWorkspaceExplorerEntryTimestamp,
+  isWorkspaceExplorerNameSortValue,
+  sortWorkspaceExplorerEntries,
+} from "./workspace_explorer_order";
 
 export const WORKSPACE_EXPLORER_SORT_GROUPS = [
   {
@@ -54,75 +60,8 @@ export function isWorkspaceExplorerSortValue(
   );
 }
 
-export function isWorkspaceExplorerNameSortValue(value: WorkspaceExplorerSortValue): boolean {
-  return value === "name" || value === "nameRev";
-}
-
 function isWorkspaceExplorerGroupMode(value: string | null): value is WorkspaceExplorerGroupMode {
   return value === "date" || value === "none";
-}
-
-function getWorkspaceExplorerSortName(entry: WorkspaceIndexEntry): string {
-  const fileName = getFileName(entry.path);
-  return entry.fileType === "file" && isMarkdownFile(fileName)
-    ? fileName.slice(0, fileName.lastIndexOf("."))
-    : fileName;
-}
-
-function compareNullableTimestamp(
-  left: number | null,
-  right: number | null,
-  descending: boolean,
-): number {
-  if (left == null || right == null) {
-    if (left == null && right == null) {
-      return 0;
-    }
-
-    return left == null ? 1 : -1;
-  }
-
-  return descending ? right - left : left - right;
-}
-
-export function getWorkspaceExplorerEntryTimestamp(
-  entry: WorkspaceIndexEntry,
-  sortValue: WorkspaceExplorerSortValue,
-): number | null {
-  return sortValue === "createTime" || sortValue === "createTimeRev"
-    ? entry.createTime
-    : entry.lastModifiedTime;
-}
-
-export function sortWorkspaceExplorerEntries(
-  entries: WorkspaceIndexEntry[],
-  sortValue: WorkspaceExplorerSortValue,
-  foldersFirst = true,
-): WorkspaceIndexEntry[] {
-  return [...entries].sort((left, right) => {
-    if (foldersFirst && left.fileType !== right.fileType) {
-      return left.fileType === "directory" ? -1 : 1;
-    }
-
-    const leftName = getWorkspaceExplorerSortName(left);
-    const rightName = getWorkspaceExplorerSortName(right);
-
-    if (sortValue === "name" || sortValue === "nameRev") {
-      return compareNames(
-        leftName,
-        rightName,
-        sortValue === "nameRev" ? "descending" : "ascending",
-      );
-    }
-
-    const timestampComparison = compareNullableTimestamp(
-      getWorkspaceExplorerEntryTimestamp(left, sortValue),
-      getWorkspaceExplorerEntryTimestamp(right, sortValue),
-      sortValue === "lastModifiedTime" || sortValue === "createTime",
-    );
-
-    return timestampComparison || compareNames(leftName, rightName);
-  });
 }
 
 type WorkspaceExplorerSortSelectProps = {

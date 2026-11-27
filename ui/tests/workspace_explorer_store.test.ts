@@ -301,3 +301,89 @@ test("移动目录迁移选中、展开、焦点和范围锚点", async () => {
   expect(state.rangeAnchorPath).toBe("B/A/sub");
   expect(state.directories.A).toBeUndefined();
 });
+
+test("保存元数据保留当前排序依据，显式重载后才采用新的时间", async () => {
+  const { store, actions, content, calls } = fixture();
+  content[""] = [
+    { ...entry("recent.md", "file"), lastModifiedTime: 20 },
+    { ...entry("old.md", "file"), lastModifiedTime: 10 },
+  ];
+  await actions.loadDirectory("w", "", { reload: true });
+  const orderingSnapshot = store.getState().workspaces.w.directories[""].snapshot;
+  await actions.updateEntryMetadata("w", "old.md", {
+    kind: "file",
+    size: 42,
+    createdAt: 1,
+    modifiedAt: 30,
+  });
+  const directory = store.getState().workspaces.w.directories[""];
+  expect(directory.snapshot?.entries[1]).toMatchObject({ size: 42, lastModifiedTime: 30 });
+  expect(directory.sortSnapshot).toBe(orderingSnapshot);
+  expect(directory.sortSnapshot?.entries[1].lastModifiedTime).toBe(10);
+  expect(directory.loading).toBe(false);
+  expect(calls).toEqual([""]);
+  actions.commitDirectoryOrder("w", "");
+  expect(store.getState().workspaces.w.directories[""].sortSnapshot).toBe(directory.snapshot);
+  expect(calls).toEqual([""]);
+  content[""] = directory.snapshot!.entries;
+  await actions.loadDirectory("w", "", { reload: true });
+  const reloaded = store.getState().workspaces.w.directories[""];
+  expect(reloaded.sortSnapshot).toBe(reloaded.snapshot);
+  expect(reloaded.sortSnapshot?.entries[1].lastModifiedTime).toBe(30);
+});
+
+test("保存 .gitignore 或重新创建缺失行时仍重载目录结构", async () => {
+  const { store, actions, calls, content } = fixture();
+  const release = actions.registerHost("w", "directory", "");
+  try {
+    await actions.loadDirectory("w", "", { reload: true });
+    content[""] = [entry("new.md", "file")];
+    calls.length = 0;
+    await actions.updateEntryMetadata("w", "new.md", {
+      kind: "file",
+      size: 1,
+      createdAt: 1,
+      modifiedAt: 2,
+    });
+    expect(store.getState().workspaces.w.directories[""].snapshot?.entries[0].path).toBe("new.md");
+    expect(calls).toEqual([""]);
+    content[""] = [];
+    calls.length = 0;
+    await actions.updateEntryMetadata("w", ".gitignore", {
+      kind: "file",
+      size: 1,
+      createdAt: 1,
+      modifiedAt: 2,
+    });
+    expect(store.getState().workspaces.w.directories[""].snapshot?.entries).toEqual([]);
+    expect(calls).toEqual([""]);
+  } finally {
+    release();
+  }
+});
+
+test("目录刷新途中保存，迟到的旧目录时间不能覆盖已保存的元数据", async () => {
+  const delayed = deferred<WorkspaceDirectorySnapshot>();
+  const original = { ...entry("note.md", "file"), lastModifiedTime: 10, size: 1 };
+  let reads = 0;
+  const store = createWorkspaceExplorerStore({
+    getDirectory: async () => (++reads === 1 ? snapshot("", [original]) : delayed.promise),
+    refresh: async () => {},
+  });
+  const actions = store.getState();
+  await actions.loadDirectory("w", "", { reload: true });
+  const refresh = actions.loadDirectory("w", "", { reload: true });
+  await actions.updateEntryMetadata("w", "note.md", {
+    kind: "file",
+    size: 42,
+    createdAt: 1,
+    modifiedAt: 30,
+  });
+  delayed.resolve(snapshot("", [original, entry("new.md", "file")]));
+  await refresh;
+  const directory = store.getState().workspaces.w.directories[""];
+  expect(directory.snapshot?.entries[0]).toMatchObject({ size: 42, lastModifiedTime: 30 });
+  expect(directory.snapshot?.entries[1].path).toBe("new.md");
+  expect(directory.sortSnapshot).toBe(directory.snapshot);
+  expect(reads).toBe(2);
+});

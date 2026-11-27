@@ -65,6 +65,7 @@ export function useWorkspaceExplorer({
     () => ({
       reload: () => actions.loadDirectory(workspaceId, currentPath, { reload: true }),
       refresh: () => actions.refreshVisible(workspaceId, mode, currentPath),
+      resort: () => actions.commitDirectoryOrder(workspaceId, currentPath),
       setExpanded: (path: string, expanded: boolean) =>
         actions.setExpanded(workspaceId, path, expanded),
       collapseAll: () => actions.collapseAll(workspaceId),
@@ -79,6 +80,7 @@ export function useWorkspaceExplorer({
       currentPath,
       actions.loadDirectory,
       actions.refreshVisible,
+      actions.commitDirectoryOrder,
       actions.setExpanded,
       actions.collapseAll,
       actions.revealPath,

@@ -1,4 +1,4 @@
-import { type Href, Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { type Href, Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type SelectHandle } from "rn-ui-kit";
 
@@ -49,7 +49,6 @@ export type WorkspaceExplorerMode = "directory" | "tree";
 
 type LoadEntriesOptions = {
   minimumDurationMs?: number;
-  showLoading?: boolean;
 };
 
 const EMPTY_ENTRIES: WorkspaceIndexEntry[] = [];
@@ -151,6 +150,7 @@ function DirectoryExplorerForWorkspace({
   const explorer = useWorkspaceExplorer({ workspaceId, mode, currentPath });
   const directory = explorer.directories[currentPath];
   const entries = directory?.snapshot?.entries ?? EMPTY_ENTRIES;
+  const orderingEntries = directory?.sortSnapshot?.entries ?? entries;
   const isLoading = directory?.loading ?? true;
   const hasError = Boolean(directory?.error);
   const isSelectionMode = explorer.selectionMode;
@@ -179,7 +179,6 @@ function DirectoryExplorerForWorkspace({
   const [isDeletingEntries, setIsDeletingEntries] = useState(false);
   const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
   const isCreatingEntryRef = useRef(false);
-  const hasFocusedRef = useRef(false);
   const sortSelectRef = useRef<SelectHandle>(null);
   const groupModeSelectRef = useRef<SelectHandle>(null);
   const currentOs = os();
@@ -198,18 +197,14 @@ function DirectoryExplorerForWorkspace({
     [explorer.reload],
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      if (hasFocusedRef.current) void loadEntries({ showLoading: false }).catch(() => undefined);
-      hasFocusedRef.current = true;
-    }, [loadEntries]),
-  );
-
   const sortValue = preferences.workspaceExplorer.sortValue;
   const groupMode = preferences.workspaceExplorer.groupMode;
   const isGroupModeDisabled = isWorkspaceExplorerNameSortValue(sortValue);
   const effectiveGroupMode = isGroupModeDisabled ? "none" : groupMode;
   const groupModeBeforeNameSortRef = useRef(groupMode);
+  useEffect(() => {
+    explorer.resort();
+  }, [explorer.resort, sortValue, effectiveGroupMode, preferences.workspaceExplorer.foldersFirst]);
 
   useEffect(() => {
     if (!isGroupModeDisabled) {
@@ -220,11 +215,11 @@ function DirectoryExplorerForWorkspace({
   const sortedEntries = useMemo(
     () =>
       sortWorkspaceExplorerEntries(
-        entries,
+        orderingEntries,
         sortValue,
         preferences.workspaceExplorer.foldersFirst && effectiveGroupMode === "none",
       ),
-    [effectiveGroupMode, entries, preferences.workspaceExplorer.foldersFirst, sortValue],
+    [effectiveGroupMode, orderingEntries, preferences.workspaceExplorer.foldersFirst, sortValue],
   );
   const title = currentPath ? getFileName(currentPath) : (workspaceState?.displayName ?? "工作区");
   const areAllEntriesSelected =
@@ -655,7 +650,7 @@ function DirectoryExplorerForWorkspace({
       />
       <WorkspaceExplorerList
         workspaceId={workspaceId}
-        entries={sortedEntries}
+        entries={entries}
         foldersFirst={preferences.workspaceExplorer.foldersFirst}
         groupMode={effectiveGroupMode}
         hasError={hasError}
@@ -674,7 +669,8 @@ function DirectoryExplorerForWorkspace({
           setIsEntryDetailsSheetOpen(true);
         }}
         onEntryPress={openEntry}
-        onRefresh={() => loadEntries({ minimumDurationMs: 300, showLoading: false })}
+        onRefresh={() => loadEntries({ minimumDurationMs: 300 })}
+        orderingEntries={orderingEntries}
         onSelectedEntryPathsChange={(selectedIds) => {
           setSelectedEntryPaths(selectedIds.filter((id): id is string => typeof id === "string"));
         }}

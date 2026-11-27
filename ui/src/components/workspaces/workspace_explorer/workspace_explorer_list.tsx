@@ -31,7 +31,6 @@ import {
   detectWorkspaceFileKind,
   formatUnixSecondsRelativeDate,
   getFileName,
-  groupItemsByDate,
   isAndroid,
   isIos17Plus,
   isMarkdownFile,
@@ -46,18 +45,13 @@ import {
   type WorkspaceExplorerGroupMode,
   type WorkspaceExplorerSortValue,
   getWorkspaceExplorerEntryTimestamp,
-  sortWorkspaceExplorerEntries,
-} from "./workspace_explorer_sort";
-
-export type WorkspaceExplorerSection = {
-  entries: WorkspaceIndexEntry[];
-  id: string;
-  title?: string;
-};
+  groupWorkspaceExplorerEntries,
+} from "./workspace_explorer_order";
 
 type WorkspaceExplorerListProps = {
   workspaceId: string;
   entries: WorkspaceIndexEntry[];
+  orderingEntries?: WorkspaceIndexEntry[];
   foldersFirst: boolean;
   groupMode: WorkspaceExplorerGroupMode;
   hasError: boolean;
@@ -88,29 +82,6 @@ function getEntryTitle(entry: WorkspaceIndexEntry): string {
 function getUnsupportedFileSfSymbol(): "doc.fill" | "doc.questionmark.fill" {
   // doc.questionmark.fill 从 iOS 17 才可用；旧系统需要使用稳定的文档图标。
   return isIos17Plus() ? "doc.questionmark.fill" : "doc.fill";
-}
-
-export function groupWorkspaceExplorerEntries(
-  entries: WorkspaceIndexEntry[],
-  foldersFirst: boolean,
-  groupMode: WorkspaceExplorerGroupMode,
-  sortValue: WorkspaceExplorerSortValue,
-): WorkspaceExplorerSection[] {
-  if (groupMode === "none") {
-    return [{ entries: sortWorkspaceExplorerEntries(entries, sortValue, foldersFirst), id: "all" }];
-  }
-
-  const ascending = sortValue === "lastModifiedTimeRev" || sortValue === "createTimeRev";
-
-  return groupItemsByDate(
-    entries,
-    (entry) => getWorkspaceExplorerEntryTimestamp(entry, sortValue),
-    ascending ? "ascending" : "descending",
-  ).map((section) => ({
-    entries: sortWorkspaceExplorerEntries(section.items, sortValue, foldersFirst),
-    id: section.id,
-    title: section.title,
-  }));
 }
 
 function WorkspaceExplorerStatus({ message }: { message: string }) {
@@ -221,6 +192,7 @@ function WorkspaceExplorerEntryItem({
 export function WorkspaceExplorerList({
   workspaceId,
   entries,
+  orderingEntries = entries,
   foldersFirst,
   groupMode,
   hasError,
@@ -308,14 +280,21 @@ export function WorkspaceExplorerList({
       },
     }).filter((item) => item.value !== "create-note" && item.value !== "create-directory");
   };
-  const statusMessage = isLoading
-    ? "正在加载文件"
-    : hasError && entries.length === 0
-      ? "文件加载失败"
-      : entries.length === 0
-        ? "当前文件夹为空"
-        : null;
-  const sections = groupWorkspaceExplorerEntries(entries, foldersFirst, groupMode, sortValue);
+  const statusMessage =
+    isLoading && entries.length === 0
+      ? "正在加载文件"
+      : hasError && entries.length === 0
+        ? "文件加载失败"
+        : entries.length === 0
+          ? "当前文件夹为空"
+          : null;
+  const sections = groupWorkspaceExplorerEntries(
+    entries,
+    foldersFirst,
+    groupMode,
+    sortValue,
+    orderingEntries,
+  );
 
   const content = (
     <NativeList

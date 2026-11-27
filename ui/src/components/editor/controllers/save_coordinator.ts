@@ -236,10 +236,10 @@ async function writeLatestSnapshot(documentId: string): Promise<DocumentSaveResu
         size: metadata?.size ?? null,
         modifiedAt: metadata?.modifiedAt ?? null,
       });
-      // 文件已保存；投影刷新失败由 Explorer 展示，不能把成功写入标记为保存失败。
+      // 保存只更新对应行的信息，保留当前目录的顺序与滚动位置。
       await workspaceExplorerStore
         .getState()
-        .invalidatePaths(document.ref.workspaceId, [document.ref.filePath])
+        .updateEntryMetadata(document.ref.workspaceId, document.ref.filePath, metadata)
         .catch((error) => console.warn("[editor-save] 文件已保存，刷新 Explorer 失败", error));
       return "saved";
     }

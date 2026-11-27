@@ -20,6 +20,7 @@ const entry = (
 });
 const directory = (path: string, entries: WorkspaceIndexEntry[]): ExplorerDirectory => ({
   snapshot: { path, entries },
+  sortSnapshot: { path, entries },
   loading: false,
   error: null,
   stale: false,

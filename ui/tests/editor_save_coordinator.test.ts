@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 
 import type { EditorDocumentCapturePayload } from "../assets/editor/src/bridge/protocol";
+import { createWorkspaceExplorerStore } from "../src/stores/workspace/workspace_explorer_store";
 
 let diskText = "原始内容";
 let modifiedAt = 1;
@@ -9,7 +10,12 @@ const confirmConflict = mock(async (): Promise<string | null> => "cancel");
 mock.module("@/components/editor/controllers/document_conflict_dialog", () => ({
   confirmExternalDocumentChange: confirmConflict,
 }));
-const metadata = mock(async () => ({ size: diskText.length, modifiedAt }));
+const metadata = mock(async () => ({
+  kind: "file" as const,
+  size: diskText.length,
+  createdAt: 0,
+  modifiedAt,
+}));
 const readText = mock(async () => diskText);
 const writeText = mock(async (_workspaceId: string, _path: string, text: string) => {
   diskText = text;
@@ -44,9 +50,29 @@ mock.module("@/stores/settings", () => ({
   },
 }));
 
-const invalidatePaths = mock(async (_id: string, _paths: string[]) => {});
+let directoryReads = 0;
+const explorerStore = createWorkspaceExplorerStore({
+  getDirectory: async (_, path) => {
+    directoryReads++;
+    return {
+      path,
+      entries: [
+        {
+          path: "note.md",
+          fileType: "file",
+          size: diskText.length,
+          createTime: 0,
+          lastModifiedTime: modifiedAt,
+        },
+      ],
+    };
+  },
+  refresh: async () => {},
+});
+const invalidateExplorerPaths = explorerStore.getState().invalidatePaths;
+const invalidatePaths = spyOn(explorerStore.getState(), "invalidatePaths");
 mock.module("@/stores/workspace/workspace_explorer_runtime", () => ({
-  workspaceExplorerStore: { getState: () => ({ invalidatePaths }) },
+  workspaceExplorerStore: explorerStore,
 }));
 
 const { editorStore, isDocumentDirty } = await import("../src/stores/editor");
@@ -195,6 +221,8 @@ test("外部文件也检测冲突，丢弃后再次编辑可重新创建已删�
 });
 
 beforeEach(() => {
+  explorerStore.getState().resetWorkspace("workspace");
+  directoryReads = 0;
   editorStore.setState({
     documentIds: [],
     documentsById: {},
@@ -211,7 +239,12 @@ beforeEach(() => {
   confirmConflict.mockReset();
   confirmConflict.mockImplementation(async () => "cancel");
   metadata.mockReset();
-  metadata.mockImplementation(async () => ({ size: diskText.length, modifiedAt }));
+  metadata.mockImplementation(async () => ({
+    kind: "file" as const,
+    size: diskText.length,
+    createdAt: 0,
+    modifiedAt,
+  }));
   readText.mockReset();
   readText.mockImplementation(async () => diskText);
   writeText.mockReset();
@@ -219,6 +252,29 @@ beforeEach(() => {
     diskText = text;
     modifiedAt += 1;
   });
+});
+
+test("编辑保存只静默更新对应列表行，不重读目录或切入加载状态", async () => {
+  const { documentId } = openDocument();
+  const actions = explorerStore.getState();
+  const release = actions.registerHost("workspace", "directory", "");
+  await actions.loadDirectory("workspace", "", { reload: true });
+  invalidatePaths.mockImplementation(invalidateExplorerPaths);
+  const loading: boolean[] = [];
+  const unsubscribe = explorerStore.subscribe((state) => {
+    loading.push(state.workspaces.workspace.directories[""].loading);
+  });
+  try {
+    await saveCoordinator.flushDocument(documentId);
+    const directory = explorerStore.getState().workspaces.workspace.directories[""];
+    expect(directory.snapshot?.entries[0].lastModifiedTime).toBe(2);
+    expect(directory.snapshot?.entries[0].size).toBe(4);
+    expect(directoryReads).toBe(1);
+    expect(loading).not.toContain(true);
+  } finally {
+    unsubscribe();
+    release();
+  }
 });
 
 test("composition capture 阻止保存与关闭mutation，远端草稿保持不变", async () => {
@@ -611,6 +667,7 @@ test("文档加载晚返回不发布旧身份；删除 dirty 无 view 文档及�
 
 test("保存 .gitignore 后刷新共享 Explorer，刷新失败不回退文件保存成功", async () => {
   const { documentId } = openDocument();
+  await explorerStore.getState().loadDirectory("workspace", "", { reload: true });
   editorStore.getState().renameWorkspacePath("workspace", "note.md", ".gitignore");
   invalidatePaths.mockRejectedValueOnce(new Error("刷新失败"));
   await saveCoordinator.flushDocument(documentId);
