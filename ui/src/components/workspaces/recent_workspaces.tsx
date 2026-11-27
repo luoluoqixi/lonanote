@@ -1,7 +1,7 @@
 import { X } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import { Button, Dropdown, Text, useUiTheme } from "rn-ui-kit";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Button, Popover, Text, useUiTheme } from "rn-ui-kit";
 
 import { type WorkspaceListItem, workspace } from "@/api/commands/workspace";
 import { getErrorMessage } from "@/api/common/error_message";
@@ -95,12 +95,12 @@ export function RecentWorkspaces() {
     <Button
       aria-label={`从历史记录中移除 ${item.displayName}`}
       variant="ghost"
-      size="xs"
+      size="sm"
       buttonSize={{ width: 24, height: 24 }}
       disabled={disabled}
       onPress={() => void deleteHistory(item.id)}
     >
-      <X size={12} color={theme.mutedForeground} />
+      <X size={12} color={theme.muted} />
     </Button>
   );
 
@@ -120,20 +120,25 @@ export function RecentWorkspaces() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading} className="text-muted-foreground">
+      <Text style={styles.heading} className="text-muted">
         最近打开
       </Text>
       {!items.length && !hasError ? (
-        <Text style={{ fontSize: 12 }} className="text-muted-foreground">
+        <Text style={{ fontSize: 12 }} className="text-muted">
           {isLoading ? "正在加载历史记录…" : "暂无最近工作区"}
         </Text>
       ) : null}
       {hasError ? (
         <View style={styles.error}>
-          <Text style={{ fontSize: 12 }} className="text-muted-foreground">
+          <Text style={{ fontSize: 12 }} className="text-muted">
             无法加载最近工作区
           </Text>
-          <Button size="sm" variant="link" onPress={() => void refresh()}>
+          <Button
+            size="sm"
+            variant="ghost"
+            textClassName="text-accent"
+            onPress={() => void refresh()}
+          >
             重试
           </Button>
         </View>
@@ -142,7 +147,7 @@ export function RecentWorkspaces() {
         <FilePathTooltip key={item.id} path={paths[item.id] ?? null} disabled={disabled}>
           <View
             role="presentation"
-            className="hover:bg-accent focus-within:bg-accent"
+            className="hover:bg-accent-soft focus-within:bg-accent-soft"
             style={styles.historyRow}
           >
             <Pressable
@@ -153,15 +158,15 @@ export function RecentWorkspaces() {
                 styles.link,
                 {
                   opacity: disabled ? 0.5 : 1,
-                  backgroundColor: pressed ? theme.accent : undefined,
+                  backgroundColor: pressed ? theme.accent03 : undefined,
                 },
               ]}
               onPress={() => void openWorkspace(item.id)}
             >
-              <Text numberOfLines={1} style={[styles.name, { color: theme.primary }]}>
+              <Text numberOfLines={1} style={[styles.name, { color: theme.accent }]}>
                 {item.displayName}
               </Text>
-              <Text numberOfLines={1} style={styles.path} className="text-muted-foreground">
+              <Text numberOfLines={1} style={styles.path} className="text-muted">
                 {pathLabel(item.id)}
               </Text>
             </Pressable>
@@ -171,60 +176,63 @@ export function RecentWorkspaces() {
       ))}
       {items.length > RECENT_WORKSPACE_LIMIT ? (
         <View style={{ alignSelf: "flex-start" }}>
-          <Dropdown
-            native={false}
-            disabled={disabled}
-            triggerLabel="更多…"
-            nativeTrigger
-            nativeTriggerIcon="none"
-            nativeTriggerContainerStyle={{
-              paddingHorizontal: 10,
-              paddingVertical: 0,
+          <Popover
+            accessibilityLabel="全部最近工作区"
+            isDisabled={disabled}
+            trigger={
+              <Button
+                native={false}
+                variant="ghost"
+                size="sm"
+                accessibilityLabel="查看全部最近工作区"
+                disabled={disabled}
+                textClassName="text-accent"
+                style={{ height: 34, paddingHorizontal: 10 }}
+              >
+                更多…
+              </Button>
+            }
+            contentProps={{
+              side: "bottom",
+              align: "start",
+              herouiWebProps: { style: { width: Math.min(520, width - 32) } },
+              herouiNativeProps: { style: { width: Math.min(520, width - 32) } },
             }}
-            nativeTriggerProps={{
-              accessibilityLabel: "查看全部最近工作区",
-              size: "xs",
-              style: {
-                outline: "none",
-                height: 34,
-              },
-            }}
-            nativeTriggerLabelProps={{ style: { color: theme.primary } }}
-            contentSize="xs"
-          >
-            <Dropdown.Content align="start" style={{ width: Math.min(520, width - 24) }}>
-              {items.map((item) => (
-                <View
-                  key={item.id}
-                  className="hover:bg-accent focus-within:bg-accent"
-                  style={styles.historyRow}
-                >
-                  <Dropdown.Item
-                    disabled={disabled}
-                    accessibilityLabel={`打开工作区 ${item.displayName}`}
-                    style={styles.menuRow}
-                    onPress={() => void openWorkspace(item.id)}
+            content={({ close }) => (
+              <ScrollView style={{ width: "100%", maxHeight: 320 }}>
+                {items.map((item) => (
+                  <View
+                    key={item.id}
+                    className="hover:bg-accent-soft focus-within:bg-accent-soft"
+                    style={styles.historyRow}
                   >
-                    <FilePathTooltip path={paths[item.id] ?? null} disabled={disabled}>
-                      <View role="presentation" style={styles.menuContent}>
-                        <Text numberOfLines={1} style={styles.menuName}>
-                          {item.displayName}
-                        </Text>
-                        <Text
-                          numberOfLines={1}
-                          style={styles.menuPath}
-                          className="text-muted-foreground"
-                        >
-                          {pathLabel(item.id)}
-                        </Text>
-                      </View>
-                    </FilePathTooltip>
-                  </Dropdown.Item>
-                  {removeButton(item)}
-                </View>
-              ))}
-            </Dropdown.Content>
-          </Dropdown>
+                    <Pressable
+                      disabled={disabled}
+                      accessibilityRole="button"
+                      accessibilityLabel={`打开工作区 ${item.displayName}`}
+                      style={styles.menuRow}
+                      onPress={() => {
+                        close();
+                        void openWorkspace(item.id);
+                      }}
+                    >
+                      <FilePathTooltip path={paths[item.id] ?? null} disabled={disabled}>
+                        <View role="presentation" style={styles.menuContent}>
+                          <Text numberOfLines={1} style={styles.menuName}>
+                            {item.displayName}
+                          </Text>
+                          <Text numberOfLines={1} style={styles.menuPath} className="text-muted">
+                            {pathLabel(item.id)}
+                          </Text>
+                        </View>
+                      </FilePathTooltip>
+                    </Pressable>
+                    {removeButton(item)}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          />
         </View>
       ) : null}
       <WorkspaceLocationSheet location={location} />

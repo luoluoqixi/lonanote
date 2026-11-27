@@ -40,18 +40,13 @@ export function WorkspaceSelectSubtitle({
 
   return (
     <View style={styles.row}>
-      <Text className="text-muted-foreground" style={styles.time}>
+      <Text className="text-muted" style={styles.time}>
         {getWorkspaceSubtitle(item, sortValue)}
       </Text>
       <View style={styles.pathColumn}>
         <FilePathTooltip path={path}>
           <View role="presentation" style={styles.pathContent}>
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              className="text-muted-foreground"
-              style={styles.path}
-            >
+            <Text numberOfLines={1} ellipsizeMode="tail" className="text-muted" style={styles.path}>
               {label}
             </Text>
           </View>

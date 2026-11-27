@@ -80,29 +80,29 @@ if (process.env.LONANOTE_LICENSE_UI_TEST === "1") {
       expect(host.textContent).not.toContain("Copyright Indirect");
       expect(host.querySelector("script")).toBeNull();
       await act(async () => {
-        button("复制文本").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+        button("复制").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
         await Promise.resolve();
       });
       expect(copied).toBe(direct);
       await act(() =>
-        button("全部依赖许可").dispatchEvent(new win.MouseEvent("click", { bubbles: true })),
+        button("全部开源许可").dispatchEvent(new win.MouseEvent("click", { bubbles: true })),
       );
       expect(host.textContent).toContain("Copyright Indirect");
       await act(async () => {
-        button("复制文本").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+        button("复制").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
         await Promise.resolve();
       });
       expect(copied).toBe(all);
       failCopy = true;
       messages.length = 0;
       await act(async () => {
-        button("复制文本").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+        button("复制").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
         await Promise.resolve();
       });
       expect(messages).toEqual(["复制失败"]);
       error = "读取开源许可失败";
       await act(() =>
-        button("直接依赖许可").dispatchEvent(new win.MouseEvent("click", { bubbles: true })),
+        button("开源许可").dispatchEvent(new win.MouseEvent("click", { bubbles: true })),
       );
       expect(host.textContent).toContain(error);
       expect(host.querySelector("input")).toBeNull();

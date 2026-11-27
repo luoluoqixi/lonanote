@@ -24,7 +24,7 @@ export function SettingsList({
       listStyleOptions={
         desktop
           ? {
-              rowBackgroundColor: theme.muted,
+              rowBackgroundColor: theme.surfaceSecondary,
               showBorder: false,
               borderColor: theme.border,
               sectionShadow: false,

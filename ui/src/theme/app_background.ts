@@ -6,32 +6,28 @@ export type AppBackgroundLevel = "screen" | "sheet" | "card" | "header";
 
 export type AppBackgroundColors = Record<AppBackgroundLevel, string>;
 
-export const STANDARD_IOS_BACKGROUND_COLORS: AppBackgroundColorsConfig = {
-  false: {
-    light: {
-      screen: "#F2F2F7",
-      sheet: "#F2F2F7",
-      card: "#FFFFFF",
-      header: "#F7F7FA",
-    },
-    dark: {
-      screen: "#0e0e0e",
-      sheet: "#0e0e0e",
-      card: "#1C1C1E",
-      header: "#1C1C1E",
-    },
+export const STANDARD_IOS_BACKGROUND_COLORS = {
+  light: {
+    screen: "#F2F2F7",
+    sheet: "#F2F2F7",
+    card: "#FFFFFF",
+    header: "#F7F7FA",
   },
-};
+  dark: {
+    screen: "#0e0e0e",
+    sheet: "#0e0e0e",
+    card: "#1C1C1E",
+    header: "#1C1C1E",
+  },
+} satisfies Record<ResolvedColorScheme, AppBackgroundColors>;
 
 export function getStandardAppBackgroundColors(
   colorScheme: ResolvedColorScheme,
 ): AppBackgroundColors {
-  return STANDARD_IOS_BACKGROUND_COLORS.false![colorScheme];
+  return STANDARD_IOS_BACKGROUND_COLORS[colorScheme];
 }
 
 export const WORKBENCH_BACKGROUND_COLORS: AppBackgroundColorsConfig = {
-  false: {
-    light: { screen: "#FFFFFF", sheet: "#FFFFFF", card: "#F6F6F7", header: "#FFFFFF" },
-    dark: { screen: "#1E1E1E", sheet: "#1E1E1E", card: "#252526", header: "#1E1E1E" },
-  },
+  light: { screen: "#FFFFFF", sheet: "#FFFFFF", card: "#F6F6F7", header: "#FFFFFF" },
+  dark: { screen: "#1E1E1E", sheet: "#1E1E1E", card: "#252526", header: "#1E1E1E" },
 };

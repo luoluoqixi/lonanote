@@ -21,7 +21,6 @@ import { clipboard } from "@/api/commands/system/clipboard";
 import { openExternalFile } from "@/api/commands/utils";
 import { workspaceFile } from "@/api/commands/workspace";
 import { getFileMimeType, isDesktop, isMarkdownFile } from "@/api/common";
-import { DESKTOP_UI_MENU_CONTENT_SIZE } from "@/components/common/consts";
 import { editorCommandCoordinator, saveCoordinator } from "@/components/editor/controllers";
 import { getDocumentSaveCapabilities } from "@/components/editor/controllers/document_save_capabilities";
 import { toggleEditorPreviewMode } from "@/components/editor/controllers/editor_preview_mode";
@@ -124,7 +123,7 @@ export function DesktopEditorActions({
   const previewMode = pendingPreviewMode ?? view?.previewMode ?? false;
   const editingDisabled = !ready || view?.readOnly || view?.previewMode;
   const sourceMode = view?.preferenceOverrides.sourceMode ?? settings.editorDefaults.sourceMode;
-  const icon = (Icon: typeof Save) => <Icon size={14} color={theme.mutedForeground} />;
+  const icon = (Icon: typeof Save) => <Icon size={14} color={theme.muted} />;
   const items: DropdownItemData[] =
     view && document
       ? [
@@ -273,7 +272,7 @@ export function DesktopEditorActions({
   return (
     <View style={styles.actions}>
       {supportsMarkdownModes && view && (ready || pendingPreviewMode !== null) ? (
-        <Tooltip content={label} openOnFocus={false}>
+        <Tooltip content={label}>
           <Button
             aria-label={label}
             variant="ghost"
@@ -281,13 +280,12 @@ export function DesktopEditorActions({
             buttonSize={{ width: 28, height: 28 }}
             onPress={togglePreview}
           >
-            <PreviewIcon size={16} color={theme.mutedForeground} />
+            <PreviewIcon size={16} color={theme.muted} />
           </Button>
         </Tooltip>
       ) : null}
       <Dropdown
         items={items}
-        contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
         contentProps={{ align: "end" }}
         nativeTrigger
         nativeTriggerIcon="none"
@@ -297,7 +295,7 @@ export function DesktopEditorActions({
           size: "2xs",
           style: { width: 28, height: 28, padding: 0 },
         }}
-        triggerLabel={<EllipsisVertical size={16} color={theme.mutedForeground} />}
+        triggerLabel={<EllipsisVertical size={16} color={theme.muted} />}
       />
     </View>
   );

@@ -136,6 +136,15 @@ test("菜单项保留格式勾选、只读限制，并拒绝失效目标", async
     },
   });
   const find = (label: string) => items.find((item) => item.textValue === label)!;
+  const checkLabels = (entries: typeof items) => {
+    expect(new Set(entries.map((entry) => entry.value)).size).toBe(entries.length);
+    for (const entry of entries) {
+      if (entry.separator) continue;
+      expect(entry.label).toBe(entry.textValue);
+      if (entry.subMenu) checkLabels(entry.subMenu);
+    }
+  };
+  checkLabels(items);
   expect(find("文本格式").disabled).toBe(true);
   expect(find("文本格式").subMenu?.find((item) => item.textValue === "加粗")?.selected).toBe(true);
   expect(find("剪切").disabled).toBe(true);

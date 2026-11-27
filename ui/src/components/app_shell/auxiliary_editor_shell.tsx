@@ -36,7 +36,10 @@ export function AuxiliaryEditorShell() {
         <DesktopEditorArea />
         {!state.connected && (
           <View style={styles.disconnected}>
-            <Text accessibilityRole="alert">
+            <Text
+              herouiNativeProps={{ accessibilityRole: "alert" }}
+              herouiWebProps={{ role: "alert" }}
+            >
               {state.ownerDestroyed
                 ? "原窗口已意外关闭，草稿已保留。请复制草稿后关闭此窗口。"
                 : "编辑器连接已断开，草稿已保留。重新连接前暂停编辑。"}

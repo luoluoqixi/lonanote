@@ -295,7 +295,7 @@ function VideoMediaViewer({
           variant="ghost"
           accessibilityLabel={isPlaying ? "暂停" : "播放"}
           hitSlop={8}
-          size="xs"
+          size="sm"
           onPress={togglePlayback}
         >
           {isPlaying ? (
@@ -309,9 +309,9 @@ function VideoMediaViewer({
         </NativeText>
         <View style={styles.videoProgress}>
           <Slider
-            disabled={duration <= 0}
-            max={progressMaximum}
-            min={0}
+            isDisabled={duration <= 0}
+            maxValue={progressMaximum}
+            minValue={0}
             native
             onValueChange={updateScrubbingTime}
             onValueChangeFinished={completeScrubbing}
@@ -325,7 +325,7 @@ function VideoMediaViewer({
         <Button
           variant="ghost"
           accessibilityLabel={isMuted ? "取消静音" : "静音"}
-          size="xs"
+          size="sm"
           hitSlop={8}
           onPress={onToggleMuted}
         >
@@ -338,7 +338,7 @@ function VideoMediaViewer({
         <Button
           variant="ghost"
           accessibilityLabel="全屏播放"
-          size="xs"
+          size="sm"
           hitSlop={8}
           onPress={enterFullscreen}
         >
@@ -346,7 +346,7 @@ function VideoMediaViewer({
         </Button>
       </View>
       <View pointerEvents="none" style={[styles.videoIndicator, !isUiVisible && styles.hiddenUi]}>
-        <Text className="text-muted-foreground text-sm">{indicatorLabel}</Text>
+        <Text className="text-muted text-sm">{indicatorLabel}</Text>
       </View>
     </View>
   );
@@ -409,7 +409,7 @@ export function MediaViewer() {
   const mediaKind = filePath ? detectWorkspaceFileKind(filePath) : null;
   const isMedia = mediaKind === "image" || mediaKind === "video";
   const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
-  const accentColor = theme.primary as ComponentProps<typeof ExternalLink>["color"];
+  const accentColor = theme.accent as ComponentProps<typeof ExternalLink>["color"];
   const menuItems = useMemo<DropdownItemData[]>(
     () =>
       isTauri()
@@ -582,7 +582,7 @@ export function MediaViewer() {
           ...getMenuHeaderRightMenuProps({
             isVisible: isUiVisible,
             menuItems,
-            labelColor: theme.primary,
+            labelColor: theme.accent,
           }),
           headerBackVisible: isUiVisible,
           headerShown: true,
@@ -590,7 +590,7 @@ export function MediaViewer() {
           headerStyle: {
             backgroundColor: "transparent",
           },
-          headerTintColor: isUiVisible ? theme.primary : "transparent",
+          headerTintColor: isUiVisible ? theme.accent : "transparent",
           headerTitleStyle: {
             color: isUiVisible ? theme.foreground : "transparent",
           },
@@ -663,7 +663,7 @@ export function MediaViewer() {
                 !isUiVisible && styles.hiddenUi,
               ]}
             >
-              <Text className="text-muted-foreground text-sm">
+              <Text className="text-muted text-sm">
                 {activeMediaIndex + 1} / {mediaPaths.length}
               </Text>
             </View>

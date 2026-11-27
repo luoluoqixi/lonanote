@@ -114,52 +114,27 @@ run icon
 
 #### 🎨 跨平台 UI 约定
 
-前端以 `Tamagui` 作为全局主题和主要 UI 基础，页面层通过 `ui/src/components/ui/` 包装层接入，不要直接依赖第三方 UI 库。
+前端统一消费独立仓库的 `rn-ui-kit` 2.0。库内 Web 使用 HeroUI React，iOS / Android 使用 HeroUI Native，并保留系统原生控件、NativeList、NativeTrigger 和 TrueSheet 分支。
 
-- Android / iOS / Web / 桌面：布局与主题优先使用 `Tamagui` tokens、`StyleSheet`，或 `ui/src/components/ui/` 中的包装组件
-- 桌面 / Web 端个别高风险浮层可在包装层内按需使用 `@rn-primitives/*` 补位
+- 页面和业务组件直接从 `rn-ui-kit` 导入；不要恢复 `src/components/ui/` 包装层，也不要直接导入底层 HeroUI 组件。
+- 通用基础组件在同级 `rn_ui_kit/src/core/components/ui/` 维护；LonaNote 业务组合留在 `src/components/`。
+- 简单样式使用语义颜色和 Uniwind `className`，复杂布局使用 React Native `StyleSheet`。
+- 主操作色为 `accent`，弱文字为 `muted`，轻染背景使用 `accent-soft` utility 或 `accent03` 色阶。背景独立于强调色；保留浅色、深色与跟随系统模式。
+- 基础组件回归入口为 `src/app/debug.tsx`，通过 `rn-ui-kit/debug` 加载示例。
 
-当前全局样式入口：
+样式与 Metro 接入：
 
-- `src/tamagui.generated.css`：由 `@tamagui/cli generate` 生成，在 `src/initialize/index.native.ts` 中引入
-
-因此，不要再在业务代码里使用 `className` + Tailwind / Uniwind，也不要重新引入第二套全局主题 CSS。
+- 应用仍只引入 `global.css`。Web 通过 PostCSS 加载 Tailwind、`@heroui/styles` 和 `rn-ui-kit/styles.css`。
+- `metro.config.js` 使用 `rn-ui-kit/metro` 的 `withHeroUIConfig`，为 iOS / Android 映射到 `global.native.css`，由 Uniwind 加载 `heroui-native/styles`。
+- 两个平台的 CSS 入口分别维护，避免在 Web 加载 Native 样式或在 Native 加载 Web 样式。
+- 当前 `rn-ui-kit` 固定到包含 Metro 助手的 2.0.0 提交 `04225868765f52aaf7ea1045532ee221fb391d08`，通过 Bun 锁文件和 `rn-ui-kit@2.0.0.patch` 保持可复现安装；本地开发可临时使用 `file:../../rn_ui_kit`。
+- 升级 TrueSheet、Reanimated 等原生依赖后，需要重新构建 iOS / Android 应用。
 
 关于模块系统：
 
 - `ui/src/` 下的应用代码不要使用 CommonJS `require`
 - 平台分发优先使用 `*.web.tsx`、`*.native.tsx`、`*.ios.tsx`、`*.android.tsx`
 - 允许使用 `require` 的位置仅限 Node 风格脚本和配置文件，例如 `ui/tools/prebuild/`、`metro.config.js`
-
-组件接入规则：
-
-- 页面和业务组件统一从 `src/components/ui/` 导入
-- 平台差异放在 `*.native.tsx` / `*.web.tsx` 包装文件里
-- 对外暴露稳定的项目内 API，不把第三方库的 props 直接扩散到业务层
-- `@rn-primitives/*` 仅用于 dialog、popover、dropdown-menu 这类局部 Web / 桌面补位，不作为第二套全局设计系统
-
-当前已经提供的包装层示例：
-
-- `src/components/ui/provider/`：统一应用级 Provider
-- `src/components/ui/button/`：统一 Button 入口
-- `src/components/ui/dialog/`：统一 Dialog 入口，web 走 `@rn-primitives/dialog`，native 走项目内包装实现
-
-后续如果要新增 `Input`、`Modal`、`Dropdown` 等组件，沿用同样结构：
-
-```text
-src/components/ui/input/
-  input.native.tsx
-  input.web.tsx
-  index.ts
-  types.ts
-```
-
-这样做的目的：
-
-- 避免业务层直接绑定第三方 UI 库
-- 把 Web / Native 的差异限制在包装层内部
-- 后续替换 UI 库或调整 props 映射时，影响面只停留在包装层
-
 
 #### 其他
 

@@ -23,7 +23,7 @@ mock.module("rn-ui-kit", () => ({
     background: "white",
     foreground: "black",
     border: "gray",
-    primary: primaryColor,
+    accent: primaryColor,
   }),
 }));
 mock.module("../src/config", () => ({ TITLE_HEIGHT: 32 }));

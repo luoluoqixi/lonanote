@@ -29,10 +29,7 @@ export function AppProvider({ children }: AppProviderProps) {
       preferences={preferences}
       theme={
         preferences.shell.layoutMode === "desktop"
-          ? composeWorkbenchTheme(
-              resolveGeneratedAccentTheme(preferences.appearance.accentColor),
-              preferences.appearance.backgroundFollowsTheme,
-            )
+          ? composeWorkbenchTheme(resolveGeneratedAccentTheme(preferences.appearance.accentColor))
           : undefined
       }
     >

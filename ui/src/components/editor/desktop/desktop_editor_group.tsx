@@ -453,7 +453,7 @@ export function DesktopEditorGroup({
                   bottom: 2,
                   left: tabDrag.preview.marker,
                   width: 2,
-                  backgroundColor: theme.primary,
+                  backgroundColor: theme.accent,
                 }}
               />
               <View
@@ -465,7 +465,7 @@ export function DesktopEditorGroup({
                   maxWidth: 220,
                   paddingHorizontal: 10,
                   justifyContent: "center",
-                  backgroundColor: theme.secondary,
+                  backgroundColor: theme.default,
                   borderColor: theme.border,
                   borderWidth: 1,
                   borderRadius: 4,
@@ -530,9 +530,7 @@ export function DesktopEditorGroup({
                         : null,
                     ]}
                   >
-                    <Text
-                      style={{ color: theme.mutedForeground, fontSize: 13, alignSelf: "center" }}
-                    >
+                    <Text style={{ color: theme.muted, fontSize: 13, alignSelf: "center" }}>
                       尚未打开文档
                     </Text>
                     <Button
@@ -542,7 +540,7 @@ export function DesktopEditorGroup({
                         void createUntitledDocumentForWindow(groupId).catch(reportError);
                       }}
                     >
-                      <FilePlus2 size={16} color={theme.mutedForeground} />
+                      <FilePlus2 size={16} color={theme.muted} />
                       新建笔记
                     </Button>
                     {canOpenLooseFile ? (
@@ -554,7 +552,7 @@ export function DesktopEditorGroup({
                           void openLooseFile();
                         }}
                       >
-                        <FolderOpen size={16} color={theme.mutedForeground} />
+                        <FolderOpen size={16} color={theme.muted} />
                         打开文件
                       </Button>
                     ) : null}

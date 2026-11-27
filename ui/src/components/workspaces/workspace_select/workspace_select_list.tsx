@@ -22,7 +22,6 @@ import {
 
 import type { WorkspaceListItem } from "@/api/commands/workspace";
 import { isAndroid, isDesktop } from "@/api/common";
-import { DESKTOP_UI_MENU_CONTENT_SIZE, MOBILE_UI_MENU_SIZE } from "@/components/common/consts";
 import { useLayoutMode } from "@/hooks/layout";
 import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 
@@ -64,7 +63,7 @@ type WorkspaceSelectListProps = {
 function WorkspaceSelectStatus({ message }: { message: string }) {
   return (
     <View style={styles.status}>
-      <Text className="text-muted-foreground text-base">{message}</Text>
+      <Text className="text-muted text-base">{message}</Text>
     </View>
   );
 }
@@ -105,7 +104,7 @@ export function WorkspaceSelectList({
   const desktop = layoutMode === "desktop";
   const compact = desktop;
   const insets = useSafeAreaInsets();
-  const accentColor = theme.primary as ComponentProps<typeof Folder>["color"];
+  const accentColor = theme.accent as ComponentProps<typeof Folder>["color"];
   const statusMessage = isLoading
     ? "正在加载工作区"
     : hasError && workspaces.length === 0
@@ -125,7 +124,7 @@ export function WorkspaceSelectList({
       listStyleOptions={
         desktop
           ? {
-              rowBackgroundColor: theme.muted,
+              rowBackgroundColor: theme.surfaceSecondary,
               showBorder: false,
               borderColor: theme.border,
               sectionShadow: false,
@@ -165,7 +164,6 @@ export function WorkspaceSelectList({
             {section.workspaces.map((workspaceItem) => (
               <NativeListNavigationItem
                 contextMenuProps={{
-                  contentSize: desktop ? DESKTOP_UI_MENU_CONTENT_SIZE : MOBILE_UI_MENU_SIZE,
                   items: [
                     ...(isDesktop()
                       ? [
@@ -217,7 +215,7 @@ export function WorkspaceSelectList({
                       : []),
                     {
                       destructive: true,
-                      icon: <Trash2 color={theme.destructive} size={14} />,
+                      icon: <Trash2 color={theme.danger} size={14} />,
                       label: "删除工作区",
                       onSelect: () => onDeleteWorkspace(workspaceItem),
                       value: `delete-workspace-${workspaceItem.id}`,
@@ -227,11 +225,11 @@ export function WorkspaceSelectList({
                     disabled: isInteractionDisabled || ("disabled" in item && item.disabled),
                   })),
                 }}
-                hoverBackgroundColor={desktop ? theme.secondary : undefined}
-                pressBackgroundColor={desktop ? theme.accent : undefined}
+                hoverBackgroundColor={desktop ? theme.default : undefined}
+                pressBackgroundColor={desktop ? theme.accent03 : undefined}
                 disabled={isInteractionDisabled}
-                icon={<Folder color={accentColor} fill={theme.primary} size={compact ? 20 : 24} />}
-                iconColor={theme.primary}
+                icon={<Folder color={accentColor} fill={theme.accent} size={compact ? 20 : 24} />}
+                iconColor={theme.accent}
                 iconSize={compact ? 20 : 24}
                 iconSlotWidth={compact ? 26 : 30}
                 key={workspaceItem.id}
@@ -250,7 +248,7 @@ export function WorkspaceSelectList({
                   desktop ? getWorkspaceOpenLabel(workspaceItem, currentWorkspaceId) : undefined
                 }
                 valueFontSize={compact ? 12 : 14}
-                valueColor={theme.mutedForeground}
+                valueColor={theme.muted}
                 titleFontSize={compact ? 13 : 16}
                 subtitleFontSize={compact ? 12 : undefined}
                 paddingVertical={compact ? 8 : undefined}

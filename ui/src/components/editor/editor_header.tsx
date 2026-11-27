@@ -97,15 +97,16 @@ function EditorBackButton({ isAndroid, onPress }: { isAndroid: boolean; onPress:
         isAndroid ? styles.headerBackButtonAndroid : null,
         {
           backgroundColor: withBackgroundOpacity(
-            pressed ? theme.accent : theme.muted,
+            pressed ? theme.accent03 : theme.surfaceSecondary,
             HEADER_SURFACE_OPACITY,
           ),
         },
       ]}
-      variant="icon"
+      variant="ghost"
+      isIconOnly
     >
       <ChevronLeft
-        color={theme.primary}
+        color={theme.accent}
         opacity={pressed ? 0.6 : 1}
         size={24}
         strokeWidth={2.5}
@@ -125,7 +126,7 @@ function EditorHeaderTitle({ children }: { children: string }) {
       style={[
         styles.headerTitleText,
         isIos15 ? styles.headerTitleTextIos15 : null,
-        { color: theme.primary },
+        { color: theme.accent },
       ]}
     >
       {children}
@@ -152,7 +153,7 @@ function EditorHeaderTitle({ children }: { children: string }) {
         styles.headerTitle,
         isIos15 ? styles.headerTitleIos15 : null,
         {
-          backgroundColor: withBackgroundOpacity(theme.muted, HEADER_SURFACE_OPACITY),
+          backgroundColor: withBackgroundOpacity(theme.surfaceSecondary, HEADER_SURFACE_OPACITY),
         },
       ]}
     >
@@ -190,14 +191,15 @@ function EditorMenuButton({
             isAndroid ? styles.headerMenuButtonAndroid : null,
             {
               backgroundColor: withBackgroundOpacity(
-                open ? theme.accent : theme.muted,
+                open ? theme.accent03 : theme.surfaceSecondary,
                 HEADER_SURFACE_OPACITY,
               ),
             },
           ]}
-          variant="icon"
+          variant="ghost"
+          isIconOnly
         >
-          <Ellipsis color={theme.primary} opacity={open ? 0.6 : 1} size={24} strokeWidth={2.5} />
+          <Ellipsis color={theme.accent} opacity={open ? 0.6 : 1} size={24} strokeWidth={2.5} />
         </Button>
       )}
     />
@@ -235,14 +237,15 @@ function EditorPreviewButton({
         isAndroid ? styles.headerPreviewButtonAndroid : null,
         {
           backgroundColor: withBackgroundOpacity(
-            pressed ? theme.accent : theme.muted,
+            pressed ? theme.accent03 : theme.surfaceSecondary,
             HEADER_SURFACE_OPACITY,
           ),
         },
       ]}
-      variant="icon"
+      variant="ghost"
+      isIconOnly
     >
-      <Icon color={theme.primary} opacity={pressed ? 0.6 : 1} size={22} strokeWidth={2.25} />
+      <Icon color={theme.accent} opacity={pressed ? 0.6 : 1} size={22} strokeWidth={2.25} />
     </Button>
   );
 }
@@ -350,7 +353,7 @@ export function EditorHeader({
             onPress: handleTogglePreviewMode,
             // iOS 26: 保留系统玻璃背景，但不与相邻菜单合并。
             sharesBackground: isIos26Plus() ? false : undefined,
-            tintColor: theme.primary,
+            tintColor: theme.accent,
             type: "button" as const,
           },
           {
@@ -360,7 +363,7 @@ export function EditorHeader({
             menu: { items: toIosHeaderMenuItems(menuItems) },
             onOpen: () => triggerNativeHaptics(true),
             sharesBackground: isIos26Plus() ? false : undefined,
-            tintColor: theme.primary,
+            tintColor: theme.accent,
             type: "menu" as const,
           },
         ]) as unknown as NonNullable<NativeStackNavigationOptions["unstable_headerRightItems"]>,
@@ -376,13 +379,13 @@ export function EditorHeader({
       };
     }
 
-    return getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary });
+    return getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.accent });
   }, [
     menuItems,
     previewMode,
     renderCustomBackButton,
     renderCustomHeaderActions,
-    theme.primary,
+    theme.accent,
     usesCustomBackButton,
     usesCustomHeaderActions,
     usesNativeHeaderRightItems,

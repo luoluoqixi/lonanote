@@ -207,12 +207,12 @@ test("PC 菜单按 Provider 能力提供路径动作，冻结多选目标且不�
     desktop: true,
   };
   const virtual = createWorkspaceExplorerMenu(options);
-  expect(virtual.some((item) => item.value === "reveal" || item.value === "copy-absolute")).toBe(
-    false,
-  );
+  const virtualPaths = virtual.find((item) => item.value === "copy-path")!.subMenu!;
+  expect(virtual.some((item) => item.value === "reveal")).toBe(false);
+  expect(virtualPaths.some((item) => item.value === "copy-absolute")).toBe(false);
   expect(virtual.some((item) => item.value === "select")).toBe(false);
   expect(virtual.find((item) => item.value === "details")?.disabled).toBe(false);
-  virtual.find((item) => item.value === "copy-relative")?.onSelect?.();
+  virtualPaths.find((item) => item.value === "copy-relative")!.onSelect!();
   expect(copied).toEqual([["note.md", false]]);
   const targets = ["one.md", "two.md"];
   const native = createWorkspaceExplorerMenu({
@@ -221,7 +221,8 @@ test("PC 菜单按 Provider 能力提供路径动作，冻结多选目标且不�
     nativePathAvailable: true,
   });
   targets[0] = "new.md";
-  expect(native.find((item) => item.value === "copy-absolute")?.disabled).toBe(true);
+  const nativePaths = native.find((item) => item.value === "copy-path")!.subMenu!;
+  expect(nativePaths.find((item) => item.value === "copy-absolute")!.disabled).toBe(true);
   native.find((item) => item.value === "delete")?.onSelect?.();
   expect(removed).toEqual([["one.md", "two.md"]]);
   current = false;

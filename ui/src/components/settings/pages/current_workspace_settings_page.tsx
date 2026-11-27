@@ -81,7 +81,7 @@ export function CurrentWorkspaceSettingsPage({
   const isEditingDisabled = isLoading || isSaving || isResetting;
   const theme = useUiTheme();
   const { toast } = useToast();
-  const destructiveColor = toSwiftUIHexColor(theme.destructive) ?? theme.destructive;
+  const destructiveColor = toSwiftUIHexColor(theme.danger) ?? theme.danger;
 
   useEffect(() => {
     activeWorkspaceIdRef.current = workspaceId;
@@ -348,8 +348,8 @@ export function CurrentWorkspaceSettingsPage({
               disabled={isEditingDisabled}
               switchProps={{
                 ...presentation.switch,
-                checked: settings.followGitignore,
-                onCheckedChange: (nextValue) => {
+                isSelected: settings.followGitignore,
+                onSelectedChange: (nextValue) => {
                   updateSettings((currentSettings) => ({
                     ...currentSettings,
                     followGitignore: nextValue,

@@ -61,9 +61,9 @@ export function PdfViewer() {
       <Stack.Screen options={{ title: getFileName(filePath) }} />
       <View style={styles.container}>
         {!isTauri() ? (
-          <Text className="text-muted-foreground text-base">当前环境不支持 PDF 预览</Text>
+          <Text className="text-muted text-base">当前环境不支持 PDF 预览</Text>
         ) : error ? (
-          <Text className="text-destructive text-base">{error}</Text>
+          <Text className="text-danger text-base">{error}</Text>
         ) : pdfUrl ? (
           <iframe aria-label={getFileName(filePath)} src={pdfUrl} style={iframeStyle} />
         ) : (

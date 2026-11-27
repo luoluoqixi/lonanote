@@ -13,7 +13,7 @@ mock.module("../src/components/editor/controllers", () => ({
   editorCommandCoordinator: {},
 }));
 mock.module("../src/components/editor/controllers/editor_window_service", () => ({
-  editorWindowService: {},
+  editorWindowService: { isRemote: () => false },
 }));
 mock.module("../src/components/editor/desktop/editor_menu_actions", () => ({
   executeEditorMenuAction: () => {},

@@ -18,8 +18,8 @@ export function useSettingsPresentation() {
     compact,
     item: compact
       ? ({
-          hoverBackgroundColor: theme.secondary,
-          pressBackgroundColor: theme.accent,
+          hoverBackgroundColor: theme.default,
+          pressBackgroundColor: theme.accent03,
           titleFontSize: 13,
           subtitleFontSize: 12,
           valueFontSize: 13,

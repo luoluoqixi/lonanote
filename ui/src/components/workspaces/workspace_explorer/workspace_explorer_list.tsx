@@ -116,7 +116,7 @@ export function groupWorkspaceExplorerEntries(
 function WorkspaceExplorerStatus({ message }: { message: string }) {
   return (
     <View style={styles.status}>
-      <Text className="text-muted-foreground text-base">{message}</Text>
+      <Text className="text-muted text-base">{message}</Text>
     </View>
   );
 }
@@ -145,7 +145,7 @@ function WorkspaceExplorerEntryItem({
   cut?: boolean;
 }) {
   const theme = useUiTheme();
-  const accentColor = theme.primary as ComponentProps<typeof Folder>["color"];
+  const accentColor = theme.accent as ComponentProps<typeof Folder>["color"];
   const isDirectory = entry.fileType === "directory";
   const fileKind = isDirectory ? null : detectWorkspaceFileKind(entry.path);
   const timestamp = getWorkspaceExplorerEntryTimestamp(entry, sortValue);
@@ -186,7 +186,7 @@ function WorkspaceExplorerEntryItem({
     disabled: isUpdating,
     style: cut ? { opacity: 0.45 } : undefined,
     icon: isDirectory ? (
-      <Folder color={accentColor} fill={theme.primary} size={24} />
+      <Folder color={accentColor} fill={theme.accent} size={24} />
     ) : fileKind === "image" ? (
       <FileImage color={accentColor} size={24} />
     ) : fileKind === "video" ? (
@@ -196,7 +196,7 @@ function WorkspaceExplorerEntryItem({
     ) : (
       <FileText color={accentColor} size={24} />
     ),
-    iconColor: theme.primary,
+    iconColor: theme.accent,
     iconSize: 24,
     iconSlotWidth: 30,
     nativeScrollId: entry.path,
@@ -366,12 +366,7 @@ export function WorkspaceExplorerList({
     </NativeList>
   );
   return desktop ? (
-    <ContextMenu
-      contentSize="sm"
-      items={menuFor() ?? []}
-      triggerProps={{ style: { flex: 1 } }}
-      trigger={content}
-    />
+    <ContextMenu items={menuFor() ?? []} triggerProps={{ style: { flex: 1 } }} trigger={content} />
   ) : (
     content
   );

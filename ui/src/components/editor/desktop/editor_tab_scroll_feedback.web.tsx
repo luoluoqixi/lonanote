@@ -175,7 +175,7 @@ export function EditorTabScrollFeedback({
           width: "100%",
           height: 3,
           borderRadius: 2,
-          backgroundColor: theme.mutedForeground,
+          backgroundColor: theme.muted,
         }}
       />
     </div>

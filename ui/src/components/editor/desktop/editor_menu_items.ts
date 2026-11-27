@@ -22,6 +22,7 @@ export function createEditorMenuItems({
 }): DropdownItemData[] {
   const item = (text: string, action: EditorMenuAction, enabled = editable): DropdownItemData => ({
     value: typeof action === "string" ? action : text,
+    label: text,
     textValue: text,
     disabled: !enabled,
     ...(typeof action === "object" && action.type === "mark.toggle"
@@ -37,10 +38,10 @@ export function createEditorMenuItems({
       }).catch(onError);
     },
   });
-  const separator = { value: "separator", separator: true };
   return [
     {
       value: "文本格式",
+      label: "文本格式",
       textValue: "文本格式",
       disabled: !editable,
       subMenuTitle: false,
@@ -54,6 +55,7 @@ export function createEditorMenuItems({
     },
     {
       value: "段落",
+      label: "段落",
       textValue: "段落",
       disabled: !editable,
       subMenuTitle: false,
@@ -67,6 +69,7 @@ export function createEditorMenuItems({
     },
     {
       value: "列表",
+      label: "列表",
       textValue: "列表",
       disabled: !editable,
       subMenuTitle: false,
@@ -78,6 +81,7 @@ export function createEditorMenuItems({
     },
     {
       value: "插入",
+      label: "插入",
       textValue: "插入",
       disabled: !editable,
       subMenuTitle: false,
@@ -89,12 +93,12 @@ export function createEditorMenuItems({
         item("分隔线", { type: "insert.horizontalRule" }),
       ],
     },
-    separator,
+    { value: "separator-clipboard", separator: true },
     item("剪切", "cut", editable && payload.from !== payload.to),
     item("复制", "copy", payload.from !== payload.to),
     item("粘贴", "paste"),
     item("全选", { type: "selection.selectAll" }, true),
-    separator,
+    { value: "separator-history", separator: true },
     item("撤销", { type: "history.undo" }, editable && payload.canUndo),
     item("重做", { type: "history.redo" }, editable && payload.canRedo),
   ];

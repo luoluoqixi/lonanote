@@ -40,7 +40,6 @@ import {
   getDefaultWorkspaceEntryName,
   getWorkspaceEntryCreateParent,
 } from "@/api/common/utils/workspace_entry_name";
-import { DESKTOP_UI_MENU_CONTENT_SIZE } from "@/components/common/consts";
 import { useEditorSelector } from "@/hooks/editor/use_editor_selector";
 import { useLayoutMode } from "@/hooks/layout";
 import { useMediaNavigation } from "@/hooks/media";
@@ -486,12 +485,7 @@ export function WorkspaceTreeHost({
         return Icon
           ? {
               ...item,
-              icon: (
-                <Icon
-                  size={14}
-                  color={item.destructive ? theme.destructive : theme.mutedForeground}
-                />
-              ),
+              icon: <Icon size={14} color={item.destructive ? theme.danger : theme.muted} />,
             }
           : item;
       });
@@ -596,7 +590,7 @@ export function WorkspaceTreeHost({
       />
       {explorer.directories[""]?.snapshot?.entries.length === 0 &&
       !explorer.directories[""]?.loading ? (
-        <Text className="text-muted-foreground px-3 py-2">工作区为空</Text>
+        <Text className="text-muted px-3 py-2">工作区为空</Text>
       ) : null}
     </View>
   );
@@ -609,7 +603,6 @@ export function WorkspaceTreeHost({
         <View style={styles.headerActions}>
           {desktop ? (
             <Dropdown
-              contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
               contentProps={{ align: "start" }}
               items={WORKSPACE_EXPLORER_SORT_GROUPS.flatMap((group) =>
                 group.items.map((item) => ({
@@ -632,9 +625,7 @@ export function WorkspaceTreeHost({
                 size: "2xs",
                 style: { width: 24, height: 28, padding: 0 },
               }}
-              triggerLabel={
-                <ArrowDownWideNarrow size={15} strokeWidth={1.6} color={theme.mutedForeground} />
-              }
+              triggerLabel={<ArrowDownWideNarrow size={15} strokeWidth={1.6} color={theme.muted} />}
             />
           ) : null}
           {(
@@ -658,17 +649,18 @@ export function WorkspaceTreeHost({
           )
             .filter(([label]) => !desktop || label !== "排序")
             .map(([label, Icon, onPress, disabled]) => (
-              <Tooltip key={label} content={label} openOnFocus={false}>
+              <Tooltip key={label} content={label}>
                 <Button
                   aria-label={label}
-                  variant="icon"
-                  size="xs"
+                  variant="ghost"
+                  isIconOnly
+                  size="sm"
                   buttonSize={{ width: 24, height: 28 }}
                   style={{ minWidth: 24, minHeight: 28, padding: 0 }}
                   disabled={disabled}
                   onPress={onPress}
                 >
-                  <Icon size={15} strokeWidth={1.6} color={theme.mutedForeground} />
+                  <Icon size={15} strokeWidth={1.6} color={theme.muted} />
                 </Button>
               </Tooltip>
             ))}
@@ -676,7 +668,7 @@ export function WorkspaceTreeHost({
       </View>
       {explorer.selectionMode ? (
         <View style={styles.toolbar}>
-          <Text className="text-muted-foreground">已选 {explorer.selectedPaths.length} 项</Text>
+          <Text className="text-muted">已选 {explorer.selectedPaths.length} 项</Text>
           <Button
             disabled={!capabilities.canDelete || !explorer.selectedPaths.length}
             onPress={() => {
@@ -691,7 +683,6 @@ export function WorkspaceTreeHost({
       {desktop ? (
         <ContextMenu
           style={styles.root}
-          contentSize="sm"
           items={menuItems("")}
           triggerProps={{ style: styles.root }}
           trigger={treeContent}

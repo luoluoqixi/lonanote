@@ -123,3 +123,20 @@ test("原生弹窗偏好默认开启并持久化关闭状态", async () => {
   await uiPreferences.savePreferences(next);
   expect(preferences.get("ui.window.nativeDialogs")).toBe(true);
 });
+
+test("旧背景跟随主题偏好被忽略，保存外观时不再读写该字段", async () => {
+  preferences.clear();
+  const legacyKey = "ui.appearance.backgroundFollowsTheme";
+  preferences.set(legacyKey, true);
+  preferences.set("ui.appearance.themeMode", "light");
+  const next = uiPreferences.getPreferences();
+  expect(next.appearance).not.toHaveProperty("backgroundFollowsTheme");
+  next.appearance.themeMode = "dark";
+  const saved = await uiPreferences.savePreferences(next);
+  expect(saved.appearance.themeMode).toBe("dark");
+  expect(saved.appearance).not.toHaveProperty("backgroundFollowsTheme");
+  expect(preferences.get(legacyKey)).toBe(true);
+  preferences.clear();
+  await uiPreferences.savePreferences(createDefaultUiPreferences());
+  expect(preferences.has(legacyKey)).toBe(false);
+});

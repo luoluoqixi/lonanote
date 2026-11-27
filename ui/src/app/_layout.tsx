@@ -87,7 +87,9 @@ function EditorNavigation() {
   if (!editorWindow.ready)
     return editorWindow.error ? (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text accessibilityRole="alert">编辑器窗口初始化失败：{editorWindow.error}</Text>
+        <Text herouiNativeProps={{ accessibilityRole: "alert" }} herouiWebProps={{ role: "alert" }}>
+          编辑器窗口初始化失败：{editorWindow.error}
+        </Text>
         <Pressable
           accessibilityRole="button"
           onPress={() => void editorWindowService.retry().catch(console.error)}

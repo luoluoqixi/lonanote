@@ -61,7 +61,7 @@ export function WorkspaceDetailsListItem({
                 <Text
                   numberOfLines={1}
                   ellipsizeMode="tail"
-                  className="text-muted-foreground"
+                  className="text-muted"
                   style={styles.valueText}
                 >
                   {value}

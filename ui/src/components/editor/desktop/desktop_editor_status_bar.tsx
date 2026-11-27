@@ -32,13 +32,13 @@ export function DesktopEditorStatusBar() {
   const state = editor.editorState;
   return (
     <View style={styles.root}>
-      <Text numberOfLines={1} style={[styles.text, { color: theme.mutedForeground }]}>
+      <Text numberOfLines={1} style={[styles.text, { color: theme.muted }]}>
         {getSaveStateLabel(document.saveState)}
       </Text>
-      <Text numberOfLines={1} style={[styles.text, { color: theme.mutedForeground }]}>
+      <Text numberOfLines={1} style={[styles.text, { color: theme.muted }]}>
         行 {state.row}，列 {state.column}
       </Text>
-      <Text numberOfLines={1} style={[styles.text, { color: theme.mutedForeground }]}>
+      <Text numberOfLines={1} style={[styles.text, { color: theme.muted }]}>
         {state.characterCount} 个字符
       </Text>
     </View>

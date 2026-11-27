@@ -1,10 +1,10 @@
-import { useRef, useState } from "react";
-import { ScrollView, View, useWindowDimensions } from "react-native";
-import { Menubar, Text, useUiTheme } from "rn-ui-kit";
+import { useState } from "react";
+import { View, useWindowDimensions } from "react-native";
+import { Menubar, type MenubarItemData, Text, useUiTheme } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common/platform";
 
-import { DESKTOP_MENUBAR_SIZE, DESKTOP_UI_MENU_CONTENT_SIZE } from "../common/consts";
+import { DESKTOP_MENUBAR_SIZE } from "../common/consts";
 import { useAppMenuContext } from "./app_menu_host";
 import type { AppMenuNode } from "./app_menu_model";
 import { useAppMenuKeyboard } from "./use_app_menu_keyboard";
@@ -13,51 +13,28 @@ export function AppMenubar({ compact }: { compact: boolean }) {
   const { groups, execute, refresh, captureEditTarget } = useAppMenuContext();
   const theme = useUiTheme();
   const { height } = useWindowDimensions();
-  const [value, setValue] = useState("");
-  const handingOffFocus = useRef(false);
-  const maxHeight = Math.max(160, height - 72);
+  const [value, setValue] = useState<string>();
   const capture = () => {
     if (!value) captureEditTarget();
   };
-  const keyboard = useAppMenuKeyboard({ compact, capture, close: () => setValue("") });
-  const renderItems = (nodes: AppMenuNode[], prefix: string) =>
+  const keyboard = useAppMenuKeyboard({ compact, capture, close: () => setValue(undefined) });
+  const menuItems = (nodes: AppMenuNode[], prefix: string): MenubarItemData[] =>
     nodes.map((node, index) => {
       const key = `${prefix}-${index}`;
-      if (node.type === "separator") return <Menubar.Separator key={key} />;
+      if (node.type === "separator") return { value: key, separator: true };
       if (node.type === "submenu")
-        return (
-          <Menubar.Sub key={key}>
-            <Menubar.SubTrigger>
-              <Text>{node.title}</Text>
-            </Menubar.SubTrigger>
-            <Menubar.SubContent style={{ backgroundColor: theme.background, maxHeight }}>
-              <ScrollView
-                nestedScrollEnabled
-                style={{ maxHeight }}
-                keyboardShouldPersistTaps="handled"
-              >
-                {renderItems(node.items, key)}
-              </ScrollView>
-            </Menubar.SubContent>
-          </Menubar.Sub>
-        );
-      return (
-        <Menubar.Item
-          key={node.action}
-          disabled={!node.enabled}
-          onPress={() => {
-            handingOffFocus.current = true;
-            setValue("");
-            // 先释放菜单的焦点层，再打开 Dialog / 文件选择器。
-            setTimeout(() => {
-              void execute(node.action);
-            }, 0);
-          }}
-        >
-          <Text>{node.title}</Text>
-          {node.shortcut ? <Menubar.Shortcut>{node.shortcut}</Menubar.Shortcut> : null}
-        </Menubar.Item>
-      );
+        return { value: key, label: node.title, subMenu: menuItems(node.items, key) };
+      return {
+        value: node.action,
+        label: node.title,
+        shortcut: node.shortcut,
+        disabled: !node.enabled,
+        onPress: () => {
+          setValue(undefined);
+          // 等待菜单释放焦点后再打开 Dialog 或文件选择器。
+          requestAnimationFrame(() => void execute(node.action));
+        },
+      };
     });
   const visible = compact
     ? [
@@ -81,13 +58,14 @@ export function AppMenubar({ compact }: { compact: boolean }) {
       <Menubar
         value={value}
         onValueChange={(next) => {
-          if (next) keyboard.onMenuOpen();
-          setValue(next ?? "");
-          if (next) handingOffFocus.current = false;
-          if (next) void refresh().catch(() => undefined);
+          setValue(next);
+          if (next) {
+            keyboard.onMenuOpen();
+            void refresh().catch(() => undefined);
+          } else requestAnimationFrame(() => keyboard.restoreFocusOnClose());
         }}
         size={DESKTOP_MENUBAR_SIZE}
-        contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
+        contentProps={{ sideOffset: 0, maxHeight: Math.max(160, height - 72) }}
         className="rounded-none border-0 shadow-none"
         style={{
           height: "100%",
@@ -98,50 +76,42 @@ export function AppMenubar({ compact }: { compact: boolean }) {
           padding: 0,
           gap: 0,
         }}
-      >
-        {visible.map((group) => (
-          <Menubar.Menu key={group.id} value={group.id}>
-            <Menubar.Trigger
-              {...(isWeb() ? { dataSet: { appMenuTrigger: group.id } } : {})}
-              style={{
-                paddingLeft: 6,
-                paddingRight: 6,
-                ...(keyboard.showHints && keyboard.focusedId === group.id
-                  ? {
-                      backgroundColor: theme.accent,
-                      outlineStyle: "solid",
-                      outlineWidth: 1,
-                      outlineColor: theme.primary,
-                    }
-                  : {}),
-              }}
-            >
-              <Text className="group-focus-visible:text-accent-foreground">
-                {group.title}
-                {keyboard.mnemonics[group.id] ? (
-                  <Text>
-                    (
-                    <Text style={{ textDecorationLine: keyboard.showHints ? "underline" : "none" }}>
-                      {keyboard.mnemonics[group.id]}
-                    </Text>
-                    )
+        items={visible.map((group) => ({
+          value: group.id,
+          title: (
+            <Text>
+              {group.title}
+              {keyboard.mnemonics[group.id] ? (
+                <Text>
+                  (
+                  <Text style={{ textDecorationLine: keyboard.showHints ? "underline" : "none" }}>
+                    {keyboard.mnemonics[group.id]}
                   </Text>
-                ) : null}
-              </Text>
-            </Menubar.Trigger>
-            <Menubar.Content
-              sideOffset={0}
-              onCloseAutoFocus={(event) => {
-                if (handingOffFocus.current || keyboard.restoreFocusOnClose())
-                  event.preventDefault();
-              }}
-              style={{ backgroundColor: theme.background, maxHeight }}
-            >
-              {renderItems(group.items, group.id)}
-            </Menubar.Content>
-          </Menubar.Menu>
-        ))}
-      </Menubar>
+                  )
+                </Text>
+              ) : null}
+            </Text>
+          ),
+          items: menuItems(group.items, group.id),
+          triggerProps: {
+            style: {
+              paddingLeft: 6,
+              paddingRight: 6,
+              ...(keyboard.showHints && keyboard.focusedId === group.id
+                ? {
+                    backgroundColor: theme.accent03,
+                    outlineStyle: "solid",
+                    outlineWidth: 1,
+                    outlineColor: theme.accent,
+                  }
+                : {}),
+            },
+            herouiWebProps: {
+              render: (props) => <button {...props} data-app-menu-trigger={group.id} />,
+            },
+          },
+        }))}
+      />
     </View>
   );
 }

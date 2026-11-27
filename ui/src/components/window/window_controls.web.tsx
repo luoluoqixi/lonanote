@@ -175,7 +175,7 @@ function WindowsButton({
         ...(compact
           ? { alignSelf: "center", borderRadius: 4, height: 24, margin: "0 4px", width: 28 }
           : {}),
-        ...(pressed ? { color: theme.primary } : {}),
+        ...(pressed ? { color: theme.accent } : {}),
       }}
       title={title}
       type="button"

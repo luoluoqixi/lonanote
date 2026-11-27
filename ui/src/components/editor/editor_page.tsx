@@ -78,7 +78,7 @@ export function EditorPage() {
     workspaceId: workspaceRef?.workspaceId,
   });
   const theme = useUiTheme();
-  const accentColor = theme.primary as ComponentProps<typeof ExternalLink>["color"];
+  const accentColor = theme.accent as ComponentProps<typeof ExternalLink>["color"];
   const documentId = document?.documentId ?? null;
   const isDirty = document ? isDocumentDirty(document) : false;
   const shouldFlushBeforeClose =
@@ -404,7 +404,7 @@ export function EditorPage() {
         ) : (
           <View style={styles.statusContainer}>
             {document.loadState === "error" ? (
-              <Text style={[styles.statusText, { color: theme.mutedForeground }]}>
+              <Text style={[styles.statusText, { color: theme.muted }]}>
                 {document.loadError ?? "读取文档失败"}
               </Text>
             ) : (

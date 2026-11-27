@@ -1,6 +1,5 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
-const { withUniwindConfig } = require("uniwind/metro");
 const path = require("node:path");
 const { blockList, watchBlockList } = require("./tools/metro_ignore");
 
@@ -38,8 +37,7 @@ config.resolver.nodeModulesPaths = [
   ...config.resolver.nodeModulesPaths,
 ];
 
-// "rn-ui-kit": "file:../../rn_ui_kit/packages/rn-ui-kit",
-// "rn-ui-kit": "github:luoluoqixi/rn-ui-kit#rn-ui-kit-1.0.5",
+// 本地源码开发可使用 "rn-ui-kit": "file:../../rn_ui_kit"。
 // Bun 的 file: 依赖位于工程外时，让 Metro 观察源码。
 // 切回 Git / registry 依赖后路径会落入 node_modules，此配置会自动停用。
 const rnUiKitRoot = path.dirname(require.resolve("rn-ui-kit/package.json"));
@@ -58,7 +56,10 @@ if (!expoUiRoot.startsWith(`${__dirname}${path.sep}`)) {
 // 通过全局变量让 @expo/metro-file-map patch 在 watch 阶段使用更宽的忽略规则。
 globalThis.__LONANOTE_METRO_WATCH_IGNORE__ = watchBlockList;
 
-module.exports = withUniwindConfig(config, {
+const { withHeroUIConfig } = require("rn-ui-kit/metro");
+
+module.exports = withHeroUIConfig(config, {
   cssEntryFile: "./global.css",
+  nativeCssEntryFile: "./global.native.css",
   dtsFile: "./uniwind-types.d.ts",
 });

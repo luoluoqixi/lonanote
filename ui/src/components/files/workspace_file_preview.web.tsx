@@ -66,7 +66,7 @@ export function WorkspaceFilePreview({ viewer }: { viewer: WorkspaceViewerSessio
         <Text>当前环境不支持文件预览</Text>
       ) : value?.error ? (
         <View style={{ alignItems: "center", gap: 12 }}>
-          <Text className="text-destructive">{value.error}</Text>
+          <Text className="text-danger">{value.error}</Text>
           <Button
             onPress={() => {
               setResource(null);

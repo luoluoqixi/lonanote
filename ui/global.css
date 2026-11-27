@@ -1,6 +1,14 @@
 @import "tailwindcss";
-@import "uniwind";
+@import "@heroui/styles";
 @import "rn-ui-kit/styles.css";
+
+/* Web 主题使用运行时根 class，不加载 Native 生成的 Uniwind CSS。 */
+@custom-variant light (&:where(.light, .light *));
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --spacing-hairline: 1px;
+}
 
 @source "./src";
 @source "./node_modules/rn-ui-kit/src";

@@ -54,8 +54,12 @@ export const DesktopEditorTab = forwardRef<View, DesktopEditorTabProps>(
         style={[
           styles.tab,
           {
-            backgroundColor: active ? theme.background : hovered ? theme.secondary : theme.muted,
-            borderTopColor: active ? (groupFocused ? theme.primary : theme.border) : "transparent",
+            backgroundColor: active
+              ? theme.background
+              : hovered
+                ? theme.default
+                : theme.surfaceSecondary,
+            borderTopColor: active ? (groupFocused ? theme.accent : theme.border) : "transparent",
             borderRightColor: theme.border,
           },
         ]}
@@ -65,7 +69,7 @@ export const DesktopEditorTab = forwardRef<View, DesktopEditorTabProps>(
           style={[
             styles.label,
             {
-              color: (active && groupFocused) || hovered ? theme.foreground : theme.mutedForeground,
+              color: (active && groupFocused) || hovered ? theme.foreground : theme.muted,
             },
           ]}
         >
@@ -81,9 +85,9 @@ export const DesktopEditorTab = forwardRef<View, DesktopEditorTabProps>(
             event.stopPropagation();
             onClose();
           }}
-          style={[styles.close, { backgroundColor: closeHovered ? theme.accent : "transparent" }]}
+          style={[styles.close, { backgroundColor: closeHovered ? theme.accent03 : "transparent" }]}
         >
-          <X color={closeHovered ? theme.foreground : theme.mutedForeground} size={14} />
+          <X color={closeHovered ? theme.foreground : theme.muted} size={14} />
         </Pressable>
       </Pressable>
     );

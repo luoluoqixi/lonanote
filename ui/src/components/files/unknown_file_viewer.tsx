@@ -25,7 +25,7 @@ export function UnknownFileViewer() {
     : (rawWorkspaceId ?? currentWorkspaceId);
   const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
   const theme = useUiTheme();
-  const accentColor = theme.primary as ComponentProps<typeof ExternalLink>["color"];
+  const accentColor = theme.accent as ComponentProps<typeof ExternalLink>["color"];
   const menuItems = useMemo<DropdownItemData[]>(
     () => [
       {
@@ -50,7 +50,7 @@ export function UnknownFileViewer() {
     <>
       <Stack.Screen
         options={{
-          ...getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.primary }),
+          ...getMenuHeaderRightMenuProps({ menuItems, labelColor: theme.accent }),
           title,
         }}
       />
@@ -105,7 +105,7 @@ function LocalUnknownFileContent({
   const { isOpening, openInOtherApp } = useOpenInOtherApp({ filePath, workspaceId });
   return (
     <View style={styles.container}>
-      <Text className="text-muted-foreground text-base">无法预览此文件</Text>
+      <Text className="text-muted text-base">无法预览此文件</Text>
       <View style={styles.openButton}>
         <OpenInOtherAppButton isOpening={isOpening} onOpenInOtherApp={openInOtherApp} />
       </View>

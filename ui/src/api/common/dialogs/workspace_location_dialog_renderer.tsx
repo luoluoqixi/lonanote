@@ -44,7 +44,7 @@ export function WorkspaceLocationDialogRenderer({
         </NativeListSection>
         {target.error ? (
           <NativeListSection>
-            <Text className="text-destructive">{target.error}</Text>
+            <Text className="text-danger">{target.error}</Text>
           </NativeListSection>
         ) : null}
       </NativeList>

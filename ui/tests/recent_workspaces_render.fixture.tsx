@@ -31,42 +31,29 @@ function Pressable({ children, style, onPress, accessibilityLabel, disabled }) {
 }
 mock.module("react-native", () => ({
   View,
+  ScrollView: View,
   Pressable,
   StyleSheet: { create: (styles) => styles },
   useWindowDimensions: () => ({ width: 1000 }),
 }));
-function Dropdown({ children }) {
+function Popover({ trigger, content }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button onClick={() => setOpen(!open)}>更多</button>
-      {open && children}
+      {open && <div role="dialog">{content({ close: () => setOpen(false) })}</div>}
     </>
   );
 }
-Dropdown.Content = ({ children, style }) => (
-  <div role="menu" style={style}>
-    {children}
-  </div>
-);
-// 菜单项与 Web primitive 一样直接消费 DOM style，避免 mock 自动 flatten 掩盖崩溃。
-Dropdown.Item = ({ children, style, onPress, accessibilityLabel }) => {
-  expect(Array.isArray(style)).toBe(false);
-  return (
-    <button role="menuitem" aria-label={accessibilityLabel} style={style} onClick={onPress}>
-      {children}
-    </button>
-  );
-};
 mock.module("rn-ui-kit", () => ({
-  Dropdown,
+  Popover,
   Text: ({ children }) => <span>{children}</span>,
   Button: ({ children, onPress, ...props }) => (
     <button aria-label={props["aria-label"]} onClick={onPress}>
       {children}
     </button>
   ),
-  useUiTheme: () => ({ primary: "blue", accent: "gray" }),
+  useUiTheme: () => ({ accent: "blue", accent03: "gray" }),
 }));
 mock.module("lucide-react-native", () => ({ X: () => <span>×</span> }));
 mock.module("../src/components/files/file_path_tooltip", () => ({
@@ -123,9 +110,9 @@ test("历史显示路径，更多菜单可渲染，移除按钮与打开按钮�
   await act(() =>
     [...container.querySelectorAll("button")].find((node) => node.textContent === "更多").click(),
   );
-  expect(container.querySelectorAll('[role="menuitem"]')).toHaveLength(11);
+  expect(container.querySelectorAll('[role="dialog"] [aria-label^="打开工作区"]')).toHaveLength(11);
   const menuRemove = container.querySelector(
-    '[role="menu"] [aria-label="从历史记录中移除 工作区0"]',
+    '[role="dialog"] [aria-label="从历史记录中移除 工作区0"]',
   );
   expect(menuRemove.parentElement.className).toContain("hover:bg-accent");
   await act(async () => {

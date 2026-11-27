@@ -80,6 +80,10 @@ export function CreateWorkspaceEntrySheet({
 
   useEffect(() => cancelScheduledFocus, []);
 
+  useEffect(() => {
+    if (open && desktop && !dialogContentOnly) handleDidPresent();
+  }, [open, desktop, dialogContentOnly]);
+
   const content = (
     <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
       <NativeListSection titleFontSize={desktop ? 12 : undefined} title="名称">
@@ -127,10 +131,6 @@ export function CreateWorkspaceEntrySheet({
       open={open}
       onOpenChange={handleOpenChange}
       dialogSize={{ width: 520, height: 320 }}
-      dialogContentProps={{
-        // 先保留 Dialog 的同步聚焦，避免背景被 aria-hidden 时焦点仍留在工具栏按钮上。
-        onOpenAutoFocus: handleDidPresent,
-      }}
       sheetProps={{
         onDidPresent: handleDidPresent,
         snapPoints: ["62%"],

@@ -34,7 +34,7 @@ export const accentThemeDefinitions = Object.fromEntries(
     {
       accent: accentThemeSeeds[themeName],
       accentForeground: resolveGeneratedAccentTheme(accentThemeSeeds[themeName]).light
-        .primaryForeground,
+        .accentForeground,
       label: accentThemeLabels[themeName],
     },
   ]),
@@ -54,7 +54,7 @@ export function getAccentThemePreset(themeName: string) {
     const generatedTheme = resolveGeneratedAccentTheme(normalized);
     return {
       accent: normalized,
-      accentForeground: generatedTheme.light.primaryForeground,
+      accentForeground: generatedTheme.light.accentForeground,
       label: "自定义颜色",
       themeName: normalized,
     };

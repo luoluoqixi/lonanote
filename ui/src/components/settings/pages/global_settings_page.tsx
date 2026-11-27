@@ -73,8 +73,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: settings.app.autoCheckUpdate,
-            onCheckedChange: (nextValue) => {
+            isSelected: settings.app.autoCheckUpdate,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle auto check update",
                 updateAndSave((currentSettings) =>
@@ -92,8 +92,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: settings.app.autoOpenLastWorkspace,
-            onCheckedChange: (nextValue) => {
+            isSelected: settings.app.autoOpenLastWorkspace,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle auto open last workspace",
                 updateAndSave((currentSettings) =>
@@ -114,8 +114,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: uiPreferences.preferences.workspaceExplorer.foldersFirst,
-            onCheckedChange: (nextValue) => {
+            isSelected: uiPreferences.preferences.workspaceExplorer.foldersFirst,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle folders first",
                 uiPreferences.updateAndSave((currentPreferences) => ({
@@ -134,8 +134,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: uiPreferences.preferences.workspaceExplorer.showFloatingToolbar,
-            onCheckedChange: (nextValue) => {
+            isSelected: uiPreferences.preferences.workspaceExplorer.showFloatingToolbar,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle workspace explorer floating toolbar",
                 uiPreferences.updateAndSave((currentPreferences) => ({
@@ -159,8 +159,8 @@ export function GlobalSettingsPage({
             title={`按住 ${os() === "macos" ? "Command" : "Ctrl"} 点击打开链接和图片链接`}
             switchProps={{
               ...presentation.switch,
-              checked: settings.editorDefaults.linkOpenRequiresCtrl,
-              onCheckedChange: (nextValue) => {
+              isSelected: settings.editorDefaults.linkOpenRequiresCtrl,
+              onSelectedChange: (nextValue) => {
                 runSettingsAction(
                   "toggle link open modifier",
                   updateAndSave((currentSettings) =>
@@ -178,8 +178,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: settings.editorDefaults.autoSaveOnFocusChange,
-            onCheckedChange: (nextValue) => {
+            isSelected: settings.editorDefaults.autoSaveOnFocusChange,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle focus auto save",
                 updateAndSave((currentSettings) =>
@@ -197,8 +197,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: settings.editorDefaults.showLineNumber,
-            onCheckedChange: (nextValue) => {
+            isSelected: settings.editorDefaults.showLineNumber,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle show line number",
                 updateAndSave((currentSettings) =>
@@ -216,8 +216,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: settings.editorDefaults.disableLineWrap,
-            onCheckedChange: (nextValue) => {
+            isSelected: settings.editorDefaults.disableLineWrap,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle line wrap",
                 updateAndSave((currentSettings) =>
@@ -235,8 +235,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: settings.editorDefaults.sourceMode,
-            onCheckedChange: (nextValue) => {
+            isSelected: settings.editorDefaults.sourceMode,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle source mode",
                 updateAndSave((currentSettings) =>
@@ -254,8 +254,8 @@ export function GlobalSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: settings.editorDefaults.autoSave,
-            onCheckedChange: (nextValue) => {
+            isSelected: settings.editorDefaults.autoSave,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "toggle auto save",
                 updateAndSave((currentSettings) =>

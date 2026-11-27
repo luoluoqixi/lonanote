@@ -44,7 +44,7 @@ export function MobileAppStack() {
               headerLargeStyle: nativeHeaderOptions.headerLargeStyle,
               headerShadowVisible: nativeHeaderOptions.headerShadowVisible,
               headerStyle: nativeHeaderOptions.headerStyle,
-              headerTintColor: theme.primary,
+              headerTintColor: theme.accent,
               headerTitleStyle: {
                 color: headerTitleColor,
               },

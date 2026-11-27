@@ -1,6 +1,6 @@
-import { type ReactNode, Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { Button, Dialog, NativeSheetStack, Tabs, Text, cn, useUiTheme } from "rn-ui-kit";
+import { Button, Dialog, NativeSheetStack, Text, useUiTheme } from "rn-ui-kit";
 
 import { dialogWindows } from "@/api/commands/win/dialog_windows";
 import { DialogContentReady } from "@/api/common/dialogs/dialog_content_boundary";
@@ -11,7 +11,11 @@ import { useUiPreferences } from "@/hooks/settings";
 import { useCurrentWorkspaceId } from "@/hooks/workspace/use_workspace_session";
 
 import { type SettingsPageId, getSettingsPage, settingsPages } from "../settings_config.desktop";
-import { type SettingsLocation, settingsNavigation } from "../settings_navigation";
+import {
+  type SettingsLocation,
+  settingsNavigation,
+  settingsTabTarget,
+} from "../settings_navigation";
 
 const RnUiKitDebugPanel = lazy(() =>
   import("rn-ui-kit/debug").then((m) => ({ default: m.RnUiKitDebugPanel })),
@@ -40,6 +44,9 @@ export function DesktopSettingsDialog({
 }: DesktopSettingsDialogProps) {
   const { width, height } = useWindowDimensions();
   const theme = useUiTheme();
+  const tabGroupId = useId();
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const panelId = `${tabGroupId}-panel`;
   const dialogWidth = nativeWindow ? Math.min(880, width) : Math.min(880, width * 0.88);
   const dialogHeight = nativeWindow ? Math.min(560, height) : Math.min(560, height * 0.8);
   const { preferences } = useUiPreferences();
@@ -154,42 +161,71 @@ export function DesktopSettingsDialog({
 
   const content = (
     <View style={styles.root}>
-      <Tabs
-        aria-label="设置页面导航"
-        onValueChange={(nextValue) => setSelectedPageId(nextValue as SettingsPageId)}
-        orientation="vertical"
-        size="sm"
-        style={styles.tabs}
-        value={selectedTabId}
-      >
+      <View style={styles.tabs}>
         <ScrollView
           style={[styles.navigation, { width: width < 720 ? 116 : 144 }]}
           contentContainerStyle={styles.navigationContent}
         >
-          <Tabs.List
-            aria-label="设置页面导航"
-            style={{ ...styles.list, backgroundColor: theme.background }}
+          <View
+            accessibilityRole="tablist"
+            accessibilityLabel="设置页面导航"
+            aria-orientation="vertical"
+            style={styles.list}
           >
             {desktopPages.map((page) => (
-              <Tabs.Trigger
+              <Button
                 key={page.id}
-                value={page.id}
-                className={cn(
-                  selectedTabId === page.id && "bg-accent text-accent-foreground",
-                  selectedTabId !== page.id && "hover:bg-accent03",
-                )}
+                native={false}
+                variant="ghost"
+                size="sm"
+                accessibilityRole="tab"
+                accessibilityState={{ selected: selectedTabId === page.id }}
+                tabIndex={selectedTabId === page.id ? 0 : -1}
+                herouiWebProps={{
+                  id: `${tabGroupId}-${page.id}`,
+                  render: (props) => (
+                    <button
+                      {...props}
+                      role="tab"
+                      aria-controls={panelId}
+                      aria-selected={selectedTabId === page.id}
+                      tabIndex={selectedTabId === page.id ? 0 : -1}
+                    />
+                  ),
+                  ref: (element) => {
+                    tabRefs.current[page.id] = element;
+                  },
+                  onKeyDown: (event) => {
+                    const next = settingsTabTarget(
+                      desktopPages.map((page) => page.id),
+                      page.id,
+                      event.key,
+                    );
+                    if (!next) return;
+                    event.preventDefault();
+                    setSelectedPageId(next);
+                    tabRefs.current[next]?.focus();
+                  },
+                }}
+                onPress={() => setSelectedPageId(page.id)}
                 style={{
                   ...styles.navigationItem,
+                  backgroundColor: selectedTabId === page.id ? theme.accent03 : undefined,
                   borderBottomWidth: selectedTabId === page.id ? 2 : 0,
-                  borderBottomColor: theme.primary,
+                  borderBottomColor: theme.accent,
                 }}
               >
                 <Text style={{ fontSize: 13 }}>{page.title}</Text>
-              </Tabs.Trigger>
+              </Button>
             ))}
-          </Tabs.List>
+          </View>
         </ScrollView>
-        <View style={styles.content}>
+        <View
+          nativeID={panelId}
+          role="tabpanel"
+          aria-labelledby={`${tabGroupId}-${selectedTabId}`}
+          style={styles.content}
+        >
           {navigation.length > 1 ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 8 }}>
               <Button variant="ghost" size="sm" onPress={back} accessibilityLabel="返回上一级设置">
@@ -211,7 +247,7 @@ export function DesktopSettingsDialog({
             </Suspense>
           ) : null}
         </View>
-      </Tabs>
+      </View>
       {isDebugSheetOpen ? (
         <Suspense fallback={null}>
           <RnUiKitDebugPanel
@@ -265,13 +301,25 @@ export function DesktopSettingsDialog({
       titleProps={{ style: { fontSize: 16 } }}
       trigger={trigger}
       contentProps={{
-        style: {
-          height: dialogHeight,
-          width: dialogWidth,
-          maxWidth: dialogWidth,
-          maxHeight: dialogHeight,
-          padding: 16,
-          backgroundColor: theme.background,
+        herouiNativeProps: {
+          style: {
+            height: dialogHeight,
+            width: dialogWidth,
+            maxWidth: dialogWidth,
+            maxHeight: dialogHeight,
+            padding: 16,
+            backgroundColor: theme.background,
+          },
+        },
+        herouiWebProps: {
+          style: {
+            height: dialogHeight,
+            width: dialogWidth,
+            maxWidth: dialogWidth,
+            maxHeight: dialogHeight,
+            padding: 16,
+            backgroundColor: theme.background,
+          },
         },
       }}
       content={content}

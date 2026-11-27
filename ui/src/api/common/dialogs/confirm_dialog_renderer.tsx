@@ -23,7 +23,7 @@ export function ConfirmDialogRenderer({ payload, onComplete }: DialogRendererPro
         {buttons.map((button) => (
           <Button
             key={button.key}
-            variant={button.style === "destructive" ? "destructive" : "default"}
+            variant={button.style === "destructive" ? "danger" : "primary"}
             onPress={() => onComplete(button.key)}
           >
             {button.text}

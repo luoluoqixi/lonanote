@@ -7,6 +7,7 @@ import {
   NativeListCustomItem,
   NativeListItem,
   NativeListSection,
+  Popover,
   Text,
   Tooltip,
   useUiTheme,
@@ -91,22 +92,27 @@ export function WorkspaceLocationSheet({
               >
                 {item?.displayName}
               </Text>
-              <Tooltip
+              <Popover
+                accessibilityLabel={mode === "rebind" ? "重新定位说明" : "迁移说明"}
                 content={hint}
-                openOnFocus={false}
-                openOnPress
-                contentProps={{ side: "bottom", align: "start", style: { maxWidth: 280 } }}
-              >
-                <Button
-                  aria-label={mode === "rebind" ? "重新定位说明" : "迁移说明"}
-                  variant="ghost"
-                  size="sm"
-                  buttonSize={{ width: 28, height: 28 }}
-                  hitSlop={8}
-                >
-                  <Info size={15} color={theme.mutedForeground} />
-                </Button>
-              </Tooltip>
+                contentProps={{
+                  side: "bottom",
+                  align: "start",
+                  herouiWebProps: { style: { maxWidth: 280 } },
+                  herouiNativeProps: { style: { maxWidth: 280 } },
+                }}
+                trigger={
+                  <Button
+                    aria-label={mode === "rebind" ? "重新定位说明" : "迁移说明"}
+                    variant="ghost"
+                    size="sm"
+                    buttonSize={{ width: 28, height: 28 }}
+                    hitSlop={8}
+                  >
+                    <Info size={15} color={theme.muted} />
+                  </Button>
+                }
+              />
             </View>
           </View>
           <NativeListSection>
@@ -114,13 +120,13 @@ export function WorkspaceLocationSheet({
               title={`当前存储位置：${getStorageProviderLabel(item?.storage.providerId)}`}
               titleFontSize={desktop ? 13 : 14}
               subtitle={
-                <Text selectable className="text-xs leading-5 text-muted-foreground">
+                <Text selectable className="text-xs leading-5 text-muted">
                   {location.currentPath}
                 </Text>
               }
               value={
                 isDesktop() ? (
-                  <Tooltip content="在文件管理器中显示" openOnFocus={false}>
+                  <Tooltip content="在文件管理器中显示">
                     <Button
                       aria-label="在文件管理器中显示"
                       variant="ghost"
@@ -131,7 +137,7 @@ export function WorkspaceLocationSheet({
                         void location.revealCurrentFolder();
                       }}
                     >
-                      <FolderOpen size={18} color={theme.mutedForeground} />
+                      <FolderOpen size={18} color={theme.muted} />
                     </Button>
                   </Tooltip>
                 ) : undefined
@@ -149,7 +155,7 @@ export function WorkspaceLocationSheet({
           {error ? (
             <NativeListSection>
               <NativeListCustomItem>
-                <Text style={desktop ? { fontSize: 13 } : undefined} className="text-destructive">
+                <Text style={desktop ? { fontSize: 13 } : undefined} className="text-danger">
                   {error}
                 </Text>
               </NativeListCustomItem>

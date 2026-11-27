@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import { Dropdown, createNativeMenuItems, useMenuConfig } from "rn-ui-kit";
 
 import { editorPredefinedItem } from "@/api/common/tauri_menu_items";
-import { DESKTOP_UI_MENU_CONTENT_SIZE } from "@/components/common/consts";
 
 import type { EditorMenuPopupProps } from "./editor_menu_popup_types";
 
@@ -48,6 +47,15 @@ export function EditorMenuPopup({ request, onDismiss }: EditorMenuPopupProps) {
   useEffect(() => {
     if (request && !request.isCurrent()) onDismiss();
   });
+  useEffect(() => {
+    if (!request || native) return;
+    const trackOutside = (event: PointerEvent) => {
+      if (!(event.target instanceof Element) || !event.target.closest("[role=menu]"))
+        interactedOutside.current = true;
+    };
+    document.addEventListener("pointerdown", trackOutside, true);
+    return () => document.removeEventListener("pointerdown", trackOutside, true);
+  }, [request, native]);
   if (!request || native) return null;
   return (
     <Dropdown
@@ -55,10 +63,14 @@ export function EditorMenuPopup({ request, onDismiss }: EditorMenuPopupProps) {
       native={false}
       __menuRef={menuRef}
       onOpenChange={(open) => {
-        if (!open) onDismiss();
+        if (!open) {
+          onDismiss();
+          requestAnimationFrame(() => {
+            if (!interactedOutside.current && request.isCurrent()) request.restoreFocus?.();
+          });
+        }
       }}
       items={request.items}
-      contentSize={DESKTOP_UI_MENU_CONTENT_SIZE}
       trigger={
         <div
           aria-hidden
@@ -76,14 +88,6 @@ export function EditorMenuPopup({ request, onDismiss }: EditorMenuPopupProps) {
         align: "start",
         side: "right",
         sideOffset: 0,
-        onInteractOutside: () => {
-          interactedOutside.current = true;
-        },
-        onCloseAutoFocus: (event) => {
-          // 不将焦点交给不可见锚点，也不抢走用户点击的其他控件的焦点。
-          event.preventDefault();
-          if (!interactedOutside.current && request.isCurrent()) request.restoreFocus?.();
-        },
       }}
     />
   );

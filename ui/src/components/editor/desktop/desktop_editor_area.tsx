@@ -124,7 +124,7 @@ function EditorDivider({
         style={[
           {
             position: "absolute",
-            backgroundColor: hovered || dragging ? theme.primary : theme.border,
+            backgroundColor: hovered || dragging ? theme.accent : theme.border,
           },
           direction === "row"
             ? { width: thickness, top: 0, bottom: 0, left: (8 - thickness) / 2 }
@@ -217,7 +217,7 @@ export function DesktopEditorArea({
                 ) : (
                   <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
                     {document.loadState === "error" ? (
-                      <Text style={{ color: theme.mutedForeground }}>
+                      <Text style={{ color: theme.muted }}>
                         {document.loadError ?? "读取文档失败"}
                       </Text>
                     ) : (

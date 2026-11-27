@@ -8,7 +8,6 @@ import {
   NativeListItem,
   NativeListSection,
   NativeListSelectItem,
-  NativeListSwitchItem,
   Panel1,
   Preview,
   type SelectOption,
@@ -106,16 +105,16 @@ export function AppearanceSettingsPage({
           {...presentation.item}
           title="编辑器字体"
           value={fontSelectionName(fonts.editor.selection)}
-          valueColor={theme.primary}
-          trailing={<ChevronsUpDown color={theme.primary} size={16} />}
+          valueColor={theme.accent}
+          trailing={<ChevronsUpDown color={theme.accent} size={16} />}
           onPress={() => setFontPicker("editor")}
         />
         <NativeListItem
           {...presentation.item}
           title="UI 界面字体"
           value={fontSelectionName(fonts.ui.selection)}
-          valueColor={theme.primary}
-          trailing={<ChevronsUpDown color={theme.primary} size={16} />}
+          valueColor={theme.accent}
+          trailing={<ChevronsUpDown color={theme.accent} size={16} />}
           onPress={() => setFontPicker("ui")}
         />
       </NativeListSection>
@@ -210,26 +209,6 @@ export function AppearanceSettingsPage({
             value: colorSchemeSettings.preferredColorScheme,
           }}
           title="主题模式"
-        />
-        <NativeListSwitchItem
-          {...presentation.item}
-          switchProps={{
-            ...presentation.switch,
-            checked: uiPreferences.preferences.appearance.backgroundFollowsTheme,
-            onCheckedChange: (nextValue) => {
-              runSettingsAction(
-                "toggle background follows theme",
-                uiPreferences.updateAndSave((currentPreferences) => ({
-                  ...currentPreferences,
-                  appearance: {
-                    ...currentPreferences.appearance,
-                    backgroundFollowsTheme: nextValue,
-                  },
-                })),
-              );
-            },
-          }}
-          title="背景跟随主题"
         />
       </NativeListSection>
 

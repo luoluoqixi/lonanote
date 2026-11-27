@@ -70,7 +70,12 @@ export function DialogWindowHost({
       <View style={styles.root}>
         {error ? (
           <View style={styles.center}>
-            <Text accessibilityRole="alert">弹窗加载失败：{error}</Text>
+            <Text
+              herouiNativeProps={{ accessibilityRole: "alert" }}
+              herouiWebProps={{ role: "alert" }}
+            >
+              弹窗加载失败：{error}
+            </Text>
           </View>
         ) : session && Renderer ? (
           <DialogContentBoundary

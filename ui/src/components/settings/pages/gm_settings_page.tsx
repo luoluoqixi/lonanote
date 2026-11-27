@@ -24,7 +24,7 @@ export function GmSettingsPage({ tracksNavigationBarScrollEdge = false }: Settin
   const [isResettingInitialWorkspace, setIsResettingInitialWorkspace] = useState(false);
   const [isGettingSystemLocale, setIsGettingSystemLocale] = useState(false);
 
-  const redColor = toSwiftUIHexColor(theme.destructive) ?? theme.destructive;
+  const redColor = toSwiftUIHexColor(theme.danger) ?? theme.danger;
 
   // 桌面 UI 的 GM Sheet 由页面级列表驱动 Header 的 scroll-edge 背景。
   const tracksScrollEdgeHeader = presentation.desktop || tracksNavigationBarScrollEdge;

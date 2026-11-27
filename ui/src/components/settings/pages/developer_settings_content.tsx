@@ -31,8 +31,8 @@ export function DeveloperSettingsContent({
             {...presentation.item}
             switchProps={{
               ...presentation.switch,
-              checked: preferences.developer.optionsEnabled,
-              onCheckedChange: (nextValue) => {
+              isSelected: preferences.developer.optionsEnabled,
+              onSelectedChange: (nextValue) => {
                 runSettingsAction(
                   "toggle developer options",
                   updateAndSave((currentPreferences) => ({

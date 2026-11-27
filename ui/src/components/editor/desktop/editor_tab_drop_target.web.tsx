@@ -87,7 +87,7 @@ export function EditorTabDropTarget({
             bottom: 2,
             left: insertion.left,
             width: 2,
-            backgroundColor: theme.primary,
+            backgroundColor: theme.accent,
             zIndex: 10,
           }}
         />

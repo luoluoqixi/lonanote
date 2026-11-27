@@ -58,12 +58,12 @@ function DirectoryRow({
               paddingLeft: 8 + depth * 16,
               opacity: excluded ? 0.45 : 1,
               backgroundColor: selected || hovered ? theme.accent03 : "transparent",
-              borderColor: selected ? theme.primary : "transparent",
+              borderColor: selected ? theme.accent : "transparent",
             },
           ]}
         >
-          <Chevron size={14} color={theme.mutedForeground} />
-          <FolderIcon size={16} color={theme.mutedForeground} />
+          <Chevron size={14} color={theme.muted} />
+          <FolderIcon size={16} color={theme.muted} />
           <Text numberOfLines={1} style={{ flex: 1, fontSize, color: theme.foreground }}>
             {path ? path.split("/").at(-1) : "工作区根目录"}
           </Text>
@@ -79,7 +79,7 @@ function DirectoryRow({
               }}
               style={{ paddingLeft: 28 + depth * 16, paddingVertical: 6 }}
             >
-              <Text className="text-destructive" style={{ fontSize }}>
+              <Text className="text-danger" style={{ fontSize }}>
                 读取失败，点击重试
               </Text>
             </Pressable>
@@ -95,7 +95,7 @@ function DirectoryRow({
           ))}
           {path === "" && state.directories[path]?.length === 0 ? (
             <Text
-              className="text-muted-foreground"
+              className="text-muted"
               style={{ fontSize, paddingHorizontal: 28, paddingVertical: 8 }}
             >
               没有可选的子文件夹
@@ -152,16 +152,13 @@ export function DirectoryPickerHost({
   const content = (
     <View style={{ flex: 1, gap: 12, minHeight: 0, ...(dialogContentOnly ? { padding: 16 } : {}) }}>
       {state.options.purpose !== "save" && (state.options.sourceCount ?? 0) > 1 ? (
-        <Text style={{ fontSize: desktop ? 12 : 14, color: theme.mutedForeground }}>
+        <Text style={{ fontSize: desktop ? 12 : 14, color: theme.muted }}>
           将{state.options.purpose === "move" ? "移动" : "复制"} {state.options.sourceCount} 个项目
         </Text>
       ) : null}
       <FilePathTooltip path={`/${state.selected}`} disabled={!desktop}>
         <View>
-          <Text
-            numberOfLines={1}
-            style={{ fontSize: desktop ? 12 : 14, color: theme.mutedForeground }}
-          >
+          <Text numberOfLines={1} style={{ fontSize: desktop ? 12 : 14, color: theme.muted }}>
             /{state.selected}
           </Text>
         </View>

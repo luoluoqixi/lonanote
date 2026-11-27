@@ -228,16 +228,30 @@ export function AdaptiveModal({
         title={title}
         contentProps={{
           ...dialogContentProps,
-          style: [
-            {
+          herouiNativeProps: {
+            ...dialogContentProps?.herouiNativeProps,
+            style: [
+              {
+                width: Math.min(dialogSize.width, width * 0.9),
+                maxWidth: width * 0.9,
+                height: Math.min(dialogSize.height, height * 0.8),
+                padding: 16,
+                backgroundColor: appBackgroundColors.sheet,
+              },
+              dialogContentProps?.herouiNativeProps?.style,
+            ],
+          },
+          herouiWebProps: {
+            ...dialogContentProps?.herouiWebProps,
+            style: {
               width: Math.min(dialogSize.width, width * 0.9),
               maxWidth: width * 0.9,
               height: Math.min(dialogSize.height, height * 0.8),
               padding: 16,
               backgroundColor: appBackgroundColors.sheet,
+              ...dialogContentProps?.herouiWebProps?.style,
             },
-            dialogContentProps?.style,
-          ],
+          },
         }}
       />
     );

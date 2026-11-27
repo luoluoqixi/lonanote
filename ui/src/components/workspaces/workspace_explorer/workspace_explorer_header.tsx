@@ -48,7 +48,7 @@ export function WorkspaceExplorerHeader({
 }: WorkspaceExplorerHeaderProps) {
   const router = useRouter();
   const theme = useUiTheme();
-  const accentColor = theme.primary as ComponentProps<typeof CircleCheck>["color"];
+  const accentColor = theme.accent as ComponentProps<typeof CircleCheck>["color"];
   const menuItems = useMemo<DropdownItemData[]>(
     () => [
       {
@@ -150,7 +150,7 @@ export function WorkspaceExplorerHeader({
         headerLargeTitleEnabled: true,
         headerLargeTitleShadowVisible: false,
         ...getSelectionHeaderRightMenuProps({
-          labelColor: theme.primary,
+          labelColor: theme.accent,
           isSelectionMode,
           areAllEntriesSelected,
           menuItems,

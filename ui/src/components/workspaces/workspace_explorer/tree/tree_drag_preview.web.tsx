@@ -48,8 +48,8 @@ export function TreeDragPreview({ pointer, sources, folder }: TreeDragPreviewPro
         maxWidth: 240,
         padding: "5px 9px",
         borderRadius: 16,
-        border: `1px solid ${theme.primary}`,
-        backgroundColor: theme.popover,
+        border: `1px solid ${theme.accent}`,
+        backgroundColor: theme.overlay,
         color: theme.foreground,
         opacity: 0.75,
         fontSize: 12,
@@ -58,7 +58,7 @@ export function TreeDragPreview({ pointer, sources, folder }: TreeDragPreviewPro
         willChange: "transform",
       }}
     >
-      <Icon size={16} color={theme.primary} style={{ flexShrink: 0 }} />
+      <Icon size={16} color={theme.accent} style={{ flexShrink: 0 }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
     </div>,
     document.body,

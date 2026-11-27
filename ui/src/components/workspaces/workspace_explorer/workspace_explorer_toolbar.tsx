@@ -37,7 +37,7 @@ export function WorkspaceExplorerToolbar({
   const insets = useSafeAreaInsets();
   const appBackgroundColors = useAppBackgroundColors();
   const theme = useUiTheme();
-  const accentColor = theme.primary as ComponentProps<typeof ArrowLeft>["color"];
+  const accentColor = theme.accent as ComponentProps<typeof ArrowLeft>["color"];
   const fallbackSurfaceStyle = isLiquidGlassAvailable()
     ? undefined
     : { backgroundColor: appBackgroundColors.card };

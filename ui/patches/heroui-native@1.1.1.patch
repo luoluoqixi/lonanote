@@ -1,0 +1,119 @@
+# HeroUI Native 1.1.1: reveal complete stacked Toast content while the front Toast is dragged.
+# Restore each Toast natural height and remove both covers during the drag; keep normal stacking and cancellation.
+# Update both source (Metro source condition) and published ESM entry points.
+# Android Popover: composite exit opacity on its wrapper without caching and clipping the surface shadow.
+diff --git a/src/components/toast/toast.animation.ts b/src/components/toast/toast.animation.ts
+--- a/src/components/toast/toast.animation.ts
++++ b/src/components/toast/toast.animation.ts
+@@ -233,6 +233,7 @@
+       }
+       return {
+         isFront,
++        revealContent: frontDrag?.get() === 1,
+         front: frontId !== undefined ? heightsValue[frontId] : undefined,
+         own: id !== undefined ? heightsValue[id] : undefined,
+       };
+@@ -240,10 +241,10 @@
+     (current) => {
+       isCovered.set(current.isFront ? 0 : 1);
+ 
+-      if (current.isFront) {
++      if (current.isFront || current.revealContent) {
+         if (isHeightFree.get()) return;
+ 
+-        // Coming back to the front: spring to its own natural height, then
++        // Returning to the front or revealing during a drag: spring to its own natural height, then
+         // release the explicit height so content changes can resize it.
+         if (current.own === undefined || isAnimationDisabledValue) {
+           isHeightFree.set(true);
+@@ -539,11 +540,11 @@
+ 
+   /**
+    * Edge cover: hides the cut-off bottom line of content in the visible strip
+-   * of a stacked toast. Unlike the full cover it stays while the front toast
++   * of a stacked toast. Like the full cover it clears while the front toast
+    * is dragged.
+    */
+   const rCoverEdgeStyle = useAnimatedStyle(() => {
+-    const edgeOpacity = isCovered.get();
++    const edgeOpacity = frontDrag?.get() === 1 ? 0 : isCovered.get();
+     return {
+       opacity: isAnimationDisabledValue
+         ? edgeOpacity
+diff --git a/lib/module/components/toast/toast.animation.js b/lib/module/components/toast/toast.animation.js
+--- a/lib/module/components/toast/toast.animation.js
++++ b/lib/module/components/toast/toast.animation.js
+@@ -229,15 +229,16 @@
+     }
+     return {
+       isFront,
++      revealContent: frontDrag?.get() === 1,
+       front: frontId !== undefined ? heightsValue[frontId] : undefined,
+       own: id !== undefined ? heightsValue[id] : undefined
+     };
+   }, current => {
+     isCovered.set(current.isFront ? 0 : 1);
+-    if (current.isFront) {
++    if (current.isFront || current.revealContent) {
+       if (isHeightFree.get()) return;
+ 
+-      // Coming back to the front: spring to its own natural height, then
++      // Returning to the front or revealing during a drag: spring to its own natural height, then
+       // release the explicit height so content changes can resize it.
+       if (current.own === undefined || isAnimationDisabledValue) {
+         isHeightFree.set(true);
+@@ -451,11 +452,11 @@
+ 
+   /**
+    * Edge cover: hides the cut-off bottom line of content in the visible strip
+-   * of a stacked toast. Unlike the full cover it stays while the front toast
++   * of a stacked toast. Like the full cover it clears while the front toast
+    * is dragged.
+    */
+   const rCoverEdgeStyle = useAnimatedStyle(() => {
+-    const edgeOpacity = isCovered.get();
++    const edgeOpacity = frontDrag?.get() === 1 ? 0 : isCovered.get();
+     return {
+       opacity: isAnimationDisabledValue ? edgeOpacity : withTiming(edgeOpacity, COVER_TIMING_CONFIG)
+     };
+diff --git a/src/components/popover/popover.tsx b/src/components/popover/popover.tsx
+index 95caeac..af2242e 100644
+--- a/src/components/popover/popover.tsx
++++ b/src/components/popover/popover.tsx
+@@ -1,6 +1,6 @@
+ import { createContext, forwardRef, use, useMemo } from 'react';
+ import type { GestureResponderEvent, StyleProp, ViewStyle } from 'react-native';
+-import { StyleSheet, useWindowDimensions, View } from 'react-native';
++import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+ import Animated from 'react-native-reanimated';
+ import { useSafeAreaInsets } from 'react-native-safe-area-context';
+ import { useThemeColor } from '../../helpers/external/hooks';
+@@ -330,6 +330,7 @@ const PopoverContentPopover = forwardRef<
+               zero-height wrapper breaks native scrolling in the content. */}
+           <Animated.View
+             exiting={exiting}
++            needsOffscreenAlphaCompositing={Platform.OS === 'android'}
+             collapsable={false}
+             style={popoverStyleSheet.contentWrapper}
+             pointerEvents="box-none"
+diff --git a/lib/module/components/popover/popover.js b/lib/module/components/popover/popover.js
+index 87b9c3f..c6a4af5 100644
+--- a/lib/module/components/popover/popover.js
++++ b/lib/module/components/popover/popover.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ 
+ import { createContext, forwardRef, use, useMemo } from 'react';
+-import { StyleSheet, useWindowDimensions, View } from 'react-native';
++import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+ import Animated from 'react-native-reanimated';
+ import { useSafeAreaInsets } from 'react-native-safe-area-context';
+ import { useThemeColor } from "../../helpers/external/hooks/index.js";
+@@ -250,6 +250,7 @@ const PopoverContentPopover = /*#__PURE__*/forwardRef(({
+       },
+       children: /*#__PURE__*/_jsx(Animated.View, {
+         exiting: exiting,
++        needsOffscreenAlphaCompositing: Platform.OS === 'android',
+         collapsable: false,
+         style: popoverStyleSheet.contentWrapper,
+         pointerEvents: "box-none",

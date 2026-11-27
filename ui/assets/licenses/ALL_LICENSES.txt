@@ -72,7 +72,7 @@ SOFTWARE.
 
 ===== @lodev09/react-native-true-sheet =====
 
-npm: @lodev09/react-native-true-sheet 3.11.12 (MIT)
+npm: @lodev09/react-native-true-sheet 4.1.2 (MIT)
 
 
 
@@ -1261,25 +1261,6 @@ limitations under the License.
 
 
 
-===== clsx =====
-
-npm: clsx 2.1.1 (MIT)
-
-
-
---- license ---
-
-MIT License
-
-Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
 ===== cmdreg =====
 
 cargo: cmdreg 0.2.2
@@ -2376,38 +2357,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-===== expo-linear-gradient =====
-
-npm: expo-linear-gradient 55.0.14 (MIT)
-
-
-
-Source: https://api.github.com/repos/expo/expo/contents/LICENSE?ref=0675db12d13a5309e3109e8ecf7f6011522194c6
---- LICENSE ---
-
-The MIT License (MIT)
-
-Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-
 ===== expo-linking =====
 
 npm: expo-linking 55.0.15 (MIT)
@@ -2568,45 +2517,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-===== expo-symbols =====
-
-npm: expo-symbols 55.0.9 (MIT)
-
-
-
-Source: https://api.github.com/repos/expo/expo/contents/LICENSE?ref=fcb091766242d53248cd3c5949965961dbc5ec1d
---- LICENSE ---
-
-The MIT License (MIT)
-
-Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-
 ===== expo-system-ui =====
 
-npm: expo-system-ui 55.0.18 (MIT)
+npm: expo-system-ui 55.0.22 (MIT)
 
 
 
-Source: https://api.github.com/repos/expo/expo/contents/LICENSE?ref=0675db12d13a5309e3109e8ecf7f6011522194c6
+Source: https://api.github.com/repos/expo/expo/contents/LICENSE?ref=856b99321eeb04bd528b33f90c0e7fa2859a1fcb
 --- LICENSE ---
 
 The MIT License (MIT)
@@ -2639,38 +2556,6 @@ npm: expo-video 55.0.19 (MIT)
 
 
 Source: https://api.github.com/repos/expo/expo/contents/LICENSE?ref=c8f16914a2713c37fe446c46d613004626b3e6b3
---- LICENSE ---
-
-The MIT License (MIT)
-
-Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-
-===== expo-web-browser =====
-
-npm: expo-web-browser 55.0.16 (MIT)
-
-
-
-Source: https://api.github.com/repos/expo/expo/contents/LICENSE?ref=0675db12d13a5309e3109e8ecf7f6011522194c6
 --- LICENSE ---
 
 The MIT License (MIT)
@@ -3900,8 +3785,6 @@ SOFTWARE.
 
 ===== React Navigation =====
 
-npm: @react-navigation/bottom-tabs 7.18.18 (MIT)
-
 npm: @react-navigation/elements 2.9.38 (MIT)
 
 npm: @react-navigation/native 7.3.16 (MIT)
@@ -4154,7 +4037,7 @@ SOFTWARE.
 
 ===== react-native-reanimated =====
 
-npm: react-native-reanimated 4.3.0 (MIT)
+npm: react-native-reanimated 4.3.4 (MIT)
 
 
 
@@ -4432,7 +4315,7 @@ SOFTWARE.
 
 ===== rn-ui-kit =====
 
-npm: rn-ui-kit 1.3.14 (MIT)
+npm: rn-ui-kit 2.0.0 (MIT)
 
 
 

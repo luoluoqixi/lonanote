@@ -123,7 +123,7 @@ export function DesktopAppShell() {
                       <Text style={{ fontSize: 13 }} className="font-semibold">
                         搜索
                       </Text>
-                      <Text style={{ fontSize: 12 }} className="text-muted-foreground">
+                      <Text style={{ fontSize: 12 }} className="text-muted">
                         搜索工作区中的笔记
                       </Text>
                     </View>
@@ -170,7 +170,10 @@ export function DesktopAppShell() {
         )}
         // title="选择工作区"
         dialogSize={{ width: 720, height: 600 }}
-        dialogContentProps={{ style: { backgroundColor: theme.background } }}
+        dialogContentProps={{
+          herouiWebProps: { style: { backgroundColor: theme.background } },
+          herouiNativeProps: { style: { backgroundColor: theme.background } },
+        }}
         sheetProps={{ snapPoints: ["85%"] }}
       >
         <View style={{ flex: 1, minHeight: 0 }}>
@@ -242,7 +245,7 @@ function ActivityButton({ accessibilityLabel, active, icon: Icon, onPress }: Act
   const theme = useUiTheme();
   const [hovered, setHovered] = useState(false);
   return (
-    <Tooltip content={accessibilityLabel} contentProps={{ side: "right" }} openOnFocus={false}>
+    <Tooltip content={accessibilityLabel} contentProps={{ side: "right" }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
@@ -252,16 +255,16 @@ function ActivityButton({ accessibilityLabel, active, icon: Icon, onPress }: Act
         style={[
           styles.activityButton,
           {
-            backgroundColor: hovered ? theme.accent : "transparent",
+            backgroundColor: hovered ? theme.accent03 : "transparent",
             borderLeftWidth: 2,
-            borderLeftColor: active ? theme.primary : "transparent",
+            borderLeftColor: active ? theme.accent : "transparent",
           },
         ]}
       >
         <Icon
           size={22}
           strokeWidth={1.6}
-          color={active || hovered ? theme.foreground : theme.mutedForeground}
+          color={active || hovered ? theme.foreground : theme.muted}
         />
       </Pressable>
     </Tooltip>
@@ -277,7 +280,7 @@ function SidePanel({ onSelectWorkspace }: { onSelectWorkspace: () => void }) {
         <WorkspaceExplorerForWorkspace key={workspaceId} workspaceId={workspaceId} mode="tree" />
       ) : (
         <View style={styles.sidePanelHeader}>
-          <Text style={{ fontSize: 13 }} className="text-muted-foreground">
+          <Text style={{ fontSize: 13 }} className="text-muted">
             尚未打开工作区
           </Text>
           <Button size="sm" onPress={onSelectWorkspace}>

@@ -119,10 +119,10 @@ function ToolbarIconButton({
       onPress={onPress}
       onPressIn={simple || trackPressedState ? () => setPressed(true) : undefined}
       onPressOut={simple || trackPressedState ? () => setPressed(false) : undefined}
-      size="xs"
+      size="sm"
       style={
         isPanelToggle
-          ? ({ pressed }) => (selected || pressed ? { backgroundColor: theme.accent } : undefined)
+          ? ({ pressed }) => (selected || pressed ? { backgroundColor: theme.accent03 } : undefined)
           : suppressPressedBackground
             ? { backgroundColor: "transparent" }
             : simple
@@ -130,11 +130,12 @@ function ToolbarIconButton({
                   backgroundColor:
                     usesLiquidGlass || !pressed
                       ? "transparent"
-                      : withBackgroundOpacity(theme.accent, TOOLBAR_SURFACE_FALLBACK_OPACITY),
+                      : withBackgroundOpacity(theme.accent03, TOOLBAR_SURFACE_FALLBACK_OPACITY),
                 })
               : undefined
       }
-      variant="icon"
+      variant="ghost"
+      isIconOnly
     >
       {typeof children === "function" ? children(pressed) : children}
     </Button>
@@ -157,7 +158,10 @@ function MobileToolbarSurface({
   const theme = useUiTheme();
   const fallbackStyle = !usesLiquidGlass
     ? {
-        backgroundColor: withBackgroundOpacity(theme.muted, TOOLBAR_SURFACE_FALLBACK_OPACITY),
+        backgroundColor: withBackgroundOpacity(
+          theme.surfaceSecondary,
+          TOOLBAR_SURFACE_FALLBACK_OPACITY,
+        ),
         boxShadow: isIos26Plus() ? undefined : TOOLBAR_SURFACE_FALLBACK_SHADOW,
       }
     : undefined;
@@ -190,7 +194,10 @@ function MobileScrollableToolbarSurface({
   const theme = useUiTheme();
   const fallbackStyle = !usesLiquidGlass
     ? {
-        backgroundColor: withBackgroundOpacity(theme.muted, TOOLBAR_SURFACE_FALLBACK_OPACITY),
+        backgroundColor: withBackgroundOpacity(
+          theme.surfaceSecondary,
+          TOOLBAR_SURFACE_FALLBACK_OPACITY,
+        ),
         boxShadow: isIos26Plus() ? undefined : TOOLBAR_SURFACE_FALLBACK_SHADOW,
       }
     : undefined;
@@ -474,7 +481,10 @@ function EditorToolbarContent({
   const panelButtonWidth = btnWidth > 0 ? btnWidth : undefined;
   const panelFallbackStyle = !usesLiquidGlass
     ? {
-        backgroundColor: withBackgroundOpacity(theme.muted, TOOLBAR_SURFACE_FALLBACK_OPACITY),
+        backgroundColor: withBackgroundOpacity(
+          theme.surfaceSecondary,
+          TOOLBAR_SURFACE_FALLBACK_OPACITY,
+        ),
         boxShadow: isIos26Plus() ? undefined : TOOLBAR_SURFACE_FALLBACK_SHADOW,
       }
     : undefined;
@@ -738,8 +748,9 @@ function EditorToolbarContent({
               key={label}
               nativeHaptics
               onPress={() => void executeCommand(command)}
-              size="xs"
-              variant="icon"
+              size="sm"
+              variant="ghost"
+              isIconOnly
             >
               <Icon color={theme.foreground} size={18} />
             </Button>
@@ -798,7 +809,7 @@ function EditorToolbarContent({
                         : undefined
                     }
                     size="sm"
-                    className={cn(!usesLiquidGlass && "bg-accent/60")}
+                    className={cn(!usesLiquidGlass && "bg-accent-soft/60")}
                     style={styles.panelButton}
                     title={label}
                     native={usesLiquidGlass}

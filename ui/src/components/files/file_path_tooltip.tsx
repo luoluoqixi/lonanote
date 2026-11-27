@@ -1,61 +1,66 @@
-import { type ComponentRef, type ReactElement, useRef, useState } from "react";
+import { type ReactElement, cloneElement, useRef, useState } from "react";
+import type { ViewProps } from "react-native";
 import { Tooltip } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common/platform";
 
-/** 文件路径的纯悬浮提示，标签栏与文件树共用交互和尺寸。触发容器应使用非 button role。 */
+/** 路径提示跟随初始悬浮位置，不接管触发容器的点击或布局。 */
 export function FilePathTooltip({
   children,
   path,
   disabled = false,
 }: {
-  children: ReactElement;
+  children: ReactElement<ViewProps>;
   path: string | null;
   disabled?: boolean;
 }) {
   const enabled = !!path && !disabled;
-  const triggerRef = useRef<ComponentRef<typeof Tooltip.Trigger>>(null);
-  const openRef = useRef(false);
-  const [alignOffset, setAlignOffset] = useState(0);
+  const hovering = useRef(false);
+  const [open, setOpen] = useState(false);
+  const [crossOffset, setCrossOffset] = useState(0);
   return (
     <Tooltip
       content={path ?? ""}
-      size="xs"
-      disableHoverableContent
-      openOnFocus={false}
-      onOpenChange={(open) => {
-        openRef.current = open;
-      }}
-      triggerProps={{
-        ref: triggerRef,
-        disabled: !enabled,
-        onPointerMove: (event) => {
-          if (!enabled || openRef.current) return;
-          const trigger = triggerRef.current;
-          if (!trigger) return;
-          if (isWeb()) {
-            // 事件可能来自文件名或图标，必须以整个触发容器为坐标原点。
-            const rect = (trigger as unknown as HTMLElement).getBoundingClientRect();
-            const pointer = event.nativeEvent;
-            const scale = rect.width / (trigger as unknown as HTMLElement).clientWidth;
-            setAlignOffset((pointer.clientX - rect.left) / (scale || 1) + 12);
-          } else {
-            const x = event.nativeEvent.pageX;
-            trigger.measureInWindow((left) => {
-              if (!openRef.current) setAlignOffset(x - left + 12);
-            });
-          }
-        },
+      isDisabled={!enabled}
+      open={enabled && open}
+      onOpenChange={(next) => {
+        if (!next) setOpen(false);
+        else {
+          // React Aria 的 warm hover 可能先于子元素的 pointer enter 同步触发。
+          queueMicrotask(() => {
+            if (hovering.current) setOpen(true);
+          });
+        }
       }}
       contentProps={{
-        side: "bottom",
-        align: "start",
-        alignOffset,
-        pointerEvents: "none",
-        style: { maxWidth: 640, display: enabled ? "flex" : "none", cursor: "auto" },
+        herouiWebProps: {
+          placement: "bottom start",
+          crossOffset,
+          style: { maxWidth: 640, pointerEvents: "none", cursor: "auto" },
+        },
       }}
     >
-      {children}
+      {cloneElement(children, {
+        tabIndex: -1,
+        onPointerEnter: (event) => {
+          hovering.current = true;
+          children.props.onPointerEnter?.(event);
+        },
+        onPointerLeave: (event) => {
+          hovering.current = false;
+          setOpen(false);
+          children.props.onPointerLeave?.(event);
+        },
+        onPointerMove: (event) => {
+          children.props.onPointerMove?.(event);
+          if (!enabled || open || !isWeb()) return;
+          // currentTarget 始终指向整行，避免子图标或文件名改变坐标原点。
+          const element = event.currentTarget as unknown as HTMLElement;
+          const rect = element.getBoundingClientRect();
+          const scale = rect.width / element.clientWidth;
+          setCrossOffset((event.nativeEvent.clientX - rect.left) / (scale || 1) + 12);
+        },
+      })}
     </Tooltip>
   );
 }

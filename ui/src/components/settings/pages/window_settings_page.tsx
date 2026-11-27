@@ -68,8 +68,8 @@ export function WindowSettingsPage({
                 </Text>
                 <Slider
                   accessibilityLabel="界面缩放"
-                  max={3}
-                  min={0.25}
+                  maxValue={3}
+                  minValue={0.25}
                   native
                   onValueChange={(nextValue) => setZoomDraft(nextValue[0] ?? view.zoom)}
                   onValueChangeFinished={(nextValue) => {
@@ -101,7 +101,8 @@ export function WindowSettingsPage({
                 </Button>
                 <Button
                   size="sm"
-                  variant="link"
+                  variant="ghost"
+                  textClassName="text-accent"
                   disabled={view.zoom === 1}
                   onPress={() => runSettingsAction("重置界面缩放", view.resetZoom())}
                 >
@@ -115,9 +116,9 @@ export function WindowSettingsPage({
             title="全屏"
             switchProps={{
               ...presentation.switch,
-              checked: view.fullscreen,
-              disabled: !view.fullscreenReady,
-              onCheckedChange: (next) => runSettingsAction("切换全屏", view.setFullscreen(next)),
+              isSelected: view.fullscreen,
+              isDisabled: !view.fullscreenReady,
+              onSelectedChange: (next) => runSettingsAction("切换全屏", view.setFullscreen(next)),
             }}
           />
         </NativeListSection>
@@ -127,8 +128,8 @@ export function WindowSettingsPage({
           {...presentation.item}
           switchProps={{
             ...presentation.switch,
-            checked: preferences.window.rememberSize,
-            onCheckedChange: (nextValue) => {
+            isSelected: preferences.window.rememberSize,
+            onSelectedChange: (nextValue) => {
               runSettingsAction(
                 "切换窗口尺寸记忆",
                 updateAndSave((currentPreferences) => ({
@@ -151,8 +152,8 @@ export function WindowSettingsPage({
             title="原生弹窗"
             switchProps={{
               ...presentation.switch,
-              checked: preferences.window.nativeDialogs,
-              onCheckedChange: (nextValue) => {
+              isSelected: preferences.window.nativeDialogs,
+              onSelectedChange: (nextValue) => {
                 runSettingsAction(
                   "切换原生弹窗",
                   updateAndSave((currentPreferences) => ({
@@ -185,7 +186,8 @@ export function WindowSettingsPage({
             </View>
             <Button
               size="sm"
-              variant="link"
+              variant="ghost"
+              textClassName="text-accent"
               onPress={() => {
                 runSettingsAction(
                   "清除保存的窗口尺寸",

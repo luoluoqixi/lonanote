@@ -44,8 +44,8 @@ export function HeaderActionButton({
       onPress={onPress}
       style={{ opacity }}
       title={label}
-      variant="link"
-      textClassName={!ios ? "no-underline" : undefined}
+      variant="ghost"
+      textClassName={!ios ? "text-accent no-underline" : "text-accent"}
       className={!ios ? "px-2" : undefined}
     />
   );

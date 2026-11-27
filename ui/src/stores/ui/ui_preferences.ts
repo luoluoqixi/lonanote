@@ -46,7 +46,6 @@ export interface UiPreferences {
   appearance: {
     font: FontSelection;
     accentColor: AccentColorSetting;
-    backgroundFollowsTheme: boolean;
     themeMode: ColorSchemeSetting;
     zoomFactor: number;
     contextMenuStyle: DesktopContextMenuStyle;
@@ -73,7 +72,6 @@ export interface UiPreferences {
 
 const UI_FONT_KEY = "ui.appearance.font";
 const UI_ACCENT_COLOR_KEY = "ui.appearance.accentColor";
-const UI_BACKGROUND_FOLLOWS_THEME_KEY = "ui.appearance.backgroundFollowsTheme";
 const UI_THEME_MODE_KEY = "ui.appearance.themeMode";
 const UI_ZOOM_FACTOR_KEY = "ui.appearance.zoomFactor";
 const UI_CONTEXT_MENU_STYLE_KEY = "ui.appearance.contextMenuStyle";
@@ -97,7 +95,6 @@ export function createDefaultUiPreferences(): UiPreferences {
     appearance: {
       font: null,
       accentColor: defaultAccentThemeName,
-      backgroundFollowsTheme: false,
       themeMode: "system",
       zoomFactor: 1,
       contextMenuStyle: "system",
@@ -219,7 +216,6 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
     appearance: {
       font: normalizeFontSelection(preferences.appearance.font),
       accentColor: normalizeAccentColor(preferences.appearance.accentColor),
-      backgroundFollowsTheme: Boolean(preferences.appearance.backgroundFollowsTheme),
       themeMode: normalizeThemeMode(preferences.appearance.themeMode),
       zoomFactor: normalizeZoomFactor(preferences.appearance.zoomFactor),
       contextMenuStyle: normalizeDesktopContextMenuStyle(preferences.appearance.contextMenuStyle),
@@ -248,7 +244,6 @@ function normalizeUiPreferences(preferences: UiPreferences): UiPreferences {
 function readUiPreferencesFromStore(): UiPreferences {
   const defaults = createDefaultUiPreferences();
   const accentColor = store.commonGetSync<unknown>(UI_ACCENT_COLOR_KEY);
-  const backgroundFollowsTheme = store.commonGetSync<unknown>(UI_BACKGROUND_FOLLOWS_THEME_KEY);
   const themeMode = store.commonGetSync<unknown>(UI_THEME_MODE_KEY);
   const zoomFactor = store.commonGetSync<unknown>(UI_ZOOM_FACTOR_KEY);
   const contextMenuStyle = store.commonGetSync<unknown>(UI_CONTEXT_MENU_STYLE_KEY);
@@ -279,10 +274,6 @@ function readUiPreferencesFromStore(): UiPreferences {
     appearance: {
       font: normalizeFontSelection(store.commonGetSync<unknown>(UI_FONT_KEY)),
       accentColor: normalizeAccentColor(accentColor ?? defaults.appearance.accentColor),
-      backgroundFollowsTheme:
-        typeof backgroundFollowsTheme === "boolean"
-          ? backgroundFollowsTheme
-          : defaults.appearance.backgroundFollowsTheme,
       themeMode: normalizeThemeMode(themeMode ?? defaults.appearance.themeMode),
       zoomFactor: normalizeZoomFactor(zoomFactor ?? defaults.appearance.zoomFactor),
       contextMenuStyle: normalizeDesktopContextMenuStyle(
@@ -329,7 +320,6 @@ function toStoreEntries(preferences: UiPreferences): Array<[string, unknown]> {
     [UI_FONT_KEY, preferences.appearance.font],
     [UI_LAYOUT_MODE_KEY, preferences.shell.layoutMode],
     [UI_ACCENT_COLOR_KEY, preferences.appearance.accentColor],
-    [UI_BACKGROUND_FOLLOWS_THEME_KEY, preferences.appearance.backgroundFollowsTheme],
     [UI_THEME_MODE_KEY, preferences.appearance.themeMode],
     [UI_ZOOM_FACTOR_KEY, preferences.appearance.zoomFactor],
     [UI_CONTEXT_MENU_STYLE_KEY, preferences.appearance.contextMenuStyle],

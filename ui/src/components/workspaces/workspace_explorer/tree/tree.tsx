@@ -13,7 +13,6 @@ import { ContextMenu, type ContextMenuItemData, Dropdown, Spinner, useUiTheme } 
 
 import { workspaceFile } from "@/api/commands/workspace";
 import { isWeb } from "@/api/common/platform";
-import { DESKTOP_UI_MENU_CONTENT_SIZE, MOBILE_UI_MENU_SIZE } from "@/components/common/consts";
 import { FilePathTooltip } from "@/components/files/file_path_tooltip";
 import { useLayoutMode } from "@/hooks/layout";
 import { useWorkspaceResourceRevision } from "@/hooks/workspace/use_workspace_resource_revision";
@@ -146,7 +145,6 @@ function TreeNode({
       >
         <View style={{ flex: 1, minWidth: 0 }}>
           <ContextMenu
-            contentSize={desktop ? DESKTOP_UI_MENU_CONTENT_SIZE : MOBILE_UI_MENU_SIZE}
             triggerProps={{ style: { width: "100%", height: rowHeight } }}
             items={frozenItems.current ?? currentMenuItems}
             onOpenWillChange={(open) => {
@@ -197,13 +195,13 @@ function TreeNode({
                     backgroundColor: dropTarget
                       ? theme.accent06
                       : active
-                        ? theme.accent
+                        ? theme.accent03
                         : selected
                           ? theme.accent03
                           : hovered && !dragActive
                             ? theme.accent03
                             : "transparent",
-                    borderColor: !dropTarget && focused ? theme.primary : "transparent",
+                    borderColor: !dropTarget && focused ? theme.accent : "transparent",
                   },
                 ]}
               >
@@ -219,19 +217,19 @@ function TreeNode({
                     }}
                     style={{ width: 20, height: rowHeight - 4, justifyContent: "center" }}
                   >
-                    <Chevron size={14} color={theme.mutedForeground} />
+                    <Chevron size={14} color={theme.muted} />
                   </Pressable>
                 ) : (
                   <View style={styles.chevronSpace} />
                 )}
                 {folder ? (
                   expanded ? (
-                    <FolderOpen size={16} color={theme.mutedForeground} />
+                    <FolderOpen size={16} color={theme.muted} />
                   ) : (
-                    <Folder size={16} color={theme.mutedForeground} />
+                    <Folder size={16} color={theme.muted} />
                   )
                 ) : (
-                  <FileText size={16} color={theme.mutedForeground} />
+                  <FileText size={16} color={theme.muted} />
                 )}
                 <Text numberOfLines={1} style={[styles.label, { color: theme.foreground }]}>
                   {row.path.split("/").at(-1)}
@@ -245,7 +243,7 @@ function TreeNode({
                         style={[styles.more, { height: rowHeight }]}
                         onPress={(event) => event.stopPropagation()}
                       >
-                        <MoreHorizontal size={16} color={theme.mutedForeground} />
+                        <MoreHorizontal size={16} color={theme.muted} />
                       </Pressable>
                     }
                   />
@@ -523,7 +521,7 @@ export function WorkspaceTree(props: Props) {
                 {item.kind === "loading" ? (
                   <Spinner size="sm" />
                 ) : (
-                  <Text className="text-destructive" numberOfLines={1}>
+                  <Text className="text-danger" numberOfLines={1}>
                     读取失败，点击重试
                   </Text>
                 )}
@@ -555,7 +553,7 @@ export function WorkspaceTree(props: Props) {
             padding: 8,
             borderWidth: 1,
             borderRadius: 4,
-            borderColor: theme.primary,
+            borderColor: theme.accent,
             backgroundColor: theme.background,
           }}
         >

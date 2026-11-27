@@ -26,7 +26,7 @@ export function renderWorkspaceStorageFields({
   if (target.isLoading)
     return [
       <NativeListCustomItem key="loading">
-        <Text style={desktop ? { fontSize: 13 } : undefined} className="text-muted-foreground">
+        <Text style={desktop ? { fontSize: 13 } : undefined} className="text-muted">
           正在加载存储位置…
         </Text>
       </NativeListCustomItem>,
@@ -34,7 +34,7 @@ export function renderWorkspaceStorageFields({
   if (target.providerIds.length === 0)
     return [
       <NativeListCustomItem key="empty">
-        <Text style={desktop ? { fontSize: 13 } : undefined} className="text-destructive">
+        <Text style={desktop ? { fontSize: 13 } : undefined} className="text-danger">
           {target.error ?? "当前设备没有可用的存储位置"}
         </Text>
       </NativeListCustomItem>,
@@ -88,18 +88,14 @@ export function renderWorkspaceStorageFields({
     ) : null,
     !target.isManaged && target.externalBinding ? (
       <NativeListCustomItem key="path">
-        <Text
-          style={desktop ? { fontSize: 13 } : undefined}
-          selectable
-          className="text-muted-foreground"
-        >
+        <Text style={desktop ? { fontSize: 13 } : undefined} selectable className="text-muted">
           {target.externalBinding.resourceRef}
         </Text>
       </NativeListCustomItem>
     ) : null,
     target.error ? (
       <NativeListCustomItem key="error">
-        <Text style={desktop ? { fontSize: 13 } : undefined} className="text-destructive">
+        <Text style={desktop ? { fontSize: 13 } : undefined} className="text-danger">
           {target.error}
         </Text>
       </NativeListCustomItem>

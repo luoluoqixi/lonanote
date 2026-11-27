@@ -35,7 +35,7 @@ export function WorkspaceSelectionToolbar({
   const fallbackSurfaceStyle = isLiquidGlassAvailable()
     ? undefined
     : { backgroundColor: appBackgroundColors.card };
-  const accentColor = theme.primary;
+  const accentColor = theme.accent;
 
   return (
     <View pointerEvents="box-none" style={[styles.overlay, { bottom: insets.bottom + 20 }]}>

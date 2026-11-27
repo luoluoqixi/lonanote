@@ -5,7 +5,6 @@ import { Button, Input, Text } from "rn-ui-kit";
 import type { FontConsumer, FontFamilyEntry, FontSelection } from "@/api/commands/fonts/types";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { fontSelectionKey } from "@/fonts/font_selection";
-import { useLayoutMode } from "@/hooks/layout";
 import { useFontCapability, useFontDirectory } from "@/hooks/settings/use_font_directory";
 import { useFontSettings } from "@/hooks/settings/use_font_settings";
 
@@ -34,7 +33,7 @@ function FontRow({
       accessibilityState={{ selected, disabled: disabled || !available }}
       onPress={onPress}
       style={{ paddingHorizontal: 12 }}
-      className={selected ? "bg-accent/30" : undefined}
+      className={selected ? "bg-accent-soft/30" : undefined}
       buttonSize={{ height: 42 }}
     >
       <View
@@ -49,7 +48,7 @@ function FontRow({
         <Text numberOfLines={1} style={{ flex: 1, fontSize: 14 }}>
           {entry.displayName}
         </Text>
-        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+        <Text className="text-muted" style={{ fontSize: 12 }}>
           {available === undefined
             ? "正在验证…"
             : available
@@ -74,8 +73,6 @@ export function FontPicker({
   open: boolean;
   onOpenChange(open: boolean): void;
 }) {
-  const { layoutMode } = useLayoutMode();
-  const isDesktop = layoutMode === "desktop";
   const fonts = useFontSettings();
   const directory = useFontDirectory(open);
   const [query, setQuery] = useState("");
@@ -114,7 +111,7 @@ export function FontPicker({
         onChangeText={setQuery}
         placeholder="搜索本机字体"
         accessibilityLabel="搜索本机字体"
-        size={isDesktop ? "xs" : "sm"}
+        className="h-8 text-sm"
       />
       <Button
         variant={fonts[consumer].selection === null ? "secondary" : "outline"}
@@ -122,23 +119,23 @@ export function FontPicker({
         onPress={() => {
           void select(null);
         }}
-        size={isDesktop ? "xs" : "sm"}
+        size="sm"
       >
         系统默认{fonts[consumer].selection === null ? " ✓" : ""}
       </Button>
       {fonts[consumer].unavailable ? (
-        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+        <Text className="text-muted" style={{ fontSize: 12 }}>
           当前字体不可用，已使用系统默认
         </Text>
       ) : null}
       {error ? (
-        <Text className="text-destructive" style={{ fontSize: 12 }}>
+        <Text className="text-danger" style={{ fontSize: 12 }}>
           {error}
         </Text>
       ) : null}
       {directory.error ? (
         <>
-          <Text className="text-destructive">读取本机字体失败</Text>
+          <Text className="text-danger">读取本机字体失败</Text>
           <Button onPress={directory.retry}>重试</Button>
         </>
       ) : null}
@@ -151,14 +148,14 @@ export function FontPicker({
         windowSize={3}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          <Text className="text-muted-foreground">
+          <Text className="text-muted">
             {directory.loading ? "正在读取本机字体…" : "没有匹配的字体"}
           </Text>
         }
         renderItem={({ item, index }) => (
           <>
             {index === 0 || entries[index - 1].source !== item.source ? (
-              <Text className="text-muted-foreground" style={{ fontSize: 12, padding: 8 }}>
+              <Text className="text-muted" style={{ fontSize: 12, padding: 8 }}>
                 {item.source === "bundled" ? "内置字体" : "本机字体"}
               </Text>
             ) : null}
