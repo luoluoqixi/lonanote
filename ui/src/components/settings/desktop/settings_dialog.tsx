@@ -44,6 +44,9 @@ export function DesktopSettingsDialog({
   const currentWorkspaceId = useCurrentWorkspaceId();
   const [isDebugSheetOpen, setIsDebugSheetOpen] = useState(false);
   const [isGmSheetOpen, setIsGmSheetOpen] = useState(false);
+  // 首次打开才加载，关闭后保留宿主以完成 Sheet 自身的退出动画。
+  const [hasOpenedDebugSheet, setHasOpenedDebugSheet] = useState(false);
+  const [hasOpenedGmSheet, setHasOpenedGmSheet] = useState(false);
   const [navigation, setNavigation] = useState<SettingsLocation[]>([
     { id: initialPageId, params: {} },
   ]);
@@ -176,14 +179,20 @@ export function DesktopSettingsDialog({
                 onNavigate={navigate}
                 onBack={back}
                 pageParams={location.params}
-                onOpenDebugSheet={() => setIsDebugSheetOpen(true)}
-                onOpenGmSheet={() => setIsGmSheetOpen(true)}
+                onOpenDebugSheet={() => {
+                  setHasOpenedDebugSheet(true);
+                  setIsDebugSheetOpen(true);
+                }}
+                onOpenGmSheet={() => {
+                  setHasOpenedGmSheet(true);
+                  setIsGmSheetOpen(true);
+                }}
               />
             </Suspense>
           ) : null}
         </View>
       </View>
-      {isDebugSheetOpen ? (
+      {hasOpenedDebugSheet ? (
         <Suspense fallback={null}>
           <RnUiKitDebugPanel
             panelSheetProps={{ snapPoints: ["60%"] }}
@@ -193,7 +202,7 @@ export function DesktopSettingsDialog({
           />
         </Suspense>
       ) : null}
-      {isGmSheetOpen ? (
+      {hasOpenedGmSheet ? (
         <Suspense fallback={null}>
           <NativeSheetStack
             name="lonanote-gm-settings-sheet"
@@ -219,6 +228,17 @@ export function DesktopSettingsDialog({
       title="设置"
       titleProps={{ style: { fontSize: 16 } }}
       trigger={trigger}
+      bodyProps={{
+        herouiWebProps: {
+          style: {
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            minHeight: 0,
+            overflow: "hidden",
+          },
+        },
+      }}
       contentProps={{
         herouiNativeProps: {
           style: {
@@ -272,6 +292,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   navigationItem: {
+    width: "100%",
     height: 36,
     flexShrink: 0,
     justifyContent: "flex-start",

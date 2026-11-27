@@ -271,6 +271,7 @@ export function WorkspaceSelectList({
 const styles = StyleSheet.create({
   list: {
     flex: 1,
+    minHeight: 0,
   },
   status: {
     alignItems: "center",

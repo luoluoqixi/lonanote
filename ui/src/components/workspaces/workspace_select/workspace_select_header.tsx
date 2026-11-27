@@ -194,7 +194,10 @@ export function WorkspaceSelectHeader({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          paddingHorizontal: 16,
+          flexShrink: 0,
+          minHeight: 44,
+          paddingLeft: 16,
+          paddingRight: 48,
           paddingVertical: 8,
           gap: 8,
           backgroundColor: theme.background,

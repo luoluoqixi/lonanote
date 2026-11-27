@@ -1,11 +1,13 @@
 import { useEffect, useMemo } from "react";
 import {
+  type MenuConfig,
   MenuProvider,
   type NativeMenuRequest,
   RootProvider,
   resolveGeneratedAccentTheme,
 } from "rn-ui-kit";
 
+import { createDesktopMenuAdapter } from "@/api/common/desktop_menu_adapter.web";
 import {
   resolveDesktopContextMenuNative,
   resolveDesktopMenuBackend,
@@ -46,9 +48,13 @@ export function AppProvider({ children }: AppProviderProps) {
       : tauriDesktop
         ? resolveDesktopContextMenuNative(preferences.shell.layoutMode, os(), menuStyle)
         : false;
-  const menuConfig = useMemo(
+  const menuConfig = useMemo<MenuConfig>(
     () => ({
       native: nativeMenus,
+      menuAdapter:
+        nativeMenus && tauriDesktop
+          ? createDesktopMenuAdapter(resolveDesktopMenuBackend(os())!, resolvedColorScheme)
+          : false,
       webContentMaxHeight:
         preferences.shell.layoutMode === "desktop" ? "calc(100vh - 24px)" : undefined,
       showNativeMenu:

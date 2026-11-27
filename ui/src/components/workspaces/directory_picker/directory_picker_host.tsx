@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Folder, FolderOpen } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Input, Spinner, Text, useUiTheme } from "rn-ui-kit";
 
@@ -104,11 +104,17 @@ function DirectoryRow({
 }
 
 export function DirectoryPickerHost() {
-  const state = useWorkspaceDirectoryPicker();
+  const currentState = useWorkspaceDirectoryPicker();
+  const lastState = useRef(currentState);
+  useLayoutEffect(() => {
+    if (currentState) lastState.current = currentState;
+  }, [currentState]);
+  // 请求结束即归还 Promise，保留内容让弹层自行完成退出动画。
+  const state = currentState ?? lastState.current;
   const { layoutMode } = useLayoutMode();
   const desktop = layoutMode === "desktop";
   const theme = useUiTheme();
-  const token = state?.token;
+  const token = currentState?.token;
   useEffect(() => {
     if (token !== undefined) void picker.load("");
   }, [token]);
@@ -162,7 +168,7 @@ export function DirectoryPickerHost() {
     <AdaptiveModal
       name="workspace-directory-picker"
       title={title}
-      open
+      open={currentState !== null}
       onOpenChange={(open) => {
         if (!open && picker.getSnapshot()?.token === state.token) picker.cancel();
       }}

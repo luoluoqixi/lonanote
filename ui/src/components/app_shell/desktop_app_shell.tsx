@@ -163,6 +163,17 @@ export function DesktopAppShell() {
         onOpenChange={setSelectOpen}
         // title="选择工作区"
         dialogSize={{ width: 720, height: 600 }}
+        dialogBodyProps={{
+          herouiWebProps: {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              minHeight: 0,
+              overflow: "hidden",
+            },
+          },
+        }}
         dialogContentProps={{
           herouiWebProps: { style: { backgroundColor: theme.background } },
           herouiNativeProps: { style: { backgroundColor: theme.background } },

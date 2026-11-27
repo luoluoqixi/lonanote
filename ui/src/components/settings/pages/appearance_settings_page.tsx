@@ -54,7 +54,9 @@ export function AppearanceSettingsPage({
   const presentation = useSettingsPresentation();
   const theme = useUiTheme();
   const fonts = useFontSettings();
+  // 保留上次 consumer，让关闭中的弹层继续显示原字体列表。
   const [fontPicker, setFontPicker] = useState<"ui" | "editor" | null>(null);
+  const [isFontPickerOpen, setIsFontPickerOpen] = useState(false);
   const colorSchemeSettings = useColorSchemeSettings();
   const { layoutMode, setLayoutMode } = useLayoutMode();
   const uiPreferences = useUiPreferences();
@@ -107,7 +109,10 @@ export function AppearanceSettingsPage({
           value={fontSelectionName(fonts.editor.selection)}
           valueColor={theme.accent}
           trailing={<ChevronsUpDown color={theme.accent} size={16} />}
-          onPress={() => setFontPicker("editor")}
+          onPress={() => {
+            setFontPicker("editor");
+            setIsFontPickerOpen(true);
+          }}
         />
         <NativeListItem
           {...presentation.item}
@@ -115,16 +120,17 @@ export function AppearanceSettingsPage({
           value={fontSelectionName(fonts.ui.selection)}
           valueColor={theme.accent}
           trailing={<ChevronsUpDown color={theme.accent} size={16} />}
-          onPress={() => setFontPicker("ui")}
+          onPress={() => {
+            setFontPicker("ui");
+            setIsFontPickerOpen(true);
+          }}
         />
       </NativeListSection>
       {fontPicker ? (
         <FontPicker
           consumer={fontPicker}
-          open
-          onOpenChange={(open) => {
-            if (!open) setFontPicker(null);
-          }}
+          open={isFontPickerOpen}
+          onOpenChange={setIsFontPickerOpen}
         />
       ) : null}
       <NativeListSection {...presentation.section} title="主题">

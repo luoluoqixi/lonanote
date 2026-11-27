@@ -12,6 +12,7 @@ import { useLayoutMode } from "@/hooks/layout";
 type SheetStackProps = ComponentProps<typeof NativeSheetStack>;
 export type AdaptiveModalProps = {
   children: ReactNode;
+  dialogBodyProps?: ComponentProps<typeof Dialog>["bodyProps"];
   dialogContentProps?: ComponentProps<typeof Dialog>["contentProps"];
   dialogSize?: { width: number; height: number };
   name: string;
@@ -27,6 +28,7 @@ export type AdaptiveModalProps = {
 /** 根据应用布局模式展示单页弹层：桌面使用 Dialog，移动布局使用 NativeSheetStack。 */
 export function AdaptiveModal({
   children,
+  dialogBodyProps,
   dialogContentProps,
   dialogSize = { width: 520, height: 320 },
   name,
@@ -43,6 +45,7 @@ export function AdaptiveModal({
   if (layoutMode === "desktop") {
     return (
       <Dialog
+        bodyProps={dialogBodyProps}
         content={children}
         onOpenChange={onOpenChange}
         open={open}
