@@ -156,7 +156,6 @@
     "react-native-screens@4.24.0": "patches/react-native-screens@4.24.0.patch",
     "react-native-webview@14.0.1": "patches/react-native-webview@14.0.1.patch",
     "react-native@0.83.9": "patches/react-native@0.83.9.patch",
-    "zeego@3.0.6": "patches/zeego@3.0.6.patch",
-    "rn-ui-kit@github:luoluoqixi/rn-ui-kit#0422586": "patches/rn-ui-kit@2.0.0.patch"
+    "zeego@3.0.6": "patches/zeego@3.0.6.patch"
   }
 }
