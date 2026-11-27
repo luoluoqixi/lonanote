@@ -18,3 +18,22 @@ test("首快照失败不得宣称同步就绪或无限挂起工作区启动", as
   expect(stderr).toBe("");
   expect(exitCode).toBe(0);
 });
+
+for (const scenario of ["native", "native-document", "headless", "web"]) {
+  test(`配置同步兼容 ${scenario} 环境并正确清理事件`, async () => {
+    const child = Bun.spawn(
+      [
+        process.execPath,
+        fileURLToPath(new URL("./fixtures/config_sync_environment.ts", import.meta.url)),
+        scenario,
+      ],
+      { cwd: fileURLToPath(new URL("..", import.meta.url)), stdout: "pipe", stderr: "pipe" },
+    );
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ]);
+    expect({ exitCode, output: stdout + stderr }).toEqual({ exitCode: 0, output: "" });
+  });
+}

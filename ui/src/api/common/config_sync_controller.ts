@@ -90,20 +90,21 @@ async function initializeController(): Promise<() => void> {
       refreshInBackground();
     }
   };
-  if (typeof window !== "undefined") {
+  // React Native 也有 window，但不提供浏览器的 DOM 事件 API。
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
     window.addEventListener("focus", refreshInBackground);
   }
-  if (typeof document !== "undefined") {
+  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
     document.addEventListener("visibilitychange", onVisibilityChange);
   }
 
   // 所有 listener 完成注册之后再拉取快照，避免初始化期间漏掉已提交变更。
   const dispose = () => {
     disposed = true;
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
       window.removeEventListener("focus", refreshInBackground);
     }
-    if (typeof document !== "undefined") {
+    if (typeof document !== "undefined" && typeof document.removeEventListener === "function") {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     }
     unlisten.forEach((dispose) => dispose());
