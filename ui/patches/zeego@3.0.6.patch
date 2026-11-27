@@ -8,8 +8,10 @@ diff --git a/lib/commonjs/menu/create-android-menu/index.android.js b/lib/common
 index ba7ef46..7201878 100644
 --- a/lib/commonjs/menu/create-android-menu/index.android.js
 +++ b/lib/commonjs/menu/create-android-menu/index.android.js
-@@ -165,4 +165,17 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -165,6 +165,19 @@ If you want to use a custom component as your <Content />, you can use the creat
    const Root = (0, _displayNames.create)(props => {
+     var _pickChildren$targetC, _pickChildren$targetC5, _pickChildren$targetC6, _trigger$targetChildr;
+ 
 +    const menuRef = (0, _react.useRef)(null);
 +    const __menuRef = props.__menuRef;
 +
@@ -24,7 +26,7 @@ index ba7ef46..7201878 100644
 +    }
 +
      const trigger = (0, _children.pickChildren)(props.children, Trigger);
-     const content = (0, _children.pickChildren)(props.children, Content).targetChildren?.[0];
+     const content = (_pickChildren$targetC = (0, _children.pickChildren)(props.children, Content).targetChildren) === null || _pickChildren$targetC === void 0 ? void 0 : _pickChildren$targetC[0];
      const callbacks = {};
 @@ -308,10 +321,14 @@ If you want to use a custom component as your <Content />, you can use the creat
              } = item;
@@ -86,8 +88,10 @@ index 5f47781..60c6abf 100644
  import { MenuView } from '@react-native-menu/menu';
  import { flattenChildren, pickChildren, isInstanceOfComponent } from '../children';
  import { create } from '../display-names';
-@@ -149,4 +149,13 @@ If you want to use a custom component as your <Content />, you can use the creat
+@@ -149,6 +149,15 @@ If you want to use a custom component as your <Content />, you can use the creat
    const Root = create(props => {
+     var _pickChildren$targetC, _pickChildren$targetC5, _pickChildren$targetC6, _trigger$targetChildr;
+ 
 +    const menuRef = useRef(null);
 +    const __menuRef = props.__menuRef;
 +
@@ -98,7 +102,7 @@ index 5f47781..60c6abf 100644
 +    }
 +
      const trigger = pickChildren(props.children, Trigger);
-     const content = pickChildren(props.children, Content).targetChildren?.[0];
+     const content = (_pickChildren$targetC = pickChildren(props.children, Content).targetChildren) === null || _pickChildren$targetC === void 0 ? void 0 : _pickChildren$targetC[0];
      const callbacks = {};
 @@ -292,10 +301,14 @@ If you want to use a custom component as your <Content />, you can use the creat
              } = item;
@@ -272,14 +276,14 @@ diff --git a/lib/commonjs/context-menu/context-menu.android.js b/lib/commonjs/co
 index d3de614..0000000 100644
 --- a/lib/commonjs/context-menu/context-menu.android.js
 +++ b/lib/commonjs/context-menu/context-menu.android.js
-@@ -7 +7 @@ exports.Trigger = exports.SubTrigger = exports.SubContent = exports.Sub = exports
+@@ -8 +8 @@ exports.Trigger = exports.SubTrigger = exports.SubContent = exports.Sub = exports
 -var _menu = require("../menu");
 +var _menu = require("../menu/create-android-menu/index.android");
 diff --git a/lib/commonjs/dropdown-menu/dropdown-menu.android.js b/lib/commonjs/dropdown-menu/dropdown-menu.android.js
 index aa4f48d..0000000 100644
 --- a/lib/commonjs/dropdown-menu/dropdown-menu.android.js
 +++ b/lib/commonjs/dropdown-menu/dropdown-menu.android.js
-@@ -7 +7 @@ exports.Trigger = exports.SubTrigger = exports.SubContent = exports.Sub = exports
+@@ -8 +8 @@ exports.Trigger = exports.SubTrigger = exports.SubContent = exports.Sub = exports
 -var _menu = require("../menu");
 +var _menu = require("../menu/create-android-menu/index.android");
 diff --git a/lib/module/context-menu/context-menu.android.js b/lib/module/context-menu/context-menu.android.js

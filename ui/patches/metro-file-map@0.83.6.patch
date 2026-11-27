@@ -91,11 +91,11 @@ index 90bbf0b..c1a5485 100644
 --- a/src/watchers/AbstractWatcher.js
 +++ b/src/watchers/AbstractWatcher.js
 @@ -44,10 +44,18 @@ class AbstractWatcher {
-  this.dot = dot || false;
-  this.ignored = ignored;
-  this.globs = globs;
+     this.dot = dot || false;
+     this.ignored = ignored;
+     this.globs = globs;
 +    this.root = path.resolve(dir);
-  this.doIgnore = ignored
+     this.doIgnore = ignored
 -      ? (filePath) => (0, _common.posixPathMatchesPattern)(ignored, filePath)
 +      ? (filePath) => {
 +          if ((0, _common.posixPathMatchesPattern)(ignored, filePath)) {
@@ -106,8 +106,8 @@ index 90bbf0b..c1a5485 100644
 +          }
 +          return ignored.test(path.resolve(this.root, filePath));
 +        }
-    : () => false;
+       : () => false;
 -    this.root = path.resolve(dir);
    }
    onFileEvent(listener) {
-  this.#emitter.on("fileevent", listener);
+     this.#emitter.on("fileevent", listener);

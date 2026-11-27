@@ -15,15 +15,15 @@ index f1d2631f..bad56ab9 100644
 --- a/android/build.gradle
 +++ b/android/build.gradle
 @@ -91,6 +91,9 @@ android {
-  defaultConfig {
-    minSdkVersion 24
-    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+   defaultConfig {
+     minSdkVersion 24
+     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
 +    // MenuView 需要在 release 包中反射 AppCompat 的 Popup 内部成员以调整 Select 弹层。
 +    // 作为库的 consumer rules 随 AAR 传递，避免应用侧单独配置。
 +    consumerProguardFiles "consumer-rules.pro"
-    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
-    versionCode 1
-    versionName "1.0"
+     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+     versionCode 1
+     versionName "1.0"
 diff --git a/android/consumer-rules.pro b/android/consumer-rules.pro
 new file mode 100644
 index 00000000..084bb5e9
@@ -1213,10 +1213,10 @@ index 9c323d9..9c26b9a 100644
  	/**
  	 * Determines if menu should open after long press or on normal press
  	 *
-@@ -191 +212 @@ export type ProcessedMenuAction = Omit<
+@@ -180 +201 @@ export type ProcessedMenuAction = Omit<
 -	"imageColor" | "titleColor" | "subactions"
 +	"imageColor" | "selectedBackgroundColor" | "titleColor" | "subactions"
-@@ -193,0 +215 @@ export type ProcessedMenuAction = Omit<
+@@ -182,0 +204 @@ export type ProcessedMenuAction = Omit<
 +	selectedBackgroundColor: ReturnType<typeof processColor>;
 diff --git a/src/UIMenuView.android.tsx b/src/UIMenuView.android.tsx
 index 4c8a0cd..0000000 100644

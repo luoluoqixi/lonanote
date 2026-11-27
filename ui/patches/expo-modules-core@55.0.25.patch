@@ -54,7 +54,7 @@ diff --git a/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift b/ios/Core/Views/Swift
        init() {}
 @@ -63,4 +66,26 @@ extension ExpoSwiftUI {
      }
- +}
+   }
 
 -}
 +#if !os(macOS)
