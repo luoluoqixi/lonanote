@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 
 import type { FontConsumer, FontFamilyEntry } from "@/api/commands/fonts/types";
-import { getFontDirectoryError, listFontFamilies, verifyFontFamily } from "@/stores/font_store";
+import {
+  getFontDirectoryError,
+  listFontFamilies,
+  prepareFontFamily,
+  verifyFontFamily,
+} from "@/stores/font_store";
 
 export function useFontDirectory(open: boolean) {
   const [entries, setEntries] = useState<FontFamilyEntry[]>([]);
@@ -48,4 +53,20 @@ export function useFontCapability(entry: FontFamilyEntry, consumer: FontConsumer
     };
   }, [entry, consumer]);
   return available;
+}
+
+/** 名称由 UI 渲染；editor 的 WebView family 不一定能在 Native Text 中使用。 */
+export function useFontPreviewFamily(entry: FontFamilyEntry) {
+  const [family, setFamily] = useState<string>();
+  useEffect(() => {
+    let active = true;
+    setFamily(undefined);
+    void prepareFontFamily(entry, "ui").then((font) => {
+      if (active) setFamily(font?.family);
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry]);
+  return family;
 }

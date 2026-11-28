@@ -544,7 +544,6 @@ export function WorkspaceTree(props: Props) {
       ) : null}
       {drag.preview ? (
         <View
-          pointerEvents="none"
           style={{
             position: "absolute",
             left: 6,
@@ -555,6 +554,7 @@ export function WorkspaceTree(props: Props) {
             borderRadius: 4,
             borderColor: theme.accent,
             backgroundColor: theme.background,
+            pointerEvents: "none",
           }}
         >
           <Text numberOfLines={2} style={{ fontSize: 12, color: theme.foreground }}>

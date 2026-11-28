@@ -12,12 +12,12 @@ export function DesktopEditorSurface({
 }) {
   return (
     <View
-      pointerEvents={active ? "auto" : "none"}
       accessibilityElementsHidden={!active}
       importantForAccessibility={active ? "auto" : "no-hide-descendants"}
       style={[
         StyleSheet.absoluteFillObject,
         { flex: 1, minHeight: 0, backgroundColor, zIndex: active ? 1 : 0 },
+        { pointerEvents: active ? "auto" : "none" },
       ]}
     >
       {children}

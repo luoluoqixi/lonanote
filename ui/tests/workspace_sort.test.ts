@@ -18,6 +18,7 @@ mock.module("@/api/common", () => ({
   formatUnixSecondsRelativeDate,
   groupItemsByDate,
   isDesktop: () => true,
+  os: () => "windows",
 }));
 mock.module("@/api/commands/store", () => ({
   store: {

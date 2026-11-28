@@ -17,7 +17,9 @@ const dragOverlayStyle: DragOverlayStyle = {
   appRegion: "drag",
   backgroundColor: "transparent",
   left: 0,
-  pointerEvents: "auto",
+  // 拖拽层不能成为 WebView 的命中层，否则会吞掉标题栏下方控件的 pointer 事件。
+  // Tauri 仍会根据 data-tauri-drag-region 和 appRegion 识别拖拽区域。
+  pointerEvents: "none",
   position: "fixed",
   right: 0,
   top: 0,
@@ -51,8 +53,6 @@ function TitleBarDragOverlay({
     <div
       aria-hidden="true"
       data-tauri-drag-region=""
-      // Radix 在 document 的 pointerdown 上判定外部点击；Tauri 的 mousedown 继续正常冒泡。
-      onPointerDown={(event) => event.stopPropagation()}
       style={{
         ...dragOverlayStyle,
         height: TITLE_HEIGHT,

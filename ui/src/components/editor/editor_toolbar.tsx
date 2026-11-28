@@ -212,12 +212,12 @@ function MobileScrollableToolbarSurface({
     >
       <GlassEffect
         glassEffectStyle={usesLiquidGlass ? "regular" : "none"}
-        pointerEvents="none"
         isInteractive={usesLiquidGlass}
         style={[
           styles.mobileToolbarSurfaceBackground,
           { borderRadius: toolbarHeight / 2 },
           fallbackStyle,
+          { pointerEvents: "none" },
         ]}
       />
       {children}
@@ -770,8 +770,7 @@ function EditorToolbarContent({
         <View style={[styles.panel, { height: panelHeight }]}>
           <GlassEffect
             glassEffectStyle={usesLiquidGlass ? "regular" : "none"}
-            pointerEvents="none"
-            style={[styles.panelBackground, panelFallbackStyle]}
+            style={[styles.panelBackground, panelFallbackStyle, { pointerEvents: "none" }]}
             isInteractive
           />
           <ScrollView
@@ -829,7 +828,6 @@ function EditorToolbarContent({
         importantForAccessibility={displayedPanel === null ? "auto" : "no-hide-descendants"}
         keyboardAvoidance={{ subtractSafeAreaInset: false }}
         keyboardHiddenConfirmation={{ finalHeight: -toolbarContainerHeight }}
-        pointerEvents={displayedPanel === null ? "auto" : "none"}
         style={[
           styles.mobileToolbar,
           {
@@ -839,6 +837,7 @@ function EditorToolbarContent({
             minHeight: toolbarContainerHeight,
             opacity: displayedPanel === null ? 1 : 0,
           },
+          { pointerEvents: displayedPanel === null ? "auto" : "none" },
         ]}
       >
         <MobileToolbarRow

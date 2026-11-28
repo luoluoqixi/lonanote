@@ -12,9 +12,7 @@ import {
   settingsTabTarget,
 } from "../settings_navigation";
 
-const RnUiKitDebugPanel = lazy(() =>
-  import("rn-ui-kit/debug").then((m) => ({ default: m.RnUiKitDebugPanel })),
-);
+const RnUiKitDebugPanel = lazy(() => import("./settings_debug_panel"));
 
 const GmSettingsPage = lazy(() =>
   import("../pages/gm_settings_page").then((m) => ({ default: m.GmSettingsPage })),

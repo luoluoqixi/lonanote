@@ -1,5 +1,10 @@
 import { systemFonts } from "@/api/commands/fonts";
-import type { FontConsumer, FontFamilyEntry, FontSelection } from "@/api/commands/fonts/types";
+import type {
+  FontConsumer,
+  FontFamilyEntry,
+  FontSelection,
+  ResolvedFont,
+} from "@/api/commands/fonts/types";
 import { listBundledFonts } from "@/fonts/bundled_fonts";
 import { loadFont } from "@/fonts/font_loader";
 import { createFontRuntime } from "@/fonts/font_runtime";
@@ -25,7 +30,7 @@ export const fontRuntimes = {
 let directory: Promise<FontFamilyEntry[]> | undefined;
 let directoryError: string | null = null;
 export const getFontDirectoryError = () => directoryError;
-const verified = new Map<string, Promise<boolean>>();
+const verified = new Map<string, Promise<ResolvedFont | null>>();
 
 export function listFontFamilies(refresh = false): Promise<FontFamilyEntry[]> {
   if (refresh) {
@@ -46,19 +51,27 @@ export function listFontFamilies(refresh = false): Promise<FontFamilyEntry[]> {
   return directory;
 }
 
-/** 只探测可见候选；加载失败的字体不会成为可提交选项。 */
-export function verifyFontFamily(entry: FontFamilyEntry, consumer: FontConsumer): Promise<boolean> {
-  if (!entry[consumer].available) return Promise.resolve(false);
+/** 只加载可见候选，同时保留实际注册的 family 供字体名称预览复用。 */
+export function prepareFontFamily(
+  entry: FontFamilyEntry,
+  consumer: FontConsumer,
+): Promise<ResolvedFont | null> {
+  if (!entry[consumer].available) return Promise.resolve(null);
   const key = `${consumer}:${fontSelectionKey(entry.selection)}`;
   let request = verified.get(key);
   if (!request) {
     request = resolve(entry.selection, consumer)
-      .then((font) => loadFont(font, consumer))
-      .then(
-        () => true,
-        () => false,
-      );
+      .then(async (font) => {
+        await loadFont(font, consumer);
+        return font;
+      })
+      .catch(() => null);
     verified.set(key, request);
   }
   return request;
+}
+
+/** 加载失败的字体不会成为可提交选项。 */
+export function verifyFontFamily(entry: FontFamilyEntry, consumer: FontConsumer): Promise<boolean> {
+  return prepareFontFamily(entry, consumer).then((font) => font !== null);
 }

@@ -1,4 +1,3 @@
-import { useUiTheme } from "rn-ui-kit";
 import type {
   NativeListItemBaseProps,
   NativeListSectionProps,
@@ -8,23 +7,19 @@ import type {
 
 import { useLayoutMode } from "@/hooks/layout";
 
-/** 桌面 UI 设置使用紧凑排版，移动 UI 保持触控尺寸。 */
+/** 保留库默认卡片外观，仅为桌面设置提供与表单一致的紧凑字号。 */
 export function useSettingsPresentation() {
   const { layoutMode } = useLayoutMode();
-  const theme = useUiTheme();
   const compact = layoutMode === "desktop";
   return {
     desktop: layoutMode === "desktop",
     compact,
     item: compact
       ? ({
-          hoverBackgroundColor: theme.default,
-          pressBackgroundColor: theme.accent03,
           titleFontSize: 13,
-          subtitleFontSize: 12,
           valueFontSize: 13,
-          paddingVertical: 8,
-        } satisfies NativeListItemBaseProps)
+          subtitleFontSize: 12,
+        } satisfies Partial<NativeListItemBaseProps>)
       : {},
     section: compact ? ({ titleFontSize: 12 } satisfies Partial<NativeListSectionProps>) : {},
     switch: compact ? ({ size: "sm" } satisfies Partial<SwitchProps>) : {},
@@ -32,7 +27,6 @@ export function useSettingsPresentation() {
       ? ({
           contentSize: "sm",
           nativeTriggerProps: { size: "sm" },
-          nativeTriggerLabelProps: { fontSize: 13 },
         } satisfies Partial<SelectProps>)
       : {},
   };

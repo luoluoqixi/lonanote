@@ -365,7 +365,6 @@ export function DesktopEditorGroup({
     <View
       nativeID={`desktop-editor-group-${groupId}`}
       ref={editorAreaRef}
-      onTouchStart={() => editorStore.getState().setActiveGroup(groupId)}
       onPointerDown={() => editorStore.getState().setActiveGroup(groupId)}
       style={[styles.root, { backgroundColor: theme.background }]}
     >
@@ -445,7 +444,7 @@ export function DesktopEditorGroup({
             </ScrollView>
           </EditorTabDropTarget>
           {tabDrag.preview ? (
-            <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+            <View style={[StyleSheet.absoluteFillObject, { pointerEvents: "none" }]}>
               <View
                 style={{
                   position: "absolute",

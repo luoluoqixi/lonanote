@@ -51,8 +51,7 @@ export function TitleBar() {
       >
         <View
           {...(desktop ? tauriDragRegionProps : {})}
-          style={[styles.title, { left: titleInset, right: titleInset }]}
-          pointerEvents="none"
+          style={[styles.title, { left: titleInset, right: titleInset }, { pointerEvents: "none" }]}
         >
           <Text
             numberOfLines={1}
@@ -78,7 +77,7 @@ export function TitleBar() {
           >
             {presentation.icon ? (
               <View {...tauriDragRegionProps} style={styles.iconDragRegion}>
-                <View pointerEvents="none">
+                <View style={{ pointerEvents: "none" }}>
                   <Image
                     source={require("../../../assets/images/favicon.png")}
                     resizeMode="contain"

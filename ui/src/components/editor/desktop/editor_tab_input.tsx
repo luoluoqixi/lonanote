@@ -1,5 +1,4 @@
 import { type ReactElement, useEffect, useState } from "react";
-import { View } from "react-native";
 import { ContextMenu, type ContextMenuItemData } from "rn-ui-kit";
 
 import { workspaceFile } from "@/api/commands/workspace";
@@ -56,19 +55,17 @@ export function EditorTabInput({
     layoutMode === "desktop" && !!tooltipPath && !suppressTooltip && frozenItems === null;
   return (
     <FilePathTooltip path={tooltipPath} disabled={!canShowTooltip}>
-      {/* 容器只承载悬浮事件；覆盖 Tooltip 注入的 button role，避免嵌套关闭按钮。 */}
-      <View role="presentation" style={{ flexShrink: 0, height: 36 }}>
-        <ContextMenu
-          items={frozenItems ?? getItems(nativePath)}
-          onOpenWillChange={(open) => {
-            if (open) setFrozenItems(getItems(nativePath));
-          }}
-          onOpenChange={(open) => {
-            if (!open) setFrozenItems(null);
-          }}
-          trigger={children}
-        />
-      </View>
+      <ContextMenu
+        items={frozenItems ?? getItems(nativePath)}
+        onOpenWillChange={(open) => {
+          if (open) setFrozenItems(getItems(nativePath));
+        }}
+        onOpenChange={(open) => {
+          if (!open) setFrozenItems(null);
+        }}
+        trigger={children}
+        triggerProps={{ asChild: true }}
+      />
     </FilePathTooltip>
   );
 }

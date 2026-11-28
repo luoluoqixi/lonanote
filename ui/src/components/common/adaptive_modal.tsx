@@ -45,7 +45,27 @@ export function AdaptiveModal({
   if (layoutMode === "desktop") {
     return (
       <Dialog
-        bodyProps={dialogBodyProps}
+        bodyProps={{
+          ...dialogBodyProps,
+          herouiNativeProps: {
+            ...dialogBodyProps?.herouiNativeProps,
+            style: [
+              { flex: 1, minHeight: 0, overflow: "hidden" },
+              dialogBodyProps?.herouiNativeProps?.style,
+            ],
+          },
+          herouiWebProps: {
+            ...dialogBodyProps?.herouiWebProps,
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              minHeight: 0,
+              overflow: "hidden",
+              ...dialogBodyProps?.herouiWebProps?.style,
+            },
+          },
+        }}
         content={children}
         onOpenChange={onOpenChange}
         open={open}

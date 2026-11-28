@@ -38,7 +38,7 @@ export function WorkspaceSelectionToolbar({
   const accentColor = theme.accent;
 
   return (
-    <View pointerEvents="box-none" style={[styles.overlay, { bottom: insets.bottom + 20 }]}>
+    <View style={[styles.overlay, { bottom: insets.bottom + 20 }, { pointerEvents: "box-none" }]}>
       <GlassEffect
         accessibilityLabel={`工作区选择操作，已选择 ${selectedCount} 个`}
         glassEffectStyle="regular"

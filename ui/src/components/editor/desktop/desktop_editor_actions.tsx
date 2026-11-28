@@ -287,15 +287,18 @@ export function DesktopEditorActions({
       <Dropdown
         items={items}
         contentProps={{ align: "end" }}
-        nativeTrigger
-        nativeTriggerIcon="none"
-        nativeTriggerContainerStyle={{ padding: 0, paddingHorizontal: 0, gap: 0 }}
-        nativeTriggerProps={{
-          accessibilityLabel: "更多选项",
-          size: "2xs",
-          style: { width: 28, height: 28, padding: 0 },
-        }}
-        triggerLabel={<EllipsisVertical size={16} color={theme.muted} />}
+        native={false}
+        trigger={
+          <Button
+            aria-label="更多选项"
+            variant="ghost"
+            size="sm"
+            buttonSize={{ width: 28, height: 28 }}
+            style={{ padding: 0 }}
+          >
+            <EllipsisVertical size={16} color={theme.muted} />
+          </Button>
+        }
       />
     </View>
   );

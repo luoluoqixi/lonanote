@@ -51,6 +51,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const menuConfig = useMemo<MenuConfig>(
     () => ({
       native: nativeMenus,
+      webSize: preferences.shell.layoutMode === "desktop" ? "sm" : undefined,
       menuAdapter:
         nativeMenus && tauriDesktop
           ? createDesktopMenuAdapter(resolveDesktopMenuBackend(os())!, resolvedColorScheme)

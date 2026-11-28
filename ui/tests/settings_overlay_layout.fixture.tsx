@@ -186,6 +186,7 @@ mock.module("../src/hooks/settings/use_font_settings", () => ({
 mock.module("../src/hooks/settings/use_font_directory", () => ({
   useFontDirectory: () => ({ entries: [], loading: false }),
   useFontCapability: () => true,
+  useFontPreviewFamily: () => undefined,
 }));
 mock.module("../src/theme/accent_themes", () => ({
   accentThemeNames: ["lavender"],

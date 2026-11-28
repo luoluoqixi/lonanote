@@ -120,18 +120,6 @@ export function WorkspaceSelectList({
   return (
     <NativeList
       native={desktop ? false : undefined}
-      backgroundColor={desktop ? theme.background : undefined}
-      listStyleOptions={
-        desktop
-          ? {
-              rowBackgroundColor: theme.surfaceSecondary,
-              showBorder: false,
-              borderColor: theme.border,
-              sectionShadow: false,
-              borderRadius: 6,
-            }
-          : undefined
-      }
       automaticallyAdjustsScrollIndicatorInsets={usesNativeIosHeader ? true : undefined}
       basicScrollViewProps={
         isAndroid()
@@ -225,8 +213,6 @@ export function WorkspaceSelectList({
                     disabled: isInteractionDisabled || ("disabled" in item && item.disabled),
                   })),
                 }}
-                hoverBackgroundColor={desktop ? theme.default : undefined}
-                pressBackgroundColor={desktop ? theme.accent03 : undefined}
                 disabled={isInteractionDisabled}
                 icon={<Folder color={accentColor} fill={theme.accent} size={compact ? 20 : 24} />}
                 iconColor={theme.accent}

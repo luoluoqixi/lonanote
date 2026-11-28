@@ -81,7 +81,6 @@ type WorkspaceGroupModeSelectProps = {
 export function WorkspaceGroupModeSelect({
   onOpenChange,
   onValueChange,
-  open,
   selectRef,
   value,
 }: WorkspaceGroupModeSelectProps) {

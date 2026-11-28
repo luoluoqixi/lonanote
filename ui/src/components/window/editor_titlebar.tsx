@@ -30,8 +30,7 @@ export function EditorTitleBar({ title, showPin = false }: { title: string; show
       >
         <View
           {...tauriDragRegionProps}
-          pointerEvents="none"
-          style={[styles.title, { left: titleInset, right: titleInset }]}
+          style={[styles.title, { left: titleInset, right: titleInset }, { pointerEvents: "none" }]}
         >
           <Text
             numberOfLines={1}

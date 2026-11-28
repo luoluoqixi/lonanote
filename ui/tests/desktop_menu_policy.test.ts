@@ -7,7 +7,7 @@ import {
 
 test("三个桌面系统的右键菜单跟随统一外观设置，移动布局保留平台默认", () => {
   for (const platform of ["windows", "linux", "macos"]) {
-    expect(resolveDesktopContextMenuNative("desktop", platform)).toBe(true);
+    expect(resolveDesktopContextMenuNative("desktop", platform)).toBe(platform === "macos");
     expect(resolveDesktopContextMenuNative("desktop", platform, "app")).toBe(false);
     expect(resolveDesktopContextMenuNative("desktop", platform, "system")).toBe(true);
     expect(resolveDesktopContextMenuNative("mobile", platform)).toBeUndefined();

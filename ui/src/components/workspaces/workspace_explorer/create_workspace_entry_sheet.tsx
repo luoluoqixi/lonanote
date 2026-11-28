@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
-import { StyleSheet, type TextInput } from "react-native";
+import { StyleSheet, type TextInput, View } from "react-native";
 import {
+  Button,
   NativeList,
   NativeListButtonItem,
   NativeListInputItem,
   NativeListSection,
+  Text,
 } from "rn-ui-kit";
 
 import { isWeb } from "@/api/common";
@@ -81,32 +83,49 @@ export function CreateWorkspaceEntrySheet({
   }, [open, desktop]);
 
   const content = (
-    <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
-      <NativeListSection titleFontSize={desktop ? 12 : undefined} title="名称">
-        <NativeListInputItem
-          titleFontSize={desktop ? 13 : undefined}
-          valueFontSize={desktop ? 13 : undefined}
-          inputProps={{
-            style: desktop ? { fontSize: 13 } : undefined,
-            onChangeText: onNameChange,
-            onSubmitEditing: onSubmit,
-            placeholder: isNote ? "未命名笔记" : "新建文件夹",
-            ref: inputRef,
-            returnKeyType: "done",
-            value: name,
-          }}
-        />
-      </NativeListSection>
-      <NativeListSection>
-        <NativeListButtonItem
-          titleFontSize={desktop ? 13 : undefined}
-          valueFontSize={desktop ? 13 : undefined}
-          disabled={name.trim().length === 0 || isCreating}
-          onPress={onSubmit}
-          title={isCreating ? "正在创建…" : title}
-        />
-      </NativeListSection>
-    </NativeList>
+    <View style={styles.list}>
+      <NativeList dismissKeyboardOnTap style={styles.list} tracksNavigationBarScrollEdge>
+        <NativeListSection titleFontSize={desktop ? 12 : undefined} title="名称">
+          <NativeListInputItem
+            titleFontSize={desktop ? 13 : undefined}
+            valueFontSize={desktop ? 13 : undefined}
+            inputProps={{
+              style: desktop ? { fontSize: 13 } : undefined,
+              onChangeText: onNameChange,
+              onSubmitEditing: onSubmit,
+              placeholder: isNote ? "未命名笔记" : "新建文件夹",
+              ref: inputRef,
+              returnKeyType: "done",
+              value: name,
+            }}
+          />
+        </NativeListSection>
+        {!desktop ? (
+          <NativeListSection>
+            <NativeListButtonItem
+              disabled={name.trim().length === 0 || isCreating}
+              onPress={onSubmit}
+              title={isCreating ? "正在创建…" : title}
+            />
+          </NativeListSection>
+        ) : null}
+      </NativeList>
+      {desktop ? (
+        <View style={styles.actions}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isCreating}
+            onPress={() => handleOpenChange(false)}
+          >
+            <Text>取消</Text>
+          </Button>
+          <Button size="sm" disabled={name.trim().length === 0 || isCreating} onPress={onSubmit}>
+            <Text>{isCreating ? "正在创建…" : title}</Text>
+          </Button>
+        </View>
+      ) : null}
+    </View>
   );
 
   return (
@@ -128,6 +147,7 @@ export function CreateWorkspaceEntrySheet({
 }
 
 const styles = StyleSheet.create({
+  actions: { flexDirection: "row", justifyContent: "flex-end", gap: 8, paddingTop: 12 },
   list: {
     flex: 1,
     minHeight: 0,

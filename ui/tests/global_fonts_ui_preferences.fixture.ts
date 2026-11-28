@@ -15,13 +15,18 @@ mock.module("../src/api/commands/store", () => ({
     },
   },
 }));
-mock.module("../src/api/common", () => ({ isDesktop: () => true }));
+mock.module("../src/api/common", () => ({ isDesktop: () => true, os: () => "windows" }));
 mock.module("../src/theme/accent_themes", () => ({
   defaultAccentThemeName: "lavender",
   normalizeAccentThemeName: (value: unknown) => (typeof value === "string" ? value : "lavender"),
 }));
 const { uiPreferences } = await import("../src/stores/ui/ui_preferences");
-const font = { source: "system" as const, platform: "windows" as const, familyKey: "Segoe UI", displayName: "Segoe UI" };
+const font = {
+  source: "system" as const,
+  platform: "windows" as const,
+  familyKey: "Segoe UI",
+  displayName: "Segoe UI",
+};
 
 test("UI 字体变化只写自己的全局 key，重置显式写 null", async () => {
   values.clear();

@@ -280,7 +280,6 @@ function VideoMediaViewer({
         </GestureDetector>
       </View>
       <View
-        pointerEvents={isUiVisible ? "auto" : "none"}
         style={[
           styles.videoControls,
           {
@@ -289,6 +288,7 @@ function VideoMediaViewer({
             paddingBottom: bottomInset,
           },
           !isUiVisible && styles.hiddenUi,
+          { pointerEvents: isUiVisible ? "auto" : "none" },
         ]}
       >
         <Button
@@ -345,7 +345,9 @@ function VideoMediaViewer({
           <Maximize color={theme.foreground} size={20} />
         </Button>
       </View>
-      <View pointerEvents="none" style={[styles.videoIndicator, !isUiVisible && styles.hiddenUi]}>
+      <View
+        style={[styles.videoIndicator, !isUiVisible && styles.hiddenUi, { pointerEvents: "none" }]}
+      >
         <Text className="text-muted text-sm">{indicatorLabel}</Text>
       </View>
     </View>
@@ -600,8 +602,12 @@ export function MediaViewer() {
         }}
       />
       <View
-        pointerEvents="none"
-        style={[styles.headerMask, { backgroundColor: "transparent" }, { height: headerHeight }]}
+        style={[
+          styles.headerMask,
+          { backgroundColor: "transparent" },
+          { height: headerHeight },
+          { pointerEvents: "none" },
+        ]}
       />
       <GestureDetector gesture={dismissGesture}>
         <Animated.View

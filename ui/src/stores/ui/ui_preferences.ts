@@ -1,7 +1,8 @@
 import type { FontSelection } from "@/api/commands/fonts/types";
 import { store } from "@/api/commands/store";
-import { isDesktop } from "@/api/common";
+import { isDesktop, os } from "@/api/common";
 import type { CommonStoreSnapshot } from "@/api/common/common_store_sync";
+import { getDefaultDesktopContextMenuStyle } from "@/api/common/desktop_menu_policy";
 import { clampWindowZoom } from "@/api/common/window_zoom";
 import { normalizeFontSelection } from "@/fonts/font_selection";
 import {
@@ -95,7 +96,7 @@ export function createDefaultUiPreferences(): UiPreferences {
       accentColor: defaultAccentThemeName,
       themeMode: "system",
       zoomFactor: 1,
-      contextMenuStyle: "system",
+      contextMenuStyle: getDefaultDesktopContextMenuStyle(os()),
     },
     developer: {
       optionsEnabled: false,
@@ -150,7 +151,7 @@ function normalizeZoomFactor(value: unknown): number {
 }
 
 function normalizeDesktopContextMenuStyle(value: unknown): DesktopContextMenuStyle {
-  return value === "app" ? "app" : "system";
+  return value === "app" || value === "system" ? value : getDefaultDesktopContextMenuStyle(os());
 }
 
 function normalizeWorkspaceExplorerSortValue(value: unknown): WorkspaceExplorerSortSetting {

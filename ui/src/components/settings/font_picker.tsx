@@ -5,7 +5,11 @@ import { Button, Input, Text } from "rn-ui-kit";
 import type { FontConsumer, FontFamilyEntry, FontSelection } from "@/api/commands/fonts/types";
 import { AdaptiveModal } from "@/components/common/adaptive_modal";
 import { fontSelectionKey } from "@/fonts/font_selection";
-import { useFontCapability, useFontDirectory } from "@/hooks/settings/use_font_directory";
+import {
+  useFontCapability,
+  useFontDirectory,
+  useFontPreviewFamily,
+} from "@/hooks/settings/use_font_directory";
 import { useFontSettings } from "@/hooks/settings/use_font_settings";
 
 import { filterFontFamilies } from "./font_picker_model";
@@ -24,6 +28,7 @@ function FontRow({
   onPress(): void;
 }) {
   const available = useFontCapability(entry, consumer);
+  const fontFamily = useFontPreviewFamily(entry);
   return (
     <Button
       variant="ghost"
@@ -32,7 +37,7 @@ function FontRow({
       accessibilityLabel={entry.displayName}
       accessibilityState={{ selected, disabled: disabled || !available }}
       onPress={onPress}
-      style={{ paddingHorizontal: 12 }}
+      style={{ paddingHorizontal: 12, width: "100%", alignSelf: "stretch" }}
       className={selected ? "bg-accent-soft/30" : undefined}
       buttonSize={{ height: 42 }}
     >
@@ -45,7 +50,10 @@ function FontRow({
           gap: 8,
         }}
       >
-        <Text numberOfLines={1} style={{ flex: 1, fontSize: 14 }}>
+        <Text
+          numberOfLines={1}
+          style={{ flex: 1, minWidth: 0, fontSize: 14, fontFamily, fontWeight: "400" }}
+        >
           {entry.displayName}
         </Text>
         <Text className="text-muted" style={{ fontSize: 12 }}>
@@ -118,6 +126,7 @@ export function FontPicker({
           void select(null);
         }}
         size="sm"
+        style={{ width: "100%", justifyContent: "flex-start" }}
       >
         系统默认{fonts[consumer].selection === null ? " ✓" : ""}
       </Button>

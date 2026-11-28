@@ -1,5 +1,8 @@
 import { type EditorAppMenuKey, isEditorAppMenuKey } from "@/assets/editor/src/bridge/app_menu_key";
-import { type EditorPointerPayload, isEditorPointerPayload } from "@/assets/editor/src/bridge/pointer";
+import {
+  type EditorPointerPayload,
+  isEditorPointerPayload,
+} from "@/assets/editor/src/bridge/pointer";
 import {
   EDITOR_BRIDGE_PROTOCOL_VERSION,
   type EditorBridgeApplyResult,

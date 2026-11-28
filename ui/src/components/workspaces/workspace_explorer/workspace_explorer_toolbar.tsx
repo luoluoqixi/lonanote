@@ -43,7 +43,7 @@ export function WorkspaceExplorerToolbar({
     : { backgroundColor: appBackgroundColors.card };
 
   return (
-    <View pointerEvents="box-none" style={[styles.overlay, { bottom: insets.bottom + 16 }]}>
+    <View style={[styles.overlay, { bottom: insets.bottom + 16 }, { pointerEvents: "box-none" }]}>
       <GlassEffect
         accessibilityLabel={isSelectionMode ? `已选择 ${selectedCount} 项` : "文件操作"}
         glassEffectStyle="regular"

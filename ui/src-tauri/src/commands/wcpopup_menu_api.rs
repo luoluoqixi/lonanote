@@ -16,6 +16,12 @@ pub(crate) struct WcPopupMenuItem {
     sub_menu: Option<Vec<WcPopupMenuItem>>,
 }
 
+#[derive(Clone, Deserialize)]
+pub(crate) struct WcPopupMenuPlacement {
+    side: String,
+    align: String,
+}
+
 fn append_items(builder: &mut MenuBuilder, items: Vec<WcPopupMenuItem>) -> Result<(), String> {
     for item in items {
         if item.separator == Some(true) {
@@ -47,6 +53,7 @@ pub(crate) async fn show_wcpopup_context_menu(
     y: f64,
     device_pixel_ratio: f64,
     dark_mode: bool,
+    placement: Option<WcPopupMenuPlacement>,
 ) -> Result<Option<String>, String> {
     #[cfg(windows)]
     let (window_handle, popup_x, popup_y) = {
@@ -93,18 +100,44 @@ pub(crate) async fn show_wcpopup_context_menu(
                 }
             };
             #[cfg(windows)]
-            if let Err(error) = install_windows_menu_bounds(&menu, popup_x, popup_y) {
+            if let Err(error) =
+                install_windows_menu_bounds(&menu, popup_x, popup_y, placement.as_ref())
+            {
                 destroy_menu(menu);
                 let _ = result_sender.send(Err(error));
                 return;
             }
             #[cfg(target_os = "linux")]
             gtk::glib::MainContext::default().spawn_local(async move {
+                use gtk::{glib::translate::FromGlibPtrNone, prelude::WidgetExt};
+                let mut popup_x = (x * device_pixel_ratio / scale_factor).round() as i32;
+                let mut popup_y = (y * device_pixel_ratio / scale_factor).round() as i32;
+                if let Some(placement) = placement {
+                    let gtk_menu = unsafe {
+                        gtk::Menu::from_glib_none(menu.gtk_menu_handle as *mut gtk::ffi::GtkMenu)
+                    };
+                    let (_, natural) = gtk_menu.preferred_size();
+                    if placement.side == "left" {
+                        popup_x = popup_x.saturating_sub(natural.width);
+                    } else if placement.side != "right" {
+                        popup_x = super::wcpopup_menu_position::aligned_menu_axis(
+                            popup_x,
+                            natural.width,
+                            &placement.align,
+                        );
+                    }
+                    if placement.side == "top" {
+                        popup_y = popup_y.saturating_sub(natural.height);
+                    } else if placement.side == "left" || placement.side == "right" {
+                        popup_y = super::wcpopup_menu_position::aligned_menu_axis(
+                            popup_y,
+                            natural.height,
+                            &placement.align,
+                        );
+                    }
+                }
                 let selected = menu
-                    .popup_at_async(
-                        (x * device_pixel_ratio / scale_factor).round() as i32,
-                        (y * device_pixel_ratio / scale_factor).round() as i32,
-                    )
+                    .popup_at_async(popup_x, popup_y)
                     .await
                     .map(|item| item.id);
                 destroy_menu(menu);
@@ -170,7 +203,20 @@ fn scale_windows_menu(config: &mut Config, scale_factor: f64) {
 
 /// 在库计算位置之后、窗口显示之前校正实际矩形，保持菜单字号、留白和尺寸。
 #[cfg(windows)]
-fn install_windows_menu_bounds(menu: &wcpopup::Menu, x: i32, y: i32) -> Result<(), String> {
+struct WindowsMenuBounds {
+    monitor: usize,
+    x: i32,
+    y: i32,
+    placement: Option<WcPopupMenuPlacement>,
+}
+
+#[cfg(windows)]
+fn install_windows_menu_bounds(
+    menu: &wcpopup::Menu,
+    x: i32,
+    y: i32,
+    placement: Option<&WcPopupMenuPlacement>,
+) -> Result<(), String> {
     use windows::Win32::{
         Foundation::{HWND, POINT},
         Graphics::Gdi::{MonitorFromPoint, MONITOR_DEFAULTTONEAREST},
@@ -180,21 +226,30 @@ fn install_windows_menu_bounds(menu: &wcpopup::Menu, x: i32, y: i32) -> Result<(
     if monitor.0.is_null() {
         return Err("无法获取菜单所在显示器".to_owned());
     }
+    let bounds = Box::into_raw(Box::new(WindowsMenuBounds {
+        monitor: monitor.0 as usize,
+        x,
+        y,
+        placement: placement.cloned(),
+    }));
     let installed = unsafe {
         SetWindowSubclass(
             HWND(menu.window_handle as *mut std::ffi::c_void),
             Some(menu_bounds_subclass),
             1,
-            monitor.0 as usize,
+            bounds as usize,
         )
     };
     if !installed.as_bool() {
+        unsafe {
+            drop(Box::from_raw(bounds));
+        }
         return Err("无法安装菜单边界定位处理".to_owned());
     }
     // 子菜单拥有独立的原生窗口，也需要在最终布局时约束位置。
     for item in menu.items() {
         if let Some(submenu) = item.submenu {
-            install_windows_menu_bounds(&submenu, x, y)?;
+            install_windows_menu_bounds(&submenu, x, y, None)?;
         }
     }
     Ok(())
@@ -207,7 +262,7 @@ unsafe extern "system" fn menu_bounds_subclass(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
     subclass_id: usize,
-    monitor: usize,
+    bounds: usize,
 ) -> windows::Win32::Foundation::LRESULT {
     use windows::Win32::{
         Graphics::Gdi::{GetMonitorInfoW, HMONITOR, MONITORINFO},
@@ -219,6 +274,7 @@ unsafe extern "system" fn menu_bounds_subclass(
             },
         },
     };
+    let bounds = unsafe { &*(bounds as *const WindowsMenuBounds) };
     if message == WM_WINDOWPOSCHANGING && lparam.0 != 0 {
         // WINDOWPOS 来自系统的同步消息，仅在当前回调中访问；所有数值均为物理像素。
         let position = unsafe { &mut *(lparam.0 as *mut WINDOWPOS) };
@@ -227,22 +283,59 @@ unsafe extern "system" fn menu_bounds_subclass(
                 cbSize: std::mem::size_of::<MONITORINFO>() as u32,
                 ..Default::default()
             };
-            if unsafe { GetMonitorInfoW(HMONITOR(monitor as *mut std::ffi::c_void), &mut info) }
-                .as_bool()
+            if unsafe {
+                GetMonitorInfoW(HMONITOR(bounds.monitor as *mut std::ffi::c_void), &mut info)
+            }
+            .as_bool()
             {
                 let mut rect = windows::Win32::Foundation::RECT::default();
-                let height = if position.flags.contains(SWP_NOSIZE) {
+                let (width, height) = if position.flags.contains(SWP_NOSIZE) {
                     if unsafe { GetWindowRect(hwnd, &mut rect) }.is_ok() {
-                        rect.bottom - rect.top
+                        (rect.right - rect.left, rect.bottom - rect.top)
                     } else {
-                        0
+                        (0, 0)
                     }
                 } else {
-                    position.cy
+                    (position.cx, position.cy)
                 };
+                if width > 0 {
+                    let left = match bounds.placement.as_ref() {
+                        Some(placement) if placement.side == "left" => {
+                            bounds.x.saturating_sub(width)
+                        }
+                        Some(placement) if placement.side == "right" => bounds.x,
+                        Some(placement) => super::wcpopup_menu_position::aligned_menu_axis(
+                            bounds.x,
+                            width,
+                            &placement.align,
+                        ),
+                        None => position.x,
+                    };
+                    position.x = super::wcpopup_menu_position::clamp_menu_left(
+                        left,
+                        width,
+                        info.rcWork.left,
+                        info.rcWork.right,
+                    );
+                }
                 if height > 0 {
+                    let top = match bounds.placement.as_ref() {
+                        Some(placement) if placement.side == "top" => {
+                            bounds.y.saturating_sub(height)
+                        }
+                        Some(placement)
+                            if placement.side == "left" || placement.side == "right" =>
+                        {
+                            super::wcpopup_menu_position::aligned_menu_axis(
+                                bounds.y,
+                                height,
+                                &placement.align,
+                            )
+                        }
+                        _ => position.y,
+                    };
                     position.y = super::wcpopup_menu_position::clamp_menu_top(
-                        position.y,
+                        top,
                         height,
                         info.rcWork.top,
                         info.rcWork.bottom,
@@ -252,6 +345,11 @@ unsafe extern "system" fn menu_bounds_subclass(
         }
     } else if message == WM_NCDESTROY {
         let _ = unsafe { RemoveWindowSubclass(hwnd, Some(menu_bounds_subclass), subclass_id) };
+        unsafe {
+            drop(Box::from_raw(
+                bounds as *const WindowsMenuBounds as *mut WindowsMenuBounds,
+            ));
+        }
     }
     unsafe { DefSubclassProc(hwnd, message, wparam, lparam) }
 }

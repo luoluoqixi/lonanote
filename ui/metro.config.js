@@ -42,7 +42,10 @@ config.resolver.nodeModulesPaths = [
 // 切回 Git / registry 依赖后路径会落入 node_modules，此配置会自动停用。
 const rnUiKitRoot = path.dirname(require.resolve("rn-ui-kit/package.json"));
 if (!rnUiKitRoot.startsWith(`${__dirname}${path.sep}`)) {
-  config.watchFolders = [...config.watchFolders, rnUiKitRoot];
+  config.watchFolders = [...new Set([...config.watchFolders, rnUiKitRoot])];
+  config.resolver.nodeModulesPaths = [
+    ...new Set([...config.resolver.nodeModulesPaths, path.resolve(rnUiKitRoot, "node_modules")]),
+  ];
 }
 
 // bun link 的真实目标可能位于工程外，Metro 必须扫描该目录才能解析包导出。

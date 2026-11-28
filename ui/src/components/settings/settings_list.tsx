@@ -1,4 +1,4 @@
-import { NativeList, type NativeListRootProps, useUiTheme } from "rn-ui-kit";
+import { NativeList, type NativeListRootProps } from "rn-ui-kit";
 
 import { os } from "@/api/common";
 
@@ -15,23 +15,10 @@ export function SettingsList({
 }: NativeListRootProps) {
   const { desktop } = useSettingsPresentation();
   const usesNativeIosScrollEdgeHeader = !desktop && os() === "ios" && tracksNavigationBarScrollEdge;
-  const theme = useUiTheme();
 
   return (
     <NativeList
       native={desktop ? false : undefined}
-      backgroundColor={desktop ? theme.background : undefined}
-      listStyleOptions={
-        desktop
-          ? {
-              rowBackgroundColor: theme.surfaceSecondary,
-              showBorder: false,
-              borderColor: theme.border,
-              sectionShadow: false,
-              borderRadius: 6,
-            }
-          : undefined
-      }
       automaticallyAdjustsScrollIndicatorInsets={
         automaticallyAdjustsScrollIndicatorInsets ??
         (usesNativeIosScrollEdgeHeader ? true : undefined)

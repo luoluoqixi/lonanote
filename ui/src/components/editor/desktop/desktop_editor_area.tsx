@@ -120,7 +120,6 @@ function EditorDivider({
       ]}
     >
       <View
-        pointerEvents="none"
         style={[
           {
             position: "absolute",
@@ -129,6 +128,7 @@ function EditorDivider({
           direction === "row"
             ? { width: thickness, top: 0, bottom: 0, left: (8 - thickness) / 2 }
             : { height: thickness, left: 0, right: 0, top: (8 - thickness) / 2 },
+          { pointerEvents: "none" },
         ]}
       />
     </View>
@@ -185,7 +185,6 @@ export function DesktopEditorArea({
         return (
           <View
             key={id}
-            pointerEvents="box-none"
             nativeID={`desktop-editor-surface-${encodeURIComponent(groupId!)}:${id}`}
             style={{
               position: "absolute",
@@ -194,10 +193,10 @@ export function DesktopEditorArea({
               width: `${rect.width * 100}%`,
               height: `${rect.height * 100}%`,
               zIndex: visible ? 2 : -1,
+              pointerEvents: "none",
             }}
           >
             <View
-              pointerEvents={visible ? "auto" : "none"}
               style={{
                 position: "absolute",
                 top: 37,
@@ -205,6 +204,7 @@ export function DesktopEditorArea({
                 right: 0,
                 bottom: 0,
                 overflow: "hidden",
+                pointerEvents: visible ? "auto" : "none",
               }}
             >
               <DesktopEditorSurface active={visible} backgroundColor={theme.background}>
